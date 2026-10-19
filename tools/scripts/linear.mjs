@@ -335,7 +335,10 @@ export async function main(argv, { env = process.env, fetch, log = console.log }
       if (!url) throw new Error(`usage: linear ${cmd} <STA-n> <url>`);
       const state = cmd === "review" ? "In Review" : "Done";
       await L.setState(issue, state);
-      await L.link(issue, url, cmd === "review" ? "Pull request" : undefined);
+      // Linear refuses a second attachment for a URL the GitHub integration already linked; that is not a failure.
+      await L.link(issue, url, cmd === "review" ? "Pull request" : undefined).catch((e) =>
+        log(`(attachment skipped: ${e.message})`),
+      );
       await L.comment(issue, `${state}: ${url}`);
       log(`${issue.identifier} → ${state}`);
       return 0;
