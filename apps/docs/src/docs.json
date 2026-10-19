@@ -77,7 +77,10 @@
               "constitution/index",
               "constitution/boundaries",
               "constitution/secrets",
-              "constitution/http-and-events"
+              "constitution/http-and-events",
+              "constitution/security",
+              "constitution/tenancy",
+              "constitution/delegation"
             ]
           }
         ]
@@ -98,11 +101,20 @@
               "adr/0006-naming-exports-and-imports",
               "adr/0007-source-documentation-standard",
               "adr/0008-test-placement",
-              "adr/0022-tests-live-in-tests-folders",
               "adr/0009-secrets-two-mechanisms",
               "adr/0010-services-are-independent-workspace-members",
               "adr/0011-rejected-and-deferred-technologies",
-              "adr/0012-code-host-and-ci"
+              "adr/0012-code-host-and-ci",
+              "adr/0013-versioning-and-release",
+              "adr/0014-data-ownership-and-orm",
+              "adr/0015-contract-packages",
+              "adr/0016-agents-source-of-truth",
+              "adr/0017-agent-roster-and-models",
+              "adr/0018-framework-design-record",
+              "adr/0019-supply-chain-hardening",
+              "adr/0020-observability-and-crash-reporting",
+              "adr/0021-ai-engine-and-agent-write-safety",
+              "adr/0022-tests-live-in-tests-folders"
             ]
           }
         ]
@@ -120,7 +132,9 @@
               "standards/apps",
               "standards/code-style",
               "standards/testing",
-              "standards/dependencies"
+              "standards/dependencies",
+              "standards/i18n-rtl",
+              "standards/ui-and-accessibility"
             ]
           }
         ]
@@ -135,7 +149,10 @@
               "runbooks/secrets",
               "runbooks/ci",
               "runbooks/release",
-              "runbooks/mobile-release"
+              "runbooks/mobile-release",
+              "runbooks/renovate",
+              "runbooks/deploys",
+              "runbooks/upgrade"
             ]
           }
         ]
@@ -146,7 +163,15 @@
         "groups": [
           {
             "group": "Setup",
-            "pages": ["agents/index", "agents/roster", "agents/hooks", "agents/concurrent-sessions"]
+            "pages": [
+              "agents/index",
+              "agents/roster",
+              "agents/hooks",
+              "agents/skills",
+              "agents/spec-lifecycle",
+              "agents/concurrent-sessions",
+              "agents/rules-that-dont-rot"
+            ]
           }
         ]
       },

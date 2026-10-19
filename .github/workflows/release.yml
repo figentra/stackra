@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+# One release run per ref at a time: a second run starting before this one finishes
+# would version the same changesets twice.
+concurrency: release-${{ github.ref }}
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    # Runbook (apps/docs/src/runbooks/release.mdx, "Before the first release"): a human
+    # configures this environment as protected and restricted to main, so a branch that
+    # edits the workflow cannot obtain a credential.
+    environment: release
+    permissions:
+      contents: write # push the version-PR branch and the version tags
+      pull-requests: write # open and update the version PR
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # changesets diffs against history and reads existing tags
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.6.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ADR-0013: automation prepares, a human decides. With pending changesets this opens
+      # or updates the "chore(release): version packages" PR (`pnpm changeset:version` also
+      # refreshes the lockfile). Merging that PR is the release; on the merge run the publish
+      # script tags each versioned member (`changeset git-tag` — every member is private, so
+      # a release is versions, changelogs and git tags only, never a registry publish) and
+      # the action pushes the tags and creates the GitHub releases from the CLI's report.
+      - name: Version PR / tag release
+        uses: changesets/action@v2
+        with:
+          version-script: pnpm changeset:version
+          publish-script: pnpm changeset git-tag
+          pr-title: "chore(release): version packages"
+          commit-message: "chore(release): version packages"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # SBOM covers what actually got installed (node_modules), independent of whether this
+      # run released. `--ignore-npm-errors` is required because cyclonedx-npm shells out to
+      # `npm ls` internally, which reports the devDependency-only peer graphs of transitive
+      # tools as errors even though pnpm installed fine. The tool is pinned via npx because
+      # it is not a workspace catalog dependency.
+      - name: Generate SBOM (CycloneDX)
+        run: npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --ignore-npm-errors --output-format JSON --output-file sbom.cdx.json
+
+      - name: Upload SBOM as release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.cdx.json
+          retention-days: 90

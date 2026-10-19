@@ -23,7 +23,7 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
    name: <kebab-case, equals file stem>
    description: <what it does>. Use when <trigger>.
    tier: steward | executor | reviewer | guardian | lead
-   blocks: true | false   # true = its FAIL stops the merge
+   blocks: true | false # true = its FAIL stops the merge
    tools: [Read, Grep, Glob, Bash]
    ---
    ```
@@ -35,13 +35,13 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
 
 ## Roster in this folder
 
-| agent | tier | blocks |
-| --- | --- | --- |
-| security-tenancy-reviewer | guardian | yes |
-| code-standards-steward | steward | no |
-| service-builder | executor | no |
-| frontend-builder | executor | no |
-| mobile-builder | executor | no |
-| api-contract-reviewer | reviewer | no |
-| design-brand-reviewer | reviewer | no |
-| i18n-steward | steward | no |
+| agent                     | tier     | blocks |
+| ------------------------- | -------- | ------ |
+| security-tenancy-reviewer | guardian | yes    |
+| code-standards-steward    | steward  | no     |
+| service-builder           | executor | no     |
+| frontend-builder          | executor | no     |
+| mobile-builder            | executor | no     |
+| api-contract-reviewer     | reviewer | no     |
+| design-brand-reviewer     | reviewer | no     |
+| i18n-steward              | steward  | no     |

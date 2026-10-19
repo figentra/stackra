@@ -10,15 +10,15 @@ manual: false
 
 Members use these names and no synonyms (`tsc`, `check-types`, `fmt`, `cov`, `serve` are wrong):
 
-| Script | Meaning |
-| --- | --- |
-| `dev` | local watch/serve (apps, services) |
-| `build` | produce `dist/` (or the app bundle) |
-| `typecheck` | type check only, no emit |
-| `lint` | oxlint |
-| `test`, `test:coverage` | vitest; coverage runs for `packages/**` only |
-| `format`, `format:check` | oxfmt write / verify |
-| `clean` | remove build output |
+| Script                   | Meaning                                      |
+| ------------------------ | -------------------------------------------- |
+| `dev`                    | local watch/serve (apps, services)           |
+| `build`                  | produce `dist/` (or the app bundle)          |
+| `typecheck`              | type check only, no emit                     |
+| `lint`                   | oxlint                                       |
+| `test`, `test:coverage`  | vitest; coverage runs for `packages/**` only |
+| `format`, `format:check` | oxfmt write / verify                         |
+| `clean`                  | remove build output                          |
 
 A member declares only the scripts it has work for (a docs app has no `typecheck`; `tooling` presets have no
 `build`). Services and apps also have `start`; Expo has `ios`, `android`, `doctor`; docs has `a11y`.

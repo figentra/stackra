@@ -1,4 +1,5 @@
 ---
+title: HTTP Conventions
 always: true
 description: HTTP API conventions for Encore services
 ---

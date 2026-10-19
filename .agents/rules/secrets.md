@@ -1,4 +1,5 @@
 ---
+title: Secrets
 always: true
 description: Secret management and environment configuration
 ---
@@ -30,6 +31,7 @@ const appSecrets = secret<{
 All other secrets through Infisical:
 
 ### Vaults Structure
+
 - `/agents` - Developer and agent tokens (local dev)
 - `/ci` - CI/CD deployment secrets (staging|prod)
 - `/services/backend/<env>` - Service environments
@@ -38,12 +40,14 @@ All other secrets through Infisical:
 ### How to Use
 
 **Local development:**
+
 ```bash
 infisical run -- pnpm dev
 infisical run -- encore run
 ```
 
 **CI/CD:**
+
 ```bash
 infisical run --env=staging -- pnpm build
 infisical run --env=production -- encore deploy
@@ -55,6 +59,7 @@ All token-based MCP servers use `tools/scripts/mcp.sh` vault wrapper (reads from
 ### Required Secrets
 
 In Infisical `/agents` (local):
+
 - `HEROUI_PERSONAL_TOKEN` - HeroUI Pro license
 - `GITHUB_PERSONAL_ACCESS_TOKEN` - GitHub MCP
 - `STRIPE_SECRET_KEY` - Stripe MCP (optional)
@@ -62,6 +67,7 @@ In Infisical `/agents` (local):
 - `RESEND_API_KEY` - Resend MCP (optional)
 
 In Infisical `/ci` (CI/CD):
+
 - `TURBO_TOKEN` - Turborepo remote cache
 - `ENCORE_API_KEY` - Encore deployment
 - `SENTRY_AUTH_TOKEN` - Sentry releases (optional)

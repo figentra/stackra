@@ -1,0 +1,1 @@
+../../.agents/hooks/prompt-hints.mjs

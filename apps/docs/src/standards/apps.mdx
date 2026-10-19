@@ -47,7 +47,7 @@ A web app has a bundle budget measured on the built output: gzip size of the ini
 
 ### Per-kind notes
 
-- **vite and next:** UI is HeroUI web. `next` ignores `.next/` and `next-env.d.ts`, and its `turbo.json` adds `.next/**` as build output.
+- **vite and next:** UI is HeroUI web ([UI and accessibility](/standards/ui-and-accessibility)). `next` ignores `.next/` and `next-env.d.ts`, and its `turbo.json` adds `.next/**` as build output.
 - **expo:** code-based React Navigation (no expo-router, no `app/` folder); HeroUI Native with Uniwind `className`; colours from the theme (`useThemeColor`), never literals. `app.json` carries the bundle id and Android package; Android segments cannot contain `-`. Native versions must match the SDK (`pnpm doctor`), and `react` stays on the `mobile` catalog.
 - **docs:** no TypeScript and no tests. `mint validate` and `mint broken-links` are its checks, and `a11y` audits the built pages.
 

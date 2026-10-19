@@ -1,4 +1,5 @@
 ---
+title: Module Boundary
 always: true
 description: Module boundary and import rules for Stackra
 ---

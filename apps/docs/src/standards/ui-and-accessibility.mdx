@@ -1,0 +1,61 @@
+---
+title: "UI and accessibility"
+description: "Reuse-first UI on the shared components, design tokens only, WCAG 2.2 AA, and how the accessibility review runs."
+icon: "accessibility"
+---
+
+Every screen an app ships meets WCAG 2.2 level AA. UI is assembled from the shared component library and the design tokens that come with it: a hand-rolled one-off is a finding, and a hard-coded colour, spacing value or font size is a lint-level defect. Brand and product values (palette, logo, product name, marketing strings) stay in each brand's app tree and are handed to the shared components as configuration — they never fork a shared component to carry them.
+
+## Reuse first, in this order
+
+1. **Reuse** the component from the shared library as is. If it exists and fits, the task is done.
+2. **Configure** it through its props and slots. Variants, sizes, densities and states belong to the library.
+3. **Compose** two or more shared components into a small local component in the app that owns the screen. The composition is still all library parts.
+4. **Extend the library** when the same gap appears on a second screen or in a second app. The change goes into the library, behind a version bump, never into the app as a fork.
+
+A one-off component in an app is allowed only while it is a candidate for step 4, and the pull request that adds it names the follow-up that promotes or deletes it.
+
+## Tokens only
+
+Colour, spacing, radius, shadow, typography and motion come from the token set the library consumes. A literal value in a screen (`#1d4ed8`, `17px`, `margin-top: 13px`) is a defect even when it matches a token by eye — the point is that the value can change in one place.
+
+- Web apps use the token-backed utilities of the styling system the app adopted; native apps read the theme (`useThemeColor`), never literals ([App standards](/standards/apps)).
+- Dark and light themes are the same tokens with different values. A colour picked for one theme is tested in the other.
+- Logical direction is part of the token discipline: physical spacing and placement break right-to-left. The rules and the `rtl-physical:` escape hatch are in [Internationalisation and RTL](/standards/i18n-rtl).
+
+## Accessibility baseline
+
+WCAG 2.2 level AA is the floor for every user-facing screen, in every theme and both directions. The recurring requirements:
+
+| Area | Requirement |
+| --- | --- |
+| Text alternatives | Informative images carry alt text; decorative ones are hidden (`alt=""`). Icon-only buttons have an accessible name. |
+| Colour and contrast | Text and interactive elements meet AA contrast against their background in both themes; the contrast pairs are generated from the token values, not audited by eye. Information is never carried by colour alone. |
+| Keyboard | Every action is reachable and usable from the keyboard, with a visible focus indicator. Modals trap focus and return it on close; Escape dismisses. A skip link bypasses repeated navigation on content-heavy pages. |
+| Dragging | Anything a drag can do, a single click or keypress can do too (reorder, resize, pan). |
+| Forms | Every input has an associated label. Errors are announced (`role="alert"` or an assertive live region), tied to their field, and the first invalid field receives focus on submit. |
+| Dynamic content | Status changes that do not move focus are announced through live regions; urgent interruptions use `role="alert"`. |
+| Target size | Interactive targets are at least 24 by 24 CSS pixels on the web and 44 by 44 points on native. |
+| Motion | Animation that is not essential respects the reduced-motion setting. |
+| Structure | Headings form a real outline; landmarks are used; a screen reader can list and jump. |
+
+## How the review runs
+
+Accessibility is checked with evidence, not by score. Automated tools (axe, Lighthouse) cover only a subset of barriers, so the audit pairs them with manual interaction:
+
+1. Run the automated audit on the rendered page and localize every failed node to a component.
+2. Inspect the accessibility tree for names, roles, states, landmarks and heading structure; walk the flow with the keyboard and, where possible, a screen reader.
+3. Fix the source, then re-run the same audit and the same manual pass.
+
+The docs app wires this as its `a11y` task on the built pages ([App standards](/standards/apps)); each web app does the same when its first screen lands. Layout, direction and theme correctness is proved by the [end-to-end matrix](/standards/testing#end-to-end-matrix), not by unit tests.
+
+## What enforces this
+
+| Rule | Check | Status |
+| --- | --- | --- |
+| `jsx-a11y` lint rules on web packages | oxlint `react` preset | Yes |
+| Docs pages pass an accessibility audit | `a11y` task in `apps/docs` | Yes |
+| Hard-coded colour or spacing literal in a screen | review; a token-literal lint rule is planned | No |
+| Contrast pairs generated from tokens and held to AA | planned: contrast check generated from the token set | No |
+| Keyboard, screen-reader and reduced-motion walkthrough per screen | planned: part of each web app's e2e and `a11y` tasks once it ships screens | No |
+| Physical-direction classes and unmirrored icons | planned: see [Internationalisation and RTL](/standards/i18n-rtl) | No |

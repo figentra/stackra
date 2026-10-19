@@ -1,0 +1,180 @@
+{
+  // ============================================================================
+  // FIGENTRA FULL-STACK MONOREPO — MCP SERVER CONFIGURATION
+  // ============================================================================
+  // Annotated master configuration (JSONC: JSON with comments).
+  //
+  // IMPORTANT:
+  // - This file is named mcp-servers.jsonc because standard .mcp.json files
+  //   generally require strict JSON and do not accept comments.
+  // - For Claude Code, copy the active configuration into repository-root
+  //   .mcp.json and remove comments/trailing commas, or convert this JSONC file
+  //   to strict JSON with a JSONC-aware tool.
+  // - Keep credentials in environment variables / your secret manager.
+  // - Never commit real tokens, API keys, passwords, or production credentials.
+  // - Check each server's current documentation before enabling it; endpoints,
+  //   package names, auth requirements, and supported tools can change.
+  //
+  // Suggested rollout:
+  // 1. Enable core development servers.
+  // 2. Add your canonical Git provider and operational integrations.
+  // 3. Implement the internal adapters listed in the commented section at the end.
+  // 4. Keep production access read-only unless a human explicitly approves writes.
+  // ============================================================================
+
+  "mcpServers": {
+    // --------------------------------------------------------------------------
+    // 01. DOCUMENTATION AND FRAMEWORK CONTEXT
+    // --------------------------------------------------------------------------
+    "context7": {
+      "command": "./tools/scripts/mcp.sh",
+      "args": ["npx", "-y", "@upstash/context7-mcp@latest", "--api-key", "$CONTEXT7_API_KEY"],
+    },
+
+    // --------------------------------------------------------------------------
+    // 02. WEB UI, DESIGN SYSTEM, AND MOBILE
+    // --------------------------------------------------------------------------
+    "heroui-react": {
+      "command": "npx",
+      "args": ["-y", "@heroui/react-mcp@latest"],
+    },
+    "heroui-native": {
+      "command": "npx",
+      "args": ["-y", "@heroui/native-mcp@latest"],
+    },
+    "heroui-pro": {
+      "command": "./tools/scripts/mcp.sh",
+      "args": [
+        "npx",
+        "-y",
+        "mcp-remote@latest",
+        "https://mcp.heroui.pro/mcp",
+        "--header",
+        "x-heroui-personal-token:$HEROUI_PERSONAL_TOKEN",
+      ],
+    },
+    "heroui-native-pro": {
+      "command": "./tools/scripts/mcp.sh",
+      "args": [
+        "npx",
+        "-y",
+        "mcp-remote@latest",
+        "https://native-mcp.heroui.pro/mcp",
+        "--header",
+        "x-heroui-personal-token:$HEROUI_PERSONAL_TOKEN",
+      ],
+    },
+    "uniwind": {
+      "type": "http",
+      "url": "https://docs.uniwind.dev/mcp",
+    },
+    "expo": {
+      "type": "http",
+      "url": "https://mcp.expo.dev/mcp",
+    },
+    "figma": {
+      "type": "http",
+      "url": "https://mcp.figma.com/mcp",
+    },
+
+    // --------------------------------------------------------------------------
+    // 03. CONTENT PLATFORM
+    // --------------------------------------------------------------------------
+    "sanity": {
+      "type": "http",
+      "url": "https://mcp.sanity.io",
+    },
+
+    // --------------------------------------------------------------------------
+    // 04. SOURCE CONTROL AND PROJECT MANAGEMENT
+    // --------------------------------------------------------------------------
+    "github": {
+      "command": "./tools/scripts/mcp.sh",
+      "args": [
+        "npx",
+        "-y",
+        "mcp-remote@latest",
+        "https://api.githubcopilot.com/mcp/",
+        "--header",
+        "Authorization:Bearer $GITHUB_PERSONAL_ACCESS_TOKEN",
+      ],
+    },
+    "linear": {
+      "type": "http",
+      "url": "https://mcp.linear.app/mcp",
+    },
+
+    // Optional: enable only if GitLab is also part of your workflow.
+    // If GitLab is your canonical provider, configure its authentication
+    // according to the current GitLab MCP documentation.
+    // "gitlab": {
+    //   "type": "http",
+    //   "url": "https://gitlab.com/api/v4/mcp"
+    // },
+
+    // --------------------------------------------------------------------------
+    // 05. PAYMENTS, EMAIL, AND COMMUNICATION
+    // --------------------------------------------------------------------------
+    "stripe": {
+      "command": "./tools/scripts/mcp.sh",
+      "args": ["npx", "-y", "@stripe/mcp", "--api-key=$STRIPE_SECRET_KEY"],
+    },
+    "resend": {
+      "command": "./tools/scripts/mcp.sh",
+      "args": ["npx", "-y", "resend-mcp@latest"],
+    },
+    "resend-docs": {
+      "type": "http",
+      "url": "https://resend.com/docs/mcp",
+    },
+
+    // --------------------------------------------------------------------------
+    // 06. CLOUD PLATFORMS
+    // --------------------------------------------------------------------------
+    "cloudflare-api": {
+      "type": "http",
+      "url": "https://mcp.cloudflare.com/mcp",
+    },
+    "aws-knowledge": {
+      "type": "http",
+      "url": "https://knowledge-mcp.global.api.aws",
+    },
+
+    // NOTE: aws-knowledge is for AWS knowledge/documentation. It is not by itself
+    // a complete AWS operations MCP for changing live infrastructure.
+    // Add a separately authenticated, least-privilege AWS operations integration
+    // only when needed. Prefer read-only roles and explicit approval for writes.
+
+    // --------------------------------------------------------------------------
+    // 07. ANALYTICS, ERRORS, AND OBSERVABILITY
+    // --------------------------------------------------------------------------
+    "posthog": {
+      "type": "http",
+      "url": "https://mcp.posthog.com/mcp?readonly=true",
+    },
+    "sentry": {
+      "type": "http",
+      "url": "https://mcp.sentry.dev/mcp",
+    },
+
+    // Grafana integration example. Verify the current official package and
+    // supported authentication options before enabling. Use a scoped service
+    // account and restrict access to the intended organization/stack.
+    // "grafana": {
+    //   "command": "uvx",
+    //   "args": ["mcp-grafana"],
+    //   "env": {
+    //     "GRAFANA_URL": "$GRAFANA_URL",
+    //     "GRAFANA_SERVICE_ACCOUNT_TOKEN": "$GRAFANA_SERVICE_ACCOUNT_TOKEN"
+    //   }
+    // },
+
+    // --------------------------------------------------------------------------
+    // 08. BROWSER AUTOMATION AND API TESTING
+    // --------------------------------------------------------------------------
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+    },
+  },
+}

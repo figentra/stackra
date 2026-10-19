@@ -1,4 +1,5 @@
 ---
+title: Concurrent Sessions
 always: true
 description: Managing multiple concurrent AI agent sessions
 ---

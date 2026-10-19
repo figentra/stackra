@@ -8,6 +8,6 @@ copies a kind into its destination and replaces exactly six tokens in file conte
 - `DESCRIPTION` and `TITLE` are JSON-escaped when written into `.json`/`.jsonc` files.
 - The root `LICENSE` is copied byte-for-byte into every new workspace member (not into service units).
 - The result is formatted with `oxfmt` after replacement.
-- To change a kind, edit its template, then `pnpm test`/`node --test tools/scripts/scaffold.test.mjs`.
+- To change a kind, edit its template, then `pnpm test`/`node --test tools/scripts/__tests__/scaffold.test.mjs`.
 
 Usage and the kinds table: `apps/docs/src/guides/standards.mdx`.

@@ -1,4 +1,5 @@
 ---
+title: Versions
 always: true
 description: Version pinning and catalog rules for Stackra monorepo
 ---

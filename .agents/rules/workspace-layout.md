@@ -1,4 +1,5 @@
 ---
+title: Workspace Layout
 always: true
 description: Repository directory structure and placement rules
 ---
