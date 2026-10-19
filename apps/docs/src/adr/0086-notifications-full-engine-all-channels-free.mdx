@@ -5,7 +5,7 @@ description: "Proposed · 2026-10-19"
 
 ## Context
 
-The Figentra OS notifications package is a stub. The owner wants a full enterprise package from day one, not a thin channel wrapper. The Pro list first put the SMS, WhatsApp and push drivers and the template editor in Pro. The owner then moved every channel to free and kept only operator tooling in Pro ([0077](/adr/0077-open-core-free-and-pro-lists)). The detailed design is a spec-kit spec, drafted separately on branch `spec/notifications`. This page records the scope only.
+The Figentra OS notifications package is a stub. The owner wants a full enterprise package from day one, not a thin channel wrapper. The Pro list first put the SMS, WhatsApp and push drivers and the template editor in Pro. The owner then moved every channel to free and kept only operator tooling in Pro ([0077](/adr/0077-open-core-free-and-pro-lists)). The detailed design is a spec-kit spec, `specs/001-notifications/spec.md`, drafted separately ([PR #14](https://github.com/figentra/stackra/pull/14)). This page records the scope only.
 
 ## Decision
 
@@ -13,7 +13,7 @@ The Figentra OS notifications package is a stub. The owner wants a full enterpri
 2. **Every channel is free**: email (Resend and SMTP drivers, [0035](/adr/0035-resend-email-with-spf-dkim-dmarc)), SMS, WhatsApp, push and in-app.
 3. **Pro adds operator tooling only**: a visual template editor, a delivery analytics dashboard and multi-provider failover.
 4. **Delivery runs on the messaging layer** ([0078](/adr/0078-messaging-layer-eight-packages)): sends are queue jobs, and in-app delivery uses realtime.
-5. **The design is the notifications spec** on branch `spec/notifications`. This ADR does not restate it. Where the two disagree, the spec is corrected or this ADR is superseded.
+5. **The design is the notifications spec**, `specs/001-notifications/spec.md`. This ADR does not restate it. Where the two disagree, the spec is corrected or this ADR is superseded.
 
 ## Consequences
 
@@ -26,4 +26,4 @@ Planned: a channel-driver conformance suite in the package's `__tests__`, and th
 
 ## Supersedes and sources
 
-Supersedes: none. Sources: owner decisions in chat, 2026-10-19 (Round 6 item 18; Round 8 C1 and the final C1 decision). Design: the notifications spec on branch `spec/notifications` (in progress).
+Supersedes: none. Sources: owner decisions in chat, 2026-10-19 (Round 6 item 18; Round 8 C1 and the final C1 decision). Design: `specs/001-notifications/spec.md` on branch `spec/notifications` ([PR #14](https://github.com/figentra/stackra/pull/14), draft).
