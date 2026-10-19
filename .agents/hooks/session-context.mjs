@@ -23,7 +23,7 @@ const dirty = git ? sh("git status --short | head -15") : "";
 const lines = [
   `[STACKRA SESSION — ${input.source ?? "start"}] branch: ${branch}`,
   "Invariants:",
-  "0. Layout: apps/{console,docs,mobile}, packages/<category>/<name>, services/* are independent members (no Encore; entry src/main.ts), mobile uses code-based navigation, docs in apps/docs/src.",
+  "0. Layout: apps/{console,docs,mobile}, packages/<category>/<name>, services/* are independent members in plain TypeScript (entry src/main.ts; no Encore files in a service — Encore is the generated runtime in the gitignored .stackra/encore, ADRs 0091/0110), mobile uses code-based navigation, docs in apps/docs/src.",
   "1. Packages live at packages/<category>/<name> (flat inside one category) and are named @stackra/<name>. A package never imports an app, a service or another package's src/ (packages/tooling/oxlint/boundaries.jsonc).",
   "2. Every member extends one @stackra/typescript-config preset, one @stackra/vitest-config preset, and declares exactly one turbo tier tag (tier:config|lib|app|service).",
   "3. Versions live only in pnpm-workspace.yaml catalogs (catalogMode: strict). A member's package.json names catalog:<name> or workspace:* — `pnpm validate` fails otherwise.",

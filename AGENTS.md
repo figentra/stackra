@@ -392,34 +392,29 @@ Rows naming no package are planned (guardian review). Docs: `/adr/0011-rejected-
 
 Stackra uses **two secret mechanisms** (ADR-0009):
 
-#### 1. App Secrets (Encore)
+#### 1. App Secrets (Encore, generated app)
 
-Backend services use Encore's secret manager:
+Services are plain TypeScript and hold no Encore files. The Encore application is generated into the
+gitignored `.stackra/encore` (ADR 0091), and app secrets reach it through Encore `secret()` there:
 
 ```typescript
 import { secret } from "encore.dev/config";
 
-const appSecrets = secret<{
-  DatabaseURL: string;
-  StripeSecretKey: string;
-}>();
+const stripeSecretKey = secret("StripeSecretKey");
 ```
 
-- Stored in Encore's secret manager (managed)
-- Synced from Infisical during deployment
-- Service-specific: `/services/backend/<env>`
+- Stored in Encore's secret manager, synced from Infisical
+- A human sets each value per environment; an agent only names the secret
 - Never in git
 
 #### 2. Dev/CI Secrets (Infisical)
 
 All other secrets through Infisical:
 
-##### Vaults Structure
+##### Vault Layout
 
-- `/agents` - Developer and agent tokens (local dev)
-- `/ci` - CI/CD deployment secrets (staging|prod)
-- `/services/backend/<env>` - Service environments
-- `/apps/*/<env>` - App-specific secrets (mobile API keys)
+- dev: `/agents` - Developer and agent tokens (local dev, MCP servers)
+- staging|prod: `/ci` - CI/CD deployment secrets
 
 ##### How to Use
 
@@ -438,7 +433,8 @@ infisical run --env=production -- encore deploy
 ```
 
 **MCP servers:**
-All token-based MCP servers use `tools/scripts/mcp.sh` vault wrapper (reads from `/agents`).
+Token-based MCP servers launch through the `tools/scripts/mcp.sh` vault wrapper (reads from `/agents`). This is a
+convention; no hook enforces it.
 
 ##### Required Secrets
 
@@ -464,8 +460,9 @@ In Infisical `/ci` (CI/CD):
 
 ##### Blocked by Hooks
 
-- `guard-bash.mjs`: Blocks `infisical export` or `infisical secrets get` without `--silent`
-- `guard-paths.mjs`: Blocks writes to `.env`, `.env.local`, `.env.*`
+- `guard-bash.mjs`: Blocks `infisical export`, `infisical secrets get` without `--silent`, a bare `infisical secrets`
+  (lists values) and `infisical run -- env|printenv`
+- `guard-paths.mjs`: Blocks writes to `.env`, `.env.*`, `.dev.vars`, `.ci-env` and `.sentryclirc`
 - `.gitleaks.toml`: Scans for accidental secret commits
 
 #### Enforcement
@@ -474,9 +471,8 @@ Each article below is bound to a check:
 
 1. **Secrets never in git** → `gitleaks` pre-commit + CI scan
 2. **No .env files** → `guard-paths` hook
-3. **MCP tokens from vault** → `mcp.sh` wrapper enforced by `guard-bash`
-4. **CI secrets from OIDC** → GitHub Actions OIDC (Phase 2)
-5. **App secrets synced** → Encore deployment workflow (Phase 2)
+3. **CI secrets from OIDC** → GitHub Actions OIDC (Phase 2)
+4. **App secrets synced** → Encore deployment of the generated `.stackra` app (Phase 2)
 
 #### Setup
 
