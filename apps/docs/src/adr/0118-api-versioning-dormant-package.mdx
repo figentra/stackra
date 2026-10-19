@@ -1,0 +1,40 @@
+---
+title: "0118 — @stackra/versioning is built now and stays dormant: date versions pinned per API key or OAuth app"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+[0037](/adr/0037-api-versioning-by-date-header) (open PR #8) proposed Stripe-style date versioning through a `Stackra-Version`
+header and left open whether it is a package or middleware. The research found that reference implementations put it in a
+response-transform chain, and that an earlier over-built version in the Figentra export (about 3,000 lines) was deleted
+unused. Endpoints themselves stay immutable under the HTTP conventions rule. The owner chose to build the package now, so the
+first external consumer does not force a rushed design.
+
+## Decision
+
+1. **V1 — `@stackra/versioning` is built now and is dormant at launch**: while only the latest version exists, it does nothing.
+2. **It is a response-only transform chain.** Each breaking change adds one dated transform that turns the latest response into
+   the previous shape. Requests are not transformed. Outbound webhooks pass through the same chain.
+3. **V2 — A client's version is pinned per API key or OAuth app** when it is created. A `Stackra-Version` header overrides the
+   pin for one request.
+4. **A version is supported for 12 months** after its successor ships. Responses on an old version carry `Deprecation` and
+   `Sunset` headers.
+5. **OpenAPI is published for the latest version only**, with a changelog of the dated transforms.
+6. **Paths stay unversioned**, and integration events keep their `.vN` names ([0078](/adr/0078-messaging-layer-eight-packages)).
+
+## Consequences
+
+- The first breaking change costs one transform, not a framework.
+- Every dated transform is a maintenance cost until its version sunsets.
+- The HTTP conventions rule's "no versions" line must point here: endpoints stay immutable, responses are versioned.
+
+## Enforcement
+
+Planned: a contract test per dated transform; a check that no route path matches `/v\d+/`; a test that a response on a sunset
+version is refused. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: [0037](/adr/0037-api-versioning-by-date-header) (decisions 1 to 3 restated; decision 4 settled as a package). The
+status edit on 0037 waits for PR #8. Sources: owner decisions in chat, 2026-10-19 (Round 11 V1, V2; API versioning research).

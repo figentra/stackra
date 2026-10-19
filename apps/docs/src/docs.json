@@ -207,7 +207,9 @@
               "adr/0113-heroui-pro-distribution",
               "adr/0114-page-builder-for-every-page",
               "adr/0115-form-builder",
-              "adr/0116-content-types-and-custom-fields"
+              "adr/0116-content-types-and-custom-fields",
+              "adr/0117-contracts-placement-and-decorator-ownership",
+              "adr/0118-api-versioning-dormant-package"
             ]
           }
         ]
