@@ -102,6 +102,22 @@
       "type": "http",
       "url": "https://api.elevenlabs.io/v1/mcp"
     },
+    "encore": {
+      "command": "encore",
+      "args": [
+        "mcp",
+        "run",
+        "--app=<TODO>"
+      ]
+    },
+    "encore-cloud": {
+      "type": "http",
+      "url": "https://api.encore.dev/mcp"
+    },
+    "cloudflare-docs": {
+      "type": "http",
+      "url": "https://docs.mcp.cloudflare.com/mcp"
+    },
     "cloudflare-api": {
       "type": "http",
       "url": "https://mcp.cloudflare.com/mcp"

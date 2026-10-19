@@ -16,13 +16,9 @@
     "deny": ["Read(**/.env)", "Read(**/.env.*)", "Read(**/.secrets.local.*)", "Read(**/*.pem)"]
   },
   "enabledPlugins": {
-    "figma@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
-    "code-review@claude-plugins-official": true,
     "encore-skills@encore-skills": true,
-    "cloudflare@cloudflare": true,
-    "security-guidance@claude-plugins-official": true,
-    "vercel@claude-plugins-official": true
+    "cloudflare@cloudflare": true
   },
   "extraKnownMarketplaces": {
     "encore-skills": {

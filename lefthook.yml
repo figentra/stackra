@@ -16,6 +16,7 @@ pre-commit:
       run: sh -c 'pnpm exec oxfmt --check "$@"; s=$?; [ $s -eq 2 ] && exit 0; exit $s' -- {staged_files}
     - name: oxlint
       glob: "*.{ts,tsx,js,mjs,cjs}"
+      exclude: ".agents/skills/**"
       run: pnpm exec oxlint {staged_files}
     - name: gitleaks
       run: |
