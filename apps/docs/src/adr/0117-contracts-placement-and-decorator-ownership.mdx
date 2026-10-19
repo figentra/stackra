@@ -1,0 +1,47 @@
+---
+title: "0117 — Shared primitives live in @stackra/contracts, each package has a types-only ./contracts entry, and each package owns its decorators"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+[0015](/adr/0015-contract-packages) requires a separate `@stackra/<domain>-contracts` package for every cross-service protocol.
+Packages already ship several entries (`core`, `react`, `native`, `node`, `contracts`;
+[0084](/adr/0084-figentra-os-package-port-plan)), so a second package per domain doubles the package count for no new
+boundary. The notifications spec proposed `@stackra/notifications-contracts`, and the owner asked for one home for public
+types instead. The owner also asked whether one "creators" package should hold every decorator, so `@Inject` works without
+installing the container.
+
+## Decision
+
+1. **C1 — `@stackra/contracts` holds the shared primitives** used across packages and services: `PublicId`, `Actor`
+   ([0098](/adr/0098-actions-are-the-unit)), `EventEnvelope`, `Page`, the error and diagnostics shapes, and `ApiVersion`.
+2. **Each package's public types live in its own types-only `./contracts` entry** (for example
+   `@stackra/notifications/contracts`): request and response, event, error and envelope shapes, with no behaviour and no
+   runtime dependencies. **There are no separate `<domain>-contracts` packages.**
+3. **The membership test of 0015 stands**: a type goes in a `contracts` entry only if another independently deployed or
+   released component needs it to communicate. Shared utilities do not.
+4. **Events are versioned**: a breaking change is a new event type or version, published beside the old one until every
+   consumer has moved.
+5. **Services and apps depend on contracts, never on each other's source.**
+6. **C2 — Each package owns its decorators.** The base is the `@stackra/container` core: the metadata store, tokens,
+   `@Injectable`, `@Inject`, `@Module`, and the creators `createDecorator` and `createParamDecorator`. `createTrait` lives in
+   `@stackra/model`. There is no separate decorators or creators package.
+
+## Consequences
+
+- One package per domain, with a cheap types-only import for consumers that need only the shapes.
+- A `contracts` entry must stay free of runtime imports, or consumers pull in the whole package.
+- Code that uses `@Inject` depends on `@stackra/container`, which is acceptable because every runtime member boots one.
+
+## Enforcement
+
+Planned: a validator check that every `./contracts` entry has no runtime imports and no imports from a service or an app; a
+check that no package is named `*-contracts`. The tier rule ([0003](/adr/0003-tier-dependency-direction)) already stops a
+package from importing a service.
+
+## Supersedes and sources
+
+Supersedes: [0015](/adr/0015-contract-packages) (decisions 1, 3, 4 and 5 restated in decisions 3, 2, 4 and 5; decision 2's
+protocol packages replaced by `./contracts` entries). Sources: owner decisions in chat, 2026-10-19 (Round 11 C1, C2; the N6
+question on the notifications spec).

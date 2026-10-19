@@ -1,0 +1,37 @@
+---
+title: "0082 — Public ids are a prefix plus base32 of one UUIDv7; four API areas"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0032](/adr/0032-rest-api-generated-client-uuidv7-ids) makes UUIDv7 the primary key and requires a prefixed public id derived from it, without fixing the encoding. Endpoints also need a stated audience, because authentication, gates and documentation differ between an anonymous caller, a tenant user, a tenant administrator and a platform operator.
+
+## Decision
+
+1. **Each row has one key, a UUIDv7.** No second stored identifier is added for public use.
+2. **The public id is the entity prefix plus the base32 encoding of that UUIDv7** (`user_<base32>`). It is derived on the way out and decoded on the way in. The prefix is registered per entity, and raw UUIDs never leave a service.
+3. **Every endpoint belongs to exactly one of four API areas**:
+
+   | Area | Audience |
+   | --- | --- |
+   | `public` | Callers without a session (the only area where `auth: false` is expected) |
+   | `app` | A tenant's end users |
+   | `admin` | A tenant's administrators |
+   | `platform` | Platform operators; every call is audited |
+
+4. Each area has its own gate chain ([0081](/adr/0081-gate-chain-configurable-per-app)).
+
+## Consequences
+
+- Public ids are shorter than hex UUIDs, still sort by creation time, and cost nothing to store.
+- The base32 alphabet, the separator and the URL or path shape of each area are TODO, settled in the first-service spec.
+- The `platform` area follows the audited-operator-endpoint rule ([0087](/adr/0087-identity-and-iam-are-driver-packages)).
+
+## Enforcement
+
+Planned: a shared id codec with round-trip tests, a generator check (`stackra gen`) that every endpoint declares exactly one area, and the response check of [0032](/adr/0032-rest-api-generated-client-uuidv7-ids) (no unprefixed id). Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0032](/adr/0032-rest-api-generated-client-uuidv7-ids) decision 3 (adds the encoding). Sources: owner decision in chat, 2026-10-19 (Round 8 X2).

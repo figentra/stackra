@@ -1,0 +1,47 @@
+---
+title: "0121 — SDLC tooling: sdlc retired, spec-kit pinned, a local Linear extension, the ported roles and who runs what"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+[0067](/adr/0067-spec-kit-is-the-sdlc) and [0066](/adr/0066-delegation-to-opencode-by-routing-matrix) adopt
+spec-kit and OpenCode delegation. The `sdlc` plugin still loads, its content is proprietary while the repository is MIT, seven
+routes in `.agents/routing.yaml` point at it, and spec-kit is not pinned, so an upgrade could wipe the plan gate. The community
+Linear extension falls back to a `.env` file, which [0009](/adr/0009-secrets-two-mechanisms) forbids.
+
+## Decision
+
+1. **D2 — The `sdlc` content being ported is relicensed to MIT** and rewritten for Stackra.
+2. **D3 — `sdlc` is removed from this project now**; from the owner's user-level setup once other repositories migrate.
+3. **D9 — Eight roles are ported** into `.agents/agents/` (architecture-guardian, code-reviewer, test-engineer,
+   release-operations, package-steward, dependency-steward, accessibility-reviewer, spec-executor). docs-governance,
+   delivery-orchestrator, spec-author and spec-planner fold into existing roles and the lead session.
+4. **D10 — OpenCode runs Kimi K3 for the steward and executor tiers only.** Reviewers, guardians and the lead never run on OpenCode.
+5. **D11 — The amended 0065, 0066, 0067 and [0012](/adr/0012-code-host-and-ci), and the Delegation law change**, are accepted
+   in the same phase, so the analyze gate stops flagging OpenCode-routed tasks.
+6. **D12 — Linear integration is a thin local extension** over `tools/scripts/spec-linear.mjs`, not the community extension.
+7. **D13 — Notifications is one spec**, with its own Linear project and one pull request per story.
+8. **D14 — The Linear model**: a spec issue (plus a project when it spans several pull requests), design and phase
+   sub-issues, task sub-issues of phases; label groups `stage/*`, `lane/*`, `risk/*` (change risk) and `exec/*`; Linear's
+   GitHub integration turned on.
+9. **D15 — spec-kit is pinned in mise** ([0027](/adr/0027-cli-tools-pinned-in-mise)) and upgraded only through a dedicated pull request.
+10. **D19 — The bundled `speckit` workflow is disabled**, because it skips clarify and analyze.
+11. **D20 — Claude Sonnet runs analyze**, with the lead adjudicating.
+
+## Consequences
+
+- No proprietary process content is left in the MIT repository.
+- Five roles disappear as separate agents; their duties must be visible in the roles that absorb them.
+- 0016 rule 5 (the `sdlc` engine) stops being true; it is superseded through [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk).
+
+## Enforcement
+
+Planned: the mise pin and the preset tripwire of 0120; an `agents:lint` check that no route or agent references `sdlc`; a
+`models.json` check that reviewer, guardian and lead tiers have no OpenCode model.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0066](/adr/0066-delegation-to-opencode-by-routing-matrix) (tiers on OpenCode) and
+[0065](/adr/0065-linear-gate-is-checked-offline) (the Linear model). Sources: owner
+decisions in chat, 2026-10-19 (SDLC D2, D3, D9 to D15, D19, D20).

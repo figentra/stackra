@@ -3,6 +3,8 @@ title: "0016 — `.agents/` is the source of truth"
 description: "Accepted · 2026-10-19"
 ---
 
+<Note>Rules 4 and 5 are superseded by [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk) and [0121](/adr/0121-sdlc-tooling-roles-and-linear): specs live in `.agents/specs/sta-<n>-<slug>/` through a spec-kit preset wrap, and the `sdlc` plugin is retired. The other rules stand.</Note>
+
 ## Context
 
 Several assistants (Claude Code, OpenCode, Kiro, Cursor) read instructions from different directories and dialects.

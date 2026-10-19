@@ -1,0 +1,49 @@
+---
+title: "0112 — Experience packages, @stackra/ui parity and the renderer kit"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+[0110](/adr/0110-experience-is-the-sdui-service-at-l2) allows L2 documents. They need a runtime, renderers on web and native,
+personalisation, publishing and a build order. Web uses HeroUI and mobile uses HeroUI Native, which do not have the same
+component set. [0011](/adr/0011-rejected-and-deferred-technologies) defers a shared React component library across web and
+native.
+
+## Decision
+
+1. **X5 — `@stackra/experience` is free**, with `contracts`, `core`, `react`, `native`, `node` and `testing` entries: the
+   document format, the validator and evaluator, and the renderer runtime. **Pro**: the dashboard studio, the page builder
+   ([0114](/adr/0114-page-builder-for-every-page)) and experience blocks.
+2. **X6 — Basic renderers are free, on HeroUI open-source components.** Charts and marketing renderers built on HeroUI Pro are Pro.
+3. **X7 — No raw HTML, CSS or head code**, in any document or block. Third-party content enters only through allow-listed
+   embed components.
+4. **X9 — `@stackra/ui` gives one component contract on both runtimes**: it exports HeroUI on web and HeroUI Native from a
+   `native` subpath, with component parity; where one runtime lacks a component, Stackra builds it there. Each runtime has its
+   own implementation of the same contract, so no React code is shared and the 0011 deferral stands. HeroUI Pro wrappers live
+   in `@stackra-pro/ui` ([0113](/adr/0113-heroui-pro-distribution)).
+5. **X10 — Personalisation**: a tenant default, then a role layout, then a user's personal copy; Pro adds branch and
+   scope-node layouts. The tenant admin decides who may customise at each level, through iam permissions and settings.
+6. **X11 — Documents have draft and published states**, published at L2 risk ([0099](/adr/0099-risk-scale-l0-to-l4));
+   scheduled publishing is a queued job.
+7. **X12 — Embeds, kiosk and broadcast dashboards are Pro**, using hashed tokens tied to a service actor.
+8. **X13 — Agents may draft documents; a human approves publishing.**
+9. **X14 — Build order**: contracts, validator and evaluator, `@stackra/ui` parity and renderers; then dashboards (the runtime,
+   then the Pro studio port); then the page and form builders.
+
+## Consequences
+
+- One document renders on web and mobile, and a tenant never sees a block missing on one runtime.
+- Building the missing components on each runtime is a large, ongoing chore.
+- Personalisation levels multiply the documents to resolve per screen; the evaluator must cache.
+
+## Enforcement
+
+Planned: a parity test in `@stackra/ui` that every exported web component has a native export; the X7 lint rule of 0110.
+Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decisions in chat, 2026-10-19 (Round 11 X5, X6, X7, X9, X10 to X14). Informational:
+`~/dev/stackra/frontend/platform/src/dashboard`, `archive/page-builder-main`,
+`archive/monorepo-main/packages/platform/{page-builder,sdui}`.

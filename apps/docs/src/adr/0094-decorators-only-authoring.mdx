@@ -1,0 +1,49 @@
+---
+title: "0094 — Decorators are the only authoring style; workflows are declarative @Step graphs"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+The owner wants decorators everywhere (models, controllers, events, jobs, crons, resources) with no mixing. Two sources disagree.
+The AI Implementation Standard §7 prefers `define*()` functions over a decorator framework, and
+[0043](/adr/0043-workflow-package-medusa-style) chose Medusa-style `createStep` and `createWorkflow`. Two authoring styles
+would mean two discovery paths in codegen ([0090](/adr/0090-codegen-discovery-by-root-module)) and two ways to read every
+feature. For workflows, two class-based styles were weighed: a declarative step graph, and an imperative `run()` method with a
+journaled `ctx.step()`, which needs a determinism lint and a replay spike.
+
+## Decision
+
+1. **Every framework concept is authored with decorators on classes**: models, controllers, actions, events, jobs, crons,
+   resources and workflows. There is no `define*()` API.
+2. **This overrides §7 of the AI Implementation Standard** for Stackra and for products built on it.
+3. **Workflows are declarative.** A `@Workflow` class declares its steps with
+   `@Step({ after, when, parallel, input, compensate })`:
+   - `after` names the steps that must finish first, so the step order is a graph read from metadata, not from code flow;
+   - `when` is a predicate over earlier outputs that skips the step when it is false;
+   - `parallel` groups steps that may run together;
+   - `input` maps the workflow input and earlier outputs to this step's input;
+   - `compensate` names the method that undoes the step.
+4. **`@Step({ workflow: Child })` is the escape hatch** for loops and complex branching: the step runs a child workflow.
+   There is no imperative `run()` method and no journaled `ctx.step()`.
+5. **Decorators are legacy decorators with the container's metadata store** ([0005](/adr/0005-di-container-and-legacy-decorators)). No `reflect-metadata`.
+
+## Consequences
+
+- One way to declare anything, and one discovery path for gen.
+- Plain-data definitions (YAML, JSON) are gone. Anything an AI or a tool generates is generated as decorated TypeScript.
+- A workflow's shape is static metadata, so gen, the registry and the workflow studio ([0122](/adr/0122-workflow-studio-three-layers)) can draw it without running it.
+- Logic that does not fit a graph goes into a child workflow or into a step body, never into the workflow class.
+- Where steps execute, the journal and compensation rules are in [0102](/adr/0102-workflow-engine-in-process-journal).
+
+## Enforcement
+
+Planned: an oxlint rule banning exported `define*` factory functions in `packages/**`; the gen validation pass rejecting an
+undecorated handler, a `@Step` whose `after` names a missing step, and a step cycle. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. The authoring part of [0043](/adr/0043-workflow-package-medusa-style) is replaced here; 0043 as a whole is
+superseded by [0102](/adr/0102-workflow-engine-in-process-journal). Sources: owner direction in chat, 2026-10-19 (Round 9 G1;
+accepted in Round 10; W2 locked in Round 11). Informational: Figentra OS AI Implementation Standard §7
+(`Figentra_OS_AI_Implementation_Standard_TypeScript_Encore_AgentCore.md`).

@@ -1,0 +1,37 @@
+---
+title: "0109 — The registry: build manifests published by CI to a Postgres-backed registry service"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Agents need the tools and skills available to them, the MCP server needs its tool list, the admin BFF needs settings schemas
+and resources, and the experience service needs widgets and components, across every service and app. Gen already produces
+`app-manifest.json` per service ([0091](/adr/0091-generated-encore-app-in-stackra-folder)). Cloudflare D1 was considered as
+the store and breaks air-gapped installs ([0076](/adr/0076-every-package-runs-saas-on-prem-and-air-gapped)).
+
+## Decision
+
+1. **Manifests are build artefacts**: each service's `app-manifest.json` and each client app's client manifest list actions,
+   tools, skills, widgets, components, routes, settings schemas, resources, links and permissions, each tagged with its module
+   ([0111](/adr/0111-module-is-the-unit-of-contribution)).
+2. **CI publishes manifests on deploy** to a registry service. Nothing registers itself at startup.
+3. **The registry service runs on Postgres.** Figentra OS runs the product registry; Stackra ships a reference registry
+   service as a test bed ([0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services)).
+4. **`@stackra/registry` is free**: contracts and a client.
+5. **Registry and experience are two logical services**, deployable together in one Encore app.
+
+## Consequences
+
+- What is live is what CI deployed; a reviewer reads the manifest diff to see it.
+- The registry is a dependency for agents, MCP, settings and experience, but not for the UI service itself.
+- The registry UI is Pro ([0100](/adr/0100-ai-model-and-ownership)).
+
+## Enforcement
+
+Planned: a CI publish step after deploy that fails the deploy on a rejected manifest; `stackra gen --check` already covers
+manifest staleness once built. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decisions in chat, 2026-10-19 (Round 11 AI12, X2).
