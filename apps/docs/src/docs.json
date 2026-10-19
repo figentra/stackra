@@ -152,6 +152,7 @@
           {
             "group": "Operations",
             "pages": [
+              "runbooks/setup",
               "runbooks/secrets",
               "runbooks/ci",
               "runbooks/release",
