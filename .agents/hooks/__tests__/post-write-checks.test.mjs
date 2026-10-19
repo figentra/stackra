@@ -5,7 +5,7 @@ import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const hook = new URL("./post-write-checks.mjs", import.meta.url).pathname;
+const hook = new URL("../post-write-checks.mjs", import.meta.url).pathname;
 
 // A fake oxfmt that "fails" the check for files containing BAD.
 const root = mkdtempSync(join(tmpdir(), "post-write-"));

@@ -1,7 +1,7 @@
 # Stackra file contract:
 # Purpose: git hooks — pre-commit format/lint on staged files and a secret scan, commit-msg conventional
 #          commits, pre-push typecheck. Installed by `pnpm install` (prepare → lefthook install).
-#          Hooks are advisory; .gitlab-ci.yml is the gate.
+#          Hooks are advisory; the GitHub Actions Quality Gate workflow (.github/workflows/ci.yml) is the gate.
 # Owner: release-operations
 # Secrets: forbidden
 
@@ -11,7 +11,7 @@ pre-commit:
     - name: oxfmt
       glob: "*.{ts,tsx,js,mjs,cjs,json,jsonc,md,yaml,yml,css}"
       # --check, not --write: stage_fixed made lefthook stash unstaged work, which conflicts while the loop
-      # edits other members mid-commit (ADR-0034); the gate formats a member before it passes.
+      # edits other members mid-commit (ADR-0017); the gate formats a member before it passes.
       # oxfmt exits 2 when every staged file is on its ignore list (pnpm-lock.yaml alone): that is not a finding.
       run: sh -c 'pnpm exec oxfmt --check "$@"; s=$?; [ $s -eq 2 ] && exit 0; exit $s' -- {staged_files}
     - name: oxlint

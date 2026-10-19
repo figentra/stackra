@@ -1,5 +1,5 @@
 // Stackra file contract:
-// Purpose: the DI tier (legacy decorators, ADR-0007). `typescript/consistent-type-imports` is off: its fix
+// Purpose: the DI tier (legacy decorators, ADR-0005). `typescript/consistent-type-imports` is off: its fix
 //          turns a class import into `import type`, which erases a class used as an @Inject(token) value.
 //          Decorator factories are PascalCase, so `new-cap` must not treat them as constructors.
 // Owner: release-operations · Secrets: forbidden

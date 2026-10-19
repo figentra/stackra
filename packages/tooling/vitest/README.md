@@ -9,14 +9,14 @@ import { withCoverage } from "@stackra/vitest-config/coverage";
 
 export default mergeConfig(
   stackraVitest,
-  defineConfig(withCoverage({ test: { include: ["src/**/*.test.ts"] } })),
+  defineConfig(withCoverage({ test: { include: ["src/**/__tests__/**/*.test.ts"] } })),
 );
 ```
 
 | Export                | Use for                                                         |
 | --------------------- | --------------------------------------------------------------- |
 | `.` / `./preset`      | every Node library                                              |
-| `./preset-decorators` | the DI tier (legacy decorators, no metadata emission; ADR-0007) |
+| `./preset-decorators` | the DI tier (legacy decorators, no metadata emission; ADR-0005) |
 | `./preset-react`      | React libraries and the console app (jsdom)                     |
 
 `passWithNoTests` is off on purpose: a package with no tests fails `pnpm test` until it has one.

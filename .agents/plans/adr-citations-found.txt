@@ -1,0 +1,13 @@
+packages/tooling/typescript/base.json:    // decorators. Workspaces that declare modules extend the decorators preset instead (ADR-0007).
+packages/tooling/typescript/decorators.json:// Purpose: a workspace that declares modules/providers with legacy decorators (the DI tier, ADR-0007).
+packages/tooling/oxlint/decorators.jsonc:// Purpose: the DI tier (legacy decorators, ADR-0007). `typescript/consistent-type-imports` is off: its fix
+packages/tooling/oxlint/boundaries.jsonc:    // Domain archetype layers (ADR-0026 §1, Basalt ADR-0004/0029): the direction is enforced here, not in review.
+packages/tooling/oxlint/boundaries.jsonc:                "message": "core is domain meaning: it imports no other layer and no host library (ADR-0026 §1).",
+packages/tooling/oxlint/boundaries.jsonc:                "message": "application imports core only and owns its ports; an adapter or a delivery surface never reaches it (ADR-0026 §1).",
+packages/tooling/oxlint/boundaries.jsonc:                "message": "presentation translates for application and core; it never reaches infrastructure (ADR-0026 §1). Bind adapters in the module.",
+packages/tooling/oxlint/boundaries.jsonc:                "message": "native composes react, never web (Basalt ADR-0029).",
+packages/tooling/oxlint/boundaries.jsonc:      // Packages declare modules with legacy decorators (ADR-0007): the same relaxations as the
+packages/tooling/tsdown/index.ts:   * emitted (ADR-0007): Encore's esbuild bundler cannot emit it, so no code may depend on it.
+lefthook.yml:      # edits other members mid-commit (ADR-0034); the gate formats a member before it passes.
+apps/docs/src/runbooks/ci.mdx:  Status: target. No CI workflow exists in the repo yet (there is no `.github/`). Everything below is the procedure the first workflow must implement. Until then `pnpm verify` on your machine is the gate. `lefthook.yml` still says `.gitlab-ci.yml` is the gate; that comment is stale, and the code host is GitHub (see [ADR-0012](/adr/0012-code-host-and-ci)).
+apps/docs/src/runbooks/release.mdx:  Status: partly live, partly target. `@changesets/cli` is configured (`.changeset/config.json`) and `pnpm changeset`, `pnpm changeset:status` and `pnpm changeset:version` exist. Not built: the release workflow, publishing to a registry and signed artifacts. Today every package is `private` and `UNLICENSED`, so a release means versions, changelogs and git tags only. Policy: [ADR-0013](/adr/0013-versioning-and-release).

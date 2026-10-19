@@ -1,4 +1,4 @@
-import { status } from "./api";
+import { status } from "../api";
 
 describe("{{NAME}}.status", () => {
   it("reports ok", async () => {

@@ -14,7 +14,7 @@ Lives in `services/src/{{NAME}}/` of the one Encore app (`@stackra/backend`). Gl
   table, and an `isolation.test.ts`.
 - Writes require an `Idempotency-Key`.
 - Secrets: `secret("Name")` only; a human sets the value. Never a value in a file, test or log.
-- Tests sit beside the code (`*.test.ts`); run them with `pnpm --filter @stackra/backend test` (`encore test`).
+- Tests sit in `__tests__/` beside the code (ADR 0022); run them with `pnpm --filter @stackra/backend test` (`encore test`).
 
 ## PII
 

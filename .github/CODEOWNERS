@@ -1,0 +1,11 @@
+# Stackra CODEOWNERS
+# Every file change requires review by the designated owner
+
+# Default owner for everything in the repo
+* @akouta
+
+# Architecture decisions require extra scrutiny
+apps/docs/src/adr/ @akouta
+
+# CI/CD changes
+.github/ @akouta

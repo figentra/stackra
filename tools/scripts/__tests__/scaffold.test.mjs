@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { CATEGORIES, scaffold } from "./scaffold.mjs";
+import { CATEGORIES, scaffold } from "../scaffold.mjs";
 
 const TOKENS = /\{\{(NAME|PASCAL|TITLE|DESCRIPTION|PORT|CATEGORY)\}\}/;
 const tmp = () => mkdtempSync(join(tmpdir(), "scaffold-"));
@@ -44,7 +44,7 @@ test("description is JSON-escaped and the LICENSE is copied byte-for-byte", () =
   );
   assert.deepEqual(
     readFileSync(join(dest, "LICENSE")),
-    readFileSync(new URL("../../LICENSE", import.meta.url)),
+    readFileSync(new URL("../../../LICENSE", import.meta.url)),
   );
 });
 

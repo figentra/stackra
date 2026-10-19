@@ -55,18 +55,21 @@ Every member declares exactly one tier in its `turbo.json`:
 ## What Goes Where
 
 ### Packages (<category>/<name>)
+
 - Shared code consumed by apps/services
 - Organized by layer: foundation, application, communication, etc.
 - Entry point: `src/index.ts`
-- Tests: `src/**/__tests__/` or `*.test.ts` beside code
+- Tests: `src/**/__tests__/` only (ADR 0022)
 
 ### Services (<name>)
+
 - Backend services ( Encore )
 - Independent workspace members
 - Entry: `src/main.ts`
 - Tests: `src/__tests__/`
 
 ### Apps (<name>)
+
 - Console: Minimal Vite app
 - Docs: Mintlify documentation site
 - Mobile: Expo React Native app

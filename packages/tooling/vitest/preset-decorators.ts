@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: vitest preset for the DI tier: the base preset plus TypeScript legacy decorators. No `design:*`
- *          metadata is emitted and nothing is loaded before the first decorated class (ADR-0007: dependencies
+ *          metadata is emitted and nothing is loaded before the first decorated class (ADR-0005: dependencies
  *          are named with @Inject(token); `reflect-metadata` is forbidden).
  *
  * Mechanism (vitest 5 / vite 8): vite transforms TypeScript with oxc through rolldown's `transformSync`;

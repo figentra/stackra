@@ -55,16 +55,6 @@
             "timeout": 5
           }
         ]
-      },
-      {
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/context-health.mjs\"",
-            "timeout": 5
-          }
-        ]
       }
     ],
     "PostToolUse": [

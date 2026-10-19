@@ -6,7 +6,7 @@
 {
   "extends": ["./node.jsonc"],
   "overrides": [
-    // Domain archetype layers (ADR-0026 §1, Basalt ADR-0004/0029): the direction is enforced here, not in review.
+    // Domain archetype layers (ADR-0004 §1): the direction is enforced here, not in review.
     {
       "files": ["**/packages/*/*/src/core/**/*.ts", "**/packages/*/*/src/core/**/*.tsx"],
       "rules": {
@@ -28,7 +28,7 @@
                   "encore.dev",
                   "encore.dev/*",
                 ],
-                "message": "core is domain meaning: it imports no other layer and no host library (ADR-0026 §1).",
+                "message": "core is domain meaning: it imports no other layer and no host library (ADR-0004 §1).",
               },
             ],
           },
@@ -57,7 +57,7 @@
                   "encore.dev",
                   "encore.dev/*",
                 ],
-                "message": "application imports core only and owns its ports; an adapter or a delivery surface never reaches it (ADR-0026 §1).",
+                "message": "application imports core only and owns its ports; an adapter or a delivery surface never reaches it (ADR-0004 §1).",
               },
             ],
           },
@@ -76,7 +76,7 @@
             "patterns": [
               {
                 "group": ["#infrastructure", "#infrastructure/*"],
-                "message": "presentation translates for application and core; it never reaches infrastructure (ADR-0026 §1). Bind adapters in the module.",
+                "message": "presentation translates for application and core; it never reaches infrastructure (ADR-0004 §1). Bind adapters in the module.",
               },
             ],
           },
@@ -95,7 +95,7 @@
             "patterns": [
               {
                 "group": ["#presentation/web", "#presentation/web/*"],
-                "message": "native composes react, never web (Basalt ADR-0029).",
+                "message": "native composes react, never web (ADR-0004).",
               },
             ],
           },
@@ -125,7 +125,7 @@
       },
     },
     {
-      // Packages declare modules with legacy decorators (ADR-0007): the same relaxations as the
+      // Packages declare modules with legacy decorators (ADR-0005): the same relaxations as the
       // decorators preset, applied from the root so the boundary rule above still holds for it.
       "files": [
         "**/packages/**/*.ts",

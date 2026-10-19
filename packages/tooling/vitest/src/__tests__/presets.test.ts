@@ -1,6 +1,6 @@
 /**
  * Proves the presets compose: the decorators preset keeps the base options and adds the oxc decorator flags
- * without metadata emission or setup files (ADR-0007); the react preset switches the environment to jsdom.
+ * without metadata emission or setup files (ADR-0005); the react preset switches the environment to jsdom.
  */
 import { describe, expect, it } from "vitest";
 import { stackraVitest } from "../../preset.ts";

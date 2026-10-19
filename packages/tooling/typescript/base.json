@@ -38,7 +38,7 @@
     // on only for packages/tooling/*, whose presets plain Node loads and which must keep `./x.ts`.
     "allowImportingTsExtensions": true,
     // Hygiene for packages that do not use the DI container: no parameter properties, enums, namespaces or
-    // decorators. Workspaces that declare modules extend the decorators preset instead (ADR-0007).
+    // decorators. Workspaces that declare modules extend the decorators preset instead (ADR-0005).
     "erasableSyntaxOnly": true,
     "skipLibCheck": true,
     "types": []

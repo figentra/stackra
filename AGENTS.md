@@ -18,7 +18,7 @@ Rules every member follows (`pnpm validate` enforces them):
 
 - Versions come only from `pnpm-workspace.yaml` catalogs (`catalog:<name>`) or `workspace:*`. `catalogMode: strict`.
 - `turbo.json` extends `//` with exactly one tier tag; `tsconfig.json` extends one `@stackra/typescript-config` preset.
-- Tests sit beside the code (`src/**/__tests__` or `*.test.ts` next to the file); no root `tests/`. App e2e lives in the app.
+- Every test file sits directly in a `__tests__/` folder beside its subject (`src/**/__tests__/<name>.test.ts`), anywhere in the repo; no root `tests/`, no `.spec`. App e2e lives in the app. ADR 0022, enforced by `pnpm validate`.
 - A package never imports an app, a service or `encore.dev`, nor another package's `src/`.
 
 Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boundaries, knip). Conventional commits.

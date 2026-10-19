@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { check, checkFiles, checkServiceUnit, tierFor } from "./validate-repository.mjs";
+import {
+  check,
+  checkFiles,
+  checkServiceUnit,
+  checkTestPlacement,
+  tierFor,
+} from "../validate-repository.mjs";
 
 const ok = {
   dir: "packages/foundation/container",
@@ -77,4 +83,27 @@ test("service units need encore.service.ts, README, AGENTS with PII", () => {
     [],
   );
   assert.equal(checkServiceUnit({ files: ["api.ts"], agents: undefined }).length, 3);
+});
+
+test("checkTestPlacement: test files must sit directly in __tests__/", () => {
+  assert.deepEqual(
+    checkTestPlacement([
+      "packages/a/b/src/__tests__/x.test.ts",
+      "apps/web/src/app/__tests__/page.test.tsx",
+      ".agents/hooks/__tests__/guard.test.mjs",
+      "packages/a/b/src/__tests__/fixture.ts",
+      ".old/console.old/src/app.test.ts",
+    ]),
+    [],
+  );
+  assert.deepEqual(checkTestPlacement(["packages/a/b/src/x.test.ts", "tools/scripts/y.test.mjs"]), [
+    "packages/a/b/src/x.test.ts: test files go in a __tests__/ folder (ADR 0022)",
+    "tools/scripts/y.test.mjs: test files go in a __tests__/ folder (ADR 0022)",
+  ]);
+  assert.deepEqual(checkTestPlacement(["src/__tests__/deep/x.test.ts"]), [
+    "src/__tests__/deep/x.test.ts: test files go in a __tests__/ folder (ADR 0022)",
+  ]);
+  assert.deepEqual(checkTestPlacement(["src/__tests__/x.spec.ts"]), [
+    "src/__tests__/x.spec.ts: name it <subject>.test.<ext>, not .spec (ADR 0022)",
+  ]);
 });
