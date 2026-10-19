@@ -127,6 +127,11 @@
       "type": "http",
       "url": "https://resend.com/docs/mcp",
     },
+    // ElevenLabs (voice, TTS, audio agents): remote MCP, authenticates with OAuth on first use; no token in this file.
+    "elevenlabs": {
+      "type": "http",
+      "url": "https://api.elevenlabs.io/v1/mcp",
+    },
 
     // --------------------------------------------------------------------------
     // 06. CLOUD PLATFORMS
