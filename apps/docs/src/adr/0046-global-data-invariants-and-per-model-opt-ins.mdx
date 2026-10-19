@@ -1,0 +1,39 @@
+---
+title: "0046 — Global data invariants and per-model opt-ins"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0014](/adr/0014-data-ownership-and-orm) fixes who owns data and which ORM is used, but not what every row looks like. Without a
+rule, each model chooses its own id type, deletion behaviour and audit trail, and a later change is a migration across every
+table. The owner split the question: a few invariants apply to every model, and the rest are opt-ins declared per model.
+
+## Decision
+
+1. **Global invariants, no opt-out:**
+   - Primary keys are UUIDv7; externally they carry a type prefix.
+   - Every tenant-owned model has `tenant_id` with row-level security ([0045](/adr/0045-tenancy-package-pool-default-silo-on-demand)).
+2. **Per-model opt-ins**, declared on the model and read by the framework:
+   - **Delete policy**: `archive` (default), `soft` or `hard`.
+   - **Audit**: changes publish audit events ([0047](/adr/0047-audit-service-via-events)).
+   - **Timestamps**: created and updated times.
+   - **Versioning**: a row version for optimistic concurrency or history. Exact semantics TODO.
+   - **Searchable**: the model is indexed through `@stackra/search` ([0049](/adr/0049-search-driver-interface)).
+   - **PII field encryption**: named fields are encrypted at the application layer. Key management TODO.
+3. **A model with no declared delete policy is `archive`.** Choosing `hard` is a visible, reviewable line in the model.
+4. **Raw SQL stays an escape hatch in migrations**, as in 0014 decision 6; it does not remove an invariant.
+
+## Consequences
+
+- Models are short to write and uniform to read.
+- Defaults lean toward keeping data; `hard` delete is the exception that needs a reason (relevant to erase requests under the GDPR practice).
+- The meaning of `archive` versus `soft` must be defined precisely before implementation (TODO).
+
+## Enforcement
+
+Planned — a build-time check on model definitions (UUIDv7 key, `tenant_id` and RLS on tenant-owned models, declared opt-ins valid) plus the per-service schema-drift test planned in 0014. Nothing is implemented yet.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0014](/adr/0014-data-ownership-and-orm); does not change it. Sources: owner decisions in chat, 2026-10-19.

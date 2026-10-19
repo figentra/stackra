@@ -1,0 +1,32 @@
+---
+title: "0048 — Point-in-time recovery and a quarterly restore drill"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+A backup that has never been restored is a hope. Stackra's data lives in managed Postgres, and silo tenants add databases
+([0045](/adr/0045-tenancy-package-pool-default-silo-on-demand)). The SOC 2 target expects evidence that recovery works. The
+database host is not finalised, so the mechanism is named by capability, not product.
+
+## Decision
+
+1. **Every production database has point-in-time recovery enabled**, pool and silo alike.
+2. **Retention window for recovery**: TODO, to be set before the first production tenant.
+3. **A restore drill runs every quarter.** A production-shaped database is restored to a chosen point into a separate environment, and a smoke check confirms the data is readable.
+4. **Each drill is recorded**: date, restore point, time taken, result and who ran it. A failed drill opens an issue before the next one.
+5. **A new silo database is not accepted into the registry until recovery is enabled on it.**
+
+## Consequences
+
+- A recurring chore with a written result, usable as SOC 2 evidence.
+- Restore time becomes a known number instead of a guess.
+- Drills cost a database for a few hours each quarter.
+
+## Enforcement
+
+Planned — a scheduled issue per quarter that must be closed with the drill record, and a registry check for decision 5. Nothing is implemented yet.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decisions in chat, 2026-10-19.

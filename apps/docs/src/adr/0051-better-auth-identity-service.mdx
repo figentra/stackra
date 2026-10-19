@@ -1,0 +1,37 @@
+---
+title: "0051 — Better Auth identity service"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Identity is the most sensitive service and is a candidate to isolate from the start. Products differ in how people sign in, so
+the framework cannot hard-code one method. Authorization already has a deferral: [0011](/adr/0011-rejected-and-deferred-technologies)
+defers OpenFGA, SpiceDB and Cedar in favour of an in-house check shaped like `check(subject, relation, object)`. This ADR uses
+that shape and does not adopt any of those engines. [0010](/adr/0010-services-are-independent-workspace-members) records how
+services are structured; where the identity service sits in the backend layout follows the separate backend decision (TODO).
+
+## Decision
+
+1. **Identity is one service built on Better Auth.** It owns users, sessions and credentials; no other service reads its tables ([0014](/adr/0014-data-ownership-and-orm)).
+2. **Sign-in methods are configuration, per product**: magic link, social, password, passkeys, phone and username. A product enables only the methods it lists.
+3. **On mobile the session token is stored in SecureStore.** It is never stored in plain app storage.
+4. **Authorization is role-based behind `check(subject, relation, object)`.** Callers use only `check`; roles are an implementation detail. The shape is Zanzibar-like so a deferred engine can replace it later without caller changes. OpenFGA, SpiceDB and Cedar stay deferred.
+5. **Three kinds of non-session credential**: personal access tokens (a person's), tenant service tokens (a tenant's machine access), and OAuth apps (third parties acting for a user). Tokens are shown once, stored hashed, scoped and revocable.
+6. **SSO is configuration and comes later**; it is not built now.
+7. **Operator endpoints are audited**: each call publishes an audit event ([0047](/adr/0047-audit-service-via-events)), and a call whose event cannot be recorded is refused.
+8. **Changes under this service need a blocking security review.**
+
+## Consequences
+
+- A product turns a sign-in method on or off without code changes.
+- OAuth apps now means the scope model and consent flow must be designed early (TODO).
+- Better Auth becomes a dependency whose upgrades the identity service owns.
+
+## Enforcement
+
+Planned — a test that `check()` is the only authorization entry point other members import, a token-storage test (hashed at rest), and the `security-tenancy-reviewer` agent on every change under the identity service. Nothing is implemented yet.
+
+## Supersedes and sources
+
+Supersedes: none. Relates to [0011](/adr/0011-rejected-and-deferred-technologies): no conflict, the authorization-engine row stays Deferred. Sources: owner decisions in chat, 2026-10-19.
