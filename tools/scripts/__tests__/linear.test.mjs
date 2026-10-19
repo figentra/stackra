@@ -8,7 +8,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { auth, client, main, prCarriesKey } from "../linear.mjs";
+import { auth, client, digest, main, prCarriesKey } from "../linear.mjs";
 import { adrStatuses, apply, plan, prKeys } from "../linear-reconcile.mjs";
 
 const SECRET = "lin_api_SECRETVALUE";
@@ -128,6 +128,24 @@ test("create adds the agent label when an agent runs it; dry-run writes nothing"
   });
   assert.match(lines.join(), /would create "X" \[docs, agent\]/);
   assert.ok(!calls.some((c) => JSON.parse(c.init.body).query.includes("mutation")));
+});
+
+test("digest: In Progress first, owner steps tagged, deduped, capped at 8 lines", () => {
+  const row = (n, state = "In Progress") => ({
+    identifier: `STA-${n}`,
+    title: `t${n}`,
+    state: { name: state },
+  });
+  assert.deepEqual(digest([row(1)], [row(1), row(2, "Todo")]), [
+    "STA-1 In Progress: t1",
+    "STA-2 Todo: t2 [owner]",
+  ]);
+  const many = digest(
+    Array.from({ length: 12 }, (_, i) => row(i)),
+    [],
+  );
+  assert.equal(many.length, 8);
+  assert.match(many[7], /and 5 more/);
 });
 
 test("check-pr: key in title or branch, or an exempt lane", () => {

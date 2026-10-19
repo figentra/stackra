@@ -149,7 +149,7 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/session-context.mjs\"",
-            "timeout": 5
+            "timeout": 12
           }
         ]
       }

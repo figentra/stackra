@@ -9,6 +9,7 @@
  *   link <STA-n> <url> [--title t]   attach a URL
  *   create --title t [--project p] [--labels a,b] [--description d]   prints the new key; adds `agent` when an agent runs it
  *   mine | open [--label l]          list my open issues | the team's started issues (or open issues with a label)
+ *   digest                           ≤8 lines: In Progress plus `owner`-labelled issues (the SessionStart hook)
  *   check-pr                         CI: exit 1 unless PR_TITLE/PR_BRANCH carries an STA key (PR_LABELS may hold chore-lane)
  * Token: the "Stackra Agent" OAuth app (actor=app, so actions show as the app; it becomes the issue's delegate,
  *   never its assignee) is preferred: LINEAR_AGENT_TOKEN, re-minted from LINEAR_AGENT_CLIENT_ID and
@@ -278,6 +279,20 @@ export function linear(c, { dry = false, log = console.log } = {}) {
 
 const OPEN = { state: { type: { nin: ["completed", "canceled", "duplicate"] } } };
 export const formatRow = (i) => `${i.identifier.padEnd(8)} ${i.state.name.padEnd(12)} ${i.title}`;
+
+/** SessionStart digest: In Progress issues, then owner-only steps, deduped, at most `max` lines. */
+export function digest(started, owner, max = 8) {
+  const seen = new Set();
+  const rows = [
+    ...started.map((i) => ({ ...i, tag: "" })),
+    ...owner.map((i) => ({ ...i, tag: " [owner]" })),
+  ].filter((i) => !seen.has(i.identifier) && seen.add(i.identifier));
+  const out = rows
+    .slice(0, max)
+    .map((i) => `${i.identifier} ${i.state.name}: ${i.title.slice(0, 70)}${i.tag}`);
+  if (rows.length > max) out[max - 1] = `… and ${rows.length - max + 1} more (pnpm linear open)`;
+  return out;
+}
 const currentBranch = () => {
   try {
     return execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { encoding: "utf8" }).trim();
@@ -381,6 +396,14 @@ export async function main(argv, { env = process.env, fetch, log = console.log }
             ? { ...OPEN, labels: { name: { eqIgnoreCase: values.label } } }
             : { state: { type: { eq: "started" } } };
       for (const i of await L.list(filter)) log(formatRow(i));
+      return 0;
+    }
+    case "digest": {
+      const [started, owner] = await Promise.all([
+        L.list({ state: { name: { eq: "In Progress" } } }),
+        L.list({ ...OPEN, labels: { name: { eqIgnoreCase: "owner" } } }),
+      ]);
+      for (const line of digest(started, owner)) log(line);
       return 0;
     }
     default:
