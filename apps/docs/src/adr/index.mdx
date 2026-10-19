@@ -36,22 +36,22 @@ Each ADR records one decision, its context, consequences and the check that enfo
 | [0026](/adr/0026-turborepo-remote-cache-on-r2)                      | Turborepo remote cache self-hosted on Cloudflare R2                                                                                 | Accepted           |
 | [0027](/adr/0027-cli-tools-pinned-in-mise)                          | Every CLI the repo needs is pinned in mise                                                                                          | Accepted           |
 | [0028](/adr/0028-package-categories-appear-with-first-package)      | Package categories appear with their first package                                                                                  | Accepted           |
-| [0029](/adr/0029-encore-ts-one-app) | Encore.ts as one application under `services/` | Proposed |
-| [0030](/adr/0030-encore-cloud-on-owner-aws) | Encore Cloud into the owner's AWS; four environments | Proposed |
-| [0031](/adr/0031-coarse-services-split-on-evidence) | Coarse services, split on evidence | Proposed |
-| [0032](/adr/0032-rest-api-generated-client-uuidv7-ids) | REST `api()`, generated client, prefixed UUIDv7 ids | Proposed |
-| [0033](/adr/0033-pubsub-cron-transactional-outbox) | Pub/Sub and cron with a transactional outbox | Proposed |
-| [0034](/adr/0034-object-storage-malware-scan-limits) | Object storage, GuardDuty malware scan, upload limits | Proposed |
-| [0035](/adr/0035-resend-email-with-spf-dkim-dmarc) | Resend email with SPF, DKIM and DMARC | Proposed |
-| [0036](/adr/0036-idempotency-cache-and-postgres) | Idempotency in Encore cache for 24h; Postgres for money | Proposed |
-| [0037](/adr/0037-api-versioning-by-date-header) | API versioning by the `Stackra-Version` date header | Proposed |
-| [0038](/adr/0038-rate-limits-app-buckets-and-waf) | Rate limits: app token buckets and Cloudflare WAF | Proposed |
-| [0039](/adr/0039-openapi-mintlify-and-oauth-guide) | OpenAPI to Mintlify API reference; OAuth developer guide | Proposed |
-| [0040](/adr/0040-ddd-feature-modules-in-services) | Services are organised as DDD feature modules | Proposed |
-| [0041](/adr/0041-decorated-controllers-and-build-time-generator) | Decorated controllers, handlers and crons via a build-time generator | Proposed |
-| [0042](/adr/0042-di-first-with-one-container-per-service) | DI-first with one container per service | Proposed |
-| [0043](/adr/0043-workflow-package-medusa-style) | `@stackra/workflow` is Medusa-style steps and workflows | Proposed |
-| [0044](/adr/0044-laravel-style-package-config) | Laravel-style package configuration | Proposed |
+| [0029](/adr/0029-encore-ts-one-app)                                 | Encore.ts as one application under `services/`                                                                                      | Superseded by 0075 |
+| [0030](/adr/0030-encore-cloud-on-owner-aws)                         | Encore Cloud into the owner's AWS; four environments                                                                                | Proposed           |
+| [0031](/adr/0031-coarse-services-split-on-evidence)                 | Coarse services, split on evidence                                                                                                  | Proposed           |
+| [0032](/adr/0032-rest-api-generated-client-uuidv7-ids)              | REST `api()`, generated client, prefixed UUIDv7 ids                                                                                 | Proposed           |
+| [0033](/adr/0033-pubsub-cron-transactional-outbox)                  | Pub/Sub and cron with a transactional outbox                                                                                        | Superseded by 0078 |
+| [0034](/adr/0034-object-storage-malware-scan-limits)                | Object storage, GuardDuty malware scan, upload limits                                                                               | Proposed           |
+| [0035](/adr/0035-resend-email-with-spf-dkim-dmarc)                  | Resend email with SPF, DKIM and DMARC                                                                                               | Proposed           |
+| [0036](/adr/0036-idempotency-cache-and-postgres)                    | Idempotency in Encore cache for 24h; Postgres for money                                                                             | Proposed           |
+| [0037](/adr/0037-api-versioning-by-date-header)                     | API versioning by the `Stackra-Version` date header                                                                                 | Superseded by 0118 |
+| [0038](/adr/0038-rate-limits-app-buckets-and-waf)                   | Rate limits: app token buckets and Cloudflare WAF                                                                                   | Proposed           |
+| [0039](/adr/0039-openapi-mintlify-and-oauth-guide)                  | OpenAPI to Mintlify API reference; OAuth developer guide                                                                            | Proposed           |
+| [0040](/adr/0040-ddd-feature-modules-in-services)                   | Services are organised as DDD feature modules                                                                                       | Proposed           |
+| [0041](/adr/0041-decorated-controllers-and-build-time-generator)    | Decorated controllers, handlers and crons via a build-time generator                                                                | Superseded by 0091 |
+| [0042](/adr/0042-di-first-with-one-container-per-service)           | DI-first with one container per service                                                                                             | Proposed           |
+| [0043](/adr/0043-workflow-package-medusa-style)                     | `@stackra/workflow` is Medusa-style steps and workflows                                                                             | Superseded by 0102 |
+| [0044](/adr/0044-laravel-style-package-config)                      | Laravel-style package configuration                                                                                                 | Proposed           |
 | [0045](/adr/0045-tenancy-package-pool-default-silo-on-demand) | `@stackra/tenancy`: pool by default, silo on demand | Proposed |
 | [0046](/adr/0046-global-data-invariants-and-per-model-opt-ins) | Global data invariants and per-model opt-ins | Proposed |
 | [0047](/adr/0047-audit-service-via-events) | Audit service fed by events | Proposed |
