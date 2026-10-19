@@ -9,7 +9,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { auth, client, main, prCarriesKey } from "../linear.mjs";
-import { adrStatuses, plan, prKeys } from "../linear-reconcile.mjs";
+import { adrStatuses, apply, plan, prKeys } from "../linear-reconcile.mjs";
 
 const SECRET = "lin_api_SECRETVALUE";
 
@@ -138,15 +138,77 @@ test("check-pr: key in title or branch, or an exempt lane", () => {
   assert.ok(!prCarriesKey({ title: "feat: x", branch: "feature/x" }).ok);
 });
 
-test("prKeys reads title, branch and magic-word body lines only", () => {
+test("prKeys: branch and Fixes/Closes close; title, Refs and Linear only mention", () => {
   assert.deepEqual(
     prKeys({
-      title: "feat: a",
+      title: "chore: after STA-10 shipped",
       headRefName: "figentra/sta-4-a",
-      body: "Fixes STA-5\nsee STA-6\nLinear: STA-8",
+      body: "Fixes STA-1, STA-2 and STA-3\nRefs: STA-11\nsee STA-6\nLinear: STA-8",
     }),
-    ["STA-4", "STA-5", "STA-8"],
+    {
+      closes: ["STA-4", "STA-1", "STA-2", "STA-3"],
+      mentions: ["STA-4", "STA-1", "STA-2", "STA-3", "STA-10", "STA-11", "STA-8"],
+    },
   );
+});
+
+test("a merged PR that only mentions an issue does not close it", () => {
+  const actions = plan({
+    issues: [iss("STA-10", "In Progress", "started", { startedAt: new Date(NOW).toISOString() })],
+    mergedPrs: [
+      {
+        number: 3,
+        url: "pr3",
+        title: "chore: after STA-10",
+        headRefName: "x",
+        body: "Refs: STA-10",
+      },
+    ],
+    openPrs: [],
+    branches: [],
+    adrs,
+    now: NOW,
+  });
+  assert.deepEqual(actions, []);
+});
+
+test("stale: a recently started issue is not stale; a human-removed label is not re-added", () => {
+  const base = { mergedPrs: [], openPrs: [], branches: [], adrs, now: NOW };
+  const fresh = iss("STA-20", "In Progress", "started", {
+    startedAt: new Date(NOW - DAY).toISOString(),
+  });
+  assert.deepEqual(plan({ ...base, issues: [fresh] }), []);
+  const old = new Date(NOW - 10 * DAY).toISOString();
+  const first = plan({
+    ...base,
+    issues: [iss("STA-21", "In Progress", "started", { startedAt: old })],
+  });
+  assert.equal(first[0].addLabel, "stale");
+  const removed = iss("STA-21", "In Progress", "started", {
+    startedAt: old,
+    comments: [`x\n\n— linear-reconcile (${first[0].tag})`],
+  });
+  assert.deepEqual(plan({ ...base, issues: [removed] }), []);
+});
+
+test("apply writes the marker comment even when Linear refuses a duplicate attachment", async () => {
+  const done = [];
+  const L = {
+    setState: async () => done.push("state"),
+    link: async () => {
+      throw new Error("Unable to create issue attachment");
+    },
+    comment: async (_i, body) => done.push(body),
+  };
+  const issue = { identifier: "STA-1", attachments: { nodes: [] } };
+  const failed = await apply(
+    L,
+    [{ key: "STA-1", rule: "b", state: "In Review", link: "pr", comment: "c", tag: "review:#1" }],
+    new Map([["STA-1", issue]]),
+    () => {},
+  );
+  assert.equal(failed, 0);
+  assert.match(done[1], /linear-reconcile \(review:#1\)/);
 });
 
 const iss = (key, state, type, extra = {}) => ({

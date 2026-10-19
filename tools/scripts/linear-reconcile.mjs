@@ -24,16 +24,27 @@ const ADR_DIR = "apps/docs/src/adr";
 const STALE_MS = 3 * 24 * 3600 * 1000;
 const MARK = (tag) => `linear-reconcile (${tag})`;
 
-/** STA keys a PR references: title, branch, and `Refs|Fixes|Closes|Resolves|Linear: STA-n` lines of the body. */
+const keysIn = (s) => [...(s ?? "").matchAll(/\bSTA-(\d+)\b/gi)].map((m) => `STA-${m[1]}`);
+/** Keys after a magic word, including lists: `Fixes STA-1, STA-2 and STA-3`. */
+const keysAfter = (body, words) =>
+  [
+    ...(body ?? "").matchAll(
+      new RegExp(`\\b(?:${words}):?\\s*(STA-\\d+(?:\\s*(?:,|and|&)?\\s*STA-\\d+)*)`, "gi"),
+    ),
+  ].flatMap((m) => keysIn(m[1]));
+
+/**
+ * STA keys a PR references, as Linear's GitHub integration reads them. `closes`: the branch name and
+ * Fixes/Closes/Resolves (merge → Done). `mentions`: those plus the title and Refs/Part of/Linear lines (open → In Review).
+ */
 export function prKeys({ title = "", headRefName = "", body = "" }) {
-  const keys = new Set();
-  for (const s of [title, headRefName])
-    for (const m of s.matchAll(/\bSTA-(\d+)\b/gi)) keys.add(`STA-${m[1]}`);
-  for (const m of (body ?? "").matchAll(
-    /\b(?:Refs|Fixes|Closes|Resolves|Linear)\b:?\s*STA-(\d+)\b/gi,
-  ))
-    keys.add(`STA-${m[1]}`);
-  return [...keys];
+  const closes = new Set([...keysIn(headRefName), ...keysAfter(body, "Fixes|Closes|Resolves")]);
+  const mentions = new Set([
+    ...closes,
+    ...keysIn(title),
+    ...keysAfter(body, "Refs|Part of|Linear"),
+  ]);
+  return { closes: [...closes], mentions: [...mentions] };
 }
 
 /** ADR number → status word, from the `description: "Accepted · …"` frontmatter. */
@@ -55,26 +66,26 @@ const adrUrl = (file) => `https://github.com/${REPO}/blob/main/${ADR_DIR}/${file
  * issue: { identifier, title, state:{name,type}, labels:[name], comments:[body], links?:[attachment url] }
  * pr: { number, url, title, headRefName, body, updatedAt }; branches: [{ name, at: ms }].
  */
-const refs = (prs) => {
+const refs = (prs, kind) => {
   const m = new Map();
-  for (const pr of prs) for (const k of prKeys(pr)) m.set(k, [...(m.get(k) ?? []), pr]);
+  for (const pr of prs) for (const k of prKeys(pr)[kind]) m.set(k, [...(m.get(k) ?? []), pr]);
   return m;
 };
+const day = (ms) => new Date(ms).toISOString().slice(0, 10);
 
 export function plan({ issues, mergedPrs, openPrs, branches, adrs, now }) {
   const actions = [];
-  const open = refs(openPrs);
-  const merged = refs(mergedPrs);
+  const open = refs(openPrs, "mentions");
+  const merged = refs(mergedPrs, "closes");
   const act = (issue, rule, a) => actions.push({ key: issue.identifier, rule, ...a });
 
   for (const issue of issues) {
     const { name, type } = issue.state;
-    // A PR also counts when its URL is attached to the issue (the GitHub integration or `pnpm linear link`).
-    const attached = (prs) => prs.filter((pr) => issue.links?.includes(pr.url));
-    const either = (m, prs) =>
-      m.get(issue.identifier) ?? (attached(prs).length ? attached(prs) : undefined);
-    const prsOpen = either(open, openPrs);
-    const prsMerged = either(merged, mergedPrs);
+    // An open PR also counts when its URL is attached to the issue (the GitHub integration or `pnpm linear link`).
+    // Merged PRs close an issue only through a closing reference, never through an attachment or a mention.
+    const attached = openPrs.filter((pr) => issue.links?.includes(pr.url));
+    const prsOpen = open.get(issue.identifier) ?? (attached.length ? attached : undefined);
+    const prsMerged = merged.get(issue.identifier);
 
     // (b) before (a): an issue with any PR still open is not finished.
     if (prsOpen) {
@@ -113,16 +124,20 @@ export function plan({ issues, mergedPrs, openPrs, branches, adrs, now }) {
       const times = branches
         .filter((b) => new RegExp(`(^|[/-])sta-${n}(\\D|$)`, "i").test(b.name))
         .map((b) => b.at);
-      const last = times.length ? Math.max(...times) : 0;
+      // An issue started recently is not stale just because nothing is pushed yet.
+      const started = Date.parse(issue.startedAt ?? "") || 0;
+      const last = Math.max(started, ...times);
       const stale = now - last > STALE_MS;
       const labelled = issue.labels.includes("stale");
-      if (stale && !labelled)
+      // Tagged by the last activity: a human who removes the label is not overridden until new activity goes stale.
+      const tag = `stale:${day(last)}`;
+      if (stale && !labelled && !hasMark(issue, tag))
         act(issue, "d", {
           addLabel: "stale",
-          comment: last
-            ? `No branch or PR activity since ${new Date(last).toISOString().slice(0, 10)}. Push, open a PR, or move it back.`
+          comment: times.length
+            ? `No branch or PR activity since ${day(last)}. Push, open a PR, or move it back.`
             : "In Progress with no linked branch or PR. Push a branch named after the issue, or move it back.",
-          tag: `stale:${new Date(now).toISOString().slice(0, 10)}`,
+          tag,
         });
       if (!stale && labelled) act(issue, "d", { removeLabel: "stale" });
     }
@@ -162,7 +177,12 @@ export async function apply(L, actions, issueByKey, log = console.log) {
     const issue = issueByKey.get(a.key);
     try {
       if (a.state) await L.setState(issue, a.state);
-      if (a.link) await L.link(issue, a.link);
+      // The GitHub integration usually attached the PR already, and Linear refuses a duplicate: the marker
+      // comment below must still be written, or a later run would override a human.
+      if (a.link && !issue.attachments?.nodes?.some((n) => n.url === a.link))
+        await L.link(issue, a.link).catch((e) =>
+          log(`  (${a.key}: attachment skipped: ${e.message})`),
+        );
       if (a.addLabel) await L.addLabel(issue, a.addLabel);
       if (a.removeLabel) await L.removeLabel(issue, a.removeLabel);
       if (a.comment) await L.comment(issue, `${a.comment}\n\n— ${MARK(a.tag)}`);
@@ -174,7 +194,8 @@ export async function apply(L, actions, issueByKey, log = console.log) {
   return failed;
 }
 
-const RAW = `id identifier title url state{id name type} team{id} labels{nodes{id name}} comments(first:30){nodes{body}} attachments(first:20){nodes{url}}`;
+// shortcut: the newest 100 comments and 50 attachments per issue; a busier issue can miss an old marker, page if that happens.
+const RAW = `id identifier title url startedAt state{id name type} team{id} labels{nodes{id name}} comments(first:100,orderBy:createdAt){nodes{body}} attachments(first:50){nodes{url}}`;
 
 async function fetchIssues(gql) {
   const out = [];

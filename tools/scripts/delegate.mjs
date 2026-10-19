@@ -2,7 +2,7 @@
 /**
  * Stackra file contract:
  * Purpose: hand a task to the executor .agents/routing.yaml names for it (`pnpm delegate <task-type> "<brief>"`).
- *   opencode → budget check, fresh worktree + branch `delegate/<type>-<slug>` from origin/main, `opencode run`
+ *   opencode → budget check, fresh worktree + branch `delegate/sta-<n>-<type>-<slug>` from origin/main, `opencode run`
  *              inside it, JSON transcript saved next to the worktree; the lead (Claude) reviews and commits.
  *   claude   → prints the command for the lead to run; nothing starts here.
  * Linear: `--issue STA-n` is required (ADR 0065). At dispatch it runs `pnpm linear start` on the issue with the
@@ -77,9 +77,11 @@ export const slugify = (s) =>
     .replace(/-+$/, "") || "task";
 
 /** Branch and worktree names; the slug comes from the brief. */
-export function names(type, brief) {
+/** The issue key leads the branch so Linear links it and the PR passes `check-pr`. */
+export function names(type, brief, issue) {
   const slug = slugify(brief);
-  return { slug, branch: `delegate/${type}-${slug}`, dir: `stackra-delegate-${slug}` };
+  const key = issue.toLowerCase();
+  return { slug, branch: `delegate/${key}-${type}-${slug}`, dir: `stackra-delegate-${slug}` };
 }
 
 export const RULES = [
@@ -145,7 +147,7 @@ function main() {
     { type, agent: values.agent, executor: values.executor },
     process.env,
   );
-  const { branch, dir, slug } = names(type, brief);
+  const { branch, dir, slug } = names(type, brief, issue);
 
   if (route.executor === "claude") {
     console.log(

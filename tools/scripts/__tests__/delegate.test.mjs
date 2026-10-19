@@ -48,9 +48,9 @@ test("resolveRoute rejects unknown types and executors", () => {
 test("slug and branch naming", () => {
   assert.equal(slugify("Add tests for  the Guard plugin!"), "add-tests-for-the-guard-plugin");
   assert.equal(slugify("!!!"), "task");
-  assert.deepEqual(names("tests", "Cover logger"), {
+  assert.deepEqual(names("tests", "Cover logger", "STA-42"), {
     slug: "cover-logger",
-    branch: "delegate/tests-cover-logger",
+    branch: "delegate/sta-42-tests-cover-logger",
     dir: "stackra-delegate-cover-logger",
   });
   assert.ok(slugify("x".repeat(100)).length <= 40);
