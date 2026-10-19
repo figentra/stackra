@@ -1,0 +1,114 @@
+---
+title: "Spec lifecycle"
+description: "How work that is worth specifying moves from idea to merged change: three documents, one skill per transition, and where a finding goes."
+icon: "list-checks"
+---
+
+Not every change needs a spec. Work that touches money, permissions, data integrity, external contracts, concurrency or state machines does, and so does anything several agents will implement or that will outlive its author's memory. Everything else is a direct change reviewed at the gates on [Working with agents](/agents/index).
+
+The spec engine ships with the `sdlc` plugin: the skills, the three document templates and the spec roles. Nothing is copied into this repository. See [Skills](/agents/skills). Run `/sdlc:spec` and it reads the specs on disk, says which stage each is at, and asks which step to run.
+
+## Where specs live
+
+```text
+.agents/specs/<NNN>-<slug>/
+├── requirements.md   what and why
+├── design.md         how
+└── tasks.md          in what order
+```
+
+`NNN` is one higher than the highest existing number. The slug is two to four kebab-case words. **A spec holds exactly three documents.** No `research.md`, no `notes.md`, no `findings/` directory. A directory that accepts a fourth file accepts a fifth, and then the three documents stop being the place to look. Research is summarised in `design.md`. A finding that is not in one of the three does not exist for this workflow.
+
+Numbers are permanent once the next document exists. `design.md` and `tasks.md` cite criteria as `2.3` (requirement 2, criterion 3), and renumbering breaks every back-reference.
+
+## One skill per transition
+
+```text
+spec-new ──▶ requirements.md ──▶ spec-design ──▶ design.md ──▶ spec-tasks ──▶ tasks.md ──▶ spec-run / spec-implement ──▶ spec-verify
+```
+
+| Skill | Agent | Writes | Never |
+| --- | --- | --- | --- |
+| `spec-new` | `spec-author` | `requirements.md` | Asks clarifying questions before a first draft |
+| `spec-design` | `spec-author` | `design.md`. Refuses without `requirements.md` | Plans tasks |
+| `spec-tasks` | `spec-planner` | `tasks.md` and the wave graph. Refuses without the first two | Implements |
+| `spec-implement` | `spec-executor` | Exactly one task | Continues to a second task |
+| `spec-run` | `delivery-orchestrator` dispatching `spec-executor` | Task status only | Writes code or runs tests itself |
+| `spec-verify` | any | Nothing. Read only | Edits a file |
+
+**The gate between documents is a human.** Each of the first three skills writes its document, asks for review and stops. This is deliberately not automated: a spec whose ceremony exceeds its subject gets ignored, and an ignored spec is worse than none.
+
+### requirements.md
+
+Every requirement has a user story and acceptance criteria in one of the six EARS patterns, held to the INCOSE rules: active voice, no vague terms, measurable, one thought per criterion, solution-free. "The system shall process requests quickly" is rejected. "WHEN a request is received, THE System SHALL process it within 200 ms" is accepted.
+
+The two stages before requirements are **sections**, not documents:
+
+- `## Discovery` sits above the glossary. It records current behaviour, repository topology (real paths), dependencies at the versions actually pinned, ownership, constraints (linked, never restated) and **Sources**. A statement that was recalled rather than read is the defect this section prevents: if you cannot name the source, do not write the statement.
+- `## Introduction` carries product definition as five fields: users, business outcome, in scope, out of scope, measurable success.
+
+Depth follows the risk class (`critical`, `standard` or `low`) recorded when the spec starts. Do not write more discovery than the risk deserves.
+
+### design.md
+
+Overview, glossary, architecture, components, data model, correctness properties, error handling, testing strategy, open questions. Every acceptance criterion becomes an **example** (one concrete case, so a test) or a **universal** (a rule over a class of inputs, so a property with explicit quantification and a `Validates:` back-reference). A coverage table accounts for every requirement.
+
+### tasks.md
+
+Coding tasks only. User acceptance testing, deployment, metric gathering, manual end-to-end runs, training and documentation are excluded by rule. Checkboxes are live state that agents read and write: `[ ]` not started, `[~]` queued, `[-]` in progress, `[x]` done. A task dependency graph puts every incomplete leaf into exactly one wave, and two tasks that touch the same file are in different waves, which is what makes a wave safe to run in parallel. `spec-run` dispatches a wave's ready tasks concurrently, capped at five.
+
+### The quick spec
+
+`spec-new --quick` skips EARS, the glossary and correctness properties for a short document: intent, acceptance, out of scope, assumptions. Use it for one small behaviour with an obvious outcome and no invariants. It can be promoted to a full spec if scope grows.
+
+## Review checklist
+
+A spec passes review when every row is **PASS** or **N/A with a reason**. One FAIL blocks the build. Reviewers check against the real tree, not the prose.
+
+1. **Decisions honoured.** Each applicable law and ADR is cited at the section that honours it. See [Constitution](/constitution/boundaries) and [Architecture decisions](/adr/index).
+2. **Cross-package consistency.** Every symbol the design imports exists in that package's current barrel (grep the export). The design's dependencies equal the member's `package.json` (`workspace:*` or `catalog:`). Dependency direction has no cycle. Events a package emits are listed once, and ones it consumes exist in the owner.
+3. **Hygiene.** Criteria are numbered and each is referenced by at least one task. Every leaf task has a `_Requirements:_` trailer. No task depends on a later one. No `TBD`, `later`, `for now`, `temporary` or `stub`. The design has no open question at approval.
+4. **A dated corrections section** exists when the spec changed after approval, and the latest wins. The status line names who approved.
+
+`spec-verify` is the mechanical half: every acceptance criterion referenced by a task, every design property covered by a test task, every `_Requirements:_` reference pointing at a criterion that exists. It does not judge whether the requirements were the right ones. That is what the human gate is for.
+
+## When a finding becomes a rule
+
+The `failure-loop` skill handles a gate failing in front of you: classify it, route it to the owner, fix the cause, re-run. For most findings that is the end. For some it is not. A finding about the repository rather than the diff will recur on the next spec, raised by a different reviewer, unless something changes.
+
+A finding is **durable** when any one of three holds:
+
+1. It has been raised before. The second occurrence, not the third.
+2. A check could have caught it, and none exists. This is the highest-value trigger.
+3. It touches an area where the first occurrence is already too many: secrets, generated artefacts, the CI gate, tier and layer boundaries, a published export surface.
+
+Anything else is one-off. Fix it in the change and write nothing. Promoting a one-off is a real cost, because every rule is read by every agent in every session.
+
+| What was missing | Where it goes | Who writes it |
+| --- | --- | --- |
+| A decision | An ADR | `architecture-guardian` |
+| Enforcement: a decision exists and nothing fails | A check wired into `pnpm verify` and CI | `release-operations` |
+| Awareness: only a human reading can enforce it | A rule in `.agents/rules/` | `docs-governance` |
+| A procedure someone re-derived | A skill in `.agents/skills/` | `docs-governance` |
+| A behaviour the spec never specified | A requirement in `requirements.md` | `spec-author` |
+| Coverage: right code, nothing would have noticed | A test at the level that catches it | `test-engineer` |
+| A version, advisory or pin | A catalog entry | `dependency-steward` |
+| A layout mistake that repeats per package | A scaffold template change | `package-steward` |
+
+**Enforcement beats awareness.** If a finding can be stated as a predicate over files, write the check, not a rule asking agents to remember. **A decision and its enforcement are two artifacts.** An ADR that no check enforces is a standard that only a tired reviewer stands behind, so the ADR ships with its check or names the check and its owner in its follow-up.
+
+The reviewer who raised the finding names the class and the destination. The owning agent writes the artifact. A reviewer who must also write the rule quietly stops raising findings.
+
+Every artifact written by a promotion opens with one provenance line:
+
+```markdown
+> Origin: review finding on <spec or change>, <first|second> occurrence — <the finding>.
+```
+
+Nothing checks for that line, and there is no findings ledger. A ledger would be a tracked file that goes stale the first week nobody updates it. The line makes existing rules searchable for "has this been seen before", and a rule whose origin nobody can state is a candidate for deletion. A reviewer enforces it, and that limit is stated on purpose.
+
+## Tasks that are not specs
+
+A spec is for work worth specifying. Day-to-day tasks use one task file per repository, not a file per agent, so two agents never disagree about what is open. A task is done only when its code is on the main branch.
+
+Related: [Roster](/agents/roster), [Delegation](/constitution/delegation), [Definition of done](/guides/definition-of-done).

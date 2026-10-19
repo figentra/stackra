@@ -1,0 +1,31 @@
+---
+title: "0019 — Supply chain hardening"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+CI that runs third-party actions and installs unpinned tools can be changed by someone else's commit. A build whose
+provenance cannot be shown cannot be trusted by the people who consume it. The pins are cheap before the first workflow exists and expensive after.
+
+## Decision
+
+1. **Every third-party GitHub Action is pinned to a full commit SHA**, with the version in a trailing comment. Tag pins are not accepted.
+2. **Workflows request the least permission.** `permissions:` is set per job; `id-token: write` appears only on jobs that use OIDC ([0009](/adr/0009-secrets-two-mechanisms)).
+3. **Toolchain versions are exact.** `mise.toml` pins node, pnpm and gitleaks; the `packageManager` field matches. External dependency versions come from catalogs ([0001](/adr/0001-monorepo-layout)). Infrastructure providers, if ever used, are pinned with `=`, with a lockfile committed.
+4. **New versions age before adoption.** Renovate proposes bumps with a minimum release age, so a freshly published release is not adopted the same day.
+5. **Release artifacts carry provenance**: a software bill of materials, checksums and a keyless signature per release, verified by a documented command. A scanner step must carry an explicit failure threshold and must never skip its database update.
+6. **A workflow linter runs in the gate.**
+
+## Consequences
+
+- Pin bumps are a chore that Renovate absorbs.
+- Verification instructions are part of every release note.
+
+## Enforcement
+
+Planned: a pin test that fails an unpinned `uses:` line, a workflow linter (zizmor) step in the gate, and the release workflow that emits and signs the SBOM. Today `mise.toml` pins the toolchain and `pnpm-workspace.yaml` forces catalog versions through `validate-repository.mjs`; there are no workflows to pin.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: platform `docs/adr/0017-wave-6-hardening-architecture`, `0009-terraform-provider-risk-policy`, `tests/pins/*.test.mjs`, `.github/zizmor.yml`.

@@ -1,0 +1,32 @@
+// Stackra file contract:
+// Purpose: Expo / React Native apps (apps/mobile); source under src/ (expo-router reads src/app). The strict base plus expo/tsconfig.base's options, inlined
+//          because a preset cannot `extends` a package its own folder does not install.
+// Owner: release-operations · Secrets: forbidden
+{
+  "display": "@stackra/typescript-config — expo",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["DOM", "ESNext"],
+    "module": "preserve",
+    "moduleDetection": "force",
+    "customConditions": ["react-native"],
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "types": [],
+    "paths": { "@/*": ["${configDir}/src/*"] }
+  },
+  "include": [
+    "${configDir}/src",
+    "${configDir}/.expo/types/**/*.ts",
+    "${configDir}/expo-env.d.ts",
+    "${configDir}/uniwind-types.d.ts"
+  ],
+  "exclude": [
+    "${configDir}/node_modules",
+    "${configDir}/babel.config.js",
+    "${configDir}/metro.config.js",
+    "${configDir}/android",
+    "${configDir}/ios"
+  ]
+}

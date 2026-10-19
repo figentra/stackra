@@ -1,0 +1,11 @@
+// Stackra file contract:
+// Purpose: a tsdown-built library (packages/*/*) — node + vitest globals. The
+//          declaration flags in base feed tsdown's dts step; a library therefore declares `@types/node`
+//          and `vitest` as devDependencies.
+// Owner: release-operations · Secrets: forbidden
+{
+  "display": "@stackra/typescript-config — library",
+  "extends": "./node.json",
+  "compilerOptions": { "types": ["node", "vitest/globals"] },
+  "include": ["${configDir}/src", "${configDir}/tsdown.config.ts", "${configDir}/vitest.config.ts"]
+}

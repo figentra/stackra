@@ -1,0 +1,48 @@
+// Stackra file contract:
+// Purpose: the single TypeScript baseline every other preset extends — strict everything, no DOM, no JSX.
+//          Workspaces never extend this directly; they pick a role preset (node/library/encore/react/vite).
+// Scope: apps/*, services/*, packages/*
+// Owner: release-operations
+// Secrets: forbidden
+// Change policy: a compiler-option change is a toolchain change and needs an ADR.
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "@stackra/typescript-config — base",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": true,
+    "allowUnreachableCode": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "noEmit": true,
+    // Workspace packages are consumed as source (no dist); every host bundles or transforms them (Encore's
+    // esbuild bundler, Vite, Vitest, Metro), and `bundler` resolution handles directory barrels. Relative
+    // imports therefore carry no extension and no `/index` (validate-repository enforces it). The flag stays
+    // on only for packages/tooling/*, whose presets plain Node loads and which must keep `./x.ts`.
+    "allowImportingTsExtensions": true,
+    // Hygiene for packages that do not use the DI container: no parameter properties, enums, namespaces or
+    // decorators. Workspaces that declare modules extend the decorators preset instead (ADR-0007).
+    "erasableSyntaxOnly": true,
+    "skipLibCheck": true,
+    "types": []
+    // ${configDir} resolves inside the EXTENDING workspace, not this package.
+  },
+  "exclude": ["node_modules", "dist", "build", ".turbo", "coverage", "encore.gen"]
+}

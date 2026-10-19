@@ -1,0 +1,15 @@
+// Stackra file contract:
+// Purpose: a Vite application that declares container modules with legacy decorators (apps/*): the vite preset
+//          (DOM lib, vite/client types, config files included) plus the decorator flags of the decorators preset,
+//          set here explicitly because a multi-extends chain lets the last preset's `lib`/`types`/`include` win
+//          and would drop the DOM lib (seen in the playground, 2026-10-04). `emitDecoratorMetadata` stays off.
+// Owner: release-operations · Secrets: forbidden
+{
+  "display": "@stackra/typescript-config — vite app with decorators",
+  "extends": "./vite.json",
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": false,
+    "erasableSyntaxOnly": false
+  }
+}

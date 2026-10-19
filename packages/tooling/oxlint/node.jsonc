@@ -1,0 +1,4 @@
+// Stackra file contract:
+// Purpose: Node libraries, scripts and the Encore app (packages/*, services/*, tooling/*).
+// Owner: release-operations · Secrets: forbidden
+{ "extends": ["./base.jsonc"], "env": { "node": true } }

@@ -1,0 +1,14 @@
+// Stackra file contract:
+// Purpose: React libraries using legacy decorators (DOM lib + automatic JSX + erasableSyntaxOnly: false).
+//          Combines decorators preset with DOM/JSX from react preset. Used by @stackra/forms.
+//          Pair with `library({ decorators: true })` from @stackra/tsdown-config and the vitest decorators
+//          preset so tsc, the build and the test transform agree.
+// Owner: release-operations · Secrets: forbidden
+{
+  "display": "@stackra/typescript-config — decorators-react",
+  "extends": "./decorators.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx"
+  }
+}

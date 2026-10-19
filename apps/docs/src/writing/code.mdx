@@ -1,0 +1,32 @@
+---
+title: "Code blocks"
+description: "Syntax highlighting, titles, groups and line highlights."
+icon: "code"
+---
+
+Name the language, and add a filename as the title:
+
+```ts packages/foundation/example/src/index.ts
+export const greet = (name: string) => `Hello, ${name}`;
+```
+
+Highlight lines with `{n}`:
+
+```ts {2}
+const a = 1;
+const b = 2;
+```
+
+Show the same thing in several languages with a group:
+
+<CodeGroup>
+
+```bash pnpm
+pnpm add react@catalog:frontend --filter @stackra/console
+```
+
+```bash turbo
+pnpm turbo run test --filter=@stackra/console
+```
+
+</CodeGroup>

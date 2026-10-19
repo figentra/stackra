@@ -1,0 +1,8 @@
+// Stackra file contract:
+// Purpose: Node 24 libraries and scripts — base + node types.
+// Owner: release-operations · Secrets: forbidden
+{
+  "display": "@stackra/typescript-config — node",
+  "extends": "./base.json",
+  "compilerOptions": { "types": ["node"] }
+}

@@ -1,0 +1,138 @@
+---
+title: "Mobile release"
+description: "EAS builds, signs, submits and updates the Expo app; a human bootstraps the stores once."
+icon: "smartphone"
+---
+
+<Note>
+  Status: target. `apps/mobile` has `eas.json` with `development`, `preview` and `production` profiles, but there is no Expo project link (`extra.eas.projectId`), no store records, no `.eas/workflows/`, no `updates` config and no `staging` profile. Licensed packages (HeroUI Pro, Uniwind Pro) are not installed, so the licence-token steps below apply only once they are. App: Expo SDK 57, code-based React Navigation.
+</Note>
+
+## Concepts
+
+| Thing | What it is | Changes when |
+| --- | --- | --- |
+| **Build** (`eas build`) | A native binary (`.ipa`, `.aab`, `.apk`) built on Expo's servers | Native code, native dependencies, app config or SDK change |
+| **Submit** (`eas submit`) | Uploads a build to App Store Connect (TestFlight) or Google Play | After each store build |
+| **Update** (`eas update`) | Ships JS and assets over the air to installed apps on a channel | JS-only changes; no store review |
+| **Profile** (`eas.json`) | Named build and submit settings | Rarely |
+| **Environment** | EAS variable sets: `development`, `preview`, `production` | When config or secrets change |
+| **Channel** | Where a build listens for updates; one per profile | Set once per profile |
+| **Runtime version** | The native fingerprint an update must match | Automatically, with the `fingerprint` policy |
+
+**Native change means a new build. JS-only change means an update.** EAS owns build, signing, submit and updates. We do not build or sign on a laptop for release.
+
+Always run EAS from `apps/mobile`, never the repo root. Every build costs money: ask before each one, and never loop builds.
+
+## One-time store bootstrap (human only)
+
+No API can do these steps. A human does them; an agent never does, and no value goes into chat, a ticket or a commit. Tokens go to EAS as secret variables ([Secrets](/runbooks/secrets)).
+
+<Steps>
+  <Step title="Apple: the company's organisation account">
+    The team must be the company's organisation account, never an individual enrolment or another party's team: every Apple artifact belongs to the team, and moving an app later is painful. The Account Holder accepts agreements, sets banking and requests App Store Connect API access once.
+  </Step>
+  <Step title="Apple: create the app record">
+    App Store Connect, Apps, New App. The bundle ID must equal `ios.bundleIdentifier` in `apps/mobile/app.json`. Note the numeric Apple ID and put it in `eas.json` under `submit.production.ios.ascAppId`. Never delete an app record to fix a mistake: the bundle ID and often the name become permanently unusable. The bundle can be switched only until the first build is uploaded.
+  </Step>
+  <Step title="Apple: API key for submit">
+    The Account Holder or an Admin creates a Team Key (Users and Access, Integrations) with role App Manager, never Admin. The `.p8` downloads once. Give it to the EAS credentials step only, then delete the local copy. App Managers cannot create keys, and "Generate" in the EAS prompt fails for them with a 403.
+  </Step>
+  <Step title="Google Play: create the app and the first upload">
+    Create the app in Play Console and upload the first `.aab` manually to an internal track. Google requires this before any API upload.
+  </Step>
+  <Step title="Google Play: service account">
+    In Google Cloud create a service account with Play Console release-manager access and download its JSON key once. Upload it through `eas credentials -p android`. Do not commit it or store it anywhere else.
+  </Step>
+  <Step title="Expo: link the project">
+    `cd apps/mobile`, `eas login`, `eas init`. This writes `extra.eas.projectId` into the app config. Connect the repository in the Expo project settings with base directory `apps/mobile`.
+  </Step>
+  <Step title="Generate credentials">
+    Run `EXPO_NO_CAPABILITY_SYNC=1 eas credentials -p ios` and set up the distribution certificate and provisioning profile. Apple allows only two APNs push keys per team and one key serves every app: at the limit, reuse an existing `.p8` by uploading it, and revoke a key only when no live app uses it. Android: `eas credentials -p android` generates an upload keystore, which EAS stores.
+  </Step>
+</Steps>
+
+## Configuration to add before the first store build
+
+In `apps/mobile/app.json`:
+
+- `runtimeVersion: { "policy": "fingerprint" }` and `updates.url` (`https://u.expo.dev/<projectId>`).
+- Declare every capability the Apple bundle has enabled (for example `ios.usesAppleSignIn: true`).
+- `ios.config.usesNonExemptEncryption: false` is already set and skips the export-compliance question.
+- Never change `ios.bundleIdentifier` or `android.package` after the first store upload.
+
+In `apps/mobile/eas.json`, add `environment` and `channel` per profile, and a `staging` profile that extends `base` with `autoIncrement: true`. `appVersionSource: remote` already keeps build numbers on EAS, and `autoIncrement` bumps the build number; you bump `version` yourself for each store release. Check what a profile resolves to with `eas config --profile <name> --platform ios`.
+
+`EXPO_PUBLIC_*` variables are inlined into the JS bundle and are public. Create them as plain text. A licence token or private key is a **secret** variable, which only the build servers see:
+
+```bash
+eas env:create --name EXPO_PUBLIC_API_URL --value <url> --environment production --visibility plaintext
+eas env:create --name SOME_TOKEN --visibility secret --environment production   # prompts for the value
+```
+
+Never put a secret value in `eas.json`, app config or the repo.
+
+### Ignore rules matter in a monorepo
+
+EAS uploads every file git does not ignore. Ensure `node_modules/`, `ios/`, `android/`, DerivedData, agent worktrees (`.claude/worktrees/`) and test output are ignored. An `.easignore` file replaces `.gitignore` for uploads entirely, so copy the rules into it if you add one. If a build hangs at "Compressing project files", find the culprit with `git status --short | grep '^??'`, `du -sh <path>` and `git check-ignore -v <path>`.
+
+## Build, submit, update
+
+```bash
+cd apps/mobile
+eas build --profile preview --platform ios                  # internal install via link
+eas build --profile staging --platform ios --auto-submit    # build and upload to TestFlight
+eas build --profile production --platform all --auto-submit
+eas update --channel staging --message "<what changed>"     # JS-only fix to staging builds
+eas update:republish --group <id> --destination-channel production   # promote a tested update
+eas update:rollback                                         # roll back a bad update
+```
+
+- **Internal testers:** `eas device:create` registers each iPhone, then `eas credentials:configure-build -p ios -e preview` builds an ad-hoc profile that includes them. TestFlight builds need no device registration.
+- **iOS submit:** `--auto-submit`, or `eas submit -p ios --profile production --latest`. Apple processes the upload for 10 to 30 minutes, then add testers under TestFlight, Internal Testing. External testers need one Beta App Review. Fallback: download the `.ipa` and use Apple's Transporter.
+- **Android submit:** `eas submit -p android --profile production --latest` sends a draft to the internal track; promote it in Play Console.
+- **An update reaches only builds with the same runtime version.** Any native change gives a new runtime version, so build first. Test on the `staging` channel, then republish the same update group to `production`: promote, do not rebuild.
+- **Store rules:** an update may fix bugs and change JS or UI, but must not change the app's core purpose. Big features go through review.
+
+### Release checklists
+
+**JS-only change:** merge to `main` (workflow publishes to `staging`); test on a staging build; `eas update:republish` to `production`.
+
+**Native change** (new native dependency, SDK upgrade, app config, permissions): merge (workflow builds `staging` and sends it to TestFlight); testers verify; bump `version` for a store release; run the production workflow; store review, then release.
+
+**Before the first public release:** production API URL and keys only in the EAS `production` environment; store listing complete (category, age rating, privacy questionnaire, screenshots per language, support and privacy-policy URLs, a review demo account); the app sits under your own company's Apple and Google accounts.
+
+## EAS Workflows (target)
+
+Under `apps/mobile/.eas/workflows/`:
+
+| Workflow | Trigger | Does |
+| --- | --- | --- |
+| `preview.yml` | Pull request | Builds a preview for iOS and Android and comments install links on the PR |
+| `staging.yml` | Push to `main` | Fingerprint check: native changed, build `staging` and submit to TestFlight; JS only, `eas update --channel staging` |
+| `production.yml` | Manual | Builds `production`, submits to App Store Connect and Play internal (draft) |
+
+Validate with `eas workflow:validate .eas/workflows/<file>.yml`; run by hand with `eas workflow:run`. Automatic TestFlight submit needs the App Store Connect API key from the bootstrap; the Apple ID plus app-specific password route is interactive only.
+
+## Troubleshooting (each one happened)
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `Failed to patch capabilities: APPLE_ID_AUTH OFF` | The Apple bundle has a capability the app config does not declare; EAS tries to turn it off and Apple refuses | Declare the capability, or prefix local commands with `EXPO_NO_CAPABILITY_SYNC=1`. The `env` value in `eas.json` applies only on the build server; the sync runs locally first |
+| `maximum allowed number of team scoped Keys` (push) | Apple's limit of two APNs keys per team | Reuse an existing `.p8`; revoke a key only when no live app uses it |
+| `Apple 403 … The API key in use does not allow this request` | Your Apple role cannot create API keys | An Admin or the Account Holder creates the key, or submit with Apple ID plus app-specific password |
+| Stuck at "Compressing project files" | Large un-ignored folders are being uploaded | See the ignore rules above |
+| `Generate updates resources for expo-updates` fails, `Error loading assets JSON from Metro` | The JS bundle failed to build; the Metro error is above it | Reproduce with `npx expo export --platform ios`; shim or remove the unresolvable web-only module in `metro.config.js` |
+| A licensed package resolves to an empty stub (`Can't resolve '<pkg>/css'`) | Its install script downloads the real build only when its token is set, and a store cached by a token-less run replays the stub | Set the token as a secret EAS variable and in CI; install with `--config.side-effects-cache=false` |
+| `Cannot find module 'babel-preset-expo'` in a Release build | pnpm does not hoist it | Declare `babel-preset-expo` as a devDependency of the app |
+| "Untrusted Developer" on a device | Development-signed build | Settings, General, VPN and Device Management, trust the team (TestFlight builds do not need this) |
+
+## Checks that back this page
+
+| Rule | Check | State |
+| --- | --- | --- |
+| App config and `eas.json` stay valid | `pnpm run doctor` (expo install --check) in `apps/mobile`, `npx expo config --type public` | Manual |
+| No secret in `eas.json` or app config | gitleaks | Live |
+| Workflows validate | `eas workflow:validate` | Not built |
+
+See also [Secrets](/runbooks/secrets), [CI](/runbooks/ci) and [Upgrade](/runbooks/upgrade).

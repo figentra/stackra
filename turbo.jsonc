@@ -1,0 +1,110 @@
+// Stackra file contract:
+// Purpose: the workspace task graph (Turborepo) and the tier boundaries. `pnpm build|test|typecheck` fan out
+//          through here. Named .jsonc so this file can carry comments; every non-obvious choice has one.
+// Scope: every workspace.
+// Owner: release-operations
+// Secrets: forbidden — TURBO_TOKEN/TURBO_TEAM come from the environment (CI: vault; local: optional).
+// Change policy: a new task name here needs the matching script in every workspace of that shape
+//                (tools/scripts/validate-repository.mjs enforces the set).
+{
+  "$schema": "https://turborepo.dev/schema.json",
+
+  // Remote cache: active when TURBO_TOKEN/TURBO_TEAM are present; a no-op otherwise. `signature: true`
+  // HMAC-signs every uploaded artifact (key: TURBO_REMOTE_CACHE_SIGNATURE_KEY, from the vault) so a
+  // poisoned cache entry is rejected rather than handed to every developer and CI run.
+  "remoteCache": { "enabled": true, "signature": true },
+
+  "ui": "tui",
+
+  // Strict env mode: a task only sees the env vars it declares. Trades a little friction for cache
+  // correctness — a task can no longer produce a different result for a reason its cache key misses.
+  "envMode": "strict",
+
+  "cacheMaxAge": "7d",
+  "cacheMaxSize": "10GB",
+
+  // Anything that changes the meaning of every task's output. mise.toml pins node/pnpm; a bump there can
+  // change what every build/test/typecheck produces.
+  "globalDependencies": ["mise.toml", ".oxlintrc.json", ".oxfmtrc.json"],
+
+  "globalEnv": ["NODE_ENV", "CI"],
+
+  // Vars a task may read without them entering its cache key — they affect HOW a tool runs, never WHAT it
+  // produces. ENCORE_* are the Encore CLI's own runtime variables.
+  "globalPassThroughEnv": ["HOME", "PATH", "ENCORE_*", "TURBO_*", "DOCKER_HOST"],
+
+  // Boundaries: the dependency direction from packages/tooling/oxlint/boundaries.jsonc.
+  //   tier:config  — tooling presets; depend on nothing workspace-local
+  //   tier:lib     — packages/*/*; never depend on a deployable
+  //   tier:app     — apps/*; consume config and libs, talk to services over the wire only
+  //   tier:service — services/*; top of the graph
+  // Each member declares its tag in its own turbo.json (`"tags": ["tier:lib"]`); validate-repository
+  // checks that every member has exactly one tier tag matching its directory.
+  "boundaries": {
+    "tags": {
+      "tier:config": {
+        "dependencies": { "deny": ["tier:lib", "tier:service", "tier:app"] },
+      },
+      "tier:lib": { "dependencies": { "deny": ["tier:service", "tier:app"] } },
+      "tier:app": { "dependencies": { "deny": ["tier:service"] } },
+      "tier:service": {},
+    },
+  },
+
+  "tasks": {
+    "build": {
+      "description": "Compile a member to its runnable/publishable artifact (tsdown for libraries, vite for apps). The Encore app has no build task; `encore build` runs in the release job.",
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$"],
+      "outputs": ["dist/**", "build/**"],
+    },
+    "typecheck": {
+      "description": "Type-check without emitting: `tsc --noEmit`.",
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$"],
+      "outputs": [],
+    },
+    "lint": {
+      "description": "Static analysis, no fixes: oxlint. Deliberately no ^build dependency — linting a package's own source must not require its dependencies to be built.",
+      "inputs": ["$TURBO_DEFAULT$", ".oxlintrc.json"],
+      "outputs": [],
+    },
+    "test": {
+      "description": "Run each member's vitest suite. No outputs: coverage is written only by test:coverage.",
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$"],
+      "outputs": [],
+    },
+    "test:coverage": {
+      "description": "`vitest run --coverage` against the shared gate (vitest.shared.ts: lines/functions 80, branches 70). Defined by packages/** only; apps have no coverage gate.",
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$"],
+      "outputs": ["coverage/**"],
+    },
+    "format": {
+      "description": "Rewrite files in place with oxfmt. Never cached: its job is to mutate the tree.",
+      "cache": false,
+      "inputs": ["$TURBO_DEFAULT$", ".oxfmtrc.json"],
+      "outputs": [],
+    },
+    "format:check": {
+      "description": "Fail if anything is unformatted, without writing. What CI runs instead of format.",
+      "inputs": ["$TURBO_DEFAULT$", ".oxfmtrc.json"],
+      "outputs": [],
+    },
+    "gen:client": {
+      "description": "Regenerate the typed API client from the Encore app. Output is committed and compared byte-for-byte in CI.",
+      "cache": false,
+    },
+    "clean": {
+      "description": "Remove a member's build output and local caches.",
+      "cache": false,
+    },
+    "dev": {
+      "description": "Long-running dev/watch process.",
+      "cache": false,
+      "persistent": true,
+      "interruptible": true,
+    },
+  },
+}

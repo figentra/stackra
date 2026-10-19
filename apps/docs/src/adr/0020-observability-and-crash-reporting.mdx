@@ -1,0 +1,32 @@
+---
+title: "0020 — Observability and crash reporting"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Nothing in Stackra emits a metric, a trace or a structured log through a shared interface yet. Error reporting that
+captures URLs, user data or screenshots turns an incident tool into a privacy incident. The vendor choice is an
+implementation detail that should be swappable.
+
+## Decision
+
+1. **The vendor sits behind configuration and one reporting function.** Application code calls a `reportError`-style helper with value-free tags; it never imports a vendor SDK directly. Swapping vendors changes one module.
+2. **Crash reporting is Sentry**, one project per app, environment as a tag. The DSN is public configuration, not a secret; upload tokens are CI or build secrets ([0009](/adr/0009-secrets-two-mechanisms)).
+3. **No personal data.** `sendDefaultPii` is off; no user object, no screenshots, no view hierarchy, no session replay. Breadcrumbs keep navigation only.
+4. **No URL-bearing tracing.** HTTP spans carry full URLs, which contain ids and query strings. Performance tracing stays off until a redaction step exists.
+5. **Uptime and deploy events** go to a hosted monitor; deploy events are log lines, not heartbeats.
+6. **Open question, to be decided when the first service runs in production:** the logging, metrics and health interface. This ADR stays Proposed until then.
+
+## Consequences
+
+- Reports are less detailed on purpose.
+- A vendor change is cheap.
+
+## Enforcement
+
+Planned: a lint rule banning direct imports of the vendor SDK outside the reporting module; a test that the init options keep `sendDefaultPii: false` and tracing off. Nothing is implemented yet.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: academorix `docs/adr/0008-sentry-mobile-errors`; platform `docs/adr/0006-observability-better-stack-and-sentry`; basalt `adr/0050-observability` (the open question).

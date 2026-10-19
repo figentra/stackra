@@ -1,0 +1,15 @@
+// Stackra file contract:
+// Purpose: Vite + React 19 SPAs (apps/console).
+// Owner: release-operations · Secrets: forbidden
+{
+  "display": "@stackra/typescript-config — vite app",
+  "extends": "./react.json",
+  "compilerOptions": { "types": ["vite/client", "node", "vitest/globals"] },
+  "include": [
+    "${configDir}/src",
+    "${configDir}/vite.config.ts",
+    "${configDir}/vitest.config.ts",
+    "${configDir}/playwright.config.ts"
+  ],
+  "exclude": ["node_modules", "dist", "test-results", "playwright-report"]
+}

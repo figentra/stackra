@@ -1,0 +1,115 @@
+---
+title: "Member standards"
+description: "What every app, package and service must contain, and which check enforces each rule."
+icon: "badge-check"
+---
+
+A member is anything `pnpm-workspace.yaml` lists: `apps/*`, `packages/<category>/<name>`, `services/*`. The rules on this page apply to all of them. Kind-specific shape lives on [Packages](/standards/packages), [Services](/standards/services) and [Apps](/standards/apps).
+
+## Required files
+
+| File            | Holds                                                                                   |
+| --------------- | --------------------------------------------------------------------------------------- |
+| `package.json`  | The manifest fields below; scripts from the [task vocabulary](/guides/tooling)          |
+| `turbo.json`    | `{ "extends": ["//"], "tags": ["tier:<x>"] }` with exactly one tier tag                  |
+| `tsconfig.json` | Extends one `@stackra/typescript-config/<preset>` and nothing else                      |
+| `README.md`     | What it is, a tasks table of its scripts, the structure of `src/`, how to run it        |
+| `AGENTS.md`     | Where code goes, rules that fail the build, tasks, and a mandatory `## PII` table       |
+| `CHANGELOG.md`  | `# <package name>` and a note that Changesets writes it; never hand-edited              |
+| `LICENSE`       | A byte-for-byte copy of the root `LICENSE`: a licence travels with the artifact         |
+
+A member with a build or tests also carries `vitest.config.ts` (extends a `@stackra/vitest-config` preset) and `tsdown.config.ts` (when `build` is `tsdown`), each starting with the [file contract](/standards/code-style#file-contract). All source lives in `src/`.
+
+### The PII table
+
+`AGENTS.md` always has a `## PII` section with the columns `Data`, `Where`, `Handling`. A member that handles no personal data says so and names the change that would make it revisit the answer:
+
+```md
+## PII
+
+| Data | Where | Handling                                                                    |
+| ---- | ----- | --------------------------------------------------------------------------- |
+| None | —     | Handles no personal data yet. Revisit when it stores or receives user data. |
+```
+
+Presence of the heading is checked; whether the table is still true is a review obligation (security reviewer, see [Security](/constitution/security)).
+
+## `package.json`
+
+| Field            | Rule                                                                                         |
+| ---------------- | -------------------------------------------------------------------------------------------- |
+| `name`           | `@stackra/<name>`; services are `@stackra/service-<name>`                                    |
+| `description`    | Non-empty, one sentence                                                                      |
+| `license`        | `"UNLICENSED"`                                                                               |
+| `private`        | `true` until a package is published                                                          |
+| `type`           | `"module"`                                                                                   |
+| `sideEffects`    | `false` on every `tier:lib` package                                                          |
+| `exports`        | `tier:lib` only: every target starts with `./src/` (or is a `.json`/`.jsonc` preset)          |
+| dependencies     | `catalog:`, `catalog:<name>` or `workspace:*` only: see [Dependencies](/standards/dependencies) |
+
+Key order: `name`, `version`, `private`, `description`, `license`, `files`, `type`, `main` (Expo only), `sideEffects`, `imports`, `exports`, `scripts`, `dependencies`, `devDependencies`. Order is convention, not checked.
+
+## `turbo.json` and tiers
+
+The tag matches the directory:
+
+| Directory                     | Tag            | May depend on               |
+| ----------------------------- | -------------- | --------------------------- |
+| `packages/tooling/*`          | `tier:config`  | nothing workspace-local     |
+| `packages/<category>/<name>`  | `tier:lib`     | `tier:lib`, `tier:config`   |
+| `apps/*`                      | `tier:app`     | `tier:lib`, `tier:config`   |
+| `services/*`                  | `tier:service` | anything below it           |
+
+The direction rule is a law: see [Boundaries](/constitution/boundaries) and [ADR 0003](/adr/0003-tier-dependency-direction).
+
+## Kinds
+
+| Tier           | Kinds                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------- |
+| `tier:app`     | `app-vite`, `app-next`, `app-expo`, `app-docs`                                                          |
+| `tier:lib`     | `domain`, `platform`, `lib` (see [Packages](/standards/packages))                                       |
+| `tier:config`  | `tooling`                                                                                               |
+| `tier:service` | one workspace member per service, `services/<name>`, entry `src/main.ts` (see [Services](/standards/services)) |
+
+## Scaffolding
+
+`pnpm new <kind> <name> [--category <c>] [--description "<text>"] [--title "<Title>"] [--port <n>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the root `LICENSE`, and formats the result. Then run `pnpm install` and `pnpm verify`.
+
+| Kind                        | Template                                   | Lands in                                             |
+| --------------------------- | ------------------------------------------ | ---------------------------------------------------- |
+| `domain`, `platform`, `lib` | `templates/packages/<kind>`                | `packages/<category>/<name>` (`--category` required) |
+| `tooling`                   | `templates/packages/tooling`               | `packages/tooling/<name>`                            |
+| `app-vite`, `app-next`      | `templates/apps/<vite\|next>`              | `apps/<name>` (port from 3710)                       |
+| `app-expo`                  | `templates/apps/expo`                      | `apps/<name>` (no hyphens in the name)               |
+| `app-docs`                  | `templates/apps/docs`                      | `apps/<name>`                                        |
+| `service`                   | `templates/services/encore`                | `services/src/<name>`                                |
+
+```bash
+pnpm new lib retry --category foundation --description "Retry with backoff."
+pnpm new app-vite admin --title "Admin"
+pnpm new app-next site --dry-run
+```
+
+<Warning>
+  The `service` kind still renders the Encore-unit layout (`services/src/<name>`), which is not a workspace member. Stackra's services are independent members at `services/<name>`. Planned: replace the template with a member template (`package.json`, `turbo.json`, `tsdown.config.ts`, `src/main.ts`) so `pnpm new service` matches `services/example`.
+</Warning>
+
+## What enforces this
+
+| Rule                                                              | Check                                          | Status  |
+| ----------------------------------------------------------------- | ---------------------------------------------- | ------- |
+| `README.md`, `AGENTS.md`, `CHANGELOG.md`, `LICENSE` exist         | `validate-repository.mjs` (`checkFiles`)       | Yes     |
+| `AGENTS.md` has a `## PII` heading                                | `validate-repository.mjs`                      | Yes     |
+| `LICENSE` equals the root `LICENSE`                               | `validate-repository.mjs`                      | Yes     |
+| `description` non-empty, `license` is `UNLICENSED`                | `validate-repository.mjs`                      | Yes     |
+| `name` starts with `@stackra/`                                    | `validate-repository.mjs`                      | Yes     |
+| Exactly one `tier:*` tag matching the directory; extends `//`     | `validate-repository.mjs` (`check`)            | Yes     |
+| `tsconfig.json` extends `@stackra/typescript-config/<preset>`     | `validate-repository.mjs`                      | Yes     |
+| `sideEffects: false` and `./src/` exports on `tier:lib`           | `validate-repository.mjs`                      | Yes     |
+| Catalog or workspace versions only; no forbidden dependency       | `validate-repository.mjs` + `catalogMode`      | Yes     |
+| Tier direction                                                    | `turbo boundaries` (`pnpm boundaries`)         | Yes     |
+| Every member exposes the task-vocabulary scripts                  | planned: validator check                       | No      |
+| `CHANGELOG.md` heading, `package.json` key order, `tsconfig.json` has no extra keys | planned: validator                  | No      |
+| `vitest.config.ts` / `tsdown.config.ts` start with the file contract | planned: doc-standard check (see [Code style](/standards/code-style)) | No |
+
+Run it directly with `node tools/scripts/validate-repository.mjs`; it prints nothing when clean.

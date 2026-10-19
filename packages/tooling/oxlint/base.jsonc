@@ -1,0 +1,35 @@
+// Stackra file contract:
+// Purpose: shared oxlint base — correctness is an error, suspicious a warning, `any` and unused code are errors.
+//          Do NOT extend directly from a workspace; extend a role preset (node/react/decorators).
+// Scope: every TypeScript/JavaScript file in the repo
+// Owner: release-operations
+// Secrets: forbidden
+{
+  "$schema": "../../../node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "jsdoc"],
+  "categories": { "correctness": "error", "suspicious": "warn" },
+  "env": { "es2024": true },
+  "rules": {
+    "no-console": "off",
+    "no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+    "typescript/no-explicit-any": "error",
+    "typescript/consistent-type-imports": "error",
+    "typescript/no-non-null-assertion": "error",
+    // Mutating sort on a freshly-built local array is fine; toSorted() is noise here.
+    "unicorn/no-array-sort": "off",
+    // Empty files are allowed for placeholders and test setup.
+    "unicorn/no-empty-file": "off",
+    // Side-effect imports for CSS and polyfills.
+    "import/no-unassigned-import": "off",
+    "import/no-cycle": "error",
+  },
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/node_modules/**",
+    "**/.turbo/**",
+    "**/*.d.ts",
+    "**/encore.gen/**",
+  ],
+}

@@ -1,0 +1,51 @@
+// Stackra file contract:
+// Purpose: unused files/exports/dependencies detection. Runs in `pnpm verify`. Workspace globs for members that do
+//          not exist yet are listed on purpose: knip prints a hint, not a failure, and the entry is right the day
+//          the member lands.
+// Owner: release-operations · Secrets: forbidden
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["tools/scripts/*.mjs"],
+      "project": ["*.mjs", "tools/scripts/*.mjs"],
+      // Run by lefthook's pre-commit hook, which knip does not read.
+      "ignoreDependencies": ["oxfmt"],
+    },
+    "packages/tooling/*": {
+      // Config packages export presets by subpath (package.json exports); the only TS besides them is their test.
+      "entry": ["*.ts", "src/**/*.test.ts"],
+      "project": ["*.ts", "src/**/*.ts"],
+      // Extended by each preset package's tsconfig.json, which knip doesn't trace where no typecheck script runs.
+      "ignoreDependencies": ["@stackra/typescript-config"],
+    },
+    "packages/*/*": {
+      "project": ["src/**/*.{ts,tsx}"],
+    },
+    "apps/*": {
+      "project": ["src/**/*.{ts,tsx}"],
+    },
+    "apps/mobile": {
+      "project": ["src/**/*.{ts,tsx}"],
+      // app.json declares no OTA updates; knip's expo plugin assumes them.
+      "ignoreDependencies": ["expo-updates"],
+    },
+    "services/*": {
+      "project": ["src/**/*.ts"],
+    },
+    "apps/docs": {
+      // Mintlify content is MDX rendered by the `mint` CLI; there is no JS entry.
+      "entry": [],
+      "project": [],
+    },
+  },
+  // `mint`: Swift's Mint runner, a fallback in lefthook's generated hooks.
+  // Scaffold templates are inert text with {{tokens}}; the generated members are checked once they exist.
+  "ignore": ["tools/scaffold/templates/**"],
+  "ignoreBinaries": ["gitleaks", "mint"],
+  "rules": {
+    // Catalog entries are declared ahead of the members that consume them; `warn` keeps a dead one visible.
+    "catalog": "warn",
+  },
+  "includeEntryExports": false,
+}

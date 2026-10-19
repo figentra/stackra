@@ -1,0 +1,19 @@
+{
+  "name": "@stackra/docs",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Stackra documentation site — Mintlify (docs.json + MDX).",
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "dev": "cd src && mint dev --port 3333",
+    "build": "cd src && mint validate",
+    "lint": "cd src && mint broken-links",
+    "format": "cd src && mint format",
+    "a11y": "cd src && mint a11y",
+    "clean": "rm -rf src/.mintlify .turbo"
+  },
+  "devDependencies": {
+    "mint": "catalog:docs"
+  }
+}

@@ -1,0 +1,205 @@
+// Stackra file contract:
+// Purpose: the repo-wide entry carrying the tier dependency rule (docs/constitution/boundaries.md):
+//          a package (packages/<category>/<name>) never imports an app, a service or encore.dev; no service
+//          imports another service's internals; nothing imports a package's src/ deep path. CI fails on a violation.
+// Owner: architecture-guardian · Secrets: forbidden
+{
+  "extends": ["./node.jsonc"],
+  "overrides": [
+    // Domain archetype layers (ADR-0026 §1, Basalt ADR-0004/0029): the direction is enforced here, not in review.
+    {
+      "files": ["**/packages/*/*/src/core/**/*.ts", "**/packages/*/*/src/core/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "#application",
+                  "#application/*",
+                  "#infrastructure",
+                  "#infrastructure/*",
+                  "#presentation",
+                  "#presentation/*",
+                  "react",
+                  "react-dom",
+                  "react-native",
+                  "encore.dev",
+                  "encore.dev/*",
+                ],
+                "message": "core is domain meaning: it imports no other layer and no host library (ADR-0026 §1).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      "files": [
+        "**/packages/*/*/src/application/**/*.ts",
+        "**/packages/*/*/src/application/**/*.tsx",
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "#infrastructure",
+                  "#infrastructure/*",
+                  "#presentation",
+                  "#presentation/*",
+                  "react",
+                  "react-dom",
+                  "react-native",
+                  "encore.dev",
+                  "encore.dev/*",
+                ],
+                "message": "application imports core only and owns its ports; an adapter or a delivery surface never reaches it (ADR-0026 §1).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      "files": [
+        "**/packages/*/*/src/presentation/**/*.ts",
+        "**/packages/*/*/src/presentation/**/*.tsx",
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["#infrastructure", "#infrastructure/*"],
+                "message": "presentation translates for application and core; it never reaches infrastructure (ADR-0026 §1). Bind adapters in the module.",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      "files": [
+        "**/packages/*/*/src/presentation/native/**/*.ts",
+        "**/packages/*/*/src/presentation/native/**/*.tsx",
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["#presentation/web", "#presentation/web/*"],
+                "message": "native composes react, never web (Basalt ADR-0029).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      "files": ["**/packages/**/*.ts", "**/packages/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apps/**",
+                  "**/services/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      // Packages declare modules with legacy decorators (ADR-0007): the same relaxations as the
+      // decorators preset, applied from the root so the boundary rule above still holds for it.
+      "files": [
+        "**/packages/**/*.ts",
+        "**/packages/**/*.tsx",
+        "**/apps/**/*.ts",
+        "**/apps/**/*.tsx",
+      ],
+      "rules": {
+        "typescript/consistent-type-imports": "off",
+        "eslint/new-cap": ["warn", { "capIsNew": false }],
+        "typescript/no-extraneous-class": ["error", { "allowWithDecorator": true }],
+      },
+    },
+    {
+      // React host entries of a package (e.g. @stackra/container ./react and ./native): the hook rules
+      // of react.jsonc, scoped to those folders so the rest of the tier keeps the node preset only.
+      "files": [
+        "**/packages/**/src/react/**/*.{ts,tsx}",
+        "**/packages/**/src/native/**/*.{ts,tsx}",
+      ],
+      "plugins": ["react"],
+      "rules": {
+        "react/react-in-jsx-scope": "off",
+        "react/rules-of-hooks": "error",
+        "react/exhaustive-deps": "warn",
+      },
+    },
+    {
+      // Tests of a package use empty classes as tokens and test doubles.
+      "files": [
+        "**/packages/**/__tests__/**/*.ts",
+        "**/packages/**/__fixtures__/**/*.ts",
+        "**/apps/**/__tests__/**/*.ts",
+        "**/apps/**/__tests__/**/*.tsx",
+      ],
+      "rules": { "typescript/no-extraneous-class": "off" },
+    },
+    {
+      "files": ["**/services/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "../*/internal/**",
+                  "../../*/internal/**",
+                  "../*/entities/**",
+                  "../*/db",
+                  "../*/db.ts",
+                ],
+                "message": "A service's internal/, entities/ and db.ts are private. Call it through ~encore/clients or subscribe to its events.ts Topic.",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+}

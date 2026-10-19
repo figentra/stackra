@@ -1,0 +1,22 @@
+---
+title: "0002 — Documentation on Mintlify"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+The docs need to live in the repository, be reviewed with the code and be checked in CI.
+
+## Decision
+
+The docs are a workspace member at `apps/docs`, built with Mintlify (`docs.json` and MDX in `apps/docs/src`). ADRs are pages under `adr/`.
+GitBook was considered and rejected: Git Sync has no local preview or build step, so it can't take part in `pnpm verify`.
+
+## Consequences
+
+- `mint validate` (build) and `mint broken-links` (lint) run in the turbo graph.
+- Hosting is Mintlify's, connected to the repository through the Mintlify GitHub app.
+
+## Enforcement
+
+The `@stackra/docs` member's `build` (`mint validate`) and `lint` (`mint broken-links`) tasks run inside the turbo graph.

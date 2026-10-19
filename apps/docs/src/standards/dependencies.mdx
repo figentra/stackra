@@ -1,0 +1,90 @@
+---
+title: "Dependencies"
+description: "One version per dependency in catalogs, toolchain pins in mise.toml, install-script and licence gates."
+icon: "package"
+---
+
+External versions have exactly two homes. JavaScript and TypeScript packages are versioned in `pnpm-workspace.yaml` catalogs. Toolchain binaries (Node, pnpm, gitleaks) are pinned in `mise.toml`. Nothing else carries a version.
+
+## Catalogs
+
+A member's `package.json` names the catalog, never a version:
+
+```json package.json
+{
+  "dependencies": { "react": "catalog:frontend" },
+  "devDependencies": { "vitest": "catalog:quality", "@stackra/vitest-config": "workspace:*" }
+}
+```
+
+| Catalog              | Contents                                                              |
+| -------------------- | --------------------------------------------------------------------- |
+| default (`catalog:`) | Shared basics such as `@types/node`                                   |
+| `build`              | typescript, tsdown, turbo                                             |
+| `quality`            | oxlint, oxfmt, vitest, coverage, knip                                 |
+| `release`            | changesets, commitlint, lefthook                                      |
+| `frontend`           | react, vite, tailwind, HeroUI, Testing Library, jsdom                 |
+| `mobile`             | Expo SDK, React Native, React Navigation, HeroUI Native, Uniwind      |
+| `docs`               | the Mintlify CLI                                                      |
+| `next`               | Next.js and its PostCSS plugin                                        |
+
+- Catalog entries are named by role and cadence, not by one consumer. Toolchain that builds output (`build`) has a different risk and cadence than lint and test tools (`quality`).
+- Workspace packages use `workspace:*`. Peer ranges state a compatible range for consumers and are the only literal versions allowed.
+- A version is added to a catalog first, then referenced. Check for an existing entry before adding one; never add a caret range "temporarily" in a member.
+- A pin that must differ from a catalog's line says why in a comment next to the entry (for example `react` in `mobile` stays on the exact version React Native renders with).
+- A catalog entry declared ahead of its first consumer is allowed; `knip` reports a dead one as a warning.
+
+## Toolchain pins
+
+`mise.toml` pins `node`, `pnpm` and `gitleaks`. The `pnpm` pin must equal `packageManager` in the root `package.json`: corepack reads that one, and a mismatch is a bug, not a choice. `.node-version` and `engines` agree with it. CI installs the toolchain from these files (see [CI](/runbooks/ci)).
+
+## Install-time controls
+
+| Control                     | Where                         | Rule                                                                                                                  |
+| --------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `allowBuilds`               | `pnpm-workspace.yaml`         | Dependency lifecycle scripts are blocked by default. Each entry is `true` (reviewed, may run) or `false` (reviewed, never). An unlisted one fails install with `ERR_PNPM_IGNORED_BUILDS` until it is reviewed. |
+| `minimumReleaseAgeExclude`  | `pnpm-workspace.yaml`         | Packages exempt from the minimum release age (a freshly published version is not installed until it has aged). An entry is a supply-chain approval. |
+| `catalogMode: strict`       | `pnpm-workspace.yaml`         | `pnpm add` accepts only versions already in a catalog.                                                                |
+| `.npmrc`                    | repo root                     | `engine-strict`, no hoisting (`shamefully-hoist=false`): a package imports only what it declares.                     |
+
+Adding an entry to `allowBuilds` or `minimumReleaseAgeExclude` is as serious as adding a dependency: it names a reason in the change, and the `dependency-steward` reviews it. An advisory fix on a critical vulnerability may bypass the release age; nothing else does.
+
+## Licences
+
+Every dependency's licence must be on the allow-list. The policy is a data file reviewed by code owners:
+
+| List       | Licences                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------- |
+| `allow`    | MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD, MPL-2.0, Unlicense, CC0-1.0          |
+| `deny`     | `GPL-*`, `AGPL-*`, `SSPL-*` (a deny match wins over `allow`)                                |
+| exceptions | Per package, with a required `reason`, printed on every run (for example a commercial licence with a contract date) |
+
+A denied licence is fixed by replacing the dependency, never by editing the policy in the same change. The member's own `license` is `UNLICENSED` ([Members](/standards/members)).
+
+## Forbidden dependencies
+
+The validator rejects a manifest that depends on a package the architecture rejected: `eslint`, `prettier`, `jest`, `@nestjs/*`, `reflect-metadata`, `prisma`, `drizzle-orm`, `express`, `fastify`, `typeorm`, `knex`. Each has a recorded replacement and revival trigger in [ADR 0011](/adr/0011-rejected-and-deferred-technologies).
+
+## Adding a dependency
+
+<Steps>
+  <Step title="Check licence and need">Confirm the licence is allowed and the package is not already covered by one in the repo.</Step>
+  <Step title="Add it to a catalog">Add the package and version under the right catalog in `pnpm-workspace.yaml`.</Step>
+  <Step title="Reference it">`pnpm add <pkg>@catalog:<name> --filter @stackra/<member>`</Step>
+  <Step title="Review install scripts">If install fails with `ERR_PNPM_IGNORED_BUILDS`, decide `true` or `false` in `allowBuilds` and say why.</Step>
+  <Step title="Verify">`pnpm verify`; add a changeset when a published package changes.</Step>
+</Steps>
+
+## What enforces this
+
+| Rule                                                           | Check                                                   | Status  |
+| -------------------------------------------------------------- | ------------------------------------------------------- | ------- |
+| Only `catalog:` or `workspace:*` specifiers (peers exempt)     | `validate-repository.mjs`                               | Yes     |
+| New versions come from a catalog                               | `catalogMode: strict`                                   | Yes     |
+| No forbidden dependency                                        | `validate-repository.mjs` (`FORBIDDEN_DEPENDENCIES`)    | Yes     |
+| Install scripts reviewed                                       | `allowBuilds` (install fails otherwise)                 | Yes     |
+| Dead catalog entry visible                                     | `knip` (`catalog: warn`)                                | Yes     |
+| Release age set explicitly (one day)                           | planned: `minimumReleaseAge` in `pnpm-workspace.yaml`; only the exclude list is declared today | No |
+| Licence allow-list                                             | planned: `policy/licenses.yaml` and a licence check in `pnpm verify` | No |
+| `mise.toml` `pnpm` equals `packageManager`                     | planned: pin-agreement test in `tools/scripts`          | No      |
+| Automated updates, no automerge                                | planned: Renovate ([Renovate](/runbooks/renovate))      | No      |

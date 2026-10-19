@@ -1,0 +1,31 @@
+---
+title: "0016 — `.agents/` is the source of truth"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Several assistants (Claude Code, OpenCode, Kiro, Cursor) read instructions from different directories and dialects.
+Edited by hand in each place, they drift within weeks. Specs written beside the code rot unless their shape is fixed.
+
+## Decision
+
+1. **`.agents/` is authored once.** Rules, skills, hooks, agents and plans live there. Other assistant directories (`.claude/`, `.opencode/`, others) hold **projections** and are never edited directly.
+2. **Two projection strategies.** Identical bytes (skills, agents, hooks, templates, specs) are per-entry symlinks into `.agents/`. Rules need different frontmatter per assistant, so each is generated from one neutral source. Assistant-specific files (`.claude/settings.json`) stay hand-owned beside the links.
+3. **Generated files carry a provenance marker** naming the source and the generator. A file with the marker whose content differs from a fresh render is drift; a file without the marker is human-owned and is never overwritten.
+4. **Specs live at `.agents/specs/<NNN>-<slug>/` and hold exactly three documents**: `requirements.md`, `design.md`, `tasks.md`. Completion reports, backups and notes do not belong there.
+5. **The spec engine comes from the `sdlc` plugin.** Templates and spec skills are supplied by it and are not copied into this repository.
+6. **Rules do not rot.** A rule file states one rule, names the check that enforces it, and carries a `paths:` frontmatter when it applies to part of the tree.
+
+## Consequences
+
+- One edit reaches every assistant.
+- Contributors who edit a projection lose the edit on the next sync; the marker tells them so.
+
+## Enforcement
+
+Planned: an `agents:check` sync-and-drift command in `pnpm validate`, and a spec-folder check that reports an extra or missing file. The hooks in `.agents/hooks` and `.claude/settings.json` exist today; `.claude/` currently holds hand-written settings only.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: basalt `adr/0023-generated-artifacts`, `0002`, `0040-spec-folder-structure`, `0054-spec-engine-ships-as-a-package-and-cli`; academorix `.agents/README.md`.

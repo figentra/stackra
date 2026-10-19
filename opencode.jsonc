@@ -1,0 +1,28 @@
+// Stackra file contract:
+// Purpose: opencode (v2) project configuration for delegated runs (AGENTS.md):
+//          the default model, the instructions file, and the permissions every run inherits. Agents live under
+//          .opencode/agents (mirror .claude/agents).
+// Owner: architecture-guardian · Secrets: forbidden (no tokens here; Bedrock credentials come from the AWS profile)
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "amazon-bedrock/zai.glm-5",
+  "instructions": ["AGENTS.md"],
+  "permissions": [
+    { "action": "webfetch", "resource": "*", "effect": "deny" },
+    { "action": "websearch", "resource": "*", "effect": "deny" },
+    { "action": "subagent", "resource": "*", "effect": "deny" },
+    { "action": "shell", "resource": "git add*", "effect": "deny" },
+    { "action": "shell", "resource": "git rm*", "effect": "deny" },
+    { "action": "shell", "resource": "git mv*", "effect": "deny" },
+    { "action": "shell", "resource": "git stash*", "effect": "deny" },
+    { "action": "shell", "resource": "git checkout*", "effect": "deny" },
+    { "action": "shell", "resource": "git restore*", "effect": "deny" },
+    { "action": "shell", "resource": "git reset*", "effect": "deny" },
+    { "action": "shell", "resource": "git commit*", "effect": "deny" },
+    { "action": "shell", "resource": "git push*", "effect": "deny" },
+    { "action": "shell", "resource": "encore secret*", "effect": "deny" },
+    { "action": "shell", "resource": "printenv*", "effect": "deny" },
+    { "action": "shell", "resource": "*", "effect": "allow" },
+    { "action": "edit", "resource": "*", "effect": "allow" },
+  ],
+}

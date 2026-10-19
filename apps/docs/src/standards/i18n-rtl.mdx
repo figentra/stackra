@@ -1,0 +1,70 @@
+---
+title: "Internationalisation and RTL"
+description: "ICU messages with typed keys, locales defined by apps, and layout written in logical directions."
+icon: "languages"
+---
+
+Every surface can ship in a right-to-left language. Nothing is built LTR-only and fixed later. There is no i18n package in the repository yet; this page is the standard its first package and every app must meet. Packages never name a locale, so which languages exist is an app decision.
+
+## Locales and messages
+
+- **Locales are defined by apps, not packages.** A shared package exposes a `defineLocales()` style factory and a convenience value; a closed `"en" | "ar"` type or a hard-coded locale list in a package is a finding ([Boundaries](/constitution/boundaries)). A new language is one definition and one catalog file in the app.
+- **One engine, ICU MessageFormat.** Plurals, selects, numbers and dates are ICU arguments. Plural categories come from ICU, never from hand-built JSON objects, because Arabic has six of them.
+- **Typed keys.** Keys and their parameters are generated from the catalogs, so a renamed or missing message fails typecheck everywhere. The generated file is marked do-not-edit.
+- **Every key exists in every supported locale** with the same ICU arguments and valid syntax. A catalog test enforces it; a locale with a missing key never ships.
+- **Locale is set from outside.** On the web the router owns the locale segment; on native the app passes the device hint plus the user's preference; on a server it is resolved per request from the principal or `Accept-Language` and validated against the supported list. The engine never negotiates on its own.
+- **Layered catalogs.** Package, then app, then tenant, then session; the last wins per key. Tenant wording overrides arrive at runtime as a layer, not a build.
+- **Fallback chain.** A regional locale falls back to its language, then to the default; a missing key is reported through the logger port, never silently shown as a raw key in production.
+- **No string concatenation of translated fragments.** One message per sentence, with arguments.
+- **Numbers and money** follow the UI language: digits per locale (Arabic-Indic where the locale defines them), money formatted from integer minor units with `Intl` and the currency's real exponent, dates in the tenant's time zone. Phone numbers, emails, URLs, PINs and keypads stay left to right.
+
+## Logical directions only
+
+Layout is written so it flips with the language.
+
+| Never (physical)                                           | Always (logical)                                              |
+| ---------------------------------------------------------- | ------------------------------------------------------------- |
+| `ml-4`, `pr-2`, `left-0`, `right-3`                        | `ms-4`, `pe-2`, `start-0`, `end-3`                            |
+| `text-left`, `text-right`                                  | `text-start`, `text-end`                                      |
+| `rounded-l-lg`, `border-r`, `float-left`                   | `rounded-s-lg`, `border-e`, `float-start`                     |
+| CSS `margin-left`, `padding-right`, `left:`, `text-align: right` | `margin-inline-start`, `padding-inline-end`, `inset-inline-start`, `text-align: end` |
+| Inline style `marginLeft`                                  | `marginInlineStart`                                           |
+| React Native `marginLeft`, `left`                          | `marginStart`, `start`, `writingDirection`                    |
+| `side="left"`, `placement="bottom right"`                  | `start` and `end` in every placement-like prop                |
+
+- Slide transforms (`translate-x-full`) need an `rtl:` counterpart; a class under an `rtl:` or `ltr:` variant is already direction-aware. Centring (`left-1/2 -translate-x-1/2`) is the one physical idiom that is legitimate.
+- Drawers open from the inline end, the navigation drawer from the start. A component whose placement is physical resolves it from the current direction.
+- **Directional icons mirror**: next and back arrows, list-row chevrons, breadcrumbs, pagination, "open" and external-link, sign-out, undo and redo (`rtl:-scale-x-100`; on native, a mirror prop on the icon). Non-directional icons never mirror (search, check, clock, play, refresh). A bare `→` glyph never mirrors; use an icon or a from-to component for "A → B".
+- **Mixed content is isolated.** Shortcuts, phone numbers, emails and URLs get `direction: ltr; unicode-bidi: isolate`. User-entered names that may be Latin or Arabic use `dir="auto"`. Signed numbers and "N unit" use `<bdi>`.
+- **Native** sets the layout direction from the app language; a restart applies a switch. With left and right swapped in RTL, a view that must stay physical sets `direction: "ltr"` on its container.
+- **Typography:** an Arabic-capable face for headings; uppercase and letter-spacing are dropped in Arabic.
+
+### The escape hatch
+
+When a direction is genuinely physical (a pitch or floor-plan diagram, a chart's time axis, a Latin wordmark, email-client CSS), mark it with a comment on the same line or the line above:
+
+```tsx
+{/* rtl-physical: pitch coordinates are physical, the goal does not move in Arabic */}
+```
+
+A parent that already flips an element says `rtl-mirrored: <where>`. Both comments carry a reason; an unexplained one is a finding.
+
+## Review checklist
+
+- [ ] Every user-facing string is a catalog key present in every locale.
+- [ ] Counts use ICU plurals; no concatenation.
+- [ ] No physical class, style or placement without `rtl-physical:`.
+- [ ] Directional icons mirror; non-directional ones do not.
+- [ ] Phone, email, URL and name fields are bidi-isolated.
+- [ ] Checked in RTL at phone and desktop widths, light and dark ([end-to-end matrix](/standards/testing#end-to-end-matrix)).
+
+## What enforces this
+
+| Rule                                                            | Check                                                                 | Status |
+| --------------------------------------------------------------- | --------------------------------------------------------------------- | ------ |
+| `jsx-a11y` lint on web packages                                 | oxlint `react` preset                                                 | Yes    |
+| Physical classes, styles, placements and unmirrored icons       | planned: a per-app RTL check script (`rtl-physical:` escape hatch) in each `lint`  | No |
+| Catalog completeness and ICU validity                           | planned: catalog test and typed-key generator in the i18n package     | No     |
+| No locale literal in a package                                  | planned: package-literal check ([Packages](/standards/packages))      | No     |
+| RTL layout in a browser or simulator                            | planned: RTL projects in the e2e matrix ([Testing](/standards/testing)) | No   |
+| Hard-coded user-facing strings                                  | review; an i18n steward role is not in the roster yet                 | No     |

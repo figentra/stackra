@@ -1,0 +1,18 @@
+# Stackra file contract:
+# Purpose: line endings and diff behaviour git applies before any tool sees a file
+# Owner: docs-governance
+# Secrets: forbidden
+
+* text=auto eol=lf
+
+# Lockfiles and generated artefacts: keep, never review line-by-line
+pnpm-lock.yaml -diff
+**/CHANGELOG.md merge=union
+**/encore.gen/** -diff linguist-generated
+packages/*/api-client/src/generated/** -diff linguist-generated
+
+# Binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary

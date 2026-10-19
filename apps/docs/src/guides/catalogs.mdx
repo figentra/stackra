@@ -1,0 +1,37 @@
+---
+title: "Dependency catalogs"
+description: "One version per dependency, declared once in pnpm-workspace.yaml."
+icon: "package"
+---
+
+Every external version lives in a catalog in `pnpm-workspace.yaml`. A member's `package.json` names the
+catalog, never a version:
+
+```json package.json
+{
+  "dependencies": { "react": "catalog:frontend" },
+  "devDependencies": { "vitest": "catalog:quality", "@stackra/vitest-config": "workspace:*" }
+}
+```
+
+| Catalog              | Contents                                       |
+| -------------------- | ---------------------------------------------- |
+| default (`catalog:`) | Shared basics such as `@types/node`            |
+| `build`              | typescript, tsdown, turbo                      |
+| `quality`            | oxlint, oxfmt, vitest, knip                    |
+| `release`            | changesets, commitlint, lefthook               |
+| `frontend`           | react, vite, tailwind, HeroUI, Testing Library |
+| `docs`               | the Mintlify CLI                               |
+
+## Enforcement
+
+- `catalogMode: strict`: `pnpm add` refuses a version that isn't already in a catalog.
+- `pnpm validate` fails on any specifier other than `catalog:` or `workspace:` (peer ranges are exempt).
+- `allowBuilds` lists every dependency allowed to run an install script; a new one fails the install until it's reviewed.
+
+## Adding a dependency
+
+<Steps>
+  <Step title="Add it to a catalog">Add the package and version under the right catalog in `pnpm-workspace.yaml`.</Step>
+  <Step title="Reference it">`pnpm add <pkg>@catalog:<name> --filter @stackra/<member>`</Step>
+</Steps>

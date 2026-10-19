@@ -1,0 +1,26 @@
+---
+title: "Navigation"
+description: "Adding pages, groups and tabs in docs.json."
+icon: "map"
+---
+
+Pages appear in the sidebar only once they're listed in `docs.json` under `navigation`. Use the file path without `.mdx`:
+
+```json docs.json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [{ "group": "Monorepo", "pages": ["guides/structure", "guides/packages"] }]
+      }
+    ]
+  }
+}
+```
+
+- A **tab** is a top-level section in the navbar.
+- A **group** is a sidebar heading.
+- A page can set `sidebarTitle` and `icon` in its frontmatter.
+
+`mint broken-links` (run by `pnpm lint`) catches links to pages that don't exist.

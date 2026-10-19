@@ -1,0 +1,36 @@
+---
+title: "Quickstart"
+description: "From a clean machine to a running console and docs site."
+icon: "rocket"
+---
+
+<Steps>
+  <Step title="Install the toolchain">
+    `mise.toml` pins Node, pnpm and gitleaks. With [mise](https://mise.jdx.dev) installed:
+
+    ```bash
+    mise install
+    ```
+
+  </Step>
+  <Step title="Install dependencies">
+    ```bash
+    pnpm install
+    ```
+
+    `prepare` installs the lefthook git hooks.
+
+  </Step>
+  <Step title="Run an app">
+    ```bash
+    pnpm console   # http://localhost:3700
+    pnpm docs      # http://localhost:3333
+    pnpm mobile    # iOS simulator (needs Xcode)
+    ```
+  </Step>
+  <Step title="Verify before you push">
+    ```bash
+    pnpm verify
+    ```
+  </Step>
+</Steps>

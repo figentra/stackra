@@ -1,0 +1,37 @@
+---
+title: "0010 — Services are independent workspace members"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Services need a rule for how they are packaged and how they talk. Earlier repositories put every service in one Encore
+application, so one gateway and one deploy unit. Stackra has no Encore application today. A service is a workspace
+member like any other, `services/<name>`, named `@stackra/service-<name>`, tagged `tier:service`.
+
+## Decision
+
+1. **One service is one workspace member** at `services/<name>` with its own `package.json`, `turbo.json` (`tier:service`),
+   `tsconfig.json`, `README.md`, `AGENTS.md` (with a PII section), `CHANGELOG.md`, `LICENSE` and a `src/main.ts` entry.
+2. **Services are independent.** A service never imports another service's source. Cross-service calls go through a
+   generated typed client or a published event; shared shapes live in a contract package ([0015](/adr/0015-contract-packages)).
+3. **A service owns its data** ([0014](/adr/0014-data-ownership-and-orm)).
+4. **Apps and libraries never import a service** ([0003](/adr/0003-tier-dependency-direction)).
+5. **The runtime is not decided here.** If a framework becomes necessary, the choice is an ADR. Encore is recorded as deferred in [0011](/adr/0011-rejected-and-deferred-technologies) with its revival trigger.
+6. **If Encore is adopted, the rule becomes one Encore application for the whole repository.** Its gateway is the only gateway, a service never sets CORS, and `auth: true` is the default on every endpoint.
+
+## Consequences
+
+- Services deploy and fail independently; there is no shared process to hide a bad dependency.
+- Contracts and generated clients become the integration surface early.
+
+## Enforcement
+
+- `validate-repository.mjs` checks the member shape and the `tier:service` tag.
+- `packages/tooling/oxlint/boundaries.jsonc` bans imports of another service's `internal/`, `entities/` and `db`.
+- `turbo boundaries` bans app-to-service and lib-to-service edges.
+- Planned: a client-drift check (`gen:client:check`) once a generated client exists.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: basalt `adr/0033-one-encore-application-per-product`, `0046-service-vs-module-boundaries`; juristra `docs/adr/0001-encore-app`; platform `docs/adr/0004-backend-deployment-encore-cloud-and-ecs-path`. Changed from the sources: no single Encore application.

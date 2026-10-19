@@ -1,0 +1,39 @@
+---
+title: "0007 — Source documentation standard"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Agents and new contributors read files cold. The cheapest durable defence against a wrong change is a header that says
+what the file is for and which rule governs it. Doc comments that restate a signature are noise and teach readers to skip comments.
+
+## Decision
+
+1. **Every source file opens with a contract block** before its imports:
+   - `Purpose:` what the file is for.
+   - `Boundary:` what it declares and what it does not own.
+   - `Runtime:` one of `node`, `browser`, `worker`, `react-native`, `isomorphic`.
+   - `Governing contract:` the ADR or standard a change must respect.
+
+   Non-TypeScript files (JSON with comments, YAML, shell, `.mjs`) carry the same fields in their own comment syntax. The
+   repository's own config files already do this (`# Stackra file contract:`).
+2. **Every exported symbol has TSDoc that says something the type does not**: a purpose sentence always; `@param` and
+   `@returns` when meaning, units or ownership are not in the type; `@throws` for each error a caller must handle; `Side effects:`
+   for I/O and global mutation; `Invariant:`; `@example` when use is not obvious; `@deprecated` with replacement and removal target.
+3. **Types carry the weight first.** No `any`; generics get meaningful names; an exported type is its own documentation.
+4. **Boilerplate is a finding.** A comment restating the signature fails review.
+
+## Consequences
+
+- Reading cost per file drops; writing cost rises by a few lines.
+- `/standards/code-style` is the operating form (header fields, tags, examples).
+
+## Enforcement
+
+Planned: a doc-standard check in `tools/scripts` (port basalt `doc-standard.mjs`) that requires the header and TSDoc on
+exports and runs in `pnpm validate`. Until then headers exist by convention, as in `lefthook.yml`, `turbo.jsonc` and `pnpm-workspace.yaml`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: basalt `adr/0011-documentation-and-source-comment-standard`; figentra `docs/constitution/documentation.md`.

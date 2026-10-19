@@ -1,0 +1,38 @@
+---
+title: "Package categories"
+description: "packages/<category>/<name>: one level of category, packages flat inside it."
+icon: "boxes"
+---
+
+A package lives at `packages/<category>/<name>` and is published as `@stackra/<name>`. The category is
+only a folder: it never appears in the package name or an import path, so moving a package between
+categories changes nothing for its consumers.
+
+| Category        | Holds                                                                                         |
+| --------------- | --------------------------------------------------------------------------------------------- |
+| `foundation`    | The core every other package builds on: container, config, contracts, events, logger, support |
+| `application`   | Application definition and runtime composition                                                |
+| `communication` | Notifications, mail, messaging                                                                |
+| `cross-cutting` | Concerns that touch every layer: analytics, brand, SEO                                        |
+| `data`          | Media, search, persistence helpers                                                            |
+| `developer`     | CLI, devtools, Vite plugins                                                                   |
+| `experience`    | UI building blocks: console shell, forms, navigation, dashboards                              |
+| `runtime`       | Cache, queue, realtime, scheduler, sync                                                       |
+| `security`      | Identity, IAM, tenancy, consent, CSP                                                          |
+| `state`         | Settings, feature flags, theming                                                              |
+| `tooling`       | Shared tsconfig, oxlint, vitest and tsdown presets                                            |
+
+<Note>
+  A package never imports an app, a service or `encore.dev`, and never deep-imports another
+  package's `src/`.
+</Note>
+
+## A new package
+
+1. Create `packages/<category>/<name>/` with `package.json` named `@stackra/<name>`.
+2. `turbo.json`: `{ "extends": ["//"], "tags": ["tier:lib"] }`.
+3. `tsconfig.json`: `{ "extends": "@stackra/typescript-config/library" }` (or another preset).
+4. `vitest.config.ts`: extend a preset from `@stackra/vitest-config`.
+5. Every dependency is `catalog:<name>` or `workspace:*`.
+
+`pnpm validate` checks steps 1, 2, 3 and 5.

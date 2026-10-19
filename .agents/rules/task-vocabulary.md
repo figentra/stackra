@@ -1,0 +1,33 @@
+---
+title: Task vocabulary
+description: The fixed set of package.json script names every member uses, and the root commands that fan them out.
+always: false
+applies_to: ["**/package.json", "turbo.jsonc"]
+manual: false
+---
+
+# Task vocabulary
+
+Members use these names and no synonyms (`tsc`, `check-types`, `fmt`, `cov`, `serve` are wrong):
+
+| Script | Meaning |
+| --- | --- |
+| `dev` | local watch/serve (apps, services) |
+| `build` | produce `dist/` (or the app bundle) |
+| `typecheck` | type check only, no emit |
+| `lint` | oxlint |
+| `test`, `test:coverage` | vitest; coverage runs for `packages/**` only |
+| `format`, `format:check` | oxfmt write / verify |
+| `clean` | remove build output |
+
+A member declares only the scripts it has work for (a docs app has no `typecheck`; `tooling` presets have no
+`build`). Services and apps also have `start`; Expo has `ios`, `android`, `doctor`; docs has `a11y`.
+
+Root: `pnpm build|typecheck|lint|test|format|format:check|clean` run `turbo run <task>`. `pnpm check` is
+format:check + lint + typecheck. `pnpm verify` is the full gate (add `validate`, `boundaries`, `knip`);
+`pnpm verify:affected` limits it to changed members. Run one member with `pnpm --filter <name> <script>`.
+
+A new task name goes in `turbo.jsonc` and in every member of that shape together.
+
+Enforcement: `tools/scripts/validate-repository.mjs` checks the script set per member shape; `turbo.jsonc` is the
+task graph.

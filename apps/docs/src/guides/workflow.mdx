@@ -1,0 +1,27 @@
+---
+title: "Commits and releases"
+description: "Git hooks, conventional commits, changesets and secret scanning."
+icon: "git-branch"
+---
+
+## Git hooks (lefthook)
+
+| Hook         | Runs                                                                      |
+| ------------ | ------------------------------------------------------------------------- |
+| `pre-commit` | `oxfmt --check` and `oxlint` on staged files, `gitleaks protect --staged` |
+| `commit-msg` | commitlint (conventional commits)                                         |
+| `pre-push`   | `pnpm typecheck`                                                          |
+
+Hooks are advisory; CI runs the full gate.
+
+## Commit messages
+
+`type(scope): subject`. The type is one of `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore` or `revert`, and the scope is the member's short name, such as `feat(console): add sign-in`.
+
+## Releases
+
+Run `pnpm changeset` for every user-visible change. `pnpm changeset:version` bumps versions and writes the changelogs.
+
+## Secrets
+
+Secret values never live in a file. `.gitleaks.toml` scans every commit and `pnpm secrets:scan` scans the whole history.

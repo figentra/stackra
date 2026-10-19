@@ -1,0 +1,101 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Stackra",
+  "description": "Stackra \u2014 the @stackra/* packages, apps and services, and how to work in the monorepo.",
+  "colors": {
+    "primary": "#4F46E5",
+    "light": "#818CF8",
+    "dark": "#4338CA"
+  },
+  "favicon": "/assets/favicon.svg",
+  "logo": {
+    "light": "/assets/logo/light.svg",
+    "dark": "/assets/logo/dark.svg",
+    "href": "/"
+  },
+  "appearance": {
+    "default": "system",
+    "strict": false
+  },
+  "icons": {
+    "library": "lucide"
+  },
+  "styling": {
+    "eyebrows": "section",
+    "codeblocks": "system"
+  },
+  "search": {
+    "prompt": "Search the Stackra docs"
+  },
+  "seo": {
+    "indexing": "navigable",
+    "metatags": {
+      "og:site_name": "Stackra"
+    }
+  },
+  "contextual": {
+    "options": ["copy", "view", "chatgpt", "claude"]
+  },
+  "errors": {
+    "404": {
+      "redirect": false,
+      "title": "Page not found",
+      "description": "This page moved or never existed. Try search."
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": ["index", "quickstart", "development"]
+          },
+          {
+            "group": "Monorepo",
+            "pages": [
+              "guides/structure",
+              "guides/packages",
+              "guides/catalogs",
+              "guides/tooling",
+              "guides/testing",
+              "guides/workflow",
+              "guides/standards"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Architecture",
+        "icon": "landmark",
+        "groups": [
+          {
+            "group": "Decisions",
+            "pages": ["adr/index", "adr/0001-monorepo-layout", "adr/0002-docs-on-mintlify"]
+          }
+        ]
+      },
+      {
+        "tab": "Writing docs",
+        "icon": "pen-line",
+        "groups": [
+          {
+            "group": "Authoring",
+            "pages": [
+              "writing/markdown",
+              "writing/code",
+              "writing/images",
+              "writing/components",
+              "writing/navigation",
+              "writing/reusable-snippets",
+              "writing/settings"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

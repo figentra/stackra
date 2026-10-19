@@ -1,0 +1,50 @@
+---
+title: "Member standards"
+description: "What every app, package and service must contain."
+icon: "badge-check"
+---
+
+## Required files per member
+
+| File            | Holds                                                                             |
+| --------------- | --------------------------------------------------------------------------------- |
+| `README.md`     | What it is, a tasks table of its scripts, the structure of `src/`, how to run it  |
+| `AGENTS.md`     | Where code goes, rules that fail the build, tasks, and a mandatory `## PII` table |
+| `CHANGELOG.md`  | `# <package name>` and a note that Changesets writes it                           |
+| `LICENSE`       | A byte-for-byte copy of the root `LICENSE`                                        |
+| `turbo.json`    | Extends `//` with exactly one tier tag                                            |
+| `tsconfig.json` | Extends one `@stackra/typescript-config` preset and nothing else                  |
+
+The PII table is always present. A member that handles no personal data says "None" and names the change that would make it revisit the answer.
+
+## Kinds
+
+- **Apps:** vite, expo, docs, next.
+- **Packages:** domain, platform, lib, tooling.
+- **Services:** the Encore app (`services`) and its Encore service units in `services/src/<service>`.
+
+## Conventions
+
+- Package `exports` point at `src/*.ts`. tsdown builds `dist` only for publishing.
+- Tests sit beside the code, in `src/**/__tests__`.
+- `package.json` key order: name, version, private, description, license, type, main (Expo only), scripts, dependencies, devDependencies.
+
+## Scaffolding
+
+`pnpm new <kind> <name> [--category <c>] [--description "<text>"] [--title "<Title>"] [--port <n>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the root `LICENSE`, and formats the result. Then run `pnpm install` and `pnpm verify`.
+
+| Kind                        | Template                      | Lands in                                             |
+| --------------------------- | ----------------------------- | ---------------------------------------------------- |
+| `domain`, `platform`, `lib` | `templates/packages/<kind>`   | `packages/<category>/<name>` (`--category` required) |
+| `tooling`                   | `templates/packages/tooling`  | `packages/tooling/<name>`                            |
+| `app-vite`, `app-next`      | `templates/apps/<vite\|next>` | `apps/<name>` (port from 3710)                       |
+| `app-expo`                  | `templates/apps/expo`         | `apps/<name>` (no hyphens in the name)               |
+| `app-docs`                  | `templates/apps/docs`         | `apps/<name>`                                        |
+| `service`                   | `templates/services/encore`   | `services/src/<name>` (not a workspace member)       |
+
+```bash
+pnpm new lib retry --category foundation --description "Retry with backoff."
+pnpm new app-vite admin --title "Admin"
+pnpm new service billing
+pnpm new app-next site --dry-run
+```

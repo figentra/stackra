@@ -1,0 +1,34 @@
+---
+title: "0014 — Data ownership and ORM"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+A shared database is a shared failure. A shared entity makes two services release together. The persistence library must
+work with whatever connection the service runtime provides, and it is chosen once.
+
+## Decision
+
+1. **MikroORM is the one ORM.** Prisma, Drizzle, TypeORM and Knex are rejected ([0011](/adr/0011-rejected-and-deferred-technologies)).
+2. **Each service owns its one database, its schema and its migrations**, applied by one migrator in one order. No service reads or writes another service's tables.
+3. **Entities and repositories live inside the owner.** In a domain package they are in `infrastructure/persistence` and implement ports that `application` declares ([0004](/adr/0004-package-archetypes-and-layers)). There is no global entity registry.
+4. **Cross-service reads and writes use the owner's API or its published events**, never a shared entity. A read model kept from events is local to its reader.
+5. **MikroORM runs over the connection the runtime provides.** It does not provision databases.
+6. **Raw SQL is an approved escape hatch** for triggers, generated columns, extensions and specialised indexes, and it lives in migrations.
+7. **Tenant isolation is a consumer decision made at the first tenant-owned table.** The mechanism is a MikroORM scoped entity plus row-level security, enforced at two layers; the rule itself is `/constitution/tenancy`. Until a tenant-owned table exists, nothing here presumes tenancy.
+
+## Consequences
+
+- Schema changes ship with the service that owns them.
+- Reporting across services needs events or an explicit read model.
+
+## Enforcement
+
+- `FORBIDDEN_DEPENDENCIES` rejects the other ORMs.
+- The oxlint services override bans importing another service's `entities/` and `db`.
+- Planned: a schema-drift test per service (the entities produce an empty update-schema diff), and a tenant isolation test once the first scoped table exists.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: basalt `adr/0049-database-ownership`, `0006-orm-direction`; figentra `docs/adr/0006-data-access-wave-0`; juristra `docs/adr/0004-tenancy-and-isolation` (tenancy half).

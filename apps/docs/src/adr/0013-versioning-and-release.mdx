@@ -1,0 +1,32 @@
+---
+title: "0013 — Versioning and release"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Many members, one repository. A member's version must be recorded where the member travels with it, and nobody should hand-edit a version or a changelog.
+
+## Decision
+
+1. **Changesets owns versions.** A change to a member needs a changeset (`pnpm changeset`). Versioning is `pnpm changeset:version`, which also refreshes the lockfile. `CHANGELOG.md` is never hand-edited.
+2. **Every member carries `CHANGELOG.md` and `LICENSE`.** The changelog starts as a `# <package-name>` heading, which Changesets prepends to. The licence is a verbatim copy of the root file, because a licence travels with the artifact, not with the repository.
+3. **Private members still version and tag** (`privatePackages: { version, tag }`), so apps and services have a release narrative.
+4. **Published versions are never replaced.** A fix is a new version; rollback is rolling forward.
+5. **A release note per major or breaking release**, written by a human before the release: what changes for a consumer, pins, human steps, verification, rollback. Routine releases need none; their notes are the changesets.
+6. **A human approves every release.** Release automation prepares; it does not decide.
+
+## Consequences
+
+- One release narrative across apps, packages and services.
+- Non-npm members (Go, Python) are out of scope; if one appears, an ADR adds its tag rule.
+
+## Enforcement
+
+- `.changeset/config.json` is the configuration; `validate-repository.mjs` requires `CHANGELOG.md` and `LICENSE` in every member.
+- `.agents/hooks/guard-bash.mjs` denies running `changeset version` by an agent.
+- Planned: chain `pnpm changeset:status` into `pnpm verify` so a change without a changeset fails.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: basalt `adr/0003-versioning-across-three-languages` (npm half), `0008-per-member-changelog-and-licence`; platform `docs/releases/README.md`.

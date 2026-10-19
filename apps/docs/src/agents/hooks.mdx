@@ -1,0 +1,95 @@
+---
+title: "Hooks"
+description: "What each agent hook denies or reminds, how settings wire them, and how they are tested."
+icon: "webhook"
+---
+
+Hooks are scripts the agent harness runs around tool calls. They are the one part of agent governance that cannot be forgotten, because the harness executes them, not the model. They live in `.agents/hooks/` and are wired in `.claude/settings.json`. Hooks have no dependencies beyond Node.
+
+A hook either **denies** a tool call with a reason the agent sees, or **adds context** to the conversation. None of them edits files.
+
+## What runs today
+
+| Hook | Event and matcher | Effect |
+| --- | --- | --- |
+| `session-context.mjs` | `SessionStart` | Restates the invariants that must survive compaction, plus the branch and up to 15 lines of `git status` |
+| `guard-bash.mjs` | `PreToolUse`, `Bash` | Denies a command that destroys history, prints secrets, or bypasses the release process |
+| `context-health.mjs` | `PreToolUse`, every tool | Reminds the agent to work in phases on every tenth tool call |
+
+`_io.mjs` holds the shared stdin and output helpers. It is not a hook.
+
+### `session-context`
+
+Runs on session start, resume, compaction and clear. It prints seven invariants: package location and naming, the tier tag and presets every member declares, versions only from catalogs, tests beside the code, docs in `apps/docs`, the secrets rule, and what done means. The point is that compaction cannot silently drop the laws. If an invariant changes on a docs page, change it here in the same commit.
+
+### `guard-bash`
+
+Thirteen rules, each scoped to the operand of a command rather than a bare keyword. Heredoc bodies are stripped before matching, so a file whose prose mentions `rm -rf` does not trip a rule.
+
+| Denied | Why |
+| --- | --- |
+| `encore secret set`, `encore secret get`, `encore secret list --values` | Secret values are set by a human. Declare `secret("NAME")` and name it in the report |
+| `wrangler secret put`, `wrangler secret bulk` | The same rule for Worker secrets |
+| Reading `.env` with `cat`, `less`, `head`, `tail`, `bat`, `sed`, `awk`, `grep` | `.env` holds live tokens and never enters the transcript |
+| The same reads of `.dev.vars` | Wrangler's local secret file |
+| `printenv`, bare `env`, `env \|` | Dumping the environment leaks injected tokens |
+| `git clean` | Removes untracked and ignored files silently |
+| `git reset --hard`, and `git checkout` or `restore` of `.` | Discards uncommitted work across the whole tree |
+| `rm -rf` in any flag order | Delete named paths without `-f`, so a wrong path fails loudly |
+| `git push --force` (not `--force-with-lease`) | Rewrites shared history |
+| `git tag <package>@<version>` | Release tags are created by CI, never by hand |
+| `DROP DATABASE`, `DROP SCHEMA` | A human decision. Reset a local database with the Encore command |
+| ORM `push`, `migrate`, `migration:up`, `schema:update` | Migrations are applied by the app, not pushed to a database |
+| `changeset version` | Runs in CI. Locally, add a changeset with `pnpm changeset` |
+
+<Warning>
+The secrets rule also forbids reading values through the vault CLI (`infisical export`, `infisical secrets get` without `--silent`). `guard-bash` does not yet have those two rules. Add them in the same change as the secrets law, with a test. Until then that part of the law rests on discipline, not on a check.
+</Warning>
+
+### `context-health`
+
+Fires on every tenth tool call and injects a short reminder: finish the unit of work, write down progress, compact, and load only what the next step needs. It reads the call count from the `CLAUDE_TOOL_CALL_COUNT` environment variable. The harness may never set that variable, in which case the hook does nothing. Confirm that it fires in a real session. If it does not, either count calls in a temp file or delete the hook. The guidance itself lives in [Concurrent sessions](/agents/concurrent-sessions).
+
+## Wiring
+
+`.claude/settings.json` registers each hook by command with a five second timeout:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [{ "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/session-context.mjs\"", "timeout": 5 }] }],
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/guard-bash.mjs\"", "timeout": 5 }] },
+      { "matcher": ".*",   "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/context-health.mjs\"", "timeout": 5 }] }
+    ]
+  }
+}
+```
+
+The path is `.agents/hooks/`, the one source. A hook is never copied into `.claude/`. The settings file is currently wired by hand, and the one canonical `.agents/` source projected to tool folders (see the [adoption plan](/adr/0016-agents-source-of-truth)) is what will keep it in step.
+
+## Planned hooks
+
+These exist in earlier repositories and are not yet in this one. Each ports only with its check.
+
+| Hook | Event | Would do |
+| --- | --- | --- |
+| `guard-paths` | `PreToolUse`, `Write\|Edit\|MultiEdit` | Refuse writes to files an agent must not touch: `.env`, generated Encore output, lockfiles, `CHANGELOG.md` (Changesets owns it), installed skills that a lockfile manages, and the tool projections of `.agents/` |
+| `post-write-checks` | `PostToolUse`, `Write\|Edit\|MultiEdit` | Format the touched file, then remind about service conventions it just broke, such as an exposed endpoint without `auth: true` |
+| `prompt-hints` | `UserPromptSubmit` | One-line reminders keyed on what the prompt is about. Cheap, never blocks |
+
+## Testing a hook
+
+A hook that no test exercises is a comment with a runtime cost. Hooks currently have no tests. The pattern to follow:
+
+1. Pipe a fixture into the script as the harness would: `{"tool_input":{"command":"git reset --hard"}}` on stdin.
+2. Assert the output is a `deny` decision for every rule, and empty for a near miss. Include the near misses: `git reset --soft`, `rm -r` without `-f`, a heredoc that mentions a forbidden command.
+3. Run the test inside `pnpm verify`, so a regex edit that loosens a rule fails the gate.
+
+Add a case in the same change as every new rule.
+
+## Hooks versus permissions
+
+A hook denies by pattern, which is easy to get subtly wrong. Treat it as a seatbelt, not a boundary. The boundary is the human owning secrets and merges, the gitleaks scan in `lefthook.yml`, and `pnpm verify` in CI. Never write a hook that turns a denial into a prompt for the agent to retry with different quoting.
+
+Related: [Secrets](/constitution/secrets), [Concurrent sessions](/agents/concurrent-sessions), [Rules that don't rot](/agents/rules-that-dont-rot).

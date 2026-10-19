@@ -1,0 +1,54 @@
+---
+title: "0004 — Package archetypes and layers"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+A package's internal shape decides every later structural question. Left open, each new package re-litigates it and
+review has nothing objective to cite. Three source shapes existed: four layers (core, application, infrastructure,
+presentation), entry folders per host (contracts, core, react, node), and a minimal flat `src/`. A standard that
+describes packages which do not exist yet teaches people that standards are aspirational, so each archetype is marked
+binding or reference.
+
+## Decision
+
+1. **A package names its archetype once, when created**, on an `Archetype:` line in its `AGENTS.md`.
+2. **The archetype set:**
+
+   | Archetype | Shape                                                                                          | Status                                     |
+   | --------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------ |
+   | domain    | the four layers below                                                                          | binding on the first member                |
+   | flat lib  | `src/index.ts` plus kind folders; no layers; pure helpers or a thin integration                | binding                                    |
+   | contracts | vocabulary only, see [0015](/adr/0015-contract-packages)                                       | binding                                    |
+   | tooling   | presets that ship data, no `src/` layers; change the preset, never the consumer                | binding                                    |
+   | other     | UI, provider, SDK, runtime, asset shapes                                                       | reference only until the first member lands |
+
+3. **The domain archetype has four layers** under `src/`:
+   - `core` is domain meaning. It imports no other layer and no host library (React, Encore, ORM, `pg`).
+   - `application` imports `core` only and owns the ports it needs (`application/ports/`).
+   - `infrastructure` implements those ports.
+   - `presentation` translates for application and core and never reaches `infrastructure`. Its delivery surfaces
+     (`api`, `react`, `web`, `native`) nest inside it. `native` composes `react`, never `web`.
+   - `resources/` and `config/` sit beside `src/` and are not layers.
+4. **Directories exist only when something real lives in them.** No speculative `utils/` or `helpers/`.
+5. **Subpath exports are deliberate** (`./core`, `./application`, `./infrastructure`, `./presentation/api`) so a
+   dependency on an adapter or a surface is visible in the importing file.
+6. **A reference shape becomes binding** when the first package of that archetype is merged, and the check for it lands in the same change.
+
+## Consequences
+
+- Reviewers block on a layer violation by citing the lint rule, not by taste.
+- The scaffold templates under `tools/scaffold/templates/packages` generate the canonical shape, so a new package starts green.
+- `/standards/packages` is the operating form of this decision.
+
+## Enforcement
+
+- `packages/tooling/oxlint/boundaries.jsonc`: `no-restricted-imports` overrides keyed on `src/core`, `src/application`,
+  `src/presentation` and `src/presentation/native`.
+- `validate-repository.mjs` checks `exports` point at `./src` and the preset and tier tags.
+- Planned: an `Archetype:` field check and a barrel and deep-import check in the validator (shape check ported from academorix `check-package-shape.mjs`).
+
+## Supersedes and sources
+
+Supersedes: none. Sources: basalt `adr/0004`, `0012` to `0018`, `0029`, `0036` and `std/package-archetypes`; figentra `adr/0026-package-archetypes-and-host-entries`.

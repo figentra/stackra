@@ -1,0 +1,30 @@
+---
+title: "Repository structure"
+description: "Top-level layout and what belongs where."
+icon: "folder-tree"
+---
+
+```text
+stackra/
+├── apps/
+│   ├── console/            @stackra/console — Vite + React + HeroUI
+│   ├── docs/               @stackra/docs — this site (Mintlify)
+│   └── mobile/             @stackra/mobile — Expo + HeroUI Native (Liquid Glass)
+├── packages/
+│   ├── <category>/<name>/  @stackra/<name>
+│   └── tooling/            @stackra/{typescript,oxlint,vitest,tsdown}-config
+├── services/               the Encore application (added with the first service)
+├── tools/scripts/          repository scripts (validate-repository.mjs)
+├── .agents/hooks/          Claude Code hooks (session context, bash guard)
+├── .claude/settings.json   wires the hooks
+└── opencode.jsonc          OpenCode configuration
+```
+
+| Path                    | Tier tag       | May depend on                             |
+| ----------------------- | -------------- | ----------------------------------------- |
+| `packages/tooling/*`    | `tier:config`  | nothing in the workspace                  |
+| `packages/<category>/*` | `tier:lib`     | config, other libs                        |
+| `apps/*`                | `tier:app`     | config, libs; services only over the wire |
+| `services`              | `tier:service` | anything                                  |
+
+`turbo boundaries` enforces the tier column, and `packages/tooling/oxlint/boundaries.jsonc` enforces the import rules.

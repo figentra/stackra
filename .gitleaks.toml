@@ -1,0 +1,14 @@
+# Stackra file contract:
+# Purpose: secret scanning policy for pre-commit (lefthook) and CI (secrets:scan)
+# Owner: security-tenancy-reviewer
+# Secrets: forbidden
+
+title = "stackra"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fixtures with deliberately fake keys"
+paths = ['''.*/__fixtures__/.*''', '''\.agents/skills/.*''', '''\.agents/specs/.*\.md''']
+regexes = ['''sk_test_[A-Za-z0-9]{8,}''', '''rk_test_[A-Za-z0-9]{8,}''']

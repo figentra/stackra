@@ -1,0 +1,149 @@
+---
+title: "Code style"
+description: "File contract, TSDoc, naming, one declaration per file, imports and typed errors."
+icon: "code"
+---
+
+This page is the operating form of [ADR 0006](/adr/0006-naming-exports-and-imports) (naming, exports, imports) and [ADR 0007](/adr/0007-source-documentation-standard) (documentation). Formatting is not a style question: `oxfmt` formats and `oxlint` lints, and both run in `pnpm verify`.
+
+## Naming
+
+| Thing                         | Rule                                                              | Example                                        |
+| ----------------------------- | ----------------------------------------------------------------- | ---------------------------------------------- |
+| Files and directories in `src/` | kebab-case, lowercase, no underscores                           | `format-label.ts`, `payment-method/`           |
+| Packages                      | `@stackra/<name>`; services `@stackra/service-<name>`             | `@stackra/container`                           |
+| Types, classes, components    | PascalCase                                                        | `PaymentError`, `TabStack`                     |
+| Functions, variables          | camelCase; booleans read as a question (`isReady`, `hasGrant`)    | `formatLabel`                                  |
+| Constants                     | camelCase, or SCREAMING_SNAKE for a fixed table of values         | `COVERAGE_THRESHOLDS`                          |
+| Enum-like value sets          | a `const` object plus a derived type, in `<name>.enum.ts`         | `scope.enum.ts`                                |
+| Test files                    | the subject's name plus `.test`                                   | `format-label.test.ts`                         |
+
+No speculative directories: `utils/`, `helpers/` and `services/` exist because something real lives in them. A helper used by a second file moves to `utils/<name>.util.ts`; a single-use private helper stays where it is used.
+
+## One declaration per file
+
+Every exported declaration lives in its own file, named for it. Where the kind is not a plain function, the file carries a kind suffix:
+
+| Kind                         | File                       |
+| ---------------------------- | -------------------------- |
+| plain function               | `format-label.ts`          |
+| class                        | `token.class.ts`           |
+| interface                    | `provider.interface.ts`    |
+| enum-like const object       | `scope.enum.ts`            |
+| error class                  | `payment.error.ts`         |
+| pure helper shared by files  | `retry.util.ts`            |
+| test                         | `__tests__/<name>.test.ts` |
+
+- `index.ts` is the only barrel name. A barrel declares nothing and names each symbol (`export type { Token } from "./token.class"`), never `export *`.
+- A folder is created for one artifact only when it has two or more non-test files.
+- Scaffolded templates are the reference: `tools/scaffold/templates/packages/lib/src`.
+- A reviewer treats a file with two exported declarations, or a barrel that declares, as a finding. Changes to these conventions go through an ADR; there are no package-local exceptions.
+
+## Imports
+
+| Rule                                                                                                | Why                                               |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Relative specifiers carry no extension and no `/index`: `from "./scan"`, `from "../contracts"`       | One spelling, so a move is a rename               |
+| Assets keep theirs (`.css`, `.svg`, `.json`); `packages/tooling/*` and `tools/**/*.mjs` use full specifiers | Plain Node loads them                       |
+| Climbing out of a folder uses a package subpath import (`#core`, `#application/*`), never `../../`  | A move cannot break a climb                       |
+| Type-only imports use `import type`                                                                 | `typescript/consistent-type-imports` is an error  |
+| Another package is imported by name or a declared subpath, never its `src/`                         | [Packages](/standards/packages)                   |
+| No import cycles                                                                                    | `import/no-cycle` is an error                     |
+
+The decorators preset turns `consistent-type-imports` off because decorator metadata needs value imports ([ADR 0005](/adr/0005-di-container-and-legacy-decorators)).
+
+## File contract
+
+Every source and configuration file opens with a header before its imports. Plain JSON has no comments and is documented by its nearest README.
+
+Source files (`.ts`, `.tsx`), per ADR 0007:
+
+```ts
+/**
+ * Stackra file contract:
+ * Purpose: one sentence, what this file is for and why it exists.
+ * Boundary: what it declares and what it does not own.
+ * Runtime: node | browser | worker | react-native | isomorphic
+ * Governing contract: the ADR or standard a change must respect.
+ */
+```
+
+Configuration and tooling files (`pnpm-workspace.yaml`, `turbo.jsonc`, `lefthook.yml`, preset configs) use the header the repository already carries, in their own comment syntax (`#`, `//`):
+
+```yaml
+# Stackra file contract:
+# Purpose: what the file is for and what it must never become.
+# Scope: what it governs (a package, a service, the repo).
+# Owner: the role that approves changes (release-operations, architecture-guardian).
+# Secrets: forbidden
+```
+
+## TSDoc
+
+Types carry the weight first: no `any`, generics have meaningful names, an exported type is its own documentation. Every exported symbol then gets TSDoc that says something the type does not.
+
+```ts
+/**
+ * Parse a public id, requiring `prefix`. Pure.
+ *
+ * @param prefix - two to six lowercase letters.
+ * @param input - the id as received at a boundary; never trusted.
+ * @returns the internal UUID in canonical lowercase form.
+ * @throws IdError when the prefix does not match or the body is malformed.
+ * @example
+ * parsePublicId("tkt", "tkt_01J9ZQ3K8H2M4N6P8R0T2V4X6Y")
+ */
+```
+
+| Tag or line      | Required when                                                      |
+| ---------------- | ------------------------------------------------------------------ |
+| Purpose sentence | always, in the imperative ("Parse a public id")                    |
+| `@param`, `@returns` | meaning, units or ownership are not already in the type        |
+| `@throws`        | for every error a caller must handle                               |
+| `Side effects:`  | it does I/O, touches the clock, or mutates global state            |
+| `@example`       | use is not obvious                                                 |
+| `@deprecated`    | with the replacement and a removal target                          |
+
+Interfaces and types say what they represent and who produces and consumes them; each property says its meaning, unit or format, and who sets it. Boilerplate is a finding: a comment that restates the signature teaches readers to skip comments.
+
+### Comments in code
+
+Explain why, not what the next line says. Required before a workaround, a security-relevant check, a deliberate deviation and a non-obvious ordering. Forbidden: restating comments, commented-out code, and a TODO without an owner and a tracking reference.
+
+### Tests
+
+A test file's header says what the suite proves. Each `it()` title is a full sentence stating behaviour, not the function name.
+
+## Typed errors
+
+A package never lets a raw `Error` escape a public function. Every error it throws is a class under `errors/` with:
+
+- a stable, unique `code` (a string literal in the class);
+- a message that names the offending thing (the token, driver or id involved);
+- an optional `hint` saying what to do;
+- structural fields, never embedded secrets or values.
+
+```ts
+/** A state the payment domain does not permit. Callers map it to their transport's error shape. */
+export class PaymentError extends Error {
+  override readonly name = "PaymentError";
+}
+```
+
+A rejected promise or listener failure is reported through the package's logger port, never swallowed. At an HTTP boundary a typed error maps to a framework error with a stable message; see [HTTP and events](/constitution/http-and-events).
+
+## What enforces this
+
+| Rule                                                          | Check                                                               | Status  |
+| ------------------------------------------------------------- | ------------------------------------------------------------------- | ------- |
+| Formatting                                                    | `oxfmt --check` (`format:check`, lefthook pre-commit)               | Yes     |
+| No `any`, no non-null assertion, no unused code, no cycles    | oxlint base preset                                                  | Yes     |
+| `import type` for type-only imports                           | oxlint `typescript/consistent-type-imports` (off in decorators)     | Yes     |
+| No deep import of `@stackra/*/src/*`                          | oxlint `boundaries.jsonc`                                           | Yes     |
+| Kebab-case names, one export per file, barrel shape           | planned: validator check                                            | No      |
+| No extension or `/index` in relative specifiers               | planned: import-style check in the validator                        | No      |
+| `#` subpath imports instead of `../` climbs; `imports` map drift | planned: validator check                                         | No      |
+| File contract header and TSDoc on exports                     | planned: doc-standard check in `pnpm validate`                      | No      |
+| Typed errors with `code` and `hint`                           | review (`code-standards-steward`, planned role) until a lint exists | No      |
+
+The planned `code-standards-steward` splits, renames and moves files to meet the naming and barrel rules without changing behaviour; see the [agent roster](/agents/roster).

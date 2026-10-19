@@ -1,0 +1,28 @@
+---
+title: "0001 — Monorepo layout, catalogs and tooling"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Stackra starts fresh and follows the shape of the existing product repos (Juristra, Muslin) and the
+Figentra framework repo, so that people and agents can move between them without relearning anything.
+
+## Decision
+
+- **pnpm 12 + Turborepo.** Members are `apps/*`, `packages/<category>/<name>` and `services`.
+- **Packages sit in category folders, flat inside each one.** The category is a folder only; the name is `@stackra/<name>`.
+- **Strict catalogs.** Every external version is declared once in `pnpm-workspace.yaml`. `catalogMode: strict` and `pnpm validate` enforce it.
+- **Shared tooling presets** (`@stackra/{typescript,oxlint,vitest,tsdown}-config`), copied from Figentra. Every member extends exactly one preset of each kind.
+- **Tests sit beside the code.** There is no root `tests/` folder; app e2e suites live in their app.
+- **Gates:** oxfmt, oxlint, typecheck, vitest, build, `validate`, `turbo boundaries` and knip in `pnpm verify`; lefthook, commitlint and gitleaks locally.
+
+## Consequences
+
+- One version bump in a catalog moves the whole repo, and Renovate reviews one line.
+- A new external dependency takes two steps: add it to a catalog, then reference it.
+- A member that skips a preset or a tier tag fails `pnpm validate`.
+
+## Enforcement
+
+`tools/scripts/validate-repository.mjs` (`pnpm validate`) checks catalogs, tier tags and presets; `turbo boundaries`, oxlint, typecheck, vitest and knip run in `pnpm verify`.

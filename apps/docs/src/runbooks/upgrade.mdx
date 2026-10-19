@@ -1,0 +1,71 @@
+---
+title: "Upgrade"
+description: "Checklists for toolchain, Expo SDK and preset upgrades."
+icon: "arrow-up-circle"
+---
+
+<Note>
+  Status: target. The checklists below describe how an upgrade should run. Encore upgrades are omitted because Encore is deferred; add that section when the first service adopts it.
+</Note>
+
+Every upgrade is its own pull request, never mixed with feature work, and is merged only when `pnpm verify` is green. Say in the description what you ran and what you did not.
+
+## Any upgrade
+
+1. Read the upstream release notes and list the breaking changes that touch this repo.
+2. Bump the version in **one** place (see below) and nowhere else. Versions live only in `pnpm-workspace.yaml` catalogs, `mise.toml` and `packageManager`.
+3. `pnpm install`, then `pnpm verify`.
+4. Add a changeset for every member whose behaviour or dependencies changed.
+5. If the upgrade changes a rule, update the page that states it in the same pull request, and write an ADR if it reverses a recorded decision.
+
+## Toolchain: Node, pnpm, gitleaks
+
+- `mise.toml` pins the tool; `packageManager` in `package.json` must carry the same pnpm version (corepack reads that one). A mismatch is a bug.
+- `engines` in `package.json` and `.node-version` follow the Node pin.
+- `apps/mobile/eas.json` pins `node` and `pnpm` for EAS builds under `build.base`. Change them in the same pull request.
+- CI installs from `mise.toml`, so nothing else needs editing ([CI](/runbooks/ci)).
+
+Checklist: edit `mise.toml`, `packageManager`, `.node-version`, `eas.json` pins, then `mise install && pnpm install && pnpm verify`.
+
+## Catalog dependencies (TypeScript, React, tools)
+
+- Bump the entry in the right catalog in `pnpm-workspace.yaml`. The default catalog is for versions shared widely; named catalogs (`build`, `quality`, `mobile`, and so on) group a toolchain by risk and cadence.
+- Check the licence allow-list and the release-age rule in [Dependencies](/standards/dependencies) first.
+- A major bump of a preset package under `packages/tooling/*` is verified by every member's `verify`; change the preset, never patch each consumer.
+- Run `pnpm knip` so a removed dependency does not leave dead exports behind.
+
+## Expo SDK
+
+Expo SDK versions move the whole `mobile` catalog together. Never bump one package alone.
+
+<Steps>
+  <Step title="Read the SDK changelog and the React Native release notes">
+    Note removed APIs, the new minimum Node and Xcode, and any New Architecture requirement.
+  </Step>
+  <Step title="Bump the expo version in the mobile catalog">
+    Then run `pnpm --filter @stackra/mobile exec expo install --fix` to learn the compatible versions of every `expo-*` and React Native package, and copy those versions into the `mobile` catalog (strict catalog mode means the catalog is the only place to write them).
+  </Step>
+  <Step title="Check the project">
+    `pnpm --filter @stackra/mobile run doctor` (that is `expo install --check`) and `npx expo config --type public` from `apps/mobile`.
+  </Step>
+  <Step title="Prove the bundle builds">
+    `pnpm --filter @stackra/mobile build` (that is `expo export` for both platforms), then run a development build on a simulator.
+  </Step>
+  <Step title="Treat it as a native change">
+    The runtime version changes, so over-the-air updates cannot reach old builds. Plan a new store build per [Mobile release](/runbooks/mobile-release) and do not publish an update across the boundary.
+  </Step>
+</Steps>
+
+## Licensed UI packages (HeroUI Pro, Uniwind Pro)
+
+Not installed yet. When they are: bump them with the matching free packages in the same catalog, and confirm the licence token is present as a secret in CI and EAS before installing, or a token-less install caches an empty stub ([Mobile release](/runbooks/mobile-release#troubleshooting-each-one-happened)).
+
+## Checks that back this page
+
+| Rule | Check | State |
+| --- | --- | --- |
+| Versions only in catalogs | `pnpm validate` | Live |
+| `mise.toml` and `packageManager` agree | Setup step in CI | Not built |
+| Expo packages compatible | `expo install --check` (`pnpm run doctor` in the app) | Manual |
+
+See also [Renovate](/runbooks/renovate), [Dependencies](/standards/dependencies) and [Release](/runbooks/release).

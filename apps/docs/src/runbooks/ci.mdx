@@ -1,0 +1,119 @@
+---
+title: "CI"
+description: "One required check that runs pnpm verify, how to reproduce it locally with zero secrets, and what to do when CI is down."
+icon: "workflow"
+---
+
+<Note>
+  Status: target. No CI workflow exists in the repo yet (there is no `.github/`). Everything below is the procedure the first workflow must implement. Until then `pnpm verify` on your machine is the gate. `lefthook.yml` still says `.gitlab-ci.yml` is the gate; that comment is stale, and the code host is GitHub (see [ADR-0012](/adr/0012-code-host-and-ci)).
+</Note>
+
+## The model
+
+- **One required check**, named `verify`, runs `pnpm verify`. Branch protection on `main` requires it and nothing else.
+- **Logic lives in pnpm scripts, not in workflow YAML.** The workflow installs the toolchain and calls a script. A step that exists only in YAML cannot be reproduced locally, and moving to another CI host stays cheap.
+- **Local and remote run the same command.** If `pnpm verify` is green on a clean clone, the check is green. The exceptions are listed under [What green does not prove](#what-green-does-not-prove).
+- **Verify needs zero secrets.** A pull request from a fork has no vault access, and a verify stage that needs one cannot check a fork's work at all.
+
+## What `pnpm verify` runs
+
+| Step | Command | Catches |
+| --- | --- | --- |
+| Format | `turbo run format:check` | Unformatted code (oxfmt) |
+| Lint | `turbo run lint` | oxlint findings, including the import rules that enforce package boundaries |
+| Typecheck | `turbo run typecheck` | Type errors |
+| Test | `turbo run test` | Failing or empty vitest suites |
+| Build | `turbo run build` | A member that no longer builds |
+| Validate | `pnpm validate` | Repository shape: required files, catalogs-only versions, tier tags, tsconfig presets, forbidden dependencies; also runs the `tools/scripts/*.test.mjs` suites |
+| Boundaries | `pnpm boundaries` | A tier importing against the dependency direction (`turbo boundaries`) |
+| Knip | `pnpm knip` | Unused files, exports and dependencies |
+
+`pnpm verify:affected` runs the turbo part for members changed since `main` only. Use it while iterating; the required check runs the full `pnpm verify`.
+
+Checks CI adds beyond `pnpm verify`:
+
+| Check | Command | Why it is separate |
+| --- | --- | --- |
+| Secret scan | `pnpm secrets:scan` (gitleaks over history) | Needs history, not a working tree |
+| Commit messages | `pnpm exec commitlint --from <base> --to HEAD` | Hooks are advisory and can be skipped locally |
+| Changeset status | `pnpm changeset:status` | A changed member without a changeset (target: chain it into `verify`) |
+| Dependency review | the host's dependency-review action | New dependencies, advisories and licences on the pull request |
+
+## Run it locally
+
+```bash
+mise install            # node, pnpm and gitleaks at the pinned versions
+pnpm install --frozen-lockfile
+pnpm verify
+```
+
+To reproduce one failing step, run exactly that script: `pnpm turbo run test --filter=@stackra/<member>`, `pnpm validate`, `pnpm knip`. The workflow's job log prints the command it ran; copy that line.
+
+Nothing in `pnpm verify` reads a vault, a `.env` or a token. If a step seems to need a credential, that is a bug in the step (see [Secrets](/runbooks/secrets)).
+
+## Rules for the workflow file
+
+<Steps>
+  <Step title="Toolchain from mise.toml">
+    One setup step installs what `mise.toml` pins, asserts that the pnpm pin equals `packageManager` in `package.json`, caches the pnpm store and runs `pnpm install --frozen-lockfile`. It installs tools and decides nothing.
+  </Step>
+  <Step title="Pin every action by SHA">
+    Each `uses:` carries a full commit SHA and a semver comment. [Renovate](/runbooks/renovate) keeps them current. Add a workflow lint (zizmor or equivalent) to catch unpinned actions and injection patterns.
+  </Step>
+  <Step title="Least privilege">
+    Top-level `permissions` are empty or `contents: read`. A job asks for more only when it must, and `id-token: write` only on a job that logs in to the vault.
+  </Step>
+  <Step title="No secrets in verify">
+    The `verify` job has no vault identity and no stored secret. Only deploy and release jobs may log in, through OIDC ([Secrets](/runbooks/secrets#ci-reads-ci-through-oidc-one-step-at-a-time)).
+  </Step>
+  <Step title="Scope with affected, never skip">
+    A pull request may use `--affected` for turbo steps. `main` and release tags run everything. `pnpm validate`, `pnpm boundaries` and `pnpm knip` never scope: they check repository-wide facts.
+  </Step>
+</Steps>
+
+## A check that cannot run is a failure
+
+A step that is skipped because its tool is missing, its secret is absent or its input is empty must **fail** in CI, never pass. A local run may report a skip, with the reason; the CI run may not. Do not resolve a red gate by weakening it. Fix the thing the failure names, or change the gate through its own record (an ADR or the standard that created it), never in the same commit as the code that was failing it.
+
+## What green does not prove
+
+- **No service is started.** `pnpm verify` builds and tests; it does not run a deployed system.
+- **The runner image is only proven for the jobs that use it.** A tool present on your machine and absent in CI fails in CI only. Keep tools in `mise.toml`.
+- **The vault and deploy paths are unexercised by verify.** The first real deploy is the first time that code runs.
+
+Say what you ran when you report. A green `verify` shows the repository conforms to its checks; it does not show the change is correct.
+
+## When CI is down
+
+Use this only when the host cannot run workflows at all (billing lock, outage, startup failure). It is a break-glass path for **gating**, not a way to skip the gate.
+
+<Steps>
+  <Step title="Gate the exact commit locally">
+    From a clean worktree of the commit, never a checkout with local edits: `git fetch origin && git worktree add ../gate-<sha7> <sha>`, then `cd` into it and run `pnpm install --frozen-lockfile && pnpm verify && pnpm secrets:scan`. Record the full SHA and the result. Do not ship a commit whose gate you did not see pass.
+  </Step>
+  <Step title="Ship it by hand, as the owner">
+    Follow [Deploys](/runbooks/deploys): the owner runs the deploy command for that commit, and a production deploy needs the owner's explicit approval. Never use `--no-verify` or skip a step to save time.
+  </Step>
+  <Step title="Smoke test and record">
+    Run the deploy's smoke test. Append a row to the table below in the same pull request or a docs follow-up: date, environment, full SHA, who deployed, gate result, smoke result, reason.
+  </Step>
+  <Step title="Reconcile">
+    When CI is back, push one normal commit to `main` so the pipeline's view matches what is running.
+  </Step>
+</Steps>
+
+| Date | Env | SHA | By | Gate | Smoke | Reason |
+| --- | --- | --- | --- | --- | --- | --- |
+| _none yet_ | | | | | | |
+
+## Enforcement status
+
+| Rule | Check | State |
+| --- | --- | --- |
+| `pnpm verify` is the single gate | The CI workflow | Not built |
+| Hooks are advisory | `lefthook.yml` (check-only, no auto-fix) | Live |
+| Conventional commits | commitlint in `commit-msg`; CI range check | Hook live, CI not built |
+| Secrets scan | gitleaks in `pre-commit`, `pnpm secrets:scan` | Live |
+| Actions pinned by SHA, least privilege | Workflow lint | Not built |
+
+See also [Definition of done](/guides/definition-of-done), [Release](/runbooks/release) and [Testing](/standards/testing).

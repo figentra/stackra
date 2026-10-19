@@ -1,0 +1,90 @@
+---
+title: "Service standards"
+description: "The eight things a complete service must have, and what is checked today."
+icon: "server"
+---
+
+A service is a `tier:service` [member](/standards/members) at `services/<name>`, named `@stackra/service-<name>`, with its entry at `src/main.ts`. Services are independent workspace members. Encore is **deferred**: there is no Encore app yet, so the Encore-specific rules below ("when Encore lands") describe the target, not today's code. The decision is recorded in [ADR 0010](/adr/0010-services-are-independent-workspace-members).
+
+## Layout
+
+Today (`services/example`, `services/health`):
+
+```text
+services/<name>/
+  package.json  turbo.json  tsconfig.json  tsdown.config.ts
+  README.md  AGENTS.md (with ## PII)  CHANGELOG.md  LICENSE
+  src/main.ts
+```
+
+Target once a service has an HTTP surface or a database, one file per primitive, each declaring literal primitives only (no identifiers built at runtime, no spread):
+
+```text
+src/
+  main.ts          entry
+  api.ts           endpoints: thin, validate, call the domain, map errors
+  db.ts            the service's one database connection
+  events.ts        topics it publishes
+  jobs.ts          scheduled and queued work
+  cache.ts         cache keyspace (also the idempotency store)
+  entities.ts      ORM entities;  migrations/  its schema history
+  isolation.test.ts
+```
+
+## The eight non-negotiables
+
+<Steps>
+  <Step title="Placement, and one file per primitive">
+    The placement test passes: a second product with none of this product's domain would still need it verbatim, so it belongs in a service named for the capability, not for the product (see [Boundaries](/constitution/boundaries)). Primitives follow the file layout above.
+  </Step>
+  <Step title="Two-layer tenant isolation, always">
+    Every query runs inside the tenancy helper, and every tenant-owned table has `tenant_id uuid NOT NULL` with row-level security enabled **and** forced. Tenant, scope and actor come only from the authenticated principal, never from request input. Full rule: [Tenancy](/constitution/tenancy). **In force from the first tenant-owned table.**
+  </Step>
+  <Step title="Event-first">
+    Cross-service communication is a versioned event unless the caller needs an authoritative decision now, and then only through a typed client on a short, closed list of allowed synchronous calls. A service imports another service's `Topic` and nothing else from it. No distributed transactions: order steps so a partial failure is safe and reconcilable. See [HTTP and events](/constitution/http-and-events).
+  </Step>
+  <Step title="One gateway">
+    When Encore lands, the single `encore.app` is the only gateway and CORS configuration; a service never sets CORS, and `auth: true` is the default on every endpoint. Until then a service exposes no public surface.
+  </Step>
+  <Step title="Idempotency on every write">
+    Writes carry an `Idempotency-Key` header and the service dedupes for 24 hours per tenant. Financial writes also run in one transaction and emit an audit event. See [HTTP and events](/constitution/http-and-events).
+  </Step>
+  <Step title="Required files, present and current">
+    Everything in [Member standards](/standards/members), plus `isolation.test.ts` once a scoped table exists. `AGENTS.md` carries a PII table even when it says none.
+  </Step>
+  <Step title="Secrets">
+    Application secrets are declared by name (`secret("NAME")`) and set by a human; never in a file, test, log or chat. Tests need zero secrets. See [Secrets](/constitution/secrets).
+  </Step>
+  <Step title="Definition of done">
+    Code, `pnpm verify` green, the service's own tests green, docs current, reviewer sign-off. A service is not "done" because it typechecks: `pnpm verify` never starts a service (see [Testing](/standards/testing#what-a-green-run-proves)).
+  </Step>
+</Steps>
+
+## Service boundary
+
+- A service owns its entry, its database and migrations, its topics, its public API and its tests.
+- No service imports another service's internals. Cross-service calls go through the generated typed client; shared types go through a contracts package ([ADR 0015](/adr/0015-contract-packages)).
+- Reading another service's database is allowed only read-only, only where an ADR names the pair.
+- Cross-service reads: call the owner's API, or subscribe and keep a small local read model. Cross-service writes: call the owner's API inside the caller's flow, or publish a versioned event and let the owner react.
+- Service calls are written inside a service directory so the framework can resolve them statically; shared library code takes callbacks instead.
+- Data ownership and the ORM: [ADR 0014](/adr/0014-data-ownership-and-orm).
+
+## Adding a service
+
+1. `pnpm new service <name>` (see the drift note on [Member standards](/standards/members#scaffolding)), or copy `services/example`.
+2. Fill `README.md`, `AGENTS.md` and its `## PII` table.
+3. Add `db.ts`, `events.ts`, `jobs.ts` only when the primitive exists.
+4. Run `pnpm install` then `pnpm verify`.
+
+## What enforces this
+
+| Rule                                                               | Check                                                         | Status  |
+| ------------------------------------------------------------------ | ------------------------------------------------------------- | ------- |
+| Member files, PII heading, `tier:service` tag, catalog versions    | `validate-repository.mjs`                                     | Yes     |
+| A package or app never imports a service                           | `turbo boundaries`, oxlint `boundaries.jsonc`                 | Yes     |
+| A service's `internal/`, `entities/` and `db` are private          | oxlint `boundaries.jsonc` (`services/**` rule)                | Yes     |
+| Encore service units (`services/src/<dir>`) have `encore.service.ts`, README, AGENTS | `validate-repository.mjs` (`checkServiceUnit`) | Yes, for the unit layout only |
+| One `api()` per operation, `auth: true` default                    | planned: lint rule when Encore lands                          | No      |
+| Generated client has not drifted                                   | planned: `gen:client:check` in `pnpm verify`                  | No      |
+| Tenant isolation (RLS audit, `isolation.test.ts`)                  | planned: from the first tenant-owned table                    | No      |
+| Application secrets declared, never valued                         | [Secrets](/constitution/secrets) checks (partly planned)      | Partial |

@@ -1,0 +1,42 @@
+{
+  "name": "@stackra/{{NAME}}",
+  "version": "0.0.1",
+  "private": true,
+  "description": "{{DESCRIPTION}}",
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port {{PORT}}",
+    "build": "next build",
+    "start": "next start --port {{PORT}}",
+    "typecheck": "next typegen && tsc --noEmit",
+    "lint": "oxlint .",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "test": "vitest run",
+    "clean": "rm -rf .next coverage .turbo"
+  },
+  "dependencies": {
+    "@heroui/react": "catalog:frontend",
+    "@heroui/styles": "catalog:frontend",
+    "next": "catalog:next",
+    "react": "catalog:frontend",
+    "react-dom": "catalog:frontend"
+  },
+  "devDependencies": {
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@tailwindcss/postcss": "catalog:next",
+    "@testing-library/dom": "catalog:frontend",
+    "@testing-library/react": "catalog:frontend",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:frontend",
+    "@types/react-dom": "catalog:frontend",
+    "jsdom": "catalog:frontend",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tailwindcss": "catalog:frontend",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  }
+}

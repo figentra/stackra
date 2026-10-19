@@ -1,0 +1,35 @@
+{
+  "name": "@stackra/oxlint-config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared oxlint presets. A workspace's .oxlintrc.json extends exactly one role preset and declares no rules of its own.",
+  "license": "UNLICENSED",
+  "files": [
+    "*.json",
+    "*.jsonc",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./base.jsonc",
+    "./base": "./base.jsonc",
+    "./node": "./node.jsonc",
+    "./boundaries": "./boundaries.jsonc",
+    "./decorators": "./decorators.jsonc",
+    "./react": "./react.jsonc"
+  },
+  "scripts": {
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "lint": "oxlint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@stackra/typescript-config": "workspace:*",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "vitest": "catalog:quality"
+  }
+}

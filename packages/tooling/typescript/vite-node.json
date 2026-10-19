@@ -1,0 +1,8 @@
+// Stackra file contract:
+// Purpose: Node-only tooling whose config graph is loaded by Vite/vitest (the tooling packages themselves).
+// Owner: release-operations · Secrets: forbidden
+{
+  "display": "@stackra/typescript-config — vite-node",
+  "extends": "./node.json",
+  "include": ["${configDir}/*.ts", "${configDir}/src"]
+}

@@ -1,0 +1,33 @@
+// Stackra file contract:
+// Purpose: the Encore.ts application (services). encore.dev's `types` condition points at its .ts
+//          sources, which our strict baseline rejects; the `paths` below resolve `encore.dev/*` to the
+//          package's shipped `dist/**/*.d.ts` so skipLibCheck covers it. Four baseline flags stay off because
+//          generated `encore.gen` code trips them; oxlint enforces the same hygiene (no-unused-vars,
+//          consistent-type-imports) on our own code instead. `declaration` is off: the app emits nothing and
+//          Better Auth's inferred instance type cannot be serialised for declaration emit.
+// Owner: release-operations · Secrets: forbidden
+{
+  "display": "@stackra/typescript-config — encore",
+  "extends": "./node.json",
+  "compilerOptions": {
+    "verbatimModuleSyntax": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitOverride": false,
+    "exactOptionalPropertyTypes": false,
+    "declaration": false,
+    "declarationMap": false,
+    "types": ["node", "vitest/globals"],
+    "paths": {
+      "~encore/*": ["${configDir}/encore.gen/*"],
+      "encore.dev": ["${configDir}/node_modules/encore.dev/dist/mod.d.ts"],
+      "encore.dev/*": ["${configDir}/node_modules/encore.dev/dist/*/mod.d.ts"]
+    }
+  },
+  // encore.gen/internal is the CLI's own runtime glue; it imports encore.dev sources the `paths` above avoid.
+  "exclude": [
+    "${configDir}/node_modules",
+    "${configDir}/encore.gen/internal",
+    "${configDir}/.encore"
+  ]
+}

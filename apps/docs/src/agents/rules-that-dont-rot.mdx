@@ -1,0 +1,59 @@
+---
+title: "Rules that don't rot"
+description: "Every rule names the check that fails when it breaks, and every vendored copy needs a drift check."
+icon: "shield-check"
+---
+
+A wrong always-on rule is worse than no rule. It is loaded into every session, and it costs tokens to mislead. The principle that runs through this section: **a claim with no enforcement mechanism is a comment, not a rule.**
+
+Three recurring failures show what that means in practice.
+
+## A checklist that rotted in days
+
+A to-do list written before a repository was built went stale almost at once. Dozens of items were still marked "to add" that already existed. A hand-written checklist and the repository it describes agree only at the moment of writing, and drift apart from then on with nothing to notice.
+
+The fix was not a better checklist. The checkable half moved into a script: a list of required root files that `pnpm validate` checks, failing CI the moment one goes missing. What stays in prose is what a checker structurally cannot hold: decisions not yet made, and the reasoning behind conventions that would otherwise look arbitrary.
+
+**If a claim can be checked by a script, it belongs in the script, not in prose kept in sync with the script by hand.**
+
+## Patterns that ignored nothing
+
+Four ignore-file patterns were written as a path, two spaces, a `#` and a comment. That file format has no trailing-comment syntax, so each line was one pattern containing literal spaces and a hash. It matched nothing, and nobody noticed until `git check-ignore` was run against a real file. Every highlighter and every reviewer read them as intended.
+
+**A pattern, a glob or a path reference is a testable claim, not decoration.** Run the tool that consumes it before trusting that it does what the prose says. The same holds for the `applies_to` globs in [rule frontmatter](/agents/index): a pattern that matches nothing loads the rule nowhere.
+
+## Vendored copies drift silently
+
+A predecessor repository vendored 99 skills, and three had already fallen behind. A copy and its source agree only on the day of the copy. No check catches this. The mitigation when a claim cannot be reduced to a check is to make the risk and the reasoning explicit where the next person reads it:
+
+- Re-vendor deliberately instead of letting a copy age.
+- When a copy and its source disagree, the source wins.
+- Keep a table of what is deliberately absent, with the reason. An unexplained absence invites someone to "fix" it by adding exactly what was left out. See [Skills](/agents/skills).
+
+## Standard and checker, paired
+
+Every standard page and every rule names the check that enforces it. A rule that cannot name one is a candidate for deletion, or for a new check.
+
+| A rule says | The check |
+| --- | --- |
+| Versions only in catalogs | `pnpm validate`, strict catalog mode |
+| A package never imports an app, a service or `encore.dev` | The oxlint boundary rules and Turborepo boundaries |
+| Tests sit beside the code | `AGENTS.md` states it. No check yet: add one in the validator |
+| No secret values anywhere | The gitleaks scan in `lefthook.yml` and `guard-bash` |
+| Required files in every member | `pnpm validate` |
+| Docs and code agree | `docs-governance` reports drift; no script does |
+
+The last two rows are the honest ones: some claims are enforced only by a person or an agent reading. Say so, as that row does, so nobody assumes more coverage than exists.
+
+Where an agent's charter and the real check disagree, the charter is the bug. Where a gate fails because something it checks has vanished, investigate the working tree. Never shrink the gate to make it pass.
+
+## Before you add a rule, skill or page
+
+1. Verify each claim against a real file or real command output. Prefer a rule short enough to stay true as the repository changes.
+2. If the claim is checkable, add the check, in the validator, a lint rule or a scaffold-template assertion, instead of writing a sentence that restates it. The sentence rots. The check fails loudly.
+3. If it cannot be checked mechanically, say so and say why.
+4. Choose `always`, `applies_to` or `manual` honestly. Do not default to `always` for convenience.
+5. Add the provenance line when the rule comes from a finding. See [Spec lifecycle](/agents/spec-lifecycle).
+6. Route a suspected drift to `docs-governance`, whose method is to verify a document's claims against the repository and report which side is wrong, never to assume a document is right because it exists.
+
+Related: [Working with agents](/agents/index), [Hooks](/agents/hooks), [Roster](/agents/roster).

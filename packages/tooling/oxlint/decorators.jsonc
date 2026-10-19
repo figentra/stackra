@@ -1,0 +1,21 @@
+// Stackra file contract:
+// Purpose: the DI tier (legacy decorators, ADR-0007). `typescript/consistent-type-imports` is off: its fix
+//          turns a class import into `import type`, which erases a class used as an @Inject(token) value.
+//          Decorator factories are PascalCase, so `new-cap` must not treat them as constructors.
+// Owner: release-operations · Secrets: forbidden
+{
+  "extends": ["./node.jsonc"],
+  "rules": {
+    "typescript/consistent-type-imports": "off",
+    "eslint/new-cap": ["warn", { "capIsNew": false }],
+    // An empty `@Module({...}) class X {}` is the normal spelling of a module.
+    "typescript/no-extraneous-class": ["error", { "allowWithDecorator": true }],
+  },
+  "overrides": [
+    {
+      // Tests use empty classes as tokens and test doubles.
+      "files": ["**/__tests__/**/*.ts", "**/__fixtures__/**/*.ts"],
+      "rules": { "typescript/no-extraneous-class": "off" },
+    },
+  ],
+}

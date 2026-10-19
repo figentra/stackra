@@ -1,0 +1,79 @@
+---
+title: "Development"
+description: "From a clean clone to a green pnpm verify, and the commands you use every day."
+icon: "terminal"
+---
+
+## Set up from a clean clone
+
+You install one thing system-wide, [mise](https://mise.jdx.dev). It provisions the rest from `mise.toml`.
+
+<Steps>
+  <Step title="Install mise">
+    ```bash
+    curl https://mise.run | sh
+    ```
+  </Step>
+  <Step title="Provision the toolchain">
+    ```bash
+    mise install
+    ```
+    This reads `mise.toml` and installs the pinned tools.
+
+    | Tool | Used for |
+    | --- | --- |
+    | `node` 24 | TypeScript toolchain, Turborepo |
+    | `pnpm` 12 | Workspace manager. The version must equal `packageManager` in `package.json` |
+    | `gitleaks` | Secret scanning in the pre-commit hook and `pnpm secrets:scan` |
+  </Step>
+  <Step title="Install dependencies">
+    ```bash
+    pnpm install
+    ```
+    This resolves every member against the catalogs in `pnpm-workspace.yaml` and installs the git hooks through the `prepare` script (`lefthook install`). If hooks do not run after install, check that pnpm was allowed to run lefthook's install script in `pnpm-workspace.yaml`.
+  </Step>
+  <Step title="Verify the setup">
+    ```bash
+    pnpm verify
+    ```
+    This is the full gate. If it is green locally, CI should be green ([CI](/runbooks/ci)).
+  </Step>
+</Steps>
+
+### Mobile
+
+The mobile app needs more only when you run it on a device or simulator: Xcode with an iOS simulator for iOS, Android Studio for Android. `pnpm mobile` starts Expo (Metro on port 8081). Release builds are EAS's job, not your laptop's ([Mobile release](/runbooks/mobile-release)).
+
+### Secrets
+
+Day-to-day development needs no secret. The only tokens are for MCP servers (`.mcp.json`), and they come from the Infisical vault at `/agents` through `tools/scripts/mcp.sh`. There is no `.env` file. See [Secrets](/runbooks/secrets).
+
+### Encore
+
+There is no Encore app and no Encore CLI to install. Services are plain workspace members under `services/<name>`; Encore is deferred.
+
+## Daily commands
+
+| Command | What it does |
+| --- | --- |
+| `pnpm dev` | Every member's dev server (Turborepo TUI) |
+| `pnpm console` / `pnpm docs` / `pnpm mobile` | One app's dev server |
+| `pnpm check` | Format check, lint and typecheck |
+| `pnpm test` | Every member's vitest suite |
+| `pnpm verify` | The full gate: format, lint, typecheck, test, build, `validate`, `boundaries`, `knip` |
+| `pnpm verify:affected` | The turbo part of the gate, only for members changed since `main` |
+| `pnpm validate` | Repository shape: catalogs only, tier tags, tsconfig presets, forbidden dependencies, required files |
+| `pnpm new <kind> <name>` | Scaffold a member ([Scaffolding](/guides/scaffolding)) |
+| `pnpm changeset` | Record a release note for the members you changed |
+| `pnpm secrets:scan` | gitleaks over the whole history |
+
+<Tip>Run one member's task with a filter: `pnpm turbo run test --filter=@stackra/console`. Or `cd` into the member and call its script directly when you do not want Turborepo's ordering.</Tip>
+
+## Troubleshooting
+
+- **`pnpm install` fails on the pnpm version.** `mise.toml` and `packageManager` must agree; run `mise install` and retry.
+- **Git hooks never run.** Run `pnpm install` again, or `pnpm exec lefthook install`. The hooks only check; they never rewrite files.
+- **A step works locally and fails in CI.** Compare the tool version in `mise.toml` with what CI installs, and check the step did not rely on a file git ignores.
+- **gitleaks is not installed.** The pre-commit hook skips it with a notice and CI still scans; run `mise install` to get it.
+
+See also [Definition of done](/guides/definition-of-done) and [Commits and releases](/guides/workflow).

@@ -1,0 +1,32 @@
+---
+title: "0017 — Agent roster and models"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+An agent definition that names a model goes stale the day the model changes. An earlier setup delegated implementation to a
+cheaper model through a second runner. It produced weak results on review, cost more in retries than it saved, and was retired.
+The roster should be small, named by role, and each role should say whether it can block.
+
+## Decision
+
+1. **An agent declares a tier, never a model.** The tiers are `economy`, `standard` and `frontier`, ordered cheapest first, which is also the order a failing output escalates in.
+2. **`.agents/models.json` maps tier to model per assistant**: Claude `haiku`, `sonnet`, `opus`. Changing a model is one edit there.
+3. **Default assignment.** Opus for the guardians and the orchestrator (decisions with a long tail), Sonnet for executors and reviewers, Haiku for mechanical stewards. No role is assigned to a model without evidence of where it fits; a trial precedes any change.
+4. **Claude only.** Delegating implementation to other models through another runner is rejected ([0011](/adr/0011-rejected-and-deferred-technologies)).
+5. **Role names are the `sdlc` plugin's** (`architecture-guardian`, `code-reviewer`, `test-engineer` and so on). New agents use `<domain>-<role>` kebab names. Roles that block are listed in `/agents/roster`.
+6. **A human decides; agents prepare.** Agents do not merge, release or deploy.
+
+## Consequences
+
+- A roster change is a table edit, not a hunt through definitions.
+- The weak-results episode is the evidence behind rule 4; it is not repeated here in full.
+
+## Enforcement
+
+Planned: `agents:lint` checking that every agent declares a valid tier and every tier resolves in `.agents/models.json`. The `lefthook.yml` comment that cites a roster decision is repointed to this page.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: figentra `docs/adr/0034-agent-roster-and-models` (with its weak-results evidence); academorix `.agents/models.json`; figentra `0023-delegation-to-opencode`, academorix `adr/0001`, platform `docs/adr/0013` (retired delegation, recorded as the rejected alternative).

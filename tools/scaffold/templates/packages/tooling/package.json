@@ -1,0 +1,32 @@
+{
+  "name": "@stackra/{{NAME}}-config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "{{DESCRIPTION}}",
+  "license": "UNLICENSED",
+  "files": [
+    "*.json",
+    "*.jsonc",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./base.json",
+    "./base": "./base.json"
+  },
+  "scripts": {
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "lint": "oxlint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@stackra/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "vitest": "catalog:quality"
+  }
+}

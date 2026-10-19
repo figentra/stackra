@@ -1,0 +1,57 @@
+---
+title: "Renovate"
+description: "One shared dependency policy: one-day release age, SHA digests, no automerge, advisories bypass the wait."
+icon: "refresh-cw"
+---
+
+<Note>
+  Status: target. There is no `renovate.json` in the repo and the Renovate app is not installed. Versions today are bumped by hand in `pnpm-workspace.yaml` catalogs. The policy itself is in [Dependencies](/standards/dependencies).
+</Note>
+
+## What the config decides
+
+| Rule | Why |
+| --- | --- |
+| `config:best-practices` and `pinGitHubActionDigestsToSemver` | Actions pinned by SHA with a semver comment; container images by digest |
+| `minimumReleaseAge: "1 day"` with `internalChecksFilter: "strict"` | A release must be a day old before a pull request proposes it, as a blocking check, so a freshly compromised release has time to be pulled |
+| `automerge: false` | Every change is a pull request a human reads |
+| `vulnerabilityAlerts` with no age gate | A security advisory does not wait; the pull request is labelled `security` |
+| `@stackra/*` has no age gate | We publish those ourselves |
+| Version updates go to the catalog, not a member | `catalogMode: strict`: a member's `package.json` only names a catalog |
+| One grouped pull request per toolchain family | Expo SDK packages move together; the `mise.toml` pins and `packageManager` move together |
+
+No token, `hostRules` entry or registry credential belongs in the config. Private registry access is configured in the Renovate app settings of the organisation.
+
+## Setup (target)
+
+<Steps>
+  <Step title="Install the Renovate app on the repository">
+    A repository admin does this once.
+  </Step>
+  <Step title="Add renovate.json at the repository root">
+    Renovate reads only the root config. Extend the shared preset and add only what is specific here: the `pnpm-workspace.yaml` catalogs, `mise.toml` and the `packageManager` field.
+  </Step>
+  <Step title="Validate the config">
+    `pnpm dlx --package renovate@<pinned version> renovate-config-validator --strict renovate.json`. Pin the version in a catalog.
+  </Step>
+  <Step title="Require the verify check on its pull requests">
+    Renovate pull requests run [CI](/runbooks/ci) like any other. `pnpm validate` rejects a literal version in a member, so a bad update to a member fails loudly.
+  </Step>
+</Steps>
+
+## Reviewing a Renovate pull request
+
+1. Read the changelog link in the body, not only the version number.
+2. Check the licence did not change against the allow-list in [Dependencies](/standards/dependencies).
+3. For toolchain bumps (Node, pnpm, Expo SDK, TypeScript) follow [Upgrade](/runbooks/upgrade) instead of merging blind.
+4. Merge only on a green `verify`. A security pull request is merged first, then investigated if it fails; the advisory is the cost of waiting.
+
+## Checks that back this page
+
+| Rule | Check | State |
+| --- | --- | --- |
+| Versions only in catalogs | `pnpm validate` | Live |
+| Config valid | `renovate-config-validator` | Not built |
+| Actions pinned by SHA | Workflow lint in CI | Not built |
+
+See also [Dependencies](/standards/dependencies) and [CI](/runbooks/ci).

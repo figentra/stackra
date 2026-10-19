@@ -1,0 +1,14 @@
+// Stackra file contract:
+// Purpose: React 19 libraries and Vite apps.
+// Owner: release-operations · Secrets: forbidden
+{
+  "extends": ["./base.jsonc"],
+  "plugins": ["react", "jsx-a11y"],
+  "env": { "browser": true },
+  "rules": {
+    "react/jsx-no-target-blank": "error",
+    "react/react-in-jsx-scope": "off",
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+  },
+}

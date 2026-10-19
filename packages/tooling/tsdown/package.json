@@ -1,0 +1,29 @@
+{
+  "name": "@stackra/tsdown-config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared tsdown build preset for libraries: ESM, dts, sourcemaps, tree-shaking, optional legacy-decorator transform.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "lint": "oxlint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "tsdown": "catalog:build"
+  },
+  "devDependencies": {
+    "@stackra/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  }
+}

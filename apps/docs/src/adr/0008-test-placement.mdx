@@ -1,0 +1,34 @@
+---
+title: "0008 — Test placement"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+An earlier rule asked for a root `tests/` directory mirroring `src/`. Five layouts then ignored it, because nothing
+checked it. The rule that survives is the one a contributor follows by default: a test sits next to the thing it tests.
+
+## Decision
+
+1. **A unit test lives beside its subject**: `src/**/__tests__/<name>.test.ts`, or `<name>.test.ts` next to the file.
+   The name is the subject's name plus `.test`.
+2. **No root `tests/` directory in any member** and no `test/` or `testing/` directories.
+3. **App end-to-end suites live in their app** (`apps/<app>/e2e`), not in a shared workspace.
+4. **Cross-cutting fixtures and doubles are an explicit `testing` entry of the package that owns the contract**, not a shared folder.
+5. **Tests need zero secrets.** Provider fakes replace credentials; a test that needs a real credential is a design finding ([0009](/adr/0009-secrets-two-mechanisms)).
+6. **A green `pnpm verify` proves less than it seems.** What it does not prove (runtime behaviour on a device, visual and
+   right-to-left correctness, behaviour against a real provider) is stated in `/standards/testing`.
+
+## Consequences
+
+- Moving a file moves its test with it.
+- Vitest globs are the same in every member and come from the vitest preset.
+
+## Enforcement
+
+Planned: a validator rule that fails a member with a root `tests/` directory and any test file outside `src/**/__tests__` or beside its subject.
+Today `AGENTS.md` states the rule and `pnpm test` runs what exists; nothing rejects a misplaced test.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: basalt `adr/0034-test-file-placement` (and the strategy part of `0019-testing-strategy`, whose root-`tests/` mirror is rejected here).

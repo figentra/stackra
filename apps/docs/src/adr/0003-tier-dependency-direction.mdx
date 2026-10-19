@@ -1,0 +1,45 @@
+---
+title: "0003 — Tier dependency direction"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+ADR 0001 gave every member a place. Nothing yet says which member may depend on which. Without a direction rule a
+library can import an app "just for a type", and the library can then no longer be built or shipped without that app.
+The easy edge to add by accident is library to app, not library to service.
+
+## Decision
+
+Every workspace member carries exactly one tier tag in its own `turbo.json` (`"tags": ["tier:<x>"]`), and the root
+`turbo.jsonc` `boundaries` block denies each tier everything above it.
+
+| Tier           | Members                       | May depend on                | Denied                  |
+| -------------- | ----------------------------- | ---------------------------- | ----------------------- |
+| `tier:config`  | `packages/tooling/*`          | nothing workspace-local      | lib, service, app       |
+| `tier:lib`     | `packages/<category>/<name>`  | config, other lib            | service, app            |
+| `tier:app`     | `apps/*`                      | config, lib                  | service                 |
+| `tier:service` | `services/*`                  | config, lib                  | app                     |
+
+- A library never imports an app, a service or `encore.dev`. If a library needs a shape from above, the shape moves
+  down into a contract package ([0015](/adr/0015-contract-packages)).
+- An app reaches a service over the wire only, through a generated client, never through its source.
+- A service never imports another service's internals ([0010](/adr/0010-services-are-independent-workspace-members)).
+- The tier is implied by the directory. A member whose tag disagrees with its directory fails.
+
+## Consequences
+
+- A package stays usable by any number of deployables.
+- Moving a member between tiers is an ADR, not a rename.
+- Product literals and `process.env` in packages are a related rule; see `/constitution/boundaries`.
+
+## Enforcement
+
+- `turbo boundaries` (`pnpm boundaries`, part of `pnpm verify`) reads the tags.
+- `tools/scripts/validate-repository.mjs` requires exactly one tier tag, equal to the one the directory implies.
+- `packages/tooling/oxlint/boundaries.jsonc` bans imports of `apps/**`, `services/**`, `encore.dev` and `~encore/*` from `packages/**`.
+- Planned: a check that packages contain no product literal and read no `process.env`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: basalt `adr/0021-tier-dependency-direction`; figentra `docs/constitution/boundaries.md`.

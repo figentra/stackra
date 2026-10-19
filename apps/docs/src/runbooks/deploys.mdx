@@ -1,0 +1,70 @@
+---
+title: "Deploys"
+description: "Agents prepare, the owner runs every deploy: staging first, then production from the same commit, and roll back by redeploying a recorded release."
+icon: "rocket"
+---
+
+<Note>
+  Status: target. Nothing is deployed. There is no Encore app (services are independent workspace members under `services/<name>` and Encore is deferred), no hosting for `apps/console` or `apps/docs`, no deploy workflow and no release records. This page is the procedure that must hold from the first deploy. When a target is chosen, replace its row in the table with a section on its real commands.
+</Note>
+
+## The rules
+
+1. **Agents prepare and check; the owner runs every deploy.** Every deploy command is behind an approval prompt. Answer no and hand it to the owner, with the commit SHA, the gate result and the list of secret names the release needs.
+2. **Staging first, then production from the same commit**, after `pnpm verify` is green on that exact SHA ([CI](/runbooks/ci)). Never deploy a commit whose gate you did not see pass.
+3. **Secrets are named by the agent and set by a human**, in each environment, before the deploy. A missing secret fails provisioning, for example Encore's `secret key(s) not defined`. See [Secrets](/runbooks/secrets).
+4. **A rollback is a redeploy of an older recorded release, not a build.**
+5. **Production needs the owner's explicit approval each time.** Two-person approval is deferred until a second maintainer joins; until then `CODEOWNERS` and branch protection are the control.
+6. **Never skip the gate** (`--no-verify`, "skip tests") to save time. The break-glass path in [CI](/runbooks/ci#when-ci-is-down) gates locally instead.
+
+## Targets
+
+| Target | Status | Deploy path |
+| --- | --- | --- |
+| Backend services (`services/<name>`) | Not deployed | Decision pending (Encore is deferred). Staging first, then production |
+| Console (`apps/console`, a Vite SPA) | Not deployed | Static build with the API URL set at build time; host not chosen |
+| Docs (`apps/docs`, Mintlify) | Not deployed | Mintlify hosting from the repository; no pipeline of ours |
+| Mobile (`apps/mobile`) | Not released | EAS, see [Mobile release](/runbooks/mobile-release) |
+
+## A deploy
+
+<Steps>
+  <Step title="Prepare (agent)">
+    Confirm `pnpm verify` is green on the SHA. List every new secret name and its purpose. List every migration and say whether it is expand-only. Write the smoke-test checks. Hand all of it to the owner.
+  </Step>
+  <Step title="Set secrets (human)">
+    The owner sets each named secret in the target environment. The agent never sets or reads a value.
+  </Step>
+  <Step title="Deploy to staging (owner)">
+    The owner deploys the full SHA to staging. A deploy is by commit hash, never by branch name.
+  </Step>
+  <Step title="Smoke test">
+    The service's health endpoint answers 200 and reports the new SHA; the console and docs load with no console errors, in both directions (LTR and RTL) and both themes where the app supports them; sign-in works against the target API.
+  </Step>
+  <Step title="Promote to production (owner)">
+    The owner deploys the same SHA to production, approves explicitly and repeats the smoke test.
+  </Step>
+  <Step title="Record it">
+    Record the release: environment, full SHA, who, gate result, smoke result, time. The record is what a rollback redeploys.
+  </Step>
+</Steps>
+
+## Rollback
+
+- **Choose the target from the release records** (the last release that succeeded before the current one), never from memory.
+- **Redeploy that release's commit to the same environment** through the same approval as a deploy. Dry-run first where the tooling allows it.
+- **The bad release keeps its record.** Write a new record for the rollback that names the one it repairs, so the bad release counts as a failure and the rollback as its repair.
+- **A rollback never goes further back than one good release.** If there is none, roll forward.
+- **Data is not rolled back.** Migrations, secrets, bindings and store listings are separate. The redeployed code runs against the current schema, so migrations are expand-then-contract: the previous release must always run against the expanded schema. A release whose migration contracted the schema is rolled **forward**, never back.
+- **A hand-run provider rollback is break-glass.** Record it within the hour with the reason.
+
+## Checks that back this page
+
+| Rule | Check | State |
+| --- | --- | --- |
+| Gate green on the deployed SHA | CI `verify` | Not built |
+| Owner approval for production | Protected environment | Not built |
+| Migrations are expand-only | Migration-safety check, once a database exists | Not built |
+| No agent sets a secret | `guard-bash` | Live |
+
+See also [Release](/runbooks/release), [Secrets](/runbooks/secrets) and [CI](/runbooks/ci).

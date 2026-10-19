@@ -1,0 +1,65 @@
+---
+title: "Boundaries"
+description: "Tiers, dependency direction, the placement test, service ownership, and the rule that shared packages hold factories rather than values."
+icon: "square-dashed"
+---
+
+## Tiers
+
+Every workspace member carries exactly one tier tag in its `turbo.json`. The tag matches its directory.
+
+| Tier | Directory | May depend on |
+| --- | --- | --- |
+| `tier:config` | `packages/tooling/*` | nothing workspace-local |
+| `tier:lib` | `packages/<category>/*` | `config`, other `lib` packages |
+| `tier:service` | `services/<name>` | `config`, `lib` |
+| `tier:app` | `apps/*` | `config`, `lib`. Talks to services over the wire only. |
+
+The direction is one way. A package never imports an app, a service, or `encore.dev`. An app never imports a service's code. A package never imports another package's `src/`: it uses the package's declared exports. See [ADR 0003](/adr/0003-tier-dependency-direction) and the [package standard](/standards/packages).
+
+**Enforcement: enforced.** Turborepo `boundaries` tags in `turbo.jsonc`, the oxlint `no-restricted-imports` rules in `packages/tooling/oxlint/boundaries.jsonc`, and the tier check in `tools/scripts/validate-repository.mjs`. All run in `pnpm verify`.
+
+## Placement test
+
+Where does new code go?
+
+1. Would a second, unrelated product still need this verbatim? Yes: it is a package in `packages/<category>/`.
+2. Does it only compose packages into something that runs or ships? A deployable: a service in `services/<name>` or an app in `apps/<name>`.
+3. Would it need renaming to make sense elsewhere? It belongs in the app or service that owns it. It is not a package.
+
+Pick the package category from the [structure guide](/guides/structure). Do not add a category for one package.
+
+**Enforcement: planned.** The package-steward and architecture-guardian agents review every new member. No script can decide placement.
+
+## Shared packages hold factories, apps hold definitions
+
+A package never contains a product enumeration or literal: no brand name, locale list, project id, URL, tenant id or environment value. It exposes `define*()` factories whose types are inferred from the definition the caller passes. The definitions live in the app or service that owns them. A convenience value such as a default locale list is fine. A closed union type of product names is not.
+
+A package never reads `process.env`. Configuration reaches it as an argument or a typed config object that the app builds.
+
+**Enforcement: partial.** `FORBIDDEN_DEPENDENCIES` in the validator blocks forbidden packages. A check for product literals and `process.env` in `packages/**/src` is planned (a validator rule or an oxlint rule). Until then a literal in a shared package is a review finding.
+
+## Service ownership
+
+Services are independent workspace members: `services/<name>` is `@stackra/service-<name>` with entry `src/main.ts`. Encore is deferred (see [ADR 0011](/adr/0011-rejected-and-deferred-technologies)). Until the one-Encore-app decision in [ADR 0010](/adr/0010-one-encore-app) is implemented, the rules below describe the target. They apply from the first service that owns data.
+
+A service owns its API, its database, its schema and migrations, its events, its tests, a `README.md` and an `AGENTS.md` with a PII table. No other service reads that database or imports that service's internals.
+
+| Need | Do |
+| --- | --- |
+| Read another service's data | Call its API, or subscribe to its events and keep a small local read model. |
+| Change another service's data | Call its API inside the caller's flow. If it can be eventually consistent, publish a versioned event and let the owner react. |
+| Share a type | Put it in a contract package ([ADR 0015](/adr/0015-contract-packages)). |
+| Atomic change across two services | Not allowed. Order the steps so a partial failure is safe and reconcilable. |
+
+**Enforcement: partial.** The validator checks the service-unit files. Cross-service import and database-read rules are planned with the first service that has a database.
+
+## What a contract package is
+
+A shared-types folder is not a contract package. A contract package is a stable boundary with a version and a change policy. Cross-service types live there, and nowhere else.
+
+## Not built yet
+
+Do not introduce a technology on the rejected or deferred list "to be helpful". If a task seems to need one, stop and route to the architecture-guardian. The list and each revival trigger live in [ADR 0011](/adr/0011-rejected-and-deferred-technologies).
+
+**Enforcement: partial.** The forbidden-dependency list in the validator.

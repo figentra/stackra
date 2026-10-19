@@ -1,0 +1,86 @@
+---
+title: "Concurrent sessions"
+description: "Working safely when several agent sessions share a clone: preconditions, ownership of a change, worktrees, and phased work."
+icon: "git-fork"
+---
+
+More than one agent session can work in the same clone at once. Neither sees the other's edits as they happen, and the working tree and the git index are the only things they share. Every rule below comes from an incident.
+
+## A precondition that lives in prose is not a precondition
+
+A session verified a history rewrite, correctly stated that a clean working tree was required, and handed over a runnable command with the requirement written in prose above it. The command ran on a dirty tree. Every uncommitted tracked edit was reset to HEAD, unrecoverably. Modified-but-never-staged content was never a git object, so nothing could restore it.
+
+Prose above a command is documentation. It does not run.
+
+- A command with a precondition **checks it and refuses**, or the precondition does not exist. A non-empty `git status --porcelain` is an abort, not a note to the reader.
+- Commands that reset, clean, rewrite history, force-push or delete need this most, because their failure mode is loss rather than an error.
+- "The user will read the warning first" is not a check. Neither is "I said it twice".
+- Never hand over a destructive command and its precondition as two things, one for the machine and one for the human. Ship one thing that enforces both.
+
+`guard-bash` denies the commonest of these. See [Hooks](/agents/hooks).
+
+## Establish whose change it is before acting on it
+
+Two incidents, one lesson. A session ran a broad `git add` and swept 471 lines of another session's work into a commit whose message described something else. Another session reported "you deleted this file" on inference alone, when neither session had touched it, and proposed making a gate pass by removing the file from the list the gate checks.
+
+- **Stage explicit paths.** Name files you produced. `git add -A`, `git add .` and `git commit -a` are how another session's work enters your commit.
+- **A directory argument is not an explicit path.** `git add some/dir/` resolves against a tree someone else may be editing.
+- **The index is shared, and naming paths is not enough.** Another session may already have staged files, and staging is process-global. Run `git diff --cached --stat` before every commit. In a shared checkout, commit with `git commit --only -m "..." -- <paths>` so only your paths land.
+- Read the commit's diff against its message. Content that does not belong to the message does not belong in the commit.
+- Before writing a sentence about who changed something, get evidence from `git status`, `git diff`, `git log` or the file. An unexplained change is a question, not a conclusion, and least of all a conclusion about the human.
+- A gate failing because something it checks has vanished is a signal about the working tree. It is never an invitation to shrink the gate.
+- Never `git stash`, reset, checkout or clean another session's files. The stash stack is shared across worktrees.
+
+### Record who decided
+
+The same edit can be right or forbidden depending only on whether a decision preceded it, and the diff does not show which. Say who decided, and when, in the commit message, the pull request or the report. After the fact it cannot be reconstructed.
+
+### Interim and end state
+
+Awareness does not survive a long session. Enforcement does. A pre-commit check against the index, comparing what is staged with what this session produced, is the end state. Until it exists, this page stands in for it. Do not treat the page as the permanent answer, and do not weaken the check when it starts failing.
+
+## Use a worktree for each task
+
+One task, one branch, one worktree. Start from fresh remote main, not a local main that may have diverged:
+
+```bash
+git fetch origin main
+git worktree add -b <branch> ../<repo>-<slug> origin/main
+git -C ../<repo>-<slug> merge-base --is-ancestor origin/main HEAD && echo BASE_OK
+```
+
+No `BASE_OK`, stop. Never pass a possibly empty variable to `git -C`. Never work in a checkout the owner is using. Branch names are `feat/<area>-<slug>`, `fix/...`, `docs/...`.
+
+- **One agent per package at a time.** Two parallel agents never edit the same package directory.
+- Never stage `.env*`, generated output, `dist/`, `.turbo`, build artifacts or test output.
+- Run the formatter on the files you touch before committing. Conventional commits, committed as soon as a unit lands.
+- Open pull requests as drafts. The description says what changed, which checks ran, and what was not run and why. Merging asks first. Never force-push main.
+- Two fix attempts per pull request when merging several together, then leave it out and report it.
+
+## Work in phases
+
+A long conversation accumulates every tool result, file body and edit until the context overflows. The remedy is small phases and a clean context between them, which is also why the main session delegates.
+
+```text
+Understand and plan (about 8 tool calls) → summarise → compact
+Implement one unit (8 to 12 calls)       → document progress → compact
+Implement the next unit                  → ...
+Finalise: integration check, docs, changeset, pnpm verify
+```
+
+- Read only what the current phase needs. Do not read everything upfront "just in case".
+- Compact after reading a large file, or when a unit of work ends.
+- Summarise before compacting, so the summary survives.
+- `session-context` restates the repository invariants after compaction, and `context-health` nudges every tenth tool call. See [Hooks](/agents/hooks).
+
+### Handover
+
+When a session ends mid-task, write a handover that the next session can start from cold. Keep it short and put the next action first:
+
+1. **Start here.** The next concrete step, and any decision waiting on a human.
+2. **State.** Branch, worktree, open pull requests, what passes and what has never been run.
+3. **Do not touch.** Files or branches another session owns.
+4. **Where things live.** Names of secrets and where each is stored, never their values.
+5. **Date.** A handover without a date is untrustworthy. Keep the date line current.
+
+Related: [Working with agents](/agents/index), [Workflow](/guides/workflow), [Delegation](/constitution/delegation).

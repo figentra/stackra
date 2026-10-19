@@ -1,0 +1,40 @@
+---
+title: "0005 — DI container and legacy decorators"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Apps, services and plain packages all need one way to declare modules, providers and dependencies. Two facts decide the
+mechanism. A single bundler (esbuild, as used by Encore) never emits `design:paramtypes`, so type-based auto-wiring works
+in some hosts and silently fails in others. And a Nest.js layer was rejected as a server framework ([0011](/adr/0011-rejected-and-deferred-technologies)), while its vocabulary is
+what people already know.
+
+## Decision
+
+1. **One container package** (`@stackra/container`) with Nest-shaped names and signatures and **zero `@nestjs/*` dependency**.
+2. **Legacy (experimental) decorators are the declaration standard** for modules, providers, scopes and metadata. The one
+   `define*` factory is `defineToken<T>(name)`, because a token has nothing to decorate.
+3. **Every constructor parameter names its token**: `@Inject(token)` or `@Dependencies([...])`. A class is its own token.
+   `design:paramtypes` is never read and `reflect-metadata` is never a dependency; the container keeps its own metadata store.
+4. **Small pure helpers live in a support package**, one subpath per concern, no root entry, no globals (`process`,
+   `window`), no decorators, no base classes, zero runtime dependencies. The container core never imports it. A helper is
+   added only when a second package needs it.
+5. **Packages that use decorators extend the decorators presets**: `@stackra/typescript-config/decorators`, the oxlint
+   `decorators` preset, and the vitest decorators preset. Nothing else relaxes `consistent-type-imports` or `no-extraneous-class`.
+
+## Consequences
+
+- Wiring is explicit and identical in every host.
+- Decorator metadata is not portable to a toolchain that drops legacy decorators; the presets are the single place to change that.
+- Reflection helpers are not available. This is intended.
+
+## Enforcement
+
+- The presets exist: `packages/tooling/typescript/decorators.json`, `packages/tooling/oxlint/decorators.jsonc`, `packages/tooling/vitest/preset-decorators.ts`.
+- `FORBIDDEN_DEPENDENCIES` in `tools/scripts/validate-repository.mjs` rejects `@nestjs/core`, `@nestjs/common` and `reflect-metadata`.
+- Planned: a check that no package other than the container imports the support package into a core entry.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: figentra `docs/adr/0007-dependency-injection-container`, `0009-support-package`.

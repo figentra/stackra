@@ -1,0 +1,66 @@
+---
+title: "App standards"
+description: "Rules for the vite, next, expo and docs apps: leaves of the graph, build-time config, budgets, no fixtures in the build."
+icon: "app-window"
+---
+
+An app is a deployable surface (a build, a host, a URL) and a `tier:app` [member](/standards/members). It sits at `apps/<name>` and keeps all its code in `src/`.
+
+## Kinds
+
+| Kind          | Pick it for                                                          | tsconfig preset | Port                  |
+| ------------- | -------------------------------------------------------------------- | --------------- | --------------------- |
+| `app-vite`    | A client-only SPA behind login (consoles, dashboards); no SEO        | `vite`          | 3710 to 3799          |
+| `app-next`    | Server rendering, SEO or public pages; App Router, typed routes      | `next`          | 3710 to 3799          |
+| `app-expo`    | An iOS or Android app (native tabs, HeroUI Native)                   | `expo`          | Metro picks 8081      |
+| `app-docs`    | A Mintlify documentation site                                        | none            | 3334 to 3399          |
+
+Ports are the `--port` values in `apps/*/package.json` `dev` scripts; pick the next free one in the range. Vite uses `--strictPort` so a clash fails loudly. There is one docs app and it exists (`apps/docs`).
+
+## Rules
+
+### Apps are leaves
+
+- Things depend on an app over HTTP, never through an import. If a second app needs code verbatim, it moves to a package and both consume it.
+- An app may depend on `tier:lib` and `tier:config`. It never depends on `tier:service`: it talks to a service over the wire. A library never depends on an app. See [Boundaries](/constitution/boundaries).
+- Apps hold definitions, packages hold factories: brand, locale list, routes and feature flags are defined in the app and handed to shared code ([Packages](/standards/packages)).
+
+### Configuration is build-time and not secret
+
+- An app reads configuration from build-time variables with the framework's public prefix (`VITE_*`, `NEXT_PUBLIC_*`, `EXPO_PUBLIC_*`). Anything under such a prefix ships to every user, so it is public by definition: API origin, environment name, a publishable key.
+- A secret never reaches an app. Server-side secrets belong to a service; see [Secrets](/constitution/secrets).
+- Per-environment values for mobile live in EAS environment variables, not in `eas.json`; each build profile names its environment.
+- A missing required value in a staging or production build fails loudly on a configuration screen; it never falls back to a development default.
+- Feature flags come from one coded list in the app, forced on or off by a build-time variable, never from a fixture.
+
+### No fixtures in the build
+
+An app talks to the real API in every environment. There is no demo or fixture mode in a shipped bundle. Test doubles live under `__tests__`, `__fixtures__` or `testing/` and never reach `dist`.
+
+### Budgets
+
+A web app has a bundle budget measured on the built output: gzip size of the initial load (the entry script, its preloads and the stylesheets `index.html` references), a total tripwire, and the largest single chunk. Rules:
+
+- The budget is a measured number plus a stated margin, written down next to the check.
+- A number is raised only in a reviewed change that says why. Lazy route chunks raise only the total.
+- Mobile and web performance targets are reviewed with the `performance-engineer` method: measure first, then name the top wins.
+
+### Per-kind notes
+
+- **vite and next:** UI is HeroUI web ([UI and accessibility](/standards/ui-and-accessibility)). `next` ignores `.next/` and `next-env.d.ts`, and its `turbo.json` adds `.next/**` as build output.
+- **expo:** code-based React Navigation (no expo-router, no `app/` folder); HeroUI Native with Uniwind `className`; colours from the theme (`useThemeColor`), never literals. `app.json` carries the bundle id and Android package; Android segments cannot contain `-`. Native versions must match the SDK (`pnpm doctor`), and `react` stays on the `mobile` catalog.
+- **docs:** no TypeScript and no tests. `mint validate` and `mint broken-links` are its checks, and `a11y` audits the built pages.
+
+Local-only scripts (`dev`, `start`, `preview`, `ios`, `android`, `doctor`, `a11y`) are allowed on apps because they never terminate or need a device; they are not Turborepo tasks. See [Tooling](/guides/tooling).
+
+## What enforces this
+
+| Rule                                                              | Check                                                  | Status |
+| ----------------------------------------------------------------- | ------------------------------------------------------ | ------ |
+| `tier:app` tag; no app depends on a service; no lib depends on an app | `validate-repository.mjs`, `turbo boundaries`      | Yes    |
+| Member files and PII table                                        | `validate-repository.mjs`                              | Yes    |
+| Catalog versions only (`catalog:mobile`, `catalog:frontend`)      | `validate-repository.mjs`, `catalogMode: strict`       | Yes    |
+| Bundle budget on the built web output                             | planned: a per-app budget script chained after `build` | No     |
+| No fixture or demo markers in `dist`                              | planned: a per-app scan script chained after `build`   | No     |
+| Physical-direction classes (RTL)                                  | planned: see [i18n and RTL](/standards/i18n-rtl)       | No     |
+| Required build-time variable present in staging/production        | planned: config screen test per app                    | No     |

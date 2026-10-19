@@ -1,0 +1,34 @@
+---
+title: "0021 — AI engine and agent write safety"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Two things are decided before any code exists. Which libraries run model calls, so nobody adds a gateway or another runtime.
+And what an agent may change through tools, because an agent that can call a write tool is acting as a user without being one.
+
+## Decision
+
+1. **The engine is AI SDK core plus the MCP SDK, inside the service that needs it.** Providers are selected by configuration. No AI gateway and no separate-language agent runtime ([0011](/adr/0011-rejected-and-deferred-technologies)). AI is not a fifth architectural layer; it is code in the application layer.
+2. **A product-neutral engine and a product-specific caller are separate.** The engine takes a capability name, a prompt and a budget; it never imports or calls the product that uses it. The product builds context by calling the owning services as the caller, copying an explicit field allow-list.
+3. **Off by default, switchable.** A per-tenant setting is checked on every call. Rate limits and a monthly cap apply. Each call writes a usage row and an audit event with ids and counts, never text.
+4. **No special-category data reaches a model.** Context is allow-listed field by field; redaction of contact details, document numbers and card numbers runs before the call.
+5. **Agents draft; humans write.** An MCP write tool exists only if it is in a closed, code-defined list. The list is default-deny. Each call needs a named human approver, a fresh approval, and a dry run unless confirmed.
+6. **Agents are not their own approvers.** An agent approving itself is refused.
+7. **Every tool call is audited**, allowed or refused, with every value-shaped string redacted. A call whose audit line cannot be written is refused.
+8. **Agent tools run with zero secrets**: a child environment of `PATH`, `HOME`, `TMPDIR` and `LANG` only. No tool reads or sets a secret value.
+9. **Same authorization as a human.** A tool derives from the registry and checks the same permissions as the equivalent API call.
+
+## Consequences
+
+- Features are slower to add than a free-form agent, and safe to leave on.
+- Adding a write tool is a code change with review, never a configuration edit.
+
+## Enforcement
+
+Planned: the write-tool list as a typed constant with a test that no tool touches secrets, approvals or releases; a redaction test for the audit line; the `security-tenancy-reviewer` agent on every change under the AI service. Nothing is implemented yet.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: academorix `docs/adr/0007-ai-engine`; juristra `docs/adr/0009-ai-engine`; platform `docs/adr/0020-mcp-write-tools-behind-approvals`, `packages/mcp/{README,AGENTS}.md`; academorix `.agents/skills/ai-mcp-tools`.

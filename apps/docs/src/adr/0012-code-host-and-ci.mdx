@@ -1,0 +1,35 @@
+---
+title: "0012 — Code host and CI"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Stackra has no CI file yet. `lefthook.yml` says a GitLab pipeline is the gate, while the repositories with a working gate
+(OIDC secrets, SHA-pinned actions, a single required check) run on GitHub Actions. A repository with two hosts has two
+sources of truth about what passes. The choice of host is a human decision, so this ADR is Proposed until a maintainer accepts it.
+
+## Decision
+
+1. **One host.** Proposed: GitHub, with GitHub Actions as the orchestrator. A repository has either `.github/` or `.gitlab/`, never both.
+2. **One required check**: a gate workflow that always runs and calls `pnpm verify`. Path filters must never skip the required check.
+3. **Logic lives in pnpm scripts, not in YAML.** Workflow files call `pnpm` scripts, so moving host is a rewrite of thin callers.
+4. **The same command runs locally.** What CI runs, a developer can run with `pnpm verify` and zero secrets. A check that cannot run is a failure, not a skip.
+5. **Secrets reach CI only through OIDC** ([0009](/adr/0009-secrets-two-mechanisms)). The verify phase has no identity.
+6. **Break-glass.** If the host is down, a human may deploy from a developer machine; the deploy is recorded in the repository afterwards.
+7. **Deploy and release jobs are separate workflows** that need approval ([0013](/adr/0013-versioning-and-release)).
+
+## Consequences
+
+- Fixing `lefthook.yml` header (it names `.gitlab-ci.yml`) is part of accepting this ADR.
+- Branch protection requires the gate check and nothing else.
+- A two-person production rule is not adopted while there is one maintainer; CODEOWNERS applies until a second maintainer joins.
+
+## Enforcement
+
+Planned: the gate workflow itself (`.github/workflows/gate.yml` running `pnpm verify`), commitlint over the pull-request range,
+and gitleaks. Nothing enforces this today: there is no CI file in the repository.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: platform `docs/adr/0001-github-code-host-and-ci`, `0002`, `0012-local-ci`, `docs/research/gitlab-vs-github.md`; academorix `ci/README.md`; basalt `.gitlab/README.md`.

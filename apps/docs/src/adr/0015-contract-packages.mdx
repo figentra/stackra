@@ -1,0 +1,36 @@
+---
+title: "0015 — Contract packages"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+A "shared types" folder becomes a dumping ground where every type two packages happen to use ends up. A contract is
+different: it is what another independently released component must know to talk to this one.
+
+## Decision
+
+1. **Membership test.** A type belongs in a contracts package only if another independently deployed or released component needs it to communicate with this one. Two packages importing the same type is not the test; that is a shared utility.
+2. **Two kinds of boundary, two names.**
+
+   | Kind               | Name                          | Boundary                                  | Breaks when                          | Versioned by                    |
+   | ------------------ | ----------------------------- | ----------------------------------------- | ------------------------------------ | ------------------------------- |
+   | Vocabulary         | `@stackra/contracts`          | in-process, a library and its callers     | a caller upgrades the package        | the package version             |
+   | Protocol           | `@stackra/<domain>-contracts` | cross-service, over a wire                | a producer deploys ahead of consumer | an explicit version in the payload |
+
+3. **Protocol contracts carry request and response, event, error and envelope shapes**, organised by contract category, with no behaviour and no runtime dependencies.
+4. **Events are versioned.** A breaking change is a new event type or version, published beside the old one until every consumer has moved.
+5. **Services and apps depend on contracts, never on each other's source** ([0003](/adr/0003-tier-dependency-direction), [0010](/adr/0010-services-are-independent-workspace-members)).
+
+## Consequences
+
+- Wire compatibility is a property of one small package that reviewers can read.
+- A type used by two packages but not crossing a boundary stays in its owner or in a utility.
+
+## Enforcement
+
+Planned: a validator check that a `*-contracts` package has no runtime dependencies and no imports from a service or an app; guardian review of every new contracts package until then. The tier rule ([0003](/adr/0003-tier-dependency-direction)) already stops a contracts package from importing a service.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: basalt `adr/0035-contract-packages`, `std/contract-packages`.
