@@ -1,0 +1,28 @@
+---
+title: "0036 — Idempotency keys in Encore cache for 24 hours; Postgres for money"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Non-GET endpoints accept an `Idempotency-Key`, and the mobile mutation queue retries with keys. A cache is cheap but can evict; money must never be applied twice or forgotten.
+
+## Decision
+
+1. **Idempotency keys are stored in the Encore cache with a 24-hour TTL**, with the response, scoped per tenant and endpoint.
+2. **Money-moving operations record their key in Postgres**, in the same transaction as the ledger entry; the key is kept as long as the entry.
+3. A repeated key with a different payload returns a conflict, not the stored response.
+4. Retries within the window return the original response.
+
+## Consequences
+
+- Fast duplicate protection for ordinary writes; a duplicate arriving after 24 hours is treated as new.
+- Payments carry a durable guarantee at the cost of a database write.
+
+## Enforcement
+
+Planned — a shared idempotency helper with a conformance test; a check that endpoints under payments/ledger do not use the cache-only helper.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decisions in chat, 2026-10-19; `.agents/rules/http-conventions.md`.

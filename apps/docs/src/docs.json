@@ -120,7 +120,18 @@
               "adr/0025-packages-publish-to-private-registry",
               "adr/0026-turborepo-remote-cache-on-r2",
               "adr/0027-cli-tools-pinned-in-mise",
-              "adr/0028-package-categories-appear-with-first-package"
+              "adr/0028-package-categories-appear-with-first-package",
+              "adr/0029-encore-ts-one-app",
+              "adr/0030-encore-cloud-on-owner-aws",
+              "adr/0031-coarse-services-split-on-evidence",
+              "adr/0032-rest-api-generated-client-uuidv7-ids",
+              "adr/0033-pubsub-cron-transactional-outbox",
+              "adr/0034-object-storage-malware-scan-limits",
+              "adr/0035-resend-email-with-spf-dkim-dmarc",
+              "adr/0036-idempotency-cache-and-postgres",
+              "adr/0037-api-versioning-by-date-header",
+              "adr/0038-rate-limits-app-buckets-and-waf",
+              "adr/0039-openapi-mintlify-and-oauth-guide"
             ]
           }
         ]
