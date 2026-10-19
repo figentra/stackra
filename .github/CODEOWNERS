@@ -1,11 +1,12 @@
 # Stackra CODEOWNERS
-# Every file change requires review by the designated owner
+# The owner is the org admin `figentra-usr` (no figentra team exists yet; switch to @figentra/<team> when one does).
+# Reviews are advisory: required approvals are 0 and merges go through `pnpm pr:merge` (owner decision A1).
 
 # Default owner for everything in the repo
-* @akouta
+* @figentra-usr
 
 # Architecture decisions require extra scrutiny
-apps/docs/src/adr/ @akouta
+apps/docs/src/adr/ @figentra-usr
 
 # CI/CD changes
-.github/ @akouta
+.github/ @figentra-usr

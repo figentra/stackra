@@ -21,9 +21,21 @@ jobs:
       pull-requests: write # open and update the version PR
 
     steps:
+      # stackra-bot token (owner decision A1): a version PR pushed with GITHUB_TOKEN never triggers the
+      # Quality Gate, so it could not merge. Scoped to what this job needs; revoked when the job ends.
+      - name: Bot token
+        id: bot
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
+          private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          token: ${{ steps.bot.outputs.token }} # pushes (version branch, tags) go out as the bot
           fetch-depth: 0 # changesets diffs against history and reads existing tags
 
       - name: Setup Node
@@ -52,7 +64,7 @@ jobs:
           publish-script: pnpm changeset git-tag
           pr-title: "chore(release): version packages"
           commit-message: "chore(release): version packages"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ steps.bot.outputs.token }}
 
       # SBOM covers what actually got installed (node_modules), independent of whether this
       # run released. `--ignore-npm-errors` is required because cyclonedx-npm shells out to
