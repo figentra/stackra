@@ -59,6 +59,16 @@ async function main() {
       "Boundaries: a package never imports an app, a service, `encore.dev`, or another package's `src/`; barrels name each re-export and declare nothing (enforced by `turbo boundaries` and oxlint boundaries.jsonc).",
     );
 
+  if (
+    /\b(new feature|feature request|i want (to|you to)|add support|implement|build (a|an|the)|let'?s build)\b/.test(
+      p,
+    ) &&
+    !p.includes("speckit")
+  )
+    hints.push(
+      "Feature work starts with spec-kit, not code: `/speckit.specify`, then `/speckit.clarify` (Impact questionnaire, Linear STA-n), then `/speckit.plan`. `/speckit.plan` refuses until clarifications are complete (apps/docs/src/agents/spec-lifecycle.mdx).",
+    );
+
   if (hints.length) context(EVENT, "[STACKRA HINTS]\n- " + hints.join("\n- "));
 }
 

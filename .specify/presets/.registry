@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "presets": {
+    "stackra": {
+      "version": "1.0.0",
+      "source": "local",
+      "manifest_hash": "sha256:b5ac0dd839919c11014a1a3d09198c9e2485b947a0f9301013d2e918ee80252b",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "claude": [
+          "speckit.specify",
+          "speckit.clarify",
+          "speckit.plan",
+          "speckit.tasks"
+        ]
+      },
+      "registered_skills": {
+        "claude": [
+          "speckit-specify",
+          "speckit-clarify",
+          "speckit-plan",
+          "speckit-tasks"
+        ]
+      },
+      "installed_at": "2026-10-19T08:43:21.807670+00:00"
+    }
+  }
+}
