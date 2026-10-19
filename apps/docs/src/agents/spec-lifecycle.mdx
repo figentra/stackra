@@ -1,76 +1,62 @@
 ---
 title: "Spec lifecycle"
-description: "How work that is worth specifying moves from idea to merged change: three documents, one skill per transition, and where a finding goes."
+description: "How work that is worth specifying moves from idea to merged change with GitHub spec-kit: clarify before plan, a Linear issue per spec, and where a finding goes."
 icon: "list-checks"
 ---
 
 Not every change needs a spec. Work that touches money, permissions, data integrity, external contracts, concurrency or state machines does, and so does anything several agents will implement or that will outlive its author's memory. Everything else is a direct change reviewed at the gates on [Working with agents](/agents/index).
 
-The spec engine ships with the `sdlc` plugin: the skills, the three document templates and the spec roles. Nothing is copied into this repository. See [Skills](/agents/skills). Run `/sdlc:spec` and it reads the specs on disk, says which stage each is at, and asks which step to run.
+The spec engine is [GitHub spec-kit](https://github.com/github/spec-kit) (`specify` CLI, pinned in `.specify/init-options.json`). It is initialised for both Claude Code (`.claude/skills/speckit-*`) and OpenCode (`.opencode/commands/speckit.*`), so both assistants run the same flow. A Stackra preset (`.specify/presets/stackra`) adds the gate described below. A change that is not specified starts at `/speckit.specify`: the prompt-hints hook nudges an ad-hoc feature request there.
 
-## Where specs live
-
-```text
-.agents/specs/<NNN>-<slug>/
-├── requirements.md   what and why
-├── design.md         how
-└── tasks.md          in what order
-```
-
-`NNN` is one higher than the highest existing number. The slug is two to four kebab-case words. **A spec holds exactly three documents.** No `research.md`, no `notes.md`, no `findings/` directory. A directory that accepts a fourth file accepts a fifth, and then the three documents stop being the place to look. Research is summarised in `design.md`. A finding that is not in one of the three does not exist for this workflow.
-
-Numbers are permanent once the next document exists. `design.md` and `tasks.md` cite criteria as `2.3` (requirement 2, criterion 3), and renumbering breaks every back-reference.
-
-## One skill per transition
+## The flow
 
 ```text
-spec-new ──▶ requirements.md ──▶ spec-design ──▶ design.md ──▶ spec-tasks ──▶ tasks.md ──▶ spec-run / spec-implement ──▶ spec-verify
+/speckit.specify ──▶ /speckit.clarify ──▶ /speckit.plan ──▶ /speckit.tasks ──▶ /speckit.implement
+   spec.md + Impact     marks "complete"    gate runs first    tasks → Linear
 ```
 
-| Skill | Agent | Writes | Never |
-| --- | --- | --- | --- |
-| `spec-new` | `spec-author` | `requirements.md` | Asks clarifying questions before a first draft |
-| `spec-design` | `spec-author` | `design.md`. Refuses without `requirements.md` | Plans tasks |
-| `spec-tasks` | `spec-planner` | `tasks.md` and the wave graph. Refuses without the first two | Implements |
-| `spec-implement` | `spec-executor` | Exactly one task | Continues to a second task |
-| `spec-run` | `delivery-orchestrator` dispatching `spec-executor` | Task status only | Writes code or runs tests itself |
-| `spec-verify` | any | Nothing. Read only | Edits a file |
+| Command                                  | Writes                         | Stackra rule                                                         |
+| ---------------------------------------- | ------------------------------ | -------------------------------------------------------------------- |
+| `/speckit.specify`                       | `specs/NNN-feature/spec.md`    | Interviews the **Impact** questionnaire. Never plans                 |
+| `/speckit.clarify`                       | Answers in `spec.md`           | Sets `**Clarifications status**: complete` only when nothing is open |
+| `/speckit.plan`                          | `plan.md`, research, contracts | **Refuses** until the spec gate passes                               |
+| `/speckit.tasks`                         | `tasks.md`                     | Tasks map to Linear sub-issues of the spec's issue                   |
+| `/speckit.analyze`, `/speckit.checklist` | reports                        | Optional                                                             |
+| `/speckit.implement`                     | code                           | Executes `tasks.md`                                                  |
 
-**The gate between documents is a human.** Each of the first three skills writes its document, asks for review and stops. This is deliberately not automated: a spec whose ceremony exceeds its subject gets ignored, and an ignored spec is worse than none.
+## The clarify-before-build gate
 
-### requirements.md
+Every `spec.md` carries three things the template provides:
 
-Every requirement has a user story and acceptance criteria in one of the six EARS patterns, held to the INCOSE rules: active voice, no vague terms, measurable, one thought per criterion, solution-free. "The system shall process requests quickly" is rejected. "WHEN a request is received, THE System SHALL process it within 200 ms" is accepted.
+- `**Linear**: STA-n`, the issue for the spec (team STA). Optionally `**Linear project**`.
+- `**Clarifications status**: pending | complete`.
+- An `## Impact` questionnaire, every line answered (`none` is an answer): apps, services and packages touched, cross-service events, tenancy and data, secrets (names, never values), whether an ADR is needed, new dependencies.
 
-The two stages before requirements are **sections**, not documents:
+`tools/scripts/spec-gate.mjs plan` passes only when the status is `complete`, a real `STA-n` is set, every Impact line is answered and no `[NEEDS CLARIFICATION` marker remains. It is enforced twice:
 
-- `## Discovery` sits above the glossary. It records current behaviour, repository topology (real paths), dependencies at the versions actually pinned, ownership, constraints (linked, never restated) and **Sources**. A statement that was recalled rather than read is the defect this section prevents: if you cannot name the source, do not write the statement.
-- `## Introduction` carries product definition as five fields: users, business outcome, in scope, out of scope, measurable success.
+1. **Locally.** `.specify/scripts/bash/setup-plan.sh` runs it first, so `/speckit.plan` fails before it writes anything. `specify init --force` or `specify integration upgrade` can overwrite that script; `spec-gate.mjs ci` fails if the call is gone.
+2. **In CI.** `pnpm validate` runs `spec-gate.mjs ci`, which checks every `specs/<feature>/` changed since `origin/main`. A branch that touches `specs/**` without a clarified, Linear-linked spec fails the Quality Gate.
 
-Depth follows the risk class (`critical`, `standard` or `low`) recorded when the spec starts. Do not write more discovery than the risk deserves.
+Answers that raise an ADR go to `docs-adr-steward`; a new dependency goes through the catalog (`dependency-steward`).
 
-### design.md
+## Linear
 
-Overview, glossary, architecture, components, data model, correctness properties, error handling, testing strategy, open questions. Every acceptance criterion becomes an **example** (one concrete case, so a test) or a **universal** (a rule over a class of inputs, so a property with explicit quantification and a `Validates:` back-reference). A coverage table accounts for every requirement.
+`tools/scripts/spec-linear.mjs issue <spec.md>` creates the spec's issue and writes the key into `spec.md`. `tools/scripts/spec-linear.mjs tasks <tasks.md>` creates one sub-issue per `T###` task and appends ` [STA-n]` to the line. Both take `--dry-run` (no token, no calls). The token is `LINEAR_API_KEY` from the environment only, so run them as `infisical run --path=/agents -- node tools/scripts/spec-linear.mjs ...`. An agent with the Linear MCP connected uses that instead and edits the same fields. No token is ever stored in a file.
 
-### tasks.md
+## The constitution
 
-Coding tasks only. User acceptance testing, deployment, metric gathering, manual end-to-end runs, training and documentation are excluded by rule. Checkboxes are live state that agents read and write: `[ ]` not started, `[~]` queued, `[-]` in progress, `[x]` done. A task dependency graph puts every incomplete leaf into exactly one wave, and two tasks that touch the same file are in different waves, which is what makes a wave safe to run in parallel. `spec-run` dispatches a wave's ready tasks concurrently, capped at five.
-
-### The quick spec
-
-`spec-new --quick` skips EARS, the glossary and correctness properties for a short document: intent, acceptance, out of scope, assumptions. Use it for one small behaviour with an obvious outcome and no invariants. It can be promoted to a full spec if scope grows.
+`.specify/memory/constitution.md` is **generated** from [the laws](/constitution/index) in `apps/docs/src/constitution/*.mdx` by `tools/scripts/agents-sync.mjs`. Edit the laws, run `pnpm agents:sync`, and `pnpm agents:check` fails on drift. Never edit the generated file or run `/speckit.constitution` against it.
 
 ## Review checklist
 
-A spec passes review when every row is **PASS** or **N/A with a reason**. One FAIL blocks the build. Reviewers check against the real tree, not the prose.
+A spec passes review when every row is **PASS** or **N/A with a reason**. Reviewers check against the real tree, not the prose.
 
-1. **Decisions honoured.** Each applicable law and ADR is cited at the section that honours it. See [Constitution](/constitution/boundaries) and [Architecture decisions](/adr/index).
-2. **Cross-package consistency.** Every symbol the design imports exists in that package's current barrel (grep the export). The design's dependencies equal the member's `package.json` (`workspace:*` or `catalog:`). Dependency direction has no cycle. Events a package emits are listed once, and ones it consumes exist in the owner.
-3. **Hygiene.** Criteria are numbered and each is referenced by at least one task. Every leaf task has a `_Requirements:_` trailer. No task depends on a later one. No `TBD`, `later`, `for now`, `temporary` or `stub`. The design has no open question at approval.
-4. **A dated corrections section** exists when the spec changed after approval, and the latest wins. The status line names who approved.
+1. **Decisions honoured.** Each applicable law and ADR is cited where the plan honours it. See [Constitution](/constitution/boundaries) and [Architecture decisions](/adr/index).
+2. **Cross-package consistency.** Every symbol the plan imports exists in that package's current barrel. Dependency direction has no cycle. Events a package emits are listed once, and ones it consumes exist in the owner.
+3. **Hygiene.** Every requirement is covered by a task. No `TBD`, `later`, `for now`, `temporary` or `stub`. The plan has no open question at approval.
+4. **Impact is true.** The Impact answers match the files the plan actually touches.
 
-`spec-verify` is the mechanical half: every acceptance criterion referenced by a task, every design property covered by a test task, every `_Requirements:_` reference pointing at a criterion that exists. It does not judge whether the requirements were the right ones. That is what the human gate is for.
+`/speckit.analyze` is the mechanical half: it cross-checks spec, plan and tasks. It does not judge whether the requirements were the right ones. That is what the human gate is for.
 
 ## When a finding becomes a rule
 
@@ -84,16 +70,16 @@ A finding is **durable** when any one of three holds:
 
 Anything else is one-off. Fix it in the change and write nothing. Promoting a one-off is a real cost, because every rule is read by every agent in every session.
 
-| What was missing | Where it goes | Who writes it |
-| --- | --- | --- |
-| A decision | An ADR | `architecture-guardian` |
-| Enforcement: a decision exists and nothing fails | A check wired into `pnpm verify` and CI | `release-operations` |
-| Awareness: only a human reading can enforce it | A rule in `.agents/rules/` | `docs-governance` |
-| A procedure someone re-derived | A skill in `.agents/skills/` | `docs-governance` |
-| A behaviour the spec never specified | A requirement in `requirements.md` | `spec-author` |
-| Coverage: right code, nothing would have noticed | A test at the level that catches it | `test-engineer` |
-| A version, advisory or pin | A catalog entry | `dependency-steward` |
-| A layout mistake that repeats per package | A scaffold template change | `package-steward` |
+| What was missing                                 | Where it goes                           | Who writes it           |
+| ------------------------------------------------ | --------------------------------------- | ----------------------- |
+| A decision                                       | An ADR                                  | `architecture-guardian` |
+| Enforcement: a decision exists and nothing fails | A check wired into `pnpm verify` and CI | `release-operations`    |
+| Awareness: only a human reading can enforce it   | A rule in `.agents/rules/`              | `docs-governance`       |
+| A procedure someone re-derived                   | A skill in `.agents/skills/`            | `docs-governance`       |
+| A behaviour the spec never specified             | A requirement in `requirements.md`      | `spec-author`           |
+| Coverage: right code, nothing would have noticed | A test at the level that catches it     | `test-engineer`         |
+| A version, advisory or pin                       | A catalog entry                         | `dependency-steward`    |
+| A layout mistake that repeats per package        | A scaffold template change              | `package-steward`       |
 
 **Enforcement beats awareness.** If a finding can be stated as a predicate over files, write the check, not a rule asking agents to remember. **A decision and its enforcement are two artifacts.** An ADR that no check enforces is a standard that only a tired reviewer stands behind, so the ADR ships with its check or names the check and its owner in its follow-up.
 

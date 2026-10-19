@@ -16,7 +16,6 @@
     "deny": ["Read(**/.env)", "Read(**/.env.*)", "Read(**/.secrets.local.*)", "Read(**/*.pem)"]
   },
   "enabledPlugins": {
-    "sdlc@figentra-sdlc": true,
     "figma@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
@@ -26,9 +25,6 @@
     "vercel@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
-    "figentra-sdlc": {
-      "source": { "source": "github", "repo": "figentra/sdlc" }
-    },
     "encore-skills": {
       "source": { "source": "github", "repo": "encoredev/skills" }
     },

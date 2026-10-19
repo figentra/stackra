@@ -870,15 +870,60 @@ const BLOCK_END = `<!-- END generated from ${SOURCE}/rules -->`;
 const BLOCK_BEGIN_PREFIX = `<!-- BEGIN generated from ${SOURCE}/rules`;
 
 /** Demote every Markdown heading two levels, outside fenced code, so a rule nests under the block's `##`. */
-function demoteHeadings(body) {
+function demoteHeadings(body, by = "##") {
   let fenced = false;
   return body
     .split("\n")
     .map((line) => {
       if (/^\s*(```|~~~)/.test(line)) fenced = !fenced;
-      return !fenced && /^#{1,4} /.test(line) ? `##${line}` : line;
+      return !fenced && /^#{1,4} /.test(line) ? `${by}${line}` : line;
     })
     .join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// CONSTITUTION — spec-kit reads `.specify/memory/constitution.md`; its single source is the
+// docs laws in apps/docs/src/constitution/*.mdx. Generated whole, drift-checked like the rest.
+// ---------------------------------------------------------------------------
+
+const CONSTITUTION_SRC = "apps/docs/src/constitution";
+const CONSTITUTION_OUT = ".specify/memory/constitution.md";
+
+function renderConstitution(files) {
+  const laws = files.map((f) => {
+    const raw = readFileSync(join(ROOT, CONSTITUTION_SRC, f), "utf8");
+    const { data, body } = parseNeutralFrontmatter(raw, `${CONSTITUTION_SRC}/${f}`);
+    // Docs components (<Note>, <Steps>…) are Mintlify-only; keep their text, drop the tags.
+    const text = body
+      .replace(/^\s*<Step title="([^"]*)">(.*)<\/Step>\s*$/gm, "- **$1**: $2")
+      .replace(/^\s*<\/?[A-Z][A-Za-z]*[^>\n]*>\s*$/gm, "")
+      .replace(/\n{3,}/g, "\n\n");
+    return `## ${unquote(String(data.title ?? f))}\n\n${demoteHeadings(text.trim(), "#")}`;
+  });
+  return [
+    "# Stackra Constitution",
+    "",
+    `<!-- generated from ${CONSTITUTION_SRC}/*.mdx by ${SCRIPT_REL} — edit the sources, not this file -->`,
+    "",
+    ...laws.flatMap((l) => [l, ""]),
+  ].join("\n");
+}
+
+function ensureConstitution() {
+  const dir = join(ROOT, CONSTITUTION_SRC);
+  if (!existsSync(dir)) return;
+  // index first (the hierarchy), then the laws alphabetically
+  const files = readdirSync(dir)
+    .filter((f) => f.endsWith(".mdx"))
+    .toSorted((a, b) => (a === "index.mdx" ? -1 : b === "index.mdx" ? 1 : a.localeCompare(b)));
+  const rendered = renderConstitution(files);
+  const out = join(ROOT, CONSTITUTION_OUT);
+  if (existsSync(out) && readFileSync(out, "utf8") === rendered) return void results.ok++;
+  if (CHECK)
+    return void results.drift.push(`${CONSTITUTION_OUT}: ${existsSync(out) ? "stale" : "missing"}`);
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(out, rendered);
+  results.generated++;
 }
 
 /** Always-on rules in full; file-scoped and manual rules as an index pointing at their source. */
@@ -1021,6 +1066,7 @@ function main() {
     return 0;
   }
 
+  ensureConstitution();
   const ruleSources = sourceEntries("rules").filter((e) => e.toLowerCase() !== "readme.md");
   for (const name of assistants) {
     const { dir, map, instructionsBlock } = ASSISTANTS[name];

@@ -558,3 +558,28 @@ for (const [what, source, message] of INVALID) {
     });
   });
 }
+
+// ---------------------------------------------------------------------------
+// Constitution projection
+// ---------------------------------------------------------------------------
+
+test("the constitution is generated from the docs laws and drift is detected", () => {
+  withFixture({ "reviewer.md": READ_ONLY }, (root) => {
+    mkdirSync(join(root, "apps/docs/src/constitution"), { recursive: true });
+    writeFileSync(
+      join(root, "apps/docs/src/constitution/secrets.mdx"),
+      '---\ntitle: "Secrets"\ndescription: "d"\n---\n\n<Note>\nNever print values.\n</Note>\n\n## Rule\n\nText.\n',
+    );
+    assert.equal(run(root).code, 0);
+    const out = read(root, ".specify/memory/constitution.md");
+    assert.match(out, /^# Stackra Constitution/);
+    assert.match(out, /## Secrets\n\n<Note>|## Secrets\n\nNever print values\./);
+    assert.doesNotMatch(out, /<Note>/);
+    assert.match(out, /### Rule/);
+    assert.equal(run(root, "--check").code, 0);
+    writeFileSync(join(root, ".specify/memory/constitution.md"), "hand edited\n");
+    const drift = run(root, "--check");
+    assert.equal(drift.code, 1);
+    assert.match(drift.out, /constitution\.md: stale/);
+  });
+});

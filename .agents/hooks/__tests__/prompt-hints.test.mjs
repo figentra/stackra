@@ -38,6 +38,8 @@ const cases = [
   ["can we use prisma here", "MikroORM"],
   ["where should this new package live", "workspace-layout.md"],
   ["can a package import from another package's src", "turbo boundaries"],
+  ["I want to add support for CSV export", "/speckit.clarify"],
+  ["implement the invite flow", "/speckit.clarify"],
 ];
 
 for (const [prompt, marker] of cases)
@@ -76,4 +78,8 @@ test("empty prompt produces no output", () => {
   const r = spawnSync("node", [hook], { input: "{}", encoding: "utf8" });
   assert.equal(r.status, 0);
   assert.equal(r.stdout.trim(), "");
+});
+
+test("a /speckit command is not nudged back to clarify", () => {
+  assert.ok(!hintsFor("/speckit.plan implement the invite flow").includes("/speckit.clarify"));
 });
