@@ -125,6 +125,9 @@ Each ADR records one decision, its context, consequences and the check that enfo
 | [0116](/adr/0116-content-types-and-custom-fields)                   | @stackra/content: content types are models with a trait bundle; custom fields are a free, bounded trait                             | Accepted           |
 | [0117](/adr/0117-contracts-placement-and-decorator-ownership)       | Shared primitives live in @stackra/contracts, each package has a types-only ./contracts entry, and each package owns its decorators | Accepted           |
 | [0118](/adr/0118-api-versioning-dormant-package)                    | @stackra/versioning is built now and stays dormant: date versions pinned per API key or OAuth app                                   | Accepted           |
+| [0119](/adr/0119-merge-policy-and-release-authority)                | Merge policy: Quality Gate is the only required check; Claude merges only through pnpm pr:merge                                     | Accepted           |
+| [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk)          | The SDLC: specs in .agents/specs, four lanes, and change risk R0 to R3                                                              | Accepted           |
+| [0121](/adr/0121-sdlc-tooling-roles-and-linear)                     | SDLC tooling: sdlc retired, spec-kit pinned, a local Linear extension, the ported roles and who runs what                           | Accepted           |
 
 Copy the [template](/adr/template), give it the next number, and add it to this table and to `docs.json`.
 Cite Stackra ADRs by path, never by a number from another repository.

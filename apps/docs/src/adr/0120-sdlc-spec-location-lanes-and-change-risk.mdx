@@ -1,0 +1,63 @@
+---
+title: "0120 — The SDLC: specs in .agents/specs, four lanes, and change risk R0 to R3"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+[0067](/adr/0067-spec-kit-is-the-sdlc) (open PR #13) adopts spec-kit with a clarify gate, and left the spec folder and the
+threshold for trivial changes as TODOs. [0016](/adr/0016-agents-source-of-truth) rules 4 and 5 put specs at
+`.agents/specs/<NNN>-<slug>/` with exactly three documents, from the `sdlc` plugin. spec-kit has no project-wide setting for the
+specs folder; per-feature overrides work but must be passed every run. Numbered folders collide across parallel worktrees.
+
+## Decision
+
+1. **D1 — Specs live in `.agents/specs/sta-<n>-<slug>/`**, keyed by the Linear issue, through a Stackra preset wrap that sets
+   `SPECIFY_FEATURE_DIRECTORY` on every run and forbids auto-numbering. A tripwire check fails when a spec-kit upgrade breaks
+   the wrap. A spec folder holds the documents spec-kit writes, not the three of 0016.
+2. **D4 — Four lanes**, chosen at intake by a fixed table (first match wins) and re-checked by CI:
+
+   | Lane  | When                                                                                              | Path                                                                   |
+   | ----- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+   | bug   | A defect in existing behaviour, one member, no contract change                                    | Assess, failing test first, fix                                        |
+   | chore | No behaviour change: docs, dependencies, tooling, refactor, tests, CI not touching permissions    | No spec                                                                |
+   | lite  | New behaviour at change risk R0–R1, one member, additive, about 400 changed lines or less, no ADR | Specify to implement in one pull request                               |
+   | full  | Everything else                                                                                   | A design pull request, then one pull request per user-story phase (D8) |
+
+   A change may move to a heavier lane at any time, and to a lighter one only with a recorded reason.
+
+3. **D16 / R2 — Change risk, R0 to R3**, a scale for code changes, distinct from the action risk L0–L4 of
+   [0099](/adr/0099-risk-scale-l0-to-l4):
+
+   | Class | Meaning                                                                                                                                 |
+   | ----- | --------------------------------------------------------------------------------------------------------------------------------------- |
+   | R0    | Docs, comments, tests only                                                                                                              |
+   | R1    | One member, internal, no contract change                                                                                                |
+   | R2    | A public contract, a new package or member, several members, a new dependency, a UI surface                                             |
+   | R3    | Auth, iam, tenancy or RLS, tenant-data migrations, money, PII, secrets, webhooks or outbound HTTP, crypto, CI permissions, agent guards |
+
+   The lead derives it from the Impact answers or the paths touched; it can be raised, never lowered.
+
+4. **D8 — Full-lane granularity**: a design pull request (spec, plan, tasks, analyze), then one pull request per user-story
+   phase, each anchored by a Linear sub-issue.
+5. **D17 — Specs are public on GitHub and are not published on Mintlify.** Pro specs live in `figentra/stackra-pro`; details of
+   an unfixed vulnerability go in a private security advisory.
+6. **D18 — EARS wording** for requirements is template guidance, not a gate.
+
+## Consequences
+
+- Parallel sessions never collide on spec numbers, and every spec is traceable to its Linear issue.
+- The preset wrap is a maintained piece of glue; the tripwire turns a silent upgrade break into a red check.
+- Trivial changes have a recorded way to skip the full flow, which settles 0067's open threshold.
+
+## Enforcement
+
+Planned: `tools/scripts/spec-gate.mjs` (folder name `^\.agents/specs/sta-\d+-[a-z0-9-]+$`, the lane check against commit
+types, the tripwire) inside `pnpm validate`; `pnpm pr:merge` reads the change-risk class ([0119](/adr/0119-merge-policy-and-release-authority)).
+
+## Supersedes and sources
+
+Supersedes: none. Supersedes in part [0016](/adr/0016-agents-source-of-truth) rules 4 and 5 (the page carries a note pointing
+here). Amends [0067](/adr/0067-spec-kit-is-the-sdlc) decision 8 and its open threshold; the edit on 0067 waits for PR #13.
+Sources: owner decisions in chat, 2026-10-19 (SDLC D1, D4, D8, D16, D17, D18; R2). Plan: the SDD and SDLC plan of the
+coordinating session (§2.3, §3.3).

@@ -209,7 +209,10 @@
               "adr/0115-form-builder",
               "adr/0116-content-types-and-custom-fields",
               "adr/0117-contracts-placement-and-decorator-ownership",
-              "adr/0118-api-versioning-dormant-package"
+              "adr/0118-api-versioning-dormant-package",
+              "adr/0119-merge-policy-and-release-authority",
+              "adr/0120-sdlc-spec-location-lanes-and-change-risk",
+              "adr/0121-sdlc-tooling-roles-and-linear"
             ]
           }
         ]
