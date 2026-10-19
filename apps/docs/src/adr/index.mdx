@@ -20,7 +20,7 @@ Each ADR records one decision, its context, consequences and the check that enfo
 | [0010](/adr/0010-services-are-independent-workspace-members) | Services are independent workspace members | Accepted |
 | [0011](/adr/0011-rejected-and-deferred-technologies) | Rejected and deferred technologies | Accepted |
 | [0012](/adr/0012-code-host-and-ci) | Code host and CI | Proposed |
-| [0013](/adr/0013-versioning-and-release) | Versioning and release | Accepted |
+| [0013](/adr/0013-versioning-and-release) | Versioning and release | Superseded by 0025 |
 | [0014](/adr/0014-data-ownership-and-orm) | Data ownership and ORM | Accepted |
 | [0015](/adr/0015-contract-packages) | Contract packages | Accepted |
 | [0016](/adr/0016-agents-source-of-truth) | `.agents/` is the source of truth | Accepted |
@@ -30,6 +30,12 @@ Each ADR records one decision, its context, consequences and the check that enfo
 | [0020](/adr/0020-observability-and-crash-reporting) | Observability and crash reporting | Proposed |
 | [0021](/adr/0021-ai-engine-and-agent-write-safety) | AI engine and agent write safety | Proposed |
 | [0022](/adr/0022-tests-live-in-tests-folders) | Tests live in `__tests__` folders | Accepted |
+| [0023](/adr/0023-stackra-is-a-framework) | Stackra is a framework; products consume it | Accepted |
+| [0024](/adr/0024-mit-license-with-exclusions) | MIT license, with stated exclusions | Accepted |
+| [0025](/adr/0025-packages-publish-to-private-registry) | Packages publish to `npm.figentra.com`; every package builds to ESM dist | Accepted |
+| [0026](/adr/0026-turborepo-remote-cache-on-r2) | Turborepo remote cache self-hosted on Cloudflare R2 | Accepted |
+| [0027](/adr/0027-cli-tools-pinned-in-mise) | Every CLI the repo needs is pinned in mise | Accepted |
+| [0028](/adr/0028-package-categories-appear-with-first-package) | Package categories appear with their first package | Accepted |
 
 Copy the [template](/adr/template), give it the next number, and add it to this table and to `docs.json`.
 Cite Stackra ADRs by path, never by a number from another repository.

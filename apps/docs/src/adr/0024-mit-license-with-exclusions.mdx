@@ -1,0 +1,41 @@
+---
+title: "0024 — MIT license, with stated exclusions"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+The repository is public. The root `LICENSE` says "All rights reserved" and every member's `package.json` says
+`"license": "UNLICENSED"`, because the earlier plan kept everything private. Products in other repositories install
+these packages ([0023](/adr/0023-stackra-is-a-framework)), and a framework nobody may legally use is not a framework.
+Some files in the tree are not ours to license: fonts arrive under the SIL Open Font License, and brand marks must not become free to reuse.
+
+## Decision
+
+1. **Code is MIT.** The root `LICENSE` is the MIT text. Every member's `LICENSE` stays a byte-identical copy of it
+   ([0013](/adr/0013-versioning-and-release)), and every `package.json` says `"license": "MIT"`.
+2. **Brand assets are excluded: all rights reserved.** Logos, marks and social images carry a `NOTICE` in their own folder
+   (for `@stackra/brand`, `src/logos/NOTICE`) stating the exclusion. The member `LICENSE` stays the root copy; the `NOTICE` narrows it.
+3. **Fonts keep their own licence.** Geist, Geist Mono and IBM Plex Sans Arabic ship with their OFL texts beside the files
+   (`src/fonts/OFL-*.txt`), as today.
+4. **Code from paid licences is never committed.** HeroUI Pro, Uniwind Pro and similar are consumed as dependencies only;
+   no copied component, generated source or licence key enters the tree.
+5. **A new exclusion needs a `NOTICE` in its folder** in the same change that adds the files.
+
+## Consequences
+
+- Anyone may use the code; nobody may reuse the Stackra marks.
+- This reverses the earlier "all private (UNLICENSED)" plan. The validator, `/standards/members` and the scaffold
+  templates change together when this ADR is accepted.
+- The copyright line in the MIT text names Figentra Technologies FZ-LLC, as the current `LICENSE` does.
+
+## Enforcement
+
+Planned — `tools/scripts/validate-repository.mjs` (`checkFiles`) currently requires `license` to be `"UNLICENSED"`; it
+changes to expect `"MIT"` and keeps the `LICENSE`-equals-root check. Planned — a check that `packages/experience/brand/src/logos/NOTICE` exists.
+Nothing checks rule 4 today; gitleaks does not detect copied source.
+
+## Supersedes and sources
+
+Supersedes: none. Changes the licence rule documented in `/standards/members`. Sources: owner decision in chat, 2026-10-19;
+`packages/experience/brand/src/fonts/OFL-*.txt`.

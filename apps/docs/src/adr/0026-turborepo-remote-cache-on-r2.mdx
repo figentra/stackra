@@ -1,0 +1,35 @@
+---
+title: "0026 — Turborepo remote cache self-hosted on Cloudflare R2"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+`turbo.jsonc` already enables the remote cache with `"signature": true`, but there is no server: it is a no-op until
+`TURBO_TOKEN` and `TURBO_TEAM` are set. CI rebuilds everything on every run. Turborepo's remote-cache HTTP API is open, so
+any server that implements it works. Vercel Remote Cache was weighed and rejected: it ties builds to a Vercel account the
+repository does not otherwise use.
+
+## Decision
+
+1. **A small Cloudflare Worker implements Turborepo's remote-cache API**, storing artifacts in an R2 bucket, on the same
+   Cloudflare account and platform as `npm.figentra.com` ([0025](/adr/0025-packages-publish-to-private-registry)).
+2. **Artifacts are signed.** `remoteCache.signature` stays `true`; the signature key and the cache token live in Infisical
+   `/ci` and reach CI over OIDC ([0009](/adr/0009-secrets-two-mechanisms)).
+3. **No lock-in.** Switching provider changes only the URL and the token; no repository file names a vendor beyond the URL.
+4. **Vercel Remote Cache is not used.**
+
+## Consequences
+
+- CI and developers skip tasks whose inputs did not change.
+- The Worker, its bucket lifecycle (`cacheMaxAge` is 7 days locally; R2 needs a matching expiry rule) and its token are a chore for the maintainer.
+- A poisoned artifact is rejected by signature check rather than served.
+
+## Enforcement
+
+Planned — the Worker itself, the CI step that sets `TURBO_API`, `TURBO_TOKEN` and `TURBO_TEAM` from `/ci`, and an R2 lifecycle rule.
+Today only `turbo.jsonc` (`remoteCache.signature: true`) exists; nothing uses a remote cache.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19; `turbo.jsonc`.

@@ -1,0 +1,54 @@
+---
+title: "0025 — Packages publish to npm.figentra.com; every package builds to ESM dist"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Products install `@stackra/*` from their own repositories ([0023](/adr/0023-stackra-is-a-framework)), so packages need a
+registry. Today every member's `exports` points at `./src` and `validate-repository.mjs` enforces it; a consumer outside the
+workspace needs compiled JavaScript and declarations instead. Runtimes (Node, Encore, Metro, Vite) must load one
+artifact, and a second module format would load `@stackra/container` twice and split its DI tokens (the dual-package hazard).
+[0013](/adr/0013-versioning-and-release) also versions and tags private apps and services, which gives deployables a
+version number they are never deployed by.
+
+## Decision
+
+1. **The registry is `npm.figentra.com`**, a private npm registry (npflared) running on Cloudflare Workers. The `@stackra`
+   scope maps to it. Publishing to public npm is a later option, not part of this decision.
+2. **The publish token is a CI secret.** The release job obtains it from Infisical `/ci` over OIDC
+   ([0009](/adr/0009-secrets-two-mechanisms)). No token appears in `.npmrc` or any other file.
+3. **Packages are not consumed as source.** Every package builds with tsdown to ESM-only `dist/*.mjs` plus `.d.mts`. There
+   is no CJS output. Runtimes (Node, Encore, Metro, Vite) always load `dist`.
+   - A custom export condition `@stackra/source`, listed first in each `exports` entry, points at `./src`. TypeScript
+     (`customConditions`), Vitest and Vite set it to read source for fast feedback; nothing that ships sets it.
+   - A package's `config/` directory (outside `src`, Laravel-style publishable defaults) is compiled and exported as `./config`.
+   - A package's static `resources/` directory is exported as `./resources/*`.
+   - The `validate-repository.mjs` rule that every `exports` target starts with `./src/` must change to accept this shape
+     (planned).
+4. **Changesets versions packages only.** Apps and services are not versioned: they deploy by commit SHA. `privatePackages`
+   in `.changeset/config.json` becomes `{ "version": false, "tag": false }`.
+5. **[0013](/adr/0013-versioning-and-release) decisions 1, 2, 4, 5 and 6 carry forward unchanged** (changesets owns versions,
+   `CHANGELOG.md` and `LICENSE` in every member, no replaced versions, release notes for breaking releases, a human approves every release).
+
+## Consequences
+
+- A publishable package flips `"private": false` when it first publishes, as `/standards/members` already says.
+- Fast feedback still reads source through `@stackra/source`; a runtime that forgets the condition loads `dist`, so a build is
+  part of running anything outside tests and typecheck, and turbo `dependsOn: ["^build"]` carries it.
+- A package whose `dist/` differs from its `src/` behaviour is a new failure mode; the publish job must test the packed artifact.
+- Apps and services lose their per-member version and tag. Their release narrative is the deploy log by SHA.
+- MIT code on a private registry is consistent ([0024](/adr/0024-mit-license-with-exclusions)): the licence permits reuse; the registry controls distribution.
+- The registry is one more Worker to run; it shares the Cloudflare account with the remote cache ([0026](/adr/0026-turborepo-remote-cache-on-r2)).
+
+## Enforcement
+
+Planned — the release workflow (scope mapping, OIDC token, tsdown build, publish), a packed-artifact smoke test, the
+`privatePackages` change in `.changeset/config.json`, the `@stackra/source` condition in the shared tsconfig and vitest
+presets, and a rewrite of the `exports` rule in `validate-repository.mjs` (today it still demands `./src/` targets;
+nothing publishes and nothing checks the dist side).
+
+## Supersedes and sources
+
+Supersedes: [0013](/adr/0013-versioning-and-release) — decision 3 (private members version and tag) is reversed by decision 4;
+decisions 1, 2, 4, 5 and 6 carry forward through decision 5. Sources: owner decision in chat, 2026-10-19.

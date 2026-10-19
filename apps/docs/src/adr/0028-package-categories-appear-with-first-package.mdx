@@ -1,0 +1,34 @@
+---
+title: "0028 — Package categories appear with their first package"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+`packages/` holds ten category folders. Nine of them contain only a `.gitkeep`; `experience` holds `@stackra/brand`. An
+empty folder documents nothing a page cannot, and it suggests packages exist where none do. `pnpm new` already creates the
+destination path recursively (`tools/scripts/scaffold.mjs`), so a category folder does not need to exist in advance.
+
+## Decision
+
+1. **The ten categories stay the taxonomy**: foundation, application, communication, cross-cutting, data, developer,
+   experience, runtime, security, state. They are listed in `/guides/packages` and in `CATEGORIES` in `tools/scripts/scaffold.mjs`.
+2. **Empty category folders are deleted**, with their `.gitkeep` files.
+3. **A category folder is created with its first package**, by `pnpm new <kind> <name> --category <c>`.
+4. **The archetypes of [0004](/adr/0004-package-archetypes-and-layers) are unchanged.**
+
+## Consequences
+
+- `ls packages` shows only what exists.
+- The taxonomy lives in two places (the guide and `CATEGORIES`); they must agree.
+
+## Enforcement
+
+`tools/scripts/scaffold.mjs` rejects a `--category` outside `CATEGORIES`. Planned — a validator check that every directory
+under `packages/` other than `tooling` contains at least one member, and that every category folder is in `CATEGORIES`.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: none — [0001](/adr/0001-monorepo-layout) and [0004](/adr/0004-package-archetypes-and-layers) require
+packages to sit in category folders but do not require empty ones. Applies 0004 decision 4 ("directories exist only when
+something real lives in them") to `packages/`. Sources: owner decision in chat, 2026-10-19.
