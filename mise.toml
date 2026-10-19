@@ -8,6 +8,14 @@
 node = "24"
 pnpm = "12.6.0"
 gitleaks = "8.30.1"
+# Developer-machine CLIs the repo calls. Not pinned here (no mise backend carries them):
+#   opencode (v2 installer: https://opencode.ai/install), encore (brew install encoredev/tap/encore), aws, claude.
+# mise `infisical` reads .infisical.yaml from 0.44 on; maestro also needs a JDK on PATH.
+"github:Infisical/cli" = "0.44.2"
+"aqua:astral-sh/uv" = "0.11.16"
+"github:mobile-dev-inc/maestro" = "cli-2.10.0"
 
 [env]
+# Bedrock profile for OpenCode (amazon-bedrock/*); `aws sso login --profile bedrock` refreshes it.
+AWS_PROFILE = "bedrock"
 NODE_ENV = "development"

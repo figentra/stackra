@@ -1,0 +1,36 @@
+---
+title: "Fresh machine"
+description: "Clone, install the pinned toolchain, log in, and let pnpm doctor tell you what is still missing."
+icon: "laptop"
+---
+
+A new machine needs only this repository, a few logins and the commands below. Nothing else is assumed.
+
+## Steps
+
+1. **Clone** `figentra/stackra` and `cd` into it.
+2. **Toolchain:** `mise trust && mise install`. `mise.toml` pins Node, pnpm, gitleaks, the Infisical CLI, uv and Maestro, and sets `AWS_PROFILE=bedrock`.
+3. **Dependencies:** `pnpm install`.
+4. **Tools mise does not pin** (no mise backend carries them): OpenCode v2 (`https://opencode.ai/install`), the Claude Code CLI, the AWS CLI (`brew install awscli`) and, once a service adopts it, Encore (`brew install encoredev/tap/encore`). Maestro also needs a JDK on `PATH`.
+5. **Logins:**
+   - `infisical login` (the project config is the committed `.infisical.yaml`).
+   - Add a `bedrock` profile to `~/.aws/config`, then `aws sso login --profile bedrock`. OpenCode reaches Kimi K3 on Amazon Bedrock through it.
+   - Sign in to Claude Code.
+6. **MCP servers:** derive `.mcp.json` from the committed `.mcp.jsonc` (its header says how). Tokens come from Infisical through `tools/scripts/mcp.sh`, never from a file.
+7. **Check:** `pnpm doctor`.
+
+## What `pnpm doctor` checks
+
+| Check                                                    | Fix when it fails                 |
+| -------------------------------------------------------- | --------------------------------- |
+| mise tools installed                                     | `mise trust && mise install`      |
+| `pnpm install` done                                      | `pnpm install`                    |
+| Infisical has an active login (`infisical profile list`) | `infisical login`                 |
+| `aws sts get-caller-identity --profile bedrock` works    | `aws sso login --profile bedrock` |
+| `claude` and `opencode` on `PATH`                        | install them (step 4)             |
+| `pnpm agents:check` clean                                | `pnpm agents:sync`                |
+| `.mcp.json` present (warning only)                       | step 6                            |
+
+Doctor prints a ✔ / ✖ / ! line per check with the fix beneath each failure, and exits 1 if any required check fails. It runs only non-secret status commands and never prints a value.
+
+Delegating work to OpenCode afterwards: `pnpm delegate <task-type> "<brief>"` (routing in `.agents/routing.yaml`) and `pnpm ai:spend` for the daily cap. Both land with their own pull request.

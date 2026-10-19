@@ -33,6 +33,7 @@
     "secrets:scan": "gitleaks git . --config .gitleaks.toml --no-banner --redact",
     "delegate": "node tools/scripts/delegate.mjs",
     "ai:spend": "node tools/scripts/ai-spend.mjs",
+    "doctor": "node tools/scripts/doctor.mjs",
     "agents:sync": "node tools/scripts/agents-sync.mjs",
     "agents:check": "node tools/scripts/agents-sync.mjs --check"
   },
