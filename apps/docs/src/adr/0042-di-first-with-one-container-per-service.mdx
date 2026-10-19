@@ -1,0 +1,38 @@
+---
+title: "0042 — DI-first with one container per service"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0005](/adr/0005-di-container-and-legacy-decorators) chose `@stackra/container` with legacy decorators and explicit tokens
+but did not say how far DI reaches or how many containers exist. Controllers, handlers and crons ([0041](/adr/0041-decorated-controllers-and-build-time-generator))
+and feature modules ([0040](/adr/0040-ddd-feature-modules-in-services)) need one wiring story. Whether Encore's bundler
+and legacy decorators work together is not yet proven.
+
+## Decision
+
+1. **Every class with dependencies is a provider** wired by `@stackra/container`, in services, apps and packages. No
+   module-level singletons for behaviour.
+2. **Tokens are explicit** (`@Inject(token)` or `@Dependencies([...])`); `reflect-metadata` and `design:paramtypes` are
+   never used, as in 0005.
+3. **One container per service**, built at start-up from the service's root module. Apps have their own container.
+4. **Modules export explicitly**: a module's providers are private unless listed in its `exports`, and another module
+   sees only exported tokens.
+5. **Encore primitives are provided as tokens** from the service root ([0040](/adr/0040-ddd-feature-modules-in-services)).
+6. **Spike first:** before this is Accepted, a spike must show Encore (esbuild) building and running a service with
+   legacy decorators and the container. Outcome: TODO. If it fails, this ADR is rewritten, not worked around.
+
+## Consequences
+
+- Tests swap providers instead of mocking imports.
+- Slightly more ceremony than plain functions; accepted for uniform wiring.
+- The spike gates 0040 and 0041 as well.
+
+## Enforcement
+
+Planned — the Encore decorator spike; an oxlint rule banning `new` of injectable classes outside module definitions and tests.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0005](/adr/0005-di-container-and-legacy-decorators). Sources: owner decision in chat, 2026-10-19.

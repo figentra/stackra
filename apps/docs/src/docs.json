@@ -131,7 +131,12 @@
               "adr/0036-idempotency-cache-and-postgres",
               "adr/0037-api-versioning-by-date-header",
               "adr/0038-rate-limits-app-buckets-and-waf",
-              "adr/0039-openapi-mintlify-and-oauth-guide"
+              "adr/0039-openapi-mintlify-and-oauth-guide",
+              "adr/0040-ddd-feature-modules-in-services",
+              "adr/0041-decorated-controllers-and-build-time-generator",
+              "adr/0042-di-first-with-one-container-per-service",
+              "adr/0043-workflow-package-medusa-style",
+              "adr/0044-laravel-style-package-config"
             ]
           }
         ]
