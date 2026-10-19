@@ -1,0 +1,39 @@
+---
+title: "0023 — Stackra is a framework; products consume it"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+The repository holds `@stackra/*` packages, three apps and two services, and the root `package.json` description still mentions "the Encore app".
+Without a stated purpose every new feature asks whether it belongs here or in a product, and product literals creep into
+shared code. The owner agreed the purpose on 2026-10-19.
+
+## Decision
+
+1. **Stackra is the shared framework tier.** It holds the `@stackra/*` packages (DI, contracts, tooling presets, brand
+   and the rest) and the reference members that prove them: `apps/console` (an operator and admin console, not a
+   customer UI), `apps/mobile`, `apps/docs` and `services/*`.
+2. **Products live in their own repositories** (Academorix, Juristra and Retail OS are examples) and install published
+   `@stackra/*` packages ([0025](/adr/0025-packages-publish-to-private-registry)). Product code never lands in this repository.
+3. **Shared packages never contain a product literal**: no product name, project id or brand URL of a product. They expose
+   factories; the product supplies the definition ([0003](/adr/0003-tier-dependency-direction)).
+4. **Foundation quality comes before features, with no fixed deadline.** The first end-to-end deliverable is deliberately
+   not decided yet; choosing it is a later ADR.
+5. **The team is one maintainer plus AI agents.** Two-person approval stays deferred, as [0012](/adr/0012-code-host-and-ci) records.
+
+## Consequences
+
+- A reviewer can reject a diff because it is product code, citing this page.
+- Reference apps must stay small enough to prove a package, not grow into products.
+- Products depend on released versions, so a breaking change here costs a coordinated upgrade elsewhere.
+- The root `package.json` description ("the Encore app") is stale and is fixed when this ADR is accepted.
+
+## Enforcement
+
+Planned — the product-literal check already planned in [0003](/adr/0003-tier-dependency-direction), scanning `packages/**/src`
+for product names (`academorix`, `juristra`, `retail-os`). Nothing checks this today; review and the `architecture-guardian` agent are the only guard.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19; user rules `module-boundary.md` (literal-value rule).

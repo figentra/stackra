@@ -1,0 +1,35 @@
+---
+title: "0027 — Every CLI the repo needs is pinned in mise"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+`mise.toml` pins node, pnpm and gitleaks. Other CLIs the repository calls (infisical for `.infisical.yaml`, encore,
+maestro for mobile flows, uv for spec-kit) are installed however each contributor likes. CI installs tools in ad-hoc steps:
+`.github/workflows/ci.yml` had no gitleaks, so the secrets scan failed with exit 127 until commit `ff3357f` added a
+`curl | tar` step, which now duplicates the version pinned in `mise.toml`. Two places pin the same tool, and they will drift.
+
+## Decision
+
+1. **Every CLI that a contributor or CI calls is pinned in `mise.toml`.** Today that adds: `infisical` (at least the first
+   version that reads `.infisical.yaml`), `maestro`, `encore` and `uv`. A new CLI is added to `mise.toml` in the change that first calls it.
+2. **CI installs tools through mise** (`jdx/mise-action`, SHA-pinned per [0019](/adr/0019-supply-chain-hardening)), not through
+   per-tool steps. The gitleaks `curl` step is removed when this lands.
+3. **Homebrew-only installs are not supported for repository tooling.** A contributor may have a tool from Homebrew; the repository relies only on the mise pin.
+4. **npm-distributed CLIs stay in catalogs** (turbo, oxlint, changesets and the rest); mise covers what pnpm does not install.
+
+## Consequences
+
+- `mise install` is the one setup step for tools; onboarding docs say so.
+- A version bump is one line, and `turbo.jsonc` already lists `mise.toml` in `globalDependencies`, so a bump invalidates the cache.
+- Some CLIs (maestro, encore) may need a mise backend other than the core registry; the pin records which.
+
+## Enforcement
+
+Planned — the CI workflow uses `jdx/mise-action`; optionally, a `validate-repository.mjs` check that every executable named
+in `package.json` scripts and workflow `run:` lines is either a workspace dependency or a `mise.toml` tool. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19; commit `ff3357f` (gitleaks exit 127); `mise.toml`.
