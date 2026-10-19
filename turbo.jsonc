@@ -25,7 +25,7 @@
 
   // Anything that changes the meaning of every task's output. mise.toml pins node/pnpm; a bump there can
   // change what every build/test/typecheck produces.
-  "globalDependencies": ["mise.toml", ".oxlintrc.json", ".oxfmtrc.json"],
+  "globalDependencies": ["mise.toml", ".oxlintrc.jsonc", ".oxfmtrc.jsonc"],
 
   "globalEnv": ["NODE_ENV", "CI"],
 
@@ -38,7 +38,7 @@
   //   tier:lib     — packages/*/*; never depend on a deployable
   //   tier:app     — apps/*; consume config and libs, talk to services over the wire only
   //   tier:service — services/*; top of the graph
-  // Each member declares its tag in its own turbo.json (`"tags": ["tier:lib"]`); validate-repository
+  // Each member declares its tag in its own turbo.jsonc (`"tags": ["tier:lib"]`); validate-repository
   // checks that every member has exactly one tier tag matching its directory.
   "boundaries": {
     "tags": {
@@ -66,7 +66,7 @@
     },
     "lint": {
       "description": "Static analysis, no fixes: oxlint. Deliberately no ^build dependency — linting a package's own source must not require its dependencies to be built.",
-      "inputs": ["$TURBO_DEFAULT$", ".oxlintrc.json"],
+      "inputs": ["$TURBO_DEFAULT$", ".oxlintrc.jsonc"],
       "outputs": [],
     },
     "test": {
@@ -84,12 +84,12 @@
     "format": {
       "description": "Rewrite files in place with oxfmt. Never cached: its job is to mutate the tree.",
       "cache": false,
-      "inputs": ["$TURBO_DEFAULT$", ".oxfmtrc.json"],
+      "inputs": ["$TURBO_DEFAULT$", ".oxfmtrc.jsonc"],
       "outputs": [],
     },
     "format:check": {
       "description": "Fail if anything is unformatted, without writing. What CI runs instead of format.",
-      "inputs": ["$TURBO_DEFAULT$", ".oxfmtrc.json"],
+      "inputs": ["$TURBO_DEFAULT$", ".oxfmtrc.jsonc"],
       "outputs": [],
     },
     "gen:client": {

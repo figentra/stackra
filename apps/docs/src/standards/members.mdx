@@ -11,7 +11,7 @@ A member is anything `pnpm-workspace.yaml` lists: `apps/*`, `packages/<category>
 | File            | Holds                                                                             |
 | --------------- | --------------------------------------------------------------------------------- |
 | `package.json`  | The manifest fields below; scripts from the [task vocabulary](/guides/tooling)    |
-| `turbo.json`    | `{ "extends": ["//"], "tags": ["tier:<x>"] }` with exactly one tier tag           |
+| `turbo.jsonc`    | `{ "extends": ["//"], "tags": ["tier:<x>"] }` with exactly one tier tag           |
 | `tsconfig.json` | Extends one `@stackra/typescript-config/<preset>` and nothing else                |
 | `README.md`     | What it is, a tasks table of its scripts, the structure of `src/`, how to run it  |
 | `AGENTS.md`     | Where code goes, rules that fail the build, tasks, and a mandatory `## PII` table |
@@ -49,7 +49,7 @@ Presence of the heading is checked; whether the table is still true is a review 
 
 Key order: `name`, `version`, `private`, `description`, `license`, `files`, `type`, `main` (Expo only), `sideEffects`, `imports`, `exports`, `scripts`, `dependencies`, `devDependencies`. Order is convention, not checked.
 
-## `turbo.json` and tiers
+## `turbo.jsonc` and tiers
 
 The tag matches the directory:
 
@@ -91,7 +91,7 @@ pnpm new app-next site --dry-run
 ```
 
 <Warning>
-  The `service` kind still renders the Encore-unit layout (`services/src/<name>`), which is not a workspace member. Stackra's services are independent members at `services/<name>`. Planned: replace the template with a member template (`package.json`, `turbo.json`, `tsdown.config.ts`, `src/main.ts`) so `pnpm new service` matches `services/example`.
+  The `service` kind still renders the Encore-unit layout (`services/src/<name>`), which is not a workspace member. Stackra's services are independent members at `services/<name>`. Planned: replace the template with a member template (`package.json`, `turbo.jsonc`, `tsdown.config.ts`, `src/main.ts`) so `pnpm new service` matches `services/example`.
 </Warning>
 
 ## What enforces this

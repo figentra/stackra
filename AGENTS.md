@@ -17,9 +17,11 @@ HTTP conventions, not-built-yet). Full guides: `apps/docs` (`pnpm docs`). Every 
 Rules every member follows (`pnpm validate` enforces them):
 
 - Versions come only from `pnpm-workspace.yaml` catalogs (`catalog:<name>`) or `workspace:*`. `catalogMode: strict`.
-- `turbo.json` extends `//` with exactly one tier tag; `tsconfig.json` extends one `@stackra/typescript-config` preset.
+- `turbo.jsonc` extends `//` with exactly one tier tag; `tsconfig.json` extends one `@stackra/typescript-config` preset.
 - Every test file sits directly in a `__tests__/` folder beside its subject (`src/**/__tests__/<name>.test.ts`), anywhere in the repo; no root `tests/`, no `.spec`. App e2e lives in the app. ADR 0022, enforced by `pnpm validate`.
 - A package never imports an app, a service or `encore.dev`, nor another package's `src/`.
+- A JSON config is `.jsonc` (comments welcome) when its tool reads JSONC; tsconfig files keep `.json` and take comments.
+  The files that must stay strict `.json`, with the reason, are `MUST_STAY_JSON` in `tools/scripts/validate-repository.mjs`.
 
 Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boundaries, knip). Conventional commits.
 
@@ -559,7 +561,7 @@ stackra/
 
 #### Tier Tags
 
-Every member declares exactly one tier in its `turbo.json`:
+Every member declares exactly one tier in its `turbo.jsonc`:
 
 - `tier:config` - Tooling presets (no workspace dependencies)
 - `tier:lib` - Packages (category-based, never depend on apps/services)
@@ -607,7 +609,7 @@ Every member declares exactly one tier in its `turbo.json`:
 #### Enforcement
 
 - `turbo boundaries` checks dependency direction
-- `tools/scripts/validate-repository.mjs` checks tier tags and file existence
+- `tools/scripts/validate-repository.mjs` checks tier tags, file existence, and that every JSON config whose tool reads JSONC is named `.jsonc` (exceptions: `MUST_STAY_JSON`)
 - `packages/tooling/oxlint/boundaries.jsonc` enforces layer rules
 
 #### See Also

@@ -4,6 +4,7 @@ import { test } from "node:test";
 import {
   check,
   checkFiles,
+  checkJsonConfigs,
   checkServiceUnit,
   checkTestPlacement,
   tierFor,
@@ -119,4 +120,33 @@ test("checkTestPlacement: test files must sit directly in __tests__/", () => {
   assert.deepEqual(checkTestPlacement(["src/__tests__/x.spec.ts"]), [
     "src/__tests__/x.spec.ts: name it <subject>.test.<ext>, not .spec (ADR 0022)",
   ]);
+});
+
+test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JSON paths are not", () => {
+  assert.deepEqual(
+    checkJsonConfigs([
+      "package.json",
+      "apps/console/package.json",
+      "apps/console/tsconfig.json",
+      "packages/tooling/typescript/node.json",
+      "apps/mobile/app.json",
+      "apps/mobile/eas.json",
+      "apps/docs/src/docs.json",
+      ".claude/settings.json",
+      ".mcp.json",
+      ".changeset/config.json",
+      ".infisical.json",
+      ".specify/integration.json",
+      ".agents/skills/x/scripts/package.json",
+      "apps/console/turbo.jsonc",
+      ".oxlintrc.jsonc",
+      "README.md",
+    ]),
+    [],
+  );
+  const flagged = ["apps/console/turbo.json", ".oxfmtrc.json", "knip.json", ".agents/models.json"];
+  assert.deepEqual(
+    checkJsonConfigs(flagged).map((m) => m.split(":")[0]),
+    flagged,
+  );
 });

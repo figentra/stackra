@@ -76,7 +76,7 @@ Every AI artifact is authored once, in `.agents/`:
 ├── skills/    project skills
 ├── specs/     work product: <NNN>-<slug>/ with three documents
 ├── plans/     working plans
-└── models.json   tier to model mapping
+└── models.jsonc  tier to model mapping
 ```
 
 The assistant folders, `.claude/` and `.opencode/`, are projections of this tree. Edit `.agents/`, never the projection. The mechanism is one canonical `.agents/` source projected to tool folders; the adoption plan describes how it is wired and checked. The decision is recorded in [ADR 0016](/adr/0016-agents-source-of-truth).

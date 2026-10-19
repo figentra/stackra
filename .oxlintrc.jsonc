@@ -25,6 +25,6 @@
     "packages/*/api-client/src/generated/**",
     // installed skills are upstream content
     ".agents/skills/**",
-    ".claude/skills/**"
-  ]
+    ".claude/skills/**",
+  ],
 }
