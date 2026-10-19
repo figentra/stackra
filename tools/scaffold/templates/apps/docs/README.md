@@ -1,4 +1,4 @@
-# @stackra/{{NAME}}
+# @figentra/{{NAME}}
 
 {{DESCRIPTION}}
 

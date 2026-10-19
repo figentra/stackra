@@ -19,7 +19,7 @@ Every test file sits directly in a `__tests__/` folder beside the code it proves
 - A test file's name is its subject's name plus `.test` (never `.spec`); its header says what the suite proves, and each `it()` title is a full sentence stating behaviour.
 - The vitest presets set `passWithNoTests: false`, so a member with an empty suite fails. Every layer or entry of a package ships at least one test.
 - Packages meet one coverage floor from `@stackra/vitest-config/coverage`: lines and functions 80, branches 70. A threshold moves only upward; a package that cannot meet it says why in its own `vitest.config.ts`. Apps are not gated.
-- Run one member with `pnpm turbo run test --filter=@stackra/<name>`; coverage with `pnpm test:coverage`.
+- Run one member with `pnpm turbo run test --filter=<package-name>`; coverage with `pnpm test:coverage`.
 
 ## Tests need zero secrets
 

@@ -1,4 +1,4 @@
-# AGENTS — @stackra/service-example
+# AGENTS — @figentra/service-example
 
 Example service. Member at `services/example` (`tier:service`). Everything it runs lives in `src/`; the entry is `src/main.ts`.
 
@@ -9,7 +9,7 @@ Example service. Member at `services/example` (`tier:service`). Everything it ru
 
 ## Tasks
 
-`pnpm turbo run <task> --filter=@stackra/service-example` — `build`, `typecheck`, `lint`, `format`, `format:check`, `clean`.
+`pnpm turbo run <task> --filter=@figentra/service-example` — `build`, `typecheck`, `lint`, `format`, `format:check`, `clean`.
 
 ## PII
 

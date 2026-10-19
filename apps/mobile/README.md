@@ -1,4 +1,4 @@
-# @stackra/mobile
+# @figentra/mobile
 
 Stackra's iOS and Android app: Expo SDK 57 with **code-based** React Navigation (no `app/` folder, no expo-router),
 HeroUI Native + Uniwind for UI, and iOS 26 Liquid Glass from native components.

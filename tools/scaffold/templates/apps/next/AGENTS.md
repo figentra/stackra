@@ -1,4 +1,4 @@
-# AGENTS — @stackra/{{NAME}}
+# AGENTS — @figentra/{{NAME}}
 
 - Routes live in `src/app/` (App Router); components start as Server Components — add `"use client"` only where
   state or effects need it. The `@/` alias points at `src/`. Tests go in `__tests__/` beside the code.

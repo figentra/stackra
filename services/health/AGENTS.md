@@ -1,4 +1,4 @@
-# AGENTS — @stackra/service-health
+# AGENTS — @figentra/service-health
 
 Health service. Member at `services/health` (`tier:service`). Everything it runs lives in `src/`; the entry is `src/main.ts`.
 
@@ -9,7 +9,7 @@ Health service. Member at `services/health` (`tier:service`). Everything it runs
 
 ## Tasks
 
-`pnpm turbo run <task> --filter=@stackra/service-health` — `build`, `typecheck`, `lint`, `format`, `format:check`, `clean`.
+`pnpm turbo run <task> --filter=@figentra/service-health` — `build`, `typecheck`, `lint`, `format`, `format:check`, `clean`.
 
 ## PII
 

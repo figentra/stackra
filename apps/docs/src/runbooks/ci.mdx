@@ -47,7 +47,7 @@ pnpm install --frozen-lockfile
 pnpm verify
 ```
 
-To reproduce one failing step, run exactly that script: `pnpm turbo run test --filter=@stackra/<member>`, `pnpm validate`, `pnpm knip`. The workflow's job log prints the command it ran; copy that line.
+To reproduce one failing step, run exactly that script: `pnpm turbo run test --filter=<package-name>`, `pnpm validate`, `pnpm knip`. The workflow's job log prints the command it ran; copy that line.
 
 Nothing in `pnpm verify` reads a vault, a `.env` or a token. If a step seems to need a credential, that is a bug in the step (see [Secrets](/runbooks/secrets)).
 

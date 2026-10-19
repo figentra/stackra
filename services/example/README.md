@@ -1,4 +1,4 @@
-# @stackra/service-example
+# @figentra/service-example
 
 Example service. For now it is a single entry, `src/main.ts`, that prints a greeting.
 

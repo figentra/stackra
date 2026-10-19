@@ -39,7 +39,7 @@ consumes the generated API client.
 1. Reuse first; tokens only; logical start/end styles; strings are i18n keys.
 2. Server data goes through the generated client; offline writes use a mutation queue with idempotency keys.
 3. Verify on a simulator or device when the change is visual (iOS and Android, light and dark, LTR and RTL).
-4. `pnpm --filter @stackra/mobile test typecheck`, then `pnpm verify`.
+4. `pnpm --filter @figentra/mobile test typecheck`, then `pnpm verify`.
 
 ## Never
 

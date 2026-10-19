@@ -1,4 +1,4 @@
-# AGENTS — @stackra/{{NAME}}
+# AGENTS — @figentra/{{NAME}}
 
 - Everything lives in `src/`; the `@/` alias points there. Tests sit beside the code in `__tests__/`.
 - UI comes from `@heroui/react`; styles are Tailwind v4 utilities. No other component library.

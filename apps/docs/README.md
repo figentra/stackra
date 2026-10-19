@@ -1,4 +1,4 @@
-# @stackra/docs
+# @figentra/docs
 
 The Stackra documentation site, built with [Mintlify](https://mintlify.com). Everything Mintlify reads lives in `src/`: `docs.json`, the MDX pages, `snippets/` and `assets/` (logo, favicon, images). The scripts run the `mint` CLI from `src/`.
 

@@ -1,4 +1,4 @@
-# @stackra/console
+# @figentra/console
 
 Stackra console. For now it is a single entry, `src/main.ts`, that prints a greeting.
 

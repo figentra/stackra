@@ -1,4 +1,4 @@
-# AGENTS — @stackra/mobile
+# AGENTS — @figentra/mobile
 
 Expo SDK 57 app at `apps/mobile` (`tier:app`). Code lives in `src/`; the entry is `src/main.ts` (`package.json` `main`).
 
@@ -20,7 +20,7 @@ Expo SDK 57 app at `apps/mobile` (`tier:app`). Code lives in `src/`; the entry i
 
 ## Tasks
 
-`pnpm turbo run <task> --filter=@stackra/mobile` — `build`, `typecheck`, `lint`, `format`, `format:check`, `clean`.
+`pnpm turbo run <task> --filter=@figentra/mobile` — `build`, `typecheck`, `lint`, `format`, `format:check`, `clean`.
 Local only: `dev`, `ios`, `android`, `doctor`.
 
 ## PII

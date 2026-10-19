@@ -1,4 +1,4 @@
-# AGENTS — @stackra/console
+# AGENTS — @figentra/console
 
 Stackra console. Member at `apps/console` (`tier:app`). Everything it runs lives in `src/`; the entry is `src/main.ts`.
 
@@ -9,7 +9,7 @@ Stackra console. Member at `apps/console` (`tier:app`). Everything it runs lives
 
 ## Tasks
 
-`pnpm turbo run <task> --filter=@stackra/console` — `build`, `typecheck`, `lint`, `format`, `format:check`, `clean`.
+`pnpm turbo run <task> --filter=@figentra/console` — `build`, `typecheck`, `lint`, `format`, `format:check`, `clean`.
 
 ## PII
 
