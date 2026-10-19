@@ -6,6 +6,7 @@ import {
   names,
   opencodeArgs,
   parseRouting,
+  requireIssue,
   resolveRoute,
   slugify,
 } from "../delegate.mjs";
@@ -53,6 +54,12 @@ test("slug and branch naming", () => {
     dir: "stackra-delegate-cover-logger",
   });
   assert.ok(slugify("x".repeat(100)).length <= 40);
+});
+
+test("delegation refuses to start without a Linear issue", () => {
+  assert.equal(requireIssue("sta-42"), "STA-42");
+  assert.throws(() => requireIssue(undefined), /--issue STA-n is required/);
+  assert.throws(() => requireIssue("42"), /--issue STA-n is required/);
 });
 
 test("prompt carries the rules; --auto only when asked", () => {

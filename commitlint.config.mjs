@@ -7,9 +7,23 @@
  * Scope is the member's short name (contracts, definition, ir, compiler, runtime, console, adr, deps,
  * release). A commit touching the repo root uses `repo`.
  */
+const KEYED = ["feat", "fix", "refactor", "perf"];
+
 export default {
   extends: ["@commitlint/config-conventional"],
+  // ADR 0065 rule 4: work commits name their Linear issue in a `Refs: STA-n` footer.
+  plugins: [
+    {
+      rules: {
+        "refs-linear-key": ({ type, raw }) => [
+          !KEYED.includes(type) || /^Refs:\s*STA-\d+\b/m.test(raw ?? ""),
+          `${KEYED.join("/")} commits need a "Refs: STA-n" footer (pnpm linear create, or the branch's issue)`,
+        ],
+      },
+    },
+  ],
   rules: {
+    "refs-linear-key": [2, "always"],
     "type-enum": [
       2,
       "always",

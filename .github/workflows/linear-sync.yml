@@ -1,0 +1,53 @@
+# Stackra file contract:
+# Purpose: keep Linear team STA in line with GitHub and the ADRs (tools/scripts/linear-reconcile.mjs).
+#          ADR 0065 rule 7: a separate, non-blocking job. It is not a required check and never fails the run.
+# Owner: release-operations
+# Secrets: LINEAR_AGENT_CLIENT_ID / LINEAR_AGENT_CLIENT_SECRET (the "Stackra Agent" app; the script mints a
+#          client_credentials token), LINEAR_API_KEY as fallback. Read from the environment only; never printed.
+name: Linear sync
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Report what would change without writing to Linear"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: linear-sync
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    name: Reconcile Linear
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Reconcile
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LINEAR_AGENT_CLIENT_ID: ${{ secrets.LINEAR_AGENT_CLIENT_ID }}
+          LINEAR_AGENT_CLIENT_SECRET: ${{ secrets.LINEAR_AGENT_CLIENT_SECRET }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          DRY_RUN: ${{ inputs.dry-run && '--dry-run' || '' }}
+        run: node tools/scripts/linear-reconcile.mjs $DRY_RUN
