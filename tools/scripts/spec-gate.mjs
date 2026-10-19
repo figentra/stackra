@@ -8,8 +8,15 @@
  * A spec may be planned when it has `**Clarifications status**: complete`, a `**Linear**: STA-n`
  * key, a fully answered `## Impact` section and no `[NEEDS CLARIFICATION` marker.
  * `setup-plan.sh` runs `plan`; CI runs `ci` (wired into `pnpm validate`). Dependency-free.
+ *
+ *   node tools/scripts/spec-gate.mjs stage <spec.md> <clarified|planned|implementing|verified>
+ *
+ * Linear: `plan` (on pass, which is "clarified") and `stage` comment the stage on the spec's issue through
+ * `pnpm linear`; `implementing` also moves it to In Progress (`linear start`). In Review and Done follow from the
+ * pull request (`pnpm linear review|done`, linear-reconcile). Best-effort: a Linear failure never changes the exit
+ * code (ADR 0065 rule 7). `ci` never calls Linear. STACKRA_LINEAR=off disables the calls.
  */
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -50,6 +57,22 @@ export function checkSpec(text) {
   return problems;
 }
 
+export const STAGES = ["clarified", "planned", "implementing", "verified"];
+
+/** Best-effort stage report to the spec's Linear issue; output and failures are swallowed. */
+function linearStage(file, stage) {
+  const key = readFileSync(file, "utf8").match(/^\*\*Linear\*\*:\s*(STA-\d+)\b/m)?.[1];
+  if (!key || process.env.STACKRA_LINEAR === "off") return;
+  const linear = (args) =>
+    spawnSync("pnpm", ["--silent", "linear", ...args], {
+      cwd: ROOT,
+      stdio: "ignore",
+      timeout: 20_000,
+    });
+  linear(["comment", key, `Spec stage: ${stage} (${file.replace(`${ROOT}/`, "")})`]);
+  if (stage === "implementing") linear(["start", key]);
+}
+
 function gate(file) {
   const problems = checkSpec(readFileSync(file, "utf8"));
   for (const p of problems) console.error(`spec-gate: ${file}: ${p}`);
@@ -73,8 +96,16 @@ function changedSpecs(base) {
   return [...features].map((f) => join(ROOT, f, "spec.md")).filter((p) => existsSync(p));
 }
 
-function main([mode, arg]) {
-  if (mode === "plan" && arg) return gate(arg) ? 1 : 0;
+function main([mode, arg, stage]) {
+  if (mode === "plan" && arg) {
+    if (gate(arg)) return 1;
+    linearStage(arg, "clarified");
+    return 0;
+  }
+  if (mode === "stage" && arg && STAGES.includes(stage)) {
+    linearStage(arg, stage);
+    return 0;
+  }
   if (mode === "ci") {
     const base = arg?.startsWith("--base=") ? arg.slice(7) : "origin/main";
     let failures = 0;
@@ -86,7 +117,9 @@ function main([mode, arg]) {
     for (const spec of changedSpecs(base)) failures += gate(spec);
     return failures ? 1 : 0;
   }
-  console.error("usage: spec-gate.mjs plan <spec.md> | ci [--base=ref]");
+  console.error(
+    `usage: spec-gate.mjs plan <spec.md> | ci [--base=ref] | stage <spec.md> <${STAGES.join("|")}>`,
+  );
   return 2;
 }
 

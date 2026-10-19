@@ -30,6 +30,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # ADR 0065: the PR names its Linear issue, and every feat/fix/refactor/perf commit carries `Refs: STA-n`.
+      # Offline checks only; nothing here calls Linear.
+      - name: Linear key check
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BRANCH: ${{ github.head_ref }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          node tools/scripts/linear.mjs check-pr
+          case "$PR_BRANCH" in renovate/*|changeset-release/*) exit 0 ;; esac
+          pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA"
+
       - name: Format check
         run: pnpm format:check
 

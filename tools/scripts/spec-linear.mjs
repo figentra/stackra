@@ -5,17 +5,18 @@
  *   node tools/scripts/spec-linear.mjs issue <spec.md>  [--dry-run]   create the spec's issue, write `**Linear**: STA-n`
  *   node tools/scripts/spec-linear.mjs tasks <tasks.md> [--dry-run]   one sub-issue per `T###` task, appends ` [STA-n]`
  *
- * The API token comes from the environment only: `infisical run --path=/agents -- node ...`
- * (variable LINEAR_API_KEY). It is never read from a file or printed. `--dry-run` needs no token
+ * The token comes from the environment only, through the shared client in linear.mjs
+ * (LINEAR_AGENT_TOKEN, else LINEAR_API_KEY; `infisical run --env=dev --path=/agents -- node ...`).
+ * It is never read from a file or printed. `--dry-run` needs no token
  * and calls nothing. When an agent runs this flow it uses the Linear MCP instead and edits the
  * same fields by hand. `**Linear project**` (optional) names the project to file issues under.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { client } from "./linear.mjs";
 
 const TEAM = "STA";
-const API = "https://api.linear.app/graphql";
 
 /** The spec's `**Linear**` key and optional project name. */
 export function specLinks(text) {
@@ -35,18 +36,7 @@ export function unlinkedTasks(text) {
     .map(({ m, i }) => ({ index: i, id: m[1], title: m[2].trim() }));
 }
 
-async function gql(query, variables) {
-  const token = process.env.LINEAR_API_KEY;
-  if (!token) throw new Error("LINEAR_API_KEY is not set (use `infisical run --path=/agents --`)");
-  const res = await fetch(API, {
-    method: "POST",
-    headers: { "content-type": "application/json", authorization: token },
-    body: JSON.stringify({ query, variables }),
-  });
-  const json = await res.json();
-  if (json.errors) throw new Error(json.errors.map((e) => e.message).join("; "));
-  return json.data;
-}
+const gql = (query, variables) => client().gql(query, variables);
 
 async function context(project) {
   const t = await gql(`query($k:String!){teams(filter:{key:{eq:$k}}){nodes{id}}}`, { k: TEAM });
