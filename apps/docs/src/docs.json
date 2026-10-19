@@ -136,7 +136,14 @@
               "adr/0041-decorated-controllers-and-build-time-generator",
               "adr/0042-di-first-with-one-container-per-service",
               "adr/0043-workflow-package-medusa-style",
-              "adr/0044-laravel-style-package-config"
+              "adr/0044-laravel-style-package-config",
+              "adr/0045-tenancy-package-pool-default-silo-on-demand",
+              "adr/0046-global-data-invariants-and-per-model-opt-ins",
+              "adr/0047-audit-service-via-events",
+              "adr/0048-point-in-time-recovery-and-quarterly-restore-drill",
+              "adr/0049-search-driver-interface",
+              "adr/0050-ai-package-on-ai-sdk-bedrock-default",
+              "adr/0051-better-auth-identity-service"
             ]
           }
         ]

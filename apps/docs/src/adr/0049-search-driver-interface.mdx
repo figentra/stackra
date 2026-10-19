@@ -1,0 +1,34 @@
+---
+title: "0049 — @stackra/search: a driver interface, Postgres first"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0011](/adr/0011-rejected-and-deferred-technologies) defers a dedicated search service (Typesense, Meilisearch, OpenSearch) and
+names Postgres `pg_trgm` and full-text search behind a search interface as the substitute. That interface does not exist yet.
+Defining it now conflicts with nothing: the engines stay deferred, and this ADR only fixes the seam so a later engine is a new
+driver, not a rewrite. Models opt in to search through [0046](/adr/0046-global-data-invariants-and-per-model-opt-ins).
+
+## Decision
+
+1. **`@stackra/search` defines a driver interface**, following the repository's driver pattern: configuration selects a default driver and named instances.
+2. **The Postgres driver is the only driver built first**, using `pg_trgm` and full-text search.
+3. **Meilisearch and OpenSearch drivers are not built.** They remain deferred per 0011 and need that row's revival trigger. Typesense is not planned.
+4. **Indexing is event-driven.** A searchable model publishes events; an indexer consumes them and updates the driver's index. Services never write an index directly.
+5. **Every driver must pass one conformance suite** shipped with the package, run against the Postgres driver now and any later driver.
+6. **Search results respect tenancy**: every query is scoped by tenant ([0045](/adr/0045-tenancy-package-pool-default-silo-on-demand)).
+
+## Consequences
+
+- A later engine is additive: a driver and a passing suite.
+- The interface must be general enough for an external engine while only one backend proves it; expect a revision when the second driver arrives.
+- Eventual consistency between a write and its appearance in search.
+
+## Enforcement
+
+Planned — the conformance suite in the package's `__tests__` folder, run by its test task. Nothing is implemented yet.
+
+## Supersedes and sources
+
+Supersedes: none. Relates to [0011](/adr/0011-rejected-and-deferred-technologies): no conflict, the search-engine row stays Deferred and its revival trigger is unchanged. Sources: owner decisions in chat, 2026-10-19.
