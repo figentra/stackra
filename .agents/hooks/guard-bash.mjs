@@ -70,6 +70,14 @@ function bareInfisicalSecrets(c) {
   });
 }
 
+/** The branch a push refspec writes to: `+src:refs/heads/dst` → `dst`. */
+const refspecDest = (r) =>
+  r
+    .replace(/^\+/, "")
+    .split(":")
+    .pop()
+    .replace(/^refs\/heads\//, "");
+
 /**
  * `git push` whose destination is main: an explicit refspec (`main`, `HEAD:main`,
  * `+main`, `refs/heads/main`, `:main`), `--all` / `--mirror`, or no refspec (or `HEAD`)
@@ -83,13 +91,7 @@ function pushesMain(c, cwd) {
     const args = m[1].split(/\s+/).map(unquote).filter(Boolean);
     if (args.some((a) => a === "--all" || a === "--mirror")) return true;
     const refs = args.filter((a) => !a.startsWith("-"));
-    const dest = (r) =>
-      r
-        .replace(/^\+/, "")
-        .split(":")
-        .pop()
-        .replace(/^refs\/heads\//, "");
-    if (refs.some((r) => dest(r) === "main")) return true;
+    if (refs.some((r) => refspecDest(r) === "main")) return true;
     const implicit = refs.length <= 1 || refs.slice(1).every((r) => r === "HEAD");
     return implicit && git(cwd, "symbolic-ref", "--short", "HEAD") === "main";
   });
