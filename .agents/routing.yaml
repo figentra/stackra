@@ -1,0 +1,65 @@
+# Stackra file contract:
+# Purpose: who does what — maps a task type to an executor (claude = the lead, opencode = Kimi K3 on Bedrock),
+#          model and agent, plus the daily OpenCode spend cap. Read by `pnpm delegate` and `pnpm ai:spend`.
+# Scope: delegation (tools/scripts/delegate.mjs, tools/scripts/ai-spend.mjs)
+# Owner: delivery-orchestrator
+# Secrets: forbidden
+# Override: `--executor claude|opencode` on the command line, or STACKRA_EXECUTOR in the environment.
+# Format: `name: { key: value, … }` flow maps (a small parser reads it; no nesting).
+budget: { dailyUsd: 150, warnAt: 0.8 }
+
+tasks:
+  # --- OpenCode / Kimi K3: mechanical, machine-verifiable, low/medium risk ---
+  tests: { executor: opencode, model: amazon-bedrock/global.moonshotai.kimi-k3, agent: build }
+  test-stewardship:
+    { executor: opencode, model: amazon-bedrock/global.moonshotai.kimi-k3, agent: build }
+  steward-docblocks:
+    {
+      executor: opencode,
+      model: amazon-bedrock/global.moonshotai.kimi-k3,
+      agent: code-standards-steward,
+    }
+  steward-code-standards:
+    {
+      executor: opencode,
+      model: amazon-bedrock/global.moonshotai.kimi-k3,
+      agent: code-standards-steward,
+    }
+  steward-i18n:
+    { executor: opencode, model: amazon-bedrock/global.moonshotai.kimi-k3, agent: i18n-steward }
+  steward-changesets:
+    {
+      executor: opencode,
+      model: amazon-bedrock/global.moonshotai.kimi-k3,
+      agent: docs-changesets-steward,
+    }
+  steward-docs:
+    { executor: opencode, model: amazon-bedrock/global.moonshotai.kimi-k3, agent: docs-adr-steward }
+  verify-fix: { executor: opencode, model: amazon-bedrock/global.moonshotai.kimi-k3, agent: build }
+  renovate-fixup:
+    { executor: opencode, model: amazon-bedrock/global.moonshotai.kimi-k3, agent: build }
+  os-port: { executor: opencode, model: amazon-bedrock/global.moonshotai.kimi-k3, agent: build }
+  spec-task: { executor: opencode, model: amazon-bedrock/global.moonshotai.kimi-k3, agent: build }
+  codegen-drift:
+    { executor: opencode, model: amazon-bedrock/global.moonshotai.kimi-k3, agent: build }
+  scan: { executor: opencode, model: amazon-bedrock/global.moonshotai.kimi-k3, agent: plan }
+  e2e: { executor: opencode, model: amazon-bedrock/global.moonshotai.kimi-k3, agent: build }
+  linear: { executor: opencode, model: amazon-bedrock/global.moonshotai.kimi-k3, agent: build }
+
+  # --- Claude: judgement, contracts, anything touching trust or money ---
+  clarify: { executor: claude, model: opus, agent: sdlc:spec-author }
+  spec: { executor: claude, model: opus, agent: sdlc:spec-author }
+  design: { executor: claude, model: opus, agent: sdlc:architecture-guardian }
+  adr: { executor: claude, model: opus, agent: docs-adr-steward }
+  contract: { executor: claude, model: opus, agent: api-contract-reviewer }
+  auth: { executor: claude, model: opus, agent: security-tenancy-reviewer }
+  tenancy: { executor: claude, model: opus, agent: security-tenancy-reviewer }
+  iam: { executor: claude, model: opus, agent: security-tenancy-reviewer }
+  money: { executor: claude, model: opus, agent: security-tenancy-reviewer }
+  pii: { executor: claude, model: opus, agent: security-tenancy-reviewer }
+  secrets: { executor: claude, model: opus, agent: sdlc:release-operations }
+  ci-permissions: { executor: claude, model: opus, agent: sdlc:release-operations }
+  review: { executor: claude, model: opus, agent: sdlc:code-reviewer }
+  merge: { executor: claude, model: opus, agent: claude }
+  release: { executor: claude, model: opus, agent: sdlc:release-operations }
+  incident: { executor: claude, model: opus, agent: incident-commander }
