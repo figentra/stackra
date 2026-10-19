@@ -196,7 +196,11 @@
               "adr/0102-workflow-engine-in-process-journal",
               "adr/0103-locking-package",
               "adr/0104-links-and-query-graph",
-              "adr/0105-crud-generates-service-methods"
+              "adr/0105-crud-generates-service-methods",
+              "adr/0106-infisical-agent-vault-per-environment",
+              "adr/0107-connections-store-and-three-key-homes",
+              "adr/0108-scoped-settings",
+              "adr/0109-registry-manifests-published-by-ci"
             ]
           }
         ]

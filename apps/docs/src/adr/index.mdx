@@ -112,6 +112,10 @@ Each ADR records one decision, its context, consequences and the check that enfo
 | [0103](/adr/0103-locking-package)                                   | @stackra/locking: server-side named locks behind a driver                                                                           | Accepted           |
 | [0104](/adr/0104-links-and-query-graph)                             | Cross-module relations are @Link declarations, read through query.graph                                                             | Accepted           |
 | [0105](/adr/0105-crud-generates-service-methods)                    | @Crud generates a model's service methods and opt-in actions                                                                        | Accepted           |
+| [0106](/adr/0106-infisical-agent-vault-per-environment)             | Infisical Agent Vault, split by environment; the model never sees a secret                                                          | Accepted           |
+| [0107](/adr/0107-connections-store-and-three-key-homes)             | Three homes for keys; tenant credentials live in @stackra/connections                                                               | Accepted           |
+| [0108](/adr/0108-scoped-settings)                                   | Scoped settings: each service owns its values; the registry owns the schema                                                         | Accepted           |
+| [0109](/adr/0109-registry-manifests-published-by-ci)                | The registry: build manifests published by CI to a Postgres-backed registry service                                                 | Accepted           |
 
 Copy the [template](/adr/template), give it the next number, and add it to this table and to `docs.json`.
 Cite Stackra ADRs by path, never by a number from another repository.

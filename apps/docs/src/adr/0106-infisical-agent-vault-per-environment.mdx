@@ -1,0 +1,47 @@
+---
+title: "0106 — Infisical Agent Vault, split by environment; the model never sees a secret"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Coding agents (Claude Code, OpenCode, `delegate.mjs` tasks) and product agents ([0100](/adr/0100-ai-model-and-ownership)) both
+make authenticated HTTP calls. Infisical Agent Vault is a forward HTTPS proxy (port 17323, used through `HTTPS_PROXY` and a CA
+certificate; Node needs `NODE_USE_ENV_PROXY=1`) that injects real credentials as HTTP headers per service in an access bundle.
+Agents hold only a time-bound session token, and sessions are logged. It handles HTTP header auth only (bearer, basic or
+pass-through), with no SigV4 and no database credentials. It is part of Infisical, so it is not a second vault under
+[0009](/adr/0009-secrets-two-mechanisms).
+
+## Decision
+
+1. **The rule everywhere: the model never sees a secret.** AWS (Bedrock, S3 and the rest) is always reached through IAM roles,
+   never keys.
+2. **Per environment**:
+
+   | Environment            | Coding agents                                      | Product AI egress                                                                          |
+   | ---------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+   | Local development      | Personal Agent Vault sessions                      | `direct` driver (secret references resolved by the runtime)                                |
+   | Staging and CI         | Task-scoped sessions created by a machine identity | `agent-vault` driver                                                                       |
+   | Production SaaS        | —                                                  | Third-party HTTP goes through Agent Vault proxies in a private subnet, one session per run |
+   | On-prem and air-gapped | —                                                  | `direct` driver                                                                            |
+
+3. **Tenant BYO OAuth and API credentials stay in the connections store** ([0107](/adr/0107-connections-store-and-three-key-homes)), not in Agent Vault.
+4. **`@stackra/ai` egress is a driver**: `direct` is the default; `agent-vault` is opt-in per environment. Nothing in a package
+   depends on the proxy being present.
+5. **`delegate.mjs` creates a task-scoped session** per delegated task and revokes it when the task ends.
+
+## Consequences
+
+- A leaked agent transcript holds at most a short-lived session token.
+- The proxy is one more production component on the SaaS path; on-prem never needs it.
+- Open: the Infisical plan tier that includes Agent Vault, and whether it can be self-hosted, are not yet verified.
+
+## Enforcement
+
+Planned: a `guard-bash` rule refusing agent commands that print `HTTPS_PROXY` session tokens; a deploy check that production
+AI services have no third-party API key in their secret store. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Consistent with [0009](/adr/0009-secrets-two-mechanisms) (Agent Vault is Infisical). Sources: owner
+decision in chat, 2026-10-19 (Round 11 AV).
