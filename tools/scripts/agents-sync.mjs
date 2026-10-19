@@ -20,6 +20,9 @@
  *   AGENTS.md (read by both assistants — Claude via CLAUDE.md → @AGENTS.md,
  *   OpenCode natively).
  *
+ *   MCP — `.mcp.jsonc` (annotated, the source) is rendered to `.mcp.json`
+ *   (comment-free), the only project MCP file Claude Code reads.
+ *
  * ---------------------------------------------------------------------------
  * Neutral rule frontmatter schema (`.agents/rules/*.md`):
  *
@@ -994,6 +997,53 @@ function ensureInstructionsBlock(file, ruleEntries) {
   results.generated++;
 }
 
+/** JSONC → JSON: drops // and /* *\/ comments outside strings, then trailing commas. */
+function stripJsonc(text) {
+  let out = "";
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"') {
+      const start = i;
+      for (i++; i < text.length && text[i] !== '"'; i++) if (text[i] === "\\") i++;
+      out += text.slice(start, i + 1);
+    } else if (c === "/" && text[i + 1] === "/") {
+      while (i < text.length && text[i] !== "\n") i++;
+      out += "\n";
+    } else if (c === "/" && text[i + 1] === "*") {
+      i = text.indexOf("*/", i + 2);
+      if (i === -1) throw new Error("unterminated /* comment");
+      i++;
+    } else out += c;
+  }
+  return out.replace(/,(\s*[}\]])/g, "$1");
+}
+
+/** Renders `.mcp.jsonc` into `.mcp.json`, which Claude Code reads (it ignores .jsonc). */
+function ensureMcpJson() {
+  const source = join(ROOT, ".mcp.jsonc");
+  if (!existsSync(source)) return;
+  let rendered;
+  try {
+    rendered = `${JSON.stringify(JSON.parse(stripJsonc(readFileSync(source, "utf8"))), null, 2)}\n`;
+  } catch (error) {
+    results.broken.push(`.mcp.jsonc: ${error.message}`);
+    return;
+  }
+  const target = join(ROOT, ".mcp.json");
+  if (existsSync(target) && readFileSync(target, "utf8") === rendered) {
+    results.ok++;
+    return;
+  }
+  if (CHECK) {
+    results.drift.push(
+      `.mcp.json: ${existsSync(target) ? "stale" : "missing"} (generated from .mcp.jsonc)`,
+    );
+    return;
+  }
+  writeFileSync(target, rendered);
+  results.generated++;
+}
+
 /** Links a retired projection (a kind now mapped to null) left behind; the directory goes if empty. */
 function pruneRetiredProjection(assistantDir, kind) {
   const dir = join(ROOT, assistantDir, kind);
@@ -1067,6 +1117,7 @@ function main() {
   }
 
   ensureConstitution();
+  ensureMcpJson();
   const ruleSources = sourceEntries("rules").filter((e) => e.toLowerCase() !== "readme.md");
   for (const name of assistants) {
     const { dir, map, instructionsBlock } = ASSISTANTS[name];

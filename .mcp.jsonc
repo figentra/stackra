@@ -127,10 +127,31 @@
       "type": "http",
       "url": "https://resend.com/docs/mcp",
     },
+    // ElevenLabs (voice, TTS, audio agents): remote MCP, authenticates with OAuth on first use; no token in this file.
+    "elevenlabs": {
+      "type": "http",
+      "url": "https://api.elevenlabs.io/v1/mcp",
+    },
 
     // --------------------------------------------------------------------------
     // 06. CLOUD PLATFORMS
     // --------------------------------------------------------------------------
+    // Encore local MCP (services, endpoints, schemas, DB queries, traces of the running app) over stdio via `encore mcp run`.
+    // TODO: replace <TODO> with the Encore app id once the Encore app exists (`encore app create`); fails to start until then.
+    "encore": {
+      "command": "encore",
+      "args": ["mcp", "run", "--app=<TODO>"],
+    },
+    // Encore Cloud MCP for deployed environments (traces, deployments, infra metadata): remote, OAuth on first use (/mcp); no key in this file.
+    "encore-cloud": {
+      "type": "http",
+      "url": "https://api.encore.dev/mcp",
+    },
+    // Cloudflare documentation search (Workers, R2, Pages, DNS, WAF): remote, no auth.
+    "cloudflare-docs": {
+      "type": "http",
+      "url": "https://docs.mcp.cloudflare.com/mcp",
+    },
     "cloudflare-api": {
       "type": "http",
       "url": "https://mcp.cloudflare.com/mcp",

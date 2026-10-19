@@ -583,3 +583,36 @@ test("the constitution is generated from the docs laws and drift is detected", (
     assert.match(drift.out, /constitution\.md: stale/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// MCP
+// ---------------------------------------------------------------------------
+
+test(".mcp.jsonc renders to a comment-free .mcp.json, and --check catches drift", () => {
+  withFixture({ "reviewer.md": READ_ONLY }, (root) => {
+    writeFileSync(
+      join(root, ".mcp.jsonc"),
+      [
+        "// annotated source",
+        "{",
+        '  "mcpServers": {',
+        '    /* block comment */ "docs": { "type": "http", "url": "https://x.dev/mcp" }, // trailing',
+        '    "local": { "command": "./tools/scripts/mcp.sh", "args": ["--api-key=$KEY"] },',
+        "  },",
+        "}",
+      ].join("\n"),
+    );
+    assert.equal(run(root).code, 0);
+    assert.deepEqual(JSON.parse(read(root, ".mcp.json")), {
+      mcpServers: {
+        docs: { type: "http", url: "https://x.dev/mcp" },
+        local: { command: "./tools/scripts/mcp.sh", args: ["--api-key=$KEY"] },
+      },
+    });
+    assert.equal(run(root, "--check").code, 0);
+    writeFileSync(join(root, ".mcp.json"), "{}\n");
+    const drift = run(root, "--check");
+    assert.equal(drift.code, 1);
+    assert.match(drift.out, /\.mcp\.json: stale/);
+  });
+});
