@@ -159,7 +159,8 @@
               "runbooks/mobile-release",
               "runbooks/renovate",
               "runbooks/deploys",
-              "runbooks/upgrade"
+              "runbooks/upgrade",
+              "runbooks/fresh-machine"
             ]
           }
         ]
