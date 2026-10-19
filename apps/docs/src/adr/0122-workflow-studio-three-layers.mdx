@@ -1,0 +1,39 @@
+---
+title: "0122 — The workflow studio: coded workflows, configurable knobs, and tenant automations as data that references code"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Workflows are coded, declarative `@Step` graphs ([0094](/adr/0094-decorators-only-authoring),
+[0102](/adr/0102-workflow-engine-in-process-journal)). Tenants also want to adjust them and to build simple automations
+("when a student enrols, if the plan is premium, send a welcome pack") without a deploy. A free-form workflow engine driven by
+tenant data would be the runtime schema engine that [0011](/adr/0011-rejected-and-deferred-technologies) rejects.
+
+## Decision
+
+1. **Layer 1 — code first.** Workflows, steps, actions and triggers are written in code.
+2. **Layer 2 — configurable knobs declared in code**, such as `@Step({ configurable })`, settings
+   ([0108](/adr/0108-scoped-settings)) and hooks, are set in the studio. Code decides what can be configured.
+3. **Layer 3 — tenant automations, UI first**: "when event, if condition, then action, workflow, wait, notify or approval",
+   composed only from registered triggers, conditions and actions. An automation is versioned data that references code and
+   adds none. Publishing one needs a dry run, approval at L2 ([0099](/adr/0099-risk-scale-l0-to-l4)) and is audited.
+4. **The studio visualises coded workflows and live runs** from the manifest and the journal.
+5. **Tiering**: the visualiser and layer-2 configuration are free; the layer-3 automation builder is Pro.
+
+## Consequences
+
+- Tenants get automation without any path to run code that was not reviewed.
+- Every trigger, condition and action an automation may use must be registered, which is a design chore per module.
+- Automations run through the action pipeline, so iam, approval and audit apply to each step.
+
+## Enforcement
+
+Planned: the automation validator refuses an automation that references an unregistered building block; a publish test
+requiring a dry-run record and an approval. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Amends the "runtime schema engine" row of [0011](/adr/0011-rejected-and-deferred-technologies) the same way
+[0110](/adr/0110-experience-is-the-sdui-service-at-l2) and [0100](/adr/0100-ai-model-and-ownership) decision 8 do: data that
+only references code is allowed. Sources: owner decisions in chat, 2026-10-19 ("LOCKED content/workflow studio" WS1, WS2).

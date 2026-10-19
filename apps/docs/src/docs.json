@@ -212,7 +212,8 @@
               "adr/0118-api-versioning-dormant-package",
               "adr/0119-merge-policy-and-release-authority",
               "adr/0120-sdlc-spec-location-lanes-and-change-risk",
-              "adr/0121-sdlc-tooling-roles-and-linear"
+              "adr/0121-sdlc-tooling-roles-and-linear",
+              "adr/0122-workflow-studio-three-layers"
             ]
           }
         ]
