@@ -1,0 +1,41 @@
+---
+title: "0094 — Decorators are the only authoring style; no define*()"
+description: "Proposed · 2026-10-19"
+---
+
+<Note>Awaiting owner confirmation. This is a recommendation the owner has not confirmed.</Note>
+
+## Context
+
+The owner wants decorators everywhere (models, controllers, events, jobs, crons, resources) with no mixing. Two sources disagree.
+The AI Implementation Standard §7 prefers `define*()` functions over a decorator framework, and
+[0043](/adr/0043-workflow-package-medusa-style) chose Medusa-style `createStep` and `createWorkflow`. Two authoring styles
+would mean two discovery paths in codegen ([0090](/adr/0090-codegen-discovery-by-root-module)) and two ways to read every
+feature.
+
+## Decision
+
+1. **Every framework concept is authored with decorators on classes**: models, controllers, actions, events, jobs, crons,
+   resources and workflows. There is no `define*()` API.
+2. **This overrides §7 of the AI Implementation Standard** for Stackra and for products built on it.
+3. **Workflows are `@Workflow` classes with `@Step` methods**, each step with an optional compensation. This replaces
+   `createStep` and `createWorkflow`. Compensation order, idempotent steps and "each step runs as a job"
+   ([0078](/adr/0078-messaging-layer-eight-packages) decision 7) are unchanged.
+4. **Decorators are legacy decorators with the container's metadata store** ([0005](/adr/0005-di-container-and-legacy-decorators)). No `reflect-metadata`.
+
+## Consequences
+
+- One way to declare anything, and one discovery path for gen.
+- Plain-data definitions (YAML, JSON) are gone. Anything an AI or a tool generates is generated as decorated TypeScript.
+- When confirmed, this supersedes [0043](/adr/0043-workflow-package-medusa-style) in the same change.
+
+## Enforcement
+
+Planned: an oxlint rule banning exported `define*` factory functions in `packages/**`, and the gen validation pass rejecting
+an undecorated handler. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none until confirmed; then [0043](/adr/0043-workflow-package-medusa-style). Sources: owner direction in chat,
+2026-10-19 (Round 9 G1); recommendation by the coordinating agent, same day. Informational: Figentra OS AI Implementation
+Standard §7 (`Figentra_OS_AI_Implementation_Standard_TypeScript_Encore_AgentCore.md`).

@@ -180,7 +180,18 @@
               "adr/0086-notifications-full-engine-all-channels-free",
               "adr/0087-identity-and-iam-are-driver-packages",
               "adr/0088-tenancy-free-pool-pro-silo-and-scope",
-              "adr/0089-search-fresh-with-pro-engine-drivers"
+              "adr/0089-search-fresh-with-pro-engine-drivers",
+              "adr/0090-codegen-discovery-by-root-module",
+              "adr/0091-generated-encore-app-in-stackra-folder",
+              "adr/0092-ir-ported-definition-package-dropped",
+              "adr/0093-better-auth-integration",
+              "adr/0094-decorators-only-authoring",
+              "adr/0095-zod-inside-field-decorators",
+              "adr/0096-trait-naming-grammar",
+              "adr/0097-model-and-database-packages",
+              "adr/0098-actions-are-the-unit",
+              "adr/0099-risk-scale-l0-to-l4",
+              "adr/0100-ai-model-and-ownership"
             ]
           }
         ]

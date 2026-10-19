@@ -74,7 +74,9 @@ Figentra OS (`@figentra-os/*`, 55 packages in the same ten categories) is Stackr
    | developer | devtools | skip | Pro later |
    | developer | devtools-ui-kit | skip | Pro later |
    | developer | vite | port + adapt | Renamed; the new name is TODO |
-   | application | compiler, definition, experience, ir, runtime-core, schema-gen | skip | Decided in the codegen deep dive, not by this plan |
+   | application | ir | port + adapt | Decorator-derived kinds ([0092](/adr/0092-ir-ported-definition-package-dropped)) |
+   | application | definition | skip | Dropped with `define*()` and YAML ([0092](/adr/0092-ir-ported-definition-package-dropped)) |
+   | application | compiler, schema-gen, runtime-core, experience | skip | Stubs; replaced as the codegen ADRs decide ([0090](/adr/0090-codegen-discovery-by-root-module), [0091](/adr/0091-generated-encore-app-in-stackra-folder)) |
 
 ## Consequences
 

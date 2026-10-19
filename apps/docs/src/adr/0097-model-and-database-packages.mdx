@@ -1,0 +1,41 @@
+---
+title: "0097 — @stackra/model and @stackra/database; gen emits MikroORM EntitySchema"
+description: "Proposed · 2026-10-19"
+---
+
+<Note>Awaiting owner confirmation. This is a recommendation the owner has not confirmed.</Note>
+
+## Context
+
+MikroORM is the ORM ([0014](/adr/0014-data-ownership-and-orm)). Models are decorated classes
+([0094](/adr/0094-decorators-only-authoring)), and their shapes are needed on the client too: forms, the API client and admin
+resources. MikroORM's own decorators would pull the ORM into client bundles. The owner left open where MikroORM lives
+(Round 9 G1). A Nest ORM wrapper studied as a reference (nestjs-orm) already has the feature set products expect.
+
+## Decision
+
+1. **`@stackra/model` holds the client-safe parts**: model and field decorators, relations as metadata, and the trait registry
+   ([0096](/adr/0096-trait-naming-grammar)). It imports no ORM.
+2. **`@stackra/database` is the only package that imports `@mikro-orm/*`.**
+3. **`stackra gen` emits MikroORM `EntitySchema` definitions** from model metadata. MikroORM's decorators are not used.
+4. **The feature list is ported from the nestjs-orm reference**: scopes, eager loading, per-audience hidden and visible fields,
+   morph relations, pivots, three paginators, chunk, upsert and bulk operations, typed flush errors, factories and seeders,
+   CLI commands on `@stackra/console`, a DataLoader, pruning, and the connection resolver
+   ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope)).
+5. **Read replicas are a new design**, not ported.
+
+## Consequences
+
+- Client bundles import model shapes without the ORM.
+- Generated schemas mean ORM changes show up in gen output, not in hand-written mappings.
+- A large feature surface to port and test. Each feature lands with its tests.
+
+## Enforcement
+
+Planned: `packages/tooling/oxlint/boundaries.jsonc` bans `@mikro-orm/*` imports outside `@stackra/database`, and gen's
+`--check` covers emitted schemas. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Answers the open question of Round 9 G1. Sources: recommendation by the coordinating agent, 2026-10-19.
+Reference: nestjs-orm (location not recorded in the decision log).

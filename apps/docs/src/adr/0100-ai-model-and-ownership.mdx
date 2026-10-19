@@ -1,0 +1,44 @@
+---
+title: "0100 — The AI model: what Stackra, Stackra Pro and Figentra OS each own"
+description: "Proposed · 2026-10-19"
+---
+
+<Note>Awaiting owner confirmation. This is a recommendation the owner has not confirmed.</Note>
+
+## Context
+
+[0050](/adr/0050-ai-package-on-ai-sdk-bedrock-default) puts `@stackra/ai` on AI SDK core with Bedrock as the default. The AI
+Implementation Standard instead treats AgentCore as the agent runtime, and describes planners, skills, registries and evaluation.
+Without a split, all of that lands in free packages or in Stackra, which ships no services
+([0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services)).
+
+## Decision
+
+1. **`@stackra/ai` stays on AI SDK core with Bedrock as the default provider.** AgentCore is an optional driver, not the runtime.
+2. **Intent is metadata on the action** ([0098](/adr/0098-actions-are-the-unit)), not a separate kind.
+3. **Evidence is separate from audit.** Evidence records why an action ran (inputs, plan, approvals). Audit records that it ran.
+4. **The planner, `@Skill`, multi-agent coordination and `@Evaluation` live in `@stackra-pro/ai-agents`**
+   ([0077](/adr/0077-open-core-free-and-pro-lists), "AI agents kit").
+5. **The registry, policy and AI services belong to Figentra OS**, as product services.
+6. **The integration event envelope gains `executionId`, `causationId` and `actor.type`** (`user`, `agent`, `service-account`,
+   `system`) ([0078](/adr/0078-messaging-layer-eight-packages) decision 3).
+
+## Consequences
+
+- Free Stackra gives products a safe, provider-agnostic model call and action exposure. Agentic orchestration is Pro, and hosted AI services are Figentra OS.
+- AgentCore as a driver must fit the "no separate-language agent runtime" row of [0011](/adr/0011-rejected-and-deferred-technologies)
+  and [0021](/adr/0021-ai-engine-and-agent-write-safety) decision 1. A driver that runs agents outside the service would
+  need that row changed first.
+- The 0021 safety rules (default-deny write tools, human approval, zero-secret tools) are unchanged.
+
+## Enforcement
+
+Planned: an envelope type test in `@stackra/events` that requires the three new fields on integration events, and a
+validator check that `@stackra/*` packages do not import `@stackra-pro/ai-agents`. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Will amend [0050](/adr/0050-ai-package-on-ai-sdk-bedrock-default) (AgentCore driver, Pro split) and
+[0078](/adr/0078-messaging-layer-eight-packages) decision 3 (envelope fields) on confirmation. Sources: recommendation by the
+coordinating agent, 2026-10-19. Informational: AI Implementation Standard §4, §20 and §35, and the Stackra AI-driven
+architecture plan.

@@ -1,0 +1,49 @@
+---
+title: "0091 — The Encore app is generated into .stackra/encore; services hold no Encore files"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0040](/adr/0040-ddd-feature-modules-in-services) put Encore primitives at each service's root, and
+[0041](/adr/0041-decorated-controllers-and-build-time-generator) had `stackra gen` write static Encore declarations into
+`services/<svc>/__generated__/`. That ties every service's source tree to Encore and puts generated code in review diffs. The
+owner proposed the reverse: services are plain TypeScript, and the whole Encore application is a build output. This makes
+Encore one target among possible others.
+
+## Decision
+
+1. **Services are plain TypeScript with no `encore.*` files** and no `__generated__/` folder.
+2. **`stackra gen` emits a complete Encore application into a gitignored `.stackra/encore/`**: `encore.app`, one
+   `encore.service.ts` per service, and generated `api()`, `Topic`, `Subscription` and `CronJob` adapters. The adapters call the
+   built service packages through the container.
+3. **Only `app-manifest.json` is committed.** It is the reviewable record of what gen produced: endpoints, topics,
+   subscriptions and crons.
+4. **`stackra gen --check` runs in CI** and fails when `app-manifest.json` is stale.
+5. **`stackra dev` is `gen --watch` plus `encore run`. `stackra build` is `gen` plus `encore build docker`.** CI deploys from
+   the generated application.
+6. **Encore is a swappable target.** Nothing outside `.stackra/` and the generator's Encore emitter knows about Encore.
+7. **Authoring stays as 0041 decision 1**: decorated controllers with `@Get`, `@Post` and the rest, `@OnEvent` and `@Cron`,
+   discovered per [0090](/adr/0090-codegen-discovery-by-root-module). HTTP conventions are unchanged, generated files are
+   never edited by hand, and auto-CRUD is out of scope here.
+8. **A spike proves it first**: Encore parses the wire types emitted under `.stackra/` and imports the built service packages.
+
+## Consequences
+
+- Reviewers see `app-manifest.json` changes instead of generated code.
+- Encore errors point into generated code under `.stackra/`, so the generator must emit source comments that point back to the authored class.
+- The DDD module layout of 0040 stands, minus its decisions 3 and 4, which this ADR replaces. Encore primitives reach
+  modules as container tokens provided by the generated app, which amends [0042](/adr/0042-di-first-with-one-container-per-service) decision 5.
+- If the spike fails, this ADR is rewritten, not worked around.
+
+## Enforcement
+
+Planned: `stackra gen --check` in CI and in `pnpm verify`. A validator check that no `encore.*` file or `__generated__/`
+folder exists under `services/`, and that `.stackra/` is gitignored. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: [0041](/adr/0041-decorated-controllers-and-build-time-generator) (decisions 1, 3 to 7 restated; output moves from
+`services/<svc>/__generated__/` to `.stackra/encore/`). Amends [0040](/adr/0040-ddd-feature-modules-in-services) decisions 3
+and 4, and [0042](/adr/0042-di-first-with-one-container-per-service) decision 5. Sources: owner decision in chat, 2026-10-19
+(Round 9 G3).

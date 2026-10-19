@@ -1,0 +1,38 @@
+---
+title: "0090 — Codegen discovers decorators through each member's root module"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+`stackra gen` ([0041](/adr/0041-decorated-controllers-and-build-time-generator)) must find every decorated class (controllers,
+handlers, crons, models, resources), including those that come from packages. Scanning every TypeScript file with a parser is
+slow and misses runtime registration. Running the app to find them would start databases and side effects. The container
+already knows every provider through its modules ([0042](/adr/0042-di-first-with-one-container-per-service)), and its decorator
+metadata lives in its own `WeakMap` store ([0005](/adr/0005-di-container-and-legacy-decorators)).
+
+## Decision
+
+1. **Each member declares its root module in `package.json`**: `"stackra": { "module": "<path>" }`.
+2. **`stackra gen` imports that module in Node and runs the container's scan and plan steps only.** It never instantiates a
+   provider. Decorator metadata comes from the container's store.
+3. **ts-morph reads only the request and response types** of the handlers that discovery found, and emits wire interfaces
+   from them. No other file is parsed.
+4. **A validation pass fails the build** on duplicate paths, a destructive action without a permission, an unversioned
+   integration event ([0078](/adr/0078-messaging-layer-eight-packages)), or exposed PII.
+
+## Consequences
+
+- A package's module is discovered the same way as a service's. No file globbing and no naming convention is needed.
+- Module code must be safe to import without starting anything. Side effects belong in providers, which are never instantiated during gen.
+- Discovery is only as complete as the module graph: a class not reachable from the root module does not exist for gen.
+
+## Enforcement
+
+The validation pass of decision 4 is itself the check, once built. Planned: `pnpm validate` fails a `tier:service` or
+`tier:app` member without a `stackra.module` field. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Specifies the discovery mechanism of [0041](/adr/0041-decorated-controllers-and-build-time-generator)
+decision 2. Sources: owner decision in chat, 2026-10-19 (Round 9 G2).

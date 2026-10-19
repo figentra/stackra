@@ -96,6 +96,17 @@ Each ADR records one decision, its context, consequences and the check that enfo
 | [0087](/adr/0087-identity-and-iam-are-driver-packages) | Identity and IAM are driver packages; enterprise features plug in as Pro | Proposed |
 | [0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope) | @stackra/tenancy: pool and RLS are free; DB-per-tenant and the scope tree are Pro | Proposed |
 | [0089](/adr/0089-search-fresh-with-pro-engine-drivers) | @stackra/search is written fresh; Meilisearch and OpenSearch are Pro drivers | Proposed |
+| [0090](/adr/0090-codegen-discovery-by-root-module) | Codegen discovers decorators through each member's root module | Proposed |
+| [0091](/adr/0091-generated-encore-app-in-stackra-folder) | The Encore app is generated into .stackra/encore; services hold no Encore files | Proposed |
+| [0092](/adr/0092-ir-ported-definition-package-dropped) | The IR is ported with decorator-derived kinds; the definition package is dropped | Proposed |
+| [0093](/adr/0093-better-auth-integration) | Better Auth integration: container hooks, iam-only authorization, an owned MikroORM adapter, global auth tables | Proposed |
+| [0094](/adr/0094-decorators-only-authoring) | Decorators are the only authoring style; no define*() | Proposed |
+| [0095](/adr/0095-zod-inside-field-decorators) | Zod is the validation engine inside @Field; class-validator and class-transformer are rejected | Proposed |
+| [0096](/adr/0096-trait-naming-grammar) | Trait naming grammar and the trait list | Proposed |
+| [0097](/adr/0097-model-and-database-packages) | @stackra/model and @stackra/database; gen emits MikroORM EntitySchema | Proposed |
+| [0098](/adr/0098-actions-are-the-unit) | Actions are the unit of behaviour, in @stackra/actions, with one pipeline | Proposed |
+| [0099](/adr/0099-risk-scale-l0-to-l4) | One risk scale, L0 to L4, with effects as tags | Proposed |
+| [0100](/adr/0100-ai-model-and-ownership) | The AI model: what Stackra, Stackra Pro and Figentra OS each own | Proposed |
 
 Copy the [template](/adr/template), give it the next number, and add it to this table and to `docs.json`.
 Cite Stackra ADRs by path, never by a number from another repository.

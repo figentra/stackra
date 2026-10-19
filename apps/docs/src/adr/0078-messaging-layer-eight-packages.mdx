@@ -28,7 +28,7 @@ Events, pub/sub, outbox, jobs, cron, workflows, realtime, webhooks and notificat
 5. **Queue** holds jobs, one-off delayed and run-at jobs, retries and a dead-letter queue. Drivers: Encore topic, Postgres `SKIP LOCKED`, memory.
 6. **Scheduler is recurring cron only.** In SaaS it runs on Encore `CronJob`. On-prem and air-gapped it runs on a `croner` timer with a Postgres advisory lock. **A scheduler handler only dispatches a job or a workflow**; it does no work itself.
 7. **Workflow is steps plus compensation, and each step runs as a queue job**, so retries and dead-lettering come from the queue. This settles part of [0043](/adr/0043-workflow-package-medusa-style) decision 6. Persisting workflow state is still TODO.
-8. **Packages never import `encore.dev`.** `stackra gen` ([0041](/adr/0041-decorated-controllers-and-build-time-generator)) emits `Topic`, `Subscription` and `CronJob` declarations for the service and passes them to duck-typed drivers.
+8. **Packages never import `encore.dev`.** `stackra gen` ([0091](/adr/0091-generated-encore-app-in-stackra-folder)) emits `Topic`, `Subscription` and `CronJob` declarations for the service and passes them to duck-typed drivers.
 9. **Package placement**: events in foundation; outbox, queue, scheduler, workflow and realtime in runtime; webhooks and notifications in communication.
 
 ## Consequences

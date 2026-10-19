@@ -1,0 +1,38 @@
+---
+title: "0092 — The IR is ported with decorator-derived kinds; the definition package is dropped"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Figentra OS's application category holds six packages. Only `definition` and `ir` are real; `compiler`, `schema-gen`,
+`runtime-core` and `experience` are stubs. `definition` declares six kinds through `define*()` functions and YAML. Stackra
+authors everything with decorators, and codegen reads decorator metadata through the container
+([0090](/adr/0090-codegen-discovery-by-root-module)). It still needs a stable, versioned intermediate representation between
+discovery and emitters, and the `ir` package already provides one.
+
+## Decision
+
+1. **The `ir` machinery is ported**: the `v: 1` envelope, deterministic serialise and parse, cycle detection, the
+   compatibility rule, and `SchemaIR` with `schemaIRToZod`.
+2. **IR kinds are derived from decorators**: model, endpoint, event, job, cron, resource and permission. They replace the six
+   definition kinds.
+3. **The `definition` package is dropped**, including `define*()` and YAML definitions.
+4. **The remaining application stubs** (`compiler`, `schema-gen`, `runtime-core`, `experience`) are not ported as they are.
+   Codegen ADRs decide what replaces them.
+
+## Consequences
+
+- One serialised form feeds every emitter (Encore app, wire types, Zod, docs), and its compatibility rule makes IR changes reviewable.
+- No second authoring path: a kind that cannot be expressed as a decorator does not exist.
+- [0084](/adr/0084-figentra-os-package-port-plan) records `ir` as port + adapt and `definition` as skip.
+
+## Enforcement
+
+Planned: the ported round-trip and cycle-detection tests in the IR package's `__tests__`, and a compatibility test that fails
+an IR change without a version bump. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Narrows [0018](/adr/0018-framework-design-record) decision 3: the IR becomes in scope for Stackra, while
+product compilers stay out. Sources: owner decision in chat, 2026-10-19 (Round 9 G4 and the source survey).

@@ -1,0 +1,44 @@
+---
+title: "0099 — One risk scale, L0 to L4, with effects as tags"
+description: "Proposed · 2026-10-19"
+---
+
+<Note>Awaiting owner confirmation. This is a recommendation the owner has not confirmed.</Note>
+
+## Context
+
+The two AI planning documents use five different risk scales between them. Actions ([0098](/adr/0098-actions-are-the-unit)),
+approval, AI exposure and the gen validation pass all need a single scale, so that one rule can decide, for example, whether
+an agent can call an action without a human.
+
+## Decision
+
+1. **Every action declares one risk level**:
+
+   | Level | Meaning |
+   | --- | --- |
+   | L0 | Informational: no data read beyond public context |
+   | L1 | Read |
+   | L2 | Reversible write |
+   | L3 | Financial |
+   | L4 | Privileged or destructive |
+
+2. **Effects are tags, separate from the level.** They describe what an action touches (for example, sending a message or
+   moving money), and policies and evidence can filter on them.
+3. **The level is the only risk input to approval and AI exposure rules.** Other scales in source documents are not used.
+
+## Consequences
+
+- One vocabulary across actions, policies, approvals and evidence.
+- Choosing a level is a reviewable line on every action. A wrong level is a security finding.
+- The effect tag vocabulary is TODO, settled in the actions spec.
+
+## Enforcement
+
+Planned: the gen validation pass rejects an action without a level, and a destructive action marked below L4. Nothing checks
+this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: recommendation by the coordinating agent, 2026-10-19. Informational: the AI Implementation
+Standard and the Stackra AI-driven architecture plan, whose scales this replaces.

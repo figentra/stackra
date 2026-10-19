@@ -1,0 +1,46 @@
+---
+title: "0098 — Actions are the unit of behaviour, in @stackra/actions, with one pipeline"
+description: "Proposed · 2026-10-19"
+---
+
+<Note>Awaiting owner confirmation. This is a recommendation the owner has not confirmed.</Note>
+
+## Context
+
+The same operation is reached from an HTTP endpoint, an AI tool, a CLI command, a queue job and an event listener. If each
+entry point re-implements validation, tenancy, authorization, approval, idempotency and audit, they drift, and an AI agent
+ends up with a path a human does not have ([0021](/adr/0021-ai-engine-and-agent-write-safety) decision 9). The AI
+Implementation Standard §35 describes one execution pipeline for this. [0091](/adr/0091-generated-encore-app-in-stackra-folder)
+makes decorated controllers the primary HTTP pattern, written before actions were proposed.
+
+## Decision
+
+1. **An action is the unit of behaviour.** `@Action` (writes) and `@Query` (reads) in `@stackra/actions` declare a
+   `key@version`, Zod input and output ([0095](/adr/0095-zod-inside-field-decorators)), a permission, a risk level
+   ([0099](/adr/0099-risk-scale-l0-to-l4)), effects, whether approval is needed, and intents with examples.
+2. **Adapters expose an action**: `@AsEndpoint`, `@AsTool`, `@AsCommand`, `@AsJob` and `@AsListener`. **AI exposure is
+   default-deny**: an action is a tool only if it carries `@AsTool`.
+3. **Every invocation runs one pipeline**, whatever the adapter: actor → validate → tenancy → iam → policy → entitlement →
+   budget → approval (durable park and resume) → idempotency → transaction → handle → outbox → evidence → audit. The tenancy,
+   iam, policy and entitlement steps run the app's gate chain ([0081](/adr/0081-gate-chain-configurable-per-app)).
+4. **`@Crud` generates opt-in actions** for a model. No services or controllers are generated.
+5. **`@Controller` remains only for raw endpoints** that are not actions (webhook receivers, `/api/auth/*`, streaming).
+
+## Consequences
+
+- A human, an agent, a job and a CLI user go through the same checks, approval and audit.
+- Approval needs durable park-and-resume state, which ties the pipeline to the workflow and queue packages ([0078](/adr/0078-messaging-layer-eight-packages)).
+- How the fixed pipeline order and the configurable gate chain of 0081 fit together is left to the actions spec.
+- When confirmed, this amends [0091](/adr/0091-generated-encore-app-in-stackra-folder) decision 7: decorated controllers stop
+  being the primary HTTP pattern.
+
+## Enforcement
+
+Planned: the gen validation pass ([0090](/adr/0090-codegen-discovery-by-root-module)) rejects an action without a permission
+or risk level, and an `@AsTool` on an L4 action without approval. A pipeline-order test in `@stackra/actions`. Nothing checks
+this today.
+
+## Supersedes and sources
+
+Supersedes: none. Will amend [0091](/adr/0091-generated-encore-app-in-stackra-folder) decision 7 on confirmation. Sources:
+recommendation by the coordinating agent, 2026-10-19. Informational: AI Implementation Standard §18 and §35.
