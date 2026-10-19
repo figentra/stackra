@@ -31,6 +31,6 @@
 
 ## Notes
 
-- Three `[NEEDS CLARIFICATION]` markers remain by design (Linear project/issue, SMS/WhatsApp providers, retention periods); they are resolved in `/speckit-clarify`, along with the `STA-n` placeholder.
+- The three `[NEEDS CLARIFICATION]` markers (Linear project/issue, SMS/WhatsApp providers, retention periods) were resolved in `/speckit-clarify` on 2026-10-19; the spec is linked to STA-35 in the Linear project Notifications.
 - "No implementation details" passes with a stated exception: this is a framework package whose users are developers, so the fixed architectural context (sibling `@stackra/*` packages, the driver instance-module pattern, RFC 8058, the no-`encore.dev` rule) is named as constraints the owner set, not as design choices. Library choices (`nodemailer`, `liquidjs`, `libphonenumber-js`) appear only in Impact and the open questions.
 - Every functional requirement is written in one EARS pattern with the Notification Engine as the subject, defined in the Glossary.

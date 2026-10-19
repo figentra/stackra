@@ -6,11 +6,11 @@
 
 **Status**: Draft
 
-**Linear**: STA-n <!-- the Linear issue for this spec; the plan gate needs a real key -->
+**Linear**: STA-35 <!-- https://linear.app/figentra/issue/STA-35 -->
 
 **Linear project**: Notifications
 
-**Clarifications status**: pending <!-- every owner question is answered (see Clarifications); the only open item is creating the STA "Notifications" project and spec issue, then writing the STA-n key above. Set to "complete" when that key is real. -->
+**Clarifications status**: complete
 
 **Input**: User description: "A full enterprise-grade, production-ready notifications framework package, @stackra/notifications, MIT. The whole engine; channels email (Resend + SMTP), SMS, WhatsApp, push (Expo push, FCM and APNs direct), in-app (database-backed inbox with read/unread/archive, delivered live via realtime); templates (file-based, i18n, per-tenant overrides, layouts/partials, preview); digests; timezone-aware quiet hours and do-not-disturb; user and tenant preferences with mandatory categories; delivery tracking via provider webhooks; retries, dead-letter, idempotency, rate limits, suppression lists, RFC 8058 one-click unsubscribe; audit and PII redaction. Pro (out of scope, seams only): visual template editor, delivery analytics dashboard, multi-provider failover. Sits on the locked messaging layer (events, outbox, queue, scheduler, realtime, webhooks) and never re-implements it."
 
@@ -502,7 +502,6 @@ The same Host code runs SaaS, on-prem and air-gapped; switching to a hosted Fige
 
 ## Open items
 
-All owner questions are answered; the decisions are recorded under Clarifications and applied above.
+All owner questions are answered; the decisions are recorded under Clarifications and applied above. Linear: project Notifications, spec issue STA-35.
 
-1. **Linear issue key.** The STA project "Notifications" and its spec issue are not created yet, so `**Linear**` still holds the `STA-n` placeholder. Create both (label `agent`), write the key, rename the folder to `sta-<n>-notifications`, and set `**Clarifications status**: complete`.
-2. **ADRs before `/speckit.plan`.** The ADRs listed under Impact (package design, ADR 0015 amendment, runtime/codegen in PR #16, settings and connections) should be accepted before the plan relies on them.
+1. **ADRs before `/speckit.plan`.** The ADRs listed under Impact (package design, ADR 0015 amendment, runtime/codegen in PR #16, settings and connections) should be accepted before the plan relies on them.
