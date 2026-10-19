@@ -1,0 +1,29 @@
+---
+title: "0086 — @stackra/notifications is a full engine, with every channel free"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+The Figentra OS notifications package is a stub. The owner wants a full enterprise package from day one, not a thin channel wrapper. The Pro list first put the SMS, WhatsApp and push drivers and the template editor in Pro. The owner then moved every channel to free and kept only operator tooling in Pro ([0077](/adr/0077-open-core-free-and-pro-lists)). The detailed design is a spec-kit spec, drafted separately on branch `spec/notifications`. This page records the scope only.
+
+## Decision
+
+1. **`@stackra/notifications` is written fresh** as a full engine: templates, digests, quiet hours, delivery tracking with retries, and per-recipient preferences.
+2. **Every channel is free**: email (Resend and SMTP drivers, [0035](/adr/0035-resend-email-with-spf-dkim-dmarc)), SMS, WhatsApp, push and in-app.
+3. **Pro adds operator tooling only**: a visual template editor, a delivery analytics dashboard and multi-provider failover.
+4. **Delivery runs on the messaging layer** ([0078](/adr/0078-messaging-layer-eight-packages)): sends are queue jobs, and in-app delivery uses realtime.
+5. **The design is the notifications spec** on branch `spec/notifications`. This ADR does not restate it. Where the two disagree, the spec is corrected or this ADR is superseded.
+
+## Consequences
+
+- Products get a complete notification system without a Pro licence. Pro value is in operations, not in reach.
+- A large package to build and maintain, with a driver for each channel provider and a conformance suite ([0076](/adr/0076-every-package-runs-saas-on-prem-and-air-gapped)). Channels that need a hosted provider (SMS, WhatsApp, push) need an on-prem path or a clear "unavailable when air-gapped" contract, settled in the spec.
+
+## Enforcement
+
+Planned: a channel-driver conformance suite in the package's `__tests__`, and the Impact questionnaire of the notifications spec. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decisions in chat, 2026-10-19 (Round 6 item 18; Round 8 C1 and the final C1 decision). Design: the notifications spec on branch `spec/notifications` (in progress).

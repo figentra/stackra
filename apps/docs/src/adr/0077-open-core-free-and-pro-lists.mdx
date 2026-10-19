@@ -1,0 +1,52 @@
+---
+title: "0077 — Open core: the free and Pro package lists"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0074](/adr/0074-open-core-licensing) introduced `@stackra-pro/*` under a commercial licence, gated at install, but left two things undecided: which packages are Pro, and where Pro source lives. The owner settled both in the package questionnaire. The rule for drawing the line is that basics are free, and enterprise and scale features are Pro. For notifications, the owner first put the SMS, WhatsApp and push drivers on the Pro list, then decided every channel is free.
+
+## Decision
+
+1. **`@stackra/*` is MIT and free** ([0024](/adr/0024-mit-license-with-exclusions)).
+2. **Pro packages use the `@stackra-pro/*` scope** on `npm.figentra.com` under a commercial licence, each with its own `LICENSE` and a `"license"` field that names it. **Access is gated at install** by a scoped `.npmrc` and a per-customer registry token. No package checks a licence at runtime.
+3. **Pro source lives in the private repository `figentra/stackra-pro`**, never in this public repository.
+4. **Pro plugs in behind free contracts.** A Pro package is a driver, module or extension for a contract that a free package defines. A free package never imports a Pro package and works fully without one.
+5. **Free security basics**: Better Auth core, pool tenancy with row-level security, RBAC behind `check()`, personal access tokens, the entitlements gate interface with plan and limit contracts, a basic token bucket, and core consent and CSP.
+6. **The notifications engine and every channel are free**: email (Resend, SMTP), SMS, WhatsApp, push and in-app ([0086](/adr/0086-notifications-full-engine-all-channels-free)).
+7. **The Pro list**:
+
+   | Area | Pro |
+   | --- | --- |
+   | Admin | Admin resource kit; billing admin UI |
+   | Builders | Page builder; dashboards |
+   | Collaboration | Presence and co-editing (trimmed out of `@stackra/realtime`) |
+   | Enterprise identity | SSO, SCIM, phone sign-in, OAuth provider; advanced audit |
+   | Tenancy and authorization at scale | Scope tree (`@stackra-pro/scope`); DB-per-tenant and move-tenant driver; Zanzibar engine (`@stackra-pro/iam-relations`); tenant service tokens |
+   | Entitlements | Plans, metering and quotas engine |
+   | Compliance | Compliance pack |
+   | Search | Meilisearch and OpenSearch drivers ([0089](/adr/0089-search-fresh-with-pro-engine-drivers)) |
+   | Analytics | Analytics destinations |
+   | AI | AI agents kit |
+   | Developer | Devtools UI (`devtools`, `devtools-ui-kit`) |
+   | Notifications | Visual template editor; delivery analytics dashboard; multi-provider failover |
+   | Licensing | `@stackra/licensing` (signed offline licence file), built only when a product sells self-hosted |
+   | Candidate | Per-tenant white-label theming |
+
+8. **A Pro package that wraps HeroUI Pro** respects HeroUI's redistribution terms, and no paid-licence code is committed here ([0024](/adr/0024-mit-license-with-exclusions) rule 4).
+
+## Consequences
+
+- Free contracts must be designed for the Pro drivers that will implement them, without the Pro code in view in this repository.
+- `figentra/stackra-pro` needs its own CI, release and registry publishing. It consumes released `@stackra/*` versions.
+- Open: Academorix needs the scope tree from day one, which makes it a Pro consumer under an internal licence. The owner has not confirmed this.
+- Open (carried from 0074): does npflared support per-customer scoped, revocable tokens.
+
+## Enforcement
+
+Planned: `tools/scripts/validate-repository.mjs` fails any member here that depends on `@stackra-pro/*`, and fails a non-MIT licence on any member of this repository. The registry rejects publishing `@stackra-pro/*` without the commercial `LICENSE`. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: [0074](/adr/0074-open-core-licensing) (it restates 0074's rules 1 to 3, 5 and 6, and settles the Pro list and the source location). Amends [0024](/adr/0024-mit-license-with-exclusions) rule 1, as 0074 did. Sources: owner decisions in chat, 2026-10-19 (Round 7; Round 8 F14a, F14b, F14c, C1).

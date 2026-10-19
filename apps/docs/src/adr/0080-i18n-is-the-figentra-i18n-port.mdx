@@ -1,0 +1,30 @@
+---
+title: "0080 — i18n is the ported Figentra i18n package; i18next is dropped"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0060](/adr/0060-i18n-logical-css-light-and-dark) requires i18n keys and logical CSS from day one, using i18next on every surface. In the package questionnaire the owner chose to port the Figentra OS i18n package instead. It does not depend on i18next. The rest of 0060 is unchanged and is restated here so that one page holds the rule.
+
+## Decision
+
+1. **All user-visible strings are i18n keys**, never literals in components, resolved by `@stackra/i18n`, the port of the Figentra OS i18n package. i18next is not used.
+2. **English is the only launch locale**; Arabic is planned for phase 2.
+3. **Layout uses CSS logical properties** (`margin-inline-start`, not `margin-left`) so right-to-left layout needs no rewrite.
+4. **Every surface supports light and dark** from design tokens.
+5. **Catalogues and tokens are shared** across web and native ([0056](/adr/0056-heroui-v3-pro-on-web-share-everything-but-components)).
+
+## Consequences
+
+- One in-house i18n surface shared with the rest of the ported packages (container, config, diagnostics).
+- Pluralisation, interpolation and catalogue loading are Stackra's to maintain and test.
+- The same costs as 0060: two colour schemes to review now, two directions later.
+
+## Enforcement
+
+Planned: `FORBIDDEN_DEPENDENCIES` in `tools/scripts/validate-repository.mjs` gains `i18next` and `react-i18next`. An oxlint rule against string literals in JSX, a lint rule against physical-direction CSS properties, and an i18n steward check for missing keys. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: [0060](/adr/0060-i18n-logical-css-light-and-dark) (decision 1 changes; decisions 2 to 5 are restated unchanged). Sources: owner decisions in chat, 2026-10-19 (Round 1 brand/i18n; Round 8 F12).

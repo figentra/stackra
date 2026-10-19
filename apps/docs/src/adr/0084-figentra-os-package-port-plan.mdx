@@ -1,0 +1,91 @@
+---
+title: "0084 — Figentra OS package port plan"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Figentra OS (`@figentra-os/*`, 55 packages in the same ten categories) is Stackra's ancestor. The owner decided, package by package, what to port. Some packages port as they are, some are adapted or redesigned, some start fresh, some are skipped, and some become Pro. Each port still goes through the gate (spec, review), and the code is relicensed to MIT as it is ported ([0024](/adr/0024-mit-license-with-exclusions)). This page is the plan. Each package's design ADR is written when it lands ([0018](/adr/0018-framework-design-record)).
+
+## Decision
+
+1. **Conventions every ported package meets**:
+   - A file-contract docblock on every file and a docblock on every export ([0007](/adr/0007-source-documentation-standard)).
+   - One export per file, `#` subpath imports, and no `any`, non-null assertions or enums ([0006](/adr/0006-naming-exports-and-imports)).
+   - No `Reflect` metadata. Code that calls `Reflect.defineMetadata` (kbd, pwa) switches to the container's `WeakMap` metadata store. `reflect-metadata` stays rejected ([0011](/adr/0011-rejected-and-deferred-technologies)).
+   - The diagnostics catalogue is kept, and its prefix becomes `STK`.
+   - Devtools tabs (through `@stackra/devtools-kit`) only where a package needs one.
+   - Driver packages follow the instance-module pattern and ship a conformance suite ([0076](/adr/0076-every-package-runs-saas-on-prem-and-air-gapped)).
+   - No `encore.dev` import ([0078](/adr/0078-messaging-layer-eight-packages)). Names follow [0083](/adr/0083-npm-scopes-and-cli-names).
+2. **The plan.** Actions: port as-is, port + adapt, redesign, fresh, skip, Pro.
+
+   | Category | Package | Action | Notes |
+   | --- | --- | --- | --- |
+   | foundation | contracts | port + adapt | |
+   | foundation | support | port + adapt | Add Laravel-style helpers now; stays dependency-free |
+   | foundation | container | port as-is | After the Encore plus legacy-decorator spike |
+   | foundation | config | port + adapt | Add publish and override ([0044](/adr/0044-laravel-style-package-config)) |
+   | foundation | events | port + adapt | Wire to the outbox; sources and sinks ([0078](/adr/0078-messaging-layer-eight-packages)) |
+   | foundation | logger | port + adapt | Reporters per [0085](/adr/0085-logger-reporters) |
+   | foundation | storage | port as-is | |
+   | foundation | query | port + adapt | Cursor-first redesign, no router dependency; optimism and offline queue ([0079](/adr/0079-client-state-is-stackra-state)) |
+   | foundation | transport | port + adapt | `Stackra-Version` header ([0037](/adr/0037-api-versioning-by-date-header)) |
+   | foundation | signals | port + adapt | Becomes `@stackra/state` ([0079](/adr/0079-client-state-is-stackra-state)); the TanStack Store state package is dropped |
+   | foundation | network | port + adapt | Rebuilt on `@stackra/state` |
+   | foundation | filesystem | port as-is | |
+   | foundation | i18n | port as-is | No i18next ([0080](/adr/0080-i18n-is-the-figentra-i18n-port)) |
+   | foundation | router | port + adapt | Keep the compiled tree and diagnostics; RR7 web and React Navigation adapters ([0053](/adr/0053-decorator-route-classes-compiled-to-router-adapters)) |
+   | runtime | app | port + adapt | On `@stackra/container`; the node entry has no React |
+   | runtime | cache | port + adapt | Add a Redis/Valkey driver for on-prem |
+   | runtime | queue | port + adapt | Jobs, delayed and run-at, retries, dead-letter queue; Encore topic, Postgres `SKIP LOCKED` and memory drivers |
+   | runtime | scheduler | port + adapt | Recurring cron only; Encore `CronJob` or `croner` with an advisory lock |
+   | runtime | realtime | port + adapt | Trimmed: presence and co-editing move to Pro collaboration; add a self-hosted driver |
+   | runtime | sync | skip | Stub deleted; the offline queue is in `@stackra/query` |
+   | runtime | outbox | fresh | Outbox table, relay, inbox deduplication |
+   | runtime | workflow | fresh | Steps plus compensation, each step a job ([0043](/adr/0043-workflow-package-medusa-style)) |
+   | security | identity | port + adapt | Better Auth local driver; remote driver later ([0087](/adr/0087-identity-and-iam-are-driver-packages)) |
+   | security | tenancy | port + adapt | Free pool, RLS and isolation kit; no router dependency ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope)) |
+   | security | iam | port + adapt | RBAC and `check()`, no scope dependency ([0087](/adr/0087-identity-and-iam-are-driver-packages)) |
+   | security | scope | Pro | `@stackra-pro/scope`, a driver behind `check()` and tenancy |
+   | security | consent | port as-is | Drop the unused optional `@heroui/react` peer |
+   | security | csp | port as-is | |
+   | security | entitlements | fresh | Gate and plan/limit contracts free; metering and limits engine Pro |
+   | state | coordinator | port + adapt | Leader election and locks only, on `@stackra/state` and the events `BroadcastChannel` source and sink; add tests |
+   | state | feature-flags | port + adapt | Add a PostHog provider, plus config and service providers for on-prem; a gate in the chain ([0081](/adr/0081-gate-chain-configurable-per-app)) |
+   | state | settings | port as-is | Platform, tenant and user scoping later |
+   | state | theming | port as-is | Tokens come from `@stackra/brand`; per-tenant white-label is a Pro candidate |
+   | experience | collaboration | Pro | Stub today; receives presence and co-editing |
+   | experience | console | port + adapt | The command-line framework, `@stackra/console` ([0083](/adr/0083-npm-scopes-and-cli-names)) |
+   | experience | dashboard | Pro | Stub today |
+   | experience | forms | redesign | On react-hook-form and Zod ([0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters)); HeroUI field adapters live in the apps; the registry is salvaged for `@Resource` |
+   | experience | kbd | port + adapt | `WeakMap` metadata store; the palette UI is built per app |
+   | experience | navigation | port + adapt | Local and remote menus, breadcrumbs, tabs as data, gate-filtered, on the router; detailed plan pending |
+   | experience | page-builder | Pro | Stub today |
+   | experience | pwa | port + adapt | `WeakMap` metadata store |
+   | data | media | port + adapt | On `@stackra/filesystem` drivers, with no second set of storage drivers |
+   | data | search | fresh | [0089](/adr/0089-search-fresh-with-pro-engine-drivers) |
+   | communication | notifications | fresh | Stub today; full engine ([0086](/adr/0086-notifications-full-engine-all-channels-free)) |
+   | communication | webhooks | fresh | Standard Webhooks |
+   | cross-cutting | analytics | port + adapt | Add a PostHog driver; other destinations Pro |
+   | cross-cutting | brand | port + adapt | Stackra tokens and assets plus the Figentra runtime `BrandService` (per-tenant branding) from day one |
+   | cross-cutting | seo | port + adapt | Add tests and the React Router 7 head integration |
+   | developer | cli | port + adapt | The `stackra` binary on `@stackra/console` |
+   | developer | devtools-kit | port as-is | |
+   | developer | devtools | skip | Pro later |
+   | developer | devtools-ui-kit | skip | Pro later |
+   | developer | vite | port + adapt | Renamed; the new name is TODO |
+   | application | compiler, definition, experience, ir, runtime-core, schema-gen | skip | Decided in the codegen deep dive, not by this plan |
+
+## Consequences
+
+- The ported set is large, and most of it is mechanical, so it can be delegated ([0066](/adr/0066-delegation-to-opencode-by-routing-matrix)). Adapt, redesign and fresh rows need a spec each.
+- Category folders are created with their first package ([0028](/adr/0028-package-categories-appear-with-first-package)). `@stackra/brand` already lives in `experience`, while Figentra OS keeps brand in `cross-cutting`. Which folder it ends in is settled when the Figentra `BrandService` is merged into it.
+- A row changes by a new ADR or an amendment to this one.
+
+## Enforcement
+
+Existing: `FORBIDDEN_DEPENDENCIES` (`reflect-metadata`) in `tools/scripts/validate-repository.mjs`, and `boundaries.jsonc` (`encore.dev`). Planned: an oxlint rule banning `Reflect.defineMetadata` and `Reflect.getMetadata`, a docblock check, and a test that every diagnostic code starts with `STK`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decisions in chat, 2026-10-19 (Round 2 lineage, Round 3 conventions, Round 6 item 4, Round 8 package questionnaire F1 to F13, R1 to R6, S1 to S4, T1 to T4, E1 to E4, D1, D2, C1, cross-cutting, developer, X3 to X5). Package list: `/Projects/figentra/packages/os/*` (informational).
