@@ -4,19 +4,19 @@ description: "Where tests live, what a green run proves, fakes instead of secret
 icon: "flask-conical"
 ---
 
-Tests sit beside the code they prove ([ADR 0008](/adr/0008-test-placement)). There is no root `tests/` folder and no shared tests workspace: each member owns its tests.
+Every test file sits directly in a `__tests__/` folder beside the code it proves, anywhere in the repository ([ADR 0022](/adr/0022-tests-live-in-tests-folders)). There is no root `tests/` folder and no shared tests workspace: each member owns its tests.
 
 ## Where tests live
 
 | Kind               | Where                                                          | Runner                                       |
 | ------------------ | -------------------------------------------------------------- | -------------------------------------------- |
-| Unit / component   | `src/**/__tests__/<name>.test.ts(x)` or `<name>.test.ts` beside the file | vitest (`pnpm test`)               |
-| App end-to-end     | `apps/<app>/e2e/`, never a shared workspace                    | Playwright (web), added with the first flow  |
-| Service tests      | beside each service                                            | vitest (and `encore test` once Encore lands) |
-| Repository scripts | `tools/scripts/*.test.mjs`                                     | `node --test` (part of `pnpm validate`)      |
+| Unit / component   | `src/**/__tests__/<name>.test.ts(x)`                           | vitest (`pnpm test`)                         |
+| App end-to-end     | `apps/<app>/e2e/__tests__/`, never a shared workspace          | Playwright (web), added with the first flow  |
+| Service tests      | `src/**/__tests__/` in each service                            | vitest (and `encore test` once Encore lands) |
+| Repository scripts | `tools/scripts/__tests__/*.test.mjs`                           | `node --test` (part of `pnpm validate`)      |
 | Fixtures, doubles  | `__fixtures__/` beside the tests, or the `testing` entry of the package that owns the contract | n/a              |
 
-- A test file's name is its subject's name plus `.test`; its header says what the suite proves, and each `it()` title is a full sentence stating behaviour.
+- A test file's name is its subject's name plus `.test` (never `.spec`); its header says what the suite proves, and each `it()` title is a full sentence stating behaviour.
 - The vitest presets set `passWithNoTests: false`, so a member with an empty suite fails. Every layer or entry of a package ships at least one test.
 - Packages meet one coverage floor from `@stackra/vitest-config/coverage`: lines and functions 80, branches 70. A threshold moves only upward; a package that cannot meet it says why in its own `vitest.config.ts`. Apps are not gated.
 - Run one member with `pnpm turbo run test --filter=@stackra/<name>`; coverage with `pnpm test:coverage`.
@@ -77,7 +77,7 @@ An app's e2e suite is a set of journeys run across axes, not a single configurat
 | ----------------------------------------------------------------- | -------------------------------------------------------------- | ------ |
 | Empty suite fails                                                 | vitest presets (`passWithNoTests: false`)                      | Yes    |
 | Coverage floor on packages                                        | `withCoverage` in `pnpm test:coverage`                         | Yes    |
-| Script tests and the scaffold render every template kind          | `node --test tools/scripts/*.test.mjs` in `pnpm validate`      | Yes    |
-| No root `tests/`; tests only under `src/**/__tests__` or beside the file | planned: validator check ([ADR 0008](/adr/0008-test-placement)) | No |
+| Script tests and the scaffold render every template kind          | `node --test tools/scripts/__tests__/*.test.mjs` in `pnpm validate` | Yes    |
+| Every test file sits directly in `__tests__/`; no `.spec`          | `checkTestPlacement` in `tools/scripts/validate-repository.mjs` ([ADR 0022](/adr/0022-tests-live-in-tests-folders)) | Yes |
 | Template output is validated, not only rendered                   | planned: scaffold test also runs the validator on each kind    | No     |
 | E2E matrix and screenshot baselines                               | planned: per-app Playwright config when the first flow lands   | No     |

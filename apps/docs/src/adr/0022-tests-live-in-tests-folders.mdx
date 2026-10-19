@@ -1,0 +1,38 @@
+---
+title: "0022 — Tests live in __tests__ folders"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+[0008](/adr/0008-test-placement) let a test sit either in `src/**/__tests__/` or as `<name>.test.ts` next to its
+subject. Both layouts appeared, outside members too (agent hooks, repository scripts, scaffold templates), and nothing
+checked either. One layout is easier to glob, exclude from builds and coverage, and spot in review.
+
+## Decision
+
+1. **Every test file in the repository sits directly inside a `__tests__/` directory** beside its subject. This covers
+   apps, packages, services, `tools/`, `.agents/hooks/`, scaffold templates — every tracked path. Inside a member that
+   means `src/**/__tests__/`.
+2. **A test file is named `<subject>.test.<ext>`** (`.ts`, `.tsx`, `.mts`, `.mjs`, `.js`, …). `.spec.*` is not used.
+3. **No root `tests/` directory in any member.** App end-to-end suites live in their app (`apps/<app>/e2e/__tests__/`).
+4. **Shared fixtures and doubles are an explicit `testing` entry of the package that owns the contract**, not a shared
+   folder. Fixtures used by one suite sit in `__tests__/` or `__fixtures__/` beside it.
+5. **Tests need zero secrets.** Provider fakes replace credentials ([0009](/adr/0009-secrets-two-mechanisms)).
+6. **A green `pnpm verify` proves less than it seems.** What it does not prove is stated in `/standards/testing`.
+
+## Consequences
+
+- One glob finds every test: `**/__tests__/**/*.test.*`. Vitest presets, coverage excludes and `node --test` scripts use it.
+- Moving a file moves its `__tests__/` neighbour with it. A test imports its subject with `../<subject>`.
+- Hook and script tests run from `__tests__/` too, so `.agents/hooks/__tests__/` and `tools/scripts/__tests__/`.
+
+## Enforcement
+
+`tools/scripts/validate-repository.mjs` (`checkTestPlacement`, run by `pnpm validate` and CI) fails on any tracked
+or untracked, non-ignored file named `*.test.*` or `*.spec.*` whose parent directory is not `__tests__`, and on any
+`*.spec.*` file. `.old/` is excluded.
+
+## Supersedes and sources
+
+Supersedes: [0008](/adr/0008-test-placement). Sources: basalt `adr/0034-test-file-placement`.

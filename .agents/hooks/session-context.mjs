@@ -27,7 +27,7 @@ const lines = [
   "1. Packages live at packages/<category>/<name> (flat inside one category) and are named @stackra/<name>. A package never imports an app, a service or another package's src/ (packages/tooling/oxlint/boundaries.jsonc).",
   "2. Every member extends one @stackra/typescript-config preset, one @stackra/vitest-config preset, and declares exactly one turbo tier tag (tier:config|lib|app|service).",
   "3. Versions live only in pnpm-workspace.yaml catalogs (catalogMode: strict). A member's package.json names catalog:<name> or workspace:* — `pnpm validate` fails otherwise.",
-  "4. Tests sit next to the code (src/**/__tests__); there is no root tests/ folder. An app's e2e lives in that app.",
+  "4. Every test file sits directly in a __tests__/ folder beside its subject (src/**/__tests__/<name>.test.ts); there is no root tests/ folder and no .spec. An app's e2e lives in that app (ADR 0022, enforced by pnpm validate).",
   "5. Docs are apps/docs (Mintlify). Pages, assets and ADRs all live in apps/docs/src (ADRs in apps/docs/src/adr).",
   "6. Secrets: never print, read or write a value. Values are set by a human; developer tokens live in the vault.",
   "7. Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boundaries, knip). Conventional commits; changesets for releases.",

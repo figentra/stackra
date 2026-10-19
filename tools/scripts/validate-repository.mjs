@@ -4,8 +4,9 @@
  * Purpose: the repository-shape gate run by `pnpm validate` (part of `pnpm verify`). Every workspace member uses
  *          catalog:/workspace: versions only, is named @stackra/*, declares exactly one turbo tier tag matching its
  *          directory, extends a @stackra/typescript-config preset, and depends on no forbidden package.
+ *          Every test file anywhere in the repository sits directly in a __tests__/ folder (ADR 0022).
  *          Prints the findings and exits 1; prints nothing on success. Adapted from Figentra's checks 1–5.
- * Scope: every member listed by `pnpm -r list --json --depth -1`.
+ * Scope: every member listed by `pnpm -r list --json --depth -1`; test placement covers every non-ignored file.
  * Owner: release-operations · Secrets: forbidden
  */
 import { execFileSync } from "node:child_process";
@@ -134,6 +135,22 @@ export function checkServiceUnit({ files, agents }) {
   return out;
 }
 
+const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
+
+/** ADR 0022: every `*.test.*` file sits directly in `__tests__/`; `.spec.*` is not used. `.old/` is archived code. */
+export function checkTestPlacement(paths) {
+  const out = [];
+  for (const p of paths) {
+    if (p.startsWith(".old/") || !TEST_FILE.test(p)) continue;
+    const parts = p.split("/");
+    if (parts.at(-2) !== "__tests__")
+      out.push(`${p}: test files go in a __tests__/ folder (ADR 0022)`);
+    if (/\.spec\./.test(parts.at(-1)))
+      out.push(`${p}: name it <subject>.test.<ext>, not .spec (ADR 0022)`);
+  }
+  return out;
+}
+
 function main() {
   const members = JSON.parse(
     execFileSync("pnpm", ["-r", "list", "--json", "--depth", "-1"], {
@@ -148,6 +165,14 @@ function main() {
     for (const f of findings) console.error(`${dir || "."}: ${f}`);
     failed += findings.length;
   };
+  const repoFiles = execFileSync(
+    "git",
+    ["ls-files", "--cached", "--others", "--exclude-standard", "--deduplicate"],
+    { cwd: ROOT, encoding: "utf8" },
+  )
+    .split("\n")
+    .filter((p) => p && existsSync(join(ROOT, p)));
+  report("", checkTestPlacement(repoFiles));
   const servicesSrc = join(ROOT, "services/src");
   if (existsSync(servicesSrc))
     for (const d of readdirSync(servicesSrc))

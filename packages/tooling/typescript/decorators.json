@@ -1,5 +1,5 @@
 // Stackra file contract:
-// Purpose: a workspace that declares modules/providers with legacy decorators (the DI tier, ADR-0007).
+// Purpose: a workspace that declares modules/providers with legacy decorators (the DI tier, ADR-0005).
 //          `emitDecoratorMetadata` stays off everywhere: esbuild (Encore's bundler) never emits
 //          `design:paramtypes`, so no code may depend on it; every dependency is named with @Inject(token).
 //          Pair with `library({ decorators: true })` from @stackra/tsdown-config and the vitest decorators

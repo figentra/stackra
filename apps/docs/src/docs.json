@@ -2,7 +2,7 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "Stackra",
-  "description": "Stackra \u2014 the @stackra/* packages, apps and services, and how to work in the monorepo.",
+  "description": "Stackra — the @stackra/* packages, apps and services, and how to work in the monorepo.",
   "colors": {
     "primary": "#4F46E5",
     "light": "#818CF8",
@@ -59,11 +59,28 @@
             "pages": [
               "guides/structure",
               "guides/packages",
-              "guides/catalogs",
               "guides/tooling",
-              "guides/testing",
               "guides/workflow",
-              "guides/standards"
+              "guides/definition-of-done",
+              "guides/scaffolding"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Constitution",
+        "icon": "shield",
+        "groups": [
+          {
+            "group": "Laws",
+            "pages": [
+              "constitution/index",
+              "constitution/boundaries",
+              "constitution/secrets",
+              "constitution/http-and-events",
+              "constitution/security",
+              "constitution/tenancy",
+              "constitution/delegation"
             ]
           }
         ]
@@ -74,7 +91,87 @@
         "groups": [
           {
             "group": "Decisions",
-            "pages": ["adr/index", "adr/0001-monorepo-layout", "adr/0002-docs-on-mintlify"]
+            "pages": [
+              "adr/index",
+              "adr/0001-monorepo-layout",
+              "adr/0002-docs-on-mintlify",
+              "adr/0003-tier-dependency-direction",
+              "adr/0004-package-archetypes-and-layers",
+              "adr/0005-di-container-and-legacy-decorators",
+              "adr/0006-naming-exports-and-imports",
+              "adr/0007-source-documentation-standard",
+              "adr/0008-test-placement",
+              "adr/0009-secrets-two-mechanisms",
+              "adr/0010-services-are-independent-workspace-members",
+              "adr/0011-rejected-and-deferred-technologies",
+              "adr/0012-code-host-and-ci",
+              "adr/0013-versioning-and-release",
+              "adr/0014-data-ownership-and-orm",
+              "adr/0015-contract-packages",
+              "adr/0016-agents-source-of-truth",
+              "adr/0017-agent-roster-and-models",
+              "adr/0018-framework-design-record",
+              "adr/0019-supply-chain-hardening",
+              "adr/0020-observability-and-crash-reporting",
+              "adr/0021-ai-engine-and-agent-write-safety",
+              "adr/0022-tests-live-in-tests-folders"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Standards",
+        "icon": "check-circle",
+        "groups": [
+          {
+            "group": "Rules",
+            "pages": [
+              "standards/members",
+              "standards/packages",
+              "standards/services",
+              "standards/apps",
+              "standards/code-style",
+              "standards/testing",
+              "standards/dependencies",
+              "standards/i18n-rtl",
+              "standards/ui-and-accessibility"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Runbooks",
+        "icon": "zap",
+        "groups": [
+          {
+            "group": "Operations",
+            "pages": [
+              "runbooks/secrets",
+              "runbooks/ci",
+              "runbooks/release",
+              "runbooks/mobile-release",
+              "runbooks/renovate",
+              "runbooks/deploys",
+              "runbooks/upgrade"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Agents",
+        "icon": "cpu",
+        "groups": [
+          {
+            "group": "Setup",
+            "pages": [
+              "agents/index",
+              "agents/roster",
+              "agents/hooks",
+              "agents/skills",
+              "agents/spec-lifecycle",
+              "agents/concurrent-sessions",
+              "agents/rules-that-dont-rot"
+            ]
           }
         ]
       },

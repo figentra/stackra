@@ -22,7 +22,7 @@ This is deliberately not a prose checklist. A definition of done is only trustwo
     `pnpm verify` passes: format, lint, typecheck, test, build, `validate`, `boundaries` and `knip`. State what you ran. A green gate does not mean a service runs or that CI's runner agrees; see [CI](/runbooks/ci#what-green-does-not-prove).
   </Step>
   <Step title="Tests exist and prove the change">
-    New behaviour has a test beside the code (`src/**/__tests__` or `*.test.ts`), and a bug fix has a test that failed before the fix. Tests use fakes, never real credentials ([Testing](/standards/testing)).
+    New behaviour has a test in a `__tests__/` folder beside the code ([ADR 0022](/adr/0022-tests-live-in-tests-folders)), and a bug fix has a test that failed before the fix. Tests use fakes, never real credentials ([Testing](/standards/testing)).
   </Step>
   <Step title="A decision that changed is an ADR, not a comment">
     If the change reverses or extends an accepted decision, the new or superseding ADR in `apps/docs/src/adr/` lands in the same change as the code. A change that quietly re-decides something is exactly what the architecture guardian blocks.

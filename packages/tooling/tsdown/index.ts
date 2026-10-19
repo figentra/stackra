@@ -11,7 +11,7 @@ import { defineConfig, type UserConfig } from "tsdown";
 export interface LibraryOptions {
   /**
    * Transpile TypeScript experimental (legacy) decorators in the built output. No `design:*` metadata is
-   * emitted (ADR-0007): Encore's esbuild bundler cannot emit it, so no code may depend on it.
+   * emitted (ADR-0005): Encore's esbuild bundler cannot emit it, so no code may depend on it.
    *
    * Mechanism (tsdown 0.23 / rolldown): oxc does this natively through rolldown's `transform.decorator` —
    * `legacy` is `experimentalDecorators`. The flags are set explicitly rather than left to tsconfig

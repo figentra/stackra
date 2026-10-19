@@ -5,7 +5,7 @@ icon: "workflow"
 ---
 
 <Note>
-  Status: target. No CI workflow exists in the repo yet (there is no `.github/`). Everything below is the procedure the first workflow must implement. Until then `pnpm verify` on your machine is the gate. `lefthook.yml` still says `.gitlab-ci.yml` is the gate; that comment is stale, and the code host is GitHub (see [ADR-0012](/adr/0012-code-host-and-ci)).
+  Status: target. No CI workflow exists in the repo yet (there is no `.github/`). Everything below is the procedure the first workflow must implement. Until then `pnpm verify` on your machine is the gate. `lefthook.yml` already points at the GitHub Actions Quality Gate workflow (`.github/workflows/ci.yml`) as the gate; the code host is GitHub (see [ADR-0012](/adr/0012-code-host-and-ci)).
 </Note>
 
 ## The model

@@ -9,11 +9,11 @@ scoped and manual rules as an index line. Do not edit the block; edit the source
 
 ```yaml
 ---
-title: <string>          # required, short display name
-description: <string>    # required, one line; used in the index
-always: true|false       # load every session (default when nothing else is set)
-applies_to: ["<glob>"]   # root-relative globs (minimatch, dot:true); relevant when a matching file is touched
-manual: true|false       # never auto-attached; read only when asked for by name
+title: <string> # required, short display name
+description: <string> # required, one line; used in the index
+always: true|false # load every session (default when nothing else is set)
+applies_to: ["<glob>"] # root-relative globs (minimatch, dot:true); relevant when a matching file is touched
+manual: true|false # never auto-attached; read only when asked for by name
 ---
 ```
 

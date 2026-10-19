@@ -1,8 +1,0 @@
-{
-  "$schema": "https://turborepo.dev/schema.json",
-  "extends": ["//"],
-  "tags": ["tier:service"],
-  "tasks": {
-    "test": { "cache": false }
-  }
-}

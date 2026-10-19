@@ -13,11 +13,11 @@ The service name and path prefix are `{{NAME}}`.
 
 ## Structure
 
-| File                | Holds                                                           |
-| ------------------- | --------------------------------------------------------------- |
-| `encore.service.ts` | The literal `new Service(...)` declaration                      |
-| `api.ts`            | One `api()` per operation, typed request/response               |
-| `api.test.ts`       | Tests beside the code; picked up by `services/vitest.config.ts` |
+| File                    | Holds                                                                      |
+| ----------------------- | -------------------------------------------------------------------------- |
+| `encore.service.ts`     | The literal `new Service(...)` declaration                                 |
+| `api.ts`                | One `api()` per operation, typed request/response                          |
+| `__tests__/api.test.ts` | Tests in `__tests__/` (ADR 0022); picked up by `services/vitest.config.ts` |
 
 Add `db.ts`, `events.ts`, `jobs.ts`, `cache.ts` only when the service owns that primitive.
 

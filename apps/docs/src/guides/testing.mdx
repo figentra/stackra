@@ -11,6 +11,6 @@ There is no root `tests/` folder. Each member owns its tests:
 | Unit / component   | `src/**/__tests__/*.test.ts(x)` inside the member | vitest (`pnpm test`)                    |
 | App end-to-end     | `apps/<app>/e2e/`                                 | Playwright, added with the first flow   |
 | Encore services    | beside each service                               | `encore test`                           |
-| Repository scripts | `tools/scripts/*.test.mjs`                        | `node --test` (part of `pnpm validate`) |
+| Repository scripts | `tools/scripts/__tests__/*.test.mjs`              | `node --test` (part of `pnpm validate`) |
 
 The vitest presets set `passWithNoTests: false`, so a member with an empty suite fails.

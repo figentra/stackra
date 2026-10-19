@@ -1,0 +1,1 @@
+../../.agents/hooks/post-write-checks.mjs
