@@ -121,7 +121,7 @@ Do not introduce a technology on the rejected or deferred list "to be helpful". 
 
 ## Delegation
 
-This is the law for any session that hands work to another agent. Rule numbers are stable, so other documents may cite them. Claude models only: no other model, external agent loop or delegated runner. The reasoning is in [ADR 0017](/adr/0017-agent-roster-and-models).
+This is the law for any session that hands work to another agent. Rule numbers are stable, so other documents may cite them. Claude leads and decides. Work is delegated to Claude models, or to OpenCode (Kimi K3) executors only where `.agents/routing.yaml` routes it, for the steward and executor tiers; reviewers, guardians and the lead never run on OpenCode ([ADR 0066](/adr/0066-delegation-to-opencode-by-routing-matrix), [ADR 0121](/adr/0121-sdlc-tooling-roles-and-linear)). No other model, external agent loop or runner. The reasoning is in [ADR 0017](/adr/0017-agent-roster-and-models).
 
 | # | Rule | Enforcement |
 | --- | --- | --- |

@@ -22,7 +22,7 @@ Every workspace member carries exactly one tier tag in its own `turbo.json` (`"t
 | `tier:service` | `services/*`                  | config, lib                  | app                     |
 
 - A library never imports an app, a service or `encore.dev`. If a library needs a shape from above, the shape moves
-  down into a contract package ([0015](/adr/0015-contract-packages)).
+  down into a contract package ([0117](/adr/0117-contracts-placement-and-decorator-ownership)).
 - An app reaches a service over the wire only, through a generated client, never through its source.
 - A service never imports another service's internals ([0010](/adr/0010-services-are-independent-workspace-members)).
 - The tier is implied by the directory. A member whose tag disagrees with its directory fails.
