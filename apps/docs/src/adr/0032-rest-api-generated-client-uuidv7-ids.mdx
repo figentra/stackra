@@ -1,0 +1,28 @@
+---
+title: "0032 — REST api(), generated TypeScript client, prefixed UUIDv7 ids"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Clients (console, mobile, desktop) and other services need a typed, stable API. Encore generates a TypeScript client from `api()` definitions. The HTTP conventions rule already requires prefixed public ids and never exposing database ids.
+
+## Decision
+
+1. **Endpoints are REST, declared with `api()`** from `encore.dev/api`, typed on request and response.
+2. **Clients use the Encore-generated TypeScript client**; hand-written fetch wrappers for Stackra endpoints are not allowed.
+3. **Primary keys are UUIDv7. Public ids are prefixed** (`user_<id>`), derived from the UUIDv7; the prefix is registered per entity. Raw database ids never leave a service.
+4. Pagination is cursor-based and errors use `APIError`, as in the HTTP conventions rule.
+
+## Consequences
+
+- One source of truth for the API surface; client drift is a build failure.
+- Time-ordered ids index well and reveal creation order, which is accepted.
+
+## Enforcement
+
+Planned — `gen:client:check` in CI (also planned by [0010](/adr/0010-services-are-independent-workspace-members)); an oxlint rule or validator check that response types carry no unprefixed id.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0015](/adr/0015-contract-packages). Sources: owner decisions in chat, 2026-10-19; `.agents/rules/http-conventions.md`.

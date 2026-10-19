@@ -1,0 +1,28 @@
+---
+title: "0037 — API versioning by the Stackra-Version date header"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+The HTTP conventions rule says endpoints are immutable, with no `/v1` or `/v2`, and only events are versioned. That cannot absorb breaking changes to a response shape for external API consumers and OAuth apps. A date-pinned header (the Stripe model) keeps paths stable.
+
+## Decision
+
+1. **Breaking changes are versioned by a date**, sent as the `Stackra-Version` request header; the default for a client is the version pinned when it was created.
+2. **Paths stay unversioned.** Events keep `.vN` names ([0033](/adr/0033-pubsub-cron-transactional-outbox)).
+3. Each breaking change is a dated transform applied to the latest response.
+4. **Open question:** implement as a versioning package (as reference implementations of webhooks and REST do) or as plain middleware. The owner will compare the references first; this ADR is not accepted until that is settled.
+
+## Consequences
+
+- External clients upgrade on their schedule; the transform list is a maintenance cost.
+- The HTTP conventions rule line "no versions" must be reworded to point here.
+
+## Enforcement
+
+Planned — a contract test per dated transform; a check that no route path matches `/v\d+/`.
+
+## Supersedes and sources
+
+Supersedes: none. Amends the HTTP conventions rule (`.agents/rules/http-conventions.md`, "no versions"), which is not an ADR. Sources: owner decisions in chat, 2026-10-19.
