@@ -131,6 +131,7 @@ export const createPayment = api(
 - Endpoints are immutable (no `/v1`, `/v2`)
 - Events are versioned (`user.created.v1`, `user.created.v2`)
 - New endpoint → new path
+- API versions are dates: the `Stackra-Version` header, pinned per API key or OAuth app, through the dormant `@stackra/versioning` package. Paths stay unversioned (`/adr/0118-api-versioning-dormant-package`)
 
 ## Error Handling
 
