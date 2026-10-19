@@ -41,7 +41,24 @@ Answers that raise an ADR go to `docs-adr-steward`; a new dependency goes throug
 
 ## Linear
 
-`tools/scripts/spec-linear.mjs issue <spec.md>` creates the spec's issue and writes the key into `spec.md`. `tools/scripts/spec-linear.mjs tasks <tasks.md>` creates one sub-issue per `T###` task and appends ` [STA-n]` to the line. Both take `--dry-run` (no token, no calls). The token is `LINEAR_API_KEY` from the environment only, so run them as `infisical run --path=/agents -- node tools/scripts/spec-linear.mjs ...`. An agent with the Linear MCP connected uses that instead and edits the same fields. No token is ever stored in a file.
+**Work isn't done until its Linear issue is in the right state; agents use `pnpm linear`.** That includes subagents and OpenCode executors that have no Linear MCP.
+
+| Moment        | Command                                                           | Issue state                   |
+| ------------- | ----------------------------------------------------------------- | ----------------------------- |
+| Start         | `pnpm linear start STA-n`                                         | In Progress, branch commented |
+| PR opened     | `pnpm linear review STA-n <pr-url>`                               | In Review, PR attached        |
+| Merged        | `pnpm linear done STA-n <link>` (or `Fixes STA-n` in the PR)      | Done                          |
+| Anything else | `pnpm linear comment STA-n "…"`, `link`, `create`, `mine`, `open` | unchanged                     |
+
+`pnpm linear` runs `tools/scripts/linear.mjs` under `infisical run --env=dev --path=/agents`. It acts as the **Stackra Agent** Linear app, which becomes the issue's _delegate_, never its assignee. The token is `LINEAR_AGENT_TOKEN`, re-minted from `LINEAR_AGENT_CLIENT_ID`/`LINEAR_AGENT_CLIENT_SECRET` when it expires. The personal `LINEAR_API_KEY` is the fallback. `create` adds the `agent` label when an agent runs it.
+
+Stage transitions report themselves. `spec-gate.mjs plan` comments "clarified" on the spec's issue when it passes. `spec-gate.mjs stage <spec.md> planned|implementing|verified` comments the later stages, and `implementing` also moves the issue to In Progress. `pnpm delegate` requires `--issue STA-n`: it starts the issue at dispatch and comments the result. None of these calls can fail a gate. Linear sync never blocks (ADR 0065 rule 7), and `STACKRA_LINEAR=off` turns them off.
+
+Keys are enforced offline. A `feat`, `fix`, `refactor` or `perf` commit needs a `Refs: STA-n` footer, checked by commitlint in lefthook and over the PR range in CI. The Quality Gate also fails a PR whose title and branch both lack an STA key, unless it is labelled `chore-lane` or comes from `renovate/*` or `changeset-release/*`.
+
+The **Linear sync** workflow (`.github/workflows/linear-sync.yml`, nightly and on push to main) runs `tools/scripts/linear-reconcile.mjs`. It moves an issue to In Review when an open PR mentions it (in the title, the branch, `Refs`/`Fixes`, or an attachment). It moves an issue to Done only when a merged PR closes it, through the branch name or `Fixes`/`Closes`/`Resolves`. A `Refs` mention never closes an issue, so an issue that spans several PRs stays open. Fork PRs are ignored. It closes "Decide ADR NNNN" once that ADR is Accepted or Superseded. It labels In Progress issues `stale` after 3 days without branch or PR activity, and comments on Backlog issues whose ADR is now Accepted. Each comment carries a `linear-reconcile (<tag>)` marker, so a re-run, or a human reopening an issue, is never overridden. `--dry-run` writes nothing.
+
+`tools/scripts/spec-linear.mjs issue <spec.md>` creates the spec's issue and writes the key into `spec.md`. `tools/scripts/spec-linear.mjs tasks <tasks.md>` creates one sub-issue per `T###` task and appends ` [STA-n]` to the line. Both take `--dry-run` (no token, no calls) and use the same client and tokens as `pnpm linear`, so run them as `infisical run --env=dev --path=/agents -- node tools/scripts/spec-linear.mjs ...`. No token is ever stored in a file.
 
 ## The constitution
 

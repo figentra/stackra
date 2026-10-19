@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // SessionStart (startup|resume|compact|clear): re-state the invariants that must survive compaction, plus repo state.
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readStdin, context } from "./_io.mjs";
 
@@ -43,5 +43,34 @@ try {
   lines.push(
     formatLine(evaluate({ today, week: costOf(fetchStats(7, { timeout: 4000 })) }, budget)),
   );
+} catch {}
+
+// Best-effort: open Linear work (In Progress + owner steps). Offline, no vault login or no key → nothing, within ~3s.
+try {
+  const script = `${root}/tools/scripts/linear.mjs`;
+  const hasKey = process.env.LINEAR_AGENT_TOKEN || process.env.LINEAR_API_KEY;
+  const [cmd, args] = hasKey
+    ? [process.execPath, [script, "digest"]]
+    : [
+        "infisical",
+        [
+          "run",
+          "--env=dev",
+          "--path=/agents",
+          "--silent",
+          "--",
+          process.execPath,
+          script,
+          "digest",
+        ],
+      ];
+  const out = execFileSync(cmd, args, {
+    cwd: root,
+    timeout: 3000,
+    stdio: ["ignore", "pipe", "ignore"],
+  })
+    .toString()
+    .trim();
+  if (out) lines.push("Linear (pnpm linear start|review|done keeps it current):", out);
 } catch {}
 context("SessionStart", lines.join("\n"));

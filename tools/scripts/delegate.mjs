@@ -2,10 +2,12 @@
 /**
  * Stackra file contract:
  * Purpose: hand a task to the executor .agents/routing.yaml names for it (`pnpm delegate <task-type> "<brief>"`).
- *   opencode → budget check, fresh worktree + branch `delegate/<type>-<slug>` from origin/main, `opencode run`
+ *   opencode → budget check, fresh worktree + branch `delegate/sta-<n>-<type>-<slug>` from origin/main, `opencode run`
  *              inside it, JSON transcript saved next to the worktree; the lead (Claude) reviews and commits.
  *   claude   → prints the command for the lead to run; nothing starts here.
- * Flags: --agent <name>, --executor claude|opencode (or STACKRA_EXECUTOR), --dry-run, --no-install,
+ * Linear: `--issue STA-n` is required (ADR 0065). At dispatch it runs `pnpm linear start` on the issue with the
+ *   delegate branch; at the end `pnpm linear comment` with the exit code and report path. Both are best-effort.
+ * Flags: --issue STA-n (required), --agent <name>, --executor claude|opencode (or STACKRA_EXECUTOR), --dry-run, --no-install,
  *        --auto (opencode --auto: approve every permission not explicitly denied in opencode.jsonc — faster, but a
  *        run that wanders is not stopped by a prompt; the deny list and the worktree are the only fences).
  * Secrets: forbidden — the brief goes to the model; never put a secret value in it.
@@ -18,6 +20,25 @@ import { fileURLToPath } from "node:url";
 import { costOf, evaluate, fetchStats, formatLine, parseBudget } from "./ai-spend.mjs";
 
 const EXECUTORS = ["claude", "opencode"];
+
+/** The `--issue` value as STA-n, or a thrown usage error: delegation never starts without a Linear issue. */
+export function requireIssue(value) {
+  const m = String(value ?? "").match(/^STA-(\d+)$/i);
+  if (!m) throw new Error("--issue STA-n is required (every delegated task has a Linear issue)");
+  return `STA-${m[1]}`;
+}
+
+/** Best-effort `pnpm linear …` (ADR 0065 rule 7: Linear sync never blocks). */
+function linearSync(args) {
+  const r = spawnSync("pnpm", ["--silent", "linear", ...args], {
+    encoding: "utf8",
+    timeout: 30_000,
+  });
+  if (r.status !== 0)
+    console.warn(
+      `delegate: linear ${args[0]} skipped (${(r.stderr || r.error?.message || "failed").trim().split("\n").pop()})`,
+    );
+}
 
 /** shortcut: `name: { k: v, … }` flow maps under `tasks:` (oxfmt may wrap them over lines); no nesting. */
 export function parseRouting(yamlText) {
@@ -56,9 +77,11 @@ export const slugify = (s) =>
     .replace(/-+$/, "") || "task";
 
 /** Branch and worktree names; the slug comes from the brief. */
-export function names(type, brief) {
+/** The issue key leads the branch so Linear links it and the PR passes `check-pr`. */
+export function names(type, brief, issue) {
   const slug = slugify(brief);
-  return { slug, branch: `delegate/${type}-${slug}`, dir: `stackra-delegate-${slug}` };
+  const key = issue.toLowerCase();
+  return { slug, branch: `delegate/${key}-${type}-${slug}`, dir: `stackra-delegate-${slug}` };
 }
 
 export const RULES = [
@@ -103,6 +126,7 @@ function main() {
     options: {
       agent: { type: "string" },
       executor: { type: "string" },
+      issue: { type: "string" },
       "dry-run": { type: "boolean" },
       "no-install": { type: "boolean" },
       auto: { type: "boolean" },
@@ -111,10 +135,11 @@ function main() {
   const [type, brief] = positionals;
   if (!type || !brief) {
     console.error(
-      'usage: pnpm delegate <task-type> "<brief>" [--agent x] [--executor claude|opencode] [--dry-run] [--auto]',
+      'usage: pnpm delegate <task-type> "<brief>" --issue STA-n [--agent x] [--executor claude|opencode] [--dry-run] [--auto]',
     );
     process.exit(2);
   }
+  const issue = requireIssue(values.issue);
   const root = fileURLToPath(new URL("../../", import.meta.url));
   const routing = parseRouting(readFileSync(`${root}.agents/routing.yaml`, "utf8"));
   const route = resolveRoute(
@@ -122,11 +147,11 @@ function main() {
     { type, agent: values.agent, executor: values.executor },
     process.env,
   );
-  const { branch, dir, slug } = names(type, brief);
+  const { branch, dir, slug } = names(type, brief, issue);
 
   if (route.executor === "claude") {
     console.log(
-      `${type} is the lead's work. Run:\n  ${claudeCommand({ agent: route.agent, brief })}`,
+      `${type} is the lead's work. Run:\n  pnpm linear start ${issue}\n  ${claudeCommand({ agent: route.agent, brief: `${brief} (Linear ${issue})` })}`,
     );
     return;
   }
@@ -148,12 +173,12 @@ function main() {
   const parent = dirname(mainCheckout());
   const worktree = `${parent}/${dir}`;
   const report = `${worktree}.report.json`;
-  const title = `${type}: ${brief}`.slice(0, 80);
+  const title = `${issue} ${type}: ${brief}`.slice(0, 80);
   const args = opencodeArgs({
     agent: route.agent,
     model: route.model,
     title,
-    prompt: buildPrompt(brief),
+    prompt: buildPrompt(`${brief}\n\nLinear issue: ${issue}`),
     auto: values.auto,
   });
 
@@ -162,6 +187,7 @@ function main() {
       JSON.stringify(
         {
           ...route,
+          issue,
           branch,
           worktree,
           report,
@@ -183,6 +209,7 @@ function main() {
     stdio: "inherit",
   });
   if (add.status !== 0) process.exit(add.status ?? 1);
+  linearSync(["start", issue, "--branch", branch]);
   if (!values["no-install"])
     run("pnpm", ["install", "--frozen-lockfile", "--prefer-offline"], {
       cwd: worktree,
@@ -193,6 +220,11 @@ function main() {
   const r = run("opencode", args, { cwd: worktree, maxBuffer: 512 * 1024 * 1024 });
   writeFileSync(report, r.stdout ?? "");
   if (r.stderr) writeFileSync(`${report}.stderr`, r.stderr);
+  linearSync([
+    "comment",
+    issue,
+    `Delegated ${type} run (${route.agent}) exited ${r.status} on branch \`${branch}\`; report ${report}. The lead reviews before commit.`,
+  ]);
   console.log(
     `delegate: opencode exited ${r.status}\n  branch: ${branch}\n  worktree: ${worktree}\n  report: ${report} (slug ${slug})\nReview the diff, run pnpm verify, then commit from the worktree.`,
   );

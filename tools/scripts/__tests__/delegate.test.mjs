@@ -6,6 +6,7 @@ import {
   names,
   opencodeArgs,
   parseRouting,
+  requireIssue,
   resolveRoute,
   slugify,
 } from "../delegate.mjs";
@@ -47,12 +48,18 @@ test("resolveRoute rejects unknown types and executors", () => {
 test("slug and branch naming", () => {
   assert.equal(slugify("Add tests for  the Guard plugin!"), "add-tests-for-the-guard-plugin");
   assert.equal(slugify("!!!"), "task");
-  assert.deepEqual(names("tests", "Cover logger"), {
+  assert.deepEqual(names("tests", "Cover logger", "STA-42"), {
     slug: "cover-logger",
-    branch: "delegate/tests-cover-logger",
+    branch: "delegate/sta-42-tests-cover-logger",
     dir: "stackra-delegate-cover-logger",
   });
   assert.ok(slugify("x".repeat(100)).length <= 40);
+});
+
+test("delegation refuses to start without a Linear issue", () => {
+  assert.equal(requireIssue("sta-42"), "STA-42");
+  assert.throws(() => requireIssue(undefined), /--issue STA-n is required/);
+  assert.throws(() => requireIssue("42"), /--issue STA-n is required/);
 });
 
 test("prompt carries the rules; --auto only when asked", () => {
