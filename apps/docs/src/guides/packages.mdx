@@ -30,7 +30,7 @@ categories changes nothing for its consumers.
 ## A new package
 
 1. Create `packages/<category>/<name>/` with `package.json` named `@stackra/<name>`.
-2. `turbo.json`: `{ "extends": ["//"], "tags": ["tier:lib"] }`.
+2. `turbo.jsonc`: `{ "extends": ["//"], "tags": ["tier:lib"] }`.
 3. `tsconfig.json`: `{ "extends": "@stackra/typescript-config/library" }` (or another preset).
 4. `vitest.config.ts`: extend a preset from `@stackra/vitest-config`.
 5. Every dependency is `catalog:<name>` or `workspace:*`.

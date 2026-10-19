@@ -50,7 +50,7 @@
  *   name: <string>                 optional; defaults to the file stem
  *   description: <string>          required
  *   tools: Read, Grep, Glob, Bash  optional; Claude Code tool names
- *   tier: steward|executor|…       optional; mapped per assistant by models.json
+ *   tier: steward|executor|…       optional; mapped per assistant by models.jsonc
  *   model: opus|sonnet|haiku|<provider>/<model>  optional override of the tier
  *   mode: primary|subagent|all     optional; OpenCode only, default subagent
  *   permissions:                   optional; explicit rules, overrides the
@@ -99,6 +99,7 @@ import {
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import process from "node:process";
+import { stripJsonc } from "./jsonc.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE = ".agents";
@@ -474,7 +475,7 @@ function normalizeAgent(data, entry, label) {
  * (`<name>`, `*`, `{a,b}`, `NNNN`/`XX`) are templates, not references, and are skipped.
  */
 const REFERENCE =
-  /^(\.agents|\.claude|\.opencode|apps|packages|services|tools)\/|^(AGENTS|CLAUDE|README)\.md$|^(turbo\.jsonc|pnpm-workspace\.yaml|\.oxlintrc\.json|mise\.toml|lefthook\.yml|opencode\.jsonc)$/;
+  /^(\.agents|\.claude|\.opencode|apps|packages|services|tools)\/|^(AGENTS|CLAUDE|README)\.md$|^(turbo\.jsonc|pnpm-workspace\.yaml|\.oxlintrc\.jsonc|mise\.toml|lefthook\.yml|opencode\.jsonc)$/;
 
 function brokenReferences(body) {
   const refs = [...body.matchAll(/`([^`\s]+)`/g)]
@@ -520,14 +521,14 @@ function loadAgent(entry) {
 }
 
 /**
- * `.agents/models.json` — agents declare a tier, this file says which model each
+ * `.agents/models.jsonc` — agents declare a tier, this file says which model each
  * assistant runs for that tier. `tiers` is ordered cheapest → strongest (the order
  * a failing output escalates in). A `null` model means "the assistant's default".
  *
  *   { "tiers": ["steward", "executor", …],
  *     "assistants": { "claude": { "steward": "haiku", … }, "opencode": { … } } }
  */
-const MODEL_MAP_REL = `${SOURCE}/models.json`;
+const MODEL_MAP_REL = `${SOURCE}/models.jsonc`;
 let modelMapCache;
 
 function modelMap() {
@@ -536,9 +537,9 @@ function modelMap() {
   if (!existsSync(path)) return (modelMapCache = null);
   let data;
   try {
-    data = JSON.parse(readFileSync(path, "utf8"));
+    data = JSON.parse(stripJsonc(readFileSync(path, "utf8")));
   } catch (error) {
-    console.error(`agents-sync: ${MODEL_MAP_REL} is not valid JSON: ${error.message}`);
+    console.error(`agents-sync: ${MODEL_MAP_REL} is not valid JSONC: ${error.message}`);
     process.exit(2);
   }
   const errors = [];
@@ -995,27 +996,6 @@ function ensureInstructionsBlock(file, ruleEntries) {
   }
   writeFileSync(path, next);
   results.generated++;
-}
-
-/** JSONC → JSON: drops // and /* *\/ comments outside strings, then trailing commas. */
-function stripJsonc(text) {
-  let out = "";
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (c === '"') {
-      const start = i;
-      for (i++; i < text.length && text[i] !== '"'; i++) if (text[i] === "\\") i++;
-      out += text.slice(start, i + 1);
-    } else if (c === "/" && text[i + 1] === "/") {
-      while (i < text.length && text[i] !== "\n") i++;
-      out += "\n";
-    } else if (c === "/" && text[i + 1] === "*") {
-      i = text.indexOf("*/", i + 2);
-      if (i === -1) throw new Error("unterminated /* comment");
-      i++;
-    } else out += c;
-  }
-  return out.replace(/,(\s*[}\]])/g, "$1");
 }
 
 /** Renders `.mcp.jsonc` into `.mcp.json`, which Claude Code reads (it ignores .jsonc). */

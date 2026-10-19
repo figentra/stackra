@@ -28,6 +28,6 @@
     ".claude/skills/**",
     // spec-kit scaffold (CLI-generated) and the constitution agents-sync generates from the docs laws
     ".specify/**",
-    ".opencode/commands/**"
-  ]
+    ".opencode/commands/**",
+  ],
 }

@@ -61,7 +61,7 @@ Some pages in this tab describe a mechanism for a thing Stackra does not have ye
 
 ### Tiers
 
-Every workspace member carries exactly one tier tag in its `turbo.json`. The tag matches its directory.
+Every workspace member carries exactly one tier tag in its `turbo.jsonc`. The tag matches its directory.
 
 | Tier | Directory | May depend on |
 | --- | --- | --- |

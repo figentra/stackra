@@ -12,7 +12,7 @@ This is deliberately not a prose checklist. A definition of done is only trustwo
 
 - `README.md`, `AGENTS.md` (with a `## PII` section, even if it says "none"), `CHANGELOG.md` and `LICENSE` are present.
 - The package is named `@stackra/*`, uses only `catalog:` or `workspace:` versions, depends on none of the forbidden packages (eslint, prettier, jest, Nest, Prisma, Drizzle and so on), and extends one `@stackra/typescript-config` preset.
-- `turbo.json` extends the root and declares exactly one tier tag that matches the directory.
+- `turbo.jsonc` extends the root and declares exactly one tier tag that matches the directory.
 - The task vocabulary scripts exist (`build`, `typecheck`, `lint`, `test`, `format`, `format:check`, `clean`): target check, not built yet. See [Tooling](/guides/tooling).
 
 ## A change is done when

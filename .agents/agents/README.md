@@ -30,7 +30,7 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
 
 3. Body sections: Mission, Owns, Checks, Never, Hand-offs. Keep it under about 80 lines.
 4. A reviewer or guardian gets no `Write`/`Edit`. Only list `Bash` if the body runs commands.
-5. Tier to model lives in `models.json`; change a model there, not in an agent.
+5. Tier to model lives in `models.jsonc`; change a model there, not in an agent.
 6. Run `pnpm agents:lint`, then `pnpm agents:sync`.
 
 ## Roster in this folder
