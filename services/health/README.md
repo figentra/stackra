@@ -1,4 +1,4 @@
-# @stackra/service-health
+# @figentra/service-health
 
 Health service. For now it is a single entry, `src/main.ts`, that prints a greeting.
 

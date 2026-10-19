@@ -8,7 +8,7 @@ manual: false
 
 # Service checklist
 
-A service is `services/<name>`, `@stackra/service-<name>`, tag `tier:service`, entry `src/main.ts`. Eight non-negotiables:
+A service is `services/<name>`, `@figentra/service-<name>`, tag `tier:service`, entry `src/main.ts`. Eight non-negotiables:
 
 1. **Placement, one file per primitive.** The placement test passes (`module-boundary`). Once needed: `api.ts`,
    `db.ts`, `events.ts`, `jobs.ts`, `cache.ts`, each declaring literal primitives only.

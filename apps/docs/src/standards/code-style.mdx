@@ -8,15 +8,15 @@ This page is the operating form of [ADR 0006](/adr/0006-naming-exports-and-impor
 
 ## Naming
 
-| Thing                         | Rule                                                              | Example                                        |
-| ----------------------------- | ----------------------------------------------------------------- | ---------------------------------------------- |
-| Files and directories in `src/` | kebab-case, lowercase, no underscores                           | `format-label.ts`, `payment-method/`           |
-| Packages                      | `@stackra/<name>`; services `@stackra/service-<name>`             | `@stackra/container`                           |
-| Types, classes, components    | PascalCase                                                        | `PaymentError`, `TabStack`                     |
-| Functions, variables          | camelCase; booleans read as a question (`isReady`, `hasGrant`)    | `formatLabel`                                  |
-| Constants                     | camelCase, or SCREAMING_SNAKE for a fixed table of values         | `COVERAGE_THRESHOLDS`                          |
-| Enum-like value sets          | a `const` object plus a derived type, in `<name>.enum.ts`         | `scope.enum.ts`                                |
-| Test files                    | the subject's name plus `.test`                                   | `format-label.test.ts`                         |
+| Thing                           | Rule                                                                            | Example                              |
+| ------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------ |
+| Files and directories in `src/` | kebab-case, lowercase, no underscores                                           | `format-label.ts`, `payment-method/` |
+| Packages                        | `@stackra/<name>`; apps `@figentra/<name>`; services `@figentra/service-<name>` | `@stackra/container`                 |
+| Types, classes, components      | PascalCase                                                                      | `PaymentError`, `TabStack`           |
+| Functions, variables            | camelCase; booleans read as a question (`isReady`, `hasGrant`)                  | `formatLabel`                        |
+| Constants                       | camelCase, or SCREAMING_SNAKE for a fixed table of values                       | `COVERAGE_THRESHOLDS`                |
+| Enum-like value sets            | a `const` object plus a derived type, in `<name>.enum.ts`                       | `scope.enum.ts`                      |
+| Test files                      | the subject's name plus `.test`                                                 | `format-label.test.ts`               |
 
 No speculative directories: `utils/`, `helpers/` and `services/` exist because something real lives in them. A helper used by a second file moves to `utils/<name>.util.ts`; a single-use private helper stays where it is used.
 
@@ -24,15 +24,15 @@ No speculative directories: `utils/`, `helpers/` and `services/` exist because s
 
 Every exported declaration lives in its own file, named for it. Where the kind is not a plain function, the file carries a kind suffix:
 
-| Kind                         | File                       |
-| ---------------------------- | -------------------------- |
-| plain function               | `format-label.ts`          |
-| class                        | `token.class.ts`           |
-| interface                    | `provider.interface.ts`    |
-| enum-like const object       | `scope.enum.ts`            |
-| error class                  | `payment.error.ts`         |
-| pure helper shared by files  | `retry.util.ts`            |
-| test                         | `__tests__/<name>.test.ts` |
+| Kind                        | File                       |
+| --------------------------- | -------------------------- |
+| plain function              | `format-label.ts`          |
+| class                       | `token.class.ts`           |
+| interface                   | `provider.interface.ts`    |
+| enum-like const object      | `scope.enum.ts`            |
+| error class                 | `payment.error.ts`         |
+| pure helper shared by files | `retry.util.ts`            |
+| test                        | `__tests__/<name>.test.ts` |
 
 - `index.ts` is the only barrel name. A barrel declares nothing and names each symbol (`export type { Token } from "./token.class"`), never `export *`.
 - A folder is created for one artifact only when it has two or more non-test files.
@@ -41,14 +41,14 @@ Every exported declaration lives in its own file, named for it. Where the kind i
 
 ## Imports
 
-| Rule                                                                                                | Why                                               |
-| --------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| Relative specifiers carry no extension and no `/index`: `from "./scan"`, `from "../contracts"`       | One spelling, so a move is a rename               |
-| Assets keep theirs (`.css`, `.svg`, `.json`); `packages/tooling/*` and `tools/**/*.mjs` use full specifiers | Plain Node loads them                       |
-| Climbing out of a folder uses a package subpath import (`#core`, `#application/*`), never `../../`  | A move cannot break a climb                       |
-| Type-only imports use `import type`                                                                 | `typescript/consistent-type-imports` is an error  |
-| Another package is imported by name or a declared subpath, never its `src/`                         | [Packages](/standards/packages)                   |
-| No import cycles                                                                                    | `import/no-cycle` is an error                     |
+| Rule                                                                                                        | Why                                              |
+| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Relative specifiers carry no extension and no `/index`: `from "./scan"`, `from "../contracts"`              | One spelling, so a move is a rename              |
+| Assets keep theirs (`.css`, `.svg`, `.json`); `packages/tooling/*` and `tools/**/*.mjs` use full specifiers | Plain Node loads them                            |
+| Climbing out of a folder uses a package subpath import (`#core`, `#application/*`), never `../../`          | A move cannot break a climb                      |
+| Type-only imports use `import type`                                                                         | `typescript/consistent-type-imports` is an error |
+| Another package is imported by name or a declared subpath, never its `src/`                                 | [Packages](/standards/packages)                  |
+| No import cycles                                                                                            | `import/no-cycle` is an error                    |
 
 The decorators preset turns `consistent-type-imports` off because decorator metadata needs value imports ([ADR 0005](/adr/0005-di-container-and-legacy-decorators)).
 
@@ -95,14 +95,14 @@ Types carry the weight first: no `any`, generics have meaningful names, an expor
  */
 ```
 
-| Tag or line      | Required when                                                      |
-| ---------------- | ------------------------------------------------------------------ |
-| Purpose sentence | always, in the imperative ("Parse a public id")                    |
-| `@param`, `@returns` | meaning, units or ownership are not already in the type        |
-| `@throws`        | for every error a caller must handle                               |
-| `Side effects:`  | it does I/O, touches the clock, or mutates global state            |
-| `@example`       | use is not obvious                                                 |
-| `@deprecated`    | with the replacement and a removal target                          |
+| Tag or line          | Required when                                           |
+| -------------------- | ------------------------------------------------------- |
+| Purpose sentence     | always, in the imperative ("Parse a public id")         |
+| `@param`, `@returns` | meaning, units or ownership are not already in the type |
+| `@throws`            | for every error a caller must handle                    |
+| `Side effects:`      | it does I/O, touches the clock, or mutates global state |
+| `@example`           | use is not obvious                                      |
+| `@deprecated`        | with the replacement and a removal target               |
 
 Interfaces and types say what they represent and who produces and consumes them; each property says its meaning, unit or format, and who sets it. Boilerplate is a finding: a comment that restates the signature teaches readers to skip comments.
 
@@ -134,16 +134,16 @@ A rejected promise or listener failure is reported through the package's logger 
 
 ## What enforces this
 
-| Rule                                                          | Check                                                               | Status  |
-| ------------------------------------------------------------- | ------------------------------------------------------------------- | ------- |
-| Formatting                                                    | `oxfmt --check` (`format:check`, lefthook pre-commit)               | Yes     |
-| No `any`, no non-null assertion, no unused code, no cycles    | oxlint base preset                                                  | Yes     |
-| `import type` for type-only imports                           | oxlint `typescript/consistent-type-imports` (off in decorators)     | Yes     |
-| No deep import of `@stackra/*/src/*`                          | oxlint `boundaries.jsonc`                                           | Yes     |
-| Kebab-case names, one export per file, barrel shape           | planned: validator check                                            | No      |
-| No extension or `/index` in relative specifiers               | planned: import-style check in the validator                        | No      |
-| `#` subpath imports instead of `../` climbs; `imports` map drift | planned: validator check                                         | No      |
-| File contract header and TSDoc on exports                     | planned: doc-standard check in `pnpm validate`                      | No      |
-| Typed errors with `code` and `hint`                           | review (`code-standards-steward`, planned role) until a lint exists | No      |
+| Rule                                                             | Check                                                               | Status |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------- | ------ |
+| Formatting                                                       | `oxfmt --check` (`format:check`, lefthook pre-commit)               | Yes    |
+| No `any`, no non-null assertion, no unused code, no cycles       | oxlint base preset                                                  | Yes    |
+| `import type` for type-only imports                              | oxlint `typescript/consistent-type-imports` (off in decorators)     | Yes    |
+| No deep import of `@stackra/*/src/*`                             | oxlint `boundaries.jsonc`                                           | Yes    |
+| Kebab-case names, one export per file, barrel shape              | planned: validator check                                            | No     |
+| No extension or `/index` in relative specifiers                  | planned: import-style check in the validator                        | No     |
+| `#` subpath imports instead of `../` climbs; `imports` map drift | planned: validator check                                            | No     |
+| File contract header and TSDoc on exports                        | planned: doc-standard check in `pnpm validate`                      | No     |
+| Typed errors with `code` and `hint`                              | review (`code-standards-steward`, planned role) until a lint exists | No     |
 
 The planned `code-standards-steward` splits, renames and moves files to meet the naming and barrel rules without changing behaviour; see the [agent roster](/agents/roster).

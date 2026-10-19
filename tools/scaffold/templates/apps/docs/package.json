@@ -1,5 +1,5 @@
 {
-  "name": "@stackra/{{NAME}}",
+  "name": "@figentra/{{NAME}}",
   "version": "0.0.1",
   "private": true,
   "description": "{{DESCRIPTION}}",

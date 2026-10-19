@@ -37,6 +37,19 @@ test("forbidden dependency, wrong name, wrong tier, foreign tsconfig", () => {
   assert.equal(f.length, 4);
 });
 
+const named = (dir, name) =>
+  check({ ...ok, dir, pkg: { name } }).filter((m) => /package name/.test(m));
+
+test("names follow placement: packages @stackra, apps @figentra, services @figentra/service-", () => {
+  assert.equal(named("apps/console", "@figentra/console").length, 0);
+  assert.equal(named("services/health", "@figentra/service-health").length, 0);
+  assert.equal(named("packages/tooling/vitest", "@stackra/vitest-config").length, 0);
+  assert.equal(named("packages/data/search", "@stackra/search").length, 0);
+  assert.equal(named("services/health", "@stackra/service-health").length, 1);
+  assert.equal(named("apps/docs", "@stackra/docs").length, 1);
+  assert.equal(named("packages/data/search", "@figentra/search").length, 1);
+});
+
 test("tiers follow the directory", () => {
   assert.equal(tierFor("apps/docs"), "tier:app");
   assert.equal(tierFor("packages/tooling/vitest"), "tier:config");
