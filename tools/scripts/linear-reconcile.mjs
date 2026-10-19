@@ -204,9 +204,10 @@ const prs = (state) =>
       "--limit",
       "100",
       "--json",
-      "number,url,title,headRefName,body,updatedAt",
+      "number,url,title,headRefName,body,updatedAt,isCrossRepository",
     ]),
-  );
+    // The repo is public: a fork PR saying "Fixes STA-n" must not drive Linear state as the app.
+  ).filter((pr) => !pr.isCrossRepository);
 function remoteBranches() {
   return sh("git", [
     "for-each-ref",

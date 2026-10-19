@@ -53,6 +53,8 @@ export async function mint(env, fetch) {
   const json = await res.json().catch(() => ({}));
   if (!res.ok || !json.access_token)
     throw new Error(`Linear app token mint failed (HTTP ${res.status})`);
+  // A minted token is not a registered secret, so Actions would not redact it on its own.
+  if (env.GITHUB_ACTIONS) console.log(`::add-mask::${json.access_token}`);
   return json.access_token;
 }
 
