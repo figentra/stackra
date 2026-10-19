@@ -1,0 +1,33 @@
+---
+title: "0043 — @stackra/workflow is Medusa-style steps and workflows"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Multi-step business operations (create order, charge, reserve stock) must be able to undo earlier steps when a later one
+fails. Services own their data ([0014](/adr/0014-data-ownership-and-orm)) and call each other through events or clients, so
+database transactions cannot span them. A step-and-compensation model, as in Medusa, fits and is readable.
+
+## Decision
+
+1. **A package `@stackra/workflow` provides `createStep(name, invoke, compensate?)` and `createWorkflow(name, composer)`.**
+2. **A step has an optional compensation function.** On failure, completed steps are compensated in reverse order.
+3. **Steps and workflows are resolved through the container** ([0042](/adr/0042-di-first-with-one-container-per-service)); workflows live in a module's `application/` ([0040](/adr/0040-ddd-feature-modules-in-services)).
+4. **Step inputs and outputs are typed**; a workflow's input and output are its public contract.
+5. **Steps are idempotent** so a retry or a re-compensation is safe.
+6. **Persistence of workflow state, retries and long-running execution are not decided here** (TODO).
+
+## Consequences
+
+- Cross-service operations get one shape and one place to look for rollback logic.
+- Without persisted state, a crash mid-workflow loses compensation; point 6 must be settled before money flows through it.
+- Package category: TODO (see [0028](/adr/0028-package-categories-appear-with-first-package)).
+
+## Enforcement
+
+Planned — conformance tests in the package for compensation order and idempotent retry; no check yet on authored workflows.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19.

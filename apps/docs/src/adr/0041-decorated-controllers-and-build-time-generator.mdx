@@ -1,0 +1,40 @@
+---
+title: "0041 — Decorated controllers, handlers and crons via a build-time generator"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Encore requires `api()`, `Subscription` and `CronJob` to be statically declared at module top level so its parser can read
+them. Stackra wants the familiar Nest-shaped authoring style ([0005](/adr/0005-di-container-and-legacy-decorators)) without
+a Nest dependency or runtime reflection. Modules may also come from packages, which Encore's parser does not scan.
+A generator bridges the two: classes with decorators in, static Encore declarations out.
+
+## Decision
+
+1. **HTTP is authored as decorated controller classes** in `presentation/`: `@Controller(prefix)` with `@Get`, `@Post`,
+   `@Put`, `@Patch`, `@Delete`. Event handlers use `@OnEvent(topic)`; scheduled work uses `@Cron(schedule)`.
+2. **A build-time generator, `stackra gen`, discovers these classes** and emits static `api()`, `Subscription` and
+   `CronJob` declarations into `services/<svc>/__generated__/` ([0040](/adr/0040-ddd-feature-modules-in-services)). Each
+   generated declaration resolves its class from the service container ([0042](/adr/0042-di-first-with-one-container-per-service)) and calls the method.
+3. **The generator also reads modules imported from packages**, so a package can ship a module and the service that
+   registers it gets its endpoints.
+4. **HTTP conventions are unchanged**: typed request and response, `auth: true` by default, no versioned paths.
+5. **Generated files are never edited by hand**; a drift check fails when they differ from generator output.
+6. **The generator is a Stackra tool, not a runtime**: Encore never loads a decorated class directly.
+7. Auto-generated CRUD and other codegen are out of scope (TODO, codegen deep dive).
+
+## Consequences
+
+- Authors write Nest-like classes; Encore sees plain static code.
+- A generator step joins build, dev and CI; `stackra gen` becomes a package and CLI to maintain (TODO: name and category).
+- Error messages point at generated code unless the generator emits source comments.
+- Depends on Encore accepting the generated shape; to be confirmed by the spike named in [0042](/adr/0042-di-first-with-one-container-per-service).
+
+## Enforcement
+
+Planned — `stackra gen --check` in CI and `pnpm verify` for drift; a lint rule forbidding hand-written `api()` outside `__generated__/` and the service root.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0005](/adr/0005-di-container-and-legacy-decorators) and [0010](/adr/0010-services-are-independent-workspace-members). Sources: owner decision in chat, 2026-10-19.
