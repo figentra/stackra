@@ -1,0 +1,40 @@
+---
+title: "0113 — HeroUI Pro reaches Stackra Pro customers as a private mirror bundle, with a bring-your-own-key option"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Pro renderers and `@stackra-pro/ui` wrap HeroUI Pro ([0112](/adr/0112-experience-packages-and-renderer-kit)). Stackra's own
+apps and CI install HeroUI Pro with `HEROUI_PERSONAL_TOKEN` from Infisical, which is end-product use. The HeroUI Pro licence
+(heroui.pro/license) prohibits redistributing the components outside an End Product, including "developing a UI library with
+HeroUI Pro components for either sale or free distribution". Giving the code to customers who build with Stackra Pro is
+redistribution whether it is bundled, mirrored in a private repository, or installed with our token. The only paths the
+licence allows as written are customers using their own HeroUI Pro licence, or an OEM licence granted by HeroUI.
+
+## Decision
+
+1. **Stackra Pro ships HeroUI Pro and HeroUI community packages in a private mirror bundle**, distributed with Stackra Pro
+   through `npm.figentra.com`.
+2. **Customers may instead bring their own HeroUI Pro key**: the Pro packages then resolve HeroUI Pro from HeroUI's own
+   registry with the customer's token, which lives in their environment ([0107](/adr/0107-connections-store-and-three-key-homes), home C).
+3. **No HeroUI Pro code is committed to this public repository** ([0024](/adr/0024-mit-license-with-exclusions)).
+4. **Our apps and CI keep using `HEROUI_PERSONAL_TOKEN`** from Infisical.
+
+## Consequences
+
+- **Licence risk, recorded as fact:** decision 1, as written, conflicts with the HeroUI Pro licence terms quoted above. Shipping
+  the bundle to customers without written permission from HeroUI exposes Figentra to a licence breach claim.
+- **Pending:** an OEM request to HeroUI. The owner asked for the email to be drafted (Round 11 K2). Until HeroUI answers in
+  writing, the bring-your-own-key path of decision 2 is the only path that the licence clearly permits.
+- Maintaining a mirror means tracking HeroUI Pro releases and security fixes ourselves.
+
+## Enforcement
+
+Planned: the validator fails any member of this repository that depends on `@heroui-pro/*` outside the apps' end-product use;
+gitleaks covers the token. Nothing enforces the licence question; it is a legal step, not a check.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0077](/adr/0077-open-core-free-and-pro-lists) rule 8 (which now points here). Related: [0056](/adr/0056-heroui-v3-pro-on-web-share-everything-but-components)
+(open PR #11). Sources: owner decision in chat, 2026-10-19 (Round 11 X9 owner decision, K1, K2). Informational: heroui.pro/license.

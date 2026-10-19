@@ -116,6 +116,13 @@ Each ADR records one decision, its context, consequences and the check that enfo
 | [0107](/adr/0107-connections-store-and-three-key-homes)             | Three homes for keys; tenant credentials live in @stackra/connections                                                               | Accepted           |
 | [0108](/adr/0108-scoped-settings)                                   | Scoped settings: each service owns its values; the registry owns the schema                                                         | Accepted           |
 | [0109](/adr/0109-registry-manifests-published-by-ci)                | The registry: build manifests published by CI to a Postgres-backed registry service                                                 | Accepted           |
+| [0110](/adr/0110-experience-is-the-sdui-service-at-l2)              | The experience service is server-driven UI at level L2: trees of registered coded components, no code over the wire                 | Accepted           |
+| [0111](/adr/0111-module-is-the-unit-of-contribution)                | The module is the unit of contribution; services and apps only host modules                                                         | Accepted           |
+| [0112](/adr/0112-experience-packages-and-renderer-kit)              | Experience packages, @stackra/ui parity and the renderer kit                                                                        | Accepted           |
+| [0113](/adr/0113-heroui-pro-distribution)                           | HeroUI Pro reaches Stackra Pro customers as a private mirror bundle, with a bring-your-own-key option                               | Accepted           |
+| [0114](/adr/0114-page-builder-for-every-page)                       | The page builder builds every page, including our own marketing site; MDX and Sanity are dropped                                    | Accepted           |
+| [0115](/adr/0115-form-builder)                                      | Built forms are documents of kind form; they submit to an action; the editors are Pro                                               | Accepted           |
+| [0116](/adr/0116-content-types-and-custom-fields)                   | @stackra/content: content types are models with a trait bundle; custom fields are a free, bounded trait                             | Accepted           |
 
 Copy the [template](/adr/template), give it the next number, and add it to this table and to `docs.json`.
 Cite Stackra ADRs by path, never by a number from another repository.

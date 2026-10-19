@@ -1,0 +1,38 @@
+---
+title: "0114 — The page builder builds every page, including our own marketing site; MDX and Sanity are dropped"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+[0057](/adr/0057-landing-is-react-router-framework-mode-on-workers) (open PR #11) put the Stackra and Figentra marketing site on
+React Router 7 framework mode with MDX content plus Sanity. Tenants also need public pages on their own domains (a sports
+academy's home page, pricing, a summer-camp landing page) and in-app pages inside the logged-in product. One builder for all
+three avoids a second content system and a new paid service.
+
+## Decision
+
+1. **The page builder covers every page**: our own marketing and landing site, tenants' public marketing and landing pages on
+   their domains, and in-app pages and areas.
+2. **Pages are L2 documents** of [0110](/adr/0110-experience-is-the-sdui-service-at-l2), stored as the `page` content type of
+   [0116](/adr/0116-content-types-and-custom-fields), with draft and publish per [0112](/adr/0112-experience-packages-and-renderer-kit).
+3. **MDX content and Sanity are dropped** for the marketing site.
+4. **The editor is Pro; the renderer is free.** Our own site uses the Pro editor under the internal licence of
+   [0077](/adr/0077-open-core-free-and-pro-lists).
+5. **Public pages prerender** for indexing; the hosting of 0057 decisions 1 and 2 (React Router 7 framework mode on Cloudflare
+   Workers) is not changed here.
+
+## Consequences
+
+- One content and publishing system for marketing and product pages.
+- Our marketing site depends on the experience runtime being ready (the last step of the X14 build order), so it ships later.
+- Custom domains and their TLS for tenant pages are an operational chore to design.
+
+## Enforcement
+
+Planned: none beyond the experience validator; the marketing app is checked by its prerender build. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: [0057](/adr/0057-landing-is-react-router-framework-mode-on-workers) decision 3 (content). The status edit on 0057
+waits for PR #11. Sources: owner decisions in chat, 2026-10-19 (Round 11 X8, X8b).
