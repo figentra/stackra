@@ -1,17 +1,19 @@
 ---
 title: "0012 — Code host and CI"
-description: "Proposed · 2026-10-19"
+description: "Accepted · 2026-10-19"
 ---
+
+<Note>Accepted in its amended form on 2026-10-19 by owner decision SDLC D11, recorded in [0121](/adr/0121-sdlc-tooling-roles-and-linear).</Note>
 
 ## Context
 
 Stackra has no CI file yet. `lefthook.yml` says a GitLab pipeline is the gate, while the repositories with a working gate
 (OIDC secrets, SHA-pinned actions, a single required check) run on GitHub Actions. A repository with two hosts has two
-sources of truth about what passes. The choice of host is a human decision, so this ADR is Proposed until a maintainer accepts it.
+sources of truth about what passes. The choice of host is a human decision; the owner chose GitHub.
 
 ## Decision
 
-1. **One host.** Proposed: GitHub, with GitHub Actions as the orchestrator. A repository has either `.github/` or `.gitlab/`, never both.
+1. **One host.** GitHub, with GitHub Actions as the orchestrator. A repository has either `.github/` or `.gitlab/`, never both.
 2. **One required check**: a gate workflow that always runs and calls `pnpm verify`. Path filters must never skip the required check.
 3. **Logic lives in pnpm scripts, not in YAML.** Workflow files call `pnpm` scripts, so moving host is a rewrite of thin callers.
 4. **The same command runs locally.** What CI runs, a developer can run with `pnpm verify` and zero secrets. A check that cannot run is a failure, not a skip.
