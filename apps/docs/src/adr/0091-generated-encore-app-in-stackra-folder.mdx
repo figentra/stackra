@@ -26,7 +26,7 @@ Encore one target among possible others.
 7. **Authoring stays as 0041 decision 1**: decorated controllers with `@Get`, `@Post` and the rest, `@OnEvent` and `@Cron`,
    discovered per [0090](/adr/0090-codegen-discovery-by-root-module). HTTP conventions are unchanged, generated files are
    never edited by hand, and auto-CRUD is out of scope here.
-8. **A spike proves it first**: Encore parses the wire types emitted under `.stackra/` and imports the built service packages.
+8. **The spike passed** all six cases: `encore run` with typed, raw, cookie and bearer endpoints; Pub/Sub and cron; `encore test`; static analysis of types in `.stackra/` with handlers in external packages; `encore build docker` on arm64 and amd64; `encore gen client`. The constraints it found are listed under Consequences.
 
 ## Consequences
 
@@ -34,7 +34,16 @@ Encore one target among possible others.
 - Encore errors point into generated code under `.stackra/`, so the generator must emit source comments that point back to the authored class.
 - The DDD module layout of 0040 stands, minus its decisions 3 and 4, which this ADR replaces. Encore primitives reach
   modules as container tokens provided by the generated app, which amends [0042](/adr/0042-di-first-with-one-container-per-service) decision 5.
-- If the spike fails, this ADR is rewritten, not worked around.
+- Constraints the spike found, which the generator and authors must respect:
+  - Topics are referenced directly: the generator emits one `switch` branch per topic.
+  - Classes are matched by export identity, not `class.name`, so every provider with handlers is exported from its package index.
+  - Handlers carry explicit parameter and return type annotations.
+  - A typed mapping from domain errors to `APIError` is required; a plain `Error` surfaces as a 500.
+  - The pipeline order is `pnpm build`, then `stackra gen`, then `pnpm install`, then `encore`.
+  - Each environment needs an Encore infra config once Pub/Sub exists.
+  - The generated app does not need `experimentalDecorators`.
+  - `encore build docker` hangs inside git worktrees (the CLI loops on the `.git` file), so Docker builds run in CI or in a normal clone.
+  - `encore run` does not run crons locally.
 
 ## Enforcement
 
@@ -46,4 +55,4 @@ folder exists under `services/`, and that `.stackra/` is gitignored. Nothing che
 Supersedes: [0041](/adr/0041-decorated-controllers-and-build-time-generator) (decisions 1, 3 to 7 restated; output moves from
 `services/<svc>/__generated__/` to `.stackra/encore/`). Amends [0040](/adr/0040-ddd-feature-modules-in-services) decisions 3
 and 4, and [0042](/adr/0042-di-first-with-one-container-per-service) decision 5. Sources: owner decision in chat, 2026-10-19
-(Round 9 G3).
+(Round 9 G3). Evidence: spike `stackra-spike-gen/FINDINGS.md` (local throwaway repository, Encore CLI 1.58.6), all six cases passed.
