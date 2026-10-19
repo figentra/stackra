@@ -1,9 +1,7 @@
 ---
 title: "0096 — Trait naming grammar and the trait list"
-description: "Proposed · 2026-10-19"
+description: "Accepted · 2026-10-19"
 ---
-
-<Note>Awaiting owner confirmation. This is a recommendation the owner has not confirmed. The trait list below is a draft derived from the per-model opt-ins of 0046 and the port plan of 0084; each row needs the owner's agreement.</Note>
 
 ## Context
 
@@ -17,34 +15,39 @@ example to avoid.
 1. **Reusable class behaviour is a trait**, created with `createTrait` from `@stackra/model`. There are no "concerns".
 2. **Names follow one grammar**:
 
-   | Form | Means | Example |
-   | --- | --- | --- |
-   | `Has*` | The model owns data (columns or relations) | `HasTimestamps` |
-   | `*able` | A capability that other code acts on | `Searchable` |
-   | `As*` | The class plays a role for another package | `AsTenant` |
-   | `InteractsWith*` | Helpers on a class that is not a model | `InteractsWithQueue` |
+   | Form             | Means                                      | Example              |
+   | ---------------- | ------------------------------------------ | -------------------- |
+   | `Has*`           | The model owns data (columns or relations) | `HasTimestamps`      |
+   | `*able`          | A capability that other code acts on       | `Searchable`         |
+   | `As*`            | The class plays a role for another package | `AsTenant`           |
+   | `InteractsWith*` | Helpers on a class that is not a model     | `InteractsWithQueue` |
 
 3. **`SoftDeletes` is the one exception**, kept for recognition.
 4. **The trait list**, each owned by one package:
 
-   | Trait | Owning package | Purpose |
-   | --- | --- | --- |
-   | `HasTimestamps` | `@stackra/model` | Created and updated times |
-   | `HasFactory` | `@stackra/database` | Test and seed factories |
-   | `SoftDeletes` | `@stackra/database` | Delete policy `soft` |
-   | `Archivable` | `@stackra/database` | Delete policy `archive` |
-   | `Prunable` | `@stackra/database` | Scheduled pruning |
-   | `Versionable` | `@stackra/database` | Row version for concurrency or history |
-   | `HasEncryptedFields` | `@stackra/database` | Application-layer PII field encryption |
-   | `HasTenant` | `@stackra/tenancy` | `tenant_id` with row-level security |
-   | `AsTenant` | `@stackra/tenancy` | The model is the tenant root |
-   | `AsSubject` | `@stackra/iam` | The model can be a `check()` subject |
-   | `Auditable` | `@stackra/outbox` | Changes publish audit events ([0047](/adr/0047-audit-service-via-events)) |
-   | `Searchable` | `@stackra/search` | Indexed through queue jobs ([0089](/adr/0089-search-fresh-with-pro-engine-drivers)) |
-   | `HasMedia` | `@stackra/media` | Attached files |
-   | `Notifiable` | `@stackra/notifications` | Can receive notifications |
-   | `HasSettings` | `@stackra/settings` | Scoped settings |
-   | `InteractsWithQueue` | `@stackra/queue` | Release, retry and fail helpers on jobs |
+   | Trait                | Owning package           | Purpose                                                                             |
+   | -------------------- | ------------------------ | ----------------------------------------------------------------------------------- |
+   | `HasTimestamps`      | `@stackra/model`         | Created and updated times                                                           |
+   | `HasFactory`         | `@stackra/database`      | Test and seed factories                                                             |
+   | `SoftDeletes`        | `@stackra/database`      | Delete policy `soft`                                                                |
+   | `Archivable`         | `@stackra/database`      | Delete policy `archive`                                                             |
+   | `Prunable`           | `@stackra/database`      | Scheduled pruning                                                                   |
+   | `Versionable`        | `@stackra/database`      | Row version for concurrency or history                                              |
+   | `HasEncryptedFields` | `@stackra/database`      | Application-layer PII field encryption                                              |
+   | `HasTenant`          | `@stackra/tenancy`       | `tenant_id` with row-level security                                                 |
+   | `AsTenant`           | `@stackra/tenancy`       | The model is the tenant root                                                        |
+   | `AsSubject`          | `@stackra/iam`           | The model can be a `check()` subject                                                |
+   | `Auditable`          | `@stackra/outbox`        | Changes publish audit events ([0047](/adr/0047-audit-service-via-events))           |
+   | `Searchable`         | `@stackra/search`        | Indexed through queue jobs ([0089](/adr/0089-search-fresh-with-pro-engine-drivers)) |
+   | `HasMedia`           | `@stackra/media`         | Attached files                                                                      |
+   | `Notifiable`         | `@stackra/notifications` | Can receive notifications                                                           |
+   | `HasSettings`        | `@stackra/settings`      | Scoped settings                                                                     |
+   | `InteractsWithQueue` | `@stackra/queue`         | Release, retry and fail helpers on jobs                                             |
+   | `HasRevisions`       | `@stackra/content`       | Draft and published revisions ([0116](/adr/0116-content-types-and-custom-fields))   |
+   | `Publishable`        | `@stackra/content`       | Draft, scheduled and published states                                               |
+   | `Sluggable`          | `@stackra/content`       | A unique slug per locale                                                            |
+   | `Translatable`       | `@stackra/content`       | Per-locale field values                                                             |
+   | `HasCustomFields`    | `@stackra/content`       | Tenant-defined fields in a side table, bounded by entitlements                      |
 
 5. **A new trait is added to this list** in the change that creates it.
 
@@ -53,6 +56,8 @@ example to avoid.
 - A trait's name tells a reader whether it adds columns, exposes a capability, or adapts a role.
 - `@stackra/model` owns the trait registry, so traits from many packages compose on one class.
 - Which package owns `Auditable` is the least certain row: audit is a service fed by events, and the trait only publishes.
+- The content-type bundle of [0116](/adr/0116-content-types-and-custom-fields) also names an SEO trait, recorded there as
+  `Seo`. That name does not fit the grammar; its final name is open and is added here when the trait is created.
 
 ## Enforcement
 
@@ -61,5 +66,6 @@ is listed in this page's table. Nothing checks this today.
 
 ## Supersedes and sources
 
-Supersedes: none. Sources: recommendation by the coordinating agent, 2026-10-19. The list is derived from
+Supersedes: none. Sources: recommendation by the coordinating agent, 2026-10-19, accepted by the owner in Round 10; the
+content traits come from the owner's CT2 and CT3 decisions in Round 11. The list is derived from
 [0046](/adr/0046-global-data-invariants-and-per-model-opt-ins) and [0084](/adr/0084-figentra-os-package-port-plan).

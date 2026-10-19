@@ -3,6 +3,11 @@ title: "0021 — AI engine and agent write safety"
 description: "Proposed · 2026-10-19"
 ---
 
+<Note>
+  Decision 5 is amended by [0100](/adr/0100-ai-model-and-ownership): approval of agent L2 writes is
+  tenant-configurable, on by default; L3 and L4 always need a named human.
+</Note>
+
 ## Context
 
 Two things are decided before any code exists. Which libraries run model calls, so nobody adds a gateway or another runtime.

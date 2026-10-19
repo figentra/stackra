@@ -6,36 +6,36 @@ icon: "landmark"
 
 Each ADR records one decision, its context, consequences and the check that enforces it. An accepted ADR is not rewritten: a later ADR supersedes it, in the same commit, and the old page points forward. Format and status vocabulary: [template](/adr/template).
 
-| ADR | Decision | Status |
-| --- | --- | --- |
-| [0001](/adr/0001-monorepo-layout) | Monorepo layout, catalogs and tooling | Accepted |
-| [0002](/adr/0002-docs-on-mintlify) | Documentation on Mintlify in `apps/docs` | Accepted |
-| [0003](/adr/0003-tier-dependency-direction) | Tier dependency direction | Accepted |
-| [0004](/adr/0004-package-archetypes-and-layers) | Package archetypes and layers | Accepted |
-| [0005](/adr/0005-di-container-and-legacy-decorators) | DI container and legacy decorators | Accepted |
-| [0006](/adr/0006-naming-exports-and-imports) | Naming, exports and imports | Accepted |
-| [0007](/adr/0007-source-documentation-standard) | Source documentation standard | Accepted |
-| [0008](/adr/0008-test-placement) | Test placement | Superseded by 0022 |
-| [0009](/adr/0009-secrets-two-mechanisms) | Secrets: two mechanisms | Accepted |
-| [0010](/adr/0010-services-are-independent-workspace-members) | Services are independent workspace members | Accepted |
-| [0011](/adr/0011-rejected-and-deferred-technologies) | Rejected and deferred technologies | Accepted |
-| [0012](/adr/0012-code-host-and-ci) | Code host and CI | Proposed |
-| [0013](/adr/0013-versioning-and-release) | Versioning and release | Superseded by 0025 |
-| [0014](/adr/0014-data-ownership-and-orm) | Data ownership and ORM | Accepted |
+| ADR                                                                 | Decision                                                                                                                            | Status             |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| [0001](/adr/0001-monorepo-layout)                                   | Monorepo layout, catalogs and tooling                                                                                               | Accepted           |
+| [0002](/adr/0002-docs-on-mintlify)                                  | Documentation on Mintlify in `apps/docs`                                                                                            | Accepted           |
+| [0003](/adr/0003-tier-dependency-direction)                         | Tier dependency direction                                                                                                           | Accepted           |
+| [0004](/adr/0004-package-archetypes-and-layers)                     | Package archetypes and layers                                                                                                       | Accepted           |
+| [0005](/adr/0005-di-container-and-legacy-decorators)                | DI container and legacy decorators                                                                                                  | Accepted           |
+| [0006](/adr/0006-naming-exports-and-imports)                        | Naming, exports and imports                                                                                                         | Accepted           |
+| [0007](/adr/0007-source-documentation-standard)                     | Source documentation standard                                                                                                       | Accepted           |
+| [0008](/adr/0008-test-placement)                                    | Test placement                                                                                                                      | Superseded by 0022 |
+| [0009](/adr/0009-secrets-two-mechanisms)                            | Secrets: two mechanisms                                                                                                             | Accepted           |
+| [0010](/adr/0010-services-are-independent-workspace-members)        | Services are independent workspace members                                                                                          | Accepted           |
+| [0011](/adr/0011-rejected-and-deferred-technologies)                | Rejected and deferred technologies                                                                                                  | Accepted           |
+| [0012](/adr/0012-code-host-and-ci)                                  | Code host and CI                                                                                                                    | Proposed           |
+| [0013](/adr/0013-versioning-and-release)                            | Versioning and release                                                                                                              | Superseded by 0025 |
+| [0014](/adr/0014-data-ownership-and-orm)                            | Data ownership and ORM                                                                                                              | Accepted           |
 | [0015](/adr/0015-contract-packages) | Contract packages | Accepted |
-| [0016](/adr/0016-agents-source-of-truth) | `.agents/` is the source of truth | Accepted |
-| [0017](/adr/0017-agent-roster-and-models) | Agent roster and models | Accepted |
-| [0018](/adr/0018-framework-design-record) | Framework design record | Proposed |
-| [0019](/adr/0019-supply-chain-hardening) | Supply chain hardening | Proposed |
-| [0020](/adr/0020-observability-and-crash-reporting) | Observability and crash reporting | Proposed |
-| [0021](/adr/0021-ai-engine-and-agent-write-safety) | AI engine and agent write safety | Proposed |
-| [0022](/adr/0022-tests-live-in-tests-folders) | Tests live in `__tests__` folders | Accepted |
-| [0023](/adr/0023-stackra-is-a-framework) | Stackra is a framework; products consume it | Accepted |
-| [0024](/adr/0024-mit-license-with-exclusions) | MIT license, with stated exclusions | Accepted |
-| [0025](/adr/0025-packages-publish-to-private-registry) | Packages publish to `npm.figentra.com`; every package builds to ESM dist | Accepted |
-| [0026](/adr/0026-turborepo-remote-cache-on-r2) | Turborepo remote cache self-hosted on Cloudflare R2 | Accepted |
-| [0027](/adr/0027-cli-tools-pinned-in-mise) | Every CLI the repo needs is pinned in mise | Accepted |
-| [0028](/adr/0028-package-categories-appear-with-first-package) | Package categories appear with their first package | Accepted |
+| [0016](/adr/0016-agents-source-of-truth)                            | `.agents/` is the source of truth                                                                                                   | Accepted           |
+| [0017](/adr/0017-agent-roster-and-models)                           | Agent roster and models                                                                                                             | Accepted           |
+| [0018](/adr/0018-framework-design-record)                           | Framework design record                                                                                                             | Proposed           |
+| [0019](/adr/0019-supply-chain-hardening)                            | Supply chain hardening                                                                                                              | Proposed           |
+| [0020](/adr/0020-observability-and-crash-reporting)                 | Observability and crash reporting                                                                                                   | Proposed           |
+| [0021](/adr/0021-ai-engine-and-agent-write-safety)                  | AI engine and agent write safety                                                                                                    | Proposed           |
+| [0022](/adr/0022-tests-live-in-tests-folders)                       | Tests live in `__tests__` folders                                                                                                   | Accepted           |
+| [0023](/adr/0023-stackra-is-a-framework)                            | Stackra is a framework; products consume it                                                                                         | Accepted           |
+| [0024](/adr/0024-mit-license-with-exclusions)                       | MIT license, with stated exclusions                                                                                                 | Accepted           |
+| [0025](/adr/0025-packages-publish-to-private-registry)              | Packages publish to `npm.figentra.com`; every package builds to ESM dist                                                            | Accepted           |
+| [0026](/adr/0026-turborepo-remote-cache-on-r2)                      | Turborepo remote cache self-hosted on Cloudflare R2                                                                                 | Accepted           |
+| [0027](/adr/0027-cli-tools-pinned-in-mise)                          | Every CLI the repo needs is pinned in mise                                                                                          | Accepted           |
+| [0028](/adr/0028-package-categories-appear-with-first-package)      | Package categories appear with their first package                                                                                  | Accepted           |
 | [0029](/adr/0029-encore-ts-one-app) | Encore.ts as one application under `services/` | Proposed |
 | [0030](/adr/0030-encore-cloud-on-owner-aws) | Encore Cloud into the owner's AWS; four environments | Proposed |
 | [0031](/adr/0031-coarse-services-split-on-evidence) | Coarse services, split on evidence | Proposed |
@@ -81,32 +81,32 @@ Each ADR records one decision, its context, consequences and the check that enfo
 | [0072](/adr/0072-soc2-groundwork) | SOC 2 groundwork | Proposed |
 | [0073](/adr/0073-observability-better-stack-sentry-encore) | Observability: Better Stack, Sentry and Encore tracing | Proposed |
 | [0074](/adr/0074-open-core-licensing) | Open core: `@stackra-pro` on the private registry | Proposed |
-| [0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services) | Stackra ships packages; Figentra OS ships the product services | Proposed |
-| [0076](/adr/0076-every-package-runs-saas-on-prem-and-air-gapped) | Every package runs in SaaS, on-prem and air-gapped deployments | Proposed |
-| [0077](/adr/0077-open-core-free-and-pro-lists) | Open core: the free and Pro package lists | Proposed |
-| [0078](/adr/0078-messaging-layer-eight-packages) | The messaging layer: eight packages, one question each | Proposed |
-| [0079](/adr/0079-client-state-is-stackra-state) | Client state is @stackra/state (ported Figentra signals); Query owns optimism and the offline queue | Proposed |
-| [0080](/adr/0080-i18n-is-the-figentra-i18n-port) | i18n is the ported Figentra i18n package; i18next is dropped | Proposed |
-| [0081](/adr/0081-gate-chain-configurable-per-app) | The gate chain is fully configurable per app, with a warning when tenancy or iam is omitted | Proposed |
-| [0082](/adr/0082-public-ids-and-api-areas) | Public ids are a prefix plus base32 of one UUIDv7; four API areas | Proposed |
-| [0083](/adr/0083-npm-scopes-and-cli-names) | npm scopes: @stackra for packages, @figentra for this repository's apps and services; @stackra/console is the CLI framework | Proposed |
-| [0084](/adr/0084-figentra-os-package-port-plan) | Figentra OS package port plan | Proposed |
-| [0085](/adr/0085-logger-reporters) | Logger reporters: CloudWatch kept; Encore log, Sentry and Better Stack added | Proposed |
-| [0086](/adr/0086-notifications-full-engine-all-channels-free) | @stackra/notifications is a full engine, with every channel free | Proposed |
-| [0087](/adr/0087-identity-and-iam-are-driver-packages) | Identity and IAM are driver packages; enterprise features plug in as Pro | Proposed |
-| [0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope) | @stackra/tenancy: pool and RLS are free; DB-per-tenant and the scope tree are Pro | Proposed |
-| [0089](/adr/0089-search-fresh-with-pro-engine-drivers) | @stackra/search is written fresh; Meilisearch and OpenSearch are Pro drivers | Proposed |
-| [0090](/adr/0090-codegen-discovery-by-root-module) | Codegen discovers decorators through each member's root module | Proposed |
-| [0091](/adr/0091-generated-encore-app-in-stackra-folder) | The Encore app is generated into .stackra/encore; services hold no Encore files | Proposed |
-| [0092](/adr/0092-ir-ported-definition-package-dropped) | The IR is ported with decorator-derived kinds; the definition package is dropped | Proposed |
-| [0093](/adr/0093-better-auth-integration) | Better Auth integration: container hooks, iam-only authorization, an owned MikroORM adapter, global auth tables | Proposed |
-| [0094](/adr/0094-decorators-only-authoring) | Decorators are the only authoring style; no define*() | Proposed |
-| [0095](/adr/0095-zod-inside-field-decorators) | Zod is the validation engine inside @Field; class-validator and class-transformer are rejected | Proposed |
-| [0096](/adr/0096-trait-naming-grammar) | Trait naming grammar and the trait list | Proposed |
-| [0097](/adr/0097-model-and-database-packages) | @stackra/model and @stackra/database; gen emits MikroORM EntitySchema | Proposed |
-| [0098](/adr/0098-actions-are-the-unit) | Actions are the unit of behaviour, in @stackra/actions, with one pipeline | Proposed |
-| [0099](/adr/0099-risk-scale-l0-to-l4) | One risk scale, L0 to L4, with effects as tags | Proposed |
-| [0100](/adr/0100-ai-model-and-ownership) | The AI model: what Stackra, Stackra Pro and Figentra OS each own | Proposed |
+| [0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services) | Stackra ships packages; Figentra OS ships the product services                                                                      | Proposed           |
+| [0076](/adr/0076-every-package-runs-saas-on-prem-and-air-gapped)    | Every package runs in SaaS, on-prem and air-gapped deployments                                                                      | Proposed           |
+| [0077](/adr/0077-open-core-free-and-pro-lists)                      | Open core: the free and Pro package lists                                                                                           | Proposed           |
+| [0078](/adr/0078-messaging-layer-eight-packages)                    | The messaging layer: eight packages, one question each                                                                              | Proposed           |
+| [0079](/adr/0079-client-state-is-stackra-state)                     | Client state is @stackra/state (ported Figentra signals); Query owns optimism and the offline queue                                 | Proposed           |
+| [0080](/adr/0080-i18n-is-the-figentra-i18n-port)                    | i18n is the ported Figentra i18n package; i18next is dropped                                                                        | Proposed           |
+| [0081](/adr/0081-gate-chain-configurable-per-app)                   | The gate chain is fully configurable per app, with a warning when tenancy or iam is omitted                                         | Proposed           |
+| [0082](/adr/0082-public-ids-and-api-areas)                          | Public ids are a prefix plus base32 of one UUIDv7; four API areas                                                                   | Proposed           |
+| [0083](/adr/0083-npm-scopes-and-cli-names)                          | npm scopes: @stackra for packages, @figentra for this repository's apps and services; @stackra/console is the CLI framework         | Proposed           |
+| [0084](/adr/0084-figentra-os-package-port-plan)                     | Figentra OS package port plan                                                                                                       | Proposed           |
+| [0085](/adr/0085-logger-reporters)                                  | Logger reporters: CloudWatch kept; Encore log, Sentry and Better Stack added                                                        | Proposed           |
+| [0086](/adr/0086-notifications-full-engine-all-channels-free)       | @stackra/notifications is a full engine, with every channel free                                                                    | Proposed           |
+| [0087](/adr/0087-identity-and-iam-are-driver-packages)              | Identity and IAM are driver packages; enterprise features plug in as Pro                                                            | Proposed           |
+| [0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope)              | @stackra/tenancy: pool and RLS are free; DB-per-tenant and the scope tree are Pro                                                   | Proposed           |
+| [0089](/adr/0089-search-fresh-with-pro-engine-drivers)              | @stackra/search is written fresh; Meilisearch and OpenSearch are Pro drivers                                                        | Proposed           |
+| [0090](/adr/0090-codegen-discovery-by-root-module)                  | Codegen discovers decorators through each member's root module                                                                      | Proposed           |
+| [0091](/adr/0091-generated-encore-app-in-stackra-folder)            | The Encore app is generated into .stackra/encore; services hold no Encore files                                                     | Accepted           |
+| [0092](/adr/0092-ir-ported-definition-package-dropped)              | The IR is ported with decorator-derived kinds; the definition package is dropped                                                    | Proposed           |
+| [0093](/adr/0093-better-auth-integration)                           | Better Auth integration: container hooks, iam-only authorization, an owned MikroORM adapter, global auth tables                     | Proposed           |
+| [0094](/adr/0094-decorators-only-authoring)                         | Decorators are the only authoring style; workflows are declarative @Step graphs                                                     | Accepted           |
+| [0095](/adr/0095-zod-inside-field-decorators)                       | @stackra/validation: Laravel-style decorators compiled to one Zod schema, plus an output serializer                                 | Accepted           |
+| [0096](/adr/0096-trait-naming-grammar)                              | Trait naming grammar and the trait list                                                                                             | Accepted           |
+| [0097](/adr/0097-model-and-database-packages)                       | @stackra/model and @stackra/database; gen emits MikroORM EntitySchema                                                               | Accepted           |
+| [0098](/adr/0098-actions-are-the-unit)                              | Actions are the unit of behaviour, in @stackra/actions, with one pipeline and a typed actor                                         | Accepted           |
+| [0099](/adr/0099-risk-scale-l0-to-l4)                               | One action risk scale, L0 to L4, with derived MCP hints and effect tags; change risk is R0 to R3                                    | Accepted           |
+| [0100](/adr/0100-ai-model-and-ownership)                            | One free @stackra/ai: agents, tools, skills, MCP and A2A on AI SDK, every tool call an action                                       | Accepted           |
 
 Copy the [template](/adr/template), give it the next number, and add it to this table and to `docs.json`.
 Cite Stackra ADRs by path, never by a number from another repository.

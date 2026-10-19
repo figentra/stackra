@@ -1,28 +1,35 @@
 ---
 title: "0097 — @stackra/model and @stackra/database; gen emits MikroORM EntitySchema"
-description: "Proposed · 2026-10-19"
+description: "Accepted · 2026-10-19"
 ---
-
-<Note>Awaiting owner confirmation. This is a recommendation the owner has not confirmed.</Note>
 
 ## Context
 
 MikroORM is the ORM ([0014](/adr/0014-data-ownership-and-orm)). Models are decorated classes
 ([0094](/adr/0094-decorators-only-authoring)), and their shapes are needed on the client too: forms, the API client and admin
 resources. MikroORM's own decorators would pull the ORM into client bundles. The owner left open where MikroORM lives
-(Round 9 G1). A Nest ORM wrapper studied as a reference (nestjs-orm) already has the feature set products expect.
+(Round 9 G1). A Nest ORM wrapper studied as a reference (nestjs-orm, also found at `archive/monorepo-main/packages/infra/orm`)
+already has the feature set products expect. The owner compared the plan against it and accepted it with five additions.
 
 ## Decision
 
-1. **`@stackra/model` holds the client-safe parts**: model and field decorators, relations as metadata, and the trait registry
-   ([0096](/adr/0096-trait-naming-grammar)). It imports no ORM.
+1. **`@stackra/model` holds the client-safe parts**: model and field decorators built on `@stackra/validation`
+   ([0095](/adr/0095-zod-inside-field-decorators)), relations as metadata, scopes, eager-load declarations, a state machine,
+   `createTrait` and the trait registry ([0096](/adr/0096-trait-naming-grammar)). It imports no ORM.
 2. **`@stackra/database` is the only package that imports `@mikro-orm/*`.**
 3. **`stackra gen` emits MikroORM `EntitySchema` definitions** from model metadata. MikroORM's decorators are not used.
-4. **The feature list is ported from the nestjs-orm reference**: scopes, eager loading, per-audience hidden and visible fields,
-   morph relations, pivots, three paginators, chunk, upsert and bulk operations, typed flush errors, factories and seeders,
-   CLI commands on `@stackra/console`, a DataLoader, pruning, and the connection resolver
+4. **The feature list is ported from the nestjs-orm reference** (its features, not its code): scopes, eager loading,
+   per-audience hidden and visible fields, morph relations, pivots, the trait runtime as a MikroORM subscriber, named filters,
+   three paginators with cursor as the default, chunk, upsert and bulk operations, typed flush errors, factories and seeders,
+   migrate, seed and make commands on `@stackra/console`, a DataLoader, pruning, and a per-model connection resolver
    ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope)).
-5. **Read replicas are a new design**, not ported.
+5. **Five additions from the reference**:
+   1. list filtering, sorting and includes, declared on the model and accepted by list actions;
+   2. `@Stored` and `@Translatable` field storage (where and how a field is persisted, and per-locale values);
+   3. the rich CRUD API consumed by `@Crud` ([0105](/adr/0105-crud-generates-service-methods));
+   4. the reference's schema registry, folded into the gen manifest rather than kept as a runtime registry;
+   5. a database health check, and factory states.
+6. **Read replicas are a new design**, not ported.
 
 ## Consequences
 
@@ -37,5 +44,6 @@ Planned: `packages/tooling/oxlint/boundaries.jsonc` bans `@mikro-orm/*` imports 
 
 ## Supersedes and sources
 
-Supersedes: none. Answers the open question of Round 9 G1. Sources: recommendation by the coordinating agent, 2026-10-19.
-Reference: nestjs-orm (location not recorded in the decision log).
+Supersedes: none. Answers the open question of Round 9 G1. Sources: recommendation by the coordinating agent, 2026-10-19;
+accepted by the owner with the five additions (Round 11 O1). Reference: nestjs-orm
+(`/Users/akouta/Downloads/2026/archive/monorepo-main/packages/infra/orm`, informational).

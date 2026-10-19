@@ -19,64 +19,65 @@ Figentra OS (`@figentra-os/*`, 55 packages in the same ten categories) is Stackr
    - No `encore.dev` import ([0078](/adr/0078-messaging-layer-eight-packages)). Names follow [0083](/adr/0083-npm-scopes-and-cli-names).
 2. **The plan.** Actions: port as-is, port + adapt, redesign, fresh, skip, Pro.
 
-   | Category | Package | Action | Notes |
-   | --- | --- | --- | --- |
-   | foundation | contracts | port + adapt | |
-   | foundation | support | port + adapt | Add Laravel-style helpers now; stays dependency-free |
-   | foundation | container | port as-is | After the Encore plus legacy-decorator spike |
-   | foundation | config | port + adapt | Add publish and override ([0044](/adr/0044-laravel-style-package-config)) |
-   | foundation | events | port + adapt | Wire to the outbox; sources and sinks ([0078](/adr/0078-messaging-layer-eight-packages)) |
-   | foundation | logger | port + adapt | Reporters per [0085](/adr/0085-logger-reporters) |
-   | foundation | storage | port as-is | |
-   | foundation | query | port + adapt | Cursor-first redesign, no router dependency; optimism and offline queue ([0079](/adr/0079-client-state-is-stackra-state)) |
-   | foundation | transport | port + adapt | `Stackra-Version` header ([0037](/adr/0037-api-versioning-by-date-header)) |
-   | foundation | signals | port + adapt | Becomes `@stackra/state` ([0079](/adr/0079-client-state-is-stackra-state)); the TanStack Store state package is dropped |
-   | foundation | network | port + adapt | Rebuilt on `@stackra/state` |
-   | foundation | filesystem | port as-is | |
-   | foundation | i18n | port as-is | No i18next ([0080](/adr/0080-i18n-is-the-figentra-i18n-port)) |
-   | foundation | router | port + adapt | Keep the compiled tree and diagnostics; RR7 web and React Navigation adapters ([0053](/adr/0053-decorator-route-classes-compiled-to-router-adapters)) |
-   | runtime | app | port + adapt | On `@stackra/container`; the node entry has no React |
-   | runtime | cache | port + adapt | Add a Redis/Valkey driver for on-prem |
-   | runtime | queue | port + adapt | Jobs, delayed and run-at, retries, dead-letter queue; Encore topic, Postgres `SKIP LOCKED` and memory drivers |
-   | runtime | scheduler | port + adapt | Recurring cron only; Encore `CronJob` or `croner` with an advisory lock |
-   | runtime | realtime | port + adapt | Trimmed: presence and co-editing move to Pro collaboration; add a self-hosted driver |
-   | runtime | sync | skip | Stub deleted; the offline queue is in `@stackra/query` |
-   | runtime | outbox | fresh | Outbox table, relay, inbox deduplication |
-   | runtime | workflow | fresh | Steps plus compensation, each step a job ([0043](/adr/0043-workflow-package-medusa-style)) |
-   | security | identity | port + adapt | Better Auth local driver; remote driver later ([0087](/adr/0087-identity-and-iam-are-driver-packages)) |
-   | security | tenancy | port + adapt | Free pool, RLS and isolation kit; no router dependency ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope)) |
-   | security | iam | port + adapt | RBAC and `check()`, no scope dependency ([0087](/adr/0087-identity-and-iam-are-driver-packages)) |
-   | security | scope | Pro | `@stackra-pro/scope`, a driver behind `check()` and tenancy |
-   | security | consent | port as-is | Drop the unused optional `@heroui/react` peer |
-   | security | csp | port as-is | |
-   | security | entitlements | fresh | Gate and plan/limit contracts free; metering and limits engine Pro |
-   | state | coordinator | port + adapt | Leader election and locks only, on `@stackra/state` and the events `BroadcastChannel` source and sink; add tests |
-   | state | feature-flags | port + adapt | Add a PostHog provider, plus config and service providers for on-prem; a gate in the chain ([0081](/adr/0081-gate-chain-configurable-per-app)) |
-   | state | settings | port as-is | Platform, tenant and user scoping later |
-   | state | theming | port as-is | Tokens come from `@stackra/brand`; per-tenant white-label is a Pro candidate |
-   | experience | collaboration | Pro | Stub today; receives presence and co-editing |
-   | experience | console | port + adapt | The command-line framework, `@stackra/console` ([0083](/adr/0083-npm-scopes-and-cli-names)) |
-   | experience | dashboard | Pro | Stub today |
-   | experience | forms | redesign | On react-hook-form and Zod ([0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters)); HeroUI field adapters live in the apps; the registry is salvaged for `@Resource` |
-   | experience | kbd | port + adapt | `WeakMap` metadata store; the palette UI is built per app |
-   | experience | navigation | port + adapt | Local and remote menus, breadcrumbs, tabs as data, gate-filtered, on the router; detailed plan pending |
-   | experience | page-builder | Pro | Stub today |
-   | experience | pwa | port + adapt | `WeakMap` metadata store |
-   | data | media | port + adapt | On `@stackra/filesystem` drivers, with no second set of storage drivers |
-   | data | search | fresh | [0089](/adr/0089-search-fresh-with-pro-engine-drivers) |
-   | communication | notifications | fresh | Stub today; full engine ([0086](/adr/0086-notifications-full-engine-all-channels-free)) |
-   | communication | webhooks | fresh | Standard Webhooks |
-   | cross-cutting | analytics | port + adapt | Add a PostHog driver; other destinations Pro |
-   | cross-cutting | brand | port + adapt | Stackra tokens and assets plus the Figentra runtime `BrandService` (per-tenant branding) from day one |
-   | cross-cutting | seo | port + adapt | Add tests and the React Router 7 head integration |
-   | developer | cli | port + adapt | The `stackra` binary on `@stackra/console` |
-   | developer | devtools-kit | port as-is | |
-   | developer | devtools | skip | Pro later |
-   | developer | devtools-ui-kit | skip | Pro later |
-   | developer | vite | port + adapt | Renamed; the new name is TODO |
-   | application | ir | port + adapt | Decorator-derived kinds ([0092](/adr/0092-ir-ported-definition-package-dropped)) |
-   | application | definition | skip | Dropped with `define*()` and YAML ([0092](/adr/0092-ir-ported-definition-package-dropped)) |
-   | application | compiler, schema-gen, runtime-core, experience | skip | Stubs; replaced as the codegen ADRs decide ([0090](/adr/0090-codegen-discovery-by-root-module), [0091](/adr/0091-generated-encore-app-in-stackra-folder)) |
+   | Category      | Package                                        | Action       | Notes                                                                                                                                                                      |
+   | ------------- | ---------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | foundation    | contracts                                      | port + adapt |                                                                                                                                                                            |
+   | foundation    | support                                        | port + adapt | Add Laravel-style helpers now; stays dependency-free                                                                                                                       |
+   | foundation    | container                                      | port as-is   | After the Encore plus legacy-decorator spike                                                                                                                               |
+   | foundation    | config                                         | port + adapt | Add publish and override ([0044](/adr/0044-laravel-style-package-config))                                                                                                  |
+   | foundation    | events                                         | port + adapt | Wire to the outbox; sources and sinks ([0078](/adr/0078-messaging-layer-eight-packages))                                                                                   |
+   | foundation    | logger                                         | port + adapt | Reporters per [0085](/adr/0085-logger-reporters)                                                                                                                           |
+   | foundation    | storage                                        | port as-is   |                                                                                                                                                                            |
+   | foundation    | query                                          | port + adapt | Cursor-first redesign, no router dependency; optimism and offline queue ([0079](/adr/0079-client-state-is-stackra-state))                                                  |
+   | foundation    | transport                                      | port + adapt | `Stackra-Version` header and the dormant version chain ([0118](/adr/0118-api-versioning-dormant-package))                                                                  |
+   | foundation    | signals                                        | port + adapt | Becomes `@stackra/state` ([0079](/adr/0079-client-state-is-stackra-state)); the TanStack Store state package is dropped                                                    |
+   | foundation    | network                                        | port + adapt | Rebuilt on `@stackra/state`                                                                                                                                                |
+   | foundation    | filesystem                                     | port as-is   |                                                                                                                                                                            |
+   | foundation    | i18n                                           | port as-is   | No i18next ([0080](/adr/0080-i18n-is-the-figentra-i18n-port))                                                                                                              |
+   | foundation    | router                                         | port + adapt | Keep the compiled tree and diagnostics; RR7 web and React Navigation adapters ([0053](/adr/0053-decorator-route-classes-compiled-to-router-adapters))                      |
+   | runtime       | app                                            | port + adapt | On `@stackra/container`; the node entry has no React                                                                                                                       |
+   | runtime       | cache                                          | port + adapt | Add a Redis/Valkey driver for on-prem                                                                                                                                      |
+   | runtime       | queue                                          | port + adapt | Jobs, delayed and run-at, retries, dead-letter queue; Encore topic, Postgres `SKIP LOCKED` and memory drivers                                                              |
+   | runtime       | scheduler                                      | port + adapt | Recurring cron only; Encore `CronJob` or `croner` with an advisory lock                                                                                                    |
+   | runtime       | realtime                                       | port + adapt | Trimmed: presence and co-editing move to Pro collaboration; add a self-hosted driver                                                                                       |
+   | runtime       | sync                                           | skip         | Stub deleted; the offline queue is in `@stackra/query`                                                                                                                     |
+   | runtime       | outbox                                         | fresh        | Outbox table, relay, inbox deduplication                                                                                                                                   |
+   | runtime       | workflow                                       | fresh        | Engine ported from Medusa's MIT parts; in-process steps with a journal ([0102](/adr/0102-workflow-engine-in-process-journal))                                              |
+   | runtime       | locking                                        | fresh        | [0103](/adr/0103-locking-package)                                                                                                                                          |
+   | security      | identity                                       | port + adapt | Better Auth local driver; remote driver later ([0087](/adr/0087-identity-and-iam-are-driver-packages))                                                                     |
+   | security      | tenancy                                        | port + adapt | Free pool, RLS and isolation kit; no router dependency ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope))                                                            |
+   | security      | iam                                            | port + adapt | RBAC and `check()`, no scope dependency ([0087](/adr/0087-identity-and-iam-are-driver-packages))                                                                           |
+   | security      | scope                                          | Pro          | `@stackra-pro/scope`, a driver behind `check()` and tenancy                                                                                                                |
+   | security      | consent                                        | port as-is   | Drop the unused optional `@heroui/react` peer                                                                                                                              |
+   | security      | csp                                            | port as-is   |                                                                                                                                                                            |
+   | security      | entitlements                                   | fresh        | Gate and plan/limit contracts free; metering and limits engine Pro                                                                                                         |
+   | state         | coordinator                                    | port + adapt | Leader election and locks only, on `@stackra/state` and the events `BroadcastChannel` source and sink; add tests                                                           |
+   | state         | feature-flags                                  | port + adapt | Add a PostHog provider, plus config and service providers for on-prem; a gate in the chain ([0081](/adr/0081-gate-chain-configurable-per-app))                             |
+   | state         | settings                                       | port + adapt | Decorators and registry ported; the resolver is rewritten for the scope chain of [0108](/adr/0108-scoped-settings)                                                         |
+   | state         | theming                                        | port as-is   | Tokens come from `@stackra/brand`; per-tenant white-label is Pro                                                                                                           |
+   | experience    | collaboration                                  | Pro          | Stub today; receives presence and co-editing                                                                                                                               |
+   | experience    | console                                        | port + adapt | The command-line framework, `@stackra/console` ([0083](/adr/0083-npm-scopes-and-cli-names))                                                                                |
+   | experience    | dashboard                                      | fresh        | Runtime free in `@stackra/experience`; the studio is Pro ([0112](/adr/0112-experience-packages-and-renderer-kit))                                                          |
+   | experience    | forms                                          | redesign     | On react-hook-form and Zod ([0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters)); HeroUI field adapters live in the apps; the registry is salvaged for `@Resource` |
+   | experience    | kbd                                            | port + adapt | `WeakMap` metadata store; the palette UI is built per app                                                                                                                  |
+   | experience    | navigation                                     | port + adapt | Local and remote menus, breadcrumbs, tabs as data, gate-filtered, on the router; detailed plan pending                                                                     |
+   | experience    | page-builder                                   | Pro          | Stub today; the editor is Pro, the renderer is free ([0114](/adr/0114-page-builder-for-every-page))                                                                        |
+   | experience    | pwa                                            | port + adapt | `WeakMap` metadata store                                                                                                                                                   |
+   | data          | media                                          | port + adapt | On `@stackra/filesystem` drivers, with no second set of storage drivers                                                                                                    |
+   | data          | search                                         | fresh        | [0089](/adr/0089-search-fresh-with-pro-engine-drivers)                                                                                                                     |
+   | communication | notifications                                  | fresh        | Stub today; full engine ([0086](/adr/0086-notifications-full-engine-all-channels-free))                                                                                    |
+   | communication | webhooks                                       | fresh        | Standard Webhooks                                                                                                                                                          |
+   | cross-cutting | analytics                                      | port + adapt | Add a PostHog driver; other destinations Pro                                                                                                                               |
+   | cross-cutting | brand                                          | port + adapt | Stackra tokens and assets plus the Figentra runtime `BrandService` (per-tenant branding) from day one                                                                      |
+   | cross-cutting | seo                                            | port + adapt | Add tests and the React Router 7 head integration                                                                                                                          |
+   | developer     | cli                                            | port + adapt | The `stackra` binary on `@stackra/console`                                                                                                                                 |
+   | developer     | devtools-kit                                   | port as-is   |                                                                                                                                                                            |
+   | developer     | devtools                                       | skip         | Pro later                                                                                                                                                                  |
+   | developer     | devtools-ui-kit                                | skip         | Pro later                                                                                                                                                                  |
+   | developer     | vite                                           | port + adapt | Renamed; the new name is TODO                                                                                                                                              |
+   | application   | ir                                             | port + adapt | Decorator-derived kinds ([0092](/adr/0092-ir-ported-definition-package-dropped))                                                                                           |
+   | application   | definition                                     | skip         | Dropped with `define*()` and YAML ([0092](/adr/0092-ir-ported-definition-package-dropped))                                                                                 |
+   | application   | compiler, schema-gen, runtime-core, experience | skip         | Stubs; replaced as the codegen ADRs decide ([0090](/adr/0090-codegen-discovery-by-root-module), [0091](/adr/0091-generated-encore-app-in-stackra-folder))                  |
 
 ## Consequences
 

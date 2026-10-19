@@ -17,30 +17,32 @@ description: "Proposed · 2026-10-19"
 6. **The notifications engine and every channel are free**: email (Resend, SMTP), SMS, WhatsApp, push and in-app ([0086](/adr/0086-notifications-full-engine-all-channels-free)).
 7. **The Pro list**:
 
-   | Area | Pro |
-   | --- | --- |
-   | Admin | Admin resource kit; billing admin UI |
-   | Builders | Page builder; dashboards |
-   | Collaboration | Presence and co-editing (trimmed out of `@stackra/realtime`) |
-   | Enterprise identity | SSO, SCIM, phone sign-in, OAuth provider; advanced audit |
-   | Tenancy and authorization at scale | Scope tree (`@stackra-pro/scope`); DB-per-tenant and move-tenant driver; Zanzibar engine (`@stackra-pro/iam-relations`); tenant service tokens |
-   | Entitlements | Plans, metering and quotas engine |
-   | Compliance | Compliance pack |
-   | Search | Meilisearch and OpenSearch drivers ([0089](/adr/0089-search-fresh-with-pro-engine-drivers)) |
-   | Analytics | Analytics destinations |
-   | AI | AI agents kit |
-   | Developer | Devtools UI (`devtools`, `devtools-ui-kit`) |
-   | Notifications | Visual template editor; delivery analytics dashboard; multi-provider failover |
-   | Licensing | `@stackra/licensing` (signed offline licence file), built only when a product sells self-hosted |
-   | Candidate | Per-tenant white-label theming |
+   | Area                               | Pro                                                                                                                                                                                                                                                                  |
+   | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | Admin                              | Admin resource kit; billing admin UI                                                                                                                                                                                                                                 |
+   | Builders                           | Dashboard studio; page builder; form builder editors; experience blocks; workflow automation builder. The runtimes are free ([0112](/adr/0112-experience-packages-and-renderer-kit), [0115](/adr/0115-form-builder), [0122](/adr/0122-workflow-studio-three-layers)) |
+   | Experience                         | Embeds, kiosk and broadcast dashboards; HeroUI Pro-based renderers (charts, marketing) and `@stackra-pro/ui` wrappers ([0113](/adr/0113-heroui-pro-distribution))                                                                                                    |
+   | Collaboration                      | Presence and co-editing (trimmed out of `@stackra/realtime`)                                                                                                                                                                                                         |
+   | Enterprise identity                | SSO, SCIM, phone sign-in, OAuth provider; advanced audit                                                                                                                                                                                                             |
+   | Tenancy and authorization at scale | Scope tree (`@stackra-pro/scope`); DB-per-tenant and move-tenant driver; Zanzibar engine (`@stackra-pro/iam-relations`); tenant service tokens                                                                                                                       |
+   | Entitlements                       | Plans, metering and quotas engine                                                                                                                                                                                                                                    |
+   | Compliance                         | Compliance pack                                                                                                                                                                                                                                                      |
+   | Search                             | Meilisearch and OpenSearch drivers ([0089](/adr/0089-search-fresh-with-pro-engine-drivers))                                                                                                                                                                          |
+   | Analytics                          | Analytics destinations                                                                                                                                                                                                                                               |
+   | AI                                 | Agent builder UI, registry UI and eval workspace. The AI runtime, skills and multi-agent are free ([0100](/adr/0100-ai-model-and-ownership))                                                                                                                         |
+   | Developer                          | Devtools UI (`devtools`, `devtools-ui-kit`)                                                                                                                                                                                                                          |
+   | Notifications                      | Visual template editor; delivery analytics dashboard; multi-provider failover                                                                                                                                                                                        |
+   | Licensing                          | `@stackra/licensing` (signed offline licence file), built only when a product sells self-hosted                                                                                                                                                                      |
+   | Theming                            | Per-tenant white-label theming                                                                                                                                                                                                                                       |
+   | Content                            | Tenant-defined content types at runtime, later ([0116](/adr/0116-content-types-and-custom-fields))                                                                                                                                                                   |
 
-8. **A Pro package that wraps HeroUI Pro** respects HeroUI's redistribution terms, and no paid-licence code is committed here ([0024](/adr/0024-mit-license-with-exclusions) rule 4).
+8. **HeroUI Pro reaches Pro customers as decided in [0113](/adr/0113-heroui-pro-distribution)**, and no paid-licence code is committed here ([0024](/adr/0024-mit-license-with-exclusions) rule 4).
+9. **Figentra's own products** (for example Academorix, which needs the scope tree from day one) consume Pro packages under an internal licence.
 
 ## Consequences
 
 - Free contracts must be designed for the Pro drivers that will implement them, without the Pro code in view in this repository.
 - `figentra/stackra-pro` needs its own CI, release and registry publishing. It consumes released `@stackra/*` versions.
-- Open: Academorix needs the scope tree from day one, which makes it a Pro consumer under an internal licence. The owner has not confirmed this.
 - Open (carried from 0074): does npflared support per-customer scoped, revocable tokens.
 
 ## Enforcement
@@ -49,4 +51,4 @@ Planned: `tools/scripts/validate-repository.mjs` fails any member here that depe
 
 ## Supersedes and sources
 
-Supersedes: [0074](/adr/0074-open-core-licensing) (it restates 0074's rules 1 to 3, 5 and 6, and settles the Pro list and the source location). Amends [0024](/adr/0024-mit-license-with-exclusions) rule 1, as 0074 did. Sources: owner decisions in chat, 2026-10-19 (Round 7; Round 8 F14a, F14b, F14c, C1).
+Supersedes: [0074](/adr/0074-open-core-licensing) (it restates 0074's rules 1 to 3, 5 and 6, and settles the Pro list and the source location). Amends [0024](/adr/0024-mit-license-with-exclusions) rule 1, as 0074 did. Sources: owner decisions in chat, 2026-10-19 (Round 7; Round 8 F14a, F14b, F14c, C1; Round 11 AI1, L2, L3, X5, X6, X9, X12, F3, CT1, WS2).

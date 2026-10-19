@@ -11,23 +11,23 @@ Events, pub/sub, outbox, jobs, cron, workflows, realtime, webhooks and notificat
 
 1. **Eight packages, each answering one question.** Pick the package by the question the code is asking:
 
-   | Question | Package |
-   | --- | --- |
-   | Something happened. Who reacts? | `@stackra/events` |
-   | Must another service learn of a committed change, even if this process dies after the commit? | `@stackra/outbox` |
-   | Run this later, at a given time, or with retries? | `@stackra/queue` |
-   | Run this on a recurring schedule? | `@stackra/scheduler` |
-   | Run several steps that must be undone if a later one fails? | `@stackra/workflow` |
-   | Push this to a connected client now? | `@stackra/realtime` |
-   | Send to or receive from another system over HTTP callbacks? | `@stackra/webhooks` |
-   | Tell a person? | `@stackra/notifications` |
+   | Question                                                                                      | Package                  |
+   | --------------------------------------------------------------------------------------------- | ------------------------ |
+   | Something happened. Who reacts?                                                               | `@stackra/events`        |
+   | Must another service learn of a committed change, even if this process dies after the commit? | `@stackra/outbox`        |
+   | Run this later, at a given time, or with retries?                                             | `@stackra/queue`         |
+   | Run this on a recurring schedule?                                                             | `@stackra/scheduler`     |
+   | Run several steps that must be undone if a later one fails?                                   | `@stackra/workflow`      |
+   | Push this to a connected client now?                                                          | `@stackra/realtime`      |
+   | Send to or receive from another system over HTTP callbacks?                                   | `@stackra/webhooks`      |
+   | Tell a person?                                                                                | `@stackra/notifications` |
 
 2. **Events is the bus for everything.** `@OnEvent` handles every source the same way: in-process events, pub/sub between services, inbound webhooks, and client transports (SSE, WebSocket, `BroadcastChannel`, push). Sources and sinks are drivers. There is no `pubsub` package.
-3. **Domain events and integration events are different.** Domain events stay in-process and are not versioned. Integration events cross a service boundary. They are versioned by name (`user.created.v1`), carry contract-package shapes ([0015](/adr/0015-contract-packages)), leave through the outbox and arrive through the inbox.
+3. **Domain events and integration events are different.** Domain events stay in-process and are not versioned. Integration events cross a service boundary. They are versioned by name (`user.created.v1`), carry shapes from the producer's `./contracts` entry ([0117](/adr/0117-contracts-placement-and-decorator-ownership)), leave through the outbox and arrive through the inbox.
 4. **Outbox is its own runtime package**, because it needs MikroORM and a database, and `@stackra/support` stays dependency-free. It owns the outbox table, the relay and inbox deduplication. The event row is written in the same transaction as the state change. **Every consumer is idempotent** and deduplicates on the event id.
 5. **Queue** holds jobs, one-off delayed and run-at jobs, retries and a dead-letter queue. Drivers: Encore topic, Postgres `SKIP LOCKED`, memory.
 6. **Scheduler is recurring cron only.** In SaaS it runs on Encore `CronJob`. On-prem and air-gapped it runs on a `croner` timer with a Postgres advisory lock. **A scheduler handler only dispatches a job or a workflow**; it does no work itself.
-7. **Workflow is steps plus compensation, and each step runs as a queue job**, so retries and dead-lettering come from the queue. This settles part of [0043](/adr/0043-workflow-package-medusa-style) decision 6. Persisting workflow state is still TODO.
+7. **Workflow is steps plus compensation.** Steps run in-process with a Postgres journal; only asynchronous, background or delayed steps go through the queue ([0102](/adr/0102-workflow-engine-in-process-journal), which replaced the first wording here, "each step runs as a queue job").
 8. **Packages never import `encore.dev`.** `stackra gen` ([0091](/adr/0091-generated-encore-app-in-stackra-folder)) emits `Topic`, `Subscription` and `CronJob` declarations for the service and passes them to duck-typed drivers.
 9. **Package placement**: events in foundation; outbox, queue, scheduler, workflow and realtime in runtime; webhooks and notifications in communication.
 
@@ -44,4 +44,4 @@ Events, pub/sub, outbox, jobs, cron, workflows, realtime, webhooks and notificat
 
 ## Supersedes and sources
 
-Supersedes: [0033](/adr/0033-pubsub-cron-transactional-outbox) (its outbox, idempotent-consumer and versioned-name rules are restated in decisions 3 and 4; Encore Pub/Sub and cron become the SaaS drivers). Amends [0043](/adr/0043-workflow-package-medusa-style) decision 6 in part. Sources: owner decisions in chat, 2026-10-19 (Round 6 items 17 and 19; Round 8 "messaging layer locked", F5).
+Supersedes: [0033](/adr/0033-pubsub-cron-transactional-outbox) (its outbox, idempotent-consumer and versioned-name rules are restated in decisions 3 and 4; Encore Pub/Sub and cron become the SaaS drivers). [0043](/adr/0043-workflow-package-medusa-style) is superseded by [0102](/adr/0102-workflow-engine-in-process-journal). Sources: owner decisions in chat, 2026-10-19 (Round 6 items 17 and 19; Round 8 "messaging layer locked", F5).
