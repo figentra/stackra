@@ -28,7 +28,7 @@ logic or markup and are what 0011 rightly rejects.
 ## Consequences
 
 - Tenants and agents can change layouts without a deploy, and every change is still checked against coded components and actions.
-- The 0011 rejection of a runtime schema engine and of JSONB-for-everything stands; only server-driven UI at L2 is allowed.
+- The 0011 rejection of a runtime schema engine and of JSONB-for-everything stands; only data that references registered code is allowed.
 - The validator and the component registry are security-critical code.
 
 ## Enforcement
@@ -38,6 +38,9 @@ a string as code or HTML. Nothing checks this today.
 
 ## Supersedes and sources
 
-Supersedes: the "server-driven UI" part of the "A runtime schema engine, server-driven UI, JSONB-for-everything" row of
-[0011](/adr/0011-rejected-and-deferred-technologies), which carries a note pointing here. Sources: owner decisions in chat,
+Supersedes: the "A runtime schema engine, server-driven UI, JSONB-for-everything" row of
+[0011](/adr/0011-rejected-and-deferred-technologies). The row is rewritten to reject a runtime schema engine,
+JSONB-for-everything and tenant data that carries code, markup or logic, and to allow data that only references registered
+code: L2 UI documents (here), builder-UI agents ([0100](/adr/0100-ai-model-and-ownership) decision 8), tenant automations
+([0122](/adr/0122-workflow-studio-three-layers)) and bounded custom fields ([0116](/adr/0116-content-types-and-custom-fields)). Sources: owner decisions in chat,
 2026-10-19 (Round 11 X1, X3). Informational: `text/experience-service-architecture-decision.md`.

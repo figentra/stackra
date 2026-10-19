@@ -47,6 +47,7 @@ example to avoid.
    | `Publishable`        | `@stackra/content`       | Draft, scheduled and published states                                               |
    | `Sluggable`          | `@stackra/content`       | A unique slug per locale                                                            |
    | `Translatable`       | `@stackra/content`       | Per-locale field values                                                             |
+   | `HasSeo`             | `@stackra/content`       | SEO metadata for the record                                                         |
    | `HasCustomFields`    | `@stackra/content`       | Tenant-defined fields in a side table, bounded by entitlements                      |
 
 5. **A new trait is added to this list** in the change that creates it.
@@ -56,8 +57,6 @@ example to avoid.
 - A trait's name tells a reader whether it adds columns, exposes a capability, or adapts a role.
 - `@stackra/model` owns the trait registry, so traits from many packages compose on one class.
 - Which package owns `Auditable` is the least certain row: audit is a service fed by events, and the trait only publishes.
-- The content-type bundle of [0116](/adr/0116-content-types-and-custom-fields) also names an SEO trait, recorded there as
-  `Seo`. That name does not fit the grammar; its final name is open and is added here when the trait is created.
 
 ## Enforcement
 
