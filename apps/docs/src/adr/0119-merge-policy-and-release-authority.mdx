@@ -1,0 +1,41 @@
+---
+title: "0119 — Merge policy: Quality Gate is the only required check; Claude merges only through pnpm pr:merge"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+`main` required one approving review, and nobody can approve their own pull request, so green pull requests stalled; merges
+happened through an admin bypass. [0012](/adr/0012-code-host-and-ci) wants one required check.
+[0017](/adr/0017-agent-roster-and-models) rule 6 says agents do not merge, but the owner authorised Claude to merge green pull
+requests (Round 6). CODEOWNERS names a handle that is not a GitHub user.
+
+## Decision
+
+1. **A1 / D5 — Required approvals are 0, and Quality Gate is the only required check.** Branch protection on `main` is already
+   set to 0 required approvals (as of 2026-10-19).
+2. **Claude merges only through `pnpm pr:merge`**, which refuses unless the gate is green, the AI review verdict for the head
+   commit is PASS, and, for design pull requests and change-risk R3 ([0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk)),
+   the owner has approved.
+3. **A bot identity** (a GitHub App or machine user) makes agent commits, pull requests and merges. CODEOWNERS is corrected to
+   the owner's real handle.
+4. **D6 — Squash merge only**; branches are deleted on merge; the squash message keeps the commit messages, which carry `Refs: STA-n`.
+5. **D7 — The owner merges the changesets version pull request**; Claude prepares it. This keeps the human release approval of
+   [0025](/adr/0025-packages-publish-to-private-registry).
+
+## Consequences
+
+- Green pull requests merge without an admin bypass, and every merge still has a recorded gate result and review.
+- `pnpm pr:merge` becomes security-critical: weakening it weakens the merge policy.
+- The bot identity and the CODEOWNERS fix are open chores.
+
+## Enforcement
+
+Existing: branch protection on `main` (0 approvals, Quality Gate required). Planned: `tools/scripts/pr-merge.mjs`; a
+`guard-bash` rule that blocks `gh pr merge` outside `pnpm pr:merge`.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0017](/adr/0017-agent-roster-and-models) rule 6 (Claude may merge through `pnpm pr:merge`; release
+and production promotion stay human) and states the review side of [0012](/adr/0012-code-host-and-ci) decision 2. Sources:
+owner decisions in chat, 2026-10-19 (Round 11 A1; SDLC D5, D6, D7).

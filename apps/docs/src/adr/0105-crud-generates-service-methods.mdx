@@ -1,0 +1,35 @@
+---
+title: "0105 — @Crud generates a model's service methods and opt-in actions"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Every model needs the same create, read, update, delete, list and restore code. Medusa's `MedusaService` generates eight
+CRUD methods per model. The first wording of [0098](/adr/0098-actions-are-the-unit) generated only actions and no services;
+the owner then chose generated CRUD services as part of the Medusa port.
+
+## Decision
+
+1. **`@Crud` on a module service generates its CRUD methods** for the named models, on the rich CRUD API of
+   [0097](/adr/0097-model-and-database-packages): retrieve, list, list-and-count, create, update, delete, soft-delete and
+   restore, with list filtering, sorting and includes.
+2. **The generated methods are inherited, not written to disk**, and a hand-written method of the same name overrides one.
+3. **`@Crud` also generates opt-in actions** that call those methods, each with a `key@version`, permission, risk level and
+   `actors` like any action. An action is generated only when the decorator lists it.
+4. **No controllers are generated.** Exposure is the adapters of 0098.
+
+## Consequences
+
+- Module services expose the same CRUD vocabulary everywhere, which workflows' steps call.
+- Generated actions still need reviewers to check the permission and risk on each.
+
+## Enforcement
+
+Planned: a conformance test per generated method in `@stackra/database`; the gen validation pass applies the action rules of
+0098 to generated actions. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0098](/adr/0098-actions-are-the-unit) decision 4 (which now points here). Sources: owner decision in
+chat, 2026-10-19 (Round 11 W4, "Generated CRUD services"). Informational: Medusa `MedusaService`.

@@ -1,0 +1,48 @@
+---
+title: "0095 — @stackra/validation: Laravel-style decorators compiled to one Zod schema, plus an output serializer"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+With decorators as the only authoring style ([0094](/adr/0094-decorators-only-authoring)), fields on models and action inputs
+need validation, input transforms and output shaping declared on the class. The Nest ecosystem uses class-validator and
+class-transformer, which depend on `reflect-metadata` ([0011](/adr/0011-rejected-and-deferred-technologies)) and duplicate what
+Zod already does for forms and the API client ([0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters)). The IR already
+converts schemas to Zod ([0092](/adr/0092-ir-ported-definition-package-dropped)). The owner asked for the class-validator and
+class-transformer developer experience with Zod underneath, rather than only `@Field(z…)`.
+
+## Decision
+
+1. **A new client-safe package, `@stackra/validation`**, owns the validation, transform and serializer decorators.
+   `@stackra/model` ([0097](/adr/0097-model-and-database-packages)) builds on it. It imports no ORM and no Node-only module.
+2. **Short, Laravel-style rule decorators** append to a per-class schema: `@Str`, `@Min`, `@Max`, `@Email`, `@Int`,
+   `@Between`, `@Enum`, `@Date`, `@After`, `@ArrayOf`, `@Nested`, `@Uuid`, `@Optional` and `@Default`. **`@Field(z…)` is the
+   escape hatch** for anything the shorthands do not cover.
+3. **Each class compiles to one cached `z.object`.** That schema is the one used by actions, forms, wire types, OpenAPI, MCP
+   tool schemas and the IR. Zod is the only validation engine.
+4. **Async rules `@Exists` and `@Unique`** run through a database rule driver supplied by `@stackra/database`.
+5. **Input transforms compile into the same Zod schema**: `@Trim`, `@Lowercase`, `@ToInt`, `@ToBoolean`, `@ToDate` and
+   `@Transform(fn)`. `X.parse(input)` returns a typed instance of `X` or an `STK`-coded `ValidationError`.
+6. **Output goes through a serializer**, separate from validation: `@Hidden`, `@Visible({ audience })`, `@Expose`, `@Cast` and
+   `@Format`. The audiences are `public`, `app`, `admin` and `agent`.
+7. **class-validator and class-transformer are rejected.**
+
+## Consequences
+
+- One schema per shape, shared from database model to form to agent tool.
+- Every shorthand must map exactly to a Zod construct, and the set needs a maintainer and a test per decorator.
+- What an agent sees of a record is an explicit audience, so a field hidden from `agent` never reaches a prompt.
+- Which rule driver answers `@Exists` and `@Unique` on the client (skip, or a remote call) is left to the package spec.
+- A row for class-validator and class-transformer is added to [0011](/adr/0011-rejected-and-deferred-technologies) by a
+  superseding change to that page.
+
+## Enforcement
+
+Planned: `FORBIDDEN_DEPENDENCIES` in `tools/scripts/validate-repository.mjs` gains `class-validator` and `class-transformer`;
+a test in `@stackra/validation` that every decorator produces its documented Zod construct; `boundaries.jsonc` keeps
+`@stackra/validation` free of Node-only imports. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decisions in chat, 2026-10-19 (Round 10: a full decorator suite on Zod; "ADR 0095 FINAL").

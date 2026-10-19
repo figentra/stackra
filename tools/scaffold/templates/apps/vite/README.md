@@ -1,4 +1,4 @@
-# @stackra/{{NAME}}
+# @figentra/{{NAME}}
 
 {{DESCRIPTION}}
 
@@ -26,4 +26,4 @@ Dev and preview/start use port {{PORT}} (http://localhost:{{PORT}}).
 | `src/styles.css`    | Tailwind + HeroUI styles                      |
 | `src/**/__tests__/` | Tests beside the code                         |
 
-Run from the root with `pnpm --filter @stackra/{{NAME}} dev`.
+Run from the root with `pnpm --filter @figentra/{{NAME}} dev`.

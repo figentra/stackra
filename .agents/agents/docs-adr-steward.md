@@ -64,7 +64,7 @@ to `architecture-guardian`.
    `apps/docs/src/docs.json`.
 5. **Verify.** Read-only commands only:
    - `pnpm validate` for repository-shape findings
-   - `pnpm turbo run format:check lint typecheck --filter=@stackra/docs` — for the docs site, `lint` runs
+   - `pnpm turbo run format:check lint typecheck --filter=@figentra/docs` — for the docs site, `lint` runs
      `mint broken-links` and `typecheck` runs `mint validate`, which fails on warnings
    - `git log` and `git diff`, to confirm what a superseded ADR said and when it changed
 6. Stage nothing. On hand-off, list the explicit paths you changed (per

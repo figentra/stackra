@@ -1,0 +1,32 @@
+---
+title: "0087 — Identity and IAM are driver packages; enterprise features plug in as Pro"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0051](/adr/0051-better-auth-identity-service) made identity one Better Auth service and listed every sign-in method and credential type as part of it. Two later decisions change that. Stackra ships packages, not services ([0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services)), and identity will also be offered as a hosted Figentra OS service, which needs a remote driver ([0076](/adr/0076-every-package-runs-saas-on-prem-and-air-gapped)). The open-core split moves enterprise identity and the authorization engine to Pro ([0077](/adr/0077-open-core-free-and-pro-lists)).
+
+## Decision
+
+1. **`@stackra/identity` is a driver package.** Its local driver is built on Better Auth. A remote driver that calls the Figentra OS identity service is designed with the contract now and built later. Whichever service registers the local driver owns users, sessions and credentials, and no other service reads its tables ([0014](/adr/0014-data-ownership-and-orm)).
+2. **Free sign-in methods are configuration, per product**: magic link, social, password, passkeys and username. **SSO, SCIM, phone sign-in and the OAuth provider plug in as Pro.**
+3. **On mobile the session token is stored in SecureStore**, never in plain app storage.
+4. **`@stackra/iam` (free) is RBAC behind `check(subject, relation, object)`**, with no dependency on the scope tree. Callers use only `check()`. **`@stackra-pro/iam-relations` (a Zanzibar-style engine) and `@stackra-pro/scope` are drivers behind the same `check()`.** OpenFGA, SpiceDB and Cedar stay deferred ([0011](/adr/0011-rejected-and-deferred-technologies)).
+5. **Personal access tokens are free; tenant service tokens are Pro.** Tokens are shown once, stored hashed, scoped and revocable.
+6. **Operator endpoints are audited**: each call publishes an audit event ([0047](/adr/0047-audit-service-via-events)), and a call whose event cannot be recorded is refused.
+7. **Changes to identity or IAM need a blocking security review.**
+
+## Consequences
+
+- A product moves from the local driver to hosted identity without changing callers, provided the contract never leaks local-driver assumptions.
+- OAuth apps, which 0051 put in the first build, are now a Pro feature. Their scope model and consent flow are designed with the Pro package.
+- Better Auth is a dependency of the local driver only.
+
+## Enforcement
+
+Planned: a test that `check()` is the only authorization entry point other members import, a token-storage test (hashed at rest), an identity driver conformance suite run against the local driver, and the `security-tenancy-reviewer` agent on every change to these packages. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: [0051](/adr/0051-better-auth-identity-service) (decisions 2 to 4, 7 and 8 restated; identity becomes a driver package; phone sign-in, tenant service tokens, OAuth apps and SSO move to Pro). Sources: owner decisions in chat, 2026-10-19 (Round 1 auth; Round 8 F14a, S1, S3).

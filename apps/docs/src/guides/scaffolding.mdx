@@ -29,7 +29,7 @@ Run it with `--dry-run` first to see what it would write. Then run `pnpm install
 `--category` is required for `domain`, `platform` and `lib` and must be one of: foundation, application, communication, cross-cutting, data, developer, experience, runtime, security, state. Names are kebab-case.
 
 <Warning>
-  A service is its own workspace member at `services/<name>` (`@stackra/service-<name>`, like `services/example` and `services/health`), and Encore is deferred. The `service` template and `tools/scripts/scaffold.mjs` still target the older layout, `services/src/<name>` as a unit of one Encore app, which is not a workspace member. Until the template is updated, scaffold a service by hand from `services/example`, or run `pnpm new service` and move the result, then run `pnpm validate`.
+  A service is its own workspace member at `services/<name>` (`@figentra/service-<name>`, like `services/example` and `services/health`), and Encore is deferred. The `service` template and `tools/scripts/scaffold.mjs` still target the older layout, `services/src/<name>` as a unit of one Encore app, which is not a workspace member. Until the template is updated, scaffold a service by hand from `services/example`, or run `pnpm new service` and move the result, then run `pnpm validate`.
 </Warning>
 
 Which package kind: would the code need renaming to make sense in a different product? Then `domain`. Does it serve other packages with no business meaning of its own? Then `platform`, or `lib` when it is flat. Rules for each shape are in [Packages](/guides/packages).

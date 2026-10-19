@@ -1,0 +1,49 @@
+---
+title: "0108 — Scoped settings: each service owns its values; the registry owns the schema"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Products need Magento-style scoped configuration: a default, overridden by the platform, a tenant, a node in the scope tree
+and a user, with per-locale values. A single settings service would couple every service to it; per-service ad-hoc tables
+would give every service a different shape. The ported Figentra settings package has decorators and a registry, but its
+resolver assumes a flat scope. Deploy-time configuration (`@stackra/config`, [0044](/adr/0044-laravel-style-package-config))
+is a different thing and is not changed here.
+
+## Decision
+
+1. **S1 — Ownership.** Each service owns its setting values in a standard `settings_values` table from `@stackra/settings`.
+   The schema is declared with `@Settings` and `@Setting` decorators, lands in the gen manifest, and is held by the registry
+   ([0109](/adr/0109-registry-manifests-published-by-ci)). The admin BFF renders settings screens from it.
+2. **S2 — Scope chain**: default → platform → tenant → scope-tree nodes (Pro) → user. Each field declares which scopes may set
+   it. A higher scope can lock a field so lower scopes cannot override it, and a deploy can lock a field too.
+3. **S3 — Locale.** Fields may hold per-locale values. Locale, currency and time zone are themselves settings, resolved at the
+   edge of the request.
+4. **S4 — Credentials** are never setting values; a setting holds a `@ConnectionRef` ([0107](/adr/0107-connections-store-and-three-key-homes)).
+5. **S5 — Storage**: one row per key, scope and locale.
+6. **S6 — Encryption** applies only to settings whose values are PII-class.
+7. **S7 — Caching**: a per-tenant version counter, a `settings.changed.v1` event, and an LRU or shared cache in front.
+8. **S8 — Cross-service reads** use the request context or an event-fed projection, never a synchronous call to another
+   service's settings.
+9. **S9 — User preferences** are split by owning service, like any other setting.
+10. **S10 — Export and import** is JSON per service or group.
+11. **S11 — Schema evolution** is `@SettingsMigration`.
+12. **S12 — The Pro ltree scope tree stays**, overriding the Tenant document's decision to drop the Scope service.
+13. **The Figentra settings resolver is rewritten** for this chain; its decorators and registry are ported.
+
+## Consequences
+
+- Every service gets the same settings shape and screens without a central settings service.
+- The scope-node level exists only where `@stackra-pro/scope` is installed; free installs stop at tenant then user.
+- Settings schemas become part of the manifest review surface.
+
+## Enforcement
+
+Planned: a `settings_values` RLS isolation test in `@stackra/settings`; the gen validation pass fails a `@Setting` without a
+scope list or a secret-typed setting without `@ConnectionRef`. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Amends the settings row of [0084](/adr/0084-figentra-os-package-port-plan) (resolver rewritten). Sources:
+owner decisions in chat, 2026-10-19 (Round 11 S1 to S12). Informational: the Figentra OS Tenant document (Scope service).

@@ -1,0 +1,48 @@
+---
+title: "0102 — The workflow engine: in-process steps with a Postgres journal, outbox staging and hooks, ported from Medusa's MIT code"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+[0043](/adr/0043-workflow-package-medusa-style) chose Medusa-style steps with compensation but left persistence, retries and
+long-running execution open. [0078](/adr/0078-messaging-layer-eight-packages) then said each step runs as a queue job. Medusa
+runs steps in-process and sends only async or background steps out of the process; a queue hop per step adds latency and
+moving parts for no gain on short steps. Medusa is MIT except its Enterprise paths (the rbac module, policies,
+check-permissions, auth-oidc, and the rbac flows, SDK and dashboard), which must never be ported or copied.
+
+## Decision
+
+1. **Steps run in-process, recorded in a Postgres journal** (run, step, status, input and output hashes, attempt). Only
+   asynchronous, background or delayed steps go through `@stackra/queue`.
+2. **A workflow is a saga, not one transaction.** Each step commits on its own. On failure, completed steps are compensated
+   in reverse order; steps are idempotent so a retry or a re-compensation is safe; retries and backoff are declared per step.
+3. **Outbox staging per run.** Events a run produces are written to the outbox as `staged` and flip to `ready` only when the
+   run succeeds; a compensated run discards them.
+4. **Workflow hooks**: `@Hook` points declared by a workflow, and `@OnWorkflowHook` handlers in any module, so products extend
+   a workflow without editing it.
+5. **Authoring is the declarative `@Step` graph** of [0094](/adr/0094-decorators-only-authoring). Step and workflow inputs and
+   outputs are typed; a workflow's input and output are its contract, and only an action invokes it ([0101](/adr/0101-action-first-workflow-behind-when-needed)).
+6. **The engine core is ported from Medusa's MIT code**: compensation, retries, async steps, the journal, outbox staging and
+   hooks. The Enterprise paths listed above are never ported, copied or read for porting.
+7. **Steps and workflows are resolved through the container** and live in the module that owns them.
+
+## Consequences
+
+- Short workflows cost no queue round trips; long ones survive restarts through the journal.
+- Consumers never see events from a run that was rolled back.
+- Porting needs a licence check per copied file; the Enterprise exclusion list is part of the port's review checklist.
+- A crash between a step's commit and its journal write is the edge case the journal design must cover; it is a spec item.
+
+## Enforcement
+
+Planned: conformance tests in `@stackra/workflow` for compensation order, idempotent retry, staged-event discard and
+journal recovery; a validator check that no file under `packages/**` carries a Medusa Enterprise path or header. Nothing
+checks this today.
+
+## Supersedes and sources
+
+Supersedes: [0043](/adr/0043-workflow-package-medusa-style) (decisions 1 and 3 to 5 restated in decisions 2, 5 and 7, with
+`createStep`/`createWorkflow` replaced per 0094; decision 6 settled here). Replaces the "each step runs as a job" wording of
+0078 decision 7. Sources: owner decisions in chat, 2026-10-19 (Round 11 W3, W4). Informational: Medusa source study
+(`archive/medusa-develop`).

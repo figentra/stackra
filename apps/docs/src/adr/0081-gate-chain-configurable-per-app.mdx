@@ -1,0 +1,29 @@
+---
+title: "0081 — The gate chain is fully configurable per app, with a warning when tenancy or iam is omitted"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Routes, navigation, endpoints and features are filtered by a chain of gates: authentication, tenancy, IAM `check()`, feature flags and entitlements. Claude recommended locking tenancy and IAM into every chain, so an app could not forget them. The owner overrode that: each app configures its own chain, and the risk is handled by a warning instead.
+
+## Decision
+
+1. **Each app configures its gate chain fully**: which gates run, and in what order. The framework imposes no mandatory gate.
+2. **Gates share one contract.** Tenancy, IAM, feature flags (`@stackra/feature-flags`), entitlements (`@stackra/entitlements`) and app-defined gates all plug into the chain the same way.
+3. **Consumers of the chain filter through it**: the router, `@stackra/navigation` and generated endpoints.
+4. **`pnpm validate` warns when an area's chain omits the tenancy gate or the IAM gate.** The warning names the app, the area and the missing gate. It does not fail the build.
+
+## Consequences
+
+- An app with unusual needs (a public site, an operator console) is not forced through gates it does not use.
+- A forgotten tenancy or IAM gate is a warning, not an error. Review must read the warnings, and the `security-tenancy-reviewer` agent treats an unexplained one as a blocking finding.
+- How an intended omission (for example, the public API area of [0082](/adr/0082-public-ids-and-api-areas)) is acknowledged so that it stops warning is TODO, settled in the gate-chain spec.
+
+## Enforcement
+
+Planned: a warning-level check in `tools/scripts/validate-repository.mjs` that reads each app's gate configuration. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19 (Round 8 X1, T2).

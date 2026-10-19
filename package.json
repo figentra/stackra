@@ -23,9 +23,9 @@
     "new": "node tools/scripts/scaffold.mjs",
     "boundaries": "turbo boundaries",
     "knip": "knip",
-    "console": "turbo run dev --filter=@stackra/console",
-    "docs": "turbo run dev --filter=@stackra/docs",
-    "mobile": "turbo run dev --filter=@stackra/mobile",
+    "console": "turbo run dev --filter=@figentra/console",
+    "docs": "turbo run dev --filter=@figentra/docs",
+    "mobile": "turbo run dev --filter=@figentra/mobile",
     "clean": "turbo run clean",
     "changeset": "changeset",
     "changeset:status": "changeset status",
@@ -35,7 +35,11 @@
     "ai:spend": "node tools/scripts/ai-spend.mjs",
     "doctor": "node tools/scripts/doctor.mjs",
     "agents:sync": "node tools/scripts/agents-sync.mjs",
-    "agents:check": "node tools/scripts/agents-sync.mjs --check"
+    "agents:check": "node tools/scripts/agents-sync.mjs --check",
+    "bot:token": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-token.mjs",
+    "bot:gh": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-gh.mjs gh",
+    "bot:git": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-gh.mjs git",
+    "pr:merge": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/pr-merge.mjs"
   },
   "devDependencies": {
     "@changesets/changelog-git": "catalog:release",

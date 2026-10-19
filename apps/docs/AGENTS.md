@@ -1,4 +1,4 @@
-# @stackra/docs
+# @figentra/docs
 
 Mintlify documentation site. Tier tag `tier:app`.
 

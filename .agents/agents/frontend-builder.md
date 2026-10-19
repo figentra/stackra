@@ -24,7 +24,7 @@ the generated client. The app is a stub today (`src/main.ts`); keep new structur
 3. User-facing strings are i18n keys, never literals; locale data comes from the app, not a shared package.
 4. Server data goes through the generated API client; no hand-written fetch to a service, no hand-edited generated files.
 5. Keyboard and screen-reader paths work; focus visible; contrast meets WCAG 2.2 AA.
-6. `pnpm --filter @stackra/console test typecheck build`, then `pnpm verify`.
+6. `pnpm --filter @figentra/console test typecheck build`, then `pnpm verify`.
 
 ## Never
 

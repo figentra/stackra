@@ -1,0 +1,32 @@
+---
+title: "0079 — Client state is @stackra/state (ported Figentra signals); Query owns optimism and the offline queue"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0054](/adr/0054-tanstack-query-and-zustand-for-client-state) chose Zustand for local client state and dropped the Figentra OS signals package. In the package questionnaire the owner reversed that: the signals package is ported as the client-state package, and the old TanStack Store state package is dropped. The Figentra OS `sync` package is a stub, and [0059](/adr/0059-offline-encrypted-query-cache-and-mutation-queue) specifies an offline mutation queue without naming the package that owns it.
+
+## Decision
+
+1. **Server state lives in TanStack Query through `@stackra/query`**, keyed from the generated API client. The package is cursor-first and has no router dependency.
+2. **Local client state lives in `@stackra/state`**, a port of the Figentra OS signals package. Zustand and TanStack Store are not used. Nothing server-owned is copied into `@stackra/state`.
+3. **Optimistic updates live in `@stackra/query`.**
+4. **The offline mutation queue lives in `@stackra/query`.** It owns [0059](/adr/0059-offline-encrypted-query-cache-and-mutation-queue) decisions 2 and 3 (idempotency keys, `409` conflict records).
+5. **The `sync` stub is deleted.** No sync package exists, and the sync-engine row of [0011](/adr/0011-rejected-and-deferred-technologies) stays Deferred.
+6. **Packages that need reactive client state build on `@stackra/state`**: `@stackra/network`, and the leader-election and lock parts of `@stackra/coordinator`.
+7. **The same packages are used on web, desktop and mobile.**
+
+## Consequences
+
+- One reactive primitive across Stackra packages, maintained in-house rather than by a third party.
+- The signals port carries its own tests and docs, where Zustand would have come with an ecosystem.
+- Offline behaviour has one owner, `@stackra/query`, instead of a separate sync package.
+
+## Enforcement
+
+Planned: `FORBIDDEN_DEPENDENCIES` in `tools/scripts/validate-repository.mjs` gains `zustand` and `@tanstack/store`. Queue unit tests (replay, ordering, `409`) in `@stackra/query`. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: [0054](/adr/0054-tanstack-query-and-zustand-for-client-state). Fills the owning package left open in [0059](/adr/0059-offline-encrypted-query-cache-and-mutation-queue). Sources: owner decisions in chat, 2026-10-19 (Round 8 F8, F10a, F10b, R6, T1).

@@ -1,0 +1,30 @@
+---
+title: "0085 — Logger reporters: CloudWatch kept; Encore log, Sentry and Better Stack added"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+The Figentra OS logger is ported ([0084](/adr/0084-figentra-os-package-port-plan)). It already reports to CloudWatch. Services built on Stackra run on Encore, and observability uses Sentry and Better Stack ([0073](/adr/0073-observability-better-stack-sentry-encore)). On-prem and air-gapped deployments ([0076](/adr/0076-every-package-runs-saas-on-prem-and-air-gapped)) cannot rely on any one of these being present.
+
+## Decision
+
+1. **`@stackra/logger` is a driver package**: application code logs through the logger, and reporters are drivers chosen by configuration.
+2. **The CloudWatch reporter is kept.**
+3. **Three reporters are added**: Encore log (`encore.dev/log`, passed in by the service and never imported by the package), Sentry, and Better Stack.
+4. **No personal data in any log line** ([0020](/adr/0020-observability-and-crash-reporting) rule 3, [0071](/adr/0071-privacy-obligations)).
+
+## Consequences
+
+- One logging call site no matter where the code is deployed. Reporters are swapped by configuration.
+- Four vendor reporters to maintain and keep current through the catalogs.
+- Which reporter an air-gapped deployment uses, when no hosted reporter is reachable, is TODO and settled when the logger is ported.
+- The Encore reporter follows the duck-typed driver rule of [0078](/adr/0078-messaging-layer-eight-packages) decision 8.
+
+## Enforcement
+
+`packages/tooling/oxlint/boundaries.jsonc` bans `encore.dev` in packages. Planned: a reporter conformance suite in the package, and a redaction test that rejects known PII fields. Nothing else checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Fills the logging part of [0020](/adr/0020-observability-and-crash-reporting) decision 6 for the logger package only. Sources: owner decision in chat, 2026-10-19 (Round 8 F6).

@@ -1,0 +1,32 @@
+---
+title: "0076 — Every package runs in SaaS, on-prem and air-gapped deployments"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Figentra OS is sold in three deploy modes ([0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services)), and Stackra packages are sold on their own. A package that hard-depends on a cloud service, or checks a licence online, cannot ship on-prem or air-gapped. Retrofitting that later means rewriting every package that assumed the cloud. Identity and IAM will also be offered as hosted Figentra OS services, so the packages must leave room for a remote implementation without building it now.
+
+## Decision
+
+1. **Three deploy modes**: SaaS (hosted by Figentra), on-prem (customer infrastructure with network access) and air-gapped (no outbound network).
+2. **Every package works in all three.** A capability that a cloud service provides sits behind a driver with a self-hosted alternative. Examples: queue on Postgres, scheduler on a local timer with an advisory lock, cache on Redis or Valkey, realtime on a self-hosted driver.
+3. **No package calls home.** Pro access is gated at install ([0077](/adr/0077-open-core-free-and-pro-lists)), and a future `@stackra/licensing` verifies a signed licence file offline.
+4. **Every spec's Impact questionnaire answers the deploy mode**: SaaS, on-prem, air-gapped, each with how the change works there. This adds an item to [0067](/adr/0067-spec-kit-is-the-sdlc) decision 3.
+5. **Every driver package ships a conformance suite** that each of its drivers passes.
+6. **An air-gapped CI job** runs the conformance suites with outbound network blocked.
+7. **Hosted capabilities are driver-based.** Identity, IAM and similar packages have a local driver now. A remote driver that calls the Figentra OS service is designed with the contract now and built later. Contracts never assume the local driver. For example, no caller relies on sharing a database transaction with the driver.
+
+## Consequences
+
+- Every new dependency is reviewed for an offline path. A vendor SDK with no self-hosted alternative can only be one driver among several.
+- Contracts carry the cost of a network seam (errors, latency, idempotency) even while only the local driver exists.
+- The CI pipeline gains a job with network egress denied. Its provider must support that.
+
+## Enforcement
+
+Planned: the Impact-section check of [0067](/adr/0067-spec-kit-is-the-sdlc) fails a spec without the deploy-mode answers. The air-gapped job runs each package's conformance suite from its `__tests__` folder, wired in runway ([0068](/adr/0068-runway-cicd-built-inside-stackra)). Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0067](/adr/0067-spec-kit-is-the-sdlc) decision 3 (one more Impact item). Sources: owner decisions in chat, 2026-10-19 (Round 8, "product architecture" and "deploy modes").

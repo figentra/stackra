@@ -1,0 +1,31 @@
+---
+title: "0089 — @stackra/search is written fresh; Meilisearch and OpenSearch are Pro drivers"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0049](/adr/0049-search-driver-interface) defined `@stackra/search` as a driver interface with a Postgres driver first, and kept Meilisearch and OpenSearch deferred under [0011](/adr/0011-rejected-and-deferred-technologies). The Figentra OS search package is a stub, so the owner chose to write the package fresh. The engine drivers are now Pro ([0077](/adr/0077-open-core-free-and-pro-lists)), and indexing runs on the queue ([0078](/adr/0078-messaging-layer-eight-packages)).
+
+## Decision
+
+1. **`@stackra/search` is written fresh**: contracts, the driver pattern (a default driver and named instances), and one conformance suite.
+2. **The free driver is Postgres**, using `pg_trgm` and full-text search.
+3. **Meilisearch and OpenSearch drivers are Pro** (`@stackra-pro/*`). They are not built in this repository. Typesense is not planned.
+4. **Indexing is event-driven through queue jobs.** A searchable model's events enqueue indexing jobs. Services never write an index directly.
+5. **Every driver passes the conformance suite**, including the Pro drivers.
+6. **Every query is scoped by tenant** ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope)).
+
+## Consequences
+
+- Free deployments, including air-gapped ones, search on Postgres alone.
+- When accepted, the dedicated-search row of [0011](/adr/0011-rejected-and-deferred-technologies) changes: Meilisearch and OpenSearch become permitted as Pro drivers only, never as a free dependency. 0011 is Accepted, so that row changes by a superseding edit when this ADR is accepted.
+- Eventual consistency between a write and its appearance in search.
+
+## Enforcement
+
+Planned: the conformance suite in the package's `__tests__`, and `FORBIDDEN_DEPENDENCIES` entries for `meilisearch` and `@opensearch-project/opensearch` in members of this repository. Nothing is implemented yet.
+
+## Supersedes and sources
+
+Supersedes: [0049](/adr/0049-search-driver-interface) (decisions 1, 2, 5 and 6 restated; engine drivers become Pro; indexing uses queue jobs). Will amend, on acceptance: the search row of [0011](/adr/0011-rejected-and-deferred-technologies). Sources: owner decisions in chat, 2026-10-19 (Round 1 backend search; Round 8 F14b, D2).

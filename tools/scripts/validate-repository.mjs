@@ -2,7 +2,7 @@
 /**
  * Stackra file contract:
  * Purpose: the repository-shape gate run by `pnpm validate` (part of `pnpm verify`). Every workspace member uses
- *          catalog:/workspace: versions only, is named @stackra/*, declares exactly one turbo tier tag matching its
+ *          catalog:/workspace: versions only, is named by placement (packages @stackra/<name>, apps @figentra/<dir>, services @figentra/service-<dir>), declares exactly one turbo tier tag matching its
  *          directory, extends a @stackra/typescript-config preset, and depends on no forbidden package.
  *          Every test file anywhere in the repository sits directly in a __tests__/ folder (ADR 0022).
  *          Prints the findings and exits 1; prints nothing on success. Adapted from Figentra's checks 1–5.
@@ -50,6 +50,16 @@ export function tierFor(dir) {
   return "unknown";
 }
 
+/** Expected npm name by placement: packages @stackra/<name>, apps @figentra/<dir>, services @figentra/service-<dir>. */
+export function expectedName(dir) {
+  const base = dir.split("/").at(-1);
+  if (dir.startsWith("apps/")) return `@figentra/${base}`;
+  if (dir.startsWith("services/")) return `@figentra/service-${base}`;
+  if (dir.startsWith("packages/tooling/")) return `@stackra/${base}-config`;
+  if (dir.startsWith("packages/")) return `@stackra/${base}`;
+  return null;
+}
+
 /** Strips // and /* *\/ comments and trailing commas so a .json/.jsonc config parses. */
 function readJsonc(path) {
   const text = readFileSync(path, "utf8")
@@ -65,8 +75,8 @@ function readJsonc(path) {
  */
 export function check({ dir, pkg, turbo, tsconfig }) {
   const out = [];
-  if (pkg.name !== "stackra" && !pkg.name?.startsWith("@stackra/"))
-    out.push(`package name ${pkg.name} is not @stackra/*`);
+  const want = expectedName(dir);
+  if (want && pkg.name !== want) out.push(`package name ${pkg.name} must be ${want}`);
 
   for (const field of DEPENDENCY_FIELDS) {
     for (const [dep, version] of Object.entries(pkg[field] ?? {})) {

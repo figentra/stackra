@@ -5,12 +5,12 @@ HTTP conventions, not-built-yet). Full guides: `apps/docs` (`pnpm docs`). Every 
 
 | Path                                                       | Holds                                                                                                                                                     | Tier tag       |
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| `apps/console`                                             | `@stackra/console` — hello-world entry `src/main.ts`                                                                                                      | `tier:app`     |
-| `apps/mobile`                                              | `@stackra/mobile` — hello-world entry `src/main.ts`                                                                                                       | `tier:app`     |
-| `apps/docs`                                                | `@stackra/docs` — Mintlify; `docs.json`, pages and `assets/` all in `src/`; ADRs in `src/adr`; `pnpm docs`                                                | `tier:app`     |
+| `apps/console`                                             | `@figentra/console` — hello-world entry `src/main.ts`                                                                                                     | `tier:app`     |
+| `apps/mobile`                                              | `@figentra/mobile` — hello-world entry `src/main.ts`                                                                                                      | `tier:app`     |
+| `apps/docs`                                                | `@figentra/docs` — Mintlify; `docs.json`, pages and `assets/` all in `src/`; ADRs in `src/adr`; `pnpm docs`                                               | `tier:app`     |
 | `packages/<category>/<name>`                               | `@stackra/<name>`, flat inside one category: foundation, application, communication, cross-cutting, data, developer, experience, runtime, security, state | `tier:lib`     |
 | `packages/tooling/*`                                       | `@stackra/{typescript,oxlint,vitest,tsdown}-config` presets                                                                                               | `tier:config`  |
-| `services/<name>`                                          | `@stackra/service-<name>` — one member per service (`example`, `health`), entry `src/main.ts`                                                             | `tier:service` |
+| `services/<name>`                                          | `@figentra/service-<name>` — one member per service (`example`, `health`), entry `src/main.ts`                                                            | `tier:service` |
 | `tools/scripts`                                            | `validate-repository.mjs` (+ test); `scaffold.mjs` (+ test) — `pnpm new <kind> <name>`, templates in `tools/scaffold`                                     | —              |
 | `.agents/hooks`, `.claude/settings.json`, `opencode.jsonc` | agent hooks and config                                                                                                                                    | —              |
 
@@ -307,16 +307,16 @@ config → lib → app → service
 
 ```typescript
 // ❌ App importing from service
-import { user } from "@stackra/service-auth";
+import { user } from "@figentra/service-auth";
 
 // ❌ Package importing from app
-import { Login } from "@stackra/console";
+import { Login } from "@figentra/console";
 
 // ❌ Service importing from another service
-import { stripe } from "@stackra/service-payments";
+import { stripe } from "@figentra/service-payments";
 
 // ❌ Cross-app import
-import { Header } from "@stackra/console/src/header";
+import { Header } from "@figentra/console/src/header";
 ```
 
 #### Allowed Patterns

@@ -1,7 +1,9 @@
 ---
 title: "0015 — Contract packages"
-description: "Accepted · 2026-10-19"
+description: "Superseded by 0117 · 2026-10-19"
 ---
+
+<Note>Superseded by [0117](/adr/0117-contracts-placement-and-decorator-ownership): public types live in a types-only `./contracts` entry per package and shared primitives in `@stackra/contracts`; there are no separate `<domain>-contracts` packages. Decisions 1, 3, 4 and 5 carry forward there.</Note>
 
 ## Context
 
@@ -13,10 +15,10 @@ different: it is what another independently released component must know to talk
 1. **Membership test.** A type belongs in a contracts package only if another independently deployed or released component needs it to communicate with this one. Two packages importing the same type is not the test; that is a shared utility.
 2. **Two kinds of boundary, two names.**
 
-   | Kind               | Name                          | Boundary                                  | Breaks when                          | Versioned by                    |
-   | ------------------ | ----------------------------- | ----------------------------------------- | ------------------------------------ | ------------------------------- |
-   | Vocabulary         | `@stackra/contracts`          | in-process, a library and its callers     | a caller upgrades the package        | the package version             |
-   | Protocol           | `@stackra/<domain>-contracts` | cross-service, over a wire                | a producer deploys ahead of consumer | an explicit version in the payload |
+   | Kind       | Name                          | Boundary                              | Breaks when                          | Versioned by                       |
+   | ---------- | ----------------------------- | ------------------------------------- | ------------------------------------ | ---------------------------------- |
+   | Vocabulary | `@stackra/contracts`          | in-process, a library and its callers | a caller upgrades the package        | the package version                |
+   | Protocol   | `@stackra/<domain>-contracts` | cross-service, over a wire            | a producer deploys ahead of consumer | an explicit version in the payload |
 
 3. **Protocol contracts carry request and response, event, error and envelope shapes**, organised by contract category, with no behaviour and no runtime dependencies.
 4. **Events are versioned.** A breaking change is a new event type or version, published beside the old one until every consumer has moved.

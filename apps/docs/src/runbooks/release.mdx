@@ -27,7 +27,7 @@ icon: "package-check"
     After a push to `main` the release job runs `pnpm changeset:version` (which also refreshes the lockfile) and opens or updates one pull request titled `chore(release): version packages`.
   </Step>
   <Step title="Review it">
-    Read the `CHANGELOG.md` diffs and the version bumps. Check the bump matches the change. A pull request opened by the workflow token does not start other workflows; close and reopen it once so the `verify` check runs.
+    Read the `CHANGELOG.md` diffs and the version bumps. Check the bump matches the change. The release job pushes and opens it as `stackra-bot` (a GitHub App token from `actions/create-github-app-token`, repo secrets `STACKRA_BOT_APP_ID` and `STACKRA_BOT_PRIVATE_KEY`), so the Quality Gate runs on it without a close and reopen.
   </Step>
   <Step title="Merge it">
     The merge to `main` is the release. The job tags each versioned member and creates the release notes.
