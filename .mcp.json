@@ -1,0 +1,125 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "./tools/scripts/mcp.sh",
+      "args": [
+        "npx",
+        "-y",
+        "@upstash/context7-mcp@latest",
+        "--api-key",
+        "$CONTEXT7_API_KEY"
+      ]
+    },
+    "heroui-react": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@heroui/react-mcp@latest"
+      ]
+    },
+    "heroui-native": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@heroui/native-mcp@latest"
+      ]
+    },
+    "heroui-pro": {
+      "command": "./tools/scripts/mcp.sh",
+      "args": [
+        "npx",
+        "-y",
+        "mcp-remote@latest",
+        "https://mcp.heroui.pro/mcp",
+        "--header",
+        "x-heroui-personal-token:$HEROUI_PERSONAL_TOKEN"
+      ]
+    },
+    "heroui-native-pro": {
+      "command": "./tools/scripts/mcp.sh",
+      "args": [
+        "npx",
+        "-y",
+        "mcp-remote@latest",
+        "https://native-mcp.heroui.pro/mcp",
+        "--header",
+        "x-heroui-personal-token:$HEROUI_PERSONAL_TOKEN"
+      ]
+    },
+    "uniwind": {
+      "type": "http",
+      "url": "https://docs.uniwind.dev/mcp"
+    },
+    "expo": {
+      "type": "http",
+      "url": "https://mcp.expo.dev/mcp"
+    },
+    "figma": {
+      "type": "http",
+      "url": "https://mcp.figma.com/mcp"
+    },
+    "sanity": {
+      "type": "http",
+      "url": "https://mcp.sanity.io"
+    },
+    "github": {
+      "command": "./tools/scripts/mcp.sh",
+      "args": [
+        "npx",
+        "-y",
+        "mcp-remote@latest",
+        "https://api.githubcopilot.com/mcp/",
+        "--header",
+        "Authorization:Bearer $GITHUB_PERSONAL_ACCESS_TOKEN"
+      ]
+    },
+    "linear": {
+      "type": "http",
+      "url": "https://mcp.linear.app/mcp"
+    },
+    "stripe": {
+      "command": "./tools/scripts/mcp.sh",
+      "args": [
+        "npx",
+        "-y",
+        "@stripe/mcp",
+        "--api-key=$STRIPE_SECRET_KEY"
+      ]
+    },
+    "resend": {
+      "command": "./tools/scripts/mcp.sh",
+      "args": [
+        "npx",
+        "-y",
+        "resend-mcp@latest"
+      ]
+    },
+    "resend-docs": {
+      "type": "http",
+      "url": "https://resend.com/docs/mcp"
+    },
+    "cloudflare-api": {
+      "type": "http",
+      "url": "https://mcp.cloudflare.com/mcp"
+    },
+    "aws-knowledge": {
+      "type": "http",
+      "url": "https://knowledge-mcp.global.api.aws"
+    },
+    "posthog": {
+      "type": "http",
+      "url": "https://mcp.posthog.com/mcp?readonly=true"
+    },
+    "sentry": {
+      "type": "http",
+      "url": "https://mcp.sentry.dev/mcp"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
+    }
+  }
+}
