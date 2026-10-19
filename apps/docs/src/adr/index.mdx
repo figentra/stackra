@@ -107,6 +107,11 @@ Each ADR records one decision, its context, consequences and the check that enfo
 | [0098](/adr/0098-actions-are-the-unit)                              | Actions are the unit of behaviour, in @stackra/actions, with one pipeline and a typed actor                                         | Accepted           |
 | [0099](/adr/0099-risk-scale-l0-to-l4)                               | One action risk scale, L0 to L4, with derived MCP hints and effect tags; change risk is R0 to R3                                    | Accepted           |
 | [0100](/adr/0100-ai-model-and-ownership)                            | One free @stackra/ai: agents, tools, skills, MCP and A2A on AI SDK, every tool call an action                                       | Accepted           |
+| [0101](/adr/0101-action-first-workflow-behind-when-needed)          | Every operation is an action; a workflow sits behind it only when the criteria hit                                                  | Accepted           |
+| [0102](/adr/0102-workflow-engine-in-process-journal)                | The workflow engine: in-process steps with a Postgres journal, outbox staging and hooks, ported from Medusa's MIT code              | Accepted           |
+| [0103](/adr/0103-locking-package)                                   | @stackra/locking: server-side named locks behind a driver                                                                           | Accepted           |
+| [0104](/adr/0104-links-and-query-graph)                             | Cross-module relations are @Link declarations, read through query.graph                                                             | Accepted           |
+| [0105](/adr/0105-crud-generates-service-methods)                    | @Crud generates a model's service methods and opt-in actions                                                                        | Accepted           |
 
 Copy the [template](/adr/template), give it the next number, and add it to this table and to `docs.json`.
 Cite Stackra ADRs by path, never by a number from another repository.

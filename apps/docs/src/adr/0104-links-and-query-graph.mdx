@@ -1,0 +1,38 @@
+---
+title: "0104 — Cross-module relations are @Link declarations, read through query.graph"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Modules own their data ([0014](/adr/0014-data-ownership-and-orm)), so one module's model cannot hold a foreign key into
+another's tables. Products still need "orders with their customer and product". Medusa solves this with `defineLink` (a pivot
+owned by a link module) and `query.graph`, which fans out to each owning module and stitches the result; its index module is
+a Postgres read model for the hot cases.
+
+## Decision
+
+1. **A relation across modules is a `@Link`** between two models, declared in a module that depends on both. The pivot table
+   belongs to that link, not to either model.
+2. **`query.graph({ entity, fields, filters })` reads across links**, calling each owning module's query and joining in
+   memory, with batching through the DataLoader of [0097](/adr/0097-model-and-database-packages).
+3. **Tenancy and iam apply per owning module**: each fan-out call goes through that module's `@Query` pipeline.
+4. **Hot read paths use an index read model** fed by events, which is the job of `@stackra/search`
+   ([0089](/adr/0089-search-fresh-with-pro-engine-drivers)), not a second index package.
+5. **Within one module, ordinary relations** of 0097 apply; `@Link` is only for crossing a module boundary.
+
+## Consequences
+
+- Module boundaries hold without giving up joined reads.
+- `query.graph` is slower than a SQL join; the read model is the answer when that matters.
+- Links appear in the gen manifest, so the registry can show the relation graph.
+
+## Enforcement
+
+Planned: the gen validation pass fails a model relation that targets another module's model without a `@Link`. Nothing
+checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19 (Round 11 W4). Informational: Medusa `defineLink`,
+`query.graph` and index module.

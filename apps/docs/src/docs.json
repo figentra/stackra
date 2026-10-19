@@ -191,7 +191,12 @@
               "adr/0097-model-and-database-packages",
               "adr/0098-actions-are-the-unit",
               "adr/0099-risk-scale-l0-to-l4",
-              "adr/0100-ai-model-and-ownership"
+              "adr/0100-ai-model-and-ownership",
+              "adr/0101-action-first-workflow-behind-when-needed",
+              "adr/0102-workflow-engine-in-process-journal",
+              "adr/0103-locking-package",
+              "adr/0104-links-and-query-graph",
+              "adr/0105-crud-generates-service-methods"
             ]
           }
         ]
