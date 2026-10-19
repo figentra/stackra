@@ -18,7 +18,7 @@ that works with both Claude Code and OpenCode. Ad-hoc requests that skip clarifi
 5. **A CI check on feature branches** fails a spec whose Impact section is missing or has unanswered items.
 6. **A prompt-hints hook** nudges an ad-hoc request that looks like feature work to start at clarify.
 7. **A Linear extension** maps spec to project and plan to issues. The existing wave runner is ported.
-8. **Spec folder layout** follows spec-kit; whether it stays under `.agents/specs/<NNN>-<slug>/` with the three-document rule of 0016 is `TODO`.
+8. **Spec folder layout**: specs live in `.agents/specs/sta-<n>-<slug>/` through a preset wrap, as decided in [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk), which also sets the lanes and the trivial-change threshold.
 
 ## Consequences
 
@@ -32,4 +32,4 @@ Planned: the CI spec check, the plan refusal in the preset, and the `agents:chec
 
 ## Supersedes and sources
 
-Will supersede [0016](/adr/0016-agents-source-of-truth) (rules 4 and 5 only). Sources: owner decision in chat, 2026-10-19 (agents and gates notes).
+Rules 4 and 5 of [0016](/adr/0016-agents-source-of-truth) are superseded by [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk) and [0121](/adr/0121-sdlc-tooling-roles-and-linear), which complete this ADR. Sources: owner decision in chat, 2026-10-19 (agents and gates notes).

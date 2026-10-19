@@ -5,7 +5,7 @@ description: "Accepted · 2026-10-19"
 
 ## Context
 
-[0067](/adr/0067-spec-kit-is-the-sdlc) (open PR #13) adopts spec-kit with a clarify gate, and left the spec folder and the
+[0067](/adr/0067-spec-kit-is-the-sdlc) adopts spec-kit with a clarify gate, and left the spec folder and the
 threshold for trivial changes as TODOs. [0016](/adr/0016-agents-source-of-truth) rules 4 and 5 put specs at
 `.agents/specs/<NNN>-<slug>/` with exactly three documents, from the `sdlc` plugin. spec-kit has no project-wide setting for the
 specs folder; per-feature overrides work but must be passed every run. Numbered folders collide across parallel worktrees.
@@ -58,6 +58,6 @@ types, the tripwire) inside `pnpm validate`; `pnpm pr:merge` reads the change-ri
 ## Supersedes and sources
 
 Supersedes: none. Supersedes in part [0016](/adr/0016-agents-source-of-truth) rules 4 and 5 (the page carries a note pointing
-here). Amends [0067](/adr/0067-spec-kit-is-the-sdlc) decision 8 and its open threshold; the edit on 0067 waits for PR #13.
+here). Amends [0067](/adr/0067-spec-kit-is-the-sdlc) decision 8 and its open threshold.
 Sources: owner decisions in chat, 2026-10-19 (SDLC D1, D4, D8, D16, D17, D18; R2). Plan: the SDD and SDLC plan of the
 coordinating session (§2.3, §3.3).

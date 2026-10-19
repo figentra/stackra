@@ -5,7 +5,7 @@ description: "Accepted · 2026-10-19"
 
 ## Context
 
-[0067](/adr/0067-spec-kit-is-the-sdlc) and [0066](/adr/0066-delegation-to-opencode-by-routing-matrix) (open PR #13) adopt
+[0067](/adr/0067-spec-kit-is-the-sdlc) and [0066](/adr/0066-delegation-to-opencode-by-routing-matrix) adopt
 spec-kit and OpenCode delegation. The `sdlc` plugin still loads, its content is proprietary while the repository is MIT, seven
 routes in `.agents/routing.yaml` point at it, and spec-kit is not pinned, so an upgrade could wipe the plan gate. The community
 Linear extension falls back to a `.env` file, which [0009](/adr/0009-secrets-two-mechanisms) forbids.
@@ -43,5 +43,5 @@ Planned: the mise pin and the preset tripwire of 0120; an `agents:lint` check th
 ## Supersedes and sources
 
 Supersedes: none. Amends [0066](/adr/0066-delegation-to-opencode-by-routing-matrix) (tiers on OpenCode) and
-[0065](/adr/0065-linear-gate-is-checked-offline) (the Linear model); the edits on those pages wait for PR #13. Sources: owner
+[0065](/adr/0065-linear-gate-is-checked-offline) (the Linear model). Sources: owner
 decisions in chat, 2026-10-19 (SDLC D2, D3, D9 to D15, D19, D20).

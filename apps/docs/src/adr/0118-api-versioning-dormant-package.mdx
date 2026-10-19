@@ -5,7 +5,7 @@ description: "Accepted · 2026-10-19"
 
 ## Context
 
-[0037](/adr/0037-api-versioning-by-date-header) (open PR #8) proposed Stripe-style date versioning through a `Stackra-Version`
+[0037](/adr/0037-api-versioning-by-date-header) proposed Stripe-style date versioning through a `Stackra-Version`
 header and left open whether it is a package or middleware. The research found that reference implementations put it in a
 response-transform chain, and that an earlier over-built version in the Figentra export (about 3,000 lines) was deleted
 unused. Endpoints themselves stay immutable under the HTTP conventions rule. The owner chose to build the package now, so the
@@ -36,5 +36,4 @@ version is refused. Nothing checks this today.
 
 ## Supersedes and sources
 
-Supersedes: [0037](/adr/0037-api-versioning-by-date-header) (decisions 1 to 3 restated; decision 4 settled as a package). The
-status edit on 0037 waits for PR #8. Sources: owner decisions in chat, 2026-10-19 (Round 11 V1, V2; API versioning research).
+Supersedes: [0037](/adr/0037-api-versioning-by-date-header) (decisions 1 to 3 restated; decision 4 settled as a package). Sources: owner decisions in chat, 2026-10-19 (Round 11 V1, V2; API versioning research).
