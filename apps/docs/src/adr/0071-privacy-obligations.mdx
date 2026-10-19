@@ -1,0 +1,31 @@
+---
+title: "0071 — Privacy: export, erasure, platform declarations and templates"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Stackra's security target includes GDPR practices, and products that install it hold personal data about their tenants' users. Per-model PII field encryption and
+archive, soft or hard delete policies are planned opt-ins in the data model. Apple requires a privacy manifest and App Tracking Transparency handling for iOS apps.
+
+## Decision
+
+1. **Data export and erasure are framework capabilities**: a subject's data can be exported and erased through one audited operation per service that owns personal data. Erasure follows each model's delete policy (archive, soft, hard).
+2. **Personal data is declared per model** (the PII opt-in), so export and erasure can enumerate it.
+3. **iOS apps ship a privacy manifest** listing collected data and required-reason API use. Dependencies' manifests are checked at build.
+4. **ATT**: tracking is off by default; a product that enables it shows the ATT prompt and says why in the manifest.
+5. **Templates for a privacy policy and a data-processing agreement** live in the docs for products to adapt. They are templates, not legal advice; legal review is each product's.
+6. **Logs, error reports and analytics carry no personal data** ([0020](/adr/0020-observability-and-crash-reporting) rule 3, [0073](/adr/0073-observability-better-stack-sentry-encore)).
+
+## Consequences
+
+- Every model holding PII has more required metadata.
+- Erasure from backups follows the point-in-time retention window; the statement made to users is `TODO`.
+
+## Enforcement
+
+Planned: a check that models flagged PII are covered by export and erasure tests; a build step validating the iOS privacy manifest. Nothing exists yet.
+
+## Supersedes and sources
+
+Supersedes: none. Related: [0014](/adr/0014-data-ownership-and-orm). Sources: owner decision in chat, 2026-10-19 (final batch, privacy; security notes).

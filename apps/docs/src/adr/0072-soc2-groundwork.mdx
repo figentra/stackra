@@ -1,0 +1,31 @@
+---
+title: "0072 — SOC 2 groundwork"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+SOC 2 is the owner's compliance target, alongside GDPR practices and ASVS level 1. An audit later is far cheaper if evidence is a by-product of how work already happens:
+reviewed pull requests, CI logs, an audit service and restore drills. Several controls exist or are proposed already ([0009](/adr/0009-secrets-two-mechanisms), [0012](/adr/0012-code-host-and-ci), [0019](/adr/0019-supply-chain-hardening)).
+
+## Decision
+
+1. **Groundwork now, audit later.** No auditor or attestation is engaged by this ADR; which Trust Services Criteria are in scope is `TODO`.
+2. **Evidence comes from existing controls**: required checks and review on `main`, secrets only through Infisical and OIDC, an audit trail from the audit service, gitleaks and push protection, strict catalogs, PITR with a quarterly restore drill.
+3. **A controls map** in the docs lists each control, the file or workflow that enforces it, and where its evidence is kept.
+4. **Blocking security review** for changes to auth, data, secrets and webhooks.
+5. **Admin bypass is rare and recorded** in the pull request; an AI reviewer is part of review.
+6. **Operator access to production data is audited.**
+
+## Consequences
+
+- A solo maintainer cannot show separation of duties; compensating controls (AI review, recorded bypass) are stated in the controls map rather than hidden.
+- The controls map is a document someone keeps true; a stale one is worse than none.
+
+## Enforcement
+
+Planned: the controls map under `apps/docs/src/`, and a check that each control it names points to an existing path. Nothing exists yet.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19 (final batch, SOC 2; security notes).

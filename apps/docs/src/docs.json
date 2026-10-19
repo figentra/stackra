@@ -155,7 +155,17 @@
               "adr/0060-i18n-logical-css-light-and-dark",
               "adr/0061-mobile-keeps-react-navigation-and-native-tabs",
               "adr/0062-mobile-release-push-and-crash-reporting",
-              "adr/0063-cloudflare-hosts-web-surfaces"
+              "adr/0063-cloudflare-hosts-web-surfaces",
+              "adr/0065-linear-gate-is-checked-offline",
+              "adr/0066-delegation-to-opencode-by-routing-matrix",
+              "adr/0067-spec-kit-is-the-sdlc",
+              "adr/0068-runway-cicd-built-inside-stackra",
+              "adr/0069-testing-strategy-and-coverage",
+              "adr/0070-quality-budgets",
+              "adr/0071-privacy-obligations",
+              "adr/0072-soc2-groundwork",
+              "adr/0073-observability-better-stack-sentry-encore",
+              "adr/0074-open-core-licensing"
             ]
           }
         ]

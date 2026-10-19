@@ -1,0 +1,31 @@
+---
+title: "0070 — Quality budgets: accessibility, Web Vitals, bundle, mobile startup"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Without a number, "fast" and "accessible" are opinions and regress silently. Web surfaces target evergreen browsers (Safari 17+), mobile is one Expo app,
+and both change with every dependency bump. The owner wants budgets agreed now and enforced as each surface appears.
+
+## Decision
+
+1. **Accessibility: WCAG 2.2 AA** on every web and mobile surface; axe runs in the E2E suite ([0069](/adr/0069-testing-strategy-and-coverage)).
+2. **Web Vitals targets** for LCP, INP and CLS: the "good" thresholds Google publishes, at the 75th percentile (numbers pinned in `/standards`, `TODO`).
+3. **Bundle budget**: each web app has a maximum entry JavaScript size per route, set when its first route ships (`TODO` number).
+4. **Mobile startup budget**: cold start to interactive on a reference device; number and device `TODO`.
+5. **A budget is a failing check**, not a report. Raising one needs a line in the pull request saying why.
+
+## Consequences
+
+- Several numbers are `TODO`; a budget with no number checks nothing, so setting them is part of each app's first release.
+- Accessibility is paid for in the first component, not retrofitted.
+
+## Enforcement
+
+Planned: axe assertions in Playwright; a bundle-size check in the web build; a Lighthouse CI or equivalent run for Web Vitals; a startup measurement in the Maestro run.
+Nothing exists yet.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19 (final batch, quality budgets).

@@ -1,0 +1,35 @@
+---
+title: "0067 — spec-kit is the SDLC, with a mandatory clarify gate"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0016](/adr/0016-agents-source-of-truth) rule 5 takes the spec engine from the `sdlc` plugin, and rule 4 fixes a spec at three documents under `.agents/specs/`.
+That plugin carries another organisation's naming and lives outside the repository. GitHub spec-kit gives a maintained specify, clarify, plan and tasks flow
+that works with both Claude Code and OpenCode. Ad-hoc requests that skip clarification are the main source of rework. This conflicts with rules 4 and 5 of 0016.
+
+## Decision
+
+1. **GitHub spec-kit is the SDLC.** The `sdlc` plugin is removed from the repository's plugin set; the role names agents use stay ([0017](/adr/0017-agent-roster-and-models) rule 5).
+2. **A Stackra preset** configures spec-kit. The constitution is generated from the docs constitution, not written twice.
+3. **A mandatory Impact questionnaire** is answered in the spec before planning: apps, services and packages touched; cross-service events; tenancy and data; secrets; Linear project; whether an ADR is needed; new dependencies.
+4. **`/speckit.plan` refuses** until the spec is clarified and carries a Linear issue ([0065](/adr/0065-linear-gate-is-checked-offline)).
+5. **A CI check on feature branches** fails a spec whose Impact section is missing or has unanswered items.
+6. **A prompt-hints hook** nudges an ad-hoc request that looks like feature work to start at clarify.
+7. **A Linear extension** maps spec to project and plan to issues. The existing wave runner is ported.
+8. **Spec folder layout** follows spec-kit; whether it stays under `.agents/specs/<NNN>-<slug>/` with the three-document rule of 0016 is `TODO`.
+
+## Consequences
+
+- Clarification becomes a gate, not a habit; whether trivial changes may skip it, and where the threshold sits, is `TODO`.
+- Tracking a third-party tool means upgrades through the preset, not by editing vendor files.
+- Rules 4 and 5 of 0016 stop being true when this is accepted.
+
+## Enforcement
+
+Planned: the CI spec check, the plan refusal in the preset, and the `agents:check` drift check of [0016](/adr/0016-agents-source-of-truth). Nothing exists yet.
+
+## Supersedes and sources
+
+Will supersede [0016](/adr/0016-agents-source-of-truth) (rules 4 and 5 only). Sources: owner decision in chat, 2026-10-19 (agents and gates notes).

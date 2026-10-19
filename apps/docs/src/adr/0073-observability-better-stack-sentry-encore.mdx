@@ -1,0 +1,32 @@
+---
+title: "0073 — Observability: Better Stack, Sentry and Encore tracing"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0020](/adr/0020-observability-and-crash-reporting) (Proposed) fixes Sentry for crashes, keeps tracing off until a redaction step exists, and leaves the logging, metrics and health
+interface open. The backend is now chosen as Encore, which brings tracing, metrics and logs of its own, and the owner picked Better Stack for uptime and logs.
+Rule 4 of 0020 (tracing off) conflicts with using Encore tracing, so this ADR amends 0020.
+
+## Decision
+
+1. **Three tools, one job each.** Sentry for crashes and errors (0020 rules 1 to 3 stand); Encore's built-in tracing, metrics and logs for backend telemetry; Better Stack for uptime monitoring and log aggregation.
+2. **Encore tracing is on for services.** Request payloads and URLs are not attached to application spans; the redaction approach is `TODO`. Client-side tracing stays off until redaction exists (0020 rule 4 kept for apps).
+3. **Vendors stay behind configuration and one reporting function** (0020 rule 1).
+4. **Alerts reach the owner's phone with a runbook link.** SLOs come later.
+5. **Sentry and Expo push from day one in mobile.**
+6. **No personal data in any telemetry** ([0071](/adr/0071-privacy-obligations)).
+
+## Consequences
+
+- The open question in 0020 rule 6 is answered for services by Encore; apps remain open.
+- Three vendors to keep configured, one more cost line.
+
+## Enforcement
+
+Planned: the lint rule and init-options test named in [0020](/adr/0020-observability-and-crash-reporting), plus a check that the runbook linked from each alert exists. Nothing is implemented yet.
+
+## Supersedes and sources
+
+Amends [0020](/adr/0020-observability-and-crash-reporting) (rules 4 and 6); does not supersede it. Sources: owner decision in chat, 2026-10-19 (ops notes).
