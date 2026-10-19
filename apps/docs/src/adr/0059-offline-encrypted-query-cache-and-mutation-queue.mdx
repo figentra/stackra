@@ -1,0 +1,30 @@
+---
+title: "0059 — Mobile offline: encrypted persisted Query cache and a persisted mutation queue"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+The mobile app must remain usable without a connection. [0011](/adr/0011-rejected-and-deferred-technologies) defers a sync engine in favour of a mutation queue
+with idempotency keys; this ADR specifies that queue. Cached data can contain personal data, so it must be encrypted at rest.
+
+## Decision
+
+1. **Reads come from a persisted TanStack Query cache** ([0054](/adr/0054-tanstack-query-and-zustand-for-client-state)), encrypted at rest. The key is held in the device secure store.
+2. **Writes go through a persisted mutation queue**; each mutation carries an `Idempotency-Key` so replay is safe.
+3. **A `409` response creates a conflict record** that the user or the product resolves; the queue never silently overwrites.
+4. **No sync engine** (RxDB, ElectricSQL, PowerSync, WatermelonDB), as 0011 states.
+
+## Consequences
+
+- Predictable offline behaviour from existing libraries.
+- Conflict-resolution UX is a product concern for each app.
+- Services must honour idempotency keys, as the HTTP conventions rule already requires.
+
+## Enforcement
+
+Planned — queue unit tests (replay, ordering, `409`) in the owning package; a check that persisted cache storage uses the encrypted adapter.
+
+## Supersedes and sources
+
+Supersedes: none. Consistent with [0011](/adr/0011-rejected-and-deferred-technologies). Sources: owner decision in chat, 2026-10-19.

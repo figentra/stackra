@@ -1,0 +1,29 @@
+---
+title: "0056 — HeroUI v3 and Pro on web; share logic and tokens, not components"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+The web surfaces want a complete component kit; HeroUI v3 with a Pro licence provides one. Native screens use React Native primitives, and
+[0011](/adr/0011-rejected-and-deferred-technologies) defers a shared React component library across web and native until duplicated screens cause a bug.
+HeroUI Pro code is excluded from the MIT licence ([0024](/adr/0024-mit-license-with-exclusions)).
+
+## Decision
+
+1. **Web UI (console, landing, desktop renderer) uses HeroUI v3 and HeroUI Pro.** The Pro token is a vault secret ([0009](/adr/0009-secrets-two-mechanisms)), never a file.
+2. **Web and native share** types, the API client, validation schemas, state, i18n catalogues and design tokens ([0060](/adr/0060-i18n-logical-css-light-and-dark)). They do not share components.
+3. **Code that embeds HeroUI Pro stays out of published `@stackra/*` packages** unless HeroUI's redistribution terms allow it (TODO: confirm the terms).
+
+## Consequences
+
+- Each platform uses its native idioms; some screens are written twice.
+- The deferral in 0011 stands unchanged; this ADR states its practical consequence.
+
+## Enforcement
+
+gitleaks already scans for committed tokens. Planned — a `validate-repository.mjs` check that HeroUI Pro packages appear only in apps.
+
+## Supersedes and sources
+
+Supersedes: none. Consistent with [0011](/adr/0011-rejected-and-deferred-technologies). Sources: owner decision in chat, 2026-10-19.

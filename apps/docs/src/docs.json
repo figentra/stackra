@@ -143,7 +143,19 @@
               "adr/0048-point-in-time-recovery-and-quarterly-restore-drill",
               "adr/0049-search-driver-interface",
               "adr/0050-ai-package-on-ai-sdk-bedrock-default",
-              "adr/0051-better-auth-identity-service"
+              "adr/0051-better-auth-identity-service",
+              "adr/0052-console-is-a-vite-react-spa",
+              "adr/0053-decorator-route-classes-compiled-to-router-adapters",
+              "adr/0054-tanstack-query-and-zustand-for-client-state",
+              "adr/0055-forms-react-hook-form-zod-heroui-adapters",
+              "adr/0056-heroui-v3-pro-on-web-share-everything-but-components",
+              "adr/0057-landing-is-react-router-framework-mode-on-workers",
+              "adr/0058-desktop-is-electron",
+              "adr/0059-offline-encrypted-query-cache-and-mutation-queue",
+              "adr/0060-i18n-logical-css-light-and-dark",
+              "adr/0061-mobile-keeps-react-navigation-and-native-tabs",
+              "adr/0062-mobile-release-push-and-crash-reporting",
+              "adr/0063-cloudflare-hosts-web-surfaces"
             ]
           }
         ]

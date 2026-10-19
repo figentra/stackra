@@ -1,0 +1,29 @@
+---
+title: "0063 — Cloudflare hosts the web surfaces"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Stackra already runs the remote cache and the package registry on Cloudflare ([0025](/adr/0025-packages-publish-to-private-registry),
+[0026](/adr/0026-turborepo-remote-cache-on-r2)). The web surfaces are a static SPA and a prerendered Workers app.
+
+## Decision
+
+1. **The console is served from Cloudflare** as static assets ([0052](/adr/0052-console-is-a-vite-react-spa)).
+2. **The landing site runs on Cloudflare Workers** ([0057](/adr/0057-landing-is-react-router-framework-mode-on-workers)).
+3. **Deploys are driven from CI**, with credentials from the vault over OIDC ([0009](/adr/0009-secrets-two-mechanisms)); no Cloudflare token in a file.
+4. **Mintlify keeps hosting the docs** ([0002](/adr/0002-docs-on-mintlify)).
+
+## Consequences
+
+- One provider for edge hosting, cache and registry; one account to secure.
+- Workers runtime limits apply to the landing app.
+
+## Enforcement
+
+gitleaks already scans for committed tokens. Planned — the deploy workflow and a runway provider for Cloudflare Workers.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19.
