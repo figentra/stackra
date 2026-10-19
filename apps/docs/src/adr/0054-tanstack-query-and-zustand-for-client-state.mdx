@@ -1,0 +1,31 @@
+---
+title: "0054 — TanStack Query for server state, Zustand for client state"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Web, desktop and mobile all hold two kinds of state: data owned by the backend and purely local UI state. Mixing them in one store
+causes stale caches and hand-written loading logic. Offline behaviour on mobile ([0059](/adr/0059-offline-encrypted-query-cache-and-mutation-queue))
+also needs a cache that can be persisted.
+
+## Decision
+
+1. **Server state lives in TanStack Query**, keyed from the generated API client.
+2. **Local client state lives in Zustand.** Nothing server-owned is copied into a Zustand store.
+3. **The Figentra OS signals package is dropped**; its network, keyboard and coordinator concerns are redesigned on Zustand as needed.
+4. **The same two libraries are used on web, desktop and mobile.**
+
+## Consequences
+
+- One mental model across surfaces; caching, retries and invalidation come from a maintained library.
+- Persistence for offline use is a Query concern, not a custom store.
+- Two libraries to keep current through the catalogs.
+
+## Enforcement
+
+Versions only through `pnpm-workspace.yaml` catalogs (enforced by `pnpm validate`). Planned — a review rule against copying fetched data into Zustand; nothing checks it yet.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19.

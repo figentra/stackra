@@ -1,0 +1,30 @@
+---
+title: "0060 — i18n keys and logical CSS from day one; English launch; light and dark"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Retrofitting translation and right-to-left layout onto a finished UI is expensive. Arabic is a planned second language, but the launch
+language is English. Brand tokens are code-first, and both colour schemes are wanted.
+
+## Decision
+
+1. **All user-visible strings are i18n keys**, never literals in components, using i18next on every surface.
+2. **English is the only launch locale**; Arabic is planned for phase 2 (P2).
+3. **Layout uses CSS logical properties** (`margin-inline-start`, not `margin-left`) so right-to-left needs no rewrite.
+4. **Every surface supports light and dark** from design tokens.
+5. **Catalogues and tokens are shared** across web and native ([0056](/adr/0056-heroui-v3-pro-on-web-share-everything-but-components)).
+
+## Consequences
+
+- Slightly slower first screens; no later string-extraction project.
+- Visual review covers two colour schemes, and later two directions.
+
+## Enforcement
+
+Planned — an oxlint rule against string literals in JSX, a lint rule against physical-direction CSS properties, and an i18n steward check for missing keys.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19.

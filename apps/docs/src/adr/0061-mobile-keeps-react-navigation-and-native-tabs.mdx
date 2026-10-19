@@ -1,0 +1,29 @@
+---
+title: "0061 — Mobile keeps React Navigation 7 and native tabs; one app"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0011](/adr/0011-rejected-and-deferred-technologies) rejects expo-router in favour of code-based React Navigation, and this ADR is consistent with it. The mobile app wants platform-native tab
+bars, including iOS Liquid Glass, which `react-native-bottom-tabs` provides. Support is verified in its documentation but not yet built with Xcode 26.
+
+## Decision
+
+1. **Mobile navigation is React Navigation 7**, fed by the adapter in [0053](/adr/0053-decorator-route-classes-compiled-to-router-adapters).
+2. **Tabs use `react-native-bottom-tabs`** (native tabs, Liquid Glass, `minimizeBehavior`, search role).
+3. **There is one mobile app.** Products that need variants use compile-time modules later (TODO), not separate apps.
+4. **A build with Xcode 26 must succeed before this ADR is Accepted.**
+
+## Consequences
+
+- Native look and feel on iOS and Android.
+- A native-module dependency to track on each Expo SDK upgrade.
+
+## Enforcement
+
+Planned — a CI build of the iOS app on Xcode 26 and a Maestro smoke flow through the tab bar.
+
+## Supersedes and sources
+
+Supersedes: none. Consistent with [0011](/adr/0011-rejected-and-deferred-technologies). Sources: owner decision in chat, 2026-10-19.

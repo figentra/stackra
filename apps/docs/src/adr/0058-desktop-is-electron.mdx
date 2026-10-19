@@ -1,0 +1,29 @@
+---
+title: "0058 — The desktop app is Electron"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Some products need hardware access (for example printers and scanners) from a desktop client, and Stackra wants that logic in TypeScript.
+Electron runs the same web stack as the console ([0052](/adr/0052-console-is-a-vite-react-spa)) with Node access to devices. No existing ADR covers desktop.
+
+## Decision
+
+1. **`apps/desktop` is an Electron app**, scaffolded now as a `tier:app` member with `pnpm new`.
+2. **The renderer reuses the web stack** ([0054](/adr/0054-tanstack-query-and-zustand-for-client-state), [0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters), [0056](/adr/0056-heroui-v3-pro-on-web-share-everything-but-components)).
+3. **Hardware access lives in the main process, in TypeScript**, exposed to the renderer through a narrow preload bridge; the renderer has no direct Node access.
+4. **Packaging, signing and auto-update are TODO** and need their own ADR before the first release.
+
+## Consequences
+
+- One language across web, desktop and hardware code.
+- A larger binary and an Electron security surface to keep current.
+
+## Enforcement
+
+Planned — the scaffold template and a validator check that the renderer is configured with context isolation and no Node integration.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19.
