@@ -11,6 +11,8 @@
       "project": ["*.mjs", "tools/scripts/*.mjs"],
       // Run by lefthook's pre-commit hook, which knip does not read.
       "ignoreDependencies": ["oxfmt"],
+      // Developer-machine CLI the delegation scripts shell out to (pinned outside pnpm).
+      "ignoreBinaries": ["opencode"],
     },
     "packages/tooling/*": {
       // Config packages export presets by subpath (package.json exports); the only TS besides them is their test.

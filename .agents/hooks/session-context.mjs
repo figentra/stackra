@@ -33,4 +33,15 @@ const lines = [
   "7. Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boundaries, knip). Conventional commits; changesets for releases.",
 ];
 if (dirty) lines.push("Working tree:", dirty);
+
+// Best-effort: today's OpenCode spend against the cap; any failure (no opencode, slow stats) just omits the line.
+try {
+  const { costOf, evaluate, fetchStats, formatLine, loadBudget } =
+    await import("../../tools/scripts/ai-spend.mjs");
+  const budget = loadBudget(`${root}/.agents/routing.yaml`);
+  const today = costOf(fetchStats(0, { timeout: 4000 }));
+  lines.push(
+    formatLine(evaluate({ today, week: costOf(fetchStats(7, { timeout: 4000 })) }, budget)),
+  );
+} catch {}
 context("SessionStart", lines.join("\n"));
