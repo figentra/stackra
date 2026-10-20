@@ -5,29 +5,32 @@ icon: "list-checks"
 ---
 
 <Note>
-  Status: target. Written 2026-10-19 from decisions agreed in chat; several accounts and every secret store below do not exist yet. `TODO` marks an unknown. This page holds **names only**: no value, no id that works as a credential, no URL with a token. Setting, copying or rotating a value is a human's job ([Secrets](/runbooks/secrets), [ADR-0009](/adr/0009-secrets-two-mechanisms)).
+  Status: target. Written 2026-10-19 from decisions agreed in chat; several accounts and every
+  secret store below do not exist yet. `TODO` marks an unknown. This page holds **names only**: no
+  value, no id that works as a credential, no URL with a token. Setting, copying or rotating a value
+  is a human's job ([Secrets](/runbooks/secrets), [ADR-0009](/adr/0009-secrets-two-mechanisms)).
 </Note>
 
 ## Accounts
 
-| Account | Used for | Owner-only step | State |
-| --- | --- | --- | --- |
-| GitHub org `figentra`, repo `stackra` | Code host, CI, releases, branch protection ([ADR-0012](/adr/0012-code-host-and-ci)) | Org settings, branch protection, push protection | Exists |
-| AWS (through Encore Cloud) | Services, Postgres, object storage, Pub/Sub, Bedrock | Create the account, link it in Encore Cloud, SSO, budgets | TODO: which AWS account holds Stackra |
-| Encore Cloud | Deploys into the owner's AWS, environments, secrets, tracing | Create the org and app, connect AWS | Not created; no generated Encore app yet, and the deploy path is open (DP2; [0124](/adr/0124-encore-is-the-generated-runtime-target)) |
-| Cloudflare | DNS, `npm.figentra.com` registry Worker ([ADR-0025](/adr/0025-packages-publish-to-private-registry)), R2 Turborepo cache ([ADR-0026](/adr/0026-turborepo-remote-cache-on-r2)), console and landing Workers | Zone, API tokens, R2 bucket, Worker deploys | TODO: confirm account and zone |
-| Infisical (EU, `eu.infisical.com`) | Developer and CI tokens: folders `/agents` and `/ci` | Create the project, machine identities, OIDC trust | Created; `.infisical.yaml` (project id, domain, branch mapping) is tracked |
-| Expo / EAS | Mobile builds, EAS Update, push, store submission | Project, robot token, credentials | TODO: project not created |
-| Apple Developer | App Store Connect, TestFlight, Sign in with Apple, push | Team membership, App Store Connect API key | TODO: team id kept out of the repo |
-| Google Play Console | Play listing, internal testing, service account for submit | Console forms, first `.aab` upload by hand | TODO |
-| Sentry (EU) | Crash and error reporting, source maps ([ADR-0020](/adr/0020-observability-and-crash-reporting)) | Org, projects, auth token | TODO |
-| Better Stack | Uptime, logs, on-call | Account, status page, phone alerts | TODO |
-| Resend | Transactional email | Domain, DNS records, API key, webhook | TODO |
-| Stripe | Payments (model per product; framework carries the ledger pattern) | Account, test and live keys, webhooks | TODO |
-| PostHog | Flags and product analytics | Project, public key | TODO |
-| Linear, team `STA` | Issues, projects, the offline gate (`Refs: STA-n`) | Workspace, API access for agents | Team exists |
-| Slack | Notifications (`#ci`, `#deploys`), coordination | App install, channel creation, connector authorization | TODO |
-| ElevenLabs | Voice, if a product needs it | Account, API key | TODO |
+| Account                               | Used for                                                                                                                                                                                                   | Owner-only step                                           | State                                                                                                                                 |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub org `figentra`, repo `stackra` | Code host, CI, releases, branch protection ([ADR-0012](/adr/0012-code-host-and-ci))                                                                                                                        | Org settings, branch protection, push protection          | Exists                                                                                                                                |
+| AWS (through Encore Cloud)            | Services, Postgres, object storage, Pub/Sub, Bedrock                                                                                                                                                       | Create the account, link it in Encore Cloud, SSO, budgets | TODO: which AWS account holds Stackra                                                                                                 |
+| Encore Cloud                          | Deploys into the owner's AWS, environments, secrets, tracing                                                                                                                                               | Create the org and app, connect AWS                       | Not created; no generated Encore app yet, and the deploy path is open (DP2; [0124](/adr/0124-encore-is-the-generated-runtime-target)) |
+| Cloudflare                            | DNS, `npm.figentra.com` registry Worker ([ADR-0025](/adr/0025-packages-publish-to-private-registry)), R2 Turborepo cache ([ADR-0026](/adr/0026-turborepo-remote-cache-on-r2)), console and landing Workers | Zone, API tokens, R2 bucket, Worker deploys               | TODO: confirm account and zone                                                                                                        |
+| Infisical (EU, `eu.infisical.com`)    | Developer and CI tokens: folders `/agents` and `/ci`                                                                                                                                                       | Create the project, machine identities, OIDC trust        | Created; `.infisical.yaml` (project id, domain, branch mapping) is tracked                                                            |
+| Expo / EAS                            | Mobile builds, EAS Update, push, store submission                                                                                                                                                          | Project, robot token, credentials                         | TODO: project not created                                                                                                             |
+| Apple Developer                       | App Store Connect, TestFlight, Sign in with Apple, push                                                                                                                                                    | Team membership, App Store Connect API key                | TODO: team id kept out of the repo                                                                                                    |
+| Google Play Console                   | Play listing, internal testing, service account for submit                                                                                                                                                 | Console forms, first `.aab` upload by hand                | TODO                                                                                                                                  |
+| Sentry (EU)                           | Crash and error reporting, source maps ([ADR-0020](/adr/0020-observability-and-crash-reporting))                                                                                                           | Org, projects, auth token                                 | TODO                                                                                                                                  |
+| Better Stack                          | Uptime, logs, on-call                                                                                                                                                                                      | Account, status page, phone alerts                        | TODO                                                                                                                                  |
+| Resend                                | Transactional email                                                                                                                                                                                        | Domain, DNS records, API key, webhook                     | TODO                                                                                                                                  |
+| Stripe                                | Payments (model per product; framework carries the ledger pattern)                                                                                                                                         | Account, test and live keys, webhooks                     | TODO                                                                                                                                  |
+| PostHog                               | Flags and product analytics                                                                                                                                                                                | Project, public key                                       | TODO                                                                                                                                  |
+| Linear, team `STA`                    | Issues, projects, the offline gate (`Refs: STA-n`)                                                                                                                                                         | Workspace, API access for agents                          | Team exists                                                                                                                           |
+| Slack                                 | Notifications (`#ci`, `#deploys`), coordination                                                                                                                                                            | App install, channel creation, connector authorization    | TODO                                                                                                                                  |
+| ElevenLabs                            | Voice, if a product needs it                                                                                                                                                                               | Account, API key                                          | TODO                                                                                                                                  |
 
 ## Where each secret name lives
 
@@ -37,34 +40,34 @@ A name appears in exactly one store. Application code reads it from the runtime,
 
 Declared as `secret("NAME")` in the service that uses it; a human sets each value in each environment with `encore secret set`. A new name must exist in an environment before the deploy that declares it, or provisioning fails.
 
-| Name | Purpose | Notes |
-| --- | --- | --- |
-| `ResendApiKey`, `ResendWebhookSecret` | Email send, delivery webhooks | Planned |
-| `StripeSecretKey`, `StripeWebhookSecret` | Payments | Planned; test keys outside prod |
-| `BetterAuthSecret` | Session and cookie signing | Planned; generated per environment |
-| `SentryDsn` | Crash reporting | Planned; not confidential |
-| `ScanAwsAccessKeyId`, `ScanAwsSecretAccessKey` | Malware-scan callbacks | TODO: likely replaced by role-based access |
-| `PostHogApiKey` | Server-side analytics | Planned |
-| OAuth client secrets (one per social provider) | Sign-in methods per product | TODO: names fixed when identity is built |
+| Name                                           | Purpose                       | Notes                                      |
+| ---------------------------------------------- | ----------------------------- | ------------------------------------------ |
+| `ResendApiKey`, `ResendWebhookSecret`          | Email send, delivery webhooks | Planned                                    |
+| `StripeSecretKey`, `StripeWebhookSecret`       | Payments                      | Planned; test keys outside prod            |
+| `BetterAuthSecret`                             | Session and cookie signing    | Planned; generated per environment         |
+| `SentryDsn`                                    | Crash reporting               | Planned; not confidential                  |
+| `ScanAwsAccessKeyId`, `ScanAwsSecretAccessKey` | Malware-scan callbacks        | TODO: likely replaced by role-based access |
+| `PostHogApiKey`                                | Server-side analytics         | Planned                                    |
+| OAuth client secrets (one per social provider) | Sign-in methods per product   | TODO: names fixed when identity is built   |
 
 TODO: the authoritative list is whatever `git grep 'secret("'` finds once a service exists; `secrets-doctor` will compare it with `encore secret list`.
 
 ### Infisical
 
-| Path | Environment | Names |
-| --- | --- | --- |
-| `/agents` | `dev` | `HEROUI_PERSONAL_TOKEN`, `GITHUB_PERSONAL_ACCESS_TOKEN`, `CONTEXT7_API_KEY`, `STRIPE_SECRET_KEY` (restricted test key, optional), `RESEND_API_KEY` (optional) |
-| `/ci` | `dev`, `staging`, `prod` | `TURBO_TOKEN`, `EXPO_TOKEN`, `ENCORE_API_KEY`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `NPM_FIGENTRA_TOKEN`, `SENTRY_AUTH_TOKEN`, `HEROUI_AUTH_TOKEN` |
+| Path      | Environment              | Names                                                                                                                                                          |
+| --------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/agents` | `dev`                    | `HEROUI_PERSONAL_TOKEN`, `GITHUB_PERSONAL_ACCESS_TOKEN`, `CONTEXT7_API_KEY`, `STRIPE_SECRET_KEY` (restricted test key, optional), `RESEND_API_KEY` (optional)  |
+| `/ci`     | `dev`, `staging`, `prod` | `TURBO_TOKEN`, `EXPO_TOKEN`, `ENCORE_API_KEY`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `NPM_FIGENTRA_TOKEN`, `SENTRY_AUTH_TOKEN`, `HEROUI_AUTH_TOKEN` |
 
 TODO: confirm each `/ci` name against the workflow that reads it. CI logs in with OIDC, one machine identity per environment.
 
 ### EAS environment variables (mobile)
 
-| Visibility | Names |
-| --- | --- |
-| Plain | `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_APP_ENV`, `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_POSTHOG_KEY`, `SENTRY_ORG`, `SENTRY_PROJECT` |
-| Secret | `HEROUI_AUTH_TOKEN`, `UNIWIND_AUTH_TOKEN`, `SENTRY_AUTH_TOKEN` |
-| File | `GOOGLE_SERVICES_JSON`, `GOOGLE_SERVICE_INFO_PLIST` |
+| Visibility | Names                                                                                                                             |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Plain      | `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_APP_ENV`, `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_POSTHOG_KEY`, `SENTRY_ORG`, `SENTRY_PROJECT` |
+| Secret     | `HEROUI_AUTH_TOKEN`, `UNIWIND_AUTH_TOKEN`, `SENTRY_AUTH_TOKEN`                                                                    |
+| File       | `GOOGLE_SERVICES_JSON`, `GOOGLE_SERVICE_INFO_PLIST`                                                                               |
 
 Apple and Google store credentials live in EAS credentials, not in Infisical.
 
@@ -89,43 +92,58 @@ Needed on the machine, pinned in `mise.toml` as each is adopted (TODO: confirm t
     Install mise, then `mise install` and `pnpm install`. Confirm with `pnpm verify`.
   </Step>
   <Step title="GitHub (owner)">
-    Org `figentra`, repo `stackra`, branch protection on `main`, push protection and secret scanning on, squash merge only.
+    Org `figentra`, repo `stackra`, branch protection on `main`, push protection and secret scanning
+    on, squash merge only.
   </Step>
   <Step title="Linear">
     Team `STA` exists. Create a project per deliverable. Agents label their issues `agent`.
   </Step>
   <Step title="Infisical (owner)">
-    Create the project in the EU region. Add `/agents` and `/ci`. Create a read-only machine identity for `/agents` and one OIDC-trusted identity per CI environment. Run `infisical login`, then `infisical init` to write the project id into the tracked `.infisical.yaml` (no secret in it).
+    Create the project in the EU region. Add `/agents` and `/ci`. Create a read-only machine
+    identity for `/agents` and one OIDC-trusted identity per CI environment. Run `infisical login`,
+    then `infisical init` to write the project id into the tracked `.infisical.yaml` (no secret in
+    it).
   </Step>
   <Step title="Developer tokens (human)">
-    Add the `/agents` names above in the Infisical UI. `tools/scripts/mcp.sh` reads them for MCP servers; nobody prints them.
+    Add the `/agents` names above in the Infisical UI. `tools/scripts/mcp.sh` reads them for MCP
+    servers; nobody prints them.
   </Step>
   <Step title="AWS and Bedrock (owner)">
-    Choose the AWS account. Create the profile named `bedrock`, then `aws sso login` with `AWS_PROFILE=bedrock`; OpenCode bills Bedrock through it. Create the monthly AWS Budget for Bedrock. The daily agent cap is $150 ([Agents](/agents/index)).
+    Choose the AWS account. Create the profile named `bedrock`, then `aws sso login` with
+    `AWS_PROFILE=bedrock`; OpenCode bills Bedrock through it. Create the monthly AWS Budget for
+    Bedrock. The daily agent cap is $150 ([Agents](/agents/index)).
   </Step>
   <Step title="Cloudflare (owner)">
-    Confirm the zone. Deploy the `npm.figentra.com` registry Worker and the R2 cache Worker. Create scoped API tokens and store them in `/ci`.
+    Confirm the zone. Deploy the `npm.figentra.com` registry Worker and the R2 cache Worker. Create
+    scoped API tokens and store them in `/ci`.
   </Step>
   <Step title="Remote cache and registry in CI">
     Set `TURBO_TOKEN` and `NPM_FIGENTRA_TOKEN` in `/ci`. Map the `@stackra` scope to the registry.
   </Step>
   <Step title="Encore Cloud (owner)">
-    Create the org and app, connect the AWS account, create environments `staging` and `prod` (PR previews are automatic). Do this only once the deploy path (DP2) is decided.
+    Create the org and app, connect the AWS account, create environments `staging` and `prod` (PR
+    previews are automatic). Do this only once the deploy path (DP2) is decided.
   </Step>
   <Step title="Application secrets (human)">
-    For each environment, `encore secret set` every declared name. Verify with `encore secret list` (names only).
+    For each environment, `encore secret set` every declared name. Verify with `encore secret list`
+    (names only).
   </Step>
   <Step title="Email (owner)">
-    Add the sending domain in Resend. Add the SPF, DKIM and return-path records and a DMARC record in Cloudflare DNS. Create the API key and the webhook.
+    Add the sending domain in Resend. Add the SPF, DKIM and return-path records and a DMARC record
+    in Cloudflare DNS. Create the API key and the webhook.
   </Step>
   <Step title="Observability">
-    Sentry org and projects (backend, console, mobile, landing), Better Stack uptime and phone alerts, PostHog project.
+    Sentry org and projects (backend, console, mobile, landing), Better Stack uptime and phone
+    alerts, PostHog project.
   </Step>
   <Step title="Mobile (owner)">
-    Apple team access, App Store Connect API key, Google Play Console forms and service account, EAS project and robot token. The first Play upload is by hand ([Mobile release](/runbooks/mobile-release)).
+    Apple team access, App Store Connect API key, Google Play Console forms and service account, EAS
+    project and robot token. The first Play upload is by hand ([Mobile
+    release](/runbooks/mobile-release)).
   </Step>
   <Step title="Payments and notifications (owner)">
-    Stripe test keys first, live keys at launch. Slack app install and channels. Authorize connectors as needed.
+    Stripe test keys first, live keys at launch. Slack app install and channels. Authorize
+    connectors as needed.
   </Step>
 </Steps>
 
@@ -151,11 +169,11 @@ The first lets `mcp.sh` fetch developer tokens from `/agents`. The second gives 
 
 ## Checks
 
-| Check | State |
-| --- | --- |
-| `pnpm secrets:scan` (gitleaks) | Live |
-| `guard-bash` denies reading values | Live |
-| `secrets-doctor` | Not built |
+| Check                                | State     |
+| ------------------------------------ | --------- |
+| `pnpm secrets:scan` (gitleaks)       | Live      |
+| `guard-bash` denies reading values   | Live      |
+| `secrets-doctor`                     | Not built |
 | `pnpm doctor` (tool and login check) | Not built |
 
 See also [Secrets](/runbooks/secrets), [CI](/runbooks/ci), [Deploys](/runbooks/deploys) and [Mobile release](/runbooks/mobile-release).

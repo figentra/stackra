@@ -33,28 +33,45 @@ skeleton with no feature module; `src/modules/README.md` lists the kind folders.
 
 <Steps>
   <Step title="Placement, and one file per primitive">
-    The placement test passes: a second product with none of this product's domain would still need it verbatim, so it belongs in a service named for the capability, not for the product (see [Boundaries](/constitution/boundaries)). Primitives follow the file layout above.
+    The placement test passes: a second product with none of this product's domain would still need
+    it verbatim, so it belongs in a service named for the capability, not for the product (see
+    [Boundaries](/constitution/boundaries)). Primitives follow the file layout above.
   </Step>
   <Step title="Two-layer tenant isolation, always">
-    Every query runs inside the tenancy helper, and every tenant-owned table has `tenant_id uuid NOT NULL` with row-level security enabled **and** forced. Tenant, scope and actor come only from the authenticated principal, never from request input. Full rule: [Tenancy](/constitution/tenancy). **In force from the first tenant-owned table.**
+    Every query runs inside the tenancy helper, and every tenant-owned table has `tenant_id uuid NOT
+    NULL` with row-level security enabled **and** forced. Tenant, scope and actor come only from the
+    authenticated principal, never from request input. Full rule: [Tenancy](/constitution/tenancy).
+    **In force from the first tenant-owned table.**
   </Step>
   <Step title="Event-first">
-    Cross-service communication is a versioned event unless the caller needs an authoritative decision now, and then only through a typed client on a short, closed list of allowed synchronous calls. A service imports another service's `Topic` and nothing else from it. No distributed transactions: order steps so a partial failure is safe and reconcilable. See [HTTP and events](/constitution/http-and-events).
+    Cross-service communication is a versioned event unless the caller needs an authoritative
+    decision now, and then only through a typed client on a short, closed list of allowed
+    synchronous calls. A service imports another service's `Topic` and nothing else from it. No
+    distributed transactions: order steps so a partial failure is safe and reconcilable. See [HTTP
+    and events](/constitution/http-and-events).
   </Step>
   <Step title="One gateway">
-    When Encore lands, the single `encore.app` is the only gateway and CORS configuration; a service never sets CORS, and `auth: true` is the default on every endpoint. Until then a service exposes no public surface.
+    When Encore lands, the single `encore.app` is the only gateway and CORS configuration; a service
+    never sets CORS, and `auth: true` is the default on every endpoint. Until then a service exposes
+    no public surface.
   </Step>
   <Step title="Idempotency on every write">
-    Writes carry an `Idempotency-Key` header and the service dedupes for 24 hours per tenant. Financial writes also run in one transaction and emit an audit event. See [HTTP and events](/constitution/http-and-events).
+    Writes carry an `Idempotency-Key` header and the service dedupes for 24 hours per tenant.
+    Financial writes also run in one transaction and emit an audit event. See [HTTP and
+    events](/constitution/http-and-events).
   </Step>
   <Step title="Required files, present and current">
-    Everything in [Member standards](/standards/members), plus `isolation.test.ts` once a scoped table exists. `AGENTS.md` carries a PII table even when it says none.
+    Everything in [Member standards](/standards/members), plus `isolation.test.ts` once a scoped
+    table exists. `AGENTS.md` carries a PII table even when it says none.
   </Step>
   <Step title="Secrets">
-    Application secrets are declared by name (`secret("NAME")`) and set by a human; never in a file, test, log or chat. Tests need zero secrets. See [Secrets](/constitution/secrets).
+    Application secrets are declared by name (`secret("NAME")`) and set by a human; never in a file,
+    test, log or chat. Tests need zero secrets. See [Secrets](/constitution/secrets).
   </Step>
   <Step title="Definition of done">
-    Code, `pnpm verify` green, the service's own tests green, docs current, reviewer sign-off. A service is not "done" because it typechecks: `pnpm verify` never starts a service (see [Testing](/standards/testing#what-a-green-run-proves)).
+    Code, `pnpm verify` green, the service's own tests green, docs current, reviewer sign-off. A
+    service is not "done" because it typechecks: `pnpm verify` never starts a service (see
+    [Testing](/standards/testing#what-a-green-run-proves)).
   </Step>
 </Steps>
 
@@ -76,13 +93,13 @@ skeleton with no feature module; `src/modules/README.md` lists the kind folders.
 
 ## What enforces this
 
-| Rule                                                               | Check                                                         | Status  |
-| ------------------------------------------------------------------ | ------------------------------------------------------------- | ------- |
-| Member files, PII heading, `tier:service` tag, catalog versions    | `validate-repository.mjs`                                     | Yes     |
-| A package or app never imports a service                           | `turbo boundaries`, oxlint `boundaries.jsonc`                 | Yes     |
-| A service's `internal/`, `entities/` and `db` are private          | oxlint `boundaries.jsonc` (`services/**` rule)                | Yes     |
-| `src/main.ts`, `stackra.module` names an existing root module, no Encore file | `validate-repository.mjs` (`checkService`) | Yes |
-| One `api()` per operation, `auth: true` default                    | planned: lint rule when Encore lands                          | No      |
-| Generated client has not drifted                                   | planned: `gen:client:check` in `pnpm verify`                  | No      |
-| Tenant isolation (RLS audit, `isolation.test.ts`)                  | planned: from the first tenant-owned table                    | No      |
-| Application secrets declared, never valued                         | [Secrets](/constitution/secrets) checks (partly planned)      | Partial |
+| Rule                                                                          | Check                                                    | Status  |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------- | ------- |
+| Member files, PII heading, `tier:service` tag, catalog versions               | `validate-repository.mjs`                                | Yes     |
+| A package or app never imports a service                                      | `turbo boundaries`, oxlint `boundaries.jsonc`            | Yes     |
+| A service's `internal/`, `entities/` and `db` are private                     | oxlint `boundaries.jsonc` (`services/**` rule)           | Yes     |
+| `src/main.ts`, `stackra.module` names an existing root module, no Encore file | `validate-repository.mjs` (`checkService`)               | Yes     |
+| One `api()` per operation, `auth: true` default                               | planned: lint rule when Encore lands                     | No      |
+| Generated client has not drifted                                              | planned: `gen:client:check` in `pnpm verify`             | No      |
+| Tenant isolation (RLS audit, `isolation.test.ts`)                             | planned: from the first tenant-owned table               | No      |
+| Application secrets declared, never valued                                    | [Secrets](/constitution/secrets) checks (partly planned) | Partial |

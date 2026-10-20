@@ -26,13 +26,13 @@ src/
   ui/                        internal logic shared by react/ and native/ (not an entry)
 ```
 
-| Rule | Detail |
-| ---- | ------ |
-| Declare only real entries | A folder, its `exports` key and its `tsdown.config.ts` entry are added together, with the first real code. `core` is always there. |
-| Entries never import entries | `react` and `native` share code through the internal `src/ui/`, never through each other. |
-| Host libraries are optional peers | A runtime-specific dependency is an optional peer (`peerDependenciesMeta`), so installing the package pulls in no host library. |
+| Rule                                 | Detail                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Declare only real entries            | A folder, its `exports` key and its `tsdown.config.ts` entry are added together, with the first real code. `core` is always there.                                                                                                                                                                                                           |
+| Entries never import entries         | `react` and `native` share code through the internal `src/ui/`, never through each other.                                                                                                                                                                                                                                                    |
+| Host libraries are optional peers    | A runtime-specific dependency is an optional peer (`peerDependenciesMeta`), so installing the package pulls in no host library.                                                                                                                                                                                                              |
 | Kind folders inside a feature module | `models/`, `actions/`, `queries/`, `services/`, `events/`, `listeners/`, `workflows/`, `policies/`, `permissions/`, `settings/`, `contracts/`, `resources/`; `interfaces/`, `types/`, `constants/`, `tokens/`, `errors/`, `decorators/` once there are two or more files. No `controllers/`, `dtos/`, `repositories/`, `helpers/`, `utils/`. |
-| Decorators ship an Explorer | A package that defines decorators registers them at bootstrap through the container's `DiscoveryService`. |
+| Decorators ship an Explorer          | A package that defines decorators registers them at bootstrap through the container's `DiscoveryService`.                                                                                                                                                                                                                                    |
 
 ### Tooling
 
@@ -59,27 +59,27 @@ Code copied from another repository is copied, not depended on, and says where i
 
 Decide per package before copying:
 
-| Verdict    | When                                                                                          |
-| ---------- | --------------------------------------------------------------------------------------------- |
-| **Port**   | The design is sound and tests exist; only names, product literals and dependencies change     |
-| **Shrink** | Most of it is surface nobody uses; keep the core and its tests                                |
-| **Replace**| A platform primitive (`fetch`, Intl) does the job; keep only the parts it lacks, with new tests |
-| **Rewrite**| The model is wrong (strings where typed keys belong); keep the ideas, write it fresh          |
-| **Drop**   | A few typed lines in an existing package replace it                                           |
+| Verdict     | When                                                                                            |
+| ----------- | ----------------------------------------------------------------------------------------------- |
+| **Port**    | The design is sound and tests exist; only names, product literals and dependencies change       |
+| **Shrink**  | Most of it is surface nobody uses; keep the core and its tests                                  |
+| **Replace** | A platform primitive (`fetch`, Intl) does the job; keep only the parts it lacks, with new tests |
+| **Rewrite** | The model is wrong (strings where typed keys belong); keep the ideas, write it fresh            |
+| **Drop**    | A few typed lines in an existing package replace it                                             |
 
 A port that diverges from its origin does so openly: in `ORIGIN.md`, not silently.
 
 ## What enforces this
 
-| Rule                                                              | Check                                                        | Status  |
-| ----------------------------------------------------------------- | ------------------------------------------------------------ | ------- |
-| Entries never import entries                                      | planned: oxlint `boundaries.jsonc` per entry folder          | No      |
-| No import of an app, service or `encore.dev` from a package       | oxlint `boundaries.jsonc` + `turbo boundaries`               | Yes     |
-| No deep import of `@stackra/*/src/*`                              | oxlint `boundaries.jsonc`                                    | Yes     |
-| `exports` dist + `@stackra/source` shape, `sideEffects: false`   | `validate-repository.mjs`                                    | Yes     |
-| Unused files and exports                                          | `knip`                                                       | Yes     |
-| Entry folders match `exports` and `tsdown.config.ts`              | planned: validator check                                     | No      |
-| No product literal or `process.env` in a package                  | planned: validator check                                     | No      |
-| `ORIGIN.md` present where code was copied                         | planned: validator check; review by `package-steward` today  | No      |
+| Rule                                                           | Check                                                       | Status |
+| -------------------------------------------------------------- | ----------------------------------------------------------- | ------ |
+| Entries never import entries                                   | planned: oxlint `boundaries.jsonc` per entry folder         | No     |
+| No import of an app, service or `encore.dev` from a package    | oxlint `boundaries.jsonc` + `turbo boundaries`              | Yes    |
+| No deep import of `@stackra/*/src/*`                           | oxlint `boundaries.jsonc`                                   | Yes    |
+| `exports` dist + `@stackra/source` shape, `sideEffects: false` | `validate-repository.mjs`                                   | Yes    |
+| Unused files and exports                                       | `knip`                                                      | Yes    |
+| Entry folders match `exports` and `tsdown.config.ts`           | planned: validator check                                    | No     |
+| No product literal or `process.env` in a package               | planned: validator check                                    | No     |
+| `ORIGIN.md` present where code was copied                      | planned: validator check; review by `package-steward` today | No     |
 
 The `package-steward` reviews every new package and every new `exports` subpath; see the [agent roster](/agents/roster).

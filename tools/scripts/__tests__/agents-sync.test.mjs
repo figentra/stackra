@@ -586,6 +586,38 @@ test("the constitution is generated from the docs laws and drift is detected", (
   });
 });
 
+test("oxfmt-wrapped multi-line <Step> and <Note> blocks keep titles and render as prose, not code", () => {
+  withFixture({ "reviewer.md": READ_ONLY }, (root) => {
+    mkdirSync(join(root, "apps/docs/src/constitution"), { recursive: true });
+    writeFileSync(
+      join(root, "apps/docs/src/constitution/index.mdx"),
+      [
+        '---\ntitle: "Constitution"\ndescription: "d"\n---\n',
+        "<Steps>",
+        '  <Step title="Laws">Short and normative.</Step>',
+        '  <Step title="ADRs">',
+        "    Record one decision each. Where an ADR and a law disagree, the law",
+        "    wins.",
+        "  </Step>",
+        "</Steps>\n",
+        "<Note>",
+        "  A wrapped note that must",
+        "  not become a code block.",
+        "</Note>\n",
+      ].join("\n"),
+    );
+    assert.equal(run(root).code, 0);
+    const out = read(root, ".specify/memory/constitution.md");
+    assert.match(out, /^- \*\*Laws\*\*: Short and normative\.$/m);
+    assert.match(
+      out,
+      /^- \*\*ADRs\*\*: Record one decision each\. Where an ADR and a law disagree, the law wins\.$/m,
+    );
+    assert.match(out, /^A wrapped note that must\nnot become a code block\.$/m);
+    assert.doesNotMatch(out, /<\/?(Steps?|Note)\b|^ {4}/m);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // MCP
 // ---------------------------------------------------------------------------

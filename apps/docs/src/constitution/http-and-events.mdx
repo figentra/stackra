@@ -5,23 +5,26 @@ icon: "arrow-left-right"
 ---
 
 <Note>
-Stackra has no HTTP service yet. Encore is the generated runtime target ([0091](/adr/0091-generated-encore-app-in-stackra-folder), [0124](/adr/0124-encore-is-the-generated-runtime-target)); services hold no Encore files. The examples use Encore's `api()` because that is the chosen shape. The rules hold for any framework.
+  Stackra has no HTTP service yet. Encore is the generated runtime target
+  ([0091](/adr/0091-generated-encore-app-in-stackra-folder),
+  [0124](/adr/0124-encore-is-the-generated-runtime-target)); services hold no Encore files. The
+  examples use Encore's `api()` because that is the chosen shape. The rules hold for any framework.
 </Note>
 
 ## HTTP
 
-| Rule | Detail |
-| --- | --- |
+| Rule                     | Detail                                                                                                                                                                                                                                                                                                                            |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | One action per operation | Every operation is one action (`@Action` or `@Query`) with typed input and output classes, exposed by an adapter such as `@AsEndpoint`; `stackra gen` emits the `api()` ([0098](/adr/0098-actions-are-the-unit), [0091](/adr/0091-generated-encore-app-in-stackra-folder)). No `any`, no `Record<string, unknown>` at a boundary. |
-| Authenticated by default | `auth: true`. An exposed endpoint without auth is a public surface and carries a comment saying why. Webhooks use a raw endpoint with signature verification. |
-| Verbs follow idempotency | `POST` creates (a second call creates again). `PUT` is an idempotent state transition (`/archive`, `/activate`). `PATCH` is a partial update. `DELETE` only where a row is truly removed. Archive instead. |
-| Cursor lists | `cursor` and `limit` (at most 100). Sorting and filtering use explicit allow-lists. Never pass column names through. |
-| Prefixed public ids | Ids at the boundary look like `tea_01JQ…`. The handler rejects a mismatched prefix before any query. Internal UUIDs never appear in URLs or responses. The `PublicId` type and the prefix registry live in `@stackra/contracts` ([0117](/adr/0117-contracts-placement-and-decorator-ownership)). |
-| Typed errors | Throw `invalidArgument`, `notFound`, `permissionDenied` or `failedPrecondition` with a stable message. Never a bare `Error`. A cross-tenant miss is `notFound`. |
-| Idempotency keys | Every write carries an `Idempotency-Key` header. The service dedupes for 24 hours per tenant. Money-like writes keep their own durable idempotency table and run in one transaction with an audit event. |
-| Validation | Boundary validation comes from `@stackra/validation` decorators on the input class, compiled to one Zod schema; Zod is the only validation engine ([0095](/adr/0095-zod-inside-field-decorators)). Business invariants live in the service layer, not the handler. |
-| Streaming | Use streaming endpoints for realtime. Fan out through pub/sub, because a socket only knows its own instance. |
-| Generated client | Frontends consume a generated client. It is regenerated, never hand-edited. |
+| Authenticated by default | `auth: true`. An exposed endpoint without auth is a public surface and carries a comment saying why. Webhooks use a raw endpoint with signature verification.                                                                                                                                                                     |
+| Verbs follow idempotency | `POST` creates (a second call creates again). `PUT` is an idempotent state transition (`/archive`, `/activate`). `PATCH` is a partial update. `DELETE` only where a row is truly removed. Archive instead.                                                                                                                        |
+| Cursor lists             | `cursor` and `limit` (at most 100). Sorting and filtering use explicit allow-lists. Never pass column names through.                                                                                                                                                                                                              |
+| Prefixed public ids      | Ids at the boundary look like `tea_01JQ…`. The handler rejects a mismatched prefix before any query. Internal UUIDs never appear in URLs or responses. The `PublicId` type and the prefix registry live in `@stackra/contracts` ([0117](/adr/0117-contracts-placement-and-decorator-ownership)).                                  |
+| Typed errors             | Throw `invalidArgument`, `notFound`, `permissionDenied` or `failedPrecondition` with a stable message. Never a bare `Error`. A cross-tenant miss is `notFound`.                                                                                                                                                                   |
+| Idempotency keys         | Every write carries an `Idempotency-Key` header. The service dedupes for 24 hours per tenant. Money-like writes keep their own durable idempotency table and run in one transaction with an audit event.                                                                                                                          |
+| Validation               | Boundary validation comes from `@stackra/validation` decorators on the input class, compiled to one Zod schema; Zod is the only validation engine ([0095](/adr/0095-zod-inside-field-decorators)). Business invariants live in the service layer, not the handler.                                                                |
+| Streaming                | Use streaming endpoints for realtime. Fan out through pub/sub, because a socket only knows its own instance.                                                                                                                                                                                                                      |
+| Generated client         | Frontends consume a generated client. It is regenerated, never hand-edited.                                                                                                                                                                                                                                                       |
 
 What gen emits for one `@Query` action (illustrative; never hand-written in a service):
 
@@ -42,12 +45,12 @@ export const list = api(
 
 Events are facts, not commands. A service publishes one when it needs another to react and does not need an answer now.
 
-| Rule | Detail |
-| --- | --- |
-| Event first | Cross-service communication is a versioned event unless the caller needs an authoritative decision immediately. Then a typed client call, and only on the allowed list in the [service standard](/standards/services). |
-| Event names | Domain events stay in-process and are not versioned. Integration events cross a service boundary and are versioned by name: `<aggregate>.<verb>.v<n>`, for example `user.created.v1` ([0078](/adr/0078-messaging-layer-eight-packages)). Whether a service prefix is added is open (gap C27). |
-| Versioning | A breaking payload change bumps the version. The old topic stays alive for the compatibility window named in an ADR. |
-| Delivery | Producers write through a transactional outbox. Consumers are idempotent: an inbox keyed by event `id`. |
+| Rule        | Detail                                                                                                                                                                                                                                                                                                                         |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Event first | Cross-service communication is a versioned event unless the caller needs an authoritative decision immediately. Then a typed client call, and only on the allowed list in the [service standard](/standards/services).                                                                                                         |
+| Event names | Domain events stay in-process and are not versioned. Integration events cross a service boundary and are versioned by name: `<aggregate>.<verb>.v<n>`, for example `user.created.v1` ([0078](/adr/0078-messaging-layer-eight-packages)). Whether a service prefix is added is open (gap C27).                                  |
+| Versioning  | A breaking payload change bumps the version. The old topic stays alive for the compatibility window named in an ADR.                                                                                                                                                                                                           |
+| Delivery    | Producers write through a transactional outbox. Consumers are idempotent: an inbox keyed by event `id`.                                                                                                                                                                                                                        |
 | Subscribing | A subscriber declares `@OnEvent` on the event name and imports only the producer's `./contracts` shape. It never imports another service's `Topic` or source; `stackra gen` emits the `Topic` and `Subscription` ([0078](/adr/0078-messaging-layer-eight-packages), [0091](/adr/0091-generated-encore-app-in-stackra-folder)). |
 
 Envelope, defined once as `EventEnvelope` in `@stackra/contracts`. The `actor` is the action pipeline's `Actor` with its full `onBehalfOf` chain ([0098](/adr/0098-actions-are-the-unit)):

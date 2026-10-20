@@ -895,11 +895,29 @@ function renderConstitution(files) {
   const laws = files.map((f) => {
     const raw = readFileSync(join(ROOT, CONSTITUTION_SRC, f), "utf8");
     const { data, body } = parseNeutralFrontmatter(raw, `${CONSTITUTION_SRC}/${f}`);
-    // Docs components (<Note>, <Steps>…) are Mintlify-only; keep their text, drop the tags.
-    const text = body
-      .replace(/^\s*<Step title="([^"]*)">(.*)<\/Step>\s*$/gm, "- **$1**: $2")
-      .replace(/^\s*<\/?[A-Z][A-Za-z]*[^>\n]*>\s*$/gm, "")
-      .replace(/\n{3,}/g, "\n\n");
+    // Docs components (<Note>, <Steps>…) are Mintlify-only; keep their text, drop the tags. oxfmt wraps a
+    // component's body onto indented lines, so a <Step> joins into one list item and other bodies are dedented
+    // (left indented, they would render as code blocks).
+    let text = body.replace(
+      /^[ \t]*<Step title="([^"]*)">([\s\S]*?)<\/Step>[ \t]*$/gm,
+      (_, title, inner) =>
+        `- **${title}**: ${inner
+          .trim()
+          .split(/\s*\n\s*/)
+          .join(" ")}`,
+    );
+    const block = /^([ \t]*)<([A-Z][A-Za-z]*)\b[^>\n]*>\n([\s\S]*?)\n\1<\/\2>[ \t]*$/gm;
+    while (block.test(text))
+      text = text.replace(block, (_, _indent, _tag, inner) => {
+        const pad = Math.min(
+          ...inner
+            .split("\n")
+            .filter((l) => l.trim())
+            .map((l) => /^ */.exec(l)[0].length),
+        );
+        return `\n${inner.replace(new RegExp(`^ {0,${pad}}`, "gm"), "")}\n`;
+      });
+    text = text.replace(/^\s*<\/?[A-Z][A-Za-z]*[^>\n]*>\s*$/gm, "").replace(/\n{3,}/g, "\n\n");
     return `## ${unquote(String(data.title ?? f))}\n\n${demoteHeadings(text.trim(), "#")}`;
   });
   return [
