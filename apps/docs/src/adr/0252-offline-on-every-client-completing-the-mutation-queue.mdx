@@ -1,0 +1,36 @@
+---
+title: "0252 — Offline on every client: completing the mutation queue"
+description: "Proposed · 2026-10-20"
+---
+
+<Note>
+  Amends [0059](/adr/0059-offline-encrypted-query-cache-and-mutation-queue) (scope: mobile becomes
+  every client) and [0079](/adr/0079-client-state-is-stackra-state).
+</Note>
+
+## Context
+
+ADR 0059 gave the mobile app an encrypted query cache and a mutation queue. The desktop and PWA plan (section 3.2, rows 1 to 12) lists what a queue on every client needs: client-minted ids, version preconditions, retention, a leader election, action-version survival, and an `offline:` option on `@Action`. The owner accepted the offline direction; the rows themselves are the plan's recommendations and were not each decided.
+
+## Decision
+
+1. **Scope.** Offline behaviour applies to every client (web, PWA, desktop and native), not only the mobile app.
+2. **Mechanics (plan section 3.2).** Client-minted ids, version preconditions on writes, retention of the queue, a leader for the queue across tabs, action-version survival across an upgrade, and an `offline:` option on `@Action`.
+3. **Storage.** The queue and the cache use `@stackra/storage` (ADR 0256).
+
+## Consequences
+
+- A user can keep working offline in any client, and the queue replays with version checks.
+- The queue is only as safe as its version preconditions, so they are part of the action contract.
+
+## Enforcement
+
+planned — the queue conformance test runs against each client driver.
+
+## Open questions
+
+1. Owner decision on the individual rows of plan section 3.2 (rows 1 to 12). This ADR stays Proposed until the owner agrees them.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0059](/adr/0059-offline-encrypted-query-cache-and-mutation-queue), [0079](/adr/0079-client-state-is-stackra-state). Sources: plan `stackra-notes/desktop-pwa-offline-plan.md` section 3.2; owner direction on offline (`stackra-decisions-2026-10-19.md` L954, 2026-10-20 night).

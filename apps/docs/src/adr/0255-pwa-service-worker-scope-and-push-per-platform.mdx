@@ -1,0 +1,33 @@
+---
+title: "0255 — PWA: vite-plugin-pwa, service worker scope and push strategy per platform"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends the PWA port plan of [0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters) (E3 in the
+  desktop and PWA plan) and [0059](/adr/0059-offline-encrypted-query-cache-and-mutation-queue).
+</Note>
+
+## Context
+
+The web console installs as a PWA. The owner accepted on 2026-10-20 night that notifications are sent while the app runs, that web push is used for the PWA, and that the PWA is built with the same app member as the desktop (ADR 0249). The plan (section 5.3) sets the service worker and the push rules.
+
+## Decision
+
+1. **Build.** `vite-plugin-pwa` produces the manifest and the service worker in the same Vite build as the app.
+2. **Service worker scope.** The service worker covers the app origin only. Assets from other origins are not cached by it.
+3. **Push.** Web Push is the PWA channel. Notifications are sent while the app runs. On platforms without Web Push, the notification falls back to in-app.
+4. **Offline.** The service worker serves the app shell offline. The mutation queue and cache of ADR 0252 handle data.
+
+## Consequences
+
+- A PWA user gets a push on a supported browser, and an in-app notice elsewhere.
+- The service worker cannot be used to read another origin's data.
+
+## Enforcement
+
+planned — a Lighthouse PWA check in the end-to-end tier (ADR 0182); the service worker scope is asserted in the build test.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters) (PWA port plan), [0059](/adr/0059-offline-encrypted-query-cache-and-mutation-queue). Sources: desktop and PWA owner decision (`stackra-decisions-2026-10-19.md` L954, 2026-10-20 night); plan section 5.3.

@@ -3,6 +3,11 @@ title: "0079 — Client state is @stackra/state (ported Figentra signals); Query
 description: "Proposed · 2026-10-19"
 ---
 
+<Note>
+  Amended by [0252](/adr/0252-offline-on-every-client-completing-the-mutation-queue) and
+  [0256](/adr/0256-client-storage-one-stackra-storage-package).
+</Note>
+
 ## Context
 
 [0054](/adr/0054-tanstack-query-and-zustand-for-client-state) chose Zustand for local client state and dropped the Figentra OS signals package. In the package questionnaire the owner reversed that: the signals package is ported as the client-state package, and the old TanStack Store state package is dropped. The Figentra OS `sync` package is a stub, and [0059](/adr/0059-offline-encrypted-query-cache-and-mutation-queue) specifies an offline mutation queue without naming the package that owns it.
