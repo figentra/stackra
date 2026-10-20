@@ -2,10 +2,84 @@
 // Purpose: the repo-wide entry carrying the tier dependency rule (docs/constitution/boundaries.md):
 //          a package (packages/<category>/<name>) never imports an app, a service or encore.dev; no service
 //          imports another service's internals; nothing imports a package's src/ deep path. CI fails on a violation.
+//          oxlint does not merge one rule across overrides: the LAST matching override's options replace the
+//          earlier ones. So the no-restricted-imports overrides run general → specific and each one repeats the
+//          patterns of the broader ones it narrows (STA-167). Keep that when adding a pattern.
 // Owner: the owner · Secrets: forbidden
 {
   "extends": ["./node.jsonc"],
   "overrides": [
+    {
+      // Every file: no deep import into a package's src/.
+      "files": ["**/*.ts", "**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      // Services: + another service's internals.
+      "files": ["**/services/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "../*/internal/**",
+                  "../../*/internal/**",
+                  "../*/entities/**",
+                  "../*/db",
+                  "../*/db.ts",
+                ],
+                "message": "A service's internal/, entities/ and db.ts are private. Call it through ~encore/clients or subscribe to its events.ts Topic.",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      // Packages: + no app, service or encore.dev.
+      "files": ["**/packages/**/*.ts", "**/packages/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  "**/services/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+            ],
+          },
+        ],
+      },
+    },
     // Domain archetype layers (ADR-0004 §1): the direction is enforced here, not in review.
     {
       "files": ["**/packages/*/*/src/core/**/*.ts", "**/packages/*/*/src/core/**/*.tsx"],
@@ -14,6 +88,20 @@
           "error",
           {
             "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  "**/services/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
               {
                 "group": [
                   "#application",
@@ -25,8 +113,6 @@
                   "react",
                   "react-dom",
                   "react-native",
-                  "encore.dev",
-                  "encore.dev/*",
                 ],
                 "message": "core is domain meaning: it imports no other layer and no host library (ADR-0004 §1).",
               },
@@ -46,6 +132,20 @@
           {
             "patterns": [
               {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  "**/services/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
                 "group": [
                   "#infrastructure",
                   "#infrastructure/*",
@@ -54,8 +154,6 @@
                   "react",
                   "react-dom",
                   "react-native",
-                  "encore.dev",
-                  "encore.dev/*",
                 ],
                 "message": "application imports core only and owns its ports; an adapter or a delivery surface never reaches it (ADR-0004 §1).",
               },
@@ -74,6 +172,20 @@
           "error",
           {
             "patterns": [
+              {
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
+              },
+              {
+                "group": [
+                  "**/apps/**",
+                  "**/services/**",
+                  "encore.dev",
+                  "encore.dev/*",
+                  "~encore/*",
+                ],
+                "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
               {
                 "group": ["#infrastructure", "#infrastructure/*"],
                 "message": "presentation translates for application and core; it never reaches infrastructure (ADR-0004 §1). Bind adapters in the module.",
@@ -94,21 +206,9 @@
           {
             "patterns": [
               {
-                "group": ["#presentation/web", "#presentation/web/*"],
-                "message": "native composes react, never web (ADR-0004).",
+                "group": ["@stackra/*/src/*"],
+                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
               },
-            ],
-          },
-        ],
-      },
-    },
-    {
-      "files": ["**/packages/**/*.ts", "**/packages/**/*.tsx"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
               {
                 "group": [
                   "**/apps/**",
@@ -118,6 +218,14 @@
                   "~encore/*",
                 ],
                 "message": "A package never imports an app, a service or encore.dev. Move the dependency the other way or publish a contract in @stackra/contracts; talk to services through the generated api-client.",
+              },
+              {
+                "group": ["#infrastructure", "#infrastructure/*"],
+                "message": "presentation translates for application and core; it never reaches infrastructure (ADR-0004 §1). Bind adapters in the module.",
+              },
+              {
+                "group": ["#presentation/web", "#presentation/web/*"],
+                "message": "native composes react, never web (ADR-0004).",
               },
             ],
           },
@@ -162,44 +270,6 @@
         "**/apps/**/__tests__/**/*.tsx",
       ],
       "rules": { "typescript/no-extraneous-class": "off" },
-    },
-    {
-      "files": ["**/services/**/*.ts"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              {
-                "group": [
-                  "../*/internal/**",
-                  "../../*/internal/**",
-                  "../*/entities/**",
-                  "../*/db",
-                  "../*/db.ts",
-                ],
-                "message": "A service's internal/, entities/ and db.ts are private. Call it through ~encore/clients or subscribe to its events.ts Topic.",
-              },
-            ],
-          },
-        ],
-      },
-    },
-    {
-      "files": ["**/*.ts", "**/*.tsx"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              {
-                "group": ["@stackra/*/src/*"],
-                "message": "Deep imports into a package's src/ bypass its public exports. Import the package or one of its declared subpaths.",
-              },
-            ],
-          },
-        ],
-      },
     },
   ],
 }
