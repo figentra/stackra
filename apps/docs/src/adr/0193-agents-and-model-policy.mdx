@@ -1,0 +1,47 @@
+---
+title: "0193 — Agents and model policy"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0017](/adr/0017-agent-roster-and-models). Amends and accepts
+  [0066](/adr/0066-delegation-to-opencode-by-routing-matrix). Amends decision 9 of
+  [0121](/adr/0121-sdlc-tooling-roles-and-linear) (the package steward is folded in).
+</Note>
+
+## Context
+
+[0017](/adr/0017-agent-roster-and-models) (Accepted) named an agent roster with economy, standard and frontier tiers. The owner's answers B5, B6, B7 and the roster decisions (mem L389–394, 2026-10-20) replace the tiers and fix who merges.
+
+## Decision
+
+1. **Tiers (B6).** Five tiers replace economy, standard and frontier: steward, executor, reviewer, guardian and lead.
+2. **Models.** Opus leads. Fable is used only for ADR and constitution reversals and deep audits. Guardians run on Opus, reviewers and executors on Sonnet, and stewards on Haiku.
+3. **Roster.**
+   - The package steward is folded into the code-standards steward.
+   - A code reviewer is added, on Sonnet, escalating to Opus.
+   - OpenCode gets only the steward and executor rows, on Kimi K3 (B5).
+   - The user-level drizzle, nestjs and expo-router skills move to the Academorix and Figentra repositories.
+4. **Merging (B7).** Claude commits, pushes and merges through `pr:merge`, under the merge rule of the register (after a green gate and an independent reviewer PASS). Releases and production promotion stay with a human.
+5. **Routing.** `.agents/routing.yaml` is updated, and the stale `sdlc:*` routes are fixed (gap B11).
+
+## Consequences
+
+- A tier names what the agent does, not what it costs.
+- Fable's cost is limited to reversals and audits, so routine work does not use it.
+
+## Enforcement
+
+planned — `pnpm validate` checks `models.yaml` and `routing.yaml` against the roster; `pnpm agents:check` checks the projections.
+
+## Open questions
+
+1. None for the roster. The OpenCode row depends on the Kimi K3 availability.
+
+## Alternatives
+
+- Economy, standard and frontier tiers: superseded by B6.
+
+## Supersedes and sources
+
+Supersedes: [0017](/adr/0017-agent-roster-and-models). Amends and accepts: [0066](/adr/0066-delegation-to-opencode-by-routing-matrix); amends decision 9 of [0121](/adr/0121-sdlc-tooling-roles-and-linear). Sources: owner answers B5, B6, B7 and the roster (`stackra-decisions-2026-10-19.md` L389–394, 2026-10-20). Closes gap B5–B7 and B11.

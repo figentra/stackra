@@ -1,0 +1,31 @@
+---
+title: "0190 — Seed profiles and our product analytics"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+Developers need seed data, and Stackra needs analytics on its own product. The owner's answers DA1 and DA2 (mem L531, 2026-10-20) fix the seed profiles and the analytics tool.
+
+## Decision
+
+1. **Seed profiles (DA1).** Three profiles: `minimal`, `demo` and `test`. The `demo` profile is the golden tenant, used for demos and for end-to-end tests.
+2. **Product analytics (DA2).** PostHog measures Stackra's own product use.
+3. **Analytics service.** The analytics service reads read models now. ClickHouse (SaaS) or DuckDB with Parquet (on-prem) is added only when a read model is too slow.
+
+## Consequences
+
+- One golden tenant keeps demos and tests on the same data, so a demo failure is a test failure.
+- Analytics about customers' data stays inside their tenant. PostHog receives Stackra's product events only.
+
+## Enforcement
+
+planned — the seed command loads each profile in CI; the PostHog event schema is checked by the analytics package tests.
+
+## Alternatives
+
+- Analytics on the production database: rejected; read models only.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner answers DA1, DA2 (`stackra-decisions-2026-10-19.md` L531, 2026-10-20).

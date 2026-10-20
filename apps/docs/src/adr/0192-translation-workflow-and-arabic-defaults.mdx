@@ -1,0 +1,37 @@
+---
+title: "0192 — Translation workflow and Arabic defaults"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends and accepts [0080](/adr/0080-i18n-is-the-figentra-i18n-port). The translation providers are
+  ADR 0236.
+</Note>
+
+## Context
+
+[0080](/adr/0080-i18n-is-the-figentra-i18n-port) (Proposed) ported i18n and left the workflow open. The owner's answers PP10, PP11 and LO1 (mem L825, L562, 2026-10-20) fix the translation workflow, the Arabic defaults and where UI strings live.
+
+## Decision
+
+1. **Workflow (PP10).** English catalogues are the source. A steward pre-translates into other languages. A native Arabic reviewer approves Arabic. Tolgee is added at the third locale. The connectors are ADR 0236.
+2. **Digits (PP11).** Latin digits are the default. Arabic-Indic digits are optional.
+3. **Calendar (PP11).** Gregorian is the default. Hijri is optional.
+4. **Storage (LO1).** UI strings stay in the i18n catalogues, not in a separate store.
+
+## Consequences
+
+- An Arabic string is reviewed by a native speaker before it ships, so pre-translation is a draft.
+- Digits and calendar are user settings, so the defaults do not force a choice on anyone.
+
+## Enforcement
+
+planned — the catalogue check fails a locale with missing keys in CI; the Arabic review status is a field in the catalogue.
+
+## Alternatives
+
+- Machine translation without review: rejected by PP10.
+
+## Supersedes and sources
+
+Supersedes: none. Amends and accepts: [0080](/adr/0080-i18n-is-the-figentra-i18n-port). Sources: owner answers PP10, PP11, LO1 (`stackra-decisions-2026-10-19.md` L562, L825, 2026-10-20).

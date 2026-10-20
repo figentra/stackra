@@ -1,0 +1,34 @@
+---
+title: "0194 — Developer and agent compute"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+Agents and developers run work on laptops, cloud sessions and a shared machine. Disk filled up once (ops, 2026-10-20), and the owner set limits on concurrency and storage. The owner's answers DC1, DC2, DC5 and DC8 (mem L421, ops L13–14, ops L32–36) fix the compute plan.
+
+## Decision
+
+1. **Now.** One shared pnpm store, cleaned up. Claude-only agent tasks run in Claude Code cloud sessions. OpenCode and Kimi run locally. Cloud sessions may push through the Claude GitHub App.
+2. **At about ten agents.** One m7i.4xlarge on-demand machine, on Activate credits, 300 GB gp3. It stops after 60 idle minutes and nightly. It is reached over SSH, tmux and Remote Control. It commits as the bot account, and OpenCode delegation moves there.
+3. **Clones (DC5).** Clean clones live in `~/src` and `~/wt`, with one shared pnpm store and a nightly prune.
+4. **Devcontainer (DC8).** A `devcontainer.json` is provided. Light Codespaces use is within $50 a month.
+5. **Worktrees.** At most about three worktree agents run at once (ops L13–14).
+6. **Deferred.** DC9 and DC10 are deferred by the owner.
+
+## Consequences
+
+- A disk problem is contained to the clones and the store, which the nightly prune cleans.
+- The bot account is the only identity that commits from the shared machine.
+
+## Enforcement
+
+planned — the nightly prune job and the worktree count are checked by the agent runner.
+
+## Alternatives
+
+- Every agent on the laptop: superseded by the cloud sessions and the shared machine.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner answers DC1, DC2, DC5, DC8 (`stackra-decisions-2026-10-19.md` L421, 2026-10-20); ops file L13–14, L32–36 (2026-10-20).
