@@ -1,0 +1,38 @@
+---
+title: "0221 — Search: Postgres hybrid, ElasticSuite parity, Arabic and operations"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0089](/adr/0089-search-fresh-with-pro-engine-drivers). Notes on
+  [0049](/adr/0049-search-driver-interface): the search driver interface leads here.
+</Note>
+
+## Context
+
+[0089](/adr/0089-search-fresh-with-pro-engine-drivers) (Proposed) put search engines in a Pro package. The owner's search answers SR1 to SR6, DA10 and the parity decision (mem L708–717, L536, 2026-10-20) keep search on Postgres first, make ElasticSuite parity free code, and add Arabic and operations.
+
+## Decision
+
+1. **Postgres hybrid (SR1).** Full-text search (tsvector), trigram search and pgvector, fused by reciprocal rank fusion.
+2. **Declaration (SR2).** `@Searchable` applies row-level security and the IAM predicate. Classification (ADR 0134) decides which fields are indexed.
+3. **Arabic (SR3).** Arabic normalisation in the index and in queries.
+4. **Palette (SR4).** A Cmd+K palette over the search API.
+5. **Lag (SR5).** Outbox indexing with under five seconds of lag.
+6. **Public API (SR6).** A public search API and widgets.
+7. **Operations (DA10).** A reindex command, a versioned index swap, and erasure that removes documents.
+8. **ElasticSuite parity.** Free code, gated by entitlements (ADR 0215).
+9. **OpenSearch.** The OpenSearch driver is built when a tenant index passes about one million documents, or when facets must return in under 50 ms.
+
+## Consequences
+
+- Search works on the same database as the data, so a deleted record leaves the index in the same workflow.
+- The OpenSearch driver is a later driver behind the same interface, with a measured trigger.
+
+## Enforcement
+
+planned — the reindex and swap test on a sample index; the erasure test confirms documents leave the index.
+
+## Supersedes and sources
+
+Supersedes: [0089](/adr/0089-search-fresh-with-pro-engine-drivers). Notes on: [0049](/adr/0049-search-driver-interface). Sources: owner search answers SR1–SR6, DA10 (`stackra-decisions-2026-10-19.md` L536, L708–717, 2026-10-20). Closes gap C35.

@@ -1,11 +1,13 @@
 ---
 title: "Tenancy"
-description: "Two-layer tenant isolation, where the tenant context comes from, the isolation tests every tenant-owned table needs, and the rules for the Pro scope tree."
+description: "Two-layer tenant isolation, where the tenant context comes from, the isolation tests every tenant-owned table needs, and the rules for the scope tree."
 icon: "layers"
 ---
 
 <Warning>
-**Trigger: the first tenant-owned table.** Stackra has none today and no database. This law is binding from the moment one appears, and the checks below must exist first. It is stated now so the first table is built right, not retrofitted.
+  **Trigger: the first tenant-owned table.** Stackra has none today and no database. This law is
+  binding from the moment one appears, and the checks below must exist first. It is stated now so
+  the first table is built right, not retrofitted.
 </Warning>
 
 ## Defence in depth: both layers, always
@@ -21,14 +23,14 @@ icon: "layers"
 
 Hand-written RLS is not allowed. The scoped-table pattern emits the columns, indexes and policy. The mechanism is decided in [ADR 0014](/adr/0014-data-ownership-and-orm), not here. Migrations that backfill tenant tables use a dedicated bypass clause in the policy. Decide it in the migration template, not on the first backfill.
 
-## Scope tree (Pro)
+## Scope tree (free code)
 
-The scope tree is a Pro driver, `@stackra-pro/scope`; free tenancy has no scope dependency ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope), owner decisions S2, S3 and S12). When a product installs it, a tenant's data is organised in a tree of scopes (for example organisation, branch, team), each with an `ltree` path, and these rules bind. `withScope` also appends the scope-path predicate from the principal's granted paths.
+The scope tree is free code in `@stackra/iam` and `@stackra/tenancy`, with no `@stackra-pro` package ([0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan)). Its depth is a plan entitlement: a free tenant has one level below the tenant, and deeper trees come with higher plans. When a product uses the tree, a tenant's data is organised in a tree of scopes (for example organisation, branch, team), each with an `ltree` path, and these rules bind. `withScope` also appends the scope-path predicate from the principal's granted paths.
 
-| Table kind | Columns |
-| --- | --- |
-| Is a node | `scope_id uuid PRIMARY KEY`, the same identity as the node, not a copy |
-| Belongs to a node | `scope_id` plus a denormalised `scope_path ltree` with a GiST index |
+| Table kind        | Columns                                                                |
+| ----------------- | ---------------------------------------------------------------------- |
+| Is a node         | `scope_id uuid PRIMARY KEY`, the same identity as the node, not a copy |
+| Belongs to a node | `scope_id` plus a denormalised `scope_path ltree` with a GiST index    |
 
 Use the OR-expansion `(scope_path <@ $1::ltree OR scope_path <@ $2::ltree …)`. Both `scope_path <@ ANY($paths)` and `$paths::ltree[] @> scope_path` seq-scan on GiST and are forbidden. An empty granted-paths list yields `false`.
 
@@ -47,12 +49,12 @@ Every service with tenant-owned tables ships an isolation test that proves:
 
 ## Enforcement: planned
 
-| Check | When |
-| --- | --- |
-| Lint rule: no direct query in a handler | With the first scoped table |
+| Check                                                                                 | When                                          |
+| ------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Lint rule: no direct query in a handler                                               | With the first scoped table                   |
 | RLS catalog audit: every table with `tenant_id` has `ENABLE` and `FORCE` and a policy | With the first scoped table, in `pnpm verify` |
-| `isolation.test.ts` required by the validator once a scoped table exists | With the first scoped table |
-| Security-tenancy reviewer agent | Before the first scoped table |
+| `isolation.test.ts` required by the validator once a scoped table exists              | With the first scoped table                   |
+| Security-tenancy reviewer agent                                                       | Before the first scoped table                 |
 
 ## History
 

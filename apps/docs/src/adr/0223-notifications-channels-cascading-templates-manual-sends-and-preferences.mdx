@@ -1,0 +1,32 @@
+---
+title: "0223 — Notifications: more channels, cascading templates, manual sends and preferences"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>Amends [0086](/adr/0086-notifications-full-engine-all-channels-free).</Note>
+
+## Context
+
+[0086](/adr/0086-notifications-full-engine-all-channels-free) made every channel free. The owner's notification answers N3 to N5, B36 (mem L686–688, L696–697, 2026-10-20) add channels, cascading templates, manual sends and where preferences live.
+
+## Decision
+
+1. **Channels (N3).** Adds Unifonic and Taqnyat for SMS, the WhatsApp Cloud API, web push with VAPID, voice through Twilio, and chat apps (Slack, Teams and Telegram).
+2. **Single layer (N4).** Notifications is the one delivery layer. Every channel goes through it.
+3. **Templates (N5).** Templates come from code defaults, then tenant overrides, then a console editor. The cascade follows the scope chain.
+4. **Manual sends.** A person can send a notification at any scope, with guardrails. The permission `notifications.message.send` is never granted by default.
+5. **Preferences (B36).** Notification preferences live in the notifications package, an exception to the settings rule (ADR 0213).
+6. **Spec location.** The notifications spec lives at `.agents/specs/sta-35-notifications`.
+
+## Consequences
+
+- A tenant can change a template without a deploy, and the default is always there.
+- A manual send is a permission grant, so it can be audited and revoked.
+
+## Enforcement
+
+planned — the cascade test covers code default, tenant override and console edit; the default-deny of `notifications.message.send` is checked by the permission catalogue.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0086](/adr/0086-notifications-full-engine-all-channels-free). Sources: owner notification answers N3–N5, B36 (`stackra-decisions-2026-10-19.md` L686–688, L696–697, 2026-10-20). Closes gap B9 (spec path).
