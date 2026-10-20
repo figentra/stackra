@@ -33,7 +33,7 @@ Pick the package category from the [structure guide](/guides/structure). Do not 
 
 ## Shared packages hold mechanisms, apps hold definitions
 
-A package never contains a product enumeration or literal: no brand name, locale list, project id, URL, tenant id or environment value. It exposes decorators, base classes and typed config contracts; there is no `define*()` API ([0094](/adr/0094-decorators-only-authoring)). The definitions (decorated classes and config objects) live in the app or service that owns them. A convenience value such as a default locale list is fine. A closed union type of product names is not.
+A package never contains a product enumeration or literal: no brand name, locale list, project id, URL, tenant id or environment value. It exposes decorators, base classes and typed config contracts; there is no `define*()` API for behaviour ([0094](/adr/0094-decorators-only-authoring)). Tokens and typed config are `define*` values, the one carve-out ([0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned)). The definitions (decorated classes and config objects) live in the app or service that owns them. A convenience value such as a default locale list is fine. A closed union type of product names is not.
 
 A package never reads `process.env`. Configuration reaches it as an argument or a typed config object that the app builds.
 
@@ -67,3 +67,4 @@ Do not introduce a technology on the rejected or deferred list "to be helpful". 
 ## History
 
 - 2026-10-20, [0125](/adr/0125-constitution-amended-to-match-accepted-adrs): factories became decorators ([0094](/adr/0094-decorators-only-authoring)); contract packages became `./contracts` entries and `@stackra/contracts` ([0117](/adr/0117-contracts-placement-and-decorator-ownership)).
+- 2026-10-20, [0229](/adr/0229-constitution-amended-for-the-2026-10-20-decisions): tokens and typed config are `define*` values ([0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned)).

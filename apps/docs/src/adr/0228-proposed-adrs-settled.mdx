@@ -1,0 +1,41 @@
+---
+title: "0228 — Proposed ADRs settled"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+Waves 1 to 3 left several ADRs from the first pass at Proposed. A Proposed page reads as a rule the reader cannot be sure of,
+and a reader cannot tell which Proposed pages bind. The owner asked for them to be settled (open decision OR1 a, memory L336).
+This record settles each one. It changes statuses only. The bodies of the pages it names are not edited.
+
+## Decision
+
+1. **Accepted as they stand.** [0059](/adr/0059-offline-encrypted-query-cache-and-mutation-queue),
+   [0079](/adr/0079-client-state-is-stackra-state),
+   [0083](/adr/0083-npm-scopes-and-cli-names) and
+   [0084](/adr/0084-figentra-os-package-port-plan) move from Proposed to Accepted. Their descriptions change to `Accepted · 2026-10-20`.
+2. **Already Accepted, confirmed here.** [0080](/adr/0080-i18n-is-the-figentra-i18n-port) (with [0192](/adr/0192-translation-workflow-and-arabic-defaults)),
+   [0082](/adr/0082-public-ids-and-api-areas) (with [0135](/adr/0135-public-id-format)),
+   [0099](/adr/0099-risk-scale-l0-to-l4), [0100](/adr/0100-ai-model-and-ownership) and
+   [0101](/adr/0101-action-first-workflow-behind-when-needed) keep their status. No change is made to them.
+3. **0061 stays Proposed.** [0061](/adr/0061-mobile-keeps-react-navigation-and-native-tabs) is accepted once the Xcode 26 build
+   has been checked on a machine that has it. Until then it is a proposal.
+4. **0018 is superseded.** [0018](/adr/0018-framework-design-record) is a reading list that points at earlier repositories, not a
+   rule. Its one rule (decision 1: a design decision is written as an ADR in the same change that creates its package) is
+   stated here as it stands, so no rule is lost.
+5. **0064 stays unused.** The number was never assigned. The index records it as unused, and no page is written under it.
+
+## Consequences
+
+- After this record, no ADR in the index is Proposed except 0061.
+- The index table shows the new statuses, and 0018 points to this page.
+
+## Enforcement
+
+planned — a check that fails when an ADR page's description status differs from its row in the index table.
+
+## Supersedes and sources
+
+Supersedes: [0018](/adr/0018-framework-design-record). Sources: the wave 4 entry for 0228 in the decision register (open decision
+OR1 a, memory L336; gap B38 for 0018; gap B48 for 0064).
