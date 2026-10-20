@@ -12,21 +12,32 @@ The main session coordinates. Subagents do the work.
 
 <Steps>
   <Step title="Main session decides">
-    The main session reads the request, classifies it, picks the agents and the model tier, and writes a self-contained brief for each. It reviews results and reports. It does not hold large file contents, long diffs or implementation detail.
+    The main session reads the request, classifies it, picks the agents and the model tier, and
+    writes a self-contained brief for each. It reviews results and reports. It does not hold large
+    file contents, long diffs or implementation detail.
   </Step>
   <Step title="Subagents execute, each with an explicit tier">
-    Every task goes to a subagent, and the delegation names the model tier. An executor gets a brief that carries the goal, the files in scope, what has been ruled out and what done means. It does not get the conversation. The brief template is in [Delegation](/constitution/delegation).
+    Every task goes to a subagent, and the delegation names the model tier. An executor gets a brief
+    that carries the goal, the files in scope, what has been ruled out and what done means. It does
+    not get the conversation. The brief template is in [Delegation](/constitution/delegation).
   </Step>
   <Step title="Gates decide, not the agent that did the work">
-    An agent's report is evidence, not a verdict. Before acting on a report, check its claims in the code. A blocked task usually means the brief left something out. Fix the brief rather than retrying into the same wall.
+    An agent's report is evidence, not a verdict. Before acting on a report, check its claims in the
+    code. A blocked task usually means the brief left something out. Fix the brief rather than
+    retrying into the same wall.
   </Step>
   <Step title="The lead lands it">
-    Executors never write to git. The lead (Claude) commits, pushes and merges through the merge gate (`pnpm pr:merge`); the owner merges the release pull request and approves every production promotion and deploy ([0119](/adr/0119-merge-policy-and-release-authority)).
+    Executors never write to git. The lead (Claude) commits, pushes and merges through the merge
+    gate (`pnpm pr:merge`); the owner merges the release pull request and approves every production
+    promotion and deploy ([0119](/adr/0119-merge-policy-and-release-authority)).
   </Step>
 </Steps>
 
 <Note>
-This is a standing preference of the maintainer, not a suggestion: all work is delegated to subagents with an explicit model tier, and the main session is kept for coordination. A long single conversation that does the work itself is the failure mode. See [Concurrent sessions](/agents/concurrent-sessions) for how to keep sessions small.
+  This is a standing preference of the maintainer, not a suggestion: all work is delegated to
+  subagents with an explicit model tier, and the main session is kept for coordination. A long
+  single conversation that does the work itself is the failure mode. See [Concurrent
+  sessions](/agents/concurrent-sessions) for how to keep sessions small.
 </Note>
 
 ### Caps and shape of a delegation
@@ -41,14 +52,14 @@ This is a standing preference of the maintainer, not a suggestion: all work is d
 
 Gate order for a non-trivial change, from the plan to the merge:
 
-| Gate | Agent | Blocks |
-| --- | --- | --- |
-| 1. Placement and decisions | `architecture-guardian` | Yes. A boundary violation, or a change that contradicts an accepted ADR without a superseding one |
-| 2. Security | `security-tenancy-reviewer` | Yes. Auth, secrets, isolation, webhooks, redaction |
-| 3. Tests | `test-engineer` | Yes. A red suite, or an untested failure path |
-| 4. Review | `code-reviewer`, `api-contract-reviewer`, `design-brand-reviewer` | No. They report findings ranked by severity |
-| 5. Accessibility | `accessibility-reviewer` | Critical and serious findings only |
-| 6. Release | `release-operations` | Yes. A human approves every release and deploy |
+| Gate                       | Agent                                                             | Blocks                                                                                            |
+| -------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| 1. Placement and decisions | `architecture-guardian`                                           | Yes. A boundary violation, or a change that contradicts an accepted ADR without a superseding one |
+| 2. Security                | `security-tenancy-reviewer`                                       | Yes. Auth, secrets, isolation, webhooks, redaction                                                |
+| 3. Tests                   | `test-engineer`                                                   | Yes. A red suite, or an untested failure path                                                     |
+| 4. Review                  | `code-reviewer`, `api-contract-reviewer`, `design-brand-reviewer` | No. They report findings ranked by severity                                                       |
+| 5. Accessibility           | `accessibility-reviewer`                                          | Critical and serious findings only                                                                |
+| 6. Release                 | `release-operations`                                              | Yes. A human approves every release and deploy                                                    |
 
 The full roster, with tiers and models, is on [Roster](/agents/roster). The `delivery-orchestrator` enforces this order and writes no code.
 
@@ -89,9 +100,9 @@ Files in `.agents/rules/` carry neutral, tool-agnostic frontmatter. It is delibe
 ---
 title: Short display name
 description: One line. Used by tools to judge relevance.
-always: true          # load in every session
-applies_to: ["services/**"]   # root-relative globs; relevant when a matching file is touched
-manual: false         # true: never auto-attached, pulled in by name only
+always: true # load in every session
+applies_to: ["services/**"] # root-relative globs; relevant when a matching file is touched
+manual: false # true: never auto-attached, pulled in by name only
 ---
 ```
 

@@ -34,14 +34,14 @@ A predecessor repository vendored 99 skills, and three had already fallen behind
 
 Every standard page and every rule names the check that enforces it. A rule that cannot name one is a candidate for deletion, or for a new check.
 
-| A rule says | The check |
-| --- | --- |
-| Versions only in catalogs | `pnpm validate`, strict catalog mode |
-| A package never imports an app, a service or `encore.dev` | The oxlint boundary rules and Turborepo boundaries |
-| Tests sit beside the code | `AGENTS.md` states it. No check yet: add one in the validator |
-| No secret values anywhere | The gitleaks scan in `lefthook.yml` and `guard-bash` |
-| Required files in every member | `pnpm validate` |
-| Docs and code agree | `docs-governance` reports drift; no script does |
+| A rule says                                               | The check                                                     |
+| --------------------------------------------------------- | ------------------------------------------------------------- |
+| Versions only in catalogs                                 | `pnpm validate`, strict catalog mode                          |
+| A package never imports an app, a service or `encore.dev` | The oxlint boundary rules and Turborepo boundaries            |
+| Tests sit beside the code                                 | `AGENTS.md` states it. No check yet: add one in the validator |
+| No secret values anywhere                                 | The gitleaks scan in `lefthook.yml` and `guard-bash`          |
+| Required files in every member                            | `pnpm validate`                                               |
+| Docs and code agree                                       | `docs-governance` reports drift; no script does               |
 
 The last two rows are the honest ones: some claims are enforced only by a person or an agent reading. Say so, as that row does, so nobody assumes more coverage than exists.
 
