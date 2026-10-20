@@ -1,0 +1,53 @@
+---
+title: "0130 — Module layout by semantic kind; no controllers"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0040](/adr/0040-ddd-feature-modules-in-services). It builds on the member shape in
+  [0126](/adr/0126-member-shapes-and-scaffold-templates), which amends 0040 first.
+</Note>
+
+## Context
+
+[0040](/adr/0040-ddd-feature-modules-in-services) organised services as DDD layers. Accepted [0091](/adr/0091-generated-encore-app-in-stackra-folder)
+and [0126](/adr/0126-member-shapes-and-scaffold-templates) already removed the generated folder and set the feature-module
+path. The owner's intent-map item P9 and the audit's module-layout answer (audit Q9) replace the DDD layers with kind folders,
+organised around what each file does.
+
+## Decision
+
+1. A feature module lives at `src/modules/<feature>/`. Its code sits in kind folders:
+   `models/`, `actions/`, `queries/`, `services/`, `events/`, `listeners/`, `workflows/`, `policies/`, `permissions/`,
+   `settings/` and `contracts/`.
+2. `interfaces/`, `types/`, `constants/`, `tokens/`, `errors/` and `decorators/` appear once a module has two or more
+   files of that kind ([0128](/adr/0128-code-conventions-enums-classes-components-and-kind-folders) decision 4).
+3. `raw/` holds only `@Controller` raw endpoints (webhooks, streaming, `/api/auth/*`). Actions never use it.
+4. There are no `controllers/`, `dtos/`, `repositories/` or `presentation/` folders.
+5. Dependencies point inward. Actions, listeners and workflows depend on services and models. Models import from no other
+   folder.
+6. Where the sources disagree, the later one wins. P9 names a `permissions.ts` file; the audit (L547) names a
+   `permissions/` folder, and the folder wins.
+
+## Consequences
+
+- Services are organised by what they do, and an agent finds an action in `actions/`.
+- The `services/encore` scaffold template, which still uses the old shape, is replaced with plain TypeScript (gap D).
+- The validator's `checkServiceUnit` must describe this shape. Until it does, the validator and this ADR disagree.
+
+## Enforcement
+
+planned — `checkServiceUnit` in `tools/scripts/validate-repository.mjs` checks the kind-folder set and forbids the
+`controllers/`, `dtos/`, `repositories/` and `presentation/` folders. Dependency direction is planned for the
+`packages/tooling/oxlint/boundaries.jsonc` rules.
+
+## Alternatives
+
+- Keep DDD layers (0040): superseded by this ADR, per the owner's audit answer.
+- One flat `modules/<feature>/` folder with no kinds: rejected, because it hides the action-first shape.
+
+## Supersedes and sources
+
+Supersedes: [0040](/adr/0040-ddd-feature-modules-in-services). Builds on: [0126](/adr/0126-member-shapes-and-scaffold-templates).
+Sources: owner intent-map item P9 (`stackra-notes/owner-docs-intent-map.md`, Part 4, accepted L584); audit Q9 (`stackra-decisions-2026-10-19.md` L547,
+2026-10-20); gap B4 (layout half).

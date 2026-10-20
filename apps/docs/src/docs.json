@@ -226,7 +226,18 @@
               "adr/0123-delivery-order-follows-the-dependency-graph",
               "adr/0124-encore-is-the-generated-runtime-target",
               "adr/0125-constitution-amended-to-match-accepted-adrs",
-              "adr/0126-member-shapes-and-scaffold-templates"
+              "adr/0126-member-shapes-and-scaffold-templates",
+              "adr/0127-package-categories-including-infrastructure",
+              "adr/0128-code-conventions-enums-classes-components-and-kind-folders",
+              "adr/0129-house-lint-plugin-and-coding-standard",
+              "adr/0130-module-layout-by-semantic-kind",
+              "adr/0131-module-key-version-and-deprecation",
+              "adr/0132-permissions-catalogue-and-policy-providers",
+              "adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events",
+              "adr/0134-data-invariants-classification-and-delete-lifecycle",
+              "adr/0135-public-id-format",
+              "adr/0136-action-runtime-contract",
+              "adr/0137-declared-action-options-and-refusal-codes"
             ]
           }
         ]
