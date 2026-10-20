@@ -2,12 +2,16 @@
 // Purpose: opencode (v2) project configuration for delegated runs (AGENTS.md):
 //          the default model, the instructions file, and the permissions every run inherits. Agents live under
 //          .opencode/agents (mirror .claude/agents).
-// Owner: architecture-guardian · Secrets: forbidden (no tokens here; Bedrock credentials come from the AWS profile)
+// Owner: the owner (architecture decisions go to the owner) · Secrets: forbidden (no tokens here; Bedrock credentials come from the AWS profile)
 {
   "$schema": "https://opencode.ai/config.json",
   "model": "amazon-bedrock/global.moonshotai.kimi-k3",
   "instructions": ["AGENTS.md"],
+  // Rules run in order and the LAST matching rule wins, so broad allows come first and the denies after them.
+  // Source: https://opencode.ai/v2/docs/permissions
   "permissions": [
+    { "action": "shell", "resource": "*", "effect": "allow" },
+    { "action": "edit", "resource": "*", "effect": "allow" },
     { "action": "webfetch", "resource": "*", "effect": "deny" },
     { "action": "websearch", "resource": "*", "effect": "deny" },
     { "action": "subagent", "resource": "*", "effect": "allow" },
@@ -34,7 +38,5 @@
     { "action": "shell", "resource": "encore env*", "effect": "deny" },
     { "action": "shell", "resource": "encore secret*", "effect": "deny" },
     { "action": "shell", "resource": "printenv*", "effect": "deny" },
-    { "action": "shell", "resource": "*", "effect": "allow" },
-    { "action": "edit", "resource": "*", "effect": "allow" },
   ],
 }

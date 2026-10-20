@@ -16,11 +16,11 @@ async function main() {
 
   if (has("endpoint", "route", " api", "handler", "controller"))
     hints.push(
-      "HTTP: Encore `api()` with typed request/response interfaces; `auth: true` by default; cursor pagination on lists; prefixed public ids; APIError for failures; Idempotency-Key on writes (.agents/rules/http-conventions.md).",
+      "HTTP: services are plain TypeScript; endpoints are decorated actions (`@AsEndpoint`) and Encore is generated (ADR 0091/0124), never hand-written; typed Zod input/output; authenticated by default; cursor pagination on lists; prefixed public ids; typed errors; Idempotency-Key on writes (.agents/rules/http-conventions.md).",
     );
   if (has("secret", "api key", "token", "credential", ".env", "infisical"))
     hints.push(
-      'Secrets: two mechanisms — app secrets via Encore `secret("NAME")` (a human sets the value, synced from Infisical), dev/CI/MCP tokens via `infisical run -- <cmd>` and tools/scripts/mcp.sh. No .env files, never read or print a value (.agents/rules/secrets.md).',
+      'Secrets: two mechanisms — app secrets via Encore `secret("NAME")` (a human sets the value in the runtime store; no Infisical sync), dev/CI/MCP tokens via `infisical run -- <cmd>` and tools/scripts/mcp.sh. No .env files, never read or print a value (.agents/rules/secrets.md).',
     );
   if (has("adr", "decision", "architecture decision", "supersede"))
     hints.push(
@@ -30,7 +30,7 @@ async function main() {
     hints.push(
       "Release: one changeset per consumer-visible member change (`.changeset/<slug>.md`, `@stackra/<member>` + bump); never run `changeset version` locally (guard-bash denies it) and never hand-edit CHANGELOG.md (apps/docs/src/runbooks/release.mdx, ADR-0013).",
     );
-  if (has("test", "vitest", "spec"))
+  if (has("test", "vitest", ".spec", "spec file", "spec.ts"))
     hints.push(
       "Tests sit directly in a `__tests__/` folder beside their subject (`src/**/__tests__/<name>.test.ts`), anywhere in the repo; no root `tests/`, no `.spec` (ADR-0022, enforced by `pnpm validate`).",
     );

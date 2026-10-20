@@ -1,0 +1,41 @@
+{
+  "name": "@figentra/service-{{NAME}}",
+  "version": "0.0.0",
+  "private": true,
+  "description": "{{DESCRIPTION}}",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "stackra": {
+    "module": "./src/{{NAME}}.module.ts"
+  },
+  "exports": {
+    "./contracts": {
+      "@stackra/source": "./src/contracts/index.ts",
+      "types": "./dist/contracts.d.mts",
+      "default": "./dist/contracts.mjs"
+    }
+  },
+  "scripts": {
+    "dev": "tsdown --watch",
+    "start": "node dist/main.mjs",
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "devDependencies": {
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  }
+}

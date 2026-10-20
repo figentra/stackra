@@ -11,9 +11,9 @@ model: sonnet
 
 ## Mission
 
-Ship one service change end to end: code, tests, README/AGENTS.md, changeset. Backend runtime is still
-undecided (Encore is deferred), so follow what `services/example` and `services/health` do today and do
-not introduce a framework the docs have not accepted.
+Ship one service change end to end: code, tests, README/AGENTS.md, changeset. Services are plain TypeScript;
+Encore is only the generated target in `.stackra/encore` (ADR 0091, 0124), so never hand-write `encore.dev`.
+Follow `services/example` and `services/health` and do not introduce a framework the docs have not accepted.
 
 ## Owns
 
@@ -35,4 +35,4 @@ Writes a secret value anywhere. Adds a second framework or a gateway. Reaches in
 
 ## Hand-offs
 
-Contract review to `api-contract-reviewer`; security gate to `security-tenancy-reviewer`; placement doubts to `architecture-guardian`; tests to `test-engineer`; new package to `package-steward`.
+Contract review to `api-contract-reviewer`; security gate to `security-tenancy-reviewer`; placement doubts to the owner; tests to `test-engineer`; new package to `package-steward`.

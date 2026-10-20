@@ -84,8 +84,8 @@ Never cross boundaries without explicit handoff.
 
 Some files are shared (read-only for all but one agent):
 
-- `pnpm-workspace.yaml` - Only dependency-steward
-- `turbo.jsonc` - Only architecture-guardian
+- `pnpm-workspace.yaml` - Only the owner (or the agent the owner assigns)
+- `turbo.jsonc` - Only the owner (or the agent the owner assigns)
 - `.agents/rules/*` - Only one agent at a time
 
 ##### Communication
@@ -117,8 +117,8 @@ If two agents conflict:
 #### Enforcement
 
 - Planned: `guard-paths.mjs` does not read `.agents/locks/` yet; lock files are a convention, not a check
-- Session context tracks agent boundaries
-- Merge checks enforce coordination
+- Planned: nothing records or enforces agent boundaries yet; `session-context.mjs` re-states the repo invariants and branch, not file ownership
+- `pnpm verify` after a merge is the only coordination check
 
 #### Best Practices
 
@@ -136,28 +136,30 @@ If two agents conflict:
 
 ### HTTP Conventions
 
-Stackra backend APIs follow Encore conventions with additional rules.
+Services are plain TypeScript. You never write `encore.dev`, `api()` or `encore.service.ts` in a service: behaviour is
+a decorated action (ADR 0094, 0098), and `stackra gen` emits the Encore `api()` adapters into the gitignored
+`.stackra/encore/` (ADR 0091, 0124). The rules below are what the generated endpoints must satisfy, so they shape how
+you author actions.
 
 #### Endpoints
 
-Every Encore endpoint uses `api()` from `encore.dev/api`:
+An action exposes itself over HTTP with `@AsEndpoint`. `@Controller` is only for raw endpoints that are not actions
+(webhook receivers, `/api/auth/*`, streaming). Shapes are illustrative; the authoritative decorator API is in the
+package docs.
 
 ```typescript
-import { api } from "encore.dev/api";
-
-export const getUser = api(
-  { method: "GET", path: "/users/:id" },
-  async ({ id }: { id: string }): Promise<User> => {
-    // ...
-  },
-);
+@Action({ key: "user.get@1", input: GetUserInput, output: UserOutput, permission: "user:read" })
+@AsEndpoint({ method: "GET", path: "/users/:id" })
+async getUser(input: GetUserInput): Promise<UserOutput> {
+  // ...
+}
 ```
 
 #### Methods
 
 HTTP methods **by idempotency**:
 
-- `GET` - Safe, idempotent, no body
+- `GET` - Safe, idempotent, no body (`@Query`)
 - `PUT` - Idempotent state transition (`/archive`, `/activate`), per the HTTP and events law
 - `DELETE` - Idempotent
 - `POST` - Non-idempotent, creates resources
@@ -165,94 +167,51 @@ HTTP methods **by idempotency**:
 
 #### Authentication
 
-All endpoints authenticated by default:
+Every endpoint is authenticated by default. A public endpoint opts out explicitly, in the decorator:
 
 ```typescript
-export const getUser = api(
-  {
-    method: "GET",
-    path: "/users/:id",
-    auth: true, // Default, can omit
-  },
-  async ({ id }, { auth }: { id: string }, authData) => {
-    const userId = authData.userID;
-    // ...
-  },
-);
+@AsEndpoint({ method: "GET", path: "/health", auth: false })
 ```
 
-Public endpoints must explicitly opt-out:
-
-```typescript
-export const health = api(
-  { method: "GET", path: "/health", auth: false },
-  async (): Promise<{ status: "ok" }> => ({ status: "ok" }),
-);
-```
+The caller is the typed `Actor` the action pipeline provides (ADR 0098); never read a user id from the request body.
 
 #### Request/Response
 
 ##### Always typed
 
+Input and output are Zod schemas on the action (ADR 0095); the TypeScript types are inferred from them.
+
 ```typescript
-interface GetUserRequest {
-  id: string;
-}
-
-interface User {
-  id: string;
-  email: string;
-  createdAt: string; // ISO 8601
-}
-
-export const getUser = api(
-  { method: "GET", path: "/users/:id" },
-  async (req: GetUserRequest): Promise<User> => {
-    /* ... */
-  },
-);
+const GetUserInput = z.object({ id: z.string() });
+const UserOutput = z.object({
+  id: z.string(),
+  email: z.string().email(),
+  createdAt: z.string().datetime(), // ISO 8601
+});
 ```
 
 ##### Cursor pagination
 
 ```typescript
-interface ListUsersRequest {
-  cursor?: string;
-  limit?: number; // Default: 20, max: 100
-}
-
-interface ListUsersResponse {
-  users: User[];
-  nextCursor?: string;
-  hasMore: boolean;
-}
+const ListUsersInput = z.object({
+  cursor: z.string().optional(),
+  limit: z.number().int().min(1).max(100).default(20),
+});
+const ListUsersOutput = z.object({
+  users: z.array(UserOutput),
+  nextCursor: z.string().optional(),
+  hasMore: z.boolean(),
+});
 ```
 
 ##### Prefixed IDs
 
-```typescript
-// Use prefixed IDs externally
-interface User {
-  id: string; // "user_01H2J3K4L5M6N7P8Q9R0"
-  email: string;
-}
-
-// Internal: never expose database IDs
-```
+Use prefixed ids externally (`user_01H2J3K4L5M6N7P8Q9R0`); never expose database ids.
 
 #### Idempotency
 
-Non-GET operations support `Idempotency-Key`:
-
-```typescript
-export const createPayment = api(
-  { method: "POST", path: "/payments" },
-  async (req: CreatePaymentRequest, headers: { "idempotency-key"?: string }) => {
-    const key = headers["idempotency-key"];
-    // Use key for deduplication
-  },
-);
-```
+Non-GET operations support the `Idempotency-Key` header. The action pipeline has an idempotency step (ADR 0098), so an
+action declares that it is idempotent-keyed and the pipeline deduplicates; do not hand-roll key storage in a handler.
 
 #### Versioning
 
@@ -265,23 +224,14 @@ export const createPayment = api(
 
 #### Error Handling
 
-Use Encore's APIError:
-
-```typescript
-import { APIError } from "encore.dev/api";
-
-if (!user) {
-  throw APIError.notFound("user not found");
-}
-
-if (!authorized) {
-  throw APIError.permissionDenied("cannot access this user");
-}
-```
+Throw a typed error from the action; the generated adapter maps it to the matching HTTP status (not found, permission
+denied, invalid argument, and so on). Never build HTTP responses by hand and never import `APIError` in a service.
 
 #### See Also
 
 - Constitution: http-and-events
+- ADR-0091, ADR-0124: Encore is generated into `.stackra/encore`
+- ADR-0094, ADR-0098: decorators-only authoring, actions are the unit
 - ADR-0010: Services are independent members
 - Standards: api-contracts
 
@@ -392,7 +342,7 @@ Services communicate via (the generated Encore app carries both, ADRs 0091 and 0
 
 ### Not built yet
 
-If a task seems to need one of these, stop and route to the `architecture-guardian` agent. Rejected means no; deferred
+If a task seems to need one of these, stop and route to the owner. Rejected means no; deferred
 means not yet. A row changes only by a new ADR. Full table with revival triggers: `/adr/0011-rejected-and-deferred-technologies`.
 
 | Do not introduce                                                                                                                                | Status   | Use instead                                                                                                                                                                                                |
@@ -541,7 +491,7 @@ Stackra versions come from **one of two sources**, never a third:
 1. **No literal versions in package.json** - always use `catalog:` or `workspace:*`
 2. **No ranges in catalogs** - pin to exact versions (`1.2.3` not `^1.2.3`)
 3. **No `latest` or `*`** - every version is explicit
-4. **Catalog changes reviewed by dependency-steward** - version bumps affect the entire repo
+4. **Catalog changes reviewed by the owner** - version bumps affect the entire repo
 5. **Toolchain versions in `mise.toml`** - Node, pnpm, gitleaks pinned exactly
 
 #### Enforcement

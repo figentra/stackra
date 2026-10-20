@@ -1,85 +1,139 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
 import { stripJsonc } from "../jsonc.mjs";
-import { CATEGORIES, scaffold } from "../scaffold.mjs";
+import { CATEGORIES, ENTRIES, parseEntries, scaffold } from "../scaffold.mjs";
+import { check, checkExports, checkService } from "../validate-repository.mjs";
 
-const TOKENS = /\{\{(NAME|PASCAL|TITLE|DESCRIPTION|PORT|CATEGORY)\}\}/;
+const TOKENS = /\{\{\s*(NAME|PASCAL|TITLE|DESCRIPTION|PORT|CATEGORY|ENTRIES)\s*\}\}/;
 const tmp = () => mkdtempSync(join(tmpdir(), "scaffold-"));
 const render = (kind, name, extra = {}) =>
   scaffold({ kind, name, root: tmp(), format: false, description: 'Say "hi".', ...extra });
+const json = (dest, f) => JSON.parse(stripJsonc(readFileSync(join(dest, f), "utf8")));
 
 const cases = [
-  ["domain", "billing-core", { category: "data" }],
-  ["platform", "registry", { category: "runtime" }],
-  ["lib", "sample-lib", { category: "foundation" }],
+  ["service", "notes", {}],
+  ["package", "billing-core", { category: "data" }],
+  ["package", "cache", { category: "runtime", entries: ENTRIES }],
   ["tooling", "sample", {}],
-  ["app-vite", "admin", {}],
-  ["app-expo", "sample", {}],
-  ["app-docs", "handbook", {}],
-  ["app-next", "site", {}],
-  ["service", "sample", {}],
+  ["app:console", "admin", {}],
+  ["app:mobile", "sample", {}],
+  ["app:desktop", "studio", {}],
+  ["app:docs", "handbook", {}],
 ];
 
 for (const [kind, name, extra] of cases)
-  test(`renders ${kind}`, () => {
-    const { dest, files } = render(kind, name, extra);
+  test(`renders ${kind} ${name} as a conforming member`, () => {
+    const { dest, rel, files } = render(kind, name, extra);
     assert.ok(files.length > 3);
     for (const f of files) {
       assert.ok(!TOKENS.test(f), `token left in path ${f}`);
       const text = readFileSync(join(dest, f), "utf8");
       assert.ok(!TOKENS.test(text), `token left in ${f}`);
+      assert.ok(!/\benum\s+\w+\s*\{/.test(text), `enum in ${f}`);
       // tsc and the .jsonc tools take comments; every other .json stays strict.
       if (/\.jsonc$|tsconfig\.json$/.test(f)) JSON.parse(stripJsonc(text));
       else if (f.endsWith(".json")) JSON.parse(text);
     }
-    assert.equal(existsSync(join(dest, "LICENSE")), kind !== "service");
+    for (const f of ["LICENSE", "README.md", "AGENTS.md", "CHANGELOG.md", "package.json"])
+      assert.ok(files.includes(f), `${f} missing`);
+    const pkg = json(dest, "package.json");
+    const findings = check({
+      dir: rel,
+      pkg,
+      turbo: json(dest, "turbo.jsonc"),
+      tsconfig: files.includes("tsconfig.json") ? json(dest, "tsconfig.json") : undefined,
+    });
+    assert.deepEqual(findings, []);
+    if (kind === "service") assert.deepEqual(checkService({ pkg, paths: files }), []);
+    if (kind === "package") assert.deepEqual(checkExports(pkg.exports), []);
   });
 
-test("description is JSON-escaped and the LICENSE is copied byte-for-byte", () => {
-  const { dest } = render("lib", "esc", { category: "data" });
-  assert.equal(
-    JSON.parse(readFileSync(join(dest, "package.json"), "utf8")).description,
-    'Say "hi".',
+test("a service is a plain-TypeScript skeleton with no Encore file", () => {
+  const { dest, files } = render("service", "notes");
+  assert.equal(json(dest, "package.json").name, "@figentra/service-notes");
+  for (const f of [
+    "src/main.ts",
+    "src/notes.module.ts",
+    "src/modules/README.md",
+    "src/contracts/index.ts",
+    "src/__tests__/notes.module.test.ts",
+    "config/notes.config.ts",
+  ])
+    assert.ok(files.includes(f), `${f} missing`);
+  assert.ok(!files.some((f) => /encore/.test(f)));
+  const ts = files.filter((f) => f.endsWith(".ts"));
+  assert.ok(!ts.some((f) => readFileSync(join(dest, f), "utf8").includes("encore.dev")));
+});
+
+test("package entries become exports and tsdown entries, in order", () => {
+  const { dest, files } = render("package", "cache", {
+    category: "runtime",
+    entries: "testing,contracts",
+  });
+  assert.deepEqual(Object.keys(json(dest, "package.json").exports), [
+    ".",
+    "./contracts",
+    "./testing",
+    "./resources/*",
+  ]);
+  assert.match(
+    readFileSync(join(dest, "tsdown.config.ts"), "utf8"),
+    /\{ "index": "src\/core\/index.ts", "contracts": "src\/contracts\/index.ts", "testing": "src\/testing\/index.ts" \}/,
   );
+  assert.ok(files.includes("src/testing/index.ts") && !files.includes("src/react/index.ts"));
+  assert.ok(files.includes("config/cache.config.ts") && files.includes("resources/README.md"));
+});
+
+test("parseEntries", () => {
+  assert.deepEqual(parseEntries("none"), []);
+  assert.deepEqual(parseEntries(""), []);
+  assert.deepEqual(parseEntries("react, contracts"), ["contracts", "react"]);
+  assert.throws(() => parseEntries("ui"), /unknown entry "ui"/);
+});
+
+test("description is JSON-escaped and the target repo's LICENSE is copied", () => {
+  const { dest } = render("package", "esc", { category: "data" });
+  assert.equal(json(dest, "package.json").description, 'Say "hi".');
   assert.deepEqual(
     readFileSync(join(dest, "LICENSE")),
     readFileSync(new URL("../../../LICENSE", import.meta.url)),
   );
+  const root = tmp();
+  writeFileSync(join(root, "LICENSE"), "Proprietary.\n");
+  const other = scaffold({ kind: "service", name: "billing", root, format: false });
+  assert.equal(readFileSync(join(other.dest, "LICENSE"), "utf8"), "Proprietary.\n");
 });
 
 test("next free port skips taken ones", () => {
   const root = tmp();
-  const a = scaffold({ kind: "app-vite", name: "one", root, format: false });
+  const a = scaffold({ kind: "app:console", name: "one", root, format: false });
   assert.match(readFileSync(join(a.dest, "package.json"), "utf8"), /--port 3710/);
-  const b = scaffold({ kind: "app-next", name: "two", root, format: false });
+  const b = scaffold({ kind: "app:console", name: "two", root, format: false });
   assert.match(readFileSync(join(b.dest, "package.json"), "utf8"), /--port 3711/);
 });
 
 test("dry run writes nothing", () => {
   const root = tmp();
-  const { dest, files } = scaffold({
-    kind: "lib",
-    name: "dry",
-    category: "data",
-    root,
-    dryRun: true,
-  });
-  assert.ok(files.includes("LICENSE"));
+  const { dest, files } = scaffold({ kind: "service", name: "dry", root, dryRun: true });
+  assert.ok(files.includes("LICENSE") && files.includes("src/dry.module.ts"));
   assert.ok(!existsSync(dest));
 });
 
 test("rejections", () => {
   const root = tmp();
   const bad = (o, re) => assert.throws(() => scaffold({ root, format: false, ...o }), re);
-  bad({ kind: "lib", name: "Bad_Name", category: "data" }, /invalid name/);
-  bad({ kind: "lib", name: "ok" }, /--category is required/);
-  bad({ kind: "lib", name: "ok", category: "nope" }, /--category/);
+  bad({ kind: "package", name: "Bad_Name", category: "data" }, /invalid name/);
+  bad({ kind: "package", name: "ok" }, /--category is required/);
+  bad({ kind: "package", name: "ok", category: "nope" }, /--category/);
+  bad({ kind: "package", name: "ok", category: "data", entries: "web" }, /unknown entry/);
   bad({ kind: "nope", name: "ok" }, /unknown kind/);
-  bad({ kind: "app-expo", name: "my-app" }, /hyphens/);
+  bad({ kind: "app-next", name: "ok" }, /unknown kind/);
+  bad({ kind: "app:mobile", name: "my-app" }, /hyphens/);
+  bad({ kind: "service", name: "ok", root: join(root, "missing") }, /not a directory/);
   scaffold({ kind: "service", name: "dup", root, format: false });
   bad({ kind: "service", name: "dup" }, /already exists/);
   assert.equal(CATEGORIES.length, 10);

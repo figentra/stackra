@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 /**
  * Stackra file contract:
- * Purpose: `pnpm new <kind> <name> …` — copies a template from tools/scaffold/templates into the repo, replaces the
- *          six tokens ({{NAME}} {{PASCAL}} {{TITLE}} {{DESCRIPTION}} {{PORT}} {{CATEGORY}}) in contents and path
- *          names, copies the root LICENSE into every new workspace member, then formats the result with oxfmt.
+ * Purpose: `pnpm new <kind> <name> …` — copies a template from tools/scaffold/templates into a monorepo (this one,
+ *          or another with `--repo <path>`), replaces the tokens ({{NAME}} {{PASCAL}} {{TITLE}} {{DESCRIPTION}}
+ *          {{PORT}} {{CATEGORY}} {{ENTRIES}}) in contents and path names, adds the chosen package entries, copies
+ *          the target repo's LICENSE into the new member, then formats the result with oxfmt. Member shapes:
+ *          ADR 0126.
  * Scope: tools/scaffold/templates/**; writes only the one new destination directory.
  * Owner: release-operations · Secrets: forbidden
  */
@@ -14,9 +16,11 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
+import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -35,21 +39,24 @@ export const CATEGORIES = [
   "state",
 ];
 
-/** kind → template dir, destination (relative to root), and whether it is a workspace member. */
+/** Optional package entries besides core (`.`), in exports order (ADR 0126, FW1). */
+export const ENTRIES = ["contracts", "node", "react", "native", "testing", "devtools"];
+
+/** kind → template dir and destination (relative to the target repo root). */
 const KINDS = {
-  domain: { tpl: "packages/domain", dest: (n, c) => `packages/${c}/${n}`, category: true },
-  platform: { tpl: "packages/platform", dest: (n, c) => `packages/${c}/${n}`, category: true },
-  lib: { tpl: "packages/lib", dest: (n, c) => `packages/${c}/${n}`, category: true },
+  service: { tpl: "services/service", dest: (n) => `services/${n}` },
+  package: { tpl: "packages/package", dest: (n, c) => `packages/${c}/${n}`, category: true },
   tooling: { tpl: "packages/tooling", dest: (n) => `packages/tooling/${n}` },
-  "app-vite": { tpl: "apps/vite", dest: (n) => `apps/${n}`, ports: [3710, 3799] },
-  "app-expo": { tpl: "apps/expo", dest: (n) => `apps/${n}`, noHyphen: true },
-  "app-docs": { tpl: "apps/docs", dest: (n) => `apps/${n}`, ports: [3334, 3399] },
-  "app-next": { tpl: "apps/next", dest: (n) => `apps/${n}`, ports: [3710, 3799] },
-  service: { tpl: "services/encore", dest: (n) => `services/src/${n}`, unit: true },
+  "app:console": { tpl: "apps/console", dest: (n) => `apps/${n}`, ports: [3710, 3799] },
+  "app:mobile": { tpl: "apps/mobile", dest: (n) => `apps/${n}`, noHyphen: true },
+  "app:desktop": { tpl: "apps/desktop", dest: (n) => `apps/${n}` },
+  "app:docs": { tpl: "apps/docs", dest: (n) => `apps/${n}`, ports: [3334, 3399] },
 };
 export const KIND_NAMES = Object.keys(KINDS);
 
 const NAME_RE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
+// Spaces tolerated: oxfmt rewrites `{{TITLE}}` inside JSX text to `{{ TITLE }}`.
+const TOKEN_RE = /\{\{\s*(NAME|PASCAL|TITLE|DESCRIPTION|PORT|CATEGORY|ENTRIES)\s*\}\}/g;
 const pascal = (n) => n.replace(/(^|-)([a-z0-9])/g, (_, __, c) => c.toUpperCase());
 const titleCase = (n) =>
   n.replace(/(^|-)([a-z0-9])/g, (_, s, c) => (s ? " " : "") + c.toUpperCase());
@@ -76,15 +83,36 @@ function freePort(root, [lo, hi]) {
   throw new Error(`no free port in ${lo}-${hi}`);
 }
 
+/** `"none"`, `""`, an array or a comma list → validated entry names in exports order. */
+export function parseEntries(value = []) {
+  const list = (Array.isArray(value) ? value : String(value).split(","))
+    .map((e) => e.trim())
+    .filter((e) => e && e !== "none");
+  for (const e of list)
+    if (!ENTRIES.includes(e))
+      throw new Error(
+        `unknown entry "${e}" — any of: ${ENTRIES.join(", ")} (core "." is always there)`,
+      );
+  return ENTRIES.filter((e) => list.includes(e));
+}
+
+/** ADR 0025 export shape for one entry; core is `.` built as `index`. */
+const exportOf = (out, src) => ({
+  "@stackra/source": `./${src}`,
+  types: `./dist/${out}.d.mts`,
+  default: `./dist/${out}.mjs`,
+});
+
 /**
  * Renders a template. Returns the destination dir and the relative file list. With `dryRun` nothing is written
- * and `format` is skipped. `root` is the repo root (injectable for tests); templates always come from this repo.
+ * and `format` is skipped. `root` is the target repo root (`--repo`); templates always come from this repo.
  */
 export function scaffold({
   kind,
   name,
   root = ROOT,
   category,
+  entries = [],
   description = "TODO: one sentence.",
   title,
   port,
@@ -99,15 +127,19 @@ export function scaffold({
     );
   if (spec.noHyphen && name.includes("-"))
     throw new Error(
-      `invalid name "${name}" — app-expo names cannot contain hyphens (Android package segment)`,
+      `invalid name "${name}" — ${kind} names cannot contain hyphens (Android package segment)`,
     );
   if (spec.category && !CATEGORIES.includes(category))
     throw new Error(`--category is required, one of: ${CATEGORIES.join(", ")}`);
+  if (!existsSync(root) || !statSync(root).isDirectory())
+    throw new Error(`--repo ${root} is not a directory`);
+  const picked = kind === "package" ? parseEntries(entries) : [];
 
   const rel = spec.dest(name, category);
   const dest = join(root, rel);
   if (existsSync(dest)) throw new Error(`${rel} already exists`);
 
+  const built = [["index", "src/core/index.ts"], ...picked.map((e) => [e, `src/${e}/index.ts`])];
   const tokens = {
     NAME: name,
     PASCAL: pascal(name),
@@ -115,40 +147,59 @@ export function scaffold({
     DESCRIPTION: description,
     PORT: String(port ?? (spec.ports ? freePort(root, spec.ports) : "")),
     CATEGORY: category ?? "",
+    ENTRIES: built.map(([out, src]) => `${JSON.stringify(out)}: ${JSON.stringify(src)}`).join(", "),
   };
   const fill = (text, escape) =>
-    text.replace(/\{\{(NAME|PASCAL|TITLE|DESCRIPTION|PORT|CATEGORY)\}\}/g, (_, k) =>
+    text.replace(TOKEN_RE, (_, k) =>
       escape && (k === "DESCRIPTION" || k === "TITLE")
         ? JSON.stringify(tokens[k]).slice(1, -1)
         : tokens[k],
     );
 
-  const tplDir = join(TEMPLATES, spec.tpl);
+  const sources = [
+    join(TEMPLATES, spec.tpl),
+    ...picked.map((e) => join(TEMPLATES, "packages/entries", e)),
+  ];
   const files = [];
-  for (const src of walk(tplDir)) {
-    const out = fill(relative(tplDir, src), false);
-    files.push(out);
-    if (dryRun) continue;
-    const target = join(dest, out);
-    mkdirSync(dirname(target), { recursive: true });
-    const json = /\.jsonc?$/.test(out);
-    writeFileSync(target, fill(readFileSync(src, "utf8"), json));
-  }
-  if (!spec.unit) files.push("LICENSE");
+  for (const tplDir of sources)
+    for (const src of walk(tplDir)) {
+      const out = fill(relative(tplDir, src), false);
+      files.push(out);
+      if (dryRun) continue;
+      const target = join(dest, out);
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, fill(readFileSync(src, "utf8"), /\.jsonc?$/.test(out)));
+    }
+  files.push("LICENSE");
   if (!dryRun) {
-    if (!spec.unit) copyFileSync(join(ROOT, "LICENSE"), join(dest, "LICENSE"));
+    if (kind === "package") {
+      const file = join(dest, "package.json");
+      const pkg = JSON.parse(readFileSync(file, "utf8"));
+      pkg.exports = {
+        ".": exportOf("index", "src/core/index.ts"),
+        ...Object.fromEntries(picked.map((e) => [`./${e}`, exportOf(e, `src/${e}/index.ts`)])),
+        "./resources/*": "./resources/*",
+      };
+      writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
+    }
+    const license = existsSync(join(root, "LICENSE"))
+      ? join(root, "LICENSE")
+      : join(ROOT, "LICENSE");
+    copyFileSync(license, join(dest, "LICENSE"));
     if (format)
       execFileSync("pnpm", ["exec", "oxfmt", "--write", dest], { cwd: ROOT, stdio: "inherit" });
   }
   return { dest, rel, files: files.sort() };
 }
 
+const VALUE_FLAGS = ["--category", "--description", "--title", "--port", "--entries", "--repo"];
+
 function parseArgs(argv) {
   const opts = { _: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--dry-run") opts.dryRun = true;
-    else if (["--category", "--description", "--title", "--port"].includes(a)) {
+    else if (VALUE_FLAGS.includes(a)) {
       if (argv[i + 1] === undefined) throw new Error(`${a} needs a value`);
       opts[a.slice(2)] = argv[++i];
     } else if (a.startsWith("--")) throw new Error(`unknown option ${a}`);
@@ -157,18 +208,31 @@ function parseArgs(argv) {
   return opts;
 }
 
-function main() {
+async function main() {
   try {
     const {
       _: [kind, name, ...extra],
       port,
+      repo,
       ...opts
     } = parseArgs(process.argv.slice(2));
     if (!kind || !name || extra.length)
       throw new Error(
-        `usage: pnpm new <kind> <name> [--category <c>] [--description "<text>"] [--title "<Title>"] [--port <n>] [--dry-run]\nkinds: ${KIND_NAMES.join(", ")}`,
+        `usage: pnpm new <kind> <name> [--category <c>] [--entries contracts,node,react,native,testing,devtools|none] [--description "<text>"] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]\nkinds: ${KIND_NAMES.join(", ")}`,
       );
-    const r = scaffold({ kind, name, ...opts, port: port && Number(port) });
+    // The only prompt: package entries, asked on a terminal when --entries is absent.
+    if (kind === "package" && opts.entries === undefined && process.stdin.isTTY) {
+      const rl = createInterface({ input: process.stdin, output: process.stdout });
+      opts.entries = await rl.question(`Entries besides core (${ENTRIES.join(",")}) [none]: `);
+      rl.close();
+    }
+    const r = scaffold({
+      kind,
+      name,
+      ...opts,
+      root: repo ? resolve(repo) : ROOT,
+      port: port && Number(port),
+    });
     console.log(`${opts.dryRun ? "Would create" : "Created"} ${r.rel}:`);
     for (const f of r.files) console.log(`  ${f}`);
     if (!opts.dryRun) console.log("\nNext: pnpm install, then pnpm verify");
@@ -178,4 +242,4 @@ function main() {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] === fileURLToPath(import.meta.url)) await main();

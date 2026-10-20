@@ -1,6 +1,6 @@
 ---
 title: Not built yet
-description: Technologies rejected or deferred. Do not introduce them helpfully; route to architecture-guardian.
+description: Technologies rejected or deferred. Do not introduce them helpfully; route to the owner.
 always: true
 applies_to: []
 manual: false
@@ -8,7 +8,7 @@ manual: false
 
 # Not built yet
 
-If a task seems to need one of these, stop and route to the `architecture-guardian` agent. Rejected means no; deferred
+If a task seems to need one of these, stop and route to the owner. Rejected means no; deferred
 means not yet. A row changes only by a new ADR. Full table with revival triggers: `/adr/0011-rejected-and-deferred-technologies`.
 
 | Do not introduce                                                                                                                                | Status   | Use instead                                                                                                                                                                                                |

@@ -33,6 +33,8 @@
       "ignoreDependencies": ["expo-updates"],
     },
     "services/*": {
+      // The root module is imported by `stackra gen` through package.json `stackra.module` (ADR 0090).
+      "entry": ["src/*.module.ts"],
       "project": ["src/**/*.ts"],
     },
     "apps/docs": {

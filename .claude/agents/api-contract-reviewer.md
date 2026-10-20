@@ -11,7 +11,7 @@ model: sonnet
 
 ## Mission
 
-Catch contract mistakes before a frontend depends on them. Escalates to `architecture-guardian` when a
+Catch contract mistakes before a frontend depends on them. Escalates to the owner when a
 finding is a boundary or decision question rather than a shape one.
 
 ## Owns
@@ -35,4 +35,4 @@ Edits files. Designs the endpoint for the builder. Blocks a merge itself.
 
 ## Hand-offs
 
-Fixes to `service-builder`; consumer updates to `frontend-builder` or `mobile-builder`; security concerns to `security-tenancy-reviewer`; boundary questions to `architecture-guardian`.
+Fixes to `service-builder`; consumer updates to `frontend-builder` or `mobile-builder`; security concerns to `security-tenancy-reviewer`; boundary questions to the owner.

@@ -4,6 +4,7 @@
  * Purpose: the repository-shape gate run by `pnpm validate` (part of `pnpm verify`). Every workspace member uses
  *          catalog:/workspace: versions only, is named by placement (packages @stackra/<name>, apps @figentra/<dir>, services @figentra/service-<dir>), declares exactly one turbo tier tag matching its
  *          directory, extends a @stackra/typescript-config preset, and depends on no forbidden package.
+ *          A service declares its root module (`stackra.module`, ADR 0090) and holds no Encore file (ADR 0126).
  *          Every test file anywhere in the repository sits directly in a __tests__/ folder (ADR 0022).
  *          Every JSON config is .jsonc unless its reader cannot take one (MUST_STAY_JSON).
  *          Prints the findings and exits 1; prints nothing on success. Adapted from Figentra's checks 1–5.
@@ -11,7 +12,7 @@
  * Owner: release-operations · Secrets: forbidden
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readJsonc } from "./jsonc.mjs";
@@ -160,13 +161,23 @@ export function checkExports(exports) {
   return out;
 }
 
-/** Findings for an Encore service unit directory (services/src/<dir>). */
-export function checkServiceUnit({ files, agents }) {
+const ENCORE_FILE = /(^|\/)(encore\.service\.ts|encore\.app)$/;
+
+/**
+ * Findings for a service member (ADR 0126): plain TypeScript with a `src/main.ts` entry and a root module named by
+ * `package.json` `stackra.module` (ADR 0090), and no Encore file — Encore is generated into .stackra/encore
+ * (ADRs 0091, 0124). `paths` are the member's files relative to the member directory.
+ */
+export function checkService({ pkg, paths }) {
   const out = [];
-  for (const f of ["encore.service.ts", "README.md", "AGENTS.md"])
-    if (!files.includes(f)) out.push(`${f} missing`);
-  if (files.includes("AGENTS.md") && !/^## PII/m.test(agents ?? ""))
-    out.push('AGENTS.md has no "## PII" section');
+  if (!paths.includes("src/main.ts")) out.push("src/main.ts missing");
+  const module = pkg.stackra?.module;
+  if (!module)
+    out.push('package.json has no "stackra": { "module": "./src/<name>.module.ts" } (ADR 0090)');
+  else if (!paths.includes(module.replace(/^\.\//, "")))
+    out.push(`package.json stackra.module ${module} does not exist`);
+  for (const p of paths.filter((f) => ENCORE_FILE.test(f)))
+    out.push(`${p}: services hold no Encore files; stackra gen generates them (ADR 0124)`);
   return out;
 }
 
@@ -239,11 +250,18 @@ export function checkJsonConfigs(paths) {
 
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 
-/** ADR 0022: every `*.test.*` file sits directly in `__tests__/`; `.spec.*` is not used. `.old/` is archived code. */
+/**
+ * ADR 0022: every `*.test.*` file sits directly in `__tests__/`; `.spec.*` is not used. Tier infixes (`.int`,
+ * `.contract`, `.e2e`, `.load`) go before `.test` (TS1/TS2). No Storybook: `*.stories.*` is banned (ADR 0126).
+ * `.old/` is archived code.
+ */
 export function checkTestPlacement(paths) {
   const out = [];
   for (const p of paths) {
-    if (p.startsWith(".old/") || !TEST_FILE.test(p)) continue;
+    if (p.startsWith(".old/")) continue;
+    if (/\.stories\.[cm]?[jt]sx?$/.test(p))
+      out.push(`${p}: no Storybook; test the component in __tests__/`);
+    if (!TEST_FILE.test(p)) continue;
     const parts = p.split("/");
     if (parts.at(-2) !== "__tests__")
       out.push(`${p}: test files go in a __tests__/ folder (ADR 0022)`);
@@ -279,17 +297,6 @@ function main() {
   // ADR 0024 decision 2: the brand marks carry their all-rights-reserved NOTICE.
   if (!existsSync(join(ROOT, "packages/experience/brand/src/logos/NOTICE")))
     report("packages/experience/brand", ["src/logos/NOTICE missing (ADR 0024)"]);
-  const servicesSrc = join(ROOT, "services/src");
-  if (existsSync(servicesSrc))
-    for (const d of readdirSync(servicesSrc))
-      if (statSync(join(servicesSrc, d)).isDirectory())
-        report(
-          `services/src/${d}`,
-          checkServiceUnit({
-            files: readdirSync(join(servicesSrc, d)),
-            agents: read(join(servicesSrc, d), "AGENTS.md"),
-          }),
-        );
   for (const { path } of members) {
     const dir = relative(ROOT, path);
     const at = (f) => (existsSync(join(path, f)) ? readJsonc(join(path, f)) : undefined);
@@ -313,6 +320,16 @@ function main() {
           agents: read(path, "AGENTS.md"),
           licenseText: read(path, "LICENSE"),
           rootLicense,
+        }),
+      );
+    if (tierFor(dir) === "tier:service")
+      report(
+        dir,
+        checkService({
+          pkg,
+          paths: repoFiles
+            .filter((p) => p.startsWith(`${dir}/`))
+            .map((p) => p.slice(dir.length + 1)),
         }),
       );
   }

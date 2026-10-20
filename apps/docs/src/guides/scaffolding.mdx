@@ -4,10 +4,10 @@ description: "Create a member with pnpm new, what the templates replace, and how
 icon: "blocks"
 ---
 
-Never copy an existing member to start a new one. `pnpm new` picks the right directory, package scope, tier tag and script set, copies the root `LICENSE` and formats the result.
+Never copy an existing member to start a new one. `pnpm new` picks the right directory, package scope, tier tag and script set, copies the target repo's `LICENSE` and formats the result. The shapes it renders are decided in [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates).
 
 ```bash
-pnpm new <kind> <name> [--category <c>] [--description "<text>"] [--title "<Title>"] [--port <n>] [--dry-run]
+pnpm new <kind> <name> [--category <c>] [--entries <list>|none] [--description "<text>"] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]
 ```
 
 Run it with `--dry-run` first to see what it would write. Then run `pnpm install` and `pnpm verify`.
@@ -16,27 +16,30 @@ Run it with `--dry-run` first to see what it would write. Then run `pnpm install
 
 | Kind | Template | Lands in | Pick it for |
 | --- | --- | --- | --- |
-| `domain` | `templates/packages/domain` | `packages/<category>/<name>` | A business capability: entities, use cases, adapters, a delivery surface |
-| `platform` | `templates/packages/platform` | `packages/<category>/<name>` | A technical capability other packages build on, runtime-neutral core |
-| `lib` | `templates/packages/lib` | `packages/<category>/<name>` | A small flat utility with one entry and no layers |
+| `service` | `templates/services/service` | `services/<name>` | A backend service: plain TypeScript, root module, no Encore file |
+| `package` | `templates/packages/package` + `templates/packages/entries/*` | `packages/<category>/<name>` | Any library, entries-first |
 | `tooling` | `templates/packages/tooling` | `packages/tooling/<name>` | A shared config preset, data only |
-| `app-vite` | `templates/apps/vite` | `apps/<name>` | A client-only SPA behind login; port from 3710 |
-| `app-next` | `templates/apps/next` | `apps/<name>` | Server rendering or public pages; port from 3710 |
-| `app-expo` | `templates/apps/expo` | `apps/<name>` | An iOS and Android app; no hyphens in the name |
-| `app-docs` | `templates/apps/docs` | `apps/<name>` | A Mintlify site; port from 3334 |
-| `service` | `templates/services/encore` | see the note | A backend service |
+| `app:console` | `templates/apps/console` | `apps/<name>` | A panel app: Vite, React Router 7, HeroUI; port from 3710 |
+| `app:mobile` | `templates/apps/mobile` | `apps/<name>` | iOS and Android: Expo SDK 57, React Navigation, HeroUI Native; no hyphens in the name |
+| `app:desktop` | `templates/apps/desktop` | `apps/<name>` | An Electron app packaged by electron-builder |
+| `app:docs` | `templates/apps/docs` | `apps/<name>` | A Mintlify site; port from 3334 |
 
-`--category` is required for `domain`, `platform` and `lib` and must be one of: foundation, application, communication, cross-cutting, data, developer, experience, runtime, security, state. Names are kebab-case.
+`--category` is required for `package` and must be one of: foundation, application, communication, cross-cutting, data, developer, experience, runtime, security, state. Names are kebab-case. There is no Next.js kind.
 
-<Warning>
-  A service is its own workspace member at `services/<name>` (`@figentra/service-<name>`, like `services/example` and `services/health`), and holds no Encore files: `stackra gen` generates the Encore app ([0124](/adr/0124-encore-is-the-generated-runtime-target)). The `service` template and `tools/scripts/scaffold.mjs` still target the older layout, `services/src/<name>` as a unit of one Encore app, which is not a workspace member. Until the template is updated, scaffold a service by hand from `services/example`, or run `pnpm new service` and move the result, then run `pnpm validate`.
-</Warning>
+## Flags
 
-Which package kind: would the code need renaming to make sense in a different product? Then `domain`. Does it serve other packages with no business meaning of its own? Then `platform`, or `lib` when it is flat. Rules for each shape are in [Packages](/guides/packages).
+| Flag | Does |
+| --- | --- |
+| `--entries contracts,node,react,native,testing,devtools` | `package` only: the entries besides core (`.`). `none` for core only. Without the flag, a terminal is asked; a script gets core only. |
+| `--repo <path>` | Scaffold into another monorepo (for example the private figentra-os). Templates come from this repo; the `LICENSE` comes from the target, or from this repo if the target has none. |
+| `--description`, `--title`, `--port` | Fill the tokens; the port defaults to the next free one in the kind's range. |
+| `--dry-run` | Print the file list, write nothing. |
+
+Every flag is non-interactive, so agents and CI run `pnpm new` without a prompt.
 
 ## Tokens
 
-The scaffold replaces exactly six tokens in file contents **and** path names. Other double-brace text (JSX style objects) is left alone.
+The scaffold replaces these tokens in file contents **and** path names. Other double-brace text (JSX style objects) is left alone.
 
 | Token | Value |
 | --- | --- |
@@ -46,12 +49,13 @@ The scaffold replaces exactly six tokens in file contents **and** path names. Ot
 | `{{DESCRIPTION}}` | the `--description` sentence; becomes `description` in `package.json` and opens the README and AGENTS |
 | `{{PORT}}` | dev port, the next free one in the kind's range (or `--port`) |
 | `{{CATEGORY}}` | the `packages/` folder |
+| `{{ENTRIES}}` | the package's tsdown entry map, built from `--entries` |
 
-`TITLE` and `DESCRIPTION` are JSON-escaped when written into `.json` and `.jsonc` files.
+`TITLE` and `DESCRIPTION` are JSON-escaped when written into `.json` and `.jsonc` files. Template files hold tokens, so oxfmt and oxlint skip `tools/scaffold/templates/**`; the generator formats what it renders.
 
 ## What you get
 
-Every member gets `package.json`, `turbo.jsonc` with its one tier tag, `README.md`, `AGENTS.md` with a `## PII` table, `CHANGELOG.md` and the byte-for-byte root `LICENSE`, with code in `src/`. Library templates ship passing tests, because the vitest preset fails an empty suite, and their `exports` point at `src`. After scaffolding:
+Every member gets `package.json`, `turbo.jsonc` with its one tier tag, `README.md`, `AGENTS.md` with a `## PII` table, `CHANGELOG.md` and the `LICENSE`, with code in `src/` and tests in `__tests__/`. A service and a package also get `config/<name>.config.ts`; a package gets `resources/`. Every template with code ships a passing test, because the vitest preset fails an empty suite. After scaffolding:
 
 1. Replace the placeholder README and AGENTS text with the member's real purpose and its PII table.
 2. `pnpm install` to link the new member, then `pnpm verify`.
@@ -59,9 +63,9 @@ Every member gets `package.json`, `turbo.jsonc` with its one tier tag, `README.m
 
 ## Changing a template
 
-Edit the template under `tools/scaffold/templates/`, then run `node --test tools/scripts/scaffold.test.mjs` (or `pnpm test`). The test renders every kind into a temporary directory and fails if a token is left in a path or a file, or if a rendered `.json` file does not parse. It also covers the JSON escaping, the byte-exact `LICENSE`, port allocation and `--dry-run`. Rendering the output through `pnpm validate` is a target extension: a template that no longer produces a conforming member should fail the suite, not surprise the next person who scaffolds.
+Edit the template under `tools/scaffold/templates/`, then run `node --test tools/scripts/__tests__/scaffold.test.mjs` (or `pnpm validate`). The test renders every kind into a temporary directory and fails if a token is left in a path or a file, if a rendered `.json` file does not parse, or if the rendered member fails the validator's member, service and exports checks. It also covers package entries, the JSON escaping, the target repo's `LICENSE`, port allocation and `--dry-run`.
 
-When you add a kind, add a row to the test's case list and to the template folder's `README.md`. Add a template for a new shape only when its recorded trigger fires; a template for a shape nobody has adopted manufactures non-conformant members.
+When you add a kind, add a row to the test's case list and to `tools/scaffold/README.md`.
 
 ## Moves are scripted, never hand edits
 
@@ -75,9 +79,9 @@ Moving or renaming a file or folder means rewriting every import and link that p
 
 | Rule | Check | State |
 | --- | --- | --- |
-| Every template renders with no token left | `tools/scripts/scaffold.test.mjs` | Live |
-| Every rendered member passes `pnpm validate` | Scaffold test | Not built |
-| Scaffolded service matches the `services/<name>` layout | Template update | Not built |
+| Every template renders with no token left | `tools/scripts/__tests__/scaffold.test.mjs` | Live |
+| Every rendered member passes the validator's member, service and exports checks | Scaffold test | Live |
+| A service declares `stackra.module` and holds no Encore file | `validate-repository.mjs` (`checkService`) | Live |
 | Moves are scripted | Move codemod | Not built |
 
 See also [Structure](/guides/structure), [Packages](/guides/packages) and [Definition of done](/guides/definition-of-done).

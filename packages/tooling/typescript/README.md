@@ -13,7 +13,6 @@ so every preset file has a header).
 | `./decorators-react` | `decorators` | a library using decorators + React (DOM lib, automatic JSX)           |
 | `./encore`           | `node`       | the Encore.ts application (`services`)                                |
 | `./expo`             | `base`       | Expo / React Native apps (`apps/mobile`)                              |
-| `./next`             | `react`      | Next.js App Router apps (`next build`, route types, `next` plugin)    |
 | `./react`            | `base`       | React 19 libraries (DOM lib, automatic JSX)                           |
 | `./vite`             | `react`      | Vite + React SPAs (`apps/console`)                                    |
 | `./vite-node`        | `node`       | the tooling packages whose config files Vite loads                    |

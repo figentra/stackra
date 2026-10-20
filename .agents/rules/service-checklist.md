@@ -23,5 +23,5 @@ A service is `services/<name>`, `@figentra/service-<name>`, tag `tier:service`, 
 8. **Definition of done:** code, `pnpm verify` green, the service's own tests green, docs current, reviewer
    sign-off. `pnpm verify` never starts a service, so a typecheck is not proof it runs.
 
-Enforcement: `tools/scripts/validate-repository.mjs` (member shape, `checkServiceUnit`, tier tag); items 2-5 and 8
+Enforcement: `tools/scripts/validate-repository.mjs` (member shape, `checkService`, tier tag); items 2-5 and 8
 are reviewer-checked (planned checks). Docs: `apps/docs/src/standards/services.mdx`.

@@ -54,8 +54,8 @@ Never cross boundaries without explicit handoff.
 
 Some files are shared (read-only for all but one agent):
 
-- `pnpm-workspace.yaml` - Only dependency-steward
-- `turbo.jsonc` - Only architecture-guardian
+- `pnpm-workspace.yaml` - Only the owner (or the agent the owner assigns)
+- `turbo.jsonc` - Only the owner (or the agent the owner assigns)
 - `.agents/rules/*` - Only one agent at a time
 
 ### Communication
@@ -87,8 +87,8 @@ If two agents conflict:
 ## Enforcement
 
 - Planned: `guard-paths.mjs` does not read `.agents/locks/` yet; lock files are a convention, not a check
-- Session context tracks agent boundaries
-- Merge checks enforce coordination
+- Planned: nothing records or enforces agent boundaries yet; `session-context.mjs` re-states the repo invariants and branch, not file ownership
+- `pnpm verify` after a merge is the only coordination check
 
 ## Best Practices
 

@@ -19,8 +19,8 @@ push, and run read-only commands only.
 
 - `AGENTS.md` and `.agents/rules/concurrent-sessions.md` — how parallel sessions lose work, and why a
   precondition written only in prose is not a precondition
-- `apps/docs/src/runbooks/ci.mdx` — the gate: one required check running `pnpm verify` (no `.github/` exists
-  yet; `pnpm verify` locally is the gate today)
+- `apps/docs/src/runbooks/ci.mdx` — the gate: one required check running `pnpm verify` (workflows live in `.github/workflows`:
+  `ci.yml`, `release.yml`, `linear-sync.yml`)
 - `apps/docs/src/runbooks/release.mdx` — changesets, the version pull request, tags, recovery
 - `apps/docs/src/runbooks/secrets.mdx` — Infisical layout and rotation
 - `apps/docs/src/runbooks/deploys.mdx` — what "deployed" means in this repo
@@ -31,10 +31,8 @@ push, and run read-only commands only.
 ## What exists today
 
 Nothing is deployed. The services under `services/` are hello-world members, the apps under `apps/` have no
-deploy target, and there is no `.github/` yet — CI is a documented target (`runbooks/ci.mdx`), so until the
-first workflow lands, `pnpm verify` on a machine is the gate. The release tooling (`pnpm changeset`,
-`pnpm changeset:status`) is configured; the release workflow itself is not built, and every package is
-private.
+deploy target, and CI runs from `.github/workflows` (`runbooks/ci.mdx`); `pnpm verify` is the gate. The release tooling (`pnpm changeset`,
+`pnpm changeset:status`) is configured, and `release.yml` opens the version PR and publishes `"private": false` packages to npm.figentra.com (ADR 0025).
 
 So the incidents that can happen here today are:
 
@@ -62,7 +60,7 @@ to this file.
 
 Fixes code or CI (the owning builder, or `release-operations`). Does security triage of a leak
 (`security-tenancy-reviewer` advises on the fix). Records a decision the incident forces
-(`architecture-guardian`, then `docs-adr-steward` writes the ADR). Rotates or reads any secret value — a
+(the owner decides, then `docs-adr-steward` writes the ADR). Rotates or reads any secret value — a
 human, in Infisical. Blocks: corrective actions are routed to their owning agents and tracked in the
 post-mortem.
 

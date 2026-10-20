@@ -3,7 +3,7 @@
 #          references resolve against. A member's package.json never carries a literal version — it names a
 #          catalog, so one bump here moves the whole repo. `pnpm validate` fails on any other specifier.
 # Scope: every member under apps/*, packages/<category>/<name>, services/*.
-# Owner: release-operations (dependency-steward reviews catalog changes)
+# Owner: release-operations (the owner reviews catalog changes)
 # Secrets: forbidden
 packages:
   - apps/*
@@ -13,6 +13,10 @@ packages:
 # `strict`: `pnpm add` only accepts versions that already exist in a catalog — a new dependency is added
 # here first, then referenced. tools/scripts/validate-repository.mjs enforces the same for hand edits.
 catalogMode: strict
+
+# Refuse an unsupported Node (engines). Lives here, not in .npmrc, so npm stops warning about pnpm-only keys;
+# auto-install-peers, shamefully-hoist=false and strict-peer-dependencies=false are pnpm defaults.
+engineStrict: true
 
 # Default catalog (`catalog:`): shared by many members, no reason to fork a version per topic.
 catalog:
@@ -55,6 +59,8 @@ catalogs:
     "@testing-library/react": 16.3.3
     "@testing-library/dom": 10.4.2
     jsdom: 30.1.0
+    # Code-based routing for the console and every Vite app (no file routing anywhere).
+    react-router: 7.18.4
   # Expo SDK 57 app (apps/mobile). Pins match academorix/apps/mobile; react stays on 19.2.3 because
   # react-native 0.86 renders with that exact renderer version. Bump with `expo install --check`.
   mobile:
@@ -93,14 +99,14 @@ catalogs:
     # The Expo CLI loads `typescript` as a JS API, which TypeScript 7 (native) does not ship yet.
     typescript: 6.0.3
     "@types/react": 19.2.18
+  # Electron desktop apps (tools/scaffold/templates/apps/desktop, MR7). No member uses it until one is scaffolded;
+  # electron's postinstall downloads the binary, so the first desktop app also adds `electron: true` to allowBuilds.
+  desktop:
+    electron: 44.5.1
+    electron-builder: 26.16.1
   # Documentation site (apps/docs).
   docs:
     mint: 4.2.985
-  # Next.js App Router apps (tools/scaffold/templates/apps/next). React, HeroUI and Tailwind come from
-  # `frontend`; @tailwindcss/postcss tracks that catalog's tailwindcss line.
-  next:
-    next: 16.3.8
-    "@tailwindcss/postcss": 4.3.3
 
 # Dependency lifecycle scripts are blocked by default (pnpm supply-chain security). Every entry here was
 # reviewed; a new one must be, too — install fails (ERR_PNPM_IGNORED_BUILDS) until it is.
