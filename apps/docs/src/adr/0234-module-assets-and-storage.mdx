@@ -5,8 +5,8 @@ description: "Accepted · 2026-10-20"
 
 <Note>
   Amends [0127](/adr/0127-package-categories-including-infrastructure): the `data` category gains
-  `assets` and `filesystem`, and the `application` category gains the assets collector in `stackra
-  gen`. "Resource" is reserved for `@Resource`, the admin-UI declaration of
+  `assets` and `filesystem`, and the `developer` category holds `stackra gen`, which gains the
+  assets collector. "Resource" is reserved for `@Resource`, the admin-UI declaration of
   [0164](/adr/0164-console-panels-are-resources-rendered-by-the-panel-package). Files shipped with a
   package are **assets**.
 </Note>
@@ -41,7 +41,7 @@ concept from "resources" to "assets", so that the word "resource" stays with `@R
    - A package exports its assets as `./assets/*`. Its folder is `assets/`, not `resources/`.
 4. **Keys use `::`.** An asset key is `<module>::<path>`, for example `flags::public/images/eg.svg`. The same form is used for i18n keys
    (`billing::invoice.refund_confirm`), template keys (`billing::mail/invoice-paid`) and stub keys (ADR 0231, decision 3).
-5. **Collection.** The collector lives in the codegen compiler (`stackra gen`, `application` category). It walks the module graph and writes the
+5. **Collection.** The collector lives in the codegen compiler (`stackra gen`, `developer` category). It walks the module graph and writes the
    `assets` section of `app-manifest.json`, with namespace, kind, path, content hash, public flag and owning module. It emits the `AssetKey`
    union into the gitignored `.stackra/` (0162). The collector and the Explorer agree, and a conformance test checks it (0144).
 6. **Publish.** Publishing public assets to the CDN bucket is a deploy step, run by `stackra build` or CI. Files are content-hashed.
