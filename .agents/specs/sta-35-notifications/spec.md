@@ -1,6 +1,6 @@
 # Feature Specification: @stackra/notifications — multi-channel notification engine
 
-**Feature Branch**: `spec/notifications`
+**Feature Branch**: `spec/notifications` (pre-dates Linear branch names; spec folder `.agents/specs/sta-35-notifications`)
 
 **Created**: 2026-10-19
 
@@ -24,6 +24,9 @@
 - **Secrets**: references only, never values. Platform-owned provider credentials (K1-A) are secret names the host maps to Encore secret in SaaS or an Infisical-fed store on-prem (ADR 0009): `NotificationsResendApiKey`, `NotificationsResendWebhookSecret`, `NotificationsSmtpPassword`, `NotificationsTwilioAuthToken`, `NotificationsSmsGatewayToken`, `NotificationsWhatsAppAccessToken`, `NotificationsWhatsAppAppSecret`, `NotificationsExpoAccessToken`, `NotificationsFcmServiceAccount`, `NotificationsApnsAuthKey`, `NotificationsUnsubscribeSigningKey`, `NotificationsRemoteServiceToken` (remote driver). Tenant-owned provider credentials (K1-B, for example a tenant's own Twilio or Resend account) are stored in `@stackra/connections` and referenced by `@ConnectionRef`; settings never hold a raw secret. Infisical Agent Vault is not used: it applies only to AI egress, and notification provider calls go direct.
 - **ADR needed**: yes: (1) the `@stackra/notifications` package design ADR (ADR 0018 rule 1); (2) an amendment to ADR 0015 for C1: protocol types move from `@stackra/<domain>-contracts` packages to a types-only `./contracts` entry of the owning package, with shared primitives in `@stackra/contracts`; (3) the runtime and codegen ADRs (Encore as a generated target via `stackra gen`, decorators-only, actions as the unit, risk L0–L4, actor model) being written in PR #16, which this plan relies on; (4) the `@stackra/settings` and `@stackra/connections` ADRs, including the ADR 0009 amendment for the connections store (S4); (5) acceptance of the locked messaging-layer split (events/outbox/queue/scheduler/workflow/realtime/webhooks/notifications) if it is not already an ADR when the plan starts.
 - **New dependencies**: `nodemailer` (SMTP driver), `liquidjs` (sandboxed template rendering, safe for tenant-authored overrides), `libphonenumber-js` (E.164 validation for SMS/WhatsApp). Resend, Twilio, the Meta WhatsApp Cloud API, the generic HTTP SMS gateway, Expo push, FCM HTTP v1 and APNs (HTTP/2 + ES256 token auth) are called over platform `fetch`/`node:http2`/`node:crypto` with no vendor SDK. All through `pnpm-workspace.yaml` catalogs, reviewed by dependency-steward.
+- **Deploy modes**: SaaS, on-prem and air-gapped are all supported. SaaS and on-prem can use every driver. Air-gapped runs SMTP to an internal relay, the generic HTTP SMS gateway and in-app only; cloud drivers (Resend, Twilio, WhatsApp Cloud API, Expo, FCM, APNs) are refused at startup, and the Conformance Suite runs in an air-gapped CI job (as recorded under Tenancy and data).
+- **Lane**: full (ADR 0120 lane table: a new package, tenant data, several pull requests; one PR per user story per D13).
+- **Change risk**: R3 (ADR 0120: tenancy and RLS, PII, secrets, inbound webhooks and outbound HTTP). Derived from the answers above; the owner may raise it, never lower it.
 
 ## Clarifications
 
