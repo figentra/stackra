@@ -1,0 +1,49 @@
+---
+title: "0155 — AI-native rule: queries are MCP tools, and all AI code is free"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0098](/adr/0098-actions-are-the-unit), decision 2, and
+  [0100](/adr/0100-ai-model-and-ownership), decisions 1 and 15. Also amends 0077 (wave 3, not on
+  this branch).
+</Note>
+
+## Context
+
+[0098](/adr/0098-actions-are-the-unit) defaulted AI exposure to deny, and [0100](/adr/0100-ai-model-and-ownership) left MCP as a later
+add-on. The owner's AI answers (mem L656, L658, L703–705, 2026-10-20) make AI and MCP part of every package from day one, and make all
+AI code free. Commercial control moves to runtime entitlements.
+
+## Decision
+
+1. Every `@Query` at risk level L0 or L1 is automatically an MCP tool, under the caller's own permissions. Writes are opt-in through
+   `@AsTool`. Any action at L3 or above always needs a named human.
+2. AI and MCP are in every package and service from the start. Specifications do not ask whether AI is needed.
+3. All AI and MCP capability is free code. Commercial control happens at runtime: a tenant that is not entitled to a tool gets
+   "requires subscription" and an upgrade path (mem L704–705).
+4. There is one MCP gateway, in the `ai` service. It runs one server per tenant over Streamable HTTP, uses OAuth through ZITADEL,
+   aggregates tools from the registry, filters them by iam and entitlements, and audits each call as an agent acting for the user
+   (mem L658). The gateway service is an OS item; the Stackra part is tool derivation and the gateway contracts.
+5. The default-deny rule of 0098 for AI exposure is replaced by points 1 and 3 (contradiction C-25).
+
+## Consequences
+
+- Every read query is available to agents, under the same permissions a user has, so the permission catalogue ([0132](/adr/0132-permissions-catalogue-and-policy-providers))
+  has to be right for queries.
+- The AI gateway is a single place to audit agent actions.
+
+## Enforcement
+
+planned — gen derives MCP tools from `@Query` at L0 and L1, and the gateway's tests check that a tool is filtered out for a tenant
+without the entitlement.
+
+## Alternatives
+
+- Default-deny AI exposure (0098 decision 2): replaced (C-25).
+- A separate AI gateway product: rejected; one gateway in the `ai` service (C-24 reword in 0011 is in the final pass).
+
+## Supersedes and sources
+
+Amends: [0098](/adr/0098-actions-are-the-unit) decision 2, [0100](/adr/0100-ai-model-and-ownership) decisions 1 and 15; 0077 (wave 3).
+Sources: owner AI answers (`stackra-decisions-2026-10-19.md` L656, L658, L703–705, 2026-10-20); contradictions C-24 and C-25.

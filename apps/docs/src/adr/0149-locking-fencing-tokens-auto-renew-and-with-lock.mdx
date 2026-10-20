@@ -1,0 +1,40 @@
+---
+title: "0149 — Locking: fencing tokens, auto-renew and @WithLock"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0103](/adr/0103-locking-package): the lock package gains fencing, renewal and a decorator.
+</Note>
+
+## Context
+
+[0103](/adr/0103-locking-package) set named server-side locks behind a driver. The owner's locking answer LK1 (mem L868, 2026-10-20)
+says the default is a Postgres advisory lock, that Valkey is optional, and that locks must have a TTL, renew themselves, carry fencing
+tokens and be easy to use.
+
+## Decision
+
+1. The default driver is a Postgres advisory lock. Valkey is an optional driver.
+2. Every lock has a TTL and renews automatically while its holder is alive.
+3. Every lock carries a fencing token, so a stale holder cannot write after its lock has expired and moved on.
+4. `@WithLock` takes a lock around a method, so authors do not call acquire and release by hand.
+5. Locks emit metrics.
+
+## Consequences
+
+- A stale worker cannot overwrite a newer write, because the store rejects a lower fencing token.
+- Locks need no extra infrastructure on-prem, because Postgres is always there.
+
+## Enforcement
+
+planned — the lock conformance suite checks TTL expiry, renewal and the fencing rule on each driver.
+
+## Alternatives
+
+- Valkey as the default: not chosen; it is optional.
+- Locks without fencing: rejected, a lock alone cannot stop a stale write.
+
+## Supersedes and sources
+
+Amends: [0103](/adr/0103-locking-package). Sources: owner locking answer LK1 (`stackra-decisions-2026-10-19.md` L868, 2026-10-20).

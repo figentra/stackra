@@ -1,0 +1,46 @@
+---
+title: "0158 — Gen artefacts: committed OpenAPI and manifest, a CI-published client, deploy-mode targets"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0091](/adr/0091-generated-encore-app-in-stackra-folder) and
+  [0124](/adr/0124-encore-is-the-generated-runtime-target). 0124 decision 4 says only the app
+  manifest is committed; it now also commits the OpenAPI file. Amends 0039 (final pass), whose open
+  item this closes.
+</Note>
+
+## Context
+
+[0091](/adr/0091-generated-encore-app-in-stackra-folder) and [0124](/adr/0124-encore-is-the-generated-runtime-target) say the app manifest
+is committed. The owner's framework answer FW6 a (mem L540, 2026-10-20) adds the OpenAPI document and makes the client a CI-published
+artefact. FW8 sets the deploy-mode targets, which [0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules)
+describes.
+
+## Decision
+
+1. `openapi.json` and `app-manifest.json` are committed to the repository.
+2. The client is built and published in CI. It is not hand-written and is not committed.
+3. The deploy-mode targets of FW8 are restated here. Their detail is in [0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules).
+4. Gap C1's remaining questions (the manifest location, the workspace membership of `.stackra/encore`, the writer of `infra.config.json`, the
+   cron dev story, and auth-data passing) are not answered here. They go to the register's Thin list.
+
+## Consequences
+
+- A pull request that changes an API shows the change in the committed OpenAPI file.
+- A client is always generated from the committed contract, so it cannot drift from the server.
+
+## Enforcement
+
+planned — `stackra gen --check` in CI fails when `openapi.json` or `app-manifest.json` is stale, and the client build runs in the release job.
+The `gen:client` task description in `turbo.jsonc` is a final-pass item (gap B51).
+
+## Alternatives
+
+- Only the app manifest committed (0124 decision 4): amended, so the OpenAPI document is reviewable too.
+- A hand-written client: rejected, it drifts.
+
+## Supersedes and sources
+
+Amends: [0091](/adr/0091-generated-encore-app-in-stackra-folder), [0124](/adr/0124-encore-is-the-generated-runtime-target); 0039 (final pass). Sources:
+owner framework answers FW6 a and FW8 a (`stackra-decisions-2026-10-19.md` L540–541, 2026-10-20); gap C1 (remaining questions go to the Thin list).
