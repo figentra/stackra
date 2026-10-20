@@ -26,6 +26,7 @@
 - **New dependencies**: `nodemailer` (SMTP driver), `liquidjs` (sandboxed template rendering, safe for tenant-authored overrides), `libphonenumber-js` (E.164 validation for SMS/WhatsApp). Resend, Twilio, the Meta WhatsApp Cloud API, the generic HTTP SMS gateway, Expo push, FCM HTTP v1 and APNs (HTTP/2 + ES256 token auth) are called over platform `fetch`/`node:http2`/`node:crypto` with no vendor SDK. All through `pnpm-workspace.yaml` catalogs, reviewed by dependency-steward.
 - **Deploy modes**: SaaS, on-prem and air-gapped are all supported. SaaS and on-prem can use every driver. Air-gapped runs SMTP to an internal relay, the generic HTTP SMS gateway and in-app only; cloud drivers (Resend, Twilio, WhatsApp Cloud API, Expo, FCM, APNs) are refused at startup, and the Conformance Suite runs in an air-gapped CI job (as recorded under Tenancy and data).
 - **Licence tier**: free (MIT, this repo). The Pro parts named in the input (visual template editor, delivery analytics dashboard, multi-provider failover) are out of scope; only their seams ship here, and they live in `figentra/stackra-pro`.
+- **Docs to update**: `apps/docs`: the `@stackra/notifications` package design ADR and the package guide page (the pages Apps touched names).
 - **Lane**: full (ADR 0120 lane table: a new package, tenant data, several pull requests; one PR per user story per D13).
 - **Change risk**: R3 (ADR 0120: tenancy and RLS, PII, secrets, inbound webhooks and outbound HTTP). Derived from the answers above; the owner may raise it, never lower it.
 
@@ -509,3 +510,8 @@ The same Host code runs SaaS, on-prem and air-gapped; switching to a hosted Fige
 All owner questions are answered; the decisions are recorded under Clarifications and applied above. Linear: project Notifications, spec issue STA-35.
 
 1. **ADRs before `/speckit.plan`.** The ADRs listed under Impact (package design, ADR 0015 amendment, runtime/codegen in PR #16, settings and connections) should be accepted before the plan relies on them.
+
+## Status history
+
+- 2026-10-19 · — → Draft · Claude (lead) · created (supersedes PR #14)
+- 2026-10-20 · Draft → Clarified · owner · every owner question answered (see Clarifications); line backfilled for spec-gate v2 (STA-163)
