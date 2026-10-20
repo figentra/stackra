@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-19
 
-**Status**: Clarified
+**Status**: Planned
 
 **Linear**: STA-35 <!-- https://linear.app/figentra/issue/STA-35 -->
 
