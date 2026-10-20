@@ -19,7 +19,7 @@ gitignored `.stackra/encore` (ADR 0091), and app secrets reach it through Encore
 ```typescript
 import { secret } from "encore.dev/config";
 
-const stripeSecretKey = secret("StripeSecretKey");
+const stripeSecretKey = secret("STRIPE_SECRET_KEY");
 ```
 
 - Stored in the runtime's secret store (Encore's secret manager), set there by a human; Infisical Secret Sync is not

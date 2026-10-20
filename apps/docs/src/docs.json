@@ -271,6 +271,8 @@
               "adr/0232-stackra-errors-package",
               "adr/0233-imports-use-subpath-aliases-only",
               "adr/0234-module-assets-and-storage",
+              "adr/0235-devices-and-iot-minimal-now-full-later",
+              "adr/0236-translation-providers-as-connectors",
               "adr/0257-secret-manager-agent-and-the-secrets-inbox"
             ]
           }
