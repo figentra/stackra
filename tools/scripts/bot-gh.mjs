@@ -45,9 +45,9 @@ export function runAsBot(tool, args, token) {
 export function reviewerAllows(args) {
   const [group, verb] = args;
   if (group === "pr") return ["view", "diff", "checks", "comment", "review"].includes(verb);
-  return (
-    group === "api" && !args.some((a) => /^(-X|--method)$/.test(a) || a.startsWith("--method="))
-  );
+  // gh api switches to POST when given fields or --input, so those are writes too.
+  const WRITE = /^(-X|--method|-f|-F|--field|--raw-field|--input)(=|$)|^-(X|f|F)./;
+  return group === "api" && !args.some((a) => WRITE.test(a));
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

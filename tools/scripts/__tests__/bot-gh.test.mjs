@@ -15,6 +15,11 @@ test("the reviewer identity may only read a PR and comment or review on it", () 
     ["pr", "edit", "5"],
     ["api", "-X", "PATCH", "repos/x/y"],
     ["api", "--method=POST", "x"],
+    ["api", "-XPOST", "x"],
+    ["api", "repos/x/y/issues/5/comments", "-f", "body=hi"],
+    ["api", "graphql", "-Fquery=mutation"],
+    ["api", "repos/x/y", "--raw-field=a=b"],
+    ["api", "repos/x/y", "--input", "f.json"],
     ["repo", "edit"],
   ];
   for (const args of denied) assert.ok(!reviewerAllows(args), args.join(" "));

@@ -158,7 +158,9 @@ script: [`tools/scripts`](tools/scripts).
    In Progress. Commits are conventional, and `feat`, `fix`, `refactor` and `perf` commits carry `Refs: STA-n`.
 4. **Pull request.** `pnpm verify` is green, the PR follows the template, and `pnpm linear review STA-n <url>` moves
    the issue to In Review. CI's `Quality Gate` is the only required check.
-5. **Independent review.** A separate AI reviewer, never the author, posts `AI-REVIEW: PASS <head sha>`. Design PRs
+5. **Independent review.** A separate AI reviewer, never the author, posts `AI-REVIEW: PASS <head sha>` as the
+   `stackra-reviewer` app through `pnpm bot:review`
+   ([ADR 0230](apps/docs/src/adr/0230-reviewer-identity-separate-from-builder.mdx)). Design PRs
    and change-risk R3 also need the owner's approval.
 6. **Merge.** Squash merge through `pnpm pr:merge`
    ([ADR 0119](apps/docs/src/adr/0119-merge-policy-and-release-authority.mdx)); the issue moves to Done. Packages
