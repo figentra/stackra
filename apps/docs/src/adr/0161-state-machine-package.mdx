@@ -1,0 +1,47 @@
+---
+title: "0161 — @stackra/state-machine"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0097](/adr/0097-model-and-database-packages), decision 1: the state machine moves out of
+  `@stackra/model` into its own package.
+</Note>
+
+## Context
+
+A state machine was first placed inside `@stackra/model`, and the first draft used a `transition(entity, ...)` call on a field. The owner's
+state-machine answers SM1 and SM2 (mem L857–858, 2026-10-20) give the final shape: a package of its own, typed class definitions, and
+a call through `stateMachine.apply`. The earlier shape (L405) is replaced (contradiction C-17). The package uses no XState.
+
+## Decision
+
+1. **Package.** `@stackra/state-machine` is a data package ([0127](/adr/0127-package-categories-including-infrastructure)). It uses no XState.
+2. **Definitions (SM1).** A machine is a typed class declared with `@StateMachine({ key, initial })`. States are a const object plus a union
+   type. Each transition has `from`, `to`, a registered guard, a permission and effects (an event, a workflow or a notification).
+3. **Attachment (SM1).** A machine attaches to a model field with `@UsesStateMachine(Flow)`. It runs with
+   `stateMachine.apply(entity, 'approve', ctx)`. A direct write to the field is blocked by a lint and by a model hook.
+4. **History and surfaces (SM2).** Each transition is recorded in the history and the audit log. The available transitions appear as panel
+   actions and as MCP tools. A Mermaid diagram comes from the registry.
+5. **Timed transitions (SM2).** They use the scheduler ([0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules)).
+6. **Tenant customisation (SM2).** Tenants can customise states and transitions at the allowed extension points, from the console. Such
+   customisation references registered guards and effects only.
+
+## Consequences
+
+- A field cannot be changed by a direct write, so every transition has a guard, a permission and a history entry.
+- A machine can run without a model, for UI flows or workflows, because it is its own package.
+
+## Enforcement
+
+planned — the lint and model hook that block direct field writes, and the history check in the package's tests.
+
+## Alternatives
+
+- The `transition(entity, ...)` call with the machine on the field (L405): replaced by SM1 (C-17).
+- XState: not chosen; the package is typed in-house.
+
+## Supersedes and sources
+
+Amends: [0097](/adr/0097-model-and-database-packages) decision 1. Sources: owner answers SM1 and SM2 (`stackra-decisions-2026-10-19.md`
+L857–858, 2026-10-20), placement and no-XState rule (L405); contradiction C-17.
