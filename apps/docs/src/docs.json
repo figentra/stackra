@@ -312,6 +312,14 @@
               "adr/0246-devtools-dev-only-for-apps-and-services",
               "adr/0247-declaration-rule-decorators-annotate-define-creates-values",
               "adr/0248-delivery-scope-saas-first-on-prem-kept-green",
+              "adr/0249-one-app-three-targets-web-pwa-and-electron",
+              "adr/0250-stackra-platform-capability-ports-drivers-and-gate",
+              "adr/0251-desktop-bridge-generated-from-desktop-action-and-electron-hardening",
+              "adr/0252-offline-on-every-client-completing-the-mutation-queue",
+              "adr/0253-peripherals-web-api-first-and-device-presets",
+              "adr/0254-desktop-release-signing-update-feed-channels-and-version-policy",
+              "adr/0255-pwa-service-worker-scope-and-push-per-platform",
+              "adr/0256-client-storage-one-stackra-storage-package",
               "adr/0257-secret-manager-agent-and-the-secrets-inbox"
             ]
           }

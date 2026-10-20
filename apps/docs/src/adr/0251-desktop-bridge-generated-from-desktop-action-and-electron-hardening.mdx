@@ -1,0 +1,34 @@
+---
+title: "0251 — The desktop bridge is generated from @DesktopAction; the Electron hardening baseline"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Fulfils the planned enforcement of [0058](/adr/0058-desktop-is-electron). Builds on
+  [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron).
+</Note>
+
+## Context
+
+An Electron app exposes main-process functions to the renderer over IPC. Each exposed function is an attack surface, and a hand-written bridge drifts from the actions it calls. The desktop plan (section 5) gives a hardening checklist and generates the IPC allow-list from declarations.
+
+## Decision
+
+1. **Bridge generated.** `stackra gen` generates the typed IPC bridge from `@DesktopAction` declarations. Nothing is exposed that is not declared.
+2. **Allow-list.** The IPC allow-list is generated from the same declarations (plan section 5.2).
+3. **Hardening baseline.** The Electron checklist of plan section 5.1 applies: context isolation on, node integration off, sandboxed renderers, fuses set, and a content security policy set from the main process.
+4. **Web and PWA.** Web and PWA targets follow the CSP and origin rules of plan section 5.3.
+
+## Consequences
+
+- A new desktop capability is one declaration, and the bridge and the allow-list update with it.
+- A renderer cannot call a main-process function that is not declared.
+
+## Enforcement
+
+planned — gen fails on an undeclared IPC channel; a test checks each fuse and each CSP directive.
+
+## Supersedes and sources
+
+Supersedes: none. Fulfils the planned enforcement of [0058](/adr/0058-desktop-is-electron). Sources: desktop and PWA owner decision (`stackra-decisions-2026-10-19.md` L954, 2026-10-20 night);
+plan `stackra-notes/desktop-pwa-offline-plan.md` sections 5.1 to 5.3.
