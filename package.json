@@ -37,6 +37,7 @@
     "doctor": "node tools/scripts/doctor.mjs",
     "agents:sync": "node tools/scripts/agents-sync.mjs",
     "agents:check": "node tools/scripts/agents-sync.mjs --check",
+    "speckit:sync": "specify integration use opencode && specify integration use claude && chmod +x .specify/scripts/bash/*.sh",
     "bot:token": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-token.mjs",
     "bot:gh": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-gh.mjs gh",
     "bot:git": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-gh.mjs git",
