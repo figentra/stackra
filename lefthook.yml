@@ -9,7 +9,7 @@ pre-commit:
   parallel: true
   jobs:
     - name: oxfmt
-      glob: "*.{ts,tsx,js,mjs,cjs,json,jsonc,md,yaml,yml,css}"
+      glob: "*.{ts,tsx,js,mjs,cjs,json,jsonc,md,mdx,yaml,yml,css}"
       # --check, not --write: stage_fixed made lefthook stash unstaged work, which conflicts while the loop
       # edits other members mid-commit (ADR-0017); the gate formats a member before it passes.
       # oxfmt exits 2 when every staged file is on its ignore list (pnpm-lock.yaml alone): that is not a finding.
