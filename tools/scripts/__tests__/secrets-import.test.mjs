@@ -1,12 +1,15 @@
 // Every test runs against a throwaway HOME (temp dir) with a fake Infisical runner; the real ~/Secrets-inbox and
 // the real vault are never touched. Values are random canaries generated here; each test asserts none of them
 // reaches the output, the audit log or the runner's argv.
+// @covers sta-185:FR-001 sta-185:FR-002 sta-185:FR-003 sta-185:FR-005 sta-185:P-001 sta-185:P-002 sta-185:P-003 sta-185:P-005
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import {
   existsSync,
+  statSync,
+  readdirSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -29,7 +32,13 @@ function setup() {
 }
 
 /** In-memory Infisical: `secrets get … --output=json` and `secrets set NAME=@file`. */
-function fakeInfisical({ failSet = false, failGet = 0, corrupt = false } = {}) {
+function fakeInfisical({
+  failSet = false,
+  failGet = 0,
+  corrupt = false,
+  crashSet = false,
+  noFileSyntax = false,
+} = {}) {
   const store = new Map();
   const calls = [];
   const flag = (args, k) => args.find((a) => a.startsWith(`--${k}=`))?.split("=")[1];
@@ -49,7 +58,14 @@ function fakeInfisical({ failSet = false, failGet = 0, corrupt = false } = {}) {
         stderr: "",
       };
     }
+    if (args[1] === "set" && args.includes("--help"))
+      return {
+        status: 0,
+        stdout: noFileSyntax ? "set <a=b>" : "set <secretName=@/path/to/file>",
+        stderr: "",
+      };
     if (args[1] === "set") {
+      if (crashSet) throw new Error("simulated crash mid-write");
       const [name, file] = args[2].split("=@");
       const value = readFileSync(file, "utf8");
       // The CLI's own output may contain the value; the script must swallow it.
@@ -289,4 +305,69 @@ test("importSecret streams a value in and returns only { name, ok, reason }", as
     reason: "name is not SCREAMING_SNAKE",
   });
   assertNoLeak([v], { out: JSON.stringify([ok, prod, big, bad]), home, calls: fake.calls });
+});
+
+test("overwrite and unchanged are reported, and the audit line is written before the file is deleted", () => {
+  const { home, inbox } = setup();
+  const v = canary();
+  const fake = fakeInfisical();
+  fake.store.set("dev:/agents:OVER_KEY", "older");
+  fake.store.set("dev:/agents:SAME_KEY", v);
+  writeFileSync(join(inbox, "OVER_KEY"), v);
+  writeFileSync(join(inbox, "SAME_KEY"), v);
+  const r = run(home, [], fake.runner);
+  assert.equal(r.code, 0);
+  assert.match(r.out, /OVER_KEY .*imported \(overwritten\)/);
+  assert.match(r.out, /SAME_KEY .*imported \(unchanged\)/);
+  assert.equal(fake.store.get("dev:/agents:OVER_KEY"), v);
+  assert.equal(fake.calls.filter((c) => c[1] === "set" && !c.includes("--help")).length, 1);
+  assert.equal(auditLog(home).match(/"result":"ok"/g).length, 2);
+  assertNoLeak([v], { ...r, home, calls: fake.calls });
+});
+
+test("production: a crash after the token is spent still refuses its reuse", () => {
+  const { home, inbox } = setup();
+  writeFileSync(join(inbox, "PROD_CRASH"), canary());
+  writeFileSync(join(inbox, "PROD_CRASH.target.yaml"), "env: prod\npath: /ci\n");
+  const t0 = 1_800_000_000_000;
+  const token = run(home, ["--dry-run"], fakeInfisical().runner, () => t0).out.match(
+    /--confirm (\S+)/,
+  )[1];
+  assert.throws(() =>
+    run(home, ["--confirm", token], fakeInfisical({ crashSet: true }).runner, () => t0),
+  );
+  assert.ok(existsSync(join(inbox, "PROD_CRASH")), "inbox file kept after the crash");
+  assert.deepEqual(
+    readdirSync(inbox).filter((f) => f.startsWith(".")),
+    [],
+    "temp dir removed",
+  );
+  assert.match(
+    run(home, ["--confirm", token], fakeInfisical().runner, () => t0).out,
+    /already used/,
+  );
+});
+
+test("a CLI without NAME=@file support fails before any write", () => {
+  const { home, inbox } = setup();
+  writeFileSync(join(inbox, "OLD_CLI"), canary());
+  const fake = fakeInfisical({ noFileSyntax: true });
+  const r = run(home, [], fake.runner);
+  assert.equal(r.code, 1);
+  assert.match(r.out, /does not support NAME=@file/);
+  assert.equal(fake.store.size, 0);
+  assert.ok(existsSync(join(inbox, "OLD_CLI")));
+});
+
+test("stale temp dirs are removed at start; ~/.stackra is tightened to 0700; names are sanitised", () => {
+  const { home, inbox } = setup();
+  mkdirSync(join(inbox, ".import-stale"));
+  writeFileSync(join(inbox, ".import-stale", "value"), canary());
+  mkdirSync(join(home, ".stackra"), { mode: 0o755 });
+  mkdirSync(join(inbox, "EVIL\u001b[2JDIR"));
+  const r = run(home, ["--list"], fakeInfisical().runner);
+  assert.equal(existsSync(join(inbox, ".import-stale")), false);
+  assert.equal(statSync(join(home, ".stackra")).mode & 0o777, 0o700);
+  assert.ok(!r.out.includes("\u001b"));
+  assert.match(r.out, /EVIL\?\[2JDIR/);
 });

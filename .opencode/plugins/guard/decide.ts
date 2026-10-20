@@ -38,9 +38,20 @@ const SECRET_FILE = [
 // Committed, value-free files: the env template and Infisical's project config.
 const SECRET_OK = /(^|\/)(\.env\.example|\.infisical\.(yaml|json))$/;
 
+/** A glob segment (`Secrets-inbo?`, `S*inbox`, not a bare `*`) that would match the inbox. Accident guard only. */
+const globNamesInbox = (s: string): boolean =>
+  s.split("/").some((seg) => {
+    if (!/[*?]/.test(seg) || /^[*?]+$/.test(seg)) return false;
+    const rx = seg
+      .replace(/[.+^$()|\\[\]{}]/g, "\\$&")
+      .replace(/\*+/g, ".*")
+      .replace(/\?/g, ".");
+    return new RegExp(`^${rx}$`, "i").test("Secrets-inbox");
+  });
+
 export function isSecretPath(p: string): boolean {
   const s = p.trim().replace(/^['"]+|['"]+$/g, "");
-  return !SECRET_OK.test(s) && SECRET_FILE.some((r) => r.test(s));
+  return !SECRET_OK.test(s) && (SECRET_FILE.some((r) => r.test(s)) || globNamesInbox(s));
 }
 
 /** read / edit tool paths. */

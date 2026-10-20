@@ -31,6 +31,8 @@ test("the secrets inbox is never read; the importer is allowed", () => {
     "ls ~/Secrets-inbox",
     "cp /Users/me/Secrets-inbox/X /tmp",
     "cat ~/.stackra/secrets-confirm.key",
+    "cat ~/Secrets-inbo?/*",
+    "cat ~/S*inbox/X",
   ])
     assert.equal(kind(c), "deny", c);
   assert.equal(decidePath("/Users/me/Secrets-inbox/X").kind, "deny");

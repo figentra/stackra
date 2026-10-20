@@ -82,11 +82,13 @@ file holding just that value; there is no `--value` flag.
 - `pnpm secrets:import --list | --dry-run | <import>` is the only way in. It never prints, logs or passes a value
   on argv, verifies by SHA-256 read-back in-process, deletes the inbox file on success and appends a names-only
   line to `~/.stackra/secrets-audit.log`.
-- Production (`--env prod`): the dry run prints a one-time `--confirm <token>` (30 min); the import runs only after
-  the owner answers yes.
-- Any agent may run the script: hooks cannot tell agents apart, so the script itself is the boundary. The
+- Production (`--env prod`): the dry run prints a one-time `--confirm <token>` (30 min). That token is a process rule,
+  not an enforced yes (the same caller sees it): ask the owner, wait for yes, only then use it. The enforced yes is
+  the local request page (STA-187), where the owner's own submit is the yes.
+- Any agent may run the script: hooks cannot tell agents apart, and the script never outputs a value. The
   `secret-manager` agent is the one that is told to.
-- No agent reads, lists, copies or moves anything in `~/Secrets-inbox/` (hooks deny every tool and command naming it).
+- No agent reads, lists, copies or moves anything in `~/Secrets-inbox/`. The hooks below catch the obvious attempts;
+  they are an accident guard, not a security boundary.
 
 ## Forbidden Patterns
 

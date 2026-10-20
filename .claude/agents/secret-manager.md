@@ -36,7 +36,7 @@ more. A refusal keeps the inbox file; say what the owner must fix (a name, a sid
 ## Never
 
 - Read, cat, head, grep, copy, move, list (other than `--list`) or open anything in `~/Secrets-inbox/`; the
-  hooks deny it anyway.
+  hooks catch the obvious attempts, but they are an accident guard; not reading is your rule.
 - Run `infisical secrets`, `infisical export`, `printenv`, `env`, or any command other than the three above.
 - Pass a value on a command line; there is no `--value` flag, by design (shell history).
 - Import to production without the owner's yes in this conversation, or reuse a token.

@@ -20,6 +20,7 @@ import { spawnSync } from "node:child_process";
 import { createHash, createHmac, randomBytes } from "node:crypto";
 import {
   appendFileSync,
+  chmodSync,
   closeSync,
   constants,
   existsSync,
@@ -35,7 +36,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -202,9 +203,34 @@ export function remoteHash(t, runner) {
   return sha256(Buffer.from(String(value), "utf8"));
 }
 
-/** Write through `NAME=@file` so the value is never on argv; the temp file is 0600 and removed at once. */
-export function writeSecret(t, value, runner) {
-  const dir = mkdtempSync(join(tmpdir(), "stackra-secret-"));
+/**
+ * The pinned CLI (0.44.2, mise.toml) documents `NAME=@/path/to/file` in `secrets set --help`; check the
+ * installed one does too before writing, so an older CLI fails here instead of storing the literal path.
+ */
+export function checkFileSyntax(runner) {
+  const r = runner(["secrets", "set", "--help"]);
+  if (r.status !== 0 || !/=@/.test(`${r.stdout}${r.stderr}`))
+    throw new Refusal("this infisical CLI does not support NAME=@file; mise install (0.44.2)");
+}
+
+const TEMP_PREFIX = ".import-";
+let liveTemp;
+
+/** Remove temp dirs a killed run left behind (dot-entries, so --list and imports skip them). */
+export function cleanStaleTemps(inbox) {
+  if (!existsSync(inbox)) return;
+  for (const f of readdirSync(inbox))
+    if (f.startsWith(TEMP_PREFIX)) rmSync(join(inbox, f), { recursive: true, force: true });
+}
+
+/**
+ * Write through `NAME=@file` so the value is never on argv. The 0600 temp file lives in a dot-dir inside
+ * the inbox (already hook-guarded, never synced), is removed at once, on a signal, or at the next start.
+ */
+export function writeSecret(t, value, runner, inbox) {
+  mkdirSync(inbox, { recursive: true, mode: 0o700 });
+  const dir = mkdtempSync(join(inbox, TEMP_PREFIX));
+  liveTemp = dir;
   try {
     const file = join(dir, "value");
     writeFileSync(file, value, { mode: 0o600 });
@@ -212,17 +238,23 @@ export function writeSecret(t, value, runner) {
     if (r.status !== 0) throw cliFailure("write", r);
   } finally {
     rmSync(dir, { recursive: true, force: true });
+    liveTemp = undefined;
   }
 }
 
 // --- production confirmation ------------------------------------------------------------------------
+/** ~/.stackra, created or tightened to 0700. */
+function stateDir(home) {
+  const dir = join(home, ".stackra");
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  chmodSync(dir, 0o700);
+  return dir;
+}
+
 /** Per-machine HMAC key, so a token reveals nothing about the value hash it binds. */
 function confirmKey(home) {
-  const p = join(home, ".stackra", "secrets-confirm.key");
-  if (!existsSync(p)) {
-    mkdirSync(dirname(p), { recursive: true, mode: 0o700 });
-    writeFileSync(p, randomBytes(32), { mode: 0o600, flag: "wx" });
-  }
+  const p = join(stateDir(home), "secrets-confirm.key");
+  if (!existsSync(p)) writeFileSync(p, randomBytes(32), { mode: 0o600, flag: "wx" });
   return readFileSync(p);
 }
 
@@ -244,7 +276,7 @@ export function checkConfirm(home, token, t, hash, now = Date.now()) {
     return "confirm token expired; run the dry run again";
   if (confirmToken(home, t, hash, issuedMs) !== token)
     return "confirm token does not match this name, env, path and file";
-  if (auditLines(home).some((l) => l.confirm === token && l.result === "ok"))
+  if (auditLines(home).some((l) => l.confirm === token && l.action === "confirm-used"))
     return "confirm token already used";
   return null;
 }
@@ -266,7 +298,7 @@ function auditLines(home) {
 }
 /** Append-only, names only. */
 function audit(home, entry) {
-  mkdirSync(join(home, ".stackra"), { recursive: true, mode: 0o700 });
+  stateDir(home);
   appendFileSync(
     auditPath(home),
     JSON.stringify({ ts: new Date().toISOString(), ...entry }) + "\n",
@@ -280,13 +312,18 @@ function audit(home, entry) {
  * The import core: production confirmation, write, read-back verification. Returns the hash that was
  * there before (null = new). Throws a Refusal; never returns or prints the value.
  */
-function store(t, { value, hash }, { confirm, home, runner, now }) {
+function store(t, { value, hash }, { confirm, home, runner, now, actor, inbox }) {
   if (isProd(t.env)) {
     const why = checkConfirm(home, confirm, t, hash, now());
     if (why) throw new Refusal(why);
+    // Spend the token before anything can fail or crash, so it can never be replayed.
+    audit(home, { actor, name: t.name, env: t.env, path: t.path, action: "confirm-used", confirm });
   }
   const before = remoteHash(t, runner);
-  if (before !== hash) writeSecret(t, value, runner);
+  if (before !== hash) {
+    checkFileSyntax(runner);
+    writeSecret(t, value, runner, inbox);
+  }
   if (remoteHash(t, runner) !== hash) throw new Refusal("read-back hash does not match");
   return before;
 }
@@ -307,10 +344,12 @@ export async function importSecret({
   now = Date.now,
 }) {
   const label = NAME_RX.test(String(name)) ? name : "(invalid name)";
+  const inbox = join(home, "Secrets-inbox");
   try {
+    cleanStaleTemps(inbox);
     const t = checkTarget({ name, env, path });
-    store(t, await readStream(valueStream), { confirm, home, runner, now });
-    audit(home, { actor, name, env, path, action: "import", result: "ok", confirm });
+    store(t, await readStream(valueStream), { confirm, home, runner, now, actor, inbox });
+    audit(home, { actor, name, env, path, action: "import", result: "ok" });
     return { name: label, ok: true };
   } catch (error) {
     if (!(error instanceof Refusal)) throw error;
@@ -338,7 +377,9 @@ export function main(
     write = (s) => process.stdout.write(s),
   } = {},
 ) {
-  const say = (s) => write(s + "\n");
+  // Strip control characters: a crafted file name must not drive the terminal.
+  // oxlint-disable-next-line no-control-regex -- matching control characters is the point
+  const say = (s) => write(s.replace(/[\u0000-\u001f\u007f-\u009f]/g, "?") + "\n");
   let args;
   try {
     args = parseArgs({
@@ -362,6 +403,7 @@ export function main(
   const { values: o, positionals } = args;
   const actor = o.actor ?? process.env.STACKRA_AGENT ?? "unknown";
   const inbox = join(home, "Secrets-inbox");
+  cleanStaleTemps(inbox);
   const { entries, problems } = scanInbox(inbox);
 
   if (o.list) {
@@ -420,21 +462,12 @@ export function main(
         audit(home, { actor, name: t.name, env: t.env, path: t.path, action, result: "ok" });
         continue;
       }
-      const before = store(t, read, { confirm: o.confirm, home, runner, now });
+      const before = store(t, read, { confirm: o.confirm, home, runner, now, actor, inbox });
+      audit(home, { actor, name: t.name, env: t.env, path: t.path, action, result: "ok" });
       unlinkSync(join(inbox, e.file));
       rmSync(join(inbox, e.name + SIDECAR), { force: true });
-      say(
-        `${label}  imported${before === null ? "" : before === hash ? " (unchanged)" : " (overwritten)"}; inbox file deleted`,
-      );
-      audit(home, {
-        actor,
-        name: t.name,
-        env: t.env,
-        path: t.path,
-        action,
-        result: "ok",
-        confirm: o.confirm,
-      });
+      const how = before === null ? "" : before === read.hash ? " (unchanged)" : " (overwritten)";
+      say(`${label}  imported${how}; inbox file deleted`);
     } catch (error) {
       if (!(error instanceof Refusal)) throw error;
       failed++;
@@ -454,6 +487,15 @@ export function main(
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  // Remove the temp dir if a signal interrupts a write, then exit with the signal's code.
+  for (const [sig, code] of [
+    ["SIGINT", 130],
+    ["SIGTERM", 143],
+  ])
+    process.once(sig, () => {
+      if (liveTemp) rmSync(liveTemp, { recursive: true, force: true });
+      process.exit(code);
+    });
   try {
     process.exitCode = main(process.argv.slice(2));
   } catch {

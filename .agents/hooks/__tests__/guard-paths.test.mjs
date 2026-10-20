@@ -70,6 +70,7 @@ test("allow: AGENTS.md hand-written section", () =>
   assert.equal(editIntoAgentsMd("# stackra"), false));
 
 // The secrets inbox: denied for every tool, read tools included; other reads stay allowed.
+// @covers sta-185:FR-004 sta-185:P-004
 const decide = (tool_name, tool_input) => {
   const r = spawnSync("node", [hook], {
     input: JSON.stringify({ tool_name, tool_input }),
@@ -87,6 +88,13 @@ for (const [tool, input] of [
   ["Write", { file_path: "/Users/me/Secrets-inbox/X", content: "v" }],
   ["Edit", { file_path: "/Users/me/Secrets-inbox/X", old_string: "a", new_string: "b" }],
   ["Read", { file_path: "/Users/me/.stackra/secrets-confirm.key" }],
+  ["Grep", { pattern: "BEGIN", glob: "~/Secrets-inbox/*" }],
+  ["Grep", { pattern: "BEGIN", path: "/r", glob: "../../Users/me/secrets-INBOX/*" }],
+  ["Grep", { pattern: "BEGIN", path: "~" }],
+  ["Grep", { pattern: "BEGIN", path: "/" }],
+  ["Glob", { pattern: "~/Secrets-inbo?/*" }],
+  ["Glob", { pattern: "~/**/*.pem" }],
+  ["Glob", { pattern: "*/X", path: "~" }],
 ])
   test(`deny ${tool}: ${JSON.stringify(input)}`, () => assert.equal(decide(tool, input), true));
 for (const [tool, input] of [
@@ -94,6 +102,9 @@ for (const [tool, input] of [
   ["Read", { file_path: "/r/CHANGELOG.md" }],
   ["Grep", { pattern: "Secrets-inbox", path: "/r/apps/docs" }],
   ["Glob", { pattern: "**/*.md" }],
+  ["Glob", { pattern: "*.md", path: "~/Projects" }],
+  ["Grep", { pattern: "x", path: "/r/apps", glob: "*.ts" }],
+  ["Read", { file_path: "~/Projects/notes.md" }],
   ["Write", { file_path: "/r/apps/docs/src/runbooks/secrets.mdx", content: "~/Secrets-inbox/" }],
 ])
   test(`allow ${tool}: ${JSON.stringify(input)}`, () => assert.equal(decide(tool, input), false));

@@ -57,6 +57,10 @@ const allowed = [
   "cat > a.md <<'EOF'\nrm -rf x; printenv; echo hi > .env\nEOF",
   // the secrets inbox: only the importer, which takes names and never prints a value
   "pnpm secrets:import --list",
+  "ls ~",
+  "grep -r foo .",
+  "cat ~/Projects/notes.md",
+  "find . -name '*.ts'",
   "pnpm secrets:import --dry-run STACKRA_REVIEWER_APP_ID",
   "pnpm secrets:import STACKRA_X --env prod --path /ci --confirm abc-123",
   'git commit -m "feat: import from ~/Secrets-inbox"',
@@ -135,6 +139,13 @@ const blocked = [
   `node -e 'require("fs").readFileSync(process.env.HOME+"/Secrets-inbox/X")'`,
   "cat ~/.stackra/secrets-confirm.key",
   "pnpm secrets:import && cat ~/Secrets-inbox/X",
+  // globs and home-wide recursive reads (accident guard)
+  "cat ~/Secrets-inbo?/*",
+  "cat ~/S*inbox/X",
+  "cat ~/*/STACKRA_X",
+  "grep -r BEGIN ~",
+  "find ~ -name '*.pem'",
+  "rg PRIVATE $HOME",
 ];
 
 for (const c of allowed) test(`allow: ${c}`, () => assert.equal(denied(c), false));
