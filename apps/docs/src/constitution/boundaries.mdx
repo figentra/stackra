@@ -8,12 +8,12 @@ icon: "square-dashed"
 
 Every workspace member carries exactly one tier tag in its `turbo.jsonc`. The tag matches its directory.
 
-| Tier           | Directory               | May depend on                                          |
-| -------------- | ----------------------- | ------------------------------------------------------ |
-| `tier:config`  | `packages/tooling/*`    | nothing workspace-local                                |
-| `tier:lib`     | `packages/<category>/*` | `config`, other `lib` packages                         |
-| `tier:service` | `services/<name>`       | `config`, `lib`                                        |
-| `tier:app`     | `apps/*`                | `config`, `lib`. Talks to services over the wire only. |
+| Tier | Directory | May depend on |
+| --- | --- | --- |
+| `tier:config` | `packages/tooling/*` | nothing workspace-local |
+| `tier:lib` | `packages/<category>/*` | `config`, other `lib` packages |
+| `tier:service` | `services/<name>` | `config`, `lib` |
+| `tier:app` | `apps/*` | `config`, `lib`. Talks to services over the wire only. |
 
 The direction is one way. A package never imports an app, a service, or `encore.dev`. An app never imports a service's code. A package never imports another package's `src/`: it uses the package's declared exports. See [ADR 0003](/adr/0003-tier-dependency-direction) and the [package standard](/standards/packages).
 
@@ -45,12 +45,12 @@ Services are independent workspace members: `services/<name>` is `@figentra/serv
 
 A service owns its API, its database, its schema and migrations, its events, its tests, a `README.md` and an `AGENTS.md` with a PII table. No other service reads that database or imports that service's internals.
 
-| Need                              | Do                                                                                                                                                                          |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Read another service's data       | Call its API, or subscribe to its events and keep a small local read model.                                                                                                 |
-| Change another service's data     | Call its API inside the caller's flow. If it can be eventually consistent, publish a versioned event and let the owner react.                                               |
-| Share a type                      | Put it in the producer's types-only `./contracts` entry, or in `@stackra/contracts` for a shared primitive ([0117](/adr/0117-contracts-placement-and-decorator-ownership)). |
-| Atomic change across two services | Not allowed. Order the steps so a partial failure is safe and reconcilable.                                                                                                 |
+| Need | Do |
+| --- | --- |
+| Read another service's data | Call its API, or subscribe to its events and keep a small local read model. |
+| Change another service's data | Call its API inside the caller's flow. If it can be eventually consistent, publish a versioned event and let the owner react. |
+| Share a type | Put it in the producer's types-only `./contracts` entry, or in `@stackra/contracts` for a shared primitive ([0117](/adr/0117-contracts-placement-and-decorator-ownership)). |
+| Atomic change across two services | Not allowed. Order the steps so a partial failure is safe and reconcilable. |
 
 **Enforcement: partial.** The validator checks the service-unit files. Cross-service import and database-read rules are planned with the first service that has a database.
 

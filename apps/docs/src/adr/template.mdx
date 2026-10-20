@@ -8,20 +8,20 @@ Number from the highest existing ADR plus one. Never cite an ADR by a number fro
 
 ## Status vocabulary
 
-| Status             | Meaning                                                                        |
-| ------------------ | ------------------------------------------------------------------------------ |
-| Proposed           | Written, not yet agreed. Nothing may rely on it.                               |
-| Accepted           | In force. Edited only to fix typos and to add or correct the Enforcement line. |
-| Deferred           | Decided not to do it now. A Revival trigger is mandatory.                      |
-| Rejected           | Decided against. A Revival trigger says what would change that.                |
-| Superseded by NNNN | Replaced. The page stays, points forward, and the replacement points back.     |
+| Status                      | Meaning                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------- |
+| Proposed                    | Written, not yet agreed. Nothing may rely on it.                             |
+| Accepted                    | In force. Edited only to fix typos and to add or correct the Enforcement line. |
+| Deferred                    | Decided not to do it now. A Revival trigger is mandatory.                    |
+| Rejected                    | Decided against. A Revival trigger says what would change that.              |
+| Superseded by NNNN          | Replaced. The page stays, points forward, and the replacement points back.   |
 
 Supersession happens in the same commit: the new ADR lists `Supersedes: NNNN`, the old ADR's status becomes
 `Superseded by NNNN`, and the index row changes. A decision is never silently reversed.
 
 ## The template
 
-```mdx
+````mdx
 ---
 title: "NNNN — Title"
 description: "Accepted · YYYY-MM-DD"
@@ -51,4 +51,4 @@ Only for Deferred and Rejected: the observable event that reopens the question.
 ## Supersedes and sources
 
 `Supersedes: none` or `NNNN`. Then the origin documents (repository and path), informational only.
-```
+````

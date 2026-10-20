@@ -5,11 +5,7 @@ icon: "workflow"
 ---
 
 <Note>
-  Status: partly live. `.github/workflows/ci.yml` runs the `Quality Gate` job (toolchain from mise,
-  actions pinned by SHA, `contents: read`), `release.yml` runs the release job and `linear-sync.yml`
-  reconciles Linear. Not built: a workflow linter, a pin test, changeset status in the gate, and any
-  deploy (the `Deploy Staging` job is a no-op until the deploy questions DP1–DP7 are decided). The
-  code host is GitHub ([ADR-0012](/adr/0012-code-host-and-ci)).
+  Status: partly live. `.github/workflows/ci.yml` runs the `Quality Gate` job (toolchain from mise, actions pinned by SHA, `contents: read`), `release.yml` runs the release job and `linear-sync.yml` reconciles Linear. Not built: a workflow linter, a pin test, changeset status in the gate, and any deploy (the `Deploy Staging` job is a no-op until the deploy questions DP1–DP7 are decided). The code host is GitHub ([ADR-0012](/adr/0012-code-host-and-ci)).
 </Note>
 
 ## The model
@@ -21,27 +17,27 @@ icon: "workflow"
 
 ## What `pnpm verify` runs
 
-| Step       | Command                  | Catches                                                                                                                                                        |
-| ---------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Format     | `turbo run format:check` | Unformatted code (oxfmt)                                                                                                                                       |
-| Lint       | `turbo run lint`         | oxlint findings, including the import rules that enforce package boundaries                                                                                    |
-| Typecheck  | `turbo run typecheck`    | Type errors                                                                                                                                                    |
-| Test       | `turbo run test`         | Failing or empty vitest suites                                                                                                                                 |
-| Build      | `turbo run build`        | A member that no longer builds                                                                                                                                 |
-| Validate   | `pnpm validate`          | Repository shape: required files, catalogs-only versions, tier tags, tsconfig presets, forbidden dependencies; also runs the `tools/scripts/*.test.mjs` suites |
-| Boundaries | `pnpm boundaries`        | A tier importing against the dependency direction (`turbo boundaries`)                                                                                         |
-| Knip       | `pnpm knip`              | Unused files, exports and dependencies                                                                                                                         |
+| Step | Command | Catches |
+| --- | --- | --- |
+| Format | `turbo run format:check` | Unformatted code (oxfmt) |
+| Lint | `turbo run lint` | oxlint findings, including the import rules that enforce package boundaries |
+| Typecheck | `turbo run typecheck` | Type errors |
+| Test | `turbo run test` | Failing or empty vitest suites |
+| Build | `turbo run build` | A member that no longer builds |
+| Validate | `pnpm validate` | Repository shape: required files, catalogs-only versions, tier tags, tsconfig presets, forbidden dependencies; also runs the `tools/scripts/*.test.mjs` suites |
+| Boundaries | `pnpm boundaries` | A tier importing against the dependency direction (`turbo boundaries`) |
+| Knip | `pnpm knip` | Unused files, exports and dependencies |
 
 `pnpm verify:affected` runs the turbo part for members changed since `main` only. Use it while iterating; the required check runs the full `pnpm verify`.
 
 Checks CI adds beyond `pnpm verify`:
 
-| Check             | Command                                        | Why it is separate                                                    |
-| ----------------- | ---------------------------------------------- | --------------------------------------------------------------------- |
-| Secret scan       | `pnpm secrets:scan` (gitleaks over history)    | Needs history, not a working tree                                     |
-| Commit messages   | `pnpm exec commitlint --from <base> --to HEAD` | Hooks are advisory and can be skipped locally                         |
-| Changeset status  | `pnpm changeset:status`                        | A changed member without a changeset (target: chain it into `verify`) |
-| Dependency review | the host's dependency-review action            | New dependencies, advisories and licences on the pull request         |
+| Check | Command | Why it is separate |
+| --- | --- | --- |
+| Secret scan | `pnpm secrets:scan` (gitleaks over history) | Needs history, not a working tree |
+| Commit messages | `pnpm exec commitlint --from <base> --to HEAD` | Hooks are advisory and can be skipped locally |
+| Changeset status | `pnpm changeset:status` | A changed member without a changeset (target: chain it into `verify`) |
+| Dependency review | the host's dependency-review action | New dependencies, advisories and licences on the pull request |
 
 ## Run it locally
 
@@ -59,27 +55,19 @@ Nothing in `pnpm verify` reads a vault, a `.env` or a token. If a step seems to 
 
 <Steps>
   <Step title="Toolchain from mise.toml">
-    One setup step installs what `mise.toml` pins, asserts that the pnpm pin equals `packageManager`
-    in `package.json`, caches the pnpm store and runs `pnpm install --frozen-lockfile`. It installs
-    tools and decides nothing.
+    One setup step installs what `mise.toml` pins, asserts that the pnpm pin equals `packageManager` in `package.json`, caches the pnpm store and runs `pnpm install --frozen-lockfile`. It installs tools and decides nothing.
   </Step>
   <Step title="Pin every action by SHA">
-    Each `uses:` carries a full commit SHA and a semver comment. [Renovate](/runbooks/renovate)
-    keeps them current. Add a workflow lint (zizmor or equivalent) to catch unpinned actions and
-    injection patterns.
+    Each `uses:` carries a full commit SHA and a semver comment. [Renovate](/runbooks/renovate) keeps them current. Add a workflow lint (zizmor or equivalent) to catch unpinned actions and injection patterns.
   </Step>
   <Step title="Least privilege">
-    Top-level `permissions` are empty or `contents: read`. A job asks for more only when it must,
-    and `id-token: write` only on a job that logs in to the vault.
+    Top-level `permissions` are empty or `contents: read`. A job asks for more only when it must, and `id-token: write` only on a job that logs in to the vault.
   </Step>
   <Step title="No secrets in verify">
-    The `verify` job has no vault identity and no stored secret. Only deploy and release jobs may
-    log in, through OIDC ([Secrets](/runbooks/secrets#ci-reads-ci-through-oidc-one-step-at-a-time)).
+    The `verify` job has no vault identity and no stored secret. Only deploy and release jobs may log in, through OIDC ([Secrets](/runbooks/secrets#ci-reads-ci-through-oidc-one-step-at-a-time)).
   </Step>
   <Step title="Scope with affected, never skip">
-    A pull request may use `--affected` for turbo steps. `main` and release tags run everything.
-    `pnpm validate`, `pnpm boundaries` and `pnpm knip` never scope: they check repository-wide
-    facts.
+    A pull request may use `--affected` for turbo steps. `main` and release tags run everything. `pnpm validate`, `pnpm boundaries` and `pnpm knip` never scope: they check repository-wide facts.
   </Step>
 </Steps>
 
@@ -114,18 +102,18 @@ Use this only when the host cannot run workflows at all (billing lock, outage, s
   </Step>
 </Steps>
 
-| Date       | Env | SHA | By  | Gate | Smoke | Reason |
-| ---------- | --- | --- | --- | ---- | ----- | ------ |
-| _none yet_ |     |     |     |      |       |        |
+| Date | Env | SHA | By | Gate | Smoke | Reason |
+| --- | --- | --- | --- | --- | --- | --- |
+| _none yet_ | | | | | | |
 
 ## Enforcement status
 
-| Rule                                   | Check                                                                 | State                     |
-| -------------------------------------- | --------------------------------------------------------------------- | ------------------------- |
-| `pnpm verify` is the single gate       | `ci.yml` `Quality Gate`                                               | Live                      |
-| Hooks are advisory                     | `lefthook.yml` (check-only, no auto-fix)                              | Live                      |
-| Conventional commits                   | commitlint in `commit-msg`; CI range check                            | Live                      |
-| Secrets scan                           | gitleaks in `pre-commit`, `pnpm secrets:scan`                         | Live                      |
+| Rule | Check | State |
+| --- | --- | --- |
+| `pnpm verify` is the single gate | `ci.yml` `Quality Gate` | Live |
+| Hooks are advisory | `lefthook.yml` (check-only, no auto-fix) | Live |
+| Conventional commits | commitlint in `commit-msg`; CI range check | Live |
+| Secrets scan | gitleaks in `pre-commit`, `pnpm secrets:scan` | Live |
 | Actions pinned by SHA, least privilege | Done by hand in every workflow; workflow lint (zizmor) and a pin test | Pins live, lint not built |
 
 See also [Definition of done](/guides/definition-of-done), [Release](/runbooks/release) and [Testing](/standards/testing).

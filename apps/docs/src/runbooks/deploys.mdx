@@ -19,39 +19,33 @@ icon: "rocket"
 
 ## Targets
 
-| Target                               | Status       | Deploy path                                                                                      |
-| ------------------------------------ | ------------ | ------------------------------------------------------------------------------------------------ |
+| Target | Status | Deploy path |
+| --- | --- | --- |
 | Backend services (`services/<name>`) | Not deployed | Decision pending (DP2: how the generated Encore app is deployed). Staging first, then production |
-| Console (`apps/console`, a Vite SPA) | Not deployed | Static build with the API URL set at build time; host not chosen                                 |
-| Docs (`apps/docs`, Mintlify)         | Not deployed | Mintlify hosting from the repository; no pipeline of ours                                        |
-| Mobile (`apps/mobile`)               | Not released | EAS, see [Mobile release](/runbooks/mobile-release)                                              |
+| Console (`apps/console`, a Vite SPA) | Not deployed | Static build with the API URL set at build time; host not chosen |
+| Docs (`apps/docs`, Mintlify) | Not deployed | Mintlify hosting from the repository; no pipeline of ours |
+| Mobile (`apps/mobile`) | Not released | EAS, see [Mobile release](/runbooks/mobile-release) |
 
 ## A deploy
 
 <Steps>
   <Step title="Prepare (agent)">
-    Confirm `pnpm verify` is green on the SHA. List every new secret name and its purpose. List
-    every migration and say whether it is expand-only. Write the smoke-test checks. Hand all of it
-    to the owner.
+    Confirm `pnpm verify` is green on the SHA. List every new secret name and its purpose. List every migration and say whether it is expand-only. Write the smoke-test checks. Hand all of it to the owner.
   </Step>
   <Step title="Set secrets (human)">
-    The owner sets each named secret in the target environment. The agent never sets or reads a
-    value.
+    The owner sets each named secret in the target environment. The agent never sets or reads a value.
   </Step>
   <Step title="Deploy to staging (owner)">
     The owner deploys the full SHA to staging. A deploy is by commit hash, never by branch name.
   </Step>
   <Step title="Smoke test">
-    The service's health endpoint answers 200 and reports the new SHA; the console and docs load
-    with no console errors, in both directions (LTR and RTL) and both themes where the app supports
-    them; sign-in works against the target API.
+    The service's health endpoint answers 200 and reports the new SHA; the console and docs load with no console errors, in both directions (LTR and RTL) and both themes where the app supports them; sign-in works against the target API.
   </Step>
   <Step title="Promote to production (owner)">
     The owner deploys the same SHA to production, approves explicitly and repeats the smoke test.
   </Step>
   <Step title="Record it">
-    Record the release: environment, full SHA, who, gate result, smoke result, time. The record is
-    what a rollback redeploys.
+    Record the release: environment, full SHA, who, gate result, smoke result, time. The record is what a rollback redeploys.
   </Step>
 </Steps>
 
@@ -66,11 +60,11 @@ icon: "rocket"
 
 ## Checks that back this page
 
-| Rule                           | Check                                          | State     |
-| ------------------------------ | ---------------------------------------------- | --------- |
-| Gate green on the deployed SHA | CI `verify`                                    | Not built |
-| Owner approval for production  | Protected environment                          | Not built |
-| Migrations are expand-only     | Migration-safety check, once a database exists | Not built |
-| No agent sets a secret         | `guard-bash`                                   | Live      |
+| Rule | Check | State |
+| --- | --- | --- |
+| Gate green on the deployed SHA | CI `verify` | Not built |
+| Owner approval for production | Protected environment | Not built |
+| Migrations are expand-only | Migration-safety check, once a database exists | Not built |
+| No agent sets a secret | `guard-bash` | Live |
 
 See also [Release](/runbooks/release), [Secrets](/runbooks/secrets) and [CI](/runbooks/ci).

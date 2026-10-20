@@ -11,7 +11,7 @@ A member is anything `pnpm-workspace.yaml` lists: `apps/*`, `packages/<category>
 | File            | Holds                                                                             |
 | --------------- | --------------------------------------------------------------------------------- |
 | `package.json`  | The manifest fields below; scripts from the [task vocabulary](/guides/tooling)    |
-| `turbo.jsonc`   | `{ "extends": ["//"], "tags": ["tier:<x>"] }` with exactly one tier tag           |
+| `turbo.jsonc`    | `{ "extends": ["//"], "tags": ["tier:<x>"] }` with exactly one tier tag           |
 | `tsconfig.json` | Extends one `@stackra/typescript-config/<preset>` and nothing else                |
 | `README.md`     | What it is, a tasks table of its scripts, the structure of `src/`, how to run it  |
 | `AGENTS.md`     | Where code goes, rules that fail the build, tasks, and a mandatory `## PII` table |
@@ -36,16 +36,16 @@ Presence of the heading is checked; whether the table is still true is a review 
 
 ## `package.json`
 
-| Field         | Rule                                                                                                                                                                                                                                                   |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `name`        | `@stackra/<name>`; apps `@figentra/<dir>`; services `@figentra/service-<name>`                                                                                                                                                                         |
-| `description` | Non-empty, one sentence                                                                                                                                                                                                                                |
-| `license`     | `"MIT"` ([0024](/adr/0024-mit-license-with-exclusions))                                                                                                                                                                                                |
-| `private`     | `true` until a package is published                                                                                                                                                                                                                    |
-| `type`        | `"module"`                                                                                                                                                                                                                                             |
-| `sideEffects` | `false` on every `tier:lib` package                                                                                                                                                                                                                    |
+| Field         | Rule                                                                                            |
+| ------------- | ----------------------------------------------------------------------------------------------- |
+| `name`        | `@stackra/<name>`; apps `@figentra/<dir>`; services `@figentra/service-<name>`                  |
+| `description` | Non-empty, one sentence                                                                         |
+| `license`     | `"MIT"` ([0024](/adr/0024-mit-license-with-exclusions))                                         |
+| `private`     | `true` until a package is published                                                             |
+| `type`        | `"module"`                                                                                      |
+| `sideEffects` | `false` on every `tier:lib` package                                                             |
 | `exports`     | `tier:lib` only: each module entry is `{ "@stackra/source": "./src/….ts", types: "./dist/….d.mts", default: "./dist/….mjs" }`, source condition first; a plain string entry is a static asset ([0025](/adr/0025-packages-publish-to-private-registry)) |
-| dependencies  | `catalog:`, `catalog:<name>` or `workspace:*` only: see [Dependencies](/standards/dependencies)                                                                                                                                                        |
+| dependencies  | `catalog:`, `catalog:<name>` or `workspace:*` only: see [Dependencies](/standards/dependencies) |
 
 Key order: `name`, `version`, `private`, `description`, `license`, `files`, `type`, `main` (Expo only), `sideEffects`, `imports`, `exports`, `scripts`, `dependencies`, `devDependencies`. Order is convention, not checked.
 
@@ -66,33 +66,33 @@ The direction rule is a law: see [Boundaries](/constitution/boundaries) and [ADR
 
 | Tier           | Kinds                                                                                                          |
 | -------------- | -------------------------------------------------------------------------------------------------------------- |
-| `tier:app`     | `app-vite`, `app-next`, `app-expo`, `app-docs`                                                                 |
-| `tier:lib`     | `domain`, `platform`, `lib` (see [Packages](/standards/packages))                                              |
+| `tier:app`     | `app:console`, `app:mobile`, `app:desktop`, `app:docs`                                                         |
+| `tier:lib`     | `package`, entries-first (see [Packages](/standards/packages), ADR 0126)                                       |
 | `tier:config`  | `tooling`                                                                                                      |
-| `tier:service` | one workspace member per service, `services/<name>`, entry `src/main.ts` (see [Services](/standards/services)) |
+| `tier:service` | `service`: `services/<name>`, entry `src/main.ts`, root module in `stackra.module` (see [Services](/standards/services)) |
 
 ## Scaffolding
 
-`pnpm new <kind> <name> [--category <c>] [--description "<text>"] [--title "<Title>"] [--port <n>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the root `LICENSE`, and formats the result. Then run `pnpm install` and `pnpm verify`.
+`pnpm new <kind> <name> [--category <c>] [--entries <list>|none] [--description "<text>"] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the target repo's `LICENSE`, and formats the result. Then run `pnpm install` and `pnpm verify`.
 
-| Kind                        | Template                      | Lands in                                             |
-| --------------------------- | ----------------------------- | ---------------------------------------------------- |
-| `domain`, `platform`, `lib` | `templates/packages/<kind>`   | `packages/<category>/<name>` (`--category` required) |
-| `tooling`                   | `templates/packages/tooling`  | `packages/tooling/<name>`                            |
-| `app-vite`, `app-next`      | `templates/apps/<vite\|next>` | `apps/<name>` (port from 3710)                       |
-| `app-expo`                  | `templates/apps/expo`         | `apps/<name>` (no hyphens in the name)               |
-| `app-docs`                  | `templates/apps/docs`         | `apps/<name>`                                        |
-| `service`                   | `templates/services/encore`   | `services/src/<name>`                                |
+| Kind          | Template                     | Lands in                                             |
+| ------------- | ---------------------------- | ---------------------------------------------------- |
+| `service`     | `templates/services/service` | `services/<name>` (`@figentra/service-<name>`)       |
+| `package`     | `templates/packages/package` | `packages/<category>/<name>` (`--category` required) |
+| `tooling`     | `templates/packages/tooling` | `packages/tooling/<name>`                            |
+| `app:console` | `templates/apps/console`     | `apps/<name>` (port from 3710)                       |
+| `app:mobile`  | `templates/apps/mobile`      | `apps/<name>` (no hyphens in the name)               |
+| `app:desktop` | `templates/apps/desktop`     | `apps/<name>`                                        |
+| `app:docs`    | `templates/apps/docs`        | `apps/<name>` (port from 3334)                       |
 
 ```bash
-pnpm new lib retry --category foundation --description "Retry with backoff."
-pnpm new app-vite admin --title "Admin"
-pnpm new app-next site --dry-run
+pnpm new service billing --description "Billing."
+pnpm new package retry --category foundation --entries contracts,testing
+pnpm new app:console admin --title "Admin"
+pnpm new service billing --repo ../figentra-os --dry-run
 ```
 
-<Warning>
-  The `service` kind still renders the Encore-unit layout (`services/src/<name>`), which is not a workspace member. Stackra's services are independent members at `services/<name>`. Planned: replace the template with a member template (`package.json`, `turbo.jsonc`, `tsdown.config.ts`, `src/main.ts`) so `pnpm new service` matches `services/example`.
-</Warning>
+Shapes: [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates). Flags and tokens: [Scaffolding](/guides/scaffolding).
 
 ## What enforces this
 

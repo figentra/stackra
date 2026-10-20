@@ -5,9 +5,7 @@ icon: "arrow-up-circle"
 ---
 
 <Note>
-  Status: target. The checklists below describe how an upgrade should run. Encore upgrades are
-  omitted until `stackra gen` emits the Encore app
-  ([0124](/adr/0124-encore-is-the-generated-runtime-target)); add that section with the generator.
+  Status: target. The checklists below describe how an upgrade should run. Encore upgrades are omitted until `stackra gen` emits the Encore app ([0124](/adr/0124-encore-is-the-generated-runtime-target)); add that section with the generator.
 </Note>
 
 Every upgrade is its own pull request, never mixed with feature work, and is merged only when `pnpm verify` is green. Say in the description what you ran and what you did not.
@@ -45,22 +43,16 @@ Expo SDK versions move the whole `mobile` catalog together. Never bump one packa
     Note removed APIs, the new minimum Node and Xcode, and any New Architecture requirement.
   </Step>
   <Step title="Bump the expo version in the mobile catalog">
-    Then run `pnpm --filter @figentra/mobile exec expo install --fix` to learn the compatible
-    versions of every `expo-*` and React Native package, and copy those versions into the `mobile`
-    catalog (strict catalog mode means the catalog is the only place to write them).
+    Then run `pnpm --filter @figentra/mobile exec expo install --fix` to learn the compatible versions of every `expo-*` and React Native package, and copy those versions into the `mobile` catalog (strict catalog mode means the catalog is the only place to write them).
   </Step>
   <Step title="Check the project">
-    `pnpm --filter @figentra/mobile run doctor` (that is `expo install --check`) and `npx expo
-    config --type public` from `apps/mobile`.
+    `pnpm --filter @figentra/mobile run doctor` (that is `expo install --check`) and `npx expo config --type public` from `apps/mobile`.
   </Step>
   <Step title="Prove the bundle builds">
-    `pnpm --filter @figentra/mobile build` (that is `expo export` for both platforms), then run a
-    development build on a simulator.
+    `pnpm --filter @figentra/mobile build` (that is `expo export` for both platforms), then run a development build on a simulator.
   </Step>
   <Step title="Treat it as a native change">
-    The runtime version changes, so over-the-air updates cannot reach old builds. Plan a new store
-    build per [Mobile release](/runbooks/mobile-release) and do not publish an update across the
-    boundary.
+    The runtime version changes, so over-the-air updates cannot reach old builds. Plan a new store build per [Mobile release](/runbooks/mobile-release) and do not publish an update across the boundary.
   </Step>
 </Steps>
 
@@ -70,10 +62,10 @@ Not installed yet. When they are: bump them with the matching free packages in t
 
 ## Checks that back this page
 
-| Rule                                   | Check                                                 | State     |
-| -------------------------------------- | ----------------------------------------------------- | --------- |
-| Versions only in catalogs              | `pnpm validate`                                       | Live      |
-| `mise.toml` and `packageManager` agree | Setup step in CI                                      | Not built |
-| Expo packages compatible               | `expo install --check` (`pnpm run doctor` in the app) | Manual    |
+| Rule | Check | State |
+| --- | --- | --- |
+| Versions only in catalogs | `pnpm validate` | Live |
+| `mise.toml` and `packageManager` agree | Setup step in CI | Not built |
+| Expo packages compatible | `expo install --check` (`pnpm run doctor` in the app) | Manual |
 
 See also [Renovate](/runbooks/renovate), [Dependencies](/standards/dependencies) and [Release](/runbooks/release).

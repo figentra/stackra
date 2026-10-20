@@ -4,9 +4,14 @@ description: "Proposed · 2026-10-19"
 ---
 
 <Note>
-  Decisions 3 and 4 are replaced by [0091](/adr/0091-generated-encore-app-in-stackra-folder):
-  services hold no Encore primitives and no `__generated__/` folder; `stackra gen` emits the Encore
-  app into `.stackra/encore/`.
+  Decisions 3 and 4 are replaced by [0091](/adr/0091-generated-encore-app-in-stackra-folder): services hold
+  no Encore primitives and no `__generated__/` folder; `stackra gen` emits the Encore app into `.stackra/encore/`.
+</Note>
+
+<Note>
+  Decisions 1 and 2 are amended by [0126](/adr/0126-member-shapes-and-scaffold-templates): a feature module lives at
+  `src/modules/<feature>/` and groups its code in action-centric kind folders (`models/`, `actions/`, `queries/`, …), not in
+  DDD layers.
 </Note>
 
 ## Context

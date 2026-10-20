@@ -5,22 +5,20 @@ icon: "refresh-cw"
 ---
 
 <Note>
-  Status: target. There is no `renovate.json` in the repo and the Renovate app is not installed.
-  Versions today are bumped by hand in `pnpm-workspace.yaml` catalogs. The policy itself is in
-  [Dependencies](/standards/dependencies).
+  Status: target. There is no `renovate.json` in the repo and the Renovate app is not installed. Versions today are bumped by hand in `pnpm-workspace.yaml` catalogs. The policy itself is in [Dependencies](/standards/dependencies).
 </Note>
 
 ## What the config decides
 
-| Rule                                                               | Why                                                                                                                                        |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `config:best-practices` and `pinGitHubActionDigestsToSemver`       | Actions pinned by SHA with a semver comment; container images by digest                                                                    |
+| Rule | Why |
+| --- | --- |
+| `config:best-practices` and `pinGitHubActionDigestsToSemver` | Actions pinned by SHA with a semver comment; container images by digest |
 | `minimumReleaseAge: "1 day"` with `internalChecksFilter: "strict"` | A release must be a day old before a pull request proposes it, as a blocking check, so a freshly compromised release has time to be pulled |
-| `automerge: false`                                                 | Every change is a pull request a human reads                                                                                               |
-| `vulnerabilityAlerts` with no age gate                             | A security advisory does not wait; the pull request is labelled `security`                                                                 |
-| `@stackra/*` has no age gate                                       | We publish those ourselves                                                                                                                 |
-| Version updates go to the catalog, not a member                    | `catalogMode: strict`: a member's `package.json` only names a catalog                                                                      |
-| One grouped pull request per toolchain family                      | Expo SDK packages move together; the `mise.toml` pins and `packageManager` move together                                                   |
+| `automerge: false` | Every change is a pull request a human reads |
+| `vulnerabilityAlerts` with no age gate | A security advisory does not wait; the pull request is labelled `security` |
+| `@stackra/*` has no age gate | We publish those ourselves |
+| Version updates go to the catalog, not a member | `catalogMode: strict`: a member's `package.json` only names a catalog |
+| One grouped pull request per toolchain family | Expo SDK packages move together; the `mise.toml` pins and `packageManager` move together |
 
 No token, `hostRules` entry or registry credential belongs in the config. Private registry access is configured in the Renovate app settings of the organisation.
 
@@ -50,10 +48,10 @@ No token, `hostRules` entry or registry credential belongs in the config. Privat
 
 ## Checks that back this page
 
-| Rule                      | Check                       | State     |
-| ------------------------- | --------------------------- | --------- |
-| Versions only in catalogs | `pnpm validate`             | Live      |
-| Config valid              | `renovate-config-validator` | Not built |
-| Actions pinned by SHA     | Workflow lint in CI         | Not built |
+| Rule | Check | State |
+| --- | --- | --- |
+| Versions only in catalogs | `pnpm validate` | Live |
+| Config valid | `renovate-config-validator` | Not built |
+| Actions pinned by SHA | Workflow lint in CI | Not built |
 
 See also [Dependencies](/standards/dependencies) and [CI](/runbooks/ci).

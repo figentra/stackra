@@ -36,7 +36,7 @@ Every exported declaration lives in its own file, named for it. Where the kind i
 
 - `index.ts` is the only barrel name. A barrel declares nothing and names each symbol (`export type { Token } from "./token.class"`), never `export *`.
 - A folder is created for one artifact only when it has two or more non-test files.
-- Scaffolded templates are the reference: `tools/scaffold/templates/packages/lib/src`.
+- Scaffolded templates are the reference: `tools/scaffold/templates/packages/package/src`.
 - A reviewer treats a file with two exported declarations, or a barrel that declares, as a finding. Changes to these conventions go through an ADR; there are no package-local exceptions.
 
 ## Imports

@@ -5,14 +5,7 @@ icon: "package-check"
 ---
 
 <Note>
-  Status: partly live, partly target. `@changesets/cli` is configured (`.changeset/config.json`) and
-  `pnpm changeset`, `pnpm changeset:status` and `pnpm changeset:version` exist.
-  `.github/workflows/release.yml` opens the version pull request and, on its merge, runs `changeset
-  publish` to `npm.figentra.com`. Not built: the Infisical release identity, a packed-artifact smoke
-  test and signed artifacts. Today every package is still `"private": true`, so nothing publishes
-  yet. Policy: [0025](/adr/0025-packages-publish-to-private-registry) (supersedes 0013 decision 3),
-  [0024](/adr/0024-mit-license-with-exclusions) (MIT),
-  [0119](/adr/0119-merge-policy-and-release-authority) (the owner merges the version pull request).
+  Status: partly live, partly target. `@changesets/cli` is configured (`.changeset/config.json`) and `pnpm changeset`, `pnpm changeset:status` and `pnpm changeset:version` exist. `.github/workflows/release.yml` opens the version pull request and, on its merge, runs `changeset publish` to `npm.figentra.com`. Not built: the Infisical release identity, a packed-artifact smoke test and signed artifacts. Today every package is still `"private": true`, so nothing publishes yet. Policy: [0025](/adr/0025-packages-publish-to-private-registry) (supersedes 0013 decision 3), [0024](/adr/0024-mit-license-with-exclusions) (MIT), [0119](/adr/0119-merge-policy-and-release-authority) (the owner merges the version pull request).
 </Note>
 
 ## The rules
@@ -29,27 +22,19 @@ icon: "package-check"
 
 <Steps>
   <Step title="Land changesets with the work">
-    In each pull request that changes a member: `pnpm changeset`, pick the members, pick the bump
-    (patch, minor, major) and write one user-facing line. Commit the generated file under
-    `.changeset/`.
+    In each pull request that changes a member: `pnpm changeset`, pick the members, pick the bump (patch, minor, major) and write one user-facing line. Commit the generated file under `.changeset/`.
   </Step>
   <Step title="Let CI open the version pull request">
-    After a push to `main` the release job runs `pnpm changeset:version` (which also refreshes the
-    lockfile) and opens or updates one pull request titled `chore(release): version packages`.
+    After a push to `main` the release job runs `pnpm changeset:version` (which also refreshes the lockfile) and opens or updates one pull request titled `chore(release): version packages`.
   </Step>
   <Step title="Review it">
-    Read the `CHANGELOG.md` diffs and the version bumps. Check the bump matches the change. The
-    release job pushes and opens it as `stackra-bot` (a GitHub App token from
-    `actions/create-github-app-token`, repo secrets `STACKRA_BOT_APP_ID` and
-    `STACKRA_BOT_PRIVATE_KEY`), so the Quality Gate runs on it without a close and reopen.
+    Read the `CHANGELOG.md` diffs and the version bumps. Check the bump matches the change. The release job pushes and opens it as `stackra-bot` (a GitHub App token from `actions/create-github-app-token`, repo secrets `STACKRA_BOT_APP_ID` and `STACKRA_BOT_PRIVATE_KEY`), so the Quality Gate runs on it without a close and reopen.
   </Step>
   <Step title="Merge it">
-    The merge to `main` is the release. The job builds, publishes every non-private package to
-    `npm.figentra.com`, tags it and creates the release notes.
+    The merge to `main` is the release. The job builds, publishes every non-private package to `npm.figentra.com`, tags it and creates the release notes.
   </Step>
   <Step title="Verify">
-    `git ls-remote --tags origin` shows the new tags on the merge commit, and each member's
-    `CHANGELOG.md` contains the entry.
+    `git ls-remote --tags origin` shows the new tags on the merge commit, and each member's `CHANGELOG.md` contains the entry.
   </Step>
 </Steps>
 
@@ -80,12 +65,12 @@ The procedure the job follows, some of it still target:
 
 Re-run only the failed jobs of the same run unless a row says otherwise.
 
-| Failed step                          | State              | Do                                                                                                |
-| ------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------- |
-| Version pull request not opened      | Nothing released   | Check the host setting for pull requests from workflows, then push any commit to `main` or re-run |
-| `verify` on the version pull request | Nothing released   | Close and reopen the pull request; if it is red, fix on `main` and let the job update it          |
-| Tagging                              | Merged, not tagged | Re-run the failed job; it tags over an existing release safely                                    |
-| Wrong bump merged                    | Tagged             | Roll forward: add a changeset and release the correction                                          |
+| Failed step | State | Do |
+| --- | --- | --- |
+| Version pull request not opened | Nothing released | Check the host setting for pull requests from workflows, then push any commit to `main` or re-run |
+| `verify` on the version pull request | Nothing released | Close and reopen the pull request; if it is red, fix on `main` and let the job update it |
+| Tagging | Merged, not tagged | Re-run the failed job; it tags over an existing release safely |
+| Wrong bump merged | Tagged | Roll forward: add a changeset and release the correction |
 
 ## Revert
 
@@ -96,11 +81,11 @@ Re-run only the failed jobs of the same run unless a row says otherwise.
 
 ## Checks that back this page
 
-| Rule                                          | Check                   | State                        |
-| --------------------------------------------- | ----------------------- | ---------------------------- |
-| Changeset per changed member                  | `pnpm changeset:status` | Script live; not in `verify` |
-| No local `changeset version`                  | `guard-bash`            | Live                         |
-| Conventional commits and generated changelogs | commitlint, changesets  | Live                         |
-| Release workflow, tag ruleset                 | CI                      | Not built                    |
+| Rule | Check | State |
+| --- | --- | --- |
+| Changeset per changed member | `pnpm changeset:status` | Script live; not in `verify` |
+| No local `changeset version` | `guard-bash` | Live |
+| Conventional commits and generated changelogs | commitlint, changesets | Live |
+| Release workflow, tag ruleset | CI | Not built |
 
 See also [Mobile release](/runbooks/mobile-release), [Deploys](/runbooks/deploys) and [Commits and releases](/guides/workflow).

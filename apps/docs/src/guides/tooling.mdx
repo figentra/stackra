@@ -7,7 +7,7 @@ icon: "wrench"
 | Package                      | Exports                                                                                                               | Used as                                                                  |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | `@stackra/typescript-config` | `base`, `node`, `library`, `react`, `vite`, `vite-node`, `encore`, `decorators`, `decorators-react`, `runtime`, `app` | `tsconfig.json` → `{ "extends": "@stackra/typescript-config/<preset>" }` |
-| `@stackra/oxlint-config`     | `base`, `node`, `react`, `decorators`, `boundaries`                                                                   | the root `.oxlintrc.jsonc` extends `boundaries`                          |
+| `@stackra/oxlint-config`     | `base`, `node`, `react`, `decorators`, `boundaries`                                                                   | the root `.oxlintrc.jsonc` extends `boundaries`                           |
 | `@stackra/vitest-config`     | `preset`, `preset-react`, `preset-decorators`, `coverage`                                                             | `vitest.config.ts` → `mergeConfig(stackraVitest…, …)`                    |
 | `@stackra/tsdown-config`     | `library()`                                                                                                           | `tsdown.config.ts` of a built library                                    |
 

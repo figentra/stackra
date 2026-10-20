@@ -1,7 +1,12 @@
 ---
 title: "0004 — Package archetypes and layers"
-description: "Accepted · 2026-10-19"
+description: "Superseded by 0126 · 2026-10-19"
 ---
+
+<Note>
+  Superseded by [0126](/adr/0126-member-shapes-and-scaffold-templates): every library package has one entries-first
+  shape; the domain, platform and lib archetypes are retired.
+</Note>
 
 ## Context
 
@@ -16,13 +21,13 @@ binding or reference.
 1. **A package names its archetype once, when created**, on an `Archetype:` line in its `AGENTS.md`.
 2. **The archetype set:**
 
-   | Archetype | Shape                                                                              | Status                                      |
-   | --------- | ---------------------------------------------------------------------------------- | ------------------------------------------- |
-   | domain    | the four layers below                                                              | binding on the first member                 |
-   | flat lib  | `src/index.ts` plus kind folders; no layers; pure helpers or a thin integration    | binding                                     |
-   | contracts | vocabulary only, see [0117](/adr/0117-contracts-placement-and-decorator-ownership) | binding                                     |
-   | tooling   | presets that ship data, no `src/` layers; change the preset, never the consumer    | binding                                     |
-   | other     | UI, provider, SDK, runtime, asset shapes                                           | reference only until the first member lands |
+   | Archetype | Shape                                                                                          | Status                                     |
+   | --------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------ |
+   | domain    | the four layers below                                                                          | binding on the first member                |
+   | flat lib  | `src/index.ts` plus kind folders; no layers; pure helpers or a thin integration                | binding                                    |
+   | contracts | vocabulary only, see [0117](/adr/0117-contracts-placement-and-decorator-ownership)                                       | binding                                    |
+   | tooling   | presets that ship data, no `src/` layers; change the preset, never the consumer                | binding                                    |
+   | other     | UI, provider, SDK, runtime, asset shapes                                                       | reference only until the first member lands |
 
 3. **The domain archetype has four layers** under `src/`:
    - `core` is domain meaning. It imports no other layer and no host library (React, Encore, ORM, `pg`).

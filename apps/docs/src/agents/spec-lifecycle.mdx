@@ -23,14 +23,14 @@ Specs are public on GitHub and are not published here (D17). They never hold sec
    spec.md + Impact     marks "complete"    gate runs first    tasks → Linear
 ```
 
-| Command                                  | Writes                               | Stackra rule                                                         |
-| ---------------------------------------- | ------------------------------------ | -------------------------------------------------------------------- |
+| Command                                  | Writes                         | Stackra rule                                                         |
+| ---------------------------------------- | ------------------------------ | -------------------------------------------------------------------- |
 | `/speckit.specify`                       | `.agents/specs/sta-n-<slug>/spec.md` | Interviews the **Impact** questionnaire. Never plans                 |
-| `/speckit.clarify`                       | Answers in `spec.md`                 | Sets `**Clarifications status**: complete` only when nothing is open |
-| `/speckit.plan`                          | `plan.md`, research, contracts       | **Refuses** until the spec gate passes                               |
-| `/speckit.tasks`                         | `tasks.md`                           | Tasks map to Linear sub-issues of the spec's issue                   |
-| `/speckit.analyze`, `/speckit.checklist` | reports                              | Optional                                                             |
-| `/speckit.implement`                     | code                                 | Executes `tasks.md`                                                  |
+| `/speckit.clarify`                       | Answers in `spec.md`           | Sets `**Clarifications status**: complete` only when nothing is open |
+| `/speckit.plan`                          | `plan.md`, research, contracts | **Refuses** until the spec gate passes                               |
+| `/speckit.tasks`                         | `tasks.md`                     | Tasks map to Linear sub-issues of the spec's issue                   |
+| `/speckit.analyze`, `/speckit.checklist` | reports                        | Optional                                                             |
+| `/speckit.implement`                     | code                           | Executes `tasks.md`                                                  |
 
 ## The clarify-before-build gate
 

@@ -26,8 +26,7 @@
     "./vite-node": "./vite-node.json",
     "./runtime": "./runtime.json",
     "./app": "./app.json",
-    "./expo": "./expo.json",
-    "./next": "./next.json"
+    "./expo": "./expo.json"
   },
   "scripts": {
     "format": "oxfmt --write .",

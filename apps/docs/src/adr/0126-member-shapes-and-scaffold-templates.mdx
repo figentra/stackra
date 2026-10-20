@@ -1,0 +1,87 @@
+---
+title: "0126 — Member shapes and scaffold templates"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+`pnpm new` still rendered shapes the owner has since replaced. Packages came in three archetypes from
+[0004](/adr/0004-package-archetypes-and-layers) (domain with four layers, platform, flat lib); a service rendered an
+Encore unit at `services/src/<name>` with `encore.service.ts` and `api.ts`, which [0091](/adr/0091-generated-encore-app-in-stackra-folder)
+and [0124](/adr/0124-encore-is-the-generated-runtime-target) rule out; there were `app-next` and `app-expo` kinds; and
+[0040](/adr/0040-ddd-feature-modules-in-services) organised a service's modules in DDD layers. The owner's
+locked decisions of 2026-10-19 and 2026-10-20 replace each of these: FW1 (entries-first packages), audit Q9 (action-centric
+kind folders), G2 (each member declares its root module), console = Filament-style resources, TS1/TS2 (test tiers by
+filename infix), CF1 (config as `config/<pkg>.config.ts`), the code conventions (no `enum`, component folders, `private`, no
+Storybook), B16 (no Next.js), MR7 (a desktop app), audit Q10 (no `app()`/`config()`/`logger()` helpers), the declaration
+rule, the devtools entry and FO5/FO7 (a separate private figentra-os repo). The templates are where a shape becomes real
+for every new member, so they are decided here together.
+
+## Decision
+
+1. **Service.** `pnpm new service <name>` renders a plain-TypeScript member at `services/<name>`,
+   `@figentra/service-<name>`, with no Encore file:
+   - `src/main.ts` bootstraps the root module; `src/<name>.module.ts` is the root `@Module` with an empty `imports` list;
+     `package.json` declares `"stackra": { "module": "./src/<name>.module.ts" }` ([0090](/adr/0090-codegen-discovery-by-root-module)).
+   - `src/modules/` starts empty; its README lists the kind folders of decision 3.
+   - `src/contracts/index.ts` is the types-only `./contracts` entry ([0117](/adr/0117-contracts-placement-and-decorator-ownership)).
+   - `config/<name>.config.ts` holds deploy-time defaults (CF1); `src/__tests__/<name>.module.test.ts` boots the root module.
+   - Until `@stackra/container` ships `@Module`, the root module is a plain class with a static `imports` field, marked as
+     a shortcut in the template.
+2. **Package.** One entries-first shape replaces the domain, platform and lib archetypes of 0004:
+   - Entries are `.` (core, `src/core/`), `./contracts`, `./node`, `./react`, `./native`, `./testing` and `./devtools`. Core is
+     always present; the others are chosen with `--entries` (or a prompt on a terminal) and are declared only with real code.
+   - `config/<pkg>.config.ts` and `resources/` (exported as `./resources/*`) sit outside `src/`.
+   - An entry never imports another entry; `react` and `native` share an internal `src/ui/` folder.
+   - `tooling` stays the `tier:config` preset shape.
+3. **Kind folders inside a feature module** (services and packages), created with their first file: `models/`, `actions/`,
+   `queries/`, `services/`, `events/`, `listeners/`, `workflows/`, `policies/`, `permissions/`, `settings/`, `contracts/`,
+   `resources/` (Filament-style panel resources); and `interfaces/`, `types/`, `constants/`, `tokens/`, `errors/`,
+   `decorators/` once there are two or more files of that kind. There are no `controllers/`, `dtos/`, `repositories/`,
+   `helpers/` or `utils/` folders. This replaces the four layers of 0040 decisions 1 and 2.
+4. **Declarations.** Decorators annotate code (classes, methods, fields); `define*` creates values other code references
+   (`defineToken`, `defineConfig`, `definePermissions`, `defineEvents`, `defineMeters`, `defineEntitlements`). A package that
+   defines decorators ships an Explorer that registers them at bootstrap through the container's `DiscoveryService`.
+5. **Apps.** Four kinds:
+   - `app:console`: Vite, React Router 7 with code-based routes, HeroUI (through `@stackra/ui` once it exists), and a panel
+     shell that hosts Filament-style resources.
+   - `app:mobile`: a copy of `apps/mobile`, so Expo SDK 57, code-based React Navigation (no expo-router), HeroUI Native and
+     Uniwind.
+   - `app:desktop`: Electron packaged by electron-builder (MR7), as a scaffold.
+   - `app:docs`: Mintlify.
+
+   There is no Next.js kind, template, tsconfig preset or catalog (B16).
+6. **Rules in every template.** Config is YAML where the reader supports it (`MUST_STAY_JSONC`, `MUST_STAY_JSON`); versions
+   are `catalog:` or `workspace:*` only; tests are `<subject>.test.ts` in `__tests__/`, with `.int`, `.contract`, `.e2e` or
+   `.load` before `.test` for those tiers, and the unit `test` task excludes the infixed tiers; every source file opens with
+   a contract block ([0007](/adr/0007-source-documentation-standard)); no `enum`, no `#private`, no `app()`/`config()`/`logger()`
+   helpers; a component is a folder `x/{x.tsx, index.ts, __tests__/x.test.tsx}`; no `*.stories.*`.
+7. **The generator.** `pnpm new <kind> <name>` takes the kinds `service`, `package`, `tooling`, `app:console`, `app:mobile`,
+   `app:desktop` and `app:docs`. Every option is a flag (`--category`, `--entries`, `--description`, `--title`, `--port`,
+   `--dry-run`), and `--repo <path>` renders into another monorepo with that repo's `LICENSE`.
+
+## Consequences
+
+- A new member starts in its final shape and passes `pnpm validate` without edits; the scaffold test proves it for every kind.
+- `services/example` and `services/health` gain a root module and `stackra.module`; the reference services of FW10 replace
+  them later.
+- The figentra-os repo is scaffolded with the same generator, so both repos share one member shape.
+- The service and package templates carry shortcuts until `@stackra/container` and `@stackra/config` exist; each is marked
+  in the file it affects.
+- The `electron` catalog entry is unused until the first desktop app, which also adds `electron` to `allowBuilds`.
+
+## Enforcement
+
+- `tools/scripts/__tests__/scaffold.test.mjs` renders every kind and runs the validator's member, service and exports checks
+  on the result.
+- `validate-repository.mjs` `checkService`: a service has `src/main.ts`, a `stackra.module` that exists, and no
+  `encore.service.ts` or `encore.app`; `checkTestPlacement` bans `*.stories.*`.
+- Planned: a validator check that a package's entry folders match its `exports` and `tsdown.config.ts`, and an oxlint rule
+  that entries never import each other.
+
+## Supersedes and sources
+
+Supersedes: [0004](/adr/0004-package-archetypes-and-layers). Amends [0040](/adr/0040-ddd-feature-modules-in-services)
+(decisions 1 and 2: kind folders replace layers) and [0010](/adr/0010-services-are-independent-workspace-members) (decision 1:
+a service also declares its root module and holds `config/`). Sources: owner decisions FW1, audit Q9 and Q10, G2, TS1/TS2,
+CF1, B16, MR7, FO5/FO7, the code conventions, the declaration rule and the devtools entry (2026-10-19 and 2026-10-20).

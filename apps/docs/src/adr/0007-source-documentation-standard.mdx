@@ -18,7 +18,6 @@ what the file is for and which rule governs it. Doc comments that restate a sign
 
    Non-TypeScript files (JSON with comments, YAML, shell, `.mjs`) carry the same fields in their own comment syntax. The
    repository's own config files already do this (`# Stackra file contract:`).
-
 2. **Every exported symbol has TSDoc that says something the type does not**: a purpose sentence always; `@param` and
    `@returns` when meaning, units or ownership are not in the type; `@throws` for each error a caller must handle; `Side effects:`
    for I/O and global mutation; `Invariant:`; `@example` when use is not obvious; `@deprecated` with replacement and removal target.

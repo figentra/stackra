@@ -10,12 +10,12 @@ A hook either **denies** a tool call with a reason the agent sees, or **adds con
 
 ## What runs today
 
-| Hook                    | Event and matcher                                    | Effect                                                                                                   |
-| ----------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `session-context.mjs`   | `SessionStart`                                       | Restates the invariants that must survive compaction, plus the branch and up to 15 lines of `git status` |
-| `guard-bash.mjs`        | `PreToolUse`, `Bash`                                 | Denies a command that destroys history, prints or writes secrets, or bypasses the release process        |
-| `guard-paths.mjs`       | `PreToolUse`, `Write\|Edit\|MultiEdit\|NotebookEdit` | Refuses writes to generated, vendored or secret paths                                                    |
-| `post-write-checks.mjs` | `PostToolUse`, `Write\|Edit\|MultiEdit`              | Reports (never fixes, never blocks) a written file that oxfmt would reformat                             |
+| Hook | Event and matcher | Effect |
+| --- | --- | --- |
+| `session-context.mjs` | `SessionStart` | Restates the invariants that must survive compaction, plus the branch and up to 15 lines of `git status` |
+| `guard-bash.mjs` | `PreToolUse`, `Bash` | Denies a command that destroys history, prints or writes secrets, or bypasses the release process |
+| `guard-paths.mjs` | `PreToolUse`, `Write\|Edit\|MultiEdit\|NotebookEdit` | Refuses writes to generated, vendored or secret paths |
+| `post-write-checks.mjs` | `PostToolUse`, `Write\|Edit\|MultiEdit` | Reports (never fixes, never blocks) a written file that oxfmt would reformat |
 
 `_io.mjs` holds the shared stdin and output helpers. It is not a hook.
 
@@ -27,26 +27,26 @@ Runs on session start, resume, compaction and clear. It prints seven invariants:
 
 Each rule is scoped to the operand of a command rather than a bare keyword. Heredoc bodies are stripped before matching, so a file whose prose mentions `rm -rf` does not trip a rule.
 
-| Denied                                                                                    | Why                                                                                                  |
-| ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `infisical export`                                                                        | Dumps every secret value into the transcript. Use `infisical run -- <cmd>` or `tools/scripts/mcp.sh` |
-| `infisical secrets get` without `--silent`                                                | Prints the value. Only the `--silent` form is allowed                                                |
-| `encore secret set`, `encore secret get`, `encore secret list --values`                   | Secret values are set by a human. Declare `secret("NAME")` and name it in the report                 |
-| `wrangler secret put`, `wrangler secret bulk`                                             | The same rule for Worker secrets                                                                     |
-| Reading `.env` with `cat`, `less`, `head`, `tail`, `bat`, `sed`, `awk`, `grep`, `strings` | There are no `.env` files here; a token value never enters the transcript                            |
-| Creating a `.env*` file (`>`, `>>`, `tee`, `touch`, `cp`, `mv`, `ln`)                     | Secrets only come from Infisical; application secrets use Encore `secret()`                          |
-| The same reads of `.dev.vars`                                                             | Wrangler's local secret file                                                                         |
-| `printenv`, bare `env`, `env \|`                                                          | Dumping the environment leaks injected tokens                                                        |
-| `encore db reset`                                                                         | Destroys the local database; a human-confirmed reset, never run by an agent                          |
-| `encore deploy`                                                                           | Ships to a shared environment; a human / CI decision                                                 |
-| `git clean`                                                                               | Removes untracked and ignored files silently                                                         |
-| `git reset --hard`, and `git checkout` or `restore` of `.`                                | Discards uncommitted work across the whole tree                                                      |
-| `rm -rf` in any flag order                                                                | Delete named paths without `-f`, so a wrong path fails loudly                                        |
-| `git push --force` (not `--force-with-lease`)                                             | Rewrites shared history                                                                              |
-| `git tag <package>@<version>`                                                             | Release tags are created by CI, never by hand                                                        |
-| `DROP DATABASE`, `DROP SCHEMA`                                                            | A human decision. Reset a local database with the Encore command                                     |
-| ORM `push`, `migrate`, `migration:up`, `schema:update`                                    | Migrations are applied by the app, not pushed to a database                                          |
-| `changeset version`                                                                       | Runs in CI. Locally, add a changeset with `pnpm changeset`                                           |
+| Denied | Why |
+| --- | --- |
+| `infisical export` | Dumps every secret value into the transcript. Use `infisical run -- <cmd>` or `tools/scripts/mcp.sh` |
+| `infisical secrets get` without `--silent` | Prints the value. Only the `--silent` form is allowed |
+| `encore secret set`, `encore secret get`, `encore secret list --values` | Secret values are set by a human. Declare `secret("NAME")` and name it in the report |
+| `wrangler secret put`, `wrangler secret bulk` | The same rule for Worker secrets |
+| Reading `.env` with `cat`, `less`, `head`, `tail`, `bat`, `sed`, `awk`, `grep`, `strings` | There are no `.env` files here; a token value never enters the transcript |
+| Creating a `.env*` file (`>`, `>>`, `tee`, `touch`, `cp`, `mv`, `ln`) | Secrets only come from Infisical; application secrets use Encore `secret()` |
+| The same reads of `.dev.vars` | Wrangler's local secret file |
+| `printenv`, bare `env`, `env \|` | Dumping the environment leaks injected tokens |
+| `encore db reset` | Destroys the local database; a human-confirmed reset, never run by an agent |
+| `encore deploy` | Ships to a shared environment; a human / CI decision |
+| `git clean` | Removes untracked and ignored files silently |
+| `git reset --hard`, and `git checkout` or `restore` of `.` | Discards uncommitted work across the whole tree |
+| `rm -rf` in any flag order | Delete named paths without `-f`, so a wrong path fails loudly |
+| `git push --force` (not `--force-with-lease`) | Rewrites shared history |
+| `git tag <package>@<version>` | Release tags are created by CI, never by hand |
+| `DROP DATABASE`, `DROP SCHEMA` | A human decision. Reset a local database with the Encore command |
+| ORM `push`, `migrate`, `migration:up`, `schema:update` | Migrations are applied by the app, not pushed to a database |
+| `changeset version` | Runs in CI. Locally, add a changeset with `pnpm changeset` |
 
 ### `guard-paths`
 
@@ -63,50 +63,13 @@ Reports a written TS/JS/JSON/MD/CSS/YAML file that oxfmt would reformat. Best-ef
 ```json
 {
   "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/session-context.mjs\"",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
+    "SessionStart": [{ "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/session-context.mjs\"", "timeout": 5 }] }],
     "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/guard-bash.mjs\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/guard-paths.mjs\"",
-            "timeout": 5
-          }
-        ]
-      }
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/guard-bash.mjs\"", "timeout": 5 }] },
+      { "matcher": "Write|Edit|MultiEdit|NotebookEdit", "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/guard-paths.mjs\"", "timeout": 5 }] }
     ],
     "PostToolUse": [
-      {
-        "matcher": "Write|Edit|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/post-write-checks.mjs\"",
-            "timeout": 10
-          }
-        ]
-      }
+      { "matcher": "Write|Edit|MultiEdit", "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/post-write-checks.mjs\"", "timeout": 10 }] }
     ]
   }
 }

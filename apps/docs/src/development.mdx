@@ -28,7 +28,6 @@ You install one thing system-wide, [mise](https://mise.jdx.dev). It provisions t
     | `infisical` | The vault CLI behind `pnpm linear`, `pnpm pr:merge` and the MCP wrapper |
     | `uv` | Python tool runner, pinned in `mise.toml` |
     | `maestro` | Mobile end-to-end flows (needs a JDK on `PATH`) |
-
   </Step>
   <Step title="Install dependencies">
     ```bash
@@ -58,23 +57,20 @@ Services are plain TypeScript workspace members under `services/<name>` with no 
 
 ## Daily commands
 
-| Command                                      | What it does                                                                                         |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                                   | Every member's dev server (Turborepo TUI)                                                            |
-| `pnpm console` / `pnpm docs` / `pnpm mobile` | One app's dev server                                                                                 |
-| `pnpm check`                                 | Format check, lint and typecheck                                                                     |
-| `pnpm test`                                  | Every member's vitest suite                                                                          |
-| `pnpm verify`                                | The full gate: format, lint, typecheck, test, build, `validate`, `boundaries`, `knip`                |
-| `pnpm verify:affected`                       | The turbo part of the gate, only for members changed since `main`                                    |
-| `pnpm validate`                              | Repository shape: catalogs only, tier tags, tsconfig presets, forbidden dependencies, required files |
-| `pnpm new <kind> <name>`                     | Scaffold a member ([Scaffolding](/guides/scaffolding))                                               |
-| `pnpm changeset`                             | Record a release note for the members you changed                                                    |
-| `pnpm secrets:scan`                          | gitleaks over the whole history                                                                      |
+| Command | What it does |
+| --- | --- |
+| `pnpm dev` | Every member's dev server (Turborepo TUI) |
+| `pnpm console` / `pnpm docs` / `pnpm mobile` | One app's dev server |
+| `pnpm check` | Format check, lint and typecheck |
+| `pnpm test` | Every member's vitest suite |
+| `pnpm verify` | The full gate: format, lint, typecheck, test, build, `validate`, `boundaries`, `knip` |
+| `pnpm verify:affected` | The turbo part of the gate, only for members changed since `main` |
+| `pnpm validate` | Repository shape: catalogs only, tier tags, tsconfig presets, forbidden dependencies, required files |
+| `pnpm new <kind> <name>` | Scaffold a member ([Scaffolding](/guides/scaffolding)) |
+| `pnpm changeset` | Record a release note for the members you changed |
+| `pnpm secrets:scan` | gitleaks over the whole history |
 
-<Tip>
-  Run one member's task with a filter: `pnpm turbo run test --filter=@figentra/console`. Or `cd`
-  into the member and call its script directly when you do not want Turborepo's ordering.
-</Tip>
+<Tip>Run one member's task with a filter: `pnpm turbo run test --filter=@figentra/console`. Or `cd` into the member and call its script directly when you do not want Turborepo's ordering.</Tip>
 
 ## Troubleshooting
 

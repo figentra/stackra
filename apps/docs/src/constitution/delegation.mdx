@@ -6,19 +6,19 @@ icon: "git-fork"
 
 This is the law for any session that hands work to another agent. Rule numbers are stable, so other documents may cite them. Claude leads and decides. Work is delegated to Claude models, or to OpenCode (Kimi K3) executors only where `.agents/routing.yaml` routes it, for the steward and executor tiers; reviewers, guardians and the lead never run on OpenCode ([ADR 0066](/adr/0066-delegation-to-opencode-by-routing-matrix), [ADR 0121](/adr/0121-sdlc-tooling-roles-and-linear)). No other model, external agent loop or runner. The reasoning is in [ADR 0017](/adr/0017-agent-roster-and-models).
 
-| #   | Rule                                                                                                                                                                                                                                                                                                                                                                                             | Enforcement                                                                                                                                                           |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| D1  | **Claude decides, executors execute.** ADRs, specs, anything that adds a workspace member, a dependency or a catalog entry, docs, tooling and `pnpm-workspace.yaml` are the deciding session's. Spec tasks whose design names every file, audits, codemods and steward passes may be delegated.                                                                                                  | **Planned.** Roster and per-agent tool lists ([roster](/agents/roster)).                                                                                              |
-| D2  | **No brief, no run.** A delegated task has a brief with every section filled. A brief that leaves a decision open goes back to the spec. Paths are absolute, commands one per line.                                                                                                                                                                                                              | By review.                                                                                                                                                            |
-| D3  | **One task, one agent per package.** Two parallel agents never edit the same package. The one that needs a shared interface owns the change.                                                                                                                                                                                                                                                     | **Planned.** See [concurrent sessions](/agents/concurrent-sessions).                                                                                                  |
-| D4  | **Executors never write git.** No `add`, `commit`, `push`, `stash`, `reset`, `checkout`, `restore`, `clean`. The dispatcher stages explicit paths and commits. The lead (Claude) pushes, opens pull requests and merges them only through the merge gate; the owner merges the release (version) pull request and promotes to production ([0119](/adr/0119-merge-policy-and-release-authority)). | **Partial.** `.agents/hooks/guard-bash.mjs` denies destructive git commands, force-push and manual release tags. A blanket write-git denial for subagents is planned. |
-| D5  | **Caps.** At most five agents run at once in a wave. The machine is shared with other sessions.                                                                                                                                                                                                                                                                                                  | By review.                                                                                                                                                            |
-| D6  | **Review by report and gates.** The dispatcher checks the report against the repo, runs `pnpm verify` itself, and compares the diff to the brief's "may touch" and "must not touch" lists. Out-of-brief files are removed. A report that claims green without a verify tail is treated as red.                                                                                                   | **Enforced** for the gate: `pnpm verify`. The rest is review.                                                                                                         |
-| D7  | **Sentinels never look like credentials.** Test values are `sentinel-<topic>-never-printed`. If a test needs a realistic credential shape, assemble it from fragments at runtime.                                                                                                                                                                                                                | **Enforced.** gitleaks at pre-commit.                                                                                                                                 |
-| D8  | **Do not split a cross-package task into broken halves.** A change to a shared interface is one task.                                                                                                                                                                                                                                                                                            | By review.                                                                                                                                                            |
-| D9  | **A brief fits one run.** About one package and fifteen files. A larger change is split by layer into briefs that run one after another, each with its own verify.                                                                                                                                                                                                                               | By review.                                                                                                                                                            |
-| D10 | **An executor never stops to ask.** Ambiguity is resolved from the design sections the brief names and recorded under "Deviations".                                                                                                                                                                                                                                                              | By review.                                                                                                                                                            |
-| D11 | **Check the report against the repo.** A blocked task usually means the brief omitted something. Find the gap rather than retrying into the same wall.                                                                                                                                                                                                                                           | By review.                                                                                                                                                            |
+| # | Rule | Enforcement |
+| --- | --- | --- |
+| D1 | **Claude decides, executors execute.** ADRs, specs, anything that adds a workspace member, a dependency or a catalog entry, docs, tooling and `pnpm-workspace.yaml` are the deciding session's. Spec tasks whose design names every file, audits, codemods and steward passes may be delegated. | **Planned.** Roster and per-agent tool lists ([roster](/agents/roster)). |
+| D2 | **No brief, no run.** A delegated task has a brief with every section filled. A brief that leaves a decision open goes back to the spec. Paths are absolute, commands one per line. | By review. |
+| D3 | **One task, one agent per package.** Two parallel agents never edit the same package. The one that needs a shared interface owns the change. | **Planned.** See [concurrent sessions](/agents/concurrent-sessions). |
+| D4 | **Executors never write git.** No `add`, `commit`, `push`, `stash`, `reset`, `checkout`, `restore`, `clean`. The dispatcher stages explicit paths and commits. The lead (Claude) pushes, opens pull requests and merges them only through the merge gate; the owner merges the release (version) pull request and promotes to production ([0119](/adr/0119-merge-policy-and-release-authority)). | **Partial.** `.agents/hooks/guard-bash.mjs` denies destructive git commands, force-push and manual release tags. A blanket write-git denial for subagents is planned. |
+| D5 | **Caps.** At most five agents run at once in a wave. The machine is shared with other sessions. | By review. |
+| D6 | **Review by report and gates.** The dispatcher checks the report against the repo, runs `pnpm verify` itself, and compares the diff to the brief's "may touch" and "must not touch" lists. Out-of-brief files are removed. A report that claims green without a verify tail is treated as red. | **Enforced** for the gate: `pnpm verify`. The rest is review. |
+| D7 | **Sentinels never look like credentials.** Test values are `sentinel-<topic>-never-printed`. If a test needs a realistic credential shape, assemble it from fragments at runtime. | **Enforced.** gitleaks at pre-commit. |
+| D8 | **Do not split a cross-package task into broken halves.** A change to a shared interface is one task. | By review. |
+| D9 | **A brief fits one run.** About one package and fifteen files. A larger change is split by layer into briefs that run one after another, each with its own verify. | By review. |
+| D10 | **An executor never stops to ask.** Ambiguity is resolved from the design sections the brief names and recorded under "Deviations". | By review. |
+| D11 | **Check the report against the repo.** A blocked task usually means the brief omitted something. Find the gap rather than retrying into the same wall. | By review. |
 
 ## Brief template
 
@@ -27,52 +27,43 @@ Copy this for every delegated task.
 ```md
 # Brief: <slug>
 
-| Agent | <agent name> |
-| Spec / task | .agents/specs/sta-<n>-<slug> · task <id> |
-| Date | <YYYY-MM-DD> |
+| Agent       | <agent name>                                 |
+| Spec / task | .agents/specs/sta-<n>-<slug> · task <id>     |
+| Date        | <YYYY-MM-DD>                                 |
 
 ## Goal
-
 One sentence. What exists when this run is done.
 
 ## Read first (absolute paths, in this order)
-
 - /abs/path/AGENTS.md
 - …
 
 ## Files you may touch
-
 - packages/<category>/<pkg>/src/… (folders or files; nothing else)
 
 ## Files you must not touch
-
 - pnpm-workspace.yaml, pnpm-lock.yaml, knip.jsonc, apps/docs/**, packages/tooling/**, every other package.
 
 ## Steps
-
 1. …
 
 ## Standards (copy; do not shorten)
-
 The rules from the standards pages that apply to these files. Never run a git command that writes.
 One pnpm command at a time.
 
 ## Verify (one at a time, all must exit 0)
-
 - pnpm --filter <package> lint
 - pnpm --filter <package> typecheck
 - pnpm --filter <package> test
 - pnpm validate
 
 ## Report
-
 Files added, changed, deleted. Test count before and after. The tail of each verify command.
 Deviations from the spec with the reason. Anything not done, with the exact reason.
 ```
 
 <Note>
-  The deciding session does not read large files or run builds itself when a brief can describe the
-  work. It spends its context on decisions, brief approval, diff review and commits.
+The deciding session does not read large files or run builds itself when a brief can describe the work. It spends its context on decisions, brief approval, diff review and commits.
 </Note>
 
 ## History

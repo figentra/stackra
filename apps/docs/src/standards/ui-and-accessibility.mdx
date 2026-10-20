@@ -27,17 +27,17 @@ Colour, spacing, radius, shadow, typography and motion come from the token set t
 
 WCAG 2.2 level AA is the floor for every user-facing screen, in every theme and both directions. The recurring requirements:
 
-| Area                | Requirement                                                                                                                                                                                                          |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Text alternatives   | Informative images carry alt text; decorative ones are hidden (`alt=""`). Icon-only buttons have an accessible name.                                                                                                 |
-| Colour and contrast | Text and interactive elements meet AA contrast against their background in both themes; the contrast pairs are generated from the token values, not audited by eye. Information is never carried by colour alone.    |
-| Keyboard            | Every action is reachable and usable from the keyboard, with a visible focus indicator. Modals trap focus and return it on close; Escape dismisses. A skip link bypasses repeated navigation on content-heavy pages. |
-| Dragging            | Anything a drag can do, a single click or keypress can do too (reorder, resize, pan).                                                                                                                                |
-| Forms               | Every input has an associated label. Errors are announced (`role="alert"` or an assertive live region), tied to their field, and the first invalid field receives focus on submit.                                   |
-| Dynamic content     | Status changes that do not move focus are announced through live regions; urgent interruptions use `role="alert"`.                                                                                                   |
-| Target size         | Interactive targets are at least 24 by 24 CSS pixels on the web and 44 by 44 points on native.                                                                                                                       |
-| Motion              | Animation that is not essential respects the reduced-motion setting.                                                                                                                                                 |
-| Structure           | Headings form a real outline; landmarks are used; a screen reader can list and jump.                                                                                                                                 |
+| Area | Requirement |
+| --- | --- |
+| Text alternatives | Informative images carry alt text; decorative ones are hidden (`alt=""`). Icon-only buttons have an accessible name. |
+| Colour and contrast | Text and interactive elements meet AA contrast against their background in both themes; the contrast pairs are generated from the token values, not audited by eye. Information is never carried by colour alone. |
+| Keyboard | Every action is reachable and usable from the keyboard, with a visible focus indicator. Modals trap focus and return it on close; Escape dismisses. A skip link bypasses repeated navigation on content-heavy pages. |
+| Dragging | Anything a drag can do, a single click or keypress can do too (reorder, resize, pan). |
+| Forms | Every input has an associated label. Errors are announced (`role="alert"` or an assertive live region), tied to their field, and the first invalid field receives focus on submit. |
+| Dynamic content | Status changes that do not move focus are announced through live regions; urgent interruptions use `role="alert"`. |
+| Target size | Interactive targets are at least 24 by 24 CSS pixels on the web and 44 by 44 points on native. |
+| Motion | Animation that is not essential respects the reduced-motion setting. |
+| Structure | Headings form a real outline; landmarks are used; a screen reader can list and jump. |
 
 ## How the review runs
 
@@ -51,11 +51,11 @@ The docs app wires this as its `a11y` task on the built pages ([App standards](/
 
 ## What enforces this
 
-| Rule                                                              | Check                                                                      | Status |
-| ----------------------------------------------------------------- | -------------------------------------------------------------------------- | ------ |
-| `jsx-a11y` lint rules on web packages                             | oxlint `react` preset                                                      | Yes    |
-| Docs pages pass an accessibility audit                            | `a11y` task in `apps/docs`                                                 | Yes    |
-| Hard-coded colour or spacing literal in a screen                  | review; a token-literal lint rule is planned                               | No     |
-| Contrast pairs generated from tokens and held to AA               | planned: contrast check generated from the token set                       | No     |
-| Keyboard, screen-reader and reduced-motion walkthrough per screen | planned: part of each web app's e2e and `a11y` tasks once it ships screens | No     |
-| Physical-direction classes and unmirrored icons                   | planned: see [Internationalisation and RTL](/standards/i18n-rtl)           | No     |
+| Rule | Check | Status |
+| --- | --- | --- |
+| `jsx-a11y` lint rules on web packages | oxlint `react` preset | Yes |
+| Docs pages pass an accessibility audit | `a11y` task in `apps/docs` | Yes |
+| Hard-coded colour or spacing literal in a screen | review; a token-literal lint rule is planned | No |
+| Contrast pairs generated from tokens and held to AA | planned: contrast check generated from the token set | No |
+| Keyboard, screen-reader and reduced-motion walkthrough per screen | planned: part of each web app's e2e and `a11y` tasks once it ships screens | No |
+| Physical-direction classes and unmirrored icons | planned: see [Internationalisation and RTL](/standards/i18n-rtl) | No |

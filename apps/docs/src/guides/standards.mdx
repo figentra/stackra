@@ -12,7 +12,7 @@ icon: "badge-check"
 | `AGENTS.md`     | Where code goes, rules that fail the build, tasks, and a mandatory `## PII` table |
 | `CHANGELOG.md`  | `# <package name>` and a note that Changesets writes it                           |
 | `LICENSE`       | A byte-for-byte copy of the root `LICENSE`                                        |
-| `turbo.jsonc`   | Extends `//` with exactly one tier tag                                            |
+| `turbo.jsonc`    | Extends `//` with exactly one tier tag                                            |
 | `tsconfig.json` | Extends one `@stackra/typescript-config` preset and nothing else                  |
 
 The PII table is always present. A member that handles no personal data says "None" and names the change that would make it revisit the answer.
@@ -31,20 +31,23 @@ The PII table is always present. A member that handles no personal data says "No
 
 ## Scaffolding
 
-`pnpm new <kind> <name> [--category <c>] [--description "<text>"] [--title "<Title>"] [--port <n>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the root `LICENSE`, and formats the result. Then run `pnpm install` and `pnpm verify`.
+`pnpm new <kind> <name> [--category <c>] [--entries <list>|none] [--description "<text>"] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the target repo's `LICENSE`, and formats the result. Then run `pnpm install` and `pnpm verify`.
 
-| Kind                        | Template                      | Lands in                                             |
-| --------------------------- | ----------------------------- | ---------------------------------------------------- |
-| `domain`, `platform`, `lib` | `templates/packages/<kind>`   | `packages/<category>/<name>` (`--category` required) |
-| `tooling`                   | `templates/packages/tooling`  | `packages/tooling/<name>`                            |
-| `app-vite`, `app-next`      | `templates/apps/<vite\|next>` | `apps/<name>` (port from 3710)                       |
-| `app-expo`                  | `templates/apps/expo`         | `apps/<name>` (no hyphens in the name)               |
-| `app-docs`                  | `templates/apps/docs`         | `apps/<name>`                                        |
-| `service`                   | `templates/services/encore`   | `services/src/<name>` (not a workspace member)       |
+| Kind          | Template                     | Lands in                                             |
+| ------------- | ---------------------------- | ---------------------------------------------------- |
+| `service`     | `templates/services/service` | `services/<name>` (`@figentra/service-<name>`)       |
+| `package`     | `templates/packages/package` | `packages/<category>/<name>` (`--category` required) |
+| `tooling`     | `templates/packages/tooling` | `packages/tooling/<name>`                            |
+| `app:console` | `templates/apps/console`     | `apps/<name>` (port from 3710)                       |
+| `app:mobile`  | `templates/apps/mobile`      | `apps/<name>` (no hyphens in the name)               |
+| `app:desktop` | `templates/apps/desktop`     | `apps/<name>`                                        |
+| `app:docs`    | `templates/apps/docs`        | `apps/<name>` (port from 3334)                       |
 
 ```bash
-pnpm new lib retry --category foundation --description "Retry with backoff."
-pnpm new app-vite admin --title "Admin"
-pnpm new service billing
-pnpm new app-next site --dry-run
+pnpm new service billing --description "Billing."
+pnpm new package retry --category foundation --entries contracts,testing
+pnpm new app:console admin --title "Admin"
+pnpm new service billing --repo ../figentra-os --dry-run
 ```
+
+Shapes: [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates). Flags and tokens: [Scaffolding](/guides/scaffolding).

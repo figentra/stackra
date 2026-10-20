@@ -17,16 +17,16 @@ A member's `package.json` names the catalog, never a version:
 }
 ```
 
-| Catalog              | Contents                                                         |
-| -------------------- | ---------------------------------------------------------------- |
-| default (`catalog:`) | Shared basics such as `@types/node`                              |
-| `build`              | typescript, tsdown, turbo                                        |
-| `quality`            | oxlint, oxfmt, vitest, coverage, knip                            |
-| `release`            | changesets, commitlint, lefthook                                 |
-| `frontend`           | react, vite, tailwind, HeroUI, Testing Library, jsdom            |
-| `mobile`             | Expo SDK, React Native, React Navigation, HeroUI Native, Uniwind |
-| `docs`               | the Mintlify CLI                                                 |
-| `next`               | Next.js and its PostCSS plugin                                   |
+| Catalog              | Contents                                                              |
+| -------------------- | --------------------------------------------------------------------- |
+| default (`catalog:`) | Shared basics such as `@types/node`                                   |
+| `build`              | typescript, tsdown, turbo                                             |
+| `quality`            | oxlint, oxfmt, vitest, coverage, knip                                 |
+| `release`            | changesets, commitlint, lefthook                                      |
+| `frontend`           | react, vite, tailwind, HeroUI, Testing Library, jsdom                 |
+| `mobile`             | Expo SDK, React Native, React Navigation, HeroUI Native, Uniwind      |
+| `docs`               | the Mintlify CLI                                                      |
+| `next`               | Next.js and its PostCSS plugin                                        |
 
 - Catalog entries are named by role and cadence, not by one consumer. Toolchain that builds output (`build`) has a different risk and cadence than lint and test tools (`quality`).
 - Workspace packages use `workspace:*`. Peer ranges state a compatible range for consumers and are the only literal versions allowed.
@@ -40,12 +40,12 @@ A member's `package.json` names the catalog, never a version:
 
 ## Install-time controls
 
-| Control                    | Where                 | Rule                                                                                                                                                                                                           |
-| -------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `allowBuilds`              | `pnpm-workspace.yaml` | Dependency lifecycle scripts are blocked by default. Each entry is `true` (reviewed, may run) or `false` (reviewed, never). An unlisted one fails install with `ERR_PNPM_IGNORED_BUILDS` until it is reviewed. |
-| `minimumReleaseAgeExclude` | `pnpm-workspace.yaml` | Packages exempt from the minimum release age (a freshly published version is not installed until it has aged). An entry is a supply-chain approval.                                                            |
-| `catalogMode: strict`      | `pnpm-workspace.yaml` | `pnpm add` accepts only versions already in a catalog.                                                                                                                                                         |
-| `.npmrc`                   | repo root             | `engine-strict`, no hoisting (`shamefully-hoist=false`): a package imports only what it declares.                                                                                                              |
+| Control                     | Where                         | Rule                                                                                                                  |
+| --------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `allowBuilds`               | `pnpm-workspace.yaml`         | Dependency lifecycle scripts are blocked by default. Each entry is `true` (reviewed, may run) or `false` (reviewed, never). An unlisted one fails install with `ERR_PNPM_IGNORED_BUILDS` until it is reviewed. |
+| `minimumReleaseAgeExclude`  | `pnpm-workspace.yaml`         | Packages exempt from the minimum release age (a freshly published version is not installed until it has aged). An entry is a supply-chain approval. |
+| `catalogMode: strict`       | `pnpm-workspace.yaml`         | `pnpm add` accepts only versions already in a catalog.                                                                |
+| `.npmrc`                    | repo root                     | `engine-strict`, no hoisting (`shamefully-hoist=false`): a package imports only what it declares.                     |
 
 Adding an entry to `allowBuilds` or `minimumReleaseAgeExclude` is as serious as adding a dependency: it names a reason in the change, and the `dependency-steward` reviews it. An advisory fix on a critical vulnerability may bypass the release age; nothing else does.
 
@@ -53,10 +53,10 @@ Adding an entry to `allowBuilds` or `minimumReleaseAgeExclude` is as serious as 
 
 Every dependency's licence must be on the allow-list. The policy is a data file reviewed by code owners:
 
-| List       | Licences                                                                                                            |
-| ---------- | ------------------------------------------------------------------------------------------------------------------- |
-| `allow`    | MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD, MPL-2.0, Unlicense, CC0-1.0                                 |
-| `deny`     | `GPL-*`, `AGPL-*`, `SSPL-*` (a deny match wins over `allow`)                                                        |
+| List       | Licences                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------- |
+| `allow`    | MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD, MPL-2.0, Unlicense, CC0-1.0          |
+| `deny`     | `GPL-*`, `AGPL-*`, `SSPL-*` (a deny match wins over `allow`)                                |
 | exceptions | Per package, with a required `reason`, printed on every run (for example a commercial licence with a contract date) |
 
 A denied licence is fixed by replacing the dependency, never by editing the policy in the same change. The member's own `license` is `MIT` ([0024](/adr/0024-mit-license-with-exclusions)) ([Members](/standards/members)).
@@ -77,14 +77,14 @@ The validator rejects a manifest that depends on a package the architecture reje
 
 ## What enforces this
 
-| Rule                                                       | Check                                                                                          | Status |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------ |
-| Only `catalog:` or `workspace:*` specifiers (peers exempt) | `validate-repository.mjs`                                                                      | Yes    |
-| New versions come from a catalog                           | `catalogMode: strict`                                                                          | Yes    |
-| No forbidden dependency                                    | `validate-repository.mjs` (`FORBIDDEN_DEPENDENCIES`)                                           | Yes    |
-| Install scripts reviewed                                   | `allowBuilds` (install fails otherwise)                                                        | Yes    |
-| Dead catalog entry visible                                 | `knip` (`catalog: warn`)                                                                       | Yes    |
-| Release age set explicitly (one day)                       | planned: `minimumReleaseAge` in `pnpm-workspace.yaml`; only the exclude list is declared today | No     |
-| Licence allow-list                                         | planned: `policy/licenses.yaml` and a licence check in `pnpm verify`                           | No     |
-| `mise.toml` `pnpm` equals `packageManager`                 | planned: pin-agreement test in `tools/scripts`                                                 | No     |
-| Automated updates, no automerge                            | planned: Renovate ([Renovate](/runbooks/renovate))                                             | No     |
+| Rule                                                           | Check                                                   | Status  |
+| -------------------------------------------------------------- | ------------------------------------------------------- | ------- |
+| Only `catalog:` or `workspace:*` specifiers (peers exempt)     | `validate-repository.mjs`                               | Yes     |
+| New versions come from a catalog                               | `catalogMode: strict`                                   | Yes     |
+| No forbidden dependency                                        | `validate-repository.mjs` (`FORBIDDEN_DEPENDENCIES`)    | Yes     |
+| Install scripts reviewed                                       | `allowBuilds` (install fails otherwise)                 | Yes     |
+| Dead catalog entry visible                                     | `knip` (`catalog: warn`)                                | Yes     |
+| Release age set explicitly (one day)                           | planned: `minimumReleaseAge` in `pnpm-workspace.yaml`; only the exclude list is declared today | No |
+| Licence allow-list                                             | planned: `policy/licenses.yaml` and a licence check in `pnpm verify` | No |
+| `mise.toml` `pnpm` equals `packageManager`                     | planned: pin-agreement test in `tools/scripts`          | No      |
+| Automated updates, no automerge                                | planned: Renovate ([Renovate](/runbooks/renovate))      | No      |
