@@ -24,7 +24,7 @@ cache; the owner moved the store to the cache package (C-34) and fixed the contr
    transaction. External calls happen only after commit. Multi-step work becomes a workflow behind the same action key. A
    lint flags network calls inside `handle()`.
 3. **Idempotency (AC3).** An `Idempotency-Key` is required for client writes, and the SDKs generate it. The key, a hash of the
-   payload and the result are stored for 24 hours in the cache package (ADR 0150, wave 1 part 2). A different payload with
+   payload and the result are stored for 24 hours in the cache package (ADR 0150, wave 1 part 3). A different payload with
    the same key returns `409`. Jobs, events and workflow steps derive their own keys. This closes gap B46.
 4. **Versions (AC4).** `key@version` versions run side by side. Public APIs get deprecation with a sunset of at least 6 months.
    REST and MCP map date versions ([0118](/adr/0118-api-versioning-dormant-package)) to action versions. Deprecated usage is
