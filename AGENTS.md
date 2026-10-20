@@ -301,7 +301,8 @@ state.** Every agent, including subagents and OpenCode executors without the Lin
 | New work found             | `pnpm linear create --title "…" [--project p] [--labels a,b]`    |
 | What is open               | `pnpm linear mine`, `pnpm linear open [--label owner]`           |
 
-- Branch names are Linear's (`<user>/sta-<n>-<slug>`). A `feat`/`fix`/`refactor`/`perf` commit carries
+- Branch names are Linear's (`figentra/sta-<n>-<slug>`; `pnpm delegate` uses `delegate/sta-<n>-…`), checked by
+  `check-pr`. A `feat`/`fix`/`refactor`/`perf` commit carries
   `Refs: STA-n`. The PR title or branch names the key, or the PR is labelled `chore-lane`.
 - `pnpm delegate` needs `--issue STA-n`. Issues an agent creates get the `agent` label automatically.
 - Actions run as the "Stackra Agent" app, which is the issue's delegate. The human assignee is never changed.

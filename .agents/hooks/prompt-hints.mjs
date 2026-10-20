@@ -66,7 +66,7 @@ async function main() {
     !p.includes("speckit")
   )
     hints.push(
-      "Feature work starts with spec-kit, not code: `/speckit.specify`, then `/speckit.clarify` (Impact questionnaire, Linear STA-n), then `/speckit.plan`. `/speckit.plan` refuses until clarifications are complete (apps/docs/src/agents/spec-lifecycle.mdx).",
+      "Feature work starts with spec-kit, not code: `/speckit.specify`, then `/speckit.clarify` (Impact questionnaire, Linear STA-n), then `/speckit.plan`. Specs live in `.agents/specs/sta-<n>-<slug>/`; `/speckit.plan` refuses until clarifications are complete (apps/docs/src/agents/spec-lifecycle.mdx).",
     );
 
   if (hints.length) context(EVENT, "[STACKRA HINTS]\n- " + hints.join("\n- "));

@@ -1,6 +1,21 @@
 ---
-description: Generate a custom checklist for the current feature based on user requirements.
+description: Generate a checklist for the spec in its .agents/specs folder.
+scripts:
+  sh: .specify/scripts/bash/check-prerequisites.sh --json --template checklist-template
+  ps: .specify/scripts/powershell/check-prerequisites.ps1 -Json -Template checklist-template
+  py: .specify/scripts/python/check_prerequisites.py --json --template checklist-template
 ---
+
+
+<!-- Source: stackra -->
+## Stackra: feature directory (runs first)
+
+Specs live in `.agents/specs/sta-<n>-<slug>/` (ADR 0120 D1), never in `specs/`. Before anything else run
+`node tools/scripts/spec-gate.mjs dir` (add `--key STA-n` when the branch name carries no key). It prints the
+spec folder for the branch's Linear key and writes `.specify/feature.json`. Pass that path as
+`SPECIFY_FEATURE_DIRECTORY=<path>` in front of every `.specify/scripts` call this command makes. If it fails,
+STOP and report it; never fall back to a numbered folder.
+
 
 ## Checklist Purpose: "Unit Tests for English"
 

@@ -10,7 +10,8 @@
  *   create --title t [--project p] [--labels a,b] [--description d]   prints the new key; adds `agent` when an agent runs it
  *   mine | open [--label l]          list my open issues | the team's started issues (or open issues with a label)
  *   digest                           ≤8 lines: In Progress plus `owner`-labelled issues (the SessionStart hook)
- *   check-pr                         CI: exit 1 unless PR_TITLE/PR_BRANCH carries an STA key (PR_LABELS may hold chore-lane)
+ *   check-pr                         CI: exit 1 unless PR_BRANCH is Linear-named (figentra/ or delegate/sta-n-…) and
+ *                                    the title or branch carries an STA key (PR_LABELS may hold chore-lane)
  * Token: the "Stackra Agent" OAuth app (actor=app, so actions show as the app; it becomes the issue's delegate,
  *   never its assignee) is preferred: LINEAR_AGENT_TOKEN, re-minted from LINEAR_AGENT_CLIENT_ID and
  *   LINEAR_AGENT_CLIENT_SECRET (client_credentials) when it expires or is absent. LINEAR_API_KEY (personal key)
@@ -25,6 +26,7 @@ import { pathToFileURL } from "node:url";
 export const TEAM = "STA";
 const API = "https://api.linear.app/graphql";
 export const KEY_RE = /\bSTA-(\d+)\b/i;
+export const BRANCH_RE = /^(?:figentra|delegate)\/sta-\d+-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const TOKEN_URL = "https://api.linear.app/oauth/token";
 export const SCOPE = "read,write,issues:create,comments:create,app:assignable,app:mentionable";
@@ -129,6 +131,14 @@ export function prCarriesKey({ title = "", branch = "", labels = [] }) {
   if (labels.includes("chore-lane")) return { ok: true, why: "labelled chore-lane" };
   if (/^(renovate|changeset-release)\//.test(branch))
     return { ok: true, why: `bot branch ${branch}` };
+  // ADR 0065 decision 5: a Linear-named branch, `figentra/sta-<n>-<slug>` (Linear's gitBranchName) or
+  // `delegate/sta-<n>-…` (pnpm delegate). shortcut: `spec/notifications` is PR #14's pre-rule branch; drop it once
+  // that PR merges or moves to a Linear-named branch.
+  if (!BRANCH_RE.test(branch) && branch !== "spec/notifications")
+    return {
+      ok: false,
+      why: `branch "${branch}" is not figentra/sta-<n>-<slug> or delegate/sta-<n>-<slug> (use Linear's branch name, or label the PR chore-lane)`,
+    };
   if (KEY_RE.test(title) || KEY_RE.test(branch)) return { ok: true, why: "carries an STA key" };
   return {
     ok: false,
