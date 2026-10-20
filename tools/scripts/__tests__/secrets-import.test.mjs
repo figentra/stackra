@@ -371,3 +371,20 @@ test("stale temp dirs are removed at start; ~/.stackra is tightened to 0700; nam
   assert.ok(!r.out.includes("\u001b"));
   assert.match(r.out, /EVIL\?\[2JDIR/);
 });
+
+test("importSecret refuses a symlinked inbox before creating its temp dir (STA-192)", async () => {
+  const home = mkdtempSync(join(tmpdir(), "secrets-import-link-"));
+  const elsewhere = join(home, "elsewhere");
+  mkdirSync(elsewhere);
+  symlinkSync(elsewhere, join(home, "Secrets-inbox"));
+  const fake = fakeInfisical();
+  const r = await importSecret({
+    name: "LINKED_INBOX",
+    valueStream: Readable.from([canary()]),
+    home,
+    runner: fake.runner,
+  });
+  assert.deepEqual(r, { name: "LINKED_INBOX", ok: false, reason: "inbox is not a real directory" });
+  assert.deepEqual(readdirSync(elsewhere), []);
+  assert.equal(fake.calls.length, 0);
+});

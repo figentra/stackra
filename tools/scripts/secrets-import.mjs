@@ -218,7 +218,8 @@ let liveTemp;
 
 /** Remove temp dirs a killed run left behind (dot-entries, so --list and imports skip them). */
 export function cleanStaleTemps(inbox) {
-  if (!existsSync(inbox)) return;
+  if (!lstatSync(inbox, { throwIfNoEntry: false })?.isDirectory()) return; // absent, or a symlink
+
   for (const f of readdirSync(inbox))
     if (f.startsWith(TEMP_PREFIX)) rmSync(join(inbox, f), { recursive: true, force: true });
 }
@@ -346,6 +347,10 @@ export async function importSecret({
   const label = NAME_RX.test(String(name)) ? name : "(invalid name)";
   const inbox = join(home, "Secrets-inbox");
   try {
+    // The temp value file goes inside the inbox: refuse one that is a symlink or not a folder.
+    const st = lstatSync(inbox, { throwIfNoEntry: false });
+    if (st && (st.isSymbolicLink() || !st.isDirectory()))
+      throw new Refusal("inbox is not a real directory");
     cleanStaleTemps(inbox);
     const t = checkTarget({ name, env, path });
     store(t, await readStream(valueStream), { confirm, home, runner, now, actor, inbox });

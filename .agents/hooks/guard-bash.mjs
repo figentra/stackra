@@ -148,9 +148,12 @@ const rules = [
       if (/Secrets-inbox|secrets-confirm\.key/i.test(scanned)) return true;
       // Globs (`~/Secrets-inbo?/*`) and home-wide recursive reads (`grep -r x ~`). Accident guard only.
       return segments(scanned).some((seg) => {
-        const recursive = /\b(?:grep\s+-\w*[rR]|rg|ag|find|tar|zip|rsync|cp\s+-\w*[rRa]|du)\b/.test(
-          seg,
-        );
+        const recursive =
+          /\b(?:rg|ag|find|tar|zip|rsync|du)\b/.test(seg) ||
+          /\bgrep\b[^|;&]*\s(?:-\w*[rR]\w*|--recursive|--directories=recurse|-d\s*recurse)\b/.test(
+            seg,
+          ) ||
+          /\bcp\b[^|;&]*\s(?:-\w*[rRa]\w*|--recursive|--archive)\b/.test(seg);
         return seg.split(/[\s'"`=<>()+,]+/).some((tok) => reachesInbox(tok, { recursive }));
       });
     },
