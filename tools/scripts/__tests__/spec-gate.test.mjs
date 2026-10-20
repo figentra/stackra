@@ -22,6 +22,7 @@ import {
   checkSpec,
   checkStage,
   checkTasks,
+  isOwnSpec,
   REPLACED,
   specDir,
   tripwire,
@@ -178,6 +179,30 @@ test("branch: Linear-named or allow-listed", () => {
   assert.deepEqual(checkBranch("renovate/node-24"), []);
   assert.deepEqual(checkBranch("changeset-release/main"), []);
   assert.match(checkBranch("spec/notifications").join(), /not `figentra\/sta-<n>-<slug>`/);
+  assert.match(checkBranch("chore/foo").join(), /not `figentra\/sta-<n>-<slug>`/);
+});
+
+test("ready rule: only the PR's own spec (the branch key's folder) must be at Tasked", () => {
+  assert.equal(isOwnSpec("sta-163-sdd-gates", "figentra/sta-163-x"), true);
+  assert.equal(isOwnSpec("sta-35-notifications", "figentra/sta-163-x"), false);
+  assert.equal(isOwnSpec("sta-16-x", "figentra/sta-163-x"), false);
+  assert.equal(isOwnSpec("sta-35-notifications", "chore/foo"), false);
+});
+
+test("branch never blocks: a chore-lane PR's `chore/foo` branch only warns (check-pr owns the label escape)", () => {
+  const env = { ...process.env, STACKRA_BRANCH: "chore/foo" };
+  const r = spawnSync(process.execPath, [join(SCRIPTS, "spec-gate.mjs"), "branch"], {
+    encoding: "utf8",
+    env,
+  });
+  assert.equal(r.status, 0);
+  assert.match(r.stderr, /warning: branch `chore\/foo`.*chore-lane/);
+  const ok = spawnSync(process.execPath, [join(SCRIPTS, "spec-gate.mjs"), "branch"], {
+    encoding: "utf8",
+    env: { ...env, STACKRA_BRANCH: "figentra/sta-163-x" },
+  });
+  assert.equal(ok.status, 0);
+  assert.equal(ok.stderr, "");
 });
 
 test("bug lane: the folder is keyed and a regression test covers sta-n:BUG", () => {

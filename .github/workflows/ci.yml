@@ -66,7 +66,7 @@ jobs:
       - name: Build
         run: pnpm build
 
-      # spec-gate: a ready-for-review PR needs every changed spec at Tasked or later; the branch must be Linear-named.
+      # spec-gate: a ready-for-review PR needs every changed spec at Tasked or later; STACKRA_BRANCH feeds the lane check (check-pr owns the branch name).
       - name: Validate repository
         env:
           SPEC_GATE_REQUIRE_READY: ${{ github.event_name == 'pull_request' && !github.event.pull_request.draft && '1' || '' }}

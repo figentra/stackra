@@ -6,10 +6,13 @@
  *   check <dir>                 the stage rules for the spec's declared `**Status**`
  *   tasks <tasks.md>            tasks lint: ids, covers, routes, deps, coverage, waves
  *   lane [--base=ref]           feat commits need a lite or full spec reached through the branch or `Refs:` keys
- *   branch                      the branch (STACKRA_BRANCH, else git) is Linear-named or allow-listed
+ *   branch                      warn, never fail, unless the branch (STACKRA_BRANCH, else git) is Linear-named or
+ *                               allow-listed: a `chore-lane` PR may use any branch, and only `linear check-pr`
+ *                               sees the PR labels, so check-pr is the enforcing check
  *   ci [--base=ref]             tripwire; `check` for every spec folder changed since the base; bug-lane rules;
- *                               `lane`; `branch` when STACKRA_BRANCH is set (CI). SPEC_GATE_REQUIRE_READY=1 (a
- *                               ready-for-review PR) also requires every changed spec to be at Tasked or later.
+ *                               `lane`. SPEC_GATE_REQUIRE_READY=1 (a ready-for-review PR) also requires the PR's
+ *                               own spec (the branch key's folder), when changed, to be at Tasked or later; an
+ *                               edit to another spec gets only `check`. No branch check: check-pr owns it.
  *   dir [--slug s] [--key STA-n]   print the spec folder for the branch's STA key and persist .specify/feature.json
  *   stage <spec.md> <stage>     best-effort Linear comment for a stage change
  *
@@ -246,6 +249,12 @@ export function checkLane({
   return [
     `lane: ${feats.length} feat commit(s), but neither the branch nor their Refs keys (${[...keys].map((k) => `STA-${k}`).join(", ") || "none"}) reach a spec in ${SPECS_DIR} — new behaviour takes the lite or full lane; use chore/fix/docs for the others`,
   ];
+}
+
+/** The spec folder is the PR's own (keyed by the branch's STA key); only it must reach Tasked on a ready PR. */
+export function isOwnSpec(folder, branch) {
+  const n = branch.match(/(?:^|[/-])sta-(\d+)(?:-|$)/i)?.[1];
+  return Boolean(n) && folder.startsWith(`sta-${n}-`);
 }
 
 /** The branch is Linear-named (ADR 0065 decision 5) or allow-listed. */
@@ -536,7 +545,13 @@ function main([mode, ...args]) {
       : 0;
   }
   if (mode === "lane") return report(laneGate(base)) ? 1 : 0;
-  if (mode === "branch") return report(checkBranch(currentBranch())) ? 1 : 0;
+  if (mode === "branch") {
+    for (const p of checkBranch(currentBranch()))
+      console.warn(
+        `spec-gate: warning: ${p} (fine for a PR labelled chore-lane; check-pr enforces it)`,
+      );
+    return 0;
+  }
   if (mode === "ci") {
     let failures = 0;
     for (const p of tripwire()) {
@@ -549,13 +564,16 @@ function main([mode, ...args]) {
       failures++;
     }
     const requireReady = process.env.SPEC_GATE_REQUIRE_READY === "1";
-    for (const dir of dirs) failures += stageGate(dir, { requireReady });
+    const branch = currentBranch();
+    for (const dir of dirs)
+      failures += stageGate(dir, {
+        requireReady: requireReady && isOwnSpec(basename(dir), branch),
+      });
     if (bugs.length) {
       const tests = testsText();
       for (const b of bugs) failures += report(checkBug(basename(b), tests));
     }
     failures += report(laneGate(base));
-    if (process.env.STACKRA_BRANCH) failures += report(checkBranch(process.env.STACKRA_BRANCH));
     return failures ? 1 : 0;
   }
   console.error(
