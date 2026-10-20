@@ -12,7 +12,7 @@ Dev and preview/start use port {{PORT}} (http://localhost:{{PORT}}).
 | `pnpm dev`    | Local preview                                          |
 | `pnpm build`  | `mint validate`, a strict build that fails on warnings |
 | `pnpm lint`   | `mint broken-links`                                    |
-| `pnpm format` | `mint format`                                          |
+| `pnpm format` | `oxfmt --write .` (`pnpm format:check` verifies)                                          |
 | `pnpm a11y`   | `mint a11y`                                            |
 
 Add a page: create the `.mdx` in `src/`, then list it under `navigation` in `src/docs.json`.

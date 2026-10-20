@@ -9,11 +9,13 @@
     "dev": "cd src && mint dev --port 3333",
     "build": "cd src && mint validate",
     "lint": "cd src && mint broken-links",
-    "format": "cd src && mint format",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
     "a11y": "cd src && mint a11y",
     "clean": "rm -rf src/.mintlify .turbo"
   },
   "devDependencies": {
-    "mint": "catalog:docs"
+    "mint": "catalog:docs",
+    "oxfmt": "catalog:quality"
   }
 }
