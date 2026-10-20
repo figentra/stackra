@@ -66,7 +66,7 @@ jobs:
       - name: Build
         run: pnpm build
 
-      # spec-gate: a ready-for-review PR needs every changed spec at Tasked or later; STACKRA_BRANCH feeds the lane check (check-pr owns the branch name).
+      # spec-gate: a ready-for-review PR needs its own spec (the branch key's folder), when changed, at Tasked or later; other changed specs get the stage check, and a change to another spec's Status line needs a commit with `Refs:` naming that spec's key; STACKRA_BRANCH feeds the lane check (check-pr owns the branch name).
       - name: Validate repository
         env:
           SPEC_GATE_REQUIRE_READY: ${{ github.event_name == 'pull_request' && !github.event.pull_request.draft && '1' || '' }}
