@@ -107,6 +107,19 @@ catalogs:
   # Documentation site (apps/docs).
   docs:
     mint: 4.2.985
+    # Overrides only (see `overrides`): mint's connectivity probe, on fetch instead of got.
+    is-online: 12.0.2
+    public-ip: 8.0.0
+
+# STA-169: `mint validate` (the docs build) first probes connectivity with is-online 10, which races three
+# got 12 requests (via public-ip 5) under a 5 s timeout and cancels the losers. A got retry that fires after the
+# cancel throws "The `onCancel` handler was attached after the promise settled" (sindresorhus/got#1489) from an
+# event handler, which kills the process: the intermittent docs build failure in CI. is-online 12 and public-ip 8
+# use fetch with AbortSignal, so no got request sits on that path. Even the newest mint still pins is-online
+# 10.0.0; drop these when @mintlify/previewing depends on is-online >= 12 itself.
+overrides:
+  "@mintlify/previewing>is-online": "catalog:docs"
+  "is-online>public-ip": "catalog:docs"
 
 # Dependency lifecycle scripts are blocked by default (pnpm supply-chain security). Every entry here was
 # reviewed; a new one must be, too — install fails (ERR_PNPM_IGNORED_BUILDS) until it is.

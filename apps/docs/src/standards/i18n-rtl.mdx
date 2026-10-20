@@ -22,15 +22,15 @@ Every surface can ship in a right-to-left language. Nothing is built LTR-only an
 
 Layout is written so it flips with the language.
 
-| Never (physical)                                           | Always (logical)                                              |
-| ---------------------------------------------------------- | ------------------------------------------------------------- |
-| `ml-4`, `pr-2`, `left-0`, `right-3`                        | `ms-4`, `pe-2`, `start-0`, `end-3`                            |
-| `text-left`, `text-right`                                  | `text-start`, `text-end`                                      |
-| `rounded-l-lg`, `border-r`, `float-left`                   | `rounded-s-lg`, `border-e`, `float-start`                     |
+| Never (physical)                                                 | Always (logical)                                                                     |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `ml-4`, `pr-2`, `left-0`, `right-3`                              | `ms-4`, `pe-2`, `start-0`, `end-3`                                                   |
+| `text-left`, `text-right`                                        | `text-start`, `text-end`                                                             |
+| `rounded-l-lg`, `border-r`, `float-left`                         | `rounded-s-lg`, `border-e`, `float-start`                                            |
 | CSS `margin-left`, `padding-right`, `left:`, `text-align: right` | `margin-inline-start`, `padding-inline-end`, `inset-inline-start`, `text-align: end` |
-| Inline style `marginLeft`                                  | `marginInlineStart`                                           |
-| React Native `marginLeft`, `left`                          | `marginStart`, `start`, `writingDirection`                    |
-| `side="left"`, `placement="bottom right"`                  | `start` and `end` in every placement-like prop                |
+| Inline style `marginLeft`                                        | `marginInlineStart`                                                                  |
+| React Native `marginLeft`, `left`                                | `marginStart`, `start`, `writingDirection`                                           |
+| `side="left"`, `placement="bottom right"`                        | `start` and `end` in every placement-like prop                                       |
 
 - Slide transforms (`translate-x-full`) need an `rtl:` counterpart; a class under an `rtl:` or `ltr:` variant is already direction-aware. Centring (`left-1/2 -translate-x-1/2`) is the one physical idiom that is legitimate.
 - Drawers open from the inline end, the navigation drawer from the start. A component whose placement is physical resolves it from the current direction.
@@ -44,7 +44,9 @@ Layout is written so it flips with the language.
 When a direction is genuinely physical (a pitch or floor-plan diagram, a chart's time axis, a Latin wordmark, email-client CSS), mark it with a comment on the same line or the line above:
 
 ```tsx
-{/* rtl-physical: pitch coordinates are physical, the goal does not move in Arabic */}
+{
+  /* rtl-physical: pitch coordinates are physical, the goal does not move in Arabic */
+}
 ```
 
 A parent that already flips an element says `rtl-mirrored: <where>`. Both comments carry a reason; an unexplained one is a finding.
@@ -60,11 +62,11 @@ A parent that already flips an element says `rtl-mirrored: <where>`. Both commen
 
 ## What enforces this
 
-| Rule                                                            | Check                                                                 | Status |
-| --------------------------------------------------------------- | --------------------------------------------------------------------- | ------ |
-| `jsx-a11y` lint on web packages                                 | oxlint `react` preset                                                 | Yes    |
-| Physical classes, styles, placements and unmirrored icons       | planned: a per-app RTL check script (`rtl-physical:` escape hatch) in each `lint`  | No |
-| Catalog completeness and ICU validity                           | planned: catalog test and typed-key generator in the i18n package     | No     |
-| No locale literal in a package                                  | planned: package-literal check ([Packages](/standards/packages))      | No     |
-| RTL layout in a browser or simulator                            | planned: RTL projects in the e2e matrix ([Testing](/standards/testing)) | No   |
-| Hard-coded user-facing strings                                  | review; an i18n steward role is not in the roster yet                 | No     |
+| Rule                                                      | Check                                                                             | Status |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------- | ------ |
+| `jsx-a11y` lint on web packages                           | oxlint `react` preset                                                             | Yes    |
+| Physical classes, styles, placements and unmirrored icons | planned: a per-app RTL check script (`rtl-physical:` escape hatch) in each `lint` | No     |
+| Catalog completeness and ICU validity                     | planned: catalog test and typed-key generator in the i18n package                 | No     |
+| No locale literal in a package                            | planned: package-literal check ([Packages](/standards/packages))                  | No     |
+| RTL layout in a browser or simulator                      | planned: RTL projects in the e2e matrix ([Testing](/standards/testing))           | No     |
+| Hard-coded user-facing strings                            | review; an i18n steward role is not in the roster yet                             | No     |

@@ -6,32 +6,38 @@ icon: "scale"
 
 The constitution holds the rules that do not bend. An [ADR](/adr/index) may refine a law. It may never contradict one. Changing a law is itself an ADR that supersedes the law's previous text, and the law page is updated in the same commit.
 
-| Law | Governs |
-| --- | --- |
-| [Boundaries](/constitution/boundaries) | tiers, dependency direction, placement, no literals in shared packages |
-| [Secrets](/constitution/secrets) | where secret values live, who sets them, what agents may not do |
-| [Security](/constitution/security) | authenticated principal, server-side authorization, audit, data classification |
-| [HTTP and events](/constitution/http-and-events) | API shape, idempotency, errors, ids, event envelope |
-| [Tenancy](/constitution/tenancy) | two-layer tenant isolation, isolation tests, the Pro scope tree |
-| [Delegation](/constitution/delegation) | who decides, how work is handed to agents, git discipline |
+| Law                                              | Governs                                                                        |
+| ------------------------------------------------ | ------------------------------------------------------------------------------ |
+| [Boundaries](/constitution/boundaries)           | tiers, dependency direction, placement, no literals in shared packages         |
+| [Secrets](/constitution/secrets)                 | where secret values live, who sets them, what agents may not do                |
+| [Security](/constitution/security)               | authenticated principal, server-side authorization, audit, data classification |
+| [HTTP and events](/constitution/http-and-events) | API shape, idempotency, errors, ids, event envelope                            |
+| [Tenancy](/constitution/tenancy)                 | two-layer tenant isolation, isolation tests, the Pro scope tree                |
+| [Delegation](/constitution/delegation)           | who decides, how work is handed to agents, git discipline                      |
 
 ## How the hierarchy works
 
 <Steps>
   <Step title="Laws">This tab. Short, normative, rarely changed.</Step>
-  <Step title="ADRs">Record one decision each and apply or refine a law. Where an ADR and a law disagree, the law wins and the ADR is wrong.</Step>
-  <Step title="Standards and guides">[Standards](/standards/members) are operating rules for one kind of member. Guides say how to do a task. Both follow the laws.</Step>
+  <Step title="ADRs">
+    Record one decision each and apply or refine a law. Where an ADR and a law disagree, the law
+    wins and the ADR is wrong.
+  </Step>
+  <Step title="Standards and guides">
+    [Standards](/standards/members) are operating rules for one kind of member. Guides say how to do
+    a task. Both follow the laws.
+  </Step>
 </Steps>
 
 ## A law names its check
 
 A rule with no check is a comment. Every law below states its enforcement in one of three words:
 
-| Word | Meaning |
-| --- | --- |
+| Word         | Meaning                                                                                                          |
+| ------------ | ---------------------------------------------------------------------------------------------------------------- |
 | **Enforced** | A check exists in this repository and runs in `pnpm verify`, a git hook, an agent hook or CI. The page names it. |
-| **Partial** | Some of the rule is checked. The page says which part is not. |
-| **Planned** | No check yet. The page names the mechanism. Until it lands, a reviewer refuses a violation by hand. |
+| **Partial**  | Some of the rule is checked. The page says which part is not.                                                    |
+| **Planned**  | No check yet. The page names the mechanism. Until it lands, a reviewer refuses a violation by hand.              |
 
 A law whose check is planned is still a law. Never lower a rule to make a gate pass: fix the code, or change the law through an ADR.
 
@@ -39,16 +45,16 @@ A law whose check is planned is still a law. Never lower a rule to make a gate p
 
 Reviewers cite these by name. Each is an application of one of the laws or ADRs and is not a separate rule.
 
-| Principle | Statement | Where it lives |
-| --- | --- | --- |
-| A service is a runtime boundary | A service is a unit of deployment, not a unit of business meaning. | [Boundaries](/constitution/boundaries) |
-| Dependencies point one way | `config` → `lib` → `app` and `service`; apps and services are peers that never import each other; nothing points back. | [ADR 0003](/adr/0003-tier-dependency-direction) |
-| Core is meaning | A package's core layer states what the package is about. It never depends on transport, an ORM, a driver or a UI toolkit. | [ADR 0004](/adr/0004-package-archetypes-and-layers) |
-| The layer that needs an abstraction owns its port | A port lives in `application`, never in `infrastructure`. | [ADR 0004](/adr/0004-package-archetypes-and-layers) |
-| Presentation owns delivery | API, React, web and native are delivery surfaces of one package, not separate business layers. | [ADR 0004](/adr/0004-package-archetypes-and-layers) |
-| Generated artifacts are never the source of truth | Decorated classes and hand-written source are authoritative. Generated code is regenerated, never edited. | [Standards](/standards/packages) |
-| Shared packages hold mechanisms, apps hold definitions | A shared package never contains a product value. | [Boundaries](/constitution/boundaries) |
-| Not built yet means not built | A rejected or deferred technology is not introduced "helpfully". | [ADR 0011](/adr/0011-rejected-and-deferred-technologies) |
+| Principle                                              | Statement                                                                                                                 | Where it lives                                           |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| A service is a runtime boundary                        | A service is a unit of deployment, not a unit of business meaning.                                                        | [Boundaries](/constitution/boundaries)                   |
+| Dependencies point one way                             | `config` → `lib` → `app` and `service`; apps and services are peers that never import each other; nothing points back.    | [ADR 0003](/adr/0003-tier-dependency-direction)          |
+| Core is meaning                                        | A package's core layer states what the package is about. It never depends on transport, an ORM, a driver or a UI toolkit. | [ADR 0004](/adr/0004-package-archetypes-and-layers)      |
+| The layer that needs an abstraction owns its port      | A port lives in `application`, never in `infrastructure`.                                                                 | [ADR 0004](/adr/0004-package-archetypes-and-layers)      |
+| Presentation owns delivery                             | API, React, web and native are delivery surfaces of one package, not separate business layers.                            | [ADR 0004](/adr/0004-package-archetypes-and-layers)      |
+| Generated artifacts are never the source of truth      | Decorated classes and hand-written source are authoritative. Generated code is regenerated, never edited.                 | [Standards](/standards/packages)                         |
+| Shared packages hold mechanisms, apps hold definitions | A shared package never contains a product value.                                                                          | [Boundaries](/constitution/boundaries)                   |
+| Not built yet means not built                          | A rejected or deferred technology is not introduced "helpfully".                                                          | [ADR 0011](/adr/0011-rejected-and-deferred-technologies) |
 
 ## Amending a law
 
@@ -58,7 +64,9 @@ Reviewers cite these by name. Each is an application of one of the laws or ADRs 
 4. Get a CODEOWNERS review.
 
 <Note>
-Some pages in this tab describe a mechanism for a thing Stackra does not have yet, such as an Encore app or a tenant-owned table. They say so at the top. The law applies from the moment the thing appears, so the check must exist before it does.
+  Some pages in this tab describe a mechanism for a thing Stackra does not have yet, such as an
+  Encore app or a tenant-owned table. They say so at the top. The law applies from the moment the
+  thing appears, so the check must exist before it does.
 </Note>
 
 ## History

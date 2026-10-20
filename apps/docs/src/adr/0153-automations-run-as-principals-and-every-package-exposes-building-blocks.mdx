@@ -1,0 +1,43 @@
+---
+title: "0153 — Automations run as principals; every package exposes its capabilities as building blocks"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0122](/adr/0122-workflow-studio-three-layers): automations get their own principal, and
+  every package is a set of workflow building blocks.
+</Note>
+
+## Context
+
+[0122](/adr/0122-workflow-studio-three-layers) described three layers for workflows. The owner's answers WF2 and WF3 (mem L771–772,
+2026-10-20) decide two rules that 0122 did not state: every package exposes its capabilities as building blocks, and an automation
+acts as its own principal, not as the person who published it.
+
+## Decision
+
+1. **Building blocks (WF2).** Every package exposes all of its capabilities as workflow building blocks. For example, notifications
+   sends push, SMS and email. AI builds workflows and automations from natural language.
+2. **Principal (WF3).** An automation runs as its own principal. Its grants are chosen at publish time and are never more than the
+   publisher's own. A level L3 action or above needs a named human. An automation pauses when its publisher loses access.
+3. Tiering of the automation features (free or Pro) is decided in ADR 0202 (wave 3), not here (contradiction C-06).
+
+## Consequences
+
+- An automation cannot outlive its publisher's rights silently: when access is lost, it pauses.
+- A new package adds building blocks, so workflow authors get its capabilities without new code in the studio.
+
+## Enforcement
+
+planned — publish refuses grants greater than the publisher's, and the automation runner checks the publisher's access on each run.
+
+## Alternatives
+
+- Automations run as the publisher: rejected by WF3, because a departing employee's rights would keep running.
+
+## Supersedes and sources
+
+Supersedes: none.
+
+Amends: [0122](/adr/0122-workflow-studio-three-layers). Sources: owner answers WF2 and WF3 (`stackra-decisions-2026-10-19.md` L771–772,
+2026-10-20).

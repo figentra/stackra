@@ -10,7 +10,7 @@ An app is a deployable surface (a build, a host, a URL) and a `tier:app` [member
 
 | Kind          | Pick it for                                                                   | tsconfig preset | Port             |
 | ------------- | ----------------------------------------------------------------------------- | --------------- | ---------------- |
-| `app:console` | A panel app: Vite + React Router 7 (code-based) + HeroUI, Filament-style       | `vite`          | 3710 to 3799     |
+| `app:console` | A panel app: Vite + React Router 7 (code-based) + HeroUI, Filament-style      | `vite`          | 3710 to 3799     |
 | `app:mobile`  | iOS/Android: Expo SDK 57, code-based React Navigation, HeroUI Native, Uniwind | `expo`          | Metro picks 8081 |
 | `app:desktop` | An Electron desktop app, packaged by electron-builder                         | `library`       | none             |
 | `app:docs`    | A Mintlify documentation site                                                 | none            | 3334 to 3399     |
@@ -57,12 +57,12 @@ Local-only scripts (`dev`, `start`, `preview`, `ios`, `android`, `doctor`, `a11y
 
 ## What enforces this
 
-| Rule                                                              | Check                                                  | Status |
-| ----------------------------------------------------------------- | ------------------------------------------------------ | ------ |
-| `tier:app` tag; no app depends on a service; no lib depends on an app | `validate-repository.mjs`, `turbo boundaries`      | Yes    |
-| Member files and PII table                                        | `validate-repository.mjs`                              | Yes    |
-| Catalog versions only (`catalog:mobile`, `catalog:frontend`)      | `validate-repository.mjs`, `catalogMode: strict`       | Yes    |
-| Bundle budget on the built web output                             | planned: a per-app budget script chained after `build` | No     |
-| No fixture or demo markers in `dist`                              | planned: a per-app scan script chained after `build`   | No     |
-| Physical-direction classes (RTL)                                  | planned: see [i18n and RTL](/standards/i18n-rtl)       | No     |
-| Required build-time variable present in staging/production        | planned: config screen test per app                    | No     |
+| Rule                                                                  | Check                                                  | Status |
+| --------------------------------------------------------------------- | ------------------------------------------------------ | ------ |
+| `tier:app` tag; no app depends on a service; no lib depends on an app | `validate-repository.mjs`, `turbo boundaries`          | Yes    |
+| Member files and PII table                                            | `validate-repository.mjs`                              | Yes    |
+| Catalog versions only (`catalog:mobile`, `catalog:frontend`)          | `validate-repository.mjs`, `catalogMode: strict`       | Yes    |
+| Bundle budget on the built web output                                 | planned: a per-app budget script chained after `build` | No     |
+| No fixture or demo markers in `dist`                                  | planned: a per-app scan script chained after `build`   | No     |
+| Physical-direction classes (RTL)                                      | planned: see [i18n and RTL](/standards/i18n-rtl)       | No     |
+| Required build-time variable present in staging/production            | planned: config screen test per app                    | No     |

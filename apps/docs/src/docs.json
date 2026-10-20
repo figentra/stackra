@@ -237,7 +237,28 @@
               "adr/0134-data-invariants-classification-and-delete-lifecycle",
               "adr/0135-public-id-format",
               "adr/0136-action-runtime-contract",
-              "adr/0137-declared-action-options-and-refusal-codes"
+              "adr/0137-declared-action-options-and-refusal-codes",
+              "adr/0138-pipeline-order-is-fixed",
+              "adr/0139-actions-declare-their-user-experience",
+              "adr/0140-error-envelope-and-error-kinds",
+              "adr/0141-integration-event-names-and-envelope",
+              "adr/0142-cross-service-transport-through-drivers",
+              "adr/0143-container-scopes-registration-lifecycle-and-testing",
+              "adr/0144-metadata-registry-and-explorers",
+              "adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned",
+              "adr/0146-package-configuration-typescript-layers-and-secret-references",
+              "adr/0147-logger-and-runtime-telemetry-defaults",
+              "adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules",
+              "adr/0149-locking-fencing-tokens-auto-renew-and-with-lock",
+              "adr/0150-cache-package",
+              "adr/0151-workflow-engine-is-a-port-with-native-and-temporal-drivers",
+              "adr/0152-workflow-semantics-timeouts-waits-pinned-versions-and-one-graph-format",
+              "adr/0153-automations-run-as-principals-and-every-package-exposes-building-blocks",
+              "adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step",
+              "adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free",
+              "adr/0156-ai-runtime-provider-drivers-memory-and-guardrails",
+              "adr/0157-stackra-inspect-and-stackra-diff",
+              "adr/0158-gen-artefacts-openapi-manifest-and-client"
             ]
           }
         ]
