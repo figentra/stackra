@@ -17,15 +17,17 @@ stackra/
 │   ├── docs/               # Mintlify documentation
 │   └── mobile/             # Expo SDK 57 app
 ├── packages/               # tier:lib
-│   ├── application/        # Codegen (IR, compiler, schema generation), AI
-│   ├── communication/      # Notifications, webhooks, mail
-│   ├── cross-cutting/      # Analytics, brand, SEO
-│   ├── data/               # Media, search, persistence helpers
-│   ├── developer/          # CLI, devtools, Vite plugins
-│   ├── experience/         # UI building blocks
-│   ├── foundation/         # Container, config, contracts, events, logger, support
-│   ├── runtime/            # Cache, outbox, queue, scheduler, workflow, realtime
-│   ├── security/           # Identity, IAM, tenancy, consent, CSP
+│   ├── application/        # Actions, AI, IR, registry
+│   ├── commerce/           # Money, ledger and pricing primitives
+│   ├── communication/      # Webhooks, notifications, versioning, integrations
+│   ├── cross-cutting/      # Brand
+│   ├── data/               # Model, database, content, media, search, state machine, assets, filesystem, storage
+│   ├── developer/          # CLI, gen (the codegen compiler), coding standard, Vite plugin
+│   ├── experience/         # UI, experience, navigation, console, panel
+│   ├── foundation/         # Contracts, validation, errors
+│   ├── infrastructure/     # Pulumi-based infra-* packages
+│   ├── runtime/            # Outbox, queue, scheduler, workflow, realtime, locking, cache
+│   ├── security/           # Identity, IAM, tenancy, connections, entitlements, licensing
 │   └── state/              # Settings, feature flags, theming
 ├── services/               # tier:service
 │   ├── example/            # Reference service (plain TypeScript)

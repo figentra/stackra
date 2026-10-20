@@ -38,7 +38,7 @@ HTTP methods **by idempotency**:
 ## Authentication
 
 Every endpoint is authenticated by default. A public endpoint opts out explicitly with `auth: false` on the action;
-the flag applies to the action's area (ADR 0135):
+the flag applies to the action's API area (ADR 0082), and the gateway enforces it (ADR 0237):
 
 ```typescript
 @Action({ key: "health.get@1", output: HealthOutput, auth: false })
@@ -90,7 +90,7 @@ action declares that it is idempotent-keyed and the pipeline deduplicates; do no
 **Versioned events, not endpoints.**
 
 - Endpoints are immutable (no `/v1`, `/v2`)
-- Events are versioned and carry no service prefix (`user.created.v1`, `user.created.v2`, ADR 0141)
+- Events are versioned and prefixed by module key: `<module-key>.<aggregate>.<verb>.v<n>` (`identity.user.created.v1`, `identity.user.created.v2`, ADR 0141)
 - New endpoint → new path
 - API versions are dates: the `Stackra-Version` header, pinned per API key or OAuth app, through the dormant `@stackra/versioning` package. Paths stay unversioned (`/adr/0118-api-versioning-dormant-package`)
 
@@ -105,5 +105,5 @@ denied, invalid argument, and so on). The error envelope and its kinds follow AD
 - ADR-0091, ADR-0124: Encore is generated into `.stackra/encore`
 - ADR-0094, ADR-0098: decorators-only authoring, actions are the unit
 - ADR-0010: Services are independent members
-- ADR-0135 (auth flag), ADR-0140 (error envelope), ADR-0141 (event names)
+- ADR-0082 (API areas and auth), ADR-0237 (generated gateway), ADR-0140 (error envelope), ADR-0141 (event names)
 - Standards: api-contracts

@@ -59,7 +59,7 @@ import { defineConfig } from "tsdown";
 
 Services communicate via (the generated Encore app carries both, ADRs 0091 and 0124):
 
-- **Integration events** - `@OnEvent` on a versioned, unprefixed event name (`user.created.v1`), shapes from the producer's `./contracts` (ADR 0078, ADR 0141)
+- **Integration events** - `@OnEvent` on a versioned event name in the form `<module-key>.<aggregate>.<verb>.v<n>` (`identity.user.created.v1`), shapes from the producer's `./contracts` (ADR 0078, ADR 0141)
 - **Typed client calls** - only where an authoritative answer is needed now
 - Transport is a driver behind the port (ADR 0142). Never direct imports of another service's source or `Topic`
 
@@ -75,5 +75,5 @@ Tokens and typed config are `define*` values, the one carve-out to the no-`defin
 
 - ADR-0003: Tier dependency direction
 - ADR-0004: Package archetypes and layers
-- ADR-0141 (event names), ADR-0142 (transport drivers), ADR-0145 (define* tokens), ADR-0231 (naming and casing)
+- ADR-0141 (event names), ADR-0142 (transport drivers), ADR-0145 (define* tokens), ADR-0231 (naming and casing standard)
 - Constitution: boundaries (placement test)

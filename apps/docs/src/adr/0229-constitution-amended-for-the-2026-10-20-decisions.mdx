@@ -22,8 +22,8 @@ The constitution is the law. The owner's answers of 2026-10-20 and the ADRs of w
    - **Security.** Two laws are added. SEC8 names ZITADEL as the one identity provider ([0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)),
      step-up for L3 and L4 actions ([0207](/adr/0207-authentication-assurance-and-machine-identities)), and break-glass operator access ([0188](/adr/0188-operator-access-and-the-encryption-key-hierarchy)).
      SEC9 fixes the pipeline order ([0138](/adr/0138-pipeline-order-is-fixed)) and audits every action ([0136](/adr/0136-action-runtime-contract), [0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention)).
-   - **HTTP and events.** Event names carry no service prefix ([0141](/adr/0141-integration-event-names-and-envelope)). The auth flag comes from the action's
-     `auth` option and its area ([0135](/adr/0135-public-id-format)). PUT is an idempotent transition. Errors follow the envelope in [0140](/adr/0140-error-envelope-and-error-kinds).
+   - **HTTP and events.** Event names carry the module-key prefix, `<module-key>.<aggregate>.<verb>.v<n>` ([0141](/adr/0141-integration-event-names-and-envelope)). The auth flag comes from the action's
+     `auth` option and its API area ([0082](/adr/0082-public-ids-and-api-areas)), enforced at the gateway ([0237](/adr/0237-generated-api-gateway-in-four-layers)). PUT is an idempotent transition. Errors follow the envelope in [0140](/adr/0140-error-envelope-and-error-kinds).
    - **Secrets.** Production secrets come from Infisical, and runway syncs them into the runtime store ([0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets)).
      This overrides decision 8 of [0009](/adr/0009-secrets-two-mechanisms), which recorded Secret Sync as an alternative not adopted.
    - **Delegation.** Model policy follows [0193](/adr/0193-agents-and-model-policy). The economy, standard and frontier tiers are replaced.
