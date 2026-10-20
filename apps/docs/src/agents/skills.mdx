@@ -48,6 +48,29 @@ The fourteen `encore-*` skills from `encoredev/skills` teach hand-written Encore
 
 A house skill that this repository writes carries a category prefix: `backend-`, `frontend-`, `mobile-`, `devops-`, `security-`, `db-`, `ai-`, `domain-`, `testing-`, `docs-`, and `code-` for code conventions ([ADR 0258](/adr/0258-agent-roster-v2-and-skill-fencing)). Upstream skills keep their upstream names, so `npx skills update` keeps working. The tree is flat on purpose: a skill is one `SKILL.md` in one top-level folder, so categories live in the name, not in folders.
 
+### House skills in this repository
+
+Each is grounded in the ADRs it cites, uses one running example (refunding an invoice, `billing.invoice.refund@1`), ends with the check that enforces it, and says that the package's own docs win once the package ships.
+
+| Skill                                     | Teaches                                                                                | ADRs                                           |
+| ----------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `backend-author-an-action`                | `@Action` and `@Query`, the pipeline, idempotency, refusal codes, UX, adapters         | 0098, 0099, 0136–0139, 0155                    |
+| `backend-module-and-root-module`          | `@Module` key and name, the root module, kind folders, scopes, lifecycle, testing      | 0090, 0111, 0126, 0130, 0131, 0143             |
+| `backend-decorator-package-with-explorer` | A decorator over the metadata registry and its Explorer, with the gen conformance test | 0005, 0117, 0144, 0247                         |
+| `backend-define-family`                   | `defineToken`, `defineConfig` with secret refs, permissions, events, meters, skills    | 0132, 0145, 0146, 0215, 0216, 0245, 0247       |
+| `backend-errors`                          | `StackraError`, the ten categories, the envelope, client entries, testing              | 0137, 0140, 0232                               |
+| `backend-assets-and-storage`              | Module `assets/`, `<module>::path` keys, filesystem disks, client storage              | 0222, 0234, 0256                               |
+| `backend-gen-and-encore-target`           | What `stackra gen` reads and emits, the Encore target, `--check`, inspect and diff     | 0090, 0091, 0124, 0157, 0158, 0237             |
+| `frontend-resource-console`               | `@Resource`, `@Page`, `@Widget` rendered by `@stackra/panel`                           | 0110, 0164, 0165, 0183                         |
+| `db-models-and-migrations`                | Models, classification, RLS equality, gen-ordered migrations, raw SQL rule             | 0014, 0097, 0133, 0134, 0159, 0160, 0238, 0239 |
+| `ai-mcp-tools`                            | Which actions become MCP tools, approvals, context providers, skills, plans            | 0098, 0155, 0156, 0245                         |
+| `code-naming-and-casing`                  | The naming table, `#` imports, enums, classes, components, docblocks                   | 0006, 0007, 0128, 0231, 0233                   |
+| `docs-spec-flow`                          | Lanes, change risk, spec-kit order, Linear, traceability, merge                        | 0065, 0067, 0119, 0120, 0198                   |
+| `mobile-eas-setup`                        | EAS profiles, channels, environments, fingerprint policy, `.easignore`                 | 0061, 0180                                     |
+| `mobile-release`                          | Binary or OTA, gates, staged rollout, minimum version, rollback, human-only steps      | 0180                                           |
+| `mobile-store-listing`                    | Store metadata, privacy answers, screenshots, demo accounts                            | 0134, 0180, 0190                               |
+| `docs-adr`                                | Writing or superseding an ADR in the house format                                      | 0016                                           |
+
 ## What is deliberately not vendored
 
 A skill that is confidently wrong is worse than a missing one, because an agent follows it. The excluded set is not "less useful". It is "would mislead someone working here". Every absence has a recorded reason so nobody re-adds it as an oversight.
