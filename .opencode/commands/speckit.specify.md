@@ -359,8 +359,10 @@ Success criteria must be:
 
 ## Stackra: Impact questionnaire (mandatory)
 
-The spec template carries an `## Impact` section. After drafting, ask the user each question in it
-(apps, services, packages, cross-service events, tenancy/data, secrets, ADR needed, new dependencies,
-deploy modes, lane, change risk) and write the answers in. Set `**Linear**` to the folder's key. Never guess an
-answer: leave it as `[NEEDS CLARIFICATION: ...]`. Leave `**Status**: Draft` and `**Clarifications status**:
-pending`. Do not run `/speckit.plan`: the next step is always `/speckit.clarify`.
+The spec template (v2) carries an `## Impact` section. After drafting, ask the user each question in it and write
+the answers in. Set `**Linear**` to the folder's key. Never guess an answer: leave it as
+`[NEEDS CLARIFICATION: ...]`. Write requirements in EARS form ("WHEN … THE <subject> SHALL …"), give every SC a
+verification method, and keep `## Amendments` and `## Status history` (one line: `<date> · — → Draft · <you> ·
+created`). Leave `**Status**: Draft` and `**Clarifications status**: pending`, then run
+`node tools/scripts/spec-gate.mjs check <folder>`. Do not run `/speckit.plan`: the next step is always
+`/speckit.clarify`.
