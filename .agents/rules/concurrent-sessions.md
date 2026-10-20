@@ -86,7 +86,7 @@ If two agents conflict:
 
 ## Enforcement
 
-- `guard-paths.mjs` blocks modifications to locked files
+- Planned: `guard-paths.mjs` does not read `.agents/locks/` yet; lock files are a convention, not a check
 - Session context tracks agent boundaries
 - Merge checks enforce coordination
 

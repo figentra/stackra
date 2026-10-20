@@ -77,15 +77,13 @@ Reports a written TS/JS/JSON/MD/CSS/YAML file that oxfmt would reformat. Best-ef
 
 The path is `.agents/hooks/`, the one source. A hook is never copied into `.claude/`. The settings file is currently wired by hand, and the one canonical `.agents/` source projected to tool folders (see the [adoption plan](/adr/0016-agents-source-of-truth)) is what will keep it in step.
 
-## Planned hooks
+### `prompt-hints`
 
-| Hook | Event | Would do |
-| --- | --- | --- |
-| `prompt-hints` | `UserPromptSubmit` | One-line reminders keyed on what the prompt is about. Cheap, never blocks |
+`UserPromptSubmit`: one-line reminders keyed on what the prompt is about. Cheap, never blocks. Registered in `.claude/settings.json` beside the hooks above.
 
 ## Testing a hook
 
-A hook that no test exercises is a comment with a runtime cost. Hooks currently have no tests. The pattern to follow:
+A hook that no test exercises is a comment with a runtime cost. Every hook has a test in `.agents/hooks/__tests__/` (`pnpm test:hooks`, part of `pnpm validate`). The pattern to follow:
 
 1. Pipe a fixture into the script as the harness would: `{"tool_input":{"command":"git reset --hard"}}` on stdin.
 2. Assert the output is a `deny` decision for every rule, and empty for a near miss. Include the near misses: `git reset --soft`, `rm -r` without `-f`, a heredoc that mentions a forbidden command.

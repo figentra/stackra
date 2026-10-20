@@ -17,17 +17,16 @@ stackra/
 │   ├── docs/               # Mintlify documentation
 │   └── mobile/             # Expo SDK 57 app
 ├── packages/               # tier:lib
-│   ├── application/        # Business logic
-│   ├── communication/      # APIs, events, contracts
-│   ├── cross-cutting/      # Logging, config, errors
-│   ├── data/               # Schemas, validation
-│   ├── developer/          # Dev tooling (internal)
-│   ├── experience/         # UI components (shared)
-│   ├── foundation/         # Core utilities
-│   ├── infrastructure/     # DB, cache, queue
-│   ├── runtime/            # Execution environment
-│   ├── security/           # Auth, permissions
-│   └── state/              # Client state management
+│   ├── application/        # Codegen (IR, compiler, schema generation), AI
+│   ├── communication/      # Notifications, webhooks, mail
+│   ├── cross-cutting/      # Analytics, brand, SEO
+│   ├── data/               # Media, search, persistence helpers
+│   ├── developer/          # CLI, devtools, Vite plugins
+│   ├── experience/         # UI building blocks
+│   ├── foundation/         # Container, config, contracts, events, logger, support
+│   ├── runtime/            # Cache, outbox, queue, scheduler, workflow, realtime
+│   ├── security/           # Identity, IAM, tenancy, consent, CSP
+│   └── state/              # Settings, feature flags, theming
 ├── services/               # tier:service
 │   ├── example/            # Encore hello-world service
 │   └── health/             # Health check service

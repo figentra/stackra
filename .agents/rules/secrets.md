@@ -19,7 +19,8 @@ import { secret } from "encore.dev/config";
 const stripeSecretKey = secret("StripeSecretKey");
 ```
 
-- Stored in Encore's secret manager, synced from Infisical
+- Stored in the runtime's secret store (Encore's secret manager), set there by a human; Infisical Secret Sync is not
+  adopted (ADR 0009 D8)
 - A human sets each value per environment; an agent only names the secret
 - Never in git
 
@@ -43,10 +44,8 @@ infisical run -- encore run
 
 **CI/CD:**
 
-```bash
-infisical run --env=staging -- pnpm build
-infisical run --env=production -- encore deploy
-```
+A CI job logs in to Infisical by GitHub OIDC for one step and reads `/ci` only (ADR 0009 D2); no token is a repository
+secret. No deploy command exists yet (`encore deploy` is denied by `guard-bash`; the deploy path is open, DP2).
 
 **MCP servers:**
 Token-based MCP servers launch through the `tools/scripts/mcp.sh` vault wrapper (reads from `/agents`). This is a
@@ -65,7 +64,8 @@ In Infisical `/agents` (local):
 In Infisical `/ci` (CI/CD):
 
 - `TURBO_TOKEN` - Turborepo remote cache
-- `ENCORE_API_KEY` - Encore deployment
+- `NPM_FIGENTRA_TOKEN` - npm.figentra.com publish token for the release job (ADR 0025)
+- `ENCORE_API_KEY` - Encore deployment, once a deploy path exists (DP2)
 - `SENTRY_AUTH_TOKEN` - Sentry releases (optional)
 
 ## Forbidden Patterns
@@ -88,13 +88,13 @@ Each article below is bound to a check:
 1. **Secrets never in git** → `gitleaks` pre-commit + CI scan
 2. **No .env files** → `guard-paths` hook
 3. **CI secrets from OIDC** → GitHub Actions OIDC (Phase 2)
-4. **App secrets synced** → Encore deployment of the generated `.stackra` app (Phase 2)
+4. **App secrets set by a human in the runtime store** → review; no sync (ADR 0009 D8)
 
 ## Setup
 
-1. Install Infisical CLI: `brew install infisical`
+1. Install the Infisical CLI: `mise install` (pinned in `mise.toml`, ADR 0027; Homebrew is not supported)
 2. Create workspace: `infisical init`
-3. Configure `.infisical.json` (workspace ID from Infisical UI)
+3. `.infisical.json` is tracked (workspace id and domain, no secret)
 4. Add secrets to `/agents` folder
 5. Run commands with `infisical run -- <command>`
 
