@@ -45,3 +45,6 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
 | api-contract-reviewer     | reviewer | no     |
 | design-brand-reviewer     | reviewer | no     |
 | i18n-steward              | steward  | no     |
+| docs-adr-steward          | steward  | no     |
+| docs-changesets-steward   | steward  | no     |
+| incident-commander        | lead     | no     |

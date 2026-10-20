@@ -3,7 +3,7 @@
 #          references resolve against. A member's package.json never carries a literal version — it names a
 #          catalog, so one bump here moves the whole repo. `pnpm validate` fails on any other specifier.
 # Scope: every member under apps/*, packages/<category>/<name>, services/*.
-# Owner: release-operations (dependency-steward reviews catalog changes)
+# Owner: release-operations (the owner reviews catalog changes)
 # Secrets: forbidden
 packages:
   - apps/*

@@ -54,8 +54,8 @@ Never cross boundaries without explicit handoff.
 
 Some files are shared (read-only for all but one agent):
 
-- `pnpm-workspace.yaml` - Only dependency-steward
-- `turbo.jsonc` - Only architecture-guardian
+- `pnpm-workspace.yaml` - Only the owner (or the agent the owner assigns)
+- `turbo.jsonc` - Only the owner (or the agent the owner assigns)
 - `.agents/rules/*` - Only one agent at a time
 
 ### Communication

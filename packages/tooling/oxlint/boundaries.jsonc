@@ -2,7 +2,7 @@
 // Purpose: the repo-wide entry carrying the tier dependency rule (docs/constitution/boundaries.md):
 //          a package (packages/<category>/<name>) never imports an app, a service or encore.dev; no service
 //          imports another service's internals; nothing imports a package's src/ deep path. CI fails on a violation.
-// Owner: architecture-guardian · Secrets: forbidden
+// Owner: the owner · Secrets: forbidden
 {
   "extends": ["./node.jsonc"],
   "overrides": [
