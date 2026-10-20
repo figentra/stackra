@@ -132,9 +132,8 @@ export function prCarriesKey({ title = "", branch = "", labels = [] }) {
   if (/^(renovate|changeset-release)\//.test(branch))
     return { ok: true, why: `bot branch ${branch}` };
   // ADR 0065 decision 5: a Linear-named branch, `figentra/sta-<n>-<slug>` (Linear's gitBranchName) or
-  // `delegate/sta-<n>-…` (pnpm delegate). shortcut: `spec/notifications` is PR #14's pre-rule branch; drop it once
-  // that PR merges or moves to a Linear-named branch.
-  if (!BRANCH_RE.test(branch) && branch !== "spec/notifications")
+  // `delegate/sta-<n>-…` (pnpm delegate).
+  if (!BRANCH_RE.test(branch))
     return {
       ok: false,
       why: `branch "${branch}" is not figentra/sta-<n>-<slug> or delegate/sta-<n>-<slug> (use Linear's branch name, or label the PR chore-lane)`,
