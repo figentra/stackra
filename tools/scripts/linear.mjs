@@ -254,7 +254,7 @@ export function linear(c, { dry = false, log = console.log } = {}) {
         ),
       );
     },
-    async create({ title, project, labels = [], description }) {
+    async create({ title, project, labels = [], description, parentId }) {
       const teamId = await api.teamId();
       let projectId;
       if (project) {
@@ -269,7 +269,7 @@ export function linear(c, { dry = false, log = console.log } = {}) {
       const d = await gql(
         `mutation($i:IssueCreateInput!){issueCreate(input:$i){issue{identifier url}}}`,
         {
-          i: { teamId, projectId, title, description, labelIds },
+          i: { teamId, projectId, title, description, labelIds, parentId },
         },
       );
       return d.issueCreate.issue;

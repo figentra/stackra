@@ -2,7 +2,7 @@
 /**
  * spec-linear — link a spec-kit spec and its tasks to Linear (team STA).
  *
- *   node tools/scripts/spec-linear.mjs issue <spec.md>  [--dry-run]   create the spec's issue, write `**Linear**: STA-n`
+ *   node tools/scripts/spec-linear.mjs issue <spec.md>  [--dry-run]   create the spec's issue (labelled `agent` when an agent runs it), write `**Linear**: STA-n`
  *   node tools/scripts/spec-linear.mjs tasks <tasks.md> [--dry-run]   one sub-issue per `T###` task, appends ` [STA-n]`
  *
  * The token comes from the environment only, through the shared client in linear.mjs
@@ -14,9 +14,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { client } from "./linear.mjs";
-
-const TEAM = "STA";
+import { client, isAgent, linear, TEAM } from "./linear.mjs";
 
 /** The spec's `**Linear**` key and optional project name. */
 export function specLinks(text) {
@@ -36,29 +34,13 @@ export function unlinkedTasks(text) {
     .map(({ m, i }) => ({ index: i, id: m[1], title: m[2].trim() }));
 }
 
-const gql = (query, variables) => client().gql(query, variables);
+/** Issues this script creates carry `agent` when an agent runs it (ADR 0121 D14), like `pnpm linear create`. */
+export const labelsFor = (env = process.env) => (isAgent(env) ? ["agent"] : []);
 
-async function context(project) {
-  const t = await gql(`query($k:String!){teams(filter:{key:{eq:$k}}){nodes{id}}}`, { k: TEAM });
-  const teamId = t.teams.nodes[0]?.id;
-  if (!teamId) throw new Error(`Linear team ${TEAM} not found`);
-  let projectId;
-  if (project && project.toLowerCase() !== "none") {
-    const p = await gql(`query($n:String!){projects(filter:{name:{eq:$n}}){nodes{id}}}`, {
-      n: project,
-    });
-    projectId = p.projects.nodes[0]?.id;
-    if (!projectId) throw new Error(`Linear project "${project}" not found`);
-  }
-  return { teamId, projectId };
-}
-
-async function createIssue(ctx, title, description, parentId) {
-  const d = await gql(
-    `mutation($i:IssueCreateInput!){issueCreate(input:$i){issue{id identifier}}}`,
-    { i: { teamId: ctx.teamId, projectId: ctx.projectId, title, description, parentId } },
-  );
-  return d.issueCreate.issue;
+function createIssue(L, links, title, description, parentId) {
+  const project =
+    links.project && links.project.toLowerCase() !== "none" ? links.project : undefined;
+  return L.create({ title, project, labels: labelsFor(), description, parentId });
 }
 
 async function main([mode, file, ...flags]) {
@@ -73,7 +55,7 @@ async function main([mode, file, ...flags]) {
   if (mode === "issue") {
     if (links.key) return (console.log(`${specPath} already linked to ${links.key}`), 0);
     if (dry) return (console.log(`[dry-run] would create ${TEAM} issue "${links.title}"`), 0);
-    const issue = await createIssue(await context(links.project), links.title, `Spec: ${specPath}`);
+    const issue = await createIssue(linear(client()), links, links.title, `Spec: ${specPath}`);
     const text = readFileSync(specPath, "utf8").replace(
       /^\*\*Linear\*\*:.*$/m,
       `**Linear**: ${issue.identifier}`,
@@ -94,10 +76,11 @@ async function main([mode, file, ...flags]) {
       console.log(`[dry-run] would create sub-issue of ${links.key}: ${t.id} ${t.title}`);
     return 0;
   }
-  const ctx = await context(links.project);
-  const parent = (await gql(`query($i:String!){issue(id:$i){id}}`, { i: links.key })).issue.id;
+  const L = linear(client());
+  const parent = (await L.issue(links.key))?.id;
+  if (!parent) throw new Error(`${links.key} not found in Linear`);
   for (const t of todo) {
-    const issue = await createIssue(ctx, `${t.id} ${t.title}`, `Spec ${links.key}`, parent);
+    const issue = await createIssue(L, links, `${t.id} ${t.title}`, `Spec ${links.key}`, parent);
     lines[t.index] += ` [${issue.identifier}]`;
     writeFileSync(file, lines.join("\n"));
     console.log(`${t.id} -> ${issue.identifier}`);

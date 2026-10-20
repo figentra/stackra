@@ -131,6 +131,12 @@ export const WRAPPED = [
   "converge",
 ];
 
+/** Core commands the preset replaces outright, with the marker their rendered copies must keep (ADR 0121). */
+export const REPLACED = {
+  taskstoissues: "## Stackra: tasks to Linear issues",
+  constitution: "## Stackra: the constitution is generated",
+};
+
 /**
  * spec-kit upgrade tripwire (ADR 0120 D1): keeping specs in `.agents/specs` rests on core text and scripts that
  * `specify integration upgrade` or `specify init --force` can change or wipe. Each problem names what broke.
@@ -157,7 +163,8 @@ export function tripwire(root = ROOT) {
     problems.push(
       "init-options.json `feature_numbering` is not `linear-key` (an init or upgrade reset it)",
     );
-  for (const name of WRAPPED) {
+  for (const name of [...WRAPPED, ...Object.keys(REPLACED)]) {
+    const marker = REPLACED[name] ?? "## Stackra: feature directory";
     for (const p of [
       `.claude/skills/speckit-${name}/SKILL.md`,
       `.opencode/commands/speckit.${name}.md`,
@@ -168,7 +175,7 @@ export function tripwire(root = ROOT) {
         if (existsSync(join(root, dirname(dirname(p))))) problems.push(`${p} is missing`);
         continue;
       }
-      if (!text.includes("## Stackra: feature directory"))
+      if (!text.includes(marker))
         problems.push(`${p} lost the Stackra wrap (re-register the preset for that integration)`);
       // Anchor on the core's own resolution rule; the wrap's prose says "use it as-is" too.
       if (
@@ -177,6 +184,18 @@ export function tripwire(root = ROOT) {
       )
         problems.push(`${p}: core specify no longer takes SPECIFY_FEATURE_DIRECTORY as-is`);
     }
+  }
+  // The bundled `speckit` workflow skips clarify and analyze (ADR 0121 D19); it stays disabled.
+  const workflows = read(".specify/workflows/workflow-registry.json");
+  if (workflows !== null) {
+    let speckit;
+    try {
+      speckit = JSON.parse(workflows).workflows?.speckit;
+    } catch {}
+    if (speckit && speckit.enabled !== false)
+      problems.push(
+        "the bundled `speckit` workflow is enabled (`specify workflow disable speckit`)",
+      );
   }
   return problems;
 }
