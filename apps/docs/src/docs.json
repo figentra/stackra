@@ -52,7 +52,7 @@
         "groups": [
           {
             "group": "Get started",
-            "pages": ["index", "quickstart", "development"]
+            "pages": ["index", "roadmap", "quickstart", "development"]
           },
           {
             "group": "Monorepo",
@@ -214,6 +214,7 @@
               "adr/0120-sdlc-spec-location-lanes-and-change-risk",
               "adr/0121-sdlc-tooling-roles-and-linear",
               "adr/0122-workflow-studio-three-layers",
+              "adr/0123-delivery-order-follows-the-dependency-graph",
               "adr/0124-encore-is-the-generated-runtime-target"
             ]
           }
