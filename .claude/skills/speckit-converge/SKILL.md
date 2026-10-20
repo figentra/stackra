@@ -1,13 +1,23 @@
 ---
-name: "speckit-converge"
-description: "Assess the current codebase against the feature's spec, plan, and tasks, then append any remaining unbuilt work as new tasks to tasks.md so implement can complete it."
-compatibility: "Requires spec-kit project structure with .specify/ directory"
+name: speckit-converge
+description: Converge spec, plan and tasks in the spec's .agents/specs folder.
+compatibility: Requires spec-kit project structure with .specify/ directory
 metadata:
-  author: "github-spec-kit"
-  source: "templates/commands/converge.md"
+  author: github-spec-kit
+  source: preset:stackra
 user-invocable: true
 disable-model-invocation: false
 ---
+
+# Speckit Converge Skill
+
+## Stackra: feature directory (runs first)
+
+Specs live in `.agents/specs/sta-<n>-<slug>/` (ADR 0120 D1), never in `specs/`. Before anything else run
+`node tools/scripts/spec-gate.mjs dir` (add `--key STA-n` when the branch name carries no key). It prints the
+spec folder for the branch's Linear key and writes `.specify/feature.json`. Pass that path as
+`SPECIFY_FEATURE_DIRECTORY=<path>` in front of every `.specify/scripts` call this command makes. If it fails,
+STOP and report it; never fall back to a numbered folder.
 
 
 ## User Input

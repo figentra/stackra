@@ -6,6 +6,8 @@ import {
   infisicalLoggedIn,
   missingMiseTools,
   render,
+  speckitMatches,
+  speckitPin,
 } from "../doctor.mjs";
 
 test("missingMiseTools lists tools with an uninstalled version", () => {
@@ -43,4 +45,12 @@ test("render shows fixes for failures only; warn does not fail the run", () => {
   assert.match(text, /1 check\(s\) failing/);
   assert.equal(exitCode(results), 1);
   assert.equal(exitCode(results.slice(0, 1).concat(results.slice(2))), 0);
+});
+
+test("spec-kit must match its exact mise pin", () => {
+  const pin = speckitPin('node = "24"\n"pipx:specify-cli" = "1.0.10"\n');
+  assert.equal(pin, "1.0.10");
+  assert.ok(speckitMatches("specify 1.0.10\n", pin));
+  assert.ok(!speckitMatches("specify 1.2.1\n", pin));
+  assert.ok(!speckitMatches("specify 1.0.10\n", speckitPin("[tools]\n")));
 });

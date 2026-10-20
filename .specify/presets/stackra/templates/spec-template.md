@@ -1,10 +1,16 @@
 # Feature Specification: [FEATURE NAME]
 
-**Feature Branch**: `[###-feature-name]`
+**Feature Branch**: `[figentra/sta-n-feature-name]`
 
 **Created**: [DATE]
 
-**Status**: Draft
+**Status**: Draft <!-- Draft → Clarified → Planned → Ready → Implementing → Verified, or Abandoned / Superseded; spec-gate ci checks the artifacts each stage needs -->
+
+<!-- Specs are public on GitHub: no secrets, customer data or details of an unfixed vulnerability (ADR 0120 D17). -->
+
+<!-- Folder: .agents/specs/sta-n-<slug>/, named by the Linear key below (ADR 0120 D1). -->
+
+
 
 **Linear**: STA-n <!-- the Linear issue for this spec; the plan gate needs a real key -->
 
@@ -26,6 +32,9 @@
 - **Secrets**: [secret names the feature needs (never values), or none]
 - **ADR needed**: [yes: topic / no]
 - **New dependencies**: [packages to add to a pnpm catalog, or none]
+- **Deploy modes**: [what differs in SaaS / on-prem / air-gapped (outbound calls, hosted services, licence checks), or "same in all three"]
+- **Lane**: [full / lite / bug / chore, from the ADR 0120 lane table (first match wins)]
+- **Change risk**: [R0 / R1 / R2 / R3 (ADR 0120), derived from the answers above; it can be raised, never lowered]
 
 ## User Scenarios & Testing *(mandatory)*
 

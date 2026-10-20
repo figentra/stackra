@@ -1,10 +1,21 @@
 ---
-description: Identify underspecified areas in the current feature spec by asking up to 5 highly targeted clarification questions and encoding answers back into the spec.
-handoffs:
-  - label: Build Technical Plan
-    agent: speckit.plan
-    prompt: Create a plan for the spec. I am building with...
+description: Resolve open questions; mark the spec complete only when none remain.
+scripts:
+  sh: .specify/scripts/bash/check-prerequisites.sh --json --paths-only
+  ps: .specify/scripts/powershell/check-prerequisites.ps1 -Json -PathsOnly
+  py: .specify/scripts/python/check_prerequisites.py --json --paths-only
 ---
+
+
+<!-- Source: stackra -->
+## Stackra: feature directory (runs first)
+
+Specs live in `.agents/specs/sta-<n>-<slug>/` (ADR 0120 D1), never in `specs/`. Before anything else run
+`node tools/scripts/spec-gate.mjs dir` (add `--key STA-n` when the branch name carries no key). It prints the
+spec folder for the branch's Linear key and writes `.specify/feature.json`. Pass that path as
+`SPECIFY_FEATURE_DIRECTORY=<path>` in front of every `.specify/scripts` call this command makes. If it fails,
+STOP and report it; never fall back to a numbered folder.
+
 
 ## User Input
 
@@ -285,3 +296,12 @@ Report completion (after questioning loop ends or early termination):
 - [ ] Spec quality checklist re-validated against updated spec (if `FEATURE_DIR/checklists/requirements.md` exists)
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
 - [ ] Completion reported to user with questions answered, sections touched, checklist status, and coverage summary
+
+
+## Stackra: completion marker
+
+When no `[NEEDS CLARIFICATION` marker remains anywhere in the spec, every `## Impact` answer is
+filled, and `**Linear**` holds a real `STA-n` key, set `**Clarifications status**: complete`.
+Otherwise leave it `pending` and list what is still open. Verify with
+`node tools/scripts/spec-gate.mjs plan <spec.md>`. A missing Linear issue is created with
+`node tools/scripts/spec-linear.mjs issue <spec.md>` (or the Linear MCP when run by an agent).

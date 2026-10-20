@@ -10,13 +10,13 @@ A skill teaches an agent **how**: patterns, gotchas and the order to decide thin
 
 | Kind | Lives in | Managed by | Edit it? |
 | --- | --- | --- | --- |
-| Spec engine and process skills | The `sdlc` plugin | `claude plugin install` | No. Upstream owns it |
+| Spec engine commands | spec-kit, `.claude/skills/speckit-*` and `.opencode/commands/speckit.*`, plus the Stackra preset in `.specify/presets/stackra` | `specify` (pinned in `mise.toml`), `pnpm speckit:sync` | Only the preset. The rendered copies are generated |
 | Upstream skills the repository uses | `.agents/skills/<upstream-name>` | `npx skills add`, `update`, `remove`, pinned in `skills-lock.json` | No. Never in place |
 | House skills | `.agents/skills/<category>-<name>` | A normal change | Yes |
 
-### The sdlc plugin
+### The spec engine
 
-`spec-new`, `spec-design`, `spec-tasks`, `spec-implement`, `spec-run`, `spec-verify`, `failure-loop` and `durable-findings` come from the `sdlc` plugin, along with the document templates and the twelve roster roles marked sdlc on [Roster](/agents/roster). `/sdlc:spec` is the entry point: it reads the specs on disk, says which stage each is at, and asks which step to run. They are not copied into this repository, because a copy is the kind of drift [Rules that don't rot](/agents/rules-that-dont-rot) warns about.
+The spec flow is GitHub spec-kit, described on [Spec lifecycle](/agents/spec-lifecycle). The `sdlc` plugin no longer applies in this repository ([ADR 0121](/adr/0121-sdlc-tooling-roles-and-linear) D3). Its `failure-loop` and `durable-findings` skills and eight of its roles are being ported into `.agents/` under MIT (D2, D9); until they land, the procedures on [Spec lifecycle](/agents/spec-lifecycle) are the reference.
 
 ### Vendored upstream skills
 
