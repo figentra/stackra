@@ -1,0 +1,80 @@
+---
+title: "0234 — Module assets and storage"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0127](/adr/0127-package-categories-including-infrastructure): the `data` category gains
+  `assets` and `filesystem`, and the `application` category gains the assets collector in `stackra
+  gen`. "Resource" is reserved for `@Resource`, the admin-UI declaration of
+  [0164](/adr/0164-console-panels-are-resources-rendered-by-the-panel-package). Files shipped with a
+  package are **assets**.
+</Note>
+
+## Context
+
+A module ships files with its code: images, icons, fonts, language files, mail and PDF templates, scaffold stubs and seed data. Those files are
+read-only and versioned with the package. Runtime files, such as uploads and generated PDFs, are different: a tenant owns them and they change. The
+owner accepted the proposal in `stackra-notes/resources-discovery-proposal.md` (2026-10-20), with the placements below. The owner then renamed the
+concept from "resources" to "assets", so that the word "resource" stays with `@Resource`.
+
+## Decision
+
+1. **One pipeline.** A module's assets follow the same path as its other contributions: declare, collect, publish, merge, consume
+   ([0144](/adr/0144-metadata-registry-and-explorers) for the registry, [0158](/adr/0158-gen-artefacts-openapi-manifest-and-client) for the manifest).
+2. **Declare by location.** A module's files sit in an `assets/` folder beside its module file. For a package's root module that is the package's
+   `assets/` folder. The namespace is the module's `name` (`@Module({ name })`). There is no `defineAssets`. Folder name = kind:
+   - `public/`: anything with a URL, published to the CDN;
+   - `lang/`: goes into the i18n registry under the namespace;
+   - `templates/`: mail, PDF and SMS templates, going into the templates registry;
+   - `stubs/`: used by the scaffolder (`pnpm new` and `stackra make`);
+   - `data/`: private seed or reference data, read with `read()`.
+3. **Packages.**
+   - `@stackra/assets` is in the `data` category. Its entries:
+     - `./contracts`: the `Assets` interface, the `ASSETS` token and the `AssetKey` type;
+     - `.`: the `Assets` service, a read-only view over a filesystem disk with namespace and override resolution, and a manifest loader;
+     - `./node`: the Explorer that registers module assets at boot, and the dev server that serves them;
+     - `./react` and `./native`: the `useAsset()` hook;
+     - `./testing`: a fake.
+   - `@stackra/filesystem` is in the `data` category: disks and drivers (S3, R2, MinIO, local and database).
+   - `@stackra/container` modules carry `name`, which is the namespace.
+   - A package exports its assets as `./assets/*`. Its folder is `assets/`, not `resources/`.
+4. **Collection.** The collector lives in the codegen compiler (`stackra gen`, `application` category). It walks the module graph and writes the
+   `assets` section of `app-manifest.json`, with namespace, kind, path, content hash, public flag and owning module. It emits the `AssetKey`
+   union into the gitignored `.stackra/` (0162). The collector and the Explorer agree, and a conformance test checks it (0144).
+5. **Publish.** Publishing public assets to the CDN bucket is a deploy step, run by `stackra build` or CI. Files are content-hashed.
+6. **Storage.** `@stackra/filesystem` is the only storage API. Disks are injected, never reached through a facade. Usage is `disk('public').url()` and
+   `disk('private').temporaryUrl()`. Static helpers exist only for pure utilities (`Str`, `Date`, `Arr`, ADR 0145).
+7. **Consumers.** `@stackra/i18n` consumes `lang/`. The templates registry in the communication category consumes `templates/`. The scaffolder consumes `stubs/`.
+8. **Overrides.** A member replaces a module file at `assets/overrides/<namespace>/<same path>`. The override wins, and gen records which one won.
+   Language JSON files merge key by key. Other files are replaced whole.
+9. **Bundler imports.** `#assets/public/...?url` imports are allowed only inside the owning package, for tree-shaking. Overrides do not apply to them.
+   The docs say so.
+10. **Runtime tenant files** belong to the Figentra OS files service, not to assets. Tenant branding stays in the runtime brand service.
+11. **Why two places.** Laravel also separates `resources/` (shipped with code) from `storage/` (created at runtime). This ADR keeps that split, and
+    names the first `assets/` here, because Stackra reserves "resource" for `@Resource`.
+
+## Consequences
+
+- An agent can predict an asset's path from its kind and namespace, without reading code.
+- Every asset is in `app-manifest.json`, so it is reviewed and diffed in a pull request.
+- Public assets are immutable after publish (content-hashed), so caches never serve a stale file.
+- Any text that calls a package folder `resources/` is stale. ADR 0126 is amended by a forward note in the same change.
+
+## Enforcement
+
+planned — gen fails on an asset whose kind folder is unknown, and the Explorer and collector conformance test covers the manifest section. The
+validator rejects a `../` import into `assets/` (0233). The scaffold templates gain `assets/` with `public/` and `lang/`.
+
+## Alternatives
+
+- Assets as runtime uploads in the same store: rejected; the two have different owners and mutability.
+- A `defineAssets` call per module: rejected; the folder is the declaration.
+- "Resources" for shipped files: rejected by the owner; the word is reserved for `@Resource`.
+
+## Supersedes and sources
+
+Amends: [0127](/adr/0127-package-categories-including-infrastructure); forward note on [0126](/adr/0126-member-shapes-and-scaffold-templates).
+Builds on: [0144](/adr/0144-metadata-registry-and-explorers), [0158](/adr/0158-gen-artefacts-openapi-manifest-and-client),
+[0162](/adr/0162-validation-translatable-fields-and-entityschema-placement). Sources: `stackra-notes/resources-discovery-proposal.md` (owner
+accepted, 2026-10-20); the owner's placements and the rename to assets (2026-10-20); DA3 (`stackra-decisions-2026-10-19.md`, public CDN bucket).
