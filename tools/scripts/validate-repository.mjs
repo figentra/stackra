@@ -34,6 +34,7 @@ export const FORBIDDEN_DEPENDENCIES = [
   "fastify",
   "typeorm",
   "knex",
+  "next", // 0165: Next.js is rejected (no revival trigger); web is Vite with React Router 7
   "expo-router", // 0011, 0061: code-based React Navigation
   "zustand", // 0079: client state is @stackra/state
   "@tanstack/store", // 0079
