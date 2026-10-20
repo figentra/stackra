@@ -1,0 +1,43 @@
+---
+title: "0162 — Validation, translatable-field and EntitySchema clarifications"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0095](/adr/0095-zod-inside-field-decorators), [0096](/adr/0096-trait-naming-grammar) and
+  [0097](/adr/0097-model-and-database-packages). Also amends 0116 (wave 3, not on this branch).
+</Note>
+
+## Context
+
+Three details in the validation, model and database packages were open: how async database rules run on the client and server, where
+translatable fields are stored, and where generated EntitySchema files go. The owner's answers C36, C16 and C37 (mem L852–854,
+2026-10-20) settle them.
+
+## Decision
+
+1. **Async rules (C36).** Async database rules are skipped on the client, with a warning in development. On the server they fail closed
+   when no driver is configured. Each issue carries an STK code and its parameters. Translation keys are derived from the code.
+2. **Translatable fields (C16).** The `@Translatable` field decorator in `@stackra/model` owns per-locale storage and the fallback chain.
+   The content trait only bundles it. Any model can have translatable fields.
+3. **EntitySchema placement (C37).** Generated EntitySchema files go into the gitignored `.stackra/` folder and are never committed. `gen --check`
+   runs in CI. Migration SQL is committed ([0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules)).
+
+## Consequences
+
+- A form on the client never blocks on a database rule; the server decides.
+- Translation keys cannot drift from the codes, because the code is the key.
+
+## Enforcement
+
+planned — `gen --check` in CI fails when the committed migration SQL is stale, and the validator fails a committed `.stackra/` file.
+
+## Alternatives
+
+- Async rules on the client: rejected by C36; the client has no database.
+- EntitySchema files committed: rejected by C37.
+
+## Supersedes and sources
+
+Amends: [0095](/adr/0095-zod-inside-field-decorators), [0096](/adr/0096-trait-naming-grammar), [0097](/adr/0097-model-and-database-packages); 0116
+(wave 3). Sources: owner answers C36, C16 and C37 (`stackra-decisions-2026-10-19.md` L852–854, 2026-10-20). Closes gaps C16, C36 and C37.

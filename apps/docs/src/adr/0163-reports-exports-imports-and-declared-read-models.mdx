@@ -1,0 +1,43 @@
+---
+title: "0163 — Reports, exports, imports and declared read models"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0011](/adr/0011-rejected-and-deferred-technologies): the reporting and read-model
+  capabilities here are built in the platform. The 0011 row changes are in the final pass (ADR
+  0227).
+</Note>
+
+## Context
+
+Modules needed reports, data imports and exports, and read models for history. The owner's answers P7, AN2, DX-1 and DX-2 (mem L821–824,
+2026-10-20) fix these. The analytics service and the tenant dashboard builder are OS items, not Stackra packages.
+
+## Decision
+
+1. **Reports and read models (P7).** A `@Report` query is compiled to SQL. Exports run as queue jobs that write a file. A `@Projection`
+   read model supports an `asOf` query.
+2. **Report widgets (AN2).** A module's `@Report` metrics appear as panel widgets ([0164](/adr/0164-console-panels-are-resources-rendered-by-the-panel-package)).
+3. **Imports (DX-1).** `@Importable` reads CSV, XLSX and JSON. It suggests a column mapping with AI, supports a dry run, upserts by key,
+   resumes after failure, and rolls back a batch as a whole.
+4. **Exports (DX-2).** List exports respect the caller's permissions. Exports can be scheduled.
+5. The analytics service and the tenant dashboard builder are not Stackra packages.
+
+## Consequences
+
+- An export of data is a queue job, so a large export does not block a request.
+- An import that fails halfway can be retried without duplicating rows, because it upserts by key.
+
+## Enforcement
+
+planned — the import dry run and batch rollback are covered by the importable conformance tests, and export jobs check permissions per row.
+
+## Alternatives
+
+- Reports as ad-hoc SQL in actions: rejected by [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions).
+
+## Supersedes and sources
+
+Amends: [0011](/adr/0011-rejected-and-deferred-technologies) (final pass for the row changes). Sources: owner answers P7 (intent-map item,
+accepted), AN2 (`stackra-decisions-2026-10-19.md` L821), DX-1 (L823), DX-2 (L824), 2026-10-20.
