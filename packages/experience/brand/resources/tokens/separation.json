@@ -1,0 +1,790 @@
+{
+  "rule": "Accent Separation, as the engine defines it (core/color/separation.mjs): separated when hueDelta >= 25 deg OR lightnessDelta >= 0.1 (oklch). Stackra's subjects (accent, link, focus) are achromatic (chroma < 0.02), so a row that fails both deltas is still separated by chroma and says so in its note. Compared: the shared status colours, the amber cursor, and the family accents read from their owners (Figentra OS cyan, Academorix volt, Vellum violet; scripts/lib/family.mjs).",
+  "neutrality": [
+    {
+      "theme": "base",
+      "name": "accent",
+      "hex": "#0B0D0F",
+      "chroma": 0.005,
+      "neutral": true
+    },
+    {
+      "theme": "base",
+      "name": "accent-foreground",
+      "hex": "#F5F6F3",
+      "chroma": 0.004,
+      "neutral": true
+    },
+    {
+      "theme": "base",
+      "name": "accent-hover",
+      "hex": "#2A2E32",
+      "chroma": 0.009,
+      "neutral": true
+    },
+    {
+      "theme": "base",
+      "name": "accent-pressed",
+      "hex": "#3F4347",
+      "chroma": 0.009,
+      "neutral": true
+    },
+    {
+      "theme": "base",
+      "name": "accent-soft",
+      "hex": "#E3E7EA",
+      "chroma": 0.006,
+      "neutral": true
+    },
+    {
+      "theme": "base",
+      "name": "focus",
+      "hex": "#0B0D0F",
+      "chroma": 0.005,
+      "neutral": true
+    },
+    {
+      "theme": "base",
+      "name": "link",
+      "hex": "#0B0D0F",
+      "chroma": 0.005,
+      "neutral": true
+    },
+    {
+      "theme": "base",
+      "name": "signal",
+      "hex": "#0B0D0F",
+      "chroma": 0.005,
+      "neutral": true
+    },
+    {
+      "theme": "base",
+      "name": "signal-foreground",
+      "hex": "#F5F6F3",
+      "chroma": 0.004,
+      "neutral": true
+    },
+    {
+      "theme": "dark",
+      "name": "accent",
+      "hex": "#F5F6F3",
+      "chroma": 0.004,
+      "neutral": true
+    },
+    {
+      "theme": "dark",
+      "name": "accent-foreground",
+      "hex": "#0B0D0F",
+      "chroma": 0.005,
+      "neutral": true
+    },
+    {
+      "theme": "dark",
+      "name": "accent-hover",
+      "hex": "#D1D5D9",
+      "chroma": 0.007,
+      "neutral": true
+    },
+    {
+      "theme": "dark",
+      "name": "accent-pressed",
+      "hex": "#BABEC3",
+      "chroma": 0.008,
+      "neutral": true
+    },
+    {
+      "theme": "dark",
+      "name": "accent-soft",
+      "hex": "#222629",
+      "chroma": 0.008,
+      "neutral": true
+    },
+    {
+      "theme": "dark",
+      "name": "focus",
+      "hex": "#F5F6F3",
+      "chroma": 0.004,
+      "neutral": true
+    },
+    {
+      "theme": "dark",
+      "name": "link",
+      "hex": "#F5F6F3",
+      "chroma": 0.004,
+      "neutral": true
+    },
+    {
+      "theme": "dark",
+      "name": "signal",
+      "hex": "#F5F6F3",
+      "chroma": 0.004,
+      "neutral": true
+    },
+    {
+      "theme": "dark",
+      "name": "signal-foreground",
+      "hex": "#0B0D0F",
+      "chroma": 0.005,
+      "neutral": true
+    }
+  ],
+  "rows": [
+    {
+      "theme": "base",
+      "subject": "accent",
+      "compared": "success",
+      "group": "status",
+      "hueDelta": 113,
+      "lightnessDelta": 0.342,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.13
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "accent",
+      "compared": "warning",
+      "group": "status",
+      "hueDelta": 159,
+      "lightnessDelta": 0.392,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.15
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "accent",
+      "compared": "danger",
+      "group": "status",
+      "hueDelta": 136,
+      "lightnessDelta": 0.292,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.17
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "accent",
+      "compared": "cursor",
+      "group": "family",
+      "brand": "Figentra (amber)",
+      "hueDelta": 173,
+      "lightnessDelta": 0.312,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.095
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "accent",
+      "compared": "os:cyan-deep",
+      "group": "family",
+      "brand": "Figentra OS (Ion Cyan)",
+      "hueDelta": 20,
+      "lightnessDelta": 0.362,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.1
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "accent",
+      "compared": "academorix:volt-700",
+      "group": "family",
+      "brand": "Academorix (volt)",
+      "hueDelta": 112,
+      "lightnessDelta": 0.342,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.14
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "accent",
+      "compared": "vellum:violet-deep",
+      "group": "family",
+      "brand": "Vellum (Ink violet, PROPOSED)",
+      "hueDelta": 54,
+      "lightnessDelta": 0.322,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.17
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "accent",
+      "compared": "juristra:indigo-deep",
+      "group": "family",
+      "brand": "Juristra (indigo, PROPOSED)",
+      "hueDelta": 17,
+      "lightnessDelta": 0.292,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.19
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "link",
+      "compared": "success",
+      "group": "status",
+      "hueDelta": 113,
+      "lightnessDelta": 0.342,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.13
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "link",
+      "compared": "warning",
+      "group": "status",
+      "hueDelta": 159,
+      "lightnessDelta": 0.392,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.15
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "link",
+      "compared": "danger",
+      "group": "status",
+      "hueDelta": 136,
+      "lightnessDelta": 0.292,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.17
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "link",
+      "compared": "cursor",
+      "group": "family",
+      "brand": "Figentra (amber)",
+      "hueDelta": 173,
+      "lightnessDelta": 0.312,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.095
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "link",
+      "compared": "os:cyan-deep",
+      "group": "family",
+      "brand": "Figentra OS (Ion Cyan)",
+      "hueDelta": 20,
+      "lightnessDelta": 0.362,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.1
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "link",
+      "compared": "academorix:volt-700",
+      "group": "family",
+      "brand": "Academorix (volt)",
+      "hueDelta": 112,
+      "lightnessDelta": 0.342,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.14
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "link",
+      "compared": "vellum:violet-deep",
+      "group": "family",
+      "brand": "Vellum (Ink violet, PROPOSED)",
+      "hueDelta": 54,
+      "lightnessDelta": 0.322,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.17
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "link",
+      "compared": "juristra:indigo-deep",
+      "group": "family",
+      "brand": "Juristra (indigo, PROPOSED)",
+      "hueDelta": 17,
+      "lightnessDelta": 0.292,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.19
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "focus",
+      "compared": "success",
+      "group": "status",
+      "hueDelta": 113,
+      "lightnessDelta": 0.342,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.13
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "focus",
+      "compared": "warning",
+      "group": "status",
+      "hueDelta": 159,
+      "lightnessDelta": 0.392,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.15
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "focus",
+      "compared": "danger",
+      "group": "status",
+      "hueDelta": 136,
+      "lightnessDelta": 0.292,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.17
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "focus",
+      "compared": "cursor",
+      "group": "family",
+      "brand": "Figentra (amber)",
+      "hueDelta": 173,
+      "lightnessDelta": 0.312,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.095
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "focus",
+      "compared": "os:cyan-deep",
+      "group": "family",
+      "brand": "Figentra OS (Ion Cyan)",
+      "hueDelta": 20,
+      "lightnessDelta": 0.362,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.1
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "focus",
+      "compared": "academorix:volt-700",
+      "group": "family",
+      "brand": "Academorix (volt)",
+      "hueDelta": 112,
+      "lightnessDelta": 0.342,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.14
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "focus",
+      "compared": "vellum:violet-deep",
+      "group": "family",
+      "brand": "Vellum (Ink violet, PROPOSED)",
+      "hueDelta": 54,
+      "lightnessDelta": 0.322,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.17
+      },
+      "separated": true
+    },
+    {
+      "theme": "base",
+      "subject": "focus",
+      "compared": "juristra:indigo-deep",
+      "group": "family",
+      "brand": "Juristra (indigo, PROPOSED)",
+      "hueDelta": 17,
+      "lightnessDelta": 0.292,
+      "chroma": {
+        "subject": 0.005,
+        "compared": 0.19
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "accent",
+      "compared": "success",
+      "group": "status",
+      "hueDelta": 13,
+      "lightnessDelta": 0.252,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.15
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "accent",
+      "compared": "warning",
+      "group": "status",
+      "hueDelta": 75,
+      "lightnessDelta": 0.252,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.17
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "accent",
+      "compared": "danger",
+      "group": "status",
+      "hueDelta": 100,
+      "lightnessDelta": 0.312,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.2
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "accent",
+      "compared": "cursor",
+      "group": "family",
+      "brand": "Figentra (amber)",
+      "hueDelta": 40,
+      "lightnessDelta": 0.142,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.15
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "accent",
+      "compared": "os:cyan",
+      "group": "family",
+      "brand": "Figentra OS (Ion Cyan)",
+      "hueDelta": 93,
+      "lightnessDelta": 0.152,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.13
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "accent",
+      "compared": "academorix:volt",
+      "group": "family",
+      "brand": "Academorix (volt)",
+      "hueDelta": 8,
+      "lightnessDelta": 0.052,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.209
+      },
+      "note": "separated by chroma only: the subject is achromatic",
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "accent",
+      "compared": "vellum:violet",
+      "group": "family",
+      "brand": "Vellum (Ink violet, PROPOSED)",
+      "hueDelta": 180,
+      "lightnessDelta": 0.252,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.14
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "accent",
+      "compared": "juristra:indigo",
+      "group": "family",
+      "brand": "Juristra (indigo, PROPOSED)",
+      "hueDelta": 143,
+      "lightnessDelta": 0.212,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.11
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "link",
+      "compared": "success",
+      "group": "status",
+      "hueDelta": 13,
+      "lightnessDelta": 0.252,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.15
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "link",
+      "compared": "warning",
+      "group": "status",
+      "hueDelta": 75,
+      "lightnessDelta": 0.252,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.17
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "link",
+      "compared": "danger",
+      "group": "status",
+      "hueDelta": 100,
+      "lightnessDelta": 0.312,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.2
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "link",
+      "compared": "cursor",
+      "group": "family",
+      "brand": "Figentra (amber)",
+      "hueDelta": 40,
+      "lightnessDelta": 0.142,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.15
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "link",
+      "compared": "os:cyan",
+      "group": "family",
+      "brand": "Figentra OS (Ion Cyan)",
+      "hueDelta": 93,
+      "lightnessDelta": 0.152,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.13
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "link",
+      "compared": "academorix:volt",
+      "group": "family",
+      "brand": "Academorix (volt)",
+      "hueDelta": 8,
+      "lightnessDelta": 0.052,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.209
+      },
+      "note": "separated by chroma only: the subject is achromatic",
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "link",
+      "compared": "vellum:violet",
+      "group": "family",
+      "brand": "Vellum (Ink violet, PROPOSED)",
+      "hueDelta": 180,
+      "lightnessDelta": 0.252,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.14
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "link",
+      "compared": "juristra:indigo",
+      "group": "family",
+      "brand": "Juristra (indigo, PROPOSED)",
+      "hueDelta": 143,
+      "lightnessDelta": 0.212,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.11
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "focus",
+      "compared": "success",
+      "group": "status",
+      "hueDelta": 13,
+      "lightnessDelta": 0.252,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.15
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "focus",
+      "compared": "warning",
+      "group": "status",
+      "hueDelta": 75,
+      "lightnessDelta": 0.252,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.17
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "focus",
+      "compared": "danger",
+      "group": "status",
+      "hueDelta": 100,
+      "lightnessDelta": 0.312,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.2
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "focus",
+      "compared": "cursor",
+      "group": "family",
+      "brand": "Figentra (amber)",
+      "hueDelta": 40,
+      "lightnessDelta": 0.142,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.15
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "focus",
+      "compared": "os:cyan",
+      "group": "family",
+      "brand": "Figentra OS (Ion Cyan)",
+      "hueDelta": 93,
+      "lightnessDelta": 0.152,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.13
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "focus",
+      "compared": "academorix:volt",
+      "group": "family",
+      "brand": "Academorix (volt)",
+      "hueDelta": 8,
+      "lightnessDelta": 0.052,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.209
+      },
+      "note": "separated by chroma only: the subject is achromatic",
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "focus",
+      "compared": "vellum:violet",
+      "group": "family",
+      "brand": "Vellum (Ink violet, PROPOSED)",
+      "hueDelta": 180,
+      "lightnessDelta": 0.252,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.14
+      },
+      "separated": true
+    },
+    {
+      "theme": "dark",
+      "subject": "focus",
+      "compared": "juristra:indigo",
+      "group": "family",
+      "brand": "Juristra (indigo, PROPOSED)",
+      "hueDelta": 143,
+      "lightnessDelta": 0.212,
+      "chroma": {
+        "subject": 0.004,
+        "compared": 0.11
+      },
+      "separated": true
+    }
+  ]
+}

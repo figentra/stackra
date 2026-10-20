@@ -12,9 +12,12 @@ files:
   - src/renderer/**
 mac:
   category: public.app-category.productivity
+  icon: node_modules/@stackra/brand/resources/app-icon/app-icon-light-1024.png
   hardenedRuntime: true
   target: [dmg, zip]
 win:
   target: [nsis]
+  icon: node_modules/@stackra/brand/resources/app-icon/app-icon-light-1024.png
 linux:
   target: [AppImage]
+  icon: node_modules/@stackra/brand/resources/app-icon/app-icon-light-1024.png

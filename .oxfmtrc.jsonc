@@ -25,6 +25,8 @@
     "packages/*/api-client/src/generated/**",
     // scaffold templates hold {{TOKENS}}, so they are not valid TS; the generator formats what it renders
     "tools/scaffold/templates/**",
+    // vendored brand-kit output, re-copied byte-for-byte from the kit (packages/experience/brand/README.md)
+    "packages/experience/brand/resources/**",
     // installed skills are upstream content
     ".agents/skills/**",
     ".claude/skills/**",
