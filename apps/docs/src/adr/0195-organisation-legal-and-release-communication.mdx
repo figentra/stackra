@@ -1,0 +1,40 @@
+---
+title: "0195 — Organisation, legal and release communication"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0024](/adr/0024-mit-license-with-exclusions): the "every package.json says MIT" rule of
+  decision 1 is replaced by the licence split below.
+</Note>
+
+## Context
+
+[0024](/adr/0024-mit-license-with-exclusions) (Accepted) chose MIT with exclusions. The owner's organisation answers OR2 to OR12 (mem L577–578, L359, L585, 2026-10-20) fix the contributor agreement, the licence split, trademarks, notices and release notes.
+
+## Decision
+
+1. **Contributors (OR4).** The Developer Certificate of Origin (DCO) is used. No contributor licence agreement.
+2. **Pledge (OR5).** An open-core pledge page is published.
+3. **Trademarks (OR7).** Stackra and Figentra are registered in the UAE first, then in Madrid.
+4. **Notices (OR8).** Ported MIT code keeps its headers, and a `NOTICE` file lists it (`ORIGIN.md` and `THIRD_PARTY_NOTICES.md`).
+5. **Escrow (OR10).** Source escrow is available on request through a provider.
+6. **Release notes (OR3 and audit Q6).** Changesets write release notes. A changelog formatter maps the change type to an emoji. The gate checks that pull-request titles carry the emoji and the conventional type. Commits stay plain.
+7. **Licence split.** `@stackra/*` is public MIT. `@figentra/*` apps and services are UNLICENSED and private.
+
+## Consequences
+
+- A contributor signs off a commit with the DCO, not a separate agreement.
+- The licence split is per scope, so a package's licence follows its name.
+
+## Enforcement
+
+planned — `commitlint.config.mjs` and the gate check pull-request titles; the validator's licence check reads each `package.json`.
+
+## Alternatives
+
+- CLA: rejected by OR4.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0024](/adr/0024-mit-license-with-exclusions) decision 1. Sources: owner answers OR2–OR12 (`stackra-decisions-2026-10-19.md` L359, L577–578, L585, 2026-10-20). Contradiction C-27 is closed by OR4.

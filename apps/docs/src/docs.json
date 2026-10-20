@@ -291,7 +291,17 @@
               "adr/0182-testing-strategy-v2-tiers-coverage-infrastructure-and-policies",
               "adr/0183-quality-budgets-with-numbers",
               "adr/0184-telemetry-opentelemetry-otlp-slis-heartbeats-and-log-retention",
-              "adr/0185-incident-response-on-call-status-page-and-support-tiers"
+              "adr/0185-incident-response-on-call-status-page-and-support-tiers",
+              "adr/0186-backups-and-disaster-recovery",
+              "adr/0187-security-and-compliance-programme",
+              "adr/0188-operator-access-and-the-encryption-key-hierarchy",
+              "adr/0189-privacy-operations-and-data-retention",
+              "adr/0190-seed-profiles-and-product-analytics",
+              "adr/0191-email-deliverability",
+              "adr/0192-translation-workflow-and-arabic-defaults",
+              "adr/0193-agents-and-model-policy",
+              "adr/0194-developer-and-agent-compute",
+              "adr/0195-organisation-legal-and-release-communication"
             ]
           }
         ]

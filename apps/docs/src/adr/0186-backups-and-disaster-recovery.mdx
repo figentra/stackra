@@ -1,0 +1,44 @@
+---
+title: "0186 — Backups and disaster recovery"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0048](/adr/0048-point-in-time-recovery-and-quarterly-restore-drill). The drill record
+  of 0048 decisions 3 to 5 carries forward.
+</Note>
+
+## Context
+
+[0048](/adr/0048-point-in-time-recovery-and-quarterly-restore-drill) (Proposed) set point-in-time recovery and a restore drill without the retention, the region rule or the objectives. The owner's answers OB7 to OB9 (mem L559, 2026-10-20) fix them.
+
+## Decision
+
+1. **Point-in-time recovery (OB7).** Fourteen days.
+2. **Snapshots (OB7).** 35-day snapshots in the backup account. Snapshots are not in the production account.
+3. **Replication (OB8).** S3 versioning and cross-region replication for object storage.
+4. **Drill (OB8).** A restore drill runs quarterly.
+5. **Objectives (OB9).** Recovery point objective 15 minutes. Recovery time objective 4 hours.
+6. **Region (OB9).** One region. Cells come later, and the stack is never active-active.
+7. **Single-tenant restore (gap P1-7, open).** Restoring one tenant from the pooled database is a separate runbook, not decided here.
+
+## Consequences
+
+- A backup outlives its production account, so an account compromise does not destroy the backups.
+- The restore drill is the only evidence that the objectives are met, so it is recorded.
+
+## Enforcement
+
+planned — the drill result is written to the runbook each quarter; the backup account policy is created by `@stackra/infra-aws` (ADR 0171).
+
+## Open questions
+
+1. Single-tenant restore from a pooled database (gap P1-7). The owner decides before the first paid tenant.
+
+## Alternatives
+
+- Active-active across regions: rejected by OB9.
+
+## Supersedes and sources
+
+Supersedes: [0048](/adr/0048-point-in-time-recovery-and-quarterly-restore-drill). Sources: owner answers OB7–OB9 (`stackra-decisions-2026-10-19.md` L559, 2026-10-20). Closes gap C43 in part.
