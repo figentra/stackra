@@ -18,7 +18,7 @@ import { readJsonc } from "./jsonc.mjs";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
-/** Architecture decisions enforced at the manifest level (.agents/rules/not-built-yet.md). */
+/** Architecture decisions enforced at the manifest level (.agents/rules/not-built-yet.md, ADR 0011 and the ADRs named). */
 export const FORBIDDEN_DEPENDENCIES = [
   "eslint",
   "prettier",
@@ -33,6 +33,15 @@ export const FORBIDDEN_DEPENDENCIES = [
   "fastify",
   "typeorm",
   "knex",
+  "expo-router", // 0011, 0061: code-based React Navigation
+  "zustand", // 0079: client state is @stackra/state
+  "@tanstack/store", // 0079
+  "i18next", // 0080: the ported @stackra/i18n
+  "react-i18next", // 0080
+  "class-validator", // 0095: @stackra/validation on Zod
+  "class-transformer", // 0095
+  "meilisearch", // 0089: search engines are Pro drivers (stackra-pro), Postgres first here
+  "@opensearch-project/opensearch", // 0089
 ];
 
 const DEPENDENCY_FIELDS = [

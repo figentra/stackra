@@ -25,7 +25,7 @@
 
   // Anything that changes the meaning of every task's output. mise.toml pins node/pnpm; a bump there can
   // change what every build/test/typecheck produces.
-  "globalDependencies": ["mise.toml", ".oxlintrc.jsonc", ".oxfmtrc.jsonc"],
+  "globalDependencies": ["mise.toml", "pnpm-workspace.yaml", ".oxlintrc.jsonc", ".oxfmtrc.jsonc"],
 
   "globalEnv": ["NODE_ENV", "CI"],
 
