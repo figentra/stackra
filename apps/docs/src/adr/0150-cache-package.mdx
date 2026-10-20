@@ -1,0 +1,38 @@
+---
+title: "0150 — @stackra/cache"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+Several decisions need a cache: the idempotency store of [0136](/adr/0136-action-runtime-contract) and the settings cache
+(gaps C9 and C40). [0036](/adr/0036-idempotency-cache-and-postgres) assumed the Encore cache. The owner's cache answer CA1 (mem L869,
+2026-10-20) makes the cache a package with several drivers, so it works on-prem and in SaaS.
+
+## Decision
+
+1. `@stackra/cache` is a runtime package with four drivers: memory LRU, Valkey, the Encore cache, and Postgres.
+2. Keys are namespaced by tenant. Tags group keys for bulk invalidation.
+3. Invalidation is event-driven.
+4. Stampede guards are single-flight and stale-while-revalidate.
+5. `@Cacheable` and `@CacheEvict` are the decorators. A two-level option (local memory in front of a shared driver) is available.
+6. The idempotency store of [0136](/adr/0136-action-runtime-contract) and the settings cache use this package.
+
+## Consequences
+
+- Cache keys cannot leak across tenants, because the namespace is part of the key.
+- A driver outage affects the idempotency store, so the cache ADR for each driver must name its failure behaviour.
+
+## Enforcement
+
+planned — the cache package's tests check tenant namespacing on every driver, and the boundaries rule bans direct cache clients in
+packages.
+
+## Alternatives
+
+- The Encore cache only (0036): superseded, because on-prem has no Encore runtime.
+
+## Supersedes and sources
+
+Supersedes: none. Used by: [0136](/adr/0136-action-runtime-contract) (idempotency), [0149](/adr/0149-locking-fencing-tokens-auto-renew-and-with-lock)
+(Valkey option). Sources: owner cache answer CA1 (`stackra-decisions-2026-10-19.md` L869, 2026-10-20); gaps C9 and C40.

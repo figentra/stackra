@@ -1,0 +1,48 @@
+---
+title: "0151 — The workflow engine is a port with a native driver and a Temporal driver"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0102](/adr/0102-workflow-engine-in-process-journal): the engine sits behind a port, and
+  Temporal is a supported driver.
+</Note>
+
+## Context
+
+[0102](/adr/0102-workflow-engine-in-process-journal) chose an in-process engine with a Postgres journal. The owner's workflow answer
+FW9 (mem L544, 2026-10-20, with a correction at L542) requires the engine to be driver-agnostic: the same workflow runs on a native
+driver or on Temporal. Temporal's checkpointed steps are activities, so a workflow body must be deterministic. This conflicts with
+the declarative graph of [0094](/adr/0094-decorators-only-authoring). Contradiction C-09 is resolved as follows: the graph is the
+deterministic body, and the lint checks that its `when` and `input` expressions are pure.
+
+## Decision
+
+1. Workflows are written once, with `@Workflow` and `@Step`. Checkpointed steps map to Temporal activities.
+2. The engine sits behind a `WorkflowEngine` port.
+3. The **native** driver is the default and costs nothing. It uses the Postgres outbox, queue and scheduler. It runs on Encore in SaaS,
+   and needs no extra infrastructure on-prem.
+4. The **Temporal** driver is part of Pro. It runs on Temporal Cloud or self-hosted, and is chosen per environment.
+5. The workflow body is the declarative graph. A lint checks that each `when` and `input` expression is pure and deterministic.
+6. A conformance suite runs on both drivers.
+
+## Consequences
+
+- A workflow author writes a graph, not imperative code, so the same workflow runs on either driver.
+- Temporal is a supported driver. The 0011 table needs a Temporal row; that change belongs to the final pass (ADR 0227).
+
+## Enforcement
+
+planned — the purity lint on `when` and `input`, and the conformance suite on both drivers. The lint and suite are not built yet.
+
+## Alternatives
+
+- Imperative workflow bodies: rejected by 0094, and they would not be portable to Temporal's model.
+- Native only: rejected, Temporal is a supported driver where a customer needs it.
+
+## Supersedes and sources
+
+Supersedes: none.
+
+Amends: [0102](/adr/0102-workflow-engine-in-process-journal). Sources: owner workflow answer FW9 with its correction (`stackra-decisions-2026-10-19.md`
+L542, L544, 2026-10-20); the resolution of C-09 (`stackra-notes/decision-register.md`, contradictions table).

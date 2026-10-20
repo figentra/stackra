@@ -1,0 +1,47 @@
+---
+title: "0152 — Workflow semantics: timeouts, waits, pinned versions, operations and one graph format"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0102](/adr/0102-workflow-engine-in-process-journal) and
+  [0094](/adr/0094-decorators-only-authoring), decision 3 (workflows as declarative graphs).
+</Note>
+
+## Context
+
+Workflows needed waits, timeouts, versioning and operations. The owner's answers P10, WF1 and WF4 (mem L770 and L773, 2026-10-20)
+fix these. Coded workflows and studio automations were to share one format.
+
+## Decision
+
+1. **Timeouts and waits (P10).** `timeout` applies to steps and runs. `@Step({ waitFor: event | signal })` parks a run durably until
+   the event or signal arrives.
+2. **Pinned versions (P10).** A run is pinned to the version it started on.
+3. **Approval (P10).** Approval is the pipeline's approval park ([0136](/adr/0136-action-runtime-contract) and the approval rules
+   of the pipeline).
+4. **Operations (P10).** Inspect, retry and cancel are actions. Cancel is at risk level L4.
+5. **One graph format (WF1).** Coded workflows and studio automations compile to one graph format, which runs on the
+   driver-agnostic engine ([0151](/adr/0151-workflow-engine-is-a-port-with-native-and-temporal-drivers)).
+6. **Guards and quotas (WF4).** Quotas use meters. Loop and recursion guards apply. Steps are idempotent. Test runs are supported.
+   Drafts are versioned and published. Run history and replay are available. Failure alerts and kill switches exist.
+
+## Consequences
+
+- A run keeps its version when a workflow is republished, so an in-flight run is never changed underneath.
+- Operators can inspect and cancel a run through the same action pipeline as everything else.
+
+## Enforcement
+
+planned — the workflow conformance suite checks timeouts, waits and the run-version pin on both drivers.
+
+## Alternatives
+
+- Separate formats for coded and studio workflows: rejected by WF1.
+
+## Supersedes and sources
+
+Supersedes: none.
+
+Amends: [0102](/adr/0102-workflow-engine-in-process-journal), [0094](/adr/0094-decorators-only-authoring) decision 3. Sources: intent-map item
+P10 (accepted), owner answers WF1 (`stackra-decisions-2026-10-19.md` L770) and WF4 (L773), 2026-10-20.
