@@ -12,7 +12,7 @@
       // Run by lefthook's pre-commit hook, which knip does not read.
       "ignoreDependencies": ["oxfmt"],
       // Developer-machine CLIs the root scripts shell out to (pinned outside pnpm).
-      "ignoreBinaries": ["opencode", "infisical"],
+      "ignoreBinaries": ["opencode", "infisical", "specify"],
     },
     "packages/tooling/*": {
       // Config packages export presets by subpath (package.json exports); the only TS besides them is their test.

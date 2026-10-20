@@ -14,6 +14,9 @@ gitleaks = "8.30.1"
 "github:Infisical/cli" = "0.44.2"
 "aqua:astral-sh/uv" = "0.11.16"
 "github:mobile-dev-inc/maestro" = "cli-2.10.0"
+# spec-kit's `specify` (ADR 0121 D15): upgrade only in a dedicated PR, together with `.specify/init-options.json`
+# `speckit_version`, then `pnpm speckit:sync` and `pnpm validate` (the spec-gate tripwire catches a broken wrap).
+"pipx:specify-cli" = "1.0.10"
 
 [env]
 # Bedrock profile for OpenCode (amazon-bedrock/*); `aws sso login --profile bedrock` refreshes it.

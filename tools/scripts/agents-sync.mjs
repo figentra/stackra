@@ -3,11 +3,11 @@
  * agents-sync — project `.agents/` into Claude Code and OpenCode directories.
  *
  * `.agents/` is the single source of truth for every AI artifact in this repo —
- * skills, subagents, rules, hooks, templates and specs. Claude Code and OpenCode
+ * skills, subagents, rules, hooks and templates (specs in `.agents/specs` are read in place). Claude Code and OpenCode
  * each expect their own layout, so this script projects every entry using one of
  * two strategies per (assistant, kind):
  *
- *   SYMLINK — skills, hooks, templates, specs. Identical bytes for every
+ *   SYMLINK — skills, hooks, templates. Identical bytes for every
  *   assistant, so a per-entry relative symlink back into `.agents/` is correct.
  *   Per-entry, not whole-directory: an assistant can keep tool-specific files
  *   alongside the linked ones (`.claude/settings.json`), tools that refuse to
@@ -120,7 +120,6 @@ const ASSISTANTS = {
       rules: null,
       hooks: "hooks",
       templates: "templates",
-      specs: "specs",
     },
   },
   opencode: {
@@ -133,14 +132,13 @@ const ASSISTANTS = {
       rules: null,
       hooks: null,
       templates: "templates",
-      specs: "specs",
     },
     instructionsBlock: "AGENTS.md",
   },
 };
 
 /** Kinds that are byte-identical everywhere and therefore symlinked. */
-const SYMLINK_KINDS = ["skills", "hooks", "templates", "specs"];
+const SYMLINK_KINDS = ["skills", "hooks", "templates"];
 /** Kinds whose content is translated per assistant and therefore generated. */
 const GENERATE_KINDS = ["rules", "agents"];
 const KINDS = [...SYMLINK_KINDS, ...GENERATE_KINDS];
@@ -212,7 +210,7 @@ function isSymlink(p) {
 }
 
 // ---------------------------------------------------------------------------
-// SYMLINK strategy (skills, hooks, templates, specs).
+// SYMLINK strategy (skills, hooks, templates).
 // ---------------------------------------------------------------------------
 
 /** Ensure `linkPath` is a relative symlink pointing at `targetPath`. */
@@ -1054,6 +1052,15 @@ function main() {
       results.overrides.push(
         `${sourceRel}: model '${agent.model}' overrides ${agent.tier ? `tier '${agent.tier}'` : `${MODEL_MAP_REL}`}`,
       );
+  }
+  // ADR 0121 D3: the sdlc plugin is retired here, so no route or agent may point at `sdlc:*`.
+  for (const rel of [
+    `${SOURCE}/routing.yaml`,
+    ...agentEntries.map((e) => `${SOURCE}/agents/${e}`),
+  ]) {
+    const path = join(ROOT, rel);
+    if (existsSync(path) && /\bsdlc:/.test(readFileSync(path, "utf8")))
+      results.broken.push(`${rel}: references the retired sdlc plugin (ADR 0121 D3)`);
   }
 
   if (LINT) {

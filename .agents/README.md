@@ -8,15 +8,15 @@ projection.
 ├── skills/      invocable skills          → symlinked
 ├── agents/      subagents, models pinned  → symlinked
 ├── templates/   skeletons the skills fill → symlinked
-├── specs/       work product              → symlinked
+├── specs/       spec-kit specs, sta-<n>-<slug>/ → read in place, not projected
 ├── hooks/       guard/format hooks        → symlinked
 └── rules/       always-on invariants      → GENERATED per assistant
 ```
 
 ## Why rules are generated, not symlinked
 
-A symlink gives every assistant identical bytes. That is correct for skills, agents, templates and
-specs. It is wrong for rules, because the same prose needs different frontmatter per assistant:
+A symlink gives every assistant identical bytes. That is correct for skills, agents and templates.
+It is wrong for rules, because the same prose needs different frontmatter per assistant:
 
 | Assistant   | Path                       | Frontmatter                                                    |
 | ----------- | -------------------------- | -------------------------------------------------------------- |

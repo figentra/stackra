@@ -4,7 +4,7 @@ description: "The agents that work in this repository: tier, model, whether they
 icon: "users"
 ---
 
-Twelve roles ship with the `sdlc` plugin. Their names are canonical and their definitions are not copied into this repository. The rest are new roles this repository adds under `.agents/agents/`, named `<domain>-<role>`.
+Every role is defined in this repository under `.agents/agents/`. The `sdlc` plugin is retired here ([ADR 0121](/adr/0121-sdlc-tooling-roles-and-linear) D3): eight of its roles are being ported (D9), and four fold into the lead session and existing roles. New roles are named `<domain>-<role>`.
 
 ## Tiers and models
 
@@ -29,30 +29,30 @@ A human approves every release and every deploy. No agent promotes to production
 
 ## Roster
 
-Status: **sdlc** means the role ships with the `sdlc` plugin and needs no file here. **new** means this repository defines it. Priority in brackets is when it is created.
+Source: **port** means the role is being ported from the retired `sdlc` plugin into `.agents/agents/` (ADR 0121 D9). **folded** means its duties move to the lead session or the named roles. **new** means this repository defines it. Priority in brackets is when it is created.
 
 ### Lead
 
 | Agent | Tier | Model | Blocks? | Owns | Source |
 | --- | --- | --- | --- | --- | --- |
-| `delivery-orchestrator` | lead | Opus | Enforces gate order; writes no code | Classify work, route it, build the task graph, report status | sdlc plugin |
+| `delivery-orchestrator` | lead | Opus | Enforces gate order; writes no code | Classify work, route it, build the task graph, report status | folded (ADR 0121 D9) |
 
 ### Guardians and gate owners
 
 | Agent | Tier | Model | Blocks? | Owns | Source |
 | --- | --- | --- | --- | --- | --- |
-| `architecture-guardian` | guardian | Opus | Yes | Tiers, layers, placement, the not-built-yet list; writes the missing ADR | sdlc plugin |
+| `architecture-guardian` | guardian | Opus | Yes | Tiers, layers, placement, the not-built-yet list; writes the missing ADR | port (ADR 0121 D9) |
 | `security-tenancy-reviewer` | guardian | Opus | Yes | Auth, secrets, isolation, webhooks, SSRF, redaction of secrets and PII from logs, events and errors | new (P0) |
-| `release-operations` | guardian | Sonnet | Yes. A human approves every release and deploy | CI, pins, the release flow, changesets | sdlc plugin |
-| `test-engineer` | guardian | Sonnet | Yes, on a red suite or an untested failure path | Verification levels, the e2e matrix | sdlc plugin |
+| `release-operations` | guardian | Sonnet | Yes. A human approves every release and deploy | CI, pins, the release flow, changesets | port (ADR 0121 D9) |
+| `test-engineer` | guardian | Sonnet | Yes, on a red suite or an untested failure path | Verification levels, the e2e matrix | port (ADR 0121 D9) |
 
 ### Stewards
 
 | Agent | Tier | Model | Blocks? | Owns | Source |
 | --- | --- | --- | --- | --- | --- |
-| `package-steward` | steward | Sonnet | A new package or subpath only | Archetype, layers, exports, barrels, provenance | sdlc plugin |
-| `dependency-steward` | steward | Haiku | An open critical advisory only | Catalogs, licences, toolchain pins, Renovate, `.mcp.json`, skills | sdlc plugin |
-| `docs-governance` | steward | Sonnet | No | The canon: docs, ADRs, `AGENTS.md`, rules, this roster; reports where docs and code disagree | sdlc plugin |
+| `package-steward` | steward | Sonnet | A new package or subpath only | Archetype, layers, exports, barrels, provenance | port (ADR 0121 D9) |
+| `dependency-steward` | steward | Haiku | An open critical advisory only | Catalogs, licences, toolchain pins, Renovate, `.mcp.json`, skills | port (ADR 0121 D9) |
+| `docs-governance` | steward | Sonnet | No | The canon: docs, ADRs, `AGENTS.md`, rules, this roster; reports where docs and code disagree | folded (ADR 0121 D9) |
 | `code-standards-steward` | steward | Haiku | No | Naming, one declaration per file, imports, the file contract and docblocks, typed errors, house helpers over hand-written ones | new (P0) |
 | `i18n-steward` | steward | Haiku | No | Logical CSS, ICU keys, locale data supplied by apps | new (P1) |
 
@@ -60,8 +60,8 @@ Status: **sdlc** means the role ships with the `sdlc` plugin and needs no file h
 
 | Agent | Tier | Model | Blocks? | Owns | Source |
 | --- | --- | --- | --- | --- | --- |
-| `code-reviewer` | reviewer | Sonnet | No | Correctness, simplicity, reuse, altitude | sdlc plugin |
-| `accessibility-reviewer` | reviewer | Sonnet | Critical and serious findings only | WCAG 2.2 AA, web and native, LTR and RTL, contrast | sdlc plugin |
+| `code-reviewer` | reviewer | Sonnet | No | Correctness, simplicity, reuse, altitude | port (ADR 0121 D9) |
+| `accessibility-reviewer` | reviewer | Sonnet | Critical and serious findings only | WCAG 2.2 AA, web and native, LTR and RTL, contrast | port (ADR 0121 D9) |
 | `api-contract-reviewer` | reviewer | Sonnet | No; escalates to the guardian | `api()` shape, prefixed ids, pagination, idempotency, generated-client drift | new (P1) |
 | `design-brand-reviewer` | reviewer | Sonnet | No | Reuse-first UI checklist, tokens only, brand rules; gives PASS or BLOCK advice | new (P1) |
 | `performance-engineer` | reviewer | Sonnet | No | Budgets (bundle, API p95, mobile TTI) and budget tests | new (P2) |
@@ -78,9 +78,9 @@ Status: **sdlc** means the role ships with the `sdlc` plugin and needs no file h
 
 | Agent | Tier | Model | Blocks? | Owns | Source |
 | --- | --- | --- | --- | --- | --- |
-| `spec-author` | executor | Opus | No | `requirements.md` and `design.md` | sdlc plugin |
-| `spec-planner` | executor | Sonnet | No | `tasks.md` and the wave graph | sdlc plugin |
-| `spec-executor` | executor | Sonnet | No | Exactly one task; at most five run in parallel | sdlc plugin |
+| `spec-author` | executor | Opus | No | `requirements.md` and `design.md` | folded (ADR 0121 D9) |
+| `spec-planner` | executor | Sonnet | No | `tasks.md` and the wave graph | folded (ADR 0121 D9) |
+| `spec-executor` | executor | Sonnet | No | Exactly one task; at most five run in parallel | port (ADR 0121 D9) |
 | `service-builder` | executor | Sonnet | No | One service change plus its tests, from a brief | new (P1) |
 | `frontend-builder` | executor | Sonnet | No | Console and docs screens on the generated client | new (P1) |
 | `mobile-builder` | executor | Sonnet | No | Expo screens with HeroUI Native and Uniwind | new (P1) |
@@ -117,7 +117,7 @@ These existed in older roster designs and are covered by an existing role instea
 - ADR stewardship and changeset stewardship are part of `docs-governance` and `release-operations`.
 - Separate e2e, brief-author, sweeper and merge-train roles are part of `test-engineer`, `delivery-orchestrator` and `release-operations`.
 - Separate stewards for docblocks, errors, redaction and test helpers are part of `code-standards-steward`, `security-tenancy-reviewer` and `test-engineer`.
-- A spec reviewer is the `spec-verify` skill.
+- A spec reviewer is `/speckit.analyze` plus the lead's adjudication ([ADR 0121](/adr/0121-sdlc-tooling-roles-and-linear) D20).
 - A design agency (director, senior designer, design engineer) was judged too heavy and unproven. One non-blocking `design-brand-reviewer` plus the design skills replaces it.
 - Business intake and AI-agent builders are not ported. The AI builder returns with the AI engine decision.
 

@@ -150,7 +150,10 @@ test("digest: In Progress first, owner steps tagged, deduped, capped at 8 lines"
 
 test("check-pr: key in title or branch, or an exempt lane", () => {
   assert.ok(prCarriesKey({ title: "feat: x", branch: "figentra/sta-42-y" }).ok);
-  assert.ok(prCarriesKey({ title: "fix(x): y (STA-3)", branch: "z" }).ok);
+  assert.ok(prCarriesKey({ title: "fix(x): y", branch: "delegate/sta-3-fix-y" }).ok);
+  assert.match(prCarriesKey({ title: "fix(x): y (STA-3)", branch: "z" }).why, /not figentra/);
+  assert.ok(!prCarriesKey({ title: "STA-3", branch: "claude/sta-3-y" }).ok);
+  assert.ok(!prCarriesKey({ title: "STA-3", branch: "figentra/STA-3-Y" }).ok);
   assert.ok(prCarriesKey({ title: "chore", branch: "renovate/foo" }).ok);
   assert.ok(prCarriesKey({ title: "chore", branch: "x", labels: ["chore-lane"] }).ok);
   assert.ok(!prCarriesKey({ title: "feat: x", branch: "feature/x" }).ok);

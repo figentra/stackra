@@ -12,7 +12,21 @@
           "speckit.specify",
           "speckit.clarify",
           "speckit.plan",
-          "speckit.tasks"
+          "speckit.tasks",
+          "speckit.analyze",
+          "speckit.checklist",
+          "speckit.implement",
+          "speckit.converge"
+        ],
+        "opencode": [
+          "speckit.specify",
+          "speckit.clarify",
+          "speckit.plan",
+          "speckit.tasks",
+          "speckit.analyze",
+          "speckit.checklist",
+          "speckit.implement",
+          "speckit.converge"
         ]
       },
       "registered_skills": {
@@ -20,7 +34,11 @@
           "speckit-specify",
           "speckit-clarify",
           "speckit-plan",
-          "speckit-tasks"
+          "speckit-tasks",
+          "speckit-analyze",
+          "speckit-checklist",
+          "speckit-implement",
+          "speckit-converge"
         ]
       },
       "installed_at": "2026-10-19T08:43:21.807670+00:00"

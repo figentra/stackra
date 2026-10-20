@@ -207,7 +207,7 @@ test("OpenCode does not receive the Claude Code hook scripts", () => {
 test("skills: Claude lists them all, OpenCode does not project skills", () => {
   const src = READ_ONLY.replace(
     "model: sonnet",
-    "model: sonnet\nskills:\n  - tdd\n  - sdlc:spec-new",
+    "model: sonnet\nskills:\n  - tdd\n  - vendor:some-skill",
   );
   withFixture({ "reviewer.md": src }, (root) => {
     mkdirSync(join(root, ".agents/skills/tdd"), { recursive: true });
@@ -215,7 +215,7 @@ test("skills: Claude lists them all, OpenCode does not project skills", () => {
     assert.equal(run(root).code, 0);
     assert.match(
       read(root, ".claude/agents/reviewer.md"),
-      /\nskills:\n {2}- tdd\n {2}- sdlc:spec-new\n/,
+      /\nskills:\n {2}- tdd\n {2}- vendor:some-skill\n/,
     );
     assert.doesNotMatch(read(root, ".opencode/agents/reviewer.md"), /skill/);
   });
