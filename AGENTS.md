@@ -515,7 +515,7 @@ Each article below is bound to a check:
 
 1. Install the Infisical CLI: `mise install` (pinned in `mise.toml`, ADR 0027; Homebrew is not supported)
 2. Create workspace: `infisical init`
-3. `.infisical.json` is tracked (workspace id and domain, no secret)
+3. `.infisical.yaml` is tracked (workspace id and domain, no secret)
 4. Add secrets to `/agents` folder
 5. Run commands with `infisical run -- <command>`
 
@@ -643,7 +643,7 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 #### Enforcement
 
 - `turbo boundaries` checks dependency direction
-- `tools/scripts/validate-repository.mjs` checks tier tags, file existence, and that every JSON config whose tool reads JSONC is named `.jsonc` (exceptions: `MUST_STAY_JSON`)
+- `tools/scripts/validate-repository.mjs` checks tier tags, file existence, and config formats: repo-owned config is YAML; `.jsonc` only where the reader has no YAML support (`MUST_STAY_JSONC`), `.json` only where it takes no comments (`MUST_STAY_JSON`)
 - `packages/tooling/oxlint/boundaries.jsonc` enforces layer rules
 
 #### See Also

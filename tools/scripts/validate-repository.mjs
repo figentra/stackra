@@ -190,9 +190,8 @@ export const MUST_STAY_JSON = [
     "generic preset template: rename to .jsonc for a JSONC tool",
   ],
   [/^\.claude\/[\w.-]+\.json$/, "Claude Code settings/launch: fixed .json names"],
-  [/^\.mcp\.json$/, "Claude Code reads only .mcp.json; generated from .mcp.jsonc"],
+  [/^\.mcp\.json$/, "Claude Code reads only .mcp.json; generated from .mcp.yaml"],
   [/^\.changeset\/config\.json$/, "@changesets/config JSON.parse on a fixed path"],
-  [/^\.infisical\.json$/, "Infisical CLI workspace file: fixed name"],
   [/^\.github\/branch-protection\.json$/, "GitHub REST API payload"],
   [/(^|\/)src\/docs\.json$/, "Mintlify parses docs.json with JSON.parse"],
   [/(^|\/)(app|eas)\.json$/, "Expo/EAS: fixed names, rewritten by the expo/eas CLIs"],
@@ -204,14 +203,38 @@ export const MUST_STAY_JSON = [
   ],
 ];
 
-/** Every *.json path not on MUST_STAY_JSON: its reader takes JSONC, so it is named .jsonc. */
+/**
+ * JSONC files whose reader has no YAML support, each with the reader. Repo-owned config (read by tools/scripts)
+ * is YAML; a .jsonc is allowed only where the tool cannot read YAML. A new entry names the reader.
+ */
+export const MUST_STAY_JSONC = [
+  [/(^|\/)turbo\.jsonc$/, "Turborepo: turbo.json / turbo.jsonc only"],
+  [
+    /^\.oxlintrc\.jsonc$|^packages\/tooling\/oxlint\/[\w-]+\.jsonc$/,
+    "oxlint: JSON/JSONC or oxlint.config.ts",
+  ],
+  [/^\.oxfmtrc\.jsonc$/, "oxfmt: .oxfmtrc.json / .jsonc only"],
+  [/^knip\.jsonc$/, "knip: JSON/JSONC or knip.ts"],
+  [/^opencode\.jsonc$/, "OpenCode: opencode.json / .jsonc only"],
+];
+
+/**
+ * Every *.json path not on MUST_STAY_JSON (its reader takes comments, so at least .jsonc) and every *.jsonc path
+ * not on MUST_STAY_JSONC (repo-owned config is YAML).
+ */
 export function checkJsonConfigs(paths) {
-  return paths
-    .filter((p) => p.endsWith(".json") && !MUST_STAY_JSON.some(([re]) => re.test(p)))
-    .map(
-      (p) =>
-        `${p}: rename to .jsonc so it can carry comments, or add it to MUST_STAY_JSON with the reason`,
-    );
+  const out = [];
+  for (const p of paths) {
+    if (p.endsWith(".json") && !MUST_STAY_JSON.some(([re]) => re.test(p)))
+      out.push(
+        `${p}: convert to .yaml (or .jsonc if its reader has no YAML support), or add it to MUST_STAY_JSON with the reason`,
+      );
+    else if (p.endsWith(".jsonc") && !MUST_STAY_JSONC.some(([re]) => re.test(p)))
+      out.push(
+        `${p}: convert to .yaml, or add it to MUST_STAY_JSONC naming the reader without YAML support`,
+      );
+  }
+  return out;
 }
 
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;

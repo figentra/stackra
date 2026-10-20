@@ -76,7 +76,7 @@ Every AI artifact is authored once, in `.agents/`:
 ├── skills/    project skills
 ├── specs/     spec-kit specs: sta-<n>-<slug>/, keyed by the Linear issue (ADR 0120)
 ├── plans/     working plans
-└── models.jsonc  tier to model mapping
+└── models.yaml   tier to model mapping
 ```
 
 The assistant folders, `.claude/` and `.opencode/`, are projections of this tree. Edit `.agents/`, never the projection. The mechanism is one canonical `.agents/` source projected to tool folders; the adoption plan describes how it is wired and checked. The decision is recorded in [ADR 0016](/adr/0016-agents-source-of-truth).

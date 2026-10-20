@@ -20,7 +20,7 @@
  *   AGENTS.md (read by both assistants — Claude via CLAUDE.md → @AGENTS.md,
  *   OpenCode natively).
  *
- *   MCP — `.mcp.jsonc` (annotated, the source) is rendered to `.mcp.json`
+ *   MCP — `.mcp.yaml` (annotated, the source) is rendered to `.mcp.json`
  *   (comment-free), the only project MCP file Claude Code reads.
  *
  * ---------------------------------------------------------------------------
@@ -50,7 +50,7 @@
  *   name: <string>                 optional; defaults to the file stem
  *   description: <string>          required
  *   tools: Read, Grep, Glob, Bash  optional; Claude Code tool names
- *   tier: steward|executor|…       optional; mapped per assistant by models.jsonc
+ *   tier: steward|executor|…       optional; mapped per assistant by models.yaml
  *   model: opus|sonnet|haiku|<provider>/<model>  optional override of the tier
  *   mode: primary|subagent|all     optional; OpenCode only, default subagent
  *   permissions:                   optional; explicit rules, overrides the
@@ -99,7 +99,7 @@ import {
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import process from "node:process";
-import { stripJsonc } from "./jsonc.mjs";
+import { parse as parseYaml } from "yaml";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE = ".agents";
@@ -519,14 +519,14 @@ function loadAgent(entry) {
 }
 
 /**
- * `.agents/models.jsonc` — agents declare a tier, this file says which model each
+ * `.agents/models.yaml` — agents declare a tier, this file says which model each
  * assistant runs for that tier. `tiers` is ordered cheapest → strongest (the order
  * a failing output escalates in). A `null` model means "the assistant's default".
  *
- *   { "tiers": ["steward", "executor", …],
- *     "assistants": { "claude": { "steward": "haiku", … }, "opencode": { … } } }
+ *   tiers: [steward, executor, …]
+ *   assistants: { claude: { steward: haiku, … }, opencode: { … } }
  */
-const MODEL_MAP_REL = `${SOURCE}/models.jsonc`;
+const MODEL_MAP_REL = `${SOURCE}/models.yaml`;
 let modelMapCache;
 
 function modelMap() {
@@ -535,9 +535,9 @@ function modelMap() {
   if (!existsSync(path)) return (modelMapCache = null);
   let data;
   try {
-    data = JSON.parse(stripJsonc(readFileSync(path, "utf8")));
+    data = parseYaml(readFileSync(path, "utf8"));
   } catch (error) {
-    console.error(`agents-sync: ${MODEL_MAP_REL} is not valid JSONC: ${error.message}`);
+    console.error(`agents-sync: ${MODEL_MAP_REL} is not valid YAML: ${error.message}`);
     process.exit(2);
   }
   const errors = [];
@@ -996,15 +996,15 @@ function ensureInstructionsBlock(file, ruleEntries) {
   results.generated++;
 }
 
-/** Renders `.mcp.jsonc` into `.mcp.json`, which Claude Code reads (it ignores .jsonc). */
+/** Renders `.mcp.yaml` into `.mcp.json`, which Claude Code reads (it reads only strict JSON). */
 function ensureMcpJson() {
-  const source = join(ROOT, ".mcp.jsonc");
+  const source = join(ROOT, ".mcp.yaml");
   if (!existsSync(source)) return;
   let rendered;
   try {
-    rendered = `${JSON.stringify(JSON.parse(stripJsonc(readFileSync(source, "utf8"))), null, 2)}\n`;
+    rendered = `${JSON.stringify(parseYaml(readFileSync(source, "utf8")), null, 2)}\n`;
   } catch (error) {
-    results.broken.push(`.mcp.jsonc: ${error.message}`);
+    results.broken.push(`.mcp.yaml: ${error.message}`);
     return;
   }
   const target = join(ROOT, ".mcp.json");
@@ -1014,7 +1014,7 @@ function ensureMcpJson() {
   }
   if (CHECK) {
     results.drift.push(
-      `.mcp.json: ${existsSync(target) ? "stale" : "missing"} (generated from .mcp.jsonc)`,
+      `.mcp.json: ${existsSync(target) ? "stale" : "missing"} (generated from .mcp.yaml)`,
     );
     return;
   }
