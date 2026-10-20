@@ -1,0 +1,55 @@
+---
+title: "0145 — Tokens are defineToken values; container-backed global helpers are banned"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0094](/adr/0094-decorators-only-authoring), decision 1 (tokens are values);
+  [0005](/adr/0005-di-container-and-legacy-decorators), decisions 2 and 4; and the support row of
+  [0084](/adr/0084-figentra-os-package-port-plan).
+</Note>
+
+## Context
+
+Injection tokens were string or symbol constants chosen per package (gap B20). The owner's answer (mem L546, 2026-10-20) picks
+`defineToken<T>()` and a `define*` family. On 2026-10-20 the owner also set the declaration rule: decorators annotate code, and
+`define*` functions create values. `definePermissions` is one of those values. Separately, the owner banned container-backed global
+helpers and kept plain utilities (mem L548, L555).
+
+## Decision
+
+1. **Tokens.** `defineToken<T>()` returns a typed, namespaced `Symbol.for` value. Class tokens are allowed. String tokens are not.
+   Tokens are values, not authored concepts ([0094](/adr/0094-decorators-only-authoring) is clarified).
+2. **The define family.** `define*` functions create values, and decorators annotate code. The family is:
+   `defineToken`, `defineConfig`, `definePermissions`, `defineEvents`, `defineMeters`, `defineEntitlements`, `defineSkill` and
+   `definePrompts`. `definePermissions` builds the one permission value each module declares; the catalogue is in
+   [0132](/adr/0132-permissions-catalogue-and-policy-providers).
+3. **Helpers.** `app()`, `config()` and `logger()` are banned everywhere. Dependencies come by injection.
+4. **Utilities.** Pure utilities (`Str`, `Arr`, `Num`, `DateTime`) are plain imported functions, with no injection.
+5. **Stateful code.** Anything stateful, such as config, the logger or the clock in testable code, is injected.
+6. The forRoot table of audit 3.3 is folded into [0143](/adr/0143-container-scopes-registration-lifecycle-and-testing).
+
+## Consequences
+
+- Code that calls `app()` or `config()` fails review. A migration is needed where it exists.
+- Tests replace injected dependencies, not globals.
+- Every `define*` value has one name in the family, so a reader finds the value by the verb.
+
+## Enforcement
+
+planned — `packages/tooling/oxlint/boundaries.jsonc` bans the `app`, `config` and `logger` helper imports. The token and define
+family rules have no check yet.
+
+## Alternatives
+
+- String tokens: rejected by the owner.
+- A `@Permissions` class with no `definePermissions` value: rejected, the define rule applies.
+
+## Supersedes and sources
+
+Supersedes: none.
+
+Amends: [0094](/adr/0094-decorators-only-authoring) decision 1, [0005](/adr/0005-di-container-and-legacy-decorators) decisions 2 and 4,
+[0084](/adr/0084-figentra-os-package-port-plan) (support row). Sources: owner answers B20 (`stackra-decisions-2026-10-19.md` L546),
+Q10 (L548), the clarified utility rule (L555), and the owner's declaration rule and define family (2026-10-20). Contradiction C-04 is
+resolved: `definePermissions` is in the family.

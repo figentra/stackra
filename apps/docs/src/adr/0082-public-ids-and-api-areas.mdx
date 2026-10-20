@@ -1,7 +1,12 @@
 ---
 title: "0082 — Public ids are a prefix plus base32 of one UUIDv7; four API areas"
-description: "Proposed · 2026-10-19"
+description: "Accepted, amended by 0135 · 2026-10-20"
 ---
+
+<Note>
+  Amended and accepted by [0135](/adr/0135-public-id-format): the public id format is fixed there.
+  The four API areas stand.
+</Note>
 
 ## Context
 
@@ -13,12 +18,12 @@ description: "Proposed · 2026-10-19"
 2. **The public id is the entity prefix plus the base32 encoding of that UUIDv7** (`user_<base32>`). It is derived on the way out and decoded on the way in. The prefix is registered per entity, and raw UUIDs never leave a service.
 3. **Every endpoint belongs to exactly one of four API areas**:
 
-   | Area | Audience |
-   | --- | --- |
-   | `public` | Callers without a session (the only area where `auth: false` is expected) |
-   | `app` | A tenant's end users |
-   | `admin` | A tenant's administrators |
-   | `platform` | Platform operators; every call is audited |
+   | Area       | Audience                                                                  |
+   | ---------- | ------------------------------------------------------------------------- |
+   | `public`   | Callers without a session (the only area where `auth: false` is expected) |
+   | `app`      | A tenant's end users                                                      |
+   | `admin`    | A tenant's administrators                                                 |
+   | `platform` | Platform operators; every call is audited                                 |
 
 4. Each area has its own gate chain ([0081](/adr/0081-gate-chain-configurable-per-app)).
 

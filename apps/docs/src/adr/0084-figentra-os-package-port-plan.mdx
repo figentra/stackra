@@ -3,6 +3,16 @@ title: "0084 — Figentra OS package port plan"
 description: "Proposed · 2026-10-19"
 ---
 
+<Note>
+  Amended by [0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned): the
+  support row is restated there.
+</Note>
+
+<Note>
+  Amended by [0127](/adr/0127-package-categories-including-infrastructure): the category list, and
+  the Vite plugin is @stackra/vite-plugin in developer.
+</Note>
+
 ## Context
 
 Figentra OS (`@figentra-os/*`, 55 packages in the same ten categories) is Stackra's ancestor. The owner decided, package by package, what to port. Some packages port as they are, some are adapted or redesigned, some start fresh, some are skipped, and some become Pro. Each port still goes through the gate (spec, review), and the code is relicensed to MIT as it is ported ([0024](/adr/0024-mit-license-with-exclusions)). This page is the plan. Each package's design ADR is written when it lands ([0018](/adr/0018-framework-design-record)).

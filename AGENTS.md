@@ -13,6 +13,7 @@ global rules. Full guides: `apps/docs` (`pnpm docs`). Every member keeps its cod
 | `services/<name>`                                          | `@figentra/service-<name>` — one member per service (`example`, `health`), entry `src/main.ts`                                                            | `tier:service` |
 | `tools/scripts`                                            | `validate-repository.mjs` (+ test); `scaffold.mjs` (+ test) — `pnpm new <kind> <name>`, templates in `tools/scaffold`                                     | —              |
 | `.agents/hooks`, `.claude/settings.json`, `opencode.jsonc` | agent hooks and config                                                                                                                                    | —              |
+| `.notes`                                                   | private owner-only submodule (`git submodule update --init .notes`); CI and agents never need it; never reference its contents from public docs           | —              |
 
 Rules every member follows (`pnpm validate` enforces them):
 
@@ -148,7 +149,7 @@ An action exposes itself over HTTP with `@AsEndpoint`. `@Controller` is only for
 package docs.
 
 ```typescript
-@Action({ key: "user.get@1", input: GetUserInput, output: UserOutput, permission: "user:read" })
+@Action({ key: "user.get@1", input: GetUserInput, output: UserOutput, permission: "identity.user.read" })
 @AsEndpoint({ method: "GET", path: "/users/:id" })
 async getUser(input: GetUserInput): Promise<UserOutput> {
   // ...
@@ -218,7 +219,7 @@ action declares that it is idempotent-keyed and the pipeline deduplicates; do no
 **Versioned events, not endpoints.**
 
 - Endpoints are immutable (no `/v1`, `/v2`)
-- Events are versioned (`user.created.v1`, `user.created.v2`)
+- Events are versioned (`identity.user.created.v1`, `identity.user.created.v2`)
 - New endpoint → new path
 - API versions are dates: the `Stackra-Version` header, pinned per API key or OAuth app, through the dormant `@stackra/versioning` package. Paths stay unversioned (`/adr/0118-api-versioning-dormant-package`)
 
@@ -541,6 +542,7 @@ stackra/
 └── tools/
     ├── scripts/            # validation, scaffolding
     └── scaffold/           # Templates
+.notes/                     # private owner-only submodule; never referenced from public docs
 ```
 
 #### Tier Tags

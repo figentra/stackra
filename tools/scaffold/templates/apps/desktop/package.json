@@ -19,6 +19,7 @@
     "clean": "rm -rf dist release coverage .turbo"
   },
   "devDependencies": {
+    "@stackra/brand": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
