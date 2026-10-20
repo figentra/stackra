@@ -25,7 +25,7 @@ The constitution is the law. The owner's answers of 2026-10-20 and the ADRs of w
    - **HTTP and events.** Event names carry no service prefix ([0141](/adr/0141-integration-event-names-and-envelope)). The auth flag comes from the action's
      `auth` option and its area ([0135](/adr/0135-public-id-format)). PUT is an idempotent transition. Errors follow the envelope in [0140](/adr/0140-error-envelope-and-error-kinds).
    - **Secrets.** Production secrets come from Infisical, and runway syncs them into the runtime store ([0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets)).
-     This replaces the "no sync" line of [0009](/adr/0009-secrets-two-mechanisms), decision 8.
+     This overrides decision 8 of [0009](/adr/0009-secrets-two-mechanisms), which recorded Secret Sync as an alternative not adopted.
    - **Delegation.** Model policy follows [0193](/adr/0193-agents-and-model-policy). The economy, standard and frontier tiers are replaced.
    - **Boundaries.** Tokens and typed config are `define*` values, the one carve-out ([0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned)).
 2. **Projected copies regenerated.** `.specify/memory/constitution.md` and `AGENTS.md` are regenerated with `pnpm agents:sync`, in the same change.
