@@ -165,10 +165,10 @@ settings:
 catalogs:
   build:
     tsdown:
-      specifier: ^0.23.0
+      specifier: 0.23.1
       version: 0.23.1
     turbo:
-      specifier: ^2.11.7
+      specifier: 2.11.9
       version: 2.11.9
     typescript:
       specifier: 7.0.2
@@ -183,56 +183,56 @@ catalogs:
       version: 4.2.985
   frontend:
     tailwindcss:
-      specifier: ^4.3.3
+      specifier: 4.3.3
       version: 4.3.3
   mobile:
     '@bottom-tabs/react-navigation':
-      specifier: ^1.4.0
+      specifier: 1.4.0
       version: 1.4.0
     '@gorhom/bottom-sheet':
-      specifier: ^5.2.14
+      specifier: 5.2.14
       version: 5.2.14
     '@react-navigation/native':
-      specifier: ^7.5.0
+      specifier: 7.5.1
       version: 7.5.1
     '@react-navigation/native-stack':
-      specifier: ^7.20.0
+      specifier: 7.21.0
       version: 7.21.0
     '@types/react':
-      specifier: ~19.2.4
+      specifier: 19.2.18
       version: 19.2.18
     babel-preset-expo:
-      specifier: ~57.0.13
+      specifier: 57.0.16
       version: 57.0.16
     expo:
-      specifier: ~57.0.25
+      specifier: 57.0.30
       version: 57.0.30
     expo-blur:
-      specifier: ~57.0.3
+      specifier: 57.0.3
       version: 57.0.3
     expo-constants:
-      specifier: ~57.0.19
+      specifier: 57.0.22
       version: 57.0.22
     expo-dev-client:
-      specifier: ~57.0.19
+      specifier: 57.0.20
       version: 57.0.20
     expo-glass-effect:
-      specifier: ~57.0.4
+      specifier: 57.0.4
       version: 57.0.4
     expo-linking:
-      specifier: ~57.0.11
+      specifier: 57.0.13
       version: 57.0.13
     expo-splash-screen:
-      specifier: ~57.0.9
+      specifier: 57.0.10
       version: 57.0.10
     expo-status-bar:
-      specifier: ~57.0.1
+      specifier: 57.0.1
       version: 57.0.1
     expo-system-ui:
-      specifier: ~57.0.4
+      specifier: 57.0.4
       version: 57.0.4
     heroui-native:
-      specifier: ^1.0.10
+      specifier: 1.0.10
       version: 1.0.10
     react:
       specifier: 19.2.3
@@ -244,10 +244,10 @@ catalogs:
       specifier: 0.86.3
       version: 0.86.3
     react-native-bottom-tabs:
-      specifier: ^1.4.0
+      specifier: 1.4.0
       version: 1.4.0
     react-native-gesture-handler:
-      specifier: ~2.32.0
+      specifier: 2.32.0
       version: 2.32.0
     react-native-reanimated:
       specifier: 4.5.1
@@ -256,7 +256,7 @@ catalogs:
       specifier: 5.7.0
       version: 5.7.0
     react-native-screens:
-      specifier: ~4.26.2
+      specifier: 4.26.2
       version: 4.26.2
     react-native-svg:
       specifier: 15.15.4
@@ -265,13 +265,13 @@ catalogs:
       specifier: 0.10.1
       version: 0.10.1
     tailwind-merge:
-      specifier: ^3.7.0
+      specifier: 3.7.0
       version: 3.7.0
     tailwind-variants:
-      specifier: ^3.3.1
+      specifier: 3.3.1
       version: 3.3.1
     typescript:
-      specifier: ~6.0.3
+      specifier: 6.0.3
       version: 6.0.3
     uniwind:
       specifier: 1.12.1
@@ -281,7 +281,7 @@ catalogs:
       specifier: 5.0.3
       version: 5.0.3
     knip:
-      specifier: ^6.39.0
+      specifier: 6.41.0
       version: 6.41.0
     oxfmt:
       specifier: 0.71.0
@@ -290,23 +290,23 @@ catalogs:
       specifier: 1.86.0
       version: 1.86.0
     vitest:
-      specifier: ^5.0.3
+      specifier: 5.0.5
       version: 5.0.5
   release:
     '@changesets/changelog-git':
-      specifier: ^1.0.0
+      specifier: 1.0.0
       version: 1.0.0
     '@changesets/cli':
-      specifier: ^3.0.3
+      specifier: 3.0.3
       version: 3.0.3
     '@commitlint/cli':
-      specifier: ^21.2.3
+      specifier: 21.2.3
       version: 21.2.3
     '@commitlint/config-conventional':
-      specifier: ^21.2.3
+      specifier: 21.2.3
       version: 21.2.3
     lefthook:
-      specifier: ^2.1.16
+      specifier: 2.2.2
       version: 2.2.2
 
 importers:
