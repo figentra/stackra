@@ -1,0 +1,33 @@
+---
+title: "0199 — Developer experience: create-stackra-app, upgrades, stackra dev, docs and the agent kit"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0027](/adr/0027-cli-tools-pinned-in-mise) (the Encore pin) and
+  [0002](/adr/0002-docs-on-mintlify) (the docs information architecture).
+</Note>
+
+## Context
+
+A new developer needs one command to start, one command to upgrade, and a dev loop that runs the whole stack. The owner's answers DX1 to DX9 (mem L565–567, 2026-10-20) and the ZITADEL dev container (mem L592) fix these.
+
+## Decision
+
+1. **Scaffold (DX1, DX6 and DX9).** `create-stackra-app` scaffolds `runway.yaml` with its topology, the CI workflows, the agent kit and a devcontainer. The reference services are its examples. The versioned agent kit installs through `stackra agents sync`.
+2. **Upgrades (DX2).** `stackra upgrade` applies codemods written with ast-grep and ts-morph.
+3. **Dev loop (DX3 and DX4).** `stackra dev` runs gen in watch mode, `encore run`, and a small compose file. The compose file includes a ZITADEL container with a seeded instance (mem L592). The docs are one Mintlify site with tabs.
+4. **Encore pin (DX8).** The Encore CLI is pinned through mise, and the `encore.dev` catalog is used (gap B13).
+
+## Consequences
+
+- A new developer runs one command, and gets the same stack the tests use.
+- A version bump is applied by `stackra upgrade`, so the codemods carry the change.
+
+## Enforcement
+
+planned — `stackra upgrade` is tested against the codemod fixtures; the dev compose file is checked by the smoke test in CI.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0027](/adr/0027-cli-tools-pinned-in-mise), [0002](/adr/0002-docs-on-mintlify). Sources: owner answers DX1–DX9 (`stackra-decisions-2026-10-19.md` L565–567, 2026-10-20); ZITADEL dev container (L592).

@@ -1,0 +1,36 @@
+---
+title: "0197 — HeroUI Pro is used only in our own apps until an OEM agreement exists"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0113](/adr/0113-heroui-pro-distribution). Closes gap C14 and contradiction C-22.
+</Note>
+
+## Context
+
+[0113](/adr/0113-heroui-pro-distribution) (Accepted) let HeroUI Pro reach customers through a mirror bundle and a bring-your-own-key option. The owner's answer OR9 (mem L579, 2026-10-20) suspends that until the OEM request (STA-41) is answered.
+
+## Decision
+
+1. **Scope.** HeroUI Pro is used only in Stackra's own apps, until an OEM agreement exists (OR9, STA-41).
+2. **Packages.** Free packages never depend on Pro components (mem L579).
+3. **Suspended.** The mirror bundle and the bring-your-own-key option are suspended.
+4. **Access.** Our apps and CI keep `HEROUI_PERSONAL_TOKEN`.
+
+## Consequences
+
+- A customer's app built on Stackra gets the free HeroUI components only.
+- Lifting the restriction is a new ADR, after STA-41.
+
+## Enforcement
+
+planned — the validator rejects a free package that depends on a Pro component.
+
+## Open questions
+
+1. STA-41, the HeroUI OEM answer. This ADR waits for it (register thin item 20).
+
+## Supersedes and sources
+
+Supersedes: [0113](/adr/0113-heroui-pro-distribution). Sources: owner answer OR9 (`stackra-decisions-2026-10-19.md` L579, 2026-10-20).
