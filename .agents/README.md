@@ -4,16 +4,17 @@ One canonical tree, projected into each assistant's own directory by
 [`tools/scripts/agents-sync.mjs`](../tools/scripts/agents-sync.mjs) (`pnpm agents:sync`). Edit here; never edit the
 projection ([ADR 0016](../apps/docs/src/adr/0016-agents-source-of-truth.mdx)).
 
-| Entry                 | Holds                                                         | Projected to                                                             |
-| --------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| [`rules/`](rules)     | always-on and file-scoped repository rules                    | rendered into the marked block of the root `AGENTS.md`                   |
-| [`agents/`](agents)   | subagent definitions, neutral frontmatter, no model ids       | generated into `.claude/agents/` and `.opencode/agents/`                 |
-| [`hooks/`](hooks)     | the guard, hint and context hooks                             | symlinked into `.claude/hooks/`                                          |
-| [`skills/`](skills)   | invocable skills (`<name>/SKILL.md`)                          | symlinked into `.claude/skills/`; OpenCode reads `.agents/skills` itself |
-| [`specs/`](specs)     | spec-kit specs, one `sta-<n>-<slug>/` folder per Linear issue | read in place, not projected                                             |
-| [`speckit/`](speckit) | the Stackra spec-kit preset source                            | installed into `.specify/presets/` by `pnpm speckit:sync`                |
-| `models.yaml`         | which model each assistant runs for each agent tier           | read by agents-sync                                                      |
-| `routing.yaml`        | task type → executor, model and agent; the daily OpenCode cap | read by `pnpm delegate` and `pnpm ai:spend`                              |
+| Entry                     | Holds                                                         | Projected to                                                             |
+| ------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| [`rules/`](rules)         | always-on and file-scoped repository rules                    | rendered into the marked block of the root `AGENTS.md`                   |
+| [`agents/`](agents)       | subagent definitions, neutral frontmatter, no model ids       | generated into `.claude/agents/` and `.opencode/agents/`                 |
+| [`hooks/`](hooks)         | the guard, hint and context hooks                             | symlinked into `.claude/hooks/`                                          |
+| [`skills/`](skills)       | invocable skills (`<name>/SKILL.md`)                          | symlinked into `.claude/skills/`; OpenCode reads `.agents/skills` itself |
+| [`reference/`](reference) | fenced upstream material (the Encore skills, ADR 0258)        | not projected; read on purpose by `compiler-engineer`                    |
+| [`specs/`](specs)         | spec-kit specs, one `sta-<n>-<slug>/` folder per Linear issue | read in place, not projected                                             |
+| [`speckit/`](speckit)     | the Stackra spec-kit preset source                            | installed into `.specify/presets/` by `pnpm speckit:sync`                |
+| `models.yaml`             | which model each assistant runs for each agent tier           | read by agents-sync                                                      |
+| `routing.yaml`            | task type → executor, model and agent; the daily OpenCode cap | read by `pnpm delegate` and `pnpm ai:spend`                              |
 
 A folder's `README.md` is documentation and is never projected.
 

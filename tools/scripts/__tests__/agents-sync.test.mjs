@@ -462,6 +462,26 @@ test("a route that sends an agent to OpenCode when the agent is not projected th
   });
 });
 
+test("a skill that teaches rejected technology fails --lint unless an allowance names the reason", () => {
+  withFixture({ "reviewer.md": READ_ONLY }, (root) => {
+    const skill = (name, text) => {
+      mkdirSync(join(root, ".agents/skills", name, "references"), { recursive: true });
+      writeFileSync(join(root, ".agents/skills", name, "SKILL.md"), `# ${name}\n`);
+      writeFileSync(join(root, ".agents/skills", name, "references/more.md"), text);
+    };
+    skill("orm-tips", "Define tables with drizzle-orm and run `drizzle-kit push`.\n");
+    skill("vitest", "The API is Jest-compatible: `vi.fn()` mirrors jest.fn().\n");
+    const fenced = join(root, ".agents/reference/encore/encore-api");
+    mkdirSync(fenced, { recursive: true });
+    writeFileSync(join(fenced, "SKILL.md"), "import { api } from 'encore.dev/api'\n");
+    const r = run(root, "--lint");
+    assert.equal(r.code, 1);
+    assert.match(r.out, /\.agents\/skills\/orm-tips: teaches 'drizzle', which is rejected/);
+    assert.doesNotMatch(r.out, /skills\/vitest: teaches/);
+    assert.doesNotMatch(r.out, /encore-api/);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Body defects: broken references and commands the agent cannot run
 // ---------------------------------------------------------------------------
