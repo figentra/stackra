@@ -1,0 +1,35 @@
+---
+title: "0211 — Memberships and support access"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>Amends [0098](/adr/0098-actions-are-the-unit): the actor gains the acting-as marker.</Note>
+
+## Context
+
+Staff and customers belong to tenants, and a support engineer sometimes needs to act inside a customer's tenant. The owner's answers (mem L596–602, T4 L634, C-03, 2026-10-20) split membership from grants, and split support access across four services so no one service can do it alone.
+
+## Decision
+
+1. **Membership.** Tenancy owns membership: invitations, switching and the membership states. IAM owns the grants. Removing a membership emits an event, and IAM removes that member's grants.
+2. **Support access, split (L597–602).**
+   - IAM issues a time-boxed, revocable support grant.
+   - Identity exchanges tokens (ZITADEL token exchange) with an "acting as" marker, and only while the grant exists.
+   - A rotating support PIN verifies the support engineer.
+   - The support service orchestrates the flow.
+   - The audit and security-centre services record and alert.
+3. **Limits.** The support mechanism keeps the limits of the earlier design: 30 minutes, read-only, audited, and the user is notified. This replaces the Better Auth admin plugin of PP14 (contradiction C-03).
+4. **Actor.** The actor gains the acting-as marker, so every audit record says who acted for whom.
+
+## Consequences
+
+- No single service can grant itself access to a customer.
+- A customer sees every support session, because the user is always notified.
+
+## Enforcement
+
+planned — the grant expiry is enforced by IAM; the acting-as marker is checked by the audit tests.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0098](/adr/0098-actions-are-the-unit) (actor). Sources: owner answers (`stackra-decisions-2026-10-19.md` L596–602, L634, 2026-10-20); contradiction C-03.
