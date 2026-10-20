@@ -14,26 +14,26 @@ Run it with `--dry-run` first to see what it would write. Then run `pnpm install
 
 ## Kinds
 
-| Kind | Template | Lands in | Pick it for |
-| --- | --- | --- | --- |
-| `service` | `templates/services/service` | `services/<name>` | A backend service: plain TypeScript, root module, no Encore file |
-| `package` | `templates/packages/package` + `templates/packages/entries/*` | `packages/<category>/<name>` | Any library, entries-first |
-| `tooling` | `templates/packages/tooling` | `packages/tooling/<name>` | A shared config preset, data only |
-| `app:console` | `templates/apps/console` | `apps/<name>` | A panel app: Vite, React Router 7, HeroUI; port from 3710 |
-| `app:mobile` | `templates/apps/mobile` | `apps/<name>` | iOS and Android: Expo SDK 57, React Navigation, HeroUI Native; no hyphens in the name |
-| `app:desktop` | `templates/apps/desktop` | `apps/<name>` | An Electron app packaged by electron-builder |
-| `app:docs` | `templates/apps/docs` | `apps/<name>` | A Mintlify site; port from 3334 |
+| Kind          | Template                                                      | Lands in                     | Pick it for                                                                           |
+| ------------- | ------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------- |
+| `service`     | `templates/services/service`                                  | `services/<name>`            | A backend service: plain TypeScript, root module, no Encore file                      |
+| `package`     | `templates/packages/package` + `templates/packages/entries/*` | `packages/<category>/<name>` | Any library, entries-first                                                            |
+| `tooling`     | `templates/packages/tooling`                                  | `packages/tooling/<name>`    | A shared config preset, data only                                                     |
+| `app:console` | `templates/apps/console`                                      | `apps/<name>`                | A panel app: Vite, React Router 7, HeroUI; port from 3710                             |
+| `app:mobile`  | `templates/apps/mobile`                                       | `apps/<name>`                | iOS and Android: Expo SDK 57, React Navigation, HeroUI Native; no hyphens in the name |
+| `app:desktop` | `templates/apps/desktop`                                      | `apps/<name>`                | An Electron app packaged by electron-builder                                          |
+| `app:docs`    | `templates/apps/docs`                                         | `apps/<name>`                | A Mintlify site; port from 3334                                                       |
 
 `--category` is required for `package` and must be one of: foundation, application, communication, cross-cutting, data, developer, experience, runtime, security, state. Names are kebab-case. There is no Next.js kind.
 
 ## Flags
 
-| Flag | Does |
-| --- | --- |
-| `--entries contracts,node,react,native,testing,devtools` | `package` only: the entries besides core (`.`). `none` for core only. Without the flag, a terminal is asked; a script gets core only. |
-| `--repo <path>` | Scaffold into another monorepo (for example the private figentra-os). Templates come from this repo; the `LICENSE` comes from the target, or from this repo if the target has none. |
-| `--description`, `--title`, `--port` | Fill the tokens; the port defaults to the next free one in the kind's range. |
-| `--dry-run` | Print the file list, write nothing. |
+| Flag                                                     | Does                                                                                                                                                                                |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--entries contracts,node,react,native,testing,devtools` | `package` only: the entries besides core (`.`). `none` for core only. Without the flag, a terminal is asked; a script gets core only.                                               |
+| `--repo <path>`                                          | Scaffold into another monorepo (for example the private figentra-os). Templates come from this repo; the `LICENSE` comes from the target, or from this repo if the target has none. |
+| `--description`, `--title`, `--port`                     | Fill the tokens; the port defaults to the next free one in the kind's range.                                                                                                        |
+| `--dry-run`                                              | Print the file list, write nothing.                                                                                                                                                 |
 
 Every flag is non-interactive, so agents and CI run `pnpm new` without a prompt.
 
@@ -41,15 +41,15 @@ Every flag is non-interactive, so agents and CI run `pnpm new` without a prompt.
 
 The scaffold replaces these tokens in file contents **and** path names. Other double-brace text (JSX style objects) is left alone.
 
-| Token | Value |
-| --- | --- |
-| `{{NAME}}` | kebab-case short name |
-| `{{PASCAL}}` | PascalCase of the name |
-| `{{TITLE}}` | Title Case name, or `--title` |
+| Token             | Value                                                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------------------------- |
+| `{{NAME}}`        | kebab-case short name                                                                                 |
+| `{{PASCAL}}`      | PascalCase of the name                                                                                |
+| `{{TITLE}}`       | Title Case name, or `--title`                                                                         |
 | `{{DESCRIPTION}}` | the `--description` sentence; becomes `description` in `package.json` and opens the README and AGENTS |
-| `{{PORT}}` | dev port, the next free one in the kind's range (or `--port`) |
-| `{{CATEGORY}}` | the `packages/` folder |
-| `{{ENTRIES}}` | the package's tsdown entry map, built from `--entries` |
+| `{{PORT}}`        | dev port, the next free one in the kind's range (or `--port`)                                         |
+| `{{CATEGORY}}`    | the `packages/` folder                                                                                |
+| `{{ENTRIES}}`     | the package's tsdown entry map, built from `--entries`                                                |
 
 `TITLE` and `DESCRIPTION` are JSON-escaped when written into `.json` and `.jsonc` files. Template files hold tokens, so oxfmt and oxlint skip `tools/scaffold/templates/**`; the generator formats what it renders.
 
@@ -72,16 +72,18 @@ When you add a kind, add a row to the test's case list and to `tools/scaffold/RE
 Moving or renaming a file or folder means rewriting every import and link that points at it. Do that with a codemod, not an editor: a script `git mv`s each path, rewrites every relative specifier and link from the file's new location, prints what it changed and can run with `--dry-run`.
 
 <Note>
-  Status: target. Stackra has no move codemod yet. Port one before the first large restructuring. Until then, move in small steps, run `pnpm typecheck` and `pnpm verify` after each, and never mix a move with a behaviour change in one commit.
+  Status: target. Stackra has no move codemod yet. Port one before the first large restructuring.
+  Until then, move in small steps, run `pnpm typecheck` and `pnpm verify` after each, and never mix
+  a move with a behaviour change in one commit.
 </Note>
 
 ## Checks that back this page
 
-| Rule | Check | State |
-| --- | --- | --- |
-| Every template renders with no token left | `tools/scripts/__tests__/scaffold.test.mjs` | Live |
-| Every rendered member passes the validator's member, service and exports checks | Scaffold test | Live |
-| A service declares `stackra.module` and holds no Encore file | `validate-repository.mjs` (`checkService`) | Live |
-| Moves are scripted | Move codemod | Not built |
+| Rule                                                                            | Check                                       | State     |
+| ------------------------------------------------------------------------------- | ------------------------------------------- | --------- |
+| Every template renders with no token left                                       | `tools/scripts/__tests__/scaffold.test.mjs` | Live      |
+| Every rendered member passes the validator's member, service and exports checks | Scaffold test                               | Live      |
+| A service declares `stackra.module` and holds no Encore file                    | `validate-repository.mjs` (`checkService`)  | Live      |
+| Moves are scripted                                                              | Move codemod                                | Not built |
 
 See also [Structure](/guides/structure), [Packages](/guides/packages) and [Definition of done](/guides/definition-of-done).

@@ -11,7 +11,7 @@ A member is anything `pnpm-workspace.yaml` lists: `apps/*`, `packages/<category>
 | File            | Holds                                                                             |
 | --------------- | --------------------------------------------------------------------------------- |
 | `package.json`  | The manifest fields below; scripts from the [task vocabulary](/guides/tooling)    |
-| `turbo.jsonc`    | `{ "extends": ["//"], "tags": ["tier:<x>"] }` with exactly one tier tag           |
+| `turbo.jsonc`   | `{ "extends": ["//"], "tags": ["tier:<x>"] }` with exactly one tier tag           |
 | `tsconfig.json` | Extends one `@stackra/typescript-config/<preset>` and nothing else                |
 | `README.md`     | What it is, a tasks table of its scripts, the structure of `src/`, how to run it  |
 | `AGENTS.md`     | Where code goes, rules that fail the build, tasks, and a mandatory `## PII` table |
@@ -36,16 +36,16 @@ Presence of the heading is checked; whether the table is still true is a review 
 
 ## `package.json`
 
-| Field         | Rule                                                                                            |
-| ------------- | ----------------------------------------------------------------------------------------------- |
-| `name`        | `@stackra/<name>`; apps `@figentra/<dir>`; services `@figentra/service-<name>`                  |
-| `description` | Non-empty, one sentence                                                                         |
-| `license`     | `"MIT"` ([0024](/adr/0024-mit-license-with-exclusions))                                         |
-| `private`     | `true` until a package is published                                                             |
-| `type`        | `"module"`                                                                                      |
-| `sideEffects` | `false` on every `tier:lib` package                                                             |
+| Field         | Rule                                                                                                                                                                                                                                                   |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `name`        | `@stackra/<name>`; apps `@figentra/<dir>`; services `@figentra/service-<name>`                                                                                                                                                                         |
+| `description` | Non-empty, one sentence                                                                                                                                                                                                                                |
+| `license`     | `"MIT"` ([0024](/adr/0024-mit-license-with-exclusions))                                                                                                                                                                                                |
+| `private`     | `true` until a package is published                                                                                                                                                                                                                    |
+| `type`        | `"module"`                                                                                                                                                                                                                                             |
+| `sideEffects` | `false` on every `tier:lib` package                                                                                                                                                                                                                    |
 | `exports`     | `tier:lib` only: each module entry is `{ "@stackra/source": "./src/….ts", types: "./dist/….d.mts", default: "./dist/….mjs" }`, source condition first; a plain string entry is a static asset ([0025](/adr/0025-packages-publish-to-private-registry)) |
-| dependencies  | `catalog:`, `catalog:<name>` or `workspace:*` only: see [Dependencies](/standards/dependencies) |
+| dependencies  | `catalog:`, `catalog:<name>` or `workspace:*` only: see [Dependencies](/standards/dependencies)                                                                                                                                                        |
 
 Key order: `name`, `version`, `private`, `description`, `license`, `files`, `type`, `main` (Expo only), `sideEffects`, `imports`, `exports`, `scripts`, `dependencies`, `devDependencies`. Order is convention, not checked.
 
@@ -64,11 +64,11 @@ The direction rule is a law: see [Boundaries](/constitution/boundaries) and [ADR
 
 ## Kinds
 
-| Tier           | Kinds                                                                                                          |
-| -------------- | -------------------------------------------------------------------------------------------------------------- |
-| `tier:app`     | `app:console`, `app:mobile`, `app:desktop`, `app:docs`                                                         |
-| `tier:lib`     | `package`, entries-first (see [Packages](/standards/packages), ADR 0126)                                       |
-| `tier:config`  | `tooling`                                                                                                      |
+| Tier           | Kinds                                                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `tier:app`     | `app:console`, `app:mobile`, `app:desktop`, `app:docs`                                                                   |
+| `tier:lib`     | `package`, entries-first (see [Packages](/standards/packages), ADR 0126)                                                 |
+| `tier:config`  | `tooling`                                                                                                                |
 | `tier:service` | `service`: `services/<name>`, entry `src/main.ts`, root module in `stackra.module` (see [Services](/standards/services)) |
 
 ## Scaffolding
