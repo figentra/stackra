@@ -15,6 +15,7 @@ interface Resolved {
   }[];
 }
 
+// @covers sta-173:FR-001 sta-173:FR-002 sta-173:P-001 sta-173:P-002
 describe("@stackra/brand assets", () => {
   it("the TS colours match the kit's resolved Stackra tokens", () => {
     const resolved = (JSON.parse(read("tokens/resolved.json")) as Resolved).tokens;
