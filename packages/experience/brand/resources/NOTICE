@@ -1,9 +1,0 @@
-Stackra brand resources — all rights reserved, with two exceptions below.
-
-Copyright (c) 2026 Figentra Technologies FZ-LLC. The brand assets in this folder (logos/, marks/, app-icon/,
-favicon/, splash/, icons/, patterns/, illustrations/, email/) are NOT covered by the MIT licence in LICENSE
-(ADR 0024, decision 2). You may not use, copy or modify them except to refer to the Stackra project unmodified.
-
-Exceptions:
-- fonts/ keeps its own licence: the SIL Open Font License texts beside the files (OFL-*.txt).
-- heroui/, tokens/ and fonts/fonts.css are design tokens and stylesheets, MIT like the rest of the package code.

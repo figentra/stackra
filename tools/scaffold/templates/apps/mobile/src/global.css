@@ -2,6 +2,6 @@
 @import "uniwind";
 
 @import "heroui-native/styles";
-@import "@stackra/brand/resources/heroui/native.css";
+@import "@stackra/brand/assets/heroui/native.css";
 
 @source "../node_modules/heroui-native/lib";

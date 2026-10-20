@@ -3,8 +3,8 @@ import { fileURLToPath } from "node:url";
 
 import { colors } from "..";
 
-const resources = fileURLToPath(new URL("../../resources/", import.meta.url));
-const read = (path: string) => readFileSync(resources + path, "utf8");
+const assets = fileURLToPath(new URL("../../assets/", import.meta.url));
+const read = (path: string) => readFileSync(assets + path, "utf8");
 const kebab = (name: string) => name.replace(/([a-z])([A-Z0-9])/g, "$1-$2").toLowerCase();
 
 interface Resolved {
@@ -15,7 +15,7 @@ interface Resolved {
   }[];
 }
 
-describe("@stackra/brand resources", () => {
+describe("@stackra/brand assets", () => {
   it("the TS colours match the kit's resolved Stackra tokens", () => {
     const resolved = (JSON.parse(read("tokens/resolved.json")) as Resolved).tokens;
     const byName = new Map(Object.entries(colors).map(([name, token]) => [kebab(name), token]));
@@ -37,12 +37,12 @@ describe("@stackra/brand resources", () => {
   });
 
   it("every @font-face file exists beside its OFL licence", () => {
-    const css = read("fonts/fonts.css");
+    const css = read("public/fonts/fonts.css");
     const files = [...css.matchAll(/url\("\.\/([^"]+)"\)/g)].map((m) => m[1]);
     expect(files).toHaveLength(10);
-    for (const file of files) expect(existsSync(`${resources}fonts/${file}`), file).toBe(true);
+    for (const file of files) expect(existsSync(`${assets}public/fonts/${file}`), file).toBe(true);
     for (const licence of ["OFL-Geist.txt", "OFL-IBMPlexSansArabic.txt"])
-      expect(existsSync(`${resources}fonts/${licence}`), licence).toBe(true);
+      expect(existsSync(`${assets}public/fonts/${licence}`), licence).toBe(true);
   });
 
   it("the brand assets carry their all-rights-reserved NOTICE (ADR 0024)", () => {

@@ -7,7 +7,7 @@
   "files": [
     "src",
     "dist",
-    "resources",
+    "assets",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
@@ -25,11 +25,11 @@
       "types": "./dist/tokens.d.mts",
       "default": "./dist/tokens.mjs"
     },
-    "./tokens.css": "./resources/heroui/web.css",
+    "./tokens.css": "./assets/heroui/web.css",
     "./tokens.json": "./src/tokens/tokens.json",
-    "./logos": "./resources/logos",
-    "./fonts": "./resources/fonts",
-    "./resources/*": "./resources/*"
+    "./logos": "./assets/public/logos",
+    "./fonts": "./assets/public/fonts",
+    "./assets/*": "./assets/*"
   },
   "scripts": {
     "build": "tsdown",

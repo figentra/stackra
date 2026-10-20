@@ -205,7 +205,7 @@ export const MUST_STAY_JSON = [
   [/^\.changeset\/config\.json$/, "@changesets/config JSON.parse on a fixed path"],
   [/^\.github\/branch-protection\.json$/, "GitHub REST API payload"],
   [
-    /^packages\/experience\/brand\/resources\/tokens\/[\w-]+\.json$/,
+    /^packages\/experience\/brand\/assets\/tokens\/[\w-]+\.json$/,
     "brand-kit token output, vendored byte-for-byte; consumers JSON.parse it",
   ],
   [/(^|\/)src\/docs\.json$/, "Mintlify parses docs.json with JSON.parse"],
@@ -299,8 +299,8 @@ function main() {
   report("", checkTestPlacement(repoFiles));
   report("", checkJsonConfigs(repoFiles));
   // ADR 0024 decision 2: the brand marks carry their all-rights-reserved NOTICE.
-  if (!existsSync(join(ROOT, "packages/experience/brand/resources/NOTICE")))
-    report("packages/experience/brand", ["resources/NOTICE missing (ADR 0024)"]);
+  if (!existsSync(join(ROOT, "packages/experience/brand/assets/NOTICE")))
+    report("packages/experience/brand", ["assets/NOTICE missing (ADR 0024)"]);
   for (const { path } of members) {
     const dir = relative(ROOT, path);
     const at = (f) => (existsSync(join(path, f)) ? readJsonc(join(path, f)) : undefined);

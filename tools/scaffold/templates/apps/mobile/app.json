@@ -6,7 +6,7 @@
     "version": "0.0.1",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "icon": "./node_modules/@stackra/brand/resources/app-icon/app-icon-ios-1024.png",
+    "icon": "./node_modules/@stackra/brand/assets/public/app-icon/app-icon-ios-1024.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.figentra.stackra.{{NAME}}",
@@ -16,7 +16,7 @@
       "package": "com.figentra.stackra.{{NAME}}",
       "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
-        "foregroundImage": "./node_modules/@stackra/brand/resources/app-icon/app-icon-android-foreground-1024.png",
+        "foregroundImage": "./node_modules/@stackra/brand/assets/public/app-icon/app-icon-android-foreground-1024.png",
         "backgroundColor": "#FFFFFF"
       }
     },
@@ -25,11 +25,11 @@
       [
         "expo-splash-screen",
         {
-          "image": "./node_modules/@stackra/brand/resources/splash/st-tile-light-256.png",
+          "image": "./node_modules/@stackra/brand/assets/public/splash/st-tile-light-256.png",
           "imageWidth": 96,
           "backgroundColor": "#F5F6F3",
           "dark": {
-            "image": "./node_modules/@stackra/brand/resources/splash/st-tile-dark-256.png",
+            "image": "./node_modules/@stackra/brand/assets/public/splash/st-tile-dark-256.png",
             "backgroundColor": "#0B0D0F"
           }
         }
