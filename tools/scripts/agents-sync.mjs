@@ -181,12 +181,12 @@ function selectAssistants() {
   return detected;
 }
 
-/** Entries under `.agents/<kind>/`, ignoring dotfiles (`.gitkeep` and friends). */
+/** Entries under `.agents/<kind>/`, ignoring dotfiles (`.gitkeep` and friends) and the folder's README.md. */
 function sourceEntries(kind) {
   const dir = join(ROOT, SOURCE, kind);
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
-    .filter((name) => !name.startsWith("."))
+    .filter((name) => !name.startsWith(".") && name.toLowerCase() !== "readme.md")
     .toSorted();
 }
 
@@ -1123,7 +1123,7 @@ function main() {
 
   ensureConstitution();
   ensureMcpJson();
-  const ruleSources = sourceEntries("rules").filter((e) => e.toLowerCase() !== "readme.md");
+  const ruleSources = sourceEntries("rules");
   for (const name of assistants) {
     const { dir, map, instructionsBlock } = ASSISTANTS[name];
     if (instructionsBlock && ruleSources.length)
