@@ -12,7 +12,9 @@
  *   ci [--base=ref]             tripwire; `check` for every spec folder changed since the base; bug-lane rules;
  *                               `lane`. SPEC_GATE_REQUIRE_READY=1 (a ready-for-review PR) also requires the PR's
  *                               own spec (the branch key's folder), when changed, to be at Tasked or later; an
- *                               edit to another spec gets only `check`. No branch check: check-pr owns it.
+ *                               edit to another spec gets only `check`, and changing another spec's `**Status**`
+ *                               line needs a commit whose `Refs:` names that spec's key. No branch check: check-pr
+ *                               owns it.
  *   dir [--slug s] [--key STA-n]   print the spec folder for the branch's STA key and persist .specify/feature.json
  *   stage <spec.md> <stage>     best-effort Linear comment for a stage change
  *
@@ -257,6 +259,37 @@ export function isOwnSpec(folder, branch) {
   return Boolean(n) && folder.startsWith(`sta-${n}-`);
 }
 
+/** The spec's `**Status**:` line, trimmed ("" when absent). */
+export const statusLine = (text) =>
+  strip(text)
+    .match(/^\*\*Status\*\*:.*$/m)?.[0]
+    .trim() ?? "";
+
+/** STA numbers named on the `Refs:` trailers of the commit messages. */
+export const refsKeys = (commits) =>
+  new Set(
+    commits.flatMap((c) =>
+      [...c.matchAll(/^Refs:[ \t]*(.*)$/gim)].flatMap((r) =>
+        [...r[1].matchAll(/\bSTA-(\d+)\b/gi)].map((m) => m[1]),
+      ),
+    ),
+  );
+
+/**
+ * A PR may move another spec's `**Status**` only when one of its commits' `Refs:` names that spec's key, so a
+ * spec's stage never changes as a side effect of unrelated work. The own spec and a newly added spec are exempt.
+ */
+export function checkForeignStatus({ folder, before = "", after = "", branch = "", commits = [] }) {
+  if (isOwnSpec(folder, branch) || !before) return [];
+  const [was, now] = [statusLine(before), statusLine(after)];
+  if (was === now) return [];
+  const key = folder.match(FOLDER_RE)?.[1];
+  if (key && refsKeys(commits).has(key)) return [];
+  return [
+    `${folder}: this PR changes another spec's Status line (\`${was || "(none)"}\` → \`${now || "(none)"}\`), but no commit has \`Refs: STA-${key ?? "?"}\``,
+  ];
+}
+
 /** The branch is Linear-named (ADR 0065 decision 5) or allow-listed. */
 export function checkBranch(branch) {
   if (!branch || branch === "HEAD" || branch === "main") return [];
@@ -478,12 +511,32 @@ function specIndex() {
   return { specKeys, taskKeys };
 }
 
-function laneGate(base) {
-  const commits = git("log", "--no-merges", "--format=%B%x00", `${base}..HEAD`)
+/** The PR's commit messages since `base`, merges excluded. */
+const prCommits = (base) =>
+  git("log", "--no-merges", "--format=%B%x00", `${base}..HEAD`)
     .split("\0")
     .map((c) => c.trim())
     .filter(Boolean);
-  return checkLane({ commits, branch: currentBranch(), ...specIndex() });
+
+function laneGate(base) {
+  return checkLane({ commits: prCommits(base), branch: currentBranch(), ...specIndex() });
+}
+
+/** checkForeignStatus for every changed spec folder, against its spec.md at the merge base. */
+function foreignStatusGate(base, dirs) {
+  const mergeBase = git("merge-base", base, "HEAD").trim();
+  if (!mergeBase) return [];
+  const branch = currentBranch();
+  const commits = prCommits(base);
+  return dirs.flatMap((dir) =>
+    checkForeignStatus({
+      folder: basename(dir),
+      before: git("show", `${mergeBase}:${relative(ROOT, join(dir, "spec.md"))}`),
+      after: readIf(join(dir, "spec.md")),
+      branch,
+      commits,
+    }),
+  );
 }
 
 /** Text of every test file under a `__tests__/` folder, for `@covers` lookups. */
@@ -569,6 +622,7 @@ function main([mode, ...args]) {
       failures += stageGate(dir, {
         requireReady: requireReady && isOwnSpec(basename(dir), branch),
       });
+    failures += report(foreignStatusGate(base, dirs));
     if (bugs.length) {
       const tests = testsText();
       for (const b of bugs) failures += report(checkBug(basename(b), tests));

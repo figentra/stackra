@@ -1,0 +1,51 @@
+---
+title: "0143 — Container scopes, module registration, lifecycle and testing"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0042](/adr/0042-di-first-with-one-container-per-service) (accepted in this change; its
+  spike passed) and [0005](/adr/0005-di-container-and-legacy-decorators). Decisions CT1 to CT4 are
+  added to 0042.
+</Note>
+
+## Context
+
+[0042](/adr/0042-di-first-with-one-container-per-service) chose DI-first. The owner's container answers CT1 to CT4 (mem L841–845,
+2026-10-20) fix scopes, registration, lifecycle and testing. Its spike passed (gap C49). The answers replace the older lifecycle
+names of P12 (contradiction C-13), and the audit's forRoot table is folded in here (audit 3.3).
+
+## Decision
+
+1. **Scopes (CT1).** `singleton` is the default. `request` is per request, job or workflow step, held in `AsyncLocalStorage`,
+   and carries tenant, actor, locale and trace. `transient` is created on each injection. A singleton may not inject a
+   request-scoped provider; it injects the context accessor instead. This is checked at boot.
+2. **Registration (CT2).** `forRoot`, `forRootAsync({ useFactory, inject })`, `forFeature` and `register`, with named instances
+   (`forRoot({ default, instances })`). Lazy modules are allowed. A `ConfigurableModuleBuilder` is the base for all of them.
+3. **Lifecycle (CT3).** Hooks follow the Nest names: `onModuleInit`, `onApplicationBootstrap`, `beforeApplicationShutdown`,
+   `onModuleDestroy` and `onApplicationShutdown`, with the shutdown hooks in reverse order and draining timeouts. Explorers run at
+   bootstrap. Readiness is reported only after bootstrap.
+4. **Cycles and tests (CT4).** A circular dependency is a boot error. `forwardRef` is not used. `createTestingModule` provides
+   `override*`, auto-mocks and a request-context helper. A devtools graph is included.
+
+## Consequences
+
+- Scope mistakes fail at boot, not at the first request.
+- Modules expose one registration vocabulary, so readers do not learn a new one per package.
+
+## Enforcement
+
+planned — the container checks the singleton-to-request injection and circular dependencies at boot, and the test module is
+covered by the container's own tests under `__tests__/`.
+
+## Alternatives
+
+- `forwardRef` for cycles: rejected by CT4.
+- The P12 hook names: superseded (C-13).
+
+## Supersedes and sources
+
+Supersedes: none.
+
+Amends: [0042](/adr/0042-di-first-with-one-container-per-service) (now Accepted), [0005](/adr/0005-di-container-and-legacy-decorators).
+Sources: owner container answers CT1 to CT4 (`stackra-decisions-2026-10-19.md` L841–845, 2026-10-20); spike result (gap C49); audit 3.3.

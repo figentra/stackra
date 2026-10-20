@@ -1,0 +1,40 @@
+---
+title: "0138 — The pipeline order is fixed; apps toggle and parameterise gates"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0081](/adr/0081-gate-chain-configurable-per-app). The "fully configurable" gate chain
+  is reversed here.
+</Note>
+
+## Context
+
+[0081](/adr/0081-gate-chain-configurable-per-app) let each app configure the whole gate chain. The owner's framework answer
+FW5 (a, mem L539, 2026-10-20) fixes the order and lets apps only toggle and parameterise it. The earlier answer X1 (mem L73, L228) asked for a validate warning when an area omits tenancy or iam; that warning stays.
+
+## Decision
+
+1. The order is fixed: **tenancy**, then **iam**, then **policy**, then **entitlement**.
+2. Apps only toggle and parameterise the gates. An app's own gates get a named slot in the chain, and they cannot be placed
+   before tenancy or iam.
+3. The validator warns when an area omits tenancy or iam. The warning stays from X1.
+4. Consent slots run after iam (P5, [0137](/adr/0137-declared-action-options-and-refusal-codes)).
+
+## Consequences
+
+- An app cannot reorder the security gates. Customisation happens through toggles and named slots.
+- An app that wants a new gate gets a slot, and a slot is a reviewed change to the pipeline.
+
+## Enforcement
+
+planned — the pipeline in `@stackra/actions` refuses a reordered chain, and the validator keeps its tenancy and iam warning.
+
+## Alternatives
+
+- The fully configurable chain of 0081: superseded, because it lets a gate run out of order (contradiction C-05).
+
+## Supersedes and sources
+
+Supersedes: [0081](/adr/0081-gate-chain-configurable-per-app). Sources: owner framework answer FW5 a (`stackra-decisions-2026-10-19.md`
+L539, 2026-10-20); X1 (L73, L228); intent-map item P5 (consent slots).

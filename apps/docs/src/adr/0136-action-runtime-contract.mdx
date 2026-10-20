@@ -1,0 +1,57 @@
+---
+title: "0136 — The action runtime contract: handler context, transaction, idempotency and versions"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0036](/adr/0036-idempotency-cache-and-postgres). Amends
+  [0098](/adr/0098-actions-are-the-unit) and [0118](/adr/0118-api-versioning-dormant-package).
+</Note>
+
+## Context
+
+[0098](/adr/0098-actions-are-the-unit) made actions the unit of behaviour, and [0118](/adr/0118-api-versioning-dormant-package)
+set date versions. Neither said what a handler receives, where its transaction starts, how idempotency is stored or how
+two versions of one action run together. [0036](/adr/0036-idempotency-cache-and-postgres) put idempotency in the Encore
+cache; the owner moved the store to the cache package (C-34) and fixed the contract on 2026-10-20 (mem L860–864).
+
+## Decision
+
+1. **Handler (AC1).** `async handle(input, ctx)`. `ctx` carries the actor and `onBehalfOf`, the tenant, scope, locale, time
+   zone and currency, request ids, the idempotency key, `ctx.now()`, an abort signal, `ctx.emit`, `ctx.transition`,
+   `ctx.afterCommit`, `ctx.authorize` and `ctx.feedback`. Dependencies come through the constructor.
+2. **Transaction (AC2).** One database transaction per action. Queries have none. Events go through the outbox inside that
+   transaction. External calls happen only after commit. Multi-step work becomes a workflow behind the same action key. A
+   lint flags network calls inside `handle()`.
+3. **Idempotency (AC3).** An `Idempotency-Key` is required for client writes, and the SDKs generate it. The key, a hash of the
+   payload and the result are stored for 24 hours in the cache package (ADR 0150, wave 1 part 3). A different payload with
+   the same key returns `409`. Jobs, events and workflow steps derive their own keys. This closes gap B46.
+4. **Versions (AC4).** `key@version` versions run side by side. Public APIs get deprecation with a sunset of at least 6 months.
+   REST and MCP map date versions ([0118](/adr/0118-api-versioning-dormant-package)) to action versions. Deprecated usage is
+   metered and shown to app owners.
+5. **Audit.** The pipeline's audit step audits every action. This reconciles the SEC3 rule with [0046](/adr/0046-global-data-invariants-and-per-model-opt-ins)
+   (gap B19), together with [0134](/adr/0134-data-invariants-classification-and-delete-lifecycle).
+6. The money keys in Postgres with the ledger entry (0036 decision 2) are restated in the commerce ADR 0220, not here.
+
+## Consequences
+
+- Handlers are testable by passing a fake `ctx`. Dependencies are constructor arguments.
+- Idempotency storage depends on the cache package, so a cache outage affects retried writes. The limit is for the cache ADR to
+  name.
+- Gen and the SDKs must generate `Idempotency-Key` for every client write.
+
+## Enforcement
+
+planned — a lint flags network calls in `handle()`; gen rejects a client write action with no idempotency declaration; the
+audit step is part of the action pipeline. The idempotency rule is also an item for `.agents/rules/http-conventions.md` (final pass).
+
+## Alternatives
+
+- Idempotency in the Encore cache (0036): superseded (C-34).
+- Hand-rolled key storage in handlers: rejected by the pipeline rule of 0098.
+
+## Supersedes and sources
+
+Supersedes: [0036](/adr/0036-idempotency-cache-and-postgres). Amends: [0098](/adr/0098-actions-are-the-unit),
+[0118](/adr/0118-api-versioning-dormant-package). Sources: owner action-runtime answers AC1 to AC4 and the audit reconciliation
+(`stackra-decisions-2026-10-19.md` L860–864, 2026-10-20); gap B46, B19; contradiction C-34.

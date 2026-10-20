@@ -18,11 +18,13 @@ import { fileURLToPath } from "node:url";
 import {
   checkBranch,
   checkBug,
+  checkForeignStatus,
   checkLane,
   checkSpec,
   checkStage,
   checkTasks,
   isOwnSpec,
+  refsKeys,
   REPLACED,
   specDir,
   tripwire,
@@ -187,6 +189,53 @@ test("ready rule: only the PR's own spec (the branch key's folder) must be at Ta
   assert.equal(isOwnSpec("sta-35-notifications", "figentra/sta-163-x"), false);
   assert.equal(isOwnSpec("sta-16-x", "figentra/sta-163-x"), false);
   assert.equal(isOwnSpec("sta-35-notifications", "chore/foo"), false);
+});
+
+const statusSpec = (s) => `# X\n\n**Status**: ${s}\n**Linear**: STA-35\n`;
+test("foreign status: another spec's Status line moves only with a Refs naming its key", () => {
+  const base = {
+    folder: "sta-35-notifications",
+    before: statusSpec("Draft"),
+    branch: "figentra/sta-170-x",
+  };
+  assert.deepEqual(
+    checkForeignStatus({ ...base, after: statusSpec("Draft"), commits: ["fix: y"] }),
+    [],
+  );
+  assert.match(
+    checkForeignStatus({
+      ...base,
+      after: statusSpec("Clarified"),
+      commits: ["fix: y\n\nRefs: STA-170"],
+    }).join(),
+    /sta-35-notifications: .*Draft.*Clarified.*Refs: STA-35/,
+  );
+  assert.deepEqual(
+    checkForeignStatus({
+      ...base,
+      after: statusSpec("Clarified"),
+      commits: ["docs: y\n\nRefs: STA-170, STA-35"],
+    }),
+    [],
+  );
+  // A key in the subject or body, not on a Refs: trailer, does not count; STA-350 is not STA-35.
+  assert.equal(
+    checkForeignStatus({
+      ...base,
+      after: statusSpec("Clarified"),
+      commits: ["docs: STA-35\n\nRefs: STA-350"],
+    }).length,
+    1,
+  );
+  // The PR's own spec and a newly added spec are exempt.
+  assert.deepEqual(
+    checkForeignStatus({ ...base, branch: "figentra/sta-35-x", after: statusSpec("Planned") }),
+    [],
+  );
+  assert.deepEqual(checkForeignStatus({ ...base, before: "", after: statusSpec("Draft") }), []);
+  // Removing the line is a change too.
+  assert.equal(checkForeignStatus({ ...base, after: "# X\n" }).length, 1);
+  assert.deepEqual([...refsKeys(["feat: a\n\nRefs: STA-1, sta-2", "fix: STA-3"])], ["1", "2"]);
 });
 
 test("branch never blocks: a chore-lane PR's `chore/foo` branch only warns (check-pr owns the label escape)", () => {
