@@ -4,7 +4,7 @@ description: "The eight things a complete service must have, and what is checked
 icon: "server"
 ---
 
-A service is a `tier:service` [member](/standards/members) at `services/<name>`, named `@figentra/service-<name>`, with its entry at `src/main.ts`. Services are independent workspace members. Encore is **deferred**: there is no Encore app yet, so the Encore-specific rules below ("when Encore lands") describe the target, not today's code. The decision is recorded in [ADR 0010](/adr/0010-services-are-independent-workspace-members).
+A service is a `tier:service` [member](/standards/members) at `services/<name>`, named `@figentra/service-<name>`, with its entry at `src/main.ts`. Services are independent workspace members. Service source holds no Encore files: Encore is the **generated** runtime target, emitted by `stackra gen` into `.stackra/encore/` ([0091](/adr/0091-generated-encore-app-in-stackra-folder), [0124](/adr/0124-encore-is-the-generated-runtime-target)). The generator is not built yet, so the Encore-specific rules below ("when Encore lands") describe the target, not today's code.
 
 ## Layout
 

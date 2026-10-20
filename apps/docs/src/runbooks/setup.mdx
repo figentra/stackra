@@ -14,7 +14,7 @@ icon: "list-checks"
 | --- | --- | --- | --- |
 | GitHub org `figentra`, repo `stackra` | Code host, CI, releases, branch protection ([ADR-0012](/adr/0012-code-host-and-ci)) | Org settings, branch protection, push protection | Exists |
 | AWS (through Encore Cloud) | Services, Postgres, object storage, Pub/Sub, Bedrock | Create the account, link it in Encore Cloud, SSO, budgets | TODO: which AWS account holds Stackra |
-| Encore Cloud | Deploys into the owner's AWS, environments, secrets, tracing | Create the org and app, connect AWS | Not created; no Encore app yet ([ADR-0011](/adr/0011-rejected-and-deferred-technologies)) |
+| Encore Cloud | Deploys into the owner's AWS, environments, secrets, tracing | Create the org and app, connect AWS | Not created; no generated Encore app yet, and the deploy path is open (DP2; [0124](/adr/0124-encore-is-the-generated-runtime-target)) |
 | Cloudflare | DNS, `npm.figentra.com` registry Worker ([ADR-0025](/adr/0025-packages-publish-to-private-registry)), R2 Turborepo cache ([ADR-0026](/adr/0026-turborepo-remote-cache-on-r2)), console and landing Workers | Zone, API tokens, R2 bucket, Worker deploys | TODO: confirm account and zone |
 | Infisical (EU, `eu.infisical.com`) | Developer and CI tokens: folders `/agents` and `/ci` | Create the project, machine identities, OIDC trust | Not created; `.infisical.json` is not in the repo |
 | Expo / EAS | Mobile builds, EAS Update, push, store submission | Project, robot token, credentials | TODO: project not created |
@@ -110,7 +110,7 @@ Needed on the machine, pinned in `mise.toml` as each is adopted (TODO: confirm t
     Set `TURBO_TOKEN` and `NPM_FIGENTRA_TOKEN` in `/ci`. Map the `@stackra` scope to the registry.
   </Step>
   <Step title="Encore Cloud (owner)">
-    Create the org and app, connect the AWS account, create environments `staging` and `prod` (PR previews are automatic). Do this only once a service moves to Encore by ADR.
+    Create the org and app, connect the AWS account, create environments `staging` and `prod` (PR previews are automatic). Do this only once the deploy path (DP2) is decided.
   </Step>
   <Step title="Application secrets (human)">
     For each environment, `encore secret set` every declared name. Verify with `encore secret list` (names only).

@@ -14,8 +14,8 @@ A service is `services/<name>`, `@figentra/service-<name>`, tag `tier:service`, 
    `db.ts`, `events.ts`, `jobs.ts`, `cache.ts`, each declaring literal primitives only.
 2. **Two-layer tenant isolation** once a tenant-owned table exists (see `tenancy`).
 3. **Event-first.** Cross-service communication is a versioned event unless an authoritative decision is needed now.
-4. **One gateway.** No service sets CORS or exposes a public surface of its own; if Encore is adopted, the single
-   `encore.app` is the only gateway and `auth: true` is the default.
+4. **One gateway.** No service sets CORS or exposes a public surface of its own; the generated
+   `encore.app` in `.stackra/encore` (ADRs 0091, 0124) is the only gateway; services hold no Encore files.
 5. **Idempotency on every write** (`http-conventions`).
 6. **Required files:** `README.md`, `AGENTS.md` with a `## PII` table (even if "none"), `CHANGELOG.md`, `LICENSE`,
    `isolation.test.ts` once a scoped table exists.

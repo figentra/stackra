@@ -213,7 +213,8 @@
               "adr/0119-merge-policy-and-release-authority",
               "adr/0120-sdlc-spec-location-lanes-and-change-risk",
               "adr/0121-sdlc-tooling-roles-and-linear",
-              "adr/0122-workflow-studio-three-layers"
+              "adr/0122-workflow-studio-three-layers",
+              "adr/0124-encore-is-the-generated-runtime-target"
             ]
           }
         ]

@@ -96,7 +96,7 @@ A package never reads `process.env`. Configuration reaches it as an argument or 
 
 ### Service ownership
 
-Services are independent workspace members: `services/<name>` is `@figentra/service-<name>` with entry `src/main.ts`. Encore is deferred (see [ADR 0011](/adr/0011-rejected-and-deferred-technologies)). Until the one-Encore-app decision in [ADR 0010](/adr/0010-services-are-independent-workspace-members) is implemented, the rules below describe the target. They apply from the first service that owns data.
+Services are independent workspace members: `services/<name>` is `@figentra/service-<name>` with entry `src/main.ts`. Service source is plain TypeScript; Encore is the generated runtime target in `.stackra/encore/` ([0091](/adr/0091-generated-encore-app-in-stackra-folder), [0124](/adr/0124-encore-is-the-generated-runtime-target)). Until `stackra gen` exists, the rules below describe the target. They apply from the first service that owns data.
 
 A service owns its API, its database, its schema and migrations, its events, its tests, a `README.md` and an `AGENTS.md` with a PII table. No other service reads that database or imports that service's internals.
 
@@ -183,7 +183,7 @@ The deciding session does not read large files or run builds itself when a brief
 
 ## HTTP and events
 
-Stackra has no HTTP service yet and Encore is deferred ([ADR 0010](/adr/0010-services-are-independent-workspace-members)). The examples use Encore's `api()` because that is the chosen shape. The rules hold for any framework.
+Stackra has no HTTP service yet. Encore is the generated runtime target ([0091](/adr/0091-generated-encore-app-in-stackra-folder), [0124](/adr/0124-encore-is-the-generated-runtime-target)); services hold no Encore files. The examples use Encore's `api()` because that is the chosen shape. The rules hold for any framework.
 
 ### HTTP
 
