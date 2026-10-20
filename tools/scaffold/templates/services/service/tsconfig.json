@@ -1,0 +1,5 @@
+// TypeScript project for this member: extends exactly one @stackra/typescript-config preset and sets nothing else
+// (pnpm validate checks the preset). tsc reads tsconfig.json as JSONC, so the name stays .json.
+// `decorators`: the root module and every feature module are declared with legacy decorators (ADR 0005).
+// Owner: release-operations · Secrets: forbidden
+{ "extends": "@stackra/typescript-config/decorators" }

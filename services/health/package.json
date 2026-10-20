@@ -23,5 +23,8 @@
     "oxlint": "catalog:quality",
     "tsdown": "catalog:build",
     "typescript": "catalog:build"
+  },
+  "stackra": {
+    "module": "./src/health.module.ts"
   }
 }

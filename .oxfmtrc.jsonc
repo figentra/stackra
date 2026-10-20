@@ -23,6 +23,8 @@
     ".mcp.json",
     // `encore gen client` output; compared byte-for-byte in CI
     "packages/*/api-client/src/generated/**",
+    // scaffold templates hold {{TOKENS}}, so they are not valid TS; the generator formats what it renders
+    "tools/scaffold/templates/**",
     // installed skills are upstream content
     ".agents/skills/**",
     ".claude/skills/**",

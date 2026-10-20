@@ -8,28 +8,26 @@ A service is a `tier:service` [member](/standards/members) at `services/<name>`,
 
 ## Layout
 
-Today (`services/example`, `services/health`):
+`pnpm new service <name>` renders it ([0126](/adr/0126-member-shapes-and-scaffold-templates)):
 
 ```text
 services/<name>/
-  package.json  turbo.jsonc  tsconfig.json  tsdown.config.ts
+  package.json        "stackra": { "module": "./src/<name>.module.ts" } (0090), ./contracts export
+  turbo.jsonc  tsconfig.json  tsdown.config.ts  vitest.config.ts
   README.md  AGENTS.md (with ## PII)  CHANGELOG.md  LICENSE
-  src/main.ts
+  config/<name>.config.ts         deploy-time defaults (CF1)
+  src/
+    main.ts                       entry: bootstraps the root module
+    <name>.module.ts              root module; feature modules join its imports
+    modules/<feature>/            kind folders: models/ actions/ queries/ services/ events/ listeners/
+                                  workflows/ policies/ permissions/ settings/ contracts/ resources/
+    contracts/index.ts            types other members may import
+    __tests__/<name>.module.test.ts
 ```
 
-Target once a service has an HTTP surface or a database, one file per primitive, each declaring literal primitives only (no identifiers built at runtime, no spread):
-
-```text
-src/
-  main.ts          entry
-  api.ts           endpoints: thin, validate, call the domain, map errors
-  db.ts            the service's one database connection
-  events.ts        topics it publishes
-  jobs.ts          scheduled and queued work
-  cache.ts         cache keyspace (also the idempotency store)
-  entities.ts      ORM entities;  migrations/  its schema history
-  isolation.test.ts
-```
+There are no `api.ts`, `db.ts` or `encore.service.ts` files: endpoints, topics, crons and databases are declared with
+decorators in the modules and `stackra gen` emits the Encore primitives into `.stackra/encore/`. A new service is a
+skeleton with no feature module; `src/modules/README.md` lists the kind folders.
 
 ## The eight non-negotiables
 
@@ -71,9 +69,9 @@ src/
 
 ## Adding a service
 
-1. `pnpm new service <name>` (see the drift note on [Member standards](/standards/members#scaffolding)), or copy `services/example`.
+1. `pnpm new service <name> --description "<one sentence>"` (or `--repo <path>` for another monorepo).
 2. Fill `README.md`, `AGENTS.md` and its `## PII` table.
-3. Add `db.ts`, `events.ts`, `jobs.ts` only when the primitive exists.
+3. Add a feature module under `src/modules/<feature>/` and import it from the root module, kind folders only as files appear.
 4. Run `pnpm install` then `pnpm verify`.
 
 ## What enforces this
@@ -83,7 +81,7 @@ src/
 | Member files, PII heading, `tier:service` tag, catalog versions    | `validate-repository.mjs`                                     | Yes     |
 | A package or app never imports a service                           | `turbo boundaries`, oxlint `boundaries.jsonc`                 | Yes     |
 | A service's `internal/`, `entities/` and `db` are private          | oxlint `boundaries.jsonc` (`services/**` rule)                | Yes     |
-| Encore service units (`services/src/<dir>`) have `encore.service.ts`, README, AGENTS | `validate-repository.mjs` (`checkServiceUnit`) | Yes, for the unit layout only |
+| `src/main.ts`, `stackra.module` names an existing root module, no Encore file | `validate-repository.mjs` (`checkService`) | Yes |
 | One `api()` per operation, `auth: true` default                    | planned: lint rule when Encore lands                          | No      |
 | Generated client has not drifted                                   | planned: `gen:client:check` in `pnpm verify`                  | No      |
 | Tenant isolation (RLS audit, `isolation.test.ts`)                  | planned: from the first tenant-owned table                    | No      |

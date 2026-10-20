@@ -1,70 +1,38 @@
 ---
 title: "Package standards"
-description: "Archetypes, the four layers, exports, barrels, and the provenance of copied code."
+description: "The entries-first package shape, exports, barrels, and the provenance of copied code."
 icon: "boxes"
 ---
 
 A package lives at `packages/<category>/<name>` and is published as `@stackra/<name>`. The category is only a folder (see [Package categories](/guides/packages)). Every package is also a [member](/standards/members) and carries its required files.
 
-## Choose the archetype
+## Shape: entries first
 
-Asked once, when the package is created. The first yes wins.
-
-| # | Question                                                                                  | Archetype  | Scaffold kind |
-| - | ----------------------------------------------------------------------------------------- | ---------- | ------------- |
-| 1 | Does it own business meaning (entities, use cases, adapters, a delivery surface)?         | `domain`   | `domain`      |
-| 2 | Is it a shared build or quality preset with no logic?                                     | `tooling`  | `tooling`     |
-| 3 | Does it serve other packages with no business meaning of its own?                         | `platform` | `platform`    |
-| 4 | Otherwise: a small flat utility with one entry and no layers                              | `lib`      | `lib`         |
-
-Domain or platform: would the code need renaming to make sense in a different product? Domain. A package that fits none of these is evidence of a new archetype, which is an [ADR 0004](/adr/0004-package-archetypes-and-layers) amendment, not a reason to stretch `platform`.
-
-Archetypes recorded as reference only (contracts, UI facade, provider, SDK, runtime, asset) have no member yet and govern nothing. Each becomes binding in the change that creates its first member; contracts are specified in [ADR 0117](/adr/0117-contracts-placement-and-decorator-ownership) (a `./contracts` entry per package, shared primitives in `@stackra/contracts`).
-
-## Shapes
-
-### Domain: four layers
+Every library package has one shape ([0126](/adr/0126-member-shapes-and-scaffold-templates), which supersedes the
+archetypes of [0004](/adr/0004-package-archetypes-and-layers)). `pnpm new package <name> --category <c> --entries …`
+renders it. `tooling` presets keep their own shape (below).
 
 ```text
+config/<name>.config.ts   publishable deploy-time defaults (CF1), outside src
+resources/                static files (lang/, stubs/, assets/), exported as ./resources/*
 src/
-  core/             domain meaning: entities, value objects, invariants, domain errors
-  application/      use cases; owns the ports (interfaces) it needs
-  infrastructure/   implementations of those ports
-  presentation/     delivery surfaces: api/, then opt-in react/ web/ native/
-  index.ts          the public surface, re-exports only
+  core/        "."           runtime-neutral; imports no host library
+  contracts/   "./contracts" vocabulary only: types, as-const objects, tokens (0117)
+  node/        "./node"      Node-only adapters, drivers, the module, the Explorer
+  react/       "./react"     web React bindings; react is an optional peer
+  native/      "./native"    React Native bindings; react-native is an optional peer
+  testing/     "./testing"   fakes, builders, conformance suites for consumers' tests
+  devtools/    "./devtools"  dev-only devtools, frontend and backend
+  ui/                        internal logic shared by react/ and native/ (not an entry)
 ```
 
-| Layer            | May import                                  | Never imports                                                |
-| ---------------- | ------------------------------------------- | ------------------------------------------------------------ |
-| `core`           | nothing else in the package                 | other layers; `react`, `react-dom`, `react-native`, `encore.dev` |
-| `application`    | `core`                                      | `infrastructure`, `presentation`; the same host libraries    |
-| `infrastructure` | `core`, `application`                       |                                                              |
-| `presentation`   | `core`, `application`                       | `infrastructure` (the host binds adapters)                   |
-
-`presentation/native` composes React and never `presentation/web`. A port belongs to `application/`, never to `infrastructure/`. Layers are addressed with subpath imports (`#core`, `#application/*`, declared in `package.json` `imports`).
-
-### Platform
-
-`src/core/` is the runtime-neutral capability. Opt-in entries sit beside it, each its own export subpath and its own peer-dependency boundary:
-
-| Entry          | Runtime        | Holds                                        |
-| -------------- | -------------- | -------------------------------------------- |
-| `core`         | `isomorphic`   | the capability; imports no host library      |
-| `contracts`    | `isomorphic`   | types and tokens a consumer needs at zero runtime cost |
-| `react`        | `browser`      | hooks and providers; imports only `core`     |
-| `native`       | `react-native` | React Native bindings; imports only `core`   |
-| `node`         | `node`         | Node-only concerns; imports only `core`      |
-| `testing`      | `node`         | fakes and builders for consumers' tests      |
-
-There is no `presentation/` in a platform package. Rules for a package that works under more than one runtime:
-
-1. The root entry is runtime-neutral; a runtime-specific symbol never reaches it.
-2. Every runtime-specific dependency is an optional peer (`peerDependenciesMeta`), so installing the package pulls in no host library.
-3. Reaching a subpath without its peer fails with a message naming the missing peer, not a module-resolution error from inside a barrel.
-
-### Lib
-
-One entry (`.`), no layers: `src/<kebab-name>.ts` re-exported by `src/index.ts`. A second entry point is the sign that it should be a platform package.
+| Rule | Detail |
+| ---- | ------ |
+| Declare only real entries | A folder, its `exports` key and its `tsdown.config.ts` entry are added together, with the first real code. `core` is always there. |
+| Entries never import entries | `react` and `native` share code through the internal `src/ui/`, never through each other. |
+| Host libraries are optional peers | A runtime-specific dependency is an optional peer (`peerDependenciesMeta`), so installing the package pulls in no host library. |
+| Kind folders inside a feature module | `models/`, `actions/`, `queries/`, `services/`, `events/`, `listeners/`, `workflows/`, `policies/`, `permissions/`, `settings/`, `contracts/`, `resources/`; `interfaces/`, `types/`, `constants/`, `tokens/`, `errors/`, `decorators/` once there are two or more files. No `controllers/`, `dtos/`, `repositories/`, `helpers/`, `utils/`. |
+| Decorators ship an Explorer | A package that defines decorators registers them at bootstrap through the container's `DiscoveryService`. |
 
 ### Tooling
 
@@ -76,7 +44,7 @@ Data, not a build: JSON or JSONC presets with a `files` allowlist and an `export
 - `index.ts` is the only barrel name. A barrel declares nothing; it re-exports.
 - A consumer imports the package or a declared subpath, never another package's `src/` (`@stackra/*/src/*` is a lint error).
 - A package never imports an app, a service, or `encore.dev` and `~encore/*`.
-- A shared package holds mechanisms, not product literals: no brand name, locale list, project id or `process.env` read. It exposes decorators, base classes and typed config contracts, never `define*()` ([0094](/adr/0094-decorators-only-authoring)), and the app holds the definition. See [Boundaries](/constitution/boundaries).
+- A shared package holds mechanisms, not product literals: no brand name, locale list, project id or `process.env` read. Decorators annotate code (classes, methods, fields); `define*` creates values other code references (`defineToken`, `defineConfig`, `definePermissions`, `defineEvents`, `defineMeters`, `defineEntitlements`); the app holds the definition. See [Boundaries](/constitution/boundaries).
 - Naming, one declaration per file and specifier style: [Code style](/standards/code-style).
 
 ## Provenance of copied code
@@ -105,12 +73,12 @@ A port that diverges from its origin does so openly: in `ORIGIN.md`, not silentl
 
 | Rule                                                              | Check                                                        | Status  |
 | ----------------------------------------------------------------- | ------------------------------------------------------------ | ------- |
-| Layer direction (`core`, `application`, `presentation`, native)   | oxlint `no-restricted-imports` in `boundaries.jsonc`         | Yes     |
+| Entries never import entries                                      | planned: oxlint `boundaries.jsonc` per entry folder          | No      |
 | No import of an app, service or `encore.dev` from a package       | oxlint `boundaries.jsonc` + `turbo boundaries`               | Yes     |
 | No deep import of `@stackra/*/src/*`                              | oxlint `boundaries.jsonc`                                    | Yes     |
 | `exports` dist + `@stackra/source` shape, `sideEffects: false`   | `validate-repository.mjs`                                    | Yes     |
 | Unused files and exports                                          | `knip`                                                       | Yes     |
-| Archetype fields and a barrel/deep-import shape check             | planned: validator check (ported from a package-shape script) | No     |
+| Entry folders match `exports` and `tsdown.config.ts`              | planned: validator check                                     | No      |
 | No product literal or `process.env` in a package                  | planned: validator check                                     | No      |
 | `ORIGIN.md` present where code was copied                         | planned: validator check; review by `package-steward` today  | No      |
 
