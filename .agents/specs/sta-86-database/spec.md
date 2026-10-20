@@ -29,7 +29,7 @@
 - **Cross-service events**: none. Trait hooks may stage events, but publishing is `@stackra/outbox`'s job (ADR 0078 decision 4)
 - **Tenancy and data**: no tenant-owned table of its own. It provides the per-model connection resolver contract and the scoped-entity filter hook that `@stackra/tenancy` uses for pool tenancy with RLS (ADR 0088 decisions 3 and 7), and the migration stream every tenant-owned table goes through
 - **Secrets**: none stored or named by the package. The connection comes from the runtime (ADR 0014 decision 5); the `HasEncryptedFields` key is a reference resolved by the runtime, never a value in config (ADR 0009)
-- **ADR needed**: no for this spec (ADRs 0097, 0014, 0046, 0096, 0104, 0105 decide it). Read replicas are a new design (ADR 0097 decision 6) and get their own ADR if the plan adopts them
+- **ADR needed**: no for this spec (Accepted ADRs 0097, 0014, 0096, 0104 and 0105 decide it; it also relies on 0046 and 0088, which are still Proposed and are decided by the owner, not here). Read replicas are a new design (ADR 0097 decision 6) and get their own ADR if the plan adopts them
 - **New dependencies**: `@mikro-orm/core`, `@mikro-orm/postgresql`, `@mikro-orm/migrations`, `dataloader` in pnpm catalogs (exact pins, dependency-steward)
 - **Deploy modes**: SaaS: Postgres provided by the generated Encore app; migrations applied by its runner. On-prem: the customer's Postgres; the same SQL migration files run as a pre-upgrade job. Air-gapped: as on-prem, with no outbound call; required Postgres extensions ship in the images (ADR 0076 decisions 1 and 2)
 - **Lane**: full (roadmap W2.2)
@@ -77,7 +77,7 @@ time; a package's migration lands before the host migration that references it.
 1. **Given** a new field on a model, **When** the make-migration command runs, **Then** one new ordered SQL file appears and nothing else changes.
 2. **Given** the migration stream, **When** it is applied to an empty Postgres, **Then** the schema matches the models.
 3. **Given** a migration that creates a table with `tenant_id`, **When** it is checked, **Then** it also enables and forces RLS, or the check fails (ADR 0088 Enforcement).
-4. **Given** a destructive change, **When** the migration is generated, **Then** it follows the zero-downtime rules the owner settles [NEEDS CLARIFICATION: DP13 — recommended: (a) expand/contract, destructive steps in a later release, lock and statement timeouts, concurrent index builds alone, squawk lint].
+4. **Given** a destructive change, **When** the migration is generated, **Then** it follows the zero-downtime rules the owner settles [NEEDS CLARIFICATION: DP13 — recommended: (a) expand/contract, destructive steps in a later release, lock and statement timeouts, concurrent index builds alone, squawk lint, backfills as queue jobs].
 
 ---
 
@@ -160,7 +160,7 @@ check reports database reachability and migration state (ADR 0097 decision 5.5).
 - A request ends with unflushed changes: they are discarded, never flushed implicitly.
 - A query runs with no tenant context on a tenant-owned model: it sees zero rows (RLS), and the tenancy kit tests it (ADR 0088 decision 7).
 - A migration needs an extension not on the approved list: it fails review [NEEDS CLARIFICATION: DA11 — recommended: (a) approve `pgvector`, `pg_trgm`, `ltree`, `citext`, `pgcrypto`].
-- Emitted `EntitySchema` files go where the owner settles [NEEDS CLARIFICATION: C37 — recommended: emitted into the gitignored `.stackra/` output and checked by `gen --check`, not committed].
+- Emitted `EntitySchema` files go where the owner settles [NEEDS CLARIFICATION: C37 — proposed: emitted into the gitignored `.stackra/` output and checked by `gen --check`, not committed].
 
 ## Requirements _(mandatory)_
 
@@ -190,7 +190,7 @@ EARS wording (ADR 0120 D18).
 - **FR-020**: The package shall contribute model and schema entries to the gen manifest instead of keeping a runtime schema registry (ADR 0097 decision 5.4).
 - **FR-021**: The package shall leave read replicas out of this spec; they are a new design (ADR 0097 decision 6) and need their own spec or ADR.
 - **FR-022**: The package shall not import `encore.dev` (ADR 0124 decision 3).
-- **FR-023**: Every database behaviour shall be tested against real Postgres in the package's `__tests__` [NEEDS CLARIFICATION: TS4 — recommended: (a) Testcontainers Postgres with the approved extensions, one schema per test file].
+- **FR-023**: Every database behaviour shall be tested against real Postgres in the package's `__tests__` [NEEDS CLARIFICATION: TS4 — recommended: (a) Testcontainers (Postgres with pgvector and ltree, Valkey, MinIO) in vitest global setup, one schema per test file].
 - **FR-024**: The package's entries and layout shall follow the layout chosen for every package [NEEDS CLARIFICATION: FW1 — recommended: (a) entries first: `contracts`, `node`, `testing`; no client entry].
 - **FR-025**: The package shall publish a types-only `./contracts` entry (paginator, CRUD, connection-resolver, error and factory types) with no runtime imports (ADR 0117 decision 2).
 
@@ -237,10 +237,10 @@ EARS wording (ADR 0120 D18).
 
 - [NEEDS CLARIFICATION: DP12 — recommended: (a) SQL files applied by Encore's runner; on-prem runs them as a pre-upgrade job]
 - [NEEDS CLARIFICATION: FW4 — recommended: (a) gen pulls package migrations into the host stream, namespaced and dependency-ordered]
-- [NEEDS CLARIFICATION: DP13 — recommended: (a) mandatory zero-downtime migration rules]
+- [NEEDS CLARIFICATION: DP13 — recommended: (a) mandatory zero-downtime migration rules, backfills as queue jobs]
 - [NEEDS CLARIFICATION: FW1 — recommended: (a) entries-first package layout]
 - [NEEDS CLARIFICATION: FW7 — recommended: (a) error kinds with STK codes in `@stackra/contracts`]
-- [NEEDS CLARIFICATION: C37 — recommended: emitted EntitySchema files are generated output, not committed, checked by `gen --check`]
+- [NEEDS CLARIFICATION: C37 — proposed: emitted EntitySchema files are generated output, not committed, checked by `gen --check`]
 - [NEEDS CLARIFICATION: DA1 — recommended: (a) seed profiles minimal, demo, test]
 - [NEEDS CLARIFICATION: DA6 — recommended: (a) platform retention defaults]
 - [NEEDS CLARIFICATION: DA7 — recommended: (a) archive and soft delete stay distinct]
