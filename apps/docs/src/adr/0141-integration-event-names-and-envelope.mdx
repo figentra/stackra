@@ -6,46 +6,45 @@ description: "Accepted · 2026-10-20"
 <Note>
   Amends [0078](/adr/0078-messaging-layer-eight-packages), decision 3, and
   [0117](/adr/0117-contracts-placement-and-decorator-ownership), decision C1. Closes the open
-  event-naming item of 0125. Amended by ADR 0231 (naming and casing): the name form gains a
-  namespace segment.
+  event-naming item of 0125. Changes the name form of C27 by adding the module key (see below).
 </Note>
 
 ## Context
 
 The service questionnaires used service-prefixed event names (`identity.user.created.v1`, `tenancy.tenant.<state>.v1`). The owner's
-later answer C27 (mem L855, 2026-10-20) removes the service prefix. It wins over the earlier names (contradiction C-12). The OS documents
-will be renamed to match. The owner's naming table of 2026-10-20 then fixed the form as `ns.entity.verb.vN`, which adds a namespace
-segment to C27's form.
+answer C27 (mem L855, 2026-10-20) fixes the form as `<aggregate>.<verb>.v<n>`, with no service prefix, and it wins over the earlier names
+(contradiction C-12). On 2026-10-20 the owner confirmed the final form (mem L930): the name starts with the module key, so `billing.invoice.paid.v1`
+and `identity.user.created.v1`. The module key is the one of [0131](/adr/0131-module-key-version-and-deprecation).
 
 ## Decision
 
-1. Events are named `ns.entity.verb.vN` (ADR 0231):
-   - `ns` is the module namespace of [0131](/adr/0131-module-key-version-and-deprecation), so it names the owning module, not a service;
-   - `entity` is the aggregate the event is about;
-   - `verb` is the event;
-   - `vN` is the version.
-     Names are globally unique through the registry (C27).
+1. Events are named `<module-key>.<aggregate>.<verb>.v<n>`:
+   - `module-key` is the module's key from [0131](/adr/0131-module-key-version-and-deprecation), for example `billing` or `identity`;
+   - `aggregate` is the entity the event is about, for example `invoice` or `user`;
+   - `verb` is the event, for example `paid` or `created`;
+   - `v<n>` is the version.
+     Names are globally unique through the registry (C27). The module key replaces the service prefix that the questionnaires used.
 2. The envelope fields are `id`, `type`, `version`, `occurredAt`, `tenant`, `actor`, `onBehalfOf`, `correlation` and `causation`,
    `traceId`, and `data`. The envelope lives in `contracts`.
 3. An in-process event maps one-to-one to an integration event at the outbox.
 
 ## Consequences
 
-- An event name carries its module namespace, so a reader sees the owner in the name. The registry still enforces uniqueness.
+- An event name says which module owns it, and the registry still enforces uniqueness.
 - Consumers depend on `contracts`, not on another service's source.
-- Existing `<aggregate>.<verb>.v<n>` names need the namespace segment before they are published.
+- Names in the service questionnaires that carry a service prefix must be renamed to the module-key form before they are published.
 
 ## Enforcement
 
-planned — the registry rejects a duplicate event name, and the validator rejects a name that does not match `ns.entity.verb.vN`.
+planned — the registry rejects a duplicate event name, and the validator rejects a name whose first segment is not a registered module key.
 
 ## Alternatives
 
 - Service-prefixed names (I10, T2, T10): superseded by C27 (C-12).
-- `<aggregate>.<verb>.v<n>` with no namespace (C27 as first written): amended by the owner's naming table (ADR 0231).
+- `<aggregate>.<verb>.v<n>` with no module key (C27 as first written): amended by the 2026-10-20 confirmation.
 
 ## Supersedes and sources
 
-Amends: [0078](/adr/0078-messaging-layer-eight-packages) decision 3, [0117](/adr/0117-contracts-placement-and-decorator-ownership)
-decision C1. Sources: owner answer C27 (`stackra-decisions-2026-10-19.md` L855, 2026-10-20; fixes STA-149); the owner's naming table
-(2026-10-20, ADR 0231); contradiction C-12.
+Supersedes: none. Amends: [0078](/adr/0078-messaging-layer-eight-packages) decision 3, [0117](/adr/0117-contracts-placement-and-decorator-ownership)
+decision C1. Sources: owner answer C27 (`stackra-decisions-2026-10-19.md` L855, 2026-10-20; fixes STA-149); the owner's confirmed naming
+(`stackra-decisions-2026-10-19.md` L930, 2026-10-20: module-key prefix); contradiction C-12.
