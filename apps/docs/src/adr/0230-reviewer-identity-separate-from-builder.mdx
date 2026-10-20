@@ -22,13 +22,23 @@ hold fewer permissions than the builder app.
    pull requests: write and contents: read, never contents: write. It can comment and review, and it cannot push.
    Its credentials are `STACKRA_REVIEWER_APP_ID`, `STACKRA_REVIEWER_INSTALLATION_ID` and
    `STACKRA_REVIEWER_PRIVATE_KEY` in Infisical. Reviewer agents post through `pnpm bot:review`, which runs only
-   `gh pr view|diff|checks|comment|review` and read-only `gh api` (no `-X`, `--method`, fields or `--input`).
-2. **`pr-merge` counts a verdict only from `stackra-reviewer`**, and never when the verdict's author is the PR author
-   or the head commit's author or committer. A verdict from the builder app `stackra-bot` is ignored, and the refusal
-   says why.
-3. **A verdict from the owner account counts only with an explicit `owner-approval` token** on the verdict line
-   (`AI-REVIEW: PASS <sha> owner-approval`), and not on a commit that the owner account authored. This is how the
-   owner approves by hand.
+   `gh pr view|diff|checks|comment|review` and read-only `gh api` (no `-X`, `--method`, fields or `--input`, alone or bundled as in `-iX`).
+2. **`pr-merge` counts a verdict only from the `stackra-reviewer` App**, identified by what GitHub records, never by
+   a login string: a REST issue comment with `user.type` `Bot` and `performed_via_github_app.slug`
+   `stackra-reviewer`. It never counts when the verdict's author is the PR author or the head commit's author or
+   committer. A verdict from the builder app `stackra-bot`, or from a user account named `stackra-reviewer`, is
+   ignored, and the refusal says why. The verdict format is binding:
+   - the first line is `AI-REVIEW: PASS <full 40-hex head sha> base=<base ref>` or `AI-REVIEW: FAIL <head sha>`. A
+     PASS counts only while the PR still targets that base ref, so re-targeting the PR voids it. The base is a ref
+     name, not a SHA, because `main` moves under every open PR and the merge is a squash onto its tip;
+   - an edited verdict never counts, and an edit to any reviewer comment voids every reviewer verdict posted before
+     it. Anyone with write access can edit another account's comment, so the reviewer always posts a new comment;
+   - a FAIL for the head SHA is sticky: it beats every PASS for that SHA, older or newer. A wrong FAIL is cleared by
+     a new commit or by the owner. Minimized comments are not visible to REST and still count, which is safe for a
+     FAIL; a reviewer retracts a PASS by posting a FAIL.
+3. **The owner approves by hand only with a pull request review**: an APPROVED review by the owner user on the head
+   SHA whose body ends with the token `owner-approval`, and not on a commit the owner account authored. An
+   `AI-REVIEW:` comment from the owner account never counts.
 4. **Agents never write `owner-approval` or the `owner-approved` label**, and never post `AI-REVIEW:` through plain
    `gh`. The bash guard denies all three. This is a tripwire, not the control: the guard cannot see a `--body-file`.
 5. **Agents stop committing and pushing as the owner.** Builders commit and push through `pnpm bot:git` and open
@@ -45,14 +55,23 @@ hold fewer permissions than the builder app.
   `pnpm bot:review`. Rules 2 and 5 remove the obvious path, because the reviewer never authors and builders never
   act as the owner. Closing the gap fully needs the review to run where builders hold no reviewer key. That means a
   CI job or a separate host with its own Infisical identity, which is Phase 3 scope (merge queue, see below).
-- The `owner-approved` label is still writable by anyone who holds the owner's login. Rule 5 shrinks that set to the
-  owner.
+- The owner path is forgeable today. Agents still hold the owner's `gh` login (`figentra-usr`), so an agent can
+  submit an APPROVED review ending in `owner-approval`, or add the `owner-approved` label, as the owner. Moving the
+  owner path from a comment to a review only makes the forgery a deliberate act; the guard denies the token on the
+  command line, but not in a `--body-file`. Rule 5 drops the owner's login from agent environments, and it also
+  takes away the owner-authored-commit exclusion that used to catch this. The real fix is an owner decision (remove
+  the owner's `gh` login from agent sessions, or require the owner's review to come from a device agents cannot
+  reach). Until then, the owner-approval path is only as strong as agents' compliance with rule 4.
+- Deleted comments are invisible to `pr-merge`: deleting a reviewer FAIL makes an older PASS count again. Only
+  accounts with write access can delete another account's comment, which today includes the owner login agents
+  hold (see above).
 
 ## Enforcement
 
 - `tools/scripts/pr-merge.mjs` (`aiReview`, `blockers`, tests in `tools/scripts/__tests__/pr-merge.test.mjs`): the
-  reviewer-only identity, the author and committer exclusion, and the owner-approval token.
-- `tools/scripts/bot-gh.mjs` (`reviewerAllows`): the reviewer's command allowlist.
+  App identity check, the author and committer exclusion, the full head SHA and base ref, edited and sticky-FAIL
+  verdicts, and the owner's approving review with the `owner-approval` token.
+- `tools/scripts/bot-gh.mjs` (`reviewerAllows`): the reviewer's command allowlist, reading bundled short flags letter by letter and refusing `--edit-last` and `--delete-last`.
 - `.agents/hooks/guard-bash.mjs`: denies agent commands that write `owner-approval` or `owner-approved`, or post
   `AI-REVIEW:` through plain `gh`.
 - Planned: the review runs in a CI job with its own credentials (the Phase 3 merge-queue design). OpenCode's guard

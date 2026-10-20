@@ -8,6 +8,7 @@ test("the reviewer identity may only read a PR and comment or review on it", () 
     ["pr", "review", "5", "--approve"],
     ["pr", "diff", "5"],
     ["api", "repos/x/y/pulls/5"],
+    ["api", "-i", "/installation/repositories", "--jq", ".repositories[].full_name"],
   ];
   for (const args of allowed) assert.ok(reviewerAllows(args), args.join(" "));
   const denied = [
@@ -20,6 +21,12 @@ test("the reviewer identity may only read a PR and comment or review on it", () 
     ["api", "graphql", "-Fquery=mutation"],
     ["api", "repos/x/y", "--raw-field=a=b"],
     ["api", "repos/x/y", "--input", "f.json"],
+    ["api", "-iX", "DELETE", "repos/x/y/issues/comments/1"],
+    ["api", "-if", "query=mutation{x}", "graphql"],
+    ["api", "repos/x/y", "-iF", "body=@f"],
+    ["api", "repos/x/y", "--field=a=b"],
+    ["pr", "comment", "5", "--edit-last"],
+    ["pr", "comment", "5", "--delete-last"],
     ["repo", "edit"],
   ];
   for (const args of denied) assert.ok(!reviewerAllows(args), args.join(" "));

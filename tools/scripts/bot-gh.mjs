@@ -44,10 +44,16 @@ export function runAsBot(tool, args, token) {
 /** gh subcommands the reviewer identity may run: read a PR, then comment or review. Never push, merge or edit. */
 export function reviewerAllows(args) {
   const [group, verb] = args;
+  // A verdict is never edited or deleted (ADR 0230): post a new comment.
+  if (args.some((a) => /^--(edit|delete)-last(=|$)/.test(a))) return false;
   if (group === "pr") return ["view", "diff", "checks", "comment", "review"].includes(verb);
-  // gh api switches to POST when given fields or --input, so those are writes too.
-  const WRITE = /^(-X|--method|-f|-F|--field|--raw-field|--input)(=|$)|^-(X|f|F)./;
-  return group === "api" && !args.some((a) => WRITE.test(a));
+  // gh api switches to POST when given fields or --input. pflag bundles short flags (`-iX`, `-if`), so every
+  // single-dash arg is read letter by letter; a value that happens to hold X, f or F is denied too.
+  const write = (a) =>
+    a.startsWith("--")
+      ? ["method", "field", "raw-field", "input"].includes(a.slice(2).split("=")[0])
+      : a.startsWith("-") && /[XfF]/.test(a.slice(1));
+  return group === "api" && !args.some(write);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
