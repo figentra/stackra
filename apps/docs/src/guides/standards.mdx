@@ -25,7 +25,7 @@ The PII table is always present. A member that handles no personal data says "No
 
 ## Conventions
 
-- Package `exports` point at `src/*.ts`. tsdown builds `dist` only for publishing.
+- Package `exports` list `@stackra/source` (`./src/*.ts`) first, then `types`/`default` in tsdown's `dist/*.d.mts`/`dist/*.mjs` ([0025](/adr/0025-packages-publish-to-private-registry)).
 - Tests sit beside the code, in `src/**/__tests__`.
 - `package.json` key order: name, version, private, description, license, type, main (Expo only), scripts, dependencies, devDependencies.
 
