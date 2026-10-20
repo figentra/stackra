@@ -45,6 +45,7 @@
     "bot:token": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-token.mjs",
     "bot:gh": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-gh.mjs gh",
     "bot:git": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-gh.mjs git",
+    "bot:review": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-gh.mjs review",
     "pr:merge": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/pr-merge.mjs"
   },
   "devDependencies": {

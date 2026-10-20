@@ -15,8 +15,9 @@ GitHub configuration for the repository. GitHub is the only code host
 ## Rules
 
 - `Quality Gate` is the only required check. Merges are squash merges through `pnpm pr:merge`, which also needs the
-  head commit's `AI-REVIEW: PASS` from a reviewer other than the author
-  ([ADR 0119](../apps/docs/src/adr/0119-merge-policy-and-release-authority.mdx)). Never `--admin`, never a push to
+  head commit's `AI-REVIEW: PASS` from the `stackra-reviewer` app (`pnpm bot:review`), never the author
+  ([ADR 0230](../apps/docs/src/adr/0230-reviewer-identity-separate-from-builder.mdx),
+  [ADR 0119](../apps/docs/src/adr/0119-merge-policy-and-release-authority.mdx)). Never `--admin`, never a push to
   `main`.
 - A PR's branch is Linear-named (`figentra/sta-<n>-<slug>`) and its title or branch names the STA key, or it carries
   the `chore-lane` label; `pnpm linear check-pr` enforces it in CI.
