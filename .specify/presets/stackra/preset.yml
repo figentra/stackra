@@ -3,7 +3,7 @@ schema_version: "1.0"
 preset:
   id: "stackra"
   name: "Stackra clarify-first workflow"
-  version: "1.2.0"
+  version: "2.0.0"
   description: "Specs in .agents/specs/sta-<n>-<slug>, mandatory Impact questionnaire, clarifications marker, Linear link, and a plan gate"
   author: "stackra"
   license: "MIT"
@@ -20,9 +20,15 @@ provides:
       replaces: "spec-template"
 
     - type: "template"
+      name: "plan-template"
+      file: "templates/plan-template.md"
+      description: "Stackra plan: constitution table, deploy modes, correctness properties, delegation plan"
+      replaces: "plan-template"
+
+    - type: "template"
       name: "tasks-template"
       file: "templates/tasks-template.md"
-      description: "Tasks carry a Linear issue column"
+      description: "Tasks v2: covers, route and deps on every line"
       replaces: "tasks-template"
 
     - type: "command"

@@ -4,151 +4,108 @@
 
 **Created**: [DATE]
 
-**Status**: Draft <!-- Draft → Clarified → Planned → Ready → Implementing → Verified, or Abandoned / Superseded; spec-gate ci checks the artifacts each stage needs -->
+**Status**: Draft <!-- Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded (OR12). spec-gate refuses a status ahead of its artifacts; append every change to Status history -->
 
 <!-- Specs are public on GitHub: no secrets, customer data or details of an unfixed vulnerability (ADR 0120 D17). -->
 
 <!-- Folder: .agents/specs/sta-n-<slug>/, named by the Linear key below (ADR 0120 D1). -->
 
-
-
-**Linear**: STA-n <!-- the Linear issue for this spec; the plan gate needs a real key -->
+**Linear**: STA-n <!-- the Linear issue for this spec; the plan gate needs a real key equal to the folder's -->
 
 **Linear project**: [project name, or "none"]
 
 **Clarifications status**: pending <!-- /speckit.clarify sets this to "complete" when nothing is open -->
 
+**Analyze**: — <!-- after /speckit.analyze: "<date> clean (C0 H# M#)"; Tasked needs C0 -->
+
 **Input**: User description: "$ARGUMENTS"
 
-## Impact *(mandatory, answer every line before /speckit.clarify completes)*
+## Impact _(mandatory, answer every line before /speckit.clarify completes)_
 
 <!-- Write "none" for a line that does not apply; never leave a [placeholder] or NEEDS CLARIFICATION. -->
 
 - **Apps touched**: [apps/console, apps/mobile, apps/docs, or none]
 - **Services touched**: [services/<name>, or none]
 - **Packages touched**: [packages/<category>/<name>, or none]
+- **Public contract change**: [none / additive / breaking: what]
 - **Cross-service events**: [event names, e.g. user.created.v1, and publisher/subscribers, or none]
 - **Tenancy and data**: [tenant-owned tables or scope-tree changes, or none]
+- **Security and privacy**: [auth, IAM, webhooks, outbound HTTP, crypto; new PII and its retention; or none]
 - **Secrets**: [secret names the feature needs (never values), or none]
 - **ADR needed**: [yes: topic / no]
 - **New dependencies**: [packages to add to a pnpm catalog, or none]
 - **Deploy modes**: [what differs in SaaS / on-prem / air-gapped (outbound calls, hosted services, licence checks), or "same in all three"]
+- **Licence tier**: [free (MIT, this repo) / Pro (figentra/stackra-pro)]
+- **UI surfaces**: [screens or components, or none]
+- **Docs to update**: [apps/docs/src/... pages, or none; spec-trace drift checks that a Done spec touched them]
 - **Lane**: [full / lite / bug / chore, from the ADR 0120 lane table (first match wins)]
 - **Change risk**: [R0 / R1 / R2 / R3 (ADR 0120), derived from the answers above; it can be raised, never lowered]
 
-## User Scenarios & Testing *(mandatory)*
+## Glossary _(full lane)_
 
-<!--
-  IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
-  you should still have a viable MVP (Minimum Viable Product) that delivers value.
+- **[Term]**: [meaning in this spec]
 
-  Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
-  Think of each story as a standalone slice of functionality that can be:
-  - Developed independently
-  - Tested independently
-  - Deployed independently
-  - Demonstrated to users independently
--->
+## User Scenarios & Testing _(mandatory)_
+
+<!-- Prioritised, independently testable user stories (P1 first). Each becomes a phase in tasks.md. -->
 
 ### User Story 1 - [Brief Title] (Priority: P1)
 
 [Describe this user journey in plain language]
 
-**Why this priority**: [Explain the value and why it has this priority level]
+**Why this priority**: [the value, and why it has this priority]
 
-**Independent Test**: [Describe how this can be tested independently - e.g., "Can be fully tested by [specific action] and delivers [specific value]"]
-
-**Acceptance Scenarios**:
-
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
-2. **Given** [initial state], **When** [action], **Then** [expected outcome]
-
----
-
-### User Story 2 - [Brief Title] (Priority: P2)
-
-[Describe this user journey in plain language]
-
-**Why this priority**: [Explain the value and why it has this priority level]
-
-**Independent Test**: [Describe how this can be tested independently]
+**Independent Test**: [how this story can be tested on its own]
 
 **Acceptance Scenarios**:
 
 1. **Given** [initial state], **When** [action], **Then** [expected outcome]
 
 ---
-
-### User Story 3 - [Brief Title] (Priority: P3)
-
-[Describe this user journey in plain language]
-
-**Why this priority**: [Explain the value and why it has this priority level]
-
-**Independent Test**: [Describe how this can be tested independently]
-
-**Acceptance Scenarios**:
-
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
-
----
-
-[Add more user stories as needed, each with an assigned priority]
 
 ### Edge Cases
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right edge cases.
--->
+- **EC-01**: [boundary condition or error scenario, and the expected behaviour]
 
-- What happens when [boundary condition]?
-- How does system handle [error scenario]?
-
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 <!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right functional requirements.
+  EARS wording (guidance, ADR 0120 D18): "WHEN <trigger> THE <subject> SHALL <response>", "WHILE <state> …",
+  "IF <unwanted condition> THEN THE <subject> SHALL …". IDs are permanent: an amendment strikes an ID
+  (~~FR-007~~ (A-001)) or appends a new one; it never renumbers. Every FR is covered by a task (`covers:`) and, by
+  Done, by a test carrying `@covers sta-n:FR-###` (spec-trace).
 -->
 
 ### Functional Requirements
 
-- **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]
-- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]
-- **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
-- **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
-- **FR-005**: System MUST [behavior, e.g., "log all security events"]
+- **FR-001**: WHEN [trigger] THE [subject] SHALL [response].
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **[Entity 1]**: [What it represents, key attributes without implementation]
-- **[Entity 2]**: [What it represents, relationships to other entities]
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
-<!--
-  ACTION REQUIRED: Define measurable success criteria.
-  These must be technology-agnostic and measurable.
--->
+<!-- Measurable and technology-agnostic. Each SC names how it is verified: unit, e2e, k6 or manual. -->
 
-### Measurable Outcomes
+- **SC-001**: [measurable outcome] — verified by: [unit / e2e / k6 / manual]
 
-- **SC-001**: [Measurable metric, e.g., "Users can complete account creation in under 2 minutes"]
-- **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
-- **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
-- **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
+## Out of scope
+
+- [what this spec deliberately does not do]
 
 ## Assumptions
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right assumptions based on reasonable defaults
-  chosen when the feature description did not specify certain details.
--->
+- [assumption, and why it is reasonable]
 
-- [Assumption about target users, e.g., "Users have stable internet connectivity"]
-- [Assumption about scope boundaries, e.g., "Mobile support is out of scope for v1"]
-- [Assumption about data/environment, e.g., "Existing authentication system will be reused"]
-- [Dependency on existing system/service, e.g., "Requires access to the existing user profile API"]
+## Amendments
+
+<!-- Append-only: "A-001 · <date> · <reason> · added: FR-012 · struck: FR-007". Status returns to Draft. -->
+
+None.
+
+## Status history
+
+<!-- Append-only: "<date> · <from> → <to> · <by> · <note or approval>". spec-gate needs a line for the current status. -->
+
+- [DATE] · — → Draft · [author] · created

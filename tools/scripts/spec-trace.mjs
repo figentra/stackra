@@ -1,0 +1,162 @@
+#!/usr/bin/env node
+/**
+ * Stackra file contract:
+ * Purpose: spec-trace — FR/SC/P → task → `@covers` test traceability and spec-vs-diff drift for specs in
+ *   `.agents/specs/sta-<n>-<slug>/` (owner decision OR12; the plan's §3.6).
+ *   trace <dir> [--json]    the matrix: each live FR and P with its tasks and covering tests, each SC with its method
+ *   drift <dir> [--base=r]  members changed in the diff that Impact does not name; ticked tasks whose paths are gone;
+ *                           for a Done spec, Impact "Docs to update" pages the diff does not touch
+ *   ci [--base=r]           for every spec folder changed since the base: at Implementing or later, drift; at Done,
+ *                           every live FR and P covered by a test (an FR may be covered through a P that is) and
+ *                           every SC naming its verification method. Wired into `pnpm validate`.
+ * A test covers an ID with a tag anywhere in a `__tests__/*.test.*` file: `@covers sta-163:FR-001 sta-163:P-002`.
+ * Dependency-free; reads files and git only, never Linear or the network.
+ * Secrets: none.
+ */
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { FOLDER, SPECS_DIR, statusOf, testsText } from "./spec-gate.mjs";
+import {
+  coversTags,
+  definedIds,
+  definedLines,
+  memberOf,
+  parseTasks,
+  properties,
+  strip,
+} from "./spec-parse.mjs";
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const readIf = (p) => (existsSync(p) ? readFileSync(p, "utf8") : "");
+
+/** The trace matrix for one spec folder's texts; `tests` is the concatenated text of the test files. */
+export function trace({ folder, spec, plan = "", tasks = "", tests = "" }) {
+  const key = folder.match(FOLDER)?.[1];
+  const covered = new Set(coversTags(tests, key));
+  const live = parseTasks(tasks).filter((t) => !t.struck);
+  const tasksFor = (id) => live.filter((t) => t.covers.includes(id)).map((t) => t.id);
+  const props = properties(plan);
+  const ps = [...props.keys()].map((id) => ({ id, tasks: tasksFor(id), tested: covered.has(id) }));
+  const frs = [...definedIds(spec, "FR").live].map((id) => {
+    const via = ps.filter((p) => p.tested && props.get(p.id).includes(id)).map((p) => p.id);
+    return { id, tasks: tasksFor(id), tested: covered.has(id), via };
+  });
+  const scLines = definedLines(spec, "SC");
+  const scs = [...definedIds(spec, "SC").live].map((id) => ({
+    id,
+    method: scLines
+      .get(id)
+      .match(/verified by:\s*([a-z0-9/ -]+)/i)?.[1]
+      ?.trim(),
+  }));
+  return { key, frs, ps, scs };
+}
+
+/** Done rules over a trace: every live FR and P tested, every SC with a method. */
+export function traceProblems(t) {
+  const problems = [];
+  for (const fr of t.frs)
+    if (!fr.tested && !fr.via.length)
+      problems.push(
+        `${fr.id} has no test carrying \`@covers sta-${t.key}:${fr.id}\` (directly or via a P-###)`,
+      );
+  for (const p of t.ps)
+    if (!p.tested) problems.push(`${p.id} has no test carrying \`@covers sta-${t.key}:${p.id}\``);
+  for (const sc of t.scs)
+    if (!sc.method)
+      problems.push(`${sc.id} names no verification method ("— verified by: unit|e2e|k6|manual")`);
+  return problems;
+}
+
+/** Drift between a spec and the changed paths. `exists` tells whether a repo path exists. */
+export function drift({ spec, tasks = "", changed = [], exists = () => true }) {
+  const problems = [];
+  const impact = strip(spec).match(/^## Impact\b[^\n]*\n([\s\S]*?)(?=^## |(?![\s\S]))/m)?.[1] ?? "";
+  const members = new Set(changed.map(memberOf).filter(Boolean));
+  for (const m of members)
+    if (!impact.includes(m)) problems.push(`the diff changes \`${m}\`, which Impact does not name`);
+  for (const t of parseTasks(tasks).filter((x) => x.done && !x.struck))
+    for (const p of t.paths)
+      if (/\//.test(p) && !/[[\]<>*]/.test(p) && !exists(p))
+        problems.push(`${t.id} is ticked, but its path \`${p}\` does not exist`);
+  if (statusOf(spec) === "done") {
+    const docs = impact.match(/^- \*\*Docs to update\*\*:(.*)$/m)?.[1] ?? "";
+    for (const d of docs.match(/apps\/docs\/src\/[^\s`,;)]+/g) ?? [])
+      if (!changed.includes(d))
+        problems.push(`status done, but Impact's doc \`${d}\` is not touched by this diff`);
+  }
+  return problems;
+}
+
+const git = (...a) => {
+  try {
+    return execFileSync("git", a, { cwd: ROOT, encoding: "utf8", maxBuffer: 64 << 20 });
+  } catch {
+    return null;
+  }
+};
+
+function load(dir) {
+  return {
+    folder: basename(dir),
+    spec: readIf(join(dir, "spec.md")),
+    plan: readIf(join(dir, "plan.md")),
+    tasks: readIf(join(dir, "tasks.md")),
+  };
+}
+
+function main([mode, ...args]) {
+  const base = args.find((a) => a.startsWith("--base="))?.slice(7) ?? "origin/main";
+  const dir = args.find((a) => !a.startsWith("--"));
+  const changed = () => {
+    const out = git("diff", "--name-only", `${base}...HEAD`);
+    if (out === null) console.log(`spec-trace: no ${base} to diff against; skipping`);
+    return (out ?? "").split("\n").filter(Boolean);
+  };
+  const exists = (p) => existsSync(join(ROOT, p));
+  if (mode === "trace" && dir) {
+    const t = trace({ ...load(resolve(dir)), tests: testsText() });
+    if (args.includes("--json")) return (console.log(JSON.stringify(t, null, 2)), 0);
+    for (const r of [...t.frs, ...t.ps])
+      console.log(
+        `${r.id.padEnd(7)} tasks: ${r.tasks.join(", ") || "—"}  tests: ${r.tested ? "yes" : r.via?.length ? `via ${r.via.join(", ")}` : "no"}`,
+      );
+    for (const sc of t.scs) console.log(`${sc.id.padEnd(7)} verified by: ${sc.method ?? "—"}`);
+    return 0;
+  }
+  if (mode === "drift" && dir) {
+    const problems = drift({ ...load(resolve(dir)), changed: changed(), exists });
+    for (const p of problems) console.error(`spec-trace: ${p}`);
+    return problems.length ? 1 : 0;
+  }
+  if (mode === "ci") {
+    const names = changed();
+    const dirs = [
+      ...new Set(names.flatMap((n) => n.match(/^\.agents\/specs\/[^/]+(?=\/)/)?.slice(0, 1) ?? [])),
+    ]
+      .map((d) => join(ROOT, d))
+      .filter((d) => existsSync(join(d, "spec.md")));
+    let failures = 0;
+    let tests;
+    for (const d of dirs) {
+      const s = load(d);
+      const status = statusOf(s.spec);
+      if (status !== "implementing" && status !== "done") continue;
+      const problems = drift({ ...s, changed: names, exists });
+      if (status === "done")
+        problems.push(...traceProblems(trace({ ...s, tests: (tests ??= testsText()) })));
+      for (const p of problems) console.error(`spec-trace: ${SPECS_DIR}/${s.folder}: ${p}`);
+      failures += problems.length;
+    }
+    return failures ? 1 : 0;
+  }
+  console.error(
+    "usage: spec-trace.mjs trace <dir> [--json] | drift <dir> [--base=ref] | ci [--base=ref]",
+  );
+  return 2;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  process.exit(main(process.argv.slice(2)));

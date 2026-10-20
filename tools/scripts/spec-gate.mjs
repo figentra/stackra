@@ -1,31 +1,37 @@
 #!/usr/bin/env node
 /**
- * spec-gate — the clarify-before-build gate for spec-kit specs in `.agents/specs/sta-<n>-<slug>/` (ADR 0120 D1).
+ * spec-gate — the stage gates for spec-kit specs in `.agents/specs/sta-<n>-<slug>/` (ADR 0120 D1, owner decision OR12).
  *
- *   node tools/scripts/spec-gate.mjs plan <spec.md>   exit 1 unless the spec may be planned
- *   node tools/scripts/spec-gate.mjs ci [--base=ref]   stage rules for every spec changed since the base ref,
- *                                                      plus the spec-kit upgrade tripwire
- *   node tools/scripts/spec-gate.mjs dir [--slug s] [--key STA-n]   print the spec folder for the branch's
- *                                                      STA key and persist it to .specify/feature.json
+ *   plan <spec.md>              exit 1 unless the spec may be planned (run by setup-plan.sh)
+ *   check <dir>                 the stage rules for the spec's declared `**Status**`
+ *   tasks <tasks.md>            tasks lint: ids, covers, routes, deps, coverage, waves
+ *   lane [--base=ref]           feat commits need a lite or full spec reached through the branch or `Refs:` keys
+ *   branch                      the branch (STACKRA_BRANCH, else git) is Linear-named or allow-listed
+ *   ci [--base=ref]             tripwire; `check` for every spec folder changed since the base; bug-lane rules;
+ *                               `lane`; `branch` when STACKRA_BRANCH is set (CI). SPEC_GATE_REQUIRE_READY=1 (a
+ *                               ready-for-review PR) also requires every changed spec to be at Tasked or later.
+ *   dir [--slug s] [--key STA-n]   print the spec folder for the branch's STA key and persist .specify/feature.json
+ *   stage <spec.md> <stage>     best-effort Linear comment for a stage change
  *
- * A spec may be planned when it has `**Clarifications status**: complete`, a `**Linear**: STA-n`
- * key, a fully answered `## Impact` section and no `[NEEDS CLARIFICATION` marker.
- * `ci` is stage-aware, by the spec's `**Status**`: a Draft spec only needs a `sta-<n>-<slug>` folder and, when a
- * key is set, the folder's key. From Clarified on the plan rules apply; Planned also needs plan.md, Ready and
- * Implementing tasks.md, Verified every task ticked. Abandoned and Superseded specs are skipped.
- * `setup-plan.sh` runs `plan`; CI runs `ci` (wired into `pnpm validate`). Dependency-free.
- *
- *   node tools/scripts/spec-gate.mjs stage <spec.md> <clarified|planned|implementing|verified>
- *
- * Linear: `plan` (on pass, which is "clarified") and `stage` comment the stage on the spec's issue through
- * `pnpm linear`; `implementing` also moves it to In Progress (`linear start`). In Review and Done follow from the
- * pull request (`pnpm linear review|done`, linear-reconcile). Best-effort: a Linear failure never changes the exit
- * code (ADR 0065 rule 7). `ci` never calls Linear. STACKRA_LINEAR=off disables the calls.
+ * States: Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded. A status may lag
+ * its artifacts, never lead them (I5):
+ *   Draft         folder `sta-<n>-<slug>`; a `**Linear**` key, when set, equals the folder's
+ *   Clarified     clarifications complete, real key, every Impact line answered, no NEEDS CLARIFICATION; a Status
+ *                 history line for the current status
+ *   Planned       plan.md: Constitution Check rows PASS or N/A with a reason, three deploy-mode rows, every live FR
+ *                 validated by a P-### (or marked example-only)
+ *   Tasked        tasks.md passes `tasks`
+ *   Implementing  at least one task ticked
+ *   Done          every live task ticked (spec-trace adds test coverage)
+ * Linear: `plan` and `stage` comment the stage on the spec's issue through `pnpm linear`; best-effort, never part of
+ * the exit code (ADR 0065 rule 7). `ci` never calls Linear. STACKRA_LINEAR=off disables the calls. Dependency-free.
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { BRANCH_RE } from "./linear.mjs";
+import { definedIds, definedLines, parseTasks, properties, routes, strip } from "./spec-parse.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const IMPACT_FIELDS = [
@@ -38,6 +44,8 @@ const IMPACT_FIELDS = [
   "ADR needed",
   "New dependencies",
   "Deploy modes",
+  "Licence tier",
+  "Docs to update",
   "Lane",
   "Change risk",
 ];
@@ -47,9 +55,9 @@ export const STATUSES = [
   "draft",
   "clarified",
   "planned",
-  "ready",
+  "tasked",
   "implementing",
-  "verified",
+  "done",
   "abandoned",
   "superseded",
 ];
@@ -78,29 +86,186 @@ export function checkSpec(text) {
   return problems;
 }
 
-export const STAGES = ["clarified", "planned", "implementing", "verified"];
+export const STAGES = ["clarified", "planned", "tasked", "implementing", "done"];
+export const FOLDER = FOLDER_RE;
+const atLeast = (status, stage) => STATUSES.indexOf(status) >= STATUSES.indexOf(stage);
+
+/** The declared `**Status**`, lower-cased ("" when absent). */
+export const statusOf = (text) =>
+  strip(text)
+    .match(/^\*\*Status\*\*:\s*([A-Za-z]+)/m)?.[1]
+    ?.toLowerCase() ?? "";
+
+/** Planned rules for plan.md against its spec. */
+export function checkPlan(plan, spec) {
+  const problems = [];
+  const body = strip(plan);
+  if (/\[NEEDS CLARIFICATION/i.test(body))
+    problems.push("plan.md: a `[NEEDS CLARIFICATION` marker remains");
+  const section = (name) =>
+    body.match(new RegExp(`^## ${name}\\b[^\\n]*\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, "m"))?.[1];
+  const rows = (text) =>
+    (text ?? "")
+      .split("\n")
+      .filter((l) => l.startsWith("|") && !/^\|\s*-/.test(l))
+      .slice(1)
+      .map((l) =>
+        l
+          .split("|")
+          .slice(1, -1)
+          .map((c) => c.trim()),
+      );
+  const constitution = section("Constitution Check");
+  if (constitution === undefined)
+    problems.push("plan.md: the `## Constitution Check` table is missing");
+  for (const [law, result, note] of rows(constitution)) {
+    if (!/^(PASS|N\/A)$/i.test(result ?? ""))
+      problems.push(
+        `plan.md: Constitution Check \`${law}\` is \`${result ?? ""}\`, not PASS or N/A`,
+      );
+    else if (/^N\/A$/i.test(result) && !note)
+      problems.push(`plan.md: Constitution Check \`${law}\` is N/A without a reason`);
+  }
+  const modes = rows(section("Deploy modes")).map(([m]) => m.toLowerCase());
+  for (const mode of ["saas", "on-prem", "air-gapped"])
+    if (!modes.includes(mode)) problems.push(`plan.md: Deploy modes has no \`${mode}\` row`);
+  const validated = new Set([...properties(plan).values()].flat());
+  const frLines = definedLines(spec, "FR");
+  for (const fr of definedIds(spec, "FR").live)
+    if (!validated.has(fr) && !/example-only/i.test(frLines.get(fr) ?? ""))
+      problems.push(`plan.md: ${fr} is validated by no P-### (or mark it example-only in spec.md)`);
+  return problems;
+}
+
+/** Tasks lint for tasks.md against its spec and plan; `known` holds the routing.yaml task types. */
+export function checkTasks(tasksText, { spec = "", plan = "", known = new Set() } = {}) {
+  const problems = [];
+  const tasks = parseTasks(tasksText);
+  if (!tasks.length) return ["tasks.md: no `- [ ] T###` task lines"];
+  const ids = new Set(definedIds(spec, "(?:FR|SC|EC)").live);
+  for (const p of properties(plan).keys()) ids.add(p);
+  const seen = new Map();
+  for (const t of tasks) {
+    if (seen.has(t.id)) problems.push(`tasks.md:${t.line}: ${t.id} repeats line ${seen.get(t.id)}`);
+    seen.set(t.id, t.line);
+  }
+  const live = tasks.filter((t) => !t.struck);
+  for (const t of live) {
+    const at = `tasks.md:${t.line}: ${t.id}`;
+    if (!t.covers.length) problems.push(`${at} has no \`covers:\``);
+    for (const id of t.covers)
+      if (!ids.has(id))
+        problems.push(`${at} covers ${id}, which spec.md and plan.md do not define`);
+    if (!t.route) problems.push(`${at} has no \`route:\``);
+    else if (known.size && !known.has(t.route))
+      problems.push(`${at} route \`${t.route}\` is not a task type in .agents/routing.yaml`);
+    for (const d of t.deps)
+      if (!seen.has(d)) problems.push(`${at} depends on ${d}, which does not exist`);
+  }
+  const deps = new Map(live.map((t) => [t.id, t.deps]));
+  const state = new Map();
+  const visit = (id, trail) => {
+    if (state.get(id) === "done") return;
+    if (state.get(id) === "open")
+      return problems.push(`tasks.md: dependency cycle ${[...trail, id].join(" → ")}`);
+    state.set(id, "open");
+    for (const d of deps.get(id) ?? []) visit(d, [...trail, id]);
+    state.set(id, "done");
+  };
+  for (const id of deps.keys()) visit(id, []);
+  const covered = new Set(live.flatMap((t) => t.covers));
+  for (const fr of definedIds(spec, "FR").live)
+    if (!covered.has(fr)) problems.push(`tasks.md: ${fr} is covered by no task`);
+  const waves = new Map();
+  for (const t of live.filter((x) => x.parallel))
+    for (const path of t.paths) {
+      const k = `${t.phase}\0${path}`;
+      if (waves.has(k))
+        problems.push(
+          `tasks.md: [P] tasks ${waves.get(k)} and ${t.id} share \`${path}\` in one wave`,
+        );
+      else waves.set(k, t.id);
+    }
+  return problems;
+}
 
 /** Problems for a spec at its declared `**Status**`; `files` lists the names in its folder. */
-export function checkStage(folder, text, { files = [], tasks = "" } = {}) {
-  const body = text.replace(/<!--[\s\S]*?-->/g, "");
+export function checkStage(folder, text, { files = [], tasks = "", plan = "", known } = {}) {
+  const body = strip(text);
   const key = folder.match(FOLDER_RE)?.[1];
   if (!key) return [`folder \`${folder}\` is not \`sta-<n>-<slug>\` (ADR 0120 D1)`];
-  const status = body.match(/^\*\*Status\*\*:\s*([A-Za-z]+)/m)?.[1]?.toLowerCase() ?? "";
+  const status = statusOf(text);
   if (!STATUSES.includes(status)) return [`\`**Status**\` is not one of ${STATUSES.join(", ")}`];
   if (status === "abandoned" || status === "superseded") return [];
   const problems = [];
   const linear = body.match(/^\*\*Linear\*\*:\s*STA-(\d+)\b/m)?.[1];
   if (linear && linear !== key)
     problems.push(`\`**Linear**: STA-${linear}\` does not match the folder key STA-${key}`);
-  const at = STATUSES.indexOf(status);
-  if (at >= STATUSES.indexOf("clarified")) problems.push(...checkSpec(text));
-  if (at >= STATUSES.indexOf("planned") && !files.includes("plan.md"))
-    problems.push(`status ${status} needs plan.md`);
-  if (at >= STATUSES.indexOf("ready") && !files.includes("tasks.md"))
-    problems.push(`status ${status} needs tasks.md`);
-  if (status === "verified" && /^\s*[-*+] \[ \]/m.test(tasks))
-    problems.push("status verified, but tasks.md has unticked tasks");
+  if (status === "draft") return problems;
+  problems.push(...checkSpec(text));
+  const history =
+    body.match(/^## Status history\b[^\n]*\n([\s\S]*?)(?=^## |(?![\s\S]))/m)?.[1] ?? "";
+  if (!new RegExp(`→\\s*${status}\\b`, "i").test(history))
+    problems.push(
+      `\`## Status history\` has no "→ ${status[0].toUpperCase()}${status.slice(1)}" line`,
+    );
+  if (atLeast(status, "planned")) {
+    if (!files.includes("plan.md")) problems.push(`status ${status} needs plan.md`);
+    else problems.push(...checkPlan(plan, text));
+  }
+  if (atLeast(status, "tasked")) {
+    if (!files.includes("tasks.md")) problems.push(`status ${status} needs tasks.md`);
+    else problems.push(...checkTasks(tasks, { spec: text, plan, known }));
+  }
+  const live = parseTasks(tasks).filter((t) => !t.struck);
+  if (atLeast(status, "implementing") && !live.some((t) => t.done))
+    problems.push(`status ${status}, but no task is ticked`);
+  if (status === "done" && live.some((t) => !t.done))
+    problems.push(
+      `status done, but ${live
+        .filter((t) => !t.done)
+        .map((t) => t.id)
+        .join(", ")} are unticked`,
+    );
   return problems;
+}
+
+/** feat commits need a lite or full spec reached through the branch key or their `Refs:` keys (ADR 0120 D4). */
+export function checkLane({
+  commits = [],
+  branch = "",
+  specKeys = new Set(),
+  taskKeys = new Set(),
+}) {
+  const feats = commits.filter((c) => /^feat(\(|!|:)/.test(c));
+  if (!feats.length) return [];
+  const keys = new Set(
+    [branch, ...feats].flatMap((t) => [...t.matchAll(/\bsta-(\d+)\b/gi)].map((m) => m[1])),
+  );
+  if ([...keys].some((k) => specKeys.has(k) || taskKeys.has(k))) return [];
+  return [
+    `lane: ${feats.length} feat commit(s), but neither the branch nor their Refs keys (${[...keys].map((k) => `STA-${k}`).join(", ") || "none"}) reach a spec in ${SPECS_DIR} — new behaviour takes the lite or full lane; use chore/fix/docs for the others`,
+  ];
+}
+
+/** The branch is Linear-named (ADR 0065 decision 5) or allow-listed. */
+export function checkBranch(branch) {
+  if (!branch || branch === "HEAD" || branch === "main") return [];
+  if (/^(renovate\/|changeset-release\/main$)/.test(branch)) return [];
+  return BRANCH_RE.test(branch)
+    ? []
+    : [
+        `branch \`${branch}\` is not \`figentra/sta-<n>-<slug>\` (Linear's "Copy git branch name") or delegate/sta-<n>-…`,
+      ];
+}
+
+/** Bug lane: `.specify/bugs/sta-<n>-<slug>/` with a regression test tagged `@covers sta-<n>:BUG`. */
+export function checkBug(folder, testsText) {
+  const key = folder.match(FOLDER_RE)?.[1];
+  if (!key) return [`.specify/bugs/${folder}: folder is not \`sta-<n>-<slug>\``];
+  return new RegExp(`@covers[^\\n]*\\bsta-${key}:BUG\\b`, "i").test(testsText)
+    ? []
+    : [`.specify/bugs/${folder}: no regression test carries \`@covers sta-${key}:BUG\``];
 }
 
 /** The repo-relative spec folder for a key: its existing `sta-<n>-*` folder, else one named from `slug`. */
@@ -185,6 +350,20 @@ export function tripwire(root = ROOT) {
         problems.push(`${p}: core specify no longer takes SPECIFY_FEATURE_DIRECTORY as-is`);
     }
   }
+  // The preset's only source is .agents/speckit/presets; the installed copy is what `pnpm speckit:sync` made of it.
+  const walk = (dir) =>
+    readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory() ? walk(`${dir}/${e.name}`) : [`${dir}/${e.name}`],
+    );
+  const sources = ".agents/speckit/presets";
+  if (existsSync(join(root, sources)))
+    for (const src of walk(sources)) {
+      const installed = `.specify/presets/${src.slice(sources.length + 1)}`;
+      if (read(installed) !== read(src))
+        problems.push(
+          `${installed} differs from ${src} (edit the source, then \`pnpm speckit:sync\`)`,
+        );
+    }
   // The bundled `speckit` workflow skips clarify and analyze (ADR 0121 D19); it stays disabled.
   const workflows = read(".specify/workflows/workflow-registry.json");
   if (workflows !== null) {
@@ -220,15 +399,24 @@ function gate(file) {
   return problems.length;
 }
 
-function stageGate(dir) {
+const readIf = (p) => (existsSync(p) ? readFileSync(p, "utf8") : "");
+const knownRoutes = () => routes(readIf(join(ROOT, ".agents/routing.yaml")));
+
+function stageGate(dir, { requireReady = false } = {}) {
   const spec = join(dir, "spec.md");
-  const tasks = join(dir, "tasks.md");
   const problems = existsSync(spec)
     ? checkStage(basename(dir), readFileSync(spec, "utf8"), {
         files: readdirSync(dir),
-        tasks: existsSync(tasks) ? readFileSync(tasks, "utf8") : "",
+        tasks: readIf(join(dir, "tasks.md")),
+        plan: readIf(join(dir, "plan.md")),
+        known: knownRoutes(),
       })
     : ["spec.md is missing"];
+  const status = statusOf(readIf(spec));
+  if (requireReady && !["abandoned", "superseded"].includes(status) && !atLeast(status, "tasked"))
+    problems.push(
+      `status ${status || "(none)"} on a ready-for-review PR: a spec PR stays a draft until Tasked (SPEC_GATE_REQUIRE_READY)`,
+    );
   for (const p of problems) console.error(`spec-gate: ${relative(ROOT, dir)}: ${p}`);
   return problems.length;
 }
@@ -248,10 +436,58 @@ function changedSpecs(base) {
   const features = new Set(
     lines.flatMap((n) => n.match(/^\.agents\/specs\/[^/]+(?=\/)/)?.slice(0, 1) ?? []),
   );
+  const bugs = new Set(
+    lines.flatMap((n) => n.match(/^\.specify\/bugs\/[^/]+(?=\/)/)?.slice(0, 1) ?? []),
+  );
   return {
+    names: lines.filter(Boolean),
+    bugs: [...bugs].filter((p) => existsSync(join(ROOT, p))),
     dirs: [...features].map((f) => join(ROOT, f)).filter((p) => existsSync(p)),
     legacy: lines.filter((n) => n.startsWith("specs/") && existsSync(join(ROOT, n))),
   };
+}
+
+const git = (...a) => {
+  try {
+    return execFileSync("git", a, { cwd: ROOT, encoding: "utf8", maxBuffer: 64 << 20 });
+  } catch {
+    return "";
+  }
+};
+const currentBranch = () => process.env.STACKRA_BRANCH || git("branch", "--show-current").trim();
+
+/** Spec keys that exist, and the `[STA-n]` keys in any tasks.md (phase and task sub-issues). */
+function specIndex() {
+  const base = join(ROOT, SPECS_DIR);
+  const folders = existsSync(base) ? readdirSync(base) : [];
+  const specKeys = new Set(folders.flatMap((f) => f.match(FOLDER_RE)?.[1] ?? []));
+  const taskKeys = new Set(
+    folders.flatMap((f) =>
+      [...readIf(join(base, f, "tasks.md")).matchAll(/\[STA-(\d+)\]/g)].map((m) => m[1]),
+    ),
+  );
+  return { specKeys, taskKeys };
+}
+
+function laneGate(base) {
+  const commits = git("log", "--no-merges", "--format=%B%x00", `${base}..HEAD`)
+    .split("\0")
+    .map((c) => c.trim())
+    .filter(Boolean);
+  return checkLane({ commits, branch: currentBranch(), ...specIndex() });
+}
+
+/** Text of every test file under a `__tests__/` folder, for `@covers` lookups. */
+export function testsText(root = ROOT) {
+  const files = git("ls-files", "*__tests__/*")
+    .split("\n")
+    .filter((f) => /\.test\.[cm]?[jt]sx?$/.test(f));
+  return files.map((f) => readIf(join(root, f))).join("\n");
+}
+
+function report(problems) {
+  for (const p of problems) console.error(`spec-gate: ${p}`);
+  return problems.length;
 }
 
 function main([mode, ...args]) {
@@ -285,23 +521,45 @@ function main([mode, ...args]) {
     console.log(dir);
     return 0;
   }
+  const base = args.find((a) => a.startsWith("--base="))?.slice(7) ?? "origin/main";
+  if (mode === "check" && arg) return stageGate(resolve(arg)) ? 1 : 0;
+  if (mode === "tasks" && arg) {
+    const dir = dirname(resolve(arg));
+    return report(
+      checkTasks(readFileSync(arg, "utf8"), {
+        spec: readIf(join(dir, "spec.md")),
+        plan: readIf(join(dir, "plan.md")),
+        known: knownRoutes(),
+      }),
+    )
+      ? 1
+      : 0;
+  }
+  if (mode === "lane") return report(laneGate(base)) ? 1 : 0;
+  if (mode === "branch") return report(checkBranch(currentBranch())) ? 1 : 0;
   if (mode === "ci") {
-    const base = arg?.startsWith("--base=") ? arg.slice(7) : "origin/main";
     let failures = 0;
     for (const p of tripwire()) {
       console.error(`spec-gate: tripwire: ${p}`);
       failures++;
     }
-    const { dirs, legacy } = changedSpecs(base);
+    const { dirs, legacy, bugs } = changedSpecs(base);
     for (const p of legacy) {
       console.error(`spec-gate: ${p}: specs live in ${SPECS_DIR}/sta-<n>-<slug>/, not specs/`);
       failures++;
     }
-    for (const dir of dirs) failures += stageGate(dir);
+    const requireReady = process.env.SPEC_GATE_REQUIRE_READY === "1";
+    for (const dir of dirs) failures += stageGate(dir, { requireReady });
+    if (bugs.length) {
+      const tests = testsText();
+      for (const b of bugs) failures += report(checkBug(basename(b), tests));
+    }
+    failures += report(laneGate(base));
+    if (process.env.STACKRA_BRANCH) failures += report(checkBranch(process.env.STACKRA_BRANCH));
     return failures ? 1 : 0;
   }
   console.error(
-    `usage: spec-gate.mjs plan <spec.md> | ci [--base=ref] | stage <spec.md> <${STAGES.join("|")}> | dir [--slug s] [--key STA-n]`,
+    `usage: spec-gate.mjs plan <spec.md> | check <dir> | tasks <tasks.md> | lane | branch | ci [--base=ref] | stage <spec.md> <${STAGES.join("|")}> | dir [--slug s] [--key STA-n]`,
   );
   return 2;
 }

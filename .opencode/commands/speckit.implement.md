@@ -231,3 +231,11 @@ Report final status with summary of completed work.
 - [ ] Implementation validated against specification, plan, and test coverage
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
 - [ ] Completion reported to user with summary of completed work
+
+
+## Stackra: status
+
+Refuse to start unless the spec's `**Status**` is Tasked or Implementing and the branch is Linear-named
+(`node tools/scripts/spec-gate.mjs branch`). On the first ticked task set `**Status**: Implementing` (Status history
+line). Every test you write carries a `// @covers sta-n:FR-###` line (a line comment: JSDoc lint rejects unknown tags). When every task is `[x]` (or struck by an
+amendment), `node tools/scripts/spec-trace.mjs ci` passes and the Impact docs are touched, set `**Status**: Done`.

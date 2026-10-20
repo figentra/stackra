@@ -35,3 +35,6 @@ pre-push:
   jobs:
     - name: typecheck
       run: pnpm typecheck
+    # Linear-named branch (ADR 0065 D5); `worktree-agent-*` and `delegate/*` work branches are never pushed.
+    - name: spec-branch
+      run: node tools/scripts/spec-gate.mjs branch

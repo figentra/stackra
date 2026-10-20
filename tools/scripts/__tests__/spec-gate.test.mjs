@@ -1,10 +1,13 @@
 /**
  * @module tools/scripts/spec-gate.test
  *
- * Purpose: hold the clarify-before-build gate and the Linear task parser to their contract.
+ * Purpose: hold the stage gates (state machine, plan, tasks, lane, branch, bug lane, tripwire), the v2 templates,
+ *   their validate wiring and the Linear task parser to their contract.
  * Boundary: pure functions plus one dry-run child process; no network, no repository writes.
  * Runtime: node — node:test and node:assert.
  */
+// @covers sta-163:FR-001 sta-163:FR-002 sta-163:FR-003 sta-163:FR-004 sta-163:FR-005 sta-163:FR-008
+// @covers sta-163:P-001 sta-163:P-002 sta-163:P-003 sta-163:P-005 sta-163:P-006 sta-163:P-007
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -12,7 +15,18 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } f
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { checkSpec, checkStage, REPLACED, specDir, tripwire, WRAPPED } from "../spec-gate.mjs";
+import {
+  checkBranch,
+  checkBug,
+  checkLane,
+  checkSpec,
+  checkStage,
+  checkTasks,
+  REPLACED,
+  specDir,
+  tripwire,
+  WRAPPED,
+} from "../spec-gate.mjs";
 import { labelsFor, specLinks, unlinkedTasks } from "../spec-linear.mjs";
 
 const SCRIPTS = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -27,6 +41,8 @@ const impact = (v = "none") =>
     "ADR needed",
     "New dependencies",
     "Deploy modes",
+    "Licence tier",
+    "Docs to update",
     "Lane",
     "Change risk",
   ]
@@ -34,29 +50,140 @@ const impact = (v = "none") =>
     .join("\n");
 const ROOT = join(SCRIPTS, "../..");
 const spec = ({ status = "complete", linear = "STA-12", body = impact(), stage = "Draft" } = {}) =>
-  `# Feature Specification: X\n\n**Status**: ${stage}\n\n**Linear**: ${linear}\n\n**Clarifications status**: ${status}\n\n## Impact\n\n${body}\n\n## Requirements\n`;
+  `# Feature Specification: X\n\n**Status**: ${stage}\n\n**Linear**: ${linear}\n\n**Clarifications status**: ${status}\n\n## Impact\n\n${body}\n\n## Requirements\n\n## Status history\n\n- d · Draft → ${stage}\n`;
 
-test("a Draft spec passes with open questions; later stages need the plan rules and their artifacts", () => {
+// The fixture is a Done spec with plan and tasks; each test breaks one thing and expects one precise message.
+const FIX = join(SCRIPTS, "__tests__/__fixtures__/sdd/sta-901-widget");
+const fixture = (name) => readFileSync(join(FIX, name), "utf8");
+const known = new Set(["tests", "spec-task"]);
+const stageOf = (text, over = {}) =>
+  checkStage("sta-901-widget", text, {
+    files: ["spec.md", "plan.md", "tasks.md"],
+    plan: fixture("plan.md"),
+    tasks: fixture("tasks.md"),
+    known,
+    ...over,
+  });
+const at = (status) =>
+  fixture("spec.md")
+    .replace("**Status**: Done", `**Status**: ${status}`)
+    .replace(/- 2026-10-20 · .*→ (?!Draft|Clarified).*\n/g, (l) =>
+      l.includes(`→ ${status}`) ? l : "",
+    );
+
+test("a Draft spec passes with open questions; later stages need their rules and artifacts", () => {
   const draft = spec({ status: "pending", linear: "STA-n", body: impact("[open]") });
   assert.deepEqual(checkStage("sta-12-x", draft), []);
   assert.match(checkStage("001-x", draft)[0], /sta-<n>-<slug>/);
   assert.match(checkStage("sta-12-x", spec({ linear: "STA-13" })).join(), /does not match/);
   assert.match(checkStage("sta-12-x", spec({ stage: "Bogus" }))[0], /Status/);
+  assert.match(checkStage("sta-12-x", spec({ stage: "Ready" }))[0], /Status/);
   assert.match(
     checkStage("sta-12-x", spec({ status: "pending", stage: "Clarified" })).join(),
     /Clarifications/,
   );
   assert.deepEqual(checkStage("sta-12-x", spec({ stage: "Clarified" })), []);
-  assert.match(checkStage("sta-12-x", spec({ stage: "Planned" })).join(), /plan\.md/);
-  assert.deepEqual(checkStage("sta-12-x", spec({ stage: "Planned" }), { files: ["plan.md"] }), []);
   assert.match(
-    checkStage("sta-12-x", spec({ stage: "Implementing" }), { files: ["plan.md"] }).join(),
-    /tasks\.md/,
+    checkStage("sta-12-x", spec({ stage: "Clarified" }).replace("Draft → Clarified", "x")).join(),
+    /Status history.*Clarified/,
   );
-  const both = { files: ["plan.md", "tasks.md"], tasks: "- [x] T001\n- [ ] T002\n" };
-  assert.deepEqual(checkStage("sta-12-x", spec({ stage: "Implementing" }), both), []);
-  assert.match(checkStage("sta-12-x", spec({ stage: "Verified" }), both).join(), /unticked/);
+  assert.match(checkStage("sta-12-x", spec({ stage: "Planned" })).join(), /needs plan\.md/);
   assert.deepEqual(checkStage("sta-12-x", spec({ stage: "Abandoned", status: "pending" })), []);
+});
+
+test("the fixture passes at every stage from Clarified to Done", () => {
+  for (const s of ["Clarified", "Planned", "Tasked", "Implementing", "Done"])
+    assert.deepEqual(stageOf(at(s)), [], s);
+});
+
+test("Planned: constitution rows, deploy modes and FR validation", () => {
+  const spec = at("Planned");
+  const plan = fixture("plan.md");
+  assert.match(
+    stageOf(spec, { plan: plan.replace("| PASS   |", "| TODO   |") }).join(),
+    /Constitution Check `Boundaries` is `TODO`/,
+  );
+  assert.match(
+    stageOf(spec, { plan: plan.replace("no tenant data", "") }).join(),
+    /`Tenancy` is N\/A without a reason/,
+  );
+  assert.match(
+    stageOf(spec, { plan: plan.replace(/^\| Air-gapped.*\n/m, "") }).join(),
+    /`air-gapped` row/,
+  );
+  assert.match(
+    stageOf(spec, { plan: plan.replace("FR-001, FR-002", "FR-001") }).join(),
+    /FR-002 is validated by no P-###/,
+  );
+  const exampleOnly = spec.replace("SHALL refuse it.", "SHALL refuse it. (example-only)");
+  assert.deepEqual(stageOf(exampleOnly, { plan: plan.replace("FR-001, FR-002", "FR-001") }), []);
+});
+
+test("Tasked: the tasks lint names the line and the problem", () => {
+  const tasks = fixture("tasks.md");
+  const lint = (t) => checkTasks(t, { spec: fixture("spec.md"), plan: fixture("plan.md"), known });
+  assert.deepEqual(lint(tasks), []);
+  assert.match(lint(tasks.replace("T002 [P]", "T001 [P]")).join(), /T001 repeats line/);
+  assert.match(lint(tasks.replace("covers: FR-002 ", "")).join(), /T002 has no `covers:`/);
+  assert.match(
+    lint(tasks.replace("covers: FR-002", "covers: FR-009")).join(),
+    /covers FR-009, which/,
+  );
+  assert.match(
+    lint(tasks.replace("route: tests", "route: nope")).join(),
+    /route `nope` is not a task type/,
+  );
+  assert.match(
+    lint(tasks.replace("deps: T001", "deps: T042")).join(),
+    /depends on T042, which does not exist/,
+  );
+  assert.match(
+    lint(tasks.replace("route: tests", "route: tests — deps: T002")).join(),
+    /dependency cycle/,
+  );
+  assert.match(
+    lint(tasks.replace("covers: FR-002", "covers: SC-001")).join(),
+    /FR-002 is covered by no task/,
+  );
+  assert.match(
+    lint(tasks.replace("src/build.ts", "src/__tests__/build.test.ts")).join(),
+    /\[P\] tasks T001 and T002 share/,
+  );
+  assert.match(stageOf(at("Tasked"), { files: ["spec.md", "plan.md"] }).join(), /needs tasks\.md/);
+});
+
+test("Implementing needs a ticked task; Done needs them all", () => {
+  const none = fixture("tasks.md").replaceAll("- [x]", "- [ ]");
+  assert.match(stageOf(at("Implementing"), { tasks: none }).join(), /no task is ticked/);
+  const one = fixture("tasks.md").replace("- [x] T002", "- [ ] T002");
+  assert.deepEqual(stageOf(at("Implementing"), { tasks: one }), []);
+  assert.match(stageOf(at("Done"), { tasks: one }).join(), /T002 are unticked/);
+});
+
+test("lane: feat commits need a spec through the branch or Refs keys", () => {
+  const specKeys = new Set(["163"]);
+  const taskKeys = new Set(["170"]);
+  const feat = "feat(x): y\n\nRefs: STA-5";
+  assert.deepEqual(checkLane({ commits: ["chore: x"], branch: "figentra/sta-5-x" }), []);
+  assert.match(
+    checkLane({ commits: [feat], branch: "figentra/sta-5-x", specKeys, taskKeys }).join(),
+    /feat commit\(s\).*STA-5/,
+  );
+  assert.deepEqual(checkLane({ commits: [feat], branch: "figentra/sta-163-x", specKeys }), []);
+  assert.deepEqual(checkLane({ commits: ["feat: y\n\nRefs: STA-170"], taskKeys }), []);
+});
+
+test("branch: Linear-named or allow-listed", () => {
+  assert.deepEqual(checkBranch("figentra/sta-163-sdd-gates"), []);
+  assert.deepEqual(checkBranch("renovate/node-24"), []);
+  assert.deepEqual(checkBranch("changeset-release/main"), []);
+  assert.match(checkBranch("spec/notifications").join(), /not `figentra\/sta-<n>-<slug>`/);
+});
+
+test("bug lane: the folder is keyed and a regression test covers sta-n:BUG", () => {
+  assert.deepEqual(checkBug("sta-44-crash", "/** @covers sta-44:BUG */"), []);
+  assert.match(checkBug("sta-44-crash", "nothing").join(), /@covers sta-44:BUG/);
+  assert.match(checkBug("44-crash", "").join(), /not `sta-<n>-<slug>`/);
 });
 
 test("specDir names the folder from the branch key, reuses an existing one, and refuses without a key", () => {
@@ -121,6 +248,15 @@ test("tripwire: the repository passes, and an upgrade that drops the wrap or res
     const more = tripwire(root).join("\n");
     assert.match(more, /speckit\.taskstoissues\.md lost the Stackra wrap/);
     assert.match(more, /workflow is enabled/);
+    // The installed preset must equal its source.
+    for (const p of [
+      ".agents/speckit/presets/stackra/preset.yml",
+      ".specify/presets/stackra/preset.yml",
+    ])
+      cpSync(join(ROOT, p), join(root, p), { recursive: true });
+    assert.doesNotMatch(tripwire(root).join(), /differs from/);
+    writeFileSync(join(root, ".specify/presets/stackra/preset.yml"), "hand edit\n");
+    assert.match(tripwire(root).join(), /\.specify\/presets\/stackra\/preset\.yml differs from/);
   } finally {
     rmSync(root, { recursive: true });
   }
@@ -189,4 +325,34 @@ test("spec-gate plan exits 1 on a pending spec, and spec-linear --dry-run needs 
   } finally {
     rmSync(dir, { recursive: true });
   }
+});
+
+test("the v2 templates carry the state machine, Impact v2, Amendments, Status history and the task line format", () => {
+  const t = (n) => readFileSync(join(ROOT, ".agents/speckit/presets/stackra/templates", n), "utf8");
+  const specT = t("spec-template.md");
+  assert.match(specT, /Draft → Clarified → Planned → Tasked → Implementing → Done/);
+  for (const h of [
+    "## Impact",
+    "## Amendments",
+    "## Status history",
+    "**Analyze**",
+    "verified by:",
+  ])
+    assert.ok(specT.includes(h), h);
+  for (const f of ["Licence tier", "Docs to update", "Lane", "Change risk"])
+    assert.ok(specT.includes(`- **${f}**:`), f);
+  assert.match(
+    t("plan-template.md"),
+    /## Constitution Check[\s\S]*## Deploy modes[\s\S]*Validates: FR-001/,
+  );
+  assert.match(t("tasks-template.md"), /— covers: FR-003, P-002 — route: spec-task — deps: T010/);
+});
+
+test("validate and CI run both gates; a ready-for-review PR sets the Tasked rule", () => {
+  const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).scripts;
+  assert.match(pkg.validate, /spec-gate\.mjs ci && node tools\/scripts\/spec-trace\.mjs ci/);
+  const ci = readFileSync(join(ROOT, ".github/workflows/ci.yml"), "utf8");
+  assert.match(ci, /ready_for_review/);
+  assert.match(ci, /SPEC_GATE_REQUIRE_READY:/);
+  assert.match(ci, /STACKRA_BRANCH:/);
 });

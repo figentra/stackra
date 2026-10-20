@@ -308,6 +308,10 @@ Report completion (after questioning loop ends or early termination):
 
 When no `[NEEDS CLARIFICATION` marker remains anywhere in the spec, every `## Impact` answer is
 filled, and `**Linear**` holds a real `STA-n` key, set `**Clarifications status**: complete`.
-Otherwise leave it `pending` and list what is still open. Verify with
-`node tools/scripts/spec-gate.mjs plan <spec.md>`. A missing Linear issue is created with
-`node tools/scripts/spec-linear.mjs issue <spec.md>` (or the Linear MCP when run by an agent).
+Otherwise leave it `pending` and list what is still open. Decisions (lane, licence tier, deploy-mode limits,
+retention, providers) come only from the owner; never answer them yourself.
+
+When it is complete, set `**Status**: Clarified`, append `<date> · Draft → Clarified · <you> · <owner's go>` to
+`## Status history`, and verify with `node tools/scripts/spec-gate.mjs plan <spec.md>` and
+`node tools/scripts/spec-gate.mjs check <folder>`. A missing Linear issue is created with
+`pnpm spec:linear issue <spec.md>`.

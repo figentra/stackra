@@ -19,3 +19,10 @@ section. If it fails, STOP: print its output, tell the user to run `/speckit.cla
 nothing. Never edit the marker yourself to get past the gate.
 
 {CORE_TEMPLATE}
+
+## Stackra: Planned
+
+`plan.md` follows the Stackra plan template: every Constitution Check row is PASS or N/A with a reason, the three
+deploy modes have rows, and every FR is validated by a `P-###` property (or the FR says `example-only`). Then set
+`**Status**: Planned`, append the Status history line, and run `node tools/scripts/spec-gate.mjs check <folder>`.
+The next step is `/speckit.tasks`.

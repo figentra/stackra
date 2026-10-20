@@ -224,7 +224,8 @@ Every task MUST strictly follow this format:
 
 ## Stackra: Linear mapping
 
-Every task line keeps its `T###` id. After writing `tasks.md`, tell the user to run
-`node tools/scripts/spec-linear.mjs tasks <tasks.md> --dry-run` and then without `--dry-run`
-(or ask the agent to use the Linear MCP). The script appends ` [STA-n]` to each task line it creates
-an issue for; tasks are sub-issues of the spec's `**Linear**` issue.
+Every task line follows the Stackra tasks template:
+`- [ ] T012 [P] [US1] <desc> in <path> — covers: FR-003, P-002 — route: <task type> — deps: T010`. Run
+`node tools/scripts/spec-gate.mjs tasks <tasks.md>` until it passes (ids, routes, coverage, deps, waves). Then set
+`**Status**: Tasked`, append the Status history line, and run `/speckit.taskstoissues`, which files each task as a
+Linear sub-issue through `pnpm spec:linear tasks` and appends ` [STA-n]`.

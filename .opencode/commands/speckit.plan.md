@@ -178,3 +178,11 @@ Command ends after Phase 1 design. Report branch, IMPL_PLAN path, and generated 
 - [ ] Plan workflow executed and design artifacts generated
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
 - [ ] Completion reported to user with branch, plan path, and generated artifacts
+
+
+## Stackra: Planned
+
+`plan.md` follows the Stackra plan template: every Constitution Check row is PASS or N/A with a reason, the three
+deploy modes have rows, and every FR is validated by a `P-###` property (or the FR says `example-only`). Then set
+`**Status**: Planned`, append the Status history line, and run `node tools/scripts/spec-gate.mjs check <folder>`.
+The next step is `/speckit.tasks`.

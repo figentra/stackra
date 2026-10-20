@@ -2,9 +2,9 @@
   "schema_version": "1.0",
   "presets": {
     "stackra": {
-      "version": "1.0.0",
+      "version": "2.0.0",
       "source": "local",
-      "manifest_hash": "sha256:b5ac0dd839919c11014a1a3d09198c9e2485b947a0f9301013d2e918ee80252b",
+      "manifest_hash": "sha256:c4a298dce30207414d45d588bcd2a796b07ab6b68765c985f2a49ebaa6c2154b",
       "enabled": true,
       "priority": 10,
       "registered_commands": {
@@ -47,7 +47,7 @@
           "speckit-constitution"
         ]
       },
-      "installed_at": "2026-10-19T08:43:21.807670+00:00"
+      "installed_at": "2026-10-20T14:17:10.610026+00:00"
     }
   }
 }
