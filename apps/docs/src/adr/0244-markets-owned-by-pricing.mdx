@@ -23,6 +23,7 @@ A tenant sells in several countries, and each one needs its own currency, price 
 6. **Rounding.** Prices round to a price point, per Market.
 7. **Data region.** The Market does not change the data region, which stays a tenancy property (ADR 0210).
 8. **Own plans.** Figentra uses Markets for its own plans (ADR 0242).
+9. **Currency and tax.** The seller's Market sets the price list and the displayed currency. Tax is destination-based: it follows the buyer's location, under the seller's tax registrations. The exchange rate is a snapshot taken at checkout (register D-15, owner answer "Part-D clarifications").
 
 ## Consequences
 
@@ -35,7 +36,7 @@ planned — the resolution test covers each of the three matching methods; the r
 
 ## Open questions
 
-1. Which entity decides the currency and the tax when a tenant's market and the end customer's address differ (register D-15). The owner decides.
+None. Decision 9 settles which entity decides the currency and the tax (register D-15).
 
 ## Supersedes and sources
 
