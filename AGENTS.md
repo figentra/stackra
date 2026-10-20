@@ -398,7 +398,8 @@ Rows naming no package are planned (guardian review). Docs: `/adr/0011-rejected-
 
 ### Secrets
 
-Stackra uses **two secret mechanisms** (ADR-0009):
+Stackra keeps production secret values in Infisical. Infisical is the source, and runway syncs them into the runtimes on deploy
+(ADR 0173, which supersedes ADR 0009). Secret names are in git; values never are.
 
 **Invariant: nobody reads a value.** A value is set by a human, or by the secret-manager flow (section 3,
 ADR 0257), which writes it without anyone, the agent included, ever seeing it.
@@ -414,8 +415,8 @@ import { secret } from "encore.dev/config";
 const stripeSecretKey = secret("STRIPE_SECRET_KEY");
 ```
 
-- Stored in the runtime's secret store (Encore's secret manager), set there by a human; Infisical Secret Sync is not
-  adopted (ADR 0009 D8)
+- Infisical is the source of production secrets. Runway syncs them into Encore, Cloudflare Workers and EAS on deploy (ADR 0173,
+  which supersedes ADR 0009)
 - A human sets each value per environment; an agent only names the secret (the secret-manager flow covers the
   runtime store once a tool for it exists; ADR 0257)
 - Never in git
@@ -505,7 +506,7 @@ Each article below is bound to a check:
 1. **Secrets never in git** → `gitleaks` pre-commit + CI scan
 2. **No .env files** → `guard-paths` hook
 3. **CI secrets from OIDC** → GitHub Actions OIDC (Phase 2)
-4. **App secrets set by a human in the runtime store** → review; no sync (ADR 0009 D8)
+4. **Production values reach runtimes by Infisical sync** (ADR 0173, decision 1), and only the `secret-manager` agent writes values through `pnpm secrets:import` (ADR 0173, decision 7; planned). Review checks the sync, not a manual copy.
 5. **Nobody reads a value; the inbox flow writes blind** → `tools/scripts/secrets-import.mjs` (+ its test, which
    asserts no canary value reaches output, audit log or argv), `guard-bash` / `guard-paths` inbox rules
 
@@ -520,7 +521,7 @@ Each article below is bound to a check:
 #### See Also
 
 - Constitution: secrets (laws)
-- ADR-0009: Two secret mechanisms
+- ADR-0173: Infisical is the source of production secrets (supersedes ADR-0009)
 - Runbook: secrets (vault layout, rotation)
 
 <!-- source: .agents/rules/versions.md -->
