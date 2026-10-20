@@ -11,7 +11,7 @@ This is the law for any session that hands work to another agent. Rule numbers a
 | D1 | **Claude decides, executors execute.** ADRs, specs, anything that adds a workspace member, a dependency or a catalog entry, docs, tooling and `pnpm-workspace.yaml` are the deciding session's. Spec tasks whose design names every file, audits, codemods and steward passes may be delegated. | **Planned.** Roster and per-agent tool lists ([roster](/agents/roster)). |
 | D2 | **No brief, no run.** A delegated task has a brief with every section filled. A brief that leaves a decision open goes back to the spec. Paths are absolute, commands one per line. | By review. |
 | D3 | **One task, one agent per package.** Two parallel agents never edit the same package. The one that needs a shared interface owns the change. | **Planned.** See [concurrent sessions](/agents/concurrent-sessions). |
-| D4 | **Executors never write git.** No `add`, `commit`, `push`, `stash`, `reset`, `checkout`, `restore`, `clean`. The dispatcher stages explicit paths and commits. Pushing and publishing are a human's call. | **Partial.** `.agents/hooks/guard-bash.mjs` denies destructive git commands, force-push and manual release tags. A blanket write-git denial for subagents is planned. |
+| D4 | **Executors never write git.** No `add`, `commit`, `push`, `stash`, `reset`, `checkout`, `restore`, `clean`. The dispatcher stages explicit paths and commits. The lead (Claude) pushes, opens pull requests and merges them only through the merge gate; the owner merges the release (version) pull request and promotes to production ([0119](/adr/0119-merge-policy-and-release-authority)). | **Partial.** `.agents/hooks/guard-bash.mjs` denies destructive git commands, force-push and manual release tags. A blanket write-git denial for subagents is planned. |
 | D5 | **Caps.** At most five agents run at once in a wave. The machine is shared with other sessions. | By review. |
 | D6 | **Review by report and gates.** The dispatcher checks the report against the repo, runs `pnpm verify` itself, and compares the diff to the brief's "may touch" and "must not touch" lists. Out-of-brief files are removed. A report that claims green without a verify tail is treated as red. | **Enforced** for the gate: `pnpm verify`. The rest is review. |
 | D7 | **Sentinels never look like credentials.** Test values are `sentinel-<topic>-never-printed`. If a test needs a realistic credential shape, assemble it from fragments at runtime. | **Enforced.** gitleaks at pre-commit. |
@@ -28,7 +28,7 @@ Copy this for every delegated task.
 # Brief: <slug>
 
 | Agent       | <agent name>                                 |
-| Spec / task | .agents/specs/<NNN>-<slug> · task <id>       |
+| Spec / task | .agents/specs/sta-<n>-<slug> · task <id>     |
 | Date        | <YYYY-MM-DD>                                 |
 
 ## Goal
@@ -65,3 +65,7 @@ Deviations from the spec with the reason. Anything not done, with the exact reas
 <Note>
 The deciding session does not read large files or run builds itself when a brief can describe the work. It spends its context on decisions, brief approval, diff review and commits.
 </Note>
+
+## History
+
+- 2026-10-20, [0125](/adr/0125-constitution-amended-to-match-accepted-adrs): D4 follows [0119](/adr/0119-merge-policy-and-release-authority) (Claude pushes and merges through the gate; the owner releases); the brief names specs by [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk) folders. Delegation to OpenCode per [0121](/adr/0121-sdlc-tooling-roles-and-linear) was already in the preamble.

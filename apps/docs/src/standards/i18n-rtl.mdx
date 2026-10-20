@@ -8,7 +8,7 @@ Every surface can ship in a right-to-left language. Nothing is built LTR-only an
 
 ## Locales and messages
 
-- **Locales are defined by apps, not packages.** A shared package exposes a `defineLocales()` style factory and a convenience value; a closed `"en" | "ar"` type or a hard-coded locale list in a package is a finding ([Boundaries](/constitution/boundaries)). A new language is one definition and one catalog file in the app.
+- **Locales are defined by apps, not packages.** A shared package exposes a typed locale config contract (no `define*()` factory, [0094](/adr/0094-decorators-only-authoring)) and a convenience value; a closed `"en" | "ar"` type or a hard-coded locale list in a package is a finding ([Boundaries](/constitution/boundaries)). A new language is one definition and one catalog file in the app.
 - **One engine, ICU MessageFormat.** Plurals, selects, numbers and dates are ICU arguments. Plural categories come from ICU, never from hand-built JSON objects, because Arabic has six of them.
 - **Typed keys.** Keys and their parameters are generated from the catalogs, so a renamed or missing message fails typecheck everywhere. The generated file is marked do-not-edit.
 - **Every key exists in every supported locale** with the same ICU arguments and valid syntax. A catalog test enforces it; a locale with a missing key never ships.

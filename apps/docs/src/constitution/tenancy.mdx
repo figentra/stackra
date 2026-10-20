@@ -1,6 +1,6 @@
 ---
 title: "Tenancy"
-description: "Two-layer tenant isolation, the scope tree, where the tenant context comes from, and the isolation tests every tenant-owned table needs."
+description: "Two-layer tenant isolation, where the tenant context comes from, the isolation tests every tenant-owned table needs, and the rules for the Pro scope tree."
 icon: "layers"
 ---
 
@@ -12,7 +12,7 @@ icon: "layers"
 
 <Steps>
   <Step title="Application layer">
-    Every query against a tenant-owned table runs inside `withTenant(ctx, db => …)` or `withScope(ctx, db => …)`. Each opens a transaction and runs `SELECT set_config('app.tenant_id', $1, true)` with the tenant from the authenticated principal, never from request input. `withScope` also appends the scope-path predicate from the principal's granted paths. A direct query in a handler is a lint failure.
+    Every query against a tenant-owned table runs inside `withTenant(ctx, db => …)` from `@stackra/tenancy` (or the Pro scope driver's `withScope`, below). It opens a transaction and runs `SELECT set_config('app.tenant_id', $1, true)` with the tenant from the authenticated principal, never from request input. A direct query in a handler is a lint failure.
   </Step>
   <Step title="Database layer">
     Every tenant-owned table has `tenant_id uuid NOT NULL`, `ENABLE ROW LEVEL SECURITY` **and** `FORCE ROW LEVEL SECURITY` (the role that owns the table would otherwise bypass RLS), and a policy on `current_setting('app.tenant_id', true)`. A forgotten filter returns zero rows, never another tenant's data.
@@ -21,9 +21,9 @@ icon: "layers"
 
 Hand-written RLS is not allowed. The scoped-table pattern emits the columns, indexes and policy. The mechanism is decided in [ADR 0014](/adr/0014-data-ownership-and-orm), not here. Migrations that backfill tenant tables use a dedicated bypass clause in the policy. Decide it in the migration template, not on the first backfill.
 
-## Scope tree
+## Scope tree (Pro)
 
-A tenant's data is organised in a tree of scopes (for example organisation, branch, team). Each scope has an `ltree` path.
+The scope tree is a Pro driver, `@stackra-pro/scope`; free tenancy has no scope dependency ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope), owner decisions S2, S3 and S12). When a product installs it, a tenant's data is organised in a tree of scopes (for example organisation, branch, team), each with an `ltree` path, and these rules bind. `withScope` also appends the scope-path predicate from the principal's granted paths.
 
 | Table kind | Columns |
 | --- | --- |
@@ -34,7 +34,7 @@ Use the OR-expansion `(scope_path <@ $1::ltree OR scope_path <@ $2::ltree …)`.
 
 ## Tenant context
 
-Resolved once per request by the single auth handler into the principal ([Security](/constitution/security)). The tenant is the session's active tenant, a token claim, or an API key's bound tenant. It is never taken from body, query string or a client header. The one client header a handler reads, `X-Scope-Path`, is validated against the granted paths and dropped otherwise.
+Resolved once per request by the single auth handler into the principal ([Security](/constitution/security)). The tenant is the session's active tenant, a token claim, or an API key's bound tenant. It is never taken from body, query string or a client header. With the Pro scope driver, the one client header a handler reads, `X-Scope-Path`, is validated against the granted paths and dropped otherwise.
 
 Cross-tenant access exists only in an explicitly privileged, audited endpoint named by an ADR. Tables that are global by design (a person registry, an auth account store) have no `tenant_id`. They enforce the boundary in code and a migration test pins that.
 
@@ -53,3 +53,7 @@ Every service with tenant-owned tables ships an isolation test that proves:
 | RLS catalog audit: every table with `tenant_id` has `ENABLE` and `FORCE` and a policy | With the first scoped table, in `pnpm verify` |
 | `isolation.test.ts` required by the validator once a scoped table exists | With the first scoped table |
 | Security-tenancy reviewer agent | Before the first scoped table |
+
+## History
+
+- 2026-10-20, [0125](/adr/0125-constitution-amended-to-match-accepted-adrs): the scope tree moved out of the base law into a Pro section ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope), owner decisions S2, S3, S12).
