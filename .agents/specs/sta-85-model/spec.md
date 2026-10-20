@@ -28,7 +28,7 @@ imports no ORM (ADRs 0097, 0096, 0046, 0082)."
 - **Cross-service events**: none
 - **Tenancy and data**: none in this package. It declares model metadata only; no table, no migration. `HasTenant` is owned by `@stackra/tenancy` (ADR 0096) and registers on this package's trait registry when that package lands
 - **Secrets**: none
-- **ADR needed**: no (ADRs 0097, 0096, 0046 and 0116 decide it)
+- **ADR needed**: no (Accepted ADRs 0097, 0096 and 0116 decide it; it also relies on 0046 and 0082, which are still Proposed and are decided by the owner, not here)
 - **New dependencies**: none (workspace packages `@stackra/validation`, `@stackra/container`, `@stackra/contracts`)
 - **Deploy modes**: same in all three. Metadata only, client-safe, no network (ADR 0076)
 - **Lane**: full (roadmap W2.1)
@@ -132,7 +132,7 @@ decision 5.2).
 
 **Acceptance Scenarios**:
 
-1. **Given** `@Translatable() title`, **When** metadata is read, **Then** the field is localized and its storage follows the clarified rule [NEEDS CLARIFICATION: C16 — recommended: the `@Translatable` field decorator owns storage; the content `Translatable` trait only bundles it].
+1. **Given** `@Translatable() title`, **When** metadata is read, **Then** the field is localized and its storage follows the clarified rule [NEEDS CLARIFICATION: C16 — proposed: the `@Translatable` field decorator owns storage; the content `Translatable` trait only bundles it].
 
 ### Edge Cases
 
@@ -157,7 +157,7 @@ EARS wording (ADR 0120 D18).
 - **FR-006**: The package shall provide relation decorators `@BelongsTo`, `@HasOne`, `@HasMany`, `@ManyToMany` with pivots, and morph relations, recorded as metadata with lazy targets (ADR 0097 decisions 1 and 4).
 - **FR-007**: The package shall provide `@Scope` for named query scopes and a declaration of default eager loads, as metadata the database executes (ADR 0097 decisions 1 and 4).
 - **FR-008**: The package shall let a model declare the filters, sorts and includes its list actions accept (ADR 0097 decision 5.1, ADR 0105 decision 1).
-- **FR-009**: The package shall provide `@Stored` and `@Translatable` field-storage declarations (ADR 0097 decision 5.2) [NEEDS CLARIFICATION: C16 — recommended: field decorator owns storage; the content trait bundles it].
+- **FR-009**: The package shall provide `@Stored` and `@Translatable` field-storage declarations (ADR 0097 decision 5.2) [NEEDS CLARIFICATION: C16 — proposed: field decorator owns storage; the content trait bundles it].
 - **FR-010**: The package shall expose per-audience hidden and visible fields through the `@stackra/validation` serializer, with audiences `public`, `app`, `admin` and `agent` (ADR 0097 decision 4, ADR 0095 decision 6).
 - **FR-011**: The package shall provide a state-machine declaration on a model field, with guarded transitions; if a transition is not allowed from the current state, then it shall fail with an STK error (ADR 0097 decision 1).
 - **FR-012**: The package shall provide `createTrait` and the trait registry, so traits owned by many packages compose on one class (ADR 0096 decision 1 and Consequences, ADR 0117 decision 6).
@@ -204,7 +204,7 @@ EARS wording (ADR 0120 D18).
 ## Assumptions
 
 - `@stackra/validation` (STA-79) and `@stackra/container` are merged before the plan starts (roadmap W2.1 depends on W1.3).
-- The public-id codec lives in `@stackra/contracts` (ADR 0125 decision 2); this package registers prefixes only.
+- `PublicId` and the prefix registry live in `@stackra/contracts` (ADR 0125 decision 2); this package declares each model's prefix and registers it there. DA9 places the uniqueness check in the gen manifest; which one owns the registry is settled with DA9.
 - Execution of scopes, filters, eager loads, pagination and trait hooks is `@stackra/database`'s job (STA-86).
 - The nestjs-orm reference (`archive/monorepo-main/packages/infra/orm`) is used for its feature list, not its code; Medusa DML is background only.
 
@@ -214,4 +214,4 @@ EARS wording (ADR 0120 D18).
 - [NEEDS CLARIFICATION: DA7 — recommended: (a) archive and soft delete stay distinct, with the stated retention]
 - [NEEDS CLARIFICATION: DA8 — recommended: (a) `Versionable` is optimistic concurrency only]
 - [NEEDS CLARIFICATION: DA9 — recommended: (a) lowercase Crockford base32, `_` separator, 2–6 letter prefixes unique in the gen manifest]
-- [NEEDS CLARIFICATION: C16 — recommended: the `@Translatable` field decorator owns storage; the content `Translatable` trait bundles it]
+- [NEEDS CLARIFICATION: C16 — proposed: the `@Translatable` field decorator owns storage; the content `Translatable` trait bundles it]
