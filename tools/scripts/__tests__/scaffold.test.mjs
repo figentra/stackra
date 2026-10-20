@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { stripJsonc } from "../jsonc.mjs";
 import { CATEGORIES, ENTRIES, parseEntries, scaffold } from "../scaffold.mjs";
@@ -51,6 +52,46 @@ for (const [kind, name, extra] of cases)
     if (kind === "service") assert.deepEqual(checkService({ pkg, paths: files }), []);
     if (kind === "package") assert.deepEqual(checkExports(pkg.exports), []);
   });
+
+// @covers sta-173:FR-003 sta-173:P-003
+test("app templates take their brand from @stackra/brand, and every brand path exists", () => {
+  const BRAND = fileURLToPath(new URL("../../../packages/experience/brand/", import.meta.url));
+  const brandFile = (ref) => {
+    const rel = ref.match(/@stackra\/brand\/(assets\/[^"'\s)]+)/)?.[1];
+    assert.ok(rel, `not a brand path: ${ref}`);
+    assert.ok(existsSync(join(BRAND, rel)), `brand file missing: ${rel}`);
+  };
+  const refs = (text) => [...text.matchAll(/@stackra\/brand\/assets\/[^"'\s)]+/g)].map((m) => m[0]);
+  const read = (dest, f) => readFileSync(join(dest, f), "utf8");
+
+  const web = render("app:console", "admin").dest;
+  assert.equal(json(web, "package.json").dependencies["@stackra/brand"], "workspace:*");
+  const styles = read(web, "src/styles.css");
+  assert.ok(styles.includes("heroui/web.css") && styles.includes("fonts/fonts.css"));
+  refs(styles).forEach(brandFile);
+  assert.ok(existsSync(join(web, "public/favicon.svg")));
+
+  const mobile = render("app:mobile", "sample").dest;
+  assert.equal(json(mobile, "package.json").dependencies["@stackra/brand"], "workspace:*");
+  assert.ok(read(mobile, "src/global.css").includes("heroui/native.css"));
+  const app = read(mobile, "app.json");
+  assert.equal(refs(app).length, 4); // icon, adaptive foreground, light and dark splash
+  refs(app).forEach(brandFile);
+  refs(read(mobile, "src/global.css")).forEach(brandFile);
+
+  const desktop = render("app:desktop", "studio").dest;
+  assert.equal(json(desktop, "package.json").devDependencies["@stackra/brand"], "workspace:*");
+  const builder = read(desktop, "electron-builder.yml");
+  assert.equal(refs(builder).length, 3); // mac, win, linux
+  refs(builder).forEach(brandFile);
+
+  const docs = render("app:docs", "handbook").dest;
+  assert.equal(json(docs, "src/docs.json").colors.primary, "#0B0D0F");
+  assert.equal(
+    read(docs, "src/assets/logo/light.svg"),
+    readFileSync(join(BRAND, "assets/public/logos/stackra-wordmark-light.svg"), "utf8"),
+  );
+});
 
 test("a service is a plain-TypeScript skeleton with no Encore file", () => {
   const { dest, files } = render("service", "notes");

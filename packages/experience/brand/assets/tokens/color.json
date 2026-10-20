@@ -1,0 +1,20 @@
+[
+  { "name": "steel", "value": "oklch(0.931 0.012 248)" },
+  { "name": "steel-deep", "value": "oklch(0.24 0.015 248.4)" },
+  {
+    "name": "stk-tile",
+    "value": "oklch(1 0 89.9)",
+    "themes": { "dark": { "value": "oklch(0.234 0.007 258.4)" } }
+  },
+  {
+    "name": "stk-tile-line",
+    "value": "oklch(0.839 0.007 124.5)",
+    "themes": { "dark": { "value": "oklch(0.35 0.009 248.1)" } }
+  },
+  { "name": "graphite-100", "value": "oklch(0.925 0.006 248)" },
+  { "name": "graphite-200", "value": "oklch(0.87 0.007 248)" },
+  { "name": "graphite-300", "value": "oklch(0.8 0.008 248)" },
+  { "name": "graphite-700", "value": "oklch(0.38 0.009 248)" },
+  { "name": "graphite-800", "value": "oklch(0.3 0.009 248)" },
+  { "name": "graphite-900", "value": "oklch(0.265 0.008 248)" }
+]

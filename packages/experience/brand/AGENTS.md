@@ -1,13 +1,14 @@
 # AGENTS — @stackra/brand
 
-Stackra brand tokens, logos, and fonts Kind: **lib** (`packages/experience/brand`, `tier:lib`).
+Stackra brand tokens, themes and assets. Kind: **lib** (`packages/experience/brand`, `tier:lib`).
 
 ## Where code goes
 
-| You are writing…        | It goes in…                                          |
-| ----------------------- | ---------------------------------------------------- |
-| A function, type, class | `src/<kebab-name>.ts`, re-exported by `src/index.ts` |
-| A test                  | `src/__tests__/`                                     |
+| You are writing…        | It goes in…                                                |
+| ----------------------- | ---------------------------------------------------------- |
+| A function, type, class | `src/<kebab-name>.ts`, re-exported by `src/index.ts`       |
+| A test                  | `src/__tests__/`                                           |
+| A brand file (from kit) | `assets/<kind>/` — brand assets fall under `assets/NOTICE` |
 
 One entry (`.`), no layers. A second entry point is a sign this should be a platform package.
 

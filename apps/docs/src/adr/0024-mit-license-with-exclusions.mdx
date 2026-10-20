@@ -15,9 +15,9 @@ Some files in the tree are not ours to license: fonts arrive under the SIL Open 
 1. **Code is MIT.** The root `LICENSE` is the MIT text. Every member's `LICENSE` stays a byte-identical copy of it
    ([0013](/adr/0013-versioning-and-release)), and every `package.json` says `"license": "MIT"`.
 2. **Brand assets are excluded: all rights reserved.** Logos, marks and social images carry a `NOTICE` in their own folder
-   (for `@stackra/brand`, `src/logos/NOTICE`) stating the exclusion. The member `LICENSE` stays the root copy; the `NOTICE` narrows it.
+   (for `@stackra/brand`, `assets/NOTICE`) stating the exclusion. The member `LICENSE` stays the root copy; the `NOTICE` narrows it.
 3. **Fonts keep their own licence.** Geist, Geist Mono and IBM Plex Sans Arabic ship with their OFL texts beside the files
-   (`src/fonts/OFL-*.txt`), as today.
+   (`assets/public/fonts/OFL-*.txt`), as today.
 4. **Code from paid licences is never committed.** HeroUI Pro, Uniwind Pro and similar are consumed as dependencies only;
    no copied component, generated source or licence key enters the tree.
 5. **A new exclusion needs a `NOTICE` in its folder** in the same change that adds the files.
@@ -32,10 +32,10 @@ Some files in the tree are not ours to license: fonts arrive under the SIL Open 
 ## Enforcement
 
 Planned — `tools/scripts/validate-repository.mjs` (`checkFiles`) currently requires `license` to be `"UNLICENSED"`; it
-changes to expect `"MIT"` and keeps the `LICENSE`-equals-root check. Planned — a check that `packages/experience/brand/src/logos/NOTICE` exists.
+changes to expect `"MIT"` and keeps the `LICENSE`-equals-root check. Planned — a check that `packages/experience/brand/assets/NOTICE` exists.
 Nothing checks rule 4 today; gitleaks does not detect copied source.
 
 ## Supersedes and sources
 
 Supersedes: none. Changes the licence rule documented in `/standards/members`. Sources: owner decision in chat, 2026-10-19;
-`packages/experience/brand/src/fonts/OFL-*.txt`.
+`packages/experience/brand/assets/public/fonts/OFL-*.txt`.
