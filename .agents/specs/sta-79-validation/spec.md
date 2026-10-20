@@ -104,7 +104,7 @@ refuses a class that has async rules with a clear STK error.
 **Acceptance Scenarios**:
 
 1. **Given** a fake rule driver that reports `email` taken, **When** `await X.parseAsync(input)` runs, **Then** a `ValidationError` names `email`.
-2. **Given** no rule driver is registered, **When** a class with `@Unique` is parsed, **Then** behaviour follows the clarified default [NEEDS CLARIFICATION: C36 — recommended: skip async rules on the client and run them on the server, with a dev-mode warning].
+2. **Given** no rule driver is registered, **When** a class with `@Unique` is parsed, **Then** behaviour follows the clarified default [NEEDS CLARIFICATION: C36 — proposed: skip async rules on the client with a dev-mode warning; fail closed on the server without a driver].
 
 ---
 
@@ -127,7 +127,7 @@ decision 2).
 - `@Optional` with `@Default`: absent input takes the default; explicit `null` follows the documented rule.
 - Unknown input keys are stripped, not kept, unless the class opts in.
 - A `@Transform(fn)` that throws becomes a `ValidationError` issue, never an uncaught error.
-- Validation messages are STK codes plus parameters, not English sentences, so `@stackra/i18n` can translate them [NEEDS CLARIFICATION: C36 — recommended: issues carry an STK code and params; i18n keys are derived from the code].
+- Validation messages are STK codes plus parameters, not English sentences, so `@stackra/i18n` can translate them [NEEDS CLARIFICATION: C36 — proposed: issues carry an STK code and params; i18n keys are derived from the code].
 
 ## Requirements _(mandatory)_
 
@@ -144,7 +144,7 @@ EARS wording (ADR 0120 D18).
 - **FR-007**: When `X.parse(input)` succeeds, it shall return an instance of `X`; when it fails, it shall throw a `ValidationError` carrying an STK code and one issue per failing path (ADR 0095 decision 5).
 - **FR-008**: Where a class declares an async rule, the package shall offer `X.parseAsync(input)`, and `X.parse` shall refuse that class with an STK error.
 - **FR-009**: The package shall provide `@Exists` and `@Unique`, which record the rule and call a validation rule driver through a contract in the package's `./contracts` entry; the package shall not implement a database driver (ADR 0095 decision 4, ADR 0117 decision 2).
-- **FR-010**: If no rule driver is registered, then a class with `@Exists` or `@Unique` shall behave as the clarified default [NEEDS CLARIFICATION: C36 — recommended: skip and warn in development on the client; fail closed on the server].
+- **FR-010**: If no rule driver is registered, then a class with `@Exists` or `@Unique` shall behave as the clarified default [NEEDS CLARIFICATION: C36 — proposed: skip and warn in development on the client; fail closed on the server].
 - **FR-011**: The package shall provide the serializer decorators `@Hidden`, `@Visible({ audience })`, `@Expose`, `@Cast` and `@Format`, kept separate from validation (ADR 0095 decision 6).
 - **FR-012**: When an instance is serialized for an audience, the serializer shall omit every field not visible to that audience. The audiences shall be exactly `public`, `app`, `admin` and `agent` (ADR 0095 decision 6).
 - **FR-013**: The decorators shall be legacy decorators writing to the `@stackra/container` metadata store, with no `reflect-metadata` and no `define*()` factory (ADR 0094 decisions 1 and 5, ADR 0005).
@@ -193,7 +193,7 @@ EARS wording (ADR 0120 D18).
 
 ## Open items
 
-- [NEEDS CLARIFICATION: C36 — recommended: client skips `@Exists`/`@Unique` with a dev warning, server fails closed without a driver; issues carry STK code + params that i18n translates]
+- [NEEDS CLARIFICATION: C36 — proposed: client skips `@Exists`/`@Unique` with a dev warning, server fails closed without a driver; issues carry STK code + params that i18n translates]
 - [NEEDS CLARIFICATION: FW1 — recommended: (a) entries-first package layout]
 - [NEEDS CLARIFICATION: FW7 — recommended: (a) error kinds with STK codes in `@stackra/contracts`]
 - [NEEDS CLARIFICATION: TS3 — recommended: 90/80 coverage for validation]
