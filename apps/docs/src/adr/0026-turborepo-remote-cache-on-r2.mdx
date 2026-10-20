@@ -3,6 +3,10 @@ title: "0026 — Turborepo remote cache self-hosted on Cloudflare R2"
 description: "Accepted · 2026-10-19"
 ---
 
+<Note>
+  Amended and accepted by [0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra): the remote cache is built now with signed artifacts.
+</Note>
+
 ## Context
 
 `turbo.jsonc` already enables the remote cache with `"signature": true`, but there is no server: it is a no-op until

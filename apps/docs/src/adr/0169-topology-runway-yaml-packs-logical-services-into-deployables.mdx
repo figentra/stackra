@@ -1,0 +1,40 @@
+---
+title: "0169 — Topology: runway.yaml packs logical services into deployables"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+Each logical service could be its own deployable, but the first customers do not need 36 deployables, and on-prem customers need fewer. The owner's topology
+answer FO2 (mem L504–505, 2026-10-20) introduces a topology per environment: a mode, named groups and an isolation list.
+
+## Decision
+
+1. **Topology per environment (FO2).** `runway.yaml` declares `topology` for each environment, with `mode: monolith | grouped | split`, named groups, and an
+   `isolate` list. Identity and payments are isolated in SaaS.
+2. **Defaults.** Local is a monolith. On-prem is a monolith or a few groups. SaaS uses about eight groups, scaled per group.
+3. **Packing.** Gen packs logical services into deployables according to the topology.
+4. **Database rule.** Topology never changes how databases are declared: each logical service keeps its own logical database (ADR 0238, wave 2 part 2).
+
+## Consequences
+
+- One service can move between groups by editing the topology, not its code.
+- Isolation is a declared property, so identity and payments are never packed together in SaaS.
+
+## Enforcement
+
+planned — gen fails when an `isolate` rule is violated by the packing; the topology schema is part of the `runway.yaml` schema (ADR 0168).
+
+## Open questions
+
+1. Whether Encore Cloud deploys one generated app as about eight independently scaled groups, or whether gen emits one Encore app per group. Each choice has different
+   Pub/Sub, secret and database wiring (register D-01). The owner must answer before the grouped mode is built.
+
+## Alternatives
+
+- One deployable per service: rejected for SaaS cost and for on-prem footprint.
+- Topology hard-coded in gen: rejected; it must be per environment.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner answer FO2 (`stackra-decisions-2026-10-19.md` L504–505, 2026-10-20); the database rule (L932, 2026-10-20).

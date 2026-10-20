@@ -1,0 +1,43 @@
+---
+title: "0168 — Runway: public reusable workflows, build order and the runway.yaml schema"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0068](/adr/0068-runway-cicd-built-inside-stackra). Registry publishing follows ADR 0177 (wave 2,
+  not yet on this branch).
+</Note>
+
+## Context
+
+[0068](/adr/0068-runway-cicd-built-inside-stackra) (Proposed) described the CI/CD build-ins without a schema, a build order or a home for the reusable workflows. The owner
+answered CI10, CI15, DP21 and DP22 on 2026-10-20 (mem L416, L420, L450, L506). Those answers replace it.
+
+## Decision
+
+1. **Reusable workflows (CI10).** Reusable workflows live in `figentra/stackra/.github/workflows`, are pinned by commit SHA, and are tagged `runway-v<n>`.
+2. **Image builds (CI15).** `encore build docker` runs only in the CI deploy and release jobs, never in a pull-request gate.
+3. **Build order (DP21).** npm first, then Cloudflare Workers, then Encore Cloud, then EAS, then AWS ECS or on-prem.
+4. **One file (DP22).** Each repository has one root `runway.yaml`, validated by a JSON Schema that `pnpm validate` checks.
+5. **Sections (mem L506).** `runway.yaml` holds deployables and providers; resources and scaling; the release policy; domains; and the secrets map from names to
+   Infisical paths (ADR 0173). The topology section is defined by [0169](/adr/0169-topology-runway-yaml-packs-logical-services-into-deployables).
+6. **Registry.** Publishing goes to npmjs and Keygen (ADR 0177, wave 2 part 2), not to `npm.figentra.com`.
+
+## Consequences
+
+- A deploy is a function of one file, so an agent can read the whole release shape in one place.
+- The schema is the contract. An invalid `runway.yaml` fails the gate before a deploy job starts.
+
+## Enforcement
+
+planned — `pnpm validate` checks `runway.yaml` against its JSON Schema; the reusable-workflow pin is checked by `zizmor`.
+
+## Alternatives
+
+- Per-workflow deploy scripts: rejected; the release policy would drift.
+- A registry under our own domain: superseded by the npmjs and Keygen split (0177).
+
+## Supersedes and sources
+
+Supersedes: [0068](/adr/0068-runway-cicd-built-inside-stackra). Sources: owner answers CI10, CI15, DP21, DP22 (`stackra-decisions-2026-10-19.md` L416, L420, L450, L506,
+2026-10-20). Closes gap C20.
