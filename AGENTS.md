@@ -660,6 +660,6 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 
 ### On request
 
-- Tenancy — Two-layer tenant isolation and scope-tree rules. Read when adding the first tenant-owned table or touching tenant-scoped code; not loaded by default. (`.agents/rules/tenancy.md`)
+- Tenancy — Two-layer tenant isolation rules, plus the Pro scope-tree rules. Read when adding the first tenant-owned table or touching tenant-scoped code; not loaded by default. (`.agents/rules/tenancy.md`)
 
 <!-- END generated from .agents/rules -->

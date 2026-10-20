@@ -14,7 +14,7 @@ Stackra has no deployed service yet. These laws bind the first service that auth
 | --- | --- | --- |
 | SEC1 | **One authenticated principal per request.** A single auth handler resolves the caller once. Handlers read it from the request context, never from body, query or client headers. `auth: true` is the default. A public endpoint is a documented exception (health, signed webhooks, public content). | **Planned.** Lint rule for undocumented `expose` without auth, with the first service API ([HTTP and events](/constitution/http-and-events)). |
 | SEC2 | **Authorization is server-side**, on every command and query. A client may hide what a user cannot do. It never decides. | **Planned.** Reviewed by the security-tenancy reviewer until a policy engine exists. |
-| SEC3 | **Every state change emits an audit record**: actor, tenant, target, before and after references, correlation id. An AI action is attributed to the AI actor and the human who approved it. | **Planned.** |
+| SEC3 | **Every state change emits an audit record**: actor, tenant, target, before and after references, correlation id. Every action's pipeline ends in an audit step, and the record carries the full `Actor` with its `onBehalfOf` chain, so an agent action names the agent and the human it acted for ([0098](/adr/0098-actions-are-the-unit)). | **Planned.** The pipeline-order test of 0098. |
 | SEC4 | **Every data field has a classification**: `internal`, `confidential` or `pii`. PII is redacted from logs, events and errors. Each member's `AGENTS.md` carries a PII table, even if it says "none". | **Partial.** The validator checks that the PII table exists. Redaction is checked by review. |
 | SEC5 | **Rate limits** on public and AI endpoints. **Budgets** on AI usage per tenant. | **Planned.** |
 | SEC6 | **Supply chain is pinned.** Versions come only from catalogs. Lifecycle scripts are allow-listed. Cache artifacts are signed. Secrets are scanned on every commit. | **Partial.** Catalog check and strict mode in the validator, signed Turborepo cache in `turbo.jsonc`, gitleaks at pre-commit. CodeQL, workflow linting and dependency review arrive with CI ([ADR 0012](/adr/0012-code-host-and-ci)). |
@@ -27,14 +27,14 @@ When an authorization system exists, every service resolves permissions the same
 ```text
 effective(principal, tenant, activeScope) =
     grants      live grants for (principal, tenant)      # not expired, not revoked
-    applicable  grants whose scope path contains activeScope
+    applicable  grants whose scope path contains activeScope  # Pro scope driver; otherwise tenant-wide
     perms       union of role permissions over applicable
                   limited to entitled features
                   limited to token abilities            # API keys only
 ```
 
 - Results are cached per `(principal, tenant, scope, grantsVersion)`. Any change to grants or roles bumps `grantsVersion`.
-- The check is shaped `check(subject, relation, object)` so the engine behind it can be replaced without touching callers.
+- The check is shaped `check(subject, relation, object)` so the engine behind it can be replaced without touching callers. Free `@stackra/iam` resolves RBAC with no scope dependency; the scope tree and the relation engine are Pro drivers behind the same `check()` ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope), owner decision S3).
 - A cross-tenant miss is `notFound`, never `permissionDenied`.
 
 ## Threat model template
@@ -46,3 +46,7 @@ Each service that handles user data keeps a `docs/threat-model.md` in its member
 | Assets | asset, where it lives, class (`internal`, `confidential`, `pii`, `secret`) |
 | Trust boundaries | numbered list: client to gateway, service to service, service to database, any third party |
 | Threats and controls | threat, control today, open work |
+
+## History
+
+- 2026-10-20, [0125](/adr/0125-constitution-amended-to-match-accepted-adrs): SEC3 audit runs in the action pipeline with the 0098 actor chain; the scope step of the effective-permission formula applies only with the Pro scope driver.

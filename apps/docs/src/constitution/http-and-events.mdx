@@ -12,16 +12,18 @@ Stackra has no HTTP service yet. Encore is the generated runtime target ([0091](
 
 | Rule | Detail |
 | --- | --- |
-| One endpoint per operation | One `api()` per operation, with typed request and response interfaces. No `any`, no `Record<string, unknown>` at a boundary. |
+| One action per operation | Every operation is one action (`@Action` or `@Query`) with typed input and output classes, exposed by an adapter such as `@AsEndpoint`; `stackra gen` emits the `api()` ([0098](/adr/0098-actions-are-the-unit), [0091](/adr/0091-generated-encore-app-in-stackra-folder)). No `any`, no `Record<string, unknown>` at a boundary. |
 | Authenticated by default | `auth: true`. An exposed endpoint without auth is a public surface and carries a comment saying why. Webhooks use a raw endpoint with signature verification. |
 | Verbs follow idempotency | `POST` creates (a second call creates again). `PUT` is an idempotent state transition (`/archive`, `/activate`). `PATCH` is a partial update. `DELETE` only where a row is truly removed. Archive instead. |
 | Cursor lists | `cursor` and `limit` (at most 100). Sorting and filtering use explicit allow-lists. Never pass column names through. |
-| Prefixed public ids | Ids at the boundary look like `tea_01JQ…`. The handler rejects a mismatched prefix before any query. Internal UUIDs never appear in URLs or responses. The prefix registry lives in the contracts package ([ADR 0015](/adr/0015-contract-packages)). |
+| Prefixed public ids | Ids at the boundary look like `tea_01JQ…`. The handler rejects a mismatched prefix before any query. Internal UUIDs never appear in URLs or responses. The `PublicId` type and the prefix registry live in `@stackra/contracts` ([0117](/adr/0117-contracts-placement-and-decorator-ownership)). |
 | Typed errors | Throw `invalidArgument`, `notFound`, `permissionDenied` or `failedPrecondition` with a stable message. Never a bare `Error`. A cross-tenant miss is `notFound`. |
 | Idempotency keys | Every write carries an `Idempotency-Key` header. The service dedupes for 24 hours per tenant. Money-like writes keep their own durable idempotency table and run in one transaction with an audit event. |
-| Validation | Boundary validation comes from the TypeScript types plus `Min`, `MaxLen` and similar. Business invariants live in the service layer, not the handler. |
+| Validation | Boundary validation comes from `@stackra/validation` decorators on the input class, compiled to one Zod schema; Zod is the only validation engine ([0095](/adr/0095-zod-inside-field-decorators)). Business invariants live in the service layer, not the handler. |
 | Streaming | Use streaming endpoints for realtime. Fan out through pub/sub, because a socket only knows its own instance. |
 | Generated client | Frontends consume a generated client. It is regenerated, never hand-edited. |
+
+What gen emits for one `@Query` action (illustrative; never hand-written in a service):
 
 ```ts
 export const list = api(
@@ -34,7 +36,7 @@ export const list = api(
 );
 ```
 
-**Enforcement: partial.** The validator checks the service-unit files. Planned: an Encore-only lint rule for one endpoint per operation, a rule file `.agents/rules/http-conventions.md` scoped to `services/**`, and a generated-client drift check (`gen:client:check`) in `pnpm verify`.
+**Enforcement: partial.** The validator checks the service-unit files. Planned: a `stackra gen` check that every endpoint is one action, a rule file `.agents/rules/http-conventions.md` scoped to `services/**`, and a generated-client drift check (`gen:client:check`) in `pnpm verify`.
 
 ## Events
 
@@ -43,23 +45,28 @@ Events are facts, not commands. A service publishes one when it needs another to
 | Rule | Detail |
 | --- | --- |
 | Event first | Cross-service communication is a versioned event unless the caller needs an authoritative decision immediately. Then a typed client call, and only on the allowed list in the [service standard](/standards/services). |
-| Topic names | `<service>.<aggregate>.<verb>.v<n>`. |
+| Event names | Domain events stay in-process and are not versioned. Integration events cross a service boundary and are versioned by name: `<aggregate>.<verb>.v<n>`, for example `user.created.v1` ([0078](/adr/0078-messaging-layer-eight-packages)). Whether a service prefix is added is open (gap C27). |
 | Versioning | A breaking payload change bumps the version. The old topic stays alive for the compatibility window named in an ADR. |
 | Delivery | Producers write through a transactional outbox. Consumers are idempotent: an inbox keyed by event `id`. |
-| Importing a topic | A subscriber may import another service's `Topic` object so it can declare its own subscription. It imports nothing else from that service. |
+| Subscribing | A subscriber declares `@OnEvent` on the event name and imports only the producer's `./contracts` shape. It never imports another service's `Topic` or source; `stackra gen` emits the `Topic` and `Subscription` ([0078](/adr/0078-messaging-layer-eight-packages), [0091](/adr/0091-generated-encore-app-in-stackra-folder)). |
 
-Envelope, defined once in the contracts package:
+Envelope, defined once as `EventEnvelope` in `@stackra/contracts`. The `actor` is the action pipeline's `Actor` with its full `onBehalfOf` chain ([0098](/adr/0098-actions-are-the-unit)):
 
 ```json
 {
   "id": "evt_01J…",
-  "type": "ticketing.ticket.validated",
+  "type": "ticket.validated.v1",
   "version": 1,
   "occurredAt": "2026-10-03T10:00:00Z",
   "source": "<service>",
   "tenantId": "…",
   "scopePath": "root.branch1",
-  "actor": { "type": "user | service | ai | system", "id": "…" },
+  "actor": {
+    "type": "user | service | agent | external-agent | job | webhook | system | anonymous",
+    "id": "…",
+    "via": "http | mcp | a2a | cli | queue | cron | event | ui",
+    "onBehalfOf": { "type": "user", "id": "…" }
+  },
   "correlationId": "…",
   "causationId": "…",
   "aggregate": { "type": "ticket", "id": "tkt_01J…", "version": 7 },
@@ -69,3 +76,7 @@ Envelope, defined once in the contracts package:
 ```
 
 **Enforcement: planned.** A schema check of the envelope in the contracts package, plus contract tests per topic, when the first event exists.
+
+## History
+
+- 2026-10-20, [0125](/adr/0125-constitution-amended-to-match-accepted-adrs): operations are actions ([0098](/adr/0098-actions-are-the-unit)); validation is `@stackra/validation` on Zod ([0095](/adr/0095-zod-inside-field-decorators)); integration event names and subscriptions follow [0078](/adr/0078-messaging-layer-eight-packages) and [0091](/adr/0091-generated-encore-app-in-stackra-folder); the envelope actor is the 0098 actor model; contracts follow [0117](/adr/0117-contracts-placement-and-decorator-ownership).
