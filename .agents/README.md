@@ -1,48 +1,40 @@
 # `.agents/` — the source of truth for every AI artifact
 
-One canonical tree, projected into each assistant's own directory. Edit here; never edit the
-projection.
+One canonical tree, projected into each assistant's own directory by
+[`tools/scripts/agents-sync.mjs`](../tools/scripts/agents-sync.mjs) (`pnpm agents:sync`). Edit here; never edit the
+projection ([ADR 0016](../apps/docs/src/adr/0016-agents-source-of-truth.mdx)).
 
-```
-.agents/
-├── skills/      invocable skills          → symlinked
-├── agents/      subagents, models pinned  → symlinked
-├── templates/   skeletons the skills fill → symlinked
-├── specs/       spec-kit specs, sta-<n>-<slug>/ → read in place, not projected
-├── hooks/       guard/format hooks        → symlinked
-└── rules/       always-on invariants      → GENERATED per assistant
-```
+| Entry                 | Holds                                                         | Projected to                                                             |
+| --------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| [`rules/`](rules)     | always-on and file-scoped repository rules                    | rendered into the marked block of the root `AGENTS.md`                   |
+| [`agents/`](agents)   | subagent definitions, neutral frontmatter, no model ids       | generated into `.claude/agents/` and `.opencode/agents/`                 |
+| [`hooks/`](hooks)     | the guard, hint and context hooks                             | symlinked into `.claude/hooks/`                                          |
+| [`skills/`](skills)   | invocable skills (`<name>/SKILL.md`)                          | symlinked into `.claude/skills/`; OpenCode reads `.agents/skills` itself |
+| [`specs/`](specs)     | spec-kit specs, one `sta-<n>-<slug>/` folder per Linear issue | read in place, not projected                                             |
+| [`speckit/`](speckit) | the Stackra spec-kit preset source                            | installed into `.specify/presets/` by `pnpm speckit:sync`                |
+| `models.yaml`         | which model each assistant runs for each agent tier           | read by agents-sync                                                      |
+| `routing.yaml`        | task type → executor, model and agent; the daily OpenCode cap | read by `pnpm delegate` and `pnpm ai:spend`                              |
 
-## Why rules are generated, not symlinked
+A folder's `README.md` is documentation and is never projected.
 
-A symlink gives every assistant identical bytes. That is correct for skills, agents and templates.
-It is wrong for rules, because the same prose needs different frontmatter per assistant:
+## Generated, not hand-edited
 
-| Assistant   | Path                       | Frontmatter                                                    |
-| ----------- | -------------------------- | -------------------------------------------------------------- |
-| Claude Code | `.claude/rules/<name>.md`  | none                                                           |
-| Kiro        | `.kiro/steering/<name>.md` | `inclusion: always \| fileMatch \| manual`, `fileMatchPattern` |
-| Cursor      | `.cursor/rules/<name>.mdc` | `alwaysApply`, `globs`                                         |
-
-So `.agents/rules/*.md` carries **neutral** frontmatter — `always`, `applies_to`, `manual` — and
-[`tools/scripts/agents-sync.mjs`](../tools/scripts/agents-sync.mjs) translates it into each
-assistant's dialect. Generated files open with a provenance marker; hand-editing one is detected
-by `pnpm agents:check` and fails CI rather than being silently overwritten.
-
-## Commands
+Generated files open with a provenance marker. `pnpm agents:check` (part of `pnpm validate`) fails on drift or on a
+hand-edited projection rather than silently overwriting it; `pnpm agents:sync` repairs it. agents-sync also renders
+`.mcp.yaml` into `.mcp.json` and the constitution into `.specify/memory/constitution.md`.
 
 ```bash
-pnpm agents:sync                                    # project into every detected assistant
-pnpm agents:check                                   # verify; fails on drift (runs in `pnpm verify`)
-node tools/scripts/agents-sync.mjs --assistant=kiro  # add an assistant that does not exist yet
-node tools/scripts/agents-sync.mjs --list           # show the mapping
+pnpm agents:sync                              # project into every detected assistant (.claude/, .opencode/)
+pnpm agents:check                             # verify; fails on drift
+node tools/scripts/agents-sync.mjs --list     # show the mapping
+node tools/scripts/agents-sync.mjs --lint     # validate agent sources only; writes nothing
 ```
 
-Assistants are auto-detected by directory existence. Only `.claude/` exists today; `.kiro/` and
-`.cursor/` are supported and recreated on demand.
+The `guard-paths` hook refuses writes to `.claude/agents/`, `.opencode/agents/`, `.mcp.json` and the generated
+block of `AGENTS.md`.
 
-## Writing a rule
+## Writing for this folder
 
-Keep it short and **true**. A wrong always-on rule is worse than no rule — it is loaded into every
-session and costs tokens to mislead. Verify every claim against a real file before writing it, and
-prefer a rule short enough to stay true as the repo changes.
+Keep every rule and agent short and **true**. A wrong always-on rule is loaded into every session and misleads at a
+cost; verify each claim against a real file, and name the check that enforces it (or say "planned"). See
+[rules that don't rot](../apps/docs/src/agents/rules-that-dont-rot.mdx).

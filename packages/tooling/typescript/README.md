@@ -4,18 +4,20 @@ tsconfig presets. A package's `tsconfig.json` is `{ "extends": "@stackra/typescr
 nothing else: every compiler option lives here, with its reason below (JSON cannot carry comments, JSONC can,
 so every preset file has a header).
 
-| Preset               | Extends      | Use for                                                               |
-| -------------------- | ------------ | --------------------------------------------------------------------- |
-| `./base`             | —            | never directly; the shared baseline                                   |
-| `./node`             | `base`       | Node scripts and tooling                                              |
-| `./library`          | `node`       | a tsdown-built library (`packages/*/*`)                               |
-| `./decorators`       | `library`    | a library using legacy decorators + `design:*` metadata (the DI tier) |
-| `./decorators-react` | `decorators` | a library using decorators + React (DOM lib, automatic JSX)           |
-| `./encore`           | `node`       | the Encore.ts application (`services`)                                |
-| `./expo`             | `base`       | Expo / React Native apps (`apps/mobile`)                              |
-| `./react`            | `base`       | React 19 libraries (DOM lib, automatic JSX)                           |
-| `./vite`             | `react`      | Vite + React SPAs (`apps/console`)                                    |
-| `./vite-node`        | `node`       | the tooling packages whose config files Vite loads                    |
+| Preset               | Extends      | Use for                                                                |
+| -------------------- | ------------ | ---------------------------------------------------------------------- |
+| `./base`             | —            | never directly; the shared baseline                                    |
+| `./node`             | `base`       | Node scripts and tooling                                               |
+| `./library`          | `node`       | a tsdown-built library (`packages/*/*`)                                |
+| `./decorators`       | `library`    | a library using legacy decorators, no metadata emission (the DI tier)  |
+| `./decorators-react` | `decorators` | a library using decorators + React (DOM lib, automatic JSX)            |
+| `./runtime`          | `decorators` | the tsx runtime loader for a package's `bin/` (never tsc or the build) |
+| `./encore`           | `node`       | Encore.ts code; the reference services extend `./node` today           |
+| `./expo`             | `base`       | Expo / React Native apps (`apps/mobile`)                               |
+| `./react`            | `base`       | React 19 libraries (DOM lib, automatic JSX)                            |
+| `./vite`             | `react`      | Vite + React SPAs (the console extends `./node` while it is one entry) |
+| `./app`              | `vite`       | a Vite app that declares container modules with legacy decorators      |
+| `./vite-node`        | `node`       | the tooling packages whose config files Vite loads                     |
 
 ## base
 
