@@ -28,7 +28,7 @@ stackra/
 │   ├── security/           # Identity, IAM, tenancy, consent, CSP
 │   └── state/              # Settings, feature flags, theming
 ├── services/               # tier:service
-│   ├── example/            # Encore hello-world service
+│   ├── example/            # Reference service (plain TypeScript)
 │   └── health/             # Health check service
 └── tools/
     ├── scripts/            # validation, scaffolding
@@ -42,7 +42,7 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 - `tier:config` - Tooling presets (no workspace dependencies)
 - `tier:lib` - Packages (category-based, never depend on apps/services)
 - `tier:app` - Apps (never depend on services)
-- `tier:service` - Encore services (top of graph)
+- `tier:service` - Services in plain TypeScript; Encore is generated into `.stackra/encore` (ADR 0124)
 
 ## Placement Test
 
@@ -63,7 +63,7 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 
 ### Services (<name>)
 
-- Backend services ( Encore )
+- Backend services in plain TypeScript; `stackra gen` emits the Encore app (ADRs 0091, 0124)
 - Independent workspace members
 - Entry: `src/main.ts`
 - Tests: `src/__tests__/`

@@ -5,7 +5,7 @@ icon: "rocket"
 ---
 
 <Note>
-  Status: target. Nothing is deployed. There is no Encore app (services are independent workspace members under `services/<name>` and Encore is deferred), no hosting for `apps/console` or `apps/docs`, no deploy workflow and no release records. This page is the procedure that must hold from the first deploy. When a target is chosen, replace its row in the table with a section on its real commands.
+  Status: target. Nothing is deployed. There is no generated Encore app yet (services are plain TypeScript members under `services/<name>`; Encore is the generated target in `.stackra/encore/`, [0124](/adr/0124-encore-is-the-generated-runtime-target)), and how it reaches a runtime is an open question (DP2), no hosting for `apps/console` or `apps/docs`, no deploy workflow and no release records. This page is the procedure that must hold from the first deploy. When a target is chosen, replace its row in the table with a section on its real commands.
 </Note>
 
 ## The rules
@@ -21,7 +21,7 @@ icon: "rocket"
 
 | Target | Status | Deploy path |
 | --- | --- | --- |
-| Backend services (`services/<name>`) | Not deployed | Decision pending (Encore is deferred). Staging first, then production |
+| Backend services (`services/<name>`) | Not deployed | Decision pending (DP2: how the generated Encore app is deployed). Staging first, then production |
 | Console (`apps/console`, a Vite SPA) | Not deployed | Static build with the API URL set at build time; host not chosen |
 | Docs (`apps/docs`, Mintlify) | Not deployed | Mintlify hosting from the repository; no pipeline of ours |
 | Mobile (`apps/mobile`) | Not released | EAS, see [Mobile release](/runbooks/mobile-release) |

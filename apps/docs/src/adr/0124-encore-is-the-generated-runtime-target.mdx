@@ -1,0 +1,57 @@
+---
+title: "0124 — Encore is the generated runtime target; service source stays plain TypeScript"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+[0011](/adr/0011-rejected-and-deferred-technologies) lists Encore as the service runtime with status Deferred, and
+[0010](/adr/0010-services-are-independent-workspace-members) decisions 5 and 6 say the runtime is not decided and describe
+what would follow "if Encore is adopted". Since then the owner locked the generated-app design (Round 9 G3) and
+[0091](/adr/0091-generated-encore-app-in-stackra-folder) was accepted: `stackra gen` emits a complete Encore application into a
+gitignored `.stackra/encore/`, and services hold no Encore files. The rules, docs pages and the session hook still repeat the
+"deferred" status, so agents are told two opposite things. This ADR records what Accepted 0091 already decided, in the two
+places that contradict it; it decides nothing new.
+
+## Decision
+
+1. **Encore.ts is the backend runtime, as a generated target only.** The Encore application exists only as the output of
+   `stackra gen` in `.stackra/encore/` ([0091](/adr/0091-generated-encore-app-in-stackra-folder) decisions 2, 5 and 6).
+2. **Service members stay plain TypeScript.** Nothing under `services/` contains an `encore.*` file, a `__generated__/`
+   folder or an import of `encore.dev` or `~encore/*` (0091 decision 1).
+3. **Packages never import `encore.dev`**, as today (`packages/tooling/oxlint/boundaries.jsonc`).
+4. **Only `app-manifest.json` is committed** from the generated app, and `stackra gen --check` fails CI when it is stale
+   (0091 decisions 3 and 4).
+5. **The Encore row of 0011 is superseded.** It no longer reads "Deferred"; the not-built-yet rule lists hand-written Encore in
+   service source or packages as rejected, with `stackra gen` as the way to use Encore.
+6. **0010 decisions 5 and 6 are amended.** The runtime is decided (decision 1 here). Decision 6's "one Encore application for
+   the repository" holds for the generated app; its gateway and `auth` defaults follow
+   [0093](/adr/0093-better-auth-integration) and the generator, not hand-written endpoints.
+
+Still open, and not decided here (gap questionnaire IDs):
+
+- **DP2:** how the gitignored generated app reaches Encore Cloud or another runtime; no deploy path exists yet.
+- **FW3:** how plain-TypeScript services declare secrets, databases and buckets for gen to emit.
+- **DP12 and FW4:** how MikroORM migrations, including migrations shipped in packages, reach Encore's runner.
+- **FW1 and B53:** the service member's shape (`src/main.ts` of 0010 decision 1 versus a root module in `package.json`, 0090).
+
+## Consequences
+
+- Rules, docs and hooks stop calling Encore deferred; they point at 0091 and this ADR.
+- An agent asked to add an Encore endpoint, topic or cron writes decorated TypeScript in the service and lets gen emit the
+  Encore code; it never writes `encore.service.ts` or imports `encore.dev` in a member.
+- The deploy runbook stays a placeholder until DP2 is answered.
+
+## Enforcement
+
+Existing: `packages/tooling/oxlint/boundaries.jsonc` bans `encore.dev` in packages. Planned (0091): `stackra gen --check` in
+CI and `pnpm verify`; a validator check that no `encore.*` file or `__generated__/` folder exists under `services/` and that
+`.stackra/` is gitignored. Until the scaffold's `services/encore` template is replaced (gap B4), `checkServiceUnit` in
+`tools/scripts/validate-repository.mjs` still describes the older layout.
+
+## Supersedes and sources
+
+Supersedes: the Encore row of [0011](/adr/0011-rejected-and-deferred-technologies). Amends:
+[0010](/adr/0010-services-are-independent-workspace-members) decisions 5 and 6. Restates, without change:
+[0091](/adr/0091-generated-encore-app-in-stackra-folder). Sources: owner decision in chat, 2026-10-19 (Round 9 G3, locked);
+gap questionnaire 2026-10-19, item B3.

@@ -5,7 +5,7 @@ icon: "arrow-up-circle"
 ---
 
 <Note>
-  Status: target. The checklists below describe how an upgrade should run. Encore upgrades are omitted because Encore is deferred; add that section when the first service adopts it.
+  Status: target. The checklists below describe how an upgrade should run. Encore upgrades are omitted until `stackra gen` emits the Encore app ([0124](/adr/0124-encore-is-the-generated-runtime-target)); add that section with the generator.
 </Note>
 
 Every upgrade is its own pull request, never mixed with feature work, and is merged only when `pnpm verify` is green. Say in the description what you ran and what you did not.

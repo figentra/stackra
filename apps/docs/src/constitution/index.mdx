@@ -12,7 +12,7 @@ The constitution holds the rules that do not bend. An [ADR](/adr/index) may refi
 | [Secrets](/constitution/secrets) | where secret values live, who sets them, what agents may not do |
 | [Security](/constitution/security) | authenticated principal, server-side authorization, audit, data classification |
 | [HTTP and events](/constitution/http-and-events) | API shape, idempotency, errors, ids, event envelope |
-| [Tenancy](/constitution/tenancy) | two-layer tenant isolation, scope tree, isolation tests |
+| [Tenancy](/constitution/tenancy) | two-layer tenant isolation, isolation tests, the Pro scope tree |
 | [Delegation](/constitution/delegation) | who decides, how work is handed to agents, git discipline |
 
 ## How the hierarchy works
@@ -42,12 +42,12 @@ Reviewers cite these by name. Each is an application of one of the laws or ADRs 
 | Principle | Statement | Where it lives |
 | --- | --- | --- |
 | A service is a runtime boundary | A service is a unit of deployment, not a unit of business meaning. | [Boundaries](/constitution/boundaries) |
-| Dependencies point one way | `config` → `lib` → `service` → `app`; nothing points back. | [ADR 0003](/adr/0003-tier-dependency-direction) |
+| Dependencies point one way | `config` → `lib` → `app` and `service`; apps and services are peers that never import each other; nothing points back. | [ADR 0003](/adr/0003-tier-dependency-direction) |
 | Core is meaning | A package's core layer states what the package is about. It never depends on transport, an ORM, a driver or a UI toolkit. | [ADR 0004](/adr/0004-package-archetypes-and-layers) |
 | The layer that needs an abstraction owns its port | A port lives in `application`, never in `infrastructure`. | [ADR 0004](/adr/0004-package-archetypes-and-layers) |
 | Presentation owns delivery | API, React, web and native are delivery surfaces of one package, not separate business layers. | [ADR 0004](/adr/0004-package-archetypes-and-layers) |
-| Generated artifacts are never the source of truth | Definitions and hand-written source are authoritative. Generated code is regenerated, never edited. | [Standards](/standards/packages) |
-| Shared packages hold factories, apps hold definitions | A shared package never contains a product value. | [Boundaries](/constitution/boundaries) |
+| Generated artifacts are never the source of truth | Decorated classes and hand-written source are authoritative. Generated code is regenerated, never edited. | [Standards](/standards/packages) |
+| Shared packages hold mechanisms, apps hold definitions | A shared package never contains a product value. | [Boundaries](/constitution/boundaries) |
 | Not built yet means not built | A rejected or deferred technology is not introduced "helpfully". | [ADR 0011](/adr/0011-rejected-and-deferred-technologies) |
 
 ## Amending a law
@@ -60,3 +60,7 @@ Reviewers cite these by name. Each is an application of one of the laws or ADRs 
 <Note>
 Some pages in this tab describe a mechanism for a thing Stackra does not have yet, such as an Encore app or a tenant-owned table. They say so at the top. The law applies from the moment the thing appears, so the check must exist before it does.
 </Note>
+
+## History
+
+- 2026-10-20, [0125](/adr/0125-constitution-amended-to-match-accepted-adrs): the dependency-direction principle follows [0003](/adr/0003-tier-dependency-direction); "factories" became "mechanisms" ([0094](/adr/0094-decorators-only-authoring)); the tenancy row names the Pro scope tree.

@@ -76,7 +76,7 @@ Data, not a build: JSON or JSONC presets with a `files` allowlist and an `export
 - `index.ts` is the only barrel name. A barrel declares nothing; it re-exports.
 - A consumer imports the package or a declared subpath, never another package's `src/` (`@stackra/*/src/*` is a lint error).
 - A package never imports an app, a service, or `encore.dev` and `~encore/*`.
-- A shared package holds factories, not product literals: no brand name, locale list, project id or `process.env` read. It exposes `define*()` and the app holds the definition. See [Boundaries](/constitution/boundaries).
+- A shared package holds mechanisms, not product literals: no brand name, locale list, project id or `process.env` read. It exposes decorators, base classes and typed config contracts, never `define*()` ([0094](/adr/0094-decorators-only-authoring)), and the app holds the definition. See [Boundaries](/constitution/boundaries).
 - Naming, one declaration per file and specifier style: [Code style](/standards/code-style).
 
 ## Provenance of copied code

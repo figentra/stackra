@@ -53,7 +53,7 @@ Day-to-day development needs no secret. The only tokens are for MCP servers (`.m
 
 ### Encore
 
-There is no Encore app and no Encore CLI to install. Services are plain workspace members under `services/<name>`; Encore is deferred.
+Services are plain TypeScript workspace members under `services/<name>` with no Encore files. Encore is the generated runtime target: `stackra gen` will emit the Encore app into the gitignored `.stackra/encore/` ([0091](/adr/0091-generated-encore-app-in-stackra-folder), [0124](/adr/0124-encore-is-the-generated-runtime-target)). The generator is not built yet, so there is no Encore app to run today.
 
 ## Daily commands
 
