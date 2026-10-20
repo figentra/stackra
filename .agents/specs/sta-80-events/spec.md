@@ -59,8 +59,9 @@ listener runs and the failure is reported to the logger port.
 ### User Story 2 - Emit only after the transaction commits (Priority: P1)
 
 A service author collects events in a deferred buffer while a unit of work runs, and flushes it on success or discards it on
-failure. This is the in-process half of "the event row is written in the same transaction as the state change"; the durable
-half is the outbox (ADR 0078 decision 4).
+failure. The deferred buffer is ported from `@figentra-os/events`; ADR 0078 does not decide it. It complements the outbox,
+which makes cross-service delivery durable by writing the event row in the same transaction as the state change (ADR 0078
+decision 4).
 
 **Why this priority**: Without it, listeners react to changes that were rolled back.
 
@@ -156,9 +157,9 @@ EARS wording (ADR 0120 D18).
 - **FR-010**: A source shall emit an external message only when its type is mapped with a schema or listed in an allow list; otherwise it shall reject it with a reason (`unmapped`, `invalid`, `undecodable`) and report it. Source schemas shall be Standard Schema compatible so `@stackra/validation` Zod schemas plug in.
 - **FR-011**: A source shall mark emitted envelopes remote with the sender's origin and ignore messages from its own origin; a sink shall receive only local envelopes matching its patterns.
 - **FR-012**: The package shall ship a BroadcastChannel source and sink.
-- **FR-013**: The package shall distinguish domain events, which stay in-process and are unversioned, from integration events, which are named `<aggregate>.<verb>.v<n>` and carry shapes from the producer's `./contracts` (ADR 0078 decision 3, constitution http-and-events) [NEEDS CLARIFICATION: C27 — recommended: no service prefix in integration event names; envelope fields beyond the actor settled in `@stackra/contracts`].
+- **FR-013**: The package shall distinguish domain events, which stay in-process and are unversioned, from integration events, which are named `<aggregate>.<verb>.v<n>` and carry shapes from the producer's `./contracts` (ADR 0078 decision 3, constitution http-and-events) [NEEDS CLARIFICATION: C27 — proposed: no service prefix in integration event names; envelope fields beyond the actor settled in `@stackra/contracts`].
 - **FR-014**: The package shall not publish integration events to a broker itself; the durable cross-service path is a sink supplied by `@stackra/outbox` and an inbound source supplied by its inbox (ADR 0078 decisions 3 and 4; roadmap W4.1).
-- **FR-015**: The cross-service envelope shall be `EventEnvelope` from `@stackra/contracts`, whose `actor` is the action pipeline's actor with its `onBehalfOf` chain (ADR 0117 decision 1, ADR 0098) [NEEDS CLARIFICATION: C27 — recommended: the in-process envelope `{ type, payload, meta }` maps one-to-one onto `EventEnvelope` at the outbox sink].
+- **FR-015**: The cross-service envelope shall be `EventEnvelope` from `@stackra/contracts`, whose `actor` is the action pipeline's actor with its `onBehalfOf` chain (ADR 0117 decision 1, ADR 0098) [NEEDS CLARIFICATION: C27 — proposed: the in-process envelope `{ type, payload, meta }` maps one-to-one onto `EventEnvelope` at the outbox sink].
 - **FR-016**: The package shall not import `encore.dev`; any broker adapter is duck-typed and passed in by gen (ADR 0078 decision 8, ADR 0124 decision 3).
 - **FR-017**: Where scoped mode is on, the module shall give each container scope a child bus that bubbles emits to the root unless emitted local, and shall bind scoped `@OnEvent` providers per scope.
 - **FR-018**: The bus shall offer `stream(pattern, { signal, buffer })` as an `AsyncIterable` with a bounded buffer that drops the oldest envelope and reports the drop, and `record({ size, patterns })` for replay.
@@ -205,5 +206,5 @@ EARS wording (ADR 0120 D18).
 
 ## Open items
 
-- [NEEDS CLARIFICATION: C27 — recommended: integration event names carry no service prefix; envelope fields beyond the actor are fixed in `@stackra/contracts`; in-process envelope maps one-to-one onto `EventEnvelope`]
+- [NEEDS CLARIFICATION: C27 — proposed: integration event names carry no service prefix; envelope fields beyond the actor are fixed in `@stackra/contracts`; in-process envelope maps one-to-one onto `EventEnvelope`]
 - [NEEDS CLARIFICATION: FW1 — recommended: (a) entries-first package layout]
