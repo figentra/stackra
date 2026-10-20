@@ -3,7 +3,7 @@
 #          references resolve against. A member's package.json never carries a literal version — it names a
 #          catalog, so one bump here moves the whole repo. `pnpm validate` fails on any other specifier.
 # Scope: every member under apps/*, packages/<category>/<name>, services/*.
-# Owner: release-operations (dependency-steward reviews catalog changes)
+# Owner: release-operations (the owner reviews catalog changes)
 # Secrets: forbidden
 packages:
   - apps/*
@@ -13,6 +13,10 @@ packages:
 # `strict`: `pnpm add` only accepts versions that already exist in a catalog — a new dependency is added
 # here first, then referenced. tools/scripts/validate-repository.mjs enforces the same for hand edits.
 catalogMode: strict
+
+# Refuse an unsupported Node (engines). Lives here, not in .npmrc, so npm stops warning about pnpm-only keys;
+# auto-install-peers, shamefully-hoist=false and strict-peer-dependencies=false are pnpm defaults.
+engineStrict: true
 
 # Default catalog (`catalog:`): shared by many members, no reason to fork a version per topic.
 catalog:

@@ -8,13 +8,13 @@ Every test file sits directly in a `__tests__/` folder beside the code it proves
 
 ## Where tests live
 
-| Kind               | Where                                                          | Runner                                       |
-| ------------------ | -------------------------------------------------------------- | -------------------------------------------- |
-| Unit / component   | `src/**/__tests__/<name>.test.ts(x)`                           | vitest (`pnpm test`)                         |
-| App end-to-end     | `apps/<app>/e2e/__tests__/`, never a shared workspace          | Playwright (web), added with the first flow  |
-| Service tests      | `src/**/__tests__/` in each service                            | vitest (and `encore test` once Encore lands) |
-| Repository scripts | `tools/scripts/__tests__/*.test.mjs`                           | `node --test` (part of `pnpm validate`)      |
-| Fixtures, doubles  | `__fixtures__/` beside the tests, or the `testing` entry of the package that owns the contract | n/a              |
+| Kind               | Where                                                                                          | Runner                                       |
+| ------------------ | ---------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Unit / component   | `src/**/__tests__/<name>.test.ts(x)`                                                           | vitest (`pnpm test`)                         |
+| App end-to-end     | `apps/<app>/e2e/__tests__/`, never a shared workspace                                          | Playwright (web), added with the first flow  |
+| Service tests      | `src/**/__tests__/` in each service                                                            | vitest (and `encore test` once Encore lands) |
+| Repository scripts | `tools/scripts/__tests__/*.test.mjs`                                                           | `node --test` (part of `pnpm validate`)      |
+| Fixtures, doubles  | `__fixtures__/` beside the tests, or the `testing` entry of the package that owns the contract | n/a                                          |
 
 - A test file's name is its subject's name plus `.test` (never `.spec`); its header says what the suite proves, and each `it()` title is a full sentence stating behaviour.
 - The vitest presets set `passWithNoTests: false`, so a member with an empty suite fails. Every layer or entry of a package ships at least one test.
@@ -42,13 +42,19 @@ It does **not** prove three things:
 
 <AccordionGroup>
   <Accordion title="It does not run a service or an app on a device">
-    Nothing in `verify` starts a service, opens a browser, or launches a simulator. A wiring mistake, a startup failure or a screen that only breaks on iOS is invisible to it. Say "typechecks and unit-tests pass", never "the service works".
+    Nothing in `verify` starts a service, opens a browser, or launches a simulator. A wiring
+    mistake, a startup failure or a screen that only breaks on iOS is invisible to it. Say
+    "typechecks and unit-tests pass", never "the service works".
   </Accordion>
   <Accordion title="It does not exercise the CI runner or reach the vault">
-    The local gate runs on your machine, not in the runner image, and never touches the secret vault. A job that needs a vault credential is reported as unexercised, not as passing; a stubbed credential would prove nothing and risks a real value in a log. See [CI](/runbooks/ci).
+    The local gate runs on your machine, not in the runner image, and never touches the secret
+    vault. A job that needs a vault credential is reported as unexercised, not as passing; a stubbed
+    credential would prove nothing and risks a real value in a log. See [CI](/runbooks/ci).
   </Accordion>
   <Accordion title="It does not prove layout, direction or theme correctness">
-    Unit tests do not see pixels. Right-to-left layout, dark theme, dense text and screen-reader behaviour are proved by the end-to-end matrix below and by the accessibility review ([UI and accessibility](/standards/ui-and-accessibility)).
+    Unit tests do not see pixels. Right-to-left layout, dark theme, dense text and screen-reader
+    behaviour are proved by the end-to-end matrix below and by the accessibility review ([UI and
+    accessibility](/standards/ui-and-accessibility)).
   </Accordion>
 </AccordionGroup>
 
@@ -58,12 +64,12 @@ Never report a stage complete on the strength of a gate that could not have obse
 
 An app's e2e suite is a set of journeys run across axes, not a single configuration. Each project in the Playwright config is one combination:
 
-| Axis       | Values                                      |
-| ---------- | ------------------------------------------- |
-| Viewport   | phone, tablet, desktop                      |
-| Theme      | light, dark                                 |
-| Direction  | LTR, RTL                                    |
-| Text size  | default, large (native)                     |
+| Axis      | Values                  |
+| --------- | ----------------------- |
+| Viewport  | phone, tablet, desktop  |
+| Theme     | light, dark             |
+| Direction | LTR, RTL                |
+| Text size | default, large (native) |
 
 - The default run is a small, named subset (for example tablet light LTR, tablet dark LTR, tablet light RTL, phone light LTR). The full grid runs on a schedule or on demand.
 - Journeys do not hard-code demo values or market literals: read them from the same source the app uses, and assert amounts by shape.
@@ -73,11 +79,11 @@ An app's e2e suite is a set of journeys run across axes, not a single configurat
 
 ## What enforces this
 
-| Rule                                                              | Check                                                          | Status |
-| ----------------------------------------------------------------- | -------------------------------------------------------------- | ------ |
-| Empty suite fails                                                 | vitest presets (`passWithNoTests: false`)                      | Yes    |
-| Coverage floor on packages                                        | `withCoverage` in `pnpm test:coverage`                         | Yes    |
-| Script tests and the scaffold render every template kind          | `node --test tools/scripts/__tests__/*.test.mjs` in `pnpm validate` | Yes    |
-| Every test file sits directly in `__tests__/`; no `.spec`          | `checkTestPlacement` in `tools/scripts/validate-repository.mjs` ([ADR 0022](/adr/0022-tests-live-in-tests-folders)) | Yes |
-| Template output is validated, not only rendered                   | planned: scaffold test also runs the validator on each kind    | No     |
-| E2E matrix and screenshot baselines                               | planned: per-app Playwright config when the first flow lands   | No     |
+| Rule                                                      | Check                                                                                                               | Status |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------ |
+| Empty suite fails                                         | vitest presets (`passWithNoTests: false`)                                                                           | Yes    |
+| Coverage floor on packages                                | `withCoverage` in `pnpm test:coverage`                                                                              | Yes    |
+| Script tests and the scaffold render every template kind  | `node --test tools/scripts/__tests__/*.test.mjs` in `pnpm validate`                                                 | Yes    |
+| Every test file sits directly in `__tests__/`; no `.spec` | `checkTestPlacement` in `tools/scripts/validate-repository.mjs` ([ADR 0022](/adr/0022-tests-live-in-tests-folders)) | Yes    |
+| Template output is validated, not only rendered           | planned: scaffold test also runs the validator on each kind                                                         | No     |
+| E2E matrix and screenshot baselines                       | planned: per-app Playwright config when the first flow lands                                                        | No     |

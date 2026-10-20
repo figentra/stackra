@@ -5,20 +5,21 @@ icon: "shield-check"
 ---
 
 <Note>
-Stackra has no deployed service yet. These laws bind the first service that authenticates a user. Controls that need a service are marked planned.
+  Stackra has no deployed service yet. These laws bind the first service that authenticates a user.
+  Controls that need a service are marked planned.
 </Note>
 
 ## Laws
 
-| # | Law | Enforcement |
-| --- | --- | --- |
-| SEC1 | **One authenticated principal per request.** A single auth handler resolves the caller once. Handlers read it from the request context, never from body, query or client headers. `auth: true` is the default. A public endpoint is a documented exception (health, signed webhooks, public content). | **Planned.** Lint rule for undocumented `expose` without auth, with the first service API ([HTTP and events](/constitution/http-and-events)). |
-| SEC2 | **Authorization is server-side**, on every command and query. A client may hide what a user cannot do. It never decides. | **Planned.** Reviewed by the security-tenancy reviewer until a policy engine exists. |
-| SEC3 | **Every state change emits an audit record**: actor, tenant, target, before and after references, correlation id. Every action's pipeline ends in an audit step, and the record carries the full `Actor` with its `onBehalfOf` chain, so an agent action names the agent and the human it acted for ([0098](/adr/0098-actions-are-the-unit)). | **Planned.** The pipeline-order test of 0098. |
-| SEC4 | **Every data field has a classification**: `internal`, `confidential` or `pii`. PII is redacted from logs, events and errors. Each member's `AGENTS.md` carries a PII table, even if it says "none". | **Partial.** The validator checks that the PII table exists. Redaction is checked by review. |
-| SEC5 | **Rate limits** on public and AI endpoints. **Budgets** on AI usage per tenant. | **Planned.** |
-| SEC6 | **Supply chain is pinned.** Versions come only from catalogs. Lifecycle scripts are allow-listed. Cache artifacts are signed. Secrets are scanned on every commit. | **Partial.** Catalog check and strict mode in the validator, signed Turborepo cache in `turbo.jsonc`, gitleaks at pre-commit. CodeQL, workflow linting and dependency review arrive with CI ([ADR 0012](/adr/0012-code-host-and-ci)). |
-| SEC7 | **Encryption** in transit everywhere. At rest through the provider. Application secrets only through the secret store ([Secrets](/constitution/secrets)). | **Planned.** |
+| #    | Law                                                                                                                                                                                                                                                                                                                                           | Enforcement                                                                                                                                                                                                                           |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SEC1 | **One authenticated principal per request.** A single auth handler resolves the caller once. Handlers read it from the request context, never from body, query or client headers. `auth: true` is the default. A public endpoint is a documented exception (health, signed webhooks, public content).                                         | **Planned.** Lint rule for undocumented `expose` without auth, with the first service API ([HTTP and events](/constitution/http-and-events)).                                                                                         |
+| SEC2 | **Authorization is server-side**, on every command and query. A client may hide what a user cannot do. It never decides.                                                                                                                                                                                                                      | **Planned.** Reviewed by the security-tenancy reviewer until a policy engine exists.                                                                                                                                                  |
+| SEC3 | **Every state change emits an audit record**: actor, tenant, target, before and after references, correlation id. Every action's pipeline ends in an audit step, and the record carries the full `Actor` with its `onBehalfOf` chain, so an agent action names the agent and the human it acted for ([0098](/adr/0098-actions-are-the-unit)). | **Planned.** The pipeline-order test of 0098.                                                                                                                                                                                         |
+| SEC4 | **Every data field has a classification**: `internal`, `confidential` or `pii`. PII is redacted from logs, events and errors. Each member's `AGENTS.md` carries a PII table, even if it says "none".                                                                                                                                          | **Partial.** The validator checks that the PII table exists. Redaction is checked by review.                                                                                                                                          |
+| SEC5 | **Rate limits** on public and AI endpoints. **Budgets** on AI usage per tenant.                                                                                                                                                                                                                                                               | **Planned.**                                                                                                                                                                                                                          |
+| SEC6 | **Supply chain is pinned.** Versions come only from catalogs. Lifecycle scripts are allow-listed. Cache artifacts are signed. Secrets are scanned on every commit.                                                                                                                                                                            | **Partial.** Catalog check and strict mode in the validator, signed Turborepo cache in `turbo.jsonc`, gitleaks at pre-commit. CodeQL, workflow linting and dependency review arrive with CI ([ADR 0012](/adr/0012-code-host-and-ci)). |
+| SEC7 | **Encryption** in transit everywhere. At rest through the provider. Application secrets only through the secret store ([Secrets](/constitution/secrets)).                                                                                                                                                                                     | **Planned.**                                                                                                                                                                                                                          |
 
 ## Effective permission
 
@@ -41,11 +42,11 @@ effective(principal, tenant, activeScope) =
 
 Each service that handles user data keeps a `docs/threat-model.md` in its member folder with three tables. A row with no control is a backlog item, not a gap to forget.
 
-| Section | Columns |
-| --- | --- |
-| Assets | asset, where it lives, class (`internal`, `confidential`, `pii`, `secret`) |
-| Trust boundaries | numbered list: client to gateway, service to service, service to database, any third party |
-| Threats and controls | threat, control today, open work |
+| Section              | Columns                                                                                    |
+| -------------------- | ------------------------------------------------------------------------------------------ |
+| Assets               | asset, where it lives, class (`internal`, `confidential`, `pii`, `secret`)                 |
+| Trust boundaries     | numbered list: client to gateway, service to service, service to database, any third party |
+| Threats and controls | threat, control today, open work                                                           |
 
 ## History
 

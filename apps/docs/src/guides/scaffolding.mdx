@@ -14,17 +14,17 @@ Run it with `--dry-run` first to see what it would write. Then run `pnpm install
 
 ## Kinds
 
-| Kind | Template | Lands in | Pick it for |
-| --- | --- | --- | --- |
-| `domain` | `templates/packages/domain` | `packages/<category>/<name>` | A business capability: entities, use cases, adapters, a delivery surface |
-| `platform` | `templates/packages/platform` | `packages/<category>/<name>` | A technical capability other packages build on, runtime-neutral core |
-| `lib` | `templates/packages/lib` | `packages/<category>/<name>` | A small flat utility with one entry and no layers |
-| `tooling` | `templates/packages/tooling` | `packages/tooling/<name>` | A shared config preset, data only |
-| `app-vite` | `templates/apps/vite` | `apps/<name>` | A client-only SPA behind login; port from 3710 |
-| `app-next` | `templates/apps/next` | `apps/<name>` | Server rendering or public pages; port from 3710 |
-| `app-expo` | `templates/apps/expo` | `apps/<name>` | An iOS and Android app; no hyphens in the name |
-| `app-docs` | `templates/apps/docs` | `apps/<name>` | A Mintlify site; port from 3334 |
-| `service` | `templates/services/encore` | see the note | A backend service |
+| Kind       | Template                      | Lands in                     | Pick it for                                                              |
+| ---------- | ----------------------------- | ---------------------------- | ------------------------------------------------------------------------ |
+| `domain`   | `templates/packages/domain`   | `packages/<category>/<name>` | A business capability: entities, use cases, adapters, a delivery surface |
+| `platform` | `templates/packages/platform` | `packages/<category>/<name>` | A technical capability other packages build on, runtime-neutral core     |
+| `lib`      | `templates/packages/lib`      | `packages/<category>/<name>` | A small flat utility with one entry and no layers                        |
+| `tooling`  | `templates/packages/tooling`  | `packages/tooling/<name>`    | A shared config preset, data only                                        |
+| `app-vite` | `templates/apps/vite`         | `apps/<name>`                | A client-only SPA behind login; port from 3710                           |
+| `app-next` | `templates/apps/next`         | `apps/<name>`                | Server rendering or public pages; port from 3710                         |
+| `app-expo` | `templates/apps/expo`         | `apps/<name>`                | An iOS and Android app; no hyphens in the name                           |
+| `app-docs` | `templates/apps/docs`         | `apps/<name>`                | A Mintlify site; port from 3334                                          |
+| `service`  | `templates/services/encore`   | see the note                 | A backend service                                                        |
 
 `--category` is required for `domain`, `platform` and `lib` and must be one of: foundation, application, communication, cross-cutting, data, developer, experience, runtime, security, state. Names are kebab-case.
 
@@ -38,14 +38,14 @@ Which package kind: would the code need renaming to make sense in a different pr
 
 The scaffold replaces exactly six tokens in file contents **and** path names. Other double-brace text (JSX style objects) is left alone.
 
-| Token | Value |
-| --- | --- |
-| `{{NAME}}` | kebab-case short name |
-| `{{PASCAL}}` | PascalCase of the name |
-| `{{TITLE}}` | Title Case name, or `--title` |
+| Token             | Value                                                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------------------------- |
+| `{{NAME}}`        | kebab-case short name                                                                                 |
+| `{{PASCAL}}`      | PascalCase of the name                                                                                |
+| `{{TITLE}}`       | Title Case name, or `--title`                                                                         |
 | `{{DESCRIPTION}}` | the `--description` sentence; becomes `description` in `package.json` and opens the README and AGENTS |
-| `{{PORT}}` | dev port, the next free one in the kind's range (or `--port`) |
-| `{{CATEGORY}}` | the `packages/` folder |
+| `{{PORT}}`        | dev port, the next free one in the kind's range (or `--port`)                                         |
+| `{{CATEGORY}}`    | the `packages/` folder                                                                                |
 
 `TITLE` and `DESCRIPTION` are JSON-escaped when written into `.json` and `.jsonc` files.
 
@@ -68,16 +68,18 @@ When you add a kind, add a row to the test's case list and to the template folde
 Moving or renaming a file or folder means rewriting every import and link that points at it. Do that with a codemod, not an editor: a script `git mv`s each path, rewrites every relative specifier and link from the file's new location, prints what it changed and can run with `--dry-run`.
 
 <Note>
-  Status: target. Stackra has no move codemod yet. Port one before the first large restructuring. Until then, move in small steps, run `pnpm typecheck` and `pnpm verify` after each, and never mix a move with a behaviour change in one commit.
+  Status: target. Stackra has no move codemod yet. Port one before the first large restructuring.
+  Until then, move in small steps, run `pnpm typecheck` and `pnpm verify` after each, and never mix
+  a move with a behaviour change in one commit.
 </Note>
 
 ## Checks that back this page
 
-| Rule | Check | State |
-| --- | --- | --- |
-| Every template renders with no token left | `tools/scripts/scaffold.test.mjs` | Live |
-| Every rendered member passes `pnpm validate` | Scaffold test | Not built |
-| Scaffolded service matches the `services/<name>` layout | Template update | Not built |
-| Moves are scripted | Move codemod | Not built |
+| Rule                                                    | Check                             | State     |
+| ------------------------------------------------------- | --------------------------------- | --------- |
+| Every template renders with no token left               | `tools/scripts/scaffold.test.mjs` | Live      |
+| Every rendered member passes `pnpm validate`            | Scaffold test                     | Not built |
+| Scaffolded service matches the `services/<name>` layout | Template update                   | Not built |
+| Moves are scripted                                      | Move codemod                      | Not built |
 
 See also [Structure](/guides/structure), [Packages](/guides/packages) and [Definition of done](/guides/definition-of-done).

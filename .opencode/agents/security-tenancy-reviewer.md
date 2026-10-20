@@ -51,4 +51,4 @@ Edits files. Cites a rule that has no ADR or docs page. Approves with an open cr
 
 ## Hand-offs
 
-Fix goes to the owning builder (`service-builder`, `frontend-builder`, `mobile-builder`). Missing decision goes to `architecture-guardian`. Missing tests go to `test-engineer`. Contract shape issues go to `api-contract-reviewer`.
+Fix goes to the owning builder (`service-builder`, `frontend-builder`, `mobile-builder`). Missing decision goes to the owner. Missing tests go to `test-engineer`. Contract shape issues go to `api-contract-reviewer`.

@@ -8,12 +8,12 @@ An app is a deployable surface (a build, a host, a URL) and a `tier:app` [member
 
 ## Kinds
 
-| Kind          | Pick it for                                                          | tsconfig preset | Port                  |
-| ------------- | -------------------------------------------------------------------- | --------------- | --------------------- |
-| `app-vite`    | A client-only SPA behind login (consoles, dashboards); no SEO        | `vite`          | 3710 to 3799          |
-| `app-next`    | Server rendering, SEO or public pages; App Router, typed routes      | `next`          | 3710 to 3799          |
-| `app-expo`    | An iOS or Android app (native tabs, HeroUI Native)                   | `expo`          | Metro picks 8081      |
-| `app-docs`    | A Mintlify documentation site                                        | none            | 3334 to 3399          |
+| Kind       | Pick it for                                                     | tsconfig preset | Port             |
+| ---------- | --------------------------------------------------------------- | --------------- | ---------------- |
+| `app-vite` | A client-only SPA behind login (consoles, dashboards); no SEO   | `vite`          | 3710 to 3799     |
+| `app-next` | Server rendering, SEO or public pages; App Router, typed routes | `next`          | 3710 to 3799     |
+| `app-expo` | An iOS or Android app (native tabs, HeroUI Native)              | `expo`          | Metro picks 8081 |
+| `app-docs` | A Mintlify documentation site                                   | none            | 3334 to 3399     |
 
 Ports are the `--port` values in `apps/*/package.json` `dev` scripts; pick the next free one in the range. Vite uses `--strictPort` so a clash fails loudly. There is one docs app and it exists (`apps/docs`).
 
@@ -55,12 +55,12 @@ Local-only scripts (`dev`, `start`, `preview`, `ios`, `android`, `doctor`, `a11y
 
 ## What enforces this
 
-| Rule                                                              | Check                                                  | Status |
-| ----------------------------------------------------------------- | ------------------------------------------------------ | ------ |
-| `tier:app` tag; no app depends on a service; no lib depends on an app | `validate-repository.mjs`, `turbo boundaries`      | Yes    |
-| Member files and PII table                                        | `validate-repository.mjs`                              | Yes    |
-| Catalog versions only (`catalog:mobile`, `catalog:frontend`)      | `validate-repository.mjs`, `catalogMode: strict`       | Yes    |
-| Bundle budget on the built web output                             | planned: a per-app budget script chained after `build` | No     |
-| No fixture or demo markers in `dist`                              | planned: a per-app scan script chained after `build`   | No     |
-| Physical-direction classes (RTL)                                  | planned: see [i18n and RTL](/standards/i18n-rtl)       | No     |
-| Required build-time variable present in staging/production        | planned: config screen test per app                    | No     |
+| Rule                                                                  | Check                                                  | Status |
+| --------------------------------------------------------------------- | ------------------------------------------------------ | ------ |
+| `tier:app` tag; no app depends on a service; no lib depends on an app | `validate-repository.mjs`, `turbo boundaries`          | Yes    |
+| Member files and PII table                                            | `validate-repository.mjs`                              | Yes    |
+| Catalog versions only (`catalog:mobile`, `catalog:frontend`)          | `validate-repository.mjs`, `catalogMode: strict`       | Yes    |
+| Bundle budget on the built web output                                 | planned: a per-app budget script chained after `build` | No     |
+| No fixture or demo markers in `dist`                                  | planned: a per-app scan script chained after `build`   | No     |
+| Physical-direction classes (RTL)                                      | planned: see [i18n and RTL](/standards/i18n-rtl)       | No     |
+| Required build-time variable present in staging/production            | planned: config screen test per app                    | No     |

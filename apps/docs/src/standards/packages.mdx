@@ -10,12 +10,12 @@ A package lives at `packages/<category>/<name>` and is published as `@stackra/<n
 
 Asked once, when the package is created. The first yes wins.
 
-| # | Question                                                                                  | Archetype  | Scaffold kind |
-| - | ----------------------------------------------------------------------------------------- | ---------- | ------------- |
-| 1 | Does it own business meaning (entities, use cases, adapters, a delivery surface)?         | `domain`   | `domain`      |
-| 2 | Is it a shared build or quality preset with no logic?                                     | `tooling`  | `tooling`     |
-| 3 | Does it serve other packages with no business meaning of its own?                         | `platform` | `platform`    |
-| 4 | Otherwise: a small flat utility with one entry and no layers                              | `lib`      | `lib`         |
+| #   | Question                                                                          | Archetype  | Scaffold kind |
+| --- | --------------------------------------------------------------------------------- | ---------- | ------------- |
+| 1   | Does it own business meaning (entities, use cases, adapters, a delivery surface)? | `domain`   | `domain`      |
+| 2   | Is it a shared build or quality preset with no logic?                             | `tooling`  | `tooling`     |
+| 3   | Does it serve other packages with no business meaning of its own?                 | `platform` | `platform`    |
+| 4   | Otherwise: a small flat utility with one entry and no layers                      | `lib`      | `lib`         |
 
 Domain or platform: would the code need renaming to make sense in a different product? Domain. A package that fits none of these is evidence of a new archetype, which is an [ADR 0004](/adr/0004-package-archetypes-and-layers) amendment, not a reason to stretch `platform`.
 
@@ -34,12 +34,12 @@ src/
   index.ts          the public surface, re-exports only
 ```
 
-| Layer            | May import                                  | Never imports                                                |
-| ---------------- | ------------------------------------------- | ------------------------------------------------------------ |
-| `core`           | nothing else in the package                 | other layers; `react`, `react-dom`, `react-native`, `encore.dev` |
-| `application`    | `core`                                      | `infrastructure`, `presentation`; the same host libraries    |
-| `infrastructure` | `core`, `application`                       |                                                              |
-| `presentation`   | `core`, `application`                       | `infrastructure` (the host binds adapters)                   |
+| Layer            | May import                  | Never imports                                                    |
+| ---------------- | --------------------------- | ---------------------------------------------------------------- |
+| `core`           | nothing else in the package | other layers; `react`, `react-dom`, `react-native`, `encore.dev` |
+| `application`    | `core`                      | `infrastructure`, `presentation`; the same host libraries        |
+| `infrastructure` | `core`, `application`       |                                                                  |
+| `presentation`   | `core`, `application`       | `infrastructure` (the host binds adapters)                       |
 
 `presentation/native` composes React and never `presentation/web`. A port belongs to `application/`, never to `infrastructure/`. Layers are addressed with subpath imports (`#core`, `#application/*`, declared in `package.json` `imports`).
 
@@ -47,14 +47,14 @@ src/
 
 `src/core/` is the runtime-neutral capability. Opt-in entries sit beside it, each its own export subpath and its own peer-dependency boundary:
 
-| Entry          | Runtime        | Holds                                        |
-| -------------- | -------------- | -------------------------------------------- |
-| `core`         | `isomorphic`   | the capability; imports no host library      |
-| `contracts`    | `isomorphic`   | types and tokens a consumer needs at zero runtime cost |
-| `react`        | `browser`      | hooks and providers; imports only `core`     |
-| `native`       | `react-native` | React Native bindings; imports only `core`   |
-| `node`         | `node`         | Node-only concerns; imports only `core`      |
-| `testing`      | `node`         | fakes and builders for consumers' tests      |
+| Entry       | Runtime        | Holds                                                  |
+| ----------- | -------------- | ------------------------------------------------------ |
+| `core`      | `isomorphic`   | the capability; imports no host library                |
+| `contracts` | `isomorphic`   | types and tokens a consumer needs at zero runtime cost |
+| `react`     | `browser`      | hooks and providers; imports only `core`               |
+| `native`    | `react-native` | React Native bindings; imports only `core`             |
+| `node`      | `node`         | Node-only concerns; imports only `core`                |
+| `testing`   | `node`         | fakes and builders for consumers' tests                |
 
 There is no `presentation/` in a platform package. Rules for a package that works under more than one runtime:
 
@@ -91,27 +91,27 @@ Code copied from another repository is copied, not depended on, and says where i
 
 Decide per package before copying:
 
-| Verdict    | When                                                                                          |
-| ---------- | --------------------------------------------------------------------------------------------- |
-| **Port**   | The design is sound and tests exist; only names, product literals and dependencies change     |
-| **Shrink** | Most of it is surface nobody uses; keep the core and its tests                                |
-| **Replace**| A platform primitive (`fetch`, Intl) does the job; keep only the parts it lacks, with new tests |
-| **Rewrite**| The model is wrong (strings where typed keys belong); keep the ideas, write it fresh          |
-| **Drop**   | A few typed lines in an existing package replace it                                           |
+| Verdict     | When                                                                                            |
+| ----------- | ----------------------------------------------------------------------------------------------- |
+| **Port**    | The design is sound and tests exist; only names, product literals and dependencies change       |
+| **Shrink**  | Most of it is surface nobody uses; keep the core and its tests                                  |
+| **Replace** | A platform primitive (`fetch`, Intl) does the job; keep only the parts it lacks, with new tests |
+| **Rewrite** | The model is wrong (strings where typed keys belong); keep the ideas, write it fresh            |
+| **Drop**    | A few typed lines in an existing package replace it                                             |
 
 A port that diverges from its origin does so openly: in `ORIGIN.md`, not silently.
 
 ## What enforces this
 
-| Rule                                                              | Check                                                        | Status  |
-| ----------------------------------------------------------------- | ------------------------------------------------------------ | ------- |
-| Layer direction (`core`, `application`, `presentation`, native)   | oxlint `no-restricted-imports` in `boundaries.jsonc`         | Yes     |
-| No import of an app, service or `encore.dev` from a package       | oxlint `boundaries.jsonc` + `turbo boundaries`               | Yes     |
-| No deep import of `@stackra/*/src/*`                              | oxlint `boundaries.jsonc`                                    | Yes     |
-| `exports` dist + `@stackra/source` shape, `sideEffects: false`   | `validate-repository.mjs`                                    | Yes     |
-| Unused files and exports                                          | `knip`                                                       | Yes     |
-| Archetype fields and a barrel/deep-import shape check             | planned: validator check (ported from a package-shape script) | No     |
-| No product literal or `process.env` in a package                  | planned: validator check                                     | No      |
-| `ORIGIN.md` present where code was copied                         | planned: validator check; review by `package-steward` today  | No      |
+| Rule                                                            | Check                                                         | Status |
+| --------------------------------------------------------------- | ------------------------------------------------------------- | ------ |
+| Layer direction (`core`, `application`, `presentation`, native) | oxlint `no-restricted-imports` in `boundaries.jsonc`          | Yes    |
+| No import of an app, service or `encore.dev` from a package     | oxlint `boundaries.jsonc` + `turbo boundaries`                | Yes    |
+| No deep import of `@stackra/*/src/*`                            | oxlint `boundaries.jsonc`                                     | Yes    |
+| `exports` dist + `@stackra/source` shape, `sideEffects: false`  | `validate-repository.mjs`                                     | Yes    |
+| Unused files and exports                                        | `knip`                                                        | Yes    |
+| Archetype fields and a barrel/deep-import shape check           | planned: validator check (ported from a package-shape script) | No     |
+| No product literal or `process.env` in a package                | planned: validator check                                      | No     |
+| `ORIGIN.md` present where code was copied                       | planned: validator check; review by `package-steward` today   | No     |
 
 The `package-steward` reviews every new package and every new `exports` subpath; see the [agent roster](/agents/roster).

@@ -14,12 +14,12 @@ The easy edge to add by accident is library to app, not library to service.
 Every workspace member carries exactly one tier tag in its own `turbo.jsonc` (`"tags": ["tier:<x>"]`), and the root
 `turbo.jsonc` `boundaries` block denies each tier everything above it.
 
-| Tier           | Members                       | May depend on                | Denied                  |
-| -------------- | ----------------------------- | ---------------------------- | ----------------------- |
-| `tier:config`  | `packages/tooling/*`          | nothing workspace-local      | lib, service, app       |
-| `tier:lib`     | `packages/<category>/<name>`  | config, other lib            | service, app            |
-| `tier:app`     | `apps/*`                      | config, lib                  | service                 |
-| `tier:service` | `services/*`                  | config, lib                  | app                     |
+| Tier           | Members                      | May depend on           | Denied            |
+| -------------- | ---------------------------- | ----------------------- | ----------------- |
+| `tier:config`  | `packages/tooling/*`         | nothing workspace-local | lib, service, app |
+| `tier:lib`     | `packages/<category>/<name>` | config, other lib       | service, app      |
+| `tier:app`     | `apps/*`                     | config, lib             | service           |
+| `tier:service` | `services/*`                 | config, lib             | app               |
 
 - A library never imports an app, a service or `encore.dev`. If a library needs a shape from above, the shape moves
   down into a contract package ([0117](/adr/0117-contracts-placement-and-decorator-ownership)).
