@@ -1,0 +1,39 @@
+---
+title: "0131 — Module key, version and deprecation"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+A module is the unit of contribution ([0111](/adr/0111-module-is-the-unit-of-contribution)). Modules need a stable name
+for the manifest, for permissions, for events and for settings, and a way to retire an old action without breaking users
+silently. The owner's intent-map item P1 answered this (accepted 2026-10-20; mem L400, "a required module key; the version
+is the package semver").
+
+## Decision
+
+1. Every `@Module` declares a required `key`: a dotted namespace unique across the manifest. The key prefixes action,
+   permission, model, setting and event keys. Gen fails on a key collision.
+2. The module's version is its package's semver. There is no second version number.
+3. `owner` and `dependsOn` are optional metadata.
+4. `@Deprecated({ since, replacement, sunset })` marks an action, event, field, setting or trait. Gen records the deprecation
+   in the manifest and warns on use. The lifecycle rule for public APIs is in [0136](/adr/0136-action-runtime-contract).
+
+## Consequences
+
+- A module author picks a key once. Renaming a key is a breaking change, so it goes through deprecation.
+- The manifest (ADR 0158, wave 1 part 3, not on this branch) is the place that holds the namespace check.
+
+## Enforcement
+
+planned — gen fails on a duplicate `key` across the manifest and warns on deprecated use. The module authoring guide
+(`guides/structure.mdx`) gets a section when the rule lands (register: docs to change).
+
+## Alternatives
+
+- A second, module-only version number: rejected, the package semver is the single version (P1).
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner intent-map item P1 (`stackra-notes/owner-docs-intent-map.md`, Part 4, accepted; mem L400,
+2026-10-20).

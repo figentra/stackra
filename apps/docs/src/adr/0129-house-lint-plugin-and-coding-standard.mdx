@@ -1,0 +1,48 @@
+---
+title: "0129 — Code standards are enforced by a house lint plugin and shipped as @stackra/coding-standard"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0001](/adr/0001-monorepo-layout): the gate list gains the house rules and `code:check`
+  (final pass, since 0001 is a platform page).
+</Note>
+
+## Context
+
+The conventions in [0128](/adr/0128-code-conventions-enums-classes-components-and-kind-folders) can only hold if a tool checks
+them. The owner locked the enforcement path on 2026-10-20 (conv Q6 to Q8). The owner also asked for one command that product
+repositories can run, similar to a coding-standard package for a PHP framework.
+
+## Decision
+
+1. The house rules ship as a local oxlint `jsPlugin` in `@stackra/oxlint-config`: `no-enum`, `no-hash-private`,
+   `hook-file-name`, `member-order` and `disable-needs-reason`.
+2. `isolatedDeclarations` is on for every package (conv Q6).
+3. Type-aware linting comes from `oxlint-tsgolint` (conv Q7).
+4. The decorators presets stop turning `erasableSyntaxOnly` off (mem L379).
+5. `stackra code:check` and `stackra code:fix` run oxlint with the house plugin, oxfmt, the validator and the boundary check.
+   They ship as `@stackra/coding-standard`, which product repositories install. It contributes its commands to the CLI
+   through the discovery rule of ADR 0144 (metadata registry and explorers, a later ADR in wave 1).
+
+## Consequences
+
+- Lint is stricter, and existing code may fail until it is fixed. Fixes happen as code is touched.
+- If `lint` changes meaning in the task vocabulary, `.agents/rules/task-vocabulary.md` must change too (`docs-governance`).
+- One more package to maintain, in the developer category ([0127](/adr/0127-package-categories-including-infrastructure)).
+
+## Enforcement
+
+planned — the house plugin rules are built and run by `pnpm verify` (lint step) once `@stackra/oxlint-config` ships them.
+Until then the conventions are not checked by any tool.
+
+## Alternatives
+
+- ESLint with its plugins: rejected, ESLint and Prettier are rejected tools (0011).
+- Rely on review: rejected by the owner's conv Q8 (a rule with no check is a comment).
+
+## Supersedes and sources
+
+Amends the gate list of [0001](/adr/0001-monorepo-layout) (final pass). Sources: owner's code-conventions lock
+(`stackra-decisions-2026-10-19.md` L379, L382, L566, L574, 2026-10-20); proposal Q6 to Q8 in
+`stackra-notes/code-conventions-proposal.md`.

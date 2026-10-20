@@ -1,0 +1,44 @@
+---
+title: "0134 — Data invariants, field classification and the delete lifecycle"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0046](/adr/0046-global-data-invariants-and-per-model-opt-ins): the global invariants
+  of 0046 are kept, and its per-model opt-ins are replaced by classification, retention and a delete
+  policy.
+</Note>
+
+## Context
+
+[0046](/adr/0046-global-data-invariants-and-per-model-opt-ins) set global invariants and per-model opt-ins. The owner's
+intent-map item P4, the delete answers DA7 and DA8 (mem L534), and the audit answer AU7 (mem L652) add classification, retention
+and a delete policy, and they say what audit diffs may contain.
+
+## Decision
+
+1. The global invariants stand: UUIDv7 keys and `tenant_id` with row-level security on every tenant table.
+2. `@Classify` takes `public`, `internal`, `pii`, `financial`, `secret` or `regulated`. Fields default to `internal`. Each
+   class has fixed effects on logs, audit, events, search, the agent audience and export or erasure (P4).
+3. `@Retention` drives `Prunable` jobs. A tenant legal hold suspends purge (P4).
+4. The delete policy is one of three: archive, soft delete (kept 30 days) or hard delete (DA7).
+5. In audit diffs, PII is encrypted with the tenant key. Secrets are never stored. An erasure leaves a hashed subject id (AU7).
+
+## Consequences
+
+- Each model declares a classification for its fields. An unclassified field is `internal`, so it is not public by accident.
+- Erasure and export depend on classification, so the compliance flow reads these tags.
+
+## Enforcement
+
+planned — the validator or gen checks that every field has a classification after `@Classify` defaults are applied, and the
+`Prunable` job reads `@Retention`. The pipeline audit step ([0136](/adr/0136-action-runtime-contract)) closes the audit half.
+
+## Alternatives
+
+- Per-model opt-ins only (0046): replaced, because classification must apply to every field.
+
+## Supersedes and sources
+
+Supersedes: [0046](/adr/0046-global-data-invariants-and-per-model-opt-ins). Amends (final pass): 0071 decision 2. Sources:
+owner intent-map item P4 (accepted, mem L584), delete answer DA7 and DA8 (mem L534), audit answer AU7 (mem L652), 2026-10-20.

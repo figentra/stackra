@@ -1,0 +1,52 @@
+---
+title: "0128 — Code conventions: enums, classes, components and kind folders"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0006](/adr/0006-naming-exports-and-imports) and
+  [0007](/adr/0007-source-documentation-standard), and (final pass) decision 6 of 0069. Decisions 1
+  to 4 are locked; decision 5 is assumed (see below).
+</Note>
+
+## Context
+
+The owner asked for a full code-conventions standard on 2026-10-20 and locked the first five rules (mem L378–381, conv Q1–Q5).
+The rest of the proposal (constants, utilities, hooks, providers, contexts, JSDoc and no inline types) was not decided one
+by one. Those rules are recorded here as assumed, so they are visible and not treated as in force.
+
+## Decision
+
+1. **Enums.** A const object plus a same-named union type, in `<name>.enum.ts`. The `enum` keyword is banned everywhere.
+2. **Components.** Always a folder: `x/{x.tsx, index.ts, __tests__/x.test.tsx}`. `XProps` is exported from the component
+   file, and it is the one allowed companion export. `*.stories.*` files are banned (no Storybook).
+3. **Classes.** Use the `private` keyword. `#private` is banned. Injected dependencies are `private readonly`.
+4. **Kind folders.** When a module has two or more files of one kind, they move into a kind folder: `interfaces/`, `types/`,
+   `constants/`, `tokens/`, `errors/` or `decorators/`. The suffix vocabulary of audit 3.1 is frozen.
+5. **Assumed, not yet in force:** constants and utilities (proposal section 2), hooks, providers and contexts (section 4),
+   JSDoc and comment rules (section 5), and "no inline types" (audit 3.1). Each becomes a numbered decision only when the
+   owner confirms it (register Thin list item 2).
+
+## Consequences
+
+- Existing components and enums move to the folder and const-object shapes when they are next touched. There is no
+  mass rewrite.
+- Test files for components sit under `__tests__/` next to the component (AGENTS.md test placement).
+- The component, hook and context scaffolds in `tools/scaffold` must produce these shapes.
+
+## Enforcement
+
+planned — house oxlint rules `no-enum`, `no-hash-private`, `hook-file-name` and `member-order` (see
+[0129](/adr/0129-house-lint-plugin-and-coding-standard)). The folder shapes are planned for the validator.
+
+## Alternatives
+
+- Keep TypeScript `enum`: rejected by the owner (Q1).
+- Storybook for component review: rejected by the owner (Q3). A revival would need a new ADR.
+
+## Supersedes and sources
+
+Amends: [0006](/adr/0006-naming-exports-and-imports), [0007](/adr/0007-source-documentation-standard), and 0069 decision 6
+(final pass). Sources: owner's code-conventions lock (`stackra-decisions-2026-10-19.md` L378–381, 2026-10-20) and audit
+decision 3.1 (L547); the proposal is `stackra-notes/code-conventions-proposal.md`, questions Q1 to Q5. Decision 5 has no owner
+lock yet (register Thin list item 2).

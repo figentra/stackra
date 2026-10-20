@@ -1,0 +1,49 @@
+---
+title: "0133 — Field semantics, model keys, rename-safe fields and lifecycle events"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0095](/adr/0095-zod-inside-field-decorators), [0096](/adr/0096-trait-naming-grammar) and
+  [0097](/adr/0097-model-and-database-packages). Those pages keep their decisions; this ADR adds the
+  field types, keys and events.
+</Note>
+
+## Context
+
+The model decorators in 0095 to 0097 covered validation and traits but not money, JSON or renames. The owner's intent-map
+item P3, with the data answer DA8 (mem L534), fixes the field vocabulary, model keys and what a rename does to a migration.
+
+## Decision
+
+1. `@Nullable` is separate from `@Optional`.
+2. Semantic field types: `@Money`, `@Decimal`, `@Json(schema)`, `@Url`, `@Phone` and `@Computed`. `@Geo` is **deferred**.
+3. `@Model({ key })` takes a key under the module namespace ([0131](/adr/0131-module-key-version-and-deprecation)).
+4. `@Stored({ column, renamedFrom })` makes a rename safe in the migration diff, so a rename is not a drop and a create.
+5. `@Crud` derives the create, update and filter schemas from the model.
+6. `Versionable` means optimistic concurrency. A stale write returns a `409` with the `conflict` code. History is either
+   `HasRevisions` or the audit log.
+7. A new trait, `HasUserStamps`, joins the trait table of [0096](/adr/0096-trait-naming-grammar).
+8. Gen emits in-process domain events `<modelKey>.created`, `<modelKey>.updated` and `<modelKey>.deleted`.
+
+Deferred item: `@Geo`. The sources give no revival trigger. The owner must name one (open question).
+
+## Consequences
+
+- Renames are safe only when the author writes `renamedFrom`. Gen cannot infer it.
+- Money and decimal fields need the ledger rules (ADR 0220 and the data specs, not on this branch).
+
+## Enforcement
+
+planned — gen rejects a `@Stored` rename with no `renamedFrom` when the column changes, and the migration diff check runs in
+`stackra gen --check` (ADR 0158, wave 1 part 3).
+
+## Alternatives
+
+- Infer renames from column names: rejected, the author states the rename.
+
+## Supersedes and sources
+
+Amends: [0095](/adr/0095-zod-inside-field-decorators), [0096](/adr/0096-trait-naming-grammar),
+[0097](/adr/0097-model-and-database-packages). Sources: owner intent-map item P3 (accepted, mem L584), data answer DA8
+(mem L534), all 2026-10-20.
