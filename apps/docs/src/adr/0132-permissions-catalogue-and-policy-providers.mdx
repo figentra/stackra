@@ -3,6 +3,10 @@ title: "0132 — Permissions are a module catalogue; policies are providers"
 description: "Accepted · 2026-10-20"
 ---
 
+<Note>
+  Amended by [0231](/adr/0231-naming-and-casing-standard): permission keys are `resource:verb`, not `<module>.<resource>.<action>`.
+</Note>
+
 ## Context
 
 Permissions were a flat list, and nothing checked that an action's permission made sense for what the action does. The

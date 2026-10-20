@@ -1,0 +1,76 @@
+---
+title: "0231 — Naming and casing standard"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Builds on [0006](/adr/0006-naming-exports-and-imports) (file names and exports) and
+  [0128](/adr/0128-code-conventions-enums-classes-components-and-kind-folders) (enums, classes,
+  components). Amends the event-name form of [0141](/adr/0141-integration-event-names-and-envelope),
+  the permission-key form of [0132](/adr/0132-permissions-catalogue-and-policy-providers), and the
+  refusal-code casing of [0137](/adr/0137-declared-action-options-and-refusal-codes). The always-on
+  rule is `.agents/rules/naming-and-casing.md`.
+</Note>
+
+## Context
+
+Casing was decided piece by piece: files in ADR 0006, code shapes in 0128, event names and permission keys in other ADRs. The owner
+asked on 2026-10-20 for one table that says every casing and where it applies, and for the existing conventions to be kept. The
+machine-code rule was decided separately: every machine code is snake_case (owner answer, 2026-10-20).
+
+## Decision
+
+1. The table below is the standard. Each row says where the casing applies. A name that no row covers is a new decision for an ADR.
+
+| Thing                                                                                               | Casing                                                                         | Example                                                 | Where it is set                           |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------- | ----------------------------------------- |
+| Files and folders under `src/`, and document and rule file names                                    | kebab-case                                                                     | `token.class.ts`, `class-provider.interface.ts`         | 0006 rule 1                               |
+| Package names                                                                                       | `@stackra/<name>`, kebab-case name                                             | `@stackra/vite-plugin`                                  | AGENTS.md package table                   |
+| TypeScript types, interfaces, classes, enum objects and React components                            | PascalCase                                                                     | `Token`, `ErrorBoundary`, `Scope`                       | 0128                                      |
+| Functions, methods, variables and parameters                                                        | camelCase; functions are verb-first                                            | `formatLabel`, `defaultRetryPolicy`                     | proposal section 2                        |
+| Constants: fixed tables and primitives fixed at build time                                          | SCREAMING_SNAKE, `as const`                                                    | `MAX_PAGE_SIZE`                                         | proposal section 2                        |
+| Constants: computed or configuration-shaped values                                                  | camelCase                                                                      | `defaultRetryPolicy`                                    | proposal section 2                        |
+| DI tokens (`defineToken` values)                                                                    | SCREAMING_SNAKE, no `_TOKEN` suffix                                            | `LOGGER`, in `logger.token.ts`                          | proposal section 2; 0145                  |
+| Machine codes: error categories, error codes, refusal codes, event reasons, STK codes, domain codes | snake_case                                                                     | `not_found`, `entitlement_required`, `step_up_required` | owner answer 2026-10-20; 0137; 0140       |
+| Event names                                                                                         | `ns.entity.verb.vN`, all lowercase; multi-word segments snake_case             | `flags.feature_flag.toggled.v1`                         | owner naming table; 0141                  |
+| Permission keys                                                                                     | `resource:verb`, lowercase; multi-word parts snake_case                        | `invoice:read`, `payment_intent:capture`                | owner naming table; 0132                  |
+| Module keys (namespaces)                                                                            | lowercase dotted namespace                                                     | `identity.users`                                        | 0131                                      |
+| Database tables and columns                                                                         | snake_case                                                                     | `tenant_id`, `created_at`                               | owner naming table                        |
+| URL path segments                                                                                   | kebab-case; path parameters in `:camelCase`                                    | `/users/:userId/archive`                                | owner naming table; http-conventions rule |
+| HTTP headers                                                                                        | Title-Case, as sent                                                            | `Idempotency-Key`, `Stackra-Version`                    | http-conventions rule; 0136; 0118         |
+| Public ids                                                                                          | lowercase `prefix_` plus 26 characters                                         | `user_01jh4q...`                                        | 0135                                      |
+| i18n keys                                                                                           | dotted; each segment snake_case; a machine code's key is derived from the code | `errors.not_found`                                      | 0162 (C36)                                |
+| Environment variables and secret names                                                              | SCREAMING*SNAKE; the env override form is `STACKRA*<PKG>\_\_<PATH>`            | `STRIPE_SECRET_KEY`, `STACKRA_PAYMENTS__TIMEOUT_MS`     | owner naming table; 0146                  |
+| Branch names                                                                                        | Linear form `figentra/sta-<n>-<slug>`, kebab-case slug                         | `figentra/sta-175-adr-wave-1-part-4`                    | AGENTS.md Linear rule                     |
+| Commit types and scopes                                                                             | lowercase conventional commits                                                 | `docs(adr): ...`                                        | commitlint                                |
+
+2. **Existing conventions are kept.** ADR 0006 rule 1 (kebab-case files) and rule 2 (one exported declaration per file, with a kind
+   suffix) stand. ADR 0128 (enums, classes, components) stands. The `STACKRA_` env prefix (0146) and public-id prefixes (0135) stand.
+3. **Open for the owner: design tokens.** The owner's table says "tokens" for DI tokens (row 7). It does not name a casing for
+   design tokens (colour, spacing, the brand package's `tokens/`). Until the owner decides, the brand package keeps its current names.
+4. **Derived rules.** Where the owner named a thing but not a segment form, the form follows the machine-code rule (snake_case words
+   inside a segment) and is listed here as derived: event segments, permission parts, i18n segments, database multi-word names.
+
+## Consequences
+
+- One table answers a naming question. The always-on rule carries the summary, so agents see it in every session.
+- Some existing text is now stale. The secret example in AGENTS.md uses `secret("StripeSecretKey")` (PascalCase), and the owner's
+  rule is SCREAMING_SNAKE for secret names. That text belongs to `docs-governance`.
+- Event names in the OS service questionnaires that used dotted prefixes must follow the `ns.entity.verb.vN` form.
+
+## Enforcement
+
+planned — the oxlint `unicorn/filename-case` rule (kebab-case files, already proposed in the code-conventions proposal), the house
+lint rules of [0129](/adr/0129-house-lint-plugin-and-coding-standard) for the code shapes, and the validator's checks for machine codes,
+event names and permission keys. The always-on rule `.agents/rules/naming-and-casing.md` is read by every agent session.
+
+## Alternatives
+
+- One rule per ADR, as before: rejected by the owner's request for one table.
+- SCREAMING_SNAKE for env and secret names only in Infisical, PascalCase in code: rejected, the owner set SCREAMING_SNAKE for all of them.
+
+## Supersedes and sources
+
+Supersedes: none. Amends the forms in [0141](/adr/0141-integration-event-names-and-envelope), [0132](/adr/0132-permissions-catalogue-and-policy-providers)
+and [0137](/adr/0137-declared-action-options-and-refusal-codes). Sources: owner naming table and machine-code answer (2026-10-20); ADR 0006;
+ADR 0128; the code-conventions proposal (`stackra-notes/code-conventions-proposal.md`, section 2); the HTTP conventions rule.

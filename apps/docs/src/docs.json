@@ -265,7 +265,11 @@
               "adr/0162-validation-translatable-fields-and-entityschema-placement",
               "adr/0163-reports-exports-imports-and-declared-read-models",
               "adr/0164-console-panels-are-resources-rendered-by-the-panel-package",
-              "adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs"
+              "adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs",
+              "adr/0231-naming-and-casing-standard",
+              "adr/0232-stackra-errors-package",
+              "adr/0233-imports-use-subpath-aliases-only",
+              "adr/0234-module-assets-and-storage"
             ]
           }
         ]

@@ -1,0 +1,45 @@
+---
+title: "0233 — Imports use #subpath aliases only"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0006](/adr/0006-naming-exports-and-imports), decisions 4 and 5. Those decisions allowed
+  `./` and `../` in some places; this ADR allows only the forms below.
+</Note>
+
+## Context
+
+[0006](/adr/0006-naming-exports-and-imports) asked for package subpath imports for climbing imports, and banned `../` in its rule 5. Some code still
+reaches across folders with `../`, and tsconfig `paths` and `@alias` names have crept in. The owner decided on 2026-10-20 that every cross-folder import
+uses a `#` alias from the member's own `imports` map.
+
+## Decision
+
+1. Each member declares its aliases in the `imports` field of its `package.json`, for example `#contracts/*`, `#core/*` and `#assets/*`.
+   The map is generated, not hand-written (0006 rule 5).
+2. Every import that leaves the current folder uses a `#` alias.
+3. `./` is allowed only for a file in the same folder.
+4. `../` is banned everywhere.
+5. tsconfig `paths` and `@alias`-style names are banned. The `imports` map is the only alias mechanism.
+6. Exempt, as in 0006 rule 4: package specifiers, non-code assets, generated output, and the plain Node scripts under `tools/` and `packages/tooling/*`.
+
+## Consequences
+
+- An import shows the folder it reaches for, by its alias, so a boundary review can read it without resolving paths.
+- Moving a file within a folder changes no import. Moving a folder changes the `imports` map only.
+- Native and bundler builds must resolve `package.json` `imports`. Native builds are verified before the first native entry ships (0006 consequences).
+
+## Enforcement
+
+planned — a lint rule bans `../` specifiers and tsconfig `paths`, and the validator checks that every cross-folder specifier is a `#` alias that the
+member's `imports` map declares.
+
+## Alternatives
+
+- tsconfig `paths` aliases: rejected by the owner; the `imports` map is the one mechanism.
+- Keep `../` for siblings: rejected, the `./` rule covers the same folder and nothing else is needed.
+
+## Supersedes and sources
+
+Amends: [0006](/adr/0006-naming-exports-and-imports) decisions 4 and 5. Sources: owner answer on import aliases (2026-10-20); ADR 0006 rules 4 and 5.
