@@ -1,0 +1,47 @@
+---
+title: "0164 — Console panels are Filament-style resources rendered by @stackra/panel"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0052](/adr/0052-console-is-a-vite-react-spa). Amends
+  [0110](/adr/0110-experience-is-the-sdui-service-at-l2) and
+  [0112](/adr/0112-experience-packages-and-renderer-kit).
+</Note>
+
+## Context
+
+[0052](/adr/0052-console-is-a-vite-react-spa) made the console a Vite and React single-page app with coded screens. The owner's panel answers
+(mem L735–739, 2026-10-20) replace coded screens with resources that modules declare, and a generic renderer that draws them. The console
+stays a Vite single-page app on Safari 17 or later, as 0052 said (gap B29).
+
+## Decision
+
+1. Modules declare `@Resource`, `@Page` and `@Widget`.
+   - A resource has form and infolist schemas built from model fields.
+   - Tables have columns, filters, sorts and bulk actions, bound to `@Action`.
+   - Relation panels and navigation are declared too.
+2. Gen and the registry publish these declarations. The generic `@stackra/panel` renderer, built on `@stackra/ui`, draws them on web and native.
+3. There are several panels: platform admin, product operator, tenant admin and customer portal.
+4. A tenant can override a level-2 page ([0110](/adr/0110-experience-is-the-sdui-service-at-l2)). Custom pages are the escape hatch.
+5. Coded screens are replaced by this model.
+6. The web app is `@figentra/console`, a Vite single-page app on Safari 17 or later.
+
+## Consequences
+
+- A new admin screen is a declaration, not a new component.
+- The renderer is the one place to fix layout, accessibility and i18n for every panel.
+
+## Enforcement
+
+planned — gen fails on a resource whose bound action does not exist, and the renderer's accessibility checks run in the console app.
+
+## Alternatives
+
+- Coded screens per panel: superseded by this decision.
+
+## Supersedes and sources
+
+Supersedes: [0052](/adr/0052-console-is-a-vite-react-spa). Amends: [0110](/adr/0110-experience-is-the-sdui-service-at-l2),
+[0112](/adr/0112-experience-packages-and-renderer-kit). Sources: owner panel answers (`stackra-decisions-2026-10-19.md` L735–739, 2026-10-20);
+gap B29.

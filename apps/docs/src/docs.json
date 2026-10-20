@@ -259,6 +259,13 @@
               "adr/0156-ai-runtime-provider-drivers-memory-and-guardrails",
               "adr/0157-stackra-inspect-and-stackra-diff",
               "adr/0158-gen-artefacts-openapi-manifest-and-client",
+              "adr/0159-migrations-gen-ordered-sql-and-safety-rules",
+              "adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions",
+              "adr/0161-state-machine-package",
+              "adr/0162-validation-translatable-fields-and-entityschema-placement",
+              "adr/0163-reports-exports-imports-and-declared-read-models",
+              "adr/0164-console-panels-are-resources-rendered-by-the-panel-package",
+              "adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs",
               "adr/0230-reviewer-identity-separate-from-builder",
               "adr/0257-secret-manager-agent-and-the-secrets-inbox"
             ]

@@ -1,0 +1,48 @@
+---
+title: "0159 — Migrations: gen-ordered SQL, migrations shipped in packages, and safety rules"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0097](/adr/0097-model-and-database-packages) and
+  [0124](/adr/0124-encore-is-the-generated-runtime-target). It closes the migration items (DP12 and
+  FW4) that 0124 left open.
+</Note>
+
+## Context
+
+[0124](/adr/0124-encore-is-the-generated-runtime-target) left open how MikroORM migrations, including migrations shipped in packages,
+reach the runner (DP12 and FW4). The owner answered on 2026-10-20: gen produces the migrations, and the runner applies them. The
+owner also set expand-and-contract rules and a forward-only policy (DP13 and DP14, mem L443–444, L355–356).
+
+## Decision
+
+1. **Package migrations (FW4 a).** Gen pulls the migrations shipped in packages into the host's migration stream.
+2. **Ordered SQL (DP12 a).** Gen writes ordered SQL files. Encore's runner applies them in SaaS. On-prem runs them as a pre-upgrade job.
+3. **Safety (DP13 a).**
+   - expand-and-contract, with destructive steps deferred to a later release;
+   - lock and statement timeouts on every migration;
+   - concurrent index builds in their own migration;
+   - a squawk lint in CI;
+   - backfills run as queue jobs ([0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules)).
+4. **Forward fix only (DP14).** Data is never rolled back by a migration. A bad migration is fixed by a new migration.
+
+## Consequences
+
+- An on-prem upgrade runs migrations as a job before the new code starts, so a failed migration stops the upgrade.
+- Destructive changes take two releases, so a rollback never meets a dropped column.
+
+## Enforcement
+
+planned — the squawk lint in CI, the lock and statement timeouts in the migration runner, and `stackra gen --check` for stale SQL.
+The upgrade runbook is a final-pass item (`runbooks/upgrade.mdx`).
+
+## Alternatives
+
+- Migrations applied by MikroORM at boot: not chosen; the runner is Encore in SaaS and a job on-prem.
+- Rolling back data: rejected by DP14.
+
+## Supersedes and sources
+
+Amends: [0097](/adr/0097-model-and-database-packages), [0124](/adr/0124-encore-is-the-generated-runtime-target). Sources: owner answers
+FW4 a (`stackra-decisions-2026-10-19.md` L355), DP12 a (L356), DP13 a and DP14 (L443–444), all 2026-10-20.
