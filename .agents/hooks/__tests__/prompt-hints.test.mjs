@@ -80,6 +80,10 @@ test("empty prompt produces no output", () => {
   assert.equal(r.stdout.trim(), "");
 });
 
+test("the word spec alone does not fire the no-.spec test hint", () => {
+  assert.ok(!hintsFor("update the spec for contracts").includes("__tests__/"));
+});
+
 test("a /speckit command is not nudged back to clarify", () => {
   assert.ok(!hintsFor("/speckit.plan implement the invite flow").includes("/speckit.clarify"));
 });

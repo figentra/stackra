@@ -18,7 +18,7 @@ Stackra versions come from **one of two sources**, never a third:
 1. **No literal versions in package.json** - always use `catalog:` or `workspace:*`
 2. **No ranges in catalogs** - pin to exact versions (`1.2.3` not `^1.2.3`)
 3. **No `latest` or `*`** - every version is explicit
-4. **Catalog changes reviewed by dependency-steward** - version bumps affect the entire repo
+4. **Catalog changes reviewed by the owner** - version bumps affect the entire repo
 5. **Toolchain versions in `mise.toml`** - Node, pnpm, gitleaks pinned exactly
 
 ## Enforcement

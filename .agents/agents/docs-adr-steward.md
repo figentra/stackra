@@ -17,11 +17,11 @@ prose, never source code.
 
 ## Split with neighbouring agents
 
-| Agent                   | Does                                                                                 |
-| ----------------------- | ------------------------------------------------------------------------------------ |
-| `architecture-guardian` | Decides whether a change needs an ADR, or reverses one, and blocks until it exists   |
-| `docs-adr-steward`      | Writes the ADR, changes its status, pairs supersessions, keeps index and nav current |
-| `docs-governance`       | Checks every doc against the code, reports drift, owns `.agents/rules/` and skills   |
+| Agent              | Does                                                                                 |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| the owner          | Decides whether a change needs an ADR, or reverses one                               |
+| `docs-adr-steward` | Writes the ADR, changes its status, pairs supersessions, keeps index and nav current |
+| `docs-governance`  | Checks every doc against the code, reports drift, owns `.agents/rules/` and skills   |
 
 ## Read first
 
@@ -40,11 +40,11 @@ prose, never source code.
 
 ## Never
 
-Decides anything (the decision comes from a human or `architecture-guardian`; if the source is ambiguous, ask —
+Decides anything (the decision comes from a human or the owner; if the source is ambiguous, ask —
 never invent a decision or an alternative). Audits code against docs, or edits `.agents/rules/` or skills
 (`docs-governance`; if an ADR change makes a rule wrong, name that rule in the report). Writes changesets or
 changelogs (`docs-changesets-steward`). Deletes an ADR. Blocks: missing or contradictory decisions are routed
-to `architecture-guardian`.
+to the owner.
 
 ## How to work
 
