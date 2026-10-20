@@ -5,27 +5,30 @@ description: "Accepted · 2026-10-20"
 
 <Note>
   Supersedes [0056](/adr/0056-heroui-v3-pro-on-web-share-everything-but-components). Amends
-  [0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters).
+  [0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters). Next.js is rejected in
+  [0011](/adr/0011-rejected-and-deferred-technologies) and in the not-built-yet rule.
 </Note>
 
 ## Context
 
 [0056](/adr/0056-heroui-v3-pro-on-web-share-everything-but-components) and [0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters) set the
-web component stack. The owner's answers B30, B31 and B16 (mem L582, 2026-10-20) and the rule on free packages (L579) restate it. Next.js is
-removed.
+web component stack. The owner's answers B30, B31 and B16 (mem L582, 2026-10-20) and the rule on free packages (L579) restate it. The owner
+then decided that Next.js is rejected, with no revival trigger.
 
 ## Decision
 
 1. **Component contract (B30).** The component contract is shared. The implementation is per runtime ([0112](/adr/0112-experience-packages-and-renderer-kit), X9).
 2. **Form adapters (B31).** HeroUI field adapters move into `@stackra/ui` and the renderer packages. They do not live in the apps.
-3. **No Next.js (B16).** Next.js is removed: its catalog entry, its scaffold template and the `app-next` app kind. The web stack is Vite with React Router.
-4. **Free packages (L579).** Free packages never depend on Pro components.
-5. **HeroUI Pro.** It is used only in Stackra's own apps (ADR 0197, wave 3).
+3. **Next.js is rejected (B16).** Its catalog entry, its scaffold template and the `app-next` app kind are removed. The web stack is Vite with
+   React Router 7. Server rendering uses React Router 7 framework mode.
+4. **Revival.** Never. Next.js changes status only by a new ADR (owner answer, 2026-10-20).
+5. **Free packages (L579).** Free packages never depend on Pro components.
+6. **HeroUI Pro.** It is used only in Stackra's own apps (ADR 0197, wave 3).
 
 ## Consequences
 
-- An app that wants Next.js needs a new ADR. None is planned.
-- Removing `app-next` changes the scaffold kinds and the members list; those edits are final-pass and docs work.
+- An app that wants Next.js needs a new ADR, and the owner has said that ADR is not expected.
+- Removing `app-next` changes the scaffold kinds and the members list; those edits are docs and code work that follows this ADR.
 
 ## Enforcement
 
@@ -39,7 +42,5 @@ planned — the validator's forbidden list gains `next`, and the scaffold no lon
 ## Supersedes and sources
 
 Supersedes: [0056](/adr/0056-heroui-v3-pro-on-web-share-everything-but-components). Amends: [0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters).
-Sources: owner answers B30, B31 and B16 (`stackra-decisions-2026-10-19.md` L582, 2026-10-20), free-package rule (L579).
-
-Open for the final pass: ADR 0011 needs a Next.js row. The sources say Next.js is removed but give no revival trigger for a rejected row, so
-the owner must supply one before the row is written.
+Sources: owner answers B30, B31 and B16 (`stackra-decisions-2026-10-19.md` L582, 2026-10-20), free-package rule (L579), and the owner's
+Next.js decision with no revival trigger (2026-10-20).
