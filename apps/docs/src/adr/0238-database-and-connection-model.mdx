@@ -17,21 +17,23 @@ description: "Accepted · 2026-10-20"
 1. **Server.** One Postgres server per environment. RDS is the default; Aurora or Neon are optional.
 2. **Databases.** Every declared database is its own logical database, one per service. This holds for monolith, grouped and split topologies alike, so topology never changes how databases are declared.
 3. **Roles.** Each service has its own database role. Each container has its own credentials.
-4. **Tenant context.** Tenant context is set only with `set_config(..., true)` inside the action transaction (ADR 0136).
-5. **Pooling.** Transaction-mode pooling: RDS Proxy in SaaS, PgBouncer on-prem. The pool budget per deployable group is recorded in `runway.yaml` (ADR 0168).
 
 ## Consequences
 
 - Grouping services into one deployable never merges their data.
-- A pool budget is a number in the manifest, so a new service cannot exhaust connections silently.
+- The owner's answer says to follow what Encore does; the rest of the connection detail is an implementation choice (below), not a decision.
 
 ## Enforcement
 
-planned — gen emits one database declaration per service; the pool budget is checked against the topology by gen.
+planned — gen emits one database declaration per service.
 
-## Open questions
+## Implementation notes and open questions
 
-1. None for the model. The per-group pool budget sizes are set when the first deployable exists.
+To confirm in the first-service spec, following Encore's own behaviour. These are not decisions of this ADR:
+
+1. Tenant context is set with `set_config(..., true)` inside the action transaction (ADR 0136), as Encore's transaction model suggests.
+2. Pooling: transaction-mode pooling through a proxy (RDS Proxy or PgBouncer, depending on where the service runs), with a pool budget per deployable group in `runway.yaml` (ADR 0168). The owner has not chosen the proxy or the budget sizes.
+3. The per-group pool budget sizes are set when the first deployable exists.
 
 ## Supersedes and sources
 
