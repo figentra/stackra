@@ -4,15 +4,17 @@ description: "Accepted · 2026-10-20"
 ---
 
 <Note>
-  Amends [0110](/adr/0110-experience-is-the-sdui-service-at-l2), decision 4, and
-  [0122](/adr/0122-workflow-studio-three-layers). The "no tenant code" rule of 0110 now has one
-  exception: the sandbox below.
+  Amends [0110](/adr/0110-experience-is-the-sdui-service-at-l2), decision 4,
+  [0122](/adr/0122-workflow-studio-three-layers), and
+  [0011](/adr/0011-rejected-and-deferred-technologies) (the tenant-code row and the not-built-yet
+  rule). The "no tenant code" rule of 0110 now has one exception: the sandbox below.
 </Note>
 
 ## Context
 
-[0110](/adr/0110-experience-is-the-sdui-service-at-l2) forbids tenant code on the wire. The owner's workflow answer WF2 (mem L771,
-2026-10-20) lets tenants write logic in automations, so the owner chose a sandboxed code step. The sandbox answer (mem L778) sets its
+[0110](/adr/0110-experience-is-the-sdui-service-at-l2) forbids tenant code on the wire, and [0011](/adr/0011-rejected-and-deferred-technologies)
+rejects "tenant data that carries code, markup or logic". The owner's workflow answer WF2 (mem L771, 2026-10-20) says the sandboxed code step
+**amends ADR 0110 and 0011**: tenants may write logic in automations, but only inside the sandbox. The sandbox answer (mem L778) sets its
 limits. The pricing builder keeps its rule of no expressions in tenant data (mem L529; contradiction C-23).
 
 ## Decision
@@ -27,16 +29,18 @@ limits. The pricing builder keeps its rule of no expressions in tenant data (mem
 8. Usage is metered as `automation.code_ms`.
 9. Pricing data carries no expressions. Pricing models use registered building blocks ([0110](/adr/0110-experience-is-the-sdui-service-at-l2)).
    Sandboxed code runs only in automations.
+10. **0011 and the not-built-yet rule are amended in this change.** The tenant-code row of 0011 lists the sandboxed code step among the allowed
+    forms, and the not-built-yet rule carries the same exception.
 
 ## Consequences
 
 - Tenant code runs in one place with fixed limits, which makes it auditable and billable.
-- The 0011 row for tenant code needs changing; that row belongs to the final pass (ADR 0227).
+- Data that carries code is still rejected. Only the sandbox may execute tenant logic.
 
 ## Enforcement
 
-planned — the sandbox's resource limits and proxy allow-list are tested in the sandbox worker pool, and the validator rejects code
-in tenant data outside the code step.
+planned — the sandbox's resource limits and proxy allow-list are tested in the sandbox worker pool, and the validator rejects code in tenant
+data outside the code step.
 
 ## Alternatives
 
@@ -45,5 +49,6 @@ in tenant data outside the code step.
 
 ## Supersedes and sources
 
-Amends: [0110](/adr/0110-experience-is-the-sdui-service-at-l2) decision 4, [0122](/adr/0122-workflow-studio-three-layers). Sources: owner
-answer WF2 (`stackra-decisions-2026-10-19.md` L771), sandbox answer (L778), pricing rule (L529), all 2026-10-20; contradiction C-20 and C-23.
+Supersedes: none. Amends: [0110](/adr/0110-experience-is-the-sdui-service-at-l2) decision 4, [0122](/adr/0122-workflow-studio-three-layers),
+[0011](/adr/0011-rejected-and-deferred-technologies). Sources: owner answer WF2 (`stackra-decisions-2026-10-19.md` L771: "amends ADR 0110/0011"),
+sandbox answer (L778), pricing rule (L529), all 2026-10-20; contradictions C-20 and C-23.
