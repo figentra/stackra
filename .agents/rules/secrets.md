@@ -94,7 +94,7 @@ Each article below is bound to a check:
 
 1. Install the Infisical CLI: `mise install` (pinned in `mise.toml`, ADR 0027; Homebrew is not supported)
 2. Create workspace: `infisical init`
-3. `.infisical.json` is tracked (workspace id and domain, no secret)
+3. `.infisical.yaml` is tracked (workspace id and domain, no secret)
 4. Add secrets to `/agents` folder
 5. Run commands with `infisical run -- <command>`
 

@@ -1,0 +1,143 @@
+# ============================================================================
+# STACKRA — MCP SERVER CONFIGURATION (source)
+# ============================================================================
+# Claude Code reads only strict-JSON .mcp.json; `pnpm agents:sync` renders this
+# file into it and `pnpm agents:check` fails on drift. Edit here, never .mcp.json.
+#
+# - Credentials never live here: token servers run through tools/scripts/mcp.sh,
+#   which injects them from Infisical dev:/agents. `$NAME` is expanded by mcp.sh.
+# - Remote (http) servers authenticate with OAuth on first use (/mcp).
+# - Check each server's current documentation before enabling it.
+# - Keep production access read-only unless a human explicitly approves writes.
+# Owner: release-operations · Secrets: forbidden
+# ============================================================================
+
+mcpServers:
+  # --------------------------------------------------------------------------
+  # 01. DOCUMENTATION AND FRAMEWORK CONTEXT
+  # --------------------------------------------------------------------------
+  context7:
+    command: ./tools/scripts/mcp.sh
+    args: [npx, -y, "@upstash/context7-mcp@latest", --api-key, $CONTEXT7_API_KEY]
+
+  # --------------------------------------------------------------------------
+  # 02. WEB UI, DESIGN SYSTEM, AND MOBILE
+  # --------------------------------------------------------------------------
+  heroui-react:
+    command: npx
+    args: [-y, "@heroui/react-mcp@latest"]
+  heroui-native:
+    command: npx
+    args: [-y, "@heroui/native-mcp@latest"]
+  heroui-pro:
+    command: ./tools/scripts/mcp.sh
+    args:
+      - npx
+      - -y
+      - mcp-remote@latest
+      - https://mcp.heroui.pro/mcp
+      - --header
+      - x-heroui-personal-token:$HEROUI_PERSONAL_TOKEN
+  heroui-native-pro:
+    command: ./tools/scripts/mcp.sh
+    args:
+      - npx
+      - -y
+      - mcp-remote@latest
+      - https://native-mcp.heroui.pro/mcp
+      - --header
+      - x-heroui-personal-token:$HEROUI_PERSONAL_TOKEN
+  uniwind:
+    type: http
+    url: https://docs.uniwind.dev/mcp
+  expo:
+    type: http
+    url: https://mcp.expo.dev/mcp
+  figma:
+    type: http
+    url: https://mcp.figma.com/mcp
+
+  # --------------------------------------------------------------------------
+  # 03. CONTENT PLATFORM
+  # --------------------------------------------------------------------------
+  sanity:
+    type: http
+    url: https://mcp.sanity.io
+
+  # --------------------------------------------------------------------------
+  # 04. SOURCE CONTROL AND PROJECT MANAGEMENT
+  # --------------------------------------------------------------------------
+  github:
+    command: ./tools/scripts/mcp.sh
+    args:
+      - npx
+      - -y
+      - mcp-remote@latest
+      - https://api.githubcopilot.com/mcp/
+      - --header
+      - Authorization:Bearer $GITHUB_PERSONAL_ACCESS_TOKEN
+  linear:
+    type: http
+    url: https://mcp.linear.app/mcp
+
+  # --------------------------------------------------------------------------
+  # 05. PAYMENTS, EMAIL, AND COMMUNICATION
+  # --------------------------------------------------------------------------
+  stripe:
+    command: ./tools/scripts/mcp.sh
+    args: [npx, -y, "@stripe/mcp", --api-key=$STRIPE_SECRET_KEY]
+  resend:
+    command: ./tools/scripts/mcp.sh
+    args: [npx, -y, resend-mcp@latest]
+  resend-docs:
+    type: http
+    url: https://resend.com/docs/mcp
+  # ElevenLabs (voice, TTS, audio agents): OAuth on first use.
+  elevenlabs:
+    type: http
+    url: https://api.elevenlabs.io/v1/mcp
+
+  # --------------------------------------------------------------------------
+  # 06. CLOUD PLATFORMS
+  # --------------------------------------------------------------------------
+  # Encore local MCP over stdio. TODO: replace <TODO> with the Encore app id once it exists (`encore app create`).
+  encore:
+    command: encore
+    args: [mcp, run, --app=<TODO>]
+  # Encore Cloud (traces, deployments, infra metadata): OAuth on first use.
+  encore-cloud:
+    type: http
+    url: https://api.encore.dev/mcp
+  # Railway (projects, services, deploys, logs, templates such as Verdaccio): OAuth on first use.
+  railway:
+    type: http
+    url: https://mcp.railway.com/mcp
+  # Cloudflare documentation search: no auth.
+  cloudflare-docs:
+    type: http
+    url: https://docs.mcp.cloudflare.com/mcp
+  cloudflare-api:
+    type: http
+    url: https://mcp.cloudflare.com/mcp
+  # AWS knowledge/documentation only, not an operations MCP. Add a least-privilege,
+  # read-only AWS operations integration separately if ever needed.
+  aws-knowledge:
+    type: http
+    url: https://knowledge-mcp.global.api.aws
+
+  # --------------------------------------------------------------------------
+  # 07. ANALYTICS, ERRORS, AND OBSERVABILITY
+  # --------------------------------------------------------------------------
+  posthog:
+    type: http
+    url: https://mcp.posthog.com/mcp?readonly=true
+  sentry:
+    type: http
+    url: https://mcp.sentry.dev/mcp
+
+  # --------------------------------------------------------------------------
+  # 08. BROWSER AUTOMATION AND API TESTING
+  # --------------------------------------------------------------------------
+  playwright:
+    command: npx
+    args: [-y, "@playwright/mcp@latest"]

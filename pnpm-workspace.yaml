@@ -17,6 +17,8 @@ catalogMode: strict
 # Default catalog (`catalog:`): shared by many members, no reason to fork a version per topic.
 catalog:
   "@types/node": 26.6.4
+  # YAML reader for repo-owned config (.agents/models.yaml, .mcp.yaml) read by tools/scripts.
+  yaml: 2.9.1
 
 catalogs:
   # Toolchain that builds TypeScript output — a different risk/cadence than lint/format/test tools.

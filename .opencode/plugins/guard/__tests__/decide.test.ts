@@ -26,9 +26,9 @@ test("denies reading secret files", () => {
 
 test("committed Infisical config stays readable", () => {
   assert.equal(kind("cat .infisical.yaml"), "allow");
-  assert.equal(kind("cat .infisical.json"), "allow");
+  assert.equal(kind("cat .infisical.yaml"), "allow");
   assert.equal(decidePath(".infisical.yaml").kind, "allow");
-  assert.equal(decidePath(".infisical.json").kind, "allow");
+  assert.equal(decidePath(".infisical.yaml").kind, "allow");
   assert.equal(decidePath(".infisical").kind, "deny");
 });
 

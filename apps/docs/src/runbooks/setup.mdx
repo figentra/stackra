@@ -16,7 +16,7 @@ icon: "list-checks"
 | AWS (through Encore Cloud) | Services, Postgres, object storage, Pub/Sub, Bedrock | Create the account, link it in Encore Cloud, SSO, budgets | TODO: which AWS account holds Stackra |
 | Encore Cloud | Deploys into the owner's AWS, environments, secrets, tracing | Create the org and app, connect AWS | Not created; no generated Encore app yet, and the deploy path is open (DP2; [0124](/adr/0124-encore-is-the-generated-runtime-target)) |
 | Cloudflare | DNS, `npm.figentra.com` registry Worker ([ADR-0025](/adr/0025-packages-publish-to-private-registry)), R2 Turborepo cache ([ADR-0026](/adr/0026-turborepo-remote-cache-on-r2)), console and landing Workers | Zone, API tokens, R2 bucket, Worker deploys | TODO: confirm account and zone |
-| Infisical (EU, `eu.infisical.com`) | Developer and CI tokens: folders `/agents` and `/ci` | Create the project, machine identities, OIDC trust | Not created; `.infisical.json` is not in the repo |
+| Infisical (EU, `eu.infisical.com`) | Developer and CI tokens: folders `/agents` and `/ci` | Create the project, machine identities, OIDC trust | Created; `.infisical.yaml` (project id, domain, branch mapping) is tracked |
 | Expo / EAS | Mobile builds, EAS Update, push, store submission | Project, robot token, credentials | TODO: project not created |
 | Apple Developer | App Store Connect, TestFlight, Sign in with Apple, push | Team membership, App Store Connect API key | TODO: team id kept out of the repo |
 | Google Play Console | Play listing, internal testing, service account for submit | Console forms, first `.aab` upload by hand | TODO |
@@ -95,7 +95,7 @@ Needed on the machine, pinned in `mise.toml` as each is adopted (TODO: confirm t
     Team `STA` exists. Create a project per deliverable. Agents label their issues `agent`.
   </Step>
   <Step title="Infisical (owner)">
-    Create the project in the EU region. Add `/agents` and `/ci`. Create a read-only machine identity for `/agents` and one OIDC-trusted identity per CI environment. Run `infisical login`, then `infisical init` to write the workspace id into the gitignored `.infisical.json`.
+    Create the project in the EU region. Add `/agents` and `/ci`. Create a read-only machine identity for `/agents` and one OIDC-trusted identity per CI environment. Run `infisical login`, then `infisical init` to write the project id into the tracked `.infisical.yaml` (no secret in it).
   </Step>
   <Step title="Developer tokens (human)">
     Add the `/agents` names above in the Infisical UI. `tools/scripts/mcp.sh` reads them for MCP servers; nobody prints them.

@@ -1,8 +1,0 @@
-{
-  "workspaceId": "dd4724f4-7b9a-46ae-a899-b34af2d626b2",
-  "defaultEnvironment": "dev",
-  "gitBranchToEnvironmentMapping": {
-    "main": "staging"
-  },
-  "domain": "https://eu.infisical.com"
-}

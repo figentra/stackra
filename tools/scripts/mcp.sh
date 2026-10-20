@@ -53,7 +53,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # Infisical secrets path for developer/MCP tokens
-# See .infisical.json for folder layout:
+# Folder layout (project link: .infisical.yaml):
 #   /agents  -> developer + MCP tokens, env: dev (read-only via machine identity)
 #   /ci      -> CI-only credentials, env: staging|prod (OIDC only)
 #   /services/<name> -> per-service runtime secrets
@@ -77,9 +77,9 @@ fi
 # Check if Infisical CLI is available and project is configured
 infisical_ready() {
   command -v infisical >/dev/null 2>&1 || return 1
-  [ -f "$ROOT/.infisical.json" ] || return 1
-  # Fail gracefully if workspaceId is still a placeholder
-  ! grep -q '"workspaceId": *"TODO' "$ROOT/.infisical.json"
+  [ -f "$ROOT/.infisical.yaml" ] || return 1
+  # Fail gracefully if project-id is still a placeholder
+  ! grep -q 'project-id: *TODO' "$ROOT/.infisical.yaml"
 }
 
 # Verify the vault is reachable before committing to it.
@@ -145,8 +145,8 @@ if [ "$requires_secret" = true ]; then
   if ! command -v infisical >/dev/null 2>&1; then
     echo "  The infisical CLI is not installed:" >&2
     echo "    https://infisical.com/docs/cli/installation" >&2
-  elif [ ! -f "$ROOT/.infisical.json" ]; then
-    echo "  .infisical.json is missing — run: infisical init" >&2
+  elif [ ! -f "$ROOT/.infisical.yaml" ]; then
+    echo "  .infisical.yaml is missing — run: infisical init" >&2
   else
     echo "  The vault at $INFISICAL_SECRET_PATH is unreachable. Check: infisical login" >&2
   fi

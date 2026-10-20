@@ -59,7 +59,8 @@ function fixture(agents, assistants = [".claude", ".opencode"]) {
   const root = mkdtempSync(join(tmpdir(), "agents-sync-"));
   mkdirSync(join(root, "tools/scripts"), { recursive: true });
   copyFileSync(SCRIPT, join(root, "tools/scripts/agents-sync.mjs"));
-  copyFileSync(join(dirname(SCRIPT), "jsonc.mjs"), join(root, "tools/scripts/jsonc.mjs"));
+  // the script's one dependency (yaml) resolves through the repo's node_modules
+  symlinkSync(join(dirname(SCRIPT), "../../node_modules"), join(root, "node_modules"));
   mkdirSync(join(root, ".agents/agents"), { recursive: true });
   for (const [name, content] of Object.entries(agents))
     writeFileSync(join(root, ".agents/agents", name), content);
@@ -327,7 +328,7 @@ const MODELS = {
   },
 };
 const withModels = (root, models = MODELS) =>
-  writeFileSync(join(root, ".agents/models.jsonc"), JSON.stringify(models));
+  writeFileSync(join(root, ".agents/models.yaml"), JSON.stringify(models));
 const TIERED = (tier) => READ_ONLY.replace("model: sonnet", `tier: ${tier}`);
 
 test("a tier renders each assistant's mapped model; null means the assistant's default", () => {
@@ -365,7 +366,7 @@ test("a tier without a mapping file, or outside it, is rejected with exit 2", ()
   withFixture({ "reviewer.md": TIERED("frontier") }, (root) => {
     const r = run(root, "--lint");
     assert.equal(r.code, 2);
-    assert.match(r.out, /'tier' needs \.agents\/models\.jsonc/);
+    assert.match(r.out, /'tier' needs \.agents\/models\.yaml/);
   });
   withFixture({ "reviewer.md": TIERED("premium") }, (root) => {
     withModels(root);
@@ -373,7 +374,7 @@ test("a tier without a mapping file, or outside it, is rejected with exit 2", ()
     assert.equal(r.code, 2);
     assert.match(
       r.out,
-      /'tier' is 'premium'; \.agents\/models\.jsonc defines: economy, standard, frontier/,
+      /'tier' is 'premium'; \.agents\/models\.yaml defines: economy, standard, frontier/,
     );
   });
 });
@@ -589,18 +590,17 @@ test("the constitution is generated from the docs laws and drift is detected", (
 // MCP
 // ---------------------------------------------------------------------------
 
-test(".mcp.jsonc renders to a comment-free .mcp.json, and --check catches drift", () => {
+test(".mcp.yaml renders to a comment-free .mcp.json, and --check catches drift", () => {
   withFixture({ "reviewer.md": READ_ONLY }, (root) => {
     writeFileSync(
-      join(root, ".mcp.jsonc"),
+      join(root, ".mcp.yaml"),
       [
-        "// annotated source",
-        "{",
-        '  "mcpServers": {',
-        '    /* block comment */ "docs": { "type": "http", "url": "https://x.dev/mcp" }, // trailing',
-        '    "local": { "command": "./tools/scripts/mcp.sh", "args": ["--api-key=$KEY"] },',
-        "  },",
-        "}",
+        "# annotated source",
+        "mcpServers:",
+        "  docs: { type: http, url: https://x.dev/mcp } # trailing",
+        "  local:",
+        "    command: ./tools/scripts/mcp.sh",
+        "    args: [--api-key=$KEY]",
       ].join("\n"),
     );
     assert.equal(run(root).code, 0);

@@ -177,7 +177,6 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       ".claude/settings.json",
       ".mcp.json",
       ".changeset/config.json",
-      ".infisical.json",
       ".specify/integration.json",
       ".agents/skills/x/scripts/package.json",
       "apps/console/turbo.jsonc",
@@ -190,5 +189,12 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
   assert.deepEqual(
     checkJsonConfigs(flagged).map((m) => m.split(":")[0]),
     flagged,
+  );
+  const yamlOwed = [".agents/models.jsonc", ".mcp.jsonc", "tools/x/config.jsonc"];
+  assert.deepEqual(
+    checkJsonConfigs([...yamlOwed, "knip.jsonc", "opencode.jsonc", ".oxfmtrc.jsonc"]).map(
+      (m) => m.split(":")[0],
+    ),
+    yamlOwed,
   );
 });

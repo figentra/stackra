@@ -53,7 +53,8 @@
     "lefthook": "catalog:release",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
-    "turbo": "catalog:build"
+    "turbo": "catalog:build",
+    "yaml": "catalog:"
   },
   "engines": {
     "node": ">=24.0.0",
