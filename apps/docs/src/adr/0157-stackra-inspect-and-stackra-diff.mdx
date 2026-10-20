@@ -1,0 +1,46 @@
+---
+title: "0157 — stackra inspect and stackra diff"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0109](/adr/0109-registry-manifests-published-by-ci) (the manifests the registry reads) and
+  [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk) (change risk).
+</Note>
+
+## Context
+
+Reviewers and agents could not see what a change does to the contracts. The owner's manifest answer P8 and the breaking-change rule RG2
+(mem L721, 2026-10-20) add inspection and a diff of the manifest, and make a breaking change fail CI when no version or deprecation
+accompanies it.
+
+## Decision
+
+1. **Manifest kinds (P8).** The manifest gains more kinds: models, events, workflows, meters and an annotation catalogue. Each node
+   records its provenance.
+2. **Inspect (P8).** `stackra inspect <kind> [key]` prints one kind, or one node of that kind.
+3. **Diff (P8).** `stackra diff <base>` compares the manifest with a base. It classifies changes to actions and events, new permissions,
+   newly exposed tools, classification exposure and migration safety. The diff runs in the Quality Gate and raises the change risk
+   of [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk).
+4. Gen emits structural contract tests, so a contract shape is tested each time it is generated.
+5. **Breaking changes (RG2).** CI fails a contribution that makes a breaking change without a new version or a deprecation
+   ([0131](/adr/0131-module-key-version-and-deprecation)).
+
+## Consequences
+
+- A reviewer sees the exposure of a change without reading the code.
+- A breaking change needs a version bump or a deprecation, so consumers are not broken silently.
+
+## Enforcement
+
+planned — `stackra diff` runs in the Quality Gate, and the RG2 check fails CI on a breaking change with no version or deprecation.
+
+## Alternatives
+
+- Review by reading the code: rejected; it does not show exposure.
+
+## Supersedes and sources
+
+Amends: [0109](/adr/0109-registry-manifests-published-by-ci), [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk). Sources: owner
+manifest answer P8 (accepted, `stackra-notes/owner-docs-intent-map.md`, Part 4) and breaking-change rule RG2 (`stackra-decisions-2026-10-19.md`
+L721), 2026-10-20.
