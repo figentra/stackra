@@ -31,6 +31,10 @@ Clients need local storage for preferences, sessions, caches, the offline queue,
 
 planned — the validator rejects an ORM import in a client app; each driver has a contract test against the `Storage` interface.
 
+## Owner defaults recorded here
+
+- **Web offline encryption.** The web offline store is encrypted with a non-extractable WebCrypto key: the page can use the key to encrypt and decrypt, but cannot read its raw bytes.
+
 ## Supersedes and sources
 
 Supersedes: none (replaces the earlier draft `@stackra/local-store`, which is not written). Restates: [0011](/adr/0011-rejected-and-deferred-technologies), [0014](/adr/0014-data-ownership-and-orm).

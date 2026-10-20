@@ -31,6 +31,11 @@ The console, a PWA and a desktop app were planned as three codebases. The owner 
 
 planned — the scaffolder test builds each target; gen fails when a `@DesktopAction` has no bridge entry.
 
+## Owner defaults recorded here
+
+- **On-prem.** One signed binary with runtime configuration, in place of a per-environment build (desktop and PWA plan, owner-accepted defaults).
+- **Spikes first.** Four one-day spikes run before the ADRs of this group are accepted (plan section 10): (a) Electron push support and `node:sqlite` availability; (b) OPFS and the SQLite-WASM worker on the `app://` scheme; (c) HeroUI and Tailwind v4 under a strict CSP; (d) Playwright `_electron` against the packaged app on macOS arm64.
+
 ## Supersedes and sources
 
 Supersedes: none. Amends: [0058](/adr/0058-desktop-is-electron) decisions 1 to 3; [0126](/adr/0126-member-shapes-and-scaffold-templates); [0164](/adr/0164-console-panels-are-resources-rendered-by-the-panel-package) decision 6.
