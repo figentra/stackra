@@ -18,7 +18,7 @@ import { readJsonc } from "./jsonc.mjs";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
-/** Architecture decisions enforced at the manifest level (~/.claude/rules/not-built-yet.md). */
+/** Architecture decisions enforced at the manifest level (.agents/rules/not-built-yet.md). */
 export const FORBIDDEN_DEPENDENCIES = [
   "eslint",
   "prettier",
@@ -113,19 +113,42 @@ export function checkFiles({ dir, pkg, files, agents, licenseText, rootLicense }
   if (files.includes("LICENSE") && licenseText !== rootLicense)
     out.push("LICENSE differs from the root LICENSE");
   if (!pkg.description?.trim()) out.push("package.json has no description");
-  if (pkg.license !== "UNLICENSED") out.push('package.json license must be "UNLICENSED"');
+  if (pkg.license !== "MIT") out.push('package.json license must be "MIT" (ADR 0024)');
   if (tierFor(dir) === "tier:lib") {
     if (pkg.sideEffects !== false) out.push("package.json sideEffects must be false");
-    for (const t of exportTargets(pkg.exports))
-      if (!t.startsWith("./src/") && !/\.jsonc?$/.test(t))
-        out.push(`exports target ${t} must start with ./src/ or end with .json/.jsonc`);
+    out.push(...checkExports(pkg.exports));
   }
   return out;
 }
 
-function exportTargets(e) {
-  if (typeof e === "string") return [e];
-  return e && typeof e === "object" ? Object.values(e).flatMap(exportTargets) : [];
+const MODULE = /\.(ts|tsx|mts|js|mjs|cjs)$/;
+
+/**
+ * ADR 0025: a module entry is `{ "@stackra/source": "./src/….ts", types: "./dist/….d.mts", default: "./dist/….mjs" }`,
+ * with the source condition first. A plain string entry is a static asset (CSS, JSON, a folder, `./resources/*`) and
+ * must not name a module.
+ */
+export function checkExports(exports) {
+  const out = [];
+  const entries = typeof exports === "string" ? [[".", exports]] : Object.entries(exports ?? {});
+  for (const [key, target] of entries) {
+    if (typeof target === "string") {
+      if (MODULE.test(target))
+        out.push(
+          `exports["${key}"] names a module as a plain string — use the @stackra/source/types/default shape (ADR 0025)`,
+        );
+      continue;
+    }
+    const keys = Object.keys(target ?? {});
+    const src = target?.["@stackra/source"];
+    if (keys[0] !== "@stackra/source" || !/^\.\/src\/.+\.tsx?$/.test(src ?? ""))
+      out.push(`exports["${key}"] must list "@stackra/source": "./src/….ts" first (ADR 0025)`);
+    if (!/^\.\/dist\/.+\.d\.mts$/.test(target?.types ?? ""))
+      out.push(`exports["${key}"].types must be ./dist/….d.mts (ADR 0025)`);
+    if (!/^\.\/dist\/.+\.mjs$/.test(target?.default ?? ""))
+      out.push(`exports["${key}"].default must be ./dist/….mjs (ADR 0025)`);
+  }
+  return out;
 }
 
 /** Findings for an Encore service unit directory (services/src/<dir>). */
@@ -221,6 +244,9 @@ function main() {
     .filter((p) => p && existsSync(join(ROOT, p)));
   report("", checkTestPlacement(repoFiles));
   report("", checkJsonConfigs(repoFiles));
+  // ADR 0024 decision 2: the brand marks carry their all-rights-reserved NOTICE.
+  if (!existsSync(join(ROOT, "packages/experience/brand/src/logos/NOTICE")))
+    report("packages/experience/brand", ["src/logos/NOTICE missing (ADR 0024)"]);
   const servicesSrc = join(ROOT, "services/src");
   if (existsSync(servicesSrc))
     for (const d of readdirSync(servicesSrc))

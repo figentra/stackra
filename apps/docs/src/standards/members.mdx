@@ -40,11 +40,11 @@ Presence of the heading is checked; whether the table is still true is a review 
 | ------------- | ----------------------------------------------------------------------------------------------- |
 | `name`        | `@stackra/<name>`; apps `@figentra/<dir>`; services `@figentra/service-<name>`                  |
 | `description` | Non-empty, one sentence                                                                         |
-| `license`     | `"UNLICENSED"`                                                                                  |
+| `license`     | `"MIT"` ([0024](/adr/0024-mit-license-with-exclusions))                                         |
 | `private`     | `true` until a package is published                                                             |
 | `type`        | `"module"`                                                                                      |
 | `sideEffects` | `false` on every `tier:lib` package                                                             |
-| `exports`     | `tier:lib` only: every target starts with `./src/` (or is a `.json`/`.jsonc` preset)            |
+| `exports`     | `tier:lib` only: each module entry is `{ "@stackra/source": "./src/….ts", types: "./dist/….d.mts", default: "./dist/….mjs" }`, source condition first; a plain string entry is a static asset ([0025](/adr/0025-packages-publish-to-private-registry)) |
 | dependencies  | `catalog:`, `catalog:<name>` or `workspace:*` only: see [Dependencies](/standards/dependencies) |
 
 Key order: `name`, `version`, `private`, `description`, `license`, `files`, `type`, `main` (Expo only), `sideEffects`, `imports`, `exports`, `scripts`, `dependencies`, `devDependencies`. Order is convention, not checked.
@@ -101,11 +101,11 @@ pnpm new app-next site --dry-run
 | `README.md`, `AGENTS.md`, `CHANGELOG.md`, `LICENSE` exist                           | `validate-repository.mjs` (`checkFiles`)                              | Yes    |
 | `AGENTS.md` has a `## PII` heading                                                  | `validate-repository.mjs`                                             | Yes    |
 | `LICENSE` equals the root `LICENSE`                                                 | `validate-repository.mjs`                                             | Yes    |
-| `description` non-empty, `license` is `UNLICENSED`                                  | `validate-repository.mjs`                                             | Yes    |
+| `description` non-empty, `license` is `MIT`                                         | `validate-repository.mjs`                                             | Yes    |
 | `name` is `@stackra/<name>`, `@figentra/<dir>` or `@figentra/service-<dir>`         | `validate-repository.mjs`                                             | Yes    |
 | Exactly one `tier:*` tag matching the directory; extends `//`                       | `validate-repository.mjs` (`check`)                                   | Yes    |
 | `tsconfig.json` extends `@stackra/typescript-config/<preset>`                       | `validate-repository.mjs`                                             | Yes    |
-| `sideEffects: false` and `./src/` exports on `tier:lib`                             | `validate-repository.mjs`                                             | Yes    |
+| `sideEffects: false` and the dist + `@stackra/source` exports shape on `tier:lib`   | `validate-repository.mjs`                                             | Yes    |
 | Catalog or workspace versions only; no forbidden dependency                         | `validate-repository.mjs` + `catalogMode`                             | Yes    |
 | Tier direction                                                                      | `turbo boundaries` (`pnpm boundaries`)                                | Yes    |
 | Every member exposes the task-vocabulary scripts                                    | planned: validator check                                              | No     |

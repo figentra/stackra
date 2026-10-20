@@ -3,6 +3,7 @@ import { test } from "node:test";
 
 import {
   check,
+  checkExports,
   checkFiles,
   checkJsonConfigs,
   checkServiceUnit,
@@ -62,9 +63,16 @@ const filesOk = {
   dir: "packages/data/search",
   pkg: {
     description: "x",
-    license: "UNLICENSED",
+    license: "MIT",
     sideEffects: false,
-    exports: { ".": { types: "./src/index.ts", default: "./src/index.ts" }, "./c": "./c.json" },
+    exports: {
+      ".": {
+        "@stackra/source": "./src/index.ts",
+        types: "./dist/index.d.mts",
+        default: "./dist/index.mjs",
+      },
+      "./c": "./c.json",
+    },
   },
   files: ["README.md", "AGENTS.md", "CHANGELOG.md", "LICENSE"],
   agents: "# A\n\n## PII\n",
@@ -80,15 +88,32 @@ test("missing files, PII, license drift, manifest hygiene", () => {
     files: ["README.md", "AGENTS.md", "LICENSE"],
     agents: "# A",
     licenseText: "other",
-    pkg: { description: " ", license: "MIT", exports: { ".": "./dist/index.js" } },
+    pkg: { description: " ", license: "UNLICENSED", exports: { ".": "./dist/index.js" } },
   });
   assert.equal(f.length, 7);
 });
 
 test("sideEffects and exports rules apply to tier:lib only", () => {
-  const pkg = { description: "x", license: "UNLICENSED", exports: "./dist/a.js" };
+  const pkg = { description: "x", license: "MIT", exports: "./dist/a.js" };
   assert.deepEqual(checkFiles({ ...filesOk, dir: "apps/console", pkg }), []);
   assert.deepEqual(checkFiles({ ...filesOk, dir: "packages/tooling/vitest", pkg }), []);
+});
+
+test("checkExports: ADR 0025 dist shape with @stackra/source first; strings are static assets", () => {
+  const good = {
+    "@stackra/source": "./src/a/index.ts",
+    types: "./dist/a.d.mts",
+    default: "./dist/a.mjs",
+  };
+  assert.deepEqual(
+    checkExports({ "./a": good, "./tokens.css": "./src/t.css", "./resources/*": "./resources/*" }),
+    [],
+  );
+  assert.equal(checkExports({ ".": { types: "./dist/a.d.mts", ...good } }).length, 1);
+  assert.equal(checkExports({ ".": { types: "./src/a.ts", default: "./src/a.ts" } }).length, 3);
+  assert.equal(checkExports({ ".": "./src/index.ts" }).length, 1);
+  assert.equal(checkExports("./dist/index.mjs").length, 1);
+  assert.deepEqual(checkExports(undefined), []);
 });
 
 test("service units need encore.service.ts, README, AGENTS with PII", () => {

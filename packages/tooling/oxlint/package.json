@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Shared oxlint presets. A workspace's .oxlintrc.jsonc extends exactly one role preset and declares no rules of its own.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "files": [
     "*.json",
     "*.jsonc",
