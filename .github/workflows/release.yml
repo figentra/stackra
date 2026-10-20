@@ -41,6 +41,7 @@ jobs:
         with:
           token: ${{ steps.bot.outputs.token }} # pushes (version branch, tags) go out as the bot
           fetch-depth: 0 # changesets diffs against history and reads existing tags
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
 
       # ADR 0027 D2: node and pnpm come from mise.toml.
       - name: Toolchain (mise)

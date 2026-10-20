@@ -13,6 +13,7 @@ global rules. Full guides: `apps/docs` (`pnpm docs`). Every member keeps its cod
 | `services/<name>`                                          | `@figentra/service-<name>` — one member per service (`example`, `health`), entry `src/main.ts`                                                            | `tier:service` |
 | `tools/scripts`                                            | `validate-repository.mjs` (+ test); `scaffold.mjs` (+ test) — `pnpm new <kind> <name>`, templates in `tools/scaffold`                                     | —              |
 | `.agents/hooks`, `.claude/settings.json`, `opencode.jsonc` | agent hooks and config                                                                                                                                    | —              |
+| `.notes`                                                   | private owner-only submodule (`git submodule update --init .notes`); CI and agents never need it; never reference its contents from public docs           | —              |
 
 Rules every member follows (`pnpm validate` enforces them):
 
@@ -541,6 +542,7 @@ stackra/
 └── tools/
     ├── scripts/            # validation, scaffolding
     └── scaffold/           # Templates
+.notes/                     # private owner-only submodule; never referenced from public docs
 ```
 
 #### Tier Tags
