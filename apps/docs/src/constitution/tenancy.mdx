@@ -25,7 +25,7 @@ Hand-written RLS is not allowed. The scoped-table pattern emits the columns, ind
 
 ## Scope tree (free code)
 
-The scope tree is free code in `@stackra/iam` and `@stackra/tenancy`, with no `@stackra-pro` package ([0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan)). Its depth is a plan entitlement: a free tenant has one level below the tenant, and deeper trees come with higher plans. When a product uses the tree, a tenant's data is organised in a tree of scopes (for example organisation, branch, team), each with an `ltree` path, and these rules bind. `withScope` also appends the scope-path predicate from the principal's granted paths.
+The scope tree is free code in `@stackra/iam` and `@stackra/tenancy`, with no `@stackra-pro` package ([0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan)). Its depth is a plan entitlement; the numbers are in ADR 0242. When a product uses the tree, a tenant's data is organised in a tree of scopes (for example organisation, branch, team), each with an `ltree` path, and these rules bind. `withScope` also appends the scope-path predicate from the principal's granted paths.
 
 | Table kind        | Columns                                                                |
 | ----------------- | ---------------------------------------------------------------------- |
