@@ -6,26 +6,30 @@ on:
   pull_request:
     branches: [main]
 
+# ADR 0019 D2: least privilege. Nothing in the gate writes to the repository or holds an OIDC token.
+permissions:
+  contents: read
+
 jobs:
   gate:
     name: Quality Gate
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
+      # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      # ADR 0027 D2: toolchains come from mise.toml (node, pnpm, gitleaks), not per-tool setup actions.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
-          node-version: "24"
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 12.6.0
+          install_args: node pnpm gitleaks
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -69,32 +73,22 @@ jobs:
       - name: Check unused code
         run: pnpm knip
 
-      - name: Install gitleaks (mise)
-        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
-        with:
-          install_args: gitleaks
-
       - name: Secrets scan
         run: pnpm secrets:scan
 
       - name: Agent sync check
         run: pnpm agents:check
 
-  # Optional: Deploy staging on main branch
+  # No deploy decision exists yet: how the generated, gitignored Encore app reaches a runtime, the environments and
+  # the promotion unit are open owner questions (gap questionnaire DP1-DP7, DP2 first; ADR 0091 leaves deploy open).
+  # Until an ADR decides them this job deploys nothing; it only marks where the deploy job will go.
   deploy-staging:
     name: Deploy Staging
     runs-on: ubuntu-latest
     needs: gate
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions: {}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Deploy to Encore
-        run: echo "Encore deployment via Infisical OIDC (Phase 2)"
-        # TODO: infisical run --env=staging -- encore deploy
-
-      - name: Build mobile preview
-        run: echo "EAS preview build (Phase 2)"
-        # TODO: eas build --profile preview --platform all
+      - name: No deploy target decided
+        run: echo "No deploy target is decided yet (gap questionnaire DP1-DP7). Nothing is deployed."
