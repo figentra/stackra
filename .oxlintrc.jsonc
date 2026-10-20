@@ -25,6 +25,8 @@
     "packages/*/api-client/src/generated/**",
     // scaffold templates hold {{TOKENS}}, so they are not valid TS; the generator formats what it renders
     "tools/scaffold/templates/**",
+    // lint fixtures are banned imports on purpose; their test lints them with the preset directly
+    "**/__tests__/fixtures/**",
     // installed skills are upstream content
     ".agents/skills/**",
     ".claude/skills/**",
