@@ -68,7 +68,7 @@ The full roster, with tiers and models, is on [Roster](/agents/roster). The `del
 Required approvals are 0 and the Quality Gate is the only required check (owner decision A1, ADR 0119). An agent merges only with `pnpm pr:merge <n>`, which squash-merges as the `stackra-bot` GitHub App (`--delete-branch`, `--match-head-commit`, never `--admin`) when all of these hold:
 
 - the newest Quality Gate run on the head SHA is green, and the PR is open and not a draft;
-- the newest trusted review comment for that SHA is `AI-REVIEW: PASS <head sha>` on its first line (posted by `stackra-bot` or the owner; `AI-REVIEW: FAIL <sha>` blocks). A new push needs a new review;
+- the newest trusted review comment for that SHA is `AI-REVIEW: PASS <head sha>` on its first line (posted by the reviewer app `stackra-reviewer` through `pnpm bot:review`, never by the PR or head-commit author, or by the owner with `owner-approval` on the line, [ADR 0230](/adr/0230-reviewer-identity-separate-from-builder); `AI-REVIEW: FAIL <sha>` blocks). A new push needs a new review;
 - a PR labelled `design` or `risk:R3` also has the owner's approval on the head SHA, or the `owner-approved` label.
 
 The bot helpers run under Infisical (`/agents`, env `dev`) and never print the token except `pnpm bot:token`, which writes it alone to stdout for piping. `pnpm bot:gh -- <args>` runs `gh` as the bot; `pnpm bot:git -- <args>` runs `git` with the bot as author and committer (`stackra-bot[bot]`, `344982495+stackra-bot[bot]@users.noreply.github.com`) and pushes over https through `gh auth git-credential`, with nothing written to `.git/config`.

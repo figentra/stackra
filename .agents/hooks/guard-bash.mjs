@@ -225,6 +225,16 @@ const rules = [
     rx: pushesMain,
     why: "Never push to main. Push your branch and open a PR; main changes only through a merged PR.",
   },
+  // ADR 0230: an agent never speaks for the owner, and only the reviewer identity posts verdicts. A tripwire, not
+  // the control: pr-merge checks the verdict's author.
+  {
+    rx: /\bgh\b[^\n]*\bowner-approv(?:al|ed)\b/i,
+    why: "`owner-approval` / `owner-approved` record the owner's own decision; an agent never writes them. Ask the owner.",
+  },
+  {
+    rx: /(?:^|[\s;&|(])gh\s+(?:pr\s+(?:comment|review)|api)\b[^\n]*\bAI-REVIEW:/i,
+    why: "AI-REVIEW verdicts are posted only by the reviewer identity: `pnpm bot:review -- pr comment <n> --body-file <f>`, from a reviewer agent, never on the reviewer's own work.",
+  },
   {
     rx: /\bgh\s+pr\s+merge\b[^|;&\n]*\s--admin\b/,
     why: "`gh pr merge --admin` bypasses branch protection and required checks. Wait for the checks and merge normally.",

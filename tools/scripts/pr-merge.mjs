@@ -5,10 +5,14 @@
  *   `stackra-bot` with `--squash --delete-branch --match-head-commit <head>` (never `--admin`) only when:
  *   1. the newest "Quality Gate" check run on the head SHA concluded `success`;
  *   2. the PR is open and not a draft;
- *   3. the newest `AI-REVIEW: <PASS|FAIL> <sha>` comment for the head SHA, by the bot or the owner, says PASS;
+ *   3. the newest counted `AI-REVIEW: <PASS|FAIL> <sha>` comment for the head SHA says PASS (ADR 0230). A verdict
+ *      counts only when its author is the reviewer app (`stackra-reviewer`), or the owner with the explicit
+ *      `owner-approval` token on the verdict line, and never when its author is the PR author or the head commit's
+ *      author or committer. The builder app `stackra-bot` cannot review: it writes the code;
  *   4. a PR labelled `design` or `risk:R3` also has an owner APPROVED review on the head SHA, or `owner-approved`.
- * Convention: an AI review ends by commenting `AI-REVIEW: PASS <full head sha>` (or FAIL) on its own first line.
- *   A label cannot name a SHA, so review results are comments only.
+ * Convention: a reviewer posts `AI-REVIEW: PASS <full head sha>` (or FAIL) on the comment's first line through
+ *   `pnpm bot:review -- pr comment <n> --body-file <f>`. The owner approving by hand writes
+ *   `AI-REVIEW: PASS <sha> owner-approval`. A label cannot name a SHA, so review results are comments only.
  * Exit: 0 merged, 1 refused (reasons on stderr), 2 usage.
  * Secrets: the bot token stays in the gh child's environment.
  */
@@ -17,23 +21,44 @@ import { fileURLToPath } from "node:url";
 import { mintToken } from "./bot-token.mjs";
 
 export const OWNER = "figentra-usr";
-const TRUSTED = new Set([OWNER, "stackra-bot", "stackra-bot[bot]"]);
+export const REVIEWER = "stackra-reviewer";
 const GATED_LABELS = ["design", "risk:R3"];
-const REVIEW_LINE = /^AI-REVIEW:\s*(PASS|FAIL)\s+([0-9a-f]{7,40})\b/i;
+const REVIEW_LINE = /^AI-REVIEW:\s*(PASS|FAIL)\s+([0-9a-f]{7,40})\b([^\n]*)/i;
 
-/** Verdict of the newest trusted AI-REVIEW comment for `sha`, or null. */
-export function aiReview(comments, sha) {
+/** One login form for users and apps: `app/stackra-bot`, `stackra-bot[bot]` and `stackra-bot` are the same actor. */
+export const actor = (login = "") =>
+  login
+    .replace(/^app\//, "")
+    .replace(/\[bot\]$/, "")
+    .toLowerCase();
+
+/**
+ * The newest counted AI-REVIEW verdict for `sha`, and why other verdicts for it were ignored. `authors` holds the
+ * PR author and the head commit's author and committer logins: none of them may review their own change.
+ */
+export function aiReview(comments, sha, authors = []) {
+  const self = new Set(authors.filter(Boolean).map(actor));
   let verdict = null;
+  const ignored = [];
   for (const c of [...comments].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
     const match = REVIEW_LINE.exec(c.body.trim());
-    if (match && TRUSTED.has(c.author?.login) && sha.startsWith(match[2].toLowerCase()))
-      verdict = match[1].toUpperCase();
+    if (!match || !sha.startsWith(match[2].toLowerCase())) continue;
+    const who = actor(c.author?.login);
+    const ownerApproval = who === OWNER && /\bowner-approval\b/i.test(match[3]);
+    if (self.has(who)) ignored.push(`${who} authored this change and cannot review it`);
+    else if (who !== REVIEWER && !ownerApproval)
+      ignored.push(
+        who === OWNER
+          ? `${who} is the owner account; its verdict counts only with \`owner-approval\` on the line`
+          : `${who} is not the reviewer identity (${REVIEWER})`,
+      );
+    else verdict = match[1].toUpperCase();
   }
-  return verdict;
+  return { verdict, ignored };
 }
 
 /** Reasons the PR may not merge; empty means merge. `checkRuns` are the head SHA's "Quality Gate" runs. */
-export function blockers(pr, checkRuns) {
+export function blockers(pr, checkRuns, headCommit = {}) {
   const reasons = [];
   const sha = pr.headRefOid;
   if (pr.state !== "OPEN") reasons.push(`PR is ${pr.state}`);
@@ -44,10 +69,11 @@ export function blockers(pr, checkRuns) {
   else if (gate.conclusion !== "success")
     reasons.push(`Quality Gate on ${sha} is ${gate.conclusion ?? gate.status}`);
 
-  const verdict = aiReview(pr.comments, sha);
+  const authors = [pr.author?.login, headCommit.author?.login, headCommit.committer?.login];
+  const { verdict, ignored } = aiReview(pr.comments, sha, authors);
   if (verdict !== "PASS")
     reasons.push(
-      `no AI review PASS for ${sha} (newest verdict: ${verdict ?? "none"}) — comment "AI-REVIEW: PASS ${sha}"`,
+      `no AI review PASS for ${sha} (newest counted verdict: ${verdict ?? "none"}) — the reviewer posts "AI-REVIEW: PASS ${sha}" with \`pnpm bot:review\`${ignored.length ? `; ignored: ${[...new Set(ignored)].join("; ")}` : ""}`,
     );
 
   const labels = pr.labels.map((l) => l.name);
@@ -78,7 +104,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   }
   try {
     const token = await mintToken();
-    const fields = "number,state,isDraft,headRefOid,labels,comments,reviews";
+    const fields = "number,state,isDraft,headRefOid,labels,comments,reviews,author";
     const pr = JSON.parse(gh(["pr", "view", n, "--json", fields], token));
     const runs = JSON.parse(
       gh(
@@ -89,7 +115,14 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         token,
       ),
     ).check_runs;
-    const reasons = blockers(pr, runs);
+    // The head commit's GitHub author and committer (null when the email maps to no account).
+    const headCommit = JSON.parse(
+      gh(
+        ["api", `repos/{owner}/{repo}/commits/${pr.headRefOid}`, "--jq", "{author,committer}"],
+        token,
+      ),
+    );
+    const reasons = blockers(pr, runs, headCommit);
     if (reasons.length) {
       process.stderr.write(
         `pr-merge: not merging #${n}:\n${reasons.map((r) => `  - ${r}`).join("\n")}\n`,

@@ -259,6 +259,7 @@
               "adr/0156-ai-runtime-provider-drivers-memory-and-guardrails",
               "adr/0157-stackra-inspect-and-stackra-diff",
               "adr/0158-gen-artefacts-openapi-manifest-and-client",
+              "adr/0230-reviewer-identity-separate-from-builder",
               "adr/0257-secret-manager-agent-and-the-secrets-inbox"
             ]
           }

@@ -1,0 +1,65 @@
+---
+title: "0230 — Reviews come from a separate reviewer identity, never the author"
+description: "Proposed · 2026-10-20"
+---
+
+## Context
+
+[0119](/adr/0119-merge-policy-and-release-authority) lets an agent merge only through `pnpm pr:merge`, which needs an
+`AI-REVIEW: PASS <head sha>` comment. Builders and reviewers both act as the `stackra-bot` GitHub App, and agents
+also hold the owner's `gh` login (`figentra-usr`). `pr-merge` trusted verdicts from both identities. So it could not
+tell an author from its reviewer. On 2026-10-20, builder agents posted `AI-REVIEW: PASS` on their own pull requests
+and merged them, some through plain `gh` as the owner's account. That breaks
+[0021](/adr/0021-ai-engine-and-agent-write-safety) rule 6: agents are not their own approvers.
+
+We weighed two designs. A signed review record verified by `pr-merge` needs a key that the builder session can also
+read on the same machine. A second GitHub App ties each verdict to an identity that GitHub records, and that app can
+hold fewer permissions than the builder app.
+
+## Decision
+
+1. **A second GitHub App, `stackra-reviewer`**, is the only identity whose verdict counts. Its installation holds
+   pull requests: write and contents: read, never contents: write. It can comment and review, and it cannot push.
+   Its credentials are `STACKRA_REVIEWER_APP_ID`, `STACKRA_REVIEWER_INSTALLATION_ID` and
+   `STACKRA_REVIEWER_PRIVATE_KEY` in Infisical. Reviewer agents post through `pnpm bot:review`, which runs only
+   `gh pr view|diff|checks|comment|review` and read-only `gh api`.
+2. **`pr-merge` counts a verdict only from `stackra-reviewer`**, and never when the verdict's author is the PR author
+   or the head commit's author or committer. A verdict from the builder app `stackra-bot` is ignored, and the refusal
+   says why.
+3. **A verdict from the owner account counts only with an explicit `owner-approval` token** on the verdict line
+   (`AI-REVIEW: PASS <sha> owner-approval`), and not on a commit that the owner account authored. This is how the
+   owner approves by hand.
+4. **Agents never write `owner-approval` or the `owner-approved` label**, and never post `AI-REVIEW:` through plain
+   `gh`. The bash guard denies all three. This is a tripwire, not the control: the guard cannot see a `--body-file`.
+5. **Agents stop committing and pushing as the owner.** Builders commit and push through `pnpm bot:git` and open
+   PRs through `pnpm bot:gh`. Agent environments drop the owner's `gh` login once the bot paths cover every write.
+
+## Consequences
+
+- A PR built by `stackra-bot` needs a reviewer agent's PASS posted as `stackra-reviewer`. Self-review is refused
+  with a reason that names the identity.
+- Until the owner creates the `stackra-reviewer` app and stores its credentials, only the owner's
+  `owner-approval` verdict can satisfy `pr-merge`. Agent merges wait on that owner step.
+- What remains: the same machine can mint both apps' tokens, so a builder agent that ignores its role could run
+  `pnpm bot:review`. Rules 2 and 5 remove the obvious path, because the reviewer never authors and builders never
+  act as the owner. Closing the gap fully needs the review to run where builders hold no reviewer key. That means a
+  CI job or a separate host with its own Infisical identity, which is Phase 3 scope (merge queue, see below).
+- The `owner-approved` label is still writable by anyone who holds the owner's login. Rule 5 shrinks that set to the
+  owner.
+
+## Enforcement
+
+- `tools/scripts/pr-merge.mjs` (`aiReview`, `blockers`, tests in `tools/scripts/__tests__/pr-merge.test.mjs`): the
+  reviewer-only identity, the author and committer exclusion, and the owner-approval token.
+- `tools/scripts/bot-gh.mjs` (`reviewerAllows`): the reviewer's command allowlist.
+- `.agents/hooks/guard-bash.mjs`: denies agent commands that write `owner-approval` or `owner-approved`, or post
+  `AI-REVIEW:` through plain `gh`.
+- Planned: the review runs in a CI job with its own credentials (the Phase 3 merge-queue design). OpenCode's guard
+  plugin mirrors the bash rules.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0119](/adr/0119-merge-policy-and-release-authority): the AI review's author must be the
+reviewer identity. Sources: the 2026-10-20 incident (agent self-PASS and merges as `figentra-usr`); the SDD/SDLC plan
+§16 D5 (bot identity). Numbered 0230 as the first number after the planned 0127–0229 range; renumber if that range
+changes.

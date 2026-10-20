@@ -1,6 +1,24 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BOT_EMAIL, gitBotArgs } from "../bot-gh.mjs";
+import { BOT_EMAIL, gitBotArgs, reviewerAllows } from "../bot-gh.mjs";
+
+test("the reviewer identity may only read a PR and comment or review on it", () => {
+  const allowed = [
+    ["pr", "comment", "5"],
+    ["pr", "review", "5", "--approve"],
+    ["pr", "diff", "5"],
+    ["api", "repos/x/y/pulls/5"],
+  ];
+  for (const args of allowed) assert.ok(reviewerAllows(args), args.join(" "));
+  const denied = [
+    ["pr", "merge", "5"],
+    ["pr", "edit", "5"],
+    ["api", "-X", "PATCH", "repos/x/y"],
+    ["api", "--method=POST", "x"],
+    ["repo", "edit"],
+  ];
+  for (const args of denied) assert.ok(!reviewerAllows(args), args.join(" "));
+});
 
 test("git runs as the bot with a token-free, non-persisted credential setup", () => {
   const args = gitBotArgs();

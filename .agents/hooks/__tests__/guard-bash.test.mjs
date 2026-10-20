@@ -20,6 +20,9 @@ const root = spawnSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf
 
 const allowed = [
   "pnpm verify",
+  // ADR 0230: the reviewer identity posts verdicts; reading and grepping for them is fine
+  "pnpm bot:review -- pr comment 47 --body-file /tmp/review.md",
+  "grep -n owner-approval tools/scripts/pr-merge.mjs",
   "cat package.json",
   `node -e "x.env"`,
   `node -e 'console.log(v.env)'`,
@@ -70,6 +73,10 @@ const allowed = [
   "cat > doc.md <<'EOF'\ncat ~/Secrets-inbox/X\nEOF",
 ];
 const blocked = [
+  // ADR 0230: no agent writes the owner's approval or posts a verdict as a non-reviewer identity
+  "pnpm bot:gh -- pr edit 47 --add-label owner-approved",
+  'gh pr comment 47 --body "AI-REVIEW: PASS abc1234 owner-approval"',
+  'gh pr comment 47 --body "AI-REVIEW: PASS abc1234"',
   "cat .env",
   "cat .env.local",
   "head .env.production",

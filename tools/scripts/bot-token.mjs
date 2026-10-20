@@ -4,7 +4,8 @@
  * Purpose: mint a GitHub App installation token for `stackra-bot` (`pnpm bot:token`). Builds an RS256 app JWT with
  *   node:crypto and exchanges it at POST /app/installations/{id}/access_tokens.
  * Input: STACKRA_BOT_APP_ID, STACKRA_BOT_INSTALLATION_ID, STACKRA_BOT_PRIVATE_KEY from the environment — injected by
- *   `infisical run --env=dev --path=/agents`, never from a file.
+ *   `infisical run --env=dev --path=/agents`, never from a file. The reviewer app (`stackra-reviewer`, ADR 0230) uses
+ *   the same names with the STACKRA_REVIEWER_ prefix.
  * Output: the token alone on stdout (for piping); errors on stderr, never containing a secret. Exit 1 on failure.
  * Secrets: handles the app key and the token; prints only the token, only to stdout.
  */
@@ -24,21 +25,20 @@ export function appJwt(appId, privateKey, now = Math.floor(Date.now() / 1000)) {
 }
 
 /** Exchange the app JWT for an installation token. Throws an Error whose message carries no secret. */
-export async function mintToken(env = process.env, fetchImpl = fetch) {
-  const missing = [
-    "STACKRA_BOT_APP_ID",
-    "STACKRA_BOT_INSTALLATION_ID",
-    "STACKRA_BOT_PRIVATE_KEY",
-  ].filter((name) => !env[name]);
+export async function mintToken(env = process.env, fetchImpl = fetch, prefix = "STACKRA_BOT") {
+  const [appId, installation, privateKey] = ["APP_ID", "INSTALLATION_ID", "PRIVATE_KEY"].map(
+    (n) => `${prefix}_${n}`,
+  );
+  const missing = [appId, installation, privateKey].filter((name) => !env[name]);
   if (missing.length) throw new Error(`missing env: ${missing.join(", ")} (run under infisical)`);
 
   let jwt;
   try {
-    jwt = appJwt(env.STACKRA_BOT_APP_ID, env.STACKRA_BOT_PRIVATE_KEY);
+    jwt = appJwt(env[appId], env[privateKey]);
   } catch {
-    throw new Error("could not sign the app JWT — STACKRA_BOT_PRIVATE_KEY is not a valid PEM key");
+    throw new Error(`could not sign the app JWT — ${privateKey} is not a valid PEM key`);
   }
-  const id = encodeURIComponent(env.STACKRA_BOT_INSTALLATION_ID);
+  const id = encodeURIComponent(env[installation]);
   const res = await fetchImpl(`https://api.github.com/app/installations/${id}/access_tokens`, {
     method: "POST",
     headers: {
