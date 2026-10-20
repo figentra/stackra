@@ -5,12 +5,12 @@ icon: "workflow"
 ---
 
 <Note>
-  Status: target. No CI workflow exists in the repo yet (there is no `.github/`). Everything below is the procedure the first workflow must implement. Until then `pnpm verify` on your machine is the gate. `lefthook.yml` already points at the GitHub Actions Quality Gate workflow (`.github/workflows/ci.yml`) as the gate; the code host is GitHub (see [ADR-0012](/adr/0012-code-host-and-ci)).
+  Status: partly live. `.github/workflows/ci.yml` runs the `Quality Gate` job (toolchain from mise, actions pinned by SHA, `contents: read`), `release.yml` runs the release job and `linear-sync.yml` reconciles Linear. Not built: a workflow linter, a pin test, changeset status in the gate, and any deploy (the `Deploy Staging` job is a no-op until the deploy questions DP1–DP7 are decided). The code host is GitHub ([ADR-0012](/adr/0012-code-host-and-ci)).
 </Note>
 
 ## The model
 
-- **One required check**, named `verify`, runs `pnpm verify`. Branch protection on `main` requires it and nothing else.
+- **One required check**, named `Quality Gate`, runs `pnpm verify` ([0119](/adr/0119-merge-policy-and-release-authority)). Branch protection on `main` requires it and nothing else.
 - **Logic lives in pnpm scripts, not in workflow YAML.** The workflow installs the toolchain and calls a script. A step that exists only in YAML cannot be reproduced locally, and moving to another CI host stays cheap.
 - **Local and remote run the same command.** If `pnpm verify` is green on a clean clone, the check is green. The exceptions are listed under [What green does not prove](#what-green-does-not-prove).
 - **Verify needs zero secrets.** A pull request from a fork has no vault access, and a verify stage that needs one cannot check a fork's work at all.
@@ -110,10 +110,10 @@ Use this only when the host cannot run workflows at all (billing lock, outage, s
 
 | Rule | Check | State |
 | --- | --- | --- |
-| `pnpm verify` is the single gate | The CI workflow | Not built |
+| `pnpm verify` is the single gate | `ci.yml` `Quality Gate` | Live |
 | Hooks are advisory | `lefthook.yml` (check-only, no auto-fix) | Live |
-| Conventional commits | commitlint in `commit-msg`; CI range check | Hook live, CI not built |
+| Conventional commits | commitlint in `commit-msg`; CI range check | Live |
 | Secrets scan | gitleaks in `pre-commit`, `pnpm secrets:scan` | Live |
-| Actions pinned by SHA, least privilege | Workflow lint | Not built |
+| Actions pinned by SHA, least privilege | Done by hand in every workflow; workflow lint (zizmor) and a pin test | Pins live, lint not built |
 
 See also [Definition of done](/guides/definition-of-done), [Release](/runbooks/release) and [Testing](/standards/testing).
