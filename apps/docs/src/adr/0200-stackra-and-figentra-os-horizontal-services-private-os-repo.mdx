@@ -1,0 +1,39 @@
+---
+title: "0200 — Stackra and Figentra OS: horizontal services, a private OS repo and co-development"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0031](/adr/0031-coarse-services-split-on-evidence). Amends and accepts
+  [0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services), and amends decision 2 of
+  [0023](/adr/0023-stackra-is-a-framework).
+</Note>
+
+## Context
+
+Stackra ships packages, and Figentra OS ships services built on them. [0031](/adr/0031-coarse-services-split-on-evidence) (Proposed) assumed coarse services split on evidence, which the 36-service catalogue
+of the owner's decisions replaces. The owner's answers FO1, FO5 to FO9 (mem L501, L510, L513, 2026-10-20) fix the boundary.
+
+## Decision
+
+1. **Horizontal services (FO1).** Business services are built on Stackra and consumed by products. Each can also be sold on its own.
+2. **Private OS repository (FO5 and FO7).** The OS lives in a private `figentra/figentra-os` repository, with `services/<name>`, `apps/console` and `runway.yaml`. Local packages are linked through pnpm overrides for co-development,
+   and CI uses released versions. One Claude session works across both repositories, and the OS `AGENTS.md` inherits Stackra's rules.
+3. **Built on Stackra from day one (FO6, FO8 and FO9).** Every OS service uses Stackra packages. There is one platform account and tenant across products, with per-product entitlements. SaaS comes first,
+   and on-prem and air-gap are built and tested from day one.
+4. **Catalogue.** The service catalogue is `svc`, plus pricing (contradiction C-30).
+5. **Sizing.** Service sizing becomes topology (ADR 0169), not a split decision.
+
+## Consequences
+
+- A horizontal service can be sold alone, which makes its entitlements part of its own contract.
+- Co-development needs the pnpm overrides, so a broken local package shows up in the OS repository before it is released.
+
+## Enforcement
+
+planned — the OS repository's CI rejects a `workspace:` link to a package that is not released, except in the co-development profile.
+
+## Supersedes and sources
+
+Supersedes: [0031](/adr/0031-coarse-services-split-on-evidence). Amends and accepts: [0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services); amends decision 2 of [0023](/adr/0023-stackra-is-a-framework).
+Sources: owner answers FO1, FO5–FO9 (`stackra-decisions-2026-10-19.md` L501, L510, L513, 2026-10-20); contradiction C-30 and C-33.

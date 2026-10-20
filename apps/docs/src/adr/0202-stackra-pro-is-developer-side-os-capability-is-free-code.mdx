@@ -1,0 +1,37 @@
+---
+title: "0202 — @stackra-pro is developer-side; OS capability is free code gated by entitlements"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0077](/adr/0077-open-core-free-and-pro-lists). Amends
+  [0112](/adr/0112-experience-packages-and-renderer-kit),
+  [0122](/adr/0122-workflow-studio-three-layers), [0114](/adr/0114-page-builder-for-every-page) and
+  [0115](/adr/0115-form-builder) (the editor tier). Resolves contradiction C-06 and closes gap B34.
+</Note>
+
+## Context
+
+[0077](/adr/0077-open-core-free-and-pro-lists) (Proposed) listed features as Pro. The owner's answers of 2026-10-20 (mem L704, L732, L671, L715, L876) say that inside Figentra OS everything is free code, and what a customer pays for is an entitlement, not a package tier.
+
+## Decision
+
+1. **Editors are free code.** The page and form builder editors are free code in the page-builder and forms app. An app entitlement unlocks them, with an upgrade prompt for a tenant that lacks it.
+2. **`@stackra-pro` is for developers.** It holds the developer-side features: the on-prem and own-cloud runtime stack (ADR 0171), the HeroUI Pro renderers (ADR 0197), the advanced drivers (Temporal, ADR 0151, and the silo database), and the devtools UI.
+3. **Free code.** The AI and MCP code is free (L704). All settings features are free (L671). Search parity is free code (L715).
+4. **Carried forward from 0077.** The separate scope, the private stackra-pro repository, Pro plugs in behind free contracts, free packages never import Pro, and the internal licence for our own products.
+5. **Service labels.** Service-level "Pro" labels (I11, A7, A11, AU8, EN8, N6, F1, F4, T4, IN2, X12) are OS entitlement tiers.
+
+## Consequences
+
+- A customer's plan is the switch for a feature, so a feature is never shipped to some tenants in a different package.
+- Developers who build their own products get the Pro packages, and a free package never depends on one.
+
+## Enforcement
+
+planned — the validator rejects a free package that imports a `@stackra-pro` package. Entitlement gates are checked by the pipeline (ADR 0138).
+
+## Supersedes and sources
+
+Supersedes: [0077](/adr/0077-open-core-free-and-pro-lists). Amends: [0112](/adr/0112-experience-packages-and-renderer-kit), [0122](/adr/0122-workflow-studio-three-layers), [0114](/adr/0114-page-builder-for-every-page), [0115](/adr/0115-form-builder).
+Sources: owner answers (`stackra-decisions-2026-10-19.md` L671, L704, L715, L732, L876, 2026-10-20). Contradiction C-06.
