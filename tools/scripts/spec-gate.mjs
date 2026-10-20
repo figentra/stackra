@@ -98,7 +98,7 @@ export function checkStage(folder, text, { files = [], tasks = "" } = {}) {
     problems.push(`status ${status} needs plan.md`);
   if (at >= STATUSES.indexOf("ready") && !files.includes("tasks.md"))
     problems.push(`status ${status} needs tasks.md`);
-  if (status === "verified" && /^\s*- \[ \]/m.test(tasks))
+  if (status === "verified" && /^\s*[-*+] \[ \]/m.test(tasks))
     problems.push("status verified, but tasks.md has unticked tasks");
   return problems;
 }
@@ -147,7 +147,13 @@ export function tripwire(root = ROOT) {
       "common.sh no longer resolves SPECIFY_FEATURE_DIRECTORY, then .specify/feature.json",
     );
   const opts = read(".specify/init-options.json");
-  if (opts !== null && JSON.parse(opts).feature_numbering !== "linear-key")
+  let numbering;
+  try {
+    numbering = opts === null ? "linear-key" : JSON.parse(opts).feature_numbering;
+  } catch {
+    numbering = "(unreadable JSON)";
+  }
+  if (numbering !== "linear-key")
     problems.push(
       "init-options.json `feature_numbering` is not `linear-key` (an init or upgrade reset it)",
     );
@@ -157,10 +163,18 @@ export function tripwire(root = ROOT) {
       `.opencode/commands/speckit.${name}.md`,
     ]) {
       const text = read(p);
-      if (text === null) continue;
+      if (text === null) {
+        // The integration is installed (its folder exists) but an upgrade dropped this command.
+        if (existsSync(join(root, dirname(dirname(p))))) problems.push(`${p} is missing`);
+        continue;
+      }
       if (!text.includes("## Stackra: feature directory"))
         problems.push(`${p} lost the Stackra wrap (re-register the preset for that integration)`);
-      if (name === "specify" && !/SPECIFY_FEATURE_DIRECTORY`[^\n]*use it as-is/.test(text))
+      // Anchor on the core's own resolution rule; the wrap's prose says "use it as-is" too.
+      if (
+        name === "specify" &&
+        !/explicitly provided `SPECIFY_FEATURE_DIRECTORY` \([^\n]*\), use it as-is/.test(text)
+      )
         problems.push(`${p}: core specify no longer takes SPECIFY_FEATURE_DIRECTORY as-is`);
     }
   }

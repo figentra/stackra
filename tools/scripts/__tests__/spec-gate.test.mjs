@@ -8,11 +8,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { checkSpec, checkStage, specDir, tripwire } from "../spec-gate.mjs";
+import { checkSpec, checkStage, specDir, tripwire, WRAPPED } from "../spec-gate.mjs";
 import { specLinks, unlinkedTasks } from "../spec-linear.mjs";
 
 const SCRIPTS = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -84,11 +84,25 @@ test("tripwire: the repository passes, and an upgrade that drops the wrap or res
     for (const p of [
       ".specify/scripts/bash",
       ".specify/init-options.json",
-      ".claude/skills/speckit-specify",
-      ".opencode/commands/speckit.specify.md",
+      ...WRAPPED.flatMap((n) => [
+        `.claude/skills/speckit-${n}/SKILL.md`,
+        `.opencode/commands/speckit.${n}.md`,
+      ]),
     ])
       cpSync(join(ROOT, p), join(root, p), { recursive: true });
     assert.deepEqual(tripwire(root), []);
+    // The wrap stays, but the core resolution rule changed.
+    const skill = join(root, ".claude/skills/speckit-specify/SKILL.md");
+    writeFileSync(
+      skill,
+      readFileSync(skill, "utf8").replace(
+        /explicitly provided `SPECIFY_FEATURE_DIRECTORY`/,
+        "set the dir",
+      ),
+    );
+    assert.match(tripwire(root).join(), /SKILL\.md: core specify/);
+    rmSync(join(root, ".claude/skills/speckit-plan"), { recursive: true });
+    assert.match(tripwire(root).join(), /speckit-plan\/SKILL\.md is missing/);
     writeFileSync(join(root, ".specify/init-options.json"), '{"feature_numbering":"sequential"}');
     writeFileSync(join(root, ".opencode/commands/speckit.specify.md"), "vanilla core text\n");
     writeFileSync(join(root, ".specify/scripts/bash/setup-plan.sh"), "#!/bin/sh\n");
