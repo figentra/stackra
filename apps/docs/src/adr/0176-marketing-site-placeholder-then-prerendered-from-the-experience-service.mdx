@@ -1,0 +1,38 @@
+---
+title: "0176 — The marketing site: a placeholder now, prerendered from the experience service later"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0057](/adr/0057-landing-is-react-router-framework-mode-on-workers). Amends decision 5
+  of [0114](/adr/0114-page-builder-for-every-page) (wave 3 owns that page).
+</Note>
+
+## Context
+
+[0057](/adr/0057-landing-is-react-router-framework-mode-on-workers) (Proposed) chose a marketing stack with React Router, MDX and Sanity. [0114](/adr/0114-page-builder-for-every-page) later made the page builder build every page. The owner's answer DP25 (c then a, mem L452, 2026-10-20) sets the sequence: a placeholder now, and later pages prerendered from the Figentra OS experience service.
+
+## Decision
+
+1. **Now.** `apps/landing` is a placeholder landing page. It has no CMS and no MDX content pipeline.
+2. **Later.** `apps/landing` prerenders its pages from the OS experience service (ADR 0110), so the page builder owns the content.
+3. **Dropped.** MDX and Sanity stay dropped, as ADR 0114 decided.
+4. **Skill.** The `sanity-best-practices` skill is removed, because nothing uses it (gap D).
+
+## Consequences
+
+- The marketing site has no content store of its own until the experience service can serve it.
+- A visitor sees a placeholder until the prerender path exists. That is an accepted cost.
+
+## Enforcement
+
+planned — the prerender path is checked when `apps/landing` gets its first prerendered page. The skill removal is part of the `agents/skills.mdx` update (final pass).
+
+## Alternatives
+
+- MDX with Sanity now: rejected by DP25 and by ADR 0114.
+
+## Supersedes and sources
+
+Supersedes: [0057](/adr/0057-landing-is-react-router-framework-mode-on-workers). Amends: [0114](/adr/0114-page-builder-for-every-page) decision 5 (wave 3). Sources: owner answer DP25 (`stackra-decisions-2026-10-19.md` L452,
+2026-10-20). Closes gaps C15 and C44.

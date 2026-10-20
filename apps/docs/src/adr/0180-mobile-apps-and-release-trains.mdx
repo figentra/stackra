@@ -1,0 +1,44 @@
+---
+title: "0180 — Mobile apps and release trains"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0062](/adr/0062-mobile-release-push-and-crash-reporting). Amends
+  [0061](/adr/0061-mobile-keeps-react-navigation-and-native-tabs).
+</Note>
+
+## Context
+
+[0062](/adr/0062-mobile-release-push-and-crash-reporting) (Proposed) gave mobile release rules without the app count, the release train or the store process. The owner's answers MR1 to MR6
+(mem L475–477, 2026-10-20) set those. The gap analysis (E-05) notes the cost of three apps on day one, so the owner should confirm the count.
+
+## Decision
+
+1. **Apps (MR1 and MR6).** Three apps on day one: the internal reference app, a public "Stackra Showcase" store app, and per-tenant white-label store builds (Pro). One Figentra Apple and Google organisation.
+2. **Builds (MR2 and MR3).** Builds run on EAS, triggered from GitHub Actions only when the native fingerprint changes. The EAS plan is paid, with a monthly build cap.
+3. **Releases (MR4 and MR5).** Store releases are phased and bi-weekly. Over-the-air updates roll out from 10% to 100% over 24 hours, gated on crash-free sessions. A minimum-version gate applies. The last two store versions are supported.
+4. **Carried forward from 0062.** Expo push and Sentry from day one (0062 decisions 2 and 3).
+5. **Skills.** The mobile skills `mobile-eas-setup`, `mobile-release` and `mobile-store-listing` are written now, with React Navigation, not expo-router (mem L395).
+
+## Consequences
+
+- An over-the-air update can be rolled back by the crash-free gate without a store review.
+- Three apps means three store listings to keep current. The count is an open question.
+
+## Enforcement
+
+planned — the fingerprint check in CI, and the minimum-version gate in the app.
+
+## Open questions
+
+1. Whether three apps on day one is right, or one reference app first (gap analysis E-05). The owner confirms.
+
+## Alternatives
+
+- One reference app only: a candidate under E-05; not chosen by the owner yet.
+
+## Supersedes and sources
+
+Supersedes: [0062](/adr/0062-mobile-release-push-and-crash-reporting). Amends: [0061](/adr/0061-mobile-keeps-react-navigation-and-native-tabs). Sources: owner answers MR1–MR6 and the mobile
+skills (`stackra-decisions-2026-10-19.md` L395, L475–477, 2026-10-20). Closes gap B33. Contradiction C-28 is closed by MR1.

@@ -1,0 +1,39 @@
+---
+title: "0185 — Incident response, on-call, the status page and support tiers"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+The owner's answers OB4 to OB6, OB12, OR11, PP13 (mem L558, L560, L563, L578, 2026-10-20) fix the on-call tool, the severity levels, the postmortem rule, the public runbook split and the support tiers. The gap analysis (P1-9 and P1-14) notes that the team is one
+owner plus agents, so the Enterprise 24/7 tier needs a second human before it is sold.
+
+## Decision
+
+1. **On-call (OB4).** Better Stack runs on-call. SEV1 pages 24/7.
+2. **Severities (OB5).** SEV1 to SEV4. Each has a Linear issue. A postmortem is written within five business days.
+3. **Status page (OB6).** A public status page starts at the first external customer.
+4. **Runbooks (OB12).** Generic runbooks are public. Environment-specific runbooks are private.
+5. **Support tiers (OR11).** Community, Business (next business day) and Enterprise (4-hour response on SEV1, 24/7).
+6. **Channel (PP13).** Stackra uses GitHub Discussions for community support.
+
+## Consequences
+
+- A public runbook can be read by a customer, so environment details stay private.
+- Enterprise 24/7 is a promise, so it is not sold until a second on-call person or an outside provider exists (open question 1).
+
+## Enforcement
+
+planned — the Better Stack on-call schedule and the status page are configured in `@stackra/infra-observability` (ADR 0171); the runbook split is checked when runbooks are published.
+
+## Open questions
+
+1. Do not sell the Enterprise 24/7 tier until a second on-call human or an outside provider exists (gap analysis P1-9). The owner decides.
+
+## Alternatives
+
+- Enterprise 24/7 with the owner alone on call: not chosen; the gap analysis flags it.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner answers OB4–OB6, OB12, OR11, PP13 (`stackra-decisions-2026-10-19.md` L558, L560, L563, L578, 2026-10-20); gap analysis P1-9 and P1-14.

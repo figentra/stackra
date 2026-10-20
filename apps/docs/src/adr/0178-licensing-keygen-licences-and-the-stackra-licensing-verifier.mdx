@@ -1,0 +1,42 @@
+---
+title: "0178 — Licensing: Keygen licences and the @stackra/licensing verifier"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends decision 3 of [0076](/adr/0076-every-package-runs-saas-on-prem-and-air-gapped) (wave 3 owns
+  the licensing row of 0077).
+</Note>
+
+## Context
+
+Pro packages and on-prem installs need licences that expire, carry seat and machine limits, and can work offline. The owner's answers PK8, PK13, PK15 and EN6 (mem L458–461, L679, 2026-10-20)
+chose Keygen for the licence store and a small verifier that we write ourselves.
+
+## Decision
+
+1. **Keygen holds licences.** Keygen holds the licences, the entitlements, the seat and machine limits, the expiry, and the signed offline licence files.
+2. **We write two things.** `@stackra/licensing` is the verifier. A billing-to-Keygen webhook keeps licences in step with the subscription. The signing key is held in Infisical KMS.
+3. **Lifecycle (PK8).** Billing webhooks create, renew and revoke licences from the first customer.
+4. **Soft enforcement (PK13).** An expired licence gives a warning, then a read-only admin mode after a grace period. Data is never lost.
+5. **No phone-home (PK15).** Installs never call home. A connected on-prem install may opt in. Compliance is a periodic signed report.
+6. **On-prem entitlement (EN6).** On-prem reads its entitlements from the licence file.
+
+## Consequences
+
+- The licence is a file an on-prem customer can verify without a network.
+- A revoked licence stops new seats, but it never deletes data.
+
+## Enforcement
+
+planned — `@stackra/licensing` verifies signatures and expiry in its tests; the billing webhook is covered by a contract test.
+
+## Alternatives
+
+- Our own licence store: rejected; Keygen covers it.
+- Phone-home checks: rejected by PK15.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0076](/adr/0076-every-package-runs-saas-on-prem-and-air-gapped) decision 3. Sources: owner answers PK8, PK13, PK15, EN6 (`stackra-decisions-2026-10-19.md`
+L458–461, L679, 2026-10-20). Closes gap B35.

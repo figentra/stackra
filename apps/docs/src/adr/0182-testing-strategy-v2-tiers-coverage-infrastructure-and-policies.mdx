@@ -1,0 +1,43 @@
+---
+title: "0182 — Testing strategy v2: tiers, coverage, infrastructure and policies"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0069](/adr/0069-testing-strategy-and-coverage). Amends
+  [0022](/adr/0022-tests-live-in-tests-folders) (test-file naming).
+</Note>
+
+## Context
+
+[0069](/adr/0069-testing-strategy-and-coverage) (Proposed) set one test level and coverage floors. The owner's answers TS1 to TS18 (mem L358, L480–483, 2026-10-20) add tiers, infrastructure and policies.
+
+## Decision
+
+1. **Tiers (TS1 and TS2).** Five tiers are marked by filename infix: `.int`, `.contract`, `.e2e` and `.load`, with the unit tier unmarked. The turbo tasks are `test`, `test:int`, `test:contract` and `test:e2e`.
+2. **Coverage (TS3).** Floors are 80% lines and 70% branches. Security, tenancy, IAM, actions, outbox, workflow, versioning, validation and licensing need 90% and 80%. Services join the coverage task.
+3. **Infrastructure (TS4 and TS5).** Testcontainers with one schema per test file. Logic is tested on plain TypeScript packages with vitest and Testcontainers. A thin Encore test suite covers the wiring.
+4. **Policies (TS6 to TS15 and TS18).** Generated isolation tests, `oasdiff` contract checks, an ephemeral end-to-end stack, the tier matrix, weekly k6 load tests, fault injection, Playwright screenshots, a device matrix, factories, a flaky-test quarantine, and an air-gap job with no network (`--network none`).
+5. **Carried forward.** Maestro on GitHub runners (0069).
+
+## Consequences
+
+- A test's tier is in its filename, so CI can run each tier on its own schedule.
+- Coverage floors are per package group, so the security code is held to the higher floor.
+
+## Enforcement
+
+planned — `pnpm validate` checks that each test file name has a known tier infix, and the turbo tasks run each tier.
+
+## Open questions
+
+1. The device matrix (TS18) needs real devices; the owner must choose which ones.
+
+## Alternatives
+
+- One test level with one floor: superseded by the tier split.
+
+## Supersedes and sources
+
+Supersedes: [0069](/adr/0069-testing-strategy-and-coverage). Amends: [0022](/adr/0022-tests-live-in-tests-folders). Sources: owner answers TS1–TS18 (`stackra-decisions-2026-10-19.md`
+L358, L480–483, 2026-10-20). Closes gaps B39, B40, C21 and C26.
