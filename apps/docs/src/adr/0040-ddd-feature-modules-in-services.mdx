@@ -3,6 +3,11 @@ title: "0040 — Services are organised as DDD feature modules"
 description: "Proposed · 2026-10-19"
 ---
 
+<Note>
+  Decisions 3 and 4 are replaced by [0091](/adr/0091-generated-encore-app-in-stackra-folder): services hold
+  no Encore primitives and no `__generated__/` folder; `stackra gen` emits the Encore app into `.stackra/encore/`.
+</Note>
+
 ## Context
 
 [0010](/adr/0010-services-are-independent-workspace-members) fixes a service as a workspace member with a `src/main.ts`
