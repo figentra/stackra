@@ -1,0 +1,33 @@
+---
+title: "0246 — Devtools: dev-only, for frontend and backend"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0182](/adr/0182-testing-strategy-v2-tiers-coverage-infrastructure-and-policies), which
+  named the test tiers, not the devtools.
+</Note>
+
+## Context
+
+Developers need to see the module graph and the runtime state while they work, on both the frontend and the backend. The owner's devtools answer (mem L882–886, 2026-10-20) fixes what they show and where they run.
+
+## Decision
+
+1. **Dev only.** Devtools run in development. In staging, operators only may use them. They are not in production builds.
+2. **Apps.** A floating panel for web and native shows the container graph, registry slots, state, queries, i18n keys, flags, entitlements, permissions and realtime.
+3. **Services.** A dev console, started by `stackra dev`, shows the module graph, actions and adapters, per-request pipeline gate traces, events, the outbox, queue and workflow state, and cache hits. It sits next to Encore's trace dashboard.
+4. **Packages.** Each package's `devtools` entry plugs its own panels in.
+
+## Consequences
+
+- A developer sees the pipeline gates for one request, so an entitlement refusal can be traced without a log search.
+- Production builds carry no devtools code.
+
+## Enforcement
+
+planned — the build strips the devtools entries from production bundles, and the validator checks that no production bundle imports them.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner devtools answer (`stackra-decisions-2026-10-19.md` L882–886, 2026-10-20).

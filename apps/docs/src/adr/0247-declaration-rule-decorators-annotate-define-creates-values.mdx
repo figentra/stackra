@@ -1,0 +1,33 @@
+---
+title: "0247 — Declaration rule: decorators annotate code, define* creates values"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0094](/adr/0094-decorators-only-authoring) and
+  [0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned).
+</Note>
+
+## Context
+
+Authoring used decorators for some things and `define*` functions for others, with no rule. The owner's declaration rule (mem L882, 2026-10-20) decides it: decorators annotate code, and `define*` creates the values that code refers to. The registry collects both.
+
+## Decision
+
+1. **Decorators annotate code.** Classes, methods and fields carry decorators: `@Action`, `@Model`, `@Field`, `@OnEvent`, `@Resource`, and the others of ADR 0094.
+2. **`define*` creates values.** `defineToken`, `defineConfig`, `definePermissions`, `defineEvents`, `defineMeters`, `defineEntitlements`, `defineSkill` and `definePrompts` build the values a decorator refers to (ADR 0145).
+3. **Enforcement.** A lint rule enforces the split: a decorator never builds a value, and a `define*` call is never placed on a class member.
+4. **Registry.** The registry collects both kinds, so gen and the Explorers see one catalogue.
+
+## Consequences
+
+- A reader knows from the form whether a line declares behaviour (decorator) or a value (define).
+- A new `define*` function is an ADR change, because the family is part of the contract.
+
+## Enforcement
+
+planned — the house lint rule (ADR 0129) for the decorator and define split.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0094](/adr/0094-decorators-only-authoring), [0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned). Sources: owner declaration rule (`stackra-decisions-2026-10-19.md` L882, 2026-10-20).

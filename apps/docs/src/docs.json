@@ -301,7 +301,16 @@
               "adr/0192-translation-workflow-and-arabic-defaults",
               "adr/0193-agents-and-model-policy",
               "adr/0194-developer-and-agent-compute",
-              "adr/0195-organisation-legal-and-release-communication"
+              "adr/0195-organisation-legal-and-release-communication",
+              "adr/0196-repository-config-is-yaml-wherever-the-reader-supports-it",
+              "adr/0197-heroui-pro-is-used-only-in-our-own-apps",
+              "adr/0198-sdlc-spec-location-states-traceability-and-roadmap",
+              "adr/0199-developer-experience-create-stackra-app-upgrades-stackra-dev-and-docs",
+              "adr/0237-generated-api-gateway-in-four-layers",
+              "adr/0238-database-and-connection-model",
+              "adr/0246-devtools-dev-only-for-apps-and-services",
+              "adr/0247-declaration-rule-decorators-annotate-define-creates-values",
+              "adr/0248-delivery-scope-saas-first-on-prem-kept-green"
             ]
           }
         ]
