@@ -1,0 +1,37 @@
+---
+title: "0213 — Settings v2: the full cascade, flags as a settings kind, YAML packs and revisions"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0108](/adr/0108-scoped-settings). Replaces the JSON export of 0108 S10 with YAML
+  (contradiction C-16).
+</Note>
+
+## Context
+
+[0108](/adr/0108-scoped-settings) set scoped settings with a short cascade. The owner's settings answers SE1 to SE6, EN1 and B36 (mem L660–671, L446, L674, 2026-10-20) add the full cascade, feature flags as a settings kind, YAML packs, revisions and approvals.
+
+## Decision
+
+1. **Ownership (SE1).** Values stay with each service. The settings service is the control plane.
+2. **Cascade (SE2).** Default, then platform, then product, then ancestor tenants, then the current tenant, then IAM scope nodes, then the user. Locks and provenance apply at each level.
+3. **Flags (SE3, DP15).** `@Flag` is a settings kind with an owner, an expiry, a removal issue and targeting. Drivers are native and PostHog. Kill switches are locked at platform level. Build-time flags remain.
+4. **Export (SE4).** YAML export and import replaces the JSON export of 0108 S10. Product settings packs, `stackra settings:diff` and `settings:apply`, and deploy locks from `runway.yaml`.
+5. **Revisions (SE5).** Revisions, an optional four-eyes approval, and scheduled changes.
+6. **Free (SE6).** All settings features are free code.
+7. **Flags are not entitlements (EN1).** A flag switches a feature on or off, and an entitlement sells it.
+8. **Notification preferences (B36).** They are owned by the notifications package, as an exception.
+
+## Consequences
+
+- Each value has a documented source (provenance), so a changed setting can be traced to who changed it.
+- A flag has an owner and an expiry, so stale flags are removed on schedule.
+
+## Enforcement
+
+planned — the cascade test covers each level and lock; `stackra settings:diff` runs in the release gate.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0108](/adr/0108-scoped-settings). Sources: owner settings answers (`stackra-decisions-2026-10-19.md` L446, L660–671, L674, 2026-10-20). Closes gaps B41 and C9. Contradiction C-16.

@@ -1,0 +1,33 @@
+---
+title: "0215 — Entitlements"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+Every gated feature needs one answer to "is this tenant allowed to use it, and how much". The owner's entitlement answers EN1 to EN8 and T8 (mem L674–681, L639, 2026-10-20) fix the kinds, the composition, the enforcement, and the trial rules. The plan names and numbers are in ADR 0242.
+
+## Decision
+
+1. **Kinds (EN1).** Feature, limit and module entitlements, declared with `@Entitlement`. The effective set is the plan, plus add-ons, plus overrides, plus trials. Flags are not entitlements (ADR 0213).
+2. **Cascade (EN2).** Grants cascade down the merchant chain as an intersection: a child gets only what its parent grants and its own plan allows. The evaluation algorithm and its invalidation are open (register D-04).
+3. **Gate (EN3).** `@Requires` is a pipeline gate on an event-fed snapshot. A limit that is exceeded returns `limit_exceeded` with an upgrade hint (ADR 0137).
+4. **Enforcement policy (EN4).** Each limit is hard, soft or grace. A downgrade never deletes data.
+5. **Trials (EN5).** Trials are part of the effective set, with an end date.
+6. **Licence file (EN6).** On-prem reads entitlements from the licence file (ADR 0178).
+7. **Meters (EN7).** A limit names the meter it counts (ADR 0216).
+8. **Tiering (EN8).** The tiers are those of ADR 0242.
+9. **Limits are owned here (T8).** The tenant limits of ADR 0210 come from this ADR.
+
+## Consequences
+
+- Upgrading a plan takes effect without a deploy, because the snapshot is event-fed.
+- A downgrade keeps data, so a customer cannot lose a record by changing plan.
+
+## Enforcement
+
+planned — the gate test covers hard, soft and grace limits; the snapshot staleness bound is open (register D-02).
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner entitlement answers EN1–EN8, T8 (`stackra-decisions-2026-10-19.md` L639, L674–681, 2026-10-20). Contradiction C-35 for the aggregation tier.

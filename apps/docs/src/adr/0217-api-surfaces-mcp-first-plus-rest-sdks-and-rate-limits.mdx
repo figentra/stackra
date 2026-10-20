@@ -1,0 +1,32 @@
+---
+title: "0217 — API surfaces: MCP first plus REST, SDKs and rate limits"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0038](/adr/0038-rate-limits-app-buckets-and-waf). Notes on
+  [0039](/adr/0039-openapi-mintlify-and-oauth-guide) (generated OpenAPI and the SDKs).
+</Note>
+
+## Context
+
+[0038](/adr/0038-rate-limits-app-buckets-and-waf) (Proposed) set rate limits and the web application firewall. The owner's API answers DV1 and DV4 (mem L765, L767, 2026-10-20) fix the surfaces, the SDKs and the bucket rules.
+
+## Decision
+
+1. **One declaration, two surfaces (DV1).** Each action is declared once and exposed as an MCP tool first, and as REST from the same declaration. REST and OpenAPI are versioned by the `Stackra-Version` header (ADR 0118). TypeScript and Python SDKs are generated. There is no GraphQL.
+2. **Rate limits (DV4).** Token buckets per (app, tenant), sized by the plan entitlements, and stricter for AI and exports. The `RateLimit-*` headers are sent. Limits are metered, and enforced at the edge and in the pipeline.
+3. **Edge.** The Cloudflare WAF of 0038 decision 1 carries forward. On-prem has no edge, so the pipeline buckets apply there (register C-41).
+
+## Consequences
+
+- An agent and a human client see the same action, so a fix reaches both.
+- A tenant on a lower plan is throttled by its entitlement, and the header says so.
+
+## Enforcement
+
+planned — the SDK generator is checked by the contract tests (ADR 0182); the bucket sizes are checked against the entitlement table.
+
+## Supersedes and sources
+
+Supersedes: [0038](/adr/0038-rate-limits-app-buckets-and-waf). Notes on: [0039](/adr/0039-openapi-mintlify-and-oauth-guide). Sources: owner API answers DV1, DV4 (`stackra-decisions-2026-10-19.md` L765, L767, 2026-10-20); gap C41.

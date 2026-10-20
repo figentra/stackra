@@ -1,0 +1,31 @@
+---
+title: "0218 — Integrations: the connector SDK and connections per chain level"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>Amends [0107](/adr/0107-connections-store-and-three-key-homes).</Note>
+
+## Context
+
+Customers connect Stackra to other systems, and each connection holds credentials. The owner's integration answers IN1 to IN4 (mem L753–756, 2026-10-20) fix the connector SDK, the connections per level, and the sync rules.
+
+## Decision
+
+1. **Connector SDK (IN1).** `@stackra/integrations` is the connector SDK for first-party connectors. An adapter runs the MIT-licensed Activepieces pieces, with a licence check per piece in CI.
+2. **Connections per level (IN2).** A connection can sit at the platform, product, tenant, scope or user level. It is stored in the store of ADR 0107, and referenced with `@ConnectionRef`. Refresh, expiry alerts, health checks and revocation apply to every connection.
+3. **Triggers and syncs (IN3).** Triggers, actions and managed two-way syncs.
+4. **Hosting.** The connections store is hosted by the integrations service (gap C12).
+5. **Marketplace (IN4).** The marketplace model is an OS item.
+
+## Consequences
+
+- A credential is held at the level that owns it, so a tenant's connection is never visible to its parent by default.
+- A piece with a licence that does not match fails the CI check before it ships.
+
+## Enforcement
+
+planned — the per-piece licence check runs in CI; the connection health check runs on schedule.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0107](/adr/0107-connections-store-and-three-key-homes). Sources: owner integration answers IN1–IN4 (`stackra-decisions-2026-10-19.md` L753–756, 2026-10-20). Closes gap C12 in part.

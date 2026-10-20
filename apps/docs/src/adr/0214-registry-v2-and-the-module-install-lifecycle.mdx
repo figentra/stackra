@@ -1,0 +1,37 @@
+---
+title: "0214 — Registry v2 and the module install lifecycle"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0109](/adr/0109-registry-manifests-published-by-ci) and
+  [0111](/adr/0111-module-is-the-unit-of-contribution).
+</Note>
+
+## Context
+
+The registry published manifests but did not say how a module is installed for one tenant, which versions are kept, or how a consumer keeps a copy current. The owner's registry answers (mem L664–669, 2026-10-20) fix the flow, the install lifecycle and version retention.
+
+## Decision
+
+1. **Flow.** Declare, collect, publish, merge, consume. A host declares slots. Modules contribute by key, and each contribution is filtered by permission, entitlement and settings.
+2. **Consumers.** Each consumer keeps a local copy, updated by the `registry.updated.v1` event.
+3. **Install lifecycle (RG1).** A module is available, installed, disabled or uninstalled, per tenant. Dependencies are resolved on install.
+4. **Versions (RG2).** Every manifest version is kept. A consumer accepts both the old and the new version during a rollout. The diff that CI runs is in ADR 0157.
+
+## Consequences
+
+- A tenant can switch a module off without a code change, and the dependency check says what else must go with it.
+- A rollout never breaks a consumer that is one version behind.
+
+## Enforcement
+
+planned — the install resolver rejects an install with an unresolved dependency; the rollout test checks both versions are accepted.
+
+## Open questions
+
+1. Bootstrapping a new consumer, the ordering of updates, and what happens when the registry is down (register D-03). The owner decides.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0109](/adr/0109-registry-manifests-published-by-ci), [0111](/adr/0111-module-is-the-unit-of-contribution). Sources: owner registry answers (`stackra-decisions-2026-10-19.md` L664–669, 2026-10-20). Closes gap C10 in part.

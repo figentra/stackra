@@ -1,0 +1,38 @@
+---
+title: "0210 — Tenancy: a recursive tenant tree, the lifecycle, one context per request, and region"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope). Carries
+  [0045](/adr/0045-tenancy-package-pool-default-silo-on-demand) forward (its pool and silo drivers).
+  The scope tree inside a tenant is ADR 0208 (free code, depth by plan entitlement, ADR 0240).
+</Note>
+
+## Context
+
+[0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope) (Proposed) described tenancy without the tree, the lifecycle or the region rule. The owner's tenancy answers T1 to T10 (mem L634–637, 2026-10-20) fix them. An organisation is a tenant with children, so the merchant chain and the tenant tree are one structure.
+
+## Decision
+
+1. **Tree (T1).** A recursive tenant tree on ltree. Each node has a type label and capabilities: host, sell, b2b, marketplace_seller and white_label. The merchant chain is the tenant tree. Each node is isolated by its own `tenant_id`. A parent sees its children only through explicit, audited operator grants. Depth is configurable, with a default of 3.
+2. **Lifecycle (T2).** A state machine of provisioning, trial, active, past_due, suspended and cancelled. A cancelled tenant is purged 30 days after cancellation.
+3. **One context per request (T5).** The active tenant lives in the session. Each request has exactly one tenant context.
+4. **Region (T6).** The region is chosen at creation and is immutable without a migration job (the job itself is open, register D-13).
+5. **Identity record (T9).** Each tenant has an identity record, owned by identity (ADR 0206).
+6. **Provisioning (T10).** Provisioning is a workflow that waits for each service to acknowledge.
+7. **Carried forward from 0088.** The pool with row-level security, `withTenant`, the isolation kit, no schema per tenant, and the silo driver for the Pro tier.
+8. **Summarised here, specified elsewhere.** Domains (T3), sandbox and demo tenants (T7) and limits through entitlements (T8) are OS items.
+
+## Consequences
+
+- A tenant's depth in the tree is data, so a deep organisation is a configuration, not a schema change.
+- A parent cannot read a child's rows except through a grant that is itself audited (ADR 0212).
+
+## Enforcement
+
+planned — the isolation tests run the tree cases; the lifecycle state machine is the one in ADR 0161.
+
+## Supersedes and sources
+
+Supersedes: [0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope). Carries forward: [0045](/adr/0045-tenancy-package-pool-default-silo-on-demand). Sources: owner tenancy answers T1–T10 (`stackra-decisions-2026-10-19.md` L634–637, 2026-10-20). Contradiction C-04b.
