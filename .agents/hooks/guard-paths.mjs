@@ -2,6 +2,7 @@
 /**
  * PreToolUse (Write|Edit|MultiEdit|NotebookEdit): refuse writes to generated, vendored
  * or secret paths — anything a tool other than the agent owns.
+ * PreToolUse (Read|Grep|Glob): refuse only the secrets inbox (ADR 0257); every other read is fine.
  */
 import { readStdin, collectStrings, deny, failOpen } from "./_io.mjs";
 
@@ -59,9 +60,24 @@ const rules = [
 /** agents-sync's generated rules block markers in the root AGENTS.md. */
 const AGENTS_MD_BLOCK = /<!--\s*(BEGIN|END) generated from \.agents\/rules/;
 
+/** ~/Secrets-inbox/ holds values for `pnpm secrets:import`; no tool reads, searches, lists or writes it. */
+const INBOX = /(^|\/)Secrets-inbox(\/|$)|(^|\/)secrets-confirm\.key$/i;
+const READ_TOOLS = new Set(["Read", "Grep", "Glob"]);
+
 async function main() {
   const input = await readStdin();
-  const target = String(input.tool_input?.file_path ?? input.tool_input?.notebook_path ?? "");
+  const ti = input.tool_input ?? {};
+  const paths = [ti.file_path, ti.notebook_path, ti.path, input.tool_name === "Glob" && ti.pattern]
+    .filter((p) => typeof p === "string")
+    .map((p) => p.replace(/^~(?=\/|$)/, "$HOME"));
+  if (paths.some((p) => INBOX.test(p)))
+    deny(
+      EVENT,
+      `Secrets guard: ~/Secrets-inbox/ holds secret values; no agent reads, searches, lists or writes it. Use \`pnpm secrets:import --list\` (names) and \`pnpm secrets:import\` (import, never prints a value).\nBlocked path: ${paths.join(", ")}`,
+    );
+  if (READ_TOOLS.has(input.tool_name)) return;
+
+  const target = String(ti.file_path ?? ti.notebook_path ?? "");
   if (!target) return;
 
   for (const rule of rules) {

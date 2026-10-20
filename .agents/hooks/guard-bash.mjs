@@ -138,6 +138,14 @@ const rules = [
     why: "Secrets guard: `infisical run -- env|printenv` prints the injected secret values. Run the command that needs them instead.",
   },
   {
+    // The secrets inbox holds values a human dropped for `pnpm secrets:import` (ADR 0257). No command
+    // may name it: not cat/head/grep/cp/mv/ls/find, not a `cd` into it. The importer takes file NAMES
+    // (`pnpm secrets:import --list` lists them) and never prints a value, so it is safe for every caller.
+    // Commit-message text is ignored; heredoc bodies are already stripped.
+    rx: (c) => /Secrets-inbox|secrets-confirm\.key/i.test(dropMessages(c)),
+    why: "Secrets guard: ~/Secrets-inbox/ (and the import confirm key) are never read, listed, copied or moved by a command. Use `pnpm secrets:import --list` for names and `pnpm secrets:import [--dry-run] [NAME]` to import; it never prints a value.",
+  },
+  {
     rx: /\bencore\s+secret\s+(set|get|list\s+--values?)\b/,
     why: 'Secrets guard: `encore secret set/get` are a human\'s to run. Declare the secret with `secret("NAME")` in code and name it in your report; a human sets the value per environment (synced from Infisical).',
   },

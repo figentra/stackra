@@ -31,6 +31,9 @@ const SECRET_FILE = [
   /(^|\/)\.ci-env$/,
   /(^|\/)\.sentryclirc$/,
   /(^|\/)\.infisical([^/]*$|\/)/,
+  // The secrets inbox (ADR 0257): only `pnpm secrets:import` touches it, and it never prints a value.
+  /(^|\/)Secrets-inbox(\/|$)/i,
+  /(^|\/)secrets-confirm\.key$/,
 ];
 // Committed, value-free files: the env template and Infisical's project config.
 const SECRET_OK = /(^|\/)(\.env\.example|\.infisical\.(yaml|json))$/;

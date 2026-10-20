@@ -68,3 +68,32 @@ test("deny: AGENTS.md generated rules block", () =>
   ));
 test("allow: AGENTS.md hand-written section", () =>
   assert.equal(editIntoAgentsMd("# stackra"), false));
+
+// The secrets inbox: denied for every tool, read tools included; other reads stay allowed.
+const decide = (tool_name, tool_input) => {
+  const r = spawnSync("node", [hook], {
+    input: JSON.stringify({ tool_name, tool_input }),
+    encoding: "utf8",
+  });
+  assert.equal(r.status, 0);
+  return r.stdout.includes('"permissionDecision":"deny"');
+};
+for (const [tool, input] of [
+  ["Read", { file_path: "/Users/me/Secrets-inbox/STACKRA_REVIEWER_PRIVATE_KEY.pem" }],
+  ["Read", { file_path: "~/Secrets-inbox/X" }],
+  ["Grep", { pattern: "BEGIN", path: "/Users/me/Secrets-inbox" }],
+  ["Glob", { pattern: "~/Secrets-inbox/*" }],
+  ["Glob", { pattern: "*", path: "/Users/me/Secrets-inbox/" }],
+  ["Write", { file_path: "/Users/me/Secrets-inbox/X", content: "v" }],
+  ["Edit", { file_path: "/Users/me/Secrets-inbox/X", old_string: "a", new_string: "b" }],
+  ["Read", { file_path: "/Users/me/.stackra/secrets-confirm.key" }],
+])
+  test(`deny ${tool}: ${JSON.stringify(input)}`, () => assert.equal(decide(tool, input), true));
+for (const [tool, input] of [
+  ["Read", { file_path: "/r/pnpm-lock.yaml" }],
+  ["Read", { file_path: "/r/CHANGELOG.md" }],
+  ["Grep", { pattern: "Secrets-inbox", path: "/r/apps/docs" }],
+  ["Glob", { pattern: "**/*.md" }],
+  ["Write", { file_path: "/r/apps/docs/src/runbooks/secrets.mdx", content: "~/Secrets-inbox/" }],
+])
+  test(`allow ${tool}: ${JSON.stringify(input)}`, () => assert.equal(decide(tool, input), false));

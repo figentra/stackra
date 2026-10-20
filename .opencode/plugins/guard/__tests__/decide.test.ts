@@ -24,6 +24,20 @@ test("denies reading secret files", () => {
   assert.equal(kind("cat README.md"), "allow");
 });
 
+test("the secrets inbox is never read; the importer is allowed", () => {
+  for (const c of [
+    "cat ~/Secrets-inbox/STACKRA_REVIEWER_PRIVATE_KEY.pem",
+    "head $HOME/Secrets-inbox/X",
+    "ls ~/Secrets-inbox",
+    "cp /Users/me/Secrets-inbox/X /tmp",
+    "cat ~/.stackra/secrets-confirm.key",
+  ])
+    assert.equal(kind(c), "deny", c);
+  assert.equal(decidePath("/Users/me/Secrets-inbox/X").kind, "deny");
+  assert.equal(kind("pnpm secrets:import --list"), "allow");
+  assert.equal(kind("pnpm secrets:import --dry-run STACKRA_X"), "allow");
+});
+
 test("committed Infisical config stays readable", () => {
   assert.equal(kind("cat .infisical.yaml"), "allow");
   assert.equal(kind("cat .infisical.yaml"), "allow");

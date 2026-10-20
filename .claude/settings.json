@@ -86,6 +86,9 @@
       "Read(**/.secrets.local.*)",
       "Read(**/*.pem)",
       "Read(**/.dev.vars)",
+      "Read(~/Secrets-inbox/**)",
+      "Read(~/.stackra/secrets-confirm.key)",
+      "Edit(~/Secrets-inbox/**)",
       "Edit(**/.env)",
       "Edit(**/.env.*)",
       "Bash(infisical export*)",
@@ -166,7 +169,7 @@
         ]
       },
       {
-        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Read|Grep|Glob",
         "hooks": [
           {
             "type": "command",

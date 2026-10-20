@@ -55,6 +55,12 @@ const allowed = [
   'git commit -m "docs: never git push origin main"',
   "pnpm changeset",
   "cat > a.md <<'EOF'\nrm -rf x; printenv; echo hi > .env\nEOF",
+  // the secrets inbox: only the importer, which takes names and never prints a value
+  "pnpm secrets:import --list",
+  "pnpm secrets:import --dry-run STACKRA_REVIEWER_APP_ID",
+  "pnpm secrets:import STACKRA_X --env prod --path /ci --confirm abc-123",
+  'git commit -m "feat: import from ~/Secrets-inbox"',
+  "cat > doc.md <<'EOF'\ncat ~/Secrets-inbox/X\nEOF",
 ];
 const blocked = [
   "cat .env",
@@ -117,6 +123,18 @@ const blocked = [
   "rm --force --recursive /etc",
   "cd /tmp && rm -rf build",
   `rm -rf ${root}`,
+  // the secrets inbox, any reader, any spelling of home
+  "cat ~/Secrets-inbox/STACKRA_REVIEWER_PRIVATE_KEY.pem",
+  "head -c 10 $HOME/Secrets-inbox/X",
+  "grep -r BEGIN /Users/me/Secrets-inbox",
+  "cp ~/Secrets-inbox/X /tmp/x",
+  "mv ~/Secrets-inbox/X .",
+  "ls -la ~/Secrets-inbox",
+  "cd ~/Secrets-inbox && cat *",
+  "base64 < ~/secrets-inbox/X",
+  `node -e 'require("fs").readFileSync(process.env.HOME+"/Secrets-inbox/X")'`,
+  "cat ~/.stackra/secrets-confirm.key",
+  "pnpm secrets:import && cat ~/Secrets-inbox/X",
 ];
 
 for (const c of allowed) test(`allow: ${c}`, () => assert.equal(denied(c), false));
