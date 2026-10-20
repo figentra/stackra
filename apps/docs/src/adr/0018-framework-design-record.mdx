@@ -1,7 +1,12 @@
 ---
 title: "0018 — Framework design record"
-description: "Proposed · 2026-10-19"
+description: "Superseded by 0228 · 2026-10-20"
 ---
+
+<Note>
+  Superseded by [0228](/adr/0228-proposed-adrs-settled). Its one rule (decision 1) is restated
+  there. The reading list below is the record as it stood on 2026-10-19.
+</Note>
 
 ## Context
 
@@ -15,18 +20,18 @@ as accepted ADRs would describe packages that are not built, and a standard for 
    as its own ADR in the same change, and the package's `README.md` links to it.
 2. **Until then this page is a reading list**, not a rule. The topics, and where the earlier thinking lives:
 
-   | Topic                                                          | Origin                                              |
-   | -------------------------------------------------------------- | --------------------------------------------------- |
-   | `define*` factories and the DI boundary                        | basalt `adr/0037`, `0039`                           |
-   | Keyed bindings instead of a manager base class                 | basalt `adr/0038`                                   |
-   | Module definition, composition and the registry                | basalt `adr/0047`, `0048`                           |
-   | Console, pipeline and connector joining the framework tier     | basalt `adr/0051`, `0052`, `0053`                   |
-   | Configuration namespaces and templates                         | figentra `docs/adr/0020-config`                     |
-   | Instance modules, events, application layer                    | figentra `docs/adr/0017`, `0018`, `0021`            |
-   | Node entry for full-stack packages                             | figentra `docs/adr/0029`                            |
-   | i18n, query, router, transport, signals, devtools, logger      | figentra `docs/adr/0008` and the named ADRs         |
-   | Driver packages                                                | basalt `plans/driver-packages`                      |
-   | AI inside the application layer, not a fifth layer             | basalt `adr/0026`                                   |
+   | Topic                                                      | Origin                                      |
+   | ---------------------------------------------------------- | ------------------------------------------- |
+   | `define*` factories and the DI boundary                    | basalt `adr/0037`, `0039`                   |
+   | Keyed bindings instead of a manager base class             | basalt `adr/0038`                           |
+   | Module definition, composition and the registry            | basalt `adr/0047`, `0048`                   |
+   | Console, pipeline and connector joining the framework tier | basalt `adr/0051`, `0052`, `0053`           |
+   | Configuration namespaces and templates                     | figentra `docs/adr/0020-config`             |
+   | Instance modules, events, application layer                | figentra `docs/adr/0017`, `0018`, `0021`    |
+   | Node entry for full-stack packages                         | figentra `docs/adr/0029`                    |
+   | i18n, query, router, transport, signals, devtools, logger  | figentra `docs/adr/0008` and the named ADRs |
+   | Driver packages                                            | basalt `plans/driver-packages`              |
+   | AI inside the application layer, not a fifth layer         | basalt `adr/0026`                           |
 
 3. **Product compiler and definition-tier designs are out of scope** for Stackra.
 

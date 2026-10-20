@@ -67,12 +67,12 @@ Some pages in this tab describe a mechanism for a thing Stackra does not have ye
 
 Every workspace member carries exactly one tier tag in its `turbo.jsonc`. The tag matches its directory.
 
-| Tier | Directory | May depend on |
-| --- | --- | --- |
-| `tier:config` | `packages/tooling/*` | nothing workspace-local |
-| `tier:lib` | `packages/<category>/*` | `config`, other `lib` packages |
-| `tier:service` | `services/<name>` | `config`, `lib` |
-| `tier:app` | `apps/*` | `config`, `lib`. Talks to services over the wire only. |
+| Tier           | Directory               | May depend on                                          |
+| -------------- | ----------------------- | ------------------------------------------------------ |
+| `tier:config`  | `packages/tooling/*`    | nothing workspace-local                                |
+| `tier:lib`     | `packages/<category>/*` | `config`, other `lib` packages                         |
+| `tier:service` | `services/<name>`       | `config`, `lib`                                        |
+| `tier:app`     | `apps/*`                | `config`, `lib`. Talks to services over the wire only. |
 
 The direction is one way. A package never imports an app, a service, or `encore.dev`. An app never imports a service's code. A package never imports another package's `src/`: it uses the package's declared exports. See [ADR 0003](/adr/0003-tier-dependency-direction) and the [package standard](/standards/packages).
 
@@ -92,7 +92,7 @@ Pick the package category from the [structure guide](/guides/structure). Do not 
 
 ### Shared packages hold mechanisms, apps hold definitions
 
-A package never contains a product enumeration or literal: no brand name, locale list, project id, URL, tenant id or environment value. It exposes decorators, base classes and typed config contracts; there is no `define*()` API ([0094](/adr/0094-decorators-only-authoring)). The definitions (decorated classes and config objects) live in the app or service that owns them. A convenience value such as a default locale list is fine. A closed union type of product names is not.
+A package never contains a product enumeration or literal: no brand name, locale list, project id, URL, tenant id or environment value. It exposes decorators, base classes and typed config contracts; there is no `define*()` API for behaviour ([0094](/adr/0094-decorators-only-authoring)). Tokens and typed config are `define*` values, the one carve-out ([0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned)). The definitions (decorated classes and config objects) live in the app or service that owns them. A convenience value such as a default locale list is fine. A closed union type of product names is not.
 
 A package never reads `process.env`. Configuration reaches it as an argument or a typed config object that the app builds.
 
@@ -104,12 +104,12 @@ Services are independent workspace members: `services/<name>` is `@figentra/serv
 
 A service owns its API, its database, its schema and migrations, its events, its tests, a `README.md` and an `AGENTS.md` with a PII table. No other service reads that database or imports that service's internals.
 
-| Need | Do |
-| --- | --- |
-| Read another service's data | Call its API, or subscribe to its events and keep a small local read model. |
-| Change another service's data | Call its API inside the caller's flow. If it can be eventually consistent, publish a versioned event and let the owner react. |
-| Share a type | Put it in the producer's types-only `./contracts` entry, or in `@stackra/contracts` for a shared primitive ([0117](/adr/0117-contracts-placement-and-decorator-ownership)). |
-| Atomic change across two services | Not allowed. Order the steps so a partial failure is safe and reconcilable. |
+| Need                              | Do                                                                                                                                                                          |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Read another service's data       | Call its API, or subscribe to its events and keep a small local read model.                                                                                                 |
+| Change another service's data     | Call its API inside the caller's flow. If it can be eventually consistent, publish a versioned event and let the owner react.                                               |
+| Share a type                      | Put it in the producer's types-only `./contracts` entry, or in `@stackra/contracts` for a shared primitive ([0117](/adr/0117-contracts-placement-and-decorator-ownership)). |
+| Atomic change across two services | Not allowed. Order the steps so a partial failure is safe and reconcilable.                                                                                                 |
 
 **Enforcement: partial.** The validator checks the service-unit files. Cross-service import and database-read rules are planned with the first service that has a database.
 
@@ -126,24 +126,25 @@ Do not introduce a technology on the rejected or deferred list "to be helpful". 
 ### History
 
 - 2026-10-20, [0125](/adr/0125-constitution-amended-to-match-accepted-adrs): factories became decorators ([0094](/adr/0094-decorators-only-authoring)); contract packages became `./contracts` entries and `@stackra/contracts` ([0117](/adr/0117-contracts-placement-and-decorator-ownership)).
+- 2026-10-20, [0229](/adr/0229-constitution-amended-for-the-2026-10-20-decisions): tokens and typed config are `define*` values ([0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned)).
 
 ## Delegation
 
 This is the law for any session that hands work to another agent. Rule numbers are stable, so other documents may cite them. Claude leads and decides. Work is delegated to Claude models, or to OpenCode (Kimi K3) executors only where `.agents/routing.yaml` routes it, for the steward and executor tiers; reviewers, guardians and the lead never run on OpenCode ([ADR 0066](/adr/0066-delegation-to-opencode-by-routing-matrix), [ADR 0121](/adr/0121-sdlc-tooling-roles-and-linear)). No other model, external agent loop or runner. The reasoning is in [ADR 0017](/adr/0017-agent-roster-and-models).
 
-| # | Rule | Enforcement |
-| --- | --- | --- |
-| D1 | **Claude decides, executors execute.** ADRs, specs, anything that adds a workspace member, a dependency or a catalog entry, docs, tooling and `pnpm-workspace.yaml` are the deciding session's. Spec tasks whose design names every file, audits, codemods and steward passes may be delegated. | **Planned.** Roster and per-agent tool lists ([roster](/agents/roster)). |
-| D2 | **No brief, no run.** A delegated task has a brief with every section filled. A brief that leaves a decision open goes back to the spec. Paths are absolute, commands one per line. | By review. |
-| D3 | **One task, one agent per package.** Two parallel agents never edit the same package. The one that needs a shared interface owns the change. | **Planned.** See [concurrent sessions](/agents/concurrent-sessions). |
-| D4 | **Executors never write git.** No `add`, `commit`, `push`, `stash`, `reset`, `checkout`, `restore`, `clean`. The dispatcher stages explicit paths and commits. The lead (Claude) pushes, opens pull requests and merges them only through the merge gate; the owner merges the release (version) pull request and promotes to production ([0119](/adr/0119-merge-policy-and-release-authority)). | **Partial.** `.agents/hooks/guard-bash.mjs` denies destructive git commands, force-push and manual release tags. A blanket write-git denial for subagents is planned. |
-| D5 | **Caps.** At most five agents run at once in a wave. The machine is shared with other sessions. | By review. |
-| D6 | **Review by report and gates.** The dispatcher checks the report against the repo, runs `pnpm verify` itself, and compares the diff to the brief's "may touch" and "must not touch" lists. Out-of-brief files are removed. A report that claims green without a verify tail is treated as red. | **Enforced** for the gate: `pnpm verify`. The rest is review. |
-| D7 | **Sentinels never look like credentials.** Test values are `sentinel-<topic>-never-printed`. If a test needs a realistic credential shape, assemble it from fragments at runtime. | **Enforced.** gitleaks at pre-commit. |
-| D8 | **Do not split a cross-package task into broken halves.** A change to a shared interface is one task. | By review. |
-| D9 | **A brief fits one run.** About one package and fifteen files. A larger change is split by layer into briefs that run one after another, each with its own verify. | By review. |
-| D10 | **An executor never stops to ask.** Ambiguity is resolved from the design sections the brief names and recorded under "Deviations". | By review. |
-| D11 | **Check the report against the repo.** A blocked task usually means the brief omitted something. Find the gap rather than retrying into the same wall. | By review. |
+| #   | Rule                                                                                                                                                                                                                                                                                                                                                                                             | Enforcement                                                                                                                                                           |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | **Claude decides, executors execute.** ADRs, specs, anything that adds a workspace member, a dependency or a catalog entry, docs, tooling and `pnpm-workspace.yaml` are the deciding session's. Spec tasks whose design names every file, audits, codemods and steward passes may be delegated.                                                                                                  | **Planned.** Roster and per-agent tool lists ([roster](/agents/roster)).                                                                                              |
+| D2  | **No brief, no run.** A delegated task has a brief with every section filled. A brief that leaves a decision open goes back to the spec. Paths are absolute, commands one per line.                                                                                                                                                                                                              | By review.                                                                                                                                                            |
+| D3  | **One task, one agent per package.** Two parallel agents never edit the same package. The one that needs a shared interface owns the change.                                                                                                                                                                                                                                                     | **Planned.** See [concurrent sessions](/agents/concurrent-sessions).                                                                                                  |
+| D4  | **Executors never write git.** No `add`, `commit`, `push`, `stash`, `reset`, `checkout`, `restore`, `clean`. The dispatcher stages explicit paths and commits. The lead (Claude) pushes, opens pull requests and merges them only through the merge gate; the owner merges the release (version) pull request and promotes to production ([0119](/adr/0119-merge-policy-and-release-authority)). | **Partial.** `.agents/hooks/guard-bash.mjs` denies destructive git commands, force-push and manual release tags. A blanket write-git denial for subagents is planned. |
+| D5  | **Caps.** At most five agents run at once in a wave. The machine is shared with other sessions.                                                                                                                                                                                                                                                                                                  | By review.                                                                                                                                                            |
+| D6  | **Review by report and gates.** The dispatcher checks the report against the repo, runs `pnpm verify` itself, and compares the diff to the brief's "may touch" and "must not touch" lists. Out-of-brief files are removed. A report that claims green without a verify tail is treated as red.                                                                                                   | **Enforced** for the gate: `pnpm verify`. The rest is review.                                                                                                         |
+| D7  | **Sentinels never look like credentials.** Test values are `sentinel-<topic>-never-printed`. If a test needs a realistic credential shape, assemble it from fragments at runtime.                                                                                                                                                                                                                | **Enforced.** gitleaks at pre-commit.                                                                                                                                 |
+| D8  | **Do not split a cross-package task into broken halves.** A change to a shared interface is one task.                                                                                                                                                                                                                                                                                            | By review.                                                                                                                                                            |
+| D9  | **A brief fits one run.** About one package and fifteen files. A larger change is split by layer into briefs that run one after another, each with its own verify.                                                                                                                                                                                                                               | By review.                                                                                                                                                            |
+| D10 | **An executor never stops to ask.** Ambiguity is resolved from the design sections the brief names and recorded under "Deviations".                                                                                                                                                                                                                                                              | By review.                                                                                                                                                            |
+| D11 | **Check the report against the repo.** A blocked task usually means the brief omitted something. Find the gap rather than retrying into the same wall.                                                                                                                                                                                                                                           | By review.                                                                                                                                                            |
 
 ### Brief template
 
@@ -152,65 +153,79 @@ Copy this for every delegated task.
 ```md
 # Brief: <slug>
 
-| Agent       | <agent name>                                 |
-| Spec / task | .agents/specs/sta-<n>-<slug> · task <id>     |
-| Date        | <YYYY-MM-DD>                                 |
+| Agent | <agent name> |
+| Spec / task | .agents/specs/sta-<n>-<slug> · task <id> |
+| Date | <YYYY-MM-DD> |
 
 ## Goal
+
 One sentence. What exists when this run is done.
 
 ## Read first (absolute paths, in this order)
+
 - /abs/path/AGENTS.md
 - …
 
 ## Files you may touch
+
 - packages/<category>/<pkg>/src/… (folders or files; nothing else)
 
 ## Files you must not touch
+
 - pnpm-workspace.yaml, pnpm-lock.yaml, knip.jsonc, apps/docs/**, packages/tooling/**, every other package.
 
 ## Steps
+
 1. …
 
 ## Standards (copy; do not shorten)
+
 The rules from the standards pages that apply to these files. Never run a git command that writes.
 One pnpm command at a time.
 
 ## Verify (one at a time, all must exit 0)
+
 - pnpm --filter <package> lint
 - pnpm --filter <package> typecheck
 - pnpm --filter <package> test
 - pnpm validate
 
 ## Report
+
 Files added, changed, deleted. Test count before and after. The tail of each verify command.
 Deviations from the spec with the reason. Anything not done, with the exact reason.
 ```
 
-The deciding session does not read large files or run builds itself when a brief can describe the work. It spends its context on decisions, brief approval, diff review and commits.
+  The deciding session does not read large files or run builds itself when a brief can describe the
+  work. It spends its context on decisions, brief approval, diff review and commits.
 
 ### History
 
 - 2026-10-20, [0125](/adr/0125-constitution-amended-to-match-accepted-adrs): D4 follows [0119](/adr/0119-merge-policy-and-release-authority) (Claude pushes and merges through the gate; the owner releases); the brief names specs by [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk) folders. Delegation to OpenCode per [0121](/adr/0121-sdlc-tooling-roles-and-linear) was already in the preamble.
+- 2026-10-20, [0229](/adr/0229-constitution-amended-for-the-2026-10-20-decisions): model policy follows [0193](/adr/0193-agents-and-model-policy); the economy, standard and frontier tiers are replaced.
 
 ## HTTP and events
 
-Stackra has no HTTP service yet. Encore is the generated runtime target ([0091](/adr/0091-generated-encore-app-in-stackra-folder), [0124](/adr/0124-encore-is-the-generated-runtime-target)); services hold no Encore files. The examples use Encore's `api()` because that is the chosen shape. The rules hold for any framework.
+Stackra has no HTTP service yet. Encore is the generated runtime target
+  ([0091](/adr/0091-generated-encore-app-in-stackra-folder),
+  [0124](/adr/0124-encore-is-the-generated-runtime-target)); services hold no Encore files. The
+  examples use Encore's `api()` because that is the chosen shape. The rules hold for any framework.
 
 ### HTTP
 
-| Rule | Detail |
-| --- | --- |
+| Rule                     | Detail                                                                                                                                                                                                                                                                                                                            |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | One action per operation | Every operation is one action (`@Action` or `@Query`) with typed input and output classes, exposed by an adapter such as `@AsEndpoint`; `stackra gen` emits the `api()` ([0098](/adr/0098-actions-are-the-unit), [0091](/adr/0091-generated-encore-app-in-stackra-folder)). No `any`, no `Record<string, unknown>` at a boundary. |
-| Authenticated by default | `auth: true`. An exposed endpoint without auth is a public surface and carries a comment saying why. Webhooks use a raw endpoint with signature verification. |
-| Verbs follow idempotency | `POST` creates (a second call creates again). `PUT` is an idempotent state transition (`/archive`, `/activate`). `PATCH` is a partial update. `DELETE` only where a row is truly removed. Archive instead. |
-| Cursor lists | `cursor` and `limit` (at most 100). Sorting and filtering use explicit allow-lists. Never pass column names through. |
-| Prefixed public ids | Ids at the boundary look like `tea_01JQ…`. The handler rejects a mismatched prefix before any query. Internal UUIDs never appear in URLs or responses. The `PublicId` type and the prefix registry live in `@stackra/contracts` ([0117](/adr/0117-contracts-placement-and-decorator-ownership)). |
-| Typed errors | Throw `invalidArgument`, `notFound`, `permissionDenied` or `failedPrecondition` with a stable message. Never a bare `Error`. A cross-tenant miss is `notFound`. |
-| Idempotency keys | Every write carries an `Idempotency-Key` header. The service dedupes for 24 hours per tenant. Money-like writes keep their own durable idempotency table and run in one transaction with an audit event. |
-| Validation | Boundary validation comes from `@stackra/validation` decorators on the input class, compiled to one Zod schema; Zod is the only validation engine ([0095](/adr/0095-zod-inside-field-decorators)). Business invariants live in the service layer, not the handler. |
-| Streaming | Use streaming endpoints for realtime. Fan out through pub/sub, because a socket only knows its own instance. |
-| Generated client | Frontends consume a generated client. It is regenerated, never hand-edited. |
+| Authenticated by default | `auth: true`, set from the action's `auth` option and its area ([0135](/adr/0135-public-id-format)). An exposed endpoint without auth is a public surface and carries a comment saying why. Webhooks use a raw endpoint with signature verification.                                                                              |
+| Error envelope           | Errors use the envelope and the kinds of [0140](/adr/0140-error-envelope-and-error-kinds).                                                                                                                                                                                                                                        |
+| Verbs follow idempotency | `POST` creates (a second call creates again). `PUT` is an idempotent state transition (`/archive`, `/activate`). `PATCH` is a partial update. `DELETE` only where a row is truly removed. Archive instead.                                                                                                                        |
+| Cursor lists             | `cursor` and `limit` (at most 100). Sorting and filtering use explicit allow-lists. Never pass column names through.                                                                                                                                                                                                              |
+| Prefixed public ids      | Ids at the boundary look like `tea_01JQ…`. The handler rejects a mismatched prefix before any query. Internal UUIDs never appear in URLs or responses. The `PublicId` type and the prefix registry live in `@stackra/contracts` ([0117](/adr/0117-contracts-placement-and-decorator-ownership)).                                  |
+| Typed errors             | Throw `invalidArgument`, `notFound`, `permissionDenied` or `failedPrecondition` with a stable message. Never a bare `Error`. A cross-tenant miss is `notFound`.                                                                                                                                                                   |
+| Idempotency keys         | Every write carries an `Idempotency-Key` header. The service dedupes for 24 hours per tenant. Money-like writes keep their own durable idempotency table and run in one transaction with an audit event.                                                                                                                          |
+| Validation               | Boundary validation comes from `@stackra/validation` decorators on the input class, compiled to one Zod schema; Zod is the only validation engine ([0095](/adr/0095-zod-inside-field-decorators)). Business invariants live in the service layer, not the handler.                                                                |
+| Streaming                | Use streaming endpoints for realtime. Fan out through pub/sub, because a socket only knows its own instance.                                                                                                                                                                                                                      |
+| Generated client         | Frontends consume a generated client. It is regenerated, never hand-edited.                                                                                                                                                                                                                                                       |
 
 What gen emits for one `@Query` action (illustrative; never hand-written in a service):
 
@@ -231,13 +246,13 @@ export const list = api(
 
 Events are facts, not commands. A service publishes one when it needs another to react and does not need an answer now.
 
-| Rule | Detail |
-| --- | --- |
-| Event first | Cross-service communication is a versioned event unless the caller needs an authoritative decision immediately. Then a typed client call, and only on the allowed list in the [service standard](/standards/services). |
-| Event names | Domain events stay in-process and are not versioned. Integration events cross a service boundary and are versioned by name: `<aggregate>.<verb>.v<n>`, for example `user.created.v1` ([0078](/adr/0078-messaging-layer-eight-packages)). Whether a service prefix is added is open (gap C27). |
-| Versioning | A breaking payload change bumps the version. The old topic stays alive for the compatibility window named in an ADR. |
-| Delivery | Producers write through a transactional outbox. Consumers are idempotent: an inbox keyed by event `id`. |
-| Subscribing | A subscriber declares `@OnEvent` on the event name and imports only the producer's `./contracts` shape. It never imports another service's `Topic` or source; `stackra gen` emits the `Topic` and `Subscription` ([0078](/adr/0078-messaging-layer-eight-packages), [0091](/adr/0091-generated-encore-app-in-stackra-folder)). |
+| Rule        | Detail                                                                                                                                                                                                                                                                                                                           |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Event first | Cross-service communication is a versioned event unless the caller needs an authoritative decision immediately. Then a typed client call, and only on the allowed list in the [service standard](/standards/services).                                                                                                           |
+| Event names | Domain events stay in-process and are not versioned. Integration events cross a service boundary and are versioned by name: `<aggregate>.<verb>.v<n>`, for example `user.created.v1` ([0078](/adr/0078-messaging-layer-eight-packages)). Names carry no service prefix ([0141](/adr/0141-integration-event-names-and-envelope)). |
+| Versioning  | A breaking payload change bumps the version. The old topic stays alive for the compatibility window named in an ADR.                                                                                                                                                                                                             |
+| Delivery    | Producers write through a transactional outbox. Consumers are idempotent: an inbox keyed by event `id`.                                                                                                                                                                                                                          |
+| Subscribing | A subscriber declares `@OnEvent` on the event name and imports only the producer's `./contracts` shape. It never imports another service's `Topic` or source; `stackra gen` emits the `Topic` and `Subscription` ([0078](/adr/0078-messaging-layer-eight-packages), [0091](/adr/0091-generated-encore-app-in-stackra-folder)).   |
 
 Envelope, defined once as `EventEnvelope` in `@stackra/contracts`. The `actor` is the action pipeline's `Actor` with its full `onBehalfOf` chain ([0098](/adr/0098-actions-are-the-unit)):
 
@@ -269,46 +284,48 @@ Envelope, defined once as `EventEnvelope` in `@stackra/contracts`. The `actor` i
 ### History
 
 - 2026-10-20, [0125](/adr/0125-constitution-amended-to-match-accepted-adrs): operations are actions ([0098](/adr/0098-actions-are-the-unit)); validation is `@stackra/validation` on Zod ([0095](/adr/0095-zod-inside-field-decorators)); integration event names and subscriptions follow [0078](/adr/0078-messaging-layer-eight-packages) and [0091](/adr/0091-generated-encore-app-in-stackra-folder); the envelope actor is the 0098 actor model; contracts follow [0117](/adr/0117-contracts-placement-and-decorator-ownership).
+- 2026-10-20, [0229](/adr/0229-constitution-amended-for-the-2026-10-20-decisions): event names are unprefixed ([0141](/adr/0141-integration-event-names-and-envelope)); the auth flag comes from the action ([0135](/adr/0135-public-id-format)); errors follow [0140](/adr/0140-error-envelope-and-error-kinds).
 
 ## Secrets
 
 ### Two kinds, two mechanisms
 
-| Kind | Where the value lives | Who sets it | How code reads it |
-| --- | --- | --- | --- |
-| **Application secret** (payment keys, OAuth client secrets, webhook signing secrets, provider API keys) | The runtime's secret store, per environment | A human | By name at runtime through the runtime's binding, for example `secret("NAME")` once Encore lands. Never from a file. |
-| **Developer or CI token** (MCP server tokens, CI vendor tokens) | The Infisical vault. `/agents` for developer tokens, `/ci` for CI. Nowhere else. | A human, in Infisical | Developers: `tools/scripts/mcp.sh` injects a token for the server process. CI: OIDC login, then `infisical run` for one step. |
+| Kind                                                                                                    | Where the value lives                                                            | Who sets it           | How code reads it                                                                                                             |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Application secret** (payment keys, OAuth client secrets, webhook signing secrets, provider API keys) | The runtime's secret store, per environment                                      | A human               | By name at runtime through the runtime's binding, for example `secret("NAME")` once Encore lands. Never from a file.          |
+| **Developer or CI token** (MCP server tokens, CI vendor tokens)                                         | The Infisical vault. `/agents` for developer tokens, `/ci` for CI. Nowhere else. | A human, in Infisical | Developers: `tools/scripts/mcp.sh` injects a token for the server process. CI: OIDC login, then `infisical run` for one step. |
 
-There is no third mechanism. There is no `.env` file, no `.env.example`, and no second vault. A local override for development goes in a gitignored file that holds no value anyone else needs. Rationale: [ADR 0009](/adr/0009-secrets-two-mechanisms). Procedures: [secrets runbook](/runbooks/secrets).
+There is no third mechanism. There is no `.env` file, no `.env.example`, and no second vault. A local override for development goes in a gitignored file that holds no value anyone else needs. Production secrets come from Infisical, and runway syncs them into the runtime store ([0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets)). Rationale: [ADR 0009](/adr/0009-secrets-two-mechanisms). Procedures: [secrets runbook](/runbooks/secrets).
 
-Stackra has no deployed runtime yet, so only the developer-token mechanism and the repository checks are live. The application-secret rules apply from the first service that declares a secret.
+  Stackra has no deployed runtime yet, so only the developer-token mechanism and the repository
+  checks are live. The application-secret rules apply from the first service that declares a secret.
 
 ### What an agent may do
 
-| An agent may | An agent may not |
-| --- | --- |
-| Declare `secret("NAME")` in code and name the key and its purpose in its report. | Set, rotate or delete a value. |
-| Reference a developer token in `.mcp.json` as a bare `$KEY`. Not `${KEY}`: Claude Code expands that form itself and disables the server when the variable is unset. | Read a value, in any form, into the transcript. |
-| Run `tools/scripts/secrets-doctor.mjs` once it exists. It reports names only. | Write a value into a file, test, fixture, log, comment, commit message or chat message. |
-| Use sentinel test values such as `sentinel-<topic>-never-printed`. | Add a `.env` file, a second vault, or a sync into the code host. |
+| An agent may                                                                                                                                                        | An agent may not                                                                        |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Declare `secret("NAME")` in code and name the key and its purpose in its report.                                                                                    | Set, rotate or delete a value.                                                          |
+| Reference a developer token in `.mcp.json` as a bare `$KEY`. Not `${KEY}`: Claude Code expands that form itself and disables the server when the variable is unset. | Read a value, in any form, into the transcript.                                         |
+| Run `tools/scripts/secrets-doctor.mjs` once it exists. It reports names only.                                                                                       | Write a value into a file, test, fixture, log, comment, commit message or chat message. |
+| Use sentinel test values such as `sentinel-<topic>-never-printed`.                                                                                                  | Add a `.env` file, a second vault, or a sync into the code host.                        |
 
 ### Articles
 
 Each article names the check that enforces it.
 
-| # | Article | Enforcement |
-| --- | --- | --- |
-| S1 | No secret value in any file in git: source, test, fixture, doc, comment, workflow, lockfile. | **Enforced.** gitleaks (`.gitleaks.toml`) at pre-commit through lefthook and `pnpm secrets:scan`. CI scan arrives with [ADR 0012](/adr/0012-code-host-and-ci). |
-| S2 | Manifests and config carry names only. | **Planned.** Covered by S1 today; a name-pattern check comes with the first manifest that lists secrets. |
-| S3 | No static credential stored in the code host. Vendor tokens come from Infisical through OIDC. | **Planned.** A CI workflow allowlist check (`secrets-workflow-allowlist`) lands with the CI pipeline. |
-| S4 | CI authenticates by OIDC only, with one machine identity per environment. Pull-request jobs can never read production. | **Planned.** A `vault-oidc` composite step plus an OIDC-permissions check, built with the CI pipeline. |
-| S5 | A secret is process environment for one step. Never written to a CI env or output file, an artifact, a cache, a log or a comment. | **Partial.** `infisical login --silent` in the steps; the agent hook denies `printenv`. The CI write check is planned. |
-| S6 | No `.env`, no `.env.example`, no second vault in any repository. | **Planned.** `secrets-no-dotenv` check in the validator. The agent hook already denies reading `.env` and `.dev.vars`. |
-| S7 | An agent never reads a secret value. Agents see names, never values. | **Partial.** `.agents/hooks/guard-bash.mjs` denies `.env`/`.dev.vars` reads, `printenv` and bare `env`, `encore secret set`, and `wrangler secret put`. It does **not** yet deny `infisical export`, `infisical secrets get` without `--silent`, or `encore secret get`. Adding those rules, with a hook test, is planned. Until then an agent must never run them. |
-| S8 | Setting, rotating and deleting a value is a human act, in the vault or store. Production changes need a second person once a second maintainer exists. | **Planned.** Vault configuration; CODEOWNERS now. |
-| S9 | A test needs zero secrets. `verify` and every test run with no credential. A test that needs a real one is a design finding. | **Partial.** `pnpm verify` takes no secret. gitleaks scans fixtures. |
-| S10 | Test values that look like credentials are built at runtime from fragments, so the scanner sees nothing in the diff. | **Enforced** by S1: gitleaks blocks anything else. |
-| S11 | The image never bakes a value. | **Planned**, with the first deployable image. |
+| #   | Article                                                                                                                                                | Enforcement                                                                                                                                                                                                                                                                                                                                                         |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S1  | No secret value in any file in git: source, test, fixture, doc, comment, workflow, lockfile.                                                           | **Enforced.** gitleaks (`.gitleaks.toml`) at pre-commit through lefthook and `pnpm secrets:scan`. CI scan arrives with [ADR 0012](/adr/0012-code-host-and-ci).                                                                                                                                                                                                      |
+| S2  | Manifests and config carry names only.                                                                                                                 | **Planned.** Covered by S1 today; a name-pattern check comes with the first manifest that lists secrets.                                                                                                                                                                                                                                                            |
+| S3  | No static credential stored in the code host. Vendor tokens come from Infisical through OIDC.                                                          | **Planned.** A CI workflow allowlist check (`secrets-workflow-allowlist`) lands with the CI pipeline.                                                                                                                                                                                                                                                               |
+| S4  | CI authenticates by OIDC only, with one machine identity per environment. Pull-request jobs can never read production.                                 | **Planned.** A `vault-oidc` composite step plus an OIDC-permissions check, built with the CI pipeline.                                                                                                                                                                                                                                                              |
+| S5  | A secret is process environment for one step. Never written to a CI env or output file, an artifact, a cache, a log or a comment.                      | **Partial.** `infisical login --silent` in the steps; the agent hook denies `printenv`. The CI write check is planned.                                                                                                                                                                                                                                              |
+| S6  | No `.env`, no `.env.example`, no second vault in any repository.                                                                                       | **Planned.** `secrets-no-dotenv` check in the validator. The agent hook already denies reading `.env` and `.dev.vars`.                                                                                                                                                                                                                                              |
+| S7  | An agent never reads a secret value. Agents see names, never values.                                                                                   | **Partial.** `.agents/hooks/guard-bash.mjs` denies `.env`/`.dev.vars` reads, `printenv` and bare `env`, `encore secret set`, and `wrangler secret put`. It does **not** yet deny `infisical export`, `infisical secrets get` without `--silent`, or `encore secret get`. Adding those rules, with a hook test, is planned. Until then an agent must never run them. |
+| S8  | Setting, rotating and deleting a value is a human act, in the vault or store. Production changes need a second person once a second maintainer exists. | **Planned.** Vault configuration; CODEOWNERS now.                                                                                                                                                                                                                                                                                                                   |
+| S9  | A test needs zero secrets. `verify` and every test run with no credential. A test that needs a real one is a design finding.                           | **Partial.** `pnpm verify` takes no secret. gitleaks scans fixtures.                                                                                                                                                                                                                                                                                                |
+| S10 | Test values that look like credentials are built at runtime from fragments, so the scanner sees nothing in the diff.                                   | **Enforced** by S1: gitleaks blocks anything else.                                                                                                                                                                                                                                                                                                                  |
+| S11 | The image never bakes a value.                                                                                                                         | **Planned**, with the first deployable image.                                                                                                                                                                                                                                                                                                                       |
 
 ### When a secret leaks
 
@@ -325,19 +342,22 @@ Each article names the check that enforces it.
 
 ## Security
 
-Stackra has no deployed service yet. These laws bind the first service that authenticates a user. Controls that need a service are marked planned.
+Stackra has no deployed service yet. These laws bind the first service that authenticates a user.
+  Controls that need a service are marked planned.
 
 ### Laws
 
-| # | Law | Enforcement |
-| --- | --- | --- |
-| SEC1 | **One authenticated principal per request.** A single auth handler resolves the caller once. Handlers read it from the request context, never from body, query or client headers. `auth: true` is the default. A public endpoint is a documented exception (health, signed webhooks, public content). | **Planned.** Lint rule for undocumented `expose` without auth, with the first service API ([HTTP and events](/constitution/http-and-events)). |
-| SEC2 | **Authorization is server-side**, on every command and query. A client may hide what a user cannot do. It never decides. | **Planned.** Reviewed by the security-tenancy reviewer until a policy engine exists. |
-| SEC3 | **Every state change emits an audit record**: actor, tenant, target, before and after references, correlation id. Every action's pipeline ends in an audit step, and the record carries the full `Actor` with its `onBehalfOf` chain, so an agent action names the agent and the human it acted for ([0098](/adr/0098-actions-are-the-unit)). | **Planned.** The pipeline-order test of 0098. |
-| SEC4 | **Every data field has a classification**: `internal`, `confidential` or `pii`. PII is redacted from logs, events and errors. Each member's `AGENTS.md` carries a PII table, even if it says "none". | **Partial.** The validator checks that the PII table exists. Redaction is checked by review. |
-| SEC5 | **Rate limits** on public and AI endpoints. **Budgets** on AI usage per tenant. | **Planned.** |
-| SEC6 | **Supply chain is pinned.** Versions come only from catalogs. Lifecycle scripts are allow-listed. Cache artifacts are signed. Secrets are scanned on every commit. | **Partial.** Catalog check and strict mode in the validator, signed Turborepo cache in `turbo.jsonc`, gitleaks at pre-commit. CodeQL, workflow linting and dependency review arrive with CI ([ADR 0012](/adr/0012-code-host-and-ci)). |
-| SEC7 | **Encryption** in transit everywhere. At rest through the provider. Application secrets only through the secret store ([Secrets](/constitution/secrets)). | **Planned.** |
+| #    | Law                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Enforcement                                                                                                                                                                                                                           |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SEC1 | **One authenticated principal per request.** A single auth handler resolves the caller once. Handlers read it from the request context, never from body, query or client headers. `auth: true` is the default. A public endpoint is a documented exception (health, signed webhooks, public content).                                                                                                                                                                                                           | **Planned.** Lint rule for undocumented `expose` without auth, with the first service API ([HTTP and events](/constitution/http-and-events)).                                                                                         |
+| SEC2 | **Authorization is server-side**, on every command and query. A client may hide what a user cannot do. It never decides.                                                                                                                                                                                                                                                                                                                                                                                        | **Planned.** Reviewed by the security-tenancy reviewer until a policy engine exists.                                                                                                                                                  |
+| SEC3 | **Every state change emits an audit record**: actor, tenant, target, before and after references, correlation id. Every action's pipeline ends in an audit step, and the record carries the full `Actor` with its `onBehalfOf` chain, so an agent action names the agent and the human it acted for ([0098](/adr/0098-actions-are-the-unit)).                                                                                                                                                                   | **Planned.** The pipeline-order test of 0098.                                                                                                                                                                                         |
+| SEC4 | **Every data field has a classification**: `internal`, `confidential` or `pii`. PII is redacted from logs, events and errors. Each member's `AGENTS.md` carries a PII table, even if it says "none".                                                                                                                                                                                                                                                                                                            | **Partial.** The validator checks that the PII table exists. Redaction is checked by review.                                                                                                                                          |
+| SEC5 | **Rate limits** on public and AI endpoints. **Budgets** on AI usage per tenant.                                                                                                                                                                                                                                                                                                                                                                                                                                 | **Planned.**                                                                                                                                                                                                                          |
+| SEC6 | **Supply chain is pinned.** Versions come only from catalogs. Lifecycle scripts are allow-listed. Cache artifacts are signed. Secrets are scanned on every commit.                                                                                                                                                                                                                                                                                                                                              | **Partial.** Catalog check and strict mode in the validator, signed Turborepo cache in `turbo.jsonc`, gitleaks at pre-commit. CodeQL, workflow linting and dependency review arrive with CI ([ADR 0012](/adr/0012-code-host-and-ci)). |
+| SEC7 | **Encryption** in transit everywhere. At rest through the provider. Application secrets only through the secret store ([Secrets](/constitution/secrets)).                                                                                                                                                                                                                                                                                                                                                       | **Planned.**                                                                                                                                                                                                                          |
+| SEC8 | **One identity provider.** ZITADEL is the identity provider for every product and for Figentra OS. Identity code is provider-neutral ([0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)). A level L3 or L4 action needs a step-up, and the refusal is `step_up_required` ([0207](/adr/0207-authentication-assurance-and-machine-identities)). Operator access to production is break-glass only ([0188](/adr/0188-operator-access-and-the-encryption-key-hierarchy)). | **Planned.** The provider test in `@stackra/identity`, and the step-up test in the action pipeline.                                                                                                                                   |
+| SEC9 | **The pipeline order is fixed.** Apps toggle and parameterise gates; they never reorder them ([0138](/adr/0138-pipeline-order-is-fixed)). Every action is audited through the action runtime contract ([0136](/adr/0136-action-runtime-contract)) and the audit policy ([0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention)).                                                                                                                                                                 | **Planned.** The pipeline-order test of 0138.                                                                                                                                                                                         |
 
 ### Effective permission
 
@@ -360,15 +380,16 @@ effective(principal, tenant, activeScope) =
 
 Each service that handles user data keeps a `docs/threat-model.md` in its member folder with three tables. A row with no control is a backlog item, not a gap to forget.
 
-| Section | Columns |
-| --- | --- |
-| Assets | asset, where it lives, class (`internal`, `confidential`, `pii`, `secret`) |
-| Trust boundaries | numbered list: client to gateway, service to service, service to database, any third party |
-| Threats and controls | threat, control today, open work |
+| Section              | Columns                                                                                    |
+| -------------------- | ------------------------------------------------------------------------------------------ |
+| Assets               | asset, where it lives, class (`internal`, `confidential`, `pii`, `secret`)                 |
+| Trust boundaries     | numbered list: client to gateway, service to service, service to database, any third party |
+| Threats and controls | threat, control today, open work                                                           |
 
 ### History
 
 - 2026-10-20, [0125](/adr/0125-constitution-amended-to-match-accepted-adrs): SEC3 audit runs in the action pipeline with the 0098 actor chain; the scope step of the effective-permission formula applies only with the Pro scope driver.
+- 2026-10-20, [0229](/adr/0229-constitution-amended-for-the-2026-10-20-decisions): ZITADEL, step-up, break-glass and the fixed pipeline became SEC8 and SEC9 ([0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral), [0207](/adr/0207-authentication-assurance-and-machine-identities), [0188](/adr/0188-operator-access-and-the-encryption-key-hierarchy), [0138](/adr/0138-pipeline-order-is-fixed)).
 
 ## Tenancy
 
@@ -420,3 +441,4 @@ Every service with tenant-owned tables ships an isolation test that proves:
 ### History
 
 - 2026-10-20, [0125](/adr/0125-constitution-amended-to-match-accepted-adrs): the scope tree moved out of the base law into a Pro section ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope), owner decisions S2, S3, S12).
+- 2026-10-20, [0229](/adr/0229-constitution-amended-for-the-2026-10-20-decisions): the tenant tree and IAM scope re-enter the base law, with deep trees as a plan entitlement ([0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names), [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region), [0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan)).
