@@ -176,7 +176,7 @@ export function checkService({ pkg, paths }) {
     out.push('package.json has no "stackra": { "module": "./src/<name>.module.ts" } (ADR 0090)');
   else if (!paths.includes(module.replace(/^\.\//, "")))
     out.push(`package.json stackra.module ${module} does not exist`);
-  for (const p of paths.filter((p) => ENCORE_FILE.test(p)))
+  for (const p of paths.filter((f) => ENCORE_FILE.test(f)))
     out.push(`${p}: services hold no Encore files; stackra gen generates them (ADR 0124)`);
   return out;
 }
