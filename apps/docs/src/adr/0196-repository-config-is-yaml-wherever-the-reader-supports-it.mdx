@@ -1,0 +1,33 @@
+---
+title: "0196 — Repository config is YAML wherever the reader supports it"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0001](/adr/0001-monorepo-layout): the config format rule below applies to every repository
+  file.
+</Note>
+
+## Context
+
+Repository config was a mix of JSON, JSONC and YAML. The owner decided on 2026-10-20 (PR #30, STA-147; mem L363–366) to use YAML wherever the tool reads it, keep JSONC only where the tool has no YAML support, and drop `.infisical.json`.
+
+## Decision
+
+1. **YAML first.** Repository config is YAML wherever the reader supports YAML.
+2. **Converted.** `models.yaml` and `.mcp.yaml` (which renders `.mcp.json`) are YAML. `.infisical.json` is dropped; `.infisical.yaml` is the real CLI file.
+3. **JSONC where YAML is unsupported.** turbo, oxlint, oxfmt, knip and opencode stay JSONC. They are listed in `MUST_STAY_JSONC`.
+4. **Strict JSON only where comments are impossible.** Those files are listed in `MUST_STAY_JSON`.
+
+## Consequences
+
+- An agent reads one format for each file type, and the validator names the exceptions.
+- `runbooks/secrets.mdx` no longer mentions `.infisical.json` (final pass).
+
+## Enforcement
+
+planned — `pnpm validate` checks the exception lists against each file's extension.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0001](/adr/0001-monorepo-layout). Sources: owner decision (`stackra-decisions-2026-10-19.md` L363–366, 2026-10-20; PR #30 / STA-147).

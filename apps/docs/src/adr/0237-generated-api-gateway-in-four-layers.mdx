@@ -1,0 +1,37 @@
+---
+title: "0237 — The API gateway is generated, in four layers, with no gateway service"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0082](/adr/0082-public-ids-and-api-areas) and
+  [0118](/adr/0118-api-versioning-dormant-package). The gate chain it uses is
+  [0138](/adr/0138-pipeline-order-is-fixed). The rejection of a separate gateway product in
+  [0011](/adr/0011-rejected-and-deferred-technologies) stands.
+</Note>
+
+## Context
+
+A gateway in front of the services was rejected in ADR 0011. The owner's answer on 2026-10-20 (mem L953) keeps that rejection and fills the gateway role with four generated layers, so no gateway service has to be written or run.
+
+## Decision
+
+1. **Edge (layer 1).** Cloudflare, configured from `runway.yaml` and Pulumi. It provides TLS, WAF, DDoS protection, bot control and a coarse per-IP rate limit. It routes the hosts `api.figentra.com/{public,app,admin,platform}`.
+2. **Encore gateway (layer 2).** `stackra gen` generates the Encore built-in gateway. It has one authentication handler that verifies ZITADEL tokens into an `Actor`, CORS per area, a request id, trace propagation, and path-to-service routing per topology (ADR 0169).
+3. **Per-endpoint middleware (layer 3).** Modules declare `@Middleware({ phase })` providers. An Explorer finds them, and they run in the order of their declared phase: version, tenant, limits, idempotency, and so on. The area gate chain (ADR 0138) runs here too, with audit on the admin and platform areas.
+4. **Action pipeline (layer 4).** Tenancy, then iam, then policy, then entitlement, then the transaction, then effects (ADR 0138 and 0136).
+5. **Manifest.** `app-manifest.json` lists every route, area, version and middleware chain (ADR 0158).
+
+## Consequences
+
+- No gateway service exists to run, scale or secure separately.
+- A route's full chain is visible in one file, so a reviewer sees what runs before a handler.
+
+## Enforcement
+
+planned — gen fails on a route with no area, and the middleware order is checked by the Explorer's conformance test (ADR 0144).
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0082](/adr/0082-public-ids-and-api-areas), [0118](/adr/0118-api-versioning-dormant-package). Builds on [0011](/adr/0011-rejected-and-deferred-technologies) (no gateway product).
+Sources: owner decision "API gateway (owner 2026-10-20 night): GENERATED, no gateway service" (`stackra-decisions-2026-10-19.md` L953, 2026-10-20).
