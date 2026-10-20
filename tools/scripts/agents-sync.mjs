@@ -57,6 +57,9 @@
  *     - action: shell                         permissions OpenCode would derive
  *       resource: "git *"                     from `tools`
  *       effect: allow|ask|deny
+ *   assistants: [claude]           optional; the assistants it is projected to, default
+ *                                  all. A tier an assistant has no row for in
+ *                                  models.yaml is not projected to it either.
  *   skills:                        optional; skill names to reference
  *     - tdd
  *   ---
@@ -395,6 +398,7 @@ function normalizeAgent(data, entry, label) {
     "blocks",
     "permissions",
     "skills",
+    "assistants",
   ]);
   for (const key of Object.keys(data)) if (!known.has(key)) errors.push(`unknown key '${key}'`);
 
@@ -409,6 +413,15 @@ function normalizeAgent(data, entry, label) {
     if (!map) errors.push(`'tier' needs ${MODEL_MAP_REL}, which does not exist`);
     else if (!map.tiers.includes(data.tier))
       errors.push(`'tier' is '${data.tier}'; ${MODEL_MAP_REL} defines: ${map.tiers.join(", ")}`);
+  }
+  if (data.assistants !== undefined) {
+    const unknown = Array.isArray(data.assistants)
+      ? data.assistants.filter((a) => !(a in ASSISTANTS))
+      : [String(data.assistants)];
+    if (!Array.isArray(data.assistants) || unknown.length)
+      errors.push(
+        `'assistants' must be a list of: ${Object.keys(ASSISTANTS).join(", ")}${unknown.length ? ` (unknown: ${unknown.join(", ")})` : ""}`,
+      );
   }
   if (data.mode !== undefined && !["primary", "subagent", "all"].includes(data.mode))
     errors.push("'mode' must be one of: primary, subagent, all");
@@ -464,7 +477,19 @@ function normalizeAgent(data, entry, label) {
     mode: data.mode ?? "subagent",
     permissions: data.permissions,
     skills,
+    assistants: data.assistants,
   };
+}
+
+/**
+ * Whether an agent is projected to an assistant: not when its `assistants` list leaves the
+ * assistant out (Claude-only agents, ADR 0258), nor when the assistant has no row for its tier.
+ */
+function projectsTo(agent, assistantName) {
+  if (agent.assistants && !agent.assistants.includes(assistantName)) return false;
+  if (agent.tier !== undefined && !(agent.tier in modelMap().assistants[assistantName]))
+    return false;
+  return true;
 }
 
 /**
@@ -551,14 +576,20 @@ function modelMap() {
       errors.push(`'assistants.${name}' is missing`);
       continue;
     }
-    for (const tier of Array.isArray(tiers) ? tiers : []) {
-      if (!(tier in row))
-        errors.push(
-          `'assistants.${name}.${tier}' is missing (use null for the assistant's default)`,
-        );
+    for (const tier of Object.keys(row)) {
+      if (!tiers?.includes?.(tier))
+        errors.push(`'assistants.${name}.${tier}' is not a tier in 'tiers'`);
       else if (row[tier] !== null && typeof row[tier] !== "string")
         errors.push(`'assistants.${name}.${tier}' must be a model id or null`);
     }
+  }
+  // A tier an assistant leaves out is never projected to it (ADR 0193 D3: OpenCode runs
+  // only the steward and executor tiers). Every tier must still run somewhere.
+  for (const tier of Array.isArray(tiers) ? tiers : []) {
+    if (!Object.values(assistants).some((row) => row && typeof row === "object" && tier in row))
+      errors.push(
+        `tier '${tier}' is mapped for no assistant (use null for the assistant's default)`,
+      );
   }
   if (errors.length) {
     console.error(`agents-sync: invalid ${MODEL_MAP_REL}: ${errors.join("; ")}`);
@@ -718,7 +749,9 @@ function pruneStaleGeneratedAgents(dir, destSub, validEntries, label) {
     if (!content.includes(`generated from ${SOURCE}/agents/`)) continue;
 
     if (CHECK)
-      results.drift.push(`${label}/${name}: stale generated agent, source no longer exists`);
+      results.drift.push(
+        `${label}/${name}: stale generated agent, source gone or not projected here`,
+      );
     else {
       rmSync(p);
       results.pruned++;
@@ -1147,9 +1180,10 @@ function main() {
           pruneStaleLinks(dir, dest, new Set(entries), `${dir}/${dest}`);
         }
       } else if (kind === "agents") {
-        for (const entry of agentEntries) ensureGeneratedAgent(name, dir, dest, entry);
+        const projected = agentEntries.filter((e) => projectsTo(loadAgent(e).agent, name));
+        for (const entry of projected) ensureGeneratedAgent(name, dir, dest, entry);
         if (PRUNE || CHECK) {
-          pruneStaleGeneratedAgents(dir, dest, new Set(agentEntries), `${dir}/${dest}`);
+          pruneStaleGeneratedAgents(dir, dest, new Set(projected), `${dir}/${dest}`);
         }
       }
     }

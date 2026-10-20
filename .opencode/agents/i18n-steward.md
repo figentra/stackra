@@ -1,7 +1,7 @@
 ---
 description: "Steward for translation keys, RTL layout and locale data. Finds hard-coded strings, missing locale keys, physical CSS properties and concatenated fragments, and raises one task per app. Never blocks. Use after UI changes or before a release."
 mode: subagent
-model: "anthropic/claude-haiku-4-5"
+model: "amazon-bedrock/global.moonshotai.kimi-k3"
 permissions:
   - action: "edit"
     resource: "*"

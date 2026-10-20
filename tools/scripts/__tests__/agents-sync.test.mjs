@@ -379,17 +379,67 @@ test("a tier without a mapping file, or outside it, is rejected with exit 2", ()
   });
 });
 
-test("a mapping file missing a tier for an assistant is rejected with exit 2", () => {
+test("a tier an assistant has no row for is not projected to it, and --prune removes the old copy", () => {
+  withFixture(
+    {
+      "reviewer.md": TIERED("frontier"),
+      "builder.md": FULL.replace("model: opus", "tier: economy"),
+    },
+    (root) => {
+      withModels(root);
+      assert.equal(run(root).code, 0);
+      assert.ok(existsSync(join(root, ".opencode/agents/reviewer.md")));
+      const partial = structuredClone(MODELS);
+      delete partial.assistants.opencode.frontier;
+      withModels(root, partial);
+      const check = run(root, "--check");
+      assert.equal(check.code, 1);
+      assert.match(check.out, /\.opencode\/agents\/reviewer\.md: stale generated agent/);
+      assert.equal(run(root, "--prune").code, 0);
+      assert.ok(!existsSync(join(root, ".opencode/agents/reviewer.md")));
+      assert.ok(existsSync(join(root, ".claude/agents/reviewer.md")));
+      assert.ok(existsSync(join(root, ".opencode/agents/builder.md")));
+      assert.equal(run(root, "--check").code, 0);
+    },
+  );
+});
+
+test("a tier mapped for no assistant, or a row naming an unknown tier, is rejected with exit 2", () => {
   withFixture({ "reviewer.md": TIERED("frontier") }, (root) => {
     const broken = structuredClone(MODELS);
     delete broken.assistants.opencode.frontier;
+    delete broken.assistants.claude.frontier;
     withModels(root, broken);
     const r = run(root);
     assert.equal(r.code, 2);
-    assert.match(
-      r.out,
-      /'assistants\.opencode\.frontier' is missing \(use null for the assistant's default\)/,
-    );
+    assert.match(r.out, /tier 'frontier' is mapped for no assistant/);
+  });
+  withFixture({ "reviewer.md": TIERED("frontier") }, (root) => {
+    const broken = structuredClone(MODELS);
+    broken.assistants.opencode.premium = "p/x";
+    withModels(root, broken);
+    const r = run(root);
+    assert.equal(r.code, 2);
+    assert.match(r.out, /'assistants\.opencode\.premium' is not a tier in 'tiers'/);
+  });
+});
+
+test("an `assistants` list limits the projection; an unknown name is rejected", () => {
+  const claudeOnly = TIERED("economy").replace(
+    "tier: economy",
+    "tier: economy\nassistants: [claude]",
+  );
+  withFixture({ "reviewer.md": claudeOnly }, (root) => {
+    withModels(root);
+    assert.equal(run(root).code, 0);
+    assert.ok(existsSync(join(root, ".claude/agents/reviewer.md")));
+    assert.ok(!existsSync(join(root, ".opencode/agents/reviewer.md")));
+  });
+  withFixture({ "reviewer.md": claudeOnly.replace("[claude]", "[claude, cursor]") }, (root) => {
+    withModels(root);
+    const r = run(root, "--lint");
+    assert.equal(r.code, 2);
+    assert.match(r.out, /'assistants' must be a list of: claude, opencode \(unknown: cursor\)/);
   });
 });
 

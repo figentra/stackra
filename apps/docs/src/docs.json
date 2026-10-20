@@ -260,7 +260,8 @@
               "adr/0157-stackra-inspect-and-stackra-diff",
               "adr/0158-gen-artefacts-openapi-manifest-and-client",
               "adr/0230-reviewer-identity-separate-from-builder",
-              "adr/0257-secret-manager-agent-and-the-secrets-inbox"
+              "adr/0257-secret-manager-agent-and-the-secrets-inbox",
+              "adr/0258-agent-roster-v2-and-skill-fencing"
             ]
           }
         ]

@@ -1,7 +1,7 @@
 ---
 description: "Implements one change to a backend service under services/* from a brief - handlers, domain logic, events, migrations if a database exists, and tests. Use when the contract and boundaries are settled and code must be written."
 mode: subagent
-model: "anthropic/claude-sonnet-4-5"
+model: "amazon-bedrock/global.moonshotai.kimi-k3"
 permissions:
   - action: "webfetch"
     resource: "*"

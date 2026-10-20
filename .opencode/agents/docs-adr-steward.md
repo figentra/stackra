@@ -1,7 +1,7 @@
 ---
 description: "Writes and maintains the ADRs in apps/docs/src/adr — new records, status changes, same-commit supersession, the index table and the docs navigation. Does not decide, and does not audit code against docs. Never blocks. Use when a decision needs recording or an existing ADR's status changes."
 mode: subagent
-model: "anthropic/claude-haiku-4-5"
+model: "amazon-bedrock/global.moonshotai.kimi-k3"
 permissions:
   - action: "webfetch"
     resource: "*"
