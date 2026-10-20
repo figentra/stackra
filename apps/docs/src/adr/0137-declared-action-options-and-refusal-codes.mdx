@@ -1,6 +1,6 @@
 ---
-title: "0137 — Declared action execution options and refusal reasons"
-description: "Proposed · 2026-10-20"
+title: "0137 — Declared action execution options and refusal codes"
+description: "Accepted · 2026-10-20"
 ---
 
 <Note>
@@ -12,34 +12,42 @@ description: "Proposed · 2026-10-20"
 
 An action needs to say how it is consent-checked, rate-limited, locked, cached or limited in includes. The owner's intent-map
 item P5 set these as declared options, each run by one pipeline step. Two refusal codes came from later answers (I5 and EN3).
-The refusal codes do not share a casing: P5 uses kebab-case, and the two later codes use snake_case (contradiction C-14). The
-owner has not chosen one casing, so this ADR is Proposed.
+The first draft had two casings. The owner decided on 2026-10-20: every machine code is snake_case (ADR 0231).
 
 ## Decision
 
 1. An action may declare these optional options: `consent`, `rateLimit`, `lock`, `cache` and `maxInclude`. Each is run by an
-   existing pipeline step (ADR 0138, wave 1 part 2, fixes the order).
-2. The stable refusal codes are `module-disabled`, `entitlement-missing`, `flag-off`, `consent-missing`, `rate-limited`,
-   `region-unsupported` and `maintenance` (P5).
-3. Two more codes are added from later answers: `step_up_required` (I5, mem L609) and `limit_exceeded`, with an upgrade hint
-   (EN3, mem L676).
-4. **Open:** the casing. One of the two forms must be chosen for all nine codes (C-14). Until the owner chooses, the codes
-   above are as the sources spell them.
+   existing pipeline step (ADR 0138 fixes the order).
+2. The stable refusal codes are snake_case:
+   - `module_disabled`;
+   - `entitlement_missing`;
+   - `flag_off`;
+   - `consent_missing`;
+   - `rate_limited`;
+   - `region_unsupported`;
+   - `maintenance`.
+3. Two more codes come from later answers, also snake_case: `step_up_required` (I5, mem L609) and `limit_exceeded`, with an
+   upgrade hint (EN3, mem L676).
+4. A refusal code is returned in the error envelope as its `code` and carries the category of ADR 0140. An entitlement refusal
+   uses the `entitlement_required` category (402) in that envelope.
 
 ## Consequences
 
-- Clients can branch on a stable code. A code added later is a new ADR, so the list does not drift silently.
-- Until the casing is chosen, the code list cannot be used as a contract by generated clients.
+- Clients branch on a stable snake_case code. A code added later is a new ADR, so the list does not drift silently.
+- Generated clients can use the list as a contract.
 
 ## Enforcement
 
-planned — gen reads the option declarations and rejects an unknown refusal code. Nothing checks the codes today.
+planned — gen reads the option declarations and rejects an unknown refusal code, and the naming rule
+(`.agents/rules/naming-and-casing.md`, wave 1 part 5) rejects a kebab-case code.
 
 ## Alternatives
 
+- Kebab-case codes (P5): replaced by the owner's snake_case decision.
 - Free-text refusal messages: rejected, clients need stable codes.
 
 ## Supersedes and sources
 
 Amends: [0098](/adr/0098-actions-are-the-unit). Sources: owner intent-map item P5 (`stackra-notes/owner-docs-intent-map.md`,
-Part 4), I5 (mem L609), EN3 (mem L676), all 2026-10-20. Open question: the code casing (C-14).
+Part 4), I5 (mem L609), EN3 (mem L676), and the owner's naming decision for machine codes (2026-10-20, ADR 0231). Contradiction C-14
+is resolved by that decision.

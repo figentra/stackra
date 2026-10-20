@@ -7,36 +7,39 @@ description: "Accepted · 2026-10-20"
 
 Permissions were a flat list, and nothing checked that an action's permission made sense for what the action does. The
 owner's intent-map item P2 and the IAM answer A10 (mem L627) set a curated catalogue per module, with labels and risk, and
-policy providers that decide per request. P2 and A10 use a class for the catalogue, not a `define*` function.
+policy providers that decide per request. P2 and A10 use a class for the catalogue. The owner's declaration rule (2026-10-20)
+says that `define*` functions create values, and `definePermissions` is one of them (see 0145).
 
 ## Decision
 
-1. Each module declares its permissions in a `@Permissions` class.
-2. Keys are `<module>.<resource>.<action>`. Each catalogue entry carries a label, a description, a risk and a verb (A10).
+1. Each module declares its permissions in a `@Permissions` class. The class is the catalogue, and `definePermissions` builds
+   its value (0145).
+2. Keys are `resource:verb`, as ADR 0231 (naming and casing) sets for permission keys. The owner's table replaces the earlier
+   `<module>.<resource>.<action>` form. The declaring module owns each key, and the registry checks uniqueness.
+   Each catalogue entry carries a label, a description, a risk and a verb (A10).
 3. The catalogue is curated per module. Gen **warns**, and does not fail, when an action reuses a permission whose verb
    differs from the action's verb (mem L401).
 4. A `@Policy` provider method returns `allow`, `deny` or `abstain`. Any `deny` wins.
 5. Wildcard permissions are allowed only in system roles (A10).
 6. A rename of a permission goes through deprecation ([0131](/adr/0131-module-key-version-and-deprecation)).
-7. The `define*` family in the 2026-10-19 DI answer (B20) did not include `definePermissions`. The owner must confirm
-   (register contradiction C-04). `defineToken` and `defineConfig` are unaffected
-   (ADRs 0145 and 0146, wave 1 part 2).
 
 ## Consequences
 
 - Permission review becomes a catalogue review, per module.
 - A verb mismatch is a warning, so an existing action is not broken on the day the check lands.
+- Permission keys are shorter, so the module is no longer part of the key text. Uniqueness is enforced by the registry.
 
 ## Enforcement
 
 planned — gen emits the catalogue from `@Permissions` and warns on a verb mismatch. Wildcard use outside system roles is
-planned as a gen error.
+planned as a gen error. The registry check for key uniqueness is planned.
 
 ## Alternatives
 
-- A `definePermissions()` function, as B20 first listed: superseded by the class (P2 and C-04).
+- A `<module>.<resource>.<action>` key: replaced by the owner's `resource:verb` table (ADR 0231).
+- A `@Permissions` class with no `definePermissions` value: rejected, the owner's define rule applies.
 
 ## Supersedes and sources
 
-Supersedes: none. Sources: owner intent-map item P2 (accepted; mem L401), IAM answer A10 (mem L627), B20 contradiction
-(mem L546), all 2026-10-20. Open: owner confirmation that `definePermissions` is not part of the family (C-04).
+Supersedes: none. Sources: owner intent-map item P2 (accepted; mem L401), IAM answer A10 (mem L627), B20 (mem L546),
+the owner's `define*` declaration rule and the naming table (owner answers, 2026-10-20).

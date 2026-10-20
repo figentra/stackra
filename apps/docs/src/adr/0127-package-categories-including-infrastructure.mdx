@@ -1,5 +1,5 @@
 ---
-title: "0127 — Package categories, including infrastructure"
+title: "0127 — Package categories, including infrastructure and commerce"
 description: "Accepted · 2026-10-20"
 ---
 
@@ -12,36 +12,38 @@ description: "Accepted · 2026-10-20"
 ## Context
 
 Package categories were fixed in the framework round as the FW2 table. The owner accepted it on 2026-10-20 (FW2 a). The
-infrastructure category came later, for Pulumi-based infrastructure packages (ADR 0171, not yet on this branch). Several placements were answered question by question, and two were not answered at all. This ADR records
-the table and the placements, and marks the two open ones.
+infrastructure category came later, for Pulumi-based infrastructure packages (ADR 0171, not yet on this branch). The owner then
+added a `commerce` category for money, ledger and pricing primitives, which closes the placement that was open. Several other
+placements were answered question by question. This ADR records the table and the placements, and marks the one open item.
 
 ## Decision
 
 1. The package categories are:
-   - **foundation:** contracts, validation;
+   - **foundation:** contracts, validation, errors (ADR 0232, wave 1 part 5);
    - **data:** model, database, content, media, search, state-machine;
    - **application:** actions, ai, ir, registry;
    - **runtime:** outbox, queue, scheduler, workflow, realtime, locking, cache;
-   - **communication:** webhooks, notifications, versioning, integrations (assumed, see 4);
+   - **communication:** webhooks, notifications, versioning, integrations (assumed, see 5);
    - **security:** connections, entitlements, licensing;
    - **experience:** ui, experience, navigation, console, panel;
    - **developer:** cli, gen, coding-standard, vite-plugin;
    - **cross-cutting:** brand;
+   - **commerce:** money, ledger and pricing primitives (owner answer, 2026-10-20). The pricing service and its
+     building blocks are placed here as primitives; the service itself is an OS item;
    - **infrastructure:** new. It holds the `@stackra/infra-*` packages defined by 0171.
 2. `state` stays a category, because existing packages (settings, feature flags, theming) use it and `AGENTS.md` lists it.
    The FW2 table did not name it. The owner should confirm it (open question 1).
 3. The placements the owner set later are fixed: state-machine in data (SM1 placement, mem L405); panel in experience
    (mem L737); coding-standard in developer (mem L566); the Vite plugin is `@stackra/vite-plugin` in developer
-   (DX10, mem L567).
-4. Integrations sit in communication. This is **assumed**, pending the owner (register Thin list item 6, mem L753).
-5. Money and ledger have **no category yet**. The owner did not state one (mem L517). Do not create the packages until this
-   is answered (open question 2).
+   (DX10, mem L567); money and ledger in commerce (owner answer, 2026-10-20).
+4. Errors sit in foundation, with `@stackra/errors` (ADR 0232).
+5. Integrations sit in communication. This is **assumed**, pending the owner (register Thin list item 6, mem L753).
 
 ## Consequences
 
 - The scaffold's category list, the `AGENTS.md` table and the packages guide must match this table. The
   `.agents/rules/workspace-layout.md` rule describes an "infrastructure" category that does not yet exist. That rule
-  becomes true with this ADR. It belongs to `docs-governance`.
+  becomes true with this ADR, and it must add `commerce` and `errors` too. It belongs to `docs-governance`.
 - A new package needs one category from this list. A package that fits none is a new ADR, not a new folder.
 
 ## Enforcement
@@ -52,11 +54,11 @@ planned — `tools/scripts/scaffold.mjs` (`CATEGORIES`) and `tools/scripts/valid
 ## Alternatives
 
 - No infrastructure category: the Pulumi packages would sit in developer. The owner chose the separate category (mem L437).
-- Other placements for money, ledger and integrations are not recorded in the sources. Only the owner can choose them.
+- Money and ledger in data or security: not chosen; the owner chose commerce.
 
 ## Supersedes and sources
 
 Amends: [0028](/adr/0028-package-categories-appear-with-first-package) and
 [0084](/adr/0084-figentra-os-package-port-plan) (the category lists). Sources: owner questionnaire, framework round
 (FW2 a, `stackra-decisions-2026-10-19.md` L339), infrastructure category (L437), placements (L405, L566, L567, L737,
-L753, L517), recorded 2026-10-20 by the owner's decision. Open questions: (1) confirm `state`; (2) money and ledger category.
+L753), commerce category and errors placement (owner answers, 2026-10-20). Open question: (1) confirm `state`.
