@@ -380,6 +380,9 @@ Rows naming no package are planned (guardian review). Docs: `/adr/0011-rejected-
 
 Stackra uses **two secret mechanisms** (ADR-0009):
 
+**Invariant: nobody reads a value.** A value is set by a human, or by the secret-manager flow (section 3,
+ADR 0257), which writes it without anyone, the agent included, ever seeing it.
+
 #### 1. App Secrets (Encore, generated app)
 
 Services are plain TypeScript and hold no Encore files. The Encore application is generated into the
@@ -393,7 +396,8 @@ const stripeSecretKey = secret("StripeSecretKey");
 
 - Stored in the runtime's secret store (Encore's secret manager), set there by a human; Infisical Secret Sync is not
   adopted (ADR 0009 D8)
-- A human sets each value per environment; an agent only names the secret
+- A human sets each value per environment; an agent only names the secret (the secret-manager flow covers the
+  runtime store once a tool for it exists; ADR 0257)
 - Never in git
 
 #### 2. Dev/CI Secrets (Infisical)
@@ -440,6 +444,24 @@ In Infisical `/ci` (CI/CD):
 - `ENCORE_API_KEY` - Encore deployment, once a deploy path exists (DP2)
 - `SENTRY_AUTH_TOKEN` - Sentry releases (optional)
 
+#### 3. The secrets inbox (secret-manager flow, ADR 0257)
+
+The owner drops one file per secret into `~/Secrets-inbox/` (outside every repo, never synced). The file name is
+the secret name (`SCREAMING_SNAKE`, one extension stripped: `STACKRA_REVIEWER_PRIVATE_KEY.pem`); an optional
+`<NAME>.target.yaml` sets `env` (default `dev`) and `path` (default `/agents`). A non-file value (an App ID) is a
+file holding just that value; there is no `--value` flag.
+
+- `pnpm secrets:import --list | --dry-run | <import>` is the only way in. It never prints, logs or passes a value
+  on argv, verifies by SHA-256 read-back in-process, deletes the inbox file on success and appends a names-only
+  line to `~/.stackra/secrets-audit.log`.
+- Production (`--env prod`): the dry run prints a one-time `--confirm <token>` (30 min). That token is a process rule,
+  not an enforced yes (the same caller sees it): ask the owner, wait for yes, only then use it. The enforced yes is
+  the local request page (STA-187), where the owner's own submit is the yes.
+- Any agent may run the script: hooks cannot tell agents apart, and the script never outputs a value. The
+  `secret-manager` agent is the one that is told to.
+- No agent reads, lists, copies or moves anything in `~/Secrets-inbox/`. The hooks below catch the obvious attempts;
+  they are an accident guard, not a security boundary.
+
 #### Forbidden Patterns
 
 1. **No `.env` files** - Use Infisical injection
@@ -450,7 +472,10 @@ In Infisical `/ci` (CI/CD):
 
 - `guard-bash.mjs`: Blocks `infisical export`, `infisical secrets get` without `--silent`, a bare `infisical secrets`
   (lists values) and `infisical run -- env|printenv`
-- `guard-paths.mjs`: Blocks writes to `.env`, `.env.*`, `.dev.vars`, `.ci-env` and `.sentryclirc`
+- `guard-bash.mjs`: Blocks any command that names `Secrets-inbox` or the import confirm key (`pnpm secrets:import`
+  never needs to)
+- `guard-paths.mjs`: Blocks writes to `.env`, `.env.*`, `.dev.vars`, `.ci-env` and `.sentryclirc`, and every
+  Read/Grep/Glob/Write/Edit under `~/Secrets-inbox/`
 - `.gitleaks.toml`: Scans for accidental secret commits
 
 #### Enforcement
@@ -461,6 +486,8 @@ Each article below is bound to a check:
 2. **No .env files** → `guard-paths` hook
 3. **CI secrets from OIDC** → GitHub Actions OIDC (Phase 2)
 4. **App secrets set by a human in the runtime store** → review; no sync (ADR 0009 D8)
+5. **Nobody reads a value; the inbox flow writes blind** → `tools/scripts/secrets-import.mjs` (+ its test, which
+   asserts no canary value reaches output, audit log or argv), `guard-bash` / `guard-paths` inbox rules
 
 #### Setup
 

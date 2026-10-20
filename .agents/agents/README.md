@@ -48,3 +48,4 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
 | docs-adr-steward          | steward  | no     |
 | docs-changesets-steward   | steward  | no     |
 | incident-commander        | lead     | no     |
+| secret-manager            | executor | no     |

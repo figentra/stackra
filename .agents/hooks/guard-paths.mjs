@@ -2,8 +2,10 @@
 /**
  * PreToolUse (Write|Edit|MultiEdit|NotebookEdit): refuse writes to generated, vendored
  * or secret paths — anything a tool other than the agent owns.
+ * PreToolUse (Read|Grep|Glob): refuse only the secrets inbox (ADR 0257); every other read is fine.
  */
 import { readStdin, collectStrings, deny, failOpen } from "./_io.mjs";
+import { reachesInbox } from "./_inbox.mjs";
 
 const EVENT = "PreToolUse";
 
@@ -59,9 +61,37 @@ const rules = [
 /** agents-sync's generated rules block markers in the root AGENTS.md. */
 const AGENTS_MD_BLOCK = /<!--\s*(BEGIN|END) generated from \.agents\/rules/;
 
+/**
+ * ~/Secrets-inbox/ holds values for `pnpm secrets:import`; no tool reads, searches, lists or writes it.
+ * An accident guard, not a boundary (ADR 0257): the importer never outputs a value.
+ */
+const READ_TOOLS = new Set(["Read", "Grep", "Glob"]);
+const under = (dir, glob) =>
+  glob.startsWith("/") || glob.startsWith("~") ? glob : `${dir}/${glob}`;
+
 async function main() {
   const input = await readStdin();
-  const target = String(input.tool_input?.file_path ?? input.tool_input?.notebook_path ?? "");
+  const ti = input.tool_input ?? {};
+  const str = (v) => (typeof v === "string" && v ? v : undefined);
+  const base = str(ti.path) ?? String(input.cwd ?? ".");
+  const checks = [
+    [ti.file_path, false],
+    [ti.notebook_path, false],
+    // Grep searches its path recursively; its `glob` filter and Glob's `pattern` are relative to it.
+    [input.tool_name === "Grep" ? str(ti.path) : undefined, true],
+    [input.tool_name === "Grep" && str(ti.glob) ? under(base, ti.glob) : undefined, false],
+    [input.tool_name === "Glob" ? str(ti.path) : undefined, false],
+    [input.tool_name === "Glob" && str(ti.pattern) ? under(base, ti.pattern) : undefined, false],
+  ].filter(([p]) => str(p));
+  const hit = checks.find(([p, recursive]) => reachesInbox(p, { recursive }));
+  if (hit)
+    deny(
+      EVENT,
+      `Secrets guard: ~/Secrets-inbox/ holds secret values; no agent reads, searches, lists or writes it. Use \`pnpm secrets:import --list\` (names) and \`pnpm secrets:import\` (import, never prints a value).\nBlocked path: ${hit[0]}`,
+    );
+  if (READ_TOOLS.has(input.tool_name)) return;
+
+  const target = String(ti.file_path ?? ti.notebook_path ?? "");
   if (!target) return;
 
   for (const rule of rules) {

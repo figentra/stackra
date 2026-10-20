@@ -55,6 +55,19 @@ const allowed = [
   'git commit -m "docs: never git push origin main"',
   "pnpm changeset",
   "cat > a.md <<'EOF'\nrm -rf x; printenv; echo hi > .env\nEOF",
+  // the secrets inbox: only the importer, which takes names and never prints a value
+  "pnpm secrets:import --list",
+  "ls ~",
+  "grep -r foo .",
+  "cat ~/Projects/notes.md",
+  "find . -name '*.ts'",
+  "grep -rn foo ~/Projects/notes.md",
+  "grep -n foo ~",
+  "cp -r dist /tmp/x",
+  "pnpm secrets:import --dry-run STACKRA_REVIEWER_APP_ID",
+  "pnpm secrets:import STACKRA_X --env prod --path /ci --confirm abc-123",
+  'git commit -m "feat: import from ~/Secrets-inbox"',
+  "cat > doc.md <<'EOF'\ncat ~/Secrets-inbox/X\nEOF",
 ];
 const blocked = [
   "cat .env",
@@ -117,6 +130,37 @@ const blocked = [
   "rm --force --recursive /etc",
   "cd /tmp && rm -rf build",
   `rm -rf ${root}`,
+  // the secrets inbox, any reader, any spelling of home
+  "cat ~/Secrets-inbox/STACKRA_REVIEWER_PRIVATE_KEY.pem",
+  "head -c 10 $HOME/Secrets-inbox/X",
+  "grep -r BEGIN /Users/me/Secrets-inbox",
+  "cp ~/Secrets-inbox/X /tmp/x",
+  "mv ~/Secrets-inbox/X .",
+  "ls -la ~/Secrets-inbox",
+  "cd ~/Secrets-inbox && cat *",
+  "base64 < ~/secrets-inbox/X",
+  `node -e 'require("fs").readFileSync(process.env.HOME+"/Secrets-inbox/X")'`,
+  "cat ~/.stackra/secrets-confirm.key",
+  "pnpm secrets:import && cat ~/Secrets-inbox/X",
+  // globs and home-wide recursive reads (accident guard)
+  "cat ~/Secrets-inbo?/*",
+  "cat ~/S*inbox/X",
+  "cat ~/*/STACKRA_X",
+  "grep -r BEGIN ~",
+  "find ~ -name '*.pem'",
+  "rg PRIVATE $HOME",
+  // every recursive grep / cp spelling (STA-192)
+  "grep -rn BEGIN ~",
+  "grep -ril private $HOME",
+  "grep -Rn BEGIN ~",
+  "grep --recursive BEGIN ~",
+  "grep -d recurse BEGIN ~",
+  "grep --directories=recurse BEGIN ~",
+  "grep -n -r BEGIN ~",
+  "cp -a ~ /tmp/h",
+  "cp -R ~ /tmp/h",
+  "cp -r ~/ /tmp/h",
+  "cp --archive ~ /tmp/h",
 ];
 
 for (const c of allowed) test(`allow: ${c}`, () => assert.equal(denied(c), false));
