@@ -1,0 +1,8 @@
+{
+  "name": "encore-decorators-spike",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "vitest run", "build:di": "pnpm -F @spike/di build" },
+  "dependencies": { "@spike/di": "workspace:*", "encore.dev": "^1.58.6" },
+  "devDependencies": { "typescript": "~5.9.0", "vitest": "^3.2.0", "tsdown": "^0.15.0" }
+}
