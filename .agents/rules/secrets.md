@@ -22,8 +22,8 @@ import { secret } from "encore.dev/config";
 const stripeSecretKey = secret("STRIPE_SECRET_KEY");
 ```
 
-- Stored in the runtime's secret store (Encore's secret manager), set there by a human; Infisical Secret Sync is not
-  adopted (ADR 0009 D8)
+- Infisical is the source of production secrets. Runway syncs them into Encore, Cloudflare Workers and EAS on deploy (ADR 0173,
+  which supersedes ADR 0009)
 - A human sets each value per environment; an agent only names the secret (the secret-manager flow covers the
   runtime store once a tool for it exists; ADR 0257)
 - Never in git

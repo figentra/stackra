@@ -1,0 +1,40 @@
+---
+title: "0174 — Supply chain: images, signing, SBOM, dependency policy and rotation"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0019](/adr/0019-supply-chain-hardening). Decisions 1 to 6 of 0019 carry forward.
+</Note>
+
+## Context
+
+[0019](/adr/0019-supply-chain-hardening) (Proposed) covered supply-chain hardening without the image registry, the signing keys, the dependency bot or the rotation
+rules. The owner's answers DP17, DP18, SC5, SC6 and SC7 (mem L447, L551, 2026-10-20) fix those.
+
+## Decision
+
+1. **Images (DP17 and DP18).** Images are stored in ECR, in the shared account. On-prem gets signed OCI tarballs. The base image is minimal and multi-architecture. Each image
+   gets a syft SBOM and a cosign signature, and Trivy fails the build on fixable critical findings.
+2. **Attestations (SC5).** Sigstore attestations are produced. Air-gapped installs use a KMS cosign key.
+3. **Dependencies (SC6).** Renovate runs with automerge off and a minimum release age of one day. OSV-Scanner runs in CI. Fixes are due within 7 days (critical) and 30 days (other).
+   A licence allow-list applies.
+4. **Rotation (SC7).** Rotation is tracked as Linear recurring issues. Signing keys have two active generations during a change. The KMS key rotates yearly.
+5. **Carried forward from 0019 decisions 1 to 6.**
+
+## Consequences
+
+- Every image a customer runs has a signature and an SBOM, so a vulnerability query is answered from the artefact, not from a guess.
+- A dependency update waits a day before it is proposed, which avoids the first-day compromise window.
+
+## Enforcement
+
+planned — Trivy and OSV-Scanner in the release job; cosign verification at deploy; the Renovate configuration is reviewed under `runbooks/renovate.mdx` (final pass).
+
+## Alternatives
+
+- Automerge of dependency updates: rejected by SC6.
+
+## Supersedes and sources
+
+Supersedes: [0019](/adr/0019-supply-chain-hardening). Sources: owner answers DP17, DP18, SC5, SC6, SC7 (`stackra-decisions-2026-10-19.md` L447, L551, 2026-10-20). Closes gap C51.
