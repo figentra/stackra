@@ -1,0 +1,46 @@
+---
+title: "0144 — A typed MetadataRegistry, and every decorator package ships an Explorer"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0090](/adr/0090-codegen-discovery-by-root-module) and
+  [0117](/adr/0117-contracts-placement-and-decorator-ownership), decision C2 (decorator ownership).
+</Note>
+
+## Context
+
+Decorators were collected by codegen, and nothing at runtime found them. The owner's discovery rule (mem L571–575, 2026-10-20)
+says every package that defines decorators also ships an Explorer. At bootstrap, the explorer uses the container's discovery
+service to register what the decorators marked. Gen reads the same metadata statically, so build time and run time agree.
+
+## Decision
+
+1. Every package that defines decorators ships an Explorer class. At bootstrap it uses the container's `DiscoveryService` to
+   register its decorated providers and methods.
+2. This applies to every decorator kind: `@Command`, `@OnEvent`, `@Cron`, `@Processor` and `@AsJob`, `@Action`, `@Setting`,
+   `@Workflow`, `@PriceModel`, and the rest.
+3. The `MetadataRegistry` lives in `@stackra/container`. It is a typed WeakMap with `defineMetadataKey<T>()`. There is no
+   `reflect-metadata` ([0005](/adr/0005-di-container-and-legacy-decorators)).
+4. Gen reads the same contract statically. A conformance test checks that gen's output and the Explorers agree.
+5. `stackra list` shows every discovered command, namespaced `<area>:<verb>`.
+
+## Consequences
+
+- A decorator with no Explorer is a bug, because nothing registers it.
+- The conformance test is the guard against gen and runtime drifting apart.
+
+## Enforcement
+
+planned — a conformance test in `@stackra/container` compares gen's discovery with the Explorers, and the validator checks that
+each decorator package exports an Explorer.
+
+## Alternatives
+
+- Runtime `reflect-metadata` scanning: rejected by 0005 and the not-built-yet rules.
+- Discovery by gen only: rejected, the runtime would have no registrations.
+
+## Supersedes and sources
+
+Amends: [0090](/adr/0090-codegen-discovery-by-root-module), [0117](/adr/0117-contracts-placement-and-decorator-ownership) decision C2.
+Sources: owner discovery rule (`stackra-decisions-2026-10-19.md` L571–575, 2026-10-20).
