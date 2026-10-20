@@ -8,6 +8,9 @@ on:
 # would version the same changesets twice.
 concurrency: release-${{ github.ref }}
 
+# ADR 0019 D2: nothing by default; the job below asks for what it needs.
+permissions: {}
+
 jobs:
   release:
     name: Release
@@ -34,20 +37,16 @@ jobs:
           permission-pull-requests: write
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           token: ${{ steps.bot.outputs.token }} # pushes (version branch, tags) go out as the bot
           fetch-depth: 0 # changesets diffs against history and reads existing tags
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      # ADR 0027 D2: node and pnpm come from mise.toml.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
-          node-version: "24"
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 12.6.0
+          install_args: node pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -84,7 +83,7 @@ jobs:
         run: pnpm build
 
       - name: Version PR / publish
-        uses: changesets/action@v2
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           version-script: pnpm changeset:version
           publish-script: pnpm changeset publish
@@ -101,7 +100,7 @@ jobs:
         run: npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --ignore-npm-errors --output-format JSON --output-file sbom.cdx.json
 
       - name: Upload SBOM as release artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: sbom
           path: sbom.cdx.json
