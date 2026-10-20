@@ -1,0 +1,40 @@
+---
+title: "0189 — Privacy operations and data retention"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0071](/adr/0071-privacy-obligations). The iOS privacy manifest and App Tracking
+  Transparency rules of 0071 (decisions 3 and 4) carry forward. Classification is ADR 0134.
+</Note>
+
+## Context
+
+[0071](/adr/0071-privacy-obligations) (Proposed) named privacy obligations without the export format, the erasure process or the retention defaults. The owner's answers DA5, DA6, SC10 and CP2 (mem L531–533, L552, L832, 2026-10-20) fix them.
+
+## Decision
+
+1. **Export (DA5).** A data export is a signed zip, available for seven days.
+2. **Erasure (DA5).** An erasure saga removes a person's data and issues receipts through the compliance service.
+3. **Offboarding (DA5).** A tenant leaving has a 30-day grace period.
+4. **Retention defaults (DA6).** Soft-deleted records are kept 30 days. Archives are kept until the tenant is deleted. AI thread data is kept 90 days. A tenant may change a default within bounds.
+5. **Documents (SC10).** A sub-processor list, a data-subject request runbook, a record of processing, and a data processing agreement, all available now.
+6. **Laws (CP2).** GDPR, the UAE and KSA PDPL, and the children's data rules apply now. HIPAA and FERPA come later.
+7. **Classification.** Field classes are set by ADR 0134.
+
+## Consequences
+
+- A tenant can see its own export before it leaves, so offboarding has no surprise.
+- Retention is a default that a tenant can tighten, so the platform does not hold data longer than the contract needs.
+
+## Enforcement
+
+planned — the retention jobs (`Prunable`, ADR 0134) run on schedule; the export and erasure sagas are covered by end-to-end tests.
+
+## Alternatives
+
+- Retention set per tenant with no default: rejected; a default protects tenants who do not configure it.
+
+## Supersedes and sources
+
+Supersedes: [0071](/adr/0071-privacy-obligations). Sources: owner answers DA5, DA6, SC10, CP2 (`stackra-decisions-2026-10-19.md` L531–533, L552, L832, 2026-10-20). Closes gap C23.
