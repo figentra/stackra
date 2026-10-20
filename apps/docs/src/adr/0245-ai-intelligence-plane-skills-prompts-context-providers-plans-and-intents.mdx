@@ -1,0 +1,39 @@
+---
+title: "0245 — The AI intelligence plane: skills, prompts, context providers, plans and intents over actions"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0100](/adr/0100-ai-model-and-ownership) and
+  [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free). Builds on the AI runtime of
+  [0156](/adr/0156-ai-runtime-provider-drivers-memory-and-guardrails).
+</Note>
+
+## Context
+
+An AI agent needs instructions, tools, knowledge and examples, and each product needs its own. The owner's intelligence-plane model (mem L902–912, 2026-10-20) maps the owner document's agents, skills, intents, plans, capabilities, tools, context and prompts onto the action model. It adds a few primitives and keeps actions as the only unit of behaviour.
+
+## Decision
+
+1. **Actions stay the only behaviour unit** (ADR 0098).
+2. **Capability.** A capability is an action or a query. The registry is the catalogue.
+3. **Tool.** A tool is the MCP projection of a capability, generated, never hand-written (ADR 0155).
+4. **Intent.** An intent is metadata on an action (`intents`). An intent router maps natural language to an action, for the command palette and for AI triggers.
+5. **Skill.** `defineSkill({ instructions, tools, examples, knowledge })` is loaded on demand, with progressive disclosure, so the agent reads only the skill it needs.
+6. **Prompts.** `definePrompts(...)` defines versioned MCP prompts, with evaluations. A tenant may override a prompt within limits.
+7. **Context providers.** `@ContextProvider` classes are contributed by modules: facts about a record, a page, a user or a tenant. They are assembled with retrieval and memory under a token budget, and exposed as MCP resources.
+8. **Plans.** An agent proposes a list of actions with inputs. A user approves the plan at level L2 and above. A plan runs as an ephemeral workflow on the workflow engine (ADR 0152). There is no separate plan engine.
+9. **Free and permission-aware.** All of it is free code, and every item respects the caller's permissions (ADR 0155).
+
+## Consequences
+
+- A new product adds skills and context providers beside its actions, and the agent finds them through the registry.
+- A plan cannot act beyond what its user may do, because each step is a normal action call.
+
+## Enforcement
+
+planned — the MCP generator checks each tool against an action; the plan runner refuses a step the approving user lacks permission for.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0100](/adr/0100-ai-model-and-ownership), [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free). Sources: owner intelligence-plane model (`stackra-decisions-2026-10-19.md` L902–912, 2026-10-20).
