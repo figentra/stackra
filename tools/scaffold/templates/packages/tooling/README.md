@@ -7,11 +7,11 @@ nothing workspace-local except `@stackra/typescript-config` for its own test fil
 
 ## Presets
 
-| Export         | File        | Use for                             |
-| -------------- | ----------- | ----------------------------------- |
-| `.` / `./base` | `base.json` | the baseline every consumer extends |
+| Export         | File            | Use for                             |
+| -------------- | --------------- | ----------------------------------- |
+| `.` / `./base` | `src/base.json` | the baseline every consumer extends |
 
-A new preset is a new file at the package root plus an `exports` entry; the test proves every target exists.
+A new preset is a new file in `src/` plus an `exports` entry; the test proves every target exists.
 Consumers extend a preset and add no settings of their own — change the preset and ship a changeset.
 
 ## Tasks
@@ -28,7 +28,7 @@ Add `typecheck` (`tsc --noEmit`, plus `typescript` from `catalog:build`) only if
 ## Structure
 
 ```text
-base.json                    the preset (a .jsonc preset carries a "Stackra file contract" header)
+src/base.json                the preset (a .jsonc preset carries a "Stackra file contract" header)
 src/__tests__/presets.test.ts every exports target exists and parses
 vitest.config.ts
 ```

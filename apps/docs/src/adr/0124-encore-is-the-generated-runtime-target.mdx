@@ -19,7 +19,7 @@ places that contradict it; it decides nothing new.
    `stackra gen` in `.stackra/encore/` ([0091](/adr/0091-generated-encore-app-in-stackra-folder) decisions 2, 5 and 6).
 2. **Service members stay plain TypeScript.** Nothing under `services/` contains an `encore.*` file, a `__generated__/`
    folder or an import of `encore.dev` or `~encore/*` (0091 decision 1).
-3. **Packages never import `encore.dev`**, as today (`packages/tooling/oxlint/boundaries.jsonc`).
+3. **Packages never import `encore.dev`**, as today (`packages/tooling/oxlint/src/boundaries.jsonc`).
 4. **Only `app-manifest.json` is committed** from the generated app, and `stackra gen --check` fails CI when it is stale
    (0091 decisions 3 and 4).
 5. **The Encore row of 0011 is superseded.** It no longer reads "Deferred"; the not-built-yet rule lists hand-written Encore in
@@ -44,7 +44,7 @@ Still open, and not decided here (gap questionnaire IDs):
 
 ## Enforcement
 
-Existing: `packages/tooling/oxlint/boundaries.jsonc` bans `encore.dev` in packages. Planned (0091): `stackra gen --check` in
+Existing: `packages/tooling/oxlint/src/boundaries.jsonc` bans `encore.dev` in packages. Planned (0091): `stackra gen --check` in
 CI and `pnpm verify`; a validator check that no `encore.*` file or `__generated__/` folder exists under `services/` and that
 `.stackra/` is gitignored. Until the scaffold's `services/encore` template is replaced (gap B4), `checkServiceUnit` in
 `tools/scripts/validate-repository.mjs` still describes the older layout.

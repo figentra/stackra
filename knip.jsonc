@@ -16,7 +16,7 @@
     },
     "packages/tooling/*": {
       // Config packages export presets by subpath (package.json exports); the only TS besides them is their test.
-      "entry": ["*.ts", "src/**/__tests__/**/*.test.ts"],
+      "entry": ["src/*.ts", "src/**/__tests__/**/*.test.ts"],
       "project": ["*.ts", "src/**/*.ts"],
       // Extended by each preset package's tsconfig.json, which knip doesn't trace where no typecheck script runs.
       "ignoreDependencies": ["@stackra/typescript-config"],

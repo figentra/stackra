@@ -76,7 +76,7 @@ Every workspace member carries exactly one tier tag in its `turbo.jsonc`. The ta
 
 The direction is one way. A package never imports an app, a service, or `encore.dev`. An app never imports a service's code. A package never imports another package's `src/`: it uses the package's declared exports. See [ADR 0003](/adr/0003-tier-dependency-direction) and the [package standard](/standards/packages).
 
-**Enforcement: enforced.** Turborepo `boundaries` tags in `turbo.jsonc`, the oxlint `no-restricted-imports` rules in `packages/tooling/oxlint/boundaries.jsonc`, and the tier check in `tools/scripts/validate-repository.mjs`. All run in `pnpm verify`.
+**Enforcement: enforced.** Turborepo `boundaries` tags in `turbo.jsonc`, the oxlint `no-restricted-imports` rules in `packages/tooling/oxlint/src/boundaries.jsonc`, and the tier check in `tools/scripts/validate-repository.mjs`. All run in `pnpm verify`.
 
 ### Placement test
 

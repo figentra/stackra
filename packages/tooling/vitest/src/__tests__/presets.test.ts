@@ -3,9 +3,9 @@
  * without metadata emission or setup files (ADR-0005); the react preset switches the environment to jsdom.
  */
 import { describe, expect, it } from "vitest";
-import { stackraVitest } from "../../preset.ts";
-import { stackraVitestDecorators } from "../../preset-decorators.ts";
-import { stackraVitestReact } from "../../preset-react.ts";
+import { stackraVitest } from "../preset.ts";
+import { stackraVitestDecorators } from "../preset-decorators.ts";
+import { stackraVitestReact } from "../preset-react.ts";
 
 describe("@stackra/vitest-config", () => {
   it("base preset refuses empty suites and enables globals", () => {

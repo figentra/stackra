@@ -5,7 +5,7 @@
 // Owner: release-operations
 // Secrets: forbidden
 {
-  "$schema": "../../../node_modules/oxlint/configuration_schema.json",
+  "$schema": "../../../../node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "oxc", "import", "jsdoc"],
   "categories": { "correctness": "error", "suspicious": "warn" },
   "env": { "es2024": true },

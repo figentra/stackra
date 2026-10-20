@@ -1,8 +1,8 @@
 # @stackra/oxlint-config
 
 oxlint presets. A workspace's `.oxlintrc.jsonc` is
-`{ "extends": ["../../../node_modules/@stackra/oxlint-config/<preset>.jsonc"] }` — oxlint resolves `extends`
-as a file path, not a package export, so every preset stays a plain file at this package's root.
+`{ "extends": ["../../../node_modules/@stackra/oxlint-config/src/<preset>.jsonc"] }` — oxlint resolves `extends`
+as a file path, not a package export, so every preset stays a plain file in this package's `src/`.
 
 | Preset             | Extends | Adds                                                                                      |
 | ------------------ | ------- | ----------------------------------------------------------------------------------------- |

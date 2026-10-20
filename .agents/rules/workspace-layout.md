@@ -80,13 +80,13 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 - No root `tests/` - tests live beside code
 - No `src/` in workspace root
 - No packages directly in `packages/` - must have category folder
-- No `packages/tooling/<name>/src/lib/` - single layer
+- Tooling presets live in `packages/tooling/<name>/src/` (one flat layer); no `packages/tooling/<name>/src/lib/`
 
 ## Enforcement
 
 - `turbo boundaries` checks dependency direction
 - `tools/scripts/validate-repository.mjs` checks tier tags, file existence, and config formats: repo-owned config is YAML; `.jsonc` only where the reader has no YAML support (`MUST_STAY_JSONC`), `.json` only where it takes no comments (`MUST_STAY_JSON`)
-- `packages/tooling/oxlint/boundaries.jsonc` enforces layer rules
+- `packages/tooling/oxlint/src/boundaries.jsonc` enforces layer rules
 
 ## See Also
 

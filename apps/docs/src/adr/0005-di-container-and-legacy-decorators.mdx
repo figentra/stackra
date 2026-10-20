@@ -31,7 +31,7 @@ what people already know.
 
 ## Enforcement
 
-- The presets exist: `packages/tooling/typescript/decorators.json`, `packages/tooling/oxlint/decorators.jsonc`, `packages/tooling/vitest/preset-decorators.ts`.
+- The presets exist: `packages/tooling/typescript/src/decorators.json`, `packages/tooling/oxlint/src/decorators.jsonc`, `packages/tooling/vitest/src/preset-decorators.ts`.
 - `FORBIDDEN_DEPENDENCIES` in `tools/scripts/validate-repository.mjs` rejects `@nestjs/core`, `@nestjs/common` and `reflect-metadata`.
 - Planned: a check that no package other than the container imports the support package into a core entry.
 

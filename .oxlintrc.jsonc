@@ -6,7 +6,7 @@
 // Owner: release-operations · Secrets: forbidden
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "extends": ["./packages/tooling/oxlint/boundaries.jsonc"],
+  "extends": ["./packages/tooling/oxlint/src/boundaries.jsonc"],
   "ignorePatterns": [
     // oxlint follows workspace symlinks (apps/*/node_modules/@stackra/* → packages/*): a bare name pattern
     // is what stops the traversal.
