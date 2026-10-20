@@ -8,10 +8,10 @@ manual: false
 
 # Service checklist
 
-A service is `services/<name>`, `@figentra/service-<name>`, tag `tier:service`. Its root module is declared in `package.json` (ADR 0126),
-and its code is organised by kind folders: `models/`, `actions/`, `queries/`, `services/`, `events/`, `listeners/`, `workflows/`, `policies/`,
-`permissions/`, `settings/`, `contracts/`, and `raw/` only for `@Controller` raw endpoints (ADR 0130). There is no `src/main.ts` and no
-`controllers/`, `dtos/`, `repositories/` or `presentation/` folder. Eight non-negotiables:
+A service is `services/<name>`, `@figentra/service-<name>`, tag `tier:service`, entry `src/main.ts`, which bootstraps the root module the member
+declares in `package.json` (ADR 0126; owner G2). Its code is organised by kind folders: `models/`, `actions/`, `queries/`, `services/`,
+`events/`, `listeners/`, `workflows/`, `policies/`, `permissions/`, `settings/`, `contracts/`, and `raw/` only for `@Controller` raw endpoints
+(ADR 0130). There is no `controllers/`, `dtos/`, `repositories/` or `presentation/` folder. Eight non-negotiables:
 
 1. **Placement and kind folders.** The placement test passes (`module-boundary`). Code sits in the kind folders above. Imports across folders use
    `#` aliases (ADR 0233).
