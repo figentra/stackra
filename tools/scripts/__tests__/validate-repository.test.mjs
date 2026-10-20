@@ -39,6 +39,23 @@ test("forbidden dependency, wrong name, wrong tier, foreign tsconfig", () => {
   assert.equal(f.length, 4);
 });
 
+test("dependencies replaced by Accepted ADRs are forbidden", () => {
+  for (const dep of [
+    "expo-router",
+    "zustand",
+    "@tanstack/store",
+    "i18next",
+    "react-i18next",
+    "class-validator",
+    "class-transformer",
+    "meilisearch",
+    "@opensearch-project/opensearch",
+  ]) {
+    const f = check({ ...ok, pkg: { ...ok.pkg, devDependencies: { [dep]: "catalog:" } } });
+    assert.deepEqual(f, [`devDependencies.${dep} is a forbidden dependency`], dep);
+  }
+});
+
 const named = (dir, name) =>
   check({ ...ok, dir, pkg: { name } }).filter((m) => /package name/.test(m));
 

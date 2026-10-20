@@ -22,76 +22,75 @@ catalogs:
   # Toolchain that builds TypeScript output — a different risk/cadence than lint/format/test tools.
   build:
     typescript: 7.0.2
-    tsdown: ^0.23.0
-    turbo: ^2.11.7
+    tsdown: 0.23.1
+    turbo: 2.11.9
   # Format/lint/test tools every member's scripts run.
   quality:
     oxlint: 1.86.0
     oxfmt: 0.71.0
-    vitest: ^5.0.3
+    vitest: 5.0.5
     "@vitest/coverage-v8": 5.0.3
-    knip: ^6.39.0
+    knip: 6.41.0
   # Release tooling: changesets, commitlint, git hooks.
   release:
-    "@changesets/cli": ^3.0.3
-    "@changesets/changelog-git": ^1.0.0
-    "@commitlint/cli": ^21.2.3
-    "@commitlint/config-conventional": ^21.2.3
-    lefthook: ^2.1.16
+    "@changesets/cli": 3.0.3
+    "@changesets/changelog-git": 1.0.0
+    "@commitlint/cli": 21.2.3
+    "@commitlint/config-conventional": 21.2.3
+    lefthook: 2.2.2
   # Web apps and React packages.
   frontend:
-    react: ^19.3.0
-    react-dom: ^19.3.0
-    "@types/react": ^19.3.0
-    "@types/react-dom": ^19.3.0
-    vite: ^8.3.2
-    "@vitejs/plugin-react": ^6.1.1
-    tailwindcss: ^4.3.3
-    "@tailwindcss/vite": ^4.3.3
-    "@heroui/react": ^3.2.6
-    "@heroui/styles": ^3.2.6
-    "@testing-library/react": ^16.3.3
-    "@testing-library/dom": ^10.4.2
-    jsdom: ^30.1.0
+    react: 19.3.0
+    react-dom: 19.3.0
+    "@types/react": 19.3.0
+    "@types/react-dom": 19.3.0
+    vite: 8.3.2
+    "@vitejs/plugin-react": 6.1.1
+    tailwindcss: 4.3.3
+    "@tailwindcss/vite": 4.3.3
+    "@heroui/react": 3.2.6
+    "@heroui/styles": 3.2.6
+    "@testing-library/react": 16.3.3
+    "@testing-library/dom": 10.4.2
+    jsdom: 30.1.0
   # Expo SDK 57 app (apps/mobile). Pins match academorix/apps/mobile; react stays on 19.2.3 because
   # react-native 0.86 renders with that exact renderer version. Bump with `expo install --check`.
   mobile:
-    expo: ~57.0.25
-    expo-router: ~57.0.23
+    expo: 57.0.30
     # Code-based navigation (no expo-router routes): React Navigation 7 + Callstack's native tab bar,
     # which drives UITabBarController so iOS 26 draws the Liquid Glass tab bar.
-    "@react-navigation/native": ^7.5.0
-    "@react-navigation/native-stack": ^7.20.0
-    react-native-bottom-tabs: ^1.4.0
-    "@bottom-tabs/react-navigation": ^1.4.0
-    "@expo/metro-runtime": ~57.0.16
-    expo-dev-client: ~57.0.19
-    expo-constants: ~57.0.19
-    expo-linking: ~57.0.11
-    expo-splash-screen: ~57.0.9
-    expo-status-bar: ~57.0.1
-    expo-system-ui: ~57.0.4
-    expo-glass-effect: ~57.0.4
-    expo-blur: ~57.0.3
-    babel-preset-expo: ~57.0.13
+    "@react-navigation/native": 7.5.1
+    "@react-navigation/native-stack": 7.21.0
+    react-native-bottom-tabs: 1.4.0
+    "@bottom-tabs/react-navigation": 1.4.0
+    "@expo/metro-runtime": 57.0.16
+    expo-dev-client: 57.0.20
+    expo-constants: 57.0.22
+    expo-linking: 57.0.13
+    expo-splash-screen: 57.0.10
+    expo-status-bar: 57.0.1
+    expo-system-ui: 57.0.4
+    expo-glass-effect: 57.0.4
+    expo-blur: 57.0.3
+    babel-preset-expo: 57.0.16
     react: 19.2.3
     react-dom: 19.2.3
     react-native: 0.86.3
-    react-native-web: ^0.21.2
-    react-native-screens: ~4.26.2
+    react-native-web: 0.21.2
+    react-native-screens: 4.26.2
     react-native-safe-area-context: 5.7.0
-    react-native-gesture-handler: ~2.32.0
+    react-native-gesture-handler: 2.32.0
     react-native-reanimated: 4.5.1
     react-native-worklets: 0.10.1
     react-native-svg: 15.15.4
-    "@gorhom/bottom-sheet": ^5.2.14
-    heroui-native: ^1.0.10
+    "@gorhom/bottom-sheet": 5.2.14
+    heroui-native: 1.0.10
     uniwind: 1.12.1
-    tailwind-merge: ^3.7.0
-    tailwind-variants: ^3.3.1
+    tailwind-merge: 3.7.0
+    tailwind-variants: 3.3.1
     # The Expo CLI loads `typescript` as a JS API, which TypeScript 7 (native) does not ship yet.
-    typescript: ~6.0.3
-    "@types/react": ~19.2.4
+    typescript: 6.0.3
+    "@types/react": 19.2.18
   # Documentation site (apps/docs).
   docs:
     mint: 4.2.985
@@ -99,7 +98,7 @@ catalogs:
   # `frontend`; @tailwindcss/postcss tracks that catalog's tailwindcss line.
   next:
     next: 16.3.8
-    "@tailwindcss/postcss": ^4.3.3
+    "@tailwindcss/postcss": 4.3.3
 
 # Dependency lifecycle scripts are blocked by default (pnpm supply-chain security). Every entry here was
 # reviewed; a new one must be, too — install fails (ERR_PNPM_IGNORED_BUILDS) until it is.
