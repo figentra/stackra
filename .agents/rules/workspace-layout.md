@@ -33,6 +33,7 @@ stackra/
 └── tools/
     ├── scripts/            # validation, scaffolding
     └── scaffold/           # Templates
+.notes/                     # private owner-only submodule; never referenced from public docs
 ```
 
 ## Tier Tags

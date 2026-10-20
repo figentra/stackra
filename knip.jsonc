@@ -46,7 +46,7 @@
   },
   // `mint`: Swift's Mint runner, a fallback in lefthook's generated hooks.
   // Scaffold templates are inert text with {{tokens}}; the generated members are checked once they exist.
-  "ignore": ["tools/scaffold/templates/**"],
+  "ignore": ["tools/scaffold/templates/**", "**/__tests__/fixtures/**"],
   "ignoreBinaries": ["gitleaks", "mint"],
   "rules": {
     // Catalog entries are declared ahead of the members that consume them; `warn` keeps a dead one visible.
