@@ -1,0 +1,41 @@
+---
+title: "0142 — Cross-service transport goes through drivers"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0032](/adr/0032-rest-api-generated-client-uuidv7-ids): REST `api()` with the Encore
+  client is no longer the transport rule. Services talk through transport drivers.
+</Note>
+
+## Context
+
+[0032](/adr/0032-rest-api-generated-client-uuidv7-ids) chose REST `api()` plus the Encore client for service calls. The owner's audit
+answer Q2 (mem L545, 2026-10-20) moves integration events and typed calls behind drivers, so the same service code runs in SaaS and on-prem.
+
+## Decision
+
+1. Integration events and typed calls go through drivers. In SaaS: Encore Pub/Sub and RPC. On-prem: a Postgres queue and HTTP.
+2. Kafka, NATS or Redpanda may come later as an event-bus driver. This ADR does not adopt them.
+3. There is no hand-written gRPC.
+4. Clients are generated (ADR 0158, wave 1 part 3), and ids follow
+   [0135](/adr/0135-public-id-format).
+
+## Consequences
+
+- A service calls another service through a generated client and an event, never through another service's source.
+- On-prem needs no broker. The Postgres queue carries events there.
+
+## Enforcement
+
+planned — the boundaries rule bans direct imports of another service's source, and gen emits the clients only through the drivers.
+
+## Alternatives
+
+- REST plus the Encore client only (0032): superseded, because on-prem has no Encore runtime.
+- Kafka as the default: not chosen; it is a later driver.
+
+## Supersedes and sources
+
+Supersedes: [0032](/adr/0032-rest-api-generated-client-uuidv7-ids). Sources: owner audit answer Q2 (`stackra-decisions-2026-10-19.md`
+L545, 2026-10-20).

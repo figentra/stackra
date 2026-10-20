@@ -1,0 +1,60 @@
+---
+title: "0140 — The error envelope and error kinds"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0117](/adr/0117-contracts-placement-and-decorator-ownership), decision C1 (error shapes in
+  contracts). The error classes that carry this envelope are in `@stackra/errors` (ADR 0232, wave 1
+  part 5).
+</Note>
+
+## Context
+
+Errors were shaped per package. The owner's intent-map item P13 fixes one envelope with a category, a retry flag and field errors,
+and says each transport maps the category. The framework answer FW7 (a, mem L540) asked for error kinds with STK codes. The owner
+answered the count on 2026-10-20: ten kinds, all snake_case, with auth split into two kinds and a payment kind added (contradiction
+C-15 is closed by that answer).
+
+## Decision
+
+1. The envelope is `ErrorEnvelope { code, category, retryable, fieldErrors?, correlationId, action? }` (P13). The `code` is a
+   snake_case STK code or a snake_case domain code (ADR 0231).
+2. The ten categories are:
+   - `validation`;
+   - `unauthenticated` (HTTP 401);
+   - `forbidden` (HTTP 403);
+   - `entitlement_required` (HTTP 402), for a runtime-gated feature the tenant is not entitled to;
+   - `not_found`;
+   - `conflict`;
+   - `precondition_failed`;
+   - `rate_limited`;
+   - `unavailable`;
+   - `internal`.
+3. Transport mappings (HTTP status, MCP error and CLI exit code) are generated from `category`, never written by hand. The
+   statuses in point 2 are the ones the owner set; the others follow the generator's table.
+4. At the gen boundary, errors map to `APIError`, using the snake_case code of the error kind.
+
+## Consequences
+
+- A new category is an ADR change, because every transport mapping depends on the list.
+- Clients branch on `category` and `retryable`, not on message text.
+- Splitting auth into `unauthenticated` and `forbidden` means a client that retries after login can tell the two cases apart.
+
+## Enforcement
+
+planned — gen fails when an error has no category, and the mapping tests check each transport for every category. The naming
+rule (`.agents/rules/naming-and-casing.md`, wave 1 part 5) rejects a kebab-case category or code.
+
+## Alternatives
+
+- Per-transport error shapes: rejected, the mappings would drift.
+- P13's eight categories with one `auth` kind: replaced by the owner's ten.
+
+## Supersedes and sources
+
+Supersedes: none.
+
+Amends: [0117](/adr/0117-contracts-placement-and-decorator-ownership) decision C1. Sources: owner intent-map item P13
+(`stackra-notes/owner-docs-intent-map.md`, Part 4, accepted); FW7 a (`stackra-decisions-2026-10-19.md` L540, 2026-10-20); the
+owner's answer on the ten kinds and the snake_case rule (2026-10-20). Contradiction C-15 is resolved by that answer.
