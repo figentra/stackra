@@ -27,7 +27,7 @@ scope-tree tier was first written as Pro and later changed to free code with pla
 2. **Roles (A2).** System roles are shipped by modules. Tenants add custom roles. A grant is a role, a principal, a scope and an optional expiry.
 3. **Conditions and deny (A3).** Structured conditions and explicit deny, with deny overriding allow, in the first release. No expressions.
 4. **Delegation (A4).** A principal can delegate only at or below its own scope, and only roles it holds. Separation-of-duties role pairs are supported.
-5. **Free and Pro lines (A7, as corrected).** Free: role-based access, custom roles, one level below the tenant, conditions and delegation. Paid entitlements: relationship-based access, separation-of-duties rules, unlimited depth, the edge decision point, and the OpenFGA and OPA adapters.
+5. **Free and Pro lines (A7, as corrected).** Free: role-based access, custom roles, one level below the tenant, conditions and delegation. Paid entitlements: relationship-based access, separation-of-duties rules, unlimited depth, the edge decision point, and the OpenFGA and OPA adapters, which come later (Deferred in 0011, and 0227).
 6. **Permission names (A10).** Are those of ADR 0132.
 7. **Access reviews (A11).** Review campaigns run on a schedule.
 
