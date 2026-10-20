@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "{{DESCRIPTION}}",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "files": [
     "src",
     "dist",
@@ -25,24 +25,29 @@
   },
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "@stackra/source": "./src/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
     },
     "./core": {
-      "types": "./src/core/index.ts",
-      "default": "./src/core/index.ts"
+      "@stackra/source": "./src/core/index.ts",
+      "types": "./dist/core.d.mts",
+      "default": "./dist/core.mjs"
     },
     "./application": {
-      "types": "./src/application/index.ts",
-      "default": "./src/application/index.ts"
+      "@stackra/source": "./src/application/index.ts",
+      "types": "./dist/application.d.mts",
+      "default": "./dist/application.mjs"
     },
     "./infrastructure": {
-      "types": "./src/infrastructure/index.ts",
-      "default": "./src/infrastructure/index.ts"
+      "@stackra/source": "./src/infrastructure/index.ts",
+      "types": "./dist/infrastructure.d.mts",
+      "default": "./dist/infrastructure.mjs"
     },
     "./presentation/api": {
-      "types": "./src/presentation/api/index.ts",
-      "default": "./src/presentation/api/index.ts"
+      "@stackra/source": "./src/presentation/api/index.ts",
+      "types": "./dist/presentation/api.d.mts",
+      "default": "./dist/presentation/api.mjs"
     }
   },
   "scripts": {

@@ -1,0 +1,8 @@
+Stackra is MIT-licensed (LICENSE), with these exclusions (ADR 0024):
+
+- Brand assets (logos, marks, social images) are all rights reserved. Each excluded folder carries its own
+  NOTICE: packages/experience/brand/src/logos/NOTICE and .github/NOTICE.
+- Fonts keep their own licence: the SIL Open Font License texts beside the files in
+  packages/experience/brand/src/fonts/OFL-*.txt.
+- Code from paid licences (HeroUI Pro, Uniwind Pro and similar) is never committed. It is consumed as a dependency
+  under its vendor's terms and is not covered by the MIT licence.

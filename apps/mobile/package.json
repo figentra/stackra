@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "description": "Stackra mobile app — Expo SDK 57, code-based React Navigation (native stack + native tabs, iOS 26 Liquid Glass), HeroUI Native + Uniwind.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "main": "src/main.ts",
   "scripts": {
     "dev": "expo start",

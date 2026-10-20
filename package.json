@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra — pnpm + Turborepo monorepo: @stackra/* packages by category, apps (console, docs), the Encore app.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "prepare": "lefthook install",
