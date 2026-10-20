@@ -26,6 +26,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
 
       # ADR 0027 D2: toolchains come from mise.toml (node, pnpm, gitleaks), not per-tool setup actions.
       - name: Toolchain (mise)

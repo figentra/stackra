@@ -30,5 +30,7 @@
     // installed skills are upstream content
     ".agents/skills/**",
     ".claude/skills/**",
+    // private owner-only notes submodule (STA-178); never part of this repo's checks
+    ".notes/**",
   ],
 }
