@@ -56,7 +56,7 @@ names when. A row changes only by a new ADR that supersedes this page.
 ## Enforcement
 
 - `FORBIDDEN_DEPENDENCIES` in `tools/scripts/validate-repository.mjs` fails a member that lists `eslint`, `prettier`, `jest`, `@nestjs/core`, `@nestjs/common`, `reflect-metadata`, `prisma`, `@prisma/client`, `drizzle-orm`, `express`, `fastify`, `typeorm` or `knex`.
-- `packages/tooling/oxlint/boundaries.jsonc` bans `encore.dev` in packages.
+- `packages/tooling/oxlint/src/boundaries.jsonc` bans `encore.dev` in packages.
 - Planned: extend the list with `encore.dev` for members other than a future service runtime, and with the other rows that name a package, after this table is reviewed.
 - The `architecture-guardian` agent reads this page.
 

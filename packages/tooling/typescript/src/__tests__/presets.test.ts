@@ -41,7 +41,7 @@ describe("@stackra/typescript-config presets", () => {
   }
 
   it("base keeps the non-negotiable strictness flags", () => {
-    const base = readJsonc(join(root, "base.json")).compilerOptions ?? {};
+    const base = readJsonc(join(root, "src", "base.json")).compilerOptions ?? {};
     for (const flag of [
       "strict",
       "noUncheckedIndexedAccess",

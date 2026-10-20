@@ -5,20 +5,19 @@
   "description": "Shared oxlint presets. A workspace's .oxlintrc.jsonc extends exactly one role preset and declares no rules of its own.",
   "license": "MIT",
   "files": [
-    "*.json",
-    "*.jsonc",
+    "src/*.jsonc",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
   ],
   "type": "module",
   "exports": {
-    ".": "./base.jsonc",
-    "./base": "./base.jsonc",
-    "./node": "./node.jsonc",
-    "./boundaries": "./boundaries.jsonc",
-    "./decorators": "./decorators.jsonc",
-    "./react": "./react.jsonc"
+    ".": "./src/base.jsonc",
+    "./base": "./src/base.jsonc",
+    "./node": "./src/node.jsonc",
+    "./boundaries": "./src/boundaries.jsonc",
+    "./decorators": "./src/decorators.jsonc",
+    "./react": "./src/react.jsonc"
   },
   "scripts": {
     "format": "oxfmt --write .",

@@ -40,7 +40,7 @@ Events, pub/sub, outbox, jobs, cron, workflows, realtime, webhooks and notificat
 
 ## Enforcement
 
-`packages/tooling/oxlint/boundaries.jsonc` bans `encore.dev` in packages. Planned: a conformance suite per driver package (queue, scheduler, events sources and sinks, outbox relay), including "redelivery is a no-op". A validator check that integration-event names end in `.v<n>`, and a lint rule that a scheduler handler only dispatches a job or a workflow.
+`packages/tooling/oxlint/src/boundaries.jsonc` bans `encore.dev` in packages. Planned: a conformance suite per driver package (queue, scheduler, events sources and sinks, outbox relay), including "redelivery is a no-op". A validator check that integration-event names end in `.v<n>`, and a lint rule that a scheduler handler only dispatches a job or a workflow.
 
 ## Supersedes and sources
 

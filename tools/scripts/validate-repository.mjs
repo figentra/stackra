@@ -193,11 +193,11 @@ export const MUST_STAY_JSON = [
     "tsc finds tsconfig.json by name; comments allowed in place",
   ],
   [
-    /^packages\/tooling\/typescript\/[\w-]+\.json$/,
+    /^packages\/tooling\/typescript\/src\/[\w-]+\.json$/,
     "tsconfig presets via package exports; comments allowed",
   ],
   [
-    /^tools\/scaffold\/templates\/packages\/tooling\/base\.json$/,
+    /^tools\/scaffold\/templates\/packages\/tooling\/src\/base\.json$/,
     "generic preset template: rename to .jsonc for a JSONC tool",
   ],
   [/^\.claude\/[\w.-]+\.json$/, "Claude Code settings/launch: fixed .json names"],
@@ -221,7 +221,7 @@ export const MUST_STAY_JSON = [
 export const MUST_STAY_JSONC = [
   [/(^|\/)turbo\.jsonc$/, "Turborepo: turbo.json / turbo.jsonc only"],
   [
-    /^\.oxlintrc\.jsonc$|^packages\/tooling\/oxlint\/[\w-]+\.jsonc$/,
+    /^\.oxlintrc\.jsonc$|^packages\/tooling\/oxlint\/src\/[\w-]+\.jsonc$/,
     "oxlint: JSON/JSONC or oxlint.config.ts",
   ],
   [/^\.oxfmtrc\.jsonc$/, "oxfmt: .oxfmtrc.json / .jsonc only"],

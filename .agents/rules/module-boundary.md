@@ -66,7 +66,7 @@ Services communicate via (the generated Encore app carries both, ADRs 0091 and 0
 ## Enforcement
 
 - `turbo boundaries` enforces tier direction
-- `packages/tooling/oxlint/boundaries.jsonc` blocks forbidden imports
+- `packages/tooling/oxlint/src/boundaries.jsonc` blocks forbidden imports
 - `tools/scripts/validate-repository.mjs` checks tier tags
 
 ## See Also

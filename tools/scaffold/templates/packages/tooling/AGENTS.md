@@ -4,10 +4,10 @@
 
 ## Where code goes
 
-| You are writing…      | It goes in…                                                   |
-| --------------------- | ------------------------------------------------------------- |
-| A preset              | a `.json`/`.jsonc` file at the package root + `exports` entry |
-| A test of the presets | `src/__tests__/`                                              |
+| You are writing…      | It goes in…                                         |
+| --------------------- | --------------------------------------------------- |
+| A preset              | a `.json`/`.jsonc` file in `src/` + `exports` entry |
+| A test of the presets | `src/__tests__/`                                    |
 
 ## Rules that fail the build
 

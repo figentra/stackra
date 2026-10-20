@@ -39,7 +39,7 @@ member like any other, `services/<name>`, named `@figentra/service-<name>`, tagg
 ## Enforcement
 
 - `validate-repository.mjs` checks the member shape and the `tier:service` tag.
-- `packages/tooling/oxlint/boundaries.jsonc` bans imports of another service's `internal/`, `entities/` and `db`.
+- `packages/tooling/oxlint/src/boundaries.jsonc` bans imports of another service's `internal/`, `entities/` and `db`.
 - `turbo boundaries` bans app-to-service and lib-to-service edges.
 - Planned: a client-drift check (`gen:client:check`) once a generated client exists.
 

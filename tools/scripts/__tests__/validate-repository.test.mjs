@@ -182,7 +182,7 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       "package.json",
       "apps/console/package.json",
       "apps/console/tsconfig.json",
-      "packages/tooling/typescript/node.json",
+      "packages/tooling/typescript/src/node.json",
       "apps/mobile/app.json",
       "apps/mobile/eas.json",
       "apps/docs/src/docs.json",

@@ -33,7 +33,7 @@
   // produces. ENCORE_* are the Encore CLI's own runtime variables.
   "globalPassThroughEnv": ["HOME", "PATH", "ENCORE_*", "TURBO_*", "DOCKER_HOST"],
 
-  // Boundaries: the dependency direction from packages/tooling/oxlint/boundaries.jsonc.
+  // Boundaries: the dependency direction from packages/tooling/oxlint/src/boundaries.jsonc.
   //   tier:config  — tooling presets; depend on nothing workspace-local
   //   tier:lib     — packages/*/*; never depend on a deployable
   //   tier:app     — apps/*; consume config and libs, talk to services over the wire only

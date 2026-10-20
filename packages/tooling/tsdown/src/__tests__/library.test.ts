@@ -3,7 +3,7 @@
  * flag installs the inputOptions hook which adds the legacy transform and swallows only the known conflict log.
  */
 import { describe, expect, it, vi } from "vitest";
-import { library } from "../..";
+import { library } from "../index.ts";
 
 type Resolved = {
   entry: Record<string, string>;

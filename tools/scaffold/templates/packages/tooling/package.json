@@ -5,16 +5,16 @@
   "description": "{{DESCRIPTION}}",
   "license": "MIT",
   "files": [
-    "*.json",
-    "*.jsonc",
+    "src/*.json",
+    "src/*.jsonc",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
   ],
   "type": "module",
   "exports": {
-    ".": "./base.json",
-    "./base": "./base.json"
+    ".": "./src/base.json",
+    "./base": "./src/base.json"
   },
   "scripts": {
     "format": "oxfmt --write .",

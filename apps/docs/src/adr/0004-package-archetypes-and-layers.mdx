@@ -49,7 +49,7 @@ binding or reference.
 
 ## Enforcement
 
-- `packages/tooling/oxlint/boundaries.jsonc`: `no-restricted-imports` overrides keyed on `src/core`, `src/application`,
+- `packages/tooling/oxlint/src/boundaries.jsonc`: `no-restricted-imports` overrides keyed on `src/core`, `src/application`,
   `src/presentation` and `src/presentation/native`.
 - `validate-repository.mjs` checks `exports` point at `./src` and the preset and tier tags.
 - Planned: an `Archetype:` field check and a barrel and deep-import check in the validator (shape check ported from academorix `check-package-shape.mjs`).

@@ -37,7 +37,7 @@ Every workspace member carries exactly one tier tag in its own `turbo.jsonc` (`"
 
 - `turbo boundaries` (`pnpm boundaries`, part of `pnpm verify`) reads the tags.
 - `tools/scripts/validate-repository.mjs` requires exactly one tier tag, equal to the one the directory implies.
-- `packages/tooling/oxlint/boundaries.jsonc` bans imports of `apps/**`, `services/**`, `encore.dev` and `~encore/*` from `packages/**`.
+- `packages/tooling/oxlint/src/boundaries.jsonc` bans imports of `apps/**`, `services/**`, `encore.dev` and `~encore/*` from `packages/**`.
 - Planned: a check that packages contain no product literal and read no `process.env`.
 
 ## Supersedes and sources

@@ -6,11 +6,11 @@
   "license": "MIT",
   "type": "module",
   "exports": {
-    ".": "./preset.ts",
-    "./preset": "./preset.ts",
-    "./preset-decorators": "./preset-decorators.ts",
-    "./preset-react": "./preset-react.ts",
-    "./coverage": "./coverage.ts"
+    ".": "./src/preset.ts",
+    "./preset": "./src/preset.ts",
+    "./preset-decorators": "./src/preset-decorators.ts",
+    "./preset-react": "./src/preset-react.ts",
+    "./coverage": "./src/coverage.ts"
   },
   "scripts": {
     "format": "oxfmt --write .",
