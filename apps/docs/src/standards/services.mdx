@@ -63,7 +63,7 @@ src/
 ## Service boundary
 
 - A service owns its entry, its database and migrations, its topics, its public API and its tests.
-- No service imports another service's internals. Cross-service calls go through the generated typed client; shared types go through a contracts package ([ADR 0015](/adr/0015-contract-packages)).
+- No service imports another service's internals. Cross-service calls go through the generated typed client; shared types go through the producer's `./contracts` entry ([ADR 0117](/adr/0117-contracts-placement-and-decorator-ownership)).
 - Reading another service's database is allowed only read-only, only where an ADR names the pair.
 - Cross-service reads: call the owner's API, or subscribe and keep a small local read model. Cross-service writes: call the owner's API inside the caller's flow, or publish a versioned event and let the owner react.
 - Service calls are written inside a service directory so the framework can resolve them statically; shared library code takes callbacks instead.

@@ -6,14 +6,14 @@ description: Module boundary and import rules for Stackra
 
 # Module Boundary
 
-Packages and services are isolated by tier. The dependency graph flows one way: config → lib → app → service.
+Packages and services are isolated by tier. The dependency graph flows one way: config → lib → app and service. Apps and services are peers (ADR 0003): neither imports the other.
 
 ## Direction
 
 ```
-config → lib → app → service
-  ↓        ↓       ↓        ↓
-  ←────────←───────←───────← (never upstream)
+config → lib → app
+             → service
+(never upstream; app and service never import each other)
 ```
 
 ## Rules
@@ -43,25 +43,25 @@ import { Header } from "@figentra/console/src/header";
 
 ```typescript
 // ✅ App importing from package
-import { Button } from "@stackra/experience/button";
+import { tokens } from "@stackra/brand";
 
 // ✅ Service importing from package
-import { logger } from "@stackra/foundation/logger";
+import { logger } from "@stackra/logger";
 
 // ✅ Package importing from lower package
-import { config } from "@stackra/foundation/config";
+import { config } from "@stackra/config";
 
 // ✅ Config presets have no imports
 import { defineConfig } from "tsdown";
 ```
 
-## Encore Services
+## Services
 
-Encore services communicate via:
+Services communicate via (the generated Encore app carries both, ADRs 0091 and 0124):
 
-- **RPC calls** - Encore's typed client
-- **Pub/Sub** - Asynchronous messaging
-- Never direct imports
+- **Integration events** - `@OnEvent` on a versioned event name, shapes from the producer's `./contracts` (ADR 0078)
+- **Typed client calls** - only where an authoritative answer is needed now
+- Never direct imports of another service's source or `Topic`
 
 ## Enforcement
 

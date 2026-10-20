@@ -17,7 +17,7 @@ member like any other, `services/<name>`, named `@figentra/service-<name>`, tagg
 
 ## Decision
 
-1. **One service is one workspace member** at `services/<name>` with its own `package.json`, `turbo.json` (`tier:service`),
+1. **One service is one workspace member** at `services/<name>` with its own `package.json`, `turbo.jsonc` (`tier:service`),
    `tsconfig.json`, `README.md`, `AGENTS.md` (with a PII section), `CHANGELOG.md`, `LICENSE` and a `src/main.ts` entry.
 2. **Services are independent.** A service never imports another service's source. Cross-service calls go through a
    generated typed client or a published event; shared shapes live in a contract package ([0117](/adr/0117-contracts-placement-and-decorator-ownership)).

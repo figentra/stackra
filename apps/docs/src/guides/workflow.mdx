@@ -16,7 +16,11 @@ Hooks are advisory; CI runs the full gate.
 
 ## Commit messages
 
-`type(scope): subject`. The type is one of `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore` or `revert`, and the scope is the member's short name, such as `feat(console): add sign-in`.
+`type(scope): subject`. The type is one of `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore` or `revert`, and the scope is the member's short name, such as `feat(console): add sign-in`. The subject is lower case. Every `feat`, `fix`, `refactor` and `perf` commit carries a `Refs: STA-n` footer naming its Linear issue (commitlint and CI enforce it, [0065](/adr/0065-linear-gate-is-checked-offline)).
+
+## Branches and pull requests
+
+Branches are `figentra/sta-<n>-<slug>`. A pull request follows `.github/pull_request_template.md` and names its issue (`Fixes STA-n`). The only required check is `Quality Gate`; merges are squash merges through `pnpm pr:merge`, which also requires the AI review verdict ([0119](/adr/0119-merge-policy-and-release-authority)). A branch that falls behind `main` is updated with `gh pr update-branch`, never force-pushed.
 
 ## Releases
 

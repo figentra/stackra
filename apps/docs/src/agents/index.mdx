@@ -20,8 +20,8 @@ The main session coordinates. Subagents do the work.
   <Step title="Gates decide, not the agent that did the work">
     An agent's report is evidence, not a verdict. Before acting on a report, check its claims in the code. A blocked task usually means the brief left something out. Fix the brief rather than retrying into the same wall.
   </Step>
-  <Step title="A human lands it">
-    Executors never write to git. Committing, pushing, merging, releasing and deploying are a human's call, or an explicit instruction in chat.
+  <Step title="The lead lands it">
+    Executors never write to git. The lead (Claude) commits, pushes and merges through the merge gate (`pnpm pr:merge`); the owner merges the release pull request and approves every production promotion and deploy ([0119](/adr/0119-merge-policy-and-release-authority)).
   </Step>
 </Steps>
 

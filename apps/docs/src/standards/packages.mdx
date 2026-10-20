@@ -19,7 +19,7 @@ Asked once, when the package is created. The first yes wins.
 
 Domain or platform: would the code need renaming to make sense in a different product? Domain. A package that fits none of these is evidence of a new archetype, which is an [ADR 0004](/adr/0004-package-archetypes-and-layers) amendment, not a reason to stretch `platform`.
 
-Archetypes recorded as reference only (contracts, UI facade, provider, SDK, runtime, asset) have no member yet and govern nothing. Each becomes binding in the change that creates its first member; contracts are specified in [ADR 0015](/adr/0015-contract-packages).
+Archetypes recorded as reference only (contracts, UI facade, provider, SDK, runtime, asset) have no member yet and govern nothing. Each becomes binding in the change that creates its first member; contracts are specified in [ADR 0117](/adr/0117-contracts-placement-and-decorator-ownership) (a `./contracts` entry per package, shared primitives in `@stackra/contracts`).
 
 ## Shapes
 

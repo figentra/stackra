@@ -28,7 +28,7 @@ export const getUser = api(
 HTTP methods **by idempotency**:
 
 - `GET` - Safe, idempotent, no body
-- `PUT` - Idempotent, replaces entire resource
+- `PUT` - Idempotent state transition (`/archive`, `/activate`), per the HTTP and events law
 - `DELETE` - Idempotent
 - `POST` - Non-idempotent, creates resources
 - `PATCH` - Non-idempotent, partial update

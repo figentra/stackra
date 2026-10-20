@@ -11,13 +11,13 @@ categories changes nothing for its consumers.
 | Category        | Holds                                                                                         |
 | --------------- | --------------------------------------------------------------------------------------------- |
 | `foundation`    | The core every other package builds on: container, config, contracts, events, logger, support |
-| `application`   | Application definition and runtime composition                                                |
-| `communication` | Notifications, mail, messaging                                                                |
+| `application`   | Codegen (IR, compiler, schema generation) and AI; the definition package is dropped (0092)    |
+| `communication` | Notifications, webhooks, mail                                                                 |
 | `cross-cutting` | Concerns that touch every layer: analytics, brand, SEO                                        |
 | `data`          | Media, search, persistence helpers                                                            |
 | `developer`     | CLI, devtools, Vite plugins                                                                   |
 | `experience`    | UI building blocks: console shell, forms, navigation, dashboards                              |
-| `runtime`       | Cache, queue, realtime, scheduler, sync                                                       |
+| `runtime`       | Cache, outbox, queue, scheduler, workflow, realtime (0078)                                    |
 | `security`      | Identity, IAM, tenancy, consent, CSP                                                          |
 | `state`         | Settings, feature flags, theming                                                              |
 | `tooling`       | Shared tsconfig, oxlint, vitest and tsdown presets                                            |

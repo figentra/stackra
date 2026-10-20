@@ -25,6 +25,9 @@ You install one thing system-wide, [mise](https://mise.jdx.dev). It provisions t
     | `node` 24 | TypeScript toolchain, Turborepo |
     | `pnpm` 12 | Workspace manager. The version must equal `packageManager` in `package.json` |
     | `gitleaks` | Secret scanning in the pre-commit hook and `pnpm secrets:scan` |
+    | `infisical` | The vault CLI behind `pnpm linear`, `pnpm pr:merge` and the MCP wrapper |
+    | `uv` | Python tool runner, pinned in `mise.toml` |
+    | `maestro` | Mobile end-to-end flows (needs a JDK on `PATH`) |
   </Step>
   <Step title="Install dependencies">
     ```bash

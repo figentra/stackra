@@ -26,8 +26,9 @@ without anyone editing it. You do not change source code, and you do not cut rel
 
 ## Read first
 
-- `apps/docs/src/adr/0013-versioning-and-release.mdx` — npm members are versioned by Changesets; versions
-  are bumped by the release job on `main`, and published or tagged versions are permanent.
+- `apps/docs/src/adr/0025-packages-publish-to-private-registry.mdx` (supersedes 0013) — only packages are versioned
+  by Changesets (apps and services deploy by SHA); versions are bumped by the release job on `main`, and published
+  or tagged versions are permanent.
 - `apps/docs/src/runbooks/release.mdx` — the release procedure: changeset per PR, the version pull request,
   merge as the release decision, tags.
 - `.changeset/config.json` — changelog generator, `baseBranch`, `privatePackages` and the `ignore` list.

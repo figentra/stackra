@@ -11,7 +11,7 @@ The easy edge to add by accident is library to app, not library to service.
 
 ## Decision
 
-Every workspace member carries exactly one tier tag in its own `turbo.json` (`"tags": ["tier:<x>"]`), and the root
+Every workspace member carries exactly one tier tag in its own `turbo.jsonc` (`"tags": ["tier:<x>"]`), and the root
 `turbo.jsonc` `boundaries` block denies each tier everything above it.
 
 | Tier           | Members                       | May depend on                | Denied                  |
