@@ -216,7 +216,8 @@
               "adr/0122-workflow-studio-three-layers",
               "adr/0123-delivery-order-follows-the-dependency-graph",
               "adr/0124-encore-is-the-generated-runtime-target",
-              "adr/0125-constitution-amended-to-match-accepted-adrs"
+              "adr/0125-constitution-amended-to-match-accepted-adrs",
+              "adr/0126-member-shapes-and-scaffold-templates"
             ]
           }
         ]

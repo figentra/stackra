@@ -1,15 +1,9 @@
 # Service templates
 
-Templates for units of the one Encore app (`services/`, `@stackra/backend`). A service is not a workspace
-member: the scaffold drops it into `services/src/<name>/`, where the app's `encore run`, `encore test`,
-typecheck and lint already pick it up.
+`service/` renders a workspace member at `services/{{NAME}}` (`@figentra/service-{{NAME}}`, `tier:service`): plain
+TypeScript, no Encore file (ADR 0124). `stackra gen` reads `package.json` `stackra.module` and generates the Encore
+app into `.stackra/encore` (ADRs 0090, 0091).
 
-| Kind     | Lands in                 | Gives you                                                                    |
-| -------- | ------------------------ | ---------------------------------------------------------------------------- |
-| `encore` | `services/src/{{NAME}}/` | `encore.service.ts`, a public `GET /<name>/status`, its test, README, AGENTS |
-
-Tokens: `{{NAME}}` (kebab, also the Encore service name and the path prefix) and `{{DESCRIPTION}}`. Replace
-only these exact tokens — the TypeScript sources may contain other `{{ … }}` text.
-
-After scaffolding, follow the service checklist (`~/.claude/rules/service-checklist.md`): add `db.ts`,
-`events.ts`, `jobs.ts` only when the primitive exists, and switch new endpoints to `auth: true`.
+A new service is a skeleton: the root module with an empty `imports` list, an empty `src/modules/` whose README
+lists the kind folders, a types-only `src/contracts/` entry, `config/{{NAME}}.config.ts`, and a test that boots
+the root module. Shape decided in ADR 0126.

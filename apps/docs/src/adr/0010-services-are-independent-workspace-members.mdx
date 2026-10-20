@@ -9,6 +9,11 @@ description: "Accepted · 2026-10-19"
   ([0091](/adr/0091-generated-encore-app-in-stackra-folder)); service members hold no Encore files.
 </Note>
 
+<Note>
+  Decision 1 is amended by [0126](/adr/0126-member-shapes-and-scaffold-templates): a service also declares its root module in
+  `package.json` `stackra.module` and keeps deploy-time defaults in `config/<name>.config.ts`.
+</Note>
+
 ## Context
 
 Services need a rule for how they are packaged and how they talk. Earlier repositories put every service in one Encore

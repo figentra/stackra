@@ -1,29 +1,11 @@
 # Package templates
 
-Templates the scaffold script copies into a new workspace member. Pick a kind, replace the tokens, copy the
-root `LICENSE` byte-for-byte (it is not in the templates).
+| Kind      | Lands in                         | Name                       | Tier          | Shape                                                       |
+| --------- | -------------------------------- | -------------------------- | ------------- | ----------------------------------------------------------- |
+| `package` | `packages/{{CATEGORY}}/{{NAME}}` | `@stackra/{{NAME}}`        | `tier:lib`    | entries-first: `src/core` (`.`) plus the chosen entries     |
+| `tooling` | `packages/tooling/{{NAME}}`      | `@stackra/{{NAME}}-config` | `tier:config` | presets that ship data; `.`, `./base`                       |
 
-| Kind       | Pick it when                                                                                | Lands in                         | Name                       | Tier          | `exports`                                                                | Scripts                                                                  |
-| ---------- | ------------------------------------------------------------------------------------------- | -------------------------------- | -------------------------- | ------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| `domain`   | a business capability: entities, use cases, adapters, a delivery surface                    | `packages/{{CATEGORY}}/{{NAME}}` | `@stackra/{{NAME}}`        | `tier:lib`    | `.`, `./core`, `./application`, `./infrastructure`, `./presentation/api` | build, typecheck, lint, test, test:coverage, format, format:check, clean |
-| `platform` | a technical capability other packages build on, runtime-neutral core, optional host entries | `packages/{{CATEGORY}}/{{NAME}}` | `@stackra/{{NAME}}`        | `tier:lib`    | `.`, `./core`                                                            | same as domain                                                           |
-| `lib`      | a small flat utility with one entry and no layers                                           | `packages/{{CATEGORY}}/{{NAME}}` | `@stackra/{{NAME}}`        | `tier:lib`    | `.`                                                                      | same as domain                                                           |
-| `tooling`  | a shared config preset (JSON/JSONC) consumed by other members' config files                 | `packages/tooling/{{NAME}}`      | `@stackra/{{NAME}}-config` | `tier:config` | `.`, `./base`                                                            | format, format:check, lint, test                                         |
-
-Domain vs platform: would the code need renaming to make sense in a different product? Domain. Does it serve
-other packages with no business meaning of its own? Platform. Lib is platform without the subpaths.
-
-Every lib kind's `exports` point at source (`./src/**/index.ts`); `tsdown` builds `dist/` only for publishing.
-Tests sit beside the code in `src/**/__tests__/`, and each template ships passing tests (the vitest preset
-fails an empty suite).
-
-## Tokens
-
-Plain-text replacement in file contents **and** path names.
-
-| Token             | Value                                                                                                                                                                                        | Example                 |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| `{{NAME}}`        | kebab-case package short name                                                                                                                                                                | `container`             |
-| `{{PASCAL}}`      | PascalCase of `{{NAME}}`                                                                                                                                                                     | `Container`             |
-| `{{CATEGORY}}`    | the `packages/` folder: foundation, application, communication, cross-cutting, data, developer, experience, runtime, security, state (tooling kind: unused — it lives in `packages/tooling`) | `foundation`            |
-| `{{DESCRIPTION}}` | one sentence; becomes `description` in package.json and opens README/AGENTS                                                                                                                  | `Dependency injection.` |
+`package/` is the base every library gets: `src/core/` for `.`, `config/{{NAME}}.config.ts` and `resources/`
+outside `src/`. `entries/<entry>/` adds one optional entry (`contracts`, `node`, `react`, `native`, `testing`, `devtools`);
+`pnpm new package <name> --entries contracts,node` copies them and writes the `exports` keys. The tsdown entry map
+is the `{{ENTRIES}}` token. ADR 0126 replaces the earlier domain/platform/lib archetypes.

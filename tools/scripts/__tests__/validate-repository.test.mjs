@@ -6,7 +6,7 @@ import {
   checkExports,
   checkFiles,
   checkJsonConfigs,
-  checkServiceUnit,
+  checkService,
   checkTestPlacement,
   tierFor,
 } from "../validate-repository.mjs";
@@ -133,12 +133,17 @@ test("checkExports: ADR 0025 dist shape with @stackra/source first; strings are 
   assert.deepEqual(checkExports(undefined), []);
 });
 
-test("service units need encore.service.ts, README, AGENTS with PII", () => {
-  assert.deepEqual(
-    checkServiceUnit({ files: ["encore.service.ts", "README.md", "AGENTS.md"], agents: "## PII" }),
-    [],
-  );
-  assert.equal(checkServiceUnit({ files: ["api.ts"], agents: undefined }).length, 3);
+test("services: main entry, stackra.module that exists, no Encore files (ADR 0126)", () => {
+  const pkg = { stackra: { module: "./src/notes.module.ts" } };
+  assert.deepEqual(checkService({ pkg, paths: ["src/main.ts", "src/notes.module.ts"] }), []);
+  assert.deepEqual(checkService({ pkg: {}, paths: ["src/encore.service.ts"] }), [
+    "src/main.ts missing",
+    'package.json has no "stackra": { "module": "./src/<name>.module.ts" } (ADR 0090)',
+    "src/encore.service.ts: services hold no Encore files; stackra gen generates them (ADR 0124)",
+  ]);
+  assert.deepEqual(checkService({ pkg, paths: ["src/main.ts"] }), [
+    "package.json stackra.module ./src/notes.module.ts does not exist",
+  ]);
 });
 
 test("checkTestPlacement: test files must sit directly in __tests__/", () => {
@@ -161,6 +166,13 @@ test("checkTestPlacement: test files must sit directly in __tests__/", () => {
   ]);
   assert.deepEqual(checkTestPlacement(["src/__tests__/x.spec.ts"]), [
     "src/__tests__/x.spec.ts: name it <subject>.test.<ext>, not .spec (ADR 0022)",
+  ]);
+  assert.deepEqual(
+    checkTestPlacement(["src/__tests__/x.int.test.ts", "src/__tests__/x.e2e.test.ts"]),
+    [],
+  );
+  assert.deepEqual(checkTestPlacement(["src/x/x.stories.tsx"]), [
+    "src/x/x.stories.tsx: no Storybook; test the component in __tests__/",
   ]);
 });
 

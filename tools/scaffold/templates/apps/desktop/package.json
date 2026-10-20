@@ -1,0 +1,34 @@
+{
+  "name": "@figentra/{{NAME}}",
+  "version": "0.0.1",
+  "private": true,
+  "description": "{{DESCRIPTION}}",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/main.mjs",
+  "scripts": {
+    "dev": "tsdown && electron .",
+    "start": "electron .",
+    "build": "tsdown",
+    "package": "tsdown && electron-builder --config electron-builder.yml",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist release coverage .turbo"
+  },
+  "devDependencies": {
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "electron": "catalog:desktop",
+    "electron-builder": "catalog:desktop",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  }
+}
