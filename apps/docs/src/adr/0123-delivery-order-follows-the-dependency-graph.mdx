@@ -1,0 +1,33 @@
+---
+title: "0123 — Delivery order follows the dependency graph"
+description: "Proposed · 2026-10-20"
+---
+
+## Context
+
+About 200 decisions (ADRs 0075 to 0122, the [package port plan](/adr/0084-figentra-os-package-port-plan) and the 2026-10-19 questionnaire rounds) name roughly sixty packages, and [0023](/adr/0023-stackra-is-a-framework) deliberately leaves the first deliverable open. Solo work with parallel agents needs one rule for what comes next, otherwise agents start packages whose dependencies do not exist, collide on shared files, or build on decisions that are still Proposed. The [roadmap](/roadmap) applies these rules; this record states them so the ordering can be reviewed separately from the plan.
+
+## Decision
+
+1. **Order is the package dependency graph.** A package starts only when every workspace package it imports is merged. Phases group packages by layer: kernel, data, codegen, actions and messaging, security, platform capabilities, client and experience.
+2. **Waves are package-disjoint.** No two concurrent waves own the same path. Shared files (`pnpm-workspace.yaml`, `turbo.jsonc`, `docs.json`, the ADR index) are changed only by their steward, one PR per wave.
+3. **Spikes come before the wave they gate.** An unproven integration (the Encore Cloud deploy of the generated app, the migration runner, npflared) is a spike issue that blocks its package, run outside the repository.
+4. **An open owner question never stops the plan.** The plan proceeds on the questionnaire's recommended default, written as "assumed: &lt;default&gt;, pending owner", and only the waves that depend on that answer are re-ordered when it changes.
+5. **Free before Pro.** A Pro item starts only after the free contract it plugs into is merged ([0077](/adr/0077-open-core-free-and-pro-lists)).
+6. **One issue per package, none per task.** Each wave and each package has one Linear issue in its phase's project, with blocked-by relations mirroring the dependency graph. Specs create the task issues ([0121](/adr/0121-sdlc-tooling-roles-and-linear)).
+7. **The first product slice is the integration milestone** that the critical path aims at. Until FO4 is answered it is the questionnaire's option a.
+
+## Consequences
+
+- Any agent can pick the next unblocked issue in Linear without asking; blocked-by relations make the order visible.
+- The kernel is a long serial chain (contracts → container → config → validation → model → database → gen), so early throughput is limited to the client track, the runway track and the spikes.
+- Assumed defaults can be wrong; reversing one costs the waves downstream of it, which the roadmap's blocking-decisions table names.
+- The roadmap page and the Linear relations must be kept in step by the lead when a wave closes.
+
+## Enforcement
+
+Planned — blocked-by relations in Linear (team STA) and the roadmap page; no automated check yet. A future `spec-gate` rule could refuse a spec whose package dependencies are not merged.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: `~/Projects/stackra-notes/gap-questionnaire.md` (Top 10, FO3, FO4, OR6), `~/Projects/stackra-notes/sdd-sdlc-plan.md` §10 and §13, the decisions memory of 2026-10-19, and `~/Projects/stackra-spike-gen/FINDINGS.md` (informational).
