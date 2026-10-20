@@ -1,0 +1,40 @@
+---
+title: "0175 — Edge, domains and TLS"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0063](/adr/0063-cloudflare-hosts-web-surfaces). The tenant domain flow is ADR 0210
+  (wave 3).
+</Note>
+
+## Context
+
+[0063](/adr/0063-cloudflare-hosts-web-surfaces) (Proposed) placed the edge on Cloudflare without the tenant-domain model, the domain names or the certificates
+for customers. The owner's answers DP26, DP27 and DX5 (mem L453–454, L568, 2026-10-20) fix those.
+
+## Decision
+
+1. **Proxy (DP27).** Cloudflare proxies every public web and API hostname.
+2. **Tenant domains (DP26).** Tenant custom domains run through Cloudflare for SaaS. On-prem uses the customer's own certificates.
+3. **Domain names (DX5).** The product domain is `stackra.figentra.com`, with `docs.` for the documentation site. `npm.` points to the Keygen custom domain
+   (ADR 0177, wave 2 part 2).
+4. **Tenant domain flow.** Defined in the tenant domain ADR (ADR 0210, wave 3).
+5. **Console.** The console is still served from Cloudflare.
+
+## Consequences
+
+- TLS for tenant domains is managed by the edge provider, so a tenant domain is a configuration change, not a certificate project.
+- On-prem customers keep their own certificates, so the edge model does not force a public certificate on them.
+
+## Enforcement
+
+planned — the edge configuration is created by `@stackra/infra-cloudflare` (ADR 0171); `runbooks/deploys.mdx` records the hostnames (final pass).
+
+## Alternatives
+
+- Origin-only TLS without a proxy: rejected by DP27.
+
+## Supersedes and sources
+
+Supersedes: [0063](/adr/0063-cloudflare-hosts-web-surfaces). Sources: owner answers DP26, DP27, DX5 (`stackra-decisions-2026-10-19.md` L453–454, L568, 2026-10-20).

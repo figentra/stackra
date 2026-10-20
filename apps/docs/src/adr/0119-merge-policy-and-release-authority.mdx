@@ -3,6 +3,12 @@ title: "0119 — Merge policy: Quality Gate is the only required check; Claude m
 description: "Accepted · 2026-10-19"
 ---
 
+<Note>
+  Amended by [0166](/adr/0166-ci-policy-runners-budgets-concurrency-and-check-matrix): public
+  repositories use a merge queue; private repositories run an affected check plus a full verify on
+  main.
+</Note>
+
 ## Context
 
 `main` required one approving review, and nobody can approve their own pull request, so green pull requests stalled; merges

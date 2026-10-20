@@ -1,0 +1,48 @@
+---
+title: "0166 — CI policy: runners, budgets, concurrency, job shape and the check matrix"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0012](/adr/0012-code-host-and-ci) (accepted; this ADR sets its runner, budget and job
+  rules) and [0119](/adr/0119-merge-policy-and-release-authority) (the merge queue for public
+  repositories).
+</Note>
+
+## Context
+
+[0012](/adr/0012-code-host-and-ci) chose GitHub as the one host and CI. It did not set runners, spend limits, concurrency or the job shape. The owner
+answered these on 2026-10-20 (mem L406–414). Those answers fix the CI cost ceiling, the merge queue and the check that a branch protection rule requires.
+
+## Decision
+
+1. **Runners (CI1).** GitHub-hosted runners only. Revisit third-party runners if private spend stays above about $80 a month for two months.
+2. **Advisory machines (CI2).** The ci-box is advisory and agent compute only. It is never a required check.
+3. **Merge path (CI3).** Public repositories use a merge queue; `pr:merge` enqueues. Private repositories run `--affected` on the pull request, plus a full
+   verify on main with an automatic revert on red.
+4. **Concurrency (CI5).** One concurrency group per workflow and ref. Only stale pull-request runs are cancelled. Runs on main are never cancelled.
+5. **Platforms (CI6).** Linux by default. macOS and Windows run only for the cases the release and desktop ADRs state.
+6. **Budgets (CI7).** A $100 organisation hard stop. Private-repository budgets alert at 75% and 90%. The budget is reviewed monthly in Linear.
+7. **Job shape (CI8).** One gate job with a 20-minute timeout. Required checks name that job.
+8. **Matrix (CI9).** The check matrix is tiered: the gate runs on every change, the heavier tiers on schedule or on release.
+
+## Consequences
+
+- Required-check names are stable, so branch protection does not need to change when a job moves.
+- A stale pull-request run never holds a runner, and a main run is never cancelled mid-deploy.
+- Spend is visible monthly. A breach is an alert before it is a bill.
+
+## Enforcement
+
+planned — the workflow files `.github/workflows/ci.yml` and the release workflow are checked by `zizmor` (0167); the concurrency group and the 20-minute
+timeout are asserted in `pnpm validate` once the workflow changes land.
+
+## Alternatives
+
+- Self-hosted runners now: rejected by CI1 until spend justifies them.
+- Required checks per job: rejected by CI8, which asks for one gate job.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0012](/adr/0012-code-host-and-ci), [0119](/adr/0119-merge-policy-and-release-authority). Sources: owner answers CI1–CI9
+(`stackra-decisions-2026-10-19.md` L406–414, 2026-10-20). Closes gap B27.
