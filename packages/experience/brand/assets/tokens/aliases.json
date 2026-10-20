@@ -1,0 +1,13 @@
+[
+  { "name": "stk-ink", "target": "steel-deep", "themes": { "dark": { "ref": "steel" } } },
+  { "name": "accent", "target": "ink", "themes": { "dark": { "ref": "paper" } } },
+  { "name": "accent-foreground", "target": "paper", "themes": { "dark": { "ref": "ink" } } },
+  { "name": "accent-hover", "target": "graphite-800", "themes": { "dark": { "ref": "graphite-200" } } },
+  { "name": "accent-pressed", "target": "graphite-700", "themes": { "dark": { "ref": "graphite-300" } } },
+  { "name": "accent-soft", "target": "graphite-100", "themes": { "dark": { "ref": "graphite-900" } } },
+  { "name": "accent-soft-foreground", "target": "foreground" },
+  { "name": "focus", "target": "ink", "themes": { "dark": { "ref": "paper" } } },
+  { "name": "link", "target": "ink", "themes": { "dark": { "ref": "paper" } } },
+  { "name": "signal", "target": "ink", "themes": { "dark": { "ref": "paper" } } },
+  { "name": "signal-foreground", "target": "paper", "themes": { "dark": { "ref": "ink" } } }
+]

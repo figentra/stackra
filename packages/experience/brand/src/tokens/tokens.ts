@@ -1,4 +1,4 @@
-/** Stackra brand — TypeScript token definitions. Mirrors the CSS custom properties in tokens.css. */
+/** Stackra brand — TypeScript token definitions. Mirrors the CSS custom properties in assets/heroui/web.css. */
 
 export interface ColorToken {
   readonly light: string;

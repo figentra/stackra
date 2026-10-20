@@ -19,7 +19,10 @@ export function PanelShell({ title }: PanelShellProps) {
   return (
     <div className="grid min-h-dvh grid-rows-[auto_1fr]">
       <header className="flex items-center justify-between border-b border-border p-4">
-        <h1 className="text-xl font-semibold">{title}</h1>
+        <div className="flex items-center gap-3">
+          <img src="/favicon.svg" alt="" width={24} height={24} />
+          <h1 className="text-xl font-semibold">{title}</h1>
+        </div>
         <Button size="sm" variant="ghost">
           Account
         </Button>

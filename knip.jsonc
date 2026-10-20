@@ -30,7 +30,8 @@
     "apps/mobile": {
       "project": ["src/**/*.{ts,tsx}"],
       // app.json declares no OTA updates; knip's expo plugin assumes them.
-      "ignoreDependencies": ["expo-updates"],
+      // @stackra/brand: read by src/global.css (Uniwind theme) and app.json (icons, splash), which knip doesn't trace.
+      "ignoreDependencies": ["expo-updates", "@stackra/brand"],
     },
     "services/*": {
       // The root module is imported by `stackra gen` through package.json `stackra.module` (ADR 0090).

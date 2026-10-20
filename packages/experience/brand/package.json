@@ -2,11 +2,12 @@
   "name": "@stackra/brand",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra brand tokens, logos, and fonts",
+  "description": "Stackra brand: tokens, HeroUI web and native themes, fonts, logos, marks, icons and app icons",
   "license": "MIT",
   "files": [
     "src",
     "dist",
+    "assets",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
@@ -24,10 +25,11 @@
       "types": "./dist/tokens.d.mts",
       "default": "./dist/tokens.mjs"
     },
-    "./tokens.css": "./src/tokens/tokens.css",
+    "./tokens.css": "./assets/heroui/web.css",
     "./tokens.json": "./src/tokens/tokens.json",
-    "./logos": "./src/logos",
-    "./fonts": "./src/fonts"
+    "./logos": "./assets/public/logos",
+    "./fonts": "./assets/public/fonts",
+    "./assets/*": "./assets/*"
   },
   "scripts": {
     "build": "tsdown",
