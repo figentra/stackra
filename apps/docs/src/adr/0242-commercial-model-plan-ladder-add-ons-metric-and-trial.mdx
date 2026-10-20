@@ -17,7 +17,7 @@ Figentra sells several products (Academorix, Juristra, Retail OS and others) on 
 1. **Buying unit.** A plan ladder for each product, plus shared platform add-ons on the one account (AI credits, extra storage, SSO, advanced audit, marketplace apps). Add-ons work across products.
 2. **Metric.** Hybrid: a platform fee per tier, plus seats for internal users only (a tenant's end customers are never seats), plus metered usage for the cost drivers: AI credits, storage in GB, SMS, WhatsApp and email messages, automation runs, and API calls over the included amount.
 3. **Tiers.** Starter, Pro, Business and Enterprise. There is no Free plan (memory L952, final).
-4. **Ladder (placeholders, editable per product in the console).** Seats, scope depth, storage, AI credits, automation runs, API rate, and the other limits are in the table below. The owner's ladder was given for five columns; the four-column values are an inference (see open questions).
+4. **Ladder (placeholders, editable per product in the console).** Seats, scope depth, storage, AI credits, automation runs, API rate, and the other limits are in the table below. The owner's ladder was given for five columns; the four-column values are the accepted ladder (see open questions).
 
 | Limit                        | Starter   | Pro       | Business      | Enterprise             |
 | ---------------------------- | --------- | --------- | ------------- | ---------------------- |
@@ -54,7 +54,7 @@ planned — the entitlement table is checked against this ADR by a test; the tri
 ## Open questions
 
 1. **Settled.** The four-column mapping is the accepted ladder as written: the Starter, Pro, Business and Enterprise columns. Free is dropped (memory L952).
-2. **Scope depth for Business.** The earlier scope-tree answer (memory L878) said "Business and above unlimited". The later ladder (L950) gives Business depth 8 and unlimited only at Enterprise. This ADR follows the later line; the owner confirms.
+2. **Settled.** Scope depth is Starter 2, Pro 4, Business 8 and Enterprise unlimited, as the ladder row above says (owner answer, "Part-D clarifications"). It replaces the earlier "Business and above unlimited" line (memory L878).
 3. **Settled.** Starter support is email, as the ladder column says.
 
 ## Supersedes and sources

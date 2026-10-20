@@ -16,7 +16,7 @@ A company has several tenants, and it wants one bill, one set of rules and one w
 
 1. **Kinds.** A tenant is personal or organisation. A product setting allows personal workspaces. A personal workspace converts to an organisation and keeps its data, its subscription and its URL. The tenant switcher shows the personal workspace and the organisations.
 2. **Consolidated billing.** The organisation pays by default, with a per-child usage breakdown. A child may be self-paying.
-3. **Guardrails.** SCP-like policies: organisation deny policies and locked settings flow down the tree. How they combine with IAM explicit deny is open (register D-08).
+3. **Guardrails.** SCP-like policies: organisation deny policies and locked settings flow down the tree. An organisation policy is a ceiling, as with AWS SCPs: IAM decides within it. Any explicit deny, from the organisation or from IAM, beats any allow (register D-08, owner answer "Part-D clarifications").
 4. **Join and move.** An organisation can invite or join existing standalone tenants. Their billing moves to the organisation, with approval from both sides for a move between organisations.
 5. **Standalone exit.** A member leaves and becomes standalone through a readiness checklist: verified owner email and phone, billing contact and address, its own payment method, accepted terms, KYB if it sells, no balance, and the organisation's SSO and connections replaced. It leaves with its data as a root tenant with its own subscription.
 6. **Checklist engine.** A generic checklist engine is shared with onboarding. A check has a status, a fix link and a verifier.
@@ -34,7 +34,7 @@ planned — the checklist engine's tests cover each check; the sole-owner rule i
 
 ## Open questions
 
-1. How organisation deny policies combine with IAM explicit deny, and which evaluates first (register D-08).
+None. The deny combination is settled in decision 3.
 
 ## Supersedes and sources
 
