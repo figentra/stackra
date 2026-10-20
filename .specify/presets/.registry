@@ -16,7 +16,9 @@
           "speckit.analyze",
           "speckit.checklist",
           "speckit.implement",
-          "speckit.converge"
+          "speckit.converge",
+          "speckit.taskstoissues",
+          "speckit.constitution"
         ],
         "opencode": [
           "speckit.specify",
@@ -26,7 +28,9 @@
           "speckit.analyze",
           "speckit.checklist",
           "speckit.implement",
-          "speckit.converge"
+          "speckit.converge",
+          "speckit.taskstoissues",
+          "speckit.constitution"
         ]
       },
       "registered_skills": {
@@ -38,7 +42,9 @@
           "speckit-analyze",
           "speckit-checklist",
           "speckit-implement",
-          "speckit-converge"
+          "speckit-converge",
+          "speckit-taskstoissues",
+          "speckit-constitution"
         ]
       },
       "installed_at": "2026-10-19T08:43:21.807670+00:00"

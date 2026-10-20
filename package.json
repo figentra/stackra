@@ -33,6 +33,7 @@
     "secrets:scan": "gitleaks git . --config .gitleaks.toml --no-banner --redact",
     "delegate": "node tools/scripts/delegate.mjs",
     "linear": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/linear.mjs",
+    "spec:linear": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/spec-linear.mjs",
     "ai:spend": "node tools/scripts/ai-spend.mjs",
     "doctor": "node tools/scripts/doctor.mjs",
     "agents:sync": "node tools/scripts/agents-sync.mjs",

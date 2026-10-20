@@ -12,8 +12,8 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } f
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { checkSpec, checkStage, specDir, tripwire, WRAPPED } from "../spec-gate.mjs";
-import { specLinks, unlinkedTasks } from "../spec-linear.mjs";
+import { checkSpec, checkStage, REPLACED, specDir, tripwire, WRAPPED } from "../spec-gate.mjs";
+import { labelsFor, specLinks, unlinkedTasks } from "../spec-linear.mjs";
 
 const SCRIPTS = join(dirname(fileURLToPath(import.meta.url)), "..");
 const impact = (v = "none") =>
@@ -84,7 +84,8 @@ test("tripwire: the repository passes, and an upgrade that drops the wrap or res
     for (const p of [
       ".specify/scripts/bash",
       ".specify/init-options.json",
-      ...WRAPPED.flatMap((n) => [
+      ".specify/workflows/workflow-registry.json",
+      ...[...WRAPPED, ...Object.keys(REPLACED)].flatMap((n) => [
         `.claude/skills/speckit-${n}/SKILL.md`,
         `.opencode/commands/speckit.${n}.md`,
       ]),
@@ -111,6 +112,15 @@ test("tripwire: the repository passes, and an upgrade that drops the wrap or res
     assert.match(problems, /speckit\.specify\.md lost the Stackra wrap/);
     assert.match(problems, /as-is/);
     assert.match(problems, /setup-plan\.sh/);
+    // The replaced commands keep their markers, and the bundled workflow stays disabled.
+    writeFileSync(join(root, ".opencode/commands/speckit.taskstoissues.md"), "GitHub issues\n");
+    writeFileSync(
+      join(root, ".specify/workflows/workflow-registry.json"),
+      '{"workflows":{"speckit":{"source":"bundled"}}}',
+    );
+    const more = tripwire(root).join("\n");
+    assert.match(more, /speckit\.taskstoissues\.md lost the Stackra wrap/);
+    assert.match(more, /workflow is enabled/);
   } finally {
     rmSync(root, { recursive: true });
   }
@@ -137,6 +147,11 @@ test("an unanswered or missing Impact line blocks planning", () => {
 
 test("HTML comments are ignored", () => {
   assert.match(checkSpec(spec({ status: "pending" }) + "<!-- complete -->").join(), /Clarif/);
+});
+
+test("spec-linear labels the issues an agent creates `agent`", () => {
+  assert.deepEqual(labelsFor({ CLAUDECODE: "1" }), ["agent"]);
+  assert.deepEqual(labelsFor({}), []);
 });
 
 test("spec-linear parses links and finds unlinked tasks", () => {
