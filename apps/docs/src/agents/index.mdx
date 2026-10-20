@@ -52,16 +52,16 @@ The main session coordinates. Subagents do the work.
 
 Gate order for a non-trivial change, from the plan to the merge:
 
-| Gate                       | Agent                                                             | Blocks                                                                                            |
-| -------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| 1. Placement and decisions | `architecture-guardian`                                           | Yes. A boundary violation, or a change that contradicts an accepted ADR without a superseding one |
-| 2. Security                | `security-tenancy-reviewer`                                       | Yes. Auth, secrets, isolation, webhooks, redaction                                                |
-| 3. Tests                   | `test-engineer`                                                   | Yes. A red suite, or an untested failure path                                                     |
-| 4. Review                  | `code-reviewer`, `api-contract-reviewer`, `design-brand-reviewer` | No. They report findings ranked by severity                                                       |
-| 5. Accessibility           | `accessibility-reviewer`                                          | Critical and serious findings only                                                                |
-| 6. Release                 | `release-operations`                                              | Yes. A human approves every release and deploy                                                    |
+| Gate                       | Agent                                                                                     | Blocks                                                                                            |
+| -------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| 1. Placement and decisions | `architecture-guardian`                                                                   | Yes. A boundary violation, or a change that contradicts an accepted ADR without a superseding one |
+| 2. Security                | `security-tenancy-reviewer`                                                               | Yes. Auth, IAM, tenancy, secrets, webhooks, redaction                                             |
+| 3. Tests                   | the Quality Gate, fed by `test-engineer`                                                  | Yes. A red suite or a coverage floor missed                                                       |
+| 4. Review                  | `code-reviewer`, `api-contract-reviewer`, `design-brand-reviewer`, `performance-reviewer` | No. They report findings ranked by severity; `code-reviewer`'s verdict gates the merge            |
+| 5. Accessibility           | `accessibility-reviewer`                                                                  | Critical and serious findings only                                                                |
+| 6. Release                 | `release-operations`                                                                      | Yes. A human approves every release and deploy                                                    |
 
-The full roster, with tiers and models, is on [Roster](/agents/roster). The `delivery-orchestrator` enforces this order and writes no code.
+The full roster, with tiers and models, is on [Roster](/agents/roster). The lead enforces this order and writes no code ([ADR 0258](/adr/0258-agent-roster-v2-and-skill-fencing)).
 
 ### How a change merges
 

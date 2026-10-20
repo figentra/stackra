@@ -71,15 +71,15 @@ A port that diverges from its origin does so openly: in `ORIGIN.md`, not silentl
 
 ## What enforces this
 
-| Rule                                                           | Check                                                       | Status |
-| -------------------------------------------------------------- | ----------------------------------------------------------- | ------ |
-| Entries never import entries                                   | planned: oxlint `boundaries.jsonc` per entry folder         | No     |
-| No import of an app, service or `encore.dev` from a package    | oxlint `boundaries.jsonc` + `turbo boundaries`              | Yes    |
-| No deep import of `@stackra/*/src/*`                           | oxlint `boundaries.jsonc`                                   | Yes    |
-| `exports` dist + `@stackra/source` shape, `sideEffects: false` | `validate-repository.mjs`                                   | Yes    |
-| Unused files and exports                                       | `knip`                                                      | Yes    |
-| Entry folders match `exports` and `tsdown.config.ts`           | planned: validator check                                    | No     |
-| No product literal or `process.env` in a package               | planned: validator check                                    | No     |
-| `ORIGIN.md` present where code was copied                      | planned: validator check; review by `package-steward` today | No     |
+| Rule                                                           | Check                                                             | Status |
+| -------------------------------------------------------------- | ----------------------------------------------------------------- | ------ |
+| Entries never import entries                                   | planned: oxlint `boundaries.jsonc` per entry folder               | No     |
+| No import of an app, service or `encore.dev` from a package    | oxlint `boundaries.jsonc` + `turbo boundaries`                    | Yes    |
+| No deep import of `@stackra/*/src/*`                           | oxlint `boundaries.jsonc`                                         | Yes    |
+| `exports` dist + `@stackra/source` shape, `sideEffects: false` | `validate-repository.mjs`                                         | Yes    |
+| Unused files and exports                                       | `knip`                                                            | Yes    |
+| Entry folders match `exports` and `tsdown.config.ts`           | planned: validator check                                          | No     |
+| No product literal or `process.env` in a package               | planned: validator check                                          | No     |
+| `ORIGIN.md` present where code was copied                      | planned: validator check; review by `architecture-guardian` today | No     |
 
-The `package-steward` reviews every new package and every new `exports` subpath; see the [agent roster](/agents/roster).
+The `architecture-guardian` reviews every new package and every new `exports` subpath, and `code-standards-steward` keeps package shape; see the [agent roster](/agents/roster).

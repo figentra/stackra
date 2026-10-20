@@ -41,7 +41,7 @@ Every standard page and every rule names the check that enforces it. A rule that
 | Tests sit beside the code                                 | `AGENTS.md` states it. No check yet: add one in the validator |
 | No secret values anywhere                                 | The gitleaks scan in `lefthook.yml` and `guard-bash`          |
 | Required files in every member                            | `pnpm validate`                                               |
-| Docs and code agree                                       | `docs-governance` reports drift; no script does               |
+| Docs and code agree                                       | the lead reports drift; no script does                        |
 
 The last two rows are the honest ones: some claims are enforced only by a person or an agent reading. Say so, as that row does, so nobody assumes more coverage than exists.
 
@@ -54,6 +54,6 @@ Where an agent's charter and the real check disagree, the charter is the bug. Wh
 3. If it cannot be checked mechanically, say so and say why.
 4. Choose `always`, `applies_to` or `manual` honestly. Do not default to `always` for convenience.
 5. Add the provenance line when the rule comes from a finding. See [Spec lifecycle](/agents/spec-lifecycle).
-6. Route a suspected drift to `docs-governance`, whose method is to verify a document's claims against the repository and report which side is wrong, never to assume a document is right because it exists.
+6. Route a suspected drift to the lead, whose method is to verify a document's claims against the repository and report which side is wrong, never to assume a document is right because it exists.
 
 Related: [Working with agents](/agents/index), [Hooks](/agents/hooks), [Roster](/agents/roster).
