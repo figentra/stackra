@@ -1,0 +1,29 @@
+---
+title: "0205 — The Figentra OS build order and the first slice"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>Amends and accepts [0123](/adr/0123-delivery-order-follows-the-dependency-graph).</Note>
+
+## Context
+
+The OS has many services, and the order in which they are built decides what can be tested end to end. The owner's build order (FO3, mem L509) follows the dependency graph, and the first slice (FO4 a, mem L337) is the smallest set that proves the platform works in staging.
+
+## Decision
+
+1. **Build order (FO3).** Foundation first. Then identity, tenancy and access. Then audit, settings and entitlements. Then notifications and files. Then search, registry, experience and content. Then webhooks, integrations and the developer platform. Then workflow and AI. Then billing, usage and payments. Then the rest.
+2. **First slice (FO4 a).** Tenant, IAM, notes CRUD, notification and audit, on the console and on mobile, in staging.
+3. **Repository.** The OS repository is scaffolded after the structure settles (mem L586).
+
+## Consequences
+
+- Nothing is built before what it depends on, so each slice is testable end to end.
+- The first slice gives a working login, a tenant and an audit trail before any commerce code exists.
+
+## Enforcement
+
+planned — the roadmap (`roadmap.mdx`, final pass) lists the order, and each service's spec cites its position.
+
+## Supersedes and sources
+
+Amends and accepts: [0123](/adr/0123-delivery-order-follows-the-dependency-graph). Sources: owner answers FO3 and FO4 a (`stackra-decisions-2026-10-19.md` L337, L509, L586, 2026-10-20).

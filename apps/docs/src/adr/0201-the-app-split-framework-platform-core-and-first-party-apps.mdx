@@ -1,0 +1,28 @@
+---
+title: "0201 — The app split: framework packages, platform core and first-party apps"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+The owner's app split (mem L725–729, 2026-10-20) divides the product into layers, so every package and service has one place. Some core services also have an app face the user sees.
+
+## Decision
+
+1. **Layer 1: framework packages.** These are packages, never apps.
+2. **Layer 2: the always-on platform core.** Identity, tenancy, access, audit, settings, entitlements, the registry, usage, file storage, notification delivery, search, compliance, the security centre, geography, the workflow engine, the AI and MCP gateway, the experience runtime, webhook delivery, and billing.
+3. **Layer 3: first-party apps.** These are installable from the marketplace, like partner apps. The list is in memory L728.
+4. Some core services have an app face (for example, the security centre), and the face is a layer 3 app over a layer 2 service.
+
+## Consequences
+
+- A new capability is placed by asking which layer it is in, and the answer decides who owns it.
+- A first-party app uses the same install path as a partner app, so the path is tested by our own apps first.
+
+## Enforcement
+
+planned — the validator checks each member's tier against the layer its manifest declares.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner app split (`stackra-decisions-2026-10-19.md` L725–729, 2026-10-20).
