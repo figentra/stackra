@@ -3,6 +3,12 @@ title: "0076 — Every package runs in SaaS, on-prem and air-gapped deployments"
 description: "Proposed · 2026-10-19"
 ---
 
+<Note>
+  Amended by [0178](/adr/0178-licensing-keygen-licences-and-the-stackra-licensing-verifier)
+  (decision 3, licences) and [0179](/adr/0179-on-prem-and-air-gapped-delivery) (on-prem and
+  air-gapped delivery).
+</Note>
+
 ## Context
 
 Figentra OS is sold in three deploy modes ([0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services)), and Stackra packages are sold on their own. A package that hard-depends on a cloud service, or checks a licence online, cannot ship on-prem or air-gapped. Retrofitting that later means rewriting every package that assumed the cloud. Identity and IAM will also be offered as hosted Figentra OS services, so the packages must leave room for a remote implementation without building it now.

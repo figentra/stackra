@@ -1,0 +1,42 @@
+---
+title: "0181 — The desktop app's pipeline"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0058](/adr/0058-desktop-is-electron). The signing and distribution parts are refined
+  by the desktop and PWA group (ADRs 0249 to 0256, wave 2): the release pipeline is built unsigned,
+  and signing turns on when a desktop deliverable is named.
+</Note>
+
+## Context
+
+[0058](/adr/0058-desktop-is-electron) (Proposed) chose Electron without the pipeline. The owner's answers MR7 to MR9 (mem L478, 2026-10-20) set the scaffold, the packager,
+the notarisation, the update feed and the channels. The later desktop decision (2026-10-20 night, ADR 0254) builds the pipeline unsigned until a deliverable is named, so
+signing and store distribution follow that decision.
+
+## Decision
+
+1. **Scaffold (MR7).** `apps/desktop` is scaffolded now, with electron-builder.
+2. **Update feed.** electron-updater reads from R2, with beta and stable channels.
+3. **Rollout.** Staged rollout from 20% to 100%.
+4. **Runners.** Macs and Windows runners run only for releases (CI6, ADR 0166).
+5. **Signing and notarisation.** macOS notarisation and Azure Trusted Signing are set up when a desktop deliverable is named (ADR 0254, decision 3). Until then the build is unsigned.
+
+## Consequences
+
+- The desktop app can be built and tested before any signing certificate exists.
+- Signing is a switch, so turning it on does not change the build.
+
+## Enforcement
+
+planned — the release job builds the desktop app on every release tag, and the update feed is checked by the channel test.
+
+## Alternatives
+
+- Tauri: rejected by the desktop decision (Electron, ADR 0058).
+
+## Supersedes and sources
+
+Supersedes: [0058](/adr/0058-desktop-is-electron). Sources: owner answers MR7–MR9 (`stackra-decisions-2026-10-19.md` L478, 2026-10-20); the desktop and PWA owner decision
+(2026-10-20 night). Closes gap C45.
