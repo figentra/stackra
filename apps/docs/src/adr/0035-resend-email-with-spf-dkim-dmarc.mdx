@@ -1,0 +1,27 @@
+---
+title: "0035 — Resend for email, with SPF, DKIM and DMARC"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Products send transactional email (sign-in links, receipts). Deliverability depends on authenticated sending domains.
+
+## Decision
+
+1. **Resend is the email provider**, behind the `@stackra/notifications` email channel driver, so it can be swapped.
+2. **Every sending domain publishes SPF, DKIM and DMARC records** before it is used in an environment.
+3. The API key is a secret held in Infisical, by name only ([0009](/adr/0009-secrets-two-mechanisms)).
+4. DMARC policy progression (`none`, then `quarantine`, then `reject`): TODO.
+
+## Consequences
+
+- One vendor and one driver to operate; DNS records are part of environment setup.
+
+## Enforcement
+
+Planned — a runway check that the DNS records for a deploy target's sending domain exist and validate.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decisions in chat, 2026-10-19.

@@ -3,10 +3,10 @@
 Canonical agent definitions for Stackra. `pnpm agents:sync` renders them into `.claude/agents` and
 `.opencode/agents`; edit the source here, never the generated copies.
 
-The generic roster (delivery-orchestrator, architecture-guardian, code-reviewer, test-engineer,
-release-operations, package-steward, dependency-steward, accessibility-reviewer, docs-governance,
-spec-author, spec-planner, spec-executor) comes from the `sdlc` plugin and is canonical there. It is
-**not** copied here. Never add an agent whose name collides with one of those.
+Every agent is defined here; no plugin supplies roles to this repository (ADR 0121 D3). Eight roles are being
+ported here under MIT (ADR 0121 D9): architecture-guardian, code-reviewer, test-engineer, release-operations,
+package-steward, dependency-steward, accessibility-reviewer, spec-executor. Keep those names free for the ports.
+delivery-orchestrator, docs-governance, spec-author and spec-planner fold into the lead session and existing roles.
 
 ## Working model
 
@@ -30,7 +30,7 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
 
 3. Body sections: Mission, Owns, Checks, Never, Hand-offs. Keep it under about 80 lines.
 4. A reviewer or guardian gets no `Write`/`Edit`. Only list `Bash` if the body runs commands.
-5. Tier to model lives in `models.json`; change a model there, not in an agent.
+5. Tier to model lives in `models.jsonc`; change a model there, not in an agent.
 6. Run `pnpm agents:lint`, then `pnpm agents:sync`.
 
 ## Roster in this folder

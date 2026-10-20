@@ -1,0 +1,80 @@
+---
+title: "0100 — One free @stackra/ai: agents, tools, skills, MCP and A2A on AI SDK, every tool call an action"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+[0050](/adr/0050-ai-package-on-ai-sdk-bedrock-default) put `@stackra/ai` on AI SDK core with Bedrock as the default. A first
+draft of this ADR split agentic features across free Stackra, `@stackra-pro/ai-agents` and Figentra OS. The owner reopened it
+and asked for one unified AI system and package, the simplest and most powerful one: tools, skills, agents and
+agent-to-agent communication. The design takes its developer experience from Laravel's AI package (an agent class with
+prompt, stream and queue), and its protocols from open standards: Agent Skills (`SKILL.md`), MCP and A2A. The safety rules of
+[0021](/adr/0021-ai-engine-and-agent-write-safety) and the action pipeline of [0098](/adr/0098-actions-are-the-unit) must hold
+for every agent call.
+
+## Decision
+
+1. **One package, `@stackra/ai`, at `packages/application/ai`, free and MIT**, on AI SDK v7. It holds agents, tools, skills,
+   multi-agent coordination, MCP, A2A, conversations, approvals, evaluation runs and test fakes.
+2. **Agents are classes: `@Agent class X extends Promptable`.** `Promptable` gives `prompt`, `stream`, `queue` and `resume`.
+   Model choice is a failover profile in config. Bedrock is the default provider, reached through IAM roles, never keys.
+   Approvals surface as `Decision` objects. `LoadSkill` loads a skill into a run, `AgentTool` lets one agent call another,
+   and fakes replace the model in tests.
+3. **Every tool call is an action dispatch** through the one pipeline of 0098, with an `agent` actor whose `onBehalfOf` chain
+   names the human, and the idempotency key `runId:toolCallId`. Plain `@Tool` classes that are not actions are allowed only
+   at L0–L1 (read-only, [0099](/adr/0099-risk-scale-l0-to-l4)), and gen checks it.
+4. **Agents are iam principals.** An agent's effective access is the intersection of the user's permissions and the agent's
+   own grant. An agent never has access its user lacks.
+5. **Approval.** L2 actions called by an agent need approval by default; a tenant may switch that off per action through
+   settings. L3 and L4 always need a named human approver. MCP-client and remote (A2A) tools default to L2 with approval,
+   unless allow-listed.
+6. **`@ClientTool`** declares a frontend tool (toggle theme, navigate, open a record) with a Zod schema and no server
+   `execute`. It is L0, UI-only, and sent with each chat request.
+7. **Protocols, pinned exactly**: Agent Skills `SKILL.md` for skills; MCP SDK v2 as both server and client; A2A 1.0 to expose
+   agents and call remote ones; AI SDK v7. **Skill `scripts/` are never run**; only a skill's instructions and resources are loaded.
+8. **Builder-UI agents are allowed as data that only references code**: an agent defined in a Pro builder names tools,
+   skills and actions defined in code, and can add none. This amends the "runtime schema engine" row of
+   [0011](/adr/0011-rejected-and-deferred-technologies) the same way [0110](/adr/0110-experience-is-the-sdui-service-at-l2) does.
+9. **Prompt and response text is stored only in conversations**: tenant-scoped, encrypted, with a 90-day default retention.
+   Runs, evidence and audit store hashes, never text.
+10. **Tables**, each with `tenant_id` and row-level security: `ai_conversations`, `ai_messages`, `ai_runs`, `ai_steps`,
+    `ai_tool_calls`, `ai_approvals`, `ai_embeddings` and `a2a_tasks`.
+11. **Three integration events only**: `ai.approval.requested.v1`, `ai.approval.resolved.v1` and `ai.run.completed.v1`.
+12. **Evaluation.** `@Evaluation` suites and recorded-run replay (on AI SDK's mock language model) are free. The eval
+    workspace UI is Pro.
+13. **Intent is metadata on the action**, not a separate kind. **Evidence is separate from audit**: evidence records why an
+    action ran (inputs, plan, approvals); audit records that it ran.
+14. **Secrets never reach the model.** Credentials are secret references resolved by the runtime; tenant credentials come from
+    the connections store ([0107](/adr/0107-connections-store-and-three-key-homes)); outbound HTTP goes through an egress
+    driver, `direct` or `agent-vault` ([0106](/adr/0106-infisical-agent-vault-per-environment)). There is no agent vault.
+15. **Pro is UIs only**: the agent builder UI, the registry UI and the eval workspace. **AgentCore is deferred**, not a driver.
+    The registry is [0109](/adr/0109-registry-manifests-published-by-ci).
+
+## Consequences
+
+- One package and one mental model: an agent is a class, a tool is an action, a skill is a folder, and other agents are tools.
+- Skills and multi-agent coordination are free, which reverses the first draft of this ADR and the "AI agents kit" Pro row of
+  [0077](/adr/0077-open-core-free-and-pro-lists).
+- A tenant that switches off L2 approval accepts agent writes without a human in the loop; this changes 0021 decision 5, which
+  required a human approver for every write tool call.
+- Three protocols pinned exactly means upgrades come through dedicated changes, each with its conformance tests.
+- AgentCore as a runtime would need the "separate-language agent runtime" row of 0011 changed first; it stays deferred.
+
+## Enforcement
+
+Planned: the gen validation pass rejects a `@Tool` above L1, an `@AsTool` action without `agent` in `actors`, and an L3–L4
+action whose approval can be disabled; a test that skill loading never executes `scripts/`; an RLS isolation test per AI
+table; exact pins checked by `catalogMode: strict` in `pnpm-workspace.yaml`. Nothing checks this today.
+
+## Revival trigger
+
+AgentCore (deferred): a product needs managed agent hosting that a service process cannot provide.
+
+## Supersedes and sources
+
+Supersedes: [0050](/adr/0050-ai-package-on-ai-sdk-bedrock-default) (decisions 1 to 4 restated; decision 5 replaced by
+decision 5 here). Amends [0021](/adr/0021-ai-engine-and-agent-write-safety) decision 5 (L2 approval is tenant-configurable)
+and [0078](/adr/0078-messaging-layer-eight-packages) decision 3 (the envelope carries the actor chain of 0098). Sources: owner
+decisions in chat, 2026-10-19 ("AI redesign" and "AI full design v2"; AI1 to AI10 and AI12 locked in Round 11).
+Informational: Laravel AI; Vercel AI SDK; `/Users/akouta/Downloads/2026/archive/ai-1.x`.

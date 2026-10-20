@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the one tsdown preset every library's `tsdown.config.ts` calls: `export default library()`.
- *          ESM only, `.d.ts` + maps, sourcemaps, clean dist, tree-shaking. The optional decorators flag turns
+ *          ESM only as `dist/*.mjs` + `.d.mts` (ADR 0025), maps, sourcemaps, clean dist, tree-shaking. The optional decorators flag turns
  *          on the legacy-decorator transform for the DI tier.
  * Owner: release-operations · Secrets: forbidden
  */
@@ -67,7 +67,7 @@ const withDecorators: InputOptionsFn = (input) => ({
  * @param {LibraryOptions} [options] - Build options (decorator support, external packages).
  * @returns {object} Rolldown/tsdown configuration object compatible with `tsdown.config.ts`.
  * @example
- * export default library(); // src/index.ts → dist/index.js + index.d.ts
+ * export default library(); // src/index.ts → dist/index.mjs + index.d.mts
  * @example
  * export default library({ index: "src/index.ts", react: "src/react/index.ts" }); // subpath exports
  * @example
@@ -80,6 +80,7 @@ export function library(
   return defineConfig({
     entry: entries,
     format: ["esm"],
+    fixedExtension: true, // ADR 0025: dist/*.mjs + .d.mts, whatever the package "type"
     platform: "neutral",
     dts: true,
     sourcemap: true,

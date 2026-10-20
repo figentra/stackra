@@ -1,0 +1,28 @@
+---
+title: "0031 — Coarse services, split on evidence"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Many small services multiply deployments, contracts and cross-service calls. With one Encore app ([0029](/adr/0029-encore-ts-one-app)) and one owner, the cost of a split is paid daily, while the cost of a later split is paid once.
+
+## Decision
+
+1. **Start with few, coarse services**; features live as modules inside a service.
+2. **Split a service only on evidence**: a different scaling profile, a different failure domain, a different team, or a security boundary.
+3. **Three are isolated from the start:** identity, payments/ledger, and services holding sensitive data (PII).
+4. Each split is recorded in the PR that makes it, with the evidence.
+
+## Consequences
+
+- Fewer contracts to maintain early; a module boundary inside a service must be kept clean to make a later split cheap.
+- Security-sensitive code has a separate blast radius and review path.
+
+## Enforcement
+
+Planned — a guardian review item on any new service folder; `pnpm validate` lists services so additions are visible in the diff.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0010](/adr/0010-services-are-independent-workspace-members) and [0014](/adr/0014-data-ownership-and-orm). Sources: owner decisions in chat, 2026-10-19.

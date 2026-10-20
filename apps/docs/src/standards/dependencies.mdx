@@ -59,7 +59,7 @@ Every dependency's licence must be on the allow-list. The policy is a data file 
 | `deny`     | `GPL-*`, `AGPL-*`, `SSPL-*` (a deny match wins over `allow`)                                |
 | exceptions | Per package, with a required `reason`, printed on every run (for example a commercial licence with a contract date) |
 
-A denied licence is fixed by replacing the dependency, never by editing the policy in the same change. The member's own `license` is `UNLICENSED` ([Members](/standards/members)).
+A denied licence is fixed by replacing the dependency, never by editing the policy in the same change. The member's own `license` is `MIT` ([0024](/adr/0024-mit-license-with-exclusions)) ([Members](/standards/members)).
 
 ## Forbidden dependencies
 
@@ -70,7 +70,7 @@ The validator rejects a manifest that depends on a package the architecture reje
 <Steps>
   <Step title="Check licence and need">Confirm the licence is allowed and the package is not already covered by one in the repo.</Step>
   <Step title="Add it to a catalog">Add the package and version under the right catalog in `pnpm-workspace.yaml`.</Step>
-  <Step title="Reference it">`pnpm add <pkg>@catalog:<name> --filter @stackra/<member>`</Step>
+  <Step title="Reference it">`pnpm add <pkg>@catalog:<name> --filter <package-name>`</Step>
   <Step title="Review install scripts">If install fails with `ERR_PNPM_IGNORED_BUILDS`, decide `true` or `false` in `allowBuilds` and say why.</Step>
   <Step title="Verify">`pnpm verify`; add a changeset when a published package changes.</Step>
 </Steps>

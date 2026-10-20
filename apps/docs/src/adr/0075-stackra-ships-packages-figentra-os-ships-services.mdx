@@ -1,0 +1,34 @@
+---
+title: "0075 — Stackra ships packages; Figentra OS ships the product services"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0023](/adr/0023-stackra-is-a-framework) makes Stackra the framework tier with reference members. [0029](/adr/0029-encore-ts-one-app) then put one Encore application under `services/` as if the product backend lived here. The owner has since fixed the product architecture: Figentra OS is a product of 12 to 15 services built on Stackra packages and sold as SaaS, on-prem and air-gapped. Stackra packages are also sold on their own. If product services lived in this repository, every Stackra release would carry a product, and the packages could not be proven independent of it.
+
+## Decision
+
+1. **Stackra ships packages only**: `@stackra/*` and `@stackra-pro/*` ([0077](/adr/0077-open-core-free-and-pro-lists)). Nothing deployable that Stackra produces is a product.
+2. **`services/` and `apps/` in this repository are reference apps and test beds.** They prove packages, exercise the generator and feed the `create-stackra-app` templates. They never carry a product feature.
+3. **Product services live in the Figentra OS repository** and install Stackra packages from `npm.figentra.com` ([0025](/adr/0025-packages-publish-to-private-registry)). Figentra OS is sold as SaaS, on-prem and air-gapped ([0076](/adr/0076-every-package-runs-saas-on-prem-and-air-gapped)). Other products install the packages the same way ([0023](/adr/0023-stackra-is-a-framework) decision 2).
+4. **Encore.ts stays the service runtime** for services built on Stackra, here and in Figentra OS. The reference services in this repository are one Encore application, and a service never imports another service's source. `stackra gen` generates it into `.stackra/encore/` ([0091](/adr/0091-generated-encore-app-in-stackra-folder)).
+5. **Packages never import `encore.dev`.** `stackra gen` emits the Encore declarations for a service ([0041](/adr/0041-decorated-controllers-and-build-time-generator), [0078](/adr/0078-messaging-layer-eight-packages)).
+6. **The Encore plus legacy-decorator spike** ([0005](/adr/0005-di-container-and-legacy-decorators)) still runs before any service depends on the combination.
+7. **Service-sizing rules for products** ([0031](/adr/0031-coarse-services-split-on-evidence)) apply where product services live, in Figentra OS, not to the reference services here.
+
+## Consequences
+
+- A diff that adds a product feature under `services/` or `apps/` is rejected, citing this page.
+- Reference services stay small. They need just enough breadth to prove the messaging, tenancy and identity packages end to end.
+- How the generated Encore application maps to workspace members and `tier:service` tags is still open (0029 decision 5 carried over); see [0091](/adr/0091-generated-encore-app-in-stackra-folder).
+- When accepted, this amends [0010](/adr/0010-services-are-independent-workspace-members) decisions 5 and 6 (the runtime is Encore, for reference services) and [0023](/adr/0023-stackra-is-a-framework) decision 1 (product services are named as living in Figentra OS). Both are Accepted, so their status lines change only when this ADR is accepted.
+- Member names in `apps/` and `services/` change scope per [0083](/adr/0083-npm-scopes-and-cli-names).
+
+## Enforcement
+
+`packages/tooling/oxlint/boundaries.jsonc` bans `encore.dev` in packages. Planned: the product-literal check of [0003](/adr/0003-tier-dependency-direction) and [0023](/adr/0023-stackra-is-a-framework) extended to `services/` and `apps/`. Review by the `architecture-guardian` agent of any new folder under `services/`.
+
+## Supersedes and sources
+
+Supersedes: [0029](/adr/0029-encore-ts-one-app) (it restates decisions 1, 3, 4 and 6 of 0029 and narrows decision 2 to reference services). Will amend, on acceptance: [0010](/adr/0010-services-are-independent-workspace-members), [0023](/adr/0023-stackra-is-a-framework). Sources: owner decisions in chat, 2026-10-19 (Round 8, "product architecture" and "services/ in Stackra").

@@ -3,7 +3,7 @@
 One folder per app kind. The scaffold copies a kind into `apps/<name>/`, copies the root `LICENSE` beside it and
 replaces five tokens: `{{NAME}}` (kebab, e.g. `admin`), `{{PASCAL}}`, `{{TITLE}}` (e.g. "Admin"),
 `{{DESCRIPTION}}` and `{{PORT}}`. Replace only these exact tokens — JSX sources contain other `{{ … }}` text
-(`style={{ flex: 1 }}`). Every kind ships `package.json` (`@stackra/{{NAME}}`), `turbo.json` (`tier:app`),
+(`style={{ flex: 1 }}`). Every kind ships `package.json` (`@figentra/{{NAME}}`), `turbo.jsonc` (`tier:app`),
 `README.md`, `AGENTS.md` (with a `## PII` table), `CHANGELOG.md`, and keeps its source in `src/`.
 
 | Kind   | Pick it for                                                              | tsconfig preset | Scripts                                                                                       | Copied from    |
@@ -29,5 +29,5 @@ Pick the next free port in the range; `apps/*/package.json` `dev` scripts are th
 
 - `expo`: `app.json` uses `com.figentra.stackra.{{NAME}}` as the iOS bundle id and Android package. Android
   package segments cannot contain `-`, so a kebab name with a hyphen needs that segment edited by hand.
-- `next`: `.gitignore` ignores `.next/` and `next-env.d.ts`; `turbo.json` adds `.next/**` as build outputs.
+- `next`: `.gitignore` ignores `.next/` and `next-env.d.ts`; `turbo.jsonc` adds `.next/**` as build outputs.
 - `docs`: no TypeScript and no tests — `mint validate` and `mint broken-links` are its checks.

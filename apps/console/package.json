@@ -1,9 +1,9 @@
 {
-  "name": "@stackra/console",
+  "name": "@figentra/console",
   "version": "0.0.1",
   "private": true,
   "description": "Stackra console.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "node --watch src/main.ts",

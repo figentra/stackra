@@ -1,0 +1,36 @@
+---
+title: "0050 — @stackra/ai on AI SDK core, Bedrock by default"
+description: "Superseded by 0100 · 2026-10-19"
+---
+
+<Note>
+  Superseded by [0100](/adr/0100-ai-model-and-ownership): one free `@stackra/ai` covers agents,
+  tools, skills, MCP and A2A; decisions 1 to 4 carry forward there.
+</Note>
+
+## Context
+
+[0021](/adr/0021-ai-engine-and-agent-write-safety) decides the engine (AI SDK core plus the MCP SDK, providers selected by
+configuration) and the write-safety rules, but not where that code lives or which provider is the default. The owner wants it
+built now as a framework package, with Amazon Bedrock as the default provider.
+
+## Decision
+
+1. **`@stackra/ai` is the package that wraps AI SDK core** for products and services. It adds no gateway and no second runtime, as 0021 decision 1 requires.
+2. **Provider-agnostic.** The provider and model are configuration; no product code imports a provider SDK directly.
+3. **Amazon Bedrock is the default provider.** Credentials come from the runtime identity or the secret store; no key value is written in a file ([0009](/adr/0009-secrets-two-mechanisms)).
+4. **The package implements the safety rules of 0021** that belong to the engine: the per-tenant switch, rate and monthly limits, the usage row, and redaction before a call. The product-specific caller stays in the product.
+5. **No new decision on write tools.** The closed, approval-gated tool list in 0021 is unchanged.
+
+## Consequences
+
+- Products get the safe path by default and switch providers by configuration.
+- Bedrock model availability and pricing become a dependency; the fallback provider is TODO.
+
+## Enforcement
+
+Planned — an oxlint import ban on provider SDKs outside `@stackra/ai`, and tests for the 0021 redaction and limit rules. Nothing is implemented yet.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0021](/adr/0021-ai-engine-and-agent-write-safety) without changing it. Sources: owner decisions in chat, 2026-10-19.

@@ -1,0 +1,33 @@
+---
+title: "0053 — Routes are decorator classes compiled to router adapters; no file-based routing"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Web and mobile both need routing, and a file-system router would tie route shape to one framework's folder convention.
+Figentra OS, Stackra's ancestor, solved this with decorator route classes (`@Route`, `@Layout`, `@Guard`) whose loaders are resolved
+through DI ([0005](/adr/0005-di-container-and-legacy-decorators)). [0011](/adr/0011-rejected-and-deferred-technologies) already rejects
+expo-router for mobile; this decision extends the same stance to every surface and is consistent with it.
+
+## Decision
+
+1. **Routes are declared as classes** decorated with `@Route`, `@Layout` and `@Guard`; loaders are resolved from the container with explicit tokens.
+2. **One definition compiles to two adapters**: React Router 7 on web and a React Navigation adapter on mobile.
+3. **No file-based routing anywhere in the repository**, including expo-router and React Router file conventions. The landing site's
+   `routes.ts` ([0057](/adr/0057-landing-is-react-router-framework-mode-on-workers)) is a code-based route list, not a folder convention.
+4. **The router package is ported from Figentra OS** through the normal package gate; its category is chosen when it is scaffolded ([0028](/adr/0028-package-categories-appear-with-first-package)).
+
+## Consequences
+
+- Route logic is testable without a framework and shared between web and mobile.
+- We own the adapters and must keep them in step with React Router 7 and React Navigation 7 releases.
+- Decorators rely on the legacy decorator setting already accepted in 0005.
+
+## Enforcement
+
+Planned — a `validate-repository.mjs` rule rejecting `expo-router` and any `app/` or `routes/` directory used as a file router, plus a conformance test that one route definition yields equivalent web and mobile route tables.
+
+## Supersedes and sources
+
+Supersedes: none. Consistent with [0011](/adr/0011-rejected-and-deferred-technologies) (expo-router rejected). Sources: owner decision in chat, 2026-10-19; Figentra OS router package.

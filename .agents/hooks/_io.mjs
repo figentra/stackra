@@ -35,6 +35,20 @@ export function deny(event, reason) {
   process.exit(0);
 }
 
+/** Hand the tool call to the human for confirmation, with a reason shown to them. */
+export function ask(event, reason) {
+  process.stdout.write(
+    JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: event,
+        permissionDecision: "ask",
+        permissionDecisionReason: reason,
+      },
+    }),
+  );
+  process.exit(0);
+}
+
 /** Hand the agent additional context without blocking anything. */
 export function context(event, text) {
   process.stdout.write(

@@ -40,6 +40,9 @@ const blocked = [
   "/r/certs/server.pem",
   "/r/services/x/.secrets.local.cue",
   "/r/credentials.json",
+  "/r/apps/worker/.dev.vars",
+  "/r/.ci-env",
+  "/Users/me/.sentryclirc",
 ];
 
 for (const p of allowed) test(`allow: ${p}`, () => assert.equal(denied(p), false));

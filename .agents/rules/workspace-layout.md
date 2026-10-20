@@ -38,7 +38,7 @@ stackra/
 
 ## Tier Tags
 
-Every member declares exactly one tier in its `turbo.json`:
+Every member declares exactly one tier in its `turbo.jsonc`:
 
 - `tier:config` - Tooling presets (no workspace dependencies)
 - `tier:lib` - Packages (category-based, never depend on apps/services)
@@ -86,7 +86,7 @@ Every member declares exactly one tier in its `turbo.json`:
 ## Enforcement
 
 - `turbo boundaries` checks dependency direction
-- `tools/scripts/validate-repository.mjs` checks tier tags and file existence
+- `tools/scripts/validate-repository.mjs` checks tier tags, file existence, and that every JSON config whose tool reads JSONC is named `.jsonc` (exceptions: `MUST_STAY_JSON`)
 - `packages/tooling/oxlint/boundaries.jsonc` enforces layer rules
 
 ## See Also

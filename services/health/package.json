@@ -1,9 +1,9 @@
 {
-  "name": "@stackra/service-health",
+  "name": "@figentra/service-health",
   "version": "0.0.1",
   "private": true,
   "description": "Health service.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "node --watch src/main.ts",

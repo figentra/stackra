@@ -5,7 +5,7 @@ icon: "package-check"
 ---
 
 <Note>
-  Status: partly live, partly target. `@changesets/cli` is configured (`.changeset/config.json`) and `pnpm changeset`, `pnpm changeset:status` and `pnpm changeset:version` exist. Not built: the release workflow, publishing to a registry and signed artifacts. Today every package is `private` and `UNLICENSED`, so a release means versions, changelogs and git tags only. Policy: [ADR-0013](/adr/0013-versioning-and-release).
+  Status: partly live, partly target. `@changesets/cli` is configured (`.changeset/config.json`) and `pnpm changeset`, `pnpm changeset:status` and `pnpm changeset:version` exist. `.github/workflows/release.yml` opens the version pull request and, on its merge, runs `changeset publish` to `npm.figentra.com`. Not built: the Infisical release identity, a packed-artifact smoke test and signed artifacts. Today every package is still `"private": true`, so nothing publishes yet. Policy: [0025](/adr/0025-packages-publish-to-private-registry) (supersedes 0013 decision 3), [0024](/adr/0024-mit-license-with-exclusions) (MIT), [0119](/adr/0119-merge-policy-and-release-authority) (the owner merges the version pull request).
 </Note>
 
 ## The rules
@@ -13,9 +13,10 @@ icon: "package-check"
 - **Every change to a member ships with a changeset.** `pnpm changeset` records it; `pnpm changeset:status` fails when a changed member has none (target: chained into `pnpm verify`).
 - **`CHANGELOG.md` files are generated** by changesets and never hand-edited.
 - **Versions are bumped by the release job on `main`**, not on a feature branch. `guard-bash` denies `changeset version` locally for that reason.
-- **Merging the version pull request is the release decision.** A human merges it.
+- **Merging the version pull request is the release decision.** Claude prepares it; the owner merges it ([0119](/adr/0119-merge-policy-and-release-authority) D7).
 - **Published or tagged versions are permanent.** A version is never republished or silently replaced; roll forward with a new patch.
-- **Private by default.** A package becomes publishable only through an ADR that changes this page and `.changeset/config.json` (`access`, `privatePackages.tag`).
+- **Only packages are versioned.** Apps and services deploy by commit SHA and get no version or tag (`privatePackages: { version: false, tag: false }`, [0025](/adr/0025-packages-publish-to-private-registry) decision 4).
+- **A package publishes when it flips to `"private": false`.** It then builds to `dist/*.mjs` + `.d.mts` and publishes to `npm.figentra.com` (`@stackra` scope).
 
 ## A normal release
 
@@ -27,10 +28,10 @@ icon: "package-check"
     After a push to `main` the release job runs `pnpm changeset:version` (which also refreshes the lockfile) and opens or updates one pull request titled `chore(release): version packages`.
   </Step>
   <Step title="Review it">
-    Read the `CHANGELOG.md` diffs and the version bumps. Check the bump matches the change. A pull request opened by the workflow token does not start other workflows; close and reopen it once so the `verify` check runs.
+    Read the `CHANGELOG.md` diffs and the version bumps. Check the bump matches the change. The release job pushes and opens it as `stackra-bot` (a GitHub App token from `actions/create-github-app-token`, repo secrets `STACKRA_BOT_APP_ID` and `STACKRA_BOT_PRIVATE_KEY`), so the Quality Gate runs on it without a close and reopen.
   </Step>
   <Step title="Merge it">
-    The merge to `main` is the release. The job tags each versioned member and creates the release notes.
+    The merge to `main` is the release. The job builds, publishes every non-private package to `npm.figentra.com`, tags it and creates the release notes.
   </Step>
   <Step title="Verify">
     `git ls-remote --tags origin` shows the new tags on the merge commit, and each member's `CHANGELOG.md` contains the entry.
@@ -39,16 +40,22 @@ icon: "package-check"
 
 ## Before the first release (once, by a human)
 
-- Branch protection on `main` requires the `verify` check ([CI](/runbooks/ci)).
+- Branch protection on `main` requires the `Quality Gate` check ([CI](/runbooks/ci)).
 - A tag ruleset on the version tag pattern blocks deletion and non-fast-forward updates for everyone. Version tags are immutable.
 - The host setting that lets the workflow token create pull requests is on.
 - The release job runs in a protected environment restricted to `main`, so a branch that edits the workflow cannot obtain a credential.
 
-## If we ever publish
+## Publishing to npm.figentra.com
 
-Publishing is a separate decision, and an ADR must record it. The procedure it must follow:
+[0025](/adr/0025-packages-publish-to-private-registry) records the decision. Before the first package flips to `"private": false`, a human:
 
-- **No long-lived publish token.** The registry trusts the workflow's OIDC identity (trusted publishing), and the package setting disallows tokens for publishing.
+- creates an Infisical machine identity for the release job (OIDC, trusting only this repository's `release` environment on `main`) with read access to `/ci` in `prod`;
+- stores the registry publish token in `/ci` as `NPM_FIGENTRA_TOKEN`;
+- sets the repository variables `INFISICAL_RELEASE_IDENTITY_ID` and `INFISICAL_PROJECT_ID` (names and ids, never a token). Until they are set the release job skips the token step.
+
+The procedure the job follows, some of it still target:
+
+- **The publish token comes only from Infisical `/ci` over OIDC** ([0009](/adr/0009-secrets-two-mechanisms)); no token sits in `.npmrc`, a repository secret or a file.
 - Build the tarball and an SBOM with no privileges, then sign both keylessly in the one job that holds `id-token: write`.
 - Publish is idempotent: the same bytes already on the registry are not published again, so re-running failed jobs is safe; different bytes fail the job.
 - Read access for consumers is a read-only token held in Infisical `/ci` and fetched through OIDC ([Secrets](/runbooks/secrets)).

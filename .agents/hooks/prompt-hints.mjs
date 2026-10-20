@@ -40,7 +40,7 @@ async function main() {
     );
   if (has("service", "microservice", "encore service", "worker", "gateway"))
     hints.push(
-      "Services are independent workspace members under `services/` (`@stackra/service-<name>`, entry `src/main.ts`), never importing each other or apps (ADR-0010). Check `.agents/rules/not-built-yet.md` before introducing a framework or runtime.",
+      "Services are independent workspace members under `services/` (`@figentra/service-<name>`, entry `src/main.ts`), never importing each other or apps (ADR-0010). Check `.agents/rules/not-built-yet.md` before introducing a framework or runtime.",
     );
   if (has("component", "screen", "page", "button", "design token", "brand"))
     hints.push(
@@ -66,7 +66,7 @@ async function main() {
     !p.includes("speckit")
   )
     hints.push(
-      "Feature work starts with spec-kit, not code: `/speckit.specify`, then `/speckit.clarify` (Impact questionnaire, Linear STA-n), then `/speckit.plan`. `/speckit.plan` refuses until clarifications are complete (apps/docs/src/agents/spec-lifecycle.mdx).",
+      "Feature work starts with spec-kit, not code: `/speckit.specify`, then `/speckit.clarify` (Impact questionnaire, Linear STA-n), then `/speckit.plan`. Specs live in `.agents/specs/sta-<n>-<slug>/`; `/speckit.plan` refuses until clarifications are complete (apps/docs/src/agents/spec-lifecycle.mdx).",
     );
 
   if (hints.length) context(EVENT, "[STACKRA HINTS]\n- " + hints.join("\n- "));

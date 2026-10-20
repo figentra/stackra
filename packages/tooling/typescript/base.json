@@ -13,6 +13,8 @@
     "lib": ["ES2022"],
     "module": "ESNext",
     "moduleResolution": "bundler",
+    // ADR 0025: typecheck reads a workspace package's source through its `@stackra/source` export condition.
+    "customConditions": ["@stackra/source"],
     "resolveJsonModule": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
@@ -32,8 +34,8 @@
     "declarationMap": true,
     "sourceMap": true,
     "noEmit": true,
-    // Workspace packages are consumed as source (no dist); every host bundles or transforms them (Encore's
-    // esbuild bundler, Vite, Vitest, Metro), and `bundler` resolution handles directory barrels. Relative
+    // Typecheck, Vitest and Vite read workspace packages as source (the `@stackra/source` condition above);
+    // runtimes load the built dist (ADR 0025). `bundler` resolution handles directory barrels. Relative
     // imports therefore carry no extension and no `/index` (validate-repository enforces it). The flag stays
     // on only for packages/tooling/*, whose presets plain Node loads and which must keep `./x.ts`.
     "allowImportingTsExtensions": true,

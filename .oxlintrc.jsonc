@@ -1,0 +1,30 @@
+// Stackra file contract:
+// Purpose: root oxlint entry — extends the shared presets from packages/tooling/oxlint. `boundaries`
+//          carries the tier dependency rule, so it applies repo-wide from here. Rules are never written in
+//          this file; change the preset. Only repo-level ignores live here (a preset's ignorePatterns resolve
+//          relative to the preset file, not the repo root).
+// Owner: release-operations · Secrets: forbidden
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "extends": ["./packages/tooling/oxlint/boundaries.jsonc"],
+  "ignorePatterns": [
+    // oxlint follows workspace symlinks (apps/*/node_modules/@stackra/* → packages/*): a bare name pattern
+    // is what stops the traversal.
+    "node_modules",
+    "**/node_modules/**",
+    // generated
+    "**/encore.gen/**",
+    "**/dist/**",
+    // Expo: generated native projects and the CLI cache
+    "**/ios/**",
+    "**/android/**",
+    "**/.expo/**",
+    "**/uniwind-types.d.ts",
+    "**/coverage/**",
+    "**/*.d.ts",
+    "packages/*/api-client/src/generated/**",
+    // installed skills are upstream content
+    ".agents/skills/**",
+    ".claude/skills/**",
+  ],
+}

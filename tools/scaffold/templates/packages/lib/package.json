@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "{{DESCRIPTION}}",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "files": [
     "src",
     "dist",
@@ -15,8 +15,9 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "@stackra/source": "./src/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
     }
   },
   "scripts": {

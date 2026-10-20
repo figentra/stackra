@@ -13,6 +13,10 @@ const rules = [
     why: "Secrets guard: .env* files are never written by an agent. Secrets only come from Infisical (developer tokens via the vault); application secrets use Encore secret().",
   },
   {
+    rx: /(^|\/)(\.dev\.vars|\.ci-env|\.sentryclirc)$/i,
+    why: "Secrets guard: .dev.vars (Wrangler), .ci-env and .sentryclirc hold live tokens and are never written by an agent. A human creates them from Infisical.",
+  },
+  {
     rx: /(^|\/)(\.secrets\.local\.[^/]+|secrets?\.(json|ya?ml|env|cue)|credentials?\.json|id_(rsa|ed25519)|[^/]+\.(pem|p12|pfx|key))$/i,
     why: "Secrets guard: files with secret-like names are never written by an agent. A human creates them.",
   },

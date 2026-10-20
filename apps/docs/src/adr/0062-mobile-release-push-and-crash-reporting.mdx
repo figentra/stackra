@@ -1,0 +1,29 @@
+---
+title: "0062 — Mobile: EAS Update, Expo push and Sentry from day one"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+The mobile app needs over-the-air fixes, push notifications and crash reporting from its first release.
+[0020](/adr/0020-observability-and-crash-reporting) (Proposed) already chooses Sentry per app; this ADR applies it to mobile and adds updates and push.
+
+## Decision
+
+1. **JavaScript updates ship through EAS Update**, iOS and Android together, on the same channel and runtime version.
+2. **Push uses Expo push notifications**; push tokens are stored per user by a service, not only in the app.
+3. **Sentry is integrated at first release**, per [0020](/adr/0020-observability-and-crash-reporting). The DSN is public configuration; upload tokens are CI secrets ([0009](/adr/0009-secrets-two-mechanisms)).
+4. **Store releases are bi-weekly.**
+
+## Consequences
+
+- Fixes reach users without store review, within the limits of native-code changes.
+- Dependence on Expo services for push and updates.
+
+## Enforcement
+
+Planned — the EAS workflow, a CI check that the runtime version changes only with native changes, and source-map upload in the release job.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0020](/adr/0020-observability-and-crash-reporting) (Proposed). Sources: owner decision in chat, 2026-10-19.

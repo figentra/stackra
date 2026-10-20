@@ -2,9 +2,10 @@
 /**
  * Stackra file contract:
  * Purpose: the repository-shape gate run by `pnpm validate` (part of `pnpm verify`). Every workspace member uses
- *          catalog:/workspace: versions only, is named @stackra/*, declares exactly one turbo tier tag matching its
+ *          catalog:/workspace: versions only, is named by placement (packages @stackra/<name>, apps @figentra/<dir>, services @figentra/service-<dir>), declares exactly one turbo tier tag matching its
  *          directory, extends a @stackra/typescript-config preset, and depends on no forbidden package.
  *          Every test file anywhere in the repository sits directly in a __tests__/ folder (ADR 0022).
+ *          Every JSON config is .jsonc unless its reader cannot take one (MUST_STAY_JSON).
  *          Prints the findings and exits 1; prints nothing on success. Adapted from Figentra's checks 1–5.
  * Scope: every member listed by `pnpm -r list --json --depth -1`; test placement covers every non-ignored file.
  * Owner: release-operations · Secrets: forbidden
@@ -13,10 +14,11 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readJsonc } from "./jsonc.mjs";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
-/** Architecture decisions enforced at the manifest level (~/.claude/rules/not-built-yet.md). */
+/** Architecture decisions enforced at the manifest level (.agents/rules/not-built-yet.md, ADR 0011 and the ADRs named). */
 export const FORBIDDEN_DEPENDENCIES = [
   "eslint",
   "prettier",
@@ -31,6 +33,15 @@ export const FORBIDDEN_DEPENDENCIES = [
   "fastify",
   "typeorm",
   "knex",
+  "expo-router", // 0011, 0061: code-based React Navigation
+  "zustand", // 0079: client state is @stackra/state
+  "@tanstack/store", // 0079
+  "i18next", // 0080: the ported @stackra/i18n
+  "react-i18next", // 0080
+  "class-validator", // 0095: @stackra/validation on Zod
+  "class-transformer", // 0095
+  "meilisearch", // 0089: search engines are Pro drivers (stackra-pro), Postgres first here
+  "@opensearch-project/opensearch", // 0089
 ];
 
 const DEPENDENCY_FIELDS = [
@@ -50,23 +61,24 @@ export function tierFor(dir) {
   return "unknown";
 }
 
-/** Strips // and /* *\/ comments and trailing commas so a .json/.jsonc config parses. */
-function readJsonc(path) {
-  const text = readFileSync(path, "utf8")
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/(^|[^:"])\/\/.*$/gm, "$1")
-    .replace(/,(\s*[}\]])/g, "$1");
-  return JSON.parse(text);
+/** Expected npm name by placement: packages @stackra/<name>, apps @figentra/<dir>, services @figentra/service-<dir>. */
+export function expectedName(dir) {
+  const base = dir.split("/").at(-1);
+  if (dir.startsWith("apps/")) return `@figentra/${base}`;
+  if (dir.startsWith("services/")) return `@figentra/service-${base}`;
+  if (dir.startsWith("packages/tooling/")) return `@stackra/${base}-config`;
+  if (dir.startsWith("packages/")) return `@stackra/${base}`;
+  return null;
 }
 
 /**
- * Findings for one member. `files` holds the parsed turbo.json / tsconfig.json (undefined when absent), so the
+ * Findings for one member. `files` holds the parsed turbo.jsonc / tsconfig.json (undefined when absent), so the
  * rules are testable without touching the disk.
  */
 export function check({ dir, pkg, turbo, tsconfig }) {
   const out = [];
-  if (pkg.name !== "stackra" && !pkg.name?.startsWith("@stackra/"))
-    out.push(`package name ${pkg.name} is not @stackra/*`);
+  const want = expectedName(dir);
+  if (want && pkg.name !== want) out.push(`package name ${pkg.name} must be ${want}`);
 
   for (const field of DEPENDENCY_FIELDS) {
     for (const [dep, version] of Object.entries(pkg[field] ?? {})) {
@@ -84,12 +96,12 @@ export function check({ dir, pkg, turbo, tsconfig }) {
   const tier = tierFor(dir);
   if (tier === null) return out;
   if (tier === "unknown") out.push("not under apps/*, packages/<category>/<name> or services/*");
-  if (!turbo) out.push("turbo.json missing");
+  if (!turbo) out.push("turbo.jsonc missing");
   else {
-    if (!turbo.extends?.includes("//")) out.push('turbo.json does not extend "//"');
+    if (!turbo.extends?.includes("//")) out.push('turbo.jsonc does not extend "//"');
     const tags = (turbo.tags ?? []).filter((t) => t.startsWith("tier:"));
     if (tags.length !== 1 || tags[0] !== tier)
-      out.push(`turbo.json tier tags ${JSON.stringify(tags)} — expected exactly ["${tier}"]`);
+      out.push(`turbo.jsonc tier tags ${JSON.stringify(tags)} — expected exactly ["${tier}"]`);
   }
   // The preset package extends its own files by relative path; it cannot depend on itself.
   if (tsconfig && dir !== "packages/tooling/typescript") {
@@ -110,19 +122,42 @@ export function checkFiles({ dir, pkg, files, agents, licenseText, rootLicense }
   if (files.includes("LICENSE") && licenseText !== rootLicense)
     out.push("LICENSE differs from the root LICENSE");
   if (!pkg.description?.trim()) out.push("package.json has no description");
-  if (pkg.license !== "UNLICENSED") out.push('package.json license must be "UNLICENSED"');
+  if (pkg.license !== "MIT") out.push('package.json license must be "MIT" (ADR 0024)');
   if (tierFor(dir) === "tier:lib") {
     if (pkg.sideEffects !== false) out.push("package.json sideEffects must be false");
-    for (const t of exportTargets(pkg.exports))
-      if (!t.startsWith("./src/") && !/\.jsonc?$/.test(t))
-        out.push(`exports target ${t} must start with ./src/ or end with .json/.jsonc`);
+    out.push(...checkExports(pkg.exports));
   }
   return out;
 }
 
-function exportTargets(e) {
-  if (typeof e === "string") return [e];
-  return e && typeof e === "object" ? Object.values(e).flatMap(exportTargets) : [];
+const MODULE = /\.(ts|tsx|mts|js|mjs|cjs)$/;
+
+/**
+ * ADR 0025: a module entry is `{ "@stackra/source": "./src/….ts", types: "./dist/….d.mts", default: "./dist/….mjs" }`,
+ * with the source condition first. A plain string entry is a static asset (CSS, JSON, a folder, `./resources/*`) and
+ * must not name a module.
+ */
+export function checkExports(exports) {
+  const out = [];
+  const entries = typeof exports === "string" ? [[".", exports]] : Object.entries(exports ?? {});
+  for (const [key, target] of entries) {
+    if (typeof target === "string") {
+      if (MODULE.test(target))
+        out.push(
+          `exports["${key}"] names a module as a plain string — use the @stackra/source/types/default shape (ADR 0025)`,
+        );
+      continue;
+    }
+    const keys = Object.keys(target ?? {});
+    const src = target?.["@stackra/source"];
+    if (keys[0] !== "@stackra/source" || !/^\.\/src\/.+\.tsx?$/.test(src ?? ""))
+      out.push(`exports["${key}"] must list "@stackra/source": "./src/….ts" first (ADR 0025)`);
+    if (!/^\.\/dist\/.+\.d\.mts$/.test(target?.types ?? ""))
+      out.push(`exports["${key}"].types must be ./dist/….d.mts (ADR 0025)`);
+    if (!/^\.\/dist\/.+\.mjs$/.test(target?.default ?? ""))
+      out.push(`exports["${key}"].default must be ./dist/….mjs (ADR 0025)`);
+  }
+  return out;
 }
 
 /** Findings for an Encore service unit directory (services/src/<dir>). */
@@ -133,6 +168,50 @@ export function checkServiceUnit({ files, agents }) {
   if (files.includes("AGENTS.md") && !/^## PII/m.test(agents ?? ""))
     out.push('AGENTS.md has no "## PII" section');
   return out;
+}
+
+/**
+ * JSON files whose reader rejects comments or a .jsonc name, each with the reason. Any other *.json is a config whose
+ * tool reads JSONC, so it must be .jsonc (tsconfig files and the typescript-config presets keep the .json name tsc
+ * resolves but already take comments). A new entry here names the reader and why it cannot take JSONC.
+ */
+export const MUST_STAY_JSON = [
+  [/(^|\/)package\.json$/, "pnpm/npm manifest: strict JSON, fixed name"],
+  [
+    /(^|\/)tsconfig(\.[\w-]+)?\.json$/,
+    "tsc finds tsconfig.json by name; comments allowed in place",
+  ],
+  [
+    /^packages\/tooling\/typescript\/[\w-]+\.json$/,
+    "tsconfig presets via package exports; comments allowed",
+  ],
+  [
+    /^tools\/scaffold\/templates\/packages\/tooling\/base\.json$/,
+    "generic preset template: rename to .jsonc for a JSONC tool",
+  ],
+  [/^\.claude\/[\w.-]+\.json$/, "Claude Code settings/launch: fixed .json names"],
+  [/^\.mcp\.json$/, "Claude Code reads only .mcp.json; generated from .mcp.jsonc"],
+  [/^\.changeset\/config\.json$/, "@changesets/config JSON.parse on a fixed path"],
+  [/^\.infisical\.json$/, "Infisical CLI workspace file: fixed name"],
+  [/^\.github\/branch-protection\.json$/, "GitHub REST API payload"],
+  [/(^|\/)src\/docs\.json$/, "Mintlify parses docs.json with JSON.parse"],
+  [/(^|\/)(app|eas)\.json$/, "Expo/EAS: fixed names, rewritten by the expo/eas CLIs"],
+  [/^\.specify\//, "spec-kit CLI output, read by its scripts with jq / python json"],
+  [/^\.(agents|claude)\/skills\//, "vendored skills: upstream content"],
+  [
+    /^packages\/experience\/brand\/src\/tokens\/tokens\.json$/,
+    "exported token data for non-TS consumers",
+  ],
+];
+
+/** Every *.json path not on MUST_STAY_JSON: its reader takes JSONC, so it is named .jsonc. */
+export function checkJsonConfigs(paths) {
+  return paths
+    .filter((p) => p.endsWith(".json") && !MUST_STAY_JSON.some(([re]) => re.test(p)))
+    .map(
+      (p) =>
+        `${p}: rename to .jsonc so it can carry comments, or add it to MUST_STAY_JSON with the reason`,
+    );
 }
 
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
@@ -173,6 +252,10 @@ function main() {
     .split("\n")
     .filter((p) => p && existsSync(join(ROOT, p)));
   report("", checkTestPlacement(repoFiles));
+  report("", checkJsonConfigs(repoFiles));
+  // ADR 0024 decision 2: the brand marks carry their all-rights-reserved NOTICE.
+  if (!existsSync(join(ROOT, "packages/experience/brand/src/logos/NOTICE")))
+    report("packages/experience/brand", ["src/logos/NOTICE missing (ADR 0024)"]);
   const servicesSrc = join(ROOT, "services/src");
   if (existsSync(servicesSrc))
     for (const d of readdirSync(servicesSrc))
@@ -193,7 +276,7 @@ function main() {
       check({
         dir,
         pkg,
-        turbo: dir === "" ? undefined : at("turbo.json"),
+        turbo: dir === "" ? undefined : at("turbo.jsonc"),
         tsconfig: dir === "" ? undefined : at("tsconfig.json"),
       }),
     );

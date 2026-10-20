@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
+import { stripJsonc } from "../jsonc.mjs";
 import { CATEGORIES, scaffold } from "../scaffold.mjs";
 
 const TOKENS = /\{\{(NAME|PASCAL|TITLE|DESCRIPTION|PORT|CATEGORY)\}\}/;
@@ -31,7 +32,9 @@ for (const [kind, name, extra] of cases)
       assert.ok(!TOKENS.test(f), `token left in path ${f}`);
       const text = readFileSync(join(dest, f), "utf8");
       assert.ok(!TOKENS.test(text), `token left in ${f}`);
-      if (/\.jsonc?$/.test(f) && f.endsWith(".json")) JSON.parse(text);
+      // tsc and the .jsonc tools take comments; every other .json stays strict.
+      if (/\.jsonc$|tsconfig\.json$/.test(f)) JSON.parse(stripJsonc(text));
+      else if (f.endsWith(".json")) JSON.parse(text);
     }
     assert.equal(existsSync(join(dest, "LICENSE")), kind !== "service");
   });

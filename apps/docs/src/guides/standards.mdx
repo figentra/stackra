@@ -12,7 +12,7 @@ icon: "badge-check"
 | `AGENTS.md`     | Where code goes, rules that fail the build, tasks, and a mandatory `## PII` table |
 | `CHANGELOG.md`  | `# <package name>` and a note that Changesets writes it                           |
 | `LICENSE`       | A byte-for-byte copy of the root `LICENSE`                                        |
-| `turbo.json`    | Extends `//` with exactly one tier tag                                            |
+| `turbo.jsonc`    | Extends `//` with exactly one tier tag                                            |
 | `tsconfig.json` | Extends one `@stackra/typescript-config` preset and nothing else                  |
 
 The PII table is always present. A member that handles no personal data says "None" and names the change that would make it revisit the answer.
@@ -25,7 +25,7 @@ The PII table is always present. A member that handles no personal data says "No
 
 ## Conventions
 
-- Package `exports` point at `src/*.ts`. tsdown builds `dist` only for publishing.
+- Package `exports` list `@stackra/source` (`./src/*.ts`) first, then `types`/`default` in tsdown's `dist/*.d.mts`/`dist/*.mjs` ([0025](/adr/0025-packages-publish-to-private-registry)).
 - Tests sit beside the code, in `src/**/__tests__`.
 - `package.json` key order: name, version, private, description, license, type, main (Expo only), scripts, dependencies, devDependencies.
 

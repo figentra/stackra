@@ -1,0 +1,27 @@
+---
+title: "0038 — Rate limits: app token buckets and Cloudflare WAF"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Abuse needs stopping at two points: at the edge before it costs compute, and in the app where the caller's identity and plan are known.
+
+## Decision
+
+1. **Cloudflare WAF and rate rules guard the edge** against volumetric and unauthenticated abuse.
+2. **The application enforces token buckets** per tenant, per token and per endpoint class, keyed on authenticated identity.
+3. A limited call returns `429` with `Retry-After`.
+4. Bucket sizes and plan-based limits: TODO; they tie to tenant entitlements, which are decided separately.
+
+## Consequences
+
+- Two layers to configure; edge rules are outside the Encore app.
+
+## Enforcement
+
+Planned — a shared rate-limit helper with a test; Cloudflare rules kept as code, with a drift check.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decisions in chat, 2026-10-19.

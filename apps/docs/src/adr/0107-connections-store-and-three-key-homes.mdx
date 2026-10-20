@@ -1,0 +1,44 @@
+---
+title: "0107 — Three homes for keys; tenant credentials live in @stackra/connections"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+[0009](/adr/0009-secrets-two-mechanisms) has two mechanisms: application secrets in the runtime store, and developer and CI
+tokens in Infisical. Neither fits a tenant's own credentials (their Stripe, Zendesk or Google tokens, their app-store keys for a
+white-label app), which a tenant admin sets at runtime, per tenant, thousands of times. Settings
+([0108](/adr/0108-scoped-settings)) must not become a place where such values end up. Nor fits a Stackra Pro customer's own
+HeroUI key or registry token.
+
+## Decision
+
+1. **Three homes, no fourth**:
+
+   | Home                               | Holds                                                                                               | Where the value lives                                                                                                                          |
+   | ---------------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+   | A. Our keys                        | HeroUI token, Apple and Google signing and store API keys, Cloudflare, AWS, the Stripe platform key | Infisical and the runtime secret store ([0009](/adr/0009-secrets-two-mechanisms)); CI via OIDC. `@stackra/config` holds only secret references |
+   | B. Tenant keys                     | A tenant's API keys, certificates and OAuth tokens                                                  | `@stackra/connections`, per tenant, encrypted                                                                                                  |
+   | C. Customer developer install keys | A Pro customer's own HeroUI key or `npm.figentra.com` token                                         | The customer's environment (their `.npmrc`, their CI secrets). We never store it                                                               |
+
+2. **`@stackra/connections`** is a package with a store owned by an Integrations service: envelope encryption with a key from
+   KMS in SaaS or a local key on-prem, OAuth refresh, rotation and revocation, all audited.
+3. **Settings never hold raw secrets.** A setting that needs a credential holds a `@ConnectionRef` to a connection.
+4. **Code reads a connection through the runtime**, which resolves it at call time; agents and models only ever see the reference.
+
+## Consequences
+
+- One answer to "where does this key go" for every kind of key.
+- An Integrations service and its encryption keys are a standing operational chore, including key rotation.
+- A third storage location for secret material exists, scoped to tenant credentials only; 0009's "never a third" is amended
+  for that class.
+
+## Enforcement
+
+Planned: the settings validator rejects a setting whose schema marks a secret without `@ConnectionRef`; gitleaks keeps
+scanning for values in files; a connections conformance suite including an air-gapped local-key run. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0009](/adr/0009-secrets-two-mechanisms): tenant-owned credentials are a third class with their own
+store. The 0009 page carries a note pointing here. Sources: owner decisions in chat, 2026-10-19 (Round 11 S4 and K1).

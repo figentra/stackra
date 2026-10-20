@@ -1,9 +1,9 @@
 {
-  "name": "@stackra/docs",
+  "name": "@figentra/docs",
   "version": "0.0.1",
   "private": true,
   "description": "Stackra documentation site — Mintlify (docs.json + MDX).",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "cd src && mint dev --port 3333",

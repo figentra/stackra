@@ -21,7 +21,14 @@ function inMainCheckout(cwd: string): boolean {
   return dir === common;
 }
 
+/** The worktree root containing cwd (falls back to cwd outside git). */
+function worktreeRoot(cwd: string): string {
+  const r = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd, encoding: "utf8" });
+  return realpathSync(r.status === 0 ? r.stdout.trim() : cwd);
+}
+
 const ctxFor = (cwd: string): GuardContext => ({
+  root: worktreeRoot(cwd),
   inMainCheckout: inMainCheckout(cwd),
   allowMain: process.env.STACKRA_ALLOW_MAIN === "1",
 });

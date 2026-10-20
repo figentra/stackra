@@ -1,0 +1,46 @@
+---
+title: "0040 — Services are organised as DDD feature modules"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0010](/adr/0010-services-are-independent-workspace-members) fixes a service as a workspace member with a `src/main.ts`
+entry, and says nothing about its inside. Encore needs its primitives (`api()`, `Subscription`, `CronJob`, databases) in
+statically analysable files, so the inside of a service must separate framework wiring from business code. Features should
+be movable between services and shippable from packages, which a layer-first layout (all controllers together, all
+repositories together) makes hard. This ADR amends the `src/` layout of 0010 and the `src/**/__tests__/` location in
+[0022](/adr/0022-tests-live-in-tests-folders) where they conflict.
+
+## Decision
+
+1. **A service's code is a set of feature modules** at `services/<svc>/modules/<feature>/`, each holding these folders as
+   needed: `core/` (entities, value objects, domain events, ports; no framework imports), `application/` (use cases,
+   workflows), `infrastructure/` (repositories, adapters, ORM mappings), `presentation/` (controllers, event handlers,
+   cron handlers) and `__tests__/`.
+2. **Dependencies point inward:** `presentation` → `application` → `core`; `infrastructure` implements ports declared in
+   `core`. `core` imports nothing from the other three.
+3. **Encore primitives live at the service root**, outside `modules/`: the service declaration, databases, topics, buckets.
+   A module receives them through DI ([0042](/adr/0042-di-first-with-one-container-per-service)), never by importing another module's internals.
+4. **Generated Encore entry files live in `services/<svc>/__generated__/`** (endpoints, subscriptions, crons), produced by
+   [0041](/adr/0041-decorated-controllers-and-build-time-generator). They are never hand-edited.
+5. **Tests stay in `__tests__/` folders** ([0022](/adr/0022-tests-live-in-tests-folders)). Module tests sit in
+   `modules/<feature>/__tests__/`; sub-folder tests sit in their own `__tests__/`. Where 0022 and AGENTS.md say
+   `src/**/__tests__/`, a service reads `**/__tests__/`.
+6. **One module never imports another module's `core`, `application` or `infrastructure`.** It uses the other module's
+   exported tokens and published events.
+7. **`src/main.ts` stays the service entry** of 0010 unless the Encore spike (TODO) shows it cannot; any change is recorded here.
+
+## Consequences
+
+- A feature is one folder: easy to read, move, or lift into a package.
+- Two layouts exist until a service migrates; `services/example` and `services/health` are the first to move (TODO).
+- `validate-repository.mjs` and the member standard must stop assuming "all code in `src/`" for services.
+
+## Enforcement
+
+Planned — a `validate-repository.mjs` check of the module folder names and an oxlint boundaries rule for the inward direction (`packages/tooling/oxlint/boundaries.jsonc`).
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0010](/adr/0010-services-are-independent-workspace-members) (service layout) and [0022](/adr/0022-tests-live-in-tests-folders) (test path inside services). Sources: owner decision in chat, 2026-10-19 (service structure, layout A).

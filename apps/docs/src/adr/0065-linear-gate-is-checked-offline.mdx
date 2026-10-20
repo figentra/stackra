@@ -1,0 +1,45 @@
+---
+title: "0065 — The Linear gate is checked offline"
+description: "Accepted · 2026-10-19"
+---
+
+<Note>Accepted in its amended form on 2026-10-19 by owner decision SDLC D11, recorded in [0121](/adr/0121-sdlc-tooling-roles-and-linear).</Note>
+
+<Note>
+  Amended by [0121](/adr/0121-sdlc-tooling-roles-and-linear): the Linear model (spec, design, phase
+  and task issues; stage, lane, risk and exec labels) and a thin local Linear extension.
+</Note>
+
+## Context
+
+Work is tracked in Linear, team key `STA`; the plans folder was deleted in favour of it. A rule that depends on the Linear API
+cannot run in `pnpm verify` ([0012](/adr/0012-code-host-and-ci) rule 4: the same command runs locally with zero secrets), and a
+soft convention about issue keys is forgotten within weeks. The link between code and issue therefore has to be written into
+files and commit messages, where a script can read it without a network.
+
+## Decision
+
+1. **A Linear project per deliverable**, milestones inside it. A spec is a project; a task is an issue. No cycles.
+2. **Every app, service and domain member carries a `linear` field in `package.json`** naming its Linear project (exact shape `TODO`). Libraries are exempt.
+3. **A spec needs an issue.** A spec folder names its Linear project and parent issue; a spec without one fails.
+4. **A `feat` or `fix` commit carries `Refs: STA-<n>` in its footer.** Other conventional-commit types do not need it.
+5. **Branch names are Linear's** (`<user>/sta-<n>-<slug>`), merged by squash.
+6. **Agents may create and update issues**, labelled `agent`. Every Proposed ADR has a "Decide ADR NNNN" issue.
+7. **The gate never calls Linear.** All checks read files and commit text only. Syncing state to Linear is a separate, non-blocking job.
+
+## Consequences
+
+- A missing key fails locally, before review, with no credentials.
+- The key is trusted, not verified: a well-formed key for the wrong issue passes. Verification against Linear is a non-blocking CI comment.
+- Every new app, service and domain member needs a Linear project before its first commit; the scaffold prompts for it.
+
+## Enforcement
+
+Planned: `tools/scripts/validate-repository.mjs` (the `linear` field on `tier:app`, `tier:service` and domain members, and the spec-needs-issue check),
+and a commitlint footer rule over the pull-request range (`Refs: STA-n` on `feat` and `fix`), wired into the gate of [0012](/adr/0012-code-host-and-ci).
+Nothing checks it today.
+
+## Supersedes and sources
+
+Supersedes: none. Related: [0016](/adr/0016-agents-source-of-truth) (spec folders), [0067](/adr/0067-spec-kit-is-the-sdlc).
+Sources: owner decision in chat, 2026-10-19 (Linear notes).

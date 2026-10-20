@@ -3,11 +3,11 @@
  * agents-sync — project `.agents/` into Claude Code and OpenCode directories.
  *
  * `.agents/` is the single source of truth for every AI artifact in this repo —
- * skills, subagents, rules, hooks, templates and specs. Claude Code and OpenCode
+ * skills, subagents, rules, hooks and templates (specs in `.agents/specs` are read in place). Claude Code and OpenCode
  * each expect their own layout, so this script projects every entry using one of
  * two strategies per (assistant, kind):
  *
- *   SYMLINK — skills, hooks, templates, specs. Identical bytes for every
+ *   SYMLINK — skills, hooks, templates. Identical bytes for every
  *   assistant, so a per-entry relative symlink back into `.agents/` is correct.
  *   Per-entry, not whole-directory: an assistant can keep tool-specific files
  *   alongside the linked ones (`.claude/settings.json`), tools that refuse to
@@ -50,7 +50,7 @@
  *   name: <string>                 optional; defaults to the file stem
  *   description: <string>          required
  *   tools: Read, Grep, Glob, Bash  optional; Claude Code tool names
- *   tier: steward|executor|…       optional; mapped per assistant by models.json
+ *   tier: steward|executor|…       optional; mapped per assistant by models.jsonc
  *   model: opus|sonnet|haiku|<provider>/<model>  optional override of the tier
  *   mode: primary|subagent|all     optional; OpenCode only, default subagent
  *   permissions:                   optional; explicit rules, overrides the
@@ -99,6 +99,7 @@ import {
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import process from "node:process";
+import { stripJsonc } from "./jsonc.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE = ".agents";
@@ -119,7 +120,6 @@ const ASSISTANTS = {
       rules: null,
       hooks: "hooks",
       templates: "templates",
-      specs: "specs",
     },
   },
   opencode: {
@@ -132,14 +132,13 @@ const ASSISTANTS = {
       rules: null,
       hooks: null,
       templates: "templates",
-      specs: "specs",
     },
     instructionsBlock: "AGENTS.md",
   },
 };
 
 /** Kinds that are byte-identical everywhere and therefore symlinked. */
-const SYMLINK_KINDS = ["skills", "hooks", "templates", "specs"];
+const SYMLINK_KINDS = ["skills", "hooks", "templates"];
 /** Kinds whose content is translated per assistant and therefore generated. */
 const GENERATE_KINDS = ["rules", "agents"];
 const KINDS = [...SYMLINK_KINDS, ...GENERATE_KINDS];
@@ -211,7 +210,7 @@ function isSymlink(p) {
 }
 
 // ---------------------------------------------------------------------------
-// SYMLINK strategy (skills, hooks, templates, specs).
+// SYMLINK strategy (skills, hooks, templates).
 // ---------------------------------------------------------------------------
 
 /** Ensure `linkPath` is a relative symlink pointing at `targetPath`. */
@@ -474,7 +473,7 @@ function normalizeAgent(data, entry, label) {
  * (`<name>`, `*`, `{a,b}`, `NNNN`/`XX`) are templates, not references, and are skipped.
  */
 const REFERENCE =
-  /^(\.agents|\.claude|\.opencode|apps|packages|services|tools)\/|^(AGENTS|CLAUDE|README)\.md$|^(turbo\.jsonc|pnpm-workspace\.yaml|\.oxlintrc\.json|mise\.toml|lefthook\.yml|opencode\.jsonc)$/;
+  /^(\.agents|\.claude|\.opencode|apps|packages|services|tools)\/|^(AGENTS|CLAUDE|README)\.md$|^(turbo\.jsonc|pnpm-workspace\.yaml|\.oxlintrc\.jsonc|mise\.toml|lefthook\.yml|opencode\.jsonc)$/;
 
 function brokenReferences(body) {
   const refs = [...body.matchAll(/`([^`\s]+)`/g)]
@@ -520,14 +519,14 @@ function loadAgent(entry) {
 }
 
 /**
- * `.agents/models.json` — agents declare a tier, this file says which model each
+ * `.agents/models.jsonc` — agents declare a tier, this file says which model each
  * assistant runs for that tier. `tiers` is ordered cheapest → strongest (the order
  * a failing output escalates in). A `null` model means "the assistant's default".
  *
  *   { "tiers": ["steward", "executor", …],
  *     "assistants": { "claude": { "steward": "haiku", … }, "opencode": { … } } }
  */
-const MODEL_MAP_REL = `${SOURCE}/models.json`;
+const MODEL_MAP_REL = `${SOURCE}/models.jsonc`;
 let modelMapCache;
 
 function modelMap() {
@@ -536,9 +535,9 @@ function modelMap() {
   if (!existsSync(path)) return (modelMapCache = null);
   let data;
   try {
-    data = JSON.parse(readFileSync(path, "utf8"));
+    data = JSON.parse(stripJsonc(readFileSync(path, "utf8")));
   } catch (error) {
-    console.error(`agents-sync: ${MODEL_MAP_REL} is not valid JSON: ${error.message}`);
+    console.error(`agents-sync: ${MODEL_MAP_REL} is not valid JSONC: ${error.message}`);
     process.exit(2);
   }
   const errors = [];
@@ -997,27 +996,6 @@ function ensureInstructionsBlock(file, ruleEntries) {
   results.generated++;
 }
 
-/** JSONC → JSON: drops // and /* *\/ comments outside strings, then trailing commas. */
-function stripJsonc(text) {
-  let out = "";
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (c === '"') {
-      const start = i;
-      for (i++; i < text.length && text[i] !== '"'; i++) if (text[i] === "\\") i++;
-      out += text.slice(start, i + 1);
-    } else if (c === "/" && text[i + 1] === "/") {
-      while (i < text.length && text[i] !== "\n") i++;
-      out += "\n";
-    } else if (c === "/" && text[i + 1] === "*") {
-      i = text.indexOf("*/", i + 2);
-      if (i === -1) throw new Error("unterminated /* comment");
-      i++;
-    } else out += c;
-  }
-  return out.replace(/,(\s*[}\]])/g, "$1");
-}
-
 /** Renders `.mcp.jsonc` into `.mcp.json`, which Claude Code reads (it ignores .jsonc). */
 function ensureMcpJson() {
   const source = join(ROOT, ".mcp.jsonc");
@@ -1074,6 +1052,15 @@ function main() {
       results.overrides.push(
         `${sourceRel}: model '${agent.model}' overrides ${agent.tier ? `tier '${agent.tier}'` : `${MODEL_MAP_REL}`}`,
       );
+  }
+  // ADR 0121 D3: the sdlc plugin is retired here, so no route or agent may point at `sdlc:*`.
+  for (const rel of [
+    `${SOURCE}/routing.yaml`,
+    ...agentEntries.map((e) => `${SOURCE}/agents/${e}`),
+  ]) {
+    const path = join(ROOT, rel);
+    if (existsSync(path) && /\bsdlc:/.test(readFileSync(path, "utf8")))
+      results.broken.push(`${rel}: references the retired sdlc plugin (ADR 0121 D3)`);
   }
 
   if (LINT) {

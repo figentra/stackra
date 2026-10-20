@@ -1,0 +1,34 @@
+---
+title: "0052 — The console is a Vite + React single-page app"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+`apps/console` is the operator and admin surface for Stackra ([0023](/adr/0023-stackra-is-a-framework)). It sits behind sign-in,
+needs no search indexing and no server rendering, and ships as static assets. The public landing site has different needs and
+is decided separately ([0057](/adr/0057-landing-is-react-router-framework-mode-on-workers)).
+
+## Decision
+
+1. **`@stackra/console` is a client-rendered Vite + React single-page app.** No server-side rendering and no Node server in the app.
+2. **Its audience is operators and admins**, not end customers; customer-facing screens belong to products.
+3. **Routing, data, forms and UI follow** [0053](/adr/0053-decorator-route-classes-compiled-to-router-adapters),
+   [0054](/adr/0054-tanstack-query-and-zustand-for-client-state), [0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters) and
+   [0056](/adr/0056-heroui-v3-pro-on-web-share-everything-but-components).
+4. **Browser support is evergreen, Safari 17 and newer.** No legacy transpilation targets.
+5. **The build output is static files** served from Cloudflare ([0063](/adr/0063-cloudflare-hosts-web-surfaces)).
+
+## Consequences
+
+- Simple build and hosting; no SSR hydration concerns in the console.
+- The console cannot be indexed; that is intended.
+- Session handling stays in the identity service; the SPA holds only client-side state and API tokens.
+
+## Enforcement
+
+Planned — a `validate-repository.mjs` check that `apps/console` declares no SSR framework dependency, and CI building it with `vite build`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19.

@@ -1,0 +1,32 @@
+---
+title: "0088 — @stackra/tenancy: pool and RLS are free; DB-per-tenant and the scope tree are Pro"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0045](/adr/0045-tenancy-package-pool-default-silo-on-demand) put pool tenancy, silo-on-demand and an `ltree` scope tree from day one into one free package. The open-core split ([0077](/adr/0077-open-core-free-and-pro-lists)) moves the scale features to Pro. The Figentra OS tenancy package also depends on the router, which a server-side package must not.
+
+## Decision
+
+1. **`@stackra/tenancy` is the one tenancy package.** Products and services use it; none implements isolation itself.
+2. **Free: pool tenancy.** Every tenant-owned table has a `tenant_id` column, and row-level security is both `ENABLE`d and `FORCE`d on it. The package provides `withTenant` and an isolation test kit.
+3. **The connection resolver is a free contract.** The pool resolver is free. **DB-per-tenant and move-tenant are a Pro driver** behind that contract.
+4. **No schema-per-tenant.**
+5. **The scope tree is Pro**, `@stackra-pro/scope`, and plugs into tenancy and `check()` ([0087](/adr/0087-identity-and-iam-are-driver-packages)). Free tenancy has no scope dependency.
+6. **No router dependency.**
+7. **Isolation is enforced at two layers**, the MikroORM scoped entity and the database policy, and **every tenant-owned table has a cross-tenant isolation test**, written with the kit.
+
+## Consequences
+
+- Free users get complete pool isolation. Silo and hierarchy are paid features.
+- Academorix needs the scope tree from day one, so it would consume `@stackra-pro/scope` under an internal licence. This is open and awaits owner confirmation.
+- The resolver contract must be designed for the Pro silo driver without it being present in this repository.
+
+## Enforcement
+
+Planned: a validator check that a migration creating a table with `tenant_id` also enables and forces RLS, and the per-table isolation test of decision 7, run on real Postgres. Nothing is implemented yet.
+
+## Supersedes and sources
+
+Supersedes: [0045](/adr/0045-tenancy-package-pool-default-silo-on-demand) (decisions 1, 2, 4, 6 and 7 restated; silo and the scope tree move to Pro). The amendment of [0014](/adr/0014-data-ownership-and-orm) decision 7 that 0045 made is carried here. Sources: owner decisions in chat, 2026-10-19 (Round 1 data/tenancy; Round 8 F14a, S2, S3 and the open conflict on the scope tree).

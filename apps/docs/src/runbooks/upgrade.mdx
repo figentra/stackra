@@ -43,13 +43,13 @@ Expo SDK versions move the whole `mobile` catalog together. Never bump one packa
     Note removed APIs, the new minimum Node and Xcode, and any New Architecture requirement.
   </Step>
   <Step title="Bump the expo version in the mobile catalog">
-    Then run `pnpm --filter @stackra/mobile exec expo install --fix` to learn the compatible versions of every `expo-*` and React Native package, and copy those versions into the `mobile` catalog (strict catalog mode means the catalog is the only place to write them).
+    Then run `pnpm --filter @figentra/mobile exec expo install --fix` to learn the compatible versions of every `expo-*` and React Native package, and copy those versions into the `mobile` catalog (strict catalog mode means the catalog is the only place to write them).
   </Step>
   <Step title="Check the project">
-    `pnpm --filter @stackra/mobile run doctor` (that is `expo install --check`) and `npx expo config --type public` from `apps/mobile`.
+    `pnpm --filter @figentra/mobile run doctor` (that is `expo install --check`) and `npx expo config --type public` from `apps/mobile`.
   </Step>
   <Step title="Prove the bundle builds">
-    `pnpm --filter @stackra/mobile build` (that is `expo export` for both platforms), then run a development build on a simulator.
+    `pnpm --filter @figentra/mobile build` (that is `expo export` for both platforms), then run a development build on a simulator.
   </Step>
   <Step title="Treat it as a native change">
     The runtime version changes, so over-the-air updates cannot reach old builds. Plan a new store build per [Mobile release](/runbooks/mobile-release) and do not publish an update across the boundary.

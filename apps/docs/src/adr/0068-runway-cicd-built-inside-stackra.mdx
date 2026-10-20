@@ -1,0 +1,33 @@
+---
+title: "0068 — runway: CI/CD built inside Stackra"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0012](/adr/0012-code-host-and-ci) fixes the host and says logic lives in `pnpm` scripts, but not how deploys are described. A private platform repository
+has a provider model and a manifest, but it is proprietary, so a public repository cannot call its private reusable workflows.
+Stackra needs deploys to Encore Cloud, AWS, Cloudflare and EAS from one manifest.
+
+## Decision
+
+1. **A focused "runway" lives in this repository, MIT**, with public reusable workflows. It ports only the pieces Stackra needs; the policy engine and signed records come later.
+2. **`runway.yaml` is the manifest**, a subset of the platform's (renamed from its earlier manifest name; schema `TODO`).
+3. **Providers: `encore-cloud`, `aws-ecs` (via `encore build docker`), `cloudflare-workers`, `eas`.** GCP Cloud Run is a new provider when needed. Publishing to `npm.figentra.com` is part of runway ([0025](/adr/0025-packages-publish-to-private-registry)).
+4. **Gate and notification providers**: spec to Linear project, plan to issues, PR key check ([0065](/adr/0065-linear-gate-is-checked-offline)), CI to comments and Slack `#ci`, deploy to a Linear release and `#deploys`, incidents.
+5. **Environments**: local, PR preview, staging, production. Production promotion is manual and needs approval ([0012](/adr/0012-code-host-and-ci) rule 7).
+6. **Workflow files stay thin.** They call `pnpm` scripts that read `runway.yaml` (0012 rule 3). Secrets arrive through OIDC ([0009](/adr/0009-secrets-two-mechanisms)).
+
+## Consequences
+
+- One manifest instead of per-provider YAML; the cost is owning a deploy tool.
+- Porting from a private repository needs the owner's relicence of the ported code to MIT.
+- This depends on 0012 being accepted; until then it is a proposal built on a proposal.
+
+## Enforcement
+
+Planned: `runway.yaml` schema validation in `pnpm validate`, and the reusable workflows under `.github/workflows/`. Nothing exists yet.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0012](/adr/0012-code-host-and-ci). Sources: owner decision in chat, 2026-10-19 (deploy and CI/CD notes); the platform repository's provider model (informational).

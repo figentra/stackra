@@ -1,4 +1,4 @@
-# AGENTS — @stackra/{{NAME}}
+# AGENTS — @figentra/{{NAME}}
 
 - Routes live in `src/app/` (expo-router); shared UI in `src/components/`. The `@/` alias points at `src/`.
 - UI comes from `heroui-native`; style with Uniwind `className`. Keep the native tab bar (`NativeTabs`) — do not

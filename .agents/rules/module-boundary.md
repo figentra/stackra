@@ -27,16 +27,16 @@ config → lib → app → service
 
 ```typescript
 // ❌ App importing from service
-import { user } from "@stackra/service-auth";
+import { user } from "@figentra/service-auth";
 
 // ❌ Package importing from app
-import { Login } from "@stackra/console";
+import { Login } from "@figentra/console";
 
 // ❌ Service importing from another service
-import { stripe } from "@stackra/service-payments";
+import { stripe } from "@figentra/service-payments";
 
 // ❌ Cross-app import
-import { Header } from "@stackra/console/src/header";
+import { Header } from "@figentra/console/src/header";
 ```
 
 ## Allowed Patterns

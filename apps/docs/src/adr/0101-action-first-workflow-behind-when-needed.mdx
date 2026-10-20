@@ -1,0 +1,42 @@
+---
+title: "0101 — Every operation is an action; a workflow sits behind it only when the criteria hit"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Medusa makes every mutation a workflow (about 341 of them, many with one step), mainly to get extension hooks and grouped
+events. Stackra's action pipeline ([0098](/adr/0098-actions-are-the-unit)) and the outbox
+([0078](/adr/0078-messaging-layer-eight-packages)) already give hooks, audit and transactional events for a single-aggregate
+write. The owner asked which rule is the right standard for all heavy development, even where both approaches reach the same goal.
+
+## Decision
+
+1. **Every operation is an action** (`@Action` or `@Query`). Actions are the only public surface; workflows are never exposed
+   directly to an adapter, an agent or a client.
+2. **A single-aggregate write is handled inline** in the action, in one transaction, with its events through the outbox.
+3. **A `@Workflow` is mandatory behind the action when any criterion hits**:
+   - the work crosses modules or services;
+   - it calls an external system;
+   - a later failure must undo an earlier effect (compensation);
+   - it waits (for a human, a timer or an event);
+   - it runs long enough that it must survive a restart.
+4. **Actions carry before and after hooks**, so extension does not need a workflow.
+5. **Reads use `@Query` actions**, and cross-module reads use `query.graph` ([0104](/adr/0104-links-and-query-graph)).
+
+## Consequences
+
+- Simple writes stay one readable method; complex ones get compensation and a journal.
+- A reviewer can reject a diff with a one-step workflow that meets none of the criteria, or an action that calls an external
+  system without a workflow.
+- Moving from inline to workflow later does not change the action's key or contract.
+
+## Enforcement
+
+Planned: the gen validation pass warns when an action handler calls a client of another module or an outbound HTTP driver
+without a workflow, and fails a `@Workflow` reachable from an adapter without an action. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19 (Round 11 W1). Informational: Medusa source study
+(`archive/medusa-develop`).

@@ -1,8 +1,25 @@
 ---
-description: Create the spec, interview the Impact questionnaire, then hand off to
-  clarify.
+description: Create the spec in .agents/specs/sta-<n>-<slug>, interview the Impact
+  questionnaire, then hand off to clarify.
 ---
 
+
+## Stackra: feature directory (runs first)
+
+Specs live in `.agents/specs/sta-<n>-<slug>/`, keyed by the spec's Linear issue (ADR 0120 D1). Never use
+`specs/` and never auto-number: `feature_numbering` is `linear-key`, which means the directory always comes
+from the Linear key, never from a scan. Once step 1 below has chosen the short name, and before step 3
+creates the directory, run:
+
+```bash
+node tools/scripts/spec-gate.mjs dir --slug <short-name>
+```
+
+It reads the STA key from the branch name (`figentra/sta-<n>-…`; pass `--key STA-n` when the branch has none),
+prints the folder and writes `.specify/feature.json`. That printed path **is** the explicitly provided
+`SPECIFY_FEATURE_DIRECTORY` below: use it as-is, and pass `SPECIFY_FEATURE_DIRECTORY=<path>` in front of every
+`.specify/scripts` call. If the command fails, STOP: there is no Linear issue yet. Create one
+(`pnpm linear create --title "…"`), or ask the user for its key, and work on a Linear-named branch.
 
 
 ## User Input
@@ -343,7 +360,7 @@ Success criteria must be:
 ## Stackra: Impact questionnaire (mandatory)
 
 The spec template carries an `## Impact` section. After drafting, ask the user each question in it
-(apps, services, packages, cross-service events, tenancy/data, secrets, Linear project/issue,
-ADR needed, new dependencies) and write the answers in. Never guess an answer: leave it as
-`[NEEDS CLARIFICATION: ...]`. Leave `**Clarifications status**` as `pending`. Do not run
-`/speckit.plan`: the next step is always `/speckit.clarify`.
+(apps, services, packages, cross-service events, tenancy/data, secrets, ADR needed, new dependencies,
+deploy modes, lane, change risk) and write the answers in. Set `**Linear**` to the folder's key. Never guess an
+answer: leave it as `[NEEDS CLARIFICATION: ...]`. Leave `**Status**: Draft` and `**Clarifications status**:
+pending`. Do not run `/speckit.plan`: the next step is always `/speckit.clarify`.

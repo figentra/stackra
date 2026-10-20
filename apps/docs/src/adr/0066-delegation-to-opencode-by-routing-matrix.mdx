@@ -1,0 +1,44 @@
+---
+title: "0066 — Claude leads; OpenCode executes routed tasks in worktrees"
+description: "Accepted · 2026-10-19"
+---
+
+<Note>Accepted in its amended form on 2026-10-19 by owner decision SDLC D11, recorded in [0121](/adr/0121-sdlc-tooling-roles-and-linear).</Note>
+
+<Note>
+  Amended by [0121](/adr/0121-sdlc-tooling-roles-and-linear): OpenCode runs Kimi K3 for the steward
+  and executor tiers only; reviewers, guardians and the lead never run on OpenCode.
+</Note>
+
+## Context
+
+[0017](/adr/0017-agent-roster-and-models) rule 4 says "Claude only", and [0011](/adr/0011-rejected-and-deferred-technologies) lists delegating
+implementation to a cheaper model through another runner as Rejected, with a revival trigger of a measured pass rate on this
+repository. The owner now wants to delegate mechanical work to OpenCode with Kimi to save cost, accepting a trial. This ADR conflicts with both
+Accepted pages: once accepted, it changes rule 4 of 0017 and reopens that row of 0011.
+
+## Decision
+
+1. **Claude Code leads and commits.** It owns clarify, specs, design, ADRs, cross-service contracts, auth, tenancy, IAM, money and PII work, secrets and CI-permission configuration, final review, `pnpm verify`, merge, releases, production promotion and incidents.
+2. **OpenCode (Kimi) executes routed tasks**: tests, stewards (docblocks, standards, i18n, changesets, docs), fixes after a failed verify, Renovate fix-ups, porting Figentra OS packages, low and medium-risk spec tasks, codegen drift, read-only scans, E2E and Maestro runs, Linear bookkeeping.
+3. **One git worktree per delegated task**, started by `tools/scripts/delegate.mjs` as `opencode run --agent <x> --format json`. OpenCode never runs in the main checkout, and never with `--auto` where it may ask.
+4. **`.agents/routing.yaml` is the matrix**: task type to executor and model. An override is a flag or `STACKRA_EXECUTOR`, and is logged.
+5. **Budget: $150 per day**, warning at 80%, measured by `pnpm ai:spend`. `delegate.mjs` refuses to start a task over the cap, and the SessionStart hook prints the spend.
+6. **A guard plugin for OpenCode** (ported from the academorix repository) enforces worktree-only writes and the path guards Claude's hooks apply.
+7. **Delegated output is reviewed like any other change** and merges only after Claude's review and a green `pnpm verify`. Tier-to-model names stay in `.agents/models.json`.
+
+## Consequences
+
+- Cost falls on mechanical work; review load on Claude rises. The pass-rate evidence 0011 asks for is collected from the first delegated tasks.
+- A second runner means a second place for guards to be wrong; the plugin port is a prerequisite, not a follow-up.
+- Rule 4 of 0017 and the 0011 row need a superseding edit when this is accepted.
+
+## Enforcement
+
+Planned: `tools/scripts/delegate.mjs` (worktree-only, budget refusal), a `.agents/routing.yaml` schema check in `agents:lint`, and the OpenCode guard plugin.
+Nothing exists yet.
+
+## Supersedes and sources
+
+Will supersede [0017](/adr/0017-agent-roster-and-models) (rule 4 only) and change one row of [0011](/adr/0011-rejected-and-deferred-technologies).
+Sources: owner decision in chat, 2026-10-19 (agents and budget notes).

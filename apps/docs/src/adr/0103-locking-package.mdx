@@ -1,0 +1,34 @@
+---
+title: "0103 — @stackra/locking: server-side named locks behind a driver"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Workflows, scheduled jobs, idempotent consumers and money operations need mutual exclusion across processes. Medusa ships a
+locking module with providers for this. Without one package, each feature invents its own advisory-lock or cache trick. The
+client-side `@stackra/coordinator` ([0084](/adr/0084-figentra-os-package-port-plan)) covers tabs and processes on one device,
+not servers.
+
+## Decision
+
+1. **`@stackra/locking` provides named, time-bound locks** (`acquire`, `release`, `withLock(key, ttl, fn)`), ported from
+   Medusa's MIT locking module.
+2. **Drivers follow the instance-module pattern**: Postgres advisory locks (the default, works on-prem and air-gapped), a
+   Redis/Valkey driver and a memory driver for tests, each with a conformance suite ([0076](/adr/0076-every-package-runs-saas-on-prem-and-air-gapped)).
+3. **Lock keys are tenant-scoped by default**; a platform-wide lock is explicit.
+4. **The scheduler's on-prem advisory lock** ([0078](/adr/0078-messaging-layer-eight-packages) decision 6) uses this package.
+5. **Package placement**: runtime.
+
+## Consequences
+
+- One place to reason about lock leaks and timeouts.
+- `@stackra/coordinator` stays client-side; the two never share code.
+
+## Enforcement
+
+Planned: the driver conformance suite in the air-gapped CI job. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19 (Round 11 W4). Informational: Medusa locking module.

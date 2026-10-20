@@ -1,0 +1,40 @@
+---
+title: "0074 — Open core: @stackra-pro on the private registry"
+description: "Superseded by 0077 · 2026-10-19"
+---
+
+<Note>
+  Superseded by [0077](/adr/0077-open-core-free-and-pro-lists): the free and Pro lists and the Pro
+  source location are settled there; rules 1 to 3, 5 and 6 carry forward.
+</Note>
+
+## Context
+
+[0024](/adr/0024-mit-license-with-exclusions) says Stackra code is MIT and that code from paid licences is never committed. The owner now wants an open core: `@stackra/*` stays MIT, and premium
+packages are sold under a commercial licence. The registry ([0025](/adr/0025-packages-publish-to-private-registry)) already controls distribution, so access can be gated at install,
+the way HeroUI Pro does. This amends 0024, whose rule 1 makes every package MIT.
+
+## Decision
+
+1. **`@stackra/*` is MIT and free**, as in 0024.
+2. **Premium packages use a separate scope, `@stackra-pro/*`**, on `npm.figentra.com`, under a commercial licence. Each carries its own `LICENSE` and a `"license"` field naming it.
+3. **Access is gated at install**: a scoped `.npmrc` plus a per-customer registry token. Packages perform no runtime licence check.
+4. **Which packages are Pro is decided later.** Candidates: the admin-resource console kit, the page builder, dashboards, AI agents.
+5. **A Pro package that uses HeroUI Pro** respects HeroUI's redistribution terms, and no paid-licence code is committed (0024 rule 4).
+6. **`@stackra/licensing`** (signed offline licence file, public-key verification, seats and expiry) is built only when a product sells self-hosted. Tenant plan entitlements are a separate package.
+
+## Consequences
+
+- The validator's "every licence is MIT" check needs an exception for the `@stackra-pro` scope.
+- Where Pro source lives (this public repository or another) is `TODO`; a public repository with commercial-licence code needs its own `NOTICE` per 0024 rule 5.
+- Open questions: does npflared support per-customer scoped, revocable tokens; what are HeroUI Pro's redistribution terms for a package that wraps it.
+
+## Enforcement
+
+Planned: `tools/scripts/validate-repository.mjs` accepts a commercial licence only under `@stackra-pro/*`, and a check that no such package is published to a public registry.
+Nothing checks it today.
+
+## Supersedes and sources
+
+Amends [0024](/adr/0024-mit-license-with-exclusions) (rule 1, for the `@stackra-pro` scope) and builds on [0025](/adr/0025-packages-publish-to-private-registry).
+Sources: owner decision in chat, 2026-10-19 (licensing).

@@ -6,7 +6,15 @@ icon: "list-checks"
 
 Not every change needs a spec. Work that touches money, permissions, data integrity, external contracts, concurrency or state machines does, and so does anything several agents will implement or that will outlive its author's memory. Everything else is a direct change reviewed at the gates on [Working with agents](/agents/index).
 
-The spec engine is [GitHub spec-kit](https://github.com/github/spec-kit) (`specify` CLI, pinned in `.specify/init-options.json`). It is initialised for both Claude Code (`.claude/skills/speckit-*`) and OpenCode (`.opencode/commands/speckit.*`), so both assistants run the same flow. A Stackra preset (`.specify/presets/stackra`) adds the gate described below. A change that is not specified starts at `/speckit.specify`: the prompt-hints hook nudges an ad-hoc feature request there.
+The spec engine is [GitHub spec-kit](https://github.com/github/spec-kit). The `specify` CLI is pinned exactly in `mise.toml` (`pipx:specify-cli`, [ADR 0121](/adr/0121-sdlc-tooling-roles-and-linear) D15), and `pnpm doctor` fails when the installed version differs. It is initialised for both Claude Code (`.claude/skills/speckit-*`) and OpenCode (`.opencode/commands/speckit.*`). A Stackra preset (`.specify/presets/stackra`) wraps the core commands with the spec location and the gate described below. spec-kit registers preset commands only for the active integration, so `pnpm speckit:sync` re-registers the preset for OpenCode and then Claude after any preset change; the spec-gate tripwire fails when either copy loses the wrap. A change that is not specified starts at `/speckit.specify`: the prompt-hints hook nudges an ad-hoc feature request there.
+
+## Where specs live
+
+Every spec lives in `.agents/specs/sta-<n>-<slug>/`, named by its Linear issue ([ADR 0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk) D1). spec-kit has no project-wide setting for the folder, so the preset passes it on every run: each wrapped command first runs `node tools/scripts/spec-gate.mjs dir`, which reads the STA key from the branch name (`figentra/sta-<n>-…`, or `--key STA-n`), prints the folder and writes `.specify/feature.json`. That path is the `SPECIFY_FEATURE_DIRECTORY` every `.specify/scripts` call receives. `/speckit.specify` adds `--slug <short-name>` to name a new folder. `.specify/init-options.json` sets `feature_numbering` to `linear-key`, so nothing auto-numbers. Root `specs/` is not used, and `spec-gate ci` fails a change that adds to it.
+
+The wrap rests on core spec-kit behaviour an upgrade could change. `spec-gate ci` therefore runs a tripwire: the gate call in `setup-plan.sh`, `common.sh` still resolving `SPECIFY_FEATURE_DIRECTORY` and then `feature.json`, `feature_numbering` still `linear-key`, core specify still taking the directory as-is, and the Stackra section present in every wrapped command for both assistants. Upgrade spec-kit only in a dedicated pull request: bump `mise.toml` and `speckit_version`, run `pnpm speckit:sync`, then `pnpm validate`.
+
+Specs are public on GitHub and are not published here (D17). They never hold secrets, customer data or details of an unfixed vulnerability.
 
 ## The flow
 
@@ -17,7 +25,7 @@ The spec engine is [GitHub spec-kit](https://github.com/github/spec-kit) (`speci
 
 | Command                                  | Writes                         | Stackra rule                                                         |
 | ---------------------------------------- | ------------------------------ | -------------------------------------------------------------------- |
-| `/speckit.specify`                       | `specs/NNN-feature/spec.md`    | Interviews the **Impact** questionnaire. Never plans                 |
+| `/speckit.specify`                       | `.agents/specs/sta-n-<slug>/spec.md` | Interviews the **Impact** questionnaire. Never plans                 |
 | `/speckit.clarify`                       | Answers in `spec.md`           | Sets `**Clarifications status**: complete` only when nothing is open |
 | `/speckit.plan`                          | `plan.md`, research, contracts | **Refuses** until the spec gate passes                               |
 | `/speckit.tasks`                         | `tasks.md`                     | Tasks map to Linear sub-issues of the spec's issue                   |
@@ -29,19 +37,36 @@ The spec engine is [GitHub spec-kit](https://github.com/github/spec-kit) (`speci
 Every `spec.md` carries three things the template provides:
 
 - `**Linear**: STA-n`, the issue for the spec (team STA). Optionally `**Linear project**`.
-- `**Clarifications status**: pending | complete`.
-- An `## Impact` questionnaire, every line answered (`none` is an answer): apps, services and packages touched, cross-service events, tenancy and data, secrets (names, never values), whether an ADR is needed, new dependencies.
+- `**Clarifications status**: pending | complete`, and `**Status**`: Draft, Clarified, Planned, Ready, Implementing, Verified, or Abandoned / Superseded.
+- An `## Impact` questionnaire, every line answered (`none` is an answer): apps, services and packages touched, cross-service events, tenancy and data, secrets (names, never values), whether an ADR is needed, new dependencies, deploy modes (what differs in SaaS, on-prem and air-gapped), the lane (full, lite, bug or chore) and the change risk (R0 to R3), both from [ADR 0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk).
 
 `tools/scripts/spec-gate.mjs plan` passes only when the status is `complete`, a real `STA-n` is set, every Impact line is answered and no `[NEEDS CLARIFICATION` marker remains. It is enforced twice:
 
 1. **Locally.** `.specify/scripts/bash/setup-plan.sh` runs it first, so `/speckit.plan` fails before it writes anything. `specify init --force` or `specify integration upgrade` can overwrite that script; `spec-gate.mjs ci` fails if the call is gone.
-2. **In CI.** `pnpm validate` runs `spec-gate.mjs ci`, which checks every `specs/<feature>/` changed since `origin/main`. A branch that touches `specs/**` without a clarified, Linear-linked spec fails the Quality Gate.
+2. **In CI.** `pnpm validate` runs `spec-gate.mjs ci`, which checks every `.agents/specs/<folder>/` changed since `origin/main` at the stage its `**Status**` claims. A Draft spec passes while it is being written: it needs only a `sta-<n>-<slug>` folder and, once set, a `**Linear**` key equal to the folder's. From Clarified on, the plan rules above apply. Planned also needs `plan.md`, Ready and Implementing need `tasks.md`, and Verified needs every task ticked. A status may lag behind the artifacts but never run ahead of them.
 
 Answers that raise an ADR go to `docs-adr-steward`; a new dependency goes through the catalog (`dependency-steward`).
 
 ## Linear
 
-`tools/scripts/spec-linear.mjs issue <spec.md>` creates the spec's issue and writes the key into `spec.md`. `tools/scripts/spec-linear.mjs tasks <tasks.md>` creates one sub-issue per `T###` task and appends ` [STA-n]` to the line. Both take `--dry-run` (no token, no calls). The token is `LINEAR_API_KEY` from the environment only, so run them as `infisical run --path=/agents -- node tools/scripts/spec-linear.mjs ...`. An agent with the Linear MCP connected uses that instead and edits the same fields. No token is ever stored in a file.
+**Work isn't done until its Linear issue is in the right state; agents use `pnpm linear`.** That includes subagents and OpenCode executors that have no Linear MCP.
+
+| Moment        | Command                                                           | Issue state                   |
+| ------------- | ----------------------------------------------------------------- | ----------------------------- |
+| Start         | `pnpm linear start STA-n`                                         | In Progress, branch commented |
+| PR opened     | `pnpm linear review STA-n <pr-url>`                               | In Review, PR attached        |
+| Merged        | `pnpm linear done STA-n <link>` (or `Fixes STA-n` in the PR)      | Done                          |
+| Anything else | `pnpm linear comment STA-n "…"`, `link`, `create`, `mine`, `open` | unchanged                     |
+
+`pnpm linear` runs `tools/scripts/linear.mjs` under `infisical run --env=dev --path=/agents`. It acts as the **Stackra Agent** Linear app, which becomes the issue's _delegate_, never its assignee. The token is `LINEAR_AGENT_TOKEN`, re-minted from `LINEAR_AGENT_CLIENT_ID`/`LINEAR_AGENT_CLIENT_SECRET` when it expires. The personal `LINEAR_API_KEY` is the fallback. `create` adds the `agent` label when an agent runs it.
+
+Stage transitions report themselves. `spec-gate.mjs plan` comments "clarified" on the spec's issue when it passes. `spec-gate.mjs stage <spec.md> planned|implementing|verified` comments the later stages, and `implementing` also moves the issue to In Progress. `pnpm delegate` requires `--issue STA-n`: it starts the issue at dispatch and comments the result. None of these calls can fail a gate. Linear sync never blocks (ADR 0065 rule 7), and `STACKRA_LINEAR=off` turns them off.
+
+Keys are enforced offline. A `feat`, `fix`, `refactor` or `perf` commit needs a `Refs: STA-n` footer, checked by commitlint in lefthook and over the PR range in CI. The Quality Gate also fails a PR whose title and branch both lack an STA key, unless it is labelled `chore-lane` or comes from `renovate/*` or `changeset-release/*`.
+
+The **Linear sync** workflow (`.github/workflows/linear-sync.yml`, nightly and on push to main) runs `tools/scripts/linear-reconcile.mjs`. It moves an issue to In Review when an open PR mentions it (in the title, the branch, `Refs`/`Fixes`, or an attachment). It moves an issue to Done only when a merged PR closes it, through the branch name or `Fixes`/`Closes`/`Resolves`. A `Refs` mention never closes an issue, so an issue that spans several PRs stays open. Fork PRs are ignored. It closes "Decide ADR NNNN" once that ADR is Accepted or Superseded. It labels In Progress issues `stale` after 3 days without branch or PR activity, and comments on Backlog issues whose ADR is now Accepted. Each comment carries a `linear-reconcile (<tag>)` marker, so a re-run, or a human reopening an issue, is never overridden. `--dry-run` writes nothing.
+
+`tools/scripts/spec-linear.mjs issue <spec.md>` creates the spec's issue and writes the key into `spec.md`. `tools/scripts/spec-linear.mjs tasks <tasks.md>` creates one sub-issue per `T###` task and appends ` [STA-n]` to the line. Both take `--dry-run` (no token, no calls) and use the same client and tokens as `pnpm linear`, so run them as `infisical run --env=dev --path=/agents -- node tools/scripts/spec-linear.mjs ...`. No token is ever stored in a file.
 
 ## The constitution
 
@@ -74,9 +99,9 @@ Anything else is one-off. Fix it in the change and write nothing. Promoting a on
 | ------------------------------------------------ | --------------------------------------- | ----------------------- |
 | A decision                                       | An ADR                                  | `architecture-guardian` |
 | Enforcement: a decision exists and nothing fails | A check wired into `pnpm verify` and CI | `release-operations`    |
-| Awareness: only a human reading can enforce it   | A rule in `.agents/rules/`              | `docs-governance`       |
-| A procedure someone re-derived                   | A skill in `.agents/skills/`            | `docs-governance`       |
-| A behaviour the spec never specified             | A requirement in `requirements.md`      | `spec-author`           |
+| Awareness: only a human reading can enforce it   | A rule in `.agents/rules/`              | the lead                |
+| A procedure someone re-derived                   | A skill in `.agents/skills/`            | the lead                |
+| A behaviour the spec never specified             | An amendment to the spec's `spec.md`    | the lead                |
 | Coverage: right code, nothing would have noticed | A test at the level that catches it     | `test-engineer`         |
 | A version, advisory or pin                       | A catalog entry                         | `dependency-steward`    |
 | A layout mistake that repeats per package        | A scaffold template change              | `package-steward`       |
@@ -95,6 +120,6 @@ Nothing checks for that line, and there is no findings ledger. A ledger would be
 
 ## Tasks that are not specs
 
-A spec is for work worth specifying. Day-to-day tasks use one task file per repository, not a file per agent, so two agents never disagree about what is open. A task is done only when its code is on the main branch.
+A spec is for work worth specifying. Other work is a Linear issue on a Linear-named branch, in the bug or chore lane of [ADR 0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk). A task is done only when its code is on the main branch.
 
 Related: [Roster](/agents/roster), [Delegation](/constitution/delegation), [Definition of done](/guides/definition-of-done).

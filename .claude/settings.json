@@ -2,18 +2,115 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
-      "Bash(pnpm verify)",
-      "Bash(pnpm validate)",
-      "Bash(pnpm test:hooks)",
-      "Bash(pnpm test)",
-      "Bash(pnpm test:*)",
-      "Bash(pnpm typecheck)",
-      "Bash(pnpm lint)",
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)"
+      "Bash(pnpm *)",
+      "Bash(turbo *)",
+      "Bash(node tools/scripts/*)",
+      "Bash(node --test *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git switch *)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git fetch*)",
+      "Bash(git pull*)",
+      "Bash(git rebase *)",
+      "Bash(git stash*)",
+      "Bash(git worktree *)",
+      "Bash(git rev-parse *)",
+      "Bash(git merge-base *)",
+      "Bash(git cherry-pick *)",
+      "Bash(git restore *)",
+      "Bash(git mv *)",
+      "Bash(git rm *)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr list*)",
+      "Bash(gh pr checks*)",
+      "Bash(gh pr diff*)",
+      "Bash(gh run view*)",
+      "Bash(gh run list*)",
+      "Bash(gh run watch*)",
+      "Bash(gh issue view*)",
+      "Bash(gh issue list*)",
+      "Bash(gh repo view*)",
+      "Bash(gh label list*)",
+      "Bash(infisical run *)",
+      "Bash(encore run*)",
+      "Bash(encore test*)",
+      "Bash(encore check*)",
+      "Bash(encore gen *)",
+      "Bash(mint *)",
+      "Bash(docker ps*)",
+      "Bash(docker logs *)",
+      "Bash(docker compose *)",
+      "Bash(docker build *)",
+      "Bash(lefthook *)",
+      "Bash(gitleaks *)",
+      "Bash(oxfmt *)",
+      "Bash(oxlint *)",
+      "mcp__context7",
+      "mcp__heroui-react",
+      "mcp__heroui-native",
+      "mcp__heroui-pro",
+      "mcp__heroui-native-pro",
+      "mcp__uniwind",
+      "mcp__expo",
+      "mcp__encore",
+      "mcp__cloudflare-docs",
+      "mcp__resend-docs",
+      "mcp__aws-knowledge",
+      "WebFetch(domain:code.claude.com)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "WebFetch(domain:opencode.ai)",
+      "WebFetch(domain:turborepo.com)",
+      "WebFetch(domain:pnpm.io)",
+      "WebFetch(domain:heroui.com)",
+      "WebFetch(domain:heroui.pro)",
+      "WebFetch(domain:encore.dev)",
+      "WebFetch(domain:docs.expo.dev)",
+      "WebFetch(domain:mintlify.com)",
+      "WebFetch(domain:infisical.com)",
+      "WebFetch(domain:developers.cloudflare.com)",
+      "WebFetch(domain:vitest.dev)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:ai-sdk.dev)",
+      "WebFetch(domain:linear.app)"
     ],
-    "deny": ["Read(**/.env)", "Read(**/.env.*)", "Read(**/.secrets.local.*)", "Read(**/*.pem)"]
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/.secrets.local.*)",
+      "Read(**/*.pem)",
+      "Read(**/.dev.vars)",
+      "Edit(**/.env)",
+      "Edit(**/.env.*)",
+      "Bash(infisical export*)",
+      "Bash(pnpm changeset:version*)",
+      "Bash(git push origin main*)",
+      "Bash(git push -u origin main*)",
+      "Bash(git push origin HEAD:main*)",
+      "Bash(git push --force *)",
+      "Bash(git push -f*)",
+      "Bash(gh pr merge --admin*)",
+      "Bash(gh pr merge * --admin*)",
+      "Bash(git reset --hard*)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~*)"
+    ],
+    "ask": [
+      "Bash(gh repo delete*)",
+      "Bash(gh repo edit*)",
+      "Bash(gh release create*)",
+      "Bash(gh release delete*)",
+      "Bash(encore deploy*)",
+      "Bash(wrangler deploy*)",
+      "Bash(gh api -X DELETE*)",
+      "Bash(gh api --method DELETE*)"
+    ]
   },
   "enabledPlugins": {
     "frontend-design@claude-plugins-official": true,
@@ -22,10 +119,16 @@
   },
   "extraKnownMarketplaces": {
     "encore-skills": {
-      "source": { "source": "github", "repo": "encoredev/skills" }
+      "source": {
+        "source": "github",
+        "repo": "encoredev/skills"
+      }
     },
     "cloudflare": {
-      "source": { "source": "github", "repo": "cloudflare/skills" }
+      "source": {
+        "source": "github",
+        "repo": "cloudflare/skills"
+      }
     }
   },
   "hooks": {
@@ -46,7 +149,7 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/session-context.mjs\"",
-            "timeout": 5
+            "timeout": 12
           }
         ]
       }

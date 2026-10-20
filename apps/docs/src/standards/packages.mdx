@@ -72,7 +72,7 @@ Data, not a build: JSON or JSONC presets with a `files` allowlist and an `export
 
 ## Exports, barrels and imports
 
-- `package.json` `exports` point at `./src/**` (the validator checks this); `tsdown` builds `dist/` only for publishing.
+- Every package builds with tsdown to ESM-only `dist/*.mjs` plus `.d.mts`. Each `exports` entry lists the `@stackra/source` condition first (pointing at `./src/**`, read by typecheck, Vitest and Vite), then `types` and `default` in `dist` (runtimes load these). The validator checks the shape ([0025](/adr/0025-packages-publish-to-private-registry)).
 - `index.ts` is the only barrel name. A barrel declares nothing; it re-exports.
 - A consumer imports the package or a declared subpath, never another package's `src/` (`@stackra/*/src/*` is a lint error).
 - A package never imports an app, a service, or `encore.dev` and `~encore/*`.
@@ -108,7 +108,7 @@ A port that diverges from its origin does so openly: in `ORIGIN.md`, not silentl
 | Layer direction (`core`, `application`, `presentation`, native)   | oxlint `no-restricted-imports` in `boundaries.jsonc`         | Yes     |
 | No import of an app, service or `encore.dev` from a package       | oxlint `boundaries.jsonc` + `turbo boundaries`               | Yes     |
 | No deep import of `@stackra/*/src/*`                              | oxlint `boundaries.jsonc`                                    | Yes     |
-| `exports` target `./src/`, `sideEffects: false`                   | `validate-repository.mjs`                                    | Yes     |
+| `exports` dist + `@stackra/source` shape, `sideEffects: false`   | `validate-repository.mjs`                                    | Yes     |
 | Unused files and exports                                          | `knip`                                                       | Yes     |
 | Archetype fields and a barrel/deep-import shape check             | planned: validator check (ported from a package-shape script) | No     |
 | No product literal or `process.env` in a package                  | planned: validator check                                     | No      |

@@ -1,0 +1,29 @@
+---
+title: "0083 — npm scopes: @stackra for packages, @figentra for this repository's apps and services; @stackra/console is the CLI framework"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Ported Figentra OS packages need Stackra names. The Figentra OS console package is a command-line framework that apps, packages and services build on, and the `stackra` binary is built on it. Its natural name, `@stackra/console`, is taken by the web operator app in `apps/console`. Apps and services in this repository are reference apps ([0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services)), not published framework packages, so they do not need the framework scope. The owner first named the CLI framework `@stackra/terminal`, then revised that.
+
+## Decision
+
+1. **Framework packages are `@stackra/<name>`**, with the Figentra name stripped (`@figentra-os/signals` becomes `@stackra/state`, `@figentra-os/router` becomes `@stackra/router`). Pro packages are `@stackra-pro/<name>` ([0077](/adr/0077-open-core-free-and-pro-lists)).
+2. **Apps and services in this repository use the `@figentra/*` scope**: `@figentra/console`, `@figentra/mobile`, `@figentra/docs`, `@figentra/service-<name>`.
+3. **`@stackra/console` is the command-line framework** (commands, kernel, terminal and prompter ports) that apps, packages and services use. The name `@stackra/terminal` is not used.
+4. **`@stackra/cli` is the `stackra` binary**, built on `@stackra/console`. Commands such as `stackra gen` ([0041](/adr/0041-decorated-controllers-and-build-time-generator)) live there.
+5. **`@stackra/navigation` keeps its name.** It covers local and remote menus, breadcrumbs and tabs, so "menu" was rejected as too narrow.
+
+## Consequences
+
+- When this is accepted, these change in the same change: member names in `apps/*` and `services/*`, `AGENTS.md`, the member-name rules in `tools/scripts/validate-repository.mjs`, the templates in `tools/scaffold`, every `--filter=@stackra/<app>` in scripts, agent definitions and docs, and [0010](/adr/0010-services-are-independent-workspace-members), which names services `@stackra/service-<name>`.
+- `@figentra/*` names private members only. They are never published from this repository.
+
+## Enforcement
+
+Planned: `tools/scripts/validate-repository.mjs` checks that `packages/**` members are `@stackra/*`, and that `apps/**` and `services/**` members are `@figentra/*` (`@figentra/service-<name>` for services). Today it enforces the old names.
+
+## Supersedes and sources
+
+Supersedes: none. Will amend [0010](/adr/0010-services-are-independent-workspace-members) (the service name) on acceptance. Sources: owner decisions in chat, 2026-10-19 (Round 8 X5, E1, E1 revised, E4 final).

@@ -1,0 +1,37 @@
+---
+title: "0111 — The module is the unit of contribution; services and apps only host modules"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+Actions, widgets, settings, resources, workflows, events, crons, navigation, permissions, UI components, client tools and
+routes all need a home. If each kind is registered in a central place (a service's bootstrap, an app's route file, a global
+widget list), a feature is scattered across the repository and cannot be moved or sold as one piece. The owner wants every
+module to expose its own contributions, with no central place.
+
+## Decision
+
+1. **A feature module declares everything it contributes, in its own folders.**
+   - Its `node` entry holds actions, widgets and stats, settings, resources, workflows, events, crons, navigation entries and
+     permissions.
+   - Its `extensions`, `react` and `native` entries hold UI components, renderers, client tools, routes and menus.
+2. **Services and apps only host modules.** They import root modules and add no contributions of their own beyond wiring.
+3. **Gen collects contributions per module**, and every manifest entry records its owning module
+   ([0109](/adr/0109-registry-manifests-published-by-ci)).
+4. **A module from a package contributes exactly like a module in a service**, so a package can ship a whole feature.
+
+## Consequences
+
+- A feature can be moved between services, or sold as a package, by moving one module.
+- Discovery depends on the root-module graph of [0090](/adr/0090-codegen-discovery-by-root-module) being complete.
+- A reviewer can reject a widget, route or permission declared outside the module that owns it.
+
+## Enforcement
+
+Planned: the gen validation pass fails a contribution whose owning module cannot be determined, and a service or app file
+that declares a contribution decorator. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19 (Round 11 X4).

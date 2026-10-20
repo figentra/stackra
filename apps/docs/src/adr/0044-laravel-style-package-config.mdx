@@ -1,0 +1,35 @@
+---
+title: "0044 — Laravel-style package configuration"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+Packages need defaults that a product can see, copy and override without forking. [0025](/adr/0025-packages-publish-to-private-registry)
+already says a package's `config/` directory sits outside `src` and is exported as `./config`, but not what a config file
+contains or how an app or service overrides it.
+
+## Decision
+
+1. **A package's defaults live in `packages/<category>/<pkg>/config/<pkg>.config.ts`**, outside `src/`, exporting a typed
+   default object, and are published via the `./config` export of 0025.
+2. **An app or service overrides by publishing**: `stackra` copies the file to the member's own config folder
+   (path: TODO); the member's copy wins. Unpublished packages run on their defaults.
+3. **Overrides are merged over defaults** (TODO: merge depth), and the result is validated against the package's schema at start-up.
+4. **Config holds names and settings, never secret values**; secrets are read by name from the secret store ([0009](/adr/0009-secrets-two-mechanisms)).
+5. **Config is delivered through the container** ([0042](/adr/0042-di-first-with-one-container-per-service)) as a token the package exports.
+6. **A package with nothing configurable has no `config/` directory.**
+
+## Consequences
+
+- Defaults are readable and diffable in one place per package.
+- A publish command and a loader are new work (TODO: owning package).
+- Upgrades must tell products when a default they copied has changed.
+
+## Enforcement
+
+Planned — a `validate-repository.mjs` check that `config/<pkg>.config.ts` exists whenever `./config` is exported; start-up schema validation in the loader.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0025](/adr/0025-packages-publish-to-private-registry) (`./config` export). Sources: owner decision in chat, 2026-10-19.

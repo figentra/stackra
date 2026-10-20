@@ -33,7 +33,7 @@ This is a standing preference of the maintainer, not a suggestion: all work is d
 
 - One task per agent run. A change to a shared interface, or one that touches two packages, is one task. A half that leaves the repository in a broken state is not a valid task.
 - One agent per package at a time. Two parallel agents never edit the same directory.
-- Parallel fan-out is capped at five concurrent executors. The `spec-run` skill enforces this for spec waves.
+- Parallel fan-out is capped at five concurrent executors. The lead enforces this for spec waves (`/speckit.implement`); no script does yet.
 - Run independent agents in a single message so they start together. Do not delegate a check you can run in one command yourself.
 - Executors do not use `git stash`, `git add -A`, force-push or `--no-verify`. See [Concurrent sessions](/agents/concurrent-sessions).
 
@@ -52,6 +52,16 @@ Gate order for a non-trivial change, from the plan to the merge:
 
 The full roster, with tiers and models, is on [Roster](/agents/roster). The `delivery-orchestrator` enforces this order and writes no code.
 
+### How a change merges
+
+Required approvals are 0 and the Quality Gate is the only required check (owner decision A1, ADR 0119). An agent merges only with `pnpm pr:merge <n>`, which squash-merges as the `stackra-bot` GitHub App (`--delete-branch`, `--match-head-commit`, never `--admin`) when all of these hold:
+
+- the newest Quality Gate run on the head SHA is green, and the PR is open and not a draft;
+- the newest trusted review comment for that SHA is `AI-REVIEW: PASS <head sha>` on its first line (posted by `stackra-bot` or the owner; `AI-REVIEW: FAIL <sha>` blocks). A new push needs a new review;
+- a PR labelled `design` or `risk:R3` also has the owner's approval on the head SHA, or the `owner-approved` label.
+
+The bot helpers run under Infisical (`/agents`, env `dev`) and never print the token except `pnpm bot:token`, which writes it alone to stdout for piping. `pnpm bot:gh -- <args>` runs `gh` as the bot; `pnpm bot:git -- <args>` runs `git` with the bot as author and committer (`stackra-bot[bot]`, `344982495+stackra-bot[bot]@users.noreply.github.com`) and pushes over https through `gh auth git-credential`, with nothing written to `.git/config`.
+
 A rule with no failing check is a comment. Where an agent's charter and the actual check disagree, the charter is the bug. See [Rules that don't rot](/agents/rules-that-dont-rot).
 
 ## One source, projected to each tool
@@ -64,9 +74,9 @@ Every AI artifact is authored once, in `.agents/`:
 ├── rules/     short always-on rules that point at these pages
 ├── agents/    roster definitions for agents the repository adds
 ├── skills/    project skills
-├── specs/     work product: <NNN>-<slug>/ with three documents
+├── specs/     spec-kit specs: sta-<n>-<slug>/, keyed by the Linear issue (ADR 0120)
 ├── plans/     working plans
-└── models.json   tier to model mapping
+└── models.jsonc  tier to model mapping
 ```
 
 The assistant folders, `.claude/` and `.opencode/`, are projections of this tree. Edit `.agents/`, never the projection. The mechanism is one canonical `.agents/` source projected to tool folders; the adoption plan describes how it is wired and checked. The decision is recorded in [ADR 0016](/adr/0016-agents-source-of-truth).

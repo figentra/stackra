@@ -1,0 +1,27 @@
+---
+title: "0039 — OpenAPI to Mintlify API reference, and an OAuth developer guide"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+External developers and OAuth apps need an API reference that matches the code. Docs are on Mintlify ([0002](/adr/0002-docs-on-mintlify)), which renders OpenAPI, and Encore endpoints ([0032](/adr/0032-rest-api-generated-client-uuidv7-ids)) are typed.
+
+## Decision
+
+1. **An OpenAPI document is generated from the Encore endpoints**, not written by hand.
+2. **The Mintlify API reference is built from that document** in `apps/docs`.
+3. **An OAuth developer guide** covers registering an app, scopes, the authorisation flow and tokens, and is written with the OAuth-apps feature.
+4. The generator and whether the document is committed or built: TODO.
+
+## Consequences
+
+- The reference cannot drift from the code if CI regenerates it; internal-only endpoints must be excluded.
+
+## Enforcement
+
+Planned — CI step that regenerates the OpenAPI document and fails on a diff; `mint broken-links` already checks the docs pages.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decisions in chat, 2026-10-19.

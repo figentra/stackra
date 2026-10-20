@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Stackra brand tokens, logos, and fonts",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "files": [
     "src",
     "dist",
@@ -15,12 +15,14 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "@stackra/source": "./src/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
     },
     "./tokens": {
-      "types": "./src/tokens/tokens.ts",
-      "default": "./src/tokens/tokens.ts"
+      "@stackra/source": "./src/tokens/tokens.ts",
+      "types": "./dist/tokens.d.mts",
+      "default": "./dist/tokens.mjs"
     },
     "./tokens.css": "./src/tokens/tokens.css",
     "./tokens.json": "./src/tokens/tokens.json",

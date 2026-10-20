@@ -59,6 +59,7 @@ function fixture(agents, assistants = [".claude", ".opencode"]) {
   const root = mkdtempSync(join(tmpdir(), "agents-sync-"));
   mkdirSync(join(root, "tools/scripts"), { recursive: true });
   copyFileSync(SCRIPT, join(root, "tools/scripts/agents-sync.mjs"));
+  copyFileSync(join(dirname(SCRIPT), "jsonc.mjs"), join(root, "tools/scripts/jsonc.mjs"));
   mkdirSync(join(root, ".agents/agents"), { recursive: true });
   for (const [name, content] of Object.entries(agents))
     writeFileSync(join(root, ".agents/agents", name), content);
@@ -206,7 +207,7 @@ test("OpenCode does not receive the Claude Code hook scripts", () => {
 test("skills: Claude lists them all, OpenCode does not project skills", () => {
   const src = READ_ONLY.replace(
     "model: sonnet",
-    "model: sonnet\nskills:\n  - tdd\n  - sdlc:spec-new",
+    "model: sonnet\nskills:\n  - tdd\n  - vendor:some-skill",
   );
   withFixture({ "reviewer.md": src }, (root) => {
     mkdirSync(join(root, ".agents/skills/tdd"), { recursive: true });
@@ -214,7 +215,7 @@ test("skills: Claude lists them all, OpenCode does not project skills", () => {
     assert.equal(run(root).code, 0);
     assert.match(
       read(root, ".claude/agents/reviewer.md"),
-      /\nskills:\n {2}- tdd\n {2}- sdlc:spec-new\n/,
+      /\nskills:\n {2}- tdd\n {2}- vendor:some-skill\n/,
     );
     assert.doesNotMatch(read(root, ".opencode/agents/reviewer.md"), /skill/);
   });
@@ -326,7 +327,7 @@ const MODELS = {
   },
 };
 const withModels = (root, models = MODELS) =>
-  writeFileSync(join(root, ".agents/models.json"), JSON.stringify(models));
+  writeFileSync(join(root, ".agents/models.jsonc"), JSON.stringify(models));
 const TIERED = (tier) => READ_ONLY.replace("model: sonnet", `tier: ${tier}`);
 
 test("a tier renders each assistant's mapped model; null means the assistant's default", () => {
@@ -364,7 +365,7 @@ test("a tier without a mapping file, or outside it, is rejected with exit 2", ()
   withFixture({ "reviewer.md": TIERED("frontier") }, (root) => {
     const r = run(root, "--lint");
     assert.equal(r.code, 2);
-    assert.match(r.out, /'tier' needs \.agents\/models\.json/);
+    assert.match(r.out, /'tier' needs \.agents\/models\.jsonc/);
   });
   withFixture({ "reviewer.md": TIERED("premium") }, (root) => {
     withModels(root);
@@ -372,7 +373,7 @@ test("a tier without a mapping file, or outside it, is rejected with exit 2", ()
     assert.equal(r.code, 2);
     assert.match(
       r.out,
-      /'tier' is 'premium'; \.agents\/models\.json defines: economy, standard, frontier/,
+      /'tier' is 'premium'; \.agents\/models\.jsonc defines: economy, standard, frontier/,
     );
   });
 });

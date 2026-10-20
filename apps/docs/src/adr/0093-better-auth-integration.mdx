@@ -1,0 +1,47 @@
+---
+title: "0093 — Better Auth integration: container hooks, iam-only authorization, an owned MikroORM adapter, global auth tables"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+`@stackra/identity`'s local driver is built on Better Auth ([0087](/adr/0087-identity-and-iam-are-driver-packages)). Better
+Auth brings its own hook system, database adapters, an admin plugin and an organization plugin. Used as shipped, it would
+bypass the container, the outbox, `check()` and tenancy. The owner studied `thallesp/nestjs-better-auth` and settled how it
+fits.
+
+## Decision
+
+1. **Hooks are container-discovered classes.** `@AuthHooks` with `@BeforeAuth` and `@AfterAuth`, and `@AuthDbHooks` with
+   `@BeforeCreate` and `@AfterCreate` (`'user'` and the other tables). They are composed before `betterAuth()` is built and
+   validated at gen time. **A hook's only side effect is an outbox event** ([0078](/adr/0078-messaging-layer-eight-packages)).
+2. **All app authorization goes through iam `check()`**, and each action declares `auth: none | optional | required`. The
+   Better Auth admin plugin is for operators only, and it is audited. **The Better Auth organization plugin is not used as
+   tenancy.**
+3. **Stackra owns the Better Auth MikroORM adapter**, built with `createAdapterFactory` and checked with
+   `@better-auth/test-utils`. Auth tables are model classes, migrations are MikroORM's, and ids are UUIDv7 through
+   `customIdGenerator`.
+4. **`user`, `session`, `account` and `verification` are global tables**: no RLS, and accessed through an identity-only database
+   role. Memberships live in tenancy and iam, with RLS.
+5. **Package shape**: entries `contracts`, core, `node`, `react`, `native` and `testing`. The generated Encore app
+   ([0091](/adr/0091-generated-encore-app-in-stackra-folder)) exposes a raw `/api/auth/*` endpoint and an `authHandler` that
+   accepts a cookie or a bearer token. Mobile uses `@better-auth/expo` with SecureStore. The future remote Figentra OS driver
+   verifies tokens against JWKS.
+6. **A spike proves the raw wildcard path, cookies and the OAuth callback** through the generated Encore app.
+
+## Consequences
+
+- Better Auth stays behind the identity contract: other packages see `check()`, outbox events and tenancy memberships, never Better Auth objects.
+- Maintaining an adapter is a standing chore that tracks Better Auth releases, with the upstream test utilities as its gate.
+- Global auth tables are an explicit, reviewed exception to tenant row-level security. The identity-only role limits who can read them.
+
+## Enforcement
+
+Planned: the adapter suite from `@better-auth/test-utils` in the identity package's `__tests__`; a gen-time check that hooks
+only write outbox events; a migration check that only the four auth tables lack RLS; the `security-tenancy-reviewer` agent on
+every change. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Details [0087](/adr/0087-identity-and-iam-are-driver-packages). Sources: owner decisions in chat,
+2026-10-19 (Round 9 I1 to I4 and the identity shape). Reference studied: `thallesp/nestjs-better-auth`.

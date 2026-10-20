@@ -1,0 +1,36 @@
+---
+title: "0057 — The landing site is React Router 7 framework mode on Cloudflare Workers"
+description: "Proposed · 2026-10-19"
+---
+
+<Note>
+  Decision 3 (MDX content plus Sanity) is superseded by
+  [0114](/adr/0114-page-builder-for-every-page): the page builder builds every page, our own site
+  included. Decisions 1, 2 and 4 stand.
+</Note>
+
+## Context
+
+The landing site is public and must be indexable, so unlike the console ([0052](/adr/0052-console-is-a-vite-react-spa)) it needs prerendering.
+React Router 7 framework mode provides that and keeps one router family across web surfaces. Marketing content changes more often than code.
+
+## Decision
+
+1. **The landing app uses React Router 7 framework mode** with an explicit `routes.ts` (code-based, no file routing, per [0053](/adr/0053-decorator-route-classes-compiled-to-router-adapters)) and prerenders public pages.
+2. **It deploys to Cloudflare Workers** ([0063](/adr/0063-cloudflare-hosts-web-surfaces)).
+3. **Content is MDX in the repository plus Sanity** for editor-managed content. The Sanity project and token names are TODO; token values live in the vault.
+4. **The landing app is a new `tier:app` member** (`apps/landing`), created with `pnpm new`.
+
+## Consequences
+
+- Fast, indexable pages; editors can change Sanity-backed content without a deploy.
+- Sanity is a new external service and cost.
+- Framework mode is the one place a server runtime (Workers) appears among web apps.
+
+## Enforcement
+
+Planned — the `pnpm new` scaffold and a CI build with prerender; the no-file-routing check from 0053 covers `routes.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19.

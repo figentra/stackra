@@ -1,0 +1,29 @@
+---
+title: "0030 — Encore Cloud deploys into the owner's AWS; four environments"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0029](/adr/0029-encore-ts-one-app) adopts Encore. Encore Cloud can provision and manage infrastructure inside a customer's own cloud account, which keeps data and billing in the owner's AWS while Encore manages the deployment.
+
+## Decision
+
+1. **Encore Cloud deploys into the owner's AWS account**, Encore-managed. Which account, regions and org layout: TODO.
+2. **Four environments:** `local`, PR preview, `staging`, `prod`.
+3. **Production is promoted manually** from a green staging build; no automatic deploy to prod.
+4. Secrets follow [0009](/adr/0009-secrets-two-mechanisms); CI authenticates through Infisical OIDC.
+5. An ECS path (`encore build docker`) stays a possible later provider; it is not adopted here.
+
+## Consequences
+
+- Infrastructure is managed, not hand-written; leaving Encore Cloud later means owning that infrastructure.
+- A prod release is a human act, recorded in CI.
+
+## Enforcement
+
+Planned — the deploy workflow requires an environment protection rule on `prod`; a check that no workflow deploys to `prod` without the manual approval.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0012](/adr/0012-code-host-and-ci). Sources: owner decisions in chat, 2026-10-19; platform `docs/adr/0004-backend-deployment-encore-cloud-and-ecs-path`.

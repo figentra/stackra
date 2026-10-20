@@ -1,4 +1,4 @@
-# @stackra/docs
+# @figentra/docs
 
 Mintlify documentation site. Tier tag `tier:app`.
 
@@ -10,7 +10,7 @@ Mintlify documentation site. Tier tag `tier:app`.
 ## Rules that fail the build
 
 - `pnpm build` (`mint validate`) fails on warnings; `pnpm lint` (`mint broken-links`) fails on dead links.
-- Versions only from catalogs; `turbo.json` extends `//` with one tier tag.
+- Versions only from catalogs; `turbo.jsonc` extends `//` with one tier tag.
 
 ## Tasks
 

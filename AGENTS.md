@@ -5,21 +5,23 @@ HTTP conventions, not-built-yet). Full guides: `apps/docs` (`pnpm docs`). Every 
 
 | Path                                                       | Holds                                                                                                                                                     | Tier tag       |
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| `apps/console`                                             | `@stackra/console` — hello-world entry `src/main.ts`                                                                                                      | `tier:app`     |
-| `apps/mobile`                                              | `@stackra/mobile` — hello-world entry `src/main.ts`                                                                                                       | `tier:app`     |
-| `apps/docs`                                                | `@stackra/docs` — Mintlify; `docs.json`, pages and `assets/` all in `src/`; ADRs in `src/adr`; `pnpm docs`                                                | `tier:app`     |
+| `apps/console`                                             | `@figentra/console` — hello-world entry `src/main.ts`                                                                                                     | `tier:app`     |
+| `apps/mobile`                                              | `@figentra/mobile` — hello-world entry `src/main.ts`                                                                                                      | `tier:app`     |
+| `apps/docs`                                                | `@figentra/docs` — Mintlify; `docs.json`, pages and `assets/` all in `src/`; ADRs in `src/adr`; `pnpm docs`                                               | `tier:app`     |
 | `packages/<category>/<name>`                               | `@stackra/<name>`, flat inside one category: foundation, application, communication, cross-cutting, data, developer, experience, runtime, security, state | `tier:lib`     |
 | `packages/tooling/*`                                       | `@stackra/{typescript,oxlint,vitest,tsdown}-config` presets                                                                                               | `tier:config`  |
-| `services/<name>`                                          | `@stackra/service-<name>` — one member per service (`example`, `health`), entry `src/main.ts`                                                             | `tier:service` |
+| `services/<name>`                                          | `@figentra/service-<name>` — one member per service (`example`, `health`), entry `src/main.ts`                                                            | `tier:service` |
 | `tools/scripts`                                            | `validate-repository.mjs` (+ test); `scaffold.mjs` (+ test) — `pnpm new <kind> <name>`, templates in `tools/scaffold`                                     | —              |
 | `.agents/hooks`, `.claude/settings.json`, `opencode.jsonc` | agent hooks and config                                                                                                                                    | —              |
 
 Rules every member follows (`pnpm validate` enforces them):
 
 - Versions come only from `pnpm-workspace.yaml` catalogs (`catalog:<name>`) or `workspace:*`. `catalogMode: strict`.
-- `turbo.json` extends `//` with exactly one tier tag; `tsconfig.json` extends one `@stackra/typescript-config` preset.
+- `turbo.jsonc` extends `//` with exactly one tier tag; `tsconfig.json` extends one `@stackra/typescript-config` preset.
 - Every test file sits directly in a `__tests__/` folder beside its subject (`src/**/__tests__/<name>.test.ts`), anywhere in the repo; no root `tests/`, no `.spec`. App e2e lives in the app. ADR 0022, enforced by `pnpm validate`.
 - A package never imports an app, a service or `encore.dev`, nor another package's `src/`.
+- A JSON config is `.jsonc` (comments welcome) when its tool reads JSONC; tsconfig files keep `.json` and take comments.
+  The files that must stay strict `.json`, with the reason, are `MUST_STAY_JSON` in `tools/scripts/validate-repository.mjs`.
 
 Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boundaries, knip). Conventional commits.
 
@@ -259,6 +261,7 @@ export const createPayment = api(
 - Endpoints are immutable (no `/v1`, `/v2`)
 - Events are versioned (`user.created.v1`, `user.created.v2`)
 - New endpoint → new path
+- API versions are dates: the `Stackra-Version` header, pinned per API key or OAuth app, through the dormant `@stackra/versioning` package. Paths stay unversioned (`/adr/0118-api-versioning-dormant-package`)
 
 #### Error Handling
 
@@ -281,6 +284,36 @@ if (!authorized) {
 - Constitution: http-and-events
 - ADR-0010: Services are independent members
 - Standards: api-contracts
+
+<!-- source: .agents/rules/linear.md -->
+
+### Linear
+
+Team `STA` tracks all work (ADR 0065, ADR 0121 D14). **Work is not done until its Linear issue is in the right
+state.** Every agent, including subagents and OpenCode executors without the Linear MCP, uses `pnpm linear`:
+
+| When                       | Run                                                              |
+| -------------------------- | ---------------------------------------------------------------- |
+| Starting work              | `pnpm linear start STA-n` (In Progress, comment with the branch) |
+| Opening the PR             | `pnpm linear review STA-n <pr-url>` (In Review, PR attached)     |
+| Merged / finished          | `pnpm linear done STA-n <link>`                                  |
+| Progress, findings, blocks | `pnpm linear comment STA-n "<text>"`                             |
+| New work found             | `pnpm linear create --title "…" [--project p] [--labels a,b]`    |
+| What is open               | `pnpm linear mine`, `pnpm linear open [--label owner]`           |
+
+- Branch names are Linear's (`figentra/sta-<n>-<slug>`; `pnpm delegate` uses `delegate/sta-<n>-…`), checked by
+  `check-pr`. A `feat`/`fix`/`refactor`/`perf` commit carries
+  `Refs: STA-n`. The PR title or branch names the key, or the PR is labelled `chore-lane`.
+- `pnpm delegate` needs `--issue STA-n`. Issues an agent creates get the `agent` label automatically.
+- Actions run as the "Stackra Agent" app, which is the issue's delegate. The human assignee is never changed.
+- Tokens come from Infisical only (`pnpm linear` wraps `infisical run --env=dev --path=/agents`). Never print one.
+- A Linear failure never blocks a gate (ADR 0065 rule 7). The nightly `Linear sync` workflow repairs drift.
+
+#### Enforcement
+
+`commitlint.config.mjs` (`refs-linear-key`, lefthook and the Quality Gate over the PR range); `linear.mjs check-pr`
+in the Quality Gate; `requireIssue` in `tools/scripts/delegate.mjs`; `.github/workflows/linear-sync.yml`
+(`tools/scripts/linear-reconcile.mjs`) moves states, closes decided ADR issues and labels stale work.
 
 <!-- source: .agents/rules/module-boundary.md -->
 
@@ -307,16 +340,16 @@ config → lib → app → service
 
 ```typescript
 // ❌ App importing from service
-import { user } from "@stackra/service-auth";
+import { user } from "@figentra/service-auth";
 
 // ❌ Package importing from app
-import { Login } from "@stackra/console";
+import { Login } from "@figentra/console";
 
 // ❌ Service importing from another service
-import { stripe } from "@stackra/service-payments";
+import { stripe } from "@figentra/service-payments";
 
 // ❌ Cross-app import
-import { Header } from "@stackra/console/src/header";
+import { Header } from "@figentra/console/src/header";
 ```
 
 #### Allowed Patterns
@@ -362,28 +395,32 @@ Encore services communicate via:
 If a task seems to need one of these, stop and route to the `architecture-guardian` agent. Rejected means no; deferred
 means not yet. A row changes only by a new ADR. Full table with revival triggers: `/adr/0011-rejected-and-deferred-technologies`.
 
-| Do not introduce                                                                            | Status   | Use instead                                                                          |
-| ------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------ |
-| Encore (`encore.dev`, `~encore/*`) as the service runtime; the backend runtime is undecided | Deferred | independent service members (`/adr/0010-services-are-independent-workspace-members`) |
-| `@nestjs/*`; an API gateway in front of services                                            | Rejected | `@stackra/container` (Nest-shaped, no `@nestjs/*`)                                   |
-| `reflect-metadata`, type-based auto-wiring                                                  | Rejected | explicit tokens (`/adr/0005-di-container-and-legacy-decorators`)                     |
-| Prisma, Drizzle, TypeORM, Knex                                                              | Rejected | MikroORM (`/adr/0014-data-ownership-and-orm`)                                        |
-| ESLint, Prettier, Jest                                                                      | Rejected | oxlint, oxfmt, vitest                                                                |
-| Express, Fastify as a server framework                                                      | Rejected | the runtime chosen by ADR                                                            |
-| Vite+ (`vp`) as task runner                                                                 | Rejected | Turborepo, oxlint, oxfmt, lefthook                                                   |
-| A second vault, Doppler, secret values in files, `.env`                                     | Rejected | Infisical + runtime secret store                                                     |
-| A second code host in this repo (code host is GitHub)                                       | Rejected | one host (`/adr/0012-code-host-and-ci`)                                              |
-| expo-router in the mobile app                                                               | Rejected | code-based React Navigation (`@react-navigation/*`, `react-native-bottom-tabs`)      |
-| An AI gateway; a separate-language agent runtime                                            | Rejected | AI SDK core + MCP SDK inside the service                                             |
-| A runtime schema engine, server-driven UI, JSONB-for-everything                             | Rejected | coded resources, build-time generation                                               |
-| A shared React component library across web and native                                      | Deferred | share types, client, validation, state, i18n, tokens                                 |
-| A sync engine (RxDB, ElectricSQL, PowerSync, WatermelonDB)                                  | Deferred | mutation queue with idempotency keys                                                 |
-| Typesense, Meilisearch, OpenSearch                                                          | Deferred | Postgres `pg_trgm` + full-text behind a search interface                             |
-| OpenFGA, SpiceDB, Cedar                                                                     | Deferred | in-house `check(subject, relation, object)`                                          |
-| A separate observability service; Prometheus for business metrics                           | Deferred | platform tracing, metrics, logs                                                      |
+| Do not introduce                                                                                                                                | Status   | Use instead                                                                                                                                                                                                |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hand-written Encore (`encore.dev`, `~encore/*`, `encore.*` files) in service members; Encore is only the generated target in `.stackra/encore/` | Deferred | plain TypeScript service members, Encore generated by `stackra gen` (`/adr/0091-generated-encore-app-in-stackra-folder`)                                                                                   |
+| `@nestjs/*`; an API gateway in front of services                                                                                                | Rejected | `@stackra/container` (Nest-shaped, no `@nestjs/*`)                                                                                                                                                         |
+| `reflect-metadata`, type-based auto-wiring                                                                                                      | Rejected | explicit tokens (`/adr/0005-di-container-and-legacy-decorators`)                                                                                                                                           |
+| Prisma, Drizzle, TypeORM, Knex                                                                                                                  | Rejected | MikroORM (`/adr/0014-data-ownership-and-orm`)                                                                                                                                                              |
+| ESLint, Prettier, Jest                                                                                                                          | Rejected | oxlint, oxfmt, vitest                                                                                                                                                                                      |
+| Express, Fastify as a server framework                                                                                                          | Rejected | the runtime chosen by ADR                                                                                                                                                                                  |
+| Vite+ (`vp`) as task runner                                                                                                                     | Rejected | Turborepo, oxlint, oxfmt, lefthook                                                                                                                                                                         |
+| A second vault, Doppler, secret values in files, `.env`                                                                                         | Rejected | Infisical + runtime secret store                                                                                                                                                                           |
+| A second code host in this repo (code host is GitHub)                                                                                           | Rejected | one host (`/adr/0012-code-host-and-ci`)                                                                                                                                                                    |
+| expo-router in the mobile app                                                                                                                   | Rejected | code-based React Navigation (`@react-navigation/*`, `react-native-bottom-tabs`)                                                                                                                            |
+| Zustand, TanStack Store for client state                                                                                                        | Rejected | `@stackra/state` (`/adr/0079-client-state-is-stackra-state`, owner decision F10a)                                                                                                                          |
+| i18next, react-i18next                                                                                                                          | Rejected | `@stackra/i18n` (`/adr/0080-i18n-is-the-figentra-i18n-port`, owner decision F12)                                                                                                                           |
+| class-validator, class-transformer                                                                                                              | Rejected | `@stackra/validation` on Zod (`/adr/0095-zod-inside-field-decorators`)                                                                                                                                     |
+| An AI gateway; a separate-language agent runtime                                                                                                | Rejected | AI SDK core + MCP SDK inside the service                                                                                                                                                                   |
+| A runtime schema engine, JSONB-for-everything, tenant data that carries code, markup or logic                                                   | Rejected | coded resources, build-time generation; allowed: data that only references registered code (L2 UI documents, builder agents, automations, custom fields; `/adr/0110-experience-is-the-sdui-service-at-l2`) |
+| A shared React component library across web and native                                                                                          | Deferred | share types, client, validation, state, i18n, tokens                                                                                                                                                       |
+| A sync engine (RxDB, ElectricSQL, PowerSync, WatermelonDB)                                                                                      | Deferred | mutation queue with idempotency keys                                                                                                                                                                       |
+| Typesense, Meilisearch, OpenSearch                                                                                                              | Deferred | Postgres `pg_trgm` + full-text behind a search interface                                                                                                                                                   |
+| OpenFGA, SpiceDB, Cedar                                                                                                                         | Deferred | in-house `check(subject, relation, object)`                                                                                                                                                                |
+| A separate observability service; Prometheus for business metrics                                                                               | Deferred | platform tracing, metrics, logs                                                                                                                                                                            |
 
 Enforcement: `FORBIDDEN_DEPENDENCIES` in `tools/scripts/validate-repository.mjs` (eslint, prettier, jest, nest,
-reflect-metadata, prisma, drizzle, express, fastify, typeorm, knex); `boundaries.jsonc` bans `encore.dev` in packages.
+reflect-metadata, prisma, drizzle, express, fastify, typeorm, knex, expo-router, zustand, @tanstack/store, i18next,
+react-i18next, class-validator, class-transformer, meilisearch, @opensearch-project/opensearch); `boundaries.jsonc` bans `encore.dev` in packages.
 Rows naming no package are planned (guardian review). Docs: `/adr/0011-rejected-and-deferred-technologies`.
 
 <!-- source: .agents/rules/secrets.md -->
@@ -392,34 +429,29 @@ Rows naming no package are planned (guardian review). Docs: `/adr/0011-rejected-
 
 Stackra uses **two secret mechanisms** (ADR-0009):
 
-#### 1. App Secrets (Encore)
+#### 1. App Secrets (Encore, generated app)
 
-Backend services use Encore's secret manager:
+Services are plain TypeScript and hold no Encore files. The Encore application is generated into the
+gitignored `.stackra/encore` (ADR 0091), and app secrets reach it through Encore `secret()` there:
 
 ```typescript
 import { secret } from "encore.dev/config";
 
-const appSecrets = secret<{
-  DatabaseURL: string;
-  StripeSecretKey: string;
-}>();
+const stripeSecretKey = secret("StripeSecretKey");
 ```
 
-- Stored in Encore's secret manager (managed)
-- Synced from Infisical during deployment
-- Service-specific: `/services/backend/<env>`
+- Stored in Encore's secret manager, synced from Infisical
+- A human sets each value per environment; an agent only names the secret
 - Never in git
 
 #### 2. Dev/CI Secrets (Infisical)
 
 All other secrets through Infisical:
 
-##### Vaults Structure
+##### Vault Layout
 
-- `/agents` - Developer and agent tokens (local dev)
-- `/ci` - CI/CD deployment secrets (staging|prod)
-- `/services/backend/<env>` - Service environments
-- `/apps/*/<env>` - App-specific secrets (mobile API keys)
+- dev: `/agents` - Developer and agent tokens (local dev, MCP servers)
+- staging|prod: `/ci` - CI/CD deployment secrets
 
 ##### How to Use
 
@@ -438,7 +470,8 @@ infisical run --env=production -- encore deploy
 ```
 
 **MCP servers:**
-All token-based MCP servers use `tools/scripts/mcp.sh` vault wrapper (reads from `/agents`).
+Token-based MCP servers launch through the `tools/scripts/mcp.sh` vault wrapper (reads from `/agents`). This is a
+convention; no hook enforces it.
 
 ##### Required Secrets
 
@@ -464,8 +497,9 @@ In Infisical `/ci` (CI/CD):
 
 ##### Blocked by Hooks
 
-- `guard-bash.mjs`: Blocks `infisical export` or `infisical secrets get` without `--silent`
-- `guard-paths.mjs`: Blocks writes to `.env`, `.env.local`, `.env.*`
+- `guard-bash.mjs`: Blocks `infisical export`, `infisical secrets get` without `--silent`, a bare `infisical secrets`
+  (lists values) and `infisical run -- env|printenv`
+- `guard-paths.mjs`: Blocks writes to `.env`, `.env.*`, `.dev.vars`, `.ci-env` and `.sentryclirc`
 - `.gitleaks.toml`: Scans for accidental secret commits
 
 #### Enforcement
@@ -474,9 +508,8 @@ Each article below is bound to a check:
 
 1. **Secrets never in git** → `gitleaks` pre-commit + CI scan
 2. **No .env files** → `guard-paths` hook
-3. **MCP tokens from vault** → `mcp.sh` wrapper enforced by `guard-bash`
-4. **CI secrets from OIDC** → GitHub Actions OIDC (Phase 2)
-5. **App secrets synced** → Encore deployment workflow (Phase 2)
+3. **CI secrets from OIDC** → GitHub Actions OIDC (Phase 2)
+4. **App secrets synced** → Encore deployment of the generated `.stackra` app (Phase 2)
 
 #### Setup
 
@@ -563,7 +596,7 @@ stackra/
 
 #### Tier Tags
 
-Every member declares exactly one tier in its `turbo.json`:
+Every member declares exactly one tier in its `turbo.jsonc`:
 
 - `tier:config` - Tooling presets (no workspace dependencies)
 - `tier:lib` - Packages (category-based, never depend on apps/services)
@@ -611,7 +644,7 @@ Every member declares exactly one tier in its `turbo.json`:
 #### Enforcement
 
 - `turbo boundaries` checks dependency direction
-- `tools/scripts/validate-repository.mjs` checks tier tags and file existence
+- `tools/scripts/validate-repository.mjs` checks tier tags, file existence, and that every JSON config whose tool reads JSONC is named `.jsonc` (exceptions: `MUST_STAY_JSON`)
 - `packages/tooling/oxlint/boundaries.jsonc` enforces layer rules
 
 #### See Also

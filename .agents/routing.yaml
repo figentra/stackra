@@ -47,9 +47,9 @@ tasks:
   linear: { executor: opencode, model: amazon-bedrock/global.moonshotai.kimi-k3, agent: build }
 
   # --- Claude: judgement, contracts, anything touching trust or money ---
-  clarify: { executor: claude, model: opus, agent: sdlc:spec-author }
-  spec: { executor: claude, model: opus, agent: sdlc:spec-author }
-  design: { executor: claude, model: opus, agent: sdlc:architecture-guardian }
+  clarify: { executor: claude, model: opus, agent: claude }
+  spec: { executor: claude, model: opus, agent: claude }
+  design: { executor: claude, model: opus, agent: claude }
   adr: { executor: claude, model: opus, agent: docs-adr-steward }
   contract: { executor: claude, model: opus, agent: api-contract-reviewer }
   auth: { executor: claude, model: opus, agent: security-tenancy-reviewer }
@@ -57,9 +57,9 @@ tasks:
   iam: { executor: claude, model: opus, agent: security-tenancy-reviewer }
   money: { executor: claude, model: opus, agent: security-tenancy-reviewer }
   pii: { executor: claude, model: opus, agent: security-tenancy-reviewer }
-  secrets: { executor: claude, model: opus, agent: sdlc:release-operations }
-  ci-permissions: { executor: claude, model: opus, agent: sdlc:release-operations }
-  review: { executor: claude, model: opus, agent: sdlc:code-reviewer }
+  secrets: { executor: claude, model: opus, agent: security-tenancy-reviewer }
+  ci-permissions: { executor: claude, model: opus, agent: security-tenancy-reviewer }
+  review: { executor: claude, model: opus, agent: claude }
   merge: { executor: claude, model: opus, agent: claude }
-  release: { executor: claude, model: opus, agent: sdlc:release-operations }
+  release: { executor: claude, model: opus, agent: claude }
   incident: { executor: claude, model: opus, agent: incident-commander }

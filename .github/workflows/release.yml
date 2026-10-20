@@ -19,11 +19,24 @@ jobs:
     permissions:
       contents: write # push the version-PR branch and the version tags
       pull-requests: write # open and update the version PR
+      id-token: write # ADR 0025 / 0009: Infisical OIDC login for the registry publish token
 
     steps:
+      # stackra-bot token (owner decision A1): a version PR pushed with GITHUB_TOKEN never triggers the
+      # Quality Gate, so it could not merge. Scoped to what this job needs; revoked when the job ends.
+      - name: Bot token
+        id: bot
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
+          private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          token: ${{ steps.bot.outputs.token }} # pushes (version branch, tags) go out as the bot
           fetch-depth: 0 # changesets diffs against history and reads existing tags
 
       - name: Setup Node
@@ -39,20 +52,45 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # ADR-0013: automation prepares, a human decides. With pending changesets this opens
-      # or updates the "chore(release): version packages" PR (`pnpm changeset:version` also
-      # refreshes the lockfile). Merging that PR is the release; on the merge run the publish
-      # script tags each versioned member (`changeset git-tag` — every member is private, so
-      # a release is versions, changelogs and git tags only, never a registry publish) and
-      # the action pushes the tags and creates the GitHub releases from the CLI's report.
-      - name: Version PR / tag release
+      # ADR 0025 decision 2: the npm.figentra.com publish token comes from Infisical `/ci` over OIDC, never from a
+      # repository secret or a file. Names only here; a human creates the machine identity and sets the two repository
+      # variables before the first package flips to "private": false (runbooks/release.mdx). Until then nothing is
+      # publishable, so the step is skipped and `changeset publish` below has nothing to publish.
+      - name: Registry token (Infisical OIDC)
+        if: vars.INFISICAL_RELEASE_IDENTITY_ID != ''
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_RELEASE_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci
+          secret-name: NPM_FIGENTRA_TOKEN
+
+      # ADR 0025 decision 1: the @stackra scope maps to npm.figentra.com. The auth line names the variable, not a value.
+      - name: Registry scope
+        run: |
+          echo "@stackra:registry=https://npm.figentra.com/" >> "$HOME/.npmrc"
+          echo '//npm.figentra.com/:_authToken=${NPM_FIGENTRA_TOKEN}' >> "$HOME/.npmrc"
+
+      # ADR 0025 / 0119 D7: automation prepares, the owner decides. With pending changesets this opens or updates the
+      # "chore(release): version packages" PR (`pnpm changeset:version` also refreshes the lockfile); Claude prepares
+      # it and the owner merges it. Only packages are versioned — apps and services deploy by commit SHA
+      # (`privatePackages: { version: false, tag: false }`). On the merge run `changeset publish` (after the Build step
+      # above, which produces each dist) publishes every package with "private": false to npm.figentra.com
+      # and tags it; the action pushes the tags and creates the GitHub releases.
+      - name: Build
+        run: pnpm build
+
+      - name: Version PR / publish
         uses: changesets/action@v2
         with:
           version-script: pnpm changeset:version
-          publish-script: pnpm changeset git-tag
+          publish-script: pnpm changeset publish
           pr-title: "chore(release): version packages"
           commit-message: "chore(release): version packages"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ steps.bot.outputs.token }}
 
       # SBOM covers what actually got installed (node_modules), independent of whether this
       # run released. `--ignore-npm-errors` is required because cyclonedx-npm shells out to

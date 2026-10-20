@@ -1,0 +1,64 @@
+---
+title: "0098 — Actions are the unit of behaviour, in @stackra/actions, with one pipeline and a typed actor"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+The same operation is reached from an HTTP endpoint, an AI tool, a CLI command, a queue job and an event listener. If each
+entry point re-implements validation, tenancy, authorization, approval, idempotency and audit, they drift, and an AI agent
+ends up with a path a human does not have ([0021](/adr/0021-ai-engine-and-agent-write-safety) decision 9). The AI
+Implementation Standard §35 describes one execution pipeline for this. [0091](/adr/0091-generated-encore-app-in-stackra-folder)
+made decorated controllers the primary HTTP pattern, written before actions were proposed. Medusa types its callers with
+`authenticate(actorType)`; Stackra needs more than a type: who is acting, how they arrived, and on whose behalf.
+
+## Decision
+
+1. **An action is the unit of behaviour.** `@Action` (writes) and `@Query` (reads) in `@stackra/actions` declare a
+   `key@version`, Zod input and output ([0095](/adr/0095-zod-inside-field-decorators)), a permission, a risk level
+   ([0099](/adr/0099-risk-scale-l0-to-l4)), effects, whether approval is needed, intents with examples, and the actor types
+   allowed to call it (`actors: [...]`).
+2. **Adapters expose an action**: `@AsEndpoint`, `@AsTool`, `@AsCommand`, `@AsJob` and `@AsListener`. **AI exposure is
+   default-deny**: an action is a tool only if it carries `@AsTool`.
+3. **Every invocation runs one pipeline**, whatever the adapter: actor → validate → tenancy → iam → policy → entitlement →
+   budget → approval (durable park and resume) → idempotency → transaction → handle → outbox → evidence → audit. The tenancy,
+   iam, policy and entitlement steps run the app's gate chain ([0081](/adr/0081-gate-chain-configurable-per-app)).
+4. **`@Crud` generates opt-in service methods and actions** for a model, per [0105](/adr/0105-crud-generates-service-methods).
+   No controllers are generated.
+5. **`@Controller` remains only for raw endpoints** that are not actions (webhook receivers, `/api/auth/*`, streaming).
+6. **The actor model.** Every invocation carries one typed `Actor`, defined in `@stackra/contracts`
+   ([0117](/adr/0117-contracts-placement-and-decorator-ownership)):
+
+   | Field        | Values                                                                                                                     |
+   | ------------ | -------------------------------------------------------------------------------------------------------------------------- |
+   | `type`       | `user`, `service`, `agent`, `external-agent`, `job`, `webhook`, `system`, `anonymous`                                      |
+   | `id`         | The principal's public id                                                                                                  |
+   | `tenantId`   | The tenant the call acts in, or none for platform calls                                                                    |
+   | `realm`      | `platform`, `tenant` or `customer`; only for `user` actors                                                                 |
+   | `via`        | `http`, `mcp`, `a2a`, `cli`, `queue`, `cron`, `event` or `ui`                                                              |
+   | `credential` | What authenticated the call (session, personal token, service token, OAuth app, signature), by reference, never the secret |
+   | `onBehalfOf` | The delegation chain: the actor this one acts for, recursively, ending at the originating principal                        |
+
+7. **An action refuses an actor type it does not list in `actors`.** The audit record, the evidence record and the integration
+   event envelope carry the full `onBehalfOf` chain.
+
+## Consequences
+
+- A human, an agent, a job and a CLI user go through the same checks, approval and audit.
+- "Who did this" always has an answer that names the agent and the human behind it, which agent permissions
+  ([0100](/adr/0100-ai-model-and-ownership)) and approvals depend on.
+- Approval needs durable park-and-resume state, which ties the pipeline to the workflow and queue packages ([0078](/adr/0078-messaging-layer-eight-packages)).
+- How the fixed pipeline order and the configurable gate chain of 0081 fit together is left to the actions spec.
+- Decorated controllers stop being the primary HTTP pattern; [0091](/adr/0091-generated-encore-app-in-stackra-folder) decision 7 is amended accordingly.
+
+## Enforcement
+
+Planned: the gen validation pass ([0090](/adr/0090-codegen-discovery-by-root-module)) rejects an action without a permission,
+a risk level or an `actors` list, and an `@AsTool` on an L4 action without approval. A pipeline-order test and an actor-refusal
+test in `@stackra/actions`. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0091](/adr/0091-generated-encore-app-in-stackra-folder) decision 7. Sources: recommendation by the
+coordinating agent, 2026-10-19, accepted by the owner in Round 10; actor model locked in Round 11 (AI3b); `@Crud` service
+methods from W4. Informational: AI Implementation Standard §18 and §35; Medusa `authenticate(actorType)`.

@@ -1,0 +1,35 @@
+---
+title: "0115 — Built forms are documents of kind form; they submit to an action; the editors are Pro"
+description: "Accepted · 2026-10-19"
+---
+
+## Context
+
+The owner wants a form builder, drag-and-drop or document style, whose forms embed in any page or component. A separate form
+format (the Form.io or SurveyJS style) would duplicate versioning, drafts, permissions, validation and security that L2
+documents ([0110](/adr/0110-experience-is-the-sdui-service-at-l2)) already have.
+
+## Decision
+
+1. **F1 — A built form is a UI document of kind `form`**, in the same format as pages and dashboards, stored as the form
+   definition content type of [0116](/adr/0116-content-types-and-custom-fields). Its schema is stored once and turned into
+   Zod on web, mobile and server.
+2. **Forms embed as a block** in any page, screen or component.
+3. **F2 — A form submits to an `@Action`.** The default is the generic `forms.submit@1` action, which stores the submission;
+   a form may name a domain action instead. Submissions are domain data, not content.
+4. **F3 — The drag-and-drop and document-style editors are Pro** (`@stackra-pro/form-builder`). The form runtime is free.
+
+## Consequences
+
+- One format to secure, version and validate; agents and the registry already understand it.
+- Submissions run through the action pipeline, so validation, tenancy, approval and audit apply.
+- Code-authored forms keep using react-hook-form and Zod ([0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters)); built
+  forms render through the same field adapters.
+
+## Enforcement
+
+Planned: the experience validator refuses a form document whose submit target is not a registered action. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decisions in chat, 2026-10-19 (Round 11 X8b, F1, F2, F3).

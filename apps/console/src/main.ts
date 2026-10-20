@@ -1,1 +1,1 @@
-process.stdout.write("Hello from @stackra/console\n");
+process.stdout.write("Hello from @figentra/console\n");

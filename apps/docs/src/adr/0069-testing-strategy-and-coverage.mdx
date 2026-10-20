@@ -1,0 +1,34 @@
+---
+title: "0069 — Testing strategy and coverage floors"
+description: "Proposed · 2026-10-19"
+---
+
+## Context
+
+[0022](/adr/0022-tests-live-in-tests-folders) says where tests live and that a green `pnpm verify` proves less than it seems; it does not say which kinds of test exist or how much
+is enough. Tenant isolation is the failure that costs most, and a mock database cannot show it. The repository is public, so GitHub-hosted runners are free.
+
+## Decision
+
+1. **Vitest covers logic** in packages, services, web and mobile.
+2. **Maestro covers mobile E2E**, on GitHub-hosted runners; a local Maestro run is the fallback. Flows sit with the app.
+3. **Playwright covers web.** A shared preset runs a smoke suite on every PR and the full suite nightly. Suites live in `apps/<app>/e2e/__tests__/` ([0022](/adr/0022-tests-live-in-tests-folders) rule 3).
+4. **Service tests use `encore test` against a real Postgres.** Each tenant-owned table has a mandatory isolation test: tenant A cannot read or write tenant B's rows.
+5. **Coverage floors: 80 and 70** for packages and services. Reading them as lines and branches is an assumption (`TODO` confirm). Apps have no floor.
+6. **Generated clients are type-checked; screenshots serve visual checks; no Storybook.**
+7. **Accessibility and load**: axe in the Playwright suite, k6 for load ([0070](/adr/0070-quality-budgets)).
+8. **No self-hosted runners on the public repository.** Heavy agent runs use a personal box, not CI.
+
+## Consequences
+
+- Real-Postgres tests are slower than mocks; they are the only evidence for tenancy.
+- A floor can be gamed; review still reads the tests.
+
+## Enforcement
+
+Planned: coverage thresholds in `@stackra/vitest-config`, a check that every tenant-owned table has an isolation test, and the Playwright and Maestro workflows.
+Test placement is already enforced by `tools/scripts/validate-repository.mjs` (`checkTestPlacement`).
+
+## Supersedes and sources
+
+Supersedes: none. Extends [0022](/adr/0022-tests-live-in-tests-folders). Sources: owner decision in chat, 2026-10-19 (testing and infrastructure notes).

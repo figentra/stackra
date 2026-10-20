@@ -1,0 +1,41 @@
+---
+title: "0045 — @stackra/tenancy: pool by default, silo on demand"
+description: "Superseded by 0088 · 2026-10-19"
+---
+
+<Note>
+  Superseded by [0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope): pool and RLS are free,
+  DB-per-tenant and the scope tree are Pro; decisions 1, 2, 4, 6 and 7 carry forward there.
+</Note>
+
+## Context
+
+[0014](/adr/0014-data-ownership-and-orm) leaves tenant isolation as "a consumer decision made at the first tenant-owned table" and
+presumes no tenancy until then. Stackra is a framework that products install ([0023](/adr/0023-stackra-is-a-framework)), so each
+product would otherwise re-decide isolation and re-implement it. The owner chose one mechanism for all of them: a shared database
+with row-level security by default, and a dedicated database for a tenant that needs one. This ADR amends 0014 decision 7 by
+moving that decision from the consumer into a framework package.
+
+## Decision
+
+1. **`@stackra/tenancy` is the one tenancy package.** Products and services use it; none implements isolation itself.
+2. **Pool is the default.** Every tenant-owned table has a `tenant_id` column, and row-level security is both `ENABLE`d and `FORCE`d on it.
+3. **Silo is available on demand.** A tenant may get its own database. A tenant registry records where each tenant lives, and a connection resolver picks the connection per request from the registry.
+4. **No schema-per-tenant.** It is not offered as a third mode.
+5. **A scope tree exists from day one.** Scopes form a tree stored with Postgres `ltree`, so a grant or a query can address a subtree (for example an organisation and everything under it). The tree is part of the first migration, not added later.
+6. **Isolation is enforced at two layers**: the MikroORM scoped entity and the database policy. The rule itself stays `/constitution/tenancy`.
+7. **Every tenant-owned table has a cross-tenant isolation test** that fails when a row from another tenant is readable or writable.
+
+## Consequences
+
+- One isolation model to review, test and audit, which also serves the SOC 2 target.
+- Moving a tenant from pool to silo is a data migration the registry and resolver must support; its procedure is TODO.
+- Migrations must run against the pool database and every silo database.
+
+## Enforcement
+
+Planned — a validator check that a migration creating a table with `tenant_id` also enables and forces RLS, and the per-table isolation test required by decision 7, run on real Postgres. Nothing is implemented yet.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0014](/adr/0014-data-ownership-and-orm) decision 7 (tenancy moves from a consumer decision to `@stackra/tenancy`); the rest of 0014 is unchanged. Sources: owner decisions in chat, 2026-10-19; `/constitution/tenancy`.

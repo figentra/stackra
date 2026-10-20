@@ -61,7 +61,7 @@ Some pages in this tab describe a mechanism for a thing Stackra does not have ye
 
 ### Tiers
 
-Every workspace member carries exactly one tier tag in its `turbo.json`. The tag matches its directory.
+Every workspace member carries exactly one tier tag in its `turbo.jsonc`. The tag matches its directory.
 
 | Tier | Directory | May depend on |
 | --- | --- | --- |
@@ -96,7 +96,7 @@ A package never reads `process.env`. Configuration reaches it as an argument or 
 
 ### Service ownership
 
-Services are independent workspace members: `services/<name>` is `@stackra/service-<name>` with entry `src/main.ts`. Encore is deferred (see [ADR 0011](/adr/0011-rejected-and-deferred-technologies)). Until the one-Encore-app decision in [ADR 0010](/adr/0010-services-are-independent-workspace-members) is implemented, the rules below describe the target. They apply from the first service that owns data.
+Services are independent workspace members: `services/<name>` is `@figentra/service-<name>` with entry `src/main.ts`. Encore is deferred (see [ADR 0011](/adr/0011-rejected-and-deferred-technologies)). Until the one-Encore-app decision in [ADR 0010](/adr/0010-services-are-independent-workspace-members) is implemented, the rules below describe the target. They apply from the first service that owns data.
 
 A service owns its API, its database, its schema and migrations, its events, its tests, a `README.md` and an `AGENTS.md` with a PII table. No other service reads that database or imports that service's internals.
 
@@ -121,7 +121,7 @@ Do not introduce a technology on the rejected or deferred list "to be helpful". 
 
 ## Delegation
 
-This is the law for any session that hands work to another agent. Rule numbers are stable, so other documents may cite them. Claude models only: no other model, external agent loop or delegated runner. The reasoning is in [ADR 0017](/adr/0017-agent-roster-and-models).
+This is the law for any session that hands work to another agent. Rule numbers are stable, so other documents may cite them. Claude leads and decides. Work is delegated to Claude models, or to OpenCode (Kimi K3) executors only where `.agents/routing.yaml` routes it, for the steward and executor tiers; reviewers, guardians and the lead never run on OpenCode ([ADR 0066](/adr/0066-delegation-to-opencode-by-routing-matrix), [ADR 0121](/adr/0121-sdlc-tooling-roles-and-linear)). No other model, external agent loop or runner. The reasoning is in [ADR 0017](/adr/0017-agent-roster-and-models).
 
 | # | Rule | Enforcement |
 | --- | --- | --- |
