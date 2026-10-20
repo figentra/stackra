@@ -1118,6 +1118,10 @@ const REJECTED_IN_SKILLS = {
  * fenced in `.agents/reference/encore`, which is never projected or scanned.
  */
 const SKILL_TECH_ALLOWED = {
+  "backend-gen-and-encore-target": {
+    "encore.dev":
+      "house skill on the generated target; names what a member must never contain (ADR 0124)",
+  },
   "expo-animation": {
     "expo-router": "upstream Expo skill; Stackra mobile uses React Navigation (ADR 0061)",
   },

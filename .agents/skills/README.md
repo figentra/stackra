@@ -11,7 +11,7 @@ directly. The spec-kit skills (`speckit-*`) are not here: spec-kit renders them 
 | Web UI                 | `heroui-react`, `frontend-design`, `accessibility`, `playwright-best-practices`                                             |
 | Mobile                 | `heroui-native`, `react-native-best-practices`, `expo-*` (animation, data-fetching, design-system, dev-client, upgrade), `eas-*` (app-stores, update, workflows) |
 | Services and vendors   | `resend` (behind the mail driver), `stripe-best-practices` (billing work only)                                              |
-| House                  | `docs-adr` (write or supersede an ADR in the house format)                                                                  |
+| House                  | `docs-adr`, `docs-spec-flow`, `backend-author-an-action`, `backend-module-and-root-module`, `backend-decorator-package-with-explorer`, `backend-define-family`, `backend-errors`, `backend-assets-and-storage`, `backend-gen-and-encore-target`, `frontend-resource-console`, `db-models-and-migrations`, `ai-mcp-tools`, `code-naming-and-casing`, `mobile-eas-setup`, `mobile-release`, `mobile-store-listing` |
 
 ## Rules
 
