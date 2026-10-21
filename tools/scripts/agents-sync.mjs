@@ -1082,6 +1082,105 @@ function pruneRetiredProjection(assistantDir, kind) {
 }
 
 // ---------------------------------------------------------------------------
+// Skills that teach rejected technology (ADR 0258 decision 6)
+// ---------------------------------------------------------------------------
+
+/**
+ * Rejected or not-built technology a skill must not teach (ADR 0011, `.agents/rules/not-built-yet.md`).
+ * Patterns are deliberately narrow: "express" and "sanity" are English words, so only their code forms match.
+ */
+const REJECTED_IN_SKILLS = {
+  drizzle: /\bdrizzle\b/i,
+  prisma: /\bprisma\b/i,
+  typeorm: /\btypeorm\b/i,
+  knex: /\bknex\b/i,
+  nestjs: /@nestjs\/|\bnestjs\b|\bnest\.js\b/i,
+  "reflect-metadata": /reflect-metadata/,
+  "encore.dev": /encore\.dev|~encore\//,
+  "expo-router": /expo-router/,
+  nextjs: /\bnext\.js\b|\bnextjs\b|from ["']next[/"']/i,
+  jest: /\bjest\b/i,
+  eslint: /\beslint\b/i,
+  prettier: /\bprettier\b/i,
+  zustand: /\bzustand\b/i,
+  "@tanstack/store": /@tanstack\/store/,
+  i18next: /\bi18next\b/i,
+  "class-validator": /class-validator|class-transformer/,
+  express: /from ["']express["']|\bexpress\(\)/,
+  fastify: /\bfastify\b/i,
+  sanity: /@sanity\/|sanity studio|sanity\.config/i,
+  tauri: /\btauri\b/i,
+};
+
+/**
+ * Upstream skills that mention a rejected technology only as a generic example, and why that is acceptable.
+ * Vendored skills are never edited in place, so the exception lives here. Encore skills are not listed: they are
+ * fenced in `.agents/reference/encore`, which is never projected or scanned.
+ */
+const SKILL_TECH_ALLOWED = {
+  "expo-animation": {
+    "expo-router": "upstream Expo skill; Stackra mobile uses React Navigation (ADR 0061)",
+  },
+  "expo-data-fetching": {
+    "expo-router": "upstream Expo skill; loaders do not apply, React Navigation (ADR 0061)",
+  },
+  "expo-design-system": { "expo-router": "upstream Expo skill; React Navigation (ADR 0061)" },
+  "expo-upgrade": { "expo-router": "upstream Expo upgrade notes; React Navigation (ADR 0061)" },
+  "heroui-react": {
+    nextjs: "framework setup examples; the web stack is Vite and React Router 7 (ADR 0165)",
+  },
+  "playwright-best-practices": {
+    nextjs: "generic web-server examples",
+    prisma: "generic seeding example",
+    zustand: "generic state example",
+  },
+  pnpm: { eslint: "generic examples; oxlint here", prettier: "generic examples; oxfmt here" },
+  "react-native-best-practices": { zustand: "generic state example", eslint: "generic examples" },
+  resend: { nextjs: "framework examples; Resend sits behind the mail driver (ADR 0191)" },
+  tdd: { jest: "Jest-style API names; vitest here" },
+  turborepo: {
+    nextjs: "example app names",
+    eslint: "example task names",
+    jest: "example task names",
+    prettier: "example task names",
+  },
+  vitest: { jest: "Jest-compatible API notes" },
+};
+
+/** One finding per (skill, technology) not covered by SKILL_TECH_ALLOWED; stale allowances are returned as notes. */
+function skillTechFindings() {
+  const findings = [];
+  const notes = [];
+  for (const skill of sourceEntries("skills")) {
+    const dir = join(ROOT, SOURCE, "skills", skill);
+    if (!existsSync(dir) || !lstatSync(dir).isDirectory()) continue;
+    const text = markdownUnder(dir);
+    const allowed = SKILL_TECH_ALLOWED[skill] ?? {};
+    for (const [tech, pattern] of Object.entries(REJECTED_IN_SKILLS)) {
+      if (!pattern.test(text)) continue;
+      if (!(tech in allowed))
+        findings.push(
+          `${SOURCE}/skills/${skill}: teaches '${tech}', which is rejected (ADR 0011); fence it, drop it, or add a reasoned SKILL_TECH_ALLOWED entry (ADR 0258)`,
+        );
+    }
+    for (const tech of Object.keys(allowed))
+      if (!REJECTED_IN_SKILLS[tech]?.test(text))
+        notes.push(`${SOURCE}/skills/${skill}: allowance for '${tech}' is no longer needed`);
+  }
+  return { findings, notes };
+}
+
+function markdownUnder(dir) {
+  let text = "";
+  for (const name of readdirSync(dir)) {
+    const path = join(dir, name);
+    if (lstatSync(path).isDirectory()) text += markdownUnder(path);
+    else if (/\.mdx?$/.test(name)) text += readFileSync(path, "utf8");
+  }
+  return text;
+}
+
+// ---------------------------------------------------------------------------
 
 function main() {
   if (!existsSync(join(ROOT, SOURCE))) {
@@ -1128,6 +1227,10 @@ function main() {
         );
     }
   }
+
+  const skillTech = skillTechFindings();
+  results.broken.push(...skillTech.findings);
+  for (const n of skillTech.notes) console.log(`  NOTE      ${n}`);
 
   if (LINT) {
     for (const b of results.broken) console.error(`  BROKEN    ${b}`);
