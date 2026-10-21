@@ -71,7 +71,7 @@ export default {
             : e.action === "edit"
               ? decideEdit(r, ctxFor(root))
               : e.action === "read"
-                ? decidePath(r)
+                ? decidePath(r, root)
                 : { kind: "allow" as const };
         if (d.kind === "deny") {
           e.effect = "deny";

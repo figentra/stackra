@@ -43,9 +43,9 @@ export function isSecretPath(p: string): boolean {
 }
 
 /** read / edit tool paths. */
-export function decidePath(path: string): Decision {
+export function decidePath(path: string, cwd?: string): Decision {
   // The secrets inbox (ADR 0257): only `pnpm secrets:import` touches it, and it never prints a value.
-  return isSecretPath(path) || reachesInbox(path)
+  return isSecretPath(path) || reachesInbox(path, { cwd })
     ? deny(
         `${path} holds secret values and is never read or written by an agent. Names only; values are set by a human (Infisical).`,
       )
@@ -57,7 +57,7 @@ export function decidePath(path: string): Decision {
  * in the main checkout itself; delegated work belongs in a worktree (`pnpm delegate`).
  */
 export function decideEdit(path: string, ctx: GuardContext): Decision {
-  const secret = decidePath(path);
+  const secret = decidePath(path, ctx.root);
   if (secret.kind === "deny") return secret;
   const root = resolve(ctx.root);
   if (!resolve(root, path).startsWith(root + sep))

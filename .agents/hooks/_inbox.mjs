@@ -33,7 +33,10 @@ export const namesInbox = (seg) => seg.toLowerCase() === INBOX.toLowerCase() || 
  */
 export function reachesInbox(p, { recursive = false, home = homedir(), cwd } = {}) {
   if (typeof p !== "string" || !p) return false;
-  const expanded = p.trim().replace(/^(~|\$HOME|\$\{HOME\})(?=\/|$)/, home);
+  const expanded = p
+    .trim()
+    .replace(/^~(?=\/|$)/, home)
+    .replace(/\$\{HOME\}|\$HOME(?!\w)/g, home);
   if (expanded.split("/").some(namesInbox)) return true;
   if (/^[~$]/.test(expanded)) return false; // another user's home or an unknown variable
   if (!expanded.startsWith("/") && !cwd) return false;
@@ -93,54 +96,118 @@ const PREFIX = new Set([
   "!",
   "{",
 ]);
-/** Commands whose first positional argument (or `-e` value) is a pattern or a program, not a path. */
-const PATTERN_FIRST = new Set(["grep", "egrep", "fgrep", "rg", "ag", "sed", "awk", "gawk", "perl"]);
-/** Flags whose value is prose (an issue title, a commit message), never a path. */
+
+/**
+ * Per command: which flags take a value (`value`, kept as a possible path), a pattern (`pattern`), a program
+ * (`program`) or a file to read (`file`, a path); and what the first positional is when no flag gave it.
+ * Booleans (grep `-v`, `-F`, `-r`; sed `-n`) are not listed, so the word after them is not swallowed.
+ */
+const GREP = {
+  value: [
+    "-A",
+    "-B",
+    "-C",
+    "-m",
+    "-d",
+    "-D",
+    "--include",
+    "--exclude",
+    "--exclude-dir",
+    "--max-count",
+  ],
+  pattern: ["-e", "--regexp"],
+  file: ["-f", "--file"],
+  first: "pattern",
+};
+const AWK = { value: ["-F", "-v"], file: ["-f"], first: "program" };
+const COMMANDS = {
+  grep: GREP,
+  egrep: GREP,
+  fgrep: GREP,
+  rg: {
+    ...GREP,
+    value: ["-A", "-B", "-C", "-m", "-g", "--glob", "-t", "--type", "-T", "--type-not", "-j", "-M"],
+  },
+  ag: { value: ["-A", "-B", "-C", "-m", "-G"], first: "pattern" },
+  sed: { program: ["-e", "--expression"], file: ["-f", "--file"], first: "program" },
+  awk: AWK,
+  gawk: AWK,
+  perl: { program: /^-[a-zA-Z]*[eE]$/, first: "path" }, // `-e`, `-ne`, `-lne`; else the first word is a script
+};
+/** Flags whose value is prose (an issue title, a commit message), never a path, unless it runs a command. */
 const PROSE_FLAG = /^(?:--title|--body|--message|-m)$/;
+const PROSE_EQ = /^(?:--title|--body|--message)=/;
+const RUNS = /\$\(|`/;
+const LITERAL = /secrets-inbox|secrets-confirm\.key/i;
 const URL = /^[a-z][a-z0-9+.-]*:\/\//i;
 const RECURSIVE =
   /\b(?:rg|ag|find|tar|zip|rsync|du)\b|\bgrep\b.*\s(?:-\w*[rR]\w*|--recursive|--directories=recurse|-d\s*recurse)\b|\bcp\b.*\s(?:-\w*[rRa]\w*|--recursive|--archive)\b/;
+const has = (list, w) => (list instanceof RegExp ? list.test(w) : (list ?? []).includes(w));
 
-/** The words of a segment that could be paths: patterns, programs, prose values and URLs dropped. */
-function pathWords(words) {
+/**
+ * Sort a segment's words: `paths` are checked as paths (literal name, home-rooted globs, recursive reads);
+ * `texts` (programs, and prose that runs a command) only for the literal name; exempt: a grep/rg/ag pattern
+ * and plain prose values. A pattern that starts with `~` or `$` is checked as a path.
+ */
+function classify(words) {
   let i = 0;
   while (i < words.length && (PREFIX.has(words[i]) || /^\w+=/.test(words[i]))) i++;
   const name = (words[i] ?? "").split("/").pop();
-  const kept = [];
-  let patternSeen = false;
-  for (let j = i; j < words.length; j++) {
+  const spec = COMMANDS[name];
+  const paths = words.slice(0, i + 1); // assignment values (`x=~/…`) are paths too
+  const texts = [];
+  let firstSeen = false;
+  const pattern = (v) => /^[~$]/.test(v) && paths.push(v);
+  for (let j = i + 1; j < words.length; j++) {
     const w = words[j];
-    if (PROSE_FLAG.test(w) || (name === "perl" && /^-[a-zA-Z]*[eE]$/.test(w))) {
-      j++; // the value is prose or a perl program
-      if (name === "perl") patternSeen = true;
-    } else if (/^(?:--title|--body|--message)=/.test(w) || URL.test(w)) continue;
-    else if (PATTERN_FIRST.has(name) && /^(?:-e|--regexp|--expression)$/.test(w)) {
-      j++;
-      patternSeen = true;
-    } else if (PATTERN_FIRST.has(name) && /^(?:-[FvdD]|-[ABCm]|--include|--exclude)$/.test(w)) {
-      kept.push(w, words[++j] ?? ""); // a flag value: keep it, but it is not the pattern
-    } else if (PATTERN_FIRST.has(name) && j > i && !patternSeen && !w.startsWith("-")) {
-      patternSeen = true; // the first positional is the regex or the sed/awk program
-      if (name === "perl") kept.push(w); // without -e, perl's first argument is a script file
-    } else kept.push(w);
+    if (PROSE_FLAG.test(w) || PROSE_EQ.test(w)) {
+      const v = PROSE_FLAG.test(w) ? (words[++j] ?? "") : w;
+      if (RUNS.test(v)) paths.push(v);
+    } else if (spec && has(spec.value, w)) paths.push(w, words[++j] ?? "");
+    else if (spec && has(spec.file, w)) {
+      paths.push(words[++j] ?? "");
+      firstSeen = true;
+    } else if (spec && has(spec.pattern, w)) {
+      pattern(words[++j] ?? "");
+      firstSeen = true;
+    } else if (spec && has(spec.program, w)) {
+      texts.push(words[++j] ?? "");
+      firstSeen = true;
+    } else if (spec && spec.first !== "path" && !firstSeen && !w.startsWith("-")) {
+      firstSeen = true;
+      if (spec.first === "pattern") pattern(w);
+      else texts.push(w);
+    } else paths.push(w);
   }
-  return { name, kept };
+  return { name, paths, texts, operands: paths.slice(i + 1) };
 }
 
+/** A path word's tokens: split on shell punctuation, `@file` and `file://` prefixes dropped. */
+const tokensOf = (w) =>
+  w
+    .split(/[\s=<>()+;|&`'"]+/)
+    .map((t) => t.replace(/^@/, "").replace(/^file:\/\//i, ""))
+    .filter(Boolean);
+
 /**
- * True when a shell command could reach the inbox: a path-like token (after unquoting) that names it, or a
- * home-rooted glob or recursive read that could match it. `cwd` is the shell's directory; a `cd` moves it.
+ * True when a shell command could reach the inbox: a word (after unquoting) that names it, except a grep
+ * pattern or plain prose; or a path token whose home-rooted glob or recursive read could match it. `cwd` is
+ * the shell's directory; a `cd` moves it, and a recursive read with no path operand reads it.
  */
 export function commandReachesInbox(cmd, { cwd, home = homedir() } = {}) {
   let dir = cwd;
   for (const words of lex(cmd)) {
-    const { name, kept } = pathWords(words);
-    const recursive = RECURSIVE.test(kept.join(" "));
-    const tokens = kept.flatMap((w) => w.split(/[\s=<>()+;|&`'"]+/)).filter(Boolean);
+    const { name, paths, texts, operands } = classify(words);
+    if (texts.some((w) => LITERAL.test(w))) return true;
+    const recursive = RECURSIVE.test(paths.join(" "));
     const opts = { recursive, home, cwd: dir };
-    if (tokens.some((t) => !URL.test(t) && reachesInbox(t, opts))) return true;
+    const tokens = paths.flatMap(tokensOf);
+    if (tokens.some((t) => (URL.test(t) ? LITERAL.test(t) : reachesInbox(t, opts)))) return true;
+    // `cd ~ && rg x`, `du -a`: no path operand means the current directory.
+    if (recursive && dir && !operands.some((w) => !w.startsWith("-")) && reachesInbox(".", opts))
+      return true;
     if (name === "cd" || name === "pushd") {
-      const to = kept.slice(1).find((w) => !/^-[LP]$/.test(w)) ?? "~";
+      const to = operands.find((w) => !/^-[LP]$/.test(w)) ?? "~";
       const expanded = to.replace(/^(~|\$HOME|\$\{HOME\})(?=\/|$)/, home);
       dir =
         /^[~$]/.test(expanded) || (!expanded.startsWith("/") && !dir)
