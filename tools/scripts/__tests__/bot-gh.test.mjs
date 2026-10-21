@@ -113,3 +113,32 @@ test("STA-216: aliases, file-sourced GraphQL and encoded merge paths are refused
   ])
     assert.equal(mergesPr(["api", "-X", "PUT", path]), true, path);
 });
+
+test("STA-216 review: git config writes, risky -c keys and normalised merge paths", async () => {
+  const { unsafeArgs } = await import("../bot-gh.mjs");
+  for (const args of [
+    ["config", "--global", "alias.x", "credential fill"],
+    ["config", "--file", "f", "includeIf.gitdir:/.path", "x"],
+    ["-c", "core.fsmonitor=x", "status"],
+    ["-c", "core.sshCommand=x", "fetch"],
+    ["-c", "core.pager=x", "log"],
+    ["-c", "core.editor=x", "commit"],
+    ["-c", "credential.helper=x", "status"],
+    ["-ccore.pager=x", "log"],
+  ])
+    assert.ok(unsafeArgs("git", args), args.join(" "));
+  for (const args of [
+    ["config", "user.name", "x"],
+    ["-c", "user.name=x", "status"],
+  ])
+    assert.equal(unsafeArgs("git", args), null, args.join(" "));
+  for (const path of [
+    "repos/x/y/pulls/12/%6derge",
+    "repos/x/y/pulls/12/./merge",
+    "repos/x/y/pulls/4/../5/merge",
+    "repos/x/y/pulls/12/%252e/merge",
+    "repos/x/y/pulls//12///merge",
+  ])
+    assert.equal(mergesPr(["api", "-X", "PUT", path]), true, path);
+  assert.equal(mergesPr(["api", "repos/x/y/pulls/12/files"]), false);
+});

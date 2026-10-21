@@ -96,14 +96,23 @@ const subcommands = (cmd: string): string[] =>
 
 /** Global options whose value is the next word (`--git-dir=x` carries its value and is skipped as a flag). */
 const GIT_VALUE_OPTS = new Set(["-C", "-c", "--git-dir", "--work-tree", "--namespace"]);
-/** `-c alias.*` / `-c include*` / `--config-env` run any git command under another name (STA-216). */
-const gitAliasConfig = (args: string[]): boolean =>
-  args.some(
+/** Config keys that run code or redefine git commands (STA-216). */
+const BAD_KEY =
+  /^(?:alias\.|include|core\.(?:fsmonitor|sshcommand|pager|editor|hookspath)|credential\.)/i;
+/** `-c` / `git config` for those keys and `--config-env` make git run another command (STA-216). */
+const gitAliasConfig = (args: string[]): boolean => {
+  const config = args.includes("config") && !args.some((a) => /^(?:--get|--list$|-l$)/.test(a));
+  return args.some(
     (a, i) =>
       /^--config-env\b/.test(a) ||
-      (a === "-c" && /^(?:alias\.|include)/i.test(args[i + 1] ?? "")) ||
-      /^-c(?:alias\.|include)/i.test(a),
+      (a === "-c" && BAD_KEY.test(args[i + 1] ?? "")) ||
+      (/^-c./.test(a) && BAD_KEY.test(a.slice(2))) ||
+      (config && BAD_KEY.test(a)),
   );
+};
+/** Env prefixes that swap git's config files or the pager (STA-216). */
+const CONFIG_ENV =
+  /(?:^|\s)(?:GIT_CONFIG[A-Z_0-9]*|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER)=/;
 
 /** git's subcommand, skipping global options (`-C dir`, `-c k=v`, `--git-dir=…`). */
 function gitSubcommand(args: string[]): string {
@@ -155,9 +164,9 @@ function denyExecutor(sub: string, cmd: string, args: string[]): Decision {
       `\`${cmd}\` is pack plumbing that bypasses the git checks; executors never run it.`,
     );
   if (cmd === "git") {
-    if (gitAliasConfig(args) || /\bGIT_CONFIG_(?:COUNT|KEY_\d+|PARAMETERS)=/.test(sub))
+    if (gitAliasConfig(args) || CONFIG_ENV.test(sub))
       return deny(
-        "`git -c alias.*`, `-c include*` and `--config-env` rename git commands past the guard.",
+        "git `-c` / `config` for alias, include, core.fsmonitor|sshCommand|pager|editor|hooksPath and credential keys, `--config-env`, and the GIT_CONFIG*, HOME, XDG_CONFIG_HOME and pager env prefixes make git run other commands past the guard.",
       );
     const g = gitSubcommand(args);
     const readOnly = g === "worktree" && args.includes("list");
@@ -194,6 +203,11 @@ function denySub(sub: string): Decision {
     return deny(
       "printing the environment leaks injected tokens. Echo the one variable you need (never a secret's value).",
     );
+  if (
+    (cmd === "man" && args.some((a) => /^-[a-zA-Z]*P|^--pager/.test(a))) ||
+    /(?:^|\s)(?:MANPAGER|PAGER)=/.test(sub)
+  )
+    return deny("`man -P`, `--pager` and the PAGER env run an arbitrary command as the pager.");
   if (cmd === "infisical" && args[0] === "export")
     return deny("`infisical export` dumps secret values. Humans only.");
   for (const t of tokens(sub))

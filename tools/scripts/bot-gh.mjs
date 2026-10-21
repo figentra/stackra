@@ -65,6 +65,27 @@ export function leaksToken(tool, args) {
   return tool === "git" ? /^credential(-|$)/.test(first) : first === "auth";
 }
 
+/** A word percent-decoded (up to three layers), then slashes collapsed and `.` / `..` segments resolved (STA-216). */
+function normalizeWord(w) {
+  let d = w;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const n = decodeURIComponent(d);
+      if (n === d) break;
+      d = n;
+    } catch {
+      break;
+    }
+  }
+  const out = [];
+  for (const seg of d.split("/")) {
+    if (seg === "" || seg === ".") continue;
+    if (seg === "..") out.pop();
+    else out.push(seg);
+  }
+  return out.join("/");
+}
+
 /**
  * Merges outside `pnpm pr:merge` (STA-214, ADR 0119): `gh pr merge`, `gh api …/pulls/<n>/merge` with any method, and
  * the GraphQL merge mutations. pr-merge.mjs runs gh itself after its checks, so it never comes through here.
@@ -72,15 +93,12 @@ export function leaksToken(tool, args) {
 export function mergesPr(args) {
   const [group, verb] = words("gh", args);
   if (group === "pr") return verb === "merge";
-  return (
-    group === "api" &&
-    args.some((a) =>
-      /\bpulls(?:\/|%2F)+\d+(?:\/|%2F)+merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/i.test(
-        a,
-      ),
-    )
-  );
+  return group === "api" && args.some((a) => MERGE.test(a) || MERGE.test(normalizeWord(a)));
 }
+
+/** Config keys that run code or redefine git commands (STA-216). */
+const BAD_KEY = String.raw`(?:alias\.|include|core\.(?:fsmonitor|sshcommand|pager|editor|hookspath)|credential\.)`;
+const MERGE = /\bpulls\/\d+\/merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/i;
 
 /**
  * Why a command is refused regardless of tool (STA-216), or null. git: `-c alias.*` / `-c include*` / `--config-env`
@@ -89,13 +107,19 @@ export function mergesPr(args) {
  */
 export function unsafeArgs(tool, args) {
   if (tool === "git") {
+    const key = new RegExp(`^${BAD_KEY}`, "i");
+    const config =
+      words("git", args)[0] === "config" && !args.some((a) => /^(?:--get|--list$|-l$)/.test(a));
     const bad = args.some(
       (a, i) =>
         /^--config-env\b/.test(a) ||
-        (a === "-c" && /^(?:alias\.|include)/i.test(args[i + 1] ?? "")) ||
-        /^-c(?:alias\.|include)/i.test(a),
+        (a === "-c" && key.test(args[i + 1] ?? "")) ||
+        (/^-c./.test(a) && key.test(a.slice(2))) ||
+        (config && key.test(a)),
     );
-    return bad ? "`-c alias.*`, `-c include*` and `--config-env` bypass the guards" : null;
+    return bad
+      ? "`-c` / `git config` for alias.*, include*, core.fsmonitor|sshCommand|pager|editor|hooksPath and credential.*, and `--config-env`, bypass the guards"
+      : null;
   }
   const [group] = words("gh", args);
   if (group === "alias") return "`gh alias` rewrites the owner's gh config";

@@ -468,3 +468,43 @@ test("push target: quoted -c, crafted -c values, GIT_DIR / GIT_WORK_TREE prefixe
     assert.equal(decision(c, feature), "allow", c);
   for (const d of [main, feature]) rmSync(d, { recursive: true, force: true });
 });
+
+// STA-216 review round: config writes, config/pager env, man -P, encoded merge paths, more -c keys
+const round3bAllowed = [
+  "git config user.name x",
+  "pnpm bot:git -- config --get remote.origin.url",
+  "man git-credential",
+  "man -a git-credential",
+  "pnpm bot:gh -- api -X PUT repos/x/y/pulls/12/files",
+];
+const round3bDenied = [
+  "git config --global alias.x 'credential fill'",
+  "git config --system alias.p push",
+  "git config --local include.path /tmp/x",
+  "git config --file /tmp/c includeIf.gitdir:/.path /tmp/x",
+  "git config core.fsmonitor 'sh x'",
+  "pnpm bot:git -- config --global alias.x '!sh'",
+  "pnpm bot:git -- -c core.fsmonitor=x status",
+  "git -c core.sshCommand=x fetch",
+  "git -c core.pager=x log",
+  "git -c core.editor=x commit",
+  "git -c credential.helper=x status",
+  "GIT_CONFIG_GLOBAL=/tmp/c git x",
+  "GIT_CONFIG_SYSTEM=/tmp/c pnpm bot:git -- x",
+  "GIT_CONFIG=/tmp/c git x",
+  "HOME=/tmp/h git x",
+  "XDG_CONFIG_HOME=/tmp/h pnpm bot:git -- x",
+  "man -P 'sh -c x' git-credential",
+  "man --pager=sh git-credential",
+  "man -aP sh ls",
+  "MANPAGER=sh man git-credential",
+  "PAGER='sh -c x' man ls",
+  "GIT_PAGER=sh git log",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/12/%6derge",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/12/./merge",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/4/../5/merge",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/12/%2e/merge",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/12/%252e%252e/12/merge",
+];
+for (const c of round3bAllowed) test(`allow: ${c}`, () => assert.equal(denied(c), false));
+for (const c of round3bDenied) test(`deny: ${c}`, () => assert.equal(denied(c), true));

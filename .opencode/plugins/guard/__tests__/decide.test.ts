@@ -263,3 +263,21 @@ test("STA-216: spaced global git options, -c alias.*, pack binaries", () => {
   ])
     assert.equal(kind(c), "allow", c);
 });
+
+test("STA-216 review: git config writes, config env, risky -c keys, man pager", () => {
+  for (const c of [
+    "git config --global alias.x 'credential fill'",
+    "git config --local include.path /tmp/x",
+    "git -c core.fsmonitor=x status",
+    "git -c credential.helper=x status",
+    "GIT_CONFIG_GLOBAL=/tmp/c git x",
+    "HOME=/tmp/h git x",
+    "XDG_CONFIG_HOME=/tmp/h git x",
+    "man -P 'sh -c x' ls",
+    "man --pager=sh ls",
+    "MANPAGER=sh man ls",
+    "PAGER=sh man ls",
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of ["man ls", "man -a git-credential"]) assert.equal(kind(c), "allow", c);
+});

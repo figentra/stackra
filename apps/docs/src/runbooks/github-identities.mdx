@@ -60,17 +60,28 @@ quotes too), and every `sh -c` or `eval` string. It denies:
   `pnpm bot:git --`. A bot push to `main` is denied too, with the branch read in the checkout the push runs in
   (after a `cd`, `-C <dir>`, `--git-dir`, `--work-tree` or a `GIT_DIR=` / `GIT_WORK_TREE=` assignment; quoted `-c`
   values are read whole; an unknown `$VAR` target or an unresolvable checkout counts as `main`);
-- `git -c alias.*`, `-c include*`, `--config-env` and `GIT_CONFIG_*`: an alias runs any git command under another
-  name (`-c alias.x=credential x fill`), past every rule above. `bot-gh.mjs` refuses them too;
+- git config that redefines or runs commands, by `-c`, by `git config` writes (`--global`, `--system`, `--local`,
+  `--file`, also through `pnpm bot:git --`) or by `--config-env`: keys `alias.*`, `include*`, `core.fsmonitor`,
+  `core.sshCommand`, `core.pager`, `core.editor`, `core.hooksPath` and `credential.*`. An alias runs any git command
+  under another name (`-c alias.x=credential x fill`), past every rule above. Reading a key (`git config --get`,
+  `--list`) stays allowed. The env prefixes that swap git's config files or pager are denied on a `git` or `man`
+  command: `GIT_CONFIG`, `GIT_CONFIG_GLOBAL`, `GIT_CONFIG_SYSTEM`, `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_<n>`,
+  `GIT_CONFIG_PARAMETERS`, `HOME=`, `XDG_CONFIG_HOME=`, `PAGER=`, `MANPAGER=` and `GIT_PAGER=`. `bot-gh.mjs` refuses
+  the `-c` and `git config` forms too;
+- `man -P <cmd>` and `man --pager=<cmd>`, which run `<cmd>`; plain read-only help such as `man git-credential` stays
+  allowed;
 - pack plumbing, bare, through `pnpm bot:git` or as the binary (`git-send-pack`): `send-pack`, `receive-pack`,
   `fetch-pack` and `upload-pack`;
 - a merge outside `pnpm pr:merge`: `pnpm bot:gh -- pr merge ...`, `pnpm bot:gh -- api .../pulls/<n>/merge` with any
   method, and the `mergePullRequest` / `enablePullRequestAutoMerge` GraphQL mutations. `bot-gh.mjs` refuses them
-  itself as well, also with `pulls/<n>//merge` and `%2F`-encoded paths. Prose does not count: the quoted value of
+  itself as well. The path is percent-decoded (up to three layers), slashes are collapsed and `.` / `..` segments
+  resolved before matching, so `pulls/<n>//merge`, `%2F`, `%6derge`, `pulls/<n>/./merge` and
+  `pulls/<m>/../<n>/merge` are all merges. Prose does not count: the quoted value of
   `--title`, `--body`, `-m` and the text of `pnpm linear comment` are not scanned;
 - `pnpm bot:gh -- api graphql` with the query from a file (`-F query=@f`, `-f query=@f`, `--input`) or a
   substitution, and `pnpm bot:gh -- alias ...`: the query cannot be checked for a merge mutation, and an alias
-  rewrites the owner's gh config. Inline the query (`bot-gh.mjs` refuses these as well);
+  rewrites the owner's gh config. Inline the query (`bot-gh.mjs` refuses these as well). A query held in a shell variable cannot be seen by the
+  hook, but `bot-gh.mjs` receives the expanded arguments and refuses the merge mutation there (defence in depth);
 - anything that could print or store a token: `pnpm bot:token`, a `$GH_TOKEN` or `$GITHUB_TOKEN` reference,
   `pnpm bot:gh -- auth ...`, `pnpm bot:review -- auth ...`, and `git credential fill|approve|reject` or a
   `git credential-<helper>` (`credential-osxkeychain get` included), bare or through `pnpm bot:git`; they answer

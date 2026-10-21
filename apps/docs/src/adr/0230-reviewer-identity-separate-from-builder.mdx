@@ -95,8 +95,10 @@ hold fewer permissions than the builder app.
   the push's own checkout (`cd`, `-C`, `--git-dir`, `--work-tree`), and any merge outside `pnpm pr:merge`
   (`bot:gh -- pr merge`, `api …/pulls/<n>/merge` with any method and its `//` and `%2F` spellings, the GraphQL merge
   mutations), also inside `$(…)`, backticks, `sh -c` and `eval`; the quoted `--title`, `--body`, `-m` text and
-  `pnpm linear comment` text are prose and not scanned. STA-216 adds: `git -c alias.*`, `-c include*`, `--config-env`
-  and `GIT_CONFIG_*`; quoted `-c` values and `GIT_DIR=` / `GIT_WORK_TREE=` in the push-target resolution (an
+  `pnpm linear comment` text are prose and not scanned. STA-216 adds: git `-c` and `git config` writes for
+  `alias.*`, `include*`, `core.fsmonitor|sshCommand|pager|editor|hooksPath` and `credential.*`, `--config-env`, the
+  `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=` and pager env prefixes, and `man -P` / `--pager`; merge paths are
+  percent-decoded and dot segments resolved before matching; quoted `-c` values and `GIT_DIR=` / `GIT_WORK_TREE=` in the push-target resolution (an
   unresolvable checkout counts as `main`); `git-*-pack` binaries by path; `bot:gh -- api graphql` from a file
   (`-F query=@f`, `--input`) or substitution, and `bot:gh -- alias`. Tests in `.agents/hooks/__tests__/guard-bash.test.mjs`.
 - `tools/scripts/bot-gh.mjs` (`leaksToken`, `mergesPr`, `unsafeArgs`): the wrappers refuse `gh auth`, `git credential`,

@@ -44,6 +44,8 @@ function stripHeredocs(raw) {
   );
 }
 
+/** Config keys that run code or redefine git commands (STA-216). */
+const BAD_KEY = String.raw`(?:alias\.|include|core\.(?:fsmonitor|sshcommand|pager|editor|hookspath)|credential\.)`;
 /** An option value: a quoted string (spaces allowed) or one word. */
 const Q = String.raw`"[^"]*"|'[^']*'|\S+`;
 /** git's global options before the subcommand (STA-216: quoted values, the boolean options). */
@@ -207,9 +209,33 @@ function pushesMain(c, cwd) {
 /** `pnpm bot:gh` merging a PR: `pr merge`, `api …/pulls/<n>/merge` (any method), or a GraphQL merge mutation. */
 const MERGE =
   /\bpr\s+(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?merge\b|\bpulls(?:\/|%2F)+\d+(?:\/|%2F)+merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/i;
+/** A word percent-decoded (up to three layers), then slashes collapsed and `.` / `..` segments resolved (STA-216). */
+function normalizeWord(w) {
+  let d = w;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const n = decodeURIComponent(d);
+      if (n === d) break;
+      d = n;
+    } catch {
+      break;
+    }
+  }
+  const out = [];
+  for (const seg of d.split("/")) {
+    if (seg === "" || seg === ".") continue;
+    if (seg === "..") out.pop();
+    else out.push(seg);
+  }
+  return out.join("/");
+}
 const botMerges = (c) =>
   [dropMessages(c), ...runnable(c)].some((t) =>
-    segments(t).some((s) => /\bbot:gh\b/.test(blank(s)) && MERGE.test(s)),
+    segments(t).some(
+      (s) =>
+        /\bbot:gh\b/.test(blank(s)) &&
+        (MERGE.test(s) || MERGE.test(s.replace(/\S+/g, normalizeWord))),
+    ),
   );
 
 /** True when `rm` is given both recursive and force, in any flag spelling. */
@@ -344,12 +370,27 @@ const rules = [
   {
     // STA-216: a config alias runs any git command (`-c alias.x=credential x fill`, `-c alias.p=push p origin main`);
     // an included config file or GIT_CONFIG_* env can define one too.
-    rx: (c) =>
-      /\bgit\b/.test(c) &&
-      /(?:^|\s)(?:-c\s*['"]?(?:alias\.|include)|--config-env\b|GIT_CONFIG_(?:COUNT|KEY_\d+|PARAMETERS)=)/i.test(
-        dropMessages(c),
-      ),
-    why: "`git -c alias.*`, `-c include*`, `--config-env` and `GIT_CONFIG_*` define git aliases that bypass the push and credential guards. Run the real subcommand.",
+    // Also `git config alias.x …` writes, the config-file env (`GIT_CONFIG_GLOBAL`, `HOME=`, `XDG_CONFIG_HOME=`) and pager env.
+    rx: (c) => {
+      const d = dropMessages(c);
+      return (
+        /\b(?:git|man)\b/.test(c) &&
+        (new RegExp(
+          String.raw`(?:^|\s)(?:-c\s*['"]?${BAD_KEY}|--config-env\b|(?:GIT_CONFIG(?:_GLOBAL|_SYSTEM|_COUNT|_KEY_\d+|_PARAMETERS)?|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER)=)`,
+          "i",
+        ).test(d) ||
+          new RegExp(
+            String.raw`\bgit\b[^|;&\n]*\sconfig\b(?![^|;&\n]*\s(?:--get|--list|-l)\b)[^|;&\n]*\s['"]?${BAD_KEY}`,
+            "i",
+          ).test(d))
+      );
+    },
+    why: "`git -c` / `git config` for `alias.*`, `include*`, `core.fsmonitor|sshCommand|pager|editor|hooksPath` and `credential.*`, `--config-env`, and the `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=`, `PAGER=`, `MANPAGER=` and `GIT_PAGER=` prefixes make git or man run another command past the push and credential guards. Run the real subcommand.",
+  },
+  {
+    // `man -P <cmd>` and `--pager=<cmd>` run <cmd>; plain `man git-credential` stays allowed.
+    rx: (c) => /\bman\b[^|;&\n]*\s-(?:[a-zA-Z]*P|-pager)/.test(dropMessages(c)),
+    why: "`man -P` and `man --pager` run an arbitrary command as the pager. Read the page with plain `man <page>`.",
   },
   {
     // STA-216: a GraphQL document read from a file or a substitution cannot be checked for a merge mutation;
