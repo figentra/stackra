@@ -5,6 +5,16 @@ description: "Proposed · 2026-10-19"
 
 <Note>
   Amended by
+  [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels):
+  the `@stackra/notifications` package is dropped. Notifications is a service,
+  `@figentra/service-notifications`, which owns delivery, preferences, the log and the in-app inbox,
+  and keeps the full engine of every channel; direct email goes through the `Mailer` driver in
+  `@stackra/mail`. The template editor is an `email-template` document kind on `@stackra/builder`,
+  free code per [0202](/adr/0202-stackra-pro-is-developer-side-os-capability-is-free-code).
+</Note>
+
+<Note>
+  Amended by
   [0223](/adr/0223-notifications-channels-cascading-templates-manual-sends-and-preferences):
   channels, cascading templates, manual sends and preferences.
 </Note>

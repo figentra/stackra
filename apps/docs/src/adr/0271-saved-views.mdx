@@ -1,0 +1,49 @@
+---
+title: "0271 — Saved views"
+description: "Accepted · 2026-10-21"
+---
+
+## Context
+
+Users want to keep the way they look at a resource list (a filter, a set of columns, a grouping, a chart) and share it, and
+reports should not need a separate builder ([0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)
+decision 10). A free-form query builder would be the tenant SQL engine that
+[0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step) rules out. The owner settled saved views on 2026-10-21.
+
+## Decision
+
+1. **A view is a saved configuration of a resource list**: filters, columns, sort, group-by, aggregates, a layout and a chart
+   mode toggle.
+2. **A view has a layout.** Layouts are registered in code; a tenant picks one and never authors one.
+
+   | Layout              | Shape                                                                                                                                                                                                       |
+   | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | table (the default) | rows and columns                                                                                                                                                                                            |
+   | board (kanban)      | grouped by a state field. Dragging a card runs a `@stackra/state-machine` transition through its action, so permissions and guards apply ([0161](/adr/0161-state-machine-package)); never a raw field write |
+   | gallery (cards)     | a card template chosen from the registered card blocks                                                                                                                                                      |
+   | calendar            | placed by a date field                                                                                                                                                                                      |
+
+   Chart mode offers the registered chart types, treemap among them.
+
+3. **Views have personal, role and tenant copies**, layered the same way as [0112](/adr/0112-experience-packages-and-renderer-kit)
+   X10. The tenant admin controls who may share a view, through iam permissions.
+4. **A view is data that references the resource's declared fields and `@Report` or query keys only.** The server validates it.
+5. **Scheduled export runs as a queue job** that respects the caller's permissions ([0163](/adr/0163-reports-exports-imports-and-declared-read-models)).
+6. **A view can be placed as a dashboard widget.**
+7. **A view is not a builder surface.** It is edited inline on the table.
+8. **Shared views use optimistic concurrency control.**
+
+## Consequences
+
+- Reports are views plus `@Report` widgets and dashboards, so there is no report builder to build.
+- A view can only show what the resource declares and what the caller may see.
+- A renamed or removed field breaks the views that reference it; the validator must report them.
+
+## Enforcement
+
+planned — server-side validation refusing a view that names an undeclared field or an unregistered report or query key; an
+export test asserting the job runs under the caller's permissions; a board test asserting a card drag dispatches the transition action and never writes the field. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decisions in chat, 2026-10-21 (saved views; layouts from the screenshot review). Linear STA-274.

@@ -608,11 +608,11 @@ stackra/
 ├── packages/               # tier:lib
 │   ├── application/        # Actions, AI, IR, registry
 │   ├── commerce/           # Money, ledger and pricing primitives
-│   ├── communication/      # Webhooks, notifications, versioning, integrations
+│   ├── communication/      # Webhooks, versioning, integrations, templates, mail
 │   ├── cross-cutting/      # Brand
 │   ├── data/               # Model, database, content, media, search, state machine, assets, filesystem, storage
 │   ├── developer/          # CLI, gen (the codegen compiler), coding standard, Vite plugin
-│   ├── experience/         # UI, experience, navigation, console, panel
+│   ├── experience/         # UI, experience, navigation, console, panel, builder, collaboration
 │   ├── foundation/         # Contracts, validation, errors
 │   ├── infrastructure/     # Pulumi-based infra-* packages
 │   ├── runtime/            # Outbox, queue, scheduler, workflow, realtime, locking, cache

@@ -4,6 +4,15 @@ description: "Accepted · 2026-10-19"
 ---
 
 <Note>
+  Amended by
+  [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels):
+  F3 — the form editor is an editor on `@stackra/builder` (field list and logic panel, presence and
+  optimistic concurrency), not `@stackra-pro/form-builder`, and is free code per
+  [0202](/adr/0202-stackra-pro-is-developer-side-os-capability-is-free-code). `@stackra/forms` is
+  dropped: coded forms use `@stackra/ui/form` (`useSchemaForm`).
+</Note>
+
+<Note>
   Amended by [0202](/adr/0202-stackra-pro-is-developer-side-os-capability-is-free-code): the form
   builder editor is free code, unlocked by an app entitlement.
 </Note>

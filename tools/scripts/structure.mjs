@@ -43,8 +43,8 @@ export const CATEGORIES = Object.freeze([
   { name: "application", reason: "actions, AI, IR and the registry", adr: "0127" },
   {
     name: "communication",
-    reason: "webhooks, notifications, versioning and integrations",
-    adr: "0127",
+    reason: "webhooks, versioning, integrations and mail",
+    adr: "0127, 0270",
   },
   { name: "commerce", reason: "money, ledger and pricing primitives", adr: "0127" },
   {
@@ -58,7 +58,11 @@ export const CATEGORIES = Object.freeze([
     adr: "0127",
   },
   { name: "developer", reason: "CLI, gen, coding standard and the Vite plugin", adr: "0127" },
-  { name: "experience", reason: "UI, experience, navigation, console and panel", adr: "0127" },
+  {
+    name: "experience",
+    reason: "UI, experience, navigation, console, panel, builder and collaboration",
+    adr: "0127, 0270",
+  },
   { name: "infrastructure", reason: "Pulumi-based packages named `infra-<name>`", adr: "0127" },
   {
     name: "runtime",

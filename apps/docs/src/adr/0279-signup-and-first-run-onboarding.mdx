@@ -21,7 +21,7 @@ gap review of 2026-10-21 (item 3) places the engine and shapes the signup.
    decision 5), production readiness and compliance tasks all use it. A check keeps the status, fix link and verifier of 0243 decision 6.
 2. **Registration on ZITADEL, onboarding after sign-in.** The account itself is registered on ZITADEL's hosted pages, so Stackra builds no
    registration or login UI ([0268](/adr/0268-register-answers-thin-items-r1-to-r18) R3). After sign-in, onboarding is a multi-step form
-   document of the form kind in ADR 0270, with steps, conditional steps and save-and-resume. It is owned by the provisioning module of
+   document of the form kind in [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels), with steps, conditional steps and save-and-resume. It is owned by the provisioning module of
    `@figentra/service-tenancy`.
 3. **Onboarding steps.**
    - Individual or organisation (the account model of [0272](/adr/0272-account-model-personal-workspace-and-opt-in-organisations)).
@@ -38,7 +38,7 @@ gap review of 2026-10-21 (item 3) places the engine and shapes the signup.
 - One engine serves four flows, so a check written for onboarding can be reused in production readiness.
 - `@figentra/checklists` is an OS package, so Stackra products without Figentra rules do not get it (placement per
   [0259](/adr/0259-module-placement-three-homes)).
-- Onboarding depends on the form kind of ADR 0270 landing first.
+- Onboarding depends on the form kind of [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels).
 
 ## Enforcement
 
@@ -56,4 +56,4 @@ The owner did not give these; the conservative default below applies until an AD
 ## Supersedes and sources
 
 Supersedes: none. Amends: [0243](/adr/0243-organisations-on-the-tenant-tree-consolidated-billing-guardrails-and-standalone-exit) decision 6.
-Depends on ADR 0270 (form kind). Sources: owner answers in chat, 2026-10-21 (screenshot gap review, item 3; register C8).
+Depends on: [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels) (form kind). Sources: owner answers in chat, 2026-10-21 (screenshot gap review, item 3; register C8).

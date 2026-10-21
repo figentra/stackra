@@ -4,6 +4,16 @@ description: "Accepted · 2026-10-20"
 ---
 
 <Note>
+  Amended by
+  [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels):
+  six rows are stale. Realtime: presence and co-editing go to the free `@stackra/collaboration`
+  (experience), not Pro. Collaboration: free, not Pro. Dashboard: the studio is an editor on
+  `@stackra/builder`, not Pro. Forms: dropped; coded forms use `@stackra/ui/form` and the form
+  builder is a document kind. Page builder: an editor on `@stackra/builder`, free code.
+  Notifications: no package; the OS service `@figentra/service-notifications` owns it.
+</Note>
+
+<Note>
   Amended by [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait): the realtime
   row.
 </Note>
