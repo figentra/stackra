@@ -39,8 +39,9 @@ for (const [kind, name, extra] of cases)
       if (/\.jsonc$|tsconfig\.json$/.test(f)) JSON.parse(stripJsonc(text));
       else if (f.endsWith(".json")) JSON.parse(text);
     }
-    for (const f of ["LICENSE", "README.md", "AGENTS.md", "CHANGELOG.md", "package.json"])
+    for (const f of ["README.md", "AGENTS.md", "CHANGELOG.md", "package.json"])
       assert.ok(files.includes(f), `${f} missing`);
+    assert.equal(files.includes("LICENSE"), kind === "package" || kind === "tooling");
     const pkg = json(dest, "package.json");
     const findings = check({
       dir: rel,
@@ -145,8 +146,16 @@ test("description is JSON-escaped and the target repo's LICENSE is copied", () =
   );
   const root = tmp();
   writeFileSync(join(root, "LICENSE"), "Proprietary.\n");
-  const other = scaffold({ kind: "service", name: "billing", root, format: false });
+  const other = scaffold({
+    kind: "package",
+    name: "billing",
+    category: "data",
+    root,
+    format: false,
+  });
   assert.equal(readFileSync(join(other.dest, "LICENSE"), "utf8"), "Proprietary.\n");
+  const svc = scaffold({ kind: "service", name: "billing", root, format: false });
+  assert.ok(!existsSync(join(svc.dest, "LICENSE")));
 });
 
 test("next free port skips taken ones", () => {
@@ -160,7 +169,7 @@ test("next free port skips taken ones", () => {
 test("dry run writes nothing", () => {
   const root = tmp();
   const { dest, files } = scaffold({ kind: "service", name: "dry", root, dryRun: true });
-  assert.ok(files.includes("LICENSE") && files.includes("src/dry.module.ts"));
+  assert.ok(files.includes("src/dry.module.ts"));
   assert.ok(!existsSync(dest));
 });
 

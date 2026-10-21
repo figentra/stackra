@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "description": "{{DESCRIPTION}}",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "cd src && mint dev --port {{PORT}}",
