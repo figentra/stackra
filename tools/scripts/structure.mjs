@@ -200,6 +200,13 @@ export const KIND_FOLDERS = Object.freeze(
     ["types", "type", "contract", "type aliases and unions", "0128"],
     ["tokens", "token", "contract", "DI tokens made with defineToken", "0231"],
     ["constants", "constant", "contract", "module-level constants, SCREAMING_SNAKE", "0231"],
+    [
+      "enums",
+      "enum",
+      "contract",
+      "const-object enums with a same-named union type; the enum keyword is banned",
+      "0128 d1, 0264 d7",
+    ],
     ["errors", "error", "contract", "StackraError subclasses", "0232"],
     ["schemas", "schema", "contract", "Zod schemas", "0095"],
     [
@@ -277,6 +284,12 @@ export const TEST_TIERS = Object.freeze([
     name: "contract",
     infix: ".contract.test",
     reason: "checks a declared contract, such as the manifest",
+    adr: "0182",
+  },
+  {
+    name: "load",
+    infix: ".load.test",
+    reason: "k6 load tests, run weekly against staging",
     adr: "0182",
   },
   { name: "e2e", infix: ".e2e.test", reason: "runs a whole app", adr: "0022" },
@@ -386,12 +399,22 @@ export function categoryOf(dir) {
   return CATEGORY_NAMES.includes(category) ? category : null;
 }
 
+/**
+ * One markdown table cell: escapes the pipe, and wraps `__tests__` in a code span unless it already sits in one.
+ * @param {unknown} text
+ * @returns {string}
+ */
 const cell = (text) =>
   String(text ?? "")
     .split(/(`[^`]*`)/)
     .map((part, i) => (i % 2 ? part : part.replace(/__tests__\/?/g, (token) => `\`${token}\``)))
     .join("")
     .replace(/\|/g, "/");
+/**
+ * A value rendered as a code span, or `none` when there is no value.
+ * @param {unknown} text
+ * @returns {string}
+ */
 const code = (text) => (text === null || text === undefined ? "none" : `\`${text}\``);
 
 /**

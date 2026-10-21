@@ -9,6 +9,7 @@ import { parseEntries, scaffold } from "../scaffold.mjs";
 import {
   BANNED_FOLDERS,
   CATEGORIES,
+  ENTRIES,
   CATEGORY_NAMES,
   ENTRY_NAMES,
   KIND_FOLDERS,
@@ -23,7 +24,7 @@ import {
   requiredTestFor,
   testFileFor,
 } from "../structure.mjs";
-import { check, checkTestPlacement } from "../validate-repository.mjs";
+import { checkTestPlacement } from "../validate-repository.mjs";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const SCRIPTS = join(ROOT, "tools/scripts");
@@ -38,7 +39,7 @@ test("the category list is the 12 categories, and every category folder on disk 
 });
 
 test("every category and entry carries a reason and an ADR", () => {
-  for (const row of [...CATEGORIES, ...KIND_FOLDERS, ...BANNED_FOLDERS, ...TEST_TIERS])
+  for (const row of [...CATEGORIES, ...ENTRIES, ...KIND_FOLDERS, ...BANNED_FOLDERS, ...TEST_TIERS])
     assert.ok(row.reason?.length > 0 && row.adr, JSON.stringify(row));
 });
 
@@ -62,19 +63,13 @@ test("scaffold accepts exactly the structure categories and writes them under pa
   );
 });
 
-test("the validator accepts a scaffolded member in every structure category", () => {
+test("scaffold writes every category to packages/<category>/<name> on disk", () => {
   for (const category of CATEGORY_NAMES) {
-    const dir = `packages/${category}/sample`;
-    assert.deepEqual(
-      check({
-        dir,
-        pkg: { name: "@stackra/sample", dependencies: {} },
-        turbo: { extends: ["//"], tags: ["tier:lib"] },
-        tsconfig: { extends: "@stackra/typescript-config/library" },
-      }),
-      [],
-      dir,
-    );
+    const root = tmp();
+    const { rel } = scaffold({ kind: "package", name: "sample", root, category, format: false });
+    assert.equal(rel, `packages/${category}/sample`);
+    assert.ok(existsSync(join(root, rel, "package.json")), rel);
+    assert.equal(categoryOf(rel), category);
   }
 });
 
@@ -115,6 +110,7 @@ test("kindOfFile maps names to kinds, hooks and the root module", () => {
   assert.equal(kindOfFile("create-user.action.ts").folder, "actions");
   assert.equal(kindOfFile("user.model.ts").test, "int");
   assert.equal(kindOfFile("cart.hook.ts").folder, "hooks");
+  assert.equal(kindOfFile("currency.enum.ts").folder, "enums");
   assert.equal(kindOfFile("use-cart.ts"), REACT_HOOK);
   assert.equal(kindOfFile("billing.module.ts"), ROOT_MODULE);
   assert.equal(kindOfFile("create-user.test.ts"), null);
@@ -132,7 +128,8 @@ test("testFileFor builds the tier infix and rejects unknown tiers", () => {
   assert.equal(testFileFor("create-user.action", "unit"), "create-user.action.test.ts");
   assert.equal(testFileFor("billing.module", "int"), "billing.module.int.test.ts");
   assert.equal(testFileFor("app-manifest", "contract"), "app-manifest.contract.test.ts");
-  assert.throws(() => testFileFor("x", "load"), /unknown test tier/);
+  assert.equal(testFileFor("ingest", "load"), "ingest.load.test.ts");
+  assert.throws(() => testFileFor("x", "smoke"), /unknown test tier/);
 });
 
 test("banned folders and kind folders never overlap", () => {

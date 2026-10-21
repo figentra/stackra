@@ -45,39 +45,40 @@ Core `.` is always present. Other entries are added only with real code (ADR 012
 
 Code of a module sits in these folders under `src/`. A file's suffix names its kind; the test column is the tier its file needs.
 
-| Folder        | File suffix       | Required test | Holds                                                                                             | Source   |
-| ------------- | ----------------- | ------------- | ------------------------------------------------------------------------------------------------- | -------- |
-| `actions`     | `*.action.ts`     | `unit`        | one action per file; its test covers the happy path and one refusal                               | ADR 0098 |
-| `queries`     | `*.query.ts`      | `unit`        | read-only operations                                                                              | ADR 0126 |
-| `models`      | `*.model.ts`      | `int`         | persistence models; their tests need the real database                                            | ADR 0014 |
-| `migrations`  | `*.migration.ts`  | none          | schema changes, applied in order                                                                  | ADR 0014 |
-| `seeds`       | `*.seed.ts`       | none          | seed data for local and test databases                                                            | ADR 0014 |
-| `factories`   | `*.factory.ts`    | none          | test-data factories                                                                               | ADR 0022 |
-| `policies`    | `*.policy.ts`     | `unit`        | authorisation rules, one case per verb                                                            | ADR 0130 |
-| `permissions` | `*.permission.ts` | `contract`    | declared permission names, covered by the member manifest test                                    | ADR 0130 |
-| `settings`    | `*.setting.ts`    | `contract`    | declared settings, covered by the member manifest test                                            | ADR 0130 |
-| `events`      | `*.event.ts`      | `contract`    | versioned event declarations, covered by the member manifest test                                 | ADR 0141 |
-| `listeners`   | `*.listener.ts`   | `unit`        | @OnEvent handlers, one toEmit case each                                                           | ADR 0130 |
-| `workflows`   | `*.workflow.ts`   | `int`         | durable, compensating workflows                                                                   | ADR 0130 |
-| `services`    | `*.service.ts`    | `unit`        | application services that actions and listeners depend on                                         | ADR 0130 |
-| `hooks`       | `*.hook.ts`       | `unit`        | extension hooks only; React hooks are `use-*.ts` files, not a folder                              | ADR 0128 |
-| `links`       | `*.link.ts`       | none          | named links between modules (purpose not yet specified)                                           | ADR 0130 |
-| `drivers`     | `*.driver.ts`     | `unit`        | port drivers; the memory driver is unit, a real one also needs int                                | ADR 0142 |
-| `widgets`     | `*.widget.ts`     | `unit`        | UI widgets; the test sits beside the component                                                    | ADR 0128 |
-| `pages`       | `*.page.ts`       | `unit`        | route pages                                                                                       | ADR 0128 |
-| `resources`   | `*.resource.ts`   | `unit`        | admin-UI @Resource declarations; the word resource is reserved for them                           | ADR 0234 |
-| `ai`          | none              | none          | AI code: prompts, tools and agents                                                                | ADR 0155 |
-| `raw`         | none              | `unit`        | raw @Controller endpoints only: webhooks, streaming and the /api/auth paths; actions never use it | ADR 0130 |
-| `decorators`  | none              | `unit`        | decorator packages with their Explorer (backend-decorator-package skill)                          | ADR 0130 |
-| `contracts`   | none              | `contract`    | vocabulary under src/contracts/, used by the package entry of that name                           | ADR 0117 |
-| `config`      | `*.config.ts`     | `contract`    | typed configuration inside src/config/, not beside src                                            | ADR 0025 |
-| `interfaces`  | `*.interface.ts`  | `contract`    | type-only shapes                                                                                  | ADR 0128 |
-| `types`       | `*.type.ts`       | `contract`    | type aliases and unions                                                                           | ADR 0128 |
-| `tokens`      | `*.token.ts`      | `contract`    | DI tokens made with defineToken                                                                   | ADR 0231 |
-| `constants`   | `*.constant.ts`   | `contract`    | module-level constants, SCREAMING_SNAKE                                                           | ADR 0231 |
-| `errors`      | `*.error.ts`      | `contract`    | StackraError subclasses                                                                           | ADR 0232 |
-| `schemas`     | `*.schema.ts`     | `contract`    | Zod schemas                                                                                       | ADR 0095 |
-| `components`  | none              | `unit`        | components as folders: `components/<name>/<name>.tsx` with its `__tests__` beside it              | ADR 0128 |
+| Folder        | File suffix       | Required test | Holds                                                                                             | Source               |
+| ------------- | ----------------- | ------------- | ------------------------------------------------------------------------------------------------- | -------------------- |
+| `actions`     | `*.action.ts`     | `unit`        | one action per file; its test covers the happy path and one refusal                               | ADR 0098             |
+| `queries`     | `*.query.ts`      | `unit`        | read-only operations                                                                              | ADR 0126             |
+| `models`      | `*.model.ts`      | `int`         | persistence models; their tests need the real database                                            | ADR 0014             |
+| `migrations`  | `*.migration.ts`  | none          | schema changes, applied in order                                                                  | ADR 0014             |
+| `seeds`       | `*.seed.ts`       | none          | seed data for local and test databases                                                            | ADR 0014             |
+| `factories`   | `*.factory.ts`    | none          | test-data factories                                                                               | ADR 0022             |
+| `policies`    | `*.policy.ts`     | `unit`        | authorisation rules, one case per verb                                                            | ADR 0130             |
+| `permissions` | `*.permission.ts` | `contract`    | declared permission names, covered by the member manifest test                                    | ADR 0130             |
+| `settings`    | `*.setting.ts`    | `contract`    | declared settings, covered by the member manifest test                                            | ADR 0130             |
+| `events`      | `*.event.ts`      | `contract`    | versioned event declarations, covered by the member manifest test                                 | ADR 0141             |
+| `listeners`   | `*.listener.ts`   | `unit`        | @OnEvent handlers, one toEmit case each                                                           | ADR 0130             |
+| `workflows`   | `*.workflow.ts`   | `int`         | durable, compensating workflows                                                                   | ADR 0130             |
+| `services`    | `*.service.ts`    | `unit`        | application services that actions and listeners depend on                                         | ADR 0130             |
+| `hooks`       | `*.hook.ts`       | `unit`        | extension hooks only; React hooks are `use-*.ts` files, not a folder                              | ADR 0128             |
+| `links`       | `*.link.ts`       | none          | named links between modules (purpose not yet specified)                                           | ADR 0130             |
+| `drivers`     | `*.driver.ts`     | `unit`        | port drivers; the memory driver is unit, a real one also needs int                                | ADR 0142             |
+| `widgets`     | `*.widget.ts`     | `unit`        | UI widgets; the test sits beside the component                                                    | ADR 0128             |
+| `pages`       | `*.page.ts`       | `unit`        | route pages                                                                                       | ADR 0128             |
+| `resources`   | `*.resource.ts`   | `unit`        | admin-UI @Resource declarations; the word resource is reserved for them                           | ADR 0234             |
+| `ai`          | none              | none          | AI code: prompts, tools and agents                                                                | ADR 0155             |
+| `raw`         | none              | `unit`        | raw @Controller endpoints only: webhooks, streaming and the /api/auth paths; actions never use it | ADR 0130             |
+| `decorators`  | none              | `unit`        | decorator packages with their Explorer (backend-decorator-package skill)                          | ADR 0130             |
+| `contracts`   | none              | `contract`    | vocabulary under src/contracts/, used by the package entry of that name                           | ADR 0117             |
+| `config`      | `*.config.ts`     | `contract`    | typed configuration inside src/config/, not beside src                                            | ADR 0025             |
+| `interfaces`  | `*.interface.ts`  | `contract`    | type-only shapes                                                                                  | ADR 0128             |
+| `types`       | `*.type.ts`       | `contract`    | type aliases and unions                                                                           | ADR 0128             |
+| `tokens`      | `*.token.ts`      | `contract`    | DI tokens made with defineToken                                                                   | ADR 0231             |
+| `constants`   | `*.constant.ts`   | `contract`    | module-level constants, SCREAMING_SNAKE                                                           | ADR 0231             |
+| `enums`       | `*.enum.ts`       | `contract`    | const-object enums with a same-named union type; the enum keyword is banned                       | ADR 0128 d1, 0264 d7 |
+| `errors`      | `*.error.ts`      | `contract`    | StackraError subclasses                                                                           | ADR 0232             |
+| `schemas`     | `*.schema.ts`     | `contract`    | Zod schemas                                                                                       | ADR 0095             |
+| `components`  | none              | `unit`        | components as folders: `components/<name>/<name>.tsx` with its `__tests__` beside it              | ADR 0128             |
 
 Root module: `src/<name>.module.ts`, test `<name>.module.int.test.ts`, ADR 0090.
 
@@ -103,6 +104,7 @@ Static files: `assets/<kind>/` beside the root module (`public`, `lang`, `templa
 | `unit`     | `.test`          | fast, no external services                       | ADR 0182 |
 | `int`      | `.int.test`      | needs a real database or container               | ADR 0182 |
 | `contract` | `.contract.test` | checks a declared contract, such as the manifest | ADR 0182 |
+| `load`     | `.load.test`     | k6 load tests, run weekly against staging        | ADR 0182 |
 | `e2e`      | `.e2e.test`      | runs a whole app                                 | ADR 0022 |
 
 Every test file sits directly in a `__tests__/` folder beside its subject (ADR 0022). `.spec.*` is not used.
