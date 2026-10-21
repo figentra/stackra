@@ -27,7 +27,7 @@
 import { spawnSync } from "node:child_process";
 import { resolve, sep } from "node:path";
 import { readStdin, deny, ask, failOpen } from "./_io.mjs";
-import { reachesInbox } from "./_inbox.mjs";
+import { commandReachesInbox } from "./_inbox.mjs";
 
 const EVENT = "PreToolUse";
 
@@ -143,20 +143,9 @@ const rules = [
     // may name it: not cat/head/grep/cp/mv/ls/find, not a `cd` into it. The importer takes file NAMES
     // (`pnpm secrets:import --list` lists them) and never prints a value, so it is safe for every caller.
     // Commit-message text is ignored; heredoc bodies are already stripped.
-    rx: (c) => {
-      const scanned = dropMessages(c);
-      if (/Secrets-inbox|secrets-confirm\.key/i.test(scanned)) return true;
-      // Globs (`~/Secrets-inbo?/*`) and home-wide recursive reads (`grep -r x ~`). Accident guard only.
-      return segments(scanned).some((seg) => {
-        const recursive =
-          /\b(?:rg|ag|find|tar|zip|rsync|du)\b/.test(seg) ||
-          /\bgrep\b[^|;&]*\s(?:-\w*[rR]\w*|--recursive|--directories=recurse|-d\s*recurse)\b/.test(
-            seg,
-          ) ||
-          /\bcp\b[^|;&]*\s(?:-\w*[rRa]\w*|--recursive|--archive)\b/.test(seg);
-        return seg.split(/[\s'"`=<>()+,]+/).some((tok) => reachesInbox(tok, { recursive }));
-      });
-    },
+    // Only path-like tokens count (grep/sed/perl/awk patterns, --title/--body/-m values and URLs are not paths);
+    // globs only when rooted at home (or relative while the shell sits in home). Accident guard only.
+    rx: (c, cwd) => commandReachesInbox(c, { cwd }),
     why: "Secrets guard: ~/Secrets-inbox/ (and the import confirm key) are never read, listed, copied or moved by a command. Use `pnpm secrets:import --list` for names and `pnpm secrets:import [--dry-run] [NAME]` to import; it never prints a value.",
   },
   {

@@ -1,6 +1,7 @@
 // node --test .opencode/plugins/guard/__tests__/decide.test.ts   (Node >= 23.6 strips the types; no network)
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { homedir } from "node:os";
 import { decideEdit, decidePath, decideShell } from "../decide.ts";
 
 const kind = (c: string) => decideShell(c).kind;
@@ -38,6 +39,33 @@ test("the secrets inbox is never read; the importer is allowed", () => {
   assert.equal(decidePath("/Users/me/Secrets-inbox/X").kind, "deny");
   assert.equal(kind("pnpm secrets:import --list"), "allow");
   assert.equal(kind("pnpm secrets:import --dry-run STACKRA_X"), "allow");
+});
+
+// STA-194: the same matcher as guard-bash (shared _inbox.mjs), so the same precision both ways (STA-207).
+test("inbox matcher parity with guard-bash: recursive reads from home, home-rooted globs", () => {
+  for (const c of [
+    "grep -r BEGIN ~",
+    "grep -rn BEGIN $HOME",
+    "find ~ -name '*.pem'",
+    "cat ~/*/X",
+    "cd ~ && cat S*inbox/X",
+    'bash -c "cat ~/Secrets-inbox/X"',
+  ])
+    assert.equal(kind(c), "deny", c);
+  assert.equal(decideShell("cat S*inbox/X", homedir()).kind, "deny");
+  assert.equal(decideShell("cat S*inbox/X", "/tmp").kind, "allow");
+  assert.equal(decidePath("~/Secrets-inbo?/X").kind, "deny");
+  for (const c of [
+    "grep -o '<title>[^<]*</title>' page.html",
+    "grep '^[+-]' file",
+    "perl -ne 'print if /^[+-]/' file",
+    'pnpm linear create --title "Secrets-inbox guard false positives"',
+    "for w in $(git worktree list --porcelain | awk '/^worktree/ {print $2}'); do git -C $w status; done",
+    'cd ~/.claude/skills && for d in encore-*; do mv "$d" ~/.claude/skills-archive/; done',
+    "grep -n foo ~",
+    "ls ~",
+  ])
+    assert.equal(kind(c), "allow", c);
 });
 
 test("committed Infisical config stays readable", () => {

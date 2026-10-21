@@ -516,8 +516,10 @@ file holding just that value; there is no `--value` flag.
 
 - `guard-bash.mjs`: Blocks `infisical export`, `infisical secrets get` without `--silent`, a bare `infisical secrets`
   (lists values) and `infisical run -- env|printenv`
-- `guard-bash.mjs`: Blocks any command that names `Secrets-inbox` or the import confirm key (`pnpm secrets:import`
-  never needs to)
+- `guard-bash.mjs`: Blocks any command with a path token that names `Secrets-inbox` or the import confirm key, a
+  glob rooted at home that could match them, or a recursive read of home (`pnpm secrets:import` never needs to);
+  grep/sed/perl/awk patterns, `--title`/`--body`/`-m` values and URLs are not paths (`_inbox.mjs`, shared with the
+  OpenCode guard)
 - `guard-paths.mjs`: Blocks writes to `.env`, `.env.*`, `.dev.vars`, `.ci-env` and `.sentryclirc`, and every
   Read/Grep/Glob/Write/Edit under `~/Secrets-inbox/`
 - `.gitleaks.toml`: Scans for accidental secret commits
