@@ -1,0 +1,65 @@
+---
+title: "Knowledge-work plugins"
+description: "The four Anthropic plugins every session has, what each is for, and where Stackra's own agents and skills take precedence."
+icon: "puzzle"
+---
+
+The repository enables four plugins from the `knowledge-work-plugins` marketplace (GitHub `anthropics/knowledge-work-plugins`) in `.claude/settings.json`, through `extraKnownMarketplaces` and `enabledPlugins`. The reference template carries the same block; generated projects will once `create-stackra-app` exists (STA-145).
+
+| Plugin             | Enabled as                                  |
+| ------------------ | ------------------------------------------- |
+| engineering        | `engineering@knowledge-work-plugins`        |
+| product-management | `product-management@knowledge-work-plugins` |
+| marketing          | `marketing@knowledge-work-plugins`          |
+| finance            | `finance@knowledge-work-plugins`            |
+
+## Routing rule
+
+Stackra's own agents and skills win for anything that touches this repository's code or decisions. A plugin output that becomes a decision is recorded as an [ADR](/adr/0121-sdlc-tooling-roles-and-linear) through `docs-adr-steward` and tracked in Linear. A plugin never decides.
+
+| Work                  | Stackra owner                          | Plugin skill it must not replace                               |
+| --------------------- | -------------------------------------- | -------------------------------------------------------------- |
+| Code review           | `code-reviewer` and the AI-REVIEW gate | `engineering:code-review`                                      |
+| Specs, plans, tasks   | spec-kit and `spec-writer`             | `product-management:write-spec`                                |
+| Architecture decision | ADRs via `docs-adr-steward`            | `engineering:architecture`                                     |
+| Incidents             | `incident-commander`                   | `engineering:incident-response`                                |
+| Tests, deploy         | `test-engineer`, `release-operations`  | `engineering:testing-strategy`, `engineering:deploy-checklist` |
+
+## What the plugins are for
+
+### engineering
+
+Use for `standup`, `system-design` discussion and `tech-debt` surveys. Skills: `architecture`, `code-review`, `debug`, `deploy-checklist`, `documentation`, `incident-response`, `standup`, `system-design`, `tech-debt`, `testing-strategy`. Only `standup`, `system-design`, `tech-debt`, `debug` and `documentation` are first choice; the rest are overridden by the table above.
+
+### product-management
+
+Product briefs, roadmaps, research synthesis and stakeholder updates. Skills: `brainstorm`, `competitive-brief`, `metrics-review`, `product-brainstorming`, `roadmap-update`, `sprint-planning`, `stakeholder-update`, `synthesize-research`, `write-spec`. Engineering specs still come from spec-kit; `write-spec` is for product-level briefs that feed one.
+
+### marketing
+
+Campaigns, content, SEO and brand voice. Skills: `brand-review`, `campaign-plan`, `competitive-brief`, `content-creation`, `draft-content`, `email-sequence`, `performance-report`, `seo-audit`. Arabic copy still needs the Arabic review (`i18n-steward` plus a human) before it ships.
+
+### finance
+
+Finance workflows. Skills: `audit-support`, `close-management`, `financial-statements`, `journal-entry`, `journal-entry-prep`, `reconciliation`, `sox-testing`, `variance-analysis`.
+
+## Supply-chain risk
+
+The marketplace entry follows the upstream default branch of `anthropics/knowledge-work-plugins`, the same as the `encore-skills` and `cloudflare` marketplaces. A change upstream reaches every session. The risk is accepted. Claude Code's marketplace reference documents `ref` and `sha` pinning for plugin sources inside a `marketplace.json`; this is not confirmed for a `github` entry under `extraKnownMarketplaces`, so the entry is unpinned. Pin it when the settings reference documents the key.
+
+## Command name overlap
+
+Plugin slash commands such as `/review` and `/incident` share names with Stackra's own. The routing table above governs which one to use: for code review and incidents, use the Stackra agents.
+
+## Bundled MCP servers
+
+Each plugin bundles its own MCP servers. They need accounts Stackra does not have, so they stay unauthenticated until the owner connects them; nothing in the repository depends on them. Servers seen when the plugins loaded on 2026-10-21:
+
+| Plugin             | Servers                                                                        |
+| ------------------ | ------------------------------------------------------------------------------ |
+| engineering        | Atlassian, Datadog, Notion, Slack, Asana, GitHub, PagerDuty                    |
+| product-management | Amplitude (US and EU), ClickUp, Fireflies, Intercom, Monday, Pendo, SimilarWeb |
+| marketing          | Ahrefs, Canva, Klaviyo, SimilarWeb, Supermetrics, HubSpot                      |
+| finance            | BigQuery (others may be bundled upstream)                                      |
+
+The list follows upstream and can change with a plugin update. Never paste a token to authorize one; connect through `/mcp` or the claude.ai connector settings.
