@@ -1110,6 +1110,12 @@ const REJECTED_IN_SKILLS = {
   fastify: /\bfastify\b/i,
   sanity: /@sanity\/|sanity studio|sanity\.config/i,
   tauri: /\btauri\b/i,
+  "better-auth": /better-auth|\bbetter auth\b/i, // superseded by ZITADEL (ADR 0206)
+  xstate: /\bxstate\b/i, // @stackra/state-machine instead (ADR 0161)
+  storybook: /\bstorybook\b|\.stories\./i, // no Storybook (ADR 0128)
+  graphql: /\bgraphql\b/i, // MCP first plus REST, no GraphQL (ADR 0217)
+  "spec-files": /\.spec\.[cm]?[jt]sx?\b/, // tests are __tests__/<name>.test.ts with a tier infix (ADR 0022, 0182)
+  "root-tests-folder": /(?:^|[\s"'`(])\.?\/?tests\/(?!.*__tests__)/m, // no root tests/ (ADR 0022)
 };
 
 /**
@@ -1133,8 +1139,13 @@ const SKILL_TECH_ALLOWED = {
   "heroui-react": {
     nextjs: "framework setup examples; the web stack is Vite and React Router 7 (ADR 0165)",
   },
+  "eas-app-stores": { graphql: "a warning against private EAS GraphQL queries" },
   "playwright-best-practices": {
     nextjs: "generic web-server examples",
+    storybook: "component-testing notes; no Storybook here (ADR 0128)",
+    graphql: "API-mocking examples; no GraphQL here (ADR 0217)",
+    "spec-files": "upstream naming; tests are __tests__/<name>.e2e.ts here (ADR 0022, 0182)",
+    "root-tests-folder": "upstream layout; no root tests/ here (ADR 0022)",
     prisma: "generic seeding example",
     zustand: "generic state example",
   },
@@ -1147,8 +1158,14 @@ const SKILL_TECH_ALLOWED = {
     eslint: "example task names",
     jest: "example task names",
     prettier: "example task names",
+    graphql: "example package names",
+    "root-tests-folder": "example inputs globs",
   },
-  vitest: { jest: "Jest-compatible API notes" },
+  vitest: {
+    jest: "Jest-compatible API notes",
+    "spec-files": "default include globs; tests are __tests__/<name>.test.ts here (ADR 0022)",
+    "root-tests-folder": "config examples; no root tests/ here (ADR 0022)",
+  },
 };
 
 /** One finding per (skill, technology) not covered by SKILL_TECH_ALLOWED; stale allowances are returned as notes. */

@@ -36,13 +36,13 @@ export default defineConfig({
     timeoutMs: z.number().int().default(5000),
     apiKey: z.custom<SecretRef>(),
   }),
-  defaults: { provider: "manual", apiKey: secret("BillingProviderApiKey") },
+  defaults: { provider: "manual", apiKey: secret("STRIPE_SECRET_KEY") },
 });
 ```
 
 Layers merge in this order: package defaults, the host file, the env file, `STACKRA_<PKG>__<PATH>` env vars, then
 `runway.yaml` overrides. Secrets and arrays replace, objects deep-merge; the result is validated and frozen. `secret()`
-holds a **name**; gen turns it into an Encore `secret()` declaration, and a human or the secret-manager flow sets the
+holds a **name**, SCREAMING_SNAKE `<PROVIDER>_<PURPOSE>` (ADR 0231 decision 4); gen turns it into an Encore `secret()` declaration, and a human or the secret-manager flow sets the
 value (ADR 0257). Runtime, per-tenant values are **settings**, not config (ADR 0108, 0213).
 
 ```ts

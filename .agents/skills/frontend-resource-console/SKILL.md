@@ -22,6 +22,8 @@ Shapes follow the ADRs; `@stackra/panel` docs win once it ships.
 
 ## Worked example
 
+Resource declarations live in the module's `resources/` kind folder (ADR 0126 decision 3).
+
 ```ts
 // src/modules/invoices/resources/invoice.resource.ts
 import { Resource, Table, Column, Filter, Form, Field, Infolist, Entry } from "@stackra/panel";

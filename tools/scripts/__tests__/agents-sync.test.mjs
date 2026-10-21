@@ -470,6 +470,7 @@ test("a skill that teaches rejected technology fails --lint unless an allowance 
       writeFileSync(join(root, ".agents/skills", name, "references/more.md"), text);
     };
     skill("orm-tips", "Define tables with drizzle-orm and run `drizzle-kit push`.\n");
+    skill("flows", "Model the checkout with XState and write checkout.spec.ts.\n");
     skill("vitest", "The API is Jest-compatible: `vi.fn()` mirrors jest.fn().\n");
     const fenced = join(root, ".agents/reference/encore/encore-api");
     mkdirSync(fenced, { recursive: true });
@@ -477,6 +478,8 @@ test("a skill that teaches rejected technology fails --lint unless an allowance 
     const r = run(root, "--lint");
     assert.equal(r.code, 1);
     assert.match(r.out, /\.agents\/skills\/orm-tips: teaches 'drizzle', which is rejected/);
+    assert.match(r.out, /\.agents\/skills\/flows: teaches 'xstate'/);
+    assert.match(r.out, /\.agents\/skills\/flows: teaches 'spec-files'/);
     assert.doesNotMatch(r.out, /skills\/vitest: teaches/);
     assert.doesNotMatch(r.out, /encore-api/);
   });
