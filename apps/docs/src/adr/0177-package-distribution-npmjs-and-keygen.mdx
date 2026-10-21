@@ -42,6 +42,24 @@ planned — the release workflow publishes with provenance, and `publint` and `a
 - One private registry for everything: superseded; free packages go to npmjs.
 - Verdaccio on Railway: dropped; Railway is gone (ops L31).
 
+## Amendment 2026-10-21: trusted publishing and provenance enforced (STA-155)
+
+**Context.** Decision 1 said "from CI with the bot token through OIDC". The release workflow still published to
+`npm.figentra.com` with an Infisical token.
+
+**Decision.** This amendment replaces decision 1's mechanism; the rest stands.
+
+1. **Registry.** `@stackra/*` publishes to `https://registry.npmjs.org/`, public. `npm.figentra.com` is no longer the
+   `@stackra` registry; the Worker keeps serving `@figentra/cli` and vellum until decision 3 is done.
+2. **No long-lived npm token.** The release job uses npm trusted publishing: GitHub OIDC (`id-token: write`). Changesets runs
+   pnpm 12's native publish, which does the OIDC exchange and provenance itself; the npm CLI is not the publisher. No `NPM_FIGENTRA_TOKEN`, no Infisical step for npm.
+3. **Provenance.** The workflow sets `NPM_CONFIG_PROVENANCE=true`; every `tier:lib` package carries a `repository` field (npm provenance needs it to match this
+   repository) and
+   `publishConfig: { access: "public", provenance: true, registry: "https://registry.npmjs.org/" }`; changesets `access` is `public`.
+
+**Enforcement.** `validate-repository.mjs` requires that `repository` and `publishConfig` on every `tier:lib` package; the package scaffold
+template carries it. Apps and services stay private and UNLICENSED. Owner steps: `/runbooks/release`.
+
 ## Supersedes and sources
 
 Supersedes: [0025](/adr/0025-packages-publish-to-private-registry). Sources: owner answers PK1–PK7, DX7 (`stackra-decisions-2026-10-19.md` L455–473, L396, 2026-10-20); ops L31.

@@ -3,13 +3,12 @@
 Pending [Changesets](https://github.com/changesets/changesets): one Markdown file per release note. Changesets
 versions and publishes **packages** only ([ADR 0025](../apps/docs/src/adr/0025-packages-publish-to-private-registry.mdx)).
 Apps and services are not versioned; they deploy by commit SHA (`privatePackages: { version: false, tag: false }`).
-A package publishes to the private registry npm.figentra.com once it flips `"private": false`; `access: restricted`
-matches that registry.
+A package publishes to public npmjs, with provenance, once it flips `"private": false`; `access: public` matches.
 
-| File          | Holds                                                                                     |
-| ------------- | ----------------------------------------------------------------------------------------- |
-| `config.json` | the Changesets config: `@changesets/changelog-git`, base branch `main`, restricted access |
-| `<name>.md`   | one pending changeset: the packages it bumps (`patch`, `minor`, `major`) and the note     |
+| File          | Holds                                                                                 |
+| ------------- | ------------------------------------------------------------------------------------- |
+| `config.json` | the Changesets config: `@changesets/changelog-git`, base branch `main`, public access |
+| `<name>.md`   | one pending changeset: the packages it bumps (`patch`, `minor`, `major`) and the note |
 
 ## Rules
 

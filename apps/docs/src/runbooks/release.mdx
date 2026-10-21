@@ -8,10 +8,11 @@ icon: "package-check"
   Status: partly live, partly target. `@changesets/cli` is configured (`.changeset/config.json`) and
   `pnpm changeset`, `pnpm changeset:status` and `pnpm changeset:version` exist.
   `.github/workflows/release.yml` opens the version pull request and, on its merge, runs `changeset
-  publish` to `npm.figentra.com`. Not built: the Infisical release identity, a packed-artifact smoke
-  test and signed artifacts. Today every package is still `"private": true`, so nothing publishes
-  yet. Policy: [0025](/adr/0025-packages-publish-to-private-registry) (supersedes 0013 decision 3),
-  [0024](/adr/0024-mit-license-with-exclusions) (MIT),
+  publish` to npmjs with provenance (pnpm trusted publishing, no token). Not built: a
+  packed-artifact smoke test and signed artifacts. Today every package is still `"private": true`,
+  so nothing publishes yet. Policy: [0025](/adr/0025-packages-publish-to-private-registry)
+  (supersedes 0013 decision 3), [0177](/adr/0177-package-distribution-npmjs-and-keygen) (npmjs,
+  provenance), [0024](/adr/0024-mit-license-with-exclusions) (MIT),
   [0119](/adr/0119-merge-policy-and-release-authority) (the owner merges the version pull request).
 </Note>
 
@@ -23,7 +24,7 @@ icon: "package-check"
 - **Merging the version pull request is the release decision.** Claude prepares it; the owner merges it ([0119](/adr/0119-merge-policy-and-release-authority) D7).
 - **Published or tagged versions are permanent.** A version is never republished or silently replaced; roll forward with a new patch.
 - **Only packages are versioned.** Apps and services deploy by commit SHA and get no version or tag (`privatePackages: { version: false, tag: false }`, [0025](/adr/0025-packages-publish-to-private-registry) decision 4).
-- **A package publishes when it flips to `"private": false`.** It then builds to `dist/*.mjs` + `.d.mts` and publishes to `npm.figentra.com` (`@stackra` scope).
+- **A package publishes when it flips to `"private": false`.** It then builds to `dist/*.mjs` + `.d.mts` and publishes to public npmjs (`@stackra` scope) with provenance.
 
 ## A normal release
 
@@ -45,7 +46,7 @@ icon: "package-check"
   </Step>
   <Step title="Merge it">
     The merge to `main` is the release. The job builds, publishes every non-private package to
-    `npm.figentra.com`, tags it and creates the release notes.
+    npmjs, tags it and creates the release notes.
   </Step>
   <Step title="Verify">
     `git ls-remote --tags origin` shows the new tags on the merge commit, and each member's
@@ -60,21 +61,47 @@ icon: "package-check"
 - The host setting that lets the workflow token create pull requests is on.
 - The release job runs in a protected environment restricted to `main`, so a branch that edits the workflow cannot obtain a credential.
 
-## Publishing to npm.figentra.com
+## Publishing to npmjs
 
-[0025](/adr/0025-packages-publish-to-private-registry) records the decision. Before the first package flips to `"private": false`, a human:
+[0177](/adr/0177-package-distribution-npmjs-and-keygen) (amendment 2026-10-21) records the decision. The release job holds no npm token: changesets runs pnpm 12's native publish, which exchanges the job's GitHub OIDC token for a short-lived publish credential and signs a provenance statement. Each package needs a `repository` field matching `figentra/stackra` (the validator checks it).
 
-- creates an Infisical machine identity for the release job (OIDC, trusting only this repository's `release` environment on `main`) with read access to `/ci` in `prod`;
-- stores the registry publish token in `/ci` as `NPM_FIGENTRA_TOKEN`;
-- sets the repository variables `INFISICAL_RELEASE_IDENTITY_ID` and `INFISICAL_PROJECT_ID` (names and ids, never a token). Until they are set the release job skips the token step.
+**One-time owner steps, per package** (the `@stackra` org is reserved, STA-154):
 
-The procedure the job follows, some of it still target:
+<Steps>
+  <Step title="Flip the package">
+    In the package, set `"private": false` (its `publishConfig` is already there; `pnpm validate` requires it).
+  </Step>
+  <Step title="Register the trusted publisher">
+    Needs 2FA enabled on the owner's npm account for `npm trust` (and the web page). npmjs.com → the package → Settings →
+    Trusted publishing → GitHub Actions: organization or user `figentra`, repository `stackra`, workflow filename
+    `release.yml`, environment `release`. Or with the CLI (npm 11.5 or later; one configuration per package):
+    `npm trust github @stackra/<name> --repo figentra/stackra --file release.yml --env release --allow-publish`.
+  </Step>
+  <Step title="Optionally close the token path">
+    Same page, Publishing access → require two-factor authentication and disallow tokens.
+  </Step>
+</Steps>
 
-- **The publish token comes only from Infisical `/ci` over OIDC** ([0009](/adr/0009-secrets-two-mechanisms)); no token sits in `.npmrc`, a repository secret or a file.
-- Build the tarball and an SBOM with no privileges, then sign both keylessly in the one job that holds `id-token: write`.
-- Publish is idempotent: the same bytes already on the registry are not published again, so re-running failed jobs is safe; different bytes fail the job.
-- Read access for consumers is a read-only token held in Infisical `/ci` and fetched through OIDC ([Secrets](/runbooks/secrets)).
+**First publish of a brand-new package.** A trusted publisher can only be registered for a package that already exists on
+the registry (`npm trust` says so too), so the job cannot create one. Publish the first version once by hand as an owner,
+from the package directory after `pnpm build`:
+`pnpm publish --no-git-checks --provenance=false --access public`. Use pnpm, not plain `npm publish`: npm would publish literal
+`workspace:` and `catalog:` versions, and it fails on provenance outside CI. Then register the trusted publisher above. The
+first version is not provenance-attested; ship a `0.0.x` placeholder.
+
+**Rehearse before any real release.** After registering `@stackra/brand`: run the `Release` workflow with `dry_run` ticked
+(`pnpm -r publish --dry-run`, same job and environment). Then publish a throwaway `0.0.x` of `@stackra/brand` from CI through a
+merged version pull request, and check `npm view @stackra/brand dist.attestations` shows a provenance entry. Only then release
+anything real.
+
+The procedure the job follows:
+
+- **No token anywhere.** No `.npmrc` auth line, repository secret or Infisical entry for npm.
+- Build and publish with `id-token: write` only on the release job, in the protected `release` environment restricted to `main`.
+- Publish is idempotent: a version already on the registry is skipped, so re-running failed jobs is safe.
+- Consumers need no account or token to read `@stackra/*`.
 - A prerelease publishes under a `next` dist-tag and moves no floating tag.
+- `npm.figentra.com` still serves `@figentra/cli` and vellum; it is not the `@stackra` registry any more.
 
 ## When something fails
 

@@ -13,7 +13,7 @@ This plan turns the owner's decisions (ADRs [0075](/adr/0075-stackra-ships-packa
   it.
 </Warning>
 
-Stackra ships packages, and nothing deployable ([0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services)). "Delivered" here means the package is merged, green, documented and publishable to `npm.figentra.com`. The reference services under `services/` are test beds that prove the packages end to end.
+Stackra ships packages, and nothing deployable ([0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services)). "Delivered" here means the package is merged, green, documented and publishable to npmjs with provenance. The reference services under `services/` are test beds that prove the packages end to end.
 
 ## How to read this page
 
@@ -290,7 +290,7 @@ Runs in parallel from now, in DP21 order (assumed: DP21 a, pending owner). Wave 
 | Step | Deliverable                                                                                                               | Issues               | Blocked by      |
 | ---- | ------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------- |
 | 1    | npflared capability check: anonymous read for `@stackra`, per-customer revocable tokens for `@stackra-pro`, download logs | STA-29               | none            |
-| 2    | Tag-driven OIDC publish to `npm.figentra.com`; Infisical CI OIDC                                                          | STA-16, STA-15       | step 1, Phase 0 |
+| 2    | Tag-driven OIDC publish to npmjs; Infisical CI OIDC                                                                       | STA-16, STA-15       | step 1, Phase 0 |
 | 3    | Cloudflare Workers provider: registry, R2 turbo cache                                                                     | STA-72               | step 2          |
 | 4    | Encore Cloud provider for the generated app                                                                               | STA-136, then STA-72 | the DP2 spike   |
 | 5    | EAS provider; then aws-ecs and the on-prem bundle                                                                         | STA-17, STA-72       | step 4          |
