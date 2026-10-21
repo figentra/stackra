@@ -340,8 +340,7 @@ test("STA-254: an apostrophe inside double quotes does not hide a nested command
     `echo "it's" "$(printenv)" "it's"`,
   ])
     assert.equal(kind(c), "deny", c);
-  for (const c of [`echo "it's fine"`, `echo 'it'"'"'s $(infisical export) quoted'`])
-    assert.equal(kind(c), "allow", c);
+  for (const c of [`echo "it's fine"`]) assert.equal(kind(c), "allow", c);
 });
 
 test("STA-254 review: quoting restarts inside a substitution, and $'…' honours \\'", () => {
@@ -439,6 +438,38 @@ test("STA-254 re-review 4: no heredoc in ${…} / $[…], bodies only at the ope
     'cat > notes.md <<"E_1"\ngit push origin main is prose\nE_1',
     "cat <<-EOF\n\tgit push origin main is prose\n\tEOF",
     'echo "$(cat <<EOF\ngit push origin main is prose\nEOF\n)"',
+  ])
+    assert.equal(kind(c), "allow", c);
+});
+
+test("STA-254 re-review 5: literal ' in a quoted ${…}, shell-read heredocs and here-strings, the safety net", () => {
+  for (const c of [
+    'echo "${x:-\'}" $(git push origin main) "${x:-\'}"',
+    "echo \"${x:-'}$(git push origin main)${x:-'}\"",
+    "git commit -m \"${x:-'}$(git push origin main)${x:-'}\"",
+    "cat <<EOF\n${x:-'}\n$(git push origin main)\n${x:-'}\nEOF",
+    "echo \"${x:-'}$(infisical export)${x:-'}\"",
+    "bash <<'EOF'\ngit push origin main\nEOF",
+    "sh <<EOF\ninfisical export\nEOF",
+    "cat <<'EOF' | sh\ngit push origin main\nEOF",
+    "source /dev/stdin <<'EOF'\ninfisical export\nEOF",
+    "bash <<< 'git push origin main'",
+    'zsh <<<"infisical export"',
+  ])
+    assert.equal(kind(c), "deny", c);
+  // The safety net's accepted false positives: a dangerous command literally inside real single quotes.
+  for (const c of [
+    "echo '$(git push origin main)'",
+    "echo '$(infisical export)'",
+    "echo 'it'\"'\"'s $(infisical export) quoted'",
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    "echo 'docs: use $(echo ok)'",
+    'echo "${x:-it\'s}"',
+    "cat <<'EOF' > run.sh\ngit status\nEOF",
+    "bash <<'EOF'\ngit status\nEOF",
+    "bash <<< 'pnpm verify'",
   ])
     assert.equal(kind(c), "allow", c);
 });

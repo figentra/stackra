@@ -8,8 +8,10 @@ import { resolve, sep } from "node:path";
 // The inbox matcher is shared with the Claude hooks (one matcher, ADR 0257): paths, globs rooted at home, recursive reads.
 import {
   commandReachesInbox,
+  rawSubstitutions,
   reachesInbox,
   scanShell,
+  scriptStrings,
   stripHeredocs,
 } from "../../../.agents/hooks/_inbox.mjs";
 
@@ -277,7 +279,12 @@ export function decideShell(raw: string, cwd?: string): Decision {
     return deny(
       "~/Secrets-inbox/ (and the import confirm key) are never read, listed, copied or moved. Use `pnpm secrets:import --list` for names and `pnpm secrets:import [--dry-run] [NAME]` to import; it never prints a value.",
     );
-  for (const text of [cmd, ...nested(cmd)])
+  // Safety net (STA-254): substitution bodies found with quotes ignored can only add denies.
+  for (const text of [
+    cmd,
+    ...nested(cmd),
+    ...rawSubstitutions(cmd).flatMap((b) => [b, ...nested(b)]),
+  ])
     for (const s of subcommands(text)) {
       const d = denySub(s);
       if (d.kind === "deny") return d;
@@ -291,7 +298,6 @@ export function decideShell(raw: string, cwd?: string): Decision {
  */
 function nested(cmd: string): string[] {
   const out = scanShell(cmd).bodies.flatMap((b) => [b, ...nested(b)]);
-  for (const m of cmd.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
-    out.push(m[2], ...nested(m[2]));
+  for (const s of scriptStrings(cmd)) out.push(s, ...nested(s));
   return out;
 }

@@ -75,7 +75,12 @@ export function reachesInbox(p, { recursive = false, home = homedir(), cwd } = {
  *   scan each body again for the ones nested in it;
  * - `spans`: `[start, end)` in `c` of every outermost closed quoted span;
  * - `stripped`: `c` verbatim except each heredoc: operator → `<<HEREDOC`, body → its substitutions as `$(…)`.
+ * A `${…}` opened inside double quotes or a heredoc body keeps `'` and `$'` literal (bash 5, zsh).
+ * A heredoc read by a shell (`sh`, `bash`, `zsh`, `dash`, `ksh`, `eval`, `source`, `.` anywhere on its line,
+ * `cat <<EOF | sh` included) is a script, so its body is never stripped.
  * Fail closed: an unclosed `"`, `$(` or backtick runs to the end; an unclosed `'` stays visible.
+ * Safety net: `rawSubstitutions` finds every `$(…)`, `<(…)`, `>(…)` and backtick body ignoring quotes; callers run
+ * their deny rules on those bodies too, so a quoting edge case here can only cost a deny, never an allow.
  * shortcut: no aliases or functions; a body rescanned out of its `((…))` context can misread a
  * `<<` shift as a heredoc (only an unterminated one, which is then read as commands); a `(a)` case pattern is
  * not split from its command. Upgrade to a real parser if one slips through.
@@ -136,6 +141,7 @@ export function scanShell(c, { heredoc = false } = {}) {
     let j = i + 1;
     let end = i;
     const subs = [];
+    if (pending.some((h) => h.script)) return null; // a shell runs the body: keep it as commands
     for (const h of pending) {
       let k = j;
       for (;;) {
@@ -196,7 +202,7 @@ export function scanShell(c, { heredoc = false } = {}) {
         continue;
       }
       const ansi = ch === "$" && c[i + 1] === "'";
-      if (ch === "'" || ansi) {
+      if ((ch === "'" || ansi) && !f.literalQuotes) {
         let j = i + (ansi ? 2 : 1);
         while (j < c.length && c[j] !== "'") j += ansi && c[j] === "\\" ? 2 : 1;
         if (j >= c.length) {
@@ -227,7 +233,10 @@ export function scanShell(c, { heredoc = false } = {}) {
         const strip = c[i + 2] === "-";
         const d = delimiter(i + (strip ? 3 : 2));
         if (d) {
-          pending.push({ ...d, strip, frame: f });
+          const from = c.lastIndexOf("\n", i - 1) + 1;
+          const to = c.indexOf("\n", i);
+          const script = SHELL_WORD.test(c.slice(from, to < 0 ? c.length : to));
+          pending.push({ ...d, strip, frame: f, script });
           edits.push([i, d.end, "<<HEREDOC"]);
           emit("<<HEREDOC");
           i = d.end - 1;
@@ -268,7 +277,11 @@ export function scanShell(c, { heredoc = false } = {}) {
     if (c.startsWith("${", i) || c.startsWith("$[", i)) {
       emit(c[i] + c[++i]);
       const brace = c[i] === "{";
-      stack.push(frame("param", { opener: c[i], closer: brace ? "}" : "]", nest: 0 }));
+      // Inside "…" or a heredoc body, `'` stays literal in the expansion (bash 5, zsh).
+      const literalQuotes = quoted(f) || Boolean(f.literalQuotes);
+      stack.push(
+        frame("param", { opener: c[i], closer: brace ? "}" : "]", nest: 0, literalQuotes }),
+      );
       continue;
     }
     if (c.startsWith("$((", i)) {
@@ -304,6 +317,49 @@ export function scanShell(c, { heredoc = false } = {}) {
  * an unquoted delimiter keeps its `$(…)` and backtick substitutions (STA-254).
  */
 export const stripHeredocs = (raw) => scanShell(raw).stripped;
+
+/** A shell (or `eval` / `source` / `.`) as a word: its heredoc or here-string is a script. */
+const SHELL_WORD = /(?:^|[\s;&|(`])(?:\S*\/)?(?:(?:ba|z|da|k)?sh|eval|source|\.)(?=[\s;&|)`]|$)/;
+
+/** Script text a shell runs from a string: `sh -c "…"`, `eval "…"` and a here-string read by a shell. */
+export function scriptStrings(c) {
+  const out = [];
+  for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
+    out.push(m[2]);
+  for (const m of c.matchAll(
+    /(?:^|[\s;&|(`])(?:\S*\/)?(?:(?:ba|z|da|k)?sh|source|\.)(?=\s)[^;&|\n]*<<<\s*(?:(["'])((?:\\.|(?!\1)[^\\])*)\1|(\S+))/g,
+  ))
+    out.push(m[2] ?? m[3]);
+  return out;
+}
+
+/**
+ * The safety net (STA-254): every `$(…)`, `<(…)`, `>(…)` and backtick body at any depth, found by balanced
+ * parentheses while ignoring every quote. Only for deny rules: it can add a deny, never an allow. Accepted false
+ * positive: a dangerous command written literally inside real single quotes (`echo '$(git push origin main)'`).
+ */
+export function rawSubstitutions(c) {
+  const out = [];
+  for (let i = 0; i < c.length; i++) {
+    if (c[i] === "\\") i++;
+    else if ("$<>".includes(c[i]) && c[i + 1] === "(") {
+      let depth = 1;
+      let j = i + 2;
+      for (; j < c.length && depth > 0; j++) {
+        if (c[j] === "\\") j++;
+        else if (c[j] === "(") depth++;
+        else if (c[j] === ")") depth--;
+      }
+      out.push(c.slice(i + 2, depth === 0 ? j - 1 : c.length));
+    } else if (c[i] === "`") {
+      let j = i + 1;
+      while (j < c.length && c[j] !== "`") j += c[j] === "\\" ? 2 : 1;
+      out.push(c.slice(i + 1, j));
+      i = j;
+    }
+  }
+  return out;
+}
 
 /** Split a command into segments of words; each word is its unquoted text. Separators outside quotes split. */
 function lex(cmd) {

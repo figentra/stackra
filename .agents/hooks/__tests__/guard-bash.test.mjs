@@ -97,7 +97,6 @@ const allowed = [
   "pnpm bot:git -- pull --rebase origin main",
   "pnpm --silent bot:gh -- pr view 80 --json body | jq -r .body",
   'BODY="$(pnpm --silent bot:gh -- pr view 80 --json body)"',
-  "git commit -m 'docs: $(gh pr view) and $GH_TOKEN are denied'",
   "echo 'gh pr view' > notes.txt",
   "git status",
   "git log --oneline -5",
@@ -579,7 +578,6 @@ for (const b of nestedBodies)
     test(`deny: ${form(b)}`, () => assert.equal(denied(form(b)), true));
 for (const c of [
   'git commit -m "docs: git config alias.x and HOME=/tmp man -P"',
-  "pnpm bot:gh -- pr create --title t --body 'uses $(git config alias.p x) text'",
   'pnpm linear comment STA-216 "note: git -c alias.p=x p"',
   'git commit -m "$(git config --get user.name)"',
 ])
@@ -651,7 +649,6 @@ for (const c of [
   `git commit -m "it's fine"`,
   `git commit -m "don't push origin main; it's prose"`,
   `pnpm bot:gh -- pr create --title "it's a title" --body "can't read ~/Secrets-inbox, it's guarded"`,
-  `git commit -m 'it'"'"'s $(git push origin main) quoted'`,
 ])
   test(`allow: ${c}`, () => assert.equal(denied(c), false));
 
@@ -752,5 +749,40 @@ for (const c of [
   'cat > notes.md <<"E_1"\ngit push origin main is prose\nE_1',
   "cat <<-EOF\n\tgit push origin main is prose\n\tEOF",
   'echo "$(cat <<EOF\ngit push origin main is prose\nEOF\n)"',
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));
+
+// STA-254 re-review 5: `'` is literal in a `${…}` inside "…" or a heredoc; a heredoc or here-string read by a
+// shell is a script.
+for (const c of [
+  'echo "${x:-\'}" $(git push origin main) "${x:-\'}"',
+  "echo \"${x:-'}$(git push origin main)${x:-'}\"",
+  "git commit -m \"${x:-'}$(git push origin main)${x:-'}\"",
+  "cat <<EOF\n${x:-'}\n$(git push origin main)\n${x:-'}\nEOF",
+  "echo \"${x:-'}$(infisical export)${x:-'}\"",
+  "bash <<'EOF'\ngit push origin main\nEOF",
+  "sh <<EOF\ninfisical export\nEOF",
+  "cat <<'EOF' | sh\ngit push origin main\nEOF",
+  "source /dev/stdin <<'EOF'\ninfisical export\nEOF",
+  "bash <<< 'git push origin main'",
+  'zsh <<<"infisical export"',
+])
+  test(`deny: ${c}`, () => assert.equal(denied(c), true));
+// The safety net: substitution bodies found with quotes ignored can only add denies. Accepted false positives: a
+// dangerous command written literally inside real single quotes (these three were allowed before STA-254).
+for (const c of [
+  "echo '$(git push origin main)'",
+  "echo '$(infisical export)'",
+  "git commit -m 'docs: $(gh pr view) and $GH_TOKEN are denied'",
+  "pnpm bot:gh -- pr create --title t --body 'uses $(git config alias.p x) text'",
+  "git commit -m 'it'\"'\"'s $(git push origin main) quoted'",
+])
+  test(`deny (safety net, accepted false positive): ${c}`, () => assert.equal(denied(c), true));
+for (const c of [
+  "git commit -m 'docs: use $(echo ok)'",
+  'echo "${x:-it\'s}"',
+  "cat <<'EOF' > run.sh\ngit status\nEOF",
+  "bash <<'EOF'\ngit status\nEOF",
+  "bash <<< 'pnpm verify'",
 ])
   test(`allow: ${c}`, () => assert.equal(denied(c), false));

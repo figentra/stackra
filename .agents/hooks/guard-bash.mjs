@@ -28,7 +28,13 @@ import { spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 import { resolve, sep } from "node:path";
 import { readStdin, deny, ask, failOpen } from "./_io.mjs";
-import { commandReachesInbox, scanShell, stripHeredocs } from "./_inbox.mjs";
+import {
+  commandReachesInbox,
+  rawSubstitutions,
+  scanShell,
+  scriptStrings,
+  stripHeredocs,
+} from "./_inbox.mjs";
 
 const EVENT = "PreToolUse";
 
@@ -135,8 +141,7 @@ const NETWORK_GIT = BARE_GIT(
 /** The text of every `$(…)` / backtick body at any depth (single quotes stay literal) and `sh -c` / `eval` string. */
 function nestedRaw(c) {
   const out = scanShell(c).bodies.flatMap((b) => [b, ...nestedRaw(b)]);
-  for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
-    out.push(m[2], ...nestedRaw(m[2]));
+  for (const s of scriptStrings(c)) out.push(s, ...nestedRaw(s));
   return out;
 }
 /** Texts a rule that needs the quoted values scans: the command with prose dropped, and every nested command in full. */
@@ -149,8 +154,7 @@ const scanTexts = (c) => [dropMessages(c), ...nestedRaw(c).map(dropMessages)];
 function runnable(c) {
   const { blanked, bodies } = scanShell(c);
   const out = [blanked, ...bodies.flatMap(runnable)];
-  for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
-    out.push(...runnable(m[2]));
+  for (const s of scriptStrings(c)) out.push(...runnable(s));
   return out;
 }
 /** True when any runnable text has a segment matching `rx`. */
@@ -569,6 +573,15 @@ async function main() {
     if (rule.decision === "ask") asked ??= rule;
     else deny(EVENT, `${rule.why}\nBlocked command: ${raw.slice(0, 200)}`);
   }
+  // Safety net (STA-254): deny rules also run on every substitution body found with quotes ignored.
+  for (const body of rawSubstitutions(cmd))
+    for (const rule of rules) {
+      if (rule.decision === "ask") continue;
+      const target = rule.scan === "bare" ? blank(body) : body;
+      const hit = typeof rule.rx === "function" ? rule.rx(target, cwd) : rule.rx.test(target);
+      if (hit && !(rule.allow && rule.allow.test(target)))
+        deny(EVENT, `${rule.why}\nBlocked command: ${raw.slice(0, 200)}`);
+    }
   if (asked) ask(EVENT, `${asked.why}\nCommand: ${raw.slice(0, 200)}`);
 }
 
