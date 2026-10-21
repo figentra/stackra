@@ -1,0 +1,58 @@
+---
+title: "0274 — App grants and the Connect-app page for OAuth apps and MCP clients"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Amends [0268](/adr/0268-register-answers-thin-items-r1-to-r18) R3 without breaking it (the
+  Connect-app page is an app screen, not login UI),
+  [0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits) (calls from OAuth apps and
+  MCP clients are checked against a grant) and
+  [0207](/adr/0207-authentication-assurance-and-machine-identities) (decision 2, OAuth apps).
+</Note>
+
+## Context
+
+[0268](/adr/0268-register-answers-thin-items-r1-to-r18) R3 uses ZITADEL's hosted sign-in pages and builds no login UI. Hosted pages cannot show
+a consent screen that lists Stackra permissions in groups and asks which workspace an app may use. An OAuth app or an MCP client needs both.
+The owner's answer to the screenshot gap review of 2026-10-21 (item 7) keeps sign-in with ZITADEL and moves workspace choice and consent into
+the console.
+
+## Decision
+
+1. **ZITADEL signs in.** ZITADEL's hosted pages sign the user in and issue a user token with broad scopes. Stackra still builds no login UI.
+2. **Connect-app page.** On the first connection of an OAuth app or MCP client, the console shows a "Connect app" page. It is an ordinary app
+   screen after sign-in, not a login page. The user picks the workspace and reviews the permissions, grouped from the service-access catalogue.
+3. **App grant.** Approval saves an app grant of (user, client, workspace, scopes) in `@figentra/service-identity`.
+4. **The gateway checks the grant.** Every call from the client is checked against its grant by the gateway
+   ([0237](/adr/0237-generated-api-gateway-in-four-layers)). A call outside the grant's workspace or scopes is refused, even when the user's
+   broad token would allow it.
+5. **Revocation.** "Connected apps" in user settings lists the grants and revokes one in one click.
+6. **MCP elicitation.** An MCP client may ask for the workspace inside the client, through an MCP elicitation, instead of a browser trip.
+
+## Consequences
+
+- The consent screen is ours, so permission groups and workspace choice match the catalogue, while passwords and MFA stay with ZITADEL.
+- The effective access of a client is the intersection of the user's permissions and the grant; the gateway carries that check on every call.
+- service-identity owns a new table of grants and the events that revoke them.
+
+## Enforcement
+
+planned — a gateway test refuses a call outside the grant's workspace and outside its scopes; a test asserts that revoking a grant refuses
+the next call.
+
+## Open details
+
+The owner did not give these; the conservative default below applies until an ADR changes it.
+
+1. **Scope change.** A client that asks for more scopes than its grant shows the Connect-app page again for the added scopes only.
+2. **Revocation reach.** Revoking a grant also revokes the refresh tokens issued for that grant.
+3. **One workspace per grant.** A client connected to two workspaces holds two grants.
+4. **Elicitation fallback.** An MCP client without elicitation support uses the browser page.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0268](/adr/0268-register-answers-thin-items-r1-to-r18),
+[0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits),
+[0207](/adr/0207-authentication-assurance-and-machine-identities). Sources: owner answers in chat, 2026-10-21 (screenshot gap review,
+item 7).

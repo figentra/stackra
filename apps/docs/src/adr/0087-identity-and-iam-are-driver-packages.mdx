@@ -10,6 +10,11 @@ description: "Superseded by 0206 · 2026-10-20"
   [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names).
 </Note>
 
+<Note>
+  The token rules of decision 5 are restated and extended by [0278](/adr/0278-api-key-lifecycle)
+  (prefix, rotation overlap, expiry, last used). This page stays superseded by 0206.
+</Note>
+
 ## Context
 
 [0051](/adr/0051-better-auth-identity-service) made identity one Better Auth service and listed every sign-in method and credential type as part of it. Two later decisions change that. Stackra ships packages, not services ([0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services)), and identity will also be offered as a hosted Figentra OS service, which needs a remote driver ([0076](/adr/0076-every-package-runs-saas-on-prem-and-air-gapped)). The open-core split moves enterprise identity and the authorization engine to Pro ([0077](/adr/0077-open-core-free-and-pro-lists)).

@@ -1,0 +1,51 @@
+---
+title: "0275 — Tenant handles: format, uniqueness, reserved words and availability"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Amends [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region): each
+  tenant has a handle, separate from its display name.
+</Note>
+
+## Context
+
+A tenant appears in URLs and in the switcher. [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) gives it an
+identity record but no handle rules, so signup cannot check a name. The owner's answer to the screenshot gap review of 2026-10-21 (item 4) fixes
+the handle.
+
+## Decision
+
+1. **Handle and display name are separate.** The display name is free text and can change freely. The handle is the URL-safe identifier.
+2. **Format.** Lowercase slug of `[a-z0-9-]`, with length bounds (open detail 1).
+3. **Uniqueness.** A handle is unique across all tenants of a product.
+4. **Reserved words.** A reserved-word list blocks system names, product names, brand names and route segments.
+5. **Availability check.** An availability-check endpoint answers whether a handle is free, valid and not reserved. Signup uses it as the user
+   types.
+6. **Changing a handle.** A handle can change, and the old handle redirects to the new one for a period (open detail 2).
+
+## Consequences
+
+- A rename of the display name never breaks a link.
+- The reserved list is data that grows with routes and products, so it needs an owner (service-tenancy).
+- A changed handle is held for its redirect period, so a squatter cannot take it at once.
+
+## Enforcement
+
+planned — a validation test covers the format, the length bounds and the reserved list; an endpoint test covers availability; a route test
+asserts the redirect from an old handle.
+
+## Open details
+
+The owner did not give these; the conservative default below applies until an ADR changes it.
+
+1. **Length and shape.** 3 to 32 characters, starting with a letter, with no leading, trailing or repeated hyphen.
+2. **Change policy.** Changeable by a tenant owner. The old handle redirects for 90 days and stays reserved for the same tenant during that
+   time; after it, the old handle is released.
+3. **Rate of change.** At most one handle change per 30 days.
+4. **Case and lookalikes.** Input is lowercased; no confusable-character check beyond the ASCII format.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region). Sources: owner answers in chat,
+2026-10-21 (screenshot gap review, item 4).

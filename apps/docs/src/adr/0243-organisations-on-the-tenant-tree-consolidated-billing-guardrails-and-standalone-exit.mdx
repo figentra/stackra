@@ -1,11 +1,25 @@
 ---
 title: "0243 — Organisations on the tenant tree: consolidated billing, guardrails and the standalone exit"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0272, 0279 · 2026-10-20"
 ---
 
 <Note>
   Builds on [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) (the
   tenant tree) and [0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan) (the scope tree).
+</Note>
+
+<Note>
+  Amended by [0272](/adr/0272-account-model-personal-workspace-and-opt-in-organisations): decision 1
+  is refined. Signup creates a personal workspace and organisations stay hidden until the user
+  chooses "Create organization". The choice is to convert the workspace (data, subscription and URL
+  kept) or to create a new, empty organisation and keep the personal one. Each tenant has its own
+  subscription.
+</Note>
+
+<Note>
+  Amended by [0279](/adr/0279-signup-and-first-run-onboarding): the checklist engine of decision 6
+  is the Figentra OS package `@figentra/checklists`, shared by onboarding, the standalone exit,
+  production readiness and compliance tasks.
 </Note>
 
 ## Context

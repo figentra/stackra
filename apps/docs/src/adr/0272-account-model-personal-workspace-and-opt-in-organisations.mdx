@@ -1,0 +1,61 @@
+---
+title: "0272 — Account model: a personal workspace at signup and opt-in organisations"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Amends
+  [0243](/adr/0243-organisations-on-the-tenant-tree-consolidated-billing-guardrails-and-standalone-exit)
+  (decision 1, the kinds),
+  [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) (decision 4, the
+  region) and [0186](/adr/0186-backups-and-disaster-recovery) (decision 6 stands; this page records
+  how the region field lives with one region).
+</Note>
+
+## Context
+
+[0243](/adr/0243-organisations-on-the-tenant-tree-consolidated-billing-guardrails-and-standalone-exit) says a tenant is personal or an
+organisation and that a personal workspace can convert, but not what a new user sees or what the choice offers.
+[0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) says the region is chosen at creation, while
+[0186](/adr/0186-backups-and-disaster-recovery) says there is one region. The owner's answers to the screenshot gap review of
+2026-10-21 (items 3 and 5) settle both.
+
+## Decision
+
+1. **Signup creates a personal workspace.** Organisations stay hidden until the user chooses "Create organization". A product setting may
+   skip personal workspaces: a B2B product creates an organisation at signup instead.
+2. **Two choices when organisations are enabled.**
+   - **Convert this workspace into an organisation.** The tenant keeps its data, its subscription and its URL, and members join it.
+   - **Create a new organisation and keep the personal workspace.** The tenant switcher shows both. The new organisation starts empty, on its
+     own trial or plan. Items move between them later through the transfer and merge of 0243 decision 7.
+3. **Region field from day one.** Every tenant has a `region` field from creation, set to the single region that 0186 decision 6 keeps. A
+   region picker appears at organisation creation once cells exist. A personal workspace defaults to the region nearest the user. The region is
+   fixed per tenant; moving a tenant is a separate job (register D-13, still open).
+4. **Billing per tenant.** Each tenant has its own subscription. Converting a personal workspace keeps its subscription. Consolidated billing
+   under a parent organisation (0243 decision 2) is unchanged.
+
+## Consequences
+
+- A solo user never sees organisation settings, so the first-run screens stay short.
+- The region column exists before cells do, so adding a second region is data plus a picker, not a migration of every tenant row.
+- Two tenants for one user means two subscriptions; the switcher and the billing page must make that visible.
+- The "create new and keep personal" path depends on the transfer and merge flows of 0243 decision 7 for moving items later.
+
+## Enforcement
+
+planned — a tenancy schema test asserts `region` is non-null on every tenant; the provisioning workflow test covers both conversion paths and
+the product setting that skips personal workspaces.
+
+## Open details
+
+The owner did not give these; the conservative default below applies until an ADR changes it.
+
+1. **Conversion is one-way.** An organisation does not convert back to a personal workspace; leaving uses the standalone exit of 0243.
+2. **A personal workspace has one member, its owner.** Inviting a second person offers the organisation choice of decision 2.
+3. **"Nearest region"** is the region nearest the signup request's IP address; while one region exists it is always that region.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0243](/adr/0243-organisations-on-the-tenant-tree-consolidated-billing-guardrails-and-standalone-exit),
+[0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region), [0186](/adr/0186-backups-and-disaster-recovery).
+Sources: owner answers in chat, 2026-10-21 (screenshot gap review, items 3 and 5).

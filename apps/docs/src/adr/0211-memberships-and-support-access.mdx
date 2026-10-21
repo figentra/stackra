@@ -1,9 +1,15 @@
 ---
 title: "0211 — Memberships and support access"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0273 · 2026-10-20"
 ---
 
 <Note>Amends [0098](/adr/0098-actions-are-the-unit): the actor gains the acting-as marker.</Note>
+
+<Note>
+  Amended by [0273](/adr/0273-active-role-within-a-tenant): a user with several roles in one tenant
+  picks an active role. Permissions stay the union of the roles; the active role shapes the menu,
+  the home screen and the default views, and is a claim in the request context.
+</Note>
 
 ## Context
 

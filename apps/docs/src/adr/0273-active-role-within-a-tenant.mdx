@@ -1,0 +1,49 @@
+---
+title: "0273 — Active role: one presentation role per session inside a tenant"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Amends [0211](/adr/0211-memberships-and-support-access): a membership with several roles gains an
+  active role.
+</Note>
+
+## Context
+
+A user can hold several roles in one tenant, for example a parent who is also a teacher in a school. Each role wants a different menu and home
+screen, but splitting permissions by role would make the user switch to do ordinary work. The owner's answer to the screenshot gap review of
+2026-10-21 (item 6) separates what the user may do from what the user sees.
+
+## Decision
+
+1. **Pick an active role.** A user with more than one role in a tenant picks an active role.
+2. **Permissions stay the union.** Authorisation uses the union of all the user's roles in the tenant, whatever the active role is. The active
+   role never grants or removes a permission.
+3. **The active role shapes presentation.** It selects the menu, the home screen and the default views.
+4. **Carried as a claim.** The active role is a claim in the request context, beside the tenant context of
+   [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) decision 3.
+5. **Switcher.** The role switcher sits beside the tenant switcher, and only appears when the user has more than one role in the current tenant.
+
+## Consequences
+
+- Switching role is a presentation change, so it needs no new token from the identity provider and no step-up.
+- Policy authors cannot use the active role to restrict access; a restriction is a role or a deny, as in
+  [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names).
+- Menus and home screens declare which roles they serve, which is new metadata for the navigation generator.
+
+## Enforcement
+
+planned — a pipeline test asserts that the permission check ignores the active-role claim; a navigation test asserts the menu changes with it.
+
+## Open details
+
+The owner did not give these; the conservative default below applies until an ADR changes it.
+
+1. **Default active role.** The last active role the user picked in that tenant; on first use, the role the membership was created with.
+2. **Audit.** The active role is recorded in the audit context of each action, as information only.
+3. **Claim name.** `activeRole` in the request context (camelCase, per [0231](/adr/0231-naming-and-casing-standard)).
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0211](/adr/0211-memberships-and-support-access). Sources: owner answers in chat, 2026-10-21 (screenshot gap
+review, item 6).

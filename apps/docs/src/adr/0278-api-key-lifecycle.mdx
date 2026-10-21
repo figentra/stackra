@@ -1,0 +1,57 @@
+---
+title: "0278 — API key lifecycle: shown once, scanner prefix, rotation overlap, expiry and revoke"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Amends [0087](/adr/0087-identity-and-iam-are-driver-packages) (decision 5, the token rules it
+  restates and extends) and [0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits)
+  (API keys used on the REST and MCP surfaces).
+</Note>
+
+## Context
+
+[0087](/adr/0087-identity-and-iam-are-driver-packages) decision 5 said tokens are shown once, stored hashed, scoped and revocable, and
+[0207](/adr/0207-authentication-assurance-and-machine-identities) decision 2 names personal access tokens and tenant service tokens. Neither
+says how a key is rotated, recognised when leaked, or seen in use. The owner's answer to the screenshot gap review of 2026-10-21 (item 9) sets
+the whole lifecycle.
+
+## Decision
+
+1. **Shown once, stored hashed.** The secret is shown once at creation and stored only as a hash.
+2. **Recognisable prefix.** Every key starts with a recognisable prefix registered with GitHub secret scanning, so a leaked key is reported.
+3. **Scopes.** A key carries scopes, and the gateway checks each call against them.
+4. **Last used.** The key list shows each key's last-used time and IP address.
+5. **Rotation with overlap.** Rotating a key issues a new one; old and new both work during an overlap window, then the old one stops.
+6. **Expiry.** A key has an expiry.
+7. **Revoke.** A key can be revoked at once.
+8. **Example usage.** Each key's page shows an example usage snippet for that key's scopes.
+
+## Consequences
+
+- A leaked key found by GitHub is revoked by our scanning endpoint, not found by the customer weeks later.
+- Rotation does not need a deploy at the exact moment the old key dies, because of the overlap window.
+- Last-used data is written on calls, so its write path must stay cheap (sampled or batched).
+
+## Enforcement
+
+planned — a storage test asserts no plaintext key is persisted; a gateway test asserts both keys work inside the overlap window and only the
+new one after it; a test asserts expired and revoked keys are refused.
+
+## Open details
+
+The owner did not give these; the conservative default below applies until an ADR changes it.
+
+1. **Prefix.** `<product>_<env>_` followed by the secret, for example `stk_live_` and `stk_test_`; the exact strings are fixed when the
+   GitHub secret-scanning partnership is filed.
+2. **Overlap window.** 24 hours by default, settable up to 7 days.
+3. **Expiry.** Required at creation, 90 days by default, at most 1 year.
+4. **Leak response.** A key reported by secret scanning is revoked automatically and its owner notified.
+5. **Last-used IP retention.** Follows the access-log retention of
+   [0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention).
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0087](/adr/0087-identity-and-iam-are-driver-packages),
+[0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits). Sources: owner answers in chat, 2026-10-21 (screenshot gap review,
+item 9).
