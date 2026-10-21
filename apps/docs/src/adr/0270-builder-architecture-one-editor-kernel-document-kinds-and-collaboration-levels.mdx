@@ -38,7 +38,7 @@ owner settled the architecture on 2026-10-21.
 5. **`@stackra/collaboration` is free, on `@stackra/realtime`**: presence, cursors, the Yjs binding and snapshots. It implements
    0225 RT2 and is gated by entitlement per 0202. The Pro-only `@stackra-pro/collaboration` listing is dropped.
 6. **Document kinds, surfaces and collaboration levels.** Co-editing with cursors is only for long free-form documents;
-   structured documents get presence and optimistic concurrency control (OCC). "Not set" means the owner has not decided drag and drop for that kind.
+   structured documents get presence and optimistic concurrency control (OCC).
 
    | Kind                                                                                     | Surface                                                         | Drag and drop | Collaboration                                                  |
    | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------- | -------------------------------------------------------------- |
@@ -48,8 +48,8 @@ owner settled the architecture on 2026-10-21.
    | dashboard                                                                                | grid                                                            | yes           | presence + OCC (data refreshes live; editing is not co-edited) |
    | email and notification template                                                          | document, email-safe blocks only; rendered by the node renderer | reorder       | presence + OCC                                                 |
    | navigation and menus                                                                     | tree                                                            | reorder       | OCC                                                            |
-   | automation ([0122](/adr/0122-workflow-studio-three-layers) layer 3)                      | step list or graph, with dry run                                | not set       | presence + OCC                                                 |
-   | pricing rules ([0219](/adr/0219-the-merchant-account-chain-and-registered-price-models)) | block composer                                                  | not set       | OCC                                                            |
+   | automation ([0122](/adr/0122-workflow-studio-three-layers) layer 3)                      | step list or graph, with dry run                                | yes           | presence + OCC                                                 |
+   | pricing rules ([0219](/adr/0219-the-merchant-account-chain-and-registered-price-models)) | block composer                                                  | no            | OCC                                                            |
 
 7. **New document kinds**: `app-shell` (navigation, home, theme and branding, route-to-page mapping), `screen` (mobile) and
    `email-template`.
