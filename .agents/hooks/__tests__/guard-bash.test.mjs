@@ -94,14 +94,17 @@ const allowed = [
   "pnpm bot:review -- pr diff 12",
   "pnpm pr:merge -R figentra/os 3",
   "pnpm bot:git -- -C ../figentra-os fetch origin",
-  "GH_TOKEN=$(pnpm --silent bot:token) gh pr view 12",
-  'GH_TOKEN="$(pnpm bot:token)" gh api repos/figentra/os/pulls',
+  "pnpm bot:git -- fetch origin main",
+  "pnpm bot:git -- pull --rebase origin main",
+  "pnpm --silent bot:gh -- pr view 80 --json body | jq -r .body",
+  'BODY="$(pnpm --silent bot:gh -- pr view 80 --json body)"',
+  "git commit -m 'docs: $(gh pr view) and $GH_TOKEN are denied'",
+  "echo 'gh pr view' > notes.txt",
   "git status",
   "git log --oneline -5",
   "git diff main...HEAD",
-  "git fetch origin main",
-  "git pull --rebase origin main",
-  "git clone https://github.com/figentra/stackra.git /tmp/s",
+  "git remote -v",
+  "git archive HEAD -o /tmp/x.tar",
   'git commit -m "docs: never run gh pr view or git push as the owner"',
   'pnpm linear comment STA-208 "use gh pr view; git push"',
   "grep -rn 'gh pr' .agents",
@@ -123,7 +126,39 @@ const blocked = [
   "env GH_PROMPT_DISABLED=1 gh pr list",
   "GH_TOKEN=abc gh pr view 1",
   "GITHUB_TOKEN=$(cat tok) gh api x",
-  "GH_TOKEN=$(pnpm bot:token) true; gh pr merge 3",
+  // H1 (#80 review): no GH_TOKEN form at all; an empty token falls back to the owner's login
+  "GH_TOKEN=$(pnpm --silent bot:token) gh pr view 12",
+  'GH_TOKEN="$(pnpm bot:token)" gh api repos/figentra/os/pulls',
+  // H2: gh inside double-quoted substitutions, backticks, sh -c and eval
+  'BODY="$(gh pr view 80 --json body)"',
+  'echo "$(gh pr list)"',
+  'echo "`gh pr list`"',
+  'curl -H "Authorization: token $(gh auth token)" https://api.github.com/user',
+  "bash -c 'gh pr list'",
+  'sh -c "gh pr list"',
+  "eval 'gh pr list'",
+  // M1: the bot token never reaches the transcript or gh's config
+  "echo $(pnpm --silent bot:token)",
+  "GH_TOKEN=x && echo $GH_TOKEN",
+  "echo ${GITHUB_TOKEN}",
+  "pnpm bot:gh -- auth token",
+  "pnpm bot:gh -- auth status --show-token",
+  "pnpm bot:review -- auth status",
+  "pnpm bot:git -- credential fill",
+  "set -x; GH_TOKEN=$(pnpm --silent bot:token) gh pr list",
+  // M2: every network git runs as the bot, public repos included
+  "git fetch origin main",
+  "git pull --rebase origin main",
+  "git clone https://github.com/figentra/stackra.git /tmp/s",
+  "cd ~/Projects/figentra-os && git fetch",
+  'git fetch "https://github.com/figentra/os"',
+  "git remote set-url origin https://github.com/figentra/os.git && git fetch",
+  "git remote add o https://github.com/figentra/os && git remote update",
+  "git remote show origin",
+  "git archive --remote=https://github.com/figentra/os HEAD",
+  "git subtree pull --prefix x https://github.com/figentra/os main",
+  "git submodule update --init",
+  'echo "$(git ls-remote origin)"',
   "git push origin feature/x",
   "git -C ../figentra-os push origin feature/x",
   "git add . && git commit -m x && git push -u origin HEAD",
@@ -303,19 +338,5 @@ test("bot push is denied on main, allowed on a branch; bare git push is always d
   assert.equal(decision("pnpm bot:git -- push -u origin HEAD", dir), "allow");
   assert.equal(decision("git push", dir), "deny");
   assert.equal(decision("git push -u origin HEAD", dir), "deny");
-  rmSync(dir, { recursive: true, force: true });
-});
-
-// A private figentra remote falls back to the owner's credential helper on a fetch; the public repo does not.
-test("network git reads of a private figentra repo go through bot:git", () => {
-  const dir = mkdtempSync(join(tmpdir(), "guard-bash-os-"));
-  spawnSync("git", ["init", "-q", "-b", "main"], { cwd: dir });
-  spawnSync("git", ["remote", "add", "origin", "https://github.com/figentra/os.git"], { cwd: dir });
-  for (const c of ["git fetch", "git pull --rebase", "git ls-remote origin", "git remote update"])
-    assert.equal(decision(c, dir), "deny", c);
-  assert.equal(decision(`git -C ${dir} fetch origin`, root), "deny");
-  for (const c of ["git log", "git status", "git diff", `pnpm bot:git -- -C ${dir} fetch origin`])
-    assert.equal(decision(c, dir), "allow", c);
-  assert.equal(decision("git fetch origin", root), "allow");
   rmSync(dir, { recursive: true, force: true });
 });

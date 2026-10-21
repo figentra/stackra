@@ -1,6 +1,24 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BOT_EMAIL, gitBotArgs, reviewerAllows } from "../bot-gh.mjs";
+import { BOT_EMAIL, gitBotArgs, leaksToken, reviewerAllows } from "../bot-gh.mjs";
+
+test("STA-208: the wrappers refuse commands that print or store the token", () => {
+  for (const [tool, args] of [
+    ["gh", ["auth", "token"]],
+    ["gh", ["auth", "status", "--show-token"]],
+    ["review", ["auth", "login", "--with-token"]],
+    ["git", ["credential", "fill"]],
+    ["git", ["-C", "../os", "-c", "x=y", "credential", "fill"]],
+  ])
+    assert.equal(leaksToken(tool, args), true, args.join(" "));
+  for (const [tool, args] of [
+    ["gh", ["pr", "view", "1"]],
+    ["gh", ["api", "repos/x/auth"]],
+    ["git", ["-C", "credential", "fetch"]],
+    ["git", ["push", "origin", "HEAD"]],
+  ])
+    assert.equal(leaksToken(tool, args), false, args.join(" "));
+});
 
 test("the reviewer identity may only read a PR and comment or review on it", () => {
   const allowed = [

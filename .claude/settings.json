@@ -15,8 +15,6 @@
       "Bash(git checkout *)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git fetch*)",
-      "Bash(git pull*)",
       "Bash(git rebase *)",
       "Bash(git stash*)",
       "Bash(git worktree *)",
@@ -101,7 +99,13 @@
       "Bash(encore deploy*)",
       "Bash(wrangler deploy*)",
       "Bash(pnpm bot:gh -- api -X DELETE*)",
-      "Bash(pnpm bot:gh -- api --method DELETE*)"
+      "Bash(pnpm bot:gh -- api --method DELETE*)",
+      "Bash(pnpm bot:gh -- api * -X DELETE*)",
+      "Bash(pnpm bot:gh -- api * --method DELETE*)",
+      "Bash(pnpm bot:gh -- api * --method=DELETE*)",
+      "Bash(pnpm --silent bot:gh -- repo delete*)",
+      "Bash(pnpm --silent bot:gh -- release *)",
+      "Bash(pnpm --silent bot:gh -- api * DELETE*)"
     ]
   },
   "enabledPlugins": {

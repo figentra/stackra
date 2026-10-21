@@ -130,6 +130,10 @@ test("N1: a FAIL is read loosely (short SHA, no SHA, trailing text); PASS stays 
     `AI-REVIEW: FAIL ${SHA} base=main — see H1`,
     "AI-REVIEW: FAIL",
     "ai-review: fail, two blocking findings",
+    "AI-REVIEW: FAILED",
+    `**AI-REVIEW: FAIL** ${SHA}`,
+    "**AI-REVIEW: FAIL**",
+    "> AI-REVIEW - fail",
   ])
     assert.equal(verdict([reviewer(body, T1), reviewer(PASS, T0)]), "FAIL", body);
   // A FAIL naming another commit belongs to an older head; a new commit clears it.

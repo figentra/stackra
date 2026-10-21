@@ -31,7 +31,8 @@ const VERDICT_LINE = /^AI-REVIEW:\s*(PASS|FAIL)\s+([0-9a-f]{40})(?:\s+base=(\S+)
 const OWNER_TOKEN = /(?:^|\s)owner-approval\s*$/;
 // N1 (#48): a FAIL is read loosely so a sloppy FAIL still blocks; only a hex token of 7+ that is not a prefix of the
 // head marks it as a FAIL for an older commit, which a new commit clears.
-const LOOSE_FAIL = /^AI-REVIEW:\s*FAIL\b\s*(\S*)/i;
+// Markdown and wording around it do not matter: `**AI-REVIEW: FAIL**`, `AI-REVIEW: FAILED`, `> AI-REVIEW - fail`.
+const LOOSE_FAIL = /^\W*AI-REVIEW\W*FAIL(?:ED)?\b\W*(\w*)/i;
 const failForHead = (token, sha) =>
   !/^[0-9a-f]{7,40}$/i.test(token) || sha.startsWith(token.toLowerCase());
 

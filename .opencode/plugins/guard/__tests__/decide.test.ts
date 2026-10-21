@@ -166,6 +166,16 @@ test("executors never run owner-only CLIs, ship, or touch git history", () => {
     "pnpm bot:review -- pr comment 1 --body-file f",
     "pnpm pr:merge 1",
     "pnpm bot:token",
+    // #80 review: substitutions inside double quotes, sh -c, eval; every network git
+    'echo "$(gh auth token)"',
+    'BODY="$(gh pr view 80)"',
+    'echo "`gh pr list`"',
+    "bash -c 'gh pr list'",
+    "eval 'git push'",
+    "git remote update",
+    "git remote show origin",
+    "git archive --remote=https://github.com/figentra/os HEAD",
+    "git subtree pull --prefix x https://github.com/figentra/os main",
   ])
     assert.equal(kind(c), "deny", c);
   for (const c of [

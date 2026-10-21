@@ -32,7 +32,8 @@ hold fewer permissions than the builder app.
      PASS counts only while the PR still targets that base ref, so re-targeting the PR voids it. The base is a ref
      name, not a SHA, because `main` moves under every open PR and the merge is a squash onto its tip;
    - PASS is parsed strictly and FAIL loosely (amended 2026-10-21, STA-208): any reviewer-app first line that starts
-     `AI-REVIEW: FAIL` counts, with a short SHA, no SHA or trailing text. Only a FAIL that names a hex SHA of 7 or
+     `AI-REVIEW: FAIL` counts. A short SHA, no SHA, trailing text, `FAILED`, or Markdown around it
+     (`**AI-REVIEW: FAIL**`) still counts. A FAIL with no SHA blocks every later head until the owner deletes it. Only a FAIL that names a hex SHA of 7 or
      more characters that is not a prefix of the head is read as a FAIL for an older commit and skipped;
    - an edited verdict never counts, and an edit to any reviewer comment voids every reviewer verdict posted before
      it. Anyone with write access can edit another account's comment, so the reviewer always posts a new comment;
@@ -49,11 +50,14 @@ hold fewer permissions than the builder app.
 5. **Agents never use the owner's GitHub login** (owner decision 2026-10-20, amended 2026-10-21, STA-208). Every
    agent-side GitHub call, the coordinator's read-only queries included, runs on an app token: builders and the
    coordinator through `pnpm bot:gh` and `pnpm bot:git` (`stackra-bot`), reviewers through `pnpm bot:review`
-   (`stackra-reviewer`), merges through `pnpm pr:merge` (as `stackra-bot`). The bash guard denies plain `gh` unless
-   the command sets `GH_TOKEN` from `$(pnpm bot:token)`, every plain `git push`, and network reads of a private
-   figentra repository, which would fall back to the owner's credential helper. The owner's own `gh` login stays for
-   the owner's terminal and `!` commands. The [GitHub identities runbook](/runbooks/github-identities) lists the
-   commands and the owner's GitHub settings.
+   (`stackra-reviewer`), merges through `pnpm pr:merge` (as `stackra-bot`). The wrappers fail closed: no token, no
+   command. There is no `GH_TOKEN=… gh` form, because `gh` falls back to the owner's stored login when `GH_TOKEN` is
+   empty. The bash guard denies plain `gh` in any form, every network `git` outside `pnpm bot:git`, and anything that
+   prints or stores a bot token. It also checks `$(…)`, backtick, `sh -c` and `eval` bodies. The owner's own `gh`
+   login stays for the owner's own terminal. The structural fix is the owner's: move that login to a separate
+   `GH_CONFIG_DIR` and remove `gh auth git-credential` from the global git config, so an agent's plain `gh` or `git`
+   finds no owner credential. The [GitHub identities runbook](/runbooks/github-identities) lists the commands and
+   the owner's steps.
 
 ## Consequences
 
@@ -66,11 +70,13 @@ hold fewer permissions than the builder app.
   `pnpm bot:review`. Rules 2 and 5 remove the obvious path, because the reviewer never authors and builders never
   act as the owner. Closing the gap fully needs the review to run where builders hold no reviewer key. That means a
   CI job or a separate host with its own Infisical identity, which is Phase 3 scope (merge queue, see below).
-- The owner path is still forgeable on this machine, but no longer by accident. Since STA-208 the guard denies plain
-  `gh` and `git push`, so an agent reaches the owner's login only by deliberately working around the guard (agents
-  run as the owner's macOS user, so the keychain and `~/.config/gh` are readable). The guard is an accident guard,
-  not isolation. Full isolation needs agents to run as a separate OS user or on the EC2 agent host, where the owner's
-  login does not exist; until then the owner-approval path is as strong as agents' compliance with rules 4 and 5.
+- The owner path is still forgeable on this machine. The guard denies the common accidental forms of plain `gh` and
+  network `git`. It does not follow aliases, shell functions, variables used as a command name, or `npx`. Agents run
+  as the owner's macOS user, so the keychain and `~/.config/gh` stay readable. The guard is an accident guard, not
+  isolation. The owner's two runbook steps (separate `GH_CONFIG_DIR`, no global `gh auth git-credential`) remove the
+  fallback for plain commands. Full isolation needs agents to run as a separate OS user or on the EC2 agent host,
+  where the owner's login does not exist. Until then the owner-approval path is only as strong as agents'
+  compliance with rules 4 and 5.
 - Deleted comments are invisible to `pr-merge`: deleting a reviewer FAIL makes an older PASS count again. Only
   accounts with write access can delete another account's comment: the owner, or an agent that works around the
   guard to reach the owner's login (see above).
@@ -82,10 +88,13 @@ hold fewer permissions than the builder app.
   verdicts, and the owner's approving review with the `owner-approval` token.
 - `tools/scripts/bot-gh.mjs` (`reviewerAllows`): the reviewer's command allowlist, reading bundled short flags letter by letter and refusing `--edit-last` and `--delete-last`.
 - `.agents/hooks/guard-bash.mjs`: denies agent commands that write `owner-approval` or `owner-approved`, or post
-  `AI-REVIEW:` through `gh` or `pnpm bot:gh`; and (rule 5) plain `gh` without a bot token, plain `git push`, network
-  reads of a private figentra repo, and `pnpm bot:token` outside `$(...)`. Tests in
-  `.agents/hooks/__tests__/guard-bash.test.mjs`.
-- `.opencode/plugins/guard/decide.ts`: executors run no `gh`, no network `git`, and no `pnpm bot:*` or `pr:merge`.
+  `AI-REVIEW:` through `gh` or `pnpm bot:gh`. For rule 5 it denies plain `gh`, network `git` outside `pnpm bot:git`
+  (push, fetch, pull, clone, ls-remote, submodule, subtree, remote update/show/prune, archive `--remote`),
+  `pnpm bot:token`, `$GH_TOKEN`, `bot:gh -- auth` and `bot:git -- credential`, also inside `$(…)`, backticks,
+  `sh -c` and `eval`. Tests in `.agents/hooks/__tests__/guard-bash.test.mjs`.
+- `tools/scripts/bot-gh.mjs` (`leaksToken`): the wrappers refuse `gh auth` and `git credential`.
+- `.opencode/plugins/guard/decide.ts`: executors run no `gh`, none of those network `git` commands, and no
+  `pnpm bot:*` or `pr:merge`, with the same substitution bodies checked.
 - Planned: the review runs in a CI job with its own credentials (the Phase 3 merge-queue design).
 
 ## Supersedes and sources
