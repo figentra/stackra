@@ -654,3 +654,26 @@ for (const c of [
   `git commit -m 'it'"'"'s $(git push origin main) quoted'`,
 ])
   test(`allow: ${c}`, () => assert.equal(denied(c), false));
+
+// STA-254 review: quoting restarts inside a substitution, and `$'…'` honours `\'` (one shared scanner).
+const restartedQuotes = [
+  `git commit -m "$(echo "it's") $(git push origin main) $(echo "it's")"`,
+  `echo "$(echo "'") $(git push origin main) $(echo "'")"`,
+  'echo "`echo "\'"` `git push origin main` `echo "\'"`"',
+  `echo $'x\\' ' $(git push origin main) ''`,
+  `echo $'\\'' ; git push origin main ; echo ''`,
+  `pnpm bot:gh -- pr create --title t --body "$(echo "it's") $(git push origin main) $(echo "it's")"`,
+  `git commit -m "$(echo "it's") $(cat ~/Secrets-inbox/X) $(echo "it's")"`,
+  `echo $'x\\' ' $(cat ~/Secrets-inbox/X) ''`,
+  `echo "$(echo "'") $(infisical export) $(echo "'")"`,
+];
+for (const c of restartedQuotes) test(`deny: ${c}`, () => assert.equal(denied(c), true));
+for (const c of [
+  `git commit -m "path C:\\\\dir \\"quoted\\" and it's fine"`,
+  `echo $'it\\'s'`,
+  `git commit -m $'it\\'s fine'`,
+  `git commit -m "it's fine"`,
+  `pnpm bot:gh -- pr create --title "it's a fix" --body "don't worry, it's tested; push origin main later"`,
+  `git commit -m "$(echo "it's") fine"`,
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));

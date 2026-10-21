@@ -6,11 +6,7 @@
 // is not unwrapped; good enough for agent-typed commands, upgrade to a real shell parser if one slips through.
 import { resolve, sep } from "node:path";
 // The inbox matcher is shared with the Claude hooks (one matcher, ADR 0257): paths, globs rooted at home, recursive reads.
-import {
-  blankSingleQuotes,
-  commandReachesInbox,
-  reachesInbox,
-} from "../../../.agents/hooks/_inbox.mjs";
+import { scanShell, commandReachesInbox, reachesInbox } from "../../../.agents/hooks/_inbox.mjs";
 
 export type Decision = { kind: "allow" } | { kind: "deny"; reason: string };
 
@@ -287,11 +283,10 @@ export function decideShell(raw: string, cwd?: string): Decision {
 
 /**
  * Commands the shell also runs: `$(…)` and backtick bodies (inside double quotes too; single quotes stay literal)
- * and `sh -c` / `eval` strings (STA-208 review H2). shortcut: one nesting level, no alias expansion.
+ * and `sh -c` / `eval` strings (STA-208 review H2), at any depth via the shared `scanShell` (STA-254). shortcut: no alias expansion.
  */
 function nested(cmd: string): string[] {
-  const literal = blankSingleQuotes(cmd);
-  const out = [...literal.matchAll(/\$\(([^()]*)\)|`([^`]*)`/g)].map((m) => m[1] ?? m[2]);
+  const out = [...scanShell(cmd).bodies];
   for (const m of cmd.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
     out.push(m[2], ...nested(m[2]));
   return out;

@@ -343,3 +343,25 @@ test("STA-254: an apostrophe inside double quotes does not hide a nested command
   for (const c of [`echo "it's fine"`, `echo 'it'"'"'s $(infisical export) quoted'`])
     assert.equal(kind(c), "allow", c);
 });
+
+test("STA-254 review: quoting restarts inside a substitution, and $'…' honours \\'", () => {
+  for (const c of [
+    `git commit -m "$(echo "it's") $(git push origin main) $(echo "it's")"`,
+    `echo "$(echo "'") $(git push origin main) $(echo "'")"`,
+    'echo "`echo "\'"` `git push origin main` `echo "\'"`"',
+    `echo $'x\\' ' $(git push origin main) ''`,
+    `echo "$(echo "it's") $(gh pr view 1) $(echo "it's")"`,
+    `git status "$(echo "'")" $(git push origin main)`,
+    `echo "$(echo "'") $(infisical export) $(echo "'")"`,
+    `echo $'x\\' ' $(cat ~/Secrets-inbox/X) ''`,
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    `echo "path C:\\\\dir \\"quoted\\" and it's fine"`,
+    `echo $'it\\'s'`,
+    `git log --grep "it's fine"`,
+    `git status -- "it's" $'it\\'s'`,
+    `echo "$(echo "it's") fine"`,
+  ])
+    assert.equal(kind(c), "allow", c);
+});

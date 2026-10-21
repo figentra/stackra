@@ -58,12 +58,102 @@ export function reachesInbox(p, { recursive = false, home = homedir(), cwd } = {
 // subshell's `cd` leaks into later segments. Upgrade to a real parser if a miss or a false positive slips through.
 
 /**
- * Single-quoted spans blanked to `''`, by POSIX rules: a `'` inside double quotes or after a backslash is
- * literal, so `-m "it's $(x) it's"` keeps its `$(x)` (STA-254). An unclosed `"` runs to the end (fail closed).
- * Shared by guard-bash and the OpenCode guard.
+ * Walk a command by bash quoting rules (STA-254), shared by guard-bash and the OpenCode guard. States: plain,
+ * `'…'`, `$'…'` (where `\'` is escaped), `"…"` / `$"…"`, and a stack of `$(…)` and backtick bodies, inside which
+ * quoting restarts (`"$(echo "it's")"`). A `'` inside double quotes is literal. Returns:
+ * - `literal`: every `'…'` / `$'…'` span (never run) blanked to `''`; the rest verbatim;
+ * - `blanked`: every outermost quoted span blanked to `""`, so only command words are left;
+ * - `bodies`: the text (of `literal`) of every `$(…)` and backtick body at any depth, outermost first;
+ * - `spans`: `[start, end)` in `c` of every outermost closed quoted span.
+ * Fail closed: an unclosed `"`, `$(` or backtick runs to the end; an unclosed `'` stays visible.
+ * shortcut: no heredocs, `${…}`, comments or `case` patterns (an unmatched `)` ends a body early); upgrade to a
+ * real parser if one slips through.
  */
-export const blankSingleQuotes = (c) =>
-  c.replace(/\\[\s\S]|"(?:\\[\s\S]|[^"\\])*"?|'[^']*'/g, (m) => (m[0] === "'" ? "''" : m));
+export function scanShell(c) {
+  let literal = "";
+  let blanked = "";
+  let quietFrom = -1; // where the outermost open double quote began; `blanked` hides text from there
+  const bodies = [];
+  const spans = [];
+  const stack = [{ kind: "cmd", parens: 0, start: 0 }];
+  const emit = (s, b = s) => {
+    literal += s;
+    if (quietFrom < 0) blanked += b;
+  };
+  const close = () => bodies.push([stack.pop().start, literal.length]);
+  for (let i = 0; i < c.length; i++) {
+    const ch = c[i];
+    const f = stack.at(-1);
+    if (ch === "\\") {
+      emit(c.slice(i, i + 2));
+      i++;
+      continue;
+    }
+    if (f.kind === "dq") {
+      if (ch === '"') {
+        stack.pop();
+        literal += ch;
+        if (!stack.some((s) => s.kind === "dq")) {
+          spans.push([quietFrom, i + 1]);
+          quietFrom = -1;
+        }
+        continue;
+      }
+    } else {
+      const ansi = ch === "$" && c[i + 1] === "'";
+      if (ch === "'" || ansi) {
+        let j = i + (ansi ? 2 : 1);
+        while (j < c.length && c[j] !== "'") j += ansi && c[j] === "\\" ? 2 : 1;
+        if (j >= c.length) {
+          emit(c.slice(i));
+          break;
+        }
+        if (quietFrom < 0) spans.push([i, j + 1]);
+        emit("''", '""');
+        i = j;
+        continue;
+      }
+      if (ch === '"' || (ch === "$" && c[i + 1] === '"')) {
+        if (ch === "$") emit(c[i++]);
+        if (quietFrom < 0) {
+          blanked += '""';
+          quietFrom = i;
+        }
+        literal += '"';
+        stack.push({ kind: "dq" });
+        continue;
+      }
+      if (f.kind === "cmd" && ch === "(") f.parens++;
+      else if (f.kind === "cmd" && ch === ")" && f.parens > 0) f.parens--;
+      else if (
+        (f.kind === "cmd" && ch === ")" && stack.length > 1) ||
+        (f.kind === "bt" && ch === "`")
+      ) {
+        close();
+        emit(ch);
+        continue;
+      }
+    }
+    if ((ch === "$" && c[i + 1] === "(") || ch === "`") {
+      const open = ch === "`" ? ch : c[i] + c[++i];
+      emit(open);
+      stack.push({ kind: ch === "`" ? "bt" : "cmd", parens: 0, start: literal.length });
+      continue;
+    }
+    emit(ch);
+  }
+  while (stack.length > 1) {
+    if (stack.at(-1).kind === "dq") stack.pop();
+    else close();
+  }
+  if (quietFrom >= 0) blanked += c.slice(quietFrom);
+  return {
+    literal,
+    blanked,
+    bodies: bodies.sort((a, b) => a[0] - b[0]).map(([s, e]) => literal.slice(s, e)),
+    spans,
+  };
+}
 
 /** Split a command into segments of words; each word is its unquoted text. Separators outside quotes split. */
 function lex(cmd) {
