@@ -443,6 +443,25 @@ test("an `assistants` list limits the projection; an unknown name is rejected", 
   });
 });
 
+test("a route that sends an agent to OpenCode when the agent is not projected there is broken", () => {
+  withFixture({ "reviewer.md": TIERED("frontier") }, (root) => {
+    const partial = structuredClone(MODELS);
+    delete partial.assistants.opencode.frontier;
+    withModels(root, partial);
+    writeFileSync(
+      join(root, ".agents/routing.yaml"),
+      "tasks:\n  review: { executor: opencode, model: p/x, agent: reviewer }\n  other: { executor: claude, model: opus, agent: reviewer }\n",
+    );
+    const r = run(root, "--lint");
+    assert.equal(r.code, 1);
+    assert.match(
+      r.out,
+      /task 'review' routes to OpenCode, but agent 'reviewer' is not projected there/,
+    );
+    assert.doesNotMatch(r.out, /task 'other'/);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Body defects: broken references and commands the agent cannot run
 // ---------------------------------------------------------------------------

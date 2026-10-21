@@ -1114,6 +1114,21 @@ function main() {
       results.broken.push(`${rel}: references the retired sdlc plugin (ADR 0121 D3)`);
   }
 
+  // ADR 0258: a route that hands work to OpenCode must name an agent OpenCode actually receives.
+  const routingPath = join(ROOT, SOURCE, "routing.yaml");
+  if (existsSync(routingPath) && modelMap()?.assistants.opencode) {
+    const known = new Set(agentEntries.map((e) => e.replace(/\.md$/, "")));
+    for (const m of readFileSync(routingPath, "utf8").matchAll(/^ {2}([\w-]+):\s*\{([^}]*)\}/gm)) {
+      const executor = /executor:\s*([\w-]+)/.exec(m[2])?.[1];
+      const agentName = /agent:\s*([\w-]+)/.exec(m[2])?.[1];
+      if (executor !== "opencode" || !known.has(agentName)) continue;
+      if (!projectsTo(loadAgent(`${agentName}.md`).agent, "opencode"))
+        results.broken.push(
+          `${SOURCE}/routing.yaml: task '${m[1]}' routes to OpenCode, but agent '${agentName}' is not projected there (ADR 0258)`,
+        );
+    }
+  }
+
   if (LINT) {
     for (const b of results.broken) console.error(`  BROKEN    ${b}`);
     for (const o of results.overrides) console.log(`  OVERRIDE  ${o}`);

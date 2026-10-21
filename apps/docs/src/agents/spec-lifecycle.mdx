@@ -106,16 +106,16 @@ A finding is **durable** when any one of three holds:
 
 Anything else is one-off. Fix it in the change and write nothing. Promoting a one-off is a real cost, because every rule is read by every agent in every session.
 
-| What was missing                                 | Where it goes                           | Who writes it           |
-| ------------------------------------------------ | --------------------------------------- | ----------------------- |
-| A decision                                       | An ADR                                  | `architecture-guardian` |
-| Enforcement: a decision exists and nothing fails | A check wired into `pnpm verify` and CI | `release-operations`    |
-| Awareness: only a human reading can enforce it   | A rule in `.agents/rules/`              | the lead                |
-| A procedure someone re-derived                   | A skill in `.agents/skills/`            | the lead                |
-| A behaviour the spec never specified             | An amendment to the spec's `spec.md`    | the lead                |
-| Coverage: right code, nothing would have noticed | A test at the level that catches it     | `test-engineer`         |
-| A version, advisory or pin                       | A catalog entry                         | `dependency-steward`    |
-| A layout mistake that repeats per package        | A scaffold template change              | `package-steward`       |
+| What was missing                                 | Where it goes                           | Who writes it            |
+| ------------------------------------------------ | --------------------------------------- | ------------------------ |
+| A decision                                       | An ADR                                  | `architecture-guardian`  |
+| Enforcement: a decision exists and nothing fails | A check wired into `pnpm verify` and CI | `release-operations`     |
+| Awareness: only a human reading can enforce it   | A rule in `.agents/rules/`              | the lead                 |
+| A procedure someone re-derived                   | A skill in `.agents/skills/`            | the lead                 |
+| A behaviour the spec never specified             | An amendment to the spec's `spec.md`    | the lead                 |
+| Coverage: right code, nothing would have noticed | A test at the level that catches it     | `test-engineer`          |
+| A version, advisory or pin                       | A catalog entry                         | `dependency-steward`     |
+| A layout mistake that repeats per package        | A scaffold template change              | `code-standards-steward` |
 
 **Enforcement beats awareness.** If a finding can be stated as a predicate over files, write the check, not a rule asking agents to remember. **A decision and its enforcement are two artifacts.** An ADR that no check enforces is a standard that only a tired reviewer stands behind, so the ADR ships with its check or names the check and its owner in its follow-up.
 

@@ -23,7 +23,9 @@ push, and run read-only commands only.
 - `apps/docs/src/runbooks/release.mdx` — changesets, the version pull request, tags, recovery
 - `apps/docs/src/runbooks/secrets.mdx` — Infisical layout and rotation
 - `apps/docs/src/runbooks/deploys.mdx` — what "deployed" means in this repo
-- `.agents/rules/secrets.md` — the two secret mechanisms (ADR-0009)
+- `.agents/rules/secrets.md` — the secret mechanisms (ADR 0173, and the secrets inbox of ADR 0257)
+- ADRs 0185 (incident response, on-call, status page, support tiers), 0186 (backups and disaster recovery) and 0170
+  decision 8 (rollback within 15 minutes, owner-triggered), cited by number until merged
 - The existing runbooks in `apps/docs/src/runbooks/` — the house format
 - `apps/docs/src/docs.json` — the Runbooks navigation group
 
@@ -57,7 +59,7 @@ to this file.
 
 ## Never
 
-Fixes code or CI (the owning builder, or `release-operations`). Does security triage of a leak
+Fixes code or CI (the owning builder, or `infra-engineer` with `release-operations`). Does security triage of a leak
 (`security-tenancy-reviewer` advises on the fix). Records a decision the incident forces
 (the owner decides, then `docs-adr-steward` writes the ADR). Rotates or reads any secret value — a
 human, in Infisical. Blocks: corrective actions are routed to their owning agents and tracked in the
