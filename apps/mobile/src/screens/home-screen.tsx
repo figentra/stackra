@@ -1,3 +1,10 @@
+/**
+ * Stackra file contract:
+ * Purpose: the Home tab's screen: a welcome panel and one button per item.
+ * Boundary: presentation and navigation calls; no data fetching.
+ * Runtime: react-native
+ * Governing contract: ADR 0007 (documentation).
+ */
 import { useNavigation } from "@react-navigation/native";
 import { Button, Card } from "heroui-native";
 import { Text } from "react-native";
@@ -7,6 +14,7 @@ import { Screen } from "../components/ui/screen";
 
 const ITEMS = ["1", "2", "3"];
 
+/** The Home tab: a welcome panel, then a card with a button that opens each item. */
 export function HomeScreen() {
   const navigation = useNavigation();
   return (

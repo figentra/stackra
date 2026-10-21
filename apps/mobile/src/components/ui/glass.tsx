@@ -1,3 +1,10 @@
+/**
+ * Stackra file contract:
+ * Purpose: the Liquid Glass panel, with a plain-surface fallback where the effect is unavailable.
+ * Boundary: one presentational component; no state and no data.
+ * Runtime: react-native
+ * Governing contract: ADR 0007 (documentation).
+ */
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import type { ReactNode } from "react";
 import { View } from "react-native";
