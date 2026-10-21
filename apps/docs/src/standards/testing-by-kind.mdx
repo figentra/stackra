@@ -1,0 +1,71 @@
+---
+title: "Testing by file kind"
+description: "Which test each kind of source file needs, and the file name that test takes. Must match tools/scripts/structure.mjs."
+icon: "vial"
+---
+
+Every source file of a known kind needs one test, placed in a `__tests__/` folder beside it (ADR 0022). The test's tier is set by its
+file-name infix (ADR 0182). This page is the file-kind to test table. The data behind it is `KIND_FOLDERS`, `ROOT_MODULE` and
+`TEST_TIERS` in `tools/scripts/structure.mjs`. The two must match: if this table and the script disagree, the script is right and this
+page is stale. The generated [repository structure](/standards/structure) page carries the same table.
+
+## Test name
+
+A test for a subject is `<subject>` + the tier infix + `.ts`. The subject keeps its kind suffix, so `refund.action.ts` is tested by
+`refund.action.test.ts` in the same folder's `__tests__/`.
+
+| Tier     | Infix            | Holds                                                                      |
+| -------- | ---------------- | -------------------------------------------------------------------------- |
+| unit     | `.test`          | fast, no external services                                                 |
+| int      | `.int.test`      | needs a real database or container                                         |
+| contract | `.contract.test` | a provider's or a consumer's agreed shape                                  |
+| load     | `.load.test`     | throughput and latency                                                     |
+| e2e      | `.e2e.test`      | runs a whole app; lives in the app, not in a package or service (ADR 0022) |
+
+## File kind to test
+
+| Kind folder    | File suffix  | Required test | Test file for `<subject>`                                  |
+| -------------- | ------------ | ------------- | ---------------------------------------------------------- |
+| `actions/`     | `action`     | unit          | `<subject>.action.test.ts`                                 |
+| `queries/`     | `query`      | unit          | `<subject>.query.test.ts`                                  |
+| `models/`      | `model`      | int           | `<subject>.model.int.test.ts`                              |
+| `migrations/`  | `migration`  | none          |                                                            |
+| `seeds/`       | `seed`       | none          |                                                            |
+| `factories/`   | `factory`    | none          |                                                            |
+| `policies/`    | `policy`     | unit          | `<subject>.policy.test.ts`                                 |
+| `permissions/` | `permission` | contract      | `<subject>.permission.contract.test.ts`                    |
+| `settings/`    | `setting`    | contract      | `<subject>.setting.contract.test.ts`                       |
+| `events/`      | `event`      | contract      | `<subject>.event.contract.test.ts`                         |
+| `listeners/`   | `listener`   | unit          | `<subject>.listener.test.ts`                               |
+| `workflows/`   | `workflow`   | int           | `<subject>.workflow.int.test.ts`                           |
+| `services/`    | `service`    | unit          | `<subject>.service.test.ts`                                |
+| `hooks/`       | `hook`       | unit          | `<subject>.hook.test.ts`                                   |
+| `links/`       | `link`       | none          |                                                            |
+| `drivers/`     | `driver`     | unit          | `<subject>.driver.test.ts`                                 |
+| `widgets/`     | `widget`     | unit          | `<subject>.widget.test.tsx` beside the component           |
+| `pages/`       | `page`       | unit          | `<subject>.page.test.tsx`                                  |
+| `resources/`   | `resource`   | unit          | `<subject>.resource.test.ts`                               |
+| `ai/`          | none         | none          |                                                            |
+| `raw/`         | none         | unit          | `<subject>.test.ts`                                        |
+| `decorators/`  | none         | unit          | `<subject>.test.ts`                                        |
+| `components/`  | none         | unit          | `<subject>.test.tsx` in the component folder               |
+| `contracts/`   | none         | contract      | `<subject>.contract.test.ts`                               |
+| `config/`      | `config`     | contract      | `<subject>.config.contract.test.ts`                        |
+| `interfaces/`  | `interface`  | contract      | `<subject>.interface.contract.test.ts`                     |
+| `types/`       | `type`       | contract      | `<subject>.type.contract.test.ts`                          |
+| `tokens/`      | `token`      | contract      | `<subject>.token.contract.test.ts`                         |
+| `constants/`   | `constant`   | contract      | `<subject>.constant.contract.test.ts`                      |
+| `enums/`       | `enum`       | contract      | `<subject>.enum.contract.test.ts`                          |
+| `errors/`      | `error`      | contract      | `<subject>.error.contract.test.ts`                         |
+| `schemas/`     | `schema`     | contract      | `<subject>.schema.contract.test.ts`                        |
+| root module    | `module`     | int           | `<name>.module.int.test.ts` in `src/__tests__/` (ADR 0126) |
+
+"none" means the script requires no test for that kind. A file of that kind can still have one.
+
+## Rules that cross the table
+
+- A component is a folder `x/{x.tsx, index.ts, __tests__/x.test.tsx}` (ADR 0128); its test is `x.test.tsx`, not a tier infix.
+- A file in a kind folder with no suffix (`ai/`, `raw/`, `decorators/`, `components/`) takes the test of its folder.
+- `.contract` is the test tier only. A schema file is `<name>.schema.ts` (ADR 0006), so `.contract` never names a source file.
+- The validator checks that a kind's test exists (`checkTestForKind`, planned under STA-220). Until it lands, the table is a rule
+  without a check, and the scaffold (`pnpm new`) is the only place that writes the test.

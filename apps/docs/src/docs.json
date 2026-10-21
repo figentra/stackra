@@ -368,7 +368,8 @@
               "adr/0265-hook-points-transform-and-verify",
               "adr/0266-capabilities-phase-in-one-option-one-driver-memory-first",
               "adr/0267-infisical-agent-vault-deferred",
-              "adr/0268-register-answers-thin-items-r1-to-r18"
+              "adr/0268-register-answers-thin-items-r1-to-r18",
+              "adr/0269-stackra-testing-package-entries-and-helper-placement"
             ]
           }
         ]
@@ -387,6 +388,7 @@
               "standards/apps",
               "standards/code-style",
               "standards/testing",
+              "standards/testing-by-kind",
               "standards/dependencies",
               "standards/i18n-rtl",
               "standards/ui-and-accessibility"

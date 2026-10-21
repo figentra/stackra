@@ -1,6 +1,6 @@
 ---
 title: "0022 — Tests live in __tests__ folders"
-description: "Accepted · 2026-10-19"
+description: "Accepted, amended by 0269 · 2026-10-19"
 ---
 
 <Note>
@@ -37,6 +37,12 @@ checked either. One layout is easier to glob, exclude from builds and coverage, 
 `tools/scripts/validate-repository.mjs` (`checkTestPlacement`, run by `pnpm validate` and CI) fails on any tracked
 or untracked, non-ignored file named `*.test.*` or `*.spec.*` whose parent directory is not `__tests__`, and on any
 `*.spec.*` file. `.old/` is excluded.
+
+## Amendment: decision 4 names the shared package (0269)
+
+Decision 4 is amended by [0269](/adr/0269-stackra-testing-package-entries-and-helper-placement). Shared fixtures and doubles
+that are generic (factories, fakes for the clock and ids, matchers with no domain type) live in `@stackra/testing`. Domain
+helpers stay in the `./testing` entry of the package that owns the contract. Decisions 1 to 3 and 5 to 6 are unchanged.
 
 ## Supersedes and sources
 
