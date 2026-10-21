@@ -1,12 +1,17 @@
 ---
 title: "0227 — Rejected and deferred technologies, refreshed"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0267 · 2026-10-20"
 ---
 
 <Note>
   Supersedes [0011](/adr/0011-rejected-and-deferred-technologies). Every row change that earlier
   ADRs made to the 0011 table is collected here, so the table has one source again. The rows that
   changed are named in Decision.
+</Note>
+
+<Note>
+  Amended by [0267](/adr/0267-infisical-agent-vault-deferred): a row is added for Agent Vault, which
+  is deferred. The row changes only by a new ADR, and 0267 is that ADR.
 </Note>
 
 ## Context
@@ -75,6 +80,7 @@ row. The owner's answers also added rows that the table never held (Better Auth,
 | Database sharding                                                                                           | Deferred | One region and one primary; cells come later ([0186](/adr/0186-backups-and-disaster-recovery))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | A measured CPU or latency limit that TypeScript and Postgres cannot meet                                                          |
 | Active-active across regions                                                                                | Rejected | One region; cells come later ([0186](/adr/0186-backups-and-disaster-recovery))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | None foreseen                                                                                                                     |
 | A second non-TypeScript runtime for services                                                                | Deferred | TypeScript service members ([0010](/adr/0010-services-are-independent-workspace-members))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | A measured CPU or latency limit that TypeScript cannot meet                                                                       |
+| Agent Vault (Infisical proxy for coding-agent and AI egress credentials)                                    | Deferred | `direct` egress and the `/agents` vault paths; the revival trigger is in [0267](/adr/0267-infisical-agent-vault-deferred)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 ## Consequences
 

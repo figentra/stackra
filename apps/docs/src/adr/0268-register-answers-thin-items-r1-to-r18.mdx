@@ -38,17 +38,21 @@ recorded in the decision below. The Agent Vault deferral (R12) is a supersession
    rules are decided on [0007](/adr/0007-source-documentation-standard), not here.
 2. **R2, per-member documentation.** Each member has a README and a generated `API.md`. A generated `llms.txt` is published. `AGENTS.md` stays
    within about 8,000 tokens.
-3. **R3, identity.** The identity service is a thin control plane over ZITADEL, and Stackra builds no login UI. The central login app of
-   [0241](/adr/0241-identity-first-slice-central-login-app-bff-and-reference-service) is not built.
-4. **R4, tax.** `@stackra/tax` is a port with a memory driver. The ZATCA and UAE tax rules are OS-only, and no Stackra package carries them.
+3. **R3, identity.** The identity service is a thin control plane over ZITADEL. Stackra builds no login UI. ZITADEL's hosted
+   sign-in pages are used, and ZITADEL's own branding replaces the per-tenant login customisation of
+   [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral) decision 7 and
+   [0241](/adr/0241-identity-first-slice-central-login-app-bff-and-reference-service) decision 6. The central login app of 0241 is not built.
+4. **R4, tax.** `@stackra/tax` is a port with a memory driver. The ZATCA and UAE tax rules are OS-only, and no Stackra package carries
+   them. The category of `@stackra/tax` is assigned in its spec.
 5. **R5, categories.** The package categories of [0127](/adr/0127-package-categories-including-infrastructure) are confirmed as they stand.
 6. **R6, DV2.** Recorded outside Stackra. DV2 is a service-level decision of the private OS product, so no Stackra page changes.
 7. **R7, manifest and member roots.** `app-manifest.json` sits at the member root and is committed. `.stackra/encore` is not a workspace member.
    Gen writes `infra.config.json`.
 8. **R8, documentation app.** A documentation app imports only the `./contracts` entries and the generated clients of the members it documents.
    It never imports module source.
-9. **R9, AI risk.** Read actions are low risk, write actions are medium, and delete, money, permission and bulk operations are high risk and
-   require approval.
+9. **R9, AI risk.** Read actions are low risk, write actions are medium, and delete, money, permission and bulk operations are high risk
+   and require approval. These are AI exposure tiers. They are not the L0 to L4 action levels of
+   [0099](/adr/0099-risk-scale-l0-to-l4) decision 1, which are unchanged.
 10. **R10, `query.graph` limits.** The default page size per relation is 20 and the maximum is 100. Depth is at most 3, and fan-out is at most
     1,000 rows per call.
 11. **R11, versions and rendering.** An old major version of a `key@major` stays supported for 12 months after its successor ships. There is no

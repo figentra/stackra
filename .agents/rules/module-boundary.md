@@ -60,7 +60,7 @@ import { defineConfig } from "tsdown";
 Services communicate via (the generated Encore app carries both, ADRs 0091 and 0124):
 
 - **Integration events** - `@OnEvent` on a versioned event name in the form `<module-key>.<aggregate>.<verb>.v<n>` (`identity.user.created.v1`), shapes from the producer's `./contracts` (ADR 0078, ADR 0141)
-- **Typed client calls** - only where an authoritative answer is needed now. `stackra gen` generates a typed client per service, injected through the constructor from `#stackra/clients` (ADR 0260, 0261)
+- **Typed client calls, commands and events** - `stackra gen` generates one typed client per service from its committed `app-manifest.json`, injected through the constructor from `#stackra/clients`: `client.x.y(input)` to call, `client.x.y.queue(input)` to command, and `@OnEvent(Producer.x)` for an event (ADR 0260, 0261)
 - **Read models** - a consumer's copy of another service's data is a `@Projection` fed by that service's events (ADR 0163, 0260)
 - Transport is a driver behind the port (ADR 0142). Never direct imports of another service's source, tables or `Topic`
 - A Stackra package that needs service data defines a port in its `./contracts` entry; the service implements it (ADR 0260)

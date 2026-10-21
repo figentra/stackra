@@ -12,7 +12,7 @@ once they ship.
 
 | Function             | Creates                                                     | ADR        |
 | -------------------- | ----------------------------------------------------------- | ---------- |
-| `defineToken<T>()`   | A typed, namespaced `Symbol.for` DI token, only for a port with several drivers | 0145, 0263 |
+| `defineToken<T>()`   | A typed, namespaced `Symbol.for` DI token; every interface port has one, under the interface's name | 0145, 0263 |
 | `defineConfig<S>()`  | A package or host config with Zod schema and secret refs    | 0146       |
 | `definePermissions`  | The one permission catalogue value a module declares        | 0132       |
 | `defineEvents`       | Integration event names and payload schemas                 | 0141       |
@@ -24,11 +24,16 @@ once they ship.
 ## Worked examples
 
 ```ts
-// tokens/invoice-storage.token.ts — a port with several drivers only (ADR 0263); SCREAMING_SNAKE, `<module>.<TypeName>` key (ADR 0231)
-export const INVOICE_STORAGE = defineToken<InvoiceStorage>("billing.InvoiceStorage");
+// contracts/invoice-storage.ts — every interface port has a same-named token (ADR 0263); `<module>.<TypeName>` key (ADR 0231)
+export interface InvoiceStorage { put(key: string, body: Uint8Array): Promise<void>; }
+export const InvoiceStorage = defineToken<InvoiceStorage>("billing.InvoiceStorage");
+
+// config/billing.config.ts — defineConfig returns a value with a same-named type (ADR 0263)
+export const BillingConfig = defineConfig("billing", BillingSchema, defaults);
+export type BillingConfig = z.infer<typeof BillingSchema>;
 ```
 
-A local class needs no token: a class is its own token, and gen wires it from its constructor types (ADR 0263).
+A constructor typed `storage: InvoiceStorage` or `config: BillingConfig` needs no `@Inject`, for one driver or many. A local class is its own token, and gen wires it from its constructor types (ADR 0263).
 
 ```ts
 // config/billing.config.ts — deploy-time, never per tenant (ADR 0146)
@@ -69,21 +74,22 @@ export const INVOICE_EVENTS = defineEvents("billing", {
 
 ```ts
 constructor(
-  @Inject(BILLING_CONFIG) private readonly config: BillingConfig,
+  private readonly config: BillingConfig,
+  private readonly storage: InvoiceStorage,
   private readonly logger: Logger,
   private readonly clock: Clock,
 ) {}
 ```
 
-Only the typed config keeps an `@Inject` token here, because it is a `define*` value (ADR 0145). The logger and the clock are
-classes or ports wired by gen: they take no `@Inject` (ADR 0263).
+Every one of them is injected by its type: a same-named token or a class, so none takes `@Inject`. `@Inject` is only for a
+named instance (ADR 0263, ADR 0143).
 
 Pure utilities (`Str`, `Arr`, `Num`, `DateTime`) are plain imported functions, with no injection.
 
 ## Never
 
 - String tokens; a `define*` inside a class body; a decorator that builds a value.
-- A `defineToken` for a local class or for a port with one driver (ADR 0263); an `@Inject(TOKEN)` on a local class.
+- An `@Inject` on an interface port, on config or on a local class, or a token whose name differs from its type (ADR 0263).
 - A secret value anywhere in config, tests or fixtures.
 - Tenant-dependent config (a lint flags it); use settings.
 

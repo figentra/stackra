@@ -72,7 +72,7 @@ export const BILLING_PROMPTS = definePrompts("billing", { "explain-invoice": { v
 
 - A hand-written MCP tool or a tool that bypasses an action.
 - A tool that reads tenant or user identity from its input.
-- A secret or credential visible to the model; credentials are secret refs resolved by the runtime (ADR 0106, 0107).
+- A secret or credential visible to the model; credentials are secret refs resolved by the runtime (ADR 0267, 0107).
 - Asking in a spec "does this need AI?": the answer is always yes (ADR 0155).
 
 ## Check

@@ -16,7 +16,8 @@ description: "Accepted, amended by 0264 · 2026-10-20"
 <Note>
   Amended by [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders): A
   module key is one snake_case segment (decision 1), and model keys are snake_case (decision 2).
-  Dotted module keys are not used.
+  Dotted module keys are not used. Token constants for interface ports and `defineConfig` values
+  take the type's name (0263 decision 3); SCREAMING_SNAKE applies to other module-level constants.
 </Note>
 
 ## Context

@@ -35,7 +35,7 @@ The brief, the service's `AGENTS.md`, `.agents/rules/service-checklist.md`, `.ag
 1. Behaviour is an action: `@Action` writes and `@Query` reads with `key@version`, Zod input and output, permission,
    risk, `actors` (ADR 0098, 0099); `handle(input, ctx)`, one transaction, events through the outbox, external calls
    after commit, idempotency for client writes (0136); declared options and refusal codes (0137); the UX declaration
-   (0139). Expose with `@AsEndpoint`, `@AsTool`, `@AsJob`, `@AsListener`; `@Controller` only for raw endpoints (0098).
+   (0139). Expose with `@AsEndpoint`, `@AsTool`, `@AsJob`, `@AsCommand`; a reaction is an `@OnEvent` listener in `listeners/` (0098, 0264); `@Controller` only for raw endpoints (0098).
 2. Queries at L0–L1 become MCP tools automatically; writes opt in with `@AsTool`; L3+ needs a named human (0155).
 3. Modules at `src/modules/<feature>/` in kind folders; no `controllers/`, `dtos/`, `repositories/` (0130); every
    `@Module` has a `key` (0131); the root module is declared in `package.json` (0090, 0126).

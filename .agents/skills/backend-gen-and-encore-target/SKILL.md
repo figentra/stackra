@@ -29,7 +29,7 @@ emitter knows about Encore. Gen lives in the developer category, `packages/devel
 | The `AssetKey` union and the manifest's assets section | `.stackra/` | no | 0234 |
 | The typed IPC bridge and allow-list from `@DesktopAction`, the capability and offline maps, the PWA manifest, electron-builder config | app target | no | 0249–0251 |
 | The gateway layers: one auth handler (ZITADEL → Actor), CORS per area, request id, per-endpoint middleware ordered by phase | `.stackra/encore/` | no | 0237 |
-| The TypeScript and Python clients      | built and published by CI    | never      | 0158, 0217       |
+| The TypeScript and Python clients      | generated from the manifest in the repository; CI-published for outside consumers | never | 0158, 0260 |
 
 ## The loop
 
@@ -59,7 +59,7 @@ for authoring: never copy its `api()`, `encore.service.ts`, `~encore/clients` or
 | ------------------------------------- | ----------------------------------------------------- |
 | An endpoint                           | `@Action`/`@Query` + `@AsEndpoint`                    |
 | A raw webhook or stream               | `@Controller` in `raw/`                               |
-| A subscription                        | `@AsListener` / `@OnEvent` on a versioned event       |
+| A subscription                        | `@OnEvent` on a versioned event       |
 | A cron                                | `@Cron` or a scheduler decorator                      |
 | A secret                              | `secret('<PROVIDER>_<PURPOSE>')` in `config/<pkg>.config.ts`           |
 | A database                            | the service's database module; gen declares one per service (ADR 0238) |

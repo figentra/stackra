@@ -1,6 +1,6 @@
 ---
 name: backend-module-and-root-module
-description: Structure Stackra code as modules - the @Module with its key and name, the root module declared in package.json for gen, src/modules/<feature>/ kind folders, imports and exports, forRoot and forFeature registration, provider scopes, lifecycle hooks and createTestingModule. Use when creating a service, a package's root module, a feature module, or wiring providers.
+description: Structure Stackra code as modules - the @Module with its key, the root module declared in package.json for gen, src/modules/<feature>/ kind folders, imports and exports, forRoot and forFeature registration, provider scopes, lifecycle hooks and createTestingModule. Use when creating a service, a package's root module, a feature module, or wiring providers.
 ---
 
 # Modules and the root module
@@ -45,8 +45,8 @@ import { InvoiceService } from "#modules/invoices/services/invoice.service";
 import { INVOICE_PERMISSIONS } from "#modules/invoices/permissions/invoice.permissions";
 
 @Module({
-  key: "billing",              // required, dotted, unique across the manifest; prefixes action, permission,
-  name: "billing",             // event and setting keys (ADR 0131); `name` is the asset/i18n namespace (ADR 0234)
+  key: "billing",              // required, one snake_case segment, unique across the manifest; the namespace of its
+                               // actions, permissions, events, settings, i18n and assets (ADR 0264, 0131, 0234)
   permissions: INVOICE_PERMISSIONS,
   exports: [InvoiceService],   // no providers list: gen discovers the folder's @Injectable classes (ADR 0263)
 })
@@ -59,7 +59,7 @@ export class RefundInvoiceAction {
 }
 
 // src/billing.module.ts — the root module declares the key and third-party imports only
-@Module({ key: "billing.service", imports: [DatabaseModule.forFeature([Invoice])] })
+@Module({ key: "billing_service", imports: [DatabaseModule.forFeature([Invoice])] })
 export class BillingModule {}
 ```
 
@@ -81,8 +81,9 @@ sunset })` marks a deprecated action, event, field, setting or trait.
 - Lifecycle: `onModuleInit`, `onApplicationBootstrap`, `beforeApplicationShutdown`, `onModuleDestroy`,
   `onApplicationShutdown`. Explorers run at bootstrap; readiness only after it.
 - A circular dependency is a boot error; there is no `forwardRef`.
-- A local class is its own token. `defineToken<T>()` is for a port with several drivers only, and strings are never tokens
-  (ADR 0263; skill `backend-define-family`).
+- A local class is its own token. Every interface port and every `defineConfig` value has a same-named token, so a constructor
+  typed with it needs no `@Inject`. `@Inject` is only for a named instance, and strings are never tokens (ADR 0263; skill
+  `backend-define-family`).
 - A module's own providers are wired by gen from `.stackra/gen/wiring.ts`; authors write no `providers` array and no
   imports for their own classes (ADR 0263).
 
