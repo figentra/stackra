@@ -25,6 +25,7 @@
  * first), so `node -e 'v.env'` or `cat apps/x/eas.json` are fine.
  */
 import { spawnSync } from "node:child_process";
+import { homedir } from "node:os";
 import { resolve, sep } from "node:path";
 import { readStdin, deny, ask, failOpen } from "./_io.mjs";
 import { commandReachesInbox } from "./_inbox.mjs";
@@ -114,24 +115,56 @@ const refspecDest = (r) =>
     .pop()
     .replace(/^refs\/heads\//, "");
 
+/** `~` and `$HOME` expanded; any other `$` or backtick makes the path unknown (null). */
+const expandHome = (p) => {
+  const e = unquote(p).replace(/^(?:~|\$HOME|\$\{HOME\})(?=\/|$)/, homedir());
+  return /[$`]/.test(e) ? null : e;
+};
+
 /**
  * `git push` whose destination is main: an explicit refspec (`main`, `HEAD:main`,
  * `+main`, `refs/heads/main`, `:main`), `--all` / `--mirror`, or no refspec (or `HEAD`)
- * while main is checked out. A branch that merely contains "main" is fine.
+ * while main is checked out in the push's checkout: the hook's cwd, moved by a preceding `cd`
+ * and by git's `-C`, `--git-dir` and `--work-tree` (STA-214). An unknown target (`$VAR`) counts as main.
+ * A branch that merely contains "main" is fine.
  */
 function pushesMain(c, cwd) {
-  const PUSH = new RegExp(GIT + String.raw`push\b(.*)$`);
+  const PUSH = new RegExp(String.raw`\bgit\s+(?:--\s+)?(` + GIT_OPTS + String.raw`)push\b(.*)$`);
+  let dir = cwd;
   return segments(dropMessages(c)).some((seg) => {
+    const cd = seg.match(/^\s*(?:cd|pushd)\s+(\S+)\s*$/);
+    if (cd) {
+      const to = expandHome(cd[1]);
+      dir = to === null || dir === null ? null : resolve(dir, to);
+      return false;
+    }
     const m = seg.match(PUSH);
     if (!m) return false;
-    const args = m[1].split(/\s+/).map(unquote).filter(Boolean);
+    const args = m[2].split(/\s+/).map(unquote).filter(Boolean);
     if (args.some((a) => a === "--all" || a === "--mirror")) return true;
     const refs = args.filter((a) => !a.startsWith("-"));
     if (refs.some((r) => refspecDest(r) === "main")) return true;
     const implicit = refs.length <= 1 || refs.slice(1).every((r) => r === "HEAD");
-    return implicit && git(cwd, "symbolic-ref", "--short", "HEAD") === "main";
+    if (!implicit) return false;
+    if (dir === null) return true;
+    // Only the location options are replayed; a `-c` value could run code (core.fsmonitor), so it is dropped.
+    const target = [];
+    for (const [, opt, value] of m[1].matchAll(/(-C|--git-dir|--work-tree)(?:=|\s+)(\S+)/g)) {
+      const v = expandHome(value);
+      if (v === null) return true;
+      target.push(...(opt === "-C" ? ["-C", v] : [`${opt}=${v}`]));
+    }
+    return git(dir, ...target, "symbolic-ref", "--short", "HEAD") === "main";
   });
 }
+
+/** `pnpm bot:gh` merging a PR: `pr merge`, `api …/pulls/<n>/merge` (any method), or a GraphQL merge mutation. */
+const MERGE =
+  /\bpr\s+(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?merge\b|\bpulls\/\d+\/merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/;
+const botMerges = (c) =>
+  [dropMessages(c), ...runnable(c)].some((t) =>
+    segments(t).some((s) => /\bbot:gh\b/.test(blank(s)) && MERGE.test(s)),
+  );
 
 /** True when `rm` is given both recursive and force, in any flag spelling. */
 const isRecursiveForce = (flags) =>
@@ -251,6 +284,15 @@ const rules = [
   },
   // STA-208: agents never act with the owner's GitHub login (ADR 0230 rule 5). Accident guard: same macOS user.
   {
+    rx: botMerges,
+    why: "Agents merge only through `pnpm pr:merge <n>` (ADR 0119, ADR 0230), which checks the gate and the reviewer's verdict. `pnpm bot:gh -- pr merge`, `api …/pulls/<n>/merge` and the GraphQL merge mutations are denied.",
+  },
+  {
+    // STA-214: pack plumbing pushes or fetches without the push-to-main check; no agent needs it.
+    rx: (c) => runs(c, new RegExp(GIT + String.raw`(?:send|receive|fetch|upload)-pack\b`)),
+    why: "`git send-pack`, `receive-pack`, `fetch-pack` and `upload-pack` are pack plumbing that bypasses the push guard. Use `pnpm bot:git -- push origin HEAD` or `pnpm bot:git -- fetch origin`.",
+  },
+  {
     rx: (c) => runs(c, BARE_GH),
     why: "Agents never run `gh` on the owner's login, in any form (a `GH_TOKEN=` prefix included: an empty token falls back to the owner). Use `pnpm bot:gh -- <args>` (builder, stackra-bot; `-R figentra/os` for the OS repo), `pnpm bot:review -- <args>` (reviewer) or `pnpm pr:merge <n>`; in a pipe, `pnpm --silent bot:gh -- <args> | …`.",
   },
@@ -265,9 +307,15 @@ const rules = [
       /\$\{?(?:GH_TOKEN|GITHUB_TOKEN)\b/.test(dropMessages(c).replace(/'[^']*'/g, "''")) ||
       runs(
         c,
-        /\bbot:(?:gh|review)\s+(?:--\s+)?auth\b|\bbot:git\s+(?:--\s+)?(?:\S+\s+)*?credential\b/,
+        new RegExp(
+          String.raw`\bbot:(?:gh|review)\s+(?:--\s+)?auth\b|\bbot:git\s+(?:--\s+)?(?:\S+\s+)*?credential\b|` +
+            // STA-214: `git credential fill` and `git credential-<helper> get` answer with the owner's token.
+            String.raw`\bgit(?:-|\s+(?:--\s+)?` +
+            GIT_OPTS +
+            String.raw`)credential\b`,
+        ),
       ),
-    why: "A bot token is never printed, read or handed to `gh auth`: `pnpm bot:token`, `$GH_TOKEN`, `bot:gh -- auth …` and `bot:git -- credential …` are denied. Use `pnpm bot:gh -- <args>`, which keeps the token in its child process.",
+    why: "A token is never printed, read or handed to `gh auth`: `pnpm bot:token`, `$GH_TOKEN`, `bot:gh -- auth …`, and `git credential …` or `git credential-<helper> …` (bare or through `bot:git`) are denied. Use `pnpm bot:gh -- <args>`, which keeps the token in its child process.",
   },
   // ADR 0230: an agent never speaks for the owner, and only the reviewer identity posts verdicts. A tripwire, not
   // the control: pr-merge checks the verdict's author.

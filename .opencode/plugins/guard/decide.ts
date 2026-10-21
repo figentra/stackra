@@ -105,11 +105,15 @@ function gitSubcommand(args: string[]): string {
 
 const OWNER_ONLY_CLI = new Set(["gh", "wrangler", "curl", "wget"]);
 // Network git too (STA-208): on a private repo a fetch falls back to the owner's credential helper.
+// STA-214: pack plumbing (bypasses the push checks) and `credential` (answers with the owner's token) too.
 const GIT_OWNER_ONLY = new Set(
-  "push commit merge rebase tag worktree fetch pull clone ls-remote submodule subtree".split(" "),
+  "push commit merge rebase tag worktree fetch pull clone ls-remote submodule subtree send-pack receive-pack fetch-pack upload-pack credential".split(
+    " ",
+  ),
 );
-/** `git remote update|show|prune` and `git archive --remote` reach the remote too. */
+/** `git remote update|show|prune`, `git archive --remote` and `git credential-<helper>` reach a remote or a token. */
 const networkGit = (g: string, args: string[]): boolean =>
+  g.startsWith("credential-") ||
   (g === "remote" && args.some((a) => ["update", "show", "prune"].includes(a))) ||
   (g === "archive" && args.some((a) => a.startsWith("--remote")));
 /** The GitHub bot wrappers (STA-208): the lead reaches GitHub as the bot; executors not at all. */
@@ -117,7 +121,7 @@ const BOT_SCRIPT = /^(?:bot:(?:gh|git|review|token)|pr:merge)$/;
 
 /** Executors run unattended: anything that leaves the worktree, ships, or rewrites history is the lead's. */
 function denyExecutor(sub: string, cmd: string, args: string[]): Decision {
-  if (OWNER_ONLY_CLI.has(cmd))
+  if (OWNER_ONLY_CLI.has(cmd) || cmd.startsWith("git-credential"))
     return deny(`\`${cmd}\` reaches the network or a shared account; executors never run it.`);
   if (/\bbot:token\b/.test(sub) || (cmd === "pnpm" && args.some((a) => BOT_SCRIPT.test(a))))
     return deny(

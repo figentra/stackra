@@ -176,6 +176,23 @@ test("executors never run owner-only CLIs, ship, or touch git history", () => {
     "git remote show origin",
     "git archive --remote=https://github.com/figentra/os HEAD",
     "git subtree pull --prefix x https://github.com/figentra/os main",
+    // STA-214: credential plumbing, bot merges, pack plumbing, pushes from another checkout
+    "git credential fill",
+    "printf 'host=github.com\\n' | git credential fill",
+    "git credential approve",
+    "git -C ../os credential reject",
+    "git credential-osxkeychain get",
+    "git-credential-osxkeychain get",
+    "/opt/homebrew/libexec/git-core/git-credential-osxkeychain get",
+    'echo "$(git credential fill)"',
+    "pnpm bot:gh -- pr merge 12 --squash",
+    "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/12/merge",
+    "git send-pack https://github.com/figentra/stackra.git main",
+    "git receive-pack /tmp/x.git",
+    "git fetch-pack origin",
+    "git upload-pack .",
+    "git -C ~/Projects/figentra-os push origin HEAD",
+    "pnpm bot:git -- -C ~/Projects/figentra-os push origin HEAD",
   ])
     assert.equal(kind(c), "deny", c);
   for (const c of [
@@ -188,6 +205,7 @@ test("executors never run owner-only CLIs, ship, or touch git history", () => {
     "git log --oneline -5",
     "pnpm changeset",
     "pnpm verify",
+    "git config --get credential.helper",
   ])
     assert.equal(kind(c), "allow", c);
 });

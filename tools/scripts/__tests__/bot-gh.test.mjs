@@ -1,6 +1,28 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BOT_EMAIL, gitBotArgs, leaksToken, reviewerAllows } from "../bot-gh.mjs";
+import { BOT_EMAIL, gitBotArgs, leaksToken, mergesPr, reviewerAllows } from "../bot-gh.mjs";
+
+test("STA-214: credential helpers leak too; merges go only through pnpm pr:merge", () => {
+  assert.equal(leaksToken("git", ["credential-osxkeychain", "get"]), true);
+  assert.equal(leaksToken("git", ["--git-dir", "x", "credential", "approve"]), true);
+  assert.equal(leaksToken("git", ["config", "credential.helper"]), false);
+  for (const args of [
+    ["pr", "merge", "12", "--squash"],
+    ["pr", "-R", "figentra/os", "merge", "3"],
+    ["api", "-X", "PUT", "repos/figentra/stackra/pulls/12/merge"],
+    ["api", "--method=put", "/repos/figentra/os/pulls/3/merge"],
+    ["api", "-XPUT", "repos/x/y/pulls/1/merge", "-f", "merge_method=squash"],
+    ["api", "graphql", "-f", "query=mutation { mergePullRequest(input: {}) { clientMutationId } }"],
+    ["api", "graphql", "-f", "query=mutation { enablePullRequestAutoMerge(input: {}) { x } }"],
+  ])
+    assert.equal(mergesPr(args), true, args.join(" "));
+  for (const args of [
+    ["pr", "view", "12", "--json", "mergeable"],
+    ["pr", "list", "--search", "merge"],
+    ["api", "repos/x/y/pulls/12/files"],
+  ])
+    assert.equal(mergesPr(args), false, args.join(" "));
+});
 
 test("STA-208: the wrappers refuse commands that print or store the token", () => {
   for (const [tool, args] of [
