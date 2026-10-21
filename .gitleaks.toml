@@ -10,5 +10,5 @@ useDefault = true
 
 [allowlist]
 description = "Fixtures with deliberately fake keys"
-paths = ['''.*/__fixtures__/.*''', '''\.agents/skills/.*''', '''\.agents/specs/.*\.md''']
+paths = ['''.*/__fixtures__/.*''', '''\.agents/skills/.*''', '''\.agents/reference/.*''', '''\.agents/specs/.*\.md''']
 regexes = ['''sk_test_[A-Za-z0-9]{8,}''', '''rk_test_[A-Za-z0-9]{8,}''']

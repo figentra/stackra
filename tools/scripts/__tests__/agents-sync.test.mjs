@@ -379,17 +379,109 @@ test("a tier without a mapping file, or outside it, is rejected with exit 2", ()
   });
 });
 
-test("a mapping file missing a tier for an assistant is rejected with exit 2", () => {
+test("a tier an assistant has no row for is not projected to it, and --prune removes the old copy", () => {
+  withFixture(
+    {
+      "reviewer.md": TIERED("frontier"),
+      "builder.md": FULL.replace("model: opus", "tier: economy"),
+    },
+    (root) => {
+      withModels(root);
+      assert.equal(run(root).code, 0);
+      assert.ok(existsSync(join(root, ".opencode/agents/reviewer.md")));
+      const partial = structuredClone(MODELS);
+      delete partial.assistants.opencode.frontier;
+      withModels(root, partial);
+      const check = run(root, "--check");
+      assert.equal(check.code, 1);
+      assert.match(check.out, /\.opencode\/agents\/reviewer\.md: stale generated agent/);
+      assert.equal(run(root, "--prune").code, 0);
+      assert.ok(!existsSync(join(root, ".opencode/agents/reviewer.md")));
+      assert.ok(existsSync(join(root, ".claude/agents/reviewer.md")));
+      assert.ok(existsSync(join(root, ".opencode/agents/builder.md")));
+      assert.equal(run(root, "--check").code, 0);
+    },
+  );
+});
+
+test("a tier mapped for no assistant, or a row naming an unknown tier, is rejected with exit 2", () => {
   withFixture({ "reviewer.md": TIERED("frontier") }, (root) => {
     const broken = structuredClone(MODELS);
     delete broken.assistants.opencode.frontier;
+    delete broken.assistants.claude.frontier;
     withModels(root, broken);
     const r = run(root);
     assert.equal(r.code, 2);
+    assert.match(r.out, /tier 'frontier' is mapped for no assistant/);
+  });
+  withFixture({ "reviewer.md": TIERED("frontier") }, (root) => {
+    const broken = structuredClone(MODELS);
+    broken.assistants.opencode.premium = "p/x";
+    withModels(root, broken);
+    const r = run(root);
+    assert.equal(r.code, 2);
+    assert.match(r.out, /'assistants\.opencode\.premium' is not a tier in 'tiers'/);
+  });
+});
+
+test("an `assistants` list limits the projection; an unknown name is rejected", () => {
+  const claudeOnly = TIERED("economy").replace(
+    "tier: economy",
+    "tier: economy\nassistants: [claude]",
+  );
+  withFixture({ "reviewer.md": claudeOnly }, (root) => {
+    withModels(root);
+    assert.equal(run(root).code, 0);
+    assert.ok(existsSync(join(root, ".claude/agents/reviewer.md")));
+    assert.ok(!existsSync(join(root, ".opencode/agents/reviewer.md")));
+  });
+  withFixture({ "reviewer.md": claudeOnly.replace("[claude]", "[claude, cursor]") }, (root) => {
+    withModels(root);
+    const r = run(root, "--lint");
+    assert.equal(r.code, 2);
+    assert.match(r.out, /'assistants' must be a list of: claude, opencode \(unknown: cursor\)/);
+  });
+});
+
+test("a route that sends an agent to OpenCode when the agent is not projected there is broken", () => {
+  withFixture({ "reviewer.md": TIERED("frontier") }, (root) => {
+    const partial = structuredClone(MODELS);
+    delete partial.assistants.opencode.frontier;
+    withModels(root, partial);
+    writeFileSync(
+      join(root, ".agents/routing.yaml"),
+      "tasks:\n  review: { executor: opencode, model: p/x, agent: reviewer }\n  other: { executor: claude, model: opus, agent: reviewer }\n",
+    );
+    const r = run(root, "--lint");
+    assert.equal(r.code, 1);
     assert.match(
       r.out,
-      /'assistants\.opencode\.frontier' is missing \(use null for the assistant's default\)/,
+      /task 'review' routes to OpenCode, but agent 'reviewer' is not projected there/,
     );
+    assert.doesNotMatch(r.out, /task 'other'/);
+  });
+});
+
+test("a skill that teaches rejected technology fails --lint unless an allowance names the reason", () => {
+  withFixture({ "reviewer.md": READ_ONLY }, (root) => {
+    const skill = (name, text) => {
+      mkdirSync(join(root, ".agents/skills", name, "references"), { recursive: true });
+      writeFileSync(join(root, ".agents/skills", name, "SKILL.md"), `# ${name}\n`);
+      writeFileSync(join(root, ".agents/skills", name, "references/more.md"), text);
+    };
+    skill("orm-tips", "Define tables with drizzle-orm and run `drizzle-kit push`.\n");
+    skill("flows", "Model the checkout with XState and write checkout.spec.ts.\n");
+    skill("vitest", "The API is Jest-compatible: `vi.fn()` mirrors jest.fn().\n");
+    const fenced = join(root, ".agents/reference/encore/encore-api");
+    mkdirSync(fenced, { recursive: true });
+    writeFileSync(join(fenced, "SKILL.md"), "import { api } from 'encore.dev/api'\n");
+    const r = run(root, "--lint");
+    assert.equal(r.code, 1);
+    assert.match(r.out, /\.agents\/skills\/orm-tips: teaches 'drizzle', which is rejected/);
+    assert.match(r.out, /\.agents\/skills\/flows: teaches 'xstate'/);
+    assert.match(r.out, /\.agents\/skills\/flows: teaches 'spec-files'/);
+    assert.doesNotMatch(r.out, /skills\/vitest: teaches/);
+    assert.doesNotMatch(r.out, /encore-api/);
   });
 });
 

@@ -1,0 +1,72 @@
+---
+title: "0258 — Agent roster v2, Claude-only agents and skill fencing"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends decision 3 of [0193](/adr/0193-agents-and-model-policy) and decision 9 of
+  [0121](/adr/0121-sdlc-tooling-roles-and-linear); both pages and the index carry "amended by 0258".
+</Note>
+
+## Context
+
+[0193](/adr/0193-agents-and-model-policy) fixed five tiers and their models and folded the package steward away, but left the roster itself to a later
+change. An audit of the eleven agents and forty-one skills against the ADRs (STA-148) found agents citing folded roles,
+a contract reviewer telling builders to commit the generated client (0158 says CI publishes it), OpenCode projections of
+reviewers and guardians that 0121 D10 forbids, and seventeen vendored `encore-*` skills that teach the hand-written Encore
+code 0091 and 0124 reject. The owner accepted the roster and skills plan with eight recommended answers on 2026-10-20.
+
+## Decision
+
+1. **Roster.** The agents are:
+   - lead (the main session, not a file);
+   - guardians (block): `architecture-guardian`, `security-tenancy-reviewer`, `release-operations`;
+   - executors: `package-builder`, `compiler-engineer`, `service-builder`, `data-engineer`, `frontend-builder`,
+     `desktop-pwa-builder`, `mobile-builder`, `infra-engineer`, `test-engineer`, `spec-writer`, `secret-manager`;
+   - reviewers: `code-reviewer`, `api-contract-reviewer`, `accessibility-reviewer`, `performance-reviewer`,
+     `design-brand-reviewer`;
+   - stewards: `code-standards-steward` (with the package steward folded in), `dependency-steward`, `docs-adr-steward`,
+     `docs-changesets-steward`, `i18n-steward`;
+   - on call: `incident-commander`.
+2. **Changes to 0121 D9.** `spec-executor` is not ported: `package-builder` and the specialist builders implement spec
+   tasks. `spec-author` returns as `spec-writer`, so the lead stays a coordinator. `delivery-orchestrator`,
+   `docs-governance` and `spec-planner` stay folded into the lead. `sql-reviewer` and `privacy-officer` are deferred to
+   the first tenant-owned table that holds personal data.
+3. **test-engineer is an executor.** It writes tests; a red suite fails the Quality Gate, which is the block. No agent
+   both writes a change and holds the blocking verdict on it.
+4. **Projection per assistant.** An assistant runs only the tiers it has a row for in `.agents/models.yaml`; OpenCode has
+   rows for steward and executor only, on Kimi K3 (0121 D10). An agent narrows further with `assistants: [claude]`.
+   `secret-manager`, `compiler-engineer`, `data-engineer`, `infra-engineer` and `spec-writer` are Claude-only, because each
+   touches change risk R3 or a generated contract.
+5. **Encore skills are fenced.** Fourteen `encore-*` skills move to `.agents/reference/encore/`, which is not projected, so
+   no session loads them by description. `compiler-engineer` reads them as the reference for what `stackra gen` emits;
+   guardians may read them to judge generated output. `encore-getting-started`, `encore-migrate` and `encore-frontend` are
+   removed, with `sanity-best-practices` (0114 drops Sanity) and `typescript-patterns` (its alias rule contradicts 0233).
+6. **Rejected technology in skills is checked.** A skill that names a rejected technology fails the lint unless an
+   allow-list entry names the reason.
+7. **House skill names** keep a category prefix (`backend-`, `frontend-`, `mobile-`, `devops-`, `security-`, `db-`,
+   `ai-`, `domain-`, `testing-`, `docs-`) and add `code-` for code conventions.
+8. **Where gen lives.** `stackra gen` is in the developer category (`packages/developer/cli` and `packages/developer/gen`),
+   as 0127 places it; `compiler-engineer` owns those packages.
+
+## Consequences
+
+- Each new or rewritten agent cites the ADRs it enforces; a stale citation is a docs-adr-steward finding.
+- OpenCode loses its copies of the reviewer, guardian and lead agents; `pnpm delegate` routes only steward and executor
+  work there, which `routing.yaml` already does.
+- The Encore reference is refreshed by hand from upstream when the emitters change.
+
+## Enforcement
+
+- `tools/scripts/agents-sync.mjs` projects an agent only to assistants with a row for its tier and listed in its
+  `assistants`, and `pnpm agents:check` fails on a stale projection (tests in
+  `tools/scripts/__tests__/agents-sync.test.mjs`).
+- `agents-sync.mjs --lint` and `--check` fail a skill in `.agents/skills/` that names rejected technology unless
+  `SKILL_TECH_ALLOWED` records the reason (decision 6), and a route that sends work to OpenCode for an agent not
+  projected there.
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends [0193](/adr/0193-agents-and-model-policy) decision 3 and [0121](/adr/0121-sdlc-tooling-roles-and-linear) decision 9. Sources:
+`stackra-notes/agent-roster-v2.md` and the owner's acceptance (memory, ops file, "Agent roster v2 ACCEPTED",
+2026-10-20).
