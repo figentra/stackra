@@ -12,21 +12,21 @@ The rules below are the single source for the scaffold (`pnpm new`) and the vali
 
 A package lives at `packages/<category>/<name>`. Tooling presets live at `packages/tooling/<name>` and carry `tier:config`.
 
-| Category         | Holds                                                                     | Source   |
-| ---------------- | ------------------------------------------------------------------------- | -------- |
-| `foundation`     | contracts, validation and errors every layer imports                      | ADR 0127 |
-| `application`    | actions, AI, IR and the registry                                          | ADR 0127 |
-| `communication`  | webhooks, notifications, versioning and integrations                      | ADR 0127 |
-| `commerce`       | money, ledger and pricing primitives                                      | ADR 0127 |
-| `cross-cutting`  | brand and concerns that span layers (settlement Q3.1)                     | ADR 0127 |
-| `data`           | model, database, content, media, search, assets, filesystem, storage      | ADR 0127 |
-| `developer`      | CLI, gen, coding standard and the Vite plugin                             | ADR 0127 |
-| `experience`     | UI, experience, navigation, console and panel                             | ADR 0127 |
-| `infrastructure` | Pulumi-based packages named `infra-<name>`                                | ADR 0127 |
-| `runtime`        | outbox, queue, scheduler, workflow, realtime, locking and cache           | ADR 0127 |
-| `security`       | identity, IAM, tenancy, connections, entitlements and licensing           | ADR 0127 |
-| `state`          | settings, feature flags and theming                                       | ADR 0127 |
-| `tooling`        | build, lint and test presets with no workspace dependencies (tier:config) | ADR 0003 |
+| Category         | Holds                                                                     | Source         |
+| ---------------- | ------------------------------------------------------------------------- | -------------- |
+| `foundation`     | contracts, validation and errors every layer imports                      | ADR 0127       |
+| `application`    | actions, AI, IR and the registry                                          | ADR 0127       |
+| `communication`  | webhooks, versioning, integrations and templates                          | ADR 0127, 0270 |
+| `commerce`       | money, ledger and pricing primitives                                      | ADR 0127       |
+| `cross-cutting`  | brand and concerns that span layers (settlement Q3.1)                     | ADR 0127       |
+| `data`           | model, database, content, media, search, assets, filesystem, storage      | ADR 0127       |
+| `developer`      | CLI, gen, coding standard and the Vite plugin                             | ADR 0127       |
+| `experience`     | UI, experience, navigation, console, panel, builder and collaboration     | ADR 0127, 0270 |
+| `infrastructure` | Pulumi-based packages named `infra-<name>`                                | ADR 0127       |
+| `runtime`        | outbox, queue, scheduler, workflow, realtime, locking and cache           | ADR 0127       |
+| `security`       | identity, IAM, tenancy, connections, entitlements and licensing           | ADR 0127       |
+| `state`          | settings, feature flags and theming                                       | ADR 0127       |
+| `tooling`        | build, lint and test presets with no workspace dependencies (tier:config) | ADR 0003       |
 
 ## Package entries
 

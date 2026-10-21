@@ -4,6 +4,14 @@ description: "Accepted · 2026-10-20"
 ---
 
 <Note>
+  Amended by
+  [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels):
+  the experience row gains `builder` and `collaboration` and loses `forms` (coded forms use
+  `@stackra/ui/form`); the communication row loses `notifications` (now the
+  `@figentra/service-notifications` service).
+</Note>
+
+<Note>
   Amended by [0234](/adr/0234-module-assets-and-storage): the data category gains `assets` and
   `filesystem`, and `stackra gen` (in the developer category) gains the assets collector.
 </Note>
@@ -90,9 +98,9 @@ member gets a category on 2026-10-21. This amendment records the placement of ea
    | data           | model, database, content, media, search, state-machine, assets, filesystem [0234 amends this table: assets and filesystem are data, not foundation], storage [structure.mjs, ADR 0256] |
    | application    | actions, ai, ir, registry                                                                                                                                                              |
    | runtime        | outbox, queue, scheduler, workflow, realtime, locking, cache, app, devices [roadmap; devices by owner settlement, 2026-10-21]                                                          |
-   | communication  | webhooks, notifications, versioning, integrations, templates [0234 names templates in communication]                                                                                   |
+   | communication  | webhooks, versioning, integrations, templates [0234 names templates in communication; notifications is a service per 0270]                                                             |
    | security       | connections, entitlements, licensing, identity, iam, tenancy, consent, csp [roadmap]                                                                                                   |
-   | experience     | ui, experience, navigation, console, panel, forms, kbd, pwa, platform [0250], peripherals [0253]                                                                                       |
+   | experience     | ui, experience, navigation, console, panel, kbd, pwa, platform [0250], peripherals [0253], builder, collaboration [0270; forms dropped]                                                |
    | developer      | cli, gen, coding-standard, vite-plugin, devtools-kit, testing [roadmap; testing per the build plan's Phase T]                                                                          |
    | cross-cutting  | brand (moved from experience), analytics, seo [roadmap]                                                                                                                                |
    | state          | settings, feature-flags, theming, coordinator [roadmap]                                                                                                                                |
