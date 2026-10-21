@@ -70,7 +70,7 @@ export function leaksToken(tool, args) {
  * the GraphQL merge mutations. pr-merge.mjs runs gh itself after its checks, so it never comes through here.
  */
 export function mergesPr(args) {
-  const [group] = words("gh", args);
+  const [group, verb] = words("gh", args);
   if (group === "pr") return verb === "merge";
   return (
     group === "api" &&
