@@ -1,6 +1,6 @@
 ---
 title: "0126 — Member shapes and scaffold templates"
-description: "Accepted, amended by 0234, 0249, 0259, 0264 · 2026-10-20"
+description: "Accepted, amended by 0234, 0249, 0259, 0264, 0269 · 2026-10-20"
 ---
 
 <Note>
@@ -23,6 +23,12 @@ description: "Accepted, amended by 0234, 0249, 0259, 0264 · 2026-10-20"
   Amended by [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders):
   The kind folders `hooks/`, `widgets/`, `pages/`, `links/`, `drivers/` and `ai/` join decision 3's
   list, each created with its first file.
+</Note>
+
+<Note>
+  Amended 2026-10-21 (STA-219): config lives in `src/config/`, package static files in `assets/`, the
+  root-module test is `<name>.module.int.test.ts`, and the kind-folder list is the one in ADR
+  [0130](/adr/0130-module-layout-by-semantic-kind). See the amendment at the end of this page.
 </Note>
 
 ## Context
@@ -101,6 +107,41 @@ for every new member, so they are decided here together.
   `encore.service.ts` or `encore.app`; `checkTestPlacement` bans `*.stories.*`.
 - Planned: a validator check that a package's entry folders match its `exports` and `tsdown.config.ts`, and an oxlint rule
   that entries never import each other.
+
+<Note>
+  Amended by [0269](/adr/0269-stackra-testing-package-entries-and-helper-placement) (decision 6):
+  decision 2's entry list has one named exception, the `./e2e` and `./contract` entries of
+  `@stackra/testing`.
+</Note>
+
+## Amendment 2026-10-21: config, assets and the root-module test (STA-219)
+
+**Context.** Decisions 1 and 2 put config beside `src/` and shipped files in `resources/`, and decision 1 named the root-module
+test `<name>.module.test.ts`. The scaffold and the preview repository differ on the test name, and the 2026-10-19 CF1 rule
+(config as `config/<pkg>.config.ts`) sits outside `src/`, against the rule that every member keeps its code in `src/`. The
+owner settled these on 2026-10-21.
+
+**Decision.**
+
+1. **Config is inside `src/`.** A service's deploy-time defaults are `src/config/<name>.config.ts`, and a package's are
+   `src/config/<pkg>.config.ts`. Replace the `config/` paths in decisions 1 and 2 with these. ADR
+   [0177](/adr/0177-package-distribution-npmjs-and-keygen) carries the package side forward.
+2. **Static files are `assets/`, not `resources/`.** Files shipped with a package sit in an `assets/` folder at the package root,
+   exported as `./assets/*`. `resources/` is the kind folder of `@Resource` declarations (ADR 0130), and never a folder of
+   static files. The `resources/` path in decision 2 is withdrawn, and the scaffold template is changed to match (T3).
+3. **The root-module test is `<name>.module.int.test.ts`.** It lives in `src/__tests__/` and boots the root module, so it is an
+   integration test under the `.int` tier of ADR 0182. The unit name `<name>.module.test.ts` in decision 1 is withdrawn.
+4. **Reference services.** `services/example` and `services/health` do not yet have `src/config/`, `src/contracts/` or
+   `src/__tests__/` (the gap in Consequences stands). Closing it belongs to the golden-members work (L7); this amendment does not
+   move them.
+
+**Consequences.**
+
+- The scaffold test (`tools/scripts/__tests__/scaffold.test.mjs`) must check the new paths; the template changes are T3.
+- A reader looking for config looks in `src/config/`; a reader looking for static files looks in `assets/`.
+
+**Enforcement.** planned — the scaffold test renders the new paths, and `checkService` in `tools/scripts/validate-repository.mjs`
+checks `src/config/` once the structure work (STA-220) lands. Until then the paths in decisions 1 and 3 are not checked.
 
 ## Supersedes and sources
 

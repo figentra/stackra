@@ -13,6 +13,11 @@ description: "Accepted, amended by 0128, 0233 · 2026-10-19"
   classes and component folders follow that ADR.
 </Note>
 
+<Note>
+  Amended 2026-10-21 (STA-219): decision 6 (`utils/`) is withdrawn and schema files take the
+  `.schema.ts` suffix. See the amendment at the end of this page.
+</Note>
+
 ## Context
 
 File names, how many things a file exports, how barrels look and how modules name each other are decided on the first
@@ -45,6 +50,32 @@ frozen before packages are created in bulk, because a codemod over many packages
 
 - `typescript/consistent-type-imports` in the base oxlint preset (off only in the decorators preset, see [0005](/adr/0005-di-container-and-legacy-decorators)).
 - Planned: a validator check for kebab-case names, one export per file and barrel shape; an import-specifier check (port basalt `tools/scripts/import-style.mjs`); an `imports` map drift check against the generator.
+
+## Amendment 2026-10-21: no `utils/`; schema files are `*.schema.ts` (STA-219)
+
+**Context.** Decision 6 put a helper used by a second file in `utils/<name>.util.ts`. ADR 0126 (decision 3) bans `utils/`
+and `helpers/`, and the two cannot both stand. Schema files were also called `*.contract.ts` (the preview repository's
+name), which collides with the `.contract` test tier of ADR 0182. The owner settled both on 2026-10-21.
+
+**Decision.**
+
+1. Decision 6 is withdrawn. There is no `utils/` folder and no `.util.ts` suffix, in any member.
+2. **Helpers are placed by how many packages use them.**
+   - A helper that a second **package** needs moves to `@stackra/support`, one subpath per concern.
+   - A helper shared by two or more **files inside one package** lives in `internal/<name>.ts`. It is not exported from any
+     barrel, and its test sits beside it in `internal/__tests__/`. The `internal/` folder is in the kind-folder list of
+     [0130](/adr/0130-module-layout-by-semantic-kind) amendment 2026-10-21, decision 2.
+   - A single-use helper stays in the file that uses it.
+3. A schema file is `<name>.schema.ts` and carries one exported schema and its inferred type. `.contract` is not a file suffix.
+   It names only the `.contract` test tier of [0182](/adr/0182-testing-strategy-v2-tiers-coverage-infrastructure-and-policies).
+
+**Consequences.**
+
+- `utils/` and `helpers/` are banned by ADR 0126 and this amendment; the validator's banned-folder list (`checkFileKinds`) carries both.
+- A reviewer reads `.schema.ts` as data shape and `.contract.test.ts` as a test; the two never share a name.
+
+**Enforcement.** planned — `checkFileKinds` in `tools/scripts/validate-repository.mjs`, reading the suffix and banned-folder
+tables of `tools/scripts/structure.mjs` (STA-220). Nothing checks these rules today.
 
 ## Supersedes and sources
 
