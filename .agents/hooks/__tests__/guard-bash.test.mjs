@@ -727,3 +727,30 @@ for (const c of [
   `pnpm bot:gh -- pr create --title t --body-file - <<'EOF'\nrun git push origin main; it's fine\nEOF`,
 ])
   test(`allow: ${c}`, () => assert.equal(denied(c), false));
+
+// STA-254 re-review 4: no heredoc inside ${…} / $[…]; a heredoc body is read only at the operator's own nesting
+// level; a delimiter must be a plain word. Otherwise the lines stay commands.
+for (const c of [
+  "echo ${x:-<<EOF}\ngit push origin main\nEOF}",
+  "echo ${x:-<<EOF}\ninfisical export\nEOF}",
+  "echo $[x<<EOF]\ngit push origin main\nEOF]",
+  "echo $[x<<EOF]\ninfisical export\nEOF]",
+  "echo <<EOF $(true\ngit push origin main)\nEOF",
+  "echo <<EOF $(true\ninfisical export)\nEOF",
+  "echo <<EOF `true\ngit push origin main`\nEOF",
+  "echo <<EOF `true\ninfisical export`\nEOF",
+  "echo ${x:-{<<EOF}}\ngit push origin main\nEOF}}",
+  "cat <<E-F\ngit push origin main\nE-F",
+  'echo "${x:-$(git push origin main)}"',
+])
+  test(`deny: ${c}`, () => assert.equal(denied(c), true));
+for (const c of [
+  'echo ${x:-default} "${y#it\'s}"',
+  "echo $[1 << 2]",
+  "cat > notes.md <<EOF\nwe don't run git push origin main here\nEOF",
+  "cat > notes.md <<'EOF'\n$(git push origin main) stays text\nEOF",
+  'cat > notes.md <<"E_1"\ngit push origin main is prose\nE_1',
+  "cat <<-EOF\n\tgit push origin main is prose\n\tEOF",
+  'echo "$(cat <<EOF\ngit push origin main is prose\nEOF\n)"',
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));

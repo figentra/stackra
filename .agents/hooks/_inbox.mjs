@@ -60,11 +60,14 @@ export function reachesInbox(p, { recursive = false, home = homedir(), cwd } = {
  * Walk a command by bash quoting rules (STA-254), shared by guard-bash and the OpenCode guard. States: plain,
  * `'…'`, `$'…'` (where `\'` is escaped; `$$` is the PID, so `$$'x'` is plain quoting), `"…"` / `$"…"`, and a
  * stack of `$(…)`, `$((…))`, `((…))`, `<(…)`, `>(…)` and backtick bodies, inside which quoting restarts
- * (`"$(echo "it's")"`). A `'` inside double quotes is literal; a `#` at an unescaped word start comments to the
+ * (`"$(echo "it's")"`), and of `${…}` / `$[…]` expansions (nesting counted; no comment, `case` or heredoc there). A `'` inside double quotes is literal; a `#` at an unescaped word start comments to the
  * end of the line (in backticks, to the closing backtick); a `case … esac` pattern `)` does not end a body and
- * ends a command (`a) git push` is two). A `<<` / `<<-` heredoc operator in plain state (not `<<<`, not in
- * quotes, comments or arithmetic) takes the lines after the next newline up to its delimiter as its body; an
- * unquoted delimiter keeps the body's substitutions; an unterminated heredoc is read as commands. Returns:
+ * ends a command (`a) git push` is two).
+ * Heredocs are stripped only when certain, else their lines stay commands (deny-leaning): the `<<` / `<<-`
+ * operator is in plain state in a command or backtick body (not `<<<`, not in quotes, comments, arithmetic,
+ * `${…}` or `$[…]`); its delimiter is a plain word `[A-Za-z0-9_]+` once quotes are removed; the newline that
+ * starts the body is at the operator's own nesting level (no substitution opened since); and the closing line
+ * is found. An unquoted delimiter keeps the body's substitutions. Returns:
  * - `literal`: every `'…'` / `$'…'` span and comment (never run) blanked to `''` / dropped, heredoc bodies
  *   replaced by their substitutions; the rest verbatim;
  * - `blanked`: also every outermost `"…"` span blanked to `""`, so only command words are left;
@@ -73,7 +76,7 @@ export function reachesInbox(p, { recursive = false, home = homedir(), cwd } = {
  * - `spans`: `[start, end)` in `c` of every outermost closed quoted span;
  * - `stripped`: `c` verbatim except each heredoc: operator → `<<HEREDOC`, body → its substitutions as `$(…)`.
  * Fail closed: an unclosed `"`, `$(` or backtick runs to the end; an unclosed `'` stays visible.
- * shortcut: no `${…}` nesting, aliases or functions; a body rescanned out of its `((…))` context can misread a
+ * shortcut: no aliases or functions; a body rescanned out of its `((…))` context can misread a
  * `<<` shift as a heredoc (only an unterminated one, which is then read as commands); a `(a)` case pattern is
  * not split from its command. Upgrade to a real parser if one slips through.
  */
@@ -90,7 +93,7 @@ export function scanShell(c, { heredoc = false } = {}) {
   const stack = [frame("cmd")];
   if (heredoc) stack.push({ kind: "heredoc" }); // like "…", but a `"` is literal
   const quoted = (s) => s.kind === "dq" || s.kind === "heredoc";
-  const direct = () => stack.every((s, k) => k === 0 || quoted(s));
+  const direct = () => stack.every((s, k) => k === 0 || quoted(s) || s.kind === "param");
   const emit = (s, b = s) => {
     literal += s;
     if (quietFrom < 0) blanked += b;
@@ -126,7 +129,7 @@ export function scanShell(c, { heredoc = false } = {}) {
         j += 2;
       } else text += c[j++];
     }
-    return j > from ? { text, isQuoted, end: j } : null;
+    return j > from && /^[A-Za-z0-9_]+$/.test(text) ? { text, isQuoted, end: j } : null;
   };
   /** The pending heredoc bodies after the newline at `i`: where the last delimiter line ends, and the substitutions. */
   const heredocBodies = (i) => {
@@ -169,7 +172,7 @@ export function scanShell(c, { heredoc = false } = {}) {
       }
     } else {
       if (ch === "\n" && pending.length) {
-        const h = heredocBodies(i);
+        const h = pending.every((p) => p.frame === f) ? heredocBodies(i) : null;
         pending = [];
         if (h) {
           const text = h.subs.map((b) => ` $(${b})`).join("");
@@ -180,7 +183,15 @@ export function scanShell(c, { heredoc = false } = {}) {
           continue;
         }
       }
-      if (ch === "#" && wordStart(i)) {
+      if (f.kind === "param") {
+        if (ch === f.closer && f.nest === 0) {
+          stack.pop();
+          emit(ch);
+          continue;
+        }
+        if (ch === f.opener) f.nest++;
+        else if (ch === f.closer) f.nest--;
+      } else if (ch === "#" && wordStart(i)) {
         while (i + 1 < c.length && c[i + 1] !== "\n" && !(f.kind === "bt" && c[i + 1] === "`")) i++;
         continue;
       }
@@ -212,11 +223,11 @@ export function scanShell(c, { heredoc = false } = {}) {
         i += 2;
         continue;
       }
-      if (c.startsWith("<<", i) && !f.arith) {
+      if (c.startsWith("<<", i) && (f.kind === "bt" || (f.kind === "cmd" && !f.arith))) {
         const strip = c[i + 2] === "-";
         const d = delimiter(i + (strip ? 3 : 2));
         if (d) {
-          pending.push({ ...d, strip });
+          pending.push({ ...d, strip, frame: f });
           edits.push([i, d.end, "<<HEREDOC"]);
           emit("<<HEREDOC");
           i = d.end - 1;
@@ -243,7 +254,7 @@ export function scanShell(c, { heredoc = false } = {}) {
           if (two) i++;
           continue;
         }
-      } else if (ch === "`") {
+      } else if (f.kind === "bt" && ch === "`") {
         close();
         emit(ch);
         continue;
@@ -253,6 +264,12 @@ export function scanShell(c, { heredoc = false } = {}) {
         stack.push(frame("cmd"));
         continue;
       }
+    }
+    if (c.startsWith("${", i) || c.startsWith("$[", i)) {
+      emit(c[i] + c[++i]);
+      const brace = c[i] === "{";
+      stack.push(frame("param", { opener: c[i], closer: brace ? "}" : "]", nest: 0 }));
+      continue;
     }
     if (c.startsWith("$((", i)) {
       emit("$((");
@@ -268,7 +285,7 @@ export function scanShell(c, { heredoc = false } = {}) {
     emit(ch);
   }
   while (stack.length > 1) {
-    if (quoted(stack.at(-1))) stack.pop();
+    if (quoted(stack.at(-1)) || stack.at(-1).kind === "param") stack.pop();
     else close();
   }
   if (quietFrom >= 0) blanked += c.slice(quietFrom);

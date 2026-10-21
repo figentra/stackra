@@ -415,3 +415,30 @@ test("STA-254 re-review 3: escaped word boundaries, heredocs only in plain state
   ])
     assert.equal(kind(c), "allow", c);
 });
+
+test("STA-254 re-review 4: no heredoc in ${…} / $[…], bodies only at the operator's level, plain delimiters", () => {
+  for (const c of [
+    "echo ${x:-<<EOF}\ngit push origin main\nEOF}",
+    "echo ${x:-<<EOF}\ninfisical export\nEOF}",
+    "echo $[x<<EOF]\ngit push origin main\nEOF]",
+    "echo $[x<<EOF]\ninfisical export\nEOF]",
+    "echo <<EOF $(true\ngit push origin main)\nEOF",
+    "echo <<EOF $(true\ninfisical export)\nEOF",
+    "echo <<EOF `true\ngit push origin main`\nEOF",
+    "echo <<EOF `true\ninfisical export`\nEOF",
+    "echo ${x:-{<<EOF}}\ngit push origin main\nEOF}}",
+    "cat <<E-F\ngit push origin main\nE-F",
+    'echo "${x:-$(git push origin main)}"',
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    'echo ${x:-default} "${y#it\'s}"',
+    "echo $[1 << 2]",
+    "cat > notes.md <<EOF\nwe don't run git push origin main here\nEOF",
+    "cat > notes.md <<'EOF'\n$(git push origin main) stays text\nEOF",
+    'cat > notes.md <<"E_1"\ngit push origin main is prose\nE_1',
+    "cat <<-EOF\n\tgit push origin main is prose\n\tEOF",
+    'echo "$(cat <<EOF\ngit push origin main is prose\nEOF\n)"',
+  ])
+    assert.equal(kind(c), "allow", c);
+});
