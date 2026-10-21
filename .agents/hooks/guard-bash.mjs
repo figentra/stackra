@@ -43,17 +43,52 @@ function stripHeredocs(raw) {
   );
 }
 
-/** `git` followed by any global options before the subcommand. */
-const GIT = String.raw`\bgit\s+(?:(?:-[Cc]\s+\S+|--(?:git-dir|work-tree|namespace)(?:=\S+|\s+\S+)|--no-pager|--literal-pathspecs)\s+)*`;
+/** git's global options before the subcommand. */
+const GIT_OPTS = String.raw`(?:(?:-[Cc]\s+\S+|--(?:git-dir|work-tree|namespace)(?:=\S+|\s+\S+)|--no-pager|--literal-pathspecs)\s+)*`;
+/** `git` (or `pnpm bot:git --`) followed by any global options before the subcommand. */
+const GIT = String.raw`\bgit\s+(?:--\s+)?` + GIT_OPTS;
 
 /** Command position: start, or after a separator, optionally behind `VAR=x` assignments. */
 const CMDPOS = String.raw`(?:^|[|;&(\n])\s*(?:\w+=\S*\s+)*`;
+
+/**
+ * Owner-login guard (STA-208, ADR 0230 rule 5): `gh` and `git` at command position run with the owner's
+ * `gh auth` login and git credential helper. Agents use the bot wrappers instead, which fail closed when no token
+ * can be minted. Wrappers like `sudo`, `env`, `xargs`, `time` are looked through.
+ */
+const BARE = String.raw`(?:^|[|;&(\n\x60])\s*(?:(?:sudo|command|exec|time|nohup|env|xargs(?:\s+-\S+)*)\s+|\w+=(?:\$\([^)]*\)|\S*)\s+)*(?:\S*/)?`;
+const BARE_GH = new RegExp(BARE + String.raw`gh(?:\s|$)`);
+const BARE_GIT = (sub) =>
+  new RegExp(BARE + String.raw`git\s+` + GIT_OPTS + String.raw`(?:${sub})\b`);
+/** Every git subcommand that talks to a remote. All of them go through `pnpm bot:git`, public repos included. */
+const NETWORK_GIT = BARE_GIT(
+  String.raw`push|fetch|pull|clone|ls-remote|submodule|subtree|remote\s+(?:update|show|prune)|archive\s+[^|;&\n]*--remote`,
+);
+
+/**
+ * The text a shell runs: the quote-blanked command (prose in `--body "…"` is ignored), plus every `$(…)` and
+ * backtick body, inside double quotes too, and every `sh -c` / `eval` string. Single-quoted text stays literal.
+ * shortcut: one nesting level per pass and no alias or function expansion; deliberate workarounds stay open.
+ */
+function runnable(c) {
+  const out = [blank(c)];
+  const literal = c.replace(/'[^']*'/g, "''");
+  for (const m of literal.matchAll(/\$\(([^()]*)\)|`([^`]*)`/g)) out.push(blank(m[1] ?? m[2]));
+  for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
+    out.push(...runnable(m[2]));
+  return out;
+}
+/** True when any runnable text has a segment matching `rx`. */
+const runs = (c, rx) => runnable(c).some((t) => segments(t).some((s) => rx.test(s)));
 
 /** `git` output in `cwd`, or "" when git fails. */
 function git(cwd, ...args) {
   const r = spawnSync("git", args, { cwd, encoding: "utf8" });
   return r.status === 0 ? r.stdout.trim() : "";
 }
+
+/** Quoted strings blanked, so a word inside `node -e '...'` or `--body "..."` is not mistaken for a command. */
+const blank = (c) => c.replace(/'[^']*'|"(?:\\.|[^"\\])*"/g, '""');
 
 /** Command segments (split on separators, quotes kept). */
 const segments = (c) => c.split(/&&|\|\||[|;&\n]/);
@@ -214,6 +249,26 @@ const rules = [
     rx: pushesMain,
     why: "Never push to main. Push your branch and open a PR; main changes only through a merged PR.",
   },
+  // STA-208: agents never act with the owner's GitHub login (ADR 0230 rule 5). Accident guard: same macOS user.
+  {
+    rx: (c) => runs(c, BARE_GH),
+    why: "Agents never run `gh` on the owner's login, in any form (a `GH_TOKEN=` prefix included: an empty token falls back to the owner). Use `pnpm bot:gh -- <args>` (builder, stackra-bot; `-R figentra/os` for the OS repo), `pnpm bot:review -- <args>` (reviewer) or `pnpm pr:merge <n>`; in a pipe, `pnpm --silent bot:gh -- <args> | …`.",
+  },
+  {
+    rx: (c) => runs(c, NETWORK_GIT),
+    why: "Agents never run network git (push, fetch, pull, clone, ls-remote, submodule, subtree, remote update, archive --remote) on the owner's credential helper. Run it as the bot: `pnpm bot:git -- push origin HEAD`, `pnpm bot:git -- fetch origin`; another repo: `pnpm bot:git -- -C <dir> …`.",
+  },
+  {
+    // The token belongs in the wrapper's child environment only, never in the transcript or in gh's config.
+    rx: (c) =>
+      runnable(c).some((t) => /\bbot:token\b/.test(t)) ||
+      /\$\{?(?:GH_TOKEN|GITHUB_TOKEN)\b/.test(dropMessages(c).replace(/'[^']*'/g, "''")) ||
+      runs(
+        c,
+        /\bbot:(?:gh|review)\s+(?:--\s+)?auth\b|\bbot:git\s+(?:--\s+)?(?:\S+\s+)*?credential\b/,
+      ),
+    why: "A bot token is never printed, read or handed to `gh auth`: `pnpm bot:token`, `$GH_TOKEN`, `bot:gh -- auth …` and `bot:git -- credential …` are denied. Use `pnpm bot:gh -- <args>`, which keeps the token in its child process.",
+  },
   // ADR 0230: an agent never speaks for the owner, and only the reviewer identity posts verdicts. A tripwire, not
   // the control: pr-merge checks the verdict's author.
   {
@@ -221,11 +276,11 @@ const rules = [
     why: "`owner-approval` / `owner-approved` record the owner's own decision; an agent never writes them. Ask the owner.",
   },
   {
-    rx: /(?:^|[\s;&|(])gh\s+(?:pr\s+(?:comment|review)|api)\b[^\n]*\bAI-REVIEW:/i,
+    rx: /(?:^|[\s;&|(:])gh\s+(?:--\s+)?(?:pr\s+(?:comment|review)|api)\b[^\n]*\bAI-REVIEW:/i,
     why: "AI-REVIEW verdicts are posted only by the reviewer identity: `pnpm bot:review -- pr comment <n> --body-file <f>`, from a reviewer agent, never on the reviewer's own work.",
   },
   {
-    rx: /\bgh\s+pr\s+merge\b[^|;&\n]*\s--admin\b/,
+    rx: /\bgh\s+(?:--\s+)?pr\s+merge\b[^|;&\n]*\s--admin\b/,
     why: "`gh pr merge --admin` bypasses branch protection and required checks. Wait for the checks and merge normally.",
   },
   {
@@ -270,8 +325,7 @@ async function main() {
   const cwd = String(input.cwd || process.cwd());
   const raw = String(input.tool_input?.command ?? "");
   const cmd = stripHeredocs(raw);
-  /** Quoted strings blanked, so a word inside `node -e '...'` is not mistaken for a command. */
-  const bare = cmd.replace(/'[^']*'|"(?:\\.|[^"\\])*"/g, '""');
+  const bare = blank(cmd);
 
   let asked;
   for (const rule of rules) {

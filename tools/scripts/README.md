@@ -21,7 +21,7 @@ One line per script. Each file's docblock is the full contract; the tests are in
 | `doctor.mjs`              | `pnpm doctor`                                      | fresh-machine checklist: toolchain, install, Infisical login, CLIs, agent sync                                                                       |
 | `bot-token.mjs`           | `pnpm bot:token` †                                 | mints a GitHub App installation token for `stackra-bot` (or `stackra-reviewer` with the `STACKRA_REVIEWER` prefix)                                   |
 | `bot-gh.mjs`              | `pnpm bot:gh`, `pnpm bot:git`, `pnpm bot:review` † | runs `gh` or `git` as `stackra-bot`; `bot:review` runs read, comment and review `gh` as `stackra-reviewer` (ADR 0230)                                |
-| `pr-merge.mjs`            | `pnpm pr:merge <n>` †                              | the only agent merge: green Quality Gate, `AI-REVIEW: PASS` on the head SHA, owner approval when needed                                              |
+| `pr-merge.mjs`            | `pnpm pr:merge [-R owner/repo] <n>` †              | the only agent merge: green Quality Gate, `AI-REVIEW: PASS` on the head SHA, owner approval when needed                                              |
 | `jsonc.mjs`               | —                                                  | the shared JSONC reader for the other scripts                                                                                                        |
 | `mcp.sh`                  | `.mcp.yaml`                                        | launches an MCP server with its secrets injected from the vault, never from `.mcp.json`                                                              |
 

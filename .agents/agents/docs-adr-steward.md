@@ -49,7 +49,7 @@ to the owner.
 ## How to work
 
 1. **Number.** The next number is the highest `NNNN-*.mdx` in `apps/docs/src/adr/` or claimed by an open pull request
-   (`gh pr list` and `gh pr diff <n> --name-only`), plus one. Never rely on memory. Numbers are never reused or renumbered, and Stackra ADRs are cited by
+   (`pnpm bot:gh -- pr list` and `pnpm bot:gh -- pr diff <n> --name-only`), plus one. Never rely on memory. Numbers are never reused or renumbered, and Stackra ADRs are cited by
    path, never by a number from another repository.
 2. **Write.** Copy `apps/docs/src/adr/template.mdx`. Frontmatter: `title: "NNNN — Title"`,
    `description: "<Status> · YYYY-MM-DD"`. Include Context, Decision, Consequences, and Enforcement — the

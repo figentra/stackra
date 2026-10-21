@@ -392,6 +392,7 @@
             "pages": [
               "runbooks/setup",
               "runbooks/secrets",
+              "runbooks/github-identities",
               "runbooks/ci",
               "runbooks/release",
               "runbooks/mobile-release",

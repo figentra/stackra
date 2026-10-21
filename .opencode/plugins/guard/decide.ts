@@ -104,12 +104,25 @@ function gitSubcommand(args: string[]): string {
 }
 
 const OWNER_ONLY_CLI = new Set(["gh", "wrangler", "curl", "wget"]);
-const GIT_OWNER_ONLY = new Set(["push", "commit", "merge", "rebase", "tag", "worktree"]);
+// Network git too (STA-208): on a private repo a fetch falls back to the owner's credential helper.
+const GIT_OWNER_ONLY = new Set(
+  "push commit merge rebase tag worktree fetch pull clone ls-remote submodule subtree".split(" "),
+);
+/** `git remote update|show|prune` and `git archive --remote` reach the remote too. */
+const networkGit = (g: string, args: string[]): boolean =>
+  (g === "remote" && args.some((a) => ["update", "show", "prune"].includes(a))) ||
+  (g === "archive" && args.some((a) => a.startsWith("--remote")));
+/** The GitHub bot wrappers (STA-208): the lead reaches GitHub as the bot; executors not at all. */
+const BOT_SCRIPT = /^(?:bot:(?:gh|git|review|token)|pr:merge)$/;
 
 /** Executors run unattended: anything that leaves the worktree, ships, or rewrites history is the lead's. */
 function denyExecutor(sub: string, cmd: string, args: string[]): Decision {
   if (OWNER_ONLY_CLI.has(cmd))
     return deny(`\`${cmd}\` reaches the network or a shared account; executors never run it.`);
+  if (/\bbot:token\b/.test(sub) || (cmd === "pnpm" && args.some((a) => BOT_SCRIPT.test(a))))
+    return deny(
+      "the GitHub bot wrappers (`pnpm bot:*`, `pnpm pr:merge`) are the lead's; executors leave changes in the worktree.",
+    );
   if (
     cmd === "infisical" &&
     args[0] === "secrets" &&
@@ -124,7 +137,12 @@ function denyExecutor(sub: string, cmd: string, args: string[]): Decision {
     );
   if (cmd === "git") {
     const g = gitSubcommand(args);
-    if (GIT_OWNER_ONLY.has(g) || (g === "branch" && args.includes("-D")))
+    const readOnly = g === "worktree" && args.includes("list");
+    if (
+      (GIT_OWNER_ONLY.has(g) && !readOnly) ||
+      networkGit(g, args) ||
+      (g === "branch" && args.includes("-D"))
+    )
       return deny(
         `\`git ${g}\` is the lead's job; executors leave changes uncommitted in the worktree.`,
       );
@@ -177,9 +195,22 @@ export function decideShell(raw: string, cwd?: string): Decision {
     return deny(
       "~/Secrets-inbox/ (and the import confirm key) are never read, listed, copied or moved. Use `pnpm secrets:import --list` for names and `pnpm secrets:import [--dry-run] [NAME]` to import; it never prints a value.",
     );
-  for (const s of subcommands(cmd)) {
-    const d = denySub(s);
-    if (d.kind === "deny") return d;
-  }
+  for (const text of [cmd, ...nested(cmd)])
+    for (const s of subcommands(text)) {
+      const d = denySub(s);
+      if (d.kind === "deny") return d;
+    }
   return ALLOW;
+}
+
+/**
+ * Commands the shell also runs: `$(…)` and backtick bodies (inside double quotes too; single quotes stay literal)
+ * and `sh -c` / `eval` strings (STA-208 review H2). shortcut: one nesting level, no alias expansion.
+ */
+function nested(cmd: string): string[] {
+  const literal = cmd.replace(/'[^']*'/g, "''");
+  const out = [...literal.matchAll(/\$\(([^()]*)\)|`([^`]*)`/g)].map((m) => m[1] ?? m[2]);
+  for (const m of cmd.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
+    out.push(m[2], ...nested(m[2]));
+  return out;
 }
