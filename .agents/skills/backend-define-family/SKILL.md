@@ -12,7 +12,7 @@ once they ship.
 
 | Function             | Creates                                                     | ADR        |
 | -------------------- | ----------------------------------------------------------- | ---------- |
-| `defineToken<T>()`   | A typed, namespaced `Symbol.for` DI token                   | 0145       |
+| `defineToken<T>()`   | A typed, namespaced `Symbol.for` DI token, only for a port with several drivers | 0145, 0263 |
 | `defineConfig<S>()`  | A package or host config with Zod schema and secret refs    | 0146       |
 | `definePermissions`  | The one permission catalogue value a module declares        | 0132       |
 | `defineEvents`       | Integration event names and payload schemas                 | 0141       |
@@ -24,9 +24,11 @@ once they ship.
 ## Worked examples
 
 ```ts
-// tokens/invoice-repository.token.ts — SCREAMING_SNAKE constant, `<module>.<TypeName>` key (ADR 0231)
-export const INVOICE_REPOSITORY = defineToken<InvoiceRepository>("billing.InvoiceRepository");
+// tokens/invoice-storage.token.ts — a port with several drivers only (ADR 0263); SCREAMING_SNAKE, `<module>.<TypeName>` key (ADR 0231)
+export const INVOICE_STORAGE = defineToken<InvoiceStorage>("billing.InvoiceStorage");
 ```
+
+A local class needs no token: a class is its own token, and gen wires it from its constructor types (ADR 0263).
 
 ```ts
 // config/billing.config.ts — deploy-time, never per tenant (ADR 0146)
@@ -73,11 +75,15 @@ constructor(
 ) {}
 ```
 
+Only the typed config keeps an `@Inject` token here, because it is a `define*` value (ADR 0145). The logger and the clock are
+classes or ports wired by gen: they take no `@Inject` (ADR 0263).
+
 Pure utilities (`Str`, `Arr`, `Num`, `DateTime`) are plain imported functions, with no injection.
 
 ## Never
 
 - String tokens; a `define*` inside a class body; a decorator that builds a value.
+- A `defineToken` for a local class or for a port with one driver (ADR 0263); an `@Inject(TOKEN)` on a local class.
 - A secret value anywhere in config, tests or fixtures.
 - Tenant-dependent config (a lint flags it); use settings.
 

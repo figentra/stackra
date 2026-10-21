@@ -1,0 +1,52 @@
+---
+title: "0261 — Generated #stackra modules: real files in .stackra/gen, imported through the #stackra alias"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Relates to [0090](/adr/0090-codegen-discovery-by-root-module) (the discovery that feeds these
+  files), [0158](/adr/0158-gen-artefacts-openapi-manifest-and-client) (the committed artefacts,
+  which this ADR does not change), [0233](/adr/0233-imports-use-subpath-aliases-only) (the `#` alias
+  mechanism), [0234](/adr/0234-module-assets-and-storage) (the `assets` output),
+  [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron) and
+  [0250](/adr/0250-stackra-platform-capability-ports-drivers-and-gate) (the `capabilities` output)
+  and [0263](/adr/0263-di-stays-and-gen-writes-the-wiring) (the `wiring` output).
+</Note>
+
+## Context
+
+`stackra gen` builds one discovery IR of every module, route, setting, permission and client in the graph. The IR must reach the code
+that uses it. Virtual modules (files that exist only inside a bundler) work in Vite, but Metro, Node, the test runner and agents cannot
+read them, so each reader would need its own shim. Real files work in every reader. The owner decided on 2026-10-21 that gen writes real
+files and the bundler only serves them.
+
+## Decision
+
+1. **One IR, real files.** `stackra gen` writes typed TypeScript files to `.stackra/gen/`: `routes`, `navigation`, `i18n`, `resources`,
+   `assets`, `clients`, `services`, `permissions`, `settings`, `capabilities` and `wiring`.
+2. **One alias.** Code imports them only as `#stackra/<name>`. The member declares the alias in the `imports` map of its
+   `package.json` ([0233](/adr/0233-imports-use-subpath-aliases-only)), for example `"#stackra/*": "./.stackra/gen/*.ts"`.
+3. **Every reader uses the real files.** Metro, Node, tests and agents read `.stackra/gen/` directly.
+4. **Vite serves the same modules.** In a Vite app, `@stackra/vite-plugin` (developer category, [0127](/adr/0127-package-categories-including-infrastructure))
+   serves the same modules as virtual modules with hot module replacement. The plugin adds no export of its own.
+5. **Fresh files.** `pnpm gen --watch` regenerates the files as sources change. The files are gitignored under `.stackra/*`, as
+   `.stackra/encore` is ([0091](/adr/0091-generated-encore-app-in-stackra-folder)). The committed artefacts of
+   [0158](/adr/0158-gen-artefacts-openapi-manifest-and-client) are unchanged.
+6. **Generated, never edited.** Each file opens with a contract block ([0007](/adr/0007-source-documentation-standard)) saying it is
+   generated. A hand edit is overwritten on the next run.
+
+## Consequences
+
+- A developer and an agent read the same file that the code runs against, so a finding about a route or a permission can be checked by reading one file.
+- The Vite plugin is a thin view. A divergence between the plugin and the file is a bug in the plugin.
+- Each consumer must run `stackra gen` before it builds or tests. The Turborepo task graph carries that dependency.
+
+## Enforcement
+
+planned — `stackra gen --check` fails when `.stackra/gen/` is stale. Planned: `pnpm validate` fails a `#stackra/*` import that names a file gen does not write.
+Planned: the conformance test of [0144](/adr/0144-metadata-registry-and-explorers) checks that the Vite virtual module exports the same names as the real file.
+
+## Supersedes and sources
+
+Supersedes: none. Relates to the ADRs listed above. Sources: owner decision in chat, 2026-10-21 (generated modules), and DX10 of the
+2026-10-20 DX round (`@stackra/vite-plugin`).

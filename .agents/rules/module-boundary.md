@@ -60,8 +60,11 @@ import { defineConfig } from "tsdown";
 Services communicate via (the generated Encore app carries both, ADRs 0091 and 0124):
 
 - **Integration events** - `@OnEvent` on a versioned event name in the form `<module-key>.<aggregate>.<verb>.v<n>` (`identity.user.created.v1`), shapes from the producer's `./contracts` (ADR 0078, ADR 0141)
-- **Typed client calls** - only where an authoritative answer is needed now
-- Transport is a driver behind the port (ADR 0142). Never direct imports of another service's source or `Topic`
+- **Typed client calls** - only where an authoritative answer is needed now. `stackra gen` generates a typed client per service, injected through the constructor from `#stackra/clients` (ADR 0260, 0261)
+- **Read models** - a consumer's copy of another service's data is a `@Projection` fed by that service's events (ADR 0163, 0260)
+- Transport is a driver behind the port (ADR 0142). Never direct imports of another service's source, tables or `Topic`
+- A Stackra package that needs service data defines a port in its `./contracts` entry; the service implements it (ADR 0260)
+- Feature modules live in one of three homes: the service (default), a figentra-os `@figentra/*` package used by two or more OS consumers, or a `@stackra/*` package with no Figentra rules (ADR 0259)
 
 Tokens and typed config are `define*` values, the one carve-out to the no-`define*` rule (ADR 0145). Names and casing follow ADR 0231.
 

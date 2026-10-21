@@ -327,8 +327,11 @@ import { defineConfig } from "tsdown";
 Services communicate via (the generated Encore app carries both, ADRs 0091 and 0124):
 
 - **Integration events** - `@OnEvent` on a versioned event name in the form `<module-key>.<aggregate>.<verb>.v<n>` (`identity.user.created.v1`), shapes from the producer's `./contracts` (ADR 0078, ADR 0141)
-- **Typed client calls** - only where an authoritative answer is needed now
-- Transport is a driver behind the port (ADR 0142). Never direct imports of another service's source or `Topic`
+- **Typed client calls** - only where an authoritative answer is needed now. `stackra gen` generates a typed client per service, injected through the constructor from `#stackra/clients` (ADR 0260, 0261)
+- **Read models** - a consumer's copy of another service's data is a `@Projection` fed by that service's events (ADR 0163, 0260)
+- Transport is a driver behind the port (ADR 0142). Never direct imports of another service's source, tables or `Topic`
+- A Stackra package that needs service data defines a port in its `./contracts` entry; the service implements it (ADR 0260)
+- Feature modules live in one of three homes: the service (default), a figentra-os `@figentra/*` package used by two or more OS consumers, or a `@stackra/*` package with no Figentra rules (ADR 0259)
 
 Tokens and typed config are `define*` values, the one carve-out to the no-`define*` rule (ADR 0145). Names and casing follow ADR 0231.
 
@@ -360,7 +363,7 @@ Every name follows ADR 0231 (`/adr/0231-naming-and-casing-standard`). The summar
 - **Database**: snake_case plural tables; `idx_` and `fk_` names for indexes and foreign keys.
 - **Environment variables and secrets**: SCREAMING_SNAKE. Public values use `VITE_`, `EXPO_PUBLIC_` or `RENDERER_VITE_` and never hold a secret. Server values use `STACKRA_`, `FIGENTRA_` or `MAIN_VITE_`. Secrets are `<PROVIDER>_<PURPOSE>`. Tool-reserved prefixes are `ENCORE_`, `TURBO_`, `NODE_`, `CI`, `GITHUB_`, `INFISICAL_`, `EAS_`.
 - **Namespace lookups** (i18n keys, assets, templates, stubs) use `<module>::<path>`, for example `billing::invoice.refund_confirm` and `flags::public/images/eg.svg`.
-- **DI tokens** are constants made with `defineToken`, with a `<module>.<TypeName>` key: `export const INVOICE_REPOSITORY = defineToken<InvoiceRepository>("billing.InvoiceRepository")`. String injection is banned.
+- **DI tokens**: a class is its own token, so a local class is injected by its type and needs no token constant (ADR 0263). `defineToken` is only for a port with several drivers, a constant with a `<module>.<TypeName>` key: `export const INVOICE_STORAGE = defineToken<InvoiceStorage>("billing.InvoiceStorage")`. String injection is banned.
 
 Enforcement: planned — oxlint `unicorn/filename-case` (kebab-case files), the house lint rules of ADR 0129, the public-prefix lint, and the validator checks named in ADR 0231.
 
@@ -657,6 +660,12 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 - Docs: Mintlify documentation site
 - Mobile: Expo React Native app
 - Entry: `src/main.ts`
+
+#### Generated Output
+
+- `stackra gen` writes real typed files to `.stackra/gen/` (`routes`, `navigation`, `i18n`, `resources`, `assets`, `clients`, `services`, `permissions`, `settings`, `capabilities`, `wiring`). Code imports them only as `#stackra/<name>`, through the member's `imports` map (ADR 0261, 0233)
+- `.stackra/*` is gitignored; `.stackra/gen/` is never committed and is never edited by hand
+- DI wiring is generated into `.stackra/gen/wiring.ts`; a module is a folder and authors write no provider lists (ADR 0263)
 
 #### Forbidden Paths
 

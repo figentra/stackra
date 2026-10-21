@@ -1,0 +1,63 @@
+---
+title: "0263 — DI stays; gen writes the wiring"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Amends [0005](/adr/0005-di-container-and-legacy-decorators) (decision 3: a constructor parameter
+  names its token only when it is not a class),
+  [0042](/adr/0042-di-first-with-one-container-per-service) (decision 2: tokens are explicit only
+  for ports with several drivers),
+  [0143](/adr/0143-container-scopes-registration-lifecycle-and-testing) (registration of a module's
+  own providers, and the override form in tests), [0144](/adr/0144-metadata-registry-and-explorers)
+  (gen reads constructor types as well as decorator metadata) and
+  [0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned) (`defineToken` is
+  for ports with several drivers). String injection stays banned.
+</Note>
+
+## Context
+
+Dependency injection answers "which implementation, for whom, now" at runtime. It swaps a driver per deploy mode, scopes a request to
+its tenant, actor and transaction, lets a test replace a provider, and manages lifecycle. Codegen answers "what exists" at build time.
+The authoring cost of the container was the explicit wiring each author wrote by hand: an `@Inject` token on every constructor parameter,
+a `providers` list and module imports for the author's own classes. The owner decided on 2026-10-21 that the container stays and gen writes
+that wiring. The decision is settled.
+
+## Decision
+
+1. **DI stays.** The container of [0005](/adr/0005-di-container-and-legacy-decorators) and the scopes and lifecycle of
+   [0143](/adr/0143-container-scopes-registration-lifecycle-and-testing) are unchanged. No runtime reflection or auto-wiring replaces them.
+2. **Authors write plain classes.** A class that another class depends on is decorated `@Injectable()` and declares typed constructor
+   parameters. For the author's own code it needs no `@Inject` token, no `providers` list and no module imports.
+3. **Gen reads the types.** `stackra gen` reads the constructor parameter types at build time with ts-morph. It uses no `reflect-metadata`
+   and no `design:paramtypes` at runtime ([0005](/adr/0005-di-container-and-legacy-decorators) decision 3 stands).
+4. **Gen emits the wiring.** `stackra gen` writes `.stackra/gen/wiring.ts`, which holds the tokens, providers, imports and scopes of the
+   member ([0261](/adr/0261-generated-stackra-modules-in-stackra-gen)).
+5. **A module is a folder.** Gen discovers the providers in a module's folder. The `@Module` declaration keeps its `key`, `name`, `exports`
+   and `permissions`. It does not list providers.
+6. **`defineToken` is for ports only.** `defineToken<T>()` is used only for a port with several drivers, because an interface is erased at
+   runtime and needs a token. A class is its own token. A port with one driver is a class until a second driver exists.
+7. **Test overrides.** A test replaces a provider with `createTestingModule(Module).override(Port, fake)`. The test never edits the real wiring.
+8. **Strings stay banned.** A string is never an injection token ([0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned)).
+9. **Typed config is unchanged.** Typed config reaches code through its `define*` value, as [0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned)
+   decision 1 says. This ADR does not change it.
+
+## Consequences
+
+- An author reads a class's dependencies in its constructor, and reviewers no longer check a provider list in a module file.
+- A wiring mistake moves to build time. An unresolved constructor type fails `stackra gen`, not the first request.
+- A port that gains a second driver changes from a class to a `defineToken`. That is a small, known migration.
+- Gen becomes load-bearing: the wiring file is generated and must be correct for every member.
+
+## Enforcement
+
+planned — `stackra gen` fails on an unresolved constructor parameter type, and on a string injection token. Planned: `pnpm validate` rejects a
+`providers` array in a `*.module.ts` file, and the conformance test of [0144](/adr/0144-metadata-registry-and-explorers) checks that
+`wiring.ts` agrees with the Explorers.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0005](/adr/0005-di-container-and-legacy-decorators), [0042](/adr/0042-di-first-with-one-container-per-service),
+[0143](/adr/0143-container-scopes-registration-lifecycle-and-testing), [0144](/adr/0144-metadata-registry-and-explorers),
+[0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned). Sources: owner decision in chat, 2026-10-21 (DI stays; gen writes
+the wiring), settled.

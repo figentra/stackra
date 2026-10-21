@@ -1,0 +1,83 @@
+---
+title: "0260 — Cross-service calls go through injected generated clients and typed events"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Amends [0117](/adr/0117-contracts-placement-and-decorator-ownership): a generated client and a
+  port are contracts-entry surfaces, and a consumer imports neither from another service's source.
+</Note>
+
+<Note>
+  Amends [0142](/adr/0142-cross-service-transport-through-drivers): the choice between an in-process
+  call and an RPC call is made by deployment topology inside the driver, and the consumer's code
+  does not change.
+</Note>
+
+<Note>
+  Amends [0158](/adr/0158-gen-artefacts-openapi-manifest-and-client): a consumer inside this
+  repository generates its client from the producer's committed `openapi.json`. The CI-published
+  client remains for consumers outside the repository.
+</Note>
+
+<Note>
+  Amends [0163](/adr/0163-reports-exports-imports-and-declared-read-models): a consumer's read model
+  of another service's data is a `@Projection` fed by that service's integration events.
+</Note>
+
+## Context
+
+[0010](/adr/0010-services-are-independent-workspace-members) says services are independent and never import each other's source.
+[0142](/adr/0142-cross-service-transport-through-drivers) moved the transport behind drivers. What was missing is the call surface a
+consumer writes. Without one, each team invents its own client, and a service reaches into another's tables. The owner decided the
+surface on 2026-10-21.
+
+## Decision
+
+1. **No direct access.** A service never imports another service's code, tables or `Topic`, and never queries another service's
+   database.
+2. **Typed client, injected.** For each service, `stackra gen` generates a typed client from the service's committed contract
+   ([0158](/adr/0158-gen-artefacts-openapi-manifest-and-client)). A consumer receives it through its constructor like any local
+   provider:
+
+   ```ts
+   constructor(private readonly commerce: CommerceClient) {}
+   ```
+
+   The client type is imported from the generated `#stackra/clients` module ([0261](/adr/0261-generated-stackra-modules-in-stackra-gen)).
+
+3. **Typed events.** `stackra gen` also generates the producer's event map from its `./contracts` entry. A consumer subscribes with
+   `@OnEvent(Commerce.salesOrderPlaced)`. Event names follow [0141](/adr/0141-integration-event-names-and-envelope).
+4. **Topology picks the transport.** When producer and consumer run in one process, the generated client calls in-process. When they
+   run as separate deployments, it uses RPC through the driver of [0142](/adr/0142-cross-service-transport-through-drivers). The
+   consumer's code is the same in both.
+5. **Read models for queries.** A consumer that needs another service's data in its own queries keeps an event-fed read model
+   (`@Projection`, [0163](/adr/0163-reports-exports-imports-and-declared-read-models)). It never queries the producer's tables.
+6. **Shared logic is not a client.** Logic that two services need goes to a figentra-os package
+   ([0259](/adr/0259-module-placement-three-homes), home B), not into a client.
+7. **Stackra packages use ports.** A Stackra package that needs service data defines a port in its `./contracts` entry
+   ([0117](/adr/0117-contracts-placement-and-decorator-ownership)). The service implements the port in its module, and gen wires it
+   ([0263](/adr/0263-di-stays-and-gen-writes-the-wiring)). The package never imports the service.
+8. **Tests override the client.** A consumer's test replaces the client with a fake through `createTestingModule(...).override(...)`
+   ([0263](/adr/0263-di-stays-and-gen-writes-the-wiring)).
+
+## Consequences
+
+- A consumer's code reads like local dependency injection, and a reviewer sees the dependency in the constructor.
+- Read models add storage and an explicit lag; the consumer owns that staleness.
+- A producer's contract change is visible in its committed `openapi.json` and event map, so the consumer's build fails on a breaking change.
+- Each service needs a committed contract before consumers can generate against it.
+
+## Enforcement
+
+planned — a boundaries rule bans imports of another service's package or path, which extends the rule of
+[0010](/adr/0010-services-are-independent-workspace-members). Planned: `stackra gen` fails when a consumer names a service with no
+committed `openapi.json`, and the conformance test of [0144](/adr/0144-metadata-registry-and-explorers) checks that the event map
+matches the producer's `./contracts`.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0117](/adr/0117-contracts-placement-and-decorator-ownership), [0142](/adr/0142-cross-service-transport-through-drivers),
+[0158](/adr/0158-gen-artefacts-openapi-manifest-and-client), [0163](/adr/0163-reports-exports-imports-and-declared-read-models). Relates to
+[0010](/adr/0010-services-are-independent-workspace-members), [0141](/adr/0141-integration-event-names-and-envelope). Sources: owner decision
+in chat, 2026-10-21 (cross-service calls).
