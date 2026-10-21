@@ -52,6 +52,11 @@ This ADR is that table.
 | Asset keys, i18n keys, template keys, stub keys (namespace lookups)   | `<module>::<path>` (decision 3)                                         | `flags::public/images/eg.svg`, `billing::invoice.refund_confirm`, `billing::mail/invoice-paid` |
 | DI token constants                                                    | SCREAMING_SNAKE constant, with a `<module>.<TypeName>` key (decision 5) | `INVOICE_REPOSITORY`                                                                           |
 
+**Carve-out: same-named DI tokens.** The SCREAMING_SNAKE row above does not apply to a token that shares its interface's name
+([0263](/adr/0263-di-stays-and-gen-writes-the-wiring) decision 3, [0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned)
+decision 1). That token is named as the interface, in PascalCase, and keeps the `<module>.<TypeName>` key:
+`export const Assets = defineToken<Assets>("assets.Assets")`. Only same-named tokens take this form.
+
 3. **Namespace lookups use `::`.** Content owned by a module is looked up with `<module>::<path>`: i18n keys, assets (ADR 0234), templates
    and stubs. Wire identifiers keep dots: permissions, events, action keys and DI token keys.
 4. **Environment prefixes.**

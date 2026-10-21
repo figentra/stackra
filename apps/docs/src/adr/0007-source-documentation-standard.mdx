@@ -1,6 +1,6 @@
 ---
 title: "0007 — Source documentation standard"
-description: "Accepted, amended by 0128 and 2026-10-21 · 2026-10-19"
+description: "Accepted, amended by 0128 · 2026-10-19"
 ---
 
 <Note>
@@ -74,6 +74,35 @@ in STA-215. This amendment replaces decision 2 where the two differ.
 **Consequences.** The check is mechanical: it verifies presence and the typed-tag ban, and review judges the wording.
 Writing cost rises for interface members, class methods and tokens. That is the point of the amendment.
 
+## Amendment 2026-10-21 (STA-219, L5): the frozen header and docblock fields
+
+**Context.** The file-contract header and the TSDoc rules were in use, but their exact spelling was not frozen. Tools
+(`tools/scripts/doc-standard.mjs`, the scaffold templates, and the agents that write files) need one spelling to match.
+
+**Decision.**
+
+1. **The header prefix is frozen.** The contract block is a comment whose first line is exactly `Stackra file contract:`
+   (the colon included, no other words on that line). In a `.ts` or `.tsx` file it sits before the first import. In other
+   files it uses that file's comment syntax (a `/* */` block in `.mjs`, `#` in YAML and shell, `//` in JSONC).
+2. **The header field list is frozen, in this order:** `Purpose:`, `Boundary:`, `Runtime:`, `Governing contract:`. Each
+   field starts its own line. `Runtime:` takes one of `node`, `browser`, `worker`, `react-native`, `isomorphic`.
+3. **The docblock field list is frozen.** A TSDoc block uses these tags and no others for the cases of decision 2 of the
+   amendment above: a purpose sentence (no tag); `@param name - meaning`; `@returns`; `@throws`; `@defaultValue`;
+   `@example`; `@remarks`; `@deprecated` with the replacement and the removal target; and the two labelled lines
+   `Side effects:` and `Invariant:`. A tag outside this list needs an ADR.
+4. **Typed tags are banned.** No `{type}` after `@param`, `@returns`, `@throws`, `@property` or `@prop`. TypeScript owns
+   the type.
+
+**Consequences.**
+
+- Any header that uses another prefix, or another field name, fails the check: a spelling change is a new amendment.
+- The scaffold templates write this header; a template that drifts is a finding for the code-standards steward.
+
+**Enforcement.** `tools/scripts/doc-standard.mjs` (test `tools/scripts/__tests__/doc-standard.test.mjs`) checks the prefix,
+the four header fields, the `Runtime:` value and the typed-tag ban. It runs in `pnpm validate`. The presence of the
+docblock fields on members is checked by the same script under decision 2 of the 2026-10-21 amendment; the wording is
+review, not a check.
+
 ## Supersedes and sources
 
-Supersedes: none. Amends: decision 2 of this page (by the amendment above). Sources: basalt `adr/0011-documentation-and-source-comment-standard`; figentra `docs/constitution/documentation.md`; owner ruling in STA-215.
+Supersedes: none. Amends: decision 2 of this page (by the amendment above). Freezes: the header and docblock field lists (STA-219). Sources: basalt `adr/0011-documentation-and-source-comment-standard`; figentra `docs/constitution/documentation.md`; owner ruling in STA-215.

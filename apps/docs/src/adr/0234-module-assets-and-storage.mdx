@@ -18,6 +18,11 @@ description: "Accepted, amended by 0263, 0264 · 2026-10-20"
 </Note>
 
 <Note>
+  Amended 2026-10-21 (STA-219): the package `assets/` folder sits at the package root, outside
+  `src/`, and the namespace is the module `key`. See the amendment at the end of this page.
+</Note>
+
+<Note>
   Amended by [0263](/adr/0263-di-stays-and-gen-writes-the-wiring) (decision 3): the `Assets` port is
   a same-named token, so a constructor typed `Assets` needs no `@Inject`. The `ASSETS` token named
   in decision 3's list is replaced by that value.
@@ -85,6 +90,31 @@ validator rejects a `../` import into `assets/` (0233). The scaffold templates g
 - Assets as runtime uploads in the same store: rejected; the two have different owners and mutability.
 - A `defineAssets` call per module: rejected; the folder is the declaration.
 - "Resources" for shipped files: rejected by the owner; the word is reserved for `@Resource`.
+
+## Amendment 2026-10-21: consistency with 0264 and 0177 (STA-219)
+
+**Context.** Three statements in this page disagreed with later decisions. Decision 2 named the namespace `name`, which
+[0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders) removed. Decision 2 put a package's `assets/`
+beside its module file, which is inside `src/`, while [0177](/adr/0177-package-distribution-npmjs-and-keygen) (amendment of
+2026-10-21) puts static files at the package root. Decision 3 kept the `name` of `@stackra/container` modules. The owner settled
+the location on 2026-10-21.
+
+**Decision.**
+
+1. **The namespace is the module `key`**, in decision 2 and in the container note of decision 3. `@Module({ name })` is not used.
+2. **Where the `assets/` folder sits.**
+   - A package's root-module assets are in `assets/` at the package root, outside `src/`, exported as `./assets/*`. Static files are
+     not code. This is the rule of 0177 (amendment of 2026-10-21).
+   - A feature module's assets are in `assets/` beside the module's files, inside `src/modules/<feature>/`, as
+     [0130](/adr/0130-module-layout-by-semantic-kind) (amendment of 2026-10-21) places the feature module.
+3. **The folder names of decision 2** (`public/`, `lang/`, `templates/`, `stubs/`, `data/`) are unchanged.
+
+**Consequences.**
+
+- Each asset path, namespace and module key has one spelling, and the validator and gen can read the same rule.
+
+**Enforcement.** planned — the asset collector in `stackra gen` (developer category) and the `exports` rule for `./assets/*` named in
+[0177](/adr/0177-package-distribution-npmjs-and-keygen). Nothing checks the location yet.
 
 ## Supersedes and sources
 

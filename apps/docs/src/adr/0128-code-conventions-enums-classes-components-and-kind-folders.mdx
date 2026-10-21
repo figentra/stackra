@@ -16,6 +16,11 @@ description: "Accepted, amended by 0268 · 2026-10-20"
   [0007](/adr/0007-source-documentation-standard).
 </Note>
 
+<Note>
+  Amended 2026-10-21 (STA-219): decision 5 is no longer "assumed" but numbered, and the hook
+  placement is fixed. See the amendment at the end of this page.
+</Note>
+
 ## Context
 
 The owner asked for a full code-conventions standard on 2026-10-20 and locked the first five rules (mem L378–381, conv Q1–Q5).
@@ -50,6 +55,36 @@ planned — house oxlint rules `no-enum`, `no-hash-private`, `hook-file-name` an
 
 - Keep TypeScript `enum`: rejected by the owner (Q1).
 - Storybook for component review: rejected by the owner (Q3). A revival would need a new ADR.
+
+## Amendment 2026-10-21: decision 5 numbered; hooks and utilities (STA-219)
+
+**Context.** Decision 5 listed the code-conventions rules as assumed. [0268](/adr/0268-register-answers-thin-items-r1-to-r18)
+(R1) put them in force, and the owner settled the two places that were still open: where a hook lives, and what `utils/` is.
+Decision 5 is now the numbered decisions below. The earlier text of decision 5 is not replaced; these numbers say which rules
+are in force.
+
+**Decision.**
+
+5. **Hooks.** Two kinds, two places, neither a shared `hooks/` folder for React hooks:
+   - `hooks/` holds extension hook files only, named `<name>.hook.ts` ([0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders)
+     decision 7, [0265](/adr/0265-hook-points-transform-and-verify)).
+   - A React hook is a file `use-<name>.ts` that exports `use<Name>`, placed beside the component that owns it. A hook used
+     by more than one component of the same package is placed beside the first and imported by path, never copied.
+     This replaces the shared `hooks/` folder of the proposal's section 4 for React hooks.
+6. **Utilities.** There is no `utils/` folder. A shared helper moves to `@stackra/support`, as [0006](/adr/0006-naming-exports-and-imports)
+   (amendment 2026-10-21) now says.
+7. **The other rules in force.** Constants, providers, contexts, JSDoc and the no-inline-types rule stay as
+   [0268](/adr/0268-register-answers-thin-items-r1-to-r18) put them in force. The hook placement in the proposal's section 4 is
+   superseded by decision 5 above.
+
+**Consequences.**
+
+- An agent looking for a React hook opens the component's folder, not `hooks/`.
+- The `hook-file-name` lint rule of [0129](/adr/0129-house-lint-plugin-and-coding-standard) matches this: a file that exports a
+  `use*` function is `use-*.ts`, and a `.hook.ts` file exports an extension hook point.
+
+**Enforcement.** planned — the house lint rule `hook-file-name` (oxlint plugin, ADR 0129) and the kind-folder checks named in
+[0130](/adr/0130-module-layout-by-semantic-kind) (amendment 2026-10-21). Nothing checks this today.
 
 ## Supersedes and sources
 

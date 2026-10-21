@@ -64,3 +64,31 @@ template carries it. Apps and services stay private and UNLICENSED. Owner steps:
 
 Supersedes: [0025](/adr/0025-packages-publish-to-private-registry). Sources: owner answers PK1–PK7, DX7 (`stackra-decisions-2026-10-19.md` L455–473, L396, 2026-10-20); ops L31.
 Contradiction C-08 is closed by this ADR. Contradiction C-37 is closed by decision 1.
+
+## Amendment 2026-10-21: package paths (STA-219)
+
+**Context.** Decision 8 carries decision 3 of [0025](/adr/0025-packages-publish-to-private-registry) forward. That decision
+put a package's config in `config/` outside `src/` and its static files in `resources/`. Every member keeps its code in
+`src/`, and `resources/` is the name the `@Resource` declarations of [0130](/adr/0130-module-layout-by-semantic-kind) use.
+[0025](/adr/0025-packages-publish-to-private-registry) is superseded, so this ADR is the live home of the path rules. The
+owner settled the paths on 2026-10-21.
+
+**Decision.**
+
+1. **Config is inside `src/`.** A package's config is `src/config/<pkg>.config.ts`. It is compiled with the rest of `src/`
+   and exported under the same `./config` entry as before. The `config/` path in decision 3 of 0025 is withdrawn.
+2. **Static files are `assets/`.** A package's shipped static files sit in an `assets/` folder at the package root and are
+   exported as `./assets/*`. The `resources/` path in decision 3 of 0025 is withdrawn. Static files are not code, so the
+   `assets/` folder is outside `src/`, as [0234](/adr/0234-module-assets-and-storage) describes.
+3. **Nothing else changes.** The registry, the publish flow, the `dist` build, the `@stackra/source` condition and the
+   versioning decisions are untouched by this amendment. The registry part of this ADR is amended separately, by the
+   change that owns it, and this section does not change it.
+
+**Consequences.**
+
+- A reader looks for a package's config in `src/config/` and its static files in `assets/`.
+- The `exports` rule in `tools/scripts/validate-repository.mjs` must accept `./config` and `./assets/*`. That is the rule
+  already planned in decision 3 of 0025, and it is unchanged in intent.
+
+**Enforcement.** planned — the `exports` rule in `tools/scripts/validate-repository.mjs` and the packed-artifact smoke test
+named in Enforcement above. Nothing checks the `src/config/` or `assets/` paths yet.

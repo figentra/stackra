@@ -36,8 +36,8 @@ Run read-only: `pnpm bot:review -- pr diff <n>`, `pnpm bot:review -- pr view <n>
 
 ## Verdict
 
-Post one **new** comment (never an edit) through `pnpm bot:review`, the `stackra-reviewer` App, the only identity whose
-verdict `pnpm pr:merge` counts (ADR 0230). The first line is `AI-REVIEW: PASS <full 40-hex head sha> base=<base ref>` or
+Post one **new** issue comment with `pnpm bot:review -- pr comment <n> --body-file <file>`. Never `pr review`, never an edit:
+`pnpm bot:review` posts as the `stackra-reviewer` App, the only identity whose verdict `pnpm pr:merge` counts (ADR 0230). The first line is `AI-REVIEW: PASS <full 40-hex head sha> base=<base ref>` or
 `AI-REVIEW: FAIL <head sha>`. A FAIL is sticky for that SHA; a new push or a re-targeted base needs a new review. Never
 post a verdict through plain `gh`, and never write `owner-approval`.
 
