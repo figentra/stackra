@@ -64,3 +64,25 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
 | docs-changesets-steward   | steward  | no                       | both       |
 | i18n-steward              | steward  | no                       | both       |
 | incident-commander        | lead     | no                       | claude     |
+
+## Routing: Stackra agents and the knowledge-work plugins
+
+Four Anthropic plugins from the `knowledge-work-plugins` marketplace (`engineering`, `product-management`,
+`marketing`, `finance`) are enabled in `.claude/settings.json`. They supply skills and commands, never roles for
+code in this repository. Stackra's own agents and skills win whenever the work touches this repo's code or
+decisions. Full detail and skill lists: `apps/docs/src/agents/plugins.mdx`.
+
+| Work                                            | Use                                                                         | Not                                                            |
+| ----------------------------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Code review of a diff                           | `code-reviewer` + the AI-REVIEW gate                                        | `engineering:code-review`, `/review`                           |
+| Specs, plans, tasks                             | spec-kit (`speckit-*`) + `spec-writer`                                      | `product-management:write-spec`                                |
+| Architecture decisions                          | ADRs through `docs-adr-steward` (`docs-adr`)                                | `engineering:architecture` (draft input only)                  |
+| Incidents                                       | `incident-commander`                                                        | `engineering:incident-response`, `/incident`                   |
+| Tests, security, deploy                         | `test-engineer`, `security-tenancy-reviewer`, `release-operations`          | `engineering:testing-strategy`, `engineering:deploy-checklist` |
+| Standups, system-design talk, tech-debt surveys | `engineering:standup`, `engineering:system-design`, `engineering:tech-debt` | -                                                              |
+| Briefs, roadmaps, research synthesis, updates   | `product-management:*`                                                      | -                                                              |
+| Campaigns, content, SEO, brand voice            | `marketing:*`; Arabic copy still goes through `i18n-steward` review         | -                                                              |
+| Finance workflows                               | `finance:*`                                                                 | -                                                              |
+
+Rule: a plugin output that becomes a decision is recorded as an ADR and tracked in Linear; the plugin never decides.
+Plugin MCP servers stay unauthenticated until the owner connects them.

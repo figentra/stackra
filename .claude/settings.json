@@ -111,7 +111,11 @@
   "enabledPlugins": {
     "frontend-design@claude-plugins-official": true,
     "encore-skills@encore-skills": true,
-    "cloudflare@cloudflare": true
+    "cloudflare@cloudflare": true,
+    "engineering@knowledge-work-plugins": true,
+    "product-management@knowledge-work-plugins": true,
+    "marketing@knowledge-work-plugins": true,
+    "finance@knowledge-work-plugins": true
   },
   "extraKnownMarketplaces": {
     "encore-skills": {
@@ -124,6 +128,12 @@
       "source": {
         "source": "github",
         "repo": "cloudflare/skills"
+      }
+    },
+    "knowledge-work-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/knowledge-work-plugins"
       }
     }
   },

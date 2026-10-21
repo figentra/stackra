@@ -428,6 +428,7 @@
               "agents/roster",
               "agents/hooks",
               "agents/skills",
+              "agents/plugins",
               "agents/spec-lifecycle",
               "agents/concurrent-sessions",
               "agents/rules-that-dont-rot"
