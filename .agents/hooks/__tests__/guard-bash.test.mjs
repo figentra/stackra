@@ -50,7 +50,6 @@ const allowed = [
   "infisical secrets --env=dev set FOO=bar",
   "infisical run -- env FOO=1 node x.js",
   "infisical run -- pnpm test",
-  "pnpm bot:gh -- pr merge 12 --squash",
   "pnpm bot:git -- push origin chore/permissions-hardening",
   "pnpm bot:git -- push -u origin feature/main-menu",
   "pnpm bot:git -- push origin maintenance",
@@ -109,6 +108,12 @@ const allowed = [
   'pnpm linear comment STA-208 "use gh pr view; git push"',
   "grep -rn 'gh pr' .agents",
   "ls ~/.config/gh-old",
+  // STA-214: merge and credential words in prose, reads of a PR, and git config are fine
+  'pnpm linear comment STA-214 "never pnpm bot:gh -- pr merge or git credential fill"',
+  "pnpm bot:gh -- pr view 12 --json mergeable",
+  "pnpm bot:gh -- api repos/figentra/stackra/pulls/12/files",
+  "git config --get credential.helper",
+  "grep -n send-pack .agents/hooks/guard-bash.mjs",
 ];
 const blocked = [
   // ADR 0230: no agent writes the owner's approval or posts a verdict as a non-reviewer identity
@@ -299,6 +304,35 @@ const blocked = [
   "cd ~ && rg BEGIN",
   "cd ~ && grep -r BEGIN",
   "cd ~ && du -a",
+  // STA-214: credential plumbing answers with the owner's token (gh credential helper, keychain)
+  "git credential fill",
+  "printf 'protocol=https\\nhost=github.com\\n\\n' | git credential fill",
+  "git credential approve",
+  "git credential reject",
+  "git -C ../os credential fill",
+  "git credential-osxkeychain get",
+  "echo host=github.com | git-credential-osxkeychain get",
+  "/opt/homebrew/libexec/git-core/git-credential-osxkeychain get",
+  "git credential-store get",
+  'echo "$(git credential fill)"',
+  "pnpm bot:git -- credential-osxkeychain get",
+  // STA-214: merges only through pnpm pr:merge
+  "pnpm bot:gh -- pr merge 12 --squash",
+  "pnpm bot:gh -- pr merge 12 --auto",
+  "pnpm --silent bot:gh -- pr -R figentra/os merge 3",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/12/merge",
+  "pnpm bot:gh -- api --method=PUT repos/figentra/stackra/pulls/12/merge",
+  "pnpm bot:gh -- api -XPUT /repos/figentra/os/pulls/3/merge -f merge_method=squash",
+  "pnpm bot:gh -- api repos/figentra/stackra/pulls/12/merge --method put",
+  "pnpm bot:gh -- api graphql -f query='mutation { mergePullRequest(input: {pullRequestId: \"x\"}) { clientMutationId } }'",
+  "pnpm bot:gh -- api graphql -f query='mutation { enablePullRequestAutoMerge(input: {}) { clientMutationId } }'",
+  "bash -c 'pnpm bot:gh -- pr merge 12'",
+  // STA-214: pack plumbing bypasses the push guard
+  "git send-pack https://github.com/figentra/stackra.git main",
+  "git receive-pack /tmp/x.git",
+  "git fetch-pack https://github.com/figentra/stackra.git",
+  "git upload-pack .",
+  "pnpm bot:git -- send-pack origin main",
 ];
 
 for (const c of allowed) test(`allow: ${c}`, () => assert.equal(denied(c), false));
@@ -339,4 +373,35 @@ test("bot push is denied on main, allowed on a branch; bare git push is always d
   assert.equal(decision("git push", dir), "deny");
   assert.equal(decision("git push -u origin HEAD", dir), "deny");
   rmSync(dir, { recursive: true, force: true });
+});
+
+// STA-214: the branch is read in the checkout the push runs in, not in the hook's cwd.
+test("bot push resolves -C, --git-dir, --work-tree and cd targets", () => {
+  const repo = (branch) => {
+    const d = mkdtempSync(join(tmpdir(), "guard-bash-"));
+    spawnSync("git", ["init", "-q", "-b", branch], { cwd: d });
+    return d;
+  };
+  const main = repo("main");
+  const feature = repo("feature/x");
+  for (const c of [
+    `pnpm bot:git -- -C ${main} push origin HEAD`,
+    `pnpm bot:git -- -C ${main} push`,
+    `pnpm bot:git -- --git-dir=${main}/.git push origin HEAD`,
+    `pnpm bot:git -- --git-dir ${main}/.git --work-tree ${main} push`,
+    `cd ${main} && pnpm bot:git -- push origin HEAD`,
+    `pnpm bot:git -- -C ${tmpdir()} -C ${main.split("/").pop()} push`,
+    "pnpm bot:git -- -C $REPO push origin HEAD",
+    "cd $REPO && pnpm bot:git -- push",
+  ])
+    assert.equal(decision(c, feature), "deny", c);
+  for (const c of [
+    "pnpm bot:git -- push origin HEAD",
+    `pnpm bot:git -- -C ${feature} push origin HEAD`,
+    `pnpm bot:git -- -C ${main} push origin feature/x`,
+    `cd ${feature} && pnpm bot:git -- push`,
+  ])
+    assert.equal(decision(c, feature), "allow", c);
+  assert.equal(decision(`pnpm bot:git -- -C ${feature} push`, main), "allow");
+  for (const d of [main, feature]) rmSync(d, { recursive: true, force: true });
 });
