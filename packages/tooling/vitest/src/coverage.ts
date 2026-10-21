@@ -3,6 +3,9 @@
  * Purpose: the ONE coverage gate for the workspace packages. Every `packages/**` vitest.config.ts wraps its
  *          config in `withCoverage()`; `pnpm test:coverage` and the CI job run `vitest run --coverage` against
  *          these thresholds. Apps are NOT gated here. Provider: @vitest/coverage-v8.
+ * Boundary: the shared coverage block and its wrapper; it runs no tests itself.
+ * Runtime: node
+ * Governing contract: ADR 0007 (documentation); ADR 0022 (test placement).
  * Owner: release-operations · Secrets: forbidden
  * Change policy: a threshold moves only upward, in a changeset; a package that cannot meet it names why in
  *                its own vitest.config.ts (`withCoverage(config, { thresholds: {...} })`).
@@ -41,6 +44,7 @@ export const coverage = Object.freeze({
   thresholds: { ...COVERAGE_THRESHOLDS },
 } satisfies CoverageOptions);
 
+/** The per-package changes `withCoverage` applies on top of the shared block. Each one needs a reason in the package. */
 export interface CoverageOverrides {
   /** Additional exclude globs appended to the shared list. */
   exclude?: string[];

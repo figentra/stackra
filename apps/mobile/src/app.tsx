@@ -1,3 +1,11 @@
+/**
+ * Stackra file contract:
+ * Purpose: the root component: gesture handling, the HeroUI provider and the navigation container, with the
+ *          theme bridged from the Stackra brand colours.
+ * Boundary: composes the providers and the navigator; owns no screen and no data.
+ * Runtime: react-native
+ * Governing contract: ADR 0007 (documentation).
+ */
 import { DarkTheme, DefaultTheme, NavigationContainer } from "@react-navigation/native";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -41,6 +49,7 @@ function Navigation() {
   );
 }
 
+/** The app's root: gesture handling, then the HeroUI provider, then the navigation container. */
 export function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

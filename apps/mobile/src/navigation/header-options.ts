@@ -1,3 +1,10 @@
+/**
+ * Stackra file contract:
+ * Purpose: the shared native-stack header options: a transparent header on iOS, and large titles on tab roots.
+ * Boundary: option objects only; it declares no navigator and no screen.
+ * Runtime: react-native
+ * Governing contract: ADR 0007 (documentation).
+ */
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import { Platform } from "react-native";
 

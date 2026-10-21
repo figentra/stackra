@@ -1,3 +1,10 @@
+/**
+ * Stackra file contract:
+ * Purpose: the detail screen for one item, typed by the `Item` route.
+ * Boundary: renders the id from the route; no data fetching.
+ * Runtime: react-native
+ * Governing contract: ADR 0007 (documentation).
+ */
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Card } from "heroui-native";
 

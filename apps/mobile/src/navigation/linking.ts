@@ -1,3 +1,10 @@
+/**
+ * Stackra file contract:
+ * Purpose: the deep-link map from URLs to screens.
+ * Boundary: the linking config only; it does not register navigators or screens.
+ * Runtime: react-native
+ * Governing contract: ADR 0007 (documentation).
+ */
 import type { LinkingOptions } from "@react-navigation/native";
 import * as Linking from "expo-linking";
 
