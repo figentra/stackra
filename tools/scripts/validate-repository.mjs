@@ -16,6 +16,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readJsonc } from "./jsonc.mjs";
+import { FORBIDDEN_FILES, SPEC_PATTERN, TEST_FILE_PATTERN } from "./structure.mjs";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -257,8 +258,6 @@ export function checkJsonConfigs(paths) {
   return out;
 }
 
-const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
-
 /**
  * ADR 0022: every `*.test.*` file sits directly in `__tests__/`; `.spec.*` is not used. Tier infixes (`.int`,
  * `.contract`, `.e2e`, `.load`) go before `.test` (TS1/TS2). No Storybook: `*.stories.*` is banned (ADR 0126).
@@ -268,13 +267,13 @@ export function checkTestPlacement(paths) {
   const out = [];
   for (const p of paths) {
     if (p.startsWith(".old/")) continue;
-    if (/\.stories\.[cm]?[jt]sx?$/.test(p))
-      out.push(`${p}: no Storybook; test the component in __tests__/`);
-    if (!TEST_FILE.test(p)) continue;
+    for (const forbidden of FORBIDDEN_FILES)
+      if (forbidden.pattern.test(p)) out.push(`${p}: ${forbidden.hint}`);
+    if (!TEST_FILE_PATTERN.test(p)) continue;
     const parts = p.split("/");
     if (parts.at(-2) !== "__tests__")
       out.push(`${p}: test files go in a __tests__/ folder (ADR 0022)`);
-    if (/\.spec\./.test(parts.at(-1)))
+    if (SPEC_PATTERN.test(parts.at(-1)))
       out.push(`${p}: name it <subject>.test.<ext>, not .spec (ADR 0022)`);
   }
   return out;

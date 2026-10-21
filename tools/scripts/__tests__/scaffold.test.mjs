@@ -6,7 +6,8 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { stripJsonc } from "../jsonc.mjs";
-import { CATEGORIES, ENTRIES, parseEntries, scaffold } from "../scaffold.mjs";
+import { parseEntries, scaffold } from "../scaffold.mjs";
+import { CATEGORY_NAMES, ENTRY_NAMES } from "../structure.mjs";
 import { check, checkExports, checkService } from "../validate-repository.mjs";
 
 const TOKENS = /\{\{\s*(NAME|PASCAL|TITLE|DESCRIPTION|PORT|CATEGORY|ENTRIES)\s*\}\}/;
@@ -18,7 +19,7 @@ const json = (dest, f) => JSON.parse(stripJsonc(readFileSync(join(dest, f), "utf
 const cases = [
   ["service", "notes", {}],
   ["package", "billing-core", { category: "data" }],
-  ["package", "cache", { category: "runtime", entries: ENTRIES }],
+  ["package", "cache", { category: "runtime", entries: ENTRY_NAMES }],
   ["tooling", "sample", {}],
   ["app:console", "admin", {}],
   ["app:mobile", "sample", {}],
@@ -186,5 +187,6 @@ test("rejections", () => {
   bad({ kind: "service", name: "ok", root: join(root, "missing") }, /not a directory/);
   scaffold({ kind: "service", name: "dup", root, format: false });
   bad({ kind: "service", name: "dup" }, /already exists/);
-  assert.equal(CATEGORIES.length, 10);
+  // The 12 categories on disk (settlement Q3.2); tooling is a separate tier, not a package category.
+  assert.equal(CATEGORY_NAMES.length, 12);
 });
