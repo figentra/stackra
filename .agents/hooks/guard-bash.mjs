@@ -28,7 +28,7 @@ import { spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 import { resolve, sep } from "node:path";
 import { readStdin, deny, ask, failOpen } from "./_io.mjs";
-import { commandReachesInbox } from "./_inbox.mjs";
+import { blankSingleQuotes, commandReachesInbox } from "./_inbox.mjs";
 
 const EVENT = "PreToolUse";
 
@@ -154,7 +154,7 @@ const NETWORK_GIT = BARE_GIT(
  * `$(…)` or a `"(y)"` does not end a body early. An unbalanced `$(` takes the rest of the string (fail closed).
  */
 function dollarBodies(c) {
-  const s = c.replace(/'[^']*'/g, "''");
+  const s = blankSingleQuotes(c);
   const out = [];
   for (let i = s.indexOf("$("); i >= 0; i = s.indexOf("$(", i + 1)) {
     let depth = 1;
@@ -179,7 +179,7 @@ function dollarBodies(c) {
 /** The raw text of every `$(…)` / backtick body (single quotes stay literal) and `sh -c` / `eval` string. */
 function nestedRaw(c) {
   const out = [];
-  const literal = c.replace(/'[^']*'/g, "''");
+  const literal = blankSingleQuotes(c);
   out.push(...dollarBodies(c));
   for (const m of literal.matchAll(/`([^`]*)`/g)) out.push(m[1]);
   for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
@@ -190,7 +190,7 @@ function nestedRaw(c) {
 const scanTexts = (c) => [dropMessages(c), ...nestedRaw(c).map(dropMessages)];
 function runnable(c) {
   const out = [blank(c)];
-  const literal = c.replace(/'[^']*'/g, "''");
+  const literal = blankSingleQuotes(c);
   for (const b of dollarBodies(c)) out.push(blank(b));
   for (const m of literal.matchAll(/`([^`]*)`/g)) out.push(blank(m[1]));
   for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
@@ -532,7 +532,7 @@ const rules = [
     // The token belongs in the wrapper's child environment only, never in the transcript or in gh's config.
     rx: (c) =>
       runnable(c).some((t) => /\bbot:token\b/.test(t)) ||
-      /\$\{?(?:GH_TOKEN|GITHUB_TOKEN)\b/.test(dropMessages(c).replace(/'[^']*'/g, "''")) ||
+      /\$\{?(?:GH_TOKEN|GITHUB_TOKEN)\b/.test(blankSingleQuotes(dropMessages(c))) ||
       runs(
         c,
         new RegExp(

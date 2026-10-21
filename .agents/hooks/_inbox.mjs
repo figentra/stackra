@@ -57,6 +57,14 @@ export function reachesInbox(p, { recursive = false, home = homedir(), cwd } = {
 // shortcut: a small lexer (quotes, separators, `$(`), not a shell parser; `cd` is followed only in order, so a
 // subshell's `cd` leaks into later segments. Upgrade to a real parser if a miss or a false positive slips through.
 
+/**
+ * Single-quoted spans blanked to `''`, by POSIX rules: a `'` inside double quotes or after a backslash is
+ * literal, so `-m "it's $(x) it's"` keeps its `$(x)` (STA-254). An unclosed `"` runs to the end (fail closed).
+ * Shared by guard-bash and the OpenCode guard.
+ */
+export const blankSingleQuotes = (c) =>
+  c.replace(/\\[\s\S]|"(?:\\[\s\S]|[^"\\])*"?|'[^']*'/g, (m) => (m[0] === "'" ? "''" : m));
+
 /** Split a command into segments of words; each word is its unquoted text. Separators outside quotes split. */
 function lex(cmd) {
   const segs = [[]];

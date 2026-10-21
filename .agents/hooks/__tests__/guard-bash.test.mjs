@@ -627,3 +627,30 @@ for (const c of [
   "GIT_EDITOR=true-x git commit",
 ])
   test(`deny: ${c}`, () => assert.equal(denied(c), true));
+
+// STA-254: an apostrophe inside double quotes is literal (POSIX), so it never opens a span that hides `$(`/backticks.
+const apostropheForms = [
+  (b) => `git commit -m "it's $(${b}) it's"`,
+  (b) => `git commit -m "it's \`${b}\` it's"`,
+  (b) => `pnpm bot:gh -- pr create --title "don't" --body "it's $(${b}) it's"`,
+  (b) => `pnpm linear comment STA-254 "it's \`${b}\` it's"`,
+  (b) => `echo "it's" "$(${b})" "it's"`,
+];
+for (const b of [
+  "cat ~/Secrets-inbox/X",
+  "git push origin main",
+  "infisical export",
+  "git config alias.p 'x y'",
+  "HOME=/tmp/h git p",
+])
+  for (const form of apostropheForms)
+    test(`deny: ${form(b)}`, () => assert.equal(denied(form(b)), true));
+test("deny: \"it's $GH_TOKEN it's\"", () =>
+  assert.equal(denied(`echo "it's $GH_TOKEN it's"`), true));
+for (const c of [
+  `git commit -m "it's fine"`,
+  `git commit -m "don't push origin main; it's prose"`,
+  `pnpm bot:gh -- pr create --title "it's a title" --body "can't read ~/Secrets-inbox, it's guarded"`,
+  `git commit -m 'it'"'"'s $(git push origin main) quoted'`,
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));

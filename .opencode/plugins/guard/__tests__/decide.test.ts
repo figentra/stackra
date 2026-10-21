@@ -331,3 +331,15 @@ test("STA-216: GIT_EDITOR is allowed only as true, : or cat", () => {
   for (const c of ["GIT_EDITOR=sh git log", "GIT_SEQUENCE_EDITOR=vim git log"])
     assert.equal(kind(c), "deny", c);
 });
+
+test("STA-254: an apostrophe inside double quotes does not hide a nested command", () => {
+  for (const c of [
+    `echo "it's $(infisical export) it's"`,
+    `echo "it's \`infisical export\` it's"`,
+    `echo "it's $(cat ~/Secrets-inbox/X) it's"`,
+    `echo "it's" "$(printenv)" "it's"`,
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [`echo "it's fine"`, `echo 'it'"'"'s $(infisical export) quoted'`])
+    assert.equal(kind(c), "allow", c);
+});
