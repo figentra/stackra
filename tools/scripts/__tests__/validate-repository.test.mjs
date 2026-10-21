@@ -82,6 +82,12 @@ const filesOk = {
     description: "x",
     license: "MIT",
     sideEffects: false,
+    repository: {
+      type: "git",
+      url: "git+https://github.com/figentra/stackra.git",
+      directory: "packages/data/search",
+    },
+    publishConfig: { access: "public", provenance: true, registry: "https://registry.npmjs.org/" },
     exports: {
       ".": {
         "@stackra/source": "./src/index.ts",
@@ -107,7 +113,7 @@ test("missing files, PII, license drift, manifest hygiene", () => {
     licenseText: "other",
     pkg: { description: " ", license: "UNLICENSED", exports: { ".": "./dist/index.js" } },
   });
-  assert.equal(f.length, 7);
+  assert.equal(f.length, 9); // the replaced manifest also lacks repository and publishConfig
 });
 
 test("apps and services are UNLICENSED with no LICENSE file (ADR 0195)", () => {

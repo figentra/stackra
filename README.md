@@ -37,8 +37,7 @@ prove them. This repository is its monorepo, on pnpm and Turborepo.
 ## Stackra and Figentra OS
 
 Figentra OS is Figentra's private product: a set of services built on Stackra packages and sold as SaaS, on-prem and
-air-gapped. Its services live in their own repository and install published `@stackra/*` packages from the private
-registry `npm.figentra.com`
+air-gapped. Its services live in their own repository and install published `@stackra/*` packages from public npmjs
 ([ADR 0025](apps/docs/src/adr/0025-packages-publish-to-private-registry.mdx),
 [ADR 0075](apps/docs/src/adr/0075-stackra-ships-packages-figentra-os-ships-services.mdx)). No product code lands here,
 and shared packages never contain a product name or literal. Several Stackra packages are being ported from Figentra

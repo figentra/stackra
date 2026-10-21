@@ -69,7 +69,6 @@ In Infisical `/agents` (local):
 In Infisical `/ci` (CI/CD):
 
 - `TURBO_TOKEN` - Turborepo remote cache
-- `NPM_FIGENTRA_TOKEN` - npm.figentra.com publish token for the release job (ADR 0025)
 - `ENCORE_API_KEY` - Encore deployment, once a deploy path exists (DP2)
 - `SENTRY_AUTH_TOKEN` - Sentry releases (optional)
 

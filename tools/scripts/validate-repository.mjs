@@ -133,6 +133,24 @@ export function checkFiles({ dir, pkg, files, agents, licenseText, rootLicense }
   if (tierFor(dir) === "tier:lib") {
     if (pkg.sideEffects !== false) out.push("package.json sideEffects must be false");
     out.push(...checkExports(pkg.exports));
+    // ADR 0177 amendment 2026-10-21: @stackra/* publishes to npmjs, public, with provenance.
+    // npm provenance rejects a package whose repository.url differs from the signing repository.
+    if (
+      pkg.repository?.url !== "git+https://github.com/figentra/stackra.git" ||
+      !pkg.repository?.directory
+    )
+      out.push(
+        'package.json repository must be { type: "git", url: "git+https://github.com/figentra/stackra.git", directory } (ADR 0177)',
+      );
+    const pc = pkg.publishConfig ?? {};
+    if (
+      pc.access !== "public" ||
+      pc.provenance !== true ||
+      pc.registry !== "https://registry.npmjs.org/"
+    )
+      out.push(
+        'package.json publishConfig must be { "access": "public", "provenance": true, "registry": "https://registry.npmjs.org/" } (ADR 0177)',
+      );
   }
   return out;
 }

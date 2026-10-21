@@ -4,6 +4,11 @@
   "private": true,
   "description": "Stackra brand: tokens, HeroUI web and native themes, fonts, logos, marks, icons and app icons",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/experience/brand"
+  },
   "files": [
     "src",
     "dist",
@@ -30,6 +35,11 @@
     "./logos": "./assets/public/logos",
     "./fonts": "./assets/public/fonts",
     "./assets/*": "./assets/*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
     "build": "tsdown",

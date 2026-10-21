@@ -34,7 +34,7 @@ push, and run read-only commands only.
 
 Nothing is deployed. The services under `services/` are hello-world members, the apps under `apps/` have no
 deploy target, and CI runs from `.github/workflows` (`runbooks/ci.mdx`); `pnpm verify` is the gate. The release tooling (`pnpm changeset`,
-`pnpm changeset:status`) is configured, and `release.yml` opens the version PR and publishes `"private": false` packages to npm.figentra.com (ADR 0025).
+`pnpm changeset:status`) is configured, and `release.yml` opens the version PR and publishes `"private": false` packages to npmjs with provenance (ADR 0177).
 
 So the incidents that can happen here today are:
 
