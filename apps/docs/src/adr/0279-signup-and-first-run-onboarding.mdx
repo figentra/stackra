@@ -1,0 +1,59 @@
+---
+title: "0279 — Signup and first-run onboarding: hosted registration, an onboarding form and the checklist engine"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Amends
+  [0243](/adr/0243-organisations-on-the-tenant-tree-consolidated-billing-guardrails-and-standalone-exit)
+  decision 6: the checklist engine is the OS package `@figentra/checklists`. Settles register C8.
+</Note>
+
+## Context
+
+[0243](/adr/0243-organisations-on-the-tenant-tree-consolidated-billing-guardrails-and-standalone-exit) decision 6 calls for a generic checklist
+engine shared with onboarding without naming its home, and register C8 left signup and onboarding open. The owner's answer to the screenshot
+gap review of 2026-10-21 (item 3) places the engine and shapes the signup.
+
+## Decision
+
+1. **Checklist engine.** The checklist engine is the Figentra OS package `@figentra/checklists`. Onboarding, leaving an organisation (0243
+   decision 5), production readiness and compliance tasks all use it. A check keeps the status, fix link and verifier of 0243 decision 6.
+2. **Registration on ZITADEL, onboarding after sign-in.** The account itself is registered on ZITADEL's hosted pages, so Stackra builds no
+   registration or login UI ([0268](/adr/0268-register-answers-thin-items-r1-to-r18) R3). After sign-in, onboarding is a multi-step form
+   document of the form kind in [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels), with steps, conditional steps and save-and-resume. It is owned by the provisioning module of
+   `@figentra/service-tenancy`.
+3. **Onboarding steps.**
+   - Individual or organisation (the account model of [0272](/adr/0272-account-model-personal-workspace-and-opt-in-organisations)).
+   - Handle, with the availability check of [0275](/adr/0275-tenant-handles).
+   - Default currency.
+   - Region, only when creating an organisation, and a single value for now (0272 decision 3); a personal workspace takes the nearest
+     region without a step.
+   - A usage-intent question, stored to tailor onboarding.
+   - An invite step.
+4. **Adaptive checklist.** After onboarding, the user gets an onboarding checklist chosen from the answers, in particular the usage intent.
+
+## Consequences
+
+- One engine serves four flows, so a check written for onboarding can be reused in production readiness.
+- `@figentra/checklists` is an OS package, so Stackra products without Figentra rules do not get it (placement per
+  [0259](/adr/0259-module-placement-three-homes)).
+- Onboarding depends on the form kind of [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels).
+
+## Enforcement
+
+planned — a provisioning test runs the onboarding document end to end for both account kinds; a checklist test covers each check's verifier.
+
+## Open details
+
+The owner did not give these; the conservative default below applies until an ADR changes it.
+
+1. **Invite step.** Shown only when the user creates an organisation; it can be skipped.
+2. **Save-and-resume.** An unfinished onboarding is kept for 30 days, then discarded.
+3. **Currency.** Changeable later by an owner until the first invoice; fixed after that.
+4. **Usage-intent answers.** A product-defined list, with "other" as free text; used only to pick checklists and defaults.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0243](/adr/0243-organisations-on-the-tenant-tree-consolidated-billing-guardrails-and-standalone-exit) decision 6.
+Depends on: [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels) (form kind). Sources: owner answers in chat, 2026-10-21 (screenshot gap review, item 3; register C8).

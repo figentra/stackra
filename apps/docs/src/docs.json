@@ -369,7 +369,18 @@
               "adr/0266-capabilities-phase-in-one-option-one-driver-memory-first",
               "adr/0267-infisical-agent-vault-deferred",
               "adr/0268-register-answers-thin-items-r1-to-r18",
-              "adr/0269-stackra-testing-package-entries-and-helper-placement"
+              "adr/0269-stackra-testing-package-entries-and-helper-placement",
+              "adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels",
+              "adr/0271-saved-views",
+              "adr/0272-account-model-personal-workspace-and-opt-in-organisations",
+              "adr/0273-active-role-within-a-tenant",
+              "adr/0274-app-grants-and-the-connect-app-page",
+              "adr/0275-tenant-handles",
+              "adr/0276-tenant-custom-domains",
+              "adr/0277-cli-and-desktop-sign-in",
+              "adr/0278-api-key-lifecycle",
+              "adr/0279-signup-and-first-run-onboarding",
+              "adr/0280-sandbox-to-live-promotion-and-environment-banner"
             ]
           }
         ]

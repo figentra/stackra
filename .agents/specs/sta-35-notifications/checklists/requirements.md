@@ -1,4 +1,4 @@
-# Specification Quality Checklist: @stackra/notifications
+# Specification Quality Checklist: notifications service (`@figentra/service-notifications`, retargeted by ADR 0270)
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-10-19

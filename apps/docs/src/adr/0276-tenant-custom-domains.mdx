@@ -1,0 +1,64 @@
+---
+title: "0276 — Tenant custom domains: ownership, verification, TLS and the primary domain"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Specifies the tenant domain flow that [0175](/adr/0175-edge-domains-and-tls) decision 4 and
+  [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) decision 8 (T3)
+  point to. It is the `domains` module of the tenancy service.
+</Note>
+
+## Context
+
+[0175](/adr/0175-edge-domains-and-tls) puts tenant custom domains on Cloudflare for SaaS and defers the flow to a tenant domain ADR, which did not
+exist. The owner's answer to the screenshot gap review of 2026-10-21 (item 10) settles the flow in the `domains` module of
+`@figentra/service-tenancy`.
+
+## Decision
+
+1. **Hostname registry.** service-tenancy keeps a registry of tenant hostnames. A hostname belongs to at most one tenant. The registry
+   refuses our own zones and any hostname already verified by another tenant.
+2. **Ownership first.** The tenant proves ownership with a TXT record, and adds the ACME TXT record for the certificate. Only then is a CNAME to
+   the edge accepted. The ownership TXT value is a random token generated for each tenant, hostname and attempt, so a value cannot be reused
+   across tenants or replayed after a failed attempt.
+3. **Verification states.** Each hostname moves through named verification states (open detail 1), and the console shows the current state and
+   the record still missing.
+4. **TLS.** Certificates are issued and renewed through Cloudflare for SaaS (0175 decision 2), configured by `@stackra/infra-cloudflare`.
+5. **Event.** Successful verification emits `tenancy.domain.verified.v1`.
+6. **Primary domain.** A tenant has one primary domain. Its other verified domains redirect to it.
+7. **Removal and re-verification.** A tenant can remove a domain, which releases it from the registry. A verified domain is re-verified
+   periodically, and a domain that fails re-verification stops serving (open detail 2).
+8. **No dangling hostname.** When a domain is removed, fails or expires, its Cloudflare custom hostname is deleted at once.
+9. **Domain claim.** The domain claim of
+   [0243](/adr/0243-organisations-on-the-tenant-tree-consolidated-billing-guardrails-and-standalone-exit) decision 7 (auto-join, inviting
+   personal workspaces on the domain) reuses this registry and its ownership proof.
+
+## Consequences
+
+- A tenant cannot point a hostname at the edge before proving it owns the zone, so one tenant cannot take another's hostname.
+- Certificates are the edge provider's chore, not ours; on-prem keeps its own certificates (0175 decision 2).
+- Other services react to `tenancy.domain.verified.v1` instead of polling the registry.
+
+## Enforcement
+
+planned — a state-machine test covers each transition and asserts the Cloudflare custom hostname is deleted on removal, failure and expiry;
+a registry test refuses our own zones and a hostname verified by another tenant; a test asserts a TXT token from another tenant or an earlier
+attempt does not verify; the event name is checked by the event-name rule of [0141](/adr/0141-integration-event-names-and-envelope).
+
+## Open details
+
+The owner did not give these; the conservative default below applies until an ADR changes it.
+
+1. **States.** `pending_ownership`, `pending_dns`, `pending_certificate`, `active`, `failed` and `removed` (snake_case machine codes, per
+   [0231](/adr/0231-naming-and-casing-standard)).
+2. **Re-verification.** Daily. After 7 days of failure the domain moves to `failed`, stops serving, and the owner is notified; the primary then
+   falls back to the tenant's handle URL.
+3. **Pending expiry.** A hostname that stays unverified for 14 days is released from the registry.
+4. **Limits.** The number of domains per tenant comes from the plan entitlements.
+
+## Supersedes and sources
+
+Supersedes: none. Specifies: [0175](/adr/0175-edge-domains-and-tls) decision 4,
+[0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) decision 8 (T3). Sources: owner answers in chat, 2026-10-21
+(screenshot gap review, item 10).

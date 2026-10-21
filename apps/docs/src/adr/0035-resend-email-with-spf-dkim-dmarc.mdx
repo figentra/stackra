@@ -4,6 +4,14 @@ description: "Superseded by 0191 · 2026-10-20"
 ---
 
 <Note>
+  Amended by
+  [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)
+  (decision 12): `@stackra/notifications` is dropped. The email channel lives in the notifications
+  service (`@figentra/service-notifications`), and direct email goes through the `Mailer` driver in
+  `@stackra/mail`.
+</Note>
+
+<Note>
   Superseded by [0191](/adr/0191-email-deliverability): subdomains per environment, separate streams
   and a DMARC ramp. SPF, DKIM and DMARC carry forward.
 </Note>

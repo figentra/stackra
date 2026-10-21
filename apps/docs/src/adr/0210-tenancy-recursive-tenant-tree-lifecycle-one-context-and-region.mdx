@@ -1,12 +1,29 @@
 ---
 title: "0210 — Tenancy: a recursive tenant tree, the lifecycle, one context per request, and region"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0272, 0275 · 2026-10-20"
 ---
 
 <Note>
   Supersedes [0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope). Carries
   [0045](/adr/0045-tenancy-package-pool-default-silo-on-demand) forward (its pool and silo drivers).
   The scope tree inside a tenant is ADR 0208 (free code, depth by plan entitlement, ADR 0240).
+</Note>
+
+<Note>
+  Amended by [0272](/adr/0272-account-model-personal-workspace-and-opt-in-organisations): decision 4
+  is refined. Every tenant has a `region` field from day one, set to the single region of ADR 0186;
+  the picker appears at organisation creation once cells exist, and a personal workspace defaults to
+  the nearest region. The region stays fixed per tenant, and a move is a separate job (D-13, open).
+</Note>
+
+<Note>
+  Amended by [0275](/adr/0275-tenant-handles): each tenant has a handle separate from its display
+  name, with format, uniqueness, reserved-word and availability rules.
+</Note>
+
+<Note>
+  Decision 8 is specified for domains (T3) by [0276](/adr/0276-tenant-custom-domains) and for
+  sandbox promotion (T7) by [0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner).
 </Note>
 
 ## Context
