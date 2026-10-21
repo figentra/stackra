@@ -104,12 +104,21 @@ function gitSubcommand(args: string[]): string {
 }
 
 const OWNER_ONLY_CLI = new Set(["gh", "wrangler", "curl", "wget"]);
-const GIT_OWNER_ONLY = new Set(["push", "commit", "merge", "rebase", "tag", "worktree"]);
+// Network git too (STA-208): on a private repo a fetch falls back to the owner's credential helper.
+const GIT_OWNER_ONLY = new Set(
+  "push commit merge rebase tag worktree fetch pull clone ls-remote submodule".split(" "),
+);
+/** The GitHub bot wrappers (STA-208): the lead reaches GitHub as the bot; executors not at all. */
+const BOT_SCRIPT = /^(?:bot:(?:gh|git|review|token)|pr:merge)$/;
 
 /** Executors run unattended: anything that leaves the worktree, ships, or rewrites history is the lead's. */
 function denyExecutor(sub: string, cmd: string, args: string[]): Decision {
   if (OWNER_ONLY_CLI.has(cmd))
     return deny(`\`${cmd}\` reaches the network or a shared account; executors never run it.`);
+  if (/\bbot:token\b/.test(sub) || (cmd === "pnpm" && args.some((a) => BOT_SCRIPT.test(a))))
+    return deny(
+      "the GitHub bot wrappers (`pnpm bot:*`, `pnpm pr:merge`) are the lead's; executors leave changes in the worktree.",
+    );
   if (
     cmd === "infisical" &&
     args[0] === "secrets" &&

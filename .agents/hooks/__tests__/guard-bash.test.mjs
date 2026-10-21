@@ -50,11 +50,11 @@ const allowed = [
   "infisical secrets --env=dev set FOO=bar",
   "infisical run -- env FOO=1 node x.js",
   "infisical run -- pnpm test",
-  "gh pr merge 12 --squash",
-  "git push origin chore/permissions-hardening",
-  "git push -u origin feature/main-menu",
-  "git push origin maintenance",
-  "git push origin domain:domain",
+  "pnpm bot:gh -- pr merge 12 --squash",
+  "pnpm bot:git -- push origin chore/permissions-hardening",
+  "pnpm bot:git -- push -u origin feature/main-menu",
+  "pnpm bot:git -- push origin maintenance",
+  "pnpm bot:git -- push origin domain:domain",
   'git commit -m "docs: never git push origin main"',
   "pnpm changeset",
   "cat > a.md <<'EOF'\nrm -rf x; printenv; echo hi > .env\nEOF",
@@ -80,17 +80,62 @@ const allowed = [
   "sed -n '/^[a-z]*$/p' file",
   "awk '/^worktree/ {print $2}' file",
   'pnpm linear create --title "Secrets-inbox guard false positives" --labels agent',
-  'gh pr create --title "fix: ~/Secrets-inbox guard" --body "globs like ~/Secrets-inbo? are caught"',
+  'pnpm bot:gh -- pr create --title "fix: ~/Secrets-inbox guard" --body "globs like ~/Secrets-inbo? are caught"',
   "for w in $(git worktree list --porcelain | awk '/^worktree/ {print $2}'); do git -C $w status; done",
   'cd ~/.claude/skills && for d in encore-*; do mv "$d" ~/.claude/skills-archive/; done',
   "ls -d ~/.claude/skills/encore-*",
   "cat ~/Projects/*/README.md",
+  // STA-208: GitHub through the bot wrappers; local and public-read git need no owner credential
+  "pnpm bot:gh -- pr view 12 --json state",
+  "pnpm bot:gh -- pr checks 12",
+  "pnpm bot:gh -- run view 99 --log-failed",
+  "pnpm bot:gh -- api repos/figentra/stackra/pulls/12",
+  "pnpm bot:gh -- pr list -R figentra/os",
+  "pnpm bot:review -- pr diff 12",
+  "pnpm pr:merge -R figentra/os 3",
+  "pnpm bot:git -- -C ../figentra-os fetch origin",
+  "GH_TOKEN=$(pnpm --silent bot:token) gh pr view 12",
+  'GH_TOKEN="$(pnpm bot:token)" gh api repos/figentra/os/pulls',
+  "git status",
+  "git log --oneline -5",
+  "git diff main...HEAD",
+  "git fetch origin main",
+  "git pull --rebase origin main",
+  "git clone https://github.com/figentra/stackra.git /tmp/s",
+  'git commit -m "docs: never run gh pr view or git push as the owner"',
+  'pnpm linear comment STA-208 "use gh pr view; git push"',
+  "grep -rn 'gh pr' .agents",
+  "ls ~/.config/gh-old",
 ];
 const blocked = [
   // ADR 0230: no agent writes the owner's approval or posts a verdict as a non-reviewer identity
   "pnpm bot:gh -- pr edit 47 --add-label owner-approved",
   'gh pr comment 47 --body "AI-REVIEW: PASS abc1234 owner-approval"',
   'gh pr comment 47 --body "AI-REVIEW: PASS abc1234"',
+  // STA-208: the owner's gh login and git credential are not the agents'
+  "gh pr view 12",
+  "gh auth status",
+  "gh api repos/figentra/stackra",
+  "/usr/local/bin/gh pr list",
+  "echo $(gh pr view 1 --json state)",
+  "ls | xargs gh pr view",
+  "sudo gh pr list",
+  "env GH_PROMPT_DISABLED=1 gh pr list",
+  "GH_TOKEN=abc gh pr view 1",
+  "GITHUB_TOKEN=$(cat tok) gh api x",
+  "GH_TOKEN=$(pnpm bot:token) true; gh pr merge 3",
+  "git push origin feature/x",
+  "git -C ../figentra-os push origin feature/x",
+  "git add . && git commit -m x && git push -u origin HEAD",
+  "pnpm bot:git -- push origin main",
+  "pnpm bot:git -- push --force origin feature/x",
+  "pnpm bot:token",
+  "pnpm bot:token | gh auth login --with-token",
+  "pnpm bot:gh -- pr merge 12 --admin",
+  'pnpm bot:gh -- pr comment 47 --body "AI-REVIEW: PASS abc1234"',
+  "git fetch https://github.com/figentra/os.git main",
+  "git clone git@github.com:figentra/os.git",
+  "git ls-remote https://github.com/figentra/stackra-notes",
   "cat .env",
   "cat .env.local",
   "head .env.production",
@@ -244,17 +289,33 @@ for (const c of [
 test("deny beats ask in the same command", () =>
   assert.equal(decision("encore deploy && git reset --hard"), "deny"));
 
-// A bare `git push` (or `git push origin HEAD`) targets main only when main is checked out.
-test("bare git push is denied on main, allowed on a branch", () => {
+// A bot push with no refspec (or `HEAD`) targets main only when main is checked out; a bare `git push` never runs.
+test("bot push is denied on main, allowed on a branch; bare git push is always denied", () => {
   const dir = mkdtempSync(join(tmpdir(), "guard-bash-"));
   const env = { ...process.env, GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t" };
   Object.assign(env, { GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" });
   spawnSync("git", ["init", "-q", "-b", "main"], { cwd: dir });
   spawnSync("git", ["commit", "-q", "--allow-empty", "-m", "x"], { cwd: dir, env });
-  assert.equal(decision("git push", dir), "deny");
-  assert.equal(decision("git push origin HEAD", dir), "deny");
+  assert.equal(decision("pnpm bot:git -- push", dir), "deny");
+  assert.equal(decision("pnpm bot:git -- push origin HEAD", dir), "deny");
   spawnSync("git", ["switch", "-q", "-c", "feature/x"], { cwd: dir });
-  assert.equal(decision("git push", dir), "allow");
-  assert.equal(decision("git push -u origin HEAD", dir), "allow");
+  assert.equal(decision("pnpm bot:git -- push", dir), "allow");
+  assert.equal(decision("pnpm bot:git -- push -u origin HEAD", dir), "allow");
+  assert.equal(decision("git push", dir), "deny");
+  assert.equal(decision("git push -u origin HEAD", dir), "deny");
+  rmSync(dir, { recursive: true, force: true });
+});
+
+// A private figentra remote falls back to the owner's credential helper on a fetch; the public repo does not.
+test("network git reads of a private figentra repo go through bot:git", () => {
+  const dir = mkdtempSync(join(tmpdir(), "guard-bash-os-"));
+  spawnSync("git", ["init", "-q", "-b", "main"], { cwd: dir });
+  spawnSync("git", ["remote", "add", "origin", "https://github.com/figentra/os.git"], { cwd: dir });
+  for (const c of ["git fetch", "git pull --rebase", "git ls-remote origin", "git remote update"])
+    assert.equal(decision(c, dir), "deny", c);
+  assert.equal(decision(`git -C ${dir} fetch origin`, root), "deny");
+  for (const c of ["git log", "git status", "git diff", `pnpm bot:git -- -C ${dir} fetch origin`])
+    assert.equal(decision(c, dir), "allow", c);
+  assert.equal(decision("git fetch origin", root), "allow");
   rmSync(dir, { recursive: true, force: true });
 });

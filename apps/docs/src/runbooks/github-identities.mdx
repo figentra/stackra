@@ -1,0 +1,97 @@
+---
+title: "GitHub identities"
+description: "Which GitHub identity each actor uses, the bot commands that replace plain gh and git push, and what the owner sets in GitHub."
+icon: "user-lock"
+---
+
+Agents never use the owner's GitHub login (owner decision 2026-10-20, STA-208,
+[ADR 0230](/adr/0230-reviewer-identity-separate-from-builder) rule 5). Every agent call to GitHub runs on a GitHub
+App installation token minted from Infisical `/agents`, and the token never reaches the transcript.
+
+## Who acts as whom
+
+| Actor                                         | Identity                    | How                                                                            |
+| --------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------ |
+| Builder agents and the coordinator            | `stackra-bot` (GitHub App)  | `pnpm bot:gh -- <gh args>`, `pnpm bot:git -- <git args>`, `pnpm pr:merge <n>`  |
+| Reviewer agents                               | `stackra-reviewer` (App)    | `pnpm bot:review -- pr view\|diff\|checks\|comment\|review`, GET `api`         |
+| OpenCode executors                            | none                        | no `gh`, no network `git`, no bot wrapper; the lead commits and pushes         |
+| The owner (`figentra-usr`), own terminal only | the owner's own `gh` login  | the owner's shell and Claude Code `!` commands (hooks do not run on them)      |
+| The owner's approval                          | the owner, in the GitHub UI | web or mobile with 2FA: an APPROVED review whose body ends in `owner-approval` |
+
+## Coordinator commands
+
+| Before                                | Now                                             |
+| ------------------------------------- | ----------------------------------------------- |
+| `gh pr view 12 --json state`          | `pnpm bot:gh -- pr view 12 --json state`        |
+| `gh pr checks 12`                     | `pnpm bot:gh -- pr checks 12`                   |
+| `gh run view 99 --log-failed`         | `pnpm bot:gh -- run view 99 --log-failed`       |
+| `gh api repos/figentra/stackra/...`   | `pnpm bot:gh -- api repos/figentra/stackra/...` |
+| `gh pr create ...`                    | `pnpm bot:gh -- pr create ...`                  |
+| `git push origin HEAD`                | `pnpm bot:git -- push origin HEAD`              |
+| `gh pr merge ...`                     | `pnpm pr:merge 12` (never `gh pr merge`)        |
+| one `gh` call inside a script or pipe | `GH_TOKEN=$(pnpm --silent bot:token) gh ...`    |
+
+`pnpm` prints a `$ infisical run ...` banner to stdout, so the `$(...)` form needs `--silent`. `pnpm bot:token` on
+its own, or piped anywhere, is denied: it would print a live token.
+
+### The private Figentra OS repo
+
+`figentra/os` sits in both apps' installations, which are the same installation as `figentra/stackra` (one per
+organization), so no other installation id is needed:
+
+- `pnpm bot:gh -- pr list -R figentra/os`
+- `pnpm pr:merge -R figentra/os 3`
+- `pnpm bot:git -- -C ~/Projects/figentra-os push origin HEAD` (pnpm runs scripts from the stackra root, so name the
+  directory with `-C`)
+- `pnpm bot:review -- pr diff 3 -R figentra/os`
+
+## What the bash guard does
+
+`.agents/hooks/guard-bash.mjs` (Claude Code) denies:
+
+- `gh` at command position, through `sudo`, `env`, `xargs`, `$(...)` or a full path, unless that command sets
+  `GH_TOKEN` or `GITHUB_TOKEN` from `$(pnpm bot:token)`;
+- `git push` at command position (`pnpm bot:git -- push` is the only push), and a bot push to `main`;
+- `git fetch|pull|clone|ls-remote|submodule|remote update` of a private figentra repository, named on the command
+  line or as a remote of the repo the command runs in. On a private repo a `401` falls through to the owner's
+  `gh auth git-credential` helper, so these go through `pnpm bot:git -- -C <dir> fetch`;
+- `pnpm bot:token` outside `$(...)`.
+
+Local `git` (status, log, diff, add, commit, switch, rebase, worktree) and network reads of the public
+`figentra/stackra` stay allowed: GitHub answers a public read without asking for a credential, so no login is used.
+A commit made with plain `git commit` carries the developer's git name; builders commit with `pnpm bot:git -- commit`
+so the bot is author and committer.
+
+The OpenCode guard (`.opencode/plugins/guard/decide.ts`) is stricter: executors run no `gh`, no network `git` and no
+`pnpm bot:*` or `pnpm pr:merge` at all.
+
+## Honest limit
+
+The guard is an accident guard. Agents run as the owner's macOS user, so the owner's `gh` token in the keychain and
+`~/.config/gh` are readable by any process an agent starts. Full isolation needs agents to run as a separate OS user,
+or on the EC2 agent host, where the owner's login does not exist.
+
+## What the owner sets in GitHub
+
+1. **`figentra/stackra` branch protection (checked 2026-10-21).** `main` is protected and requires the `Quality Gate`
+   check for non-admins, with no rulesets. The bot merges through that protection: it is not an admin, so the gate
+   must be green, and `pnpm pr:merge` never passes `--admin`. If "Restrict who can push to matching branches" is ever
+   turned on, add the `stackra-bot` app to the allowed list, or every merge fails.
+2. **`figentra/os` has no branch protection.** It is private on the free plan, and GitHub answers "Upgrade to GitHub
+   Pro or make this repository public" for its rules. Nothing on GitHub stops a direct push to its `main`; only the
+   guard does. To protect it: move the organization to GitHub Team, then require `Quality Gate` on `main` as on
+   stackra.
+3. **App permissions are enough.** `stackra-bot` holds contents, pull requests, issues, actions and workflows: write,
+   and checks and statuses: read, which covers push, PR, squash merge and branch delete. `stackra-reviewer` holds pull
+   requests: write and contents: read. Nothing else is needed. The bot cannot read classic branch protection
+   (administration: read is not granted), and does not need to.
+4. **Private notes repo.** `figentra/stackra-notes` is in neither installation, so an agent can no longer fetch or
+   push it. Add it to the `stackra-bot` installation (Settings, GitHub Apps, stackra-bot, Repository access) and push
+   with `pnpm bot:git -- -C ~/Projects/stackra-notes push`.
+5. **Keep the owner login away from agent sessions.** Keep `gh` logged in for the owner's own terminal. To make an
+   agent's plain `gh` fail even if the guard is bypassed, log the owner in under a separate config directory
+   (`GH_CONFIG_DIR=~/.config/gh-owner gh auth login`, with an alias in the owner's own shell profile) and run
+   `gh auth logout` in the default one.
+6. **Approve only in the GitHub UI.** An owner approval is an APPROVED pull request review on the head commit whose
+   body ends with `owner-approval`, submitted from the web or mobile app with 2FA. A reviewer `AI-REVIEW: FAIL` on the
+   same commit still blocks the merge.

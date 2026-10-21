@@ -31,7 +31,7 @@ The pull request, its spec or brief and Linear issue, `apps/docs/src/guides/stan
 Report each finding as `blocking`, `should-fix` or `consider`, with file:line and a concrete failure, never a preference.
 Do not report what `pnpm verify` already checks: finding one means the gate is broken, and that becomes the finding.
 
-Run read-only: `gh pr diff <n>`, `gh pr view <n>`, `git log`, and the member's tests.
+Run read-only: `pnpm bot:review -- pr diff <n>`, `pnpm bot:review -- pr view <n>`, `git log`, and the member's tests.
 
 ## Verdict
 

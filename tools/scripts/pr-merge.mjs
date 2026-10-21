@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 /**
  * Stackra file contract:
- * Purpose: `pnpm pr:merge <n>` — the only way an agent merges (owner decision A1, ADR 0119). Merges PR <n> as
+ * Purpose: `pnpm pr:merge [-R owner/repo] <n>` (`-R figentra/os` for the OS repo) — the only way an agent merges (owner decision A1, ADR 0119). Merges PR <n> as
  *   `stackra-bot` with `--squash --delete-branch --match-head-commit <head>` (never `--admin`) only when:
  *   1. the newest "Quality Gate" check run on the head SHA concluded `success`;
  *   2. the PR is open and not a draft;
  *   3. the AI review passed (ADR 0230): either the reviewer app passed the head on this base, or the owner approved.
  *      - Reviewer: a PR comment whose author is the App itself (`user.type` Bot and `performed_via_github_app.slug`
  *        `stackra-reviewer`, never a login string), unedited, first line `AI-REVIEW: PASS <40-hex head> base=<base
- *        ref>`. A FAIL for the head SHA is sticky: any counted FAIL beats every PASS, whatever its order. An edit to
+ *        ref>`. A FAIL is read loosely: any first line starting `AI-REVIEW: FAIL` counts (short SHA, no SHA or trailing
+ *        text), unless it names a 7+ hex SHA that is not the head's. A FAIL for the head SHA is sticky: any counted FAIL beats every PASS, whatever its order. An edit to
  *        any reviewer comment voids every reviewer verdict posted before it. Never counted when the reviewer is the
  *        PR author or the head commit's author or committer.
  *      - Owner: an APPROVED pull request review by the owner user (`figentra-usr`) on the head SHA whose body ends
@@ -28,6 +29,11 @@ export const REVIEWER = "stackra-reviewer";
 const GATED_LABELS = ["design", "risk:R3"];
 const VERDICT_LINE = /^AI-REVIEW:\s*(PASS|FAIL)\s+([0-9a-f]{40})(?:\s+base=(\S+))?\s*$/i;
 const OWNER_TOKEN = /(?:^|\s)owner-approval\s*$/;
+// N1 (#48): a FAIL is read loosely so a sloppy FAIL still blocks; only a hex token of 7+ that is not a prefix of the
+// head marks it as a FAIL for an older commit, which a new commit clears.
+const LOOSE_FAIL = /^AI-REVIEW:\s*FAIL\b\s*(\S*)/i;
+const failForHead = (token, sha) =>
+  !/^[0-9a-f]{7,40}$/i.test(token) || sha.startsWith(token.toLowerCase());
 
 /** One login form for users and apps: `app/stackra-bot`, `stackra-bot[bot]` and `stackra-bot` are the same actor. */
 export const actor = (login = "") =>
@@ -63,10 +69,12 @@ export function aiReview(pr, comments, reviews, authors = []) {
   const voidBefore = edits.at(-1) ?? "";
   const verdicts = new Set();
   for (const c of comments) {
-    const match = VERDICT_LINE.exec((c.body ?? "").trim().split("\n")[0].trim());
-    if (!match || match[2].toLowerCase() !== sha) continue;
+    const line = (c.body ?? "").trim().split("\n")[0].trim();
+    const match = VERDICT_LINE.exec(line);
+    const loose = match ? null : LOOSE_FAIL.exec(line);
+    if (match ? match[2].toLowerCase() !== sha : !loose || !failForHead(loose[1], sha)) continue;
     const who = c.user?.login ?? "unknown";
-    const [, kind, , base] = match;
+    const [, kind, , base] = match ?? [line, "FAIL"];
     if (!byReviewerApp(c)) ignored.push(`${who} is not the ${REVIEWER} app`);
     else if (self.has(actor(who))) ignored.push(`${who} authored this change and cannot review it`);
     else if (c.updated_at !== c.created_at) ignored.push(`a verdict by ${who} was edited`);
@@ -121,6 +129,20 @@ export function blockers(pr, checkRuns, headCommit = {}, comments = [], reviews 
   return reasons;
 }
 
+/** `[-R|--repo owner/name] <n>` → the PR number and repo; `{owner}/{repo}` is gh's current-repo placeholder. */
+export function parseArgs(argv) {
+  const args = argv.filter((a) => a !== "--");
+  let repo = "{owner}/{repo}";
+  const rest = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "-R" || args[i] === "--repo") repo = args[++i] ?? "";
+    else if (args[i].startsWith("--repo=")) repo = args[i].slice(7);
+    else rest.push(args[i]);
+  }
+  const valid = repo === "{owner}/{repo}" || /^[\w.-]+\/[\w.-]+$/.test(repo);
+  return rest.length === 1 && /^\d+$/.test(rest[0]) && valid ? { n: rest[0], repo } : null;
+}
+
 function gh(args, token) {
   const r = spawnSync("gh", args, { encoding: "utf8", env: { ...process.env, GH_TOKEN: token } });
   if (r.status !== 0) throw new Error(`gh ${args[0]} ${args[1]} failed: ${r.stderr.trim()}`);
@@ -131,34 +153,30 @@ function gh(args, token) {
 const list = (path, token) => JSON.parse(gh(["api", "--paginate", "--slurp", path], token)).flat();
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const n = process.argv.slice(2).find((a) => a !== "--");
-  if (!/^\d+$/.test(n ?? "")) {
-    process.stderr.write("usage: pnpm pr:merge <pr-number>\n");
+  const parsed = parseArgs(process.argv.slice(2));
+  if (!parsed) {
+    process.stderr.write("usage: pnpm pr:merge [-R owner/repo] <pr-number>\n");
     process.exit(2);
   }
+  const { n, repo } = parsed;
+  const R = repo.startsWith("{") ? [] : ["-R", repo];
   try {
     const token = await mintToken();
     const fields = "number,state,isDraft,headRefOid,baseRefName,labels,author";
-    const pr = JSON.parse(gh(["pr", "view", n, "--json", fields], token));
+    const pr = JSON.parse(gh(["pr", "view", n, ...R, "--json", fields], token));
     const runs = JSON.parse(
       gh(
-        [
-          "api",
-          `repos/{owner}/{repo}/commits/${pr.headRefOid}/check-runs?check_name=Quality%20Gate`,
-        ],
+        ["api", `repos/${repo}/commits/${pr.headRefOid}/check-runs?check_name=Quality%20Gate`],
         token,
       ),
     ).check_runs;
     // The head commit's GitHub author and committer (null when the email maps to no account).
     const headCommit = JSON.parse(
-      gh(
-        ["api", `repos/{owner}/{repo}/commits/${pr.headRefOid}`, "--jq", "{author,committer}"],
-        token,
-      ),
+      gh(["api", `repos/${repo}/commits/${pr.headRefOid}`, "--jq", "{author,committer}"], token),
     );
     // REST, not `gh pr view`: only REST carries user.type, performed_via_github_app and updated_at.
-    const comments = list(`repos/{owner}/{repo}/issues/${n}/comments?per_page=100`, token);
-    const reviews = list(`repos/{owner}/{repo}/pulls/${n}/reviews?per_page=100`, token);
+    const comments = list(`repos/${repo}/issues/${n}/comments?per_page=100`, token);
+    const reviews = list(`repos/${repo}/pulls/${n}/reviews?per_page=100`, token);
     const reasons = blockers(pr, runs, headCommit, comments, reviews);
     if (reasons.length) {
       process.stderr.write(
@@ -167,7 +185,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       process.exit(1);
     }
     gh(
-      ["pr", "merge", n, "--squash", "--delete-branch", "--match-head-commit", pr.headRefOid],
+      ["pr", "merge", n, ...R, "--squash", "--delete-branch", "--match-head-commit", pr.headRefOid],
       token,
     );
     process.stdout.write(`merged #${n} at ${pr.headRefOid}\n`);

@@ -154,6 +154,18 @@ test("executors never run owner-only CLIs, ship, or touch git history", () => {
     "pnpm changeset:version",
     "pnpm changeset version",
     "pnpm test && git push",
+    // STA-208: no owner login (gh with any token, network git) and no bot wrappers for executors
+    "GH_TOKEN=$(pnpm bot:token) gh pr view 1",
+    "env GH_TOKEN=x gh pr list",
+    "git fetch origin",
+    "git -C ../os pull",
+    "git clone https://github.com/figentra/os",
+    "git ls-remote origin",
+    "pnpm bot:gh -- pr view 1",
+    "pnpm bot:git -- push origin HEAD",
+    "pnpm bot:review -- pr comment 1 --body-file f",
+    "pnpm pr:merge 1",
+    "pnpm bot:token",
   ])
     assert.equal(kind(c), "deny", c);
   for (const c of [

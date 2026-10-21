@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { actor, aiReview, blockers, OWNER, REVIEWER } from "../pr-merge.mjs";
+import { actor, aiReview, blockers, OWNER, parseArgs, REVIEWER } from "../pr-merge.mjs";
 
 const SHA = "0123456789abcdef0123456789abcdef01234567";
 const T0 = "2026-10-19T10:00:00Z";
@@ -124,6 +124,29 @@ test("L3: a FAIL for the head SHA is sticky over any PASS, older or newer", () =
   );
 });
 
+test("N1: a FAIL is read loosely (short SHA, no SHA, trailing text); PASS stays strict", () => {
+  for (const body of [
+    `AI-REVIEW: FAIL ${SHA.slice(0, 7)}`,
+    `AI-REVIEW: FAIL ${SHA} base=main — see H1`,
+    "AI-REVIEW: FAIL",
+    "ai-review: fail, two blocking findings",
+  ])
+    assert.equal(verdict([reviewer(body, T1), reviewer(PASS, T0)]), "FAIL", body);
+  // A FAIL naming another commit belongs to an older head; a new commit clears it.
+  assert.equal(verdict([reviewer("AI-REVIEW: FAIL fedcba9", T1), reviewer(PASS, T0)]), "PASS");
+  // Still only the reviewer app's FAIL counts.
+  assert.equal(verdict([appComment("stackra-bot", "AI-REVIEW: FAIL"), reviewer(PASS)]), "PASS");
+  assert.equal(verdict([reviewer(`AI-REVIEW: PASS ${SHA} base=main trailing`)]), null);
+});
+
+test("pr:merge arguments: a number and an optional -R owner/repo", () => {
+  assert.deepEqual(parseArgs(["--", "12"]), { n: "12", repo: "{owner}/{repo}" });
+  assert.deepEqual(parseArgs(["-R", "figentra/os", "3"]), { n: "3", repo: "figentra/os" });
+  assert.deepEqual(parseArgs(["3", "--repo=figentra/os"]), { n: "3", repo: "figentra/os" });
+  for (const bad of [[], ["x"], ["1", "2"], ["-R", "os", "1"], ["-R", "a/b;rm", "1"]])
+    assert.equal(parseArgs(bad), null, bad.join(" "));
+});
+
 test("the reviewer cannot pass a change it authored or committed", () => {
   const byReviewer = { author: { login: `${REVIEWER}[bot]` }, committer: { login: "web-flow" } };
   assert.match(
@@ -149,8 +172,9 @@ test("M2/L2: the owner passes only by an APPROVED review on the head ending in o
   assert.equal(verdict([], [review({ user: { login: OWNER, type: "Bot" } })]), null);
   const ownCommit = { author: { login: OWNER }, committer: { login: OWNER } };
   assert.match(blockers(pr(), green, ownCommit, [], [review()]).join(), /no AI review PASS/);
-  // A reviewer FAIL still wins over the owner's approval.
+  // N2: a reviewer FAIL on the same SHA overrides the owner's approving review, loose FAIL too.
   assert.equal(verdict([reviewer(FAIL)], [review()]), "FAIL");
+  assert.equal(verdict([reviewer("AI-REVIEW: FAIL")], [review()]), "FAIL");
 });
 
 test("design / risk:R3 need an owner approval on the head SHA or owner-approved", () => {

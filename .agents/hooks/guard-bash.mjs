@@ -25,6 +25,7 @@
  * first), so `node -e 'v.env'` or `cat apps/x/eas.json` are fine.
  */
 import { spawnSync } from "node:child_process";
+import { homedir } from "node:os";
 import { resolve, sep } from "node:path";
 import { readStdin, deny, ask, failOpen } from "./_io.mjs";
 import { commandReachesInbox } from "./_inbox.mjs";
@@ -43,17 +44,54 @@ function stripHeredocs(raw) {
   );
 }
 
-/** `git` followed by any global options before the subcommand. */
-const GIT = String.raw`\bgit\s+(?:(?:-[Cc]\s+\S+|--(?:git-dir|work-tree|namespace)(?:=\S+|\s+\S+)|--no-pager|--literal-pathspecs)\s+)*`;
+/** git's global options before the subcommand. */
+const GIT_OPTS = String.raw`(?:(?:-[Cc]\s+\S+|--(?:git-dir|work-tree|namespace)(?:=\S+|\s+\S+)|--no-pager|--literal-pathspecs)\s+)*`;
+/** `git` (or `pnpm bot:git --`) followed by any global options before the subcommand. */
+const GIT = String.raw`\bgit\s+(?:--\s+)?` + GIT_OPTS;
 
 /** Command position: start, or after a separator, optionally behind `VAR=x` assignments. */
 const CMDPOS = String.raw`(?:^|[|;&(\n])\s*(?:\w+=\S*\s+)*`;
+
+/**
+ * Owner-login guard (STA-208, ADR 0230 rule 5): `gh` and `git` at command position run with the owner's
+ * `gh auth` login and git credential helper. Agents use the bot wrappers instead. Matched on the quote-blanked
+ * command, so prose in `--body "…gh…"` is ignored. Wrappers like `sudo`, `env`, `xargs`, `time` are looked through.
+ */
+const BARE = String.raw`(?:^|[|;&(\n\x60])\s*(?:(?:sudo|command|exec|time|nohup|env|xargs(?:\s+-\S+)*)\s+|\w+=(?:\$\([^)]*\)|\S*)\s+)*(?:\S*/)?`;
+const BARE_GH = new RegExp(BARE + String.raw`gh(?:\s|$)`);
+const BARE_GIT = (sub) =>
+  new RegExp(BARE + String.raw`git\s+` + GIT_OPTS + String.raw`(?:${sub})\b`);
+/** `GH_TOKEN=$(pnpm bot:token) gh …`: gh runs on a bot token minted for this one command. */
+const BOT_TOKEN_ENV =
+  /\b(?:GH_TOKEN|GITHUB_TOKEN)=["']?\$\(\s*pnpm\s+(?:--silent\s+)?bot:token\s*\)/;
+/** A private figentra repository: anything but the public figentra/stackra. */
+const PRIVATE_REMOTE = /github\.com[/:]figentra\/(?!stackra(?:\.git)?(?![\w.-]))[\w.-]+/i;
+
+/**
+ * Network reads of a private repo: a 401 there falls through to the owner's `gh auth git-credential` helper.
+ * Public figentra/stackra reads send no credential, so they stay allowed. Checks the URL on the command line,
+ * then the remotes of the repo the command runs in (`-C dir`, else the hook's cwd; a `cd` first is not followed).
+ */
+function privateNetworkRead(bare, cwd) {
+  const rx = BARE_GIT(String.raw`fetch|pull|clone|ls-remote|submodule|remote\s+update`);
+  return segments(bare).some((seg) => {
+    if (!rx.test(seg)) return false;
+    if (PRIVATE_REMOTE.test(seg)) return true;
+    if (/\bclone\b|github\.com/.test(seg)) return false;
+    const dir = seg.match(/\bgit\s+(?:\S+\s+)*?-C\s+(\S+)/)?.[1];
+    const where = dir ? resolve(cwd, dir.replace(/^~(?=\/|$)/, homedir())) : cwd;
+    return PRIVATE_REMOTE.test(git(where, "remote", "-v"));
+  });
+}
 
 /** `git` output in `cwd`, or "" when git fails. */
 function git(cwd, ...args) {
   const r = spawnSync("git", args, { cwd, encoding: "utf8" });
   return r.status === 0 ? r.stdout.trim() : "";
 }
+
+/** Quoted strings blanked, so a word inside `node -e '...'` or `--body "..."` is not mistaken for a command. */
+const blank = (c) => c.replace(/'[^']*'|"(?:\\.|[^"\\])*"/g, '""');
 
 /** Command segments (split on separators, quotes kept). */
 const segments = (c) => c.split(/&&|\|\||[|;&\n]/);
@@ -214,6 +252,24 @@ const rules = [
     rx: pushesMain,
     why: "Never push to main. Push your branch and open a PR; main changes only through a merged PR.",
   },
+  // STA-208: agents never act with the owner's GitHub login (ADR 0230 rule 5). Accident guard: same macOS user.
+  {
+    rx: (c) => segments(c).some((s) => BARE_GH.test(blank(s)) && !BOT_TOKEN_ENV.test(s)),
+    why: "Agents never run `gh` on the owner's login. Use `pnpm bot:gh -- <args>` (builder, stackra-bot; `-R figentra/os` for the OS repo), `pnpm bot:review -- <args>` (reviewer), `pnpm pr:merge <n>`, or `GH_TOKEN=$(pnpm --silent bot:token) gh …` for one command.",
+  },
+  {
+    rx: (c) => BARE_GIT("push").test(blank(c)),
+    why: "Agents never `git push` with the owner's credential helper. Push as the bot: `pnpm bot:git -- push origin HEAD` (another repo: `pnpm bot:git -- -C <dir> push …`).",
+  },
+  {
+    rx: (c, cwd) => privateNetworkRead(blank(c), cwd),
+    why: "This git command reads a private figentra repo, which falls back to the owner's credential helper. Run it as the bot: `pnpm bot:git -- -C <dir> fetch|pull|ls-remote …`. Reads of the public figentra/stackra need no credential and stay allowed.",
+  },
+  {
+    // The token belongs in a child's environment, never in the transcript or in gh's config.
+    rx: (c) => /\bbot:token\b/.test(c) && !/\$\(\s*pnpm\s+(?:--silent\s+)?bot:token\s*\)/.test(c),
+    why: "`pnpm bot:token` prints a live token. Use it only inside `$(…)` as `GH_TOKEN=$(pnpm --silent bot:token) gh …`, or use `pnpm bot:gh`.",
+  },
   // ADR 0230: an agent never speaks for the owner, and only the reviewer identity posts verdicts. A tripwire, not
   // the control: pr-merge checks the verdict's author.
   {
@@ -221,11 +277,11 @@ const rules = [
     why: "`owner-approval` / `owner-approved` record the owner's own decision; an agent never writes them. Ask the owner.",
   },
   {
-    rx: /(?:^|[\s;&|(])gh\s+(?:pr\s+(?:comment|review)|api)\b[^\n]*\bAI-REVIEW:/i,
+    rx: /(?:^|[\s;&|(:])gh\s+(?:--\s+)?(?:pr\s+(?:comment|review)|api)\b[^\n]*\bAI-REVIEW:/i,
     why: "AI-REVIEW verdicts are posted only by the reviewer identity: `pnpm bot:review -- pr comment <n> --body-file <f>`, from a reviewer agent, never on the reviewer's own work.",
   },
   {
-    rx: /\bgh\s+pr\s+merge\b[^|;&\n]*\s--admin\b/,
+    rx: /\bgh\s+(?:--\s+)?pr\s+merge\b[^|;&\n]*\s--admin\b/,
     why: "`gh pr merge --admin` bypasses branch protection and required checks. Wait for the checks and merge normally.",
   },
   {
@@ -270,8 +326,7 @@ async function main() {
   const cwd = String(input.cwd || process.cwd());
   const raw = String(input.tool_input?.command ?? "");
   const cmd = stripHeredocs(raw);
-  /** Quoted strings blanked, so a word inside `node -e '...'` is not mistaken for a command. */
-  const bare = cmd.replace(/'[^']*'|"(?:\\.|[^"\\])*"/g, '""');
+  const bare = blank(cmd);
 
   let asked;
   for (const rule of rules) {

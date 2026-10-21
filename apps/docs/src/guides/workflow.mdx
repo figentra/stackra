@@ -20,7 +20,7 @@ Hooks are advisory; CI runs the full gate.
 
 ## Branches and pull requests
 
-Branches are `figentra/sta-<n>-<slug>`. A pull request follows `.github/pull_request_template.md` and names its issue (`Fixes STA-n`). The only required check is `Quality Gate`; merges are squash merges through `pnpm pr:merge`, which also requires the AI review verdict ([0119](/adr/0119-merge-policy-and-release-authority)). A branch that falls behind `main` is updated with `gh pr update-branch`, never force-pushed.
+Branches are `figentra/sta-<n>-<slug>`. A pull request follows `.github/pull_request_template.md` and names its issue (`Fixes STA-n`). The only required check is `Quality Gate`; merges are squash merges through `pnpm pr:merge`, which also requires the AI review verdict ([0119](/adr/0119-merge-policy-and-release-authority)). A branch that falls behind `main` is updated with `pnpm bot:gh -- pr update-branch`, never force-pushed.
 
 ## Releases
 
