@@ -6,7 +6,12 @@
 // is not unwrapped; good enough for agent-typed commands, upgrade to a real shell parser if one slips through.
 import { resolve, sep } from "node:path";
 // The inbox matcher is shared with the Claude hooks (one matcher, ADR 0257): paths, globs rooted at home, recursive reads.
-import { scanShell, commandReachesInbox, reachesInbox } from "../../../.agents/hooks/_inbox.mjs";
+import {
+  commandReachesInbox,
+  reachesInbox,
+  scanShell,
+  stripHeredocs,
+} from "../../../.agents/hooks/_inbox.mjs";
 
 export type Decision = { kind: "allow" } | { kind: "deny"; reason: string };
 
@@ -22,9 +27,8 @@ export interface GuardContext {
 const ALLOW: Decision = { kind: "allow" };
 const deny = (reason: string): Decision => ({ kind: "deny", reason: `stackra-guard: ${reason}` });
 
-// Heredoc bodies are file content, not commands (same as guard-bash.mjs).
-const HEREDOC = /<<-?\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1[^\n]*\n[\s\S]*?\n\s*\2\s*(?=\n|$)/g;
-export const stripHeredocs = (c: string): string => c.replace(HEREDOC, "<<HEREDOC");
+// Heredoc bodies are file content, not commands (the shared stripHeredocs, as in guard-bash.mjs).
+export { stripHeredocs };
 
 // ---- paths -------------------------------------------------------------------------------------------
 const SECRET_FILE = [
@@ -286,7 +290,7 @@ export function decideShell(raw: string, cwd?: string): Decision {
  * and `sh -c` / `eval` strings (STA-208 review H2), at any depth via the shared `scanShell` (STA-254). shortcut: no alias expansion.
  */
 function nested(cmd: string): string[] {
-  const out = [...scanShell(cmd).bodies];
+  const out = scanShell(cmd).bodies.flatMap((b) => [b, ...nested(b)]);
   for (const m of cmd.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
     out.push(m[2], ...nested(m[2]));
   return out;

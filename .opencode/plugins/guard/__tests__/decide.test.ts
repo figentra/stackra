@@ -365,3 +365,27 @@ test("STA-254 review: quoting restarts inside a substitution, and $'…' honours
   ])
     assert.equal(kind(c), "allow", c);
 });
+
+test("STA-254 re-review: $$, case and comments in a substitution, escaped backticks, <(…), heredocs", () => {
+  for (const c of [
+    `echo $$'x\\' $(git push origin main) ''`,
+    `echo "$(case a in a) echo "'";; esac; git push origin main)" '`,
+    `echo "$(true # )\ngit push origin main)"`,
+    `echo hi # it's\necho "$(git push origin main)" # it's`,
+    "echo `echo \\`git push origin main\\``",
+    `diff <(echo "it's") <(git push origin main)`,
+    `cat > notes.md <<EOF\n$(git push origin main)\nEOF`,
+    `cat > notes.md <<EOF\n\`git push origin main\`\nEOF`,
+    `cat > notes.md <<EOF\nit's $(cat ~/Secrets-inbox/X)\nEOF`,
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    `echo $$`,
+    `echo "pid $$, it's fine"`,
+    `git log --format='%H' # it's a comment`,
+    `echo $(case x in a) echo a;; esac)`,
+    `cat > notes.md <<EOF\nwe don't run git push origin main here\nEOF`,
+    `cat > notes.md <<'EOF'\n$(git push origin main) stays text\nEOF`,
+  ])
+    assert.equal(kind(c), "allow", c);
+});

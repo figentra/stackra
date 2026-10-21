@@ -28,21 +28,9 @@ import { spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 import { resolve, sep } from "node:path";
 import { readStdin, deny, ask, failOpen } from "./_io.mjs";
-import { commandReachesInbox, scanShell } from "./_inbox.mjs";
+import { commandReachesInbox, scanShell, stripHeredocs } from "./_inbox.mjs";
 
 const EVENT = "PreToolUse";
-
-/**
- * Heredoc bodies are file content, not commands: `cat > rules.md <<'EOF' … EOF` must not
- * trip a rule because the prose mentions a forbidden command. Strip every heredoc body
- * before matching.
- */
-function stripHeredocs(raw) {
-  return raw.replace(
-    /<<-?\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1[^\n]*\n[\s\S]*?\n\s*\2\s*(?=\n|$)/g,
-    "<<HEREDOC_BODY_STRIPPED",
-  );
-}
 
 /** The only `-c` keys an agent may set: display and identity, none runs a command or redirects a remote (STA-216). */
 const ALLOWED_C =
@@ -146,7 +134,7 @@ const NETWORK_GIT = BARE_GIT(
 
 /** The text of every `$(…)` / backtick body at any depth (single quotes stay literal) and `sh -c` / `eval` string. */
 function nestedRaw(c) {
-  const out = [...scanShell(c).bodies];
+  const out = scanShell(c).bodies.flatMap((b) => [b, ...nestedRaw(b)]);
   for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
     out.push(m[2], ...nestedRaw(m[2]));
   return out;
@@ -160,7 +148,7 @@ const scanTexts = (c) => [dropMessages(c), ...nestedRaw(c).map(dropMessages)];
  */
 function runnable(c) {
   const { blanked, bodies } = scanShell(c);
-  const out = [blanked, ...bodies.map(blank)];
+  const out = [blanked, ...bodies.flatMap(runnable)];
   for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
     out.push(...runnable(m[2]));
   return out;

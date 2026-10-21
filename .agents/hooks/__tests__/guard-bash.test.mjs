@@ -677,3 +677,27 @@ for (const c of [
   `git commit -m "$(echo "it's") fine"`,
 ])
   test(`allow: ${c}`, () => assert.equal(denied(c), false));
+
+// STA-254 re-review: `$$` before `'`, `case` patterns and comments inside a substitution, a comment's apostrophe,
+// escaped backticks, process substitution and unquoted heredoc bodies.
+for (const c of [
+  `echo $$'x\\' $(git push origin main) ''`,
+  `echo "$(case a in a) echo "'";; esac; git push origin main)" '`,
+  `echo "$(true # )\ngit push origin main)"`,
+  `echo hi # it's\necho "$(git push origin main)" # it's`,
+  "echo `echo \\`git push origin main\\``",
+  `diff <(echo "it's") <(git push origin main)`,
+  `cat > notes.md <<EOF\n$(git push origin main)\nEOF`,
+  `cat > notes.md <<EOF\n\`git push origin main\`\nEOF`,
+  `cat > notes.md <<EOF\nit's $(cat ~/Secrets-inbox/X)\nEOF`,
+])
+  test(`deny: ${c}`, () => assert.equal(denied(c), true));
+for (const c of [
+  `echo $$`,
+  `echo "pid $$, it's fine"`,
+  `git log --format='%H' # it's a comment`,
+  `echo $(case x in a) echo a;; esac)`,
+  `cat > notes.md <<EOF\nwe don't run git push origin main here\nEOF`,
+  `cat > notes.md <<'EOF'\n$(git push origin main) stays text\nEOF`,
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));
