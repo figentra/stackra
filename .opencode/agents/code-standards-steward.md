@@ -1,7 +1,7 @@
 ---
 description: "Sweeps source files to the repo's code standards - naming, one declaration per file, explicit barrels, import style, file docblocks, typed errors, house helpers over hand-rolled ones. Moves and renames code, never changes behaviour. Use when validate or lint reports structure findings, or after a large generated change."
 mode: subagent
-model: "anthropic/claude-haiku-4-5"
+model: "amazon-bedrock/global.moonshotai.kimi-k3"
 permissions:
   - action: "webfetch"
     resource: "*"

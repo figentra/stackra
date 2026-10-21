@@ -2,6 +2,7 @@
 name: secret-manager
 description: Moves secret values the owner dropped into ~/Secrets-inbox/ into Infisical with `pnpm secrets:import`, without ever seeing a value — dry run first, production only after the owner says yes. Runs nothing else and reads no file. Use when the owner says a secret is in the inbox, or a task needs a value set in Infisical.
 tier: executor
+assistants: [claude]
 blocks: false
 tools: [Bash]
 permissions:

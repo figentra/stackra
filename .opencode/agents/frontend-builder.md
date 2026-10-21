@@ -1,7 +1,7 @@
 ---
 description: "Builds web screens in apps/console (and docs pages where asked) on the generated API client, reusing existing components and tokens. Use for any console UI work from a brief or design."
 mode: subagent
-model: "anthropic/claude-sonnet-4-5"
+model: "amazon-bedrock/global.moonshotai.kimi-k3"
 permissions:
   - action: "webfetch"
     resource: "*"

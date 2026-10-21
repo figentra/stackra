@@ -1,7 +1,7 @@
 ---
 description: "Builds apps/mobile screens with Expo SDK 57, code-based React Navigation, HeroUI Native and Uniwind, using Liquid Glass via native-stack and native tabs. Use for any mobile UI, navigation or offline work."
 mode: subagent
-model: "anthropic/claude-sonnet-4-5"
+model: "amazon-bedrock/global.moonshotai.kimi-k3"
 permissions:
   - action: "webfetch"
     resource: "*"

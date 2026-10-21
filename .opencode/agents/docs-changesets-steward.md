@@ -1,7 +1,7 @@
 ---
 description: "Writes and reviews .changeset/*.md entries so every consumer-visible member change carries a correctly-bumped, clearly-worded changeset; keeps .changeset/README.md true. Never runs `changeset version`, never hand-edits a generated CHANGELOG.md. Never blocks — the CI changeset-status check does. Use on any change to a packages/*, apps/* or services/* member."
 mode: subagent
-model: "anthropic/claude-haiku-4-5"
+model: "amazon-bedrock/global.moonshotai.kimi-k3"
 permissions:
   - action: "webfetch"
     resource: "*"
