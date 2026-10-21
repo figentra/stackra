@@ -1,0 +1,157 @@
+import assert from "node:assert/strict";
+import { existsSync, mkdtempSync, readFileSync, readdirSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { test } from "node:test";
+import { fileURLToPath } from "node:url";
+
+import { parseEntries, scaffold } from "../scaffold.mjs";
+import {
+  BANNED_FOLDERS,
+  CATEGORIES,
+  CATEGORY_NAMES,
+  ENTRY_NAMES,
+  KIND_FOLDERS,
+  REACT_HOOK,
+  ROOT_MODULE,
+  TEST_TIERS,
+  categoryOf,
+  folderForSuffix,
+  isBannedFolder,
+  kindOfFile,
+  renderStructureDoc,
+  requiredTestFor,
+  testFileFor,
+} from "../structure.mjs";
+import { check, checkTestPlacement } from "../validate-repository.mjs";
+
+const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
+const SCRIPTS = join(ROOT, "tools/scripts");
+const tmp = () => mkdtempSync(join(tmpdir(), "structure-"));
+
+test("the category list is the 12 categories, and every category folder on disk is one of them", () => {
+  const onDisk = readdirSync(join(ROOT, "packages"), { withFileTypes: true })
+    .filter((d) => d.isDirectory() && d.name !== "tooling")
+    .map((d) => d.name);
+  assert.equal(CATEGORY_NAMES.length, 12);
+  for (const name of onDisk) assert.ok(CATEGORY_NAMES.includes(name), name);
+});
+
+test("every category and entry carries a reason and an ADR", () => {
+  for (const row of [...CATEGORIES, ...KIND_FOLDERS, ...BANNED_FOLDERS, ...TEST_TIERS])
+    assert.ok(row.reason?.length > 0 && row.adr, JSON.stringify(row));
+});
+
+test("scaffold accepts exactly the structure categories and writes them under packages/<category>", () => {
+  for (const category of CATEGORY_NAMES) {
+    const { rel } = scaffold({
+      kind: "package",
+      name: "sample",
+      root: tmp(),
+      category,
+      entries: [],
+      dryRun: true,
+    });
+    assert.equal(rel, `packages/${category}/sample`);
+    assert.equal(categoryOf(rel), category);
+  }
+  assert.throws(
+    () =>
+      scaffold({ kind: "package", name: "sample", root: tmp(), category: "tooling", dryRun: true }),
+    /--category/,
+  );
+});
+
+test("the validator accepts a scaffolded member in every structure category", () => {
+  for (const category of CATEGORY_NAMES) {
+    const dir = `packages/${category}/sample`;
+    assert.deepEqual(
+      check({
+        dir,
+        pkg: { name: "@stackra/sample", dependencies: {} },
+        turbo: { extends: ["//"], tags: ["tier:lib"] },
+        tsconfig: { extends: "@stackra/typescript-config/library" },
+      }),
+      [],
+      dir,
+    );
+  }
+});
+
+test("categoryOf reads packages/<category>/<name> and packages/tooling/<name>", () => {
+  assert.equal(categoryOf("packages/cross-cutting/brand"), "cross-cutting");
+  assert.equal(categoryOf("packages/tooling/oxlint"), "tooling");
+  assert.equal(categoryOf("packages/nope/x"), null);
+  assert.equal(categoryOf("apps/console"), null);
+});
+
+test("entries parse in exports order and reject unknown names", () => {
+  assert.deepEqual(parseEntries(ENTRY_NAMES), ENTRY_NAMES);
+  assert.deepEqual(parseEntries("react,contracts"), ["contracts", "react"]);
+  assert.throws(() => parseEntries("web"), /unknown entry/);
+});
+
+test("scaffold and validator import the lists and declare none of their own", () => {
+  for (const file of ["scaffold.mjs", "validate-repository.mjs"]) {
+    const source = readFileSync(join(SCRIPTS, file), "utf8");
+    assert.match(source, /from "\.\/structure\.mjs"/, file);
+    assert.doesNotMatch(
+      source,
+      /export const (CATEGORIES|ENTRIES)\b|const (CATEGORIES|ENTRIES) =/,
+      file,
+    );
+  }
+});
+
+test("the validator's stories and test-file rules come from structure", () => {
+  assert.deepEqual(checkTestPlacement(["packages/x/src/button.stories.tsx"]), [
+    "packages/x/src/button.stories.tsx: no Storybook; test the component in __tests__/",
+  ]);
+  assert.deepEqual(checkTestPlacement(["packages/x/src/__tests__/a.test.ts"]), []);
+  assert.equal(checkTestPlacement(["packages/x/src/a.test.ts"]).length, 1);
+});
+
+test("kindOfFile maps names to kinds, hooks and the root module", () => {
+  assert.equal(kindOfFile("create-user.action.ts").folder, "actions");
+  assert.equal(kindOfFile("user.model.ts").test, "int");
+  assert.equal(kindOfFile("cart.hook.ts").folder, "hooks");
+  assert.equal(kindOfFile("use-cart.ts"), REACT_HOOK);
+  assert.equal(kindOfFile("billing.module.ts"), ROOT_MODULE);
+  assert.equal(kindOfFile("create-user.test.ts"), null);
+  assert.equal(kindOfFile("notes.md"), null);
+});
+
+test("suffix lookups give the folder and the required test tier", () => {
+  assert.equal(folderForSuffix("schema"), "schemas");
+  assert.equal(folderForSuffix("nope"), null);
+  assert.equal(requiredTestFor("workflow"), "int");
+  assert.equal(requiredTestFor("migration"), null);
+});
+
+test("testFileFor builds the tier infix and rejects unknown tiers", () => {
+  assert.equal(testFileFor("create-user.action", "unit"), "create-user.action.test.ts");
+  assert.equal(testFileFor("billing.module", "int"), "billing.module.int.test.ts");
+  assert.equal(testFileFor("app-manifest", "contract"), "app-manifest.contract.test.ts");
+  assert.throws(() => testFileFor("x", "load"), /unknown test tier/);
+});
+
+test("banned folders and kind folders never overlap", () => {
+  for (const { folder } of KIND_FOLDERS) assert.equal(isBannedFolder(folder), false, folder);
+  for (const name of ["controllers", "dtos", "repositories", "helpers", "utils", "presentation"])
+    assert.equal(isBannedFolder(name), true, name);
+});
+
+test("kind suffixes are unique", () => {
+  const suffixes = KIND_FOLDERS.map((k) => k.suffix).filter(Boolean);
+  assert.equal(new Set(suffixes).size, suffixes.length);
+});
+
+test("the standards page is the generated output, and docs.json links it", () => {
+  const page = join(ROOT, "apps/docs/src/standards/structure.mdx");
+  assert.ok(existsSync(page), "run node tools/scripts/structure.mjs --write-docs");
+  assert.equal(readFileSync(page, "utf8"), renderStructureDoc());
+  assert.match(
+    readFileSync(join(ROOT, "apps/docs/src/docs.json"), "utf8"),
+    /"standards\/structure"/,
+  );
+});

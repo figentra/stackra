@@ -372,6 +372,7 @@
             "pages": [
               "standards/members",
               "standards/packages",
+              "standards/structure",
               "standards/services",
               "standards/apps",
               "standards/code-style",

@@ -22,25 +22,10 @@ import {
 import { dirname, join, relative, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
+import { CATEGORY_NAMES, ENTRY_NAMES } from "./structure.mjs";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const TEMPLATES = join(ROOT, "tools/scaffold/templates");
-
-export const CATEGORIES = [
-  "foundation",
-  "application",
-  "communication",
-  "cross-cutting",
-  "data",
-  "developer",
-  "experience",
-  "runtime",
-  "security",
-  "state",
-];
-
-/** Optional package entries besides core (`.`), in exports order (ADR 0126, FW1). */
-export const ENTRIES = ["contracts", "node", "react", "native", "testing", "devtools"];
 
 /** kind → template dir and destination (relative to the target repo root). */
 const KINDS = {
@@ -89,11 +74,11 @@ export function parseEntries(value = []) {
     .map((e) => e.trim())
     .filter((e) => e && e !== "none");
   for (const e of list)
-    if (!ENTRIES.includes(e))
+    if (!ENTRY_NAMES.includes(e))
       throw new Error(
-        `unknown entry "${e}" — any of: ${ENTRIES.join(", ")} (core "." is always there)`,
+        `unknown entry "${e}" — any of: ${ENTRY_NAMES.join(", ")} (core "." is always there)`,
       );
-  return ENTRIES.filter((e) => list.includes(e));
+  return ENTRY_NAMES.filter((e) => list.includes(e));
 }
 
 /** ADR 0025 export shape for one entry; core is `.` built as `index`. */
@@ -129,8 +114,8 @@ export function scaffold({
     throw new Error(
       `invalid name "${name}" — ${kind} names cannot contain hyphens (Android package segment)`,
     );
-  if (spec.category && !CATEGORIES.includes(category))
-    throw new Error(`--category is required, one of: ${CATEGORIES.join(", ")}`);
+  if (spec.category && !CATEGORY_NAMES.includes(category))
+    throw new Error(`--category is required, one of: ${CATEGORY_NAMES.join(", ")}`);
   if (!existsSync(root) || !statSync(root).isDirectory())
     throw new Error(`--repo ${root} is not a directory`);
   const picked = kind === "package" ? parseEntries(entries) : [];
@@ -221,12 +206,12 @@ async function main() {
     } = parseArgs(process.argv.slice(2));
     if (!kind || !name || extra.length)
       throw new Error(
-        `usage: pnpm new <kind> <name> [--category <c>] [--entries contracts,node,react,native,testing,devtools|none] [--description "<text>"] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]\nkinds: ${KIND_NAMES.join(", ")}`,
+        `usage: pnpm new <kind> <name> [--category <c>] [--entries ${ENTRY_NAMES.join(",")}|none] [--description "<text>"] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]\nkinds: ${KIND_NAMES.join(", ")}`,
       );
     // The only prompt: package entries, asked on a terminal when --entries is absent.
     if (kind === "package" && opts.entries === undefined && process.stdin.isTTY) {
       const rl = createInterface({ input: process.stdin, output: process.stdout });
-      opts.entries = await rl.question(`Entries besides core (${ENTRIES.join(",")}) [none]: `);
+      opts.entries = await rl.question(`Entries besides core (${ENTRY_NAMES.join(",")}) [none]: `);
       rl.close();
     }
     const r = scaffold({
