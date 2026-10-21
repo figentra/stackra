@@ -81,7 +81,9 @@ owner settled one list on 2026-10-21. This amendment is the only list; the other
    decision 2). `config/` holds typed configuration inside `src/` ([0126](/adr/0126-member-shapes-and-scaffold-templates) and
    [0177](/adr/0177-package-distribution-npmjs-and-keygen) amendments of 2026-10-21).
 2. **Kind folders created once a module has two or more files of that kind:** `interfaces/`, `types/`, `constants/`,
-   `tokens/`, `errors/`, `decorators/` and `enums/`. `enums/` holds const-object enums, one `<name>.enum.ts` per file, as
+   `tokens/`, `errors/`, `decorators/`, `enums/` and `internal/`. `internal/` holds a helper shared by two or more files of one
+   package, not exported from any barrel ([0006](/adr/0006-naming-exports-and-imports) amendment 2026-10-21, decision 2).
+   `enums/` holds const-object enums, one `<name>.enum.ts` per file, as
    [0128](/adr/0128-code-conventions-enums-classes-components-and-kind-folders) decision 1 names the file. The folder is
    named here for the first time; its threshold is the same as its neighbours' (two or more files). PR #84 (`tools/scripts/structure.mjs`)
    already uses `enums/` and cites 0128 decision 1; this decision makes that folder official.

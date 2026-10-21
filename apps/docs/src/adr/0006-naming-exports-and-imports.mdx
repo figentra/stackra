@@ -60,9 +60,12 @@ name), which collides with the `.contract` test tier of ADR 0182. The owner sett
 **Decision.**
 
 1. Decision 6 is withdrawn. There is no `utils/` folder and no `.util.ts` suffix, in any member.
-2. A helper that a second package needs moves to `@stackra/support`, one subpath per concern.
-   A single-use helper stays in the file that uses it. Where a helper used by two files of one package goes is **not decided
-   here**; it is routed to the owner, and until then it stays where it is first written.
+2. **Helpers are placed by how many packages use them.**
+   - A helper that a second **package** needs moves to `@stackra/support`, one subpath per concern.
+   - A helper shared by two or more **files inside one package** lives in `internal/<name>.ts`. It is not exported from any
+     barrel, and its test sits beside it in `internal/__tests__/`. The `internal/` folder is in the kind-folder list of
+     [0130](/adr/0130-module-layout-by-semantic-kind) amendment 2026-10-21, decision 2.
+   - A single-use helper stays in the file that uses it.
 3. A schema file is `<name>.schema.ts` and carries one exported schema and its inferred type. `.contract` is not a file suffix.
    It names only the `.contract` test tier of [0182](/adr/0182-testing-strategy-v2-tiers-coverage-infrastructure-and-policies).
 

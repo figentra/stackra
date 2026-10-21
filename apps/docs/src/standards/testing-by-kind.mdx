@@ -24,41 +24,42 @@ A test for a subject is `<subject>` + the tier infix + `.ts`. The subject keeps 
 
 ## File kind to test
 
-| Kind folder    | File suffix  | Required test | Test file for `<subject>`                                  |
-| -------------- | ------------ | ------------- | ---------------------------------------------------------- |
-| `actions/`     | `action`     | unit          | `<subject>.action.test.ts`                                 |
-| `queries/`     | `query`      | unit          | `<subject>.query.test.ts`                                  |
-| `models/`      | `model`      | int           | `<subject>.model.int.test.ts`                              |
-| `migrations/`  | `migration`  | none          |                                                            |
-| `seeds/`       | `seed`       | none          |                                                            |
-| `factories/`   | `factory`    | none          |                                                            |
-| `policies/`    | `policy`     | unit          | `<subject>.policy.test.ts`                                 |
-| `permissions/` | `permission` | contract      | `<subject>.permission.contract.test.ts`                    |
-| `settings/`    | `setting`    | contract      | `<subject>.setting.contract.test.ts`                       |
-| `events/`      | `event`      | contract      | `<subject>.event.contract.test.ts`                         |
-| `listeners/`   | `listener`   | unit          | `<subject>.listener.test.ts`                               |
-| `workflows/`   | `workflow`   | int           | `<subject>.workflow.int.test.ts`                           |
-| `services/`    | `service`    | unit          | `<subject>.service.test.ts`                                |
-| `hooks/`       | `hook`       | unit          | `<subject>.hook.test.ts`                                   |
-| `links/`       | `link`       | none          |                                                            |
-| `drivers/`     | `driver`     | unit          | `<subject>.driver.test.ts`                                 |
-| `widgets/`     | `widget`     | unit          | `<subject>.widget.test.tsx` beside the component           |
-| `pages/`       | `page`       | unit          | `<subject>.page.test.tsx`                                  |
-| `resources/`   | `resource`   | unit          | `<subject>.resource.test.ts`                               |
-| `ai/`          | none         | none          |                                                            |
-| `raw/`         | none         | unit          | `<subject>.test.ts`                                        |
-| `decorators/`  | none         | unit          | `<subject>.test.ts`                                        |
-| `components/`  | none         | unit          | `<subject>.test.tsx` in the component folder               |
-| `contracts/`   | none         | contract      | `<subject>.contract.test.ts`                               |
-| `config/`      | `config`     | contract      | `<subject>.config.contract.test.ts`                        |
-| `interfaces/`  | `interface`  | contract      | `<subject>.interface.contract.test.ts`                     |
-| `types/`       | `type`       | contract      | `<subject>.type.contract.test.ts`                          |
-| `tokens/`      | `token`      | contract      | `<subject>.token.contract.test.ts`                         |
-| `constants/`   | `constant`   | contract      | `<subject>.constant.contract.test.ts`                      |
-| `enums/`       | `enum`       | contract      | `<subject>.enum.contract.test.ts`                          |
-| `errors/`      | `error`      | contract      | `<subject>.error.contract.test.ts`                         |
-| `schemas/`     | `schema`     | contract      | `<subject>.schema.contract.test.ts`                        |
-| root module    | `module`     | int           | `<name>.module.int.test.ts` in `src/__tests__/` (ADR 0126) |
+| Kind folder    | File suffix  | Required test | Test file for `<subject>`                                                                          |
+| -------------- | ------------ | ------------- | -------------------------------------------------------------------------------------------------- |
+| `actions/`     | `action`     | unit          | `<subject>.action.test.ts`                                                                         |
+| `queries/`     | `query`      | unit          | `<subject>.query.test.ts`                                                                          |
+| `models/`      | `model`      | int           | `<subject>.model.int.test.ts`                                                                      |
+| `migrations/`  | `migration`  | none          |                                                                                                    |
+| `seeds/`       | `seed`       | none          |                                                                                                    |
+| `factories/`   | `factory`    | none          |                                                                                                    |
+| `policies/`    | `policy`     | unit          | `<subject>.policy.test.ts`                                                                         |
+| `permissions/` | `permission` | contract      | `<subject>.permission.contract.test.ts`                                                            |
+| `settings/`    | `setting`    | contract      | `<subject>.setting.contract.test.ts`                                                               |
+| `events/`      | `event`      | contract      | `<subject>.event.contract.test.ts`                                                                 |
+| `listeners/`   | `listener`   | unit          | `<subject>.listener.test.ts`                                                                       |
+| `workflows/`   | `workflow`   | int           | `<subject>.workflow.int.test.ts`                                                                   |
+| `services/`    | `service`    | unit          | `<subject>.service.test.ts`                                                                        |
+| `hooks/`       | `hook`       | unit          | `<subject>.hook.test.ts`                                                                           |
+| `links/`       | `link`       | none          |                                                                                                    |
+| `drivers/`     | `driver`     | unit          | `<subject>.driver.test.ts`                                                                         |
+| `widgets/`     | `widget`     | unit          | `<subject>.widget.test.tsx` beside the component                                                   |
+| `pages/`       | `page`       | unit          | `<subject>.page.test.tsx`                                                                          |
+| `resources/`   | `resource`   | unit          | `<subject>.resource.test.ts`                                                                       |
+| `ai/`          | none         | none          |                                                                                                    |
+| `raw/`         | none         | unit          | `<subject>.test.ts`                                                                                |
+| `decorators/`  | none         | unit          | `<subject>.test.ts`                                                                                |
+| `components/`  | none         | unit          | `<subject>.test.tsx` in the component folder                                                       |
+| `internal/`    | none         | unit          | `<subject>.test.ts` in `internal/__tests__/` (ADR 0006); pending a `structure.mjs` row (follow-up) |
+| `contracts/`   | none         | contract      | `<subject>.contract.test.ts`                                                                       |
+| `config/`      | `config`     | contract      | `<subject>.config.contract.test.ts`                                                                |
+| `interfaces/`  | `interface`  | contract      | `<subject>.interface.contract.test.ts`                                                             |
+| `types/`       | `type`       | contract      | `<subject>.type.contract.test.ts`                                                                  |
+| `tokens/`      | `token`      | contract      | `<subject>.token.contract.test.ts`                                                                 |
+| `constants/`   | `constant`   | contract      | `<subject>.constant.contract.test.ts`                                                              |
+| `enums/`       | `enum`       | contract      | `<subject>.enum.contract.test.ts`                                                                  |
+| `errors/`      | `error`      | contract      | `<subject>.error.contract.test.ts`                                                                 |
+| `schemas/`     | `schema`     | contract      | `<subject>.schema.contract.test.ts`                                                                |
+| root module    | `module`     | int           | `<name>.module.int.test.ts` in `src/__tests__/` (ADR 0126)                                         |
 
 "none" means the script requires no test for that kind. A file of that kind can still have one.
 
