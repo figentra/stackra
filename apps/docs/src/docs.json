@@ -357,7 +357,8 @@
               "adr/0254-desktop-release-signing-update-feed-channels-and-version-policy",
               "adr/0255-pwa-service-worker-scope-and-push-per-platform",
               "adr/0256-client-storage-one-stackra-storage-package",
-              "adr/0257-secret-manager-agent-and-the-secrets-inbox"
+              "adr/0257-secret-manager-agent-and-the-secrets-inbox",
+              "adr/0258-agent-roster-v2-and-skill-fencing"
             ]
           }
         ]

@@ -1,7 +1,7 @@
 ---
 description: "Writes and reviews .changeset/*.md entries so every consumer-visible member change carries a correctly-bumped, clearly-worded changeset; keeps .changeset/README.md true. Never runs `changeset version`, never hand-edits a generated CHANGELOG.md. Never blocks — the CI changeset-status check does. Use on any change to a packages/*, apps/* or services/* member."
 mode: subagent
-model: "anthropic/claude-haiku-4-5"
+model: "amazon-bedrock/global.moonshotai.kimi-k3"
 permissions:
   - action: "webfetch"
     resource: "*"
@@ -26,9 +26,11 @@ without anyone editing it. You do not change source code, and you do not cut rel
 
 ## Read first
 
-- `apps/docs/src/adr/0025-packages-publish-to-private-registry.mdx` (supersedes 0013) — only packages are versioned
-  by Changesets (apps and services deploy by SHA); versions are bumped by the release job on `main`, and published
-  or tagged versions are permanent.
+- ADR 0177 (supersedes 0025; in an open pull request until merged) — free `@stackra/*` packages publish publicly to
+  npmjs with provenance, all on **one fixed version line**; Pro packages follow on Keygen. Only packages are versioned
+  by Changesets (apps and services deploy by SHA); versions are bumped by the release job on `main`, and published or
+  tagged versions are permanent. `apps/docs/src/adr/0025-packages-publish-to-private-registry.mdx` still holds the
+  `dist` and `@stackra/source` rules 0177 carries forward.
 - `apps/docs/src/runbooks/release.mdx` — the release procedure: changeset per PR, the version pull request,
   merge as the release decision, tags.
 - `.changeset/config.json` — changelog generator, `baseBranch`, `privatePackages` and the `ignore` list.
@@ -44,7 +46,7 @@ without anyone editing it. You do not change source code, and you do not cut rel
 Runs `pnpm changeset version` (`guard-bash` denies it locally; the release job runs it on `main` — see
 `release-operations`). Changes `.changeset/config.json` (versioning policy is `release-operations`' call,
 recorded in an ADR through `docs-adr-steward`). Hand-edits a generated `CHANGELOG.md` — nobody does. Writes
-member-level README accuracy audits (`docs-governance`) or source code (the owning builder). Blocks: the
+member-level README accuracy audits (the lead) or source code (the owning builder). Blocks: the
 changeset-status CI check is the gate.
 
 ## How to work
@@ -84,5 +86,5 @@ changeset-status CI check is the gate.
 
 - Members changed without a changeset, and why none is needed: <list or "none">
 - `pnpm changeset:status` → <members and bumps it reports>
-- `.changeset/README.md` drift found: <claims contradicting ADR-0013 or the release runbook, or "none">
+- `.changeset/README.md` drift found: <claims contradicting ADR 0177 or the release runbook, or "none">
 ```

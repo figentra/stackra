@@ -57,6 +57,9 @@
  *     - action: shell                         permissions OpenCode would derive
  *       resource: "git *"                     from `tools`
  *       effect: allow|ask|deny
+ *   assistants: [claude]           optional; the assistants it is projected to, default
+ *                                  all. A tier an assistant has no row for in
+ *                                  models.yaml is not projected to it either.
  *   skills:                        optional; skill names to reference
  *     - tdd
  *   ---
@@ -395,6 +398,7 @@ function normalizeAgent(data, entry, label) {
     "blocks",
     "permissions",
     "skills",
+    "assistants",
   ]);
   for (const key of Object.keys(data)) if (!known.has(key)) errors.push(`unknown key '${key}'`);
 
@@ -409,6 +413,15 @@ function normalizeAgent(data, entry, label) {
     if (!map) errors.push(`'tier' needs ${MODEL_MAP_REL}, which does not exist`);
     else if (!map.tiers.includes(data.tier))
       errors.push(`'tier' is '${data.tier}'; ${MODEL_MAP_REL} defines: ${map.tiers.join(", ")}`);
+  }
+  if (data.assistants !== undefined) {
+    const unknown = Array.isArray(data.assistants)
+      ? data.assistants.filter((a) => !(a in ASSISTANTS))
+      : [String(data.assistants)];
+    if (!Array.isArray(data.assistants) || unknown.length)
+      errors.push(
+        `'assistants' must be a list of: ${Object.keys(ASSISTANTS).join(", ")}${unknown.length ? ` (unknown: ${unknown.join(", ")})` : ""}`,
+      );
   }
   if (data.mode !== undefined && !["primary", "subagent", "all"].includes(data.mode))
     errors.push("'mode' must be one of: primary, subagent, all");
@@ -464,7 +477,19 @@ function normalizeAgent(data, entry, label) {
     mode: data.mode ?? "subagent",
     permissions: data.permissions,
     skills,
+    assistants: data.assistants,
   };
+}
+
+/**
+ * Whether an agent is projected to an assistant: not when its `assistants` list leaves the
+ * assistant out (Claude-only agents, ADR 0258), nor when the assistant has no row for its tier.
+ */
+function projectsTo(agent, assistantName) {
+  if (agent.assistants && !agent.assistants.includes(assistantName)) return false;
+  if (agent.tier !== undefined && !(agent.tier in modelMap().assistants[assistantName]))
+    return false;
+  return true;
 }
 
 /**
@@ -551,14 +576,20 @@ function modelMap() {
       errors.push(`'assistants.${name}' is missing`);
       continue;
     }
-    for (const tier of Array.isArray(tiers) ? tiers : []) {
-      if (!(tier in row))
-        errors.push(
-          `'assistants.${name}.${tier}' is missing (use null for the assistant's default)`,
-        );
+    for (const tier of Object.keys(row)) {
+      if (!tiers?.includes?.(tier))
+        errors.push(`'assistants.${name}.${tier}' is not a tier in 'tiers'`);
       else if (row[tier] !== null && typeof row[tier] !== "string")
         errors.push(`'assistants.${name}.${tier}' must be a model id or null`);
     }
+  }
+  // A tier an assistant leaves out is never projected to it (ADR 0193 D3: OpenCode runs
+  // only the steward and executor tiers). Every tier must still run somewhere.
+  for (const tier of Array.isArray(tiers) ? tiers : []) {
+    if (!Object.values(assistants).some((row) => row && typeof row === "object" && tier in row))
+      errors.push(
+        `tier '${tier}' is mapped for no assistant (use null for the assistant's default)`,
+      );
   }
   if (errors.length) {
     console.error(`agents-sync: invalid ${MODEL_MAP_REL}: ${errors.join("; ")}`);
@@ -718,7 +749,9 @@ function pruneStaleGeneratedAgents(dir, destSub, validEntries, label) {
     if (!content.includes(`generated from ${SOURCE}/agents/`)) continue;
 
     if (CHECK)
-      results.drift.push(`${label}/${name}: stale generated agent, source no longer exists`);
+      results.drift.push(
+        `${label}/${name}: stale generated agent, source gone or not projected here`,
+      );
     else {
       rmSync(p);
       results.pruned++;
@@ -1049,6 +1082,126 @@ function pruneRetiredProjection(assistantDir, kind) {
 }
 
 // ---------------------------------------------------------------------------
+// Skills that teach rejected technology (ADR 0258 decision 6)
+// ---------------------------------------------------------------------------
+
+/**
+ * Rejected or not-built technology a skill must not teach (ADR 0227, `.agents/rules/not-built-yet.md`).
+ * Patterns are deliberately narrow: "express" and "sanity" are English words, so only their code forms match.
+ */
+const REJECTED_IN_SKILLS = {
+  drizzle: /\bdrizzle\b/i,
+  prisma: /\bprisma\b/i,
+  typeorm: /\btypeorm\b/i,
+  knex: /\bknex\b/i,
+  nestjs: /@nestjs\/|\bnestjs\b|\bnest\.js\b/i,
+  "reflect-metadata": /reflect-metadata/,
+  "encore.dev": /encore\.dev|~encore\//,
+  "expo-router": /expo-router/,
+  nextjs: /\bnext\.js\b|\bnextjs\b|from ["']next[/"']/i,
+  jest: /\bjest\b/i,
+  eslint: /\beslint\b/i,
+  prettier: /\bprettier\b/i,
+  zustand: /\bzustand\b/i,
+  "@tanstack/store": /@tanstack\/store/,
+  i18next: /\bi18next\b/i,
+  "class-validator": /class-validator|class-transformer/,
+  express: /from ["']express["']|\bexpress\(\)/,
+  fastify: /\bfastify\b/i,
+  sanity: /@sanity\/|sanity studio|sanity\.config/i,
+  tauri: /\btauri\b/i,
+  "better-auth": /better-auth|\bbetter auth\b/i, // superseded by ZITADEL (ADR 0206)
+  xstate: /\bxstate\b/i, // @stackra/state-machine instead (ADR 0161)
+  storybook: /\bstorybook\b|\.stories\./i, // no Storybook (ADR 0128)
+  graphql: /\bgraphql\b/i, // MCP first plus REST, no GraphQL (ADR 0217)
+  "spec-files": /\.spec\.[cm]?[jt]sx?\b/, // tests are __tests__/<name>.test.ts with a tier infix (ADR 0022, 0182)
+  "root-tests-folder": /(?:^|[\s"'`(])\.?\/?tests\/(?!.*__tests__)/m, // no root tests/ (ADR 0022)
+};
+
+/**
+ * Upstream skills that mention a rejected technology only as a generic example, and why that is acceptable.
+ * Vendored skills are never edited in place, so the exception lives here. Encore skills are not listed: they are
+ * fenced in `.agents/reference/encore`, which is never projected or scanned.
+ */
+const SKILL_TECH_ALLOWED = {
+  "backend-gen-and-encore-target": {
+    "encore.dev":
+      "house skill on the generated target; names what a member must never contain (ADR 0124)",
+  },
+  "expo-animation": {
+    "expo-router": "upstream Expo skill; Stackra mobile uses React Navigation (ADR 0061)",
+  },
+  "expo-data-fetching": {
+    "expo-router": "upstream Expo skill; loaders do not apply, React Navigation (ADR 0061)",
+  },
+  "expo-design-system": { "expo-router": "upstream Expo skill; React Navigation (ADR 0061)" },
+  "expo-upgrade": { "expo-router": "upstream Expo upgrade notes; React Navigation (ADR 0061)" },
+  "heroui-react": {
+    nextjs: "framework setup examples; the web stack is Vite and React Router 7 (ADR 0165)",
+  },
+  "eas-app-stores": { graphql: "a warning against private EAS GraphQL queries" },
+  "playwright-best-practices": {
+    nextjs: "generic web-server examples",
+    storybook: "component-testing notes; no Storybook here (ADR 0128)",
+    graphql: "API-mocking examples; no GraphQL here (ADR 0217)",
+    "spec-files": "upstream naming; tests are __tests__/<name>.e2e.ts here (ADR 0022, 0182)",
+    "root-tests-folder": "upstream layout; no root tests/ here (ADR 0022)",
+    prisma: "generic seeding example",
+    zustand: "generic state example",
+  },
+  pnpm: { eslint: "generic examples; oxlint here", prettier: "generic examples; oxfmt here" },
+  "react-native-best-practices": { zustand: "generic state example", eslint: "generic examples" },
+  resend: { nextjs: "framework examples; Resend sits behind the mail driver (ADR 0191)" },
+  tdd: { jest: "Jest-style API names; vitest here" },
+  turborepo: {
+    nextjs: "example app names",
+    eslint: "example task names",
+    jest: "example task names",
+    prettier: "example task names",
+    graphql: "example package names",
+    "root-tests-folder": "example inputs globs",
+  },
+  vitest: {
+    jest: "Jest-compatible API notes",
+    "spec-files": "default include globs; tests are __tests__/<name>.test.ts here (ADR 0022)",
+    "root-tests-folder": "config examples; no root tests/ here (ADR 0022)",
+  },
+};
+
+/** One finding per (skill, technology) not covered by SKILL_TECH_ALLOWED; stale allowances are returned as notes. */
+function skillTechFindings() {
+  const findings = [];
+  const notes = [];
+  for (const skill of sourceEntries("skills")) {
+    const dir = join(ROOT, SOURCE, "skills", skill);
+    if (!existsSync(dir) || !lstatSync(dir).isDirectory()) continue;
+    const text = markdownUnder(dir);
+    const allowed = SKILL_TECH_ALLOWED[skill] ?? {};
+    for (const [tech, pattern] of Object.entries(REJECTED_IN_SKILLS)) {
+      if (!pattern.test(text)) continue;
+      if (!(tech in allowed))
+        findings.push(
+          `${SOURCE}/skills/${skill}: teaches '${tech}', which is rejected (ADR 0227); fence it, drop it, or add a reasoned SKILL_TECH_ALLOWED entry (ADR 0258)`,
+        );
+    }
+    for (const tech of Object.keys(allowed))
+      if (!REJECTED_IN_SKILLS[tech]?.test(text))
+        notes.push(`${SOURCE}/skills/${skill}: allowance for '${tech}' is no longer needed`);
+  }
+  return { findings, notes };
+}
+
+function markdownUnder(dir) {
+  let text = "";
+  for (const name of readdirSync(dir)) {
+    const path = join(dir, name);
+    if (lstatSync(path).isDirectory()) text += markdownUnder(path);
+    else if (/\.mdx?$/.test(name)) text += readFileSync(path, "utf8");
+  }
+  return text;
+}
+
+// ---------------------------------------------------------------------------
 
 function main() {
   if (!existsSync(join(ROOT, SOURCE))) {
@@ -1080,6 +1233,25 @@ function main() {
     if (existsSync(path) && /\bsdlc:/.test(readFileSync(path, "utf8")))
       results.broken.push(`${rel}: references the retired sdlc plugin (ADR 0121 D3)`);
   }
+
+  // ADR 0258: a route that hands work to OpenCode must name an agent OpenCode actually receives.
+  const routingPath = join(ROOT, SOURCE, "routing.yaml");
+  if (existsSync(routingPath) && modelMap()?.assistants.opencode) {
+    const known = new Set(agentEntries.map((e) => e.replace(/\.md$/, "")));
+    for (const m of readFileSync(routingPath, "utf8").matchAll(/^ {2}([\w-]+):\s*\{([^}]*)\}/gm)) {
+      const executor = /executor:\s*([\w-]+)/.exec(m[2])?.[1];
+      const agentName = /agent:\s*([\w-]+)/.exec(m[2])?.[1];
+      if (executor !== "opencode" || !known.has(agentName)) continue;
+      if (!projectsTo(loadAgent(`${agentName}.md`).agent, "opencode"))
+        results.broken.push(
+          `${SOURCE}/routing.yaml: task '${m[1]}' routes to OpenCode, but agent '${agentName}' is not projected there (ADR 0258)`,
+        );
+    }
+  }
+
+  const skillTech = skillTechFindings();
+  results.broken.push(...skillTech.findings);
+  for (const n of skillTech.notes) console.log(`  NOTE      ${n}`);
 
   if (LINT) {
     for (const b of results.broken) console.error(`  BROKEN    ${b}`);
@@ -1147,9 +1319,10 @@ function main() {
           pruneStaleLinks(dir, dest, new Set(entries), `${dir}/${dest}`);
         }
       } else if (kind === "agents") {
-        for (const entry of agentEntries) ensureGeneratedAgent(name, dir, dest, entry);
+        const projected = agentEntries.filter((e) => projectsTo(loadAgent(e).agent, name));
+        for (const entry of projected) ensureGeneratedAgent(name, dir, dest, entry);
         if (PRUNE || CHECK) {
-          pruneStaleGeneratedAgents(dir, dest, new Set(agentEntries), `${dir}/${dest}`);
+          pruneStaleGeneratedAgents(dir, dest, new Set(projected), `${dir}/${dest}`);
         }
       }
     }

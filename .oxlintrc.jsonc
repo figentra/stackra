@@ -29,6 +29,8 @@
     "**/__tests__/fixtures/**",
     // installed skills are upstream content
     ".agents/skills/**",
+    // fenced upstream Encore skills, read only by compiler-engineer (ADR 0258)
+    ".agents/reference/**",
     ".claude/skills/**",
     // private owner-only notes submodule (STA-178); never part of this repo's checks
     ".notes/**",
