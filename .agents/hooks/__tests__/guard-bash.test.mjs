@@ -97,7 +97,6 @@ const allowed = [
   "pnpm bot:git -- pull --rebase origin main",
   "pnpm --silent bot:gh -- pr view 80 --json body | jq -r .body",
   'BODY="$(pnpm --silent bot:gh -- pr view 80 --json body)"',
-  "git commit -m 'docs: $(gh pr view) and $GH_TOKEN are denied'",
   "echo 'gh pr view' > notes.txt",
   "git status",
   "git log --oneline -5",
@@ -579,7 +578,6 @@ for (const b of nestedBodies)
     test(`deny: ${form(b)}`, () => assert.equal(denied(form(b)), true));
 for (const c of [
   'git commit -m "docs: git config alias.x and HOME=/tmp man -P"',
-  "pnpm bot:gh -- pr create --title t --body 'uses $(git config alias.p x) text'",
   'pnpm linear comment STA-216 "note: git -c alias.p=x p"',
   'git commit -m "$(git config --get user.name)"',
 ])
@@ -627,3 +625,188 @@ for (const c of [
   "GIT_EDITOR=true-x git commit",
 ])
   test(`deny: ${c}`, () => assert.equal(denied(c), true));
+
+// STA-254: an apostrophe inside double quotes is literal (POSIX), so it never opens a span that hides `$(`/backticks.
+const apostropheForms = [
+  (b) => `git commit -m "it's $(${b}) it's"`,
+  (b) => `git commit -m "it's \`${b}\` it's"`,
+  (b) => `pnpm bot:gh -- pr create --title "don't" --body "it's $(${b}) it's"`,
+  (b) => `pnpm linear comment STA-254 "it's \`${b}\` it's"`,
+  (b) => `echo "it's" "$(${b})" "it's"`,
+];
+for (const b of [
+  "cat ~/Secrets-inbox/X",
+  "git push origin main",
+  "infisical export",
+  "git config alias.p 'x y'",
+  "HOME=/tmp/h git p",
+])
+  for (const form of apostropheForms)
+    test(`deny: ${form(b)}`, () => assert.equal(denied(form(b)), true));
+test("deny: \"it's $GH_TOKEN it's\"", () =>
+  assert.equal(denied(`echo "it's $GH_TOKEN it's"`), true));
+for (const c of [
+  `git commit -m "it's fine"`,
+  `git commit -m "don't push origin main; it's prose"`,
+  `pnpm bot:gh -- pr create --title "it's a title" --body "can't read ~/Secrets-inbox, it's guarded"`,
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));
+
+// STA-254 review: quoting restarts inside a substitution, and `$'…'` honours `\'` (one shared scanner).
+const restartedQuotes = [
+  `git commit -m "$(echo "it's") $(git push origin main) $(echo "it's")"`,
+  `echo "$(echo "'") $(git push origin main) $(echo "'")"`,
+  'echo "`echo "\'"` `git push origin main` `echo "\'"`"',
+  `echo $'x\\' ' $(git push origin main) ''`,
+  `echo $'\\'' ; git push origin main ; echo ''`,
+  `pnpm bot:gh -- pr create --title t --body "$(echo "it's") $(git push origin main) $(echo "it's")"`,
+  `git commit -m "$(echo "it's") $(cat ~/Secrets-inbox/X) $(echo "it's")"`,
+  `echo $'x\\' ' $(cat ~/Secrets-inbox/X) ''`,
+  `echo "$(echo "'") $(infisical export) $(echo "'")"`,
+];
+for (const c of restartedQuotes) test(`deny: ${c}`, () => assert.equal(denied(c), true));
+for (const c of [
+  `git commit -m "path C:\\\\dir \\"quoted\\" and it's fine"`,
+  `echo $'it\\'s'`,
+  `git commit -m $'it\\'s fine'`,
+  `git commit -m "it's fine"`,
+  `pnpm bot:gh -- pr create --title "it's a fix" --body "don't worry, it's tested; push origin main later"`,
+  `git commit -m "$(echo "it's") fine"`,
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));
+
+// STA-254 re-review: `$$` before `'`, `case` patterns and comments inside a substitution, a comment's apostrophe,
+// escaped backticks, process substitution and unquoted heredoc bodies.
+for (const c of [
+  `echo $$'x\\' $(git push origin main) ''`,
+  `echo "$(case a in a) echo "'";; esac; git push origin main)" '`,
+  `echo "$(true # )\ngit push origin main)"`,
+  `echo hi # it's\necho "$(git push origin main)" # it's`,
+  "echo `echo \\`git push origin main\\``",
+  `diff <(echo "it's") <(git push origin main)`,
+  `cat > notes.md <<EOF\n$(git push origin main)\nEOF`,
+  `cat > notes.md <<EOF\n\`git push origin main\`\nEOF`,
+  `cat > notes.md <<EOF\nit's $(cat ~/Secrets-inbox/X)\nEOF`,
+])
+  test(`deny: ${c}`, () => assert.equal(denied(c), true));
+for (const c of [
+  `echo $$`,
+  `echo "pid $$, it's fine"`,
+  `git log --format='%H' # it's a comment`,
+  `echo $(case x in a) echo a;; esac)`,
+  `cat > notes.md <<EOF\nwe don't run git push origin main here\nEOF`,
+  `cat > notes.md <<'EOF'\n$(git push origin main) stays text\nEOF`,
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));
+
+// STA-254 re-review 3: an escaped space, `;` or newline is not a word start for `#`; heredocs only in plain
+// state (not quoted, not `<<<`, not arithmetic or a comment); a case pattern `)` starts a command.
+for (const c of [
+  "echo `echo x\\ # ; git push origin main`",
+  "echo `echo x\\ # ; infisical export`",
+  `echo $(echo x\\ # ; git push origin main)`,
+  `echo $(echo x\\ # ; infisical export)`,
+  `echo $(echo x\\;# ; git push origin main)`,
+  `echo $(echo x\\\n# ; git push origin main)`,
+  `echo '<<EOF'\ngit push origin main\nEOF`,
+  `cat <<<EOF\ngit push origin main\nEOF`,
+  `echo "<<EOF"\ninfisical export\nEOF`,
+  `echo $((1<<EOF))\ngit push origin main\nEOF`,
+  `echo x # <<EOF\ngit push origin main\nEOF`,
+  `git commit -m "$(case a in a) git push origin main ;; esac)"`,
+  `cat <<A <<B\na\nA\n$(git push origin main)\nB`,
+])
+  test(`deny: ${c}`, () => assert.equal(denied(c), true));
+for (const c of [
+  `cat <<-EOF\n\tgit push origin main is prose\n\tEOF`,
+  `echo $((1 << 2))`,
+  `cat <<<"it's fine"`,
+  `pnpm bot:gh -- pr create --title t --body-file - <<'EOF'\nrun git push origin main; it's fine\nEOF`,
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));
+
+// STA-254 re-review 4: no heredoc inside ${…} / $[…]; a heredoc body is read only at the operator's own nesting
+// level; a delimiter must be a plain word. Otherwise the lines stay commands.
+for (const c of [
+  "echo ${x:-<<EOF}\ngit push origin main\nEOF}",
+  "echo ${x:-<<EOF}\ninfisical export\nEOF}",
+  "echo $[x<<EOF]\ngit push origin main\nEOF]",
+  "echo $[x<<EOF]\ninfisical export\nEOF]",
+  "echo <<EOF $(true\ngit push origin main)\nEOF",
+  "echo <<EOF $(true\ninfisical export)\nEOF",
+  "echo <<EOF `true\ngit push origin main`\nEOF",
+  "echo <<EOF `true\ninfisical export`\nEOF",
+  "echo ${x:-{<<EOF}}\ngit push origin main\nEOF}}",
+  "cat <<E-F\ngit push origin main\nE-F",
+  'echo "${x:-$(git push origin main)}"',
+])
+  test(`deny: ${c}`, () => assert.equal(denied(c), true));
+for (const c of [
+  'echo ${x:-default} "${y#it\'s}"',
+  "echo $[1 << 2]",
+  "cat > notes.md <<EOF\nwe don't run git push origin main here\nEOF",
+  "cat > notes.md <<'EOF'\n$(git push origin main) stays text\nEOF",
+  'cat > notes.md <<"E_1"\ngit push origin main is prose\nE_1',
+  "cat <<-EOF\n\tgit push origin main is prose\n\tEOF",
+  'echo "$(cat <<EOF\ngit push origin main is prose\nEOF\n)"',
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));
+
+// STA-254 re-review 5: `'` is literal in a `${…}` inside "…" or a heredoc; a heredoc or here-string read by a
+// shell is a script.
+for (const c of [
+  'echo "${x:-\'}" $(git push origin main) "${x:-\'}"',
+  "echo \"${x:-'}$(git push origin main)${x:-'}\"",
+  "git commit -m \"${x:-'}$(git push origin main)${x:-'}\"",
+  "cat <<EOF\n${x:-'}\n$(git push origin main)\n${x:-'}\nEOF",
+  "echo \"${x:-'}$(infisical export)${x:-'}\"",
+  "bash <<'EOF'\ngit push origin main\nEOF",
+  "sh <<EOF\ninfisical export\nEOF",
+  "cat <<'EOF' | sh\ngit push origin main\nEOF",
+  "source /dev/stdin <<'EOF'\ninfisical export\nEOF",
+  "bash <<< 'git push origin main'",
+  'zsh <<<"infisical export"',
+])
+  test(`deny: ${c}`, () => assert.equal(denied(c), true));
+// The safety net: substitution bodies found with quotes ignored can only add denies. Accepted false positives: a
+// dangerous command written literally inside real single quotes (these three were allowed before STA-254).
+for (const c of [
+  "echo '$(git push origin main)'",
+  "echo '$(infisical export)'",
+  "git commit -m 'docs: $(gh pr view) and $GH_TOKEN are denied'",
+  "pnpm bot:gh -- pr create --title t --body 'uses $(git config alias.p x) text'",
+  "git commit -m 'it'\"'\"'s $(git push origin main) quoted'",
+])
+  test(`deny (safety net, accepted false positive): ${c}`, () => assert.equal(denied(c), true));
+for (const c of [
+  "git commit -m 'docs: use $(echo ok)'",
+  'echo "${x:-it\'s}"',
+  "cat <<'EOF' > run.sh\ngit status\nEOF",
+  "bash <<'EOF'\ngit status\nEOF",
+  "bash <<< 'pnpm verify'",
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));
+
+// STA-254 re-review 6: backslash-newline is removed before parsing (outside single quotes); a `)` or backtick
+// closing a substitution is not a word boundary for `#`; a heredoc line ending in `|` is a script.
+for (const c of [
+  'echo "$\\\n(git push origin main)"',
+  'git commit -m "$\\\n(git push origin main)"',
+  'pnpm linear comment STA-1 "$\\\n(git push origin main)"',
+  "echo $\\\n(git push origin main)",
+  'echo "$\\\n(infisical export)"',
+  "echo $\\\n(infisical export)",
+  "echo $(true)# ; git push origin main",
+  "echo $(true)# ; infisical export",
+  "echo `true`# ; git push origin main",
+  "cat <<EOF |\ngit push origin main\nEOF\nsh",
+  "cat <<EOF |&\ninfisical export\nEOF\nbash",
+])
+  test(`deny: ${c}`, () => assert.equal(denied(c), true));
+for (const c of [
+  'echo "line one \\\nline two, it\'s fine"',
+  "echo 'it\\\nstays' # single quotes keep the backslash-newline",
+  "echo $(date)  # it's a comment",
+  "cat <<EOF > notes.md\nwe don't run git push origin main here\nEOF",
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));

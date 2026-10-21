@@ -28,21 +28,15 @@ import { spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 import { resolve, sep } from "node:path";
 import { readStdin, deny, ask, failOpen } from "./_io.mjs";
-import { commandReachesInbox } from "./_inbox.mjs";
+import {
+  commandReachesInbox,
+  rawSubstitutions,
+  scanShell,
+  scriptStrings,
+  stripHeredocs,
+} from "./_inbox.mjs";
 
 const EVENT = "PreToolUse";
-
-/**
- * Heredoc bodies are file content, not commands: `cat > rules.md <<'EOF' … EOF` must not
- * trip a rule because the prose mentions a forbidden command. Strip every heredoc body
- * before matching.
- */
-function stripHeredocs(raw) {
-  return raw.replace(
-    /<<-?\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1[^\n]*\n[\s\S]*?\n\s*\2\s*(?=\n|$)/g,
-    "<<HEREDOC_BODY_STRIPPED",
-  );
-}
 
 /** The only `-c` keys an agent may set: display and identity, none runs a command or redirects a remote (STA-216). */
 const ALLOWED_C =
@@ -144,57 +138,23 @@ const NETWORK_GIT = BARE_GIT(
   String.raw`push|fetch|pull|clone|ls-remote|submodule|subtree|remote\s+(?:update|show|prune)|archive\s+[^|;&\n]*--remote`,
 );
 
-/**
- * The text a shell runs: the quote-blanked command (prose in `--body "…"` is ignored), plus every `$(…)` and
- * backtick body, inside double quotes too, and every `sh -c` / `eval` string. Single-quoted text stays literal.
- * shortcut: one nesting level per pass and no alias or function expansion; deliberate workarounds stay open.
- */
-/**
- * The body of every `$(` at every depth, outermost included: parentheses are counted outside quotes, so a nested
- * `$(…)` or a `"(y)"` does not end a body early. An unbalanced `$(` takes the rest of the string (fail closed).
- */
-function dollarBodies(c) {
-  const s = c.replace(/'[^']*'/g, "''");
-  const out = [];
-  for (let i = s.indexOf("$("); i >= 0; i = s.indexOf("$(", i + 1)) {
-    let depth = 1;
-    let quote = "";
-    let j = i + 2;
-    for (; j < s.length && depth > 0; j++) {
-      const ch = s[j];
-      if (quote === "'") {
-        if (ch === "'") quote = "";
-      } else if (quote === '"') {
-        if (ch === "\\") j++;
-        else if (ch === '"') quote = "";
-      } else if (ch === "'" || ch === '"') quote = ch;
-      else if (ch === "\\") j++;
-      else if (ch === "(") depth++;
-      else if (ch === ")") depth--;
-    }
-    out.push(s.slice(i + 2, depth === 0 ? j - 1 : s.length));
-  }
-  return out;
-}
-/** The raw text of every `$(…)` / backtick body (single quotes stay literal) and `sh -c` / `eval` string. */
+/** The text of every `$(…)` / backtick body at any depth (single quotes stay literal) and `sh -c` / `eval` string. */
 function nestedRaw(c) {
-  const out = [];
-  const literal = c.replace(/'[^']*'/g, "''");
-  out.push(...dollarBodies(c));
-  for (const m of literal.matchAll(/`([^`]*)`/g)) out.push(m[1]);
-  for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
-    out.push(m[2], ...nestedRaw(m[2]));
+  const out = scanShell(c).bodies.flatMap((b) => [b, ...nestedRaw(b)]);
+  for (const s of scriptStrings(c)) out.push(s, ...nestedRaw(s));
   return out;
 }
 /** Texts a rule that needs the quoted values scans: the command with prose dropped, and every nested command in full. */
 const scanTexts = (c) => [dropMessages(c), ...nestedRaw(c).map(dropMessages)];
+/**
+ * The text a shell runs: the quote-blanked command (prose in `--body "…"` is ignored), plus every `$(…)` and
+ * backtick body at any depth, inside double quotes too (`scanShell`, STA-254), and every `sh -c` / `eval` string.
+ * Single-quoted text stays literal. shortcut: no alias or function expansion; deliberate workarounds stay open.
+ */
 function runnable(c) {
-  const out = [blank(c)];
-  const literal = c.replace(/'[^']*'/g, "''");
-  for (const b of dollarBodies(c)) out.push(blank(b));
-  for (const m of literal.matchAll(/`([^`]*)`/g)) out.push(blank(m[1]));
-  for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
-    out.push(...runnable(m[2]));
+  const { blanked, bodies } = scanShell(c);
+  const out = [blanked, ...bodies.flatMap(runnable)];
+  for (const s of scriptStrings(c)) out.push(...runnable(s));
   return out;
 }
 /** True when any runnable text has a segment matching `rx`. */
@@ -207,7 +167,7 @@ function git(cwd, ...args) {
 }
 
 /** Quoted strings blanked, so a word inside `node -e '...'` or `--body "..."` is not mistaken for a command. */
-const blank = (c) => c.replace(/'[^']*'|"(?:\\.|[^"\\])*"/g, '""');
+const blank = (c) => scanShell(c).blanked;
 
 /** Command segments: split on separators outside quotes (a `;` inside `-c "a;b"` does not hide a push). */
 function segments(c) {
@@ -238,10 +198,13 @@ const unquote = (w) => w.replace(/^['"]+|['"]+$/g, "");
  * Prose is not a command: blank the quoted `-m` / `--message` / `--title` / `--body` value and the text of
  * `pnpm linear comment <KEY> "…"` (STA-216), so a PR body or a comment may mention `pr merge` or `push origin main`.
  */
-const dropMessages = (c) =>
-  c
-    .replace(/(\s(?:-m|--message|--title|--body)(?:\s+|=))("(?:\\.|[^"\\])*"|'[^']*')/g, "$1MSG")
-    .replace(/(\blinear\s+comment\s+\S+\s+)("(?:\\.|[^"\\])*"|'[^']*')/g, "$1MSG");
+const PROSE_BEFORE = /(?:\s(?:-m|--message|--title|--body)(?:\s+|=)|\blinear\s+comment\s+\S+\s+)$/;
+const dropMessages = (c) => {
+  const { spans, source } = scanShell(c);
+  return spans
+    .filter(([start]) => PROSE_BEFORE.test(source.slice(0, start)))
+    .reduceRight((t, [start, end]) => t.slice(0, start) + "MSG" + t.slice(end), source);
+};
 
 /** `infisical secrets` with no subcommand (only flags / flag values) lists every value. */
 const INFISICAL_SUBCOMMANDS = new Set(["get", "set", "delete", "folders", "generate-example-env"]);
@@ -532,7 +495,7 @@ const rules = [
     // The token belongs in the wrapper's child environment only, never in the transcript or in gh's config.
     rx: (c) =>
       runnable(c).some((t) => /\bbot:token\b/.test(t)) ||
-      /\$\{?(?:GH_TOKEN|GITHUB_TOKEN)\b/.test(dropMessages(c).replace(/'[^']*'/g, "''")) ||
+      /\$\{?(?:GH_TOKEN|GITHUB_TOKEN)\b/.test(scanShell(dropMessages(c)).literal) ||
       runs(
         c,
         new RegExp(
@@ -612,6 +575,15 @@ async function main() {
     if (rule.decision === "ask") asked ??= rule;
     else deny(EVENT, `${rule.why}\nBlocked command: ${raw.slice(0, 200)}`);
   }
+  // Safety net (STA-254): deny rules also run on every substitution body found with quotes ignored.
+  for (const body of rawSubstitutions(cmd))
+    for (const rule of rules) {
+      if (rule.decision === "ask") continue;
+      const target = rule.scan === "bare" ? blank(body) : body;
+      const hit = typeof rule.rx === "function" ? rule.rx(target, cwd) : rule.rx.test(target);
+      if (hit && !(rule.allow && rule.allow.test(target)))
+        deny(EVENT, `${rule.why}\nBlocked command: ${raw.slice(0, 200)}`);
+    }
   if (asked) ask(EVENT, `${asked.why}\nCommand: ${raw.slice(0, 200)}`);
 }
 

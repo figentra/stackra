@@ -56,6 +56,335 @@ export function reachesInbox(p, { recursive = false, home = homedir(), cwd } = {
 // ---- shell commands --------------------------------------------------------------------------------------
 // shortcut: a small lexer (quotes, separators, `$(`), not a shell parser; `cd` is followed only in order, so a
 // subshell's `cd` leaks into later segments. Upgrade to a real parser if a miss or a false positive slips through.
+/**
+ * Walk a command by bash quoting rules (STA-254), shared by guard-bash and the OpenCode guard. States: plain,
+ * `'…'`, `$'…'` (where `\'` is escaped; `$$` is the PID, so `$$'x'` is plain quoting), `"…"` / `$"…"`, and a
+ * stack of `$(…)`, `$((…))`, `((…))`, `<(…)`, `>(…)` and backtick bodies, inside which quoting restarts
+ * (`"$(echo "it's")"`), and of `${…}` / `$[…]` expansions (nesting counted; no comment, `case` or heredoc there). A `'` inside double quotes is literal; a `#` at an unescaped word start comments to the
+ * end of the line (in backticks, to the closing backtick); a `case … esac` pattern `)` does not end a body and
+ * ends a command (`a) git push` is two).
+ * Heredocs are stripped only when certain, else their lines stay commands (deny-leaning): the `<<` / `<<-`
+ * operator is in plain state in a command or backtick body (not `<<<`, not in quotes, comments, arithmetic,
+ * `${…}` or `$[…]`); its delimiter is a plain word `[A-Za-z0-9_]+` once quotes are removed; the newline that
+ * starts the body is at the operator's own nesting level (no substitution opened since); and the closing line
+ * is found. An unquoted delimiter keeps the body's substitutions. Returns:
+ * - `literal`: every `'…'` / `$'…'` span and comment (never run) blanked to `''` / dropped, heredoc bodies
+ *   replaced by their substitutions; the rest verbatim;
+ * - `blanked`: also every outermost `"…"` span blanked to `""`, so only command words are left;
+ * - `bodies`: the text (of `literal`) of every direct substitution body, backtick bodies unescaped; callers
+ *   scan each body again for the ones nested in it;
+ * - `spans`: `[start, end)` in `c` of every outermost closed quoted span;
+ * - `stripped`: `source` verbatim except each heredoc: operator → `<<HEREDOC`, body → its substitutions as `$(…)`;
+ * - `source`: `c` with every backslash-newline outside single quotes and stripped heredoc bodies removed, as the
+ *   shell does before parsing (`"$\⏎(cmd)"` runs `cmd`); every other output, `spans` included, refers to it.
+ * A `${…}` opened inside double quotes or a heredoc body keeps `'` and `$'` literal (bash 5, zsh).
+ * A heredoc read by a shell (`sh`, `bash`, `zsh`, `dash`, `ksh`, `eval`, `source`, `.` anywhere on its line,
+ * `cat <<EOF | sh` included), or whose operator line ends in `|` / `|&` (`cat <<EOF |⏎…⏎EOF⏎sh`), is a script, so
+ * its body is never stripped. A `)` or backtick that closes a substitution is not a word boundary (`$(x)#y`).
+ * Fail closed: an unclosed `"`, `$(` or backtick runs to the end; an unclosed `'` stays visible.
+ * Safety net: `rawSubstitutions` finds every `$(…)`, `<(…)`, `>(…)` and backtick body ignoring quotes; callers run
+ * their deny rules on those bodies too, so a quoting edge case here can only cost a deny, never an allow.
+ * shortcut: no aliases or functions; a body rescanned out of its `((…))` context can misread a
+ * `<<` shift as a heredoc (only an unterminated one, which is then read as commands); a `(a)` case pattern is
+ * not split from its command; a string piped into a shell (`echo '…' | sh`) and a script written then run
+ * (`tee f; sh f`) are not unwrapped (follow-ups). Upgrade to a real parser if one slips through.
+ */
+export function scanShell(c, opts = {}) {
+  const first = scanOnce(c, opts);
+  if (!first.joins.length) return { ...first, source: c };
+  let source = "";
+  let at = 0;
+  for (const j of first.joins) {
+    source += c.slice(at, j);
+    at = j + 2;
+  }
+  return { ...scanOnce(source + c.slice(at), opts), source: source + c.slice(at) };
+}
+
+/** One pass of `scanShell` over `c` as given; `joins` lists where a backslash-newline sits outside single quotes. */
+function scanOnce(c, { heredoc = false } = {}) {
+  let literal = "";
+  let blanked = "";
+  let quietFrom = -1; // where the outermost open double quote began; `blanked` hides text from there
+  let escaped = -1; // index of the last character a backslash consumed: never a word boundary
+  let closedAt = -1; // index of the last `)` or backtick that closed a substitution: never a word boundary
+  const joins = [];
+  let pending = []; // heredocs whose bodies start after the next newline
+  const bodies = [];
+  const spans = [];
+  const edits = []; // [start, end, text] in `c`, for `stripped`
+  const frame = (kind, extra) => ({ kind, parens: 0, cases: 0, start: literal.length, ...extra });
+  const stack = [frame("cmd")];
+  if (heredoc) stack.push({ kind: "heredoc" }); // like "…", but a `"` is literal
+  const quoted = (s) => s.kind === "dq" || s.kind === "heredoc";
+  const direct = () => stack.every((s, k) => k === 0 || quoted(s) || s.kind === "param");
+  const emit = (s, b = s) => {
+    literal += s;
+    if (quietFrom < 0) blanked += b;
+  };
+  const close = () => {
+    const f = stack.pop();
+    if (direct()) {
+      const text = literal.slice(f.start);
+      bodies.push(f.kind === "bt" ? text.replace(/\\([`$\\])/g, "$1") : text);
+    }
+  };
+  const wordStart = (i) =>
+    i === 0 || (escaped !== i - 1 && closedAt !== i - 1 && /[\s;&|()<>`]/.test(c[i - 1]));
+  const word = (i, w) =>
+    wordStart(i) &&
+    c.startsWith(w, i) &&
+    /^(?:[\s;&|()`]|$)/.test(c.slice(i + w.length, i + w.length + 1));
+  /** A heredoc delimiter word from `j`: its unquoted text, whether any of it was quoted, and where it ends. */
+  const delimiter = (j) => {
+    while (c[j] === " " || c[j] === "\t") j++;
+    const from = j;
+    let text = "";
+    let isQuoted = false;
+    while (j < c.length && !/[\s;&|()<>]/.test(c[j])) {
+      if (c[j] === "'" || c[j] === '"') {
+        const q = c.indexOf(c[j], j + 1);
+        if (q < 0) return null;
+        text += c.slice(j + 1, q);
+        isQuoted = true;
+        j = q + 1;
+      } else if (c[j] === "\\") {
+        text += c[j + 1] ?? "";
+        isQuoted = true;
+        j += 2;
+      } else text += c[j++];
+    }
+    return j > from && /^[A-Za-z0-9_]+$/.test(text) ? { text, isQuoted, end: j } : null;
+  };
+  /** The pending heredoc bodies after the newline at `i`: where the last delimiter line ends, and the substitutions. */
+  const heredocBodies = (i) => {
+    let j = i + 1;
+    let end = i;
+    const subs = [];
+    if (pending.some((h) => h.script)) return null; // a shell runs the body: keep it as commands
+    for (const h of pending) {
+      let k = j;
+      for (;;) {
+        const nl = c.indexOf("\n", k);
+        end = nl < 0 ? c.length : nl;
+        const line = c.slice(k, end);
+        if ((h.strip ? line.replace(/^\t+/, "") : line) === h.text) break;
+        if (nl < 0) return null;
+        k = nl + 1;
+      }
+      if (!h.isQuoted) subs.push(...scanShell(c.slice(j, k), { heredoc: true }).bodies);
+      j = end + 1;
+    }
+    return { end, subs };
+  };
+  for (let i = 0; i < c.length; i++) {
+    const ch = c[i];
+    const f = stack.at(-1);
+    if (ch === "\\" || (ch === "$" && c[i + 1] === "$")) {
+      emit(c.slice(i, i + 2));
+      i++;
+      if (ch === "\\") escaped = i;
+      if (ch === "\\" && c[i] === "\n") joins.push(i - 1);
+      continue;
+    }
+    if (quoted(f)) {
+      if (ch === '"' && f.kind === "dq") {
+        stack.pop();
+        literal += ch;
+        if (!stack.some((s) => s.kind === "dq")) {
+          spans.push([quietFrom, i + 1]);
+          quietFrom = -1;
+        }
+        continue;
+      }
+    } else {
+      if (ch === "\n" && pending.length) {
+        const h = pending.every((p) => p.frame === f) ? heredocBodies(i) : null;
+        pending = [];
+        if (h) {
+          const text = h.subs.map((b) => ` $(${b})`).join("");
+          edits.push([i, h.end, text]);
+          emit(text);
+          if (direct()) bodies.push(...h.subs);
+          i = h.end - 1;
+          continue;
+        }
+      }
+      if (f.kind === "param") {
+        if (ch === f.closer && f.nest === 0) {
+          stack.pop();
+          emit(ch);
+          continue;
+        }
+        if (ch === f.opener) f.nest++;
+        else if (ch === f.closer) f.nest--;
+      } else if (ch === "#" && wordStart(i)) {
+        while (i + 1 < c.length && c[i + 1] !== "\n" && !(f.kind === "bt" && c[i + 1] === "`")) i++;
+        continue;
+      }
+      const ansi = ch === "$" && c[i + 1] === "'";
+      if ((ch === "'" || ansi) && !f.literalQuotes) {
+        let j = i + (ansi ? 2 : 1);
+        while (j < c.length && c[j] !== "'") j += ansi && c[j] === "\\" ? 2 : 1;
+        if (j >= c.length) {
+          emit(c.slice(i));
+          break;
+        }
+        if (quietFrom < 0) spans.push([i, j + 1]);
+        emit("''", '""');
+        i = j;
+        continue;
+      }
+      if (ch === '"' || (ch === "$" && c[i + 1] === '"')) {
+        if (ch === "$") emit(c[i++]);
+        if (quietFrom < 0) {
+          blanked += '""';
+          quietFrom = i;
+        }
+        literal += '"';
+        stack.push({ kind: "dq" });
+        continue;
+      }
+      if (c.startsWith("<<<", i)) {
+        emit("<<<");
+        i += 2;
+        continue;
+      }
+      if (c.startsWith("<<", i) && (f.kind === "bt" || (f.kind === "cmd" && !f.arith))) {
+        const strip = c[i + 2] === "-";
+        const d = delimiter(i + (strip ? 3 : 2));
+        if (d) {
+          const from = c.lastIndexOf("\n", i - 1) + 1;
+          const to = c.indexOf("\n", i);
+          const line = c.slice(from, to < 0 ? c.length : to);
+          const script = SHELL_WORD.test(line) || /\|&?\s*$/.test(line);
+          pending.push({ ...d, strip, frame: f, script });
+          edits.push([i, d.end, "<<HEREDOC"]);
+          emit("<<HEREDOC");
+          i = d.end - 1;
+          continue;
+        }
+      }
+      if (f.kind === "cmd") {
+        if (word(i, "case")) f.cases++;
+        else if (word(i, "esac") && f.cases > 0) f.cases--;
+        else if (ch === "(" && c[i + 1] === "(" && wordStart(i)) {
+          emit("((");
+          i++;
+          stack.push(frame("cmd", { arith: true }));
+          continue;
+        } else if (ch === "(") f.parens++;
+        else if (ch === ")" && f.parens > 0) f.parens--;
+        else if (ch === ")" && f.cases > 0 && !f.arith) {
+          emit(");"); // a case pattern ends here and its command starts
+          continue;
+        } else if (ch === ")" && stack.length > 1) {
+          close();
+          const two = f.arith && c[i + 1] === ")";
+          emit(two ? "))" : ")");
+          if (two) i++;
+          closedAt = i;
+          continue;
+        }
+      } else if (f.kind === "bt" && ch === "`") {
+        close();
+        emit(ch);
+        closedAt = i;
+        continue;
+      }
+      if ((ch === "<" || ch === ">") && c[i + 1] === "(") {
+        emit(c[i] + c[++i]);
+        stack.push(frame("cmd"));
+        continue;
+      }
+    }
+    if (c.startsWith("${", i) || c.startsWith("$[", i)) {
+      emit(c[i] + c[++i]);
+      const brace = c[i] === "{";
+      // Inside "…" or a heredoc body, `'` stays literal in the expansion (bash 5, zsh).
+      const literalQuotes = quoted(f) || Boolean(f.literalQuotes);
+      stack.push(
+        frame("param", { opener: c[i], closer: brace ? "}" : "]", nest: 0, literalQuotes }),
+      );
+      continue;
+    }
+    if (c.startsWith("$((", i)) {
+      emit("$((");
+      i += 2;
+      stack.push(frame("cmd", { arith: true }));
+      continue;
+    }
+    if ((ch === "$" && c[i + 1] === "(") || ch === "`") {
+      emit(ch === "`" ? ch : c[i] + c[++i]);
+      stack.push(frame(ch === "`" ? "bt" : "cmd"));
+      continue;
+    }
+    emit(ch);
+  }
+  while (stack.length > 1) {
+    if (quoted(stack.at(-1)) || stack.at(-1).kind === "param") stack.pop();
+    else close();
+  }
+  if (quietFrom >= 0) blanked += c.slice(quietFrom);
+  let stripped = "";
+  let at = 0;
+  for (const [start, end, text] of edits) {
+    stripped += c.slice(at, start) + text;
+    at = end;
+  }
+  return { literal, blanked, bodies, spans, joins, stripped: stripped + c.slice(at) };
+}
+
+/**
+ * Heredoc bodies are file content, not commands: `cat > rules.md <<'EOF' … EOF` must not trip a rule because the
+ * prose names a forbidden command. Found by `scanShell` (so `'<<EOF'` and `<<<EOF` are not heredocs); a body with
+ * an unquoted delimiter keeps its `$(…)` and backtick substitutions (STA-254).
+ */
+export const stripHeredocs = (raw) => scanShell(raw).stripped;
+
+/** A shell (or `eval` / `source` / `.`) as a word: its heredoc or here-string is a script. */
+const SHELL_WORD = /(?:^|[\s;&|(`])(?:\S*\/)?(?:(?:ba|z|da|k)?sh|eval|source|\.)(?=[\s;&|)`]|$)/;
+
+/** Script text a shell runs from a string: `sh -c "…"`, `eval "…"` and a here-string read by a shell. */
+export function scriptStrings(c) {
+  const out = [];
+  for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
+    out.push(m[2]);
+  for (const m of c.matchAll(
+    /(?:^|[\s;&|(`])(?:\S*\/)?(?:(?:ba|z|da|k)?sh|source|\.)(?=\s)[^;&|\n]*<<<\s*(?:(["'])((?:\\.|(?!\1)[^\\])*)\1|(\S+))/g,
+  ))
+    out.push(m[2] ?? m[3]);
+  return out;
+}
+
+/**
+ * The safety net (STA-254): every `$(…)`, `<(…)`, `>(…)` and backtick body at any depth, found by balanced
+ * parentheses while ignoring every quote. Only for deny rules: it can add a deny, never an allow. Accepted false
+ * positive: a dangerous command written literally inside real single quotes (`echo '$(git push origin main)'`).
+ */
+export function rawSubstitutions(raw) {
+  const c = raw.replace(/\\\n/g, ""); // backslash-newline goes first, quotes or not
+  const out = [];
+  for (let i = 0; i < c.length; i++) {
+    if (c[i] === "\\") i++;
+    else if ("$<>".includes(c[i]) && c[i + 1] === "(") {
+      let depth = 1;
+      let j = i + 2;
+      for (; j < c.length && depth > 0; j++) {
+        if (c[j] === "\\") j++;
+        else if (c[j] === "(") depth++;
+        else if (c[j] === ")") depth--;
+      }
+      out.push(c.slice(i + 2, depth === 0 ? j - 1 : c.length));
+    } else if (c[i] === "`") {
+      let j = i + 1;
+      while (j < c.length && c[j] !== "`") j += c[j] === "\\" ? 2 : 1;
+      out.push(c.slice(i + 1, j));
+      i = j;
+    }
+  }
+  return out;
+}
 
 /** Split a command into segments of words; each word is its unquoted text. Separators outside quotes split. */
 function lex(cmd) {

@@ -331,3 +331,169 @@ test("STA-216: GIT_EDITOR is allowed only as true, : or cat", () => {
   for (const c of ["GIT_EDITOR=sh git log", "GIT_SEQUENCE_EDITOR=vim git log"])
     assert.equal(kind(c), "deny", c);
 });
+
+test("STA-254: an apostrophe inside double quotes does not hide a nested command", () => {
+  for (const c of [
+    `echo "it's $(infisical export) it's"`,
+    `echo "it's \`infisical export\` it's"`,
+    `echo "it's $(cat ~/Secrets-inbox/X) it's"`,
+    `echo "it's" "$(printenv)" "it's"`,
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [`echo "it's fine"`]) assert.equal(kind(c), "allow", c);
+});
+
+test("STA-254 review: quoting restarts inside a substitution, and $'…' honours \\'", () => {
+  for (const c of [
+    `git commit -m "$(echo "it's") $(git push origin main) $(echo "it's")"`,
+    `echo "$(echo "'") $(git push origin main) $(echo "'")"`,
+    'echo "`echo "\'"` `git push origin main` `echo "\'"`"',
+    `echo $'x\\' ' $(git push origin main) ''`,
+    `echo "$(echo "it's") $(gh pr view 1) $(echo "it's")"`,
+    `git status "$(echo "'")" $(git push origin main)`,
+    `echo "$(echo "'") $(infisical export) $(echo "'")"`,
+    `echo $'x\\' ' $(cat ~/Secrets-inbox/X) ''`,
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    `echo "path C:\\\\dir \\"quoted\\" and it's fine"`,
+    `echo $'it\\'s'`,
+    `git log --grep "it's fine"`,
+    `git status -- "it's" $'it\\'s'`,
+    `echo "$(echo "it's") fine"`,
+  ])
+    assert.equal(kind(c), "allow", c);
+});
+
+test("STA-254 re-review: $$, case and comments in a substitution, escaped backticks, <(…), heredocs", () => {
+  for (const c of [
+    `echo $$'x\\' $(git push origin main) ''`,
+    `echo "$(case a in a) echo "'";; esac; git push origin main)" '`,
+    `echo "$(true # )\ngit push origin main)"`,
+    `echo hi # it's\necho "$(git push origin main)" # it's`,
+    "echo `echo \\`git push origin main\\``",
+    `diff <(echo "it's") <(git push origin main)`,
+    `cat > notes.md <<EOF\n$(git push origin main)\nEOF`,
+    `cat > notes.md <<EOF\n\`git push origin main\`\nEOF`,
+    `cat > notes.md <<EOF\nit's $(cat ~/Secrets-inbox/X)\nEOF`,
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    `echo $$`,
+    `echo "pid $$, it's fine"`,
+    `git log --format='%H' # it's a comment`,
+    `echo $(case x in a) echo a;; esac)`,
+    `cat > notes.md <<EOF\nwe don't run git push origin main here\nEOF`,
+    `cat > notes.md <<'EOF'\n$(git push origin main) stays text\nEOF`,
+  ])
+    assert.equal(kind(c), "allow", c);
+});
+
+test("STA-254 re-review 3: escaped word boundaries, heredocs only in plain state, case pattern commands", () => {
+  for (const c of [
+    "echo `echo x\\ # ; git push origin main`",
+    "echo `echo x\\ # ; infisical export`",
+    `echo $(echo x\\ # ; git push origin main)`,
+    `echo $(echo x\\ # ; infisical export)`,
+    `echo $(echo x\\;# ; git push origin main)`,
+    `echo $(echo x\\\n# ; git push origin main)`,
+    `echo '<<EOF'\ngit push origin main\nEOF`,
+    `cat <<<EOF\ngit push origin main\nEOF`,
+    `echo "<<EOF"\ninfisical export\nEOF`,
+    `echo $((1<<EOF))\ngit push origin main\nEOF`,
+    `echo x # <<EOF\ngit push origin main\nEOF`,
+    `echo "$(case a in a) git push origin main ;; esac)"`,
+    `cat <<A <<B\na\nA\n$(git push origin main)\nB`,
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    `cat <<-EOF\n\tgit push origin main is prose\n\tEOF`,
+    `echo $((1 << 2))`,
+    `cat <<<"it's fine"`,
+    `cat > notes.md <<'EOF'\nrun git push origin main; it's fine\nEOF`,
+  ])
+    assert.equal(kind(c), "allow", c);
+});
+
+test("STA-254 re-review 4: no heredoc in ${…} / $[…], bodies only at the operator's level, plain delimiters", () => {
+  for (const c of [
+    "echo ${x:-<<EOF}\ngit push origin main\nEOF}",
+    "echo ${x:-<<EOF}\ninfisical export\nEOF}",
+    "echo $[x<<EOF]\ngit push origin main\nEOF]",
+    "echo $[x<<EOF]\ninfisical export\nEOF]",
+    "echo <<EOF $(true\ngit push origin main)\nEOF",
+    "echo <<EOF $(true\ninfisical export)\nEOF",
+    "echo <<EOF `true\ngit push origin main`\nEOF",
+    "echo <<EOF `true\ninfisical export`\nEOF",
+    "echo ${x:-{<<EOF}}\ngit push origin main\nEOF}}",
+    "cat <<E-F\ngit push origin main\nE-F",
+    'echo "${x:-$(git push origin main)}"',
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    'echo ${x:-default} "${y#it\'s}"',
+    "echo $[1 << 2]",
+    "cat > notes.md <<EOF\nwe don't run git push origin main here\nEOF",
+    "cat > notes.md <<'EOF'\n$(git push origin main) stays text\nEOF",
+    'cat > notes.md <<"E_1"\ngit push origin main is prose\nE_1',
+    "cat <<-EOF\n\tgit push origin main is prose\n\tEOF",
+    'echo "$(cat <<EOF\ngit push origin main is prose\nEOF\n)"',
+  ])
+    assert.equal(kind(c), "allow", c);
+});
+
+test("STA-254 re-review 5: literal ' in a quoted ${…}, shell-read heredocs and here-strings, the safety net", () => {
+  for (const c of [
+    'echo "${x:-\'}" $(git push origin main) "${x:-\'}"',
+    "echo \"${x:-'}$(git push origin main)${x:-'}\"",
+    "git commit -m \"${x:-'}$(git push origin main)${x:-'}\"",
+    "cat <<EOF\n${x:-'}\n$(git push origin main)\n${x:-'}\nEOF",
+    "echo \"${x:-'}$(infisical export)${x:-'}\"",
+    "bash <<'EOF'\ngit push origin main\nEOF",
+    "sh <<EOF\ninfisical export\nEOF",
+    "cat <<'EOF' | sh\ngit push origin main\nEOF",
+    "source /dev/stdin <<'EOF'\ninfisical export\nEOF",
+    "bash <<< 'git push origin main'",
+    'zsh <<<"infisical export"',
+  ])
+    assert.equal(kind(c), "deny", c);
+  // The safety net's accepted false positives: a dangerous command literally inside real single quotes.
+  for (const c of [
+    "echo '$(git push origin main)'",
+    "echo '$(infisical export)'",
+    "echo 'it'\"'\"'s $(infisical export) quoted'",
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    "echo 'docs: use $(echo ok)'",
+    'echo "${x:-it\'s}"',
+    "cat <<'EOF' > run.sh\ngit status\nEOF",
+    "bash <<'EOF'\ngit status\nEOF",
+    "bash <<< 'pnpm verify'",
+  ])
+    assert.equal(kind(c), "allow", c);
+});
+
+test("STA-254 re-review 6: backslash-newline first, no boundary after a closing ), heredoc piped to a later shell", () => {
+  for (const c of [
+    'echo "$\\\n(git push origin main)"',
+    'git commit -m "$\\\n(git push origin main)"',
+    'pnpm linear comment STA-1 "$\\\n(git push origin main)"',
+    "echo $\\\n(git push origin main)",
+    'echo "$\\\n(infisical export)"',
+    "echo $\\\n(infisical export)",
+    "echo $(true)# ; git push origin main",
+    "echo $(true)# ; infisical export",
+    "echo `true`# ; git push origin main",
+    "cat <<EOF |\ngit push origin main\nEOF\nsh",
+    "cat <<EOF |&\ninfisical export\nEOF\nbash",
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    'echo "line one \\\nline two, it\'s fine"',
+    "echo 'it\\\nstays' # single quotes keep the backslash-newline",
+    "echo $(date)  # it's a comment",
+    "cat <<EOF > notes.md\nwe don't run git push origin main here\nEOF",
+  ])
+    assert.equal(kind(c), "allow", c);
+});
