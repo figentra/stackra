@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "description": "Example service.",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "node --watch src/main.ts",

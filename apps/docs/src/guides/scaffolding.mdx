@@ -4,7 +4,7 @@ description: "Create a member with pnpm new, what the templates replace, and how
 icon: "blocks"
 ---
 
-Never copy an existing member to start a new one. `pnpm new` picks the right directory, package scope, tier tag and script set, copies the target repo's `LICENSE` and formats the result. The shapes it renders are decided in [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates).
+Never copy an existing member to start a new one. `pnpm new` picks the right directory, package scope, tier tag and script set, copies the target repo's `LICENSE` (packages and tooling only) and formats the result. The shapes it renders are decided in [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates).
 
 ```bash
 pnpm new <kind> <name> [--category <c>] [--entries <list>|none] [--description "<text>"] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]
@@ -28,12 +28,12 @@ Run it with `--dry-run` first to see what it would write. Then run `pnpm install
 
 ## Flags
 
-| Flag                                                     | Does                                                                                                                                                                                |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--entries contracts,node,react,native,testing,devtools` | `package` only: the entries besides core (`.`). `none` for core only. Without the flag, a terminal is asked; a script gets core only.                                               |
-| `--repo <path>`                                          | Scaffold into another monorepo (for example the private figentra-os). Templates come from this repo; the `LICENSE` comes from the target, or from this repo if the target has none. |
-| `--description`, `--title`, `--port`                     | Fill the tokens; the port defaults to the next free one in the kind's range.                                                                                                        |
-| `--dry-run`                                              | Print the file list, write nothing.                                                                                                                                                 |
+| Flag                                                     | Does                                                                                                                                                                                        |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--entries contracts,node,react,native,testing,devtools` | `package` only: the entries besides core (`.`). `none` for core only. Without the flag, a terminal is asked; a script gets core only.                                                       |
+| `--repo <path>`                                          | Scaffold into another monorepo (for example the private figentra-os). Templates come from this repo; the package `LICENSE` comes from the target, or from this repo if the target has none. |
+| `--description`, `--title`, `--port`                     | Fill the tokens; the port defaults to the next free one in the kind's range.                                                                                                                |
+| `--dry-run`                                              | Print the file list, write nothing.                                                                                                                                                         |
 
 Every flag is non-interactive, so agents and CI run `pnpm new` without a prompt.
 
@@ -55,7 +55,7 @@ The scaffold replaces these tokens in file contents **and** path names. Other do
 
 ## What you get
 
-Every member gets `package.json`, `turbo.jsonc` with its one tier tag, `README.md`, `AGENTS.md` with a `## PII` table, `CHANGELOG.md` and the `LICENSE`, with code in `src/` and tests in `__tests__/`. A service and a package also get `config/<name>.config.ts`; a package gets `resources/`. Every template with code ships a passing test, because the vitest preset fails an empty suite. After scaffolding:
+Every member gets `package.json`, `turbo.jsonc` with its one tier tag, `README.md`, `AGENTS.md` with a `## PII` table, `CHANGELOG.md` and, for packages and tooling only, the `LICENSE` (apps and services are UNLICENSED, ADR 0195), with code in `src/` and tests in `__tests__/`. A service and a package also get `config/<name>.config.ts`; a package gets `resources/`. Every template with code ships a passing test, because the vitest preset fails an empty suite. After scaffolding:
 
 1. Replace the placeholder README and AGENTS text with the member's real purpose and its PII table.
 2. `pnpm install` to link the new member, then `pnpm verify`.

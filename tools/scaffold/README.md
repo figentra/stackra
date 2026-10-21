@@ -19,7 +19,7 @@ decided in ADR 0126; usage is in `apps/docs/src/guides/scaffolding.mdx`.
 Tokens, replaced in file contents and path names: `{{NAME}}`, `{{PASCAL}}`, `{{TITLE}}`, `{{DESCRIPTION}}`,
 `{{PORT}}`, `{{CATEGORY}}`, and `{{ENTRIES}}` (the package's tsdown entry map). Other `{{ … }}` text (JSX) is
 left alone. `DESCRIPTION` and `TITLE` are JSON-escaped in `.json`/`.jsonc` files. The target repo's `LICENSE` is
-copied into every new member and the result is formatted with oxfmt.
+copied into new packages and tooling only (apps and services are UNLICENSED, ADR 0195), and the result is formatted with oxfmt.
 
 Template files hold tokens, so they are not valid TypeScript: oxfmt and oxlint skip `tools/scaffold/templates/**`.
 To change a kind, edit its template, then run `node --test tools/scripts/__tests__/scaffold.test.mjs`.
