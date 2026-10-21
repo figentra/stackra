@@ -1,0 +1,43 @@
+---
+title: "0244 — Markets, owned by pricing"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Builds on [0219](/adr/0219-the-merchant-account-chain-and-registered-price-models) (price models)
+  and [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) (the data
+  region).
+</Note>
+
+## Context
+
+A tenant sells in several countries, and each one needs its own currency, price list, tax rules, payment methods, shipping and language. Those rules were spread across pricing, tax and payments. The owner's market answer (mem L888, 2026-10-20) puts them in one entity, a Market, owned by pricing.
+
+## Decision
+
+1. **The entity.** A Market groups countries, and carries the currency, the price list, the tax rules, the payment methods and processors, the shipping zones, the language, and the domain or sub-folder.
+2. **Price lists.** A price list is explicit, or adjusted from a base list (for example, a purchasing-power adjustment).
+3. **Resolution.** A visitor is matched to a Market by the domain, by the address, or by geo-IP, in that order of precedence.
+4. **Readers.** Pricing, commerce, billing, payments, tax, shipping and localisation read the Market. None of them keeps its own copy.
+5. **Multiple markets.** More than one Market is an entitlement.
+6. **Rounding.** Prices round to a price point, per Market.
+7. **Data region.** The Market does not change the data region, which stays a tenancy property (ADR 0210).
+8. **Own plans.** Figentra uses Markets for its own plans (ADR 0242).
+9. **Currency and tax.** The seller's Market sets the price list and the displayed currency. Tax is destination-based: it follows the buyer's location, under the seller's tax registrations. The exchange rate is a snapshot taken at checkout (register D-15, owner answer "Part-D clarifications").
+
+## Consequences
+
+- A change to a Market's tax or currency is made in one place, and every reader sees it.
+- The data region and the selling market are separate, so a Market in one country does not move a tenant's data.
+
+## Enforcement
+
+planned — the resolution test covers each of the three matching methods; the readers' contract test checks they read the Market and do not copy it.
+
+## Open questions
+
+None. Decision 9 settles which entity decides the currency and the tax (register D-15).
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner market answer (`stackra-decisions-2026-10-19.md` L888, 2026-10-20). Builds on [0219](/adr/0219-the-merchant-account-chain-and-registered-price-models).

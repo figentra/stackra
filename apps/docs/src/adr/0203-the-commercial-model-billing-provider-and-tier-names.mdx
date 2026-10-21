@@ -1,0 +1,39 @@
+---
+title: "0203 — The commercial model: billing provider, metric and tier names"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Completed by [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial): the plan
+  ladder, add-ons, metric and the 14-day trial.
+</Note>
+
+<Note>
+  The plan ladder, its numbers and the trial are in ADR 0242. This ADR records the billing provider
+  and the metric, and corrects the tier names: there is no Free plan.
+</Note>
+
+## Context
+
+The owner's commercial answers (mem L515, L526, L947–952, 2026-10-20) fix how Figentra bills its own customers. An earlier answer listed a Free tier, and the later answer (Start FINAL, L952) removed it.
+
+## Decision
+
+1. **Billing provider (PP1).** Stripe Billing, with Stripe Tax and the customer portal, bills Figentra's own customers. Its webhooks drive Keygen and the entitlements (ADR 0178). Enterprise and on-prem deals use annual invoices.
+2. **Tiers.** Starter, Pro, Business and Enterprise (L952). There is no Free plan. The numbers of each tier are in ADR 0242.
+3. **Add-ons and usage.** Paid module add-ons per service, and metered usage on top. Entitlements are the plan, plus add-ons, plus overrides.
+4. **Metric.** Hybrid: a platform fee per tier, plus seats for internal users, plus metered usage for cost drivers (ADR 0242). A tenant's end customers are never seats.
+5. **Developer licence.** Stackra Pro is a separate per-organisation developer licence (ADR 0202).
+
+## Consequences
+
+- A paying customer's plan lives in one billing provider, and every entitlement is derived from it.
+- The tier names match the ladder in ADR 0242, so a price page cannot list a tier the product does not have.
+
+## Enforcement
+
+planned — the billing webhook contract test (ADR 0178) and the tier-name check in the pricing package.
+
+## Supersedes and sources
+
+Supersedes: none. Corrects: the Free tier in the earlier draft of this ADR. Sources: owner answers PP1, PP4, PP6 (`stackra-decisions-2026-10-19.md` L515, L526, L947–952, 2026-10-20).

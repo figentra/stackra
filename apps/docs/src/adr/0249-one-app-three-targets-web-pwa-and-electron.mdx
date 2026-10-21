@@ -1,0 +1,42 @@
+---
+title: "0249 — One app, three targets: web, PWA and Electron desktop from one member"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0058](/adr/0058-desktop-is-electron), decisions 1 to 3, and
+  [0126](/adr/0126-member-shapes-and-scaffold-templates) (member shapes), and decision 6 of
+  [0164](/adr/0164-console-panels-are-resources-rendered-by-the-panel-package) (the console is a
+  Vite single-page app).
+</Note>
+
+## Context
+
+The console, a PWA and a desktop app were planned as three codebases. The owner accepted one app member that builds all three targets (desktop and PWA plan, 2026-10-20 night, Option A), with the renderer bundled and served from `app://` inside the desktop shell.
+
+## Decision
+
+1. **One member, several targets.** An app member builds web, PWA and Electron desktop targets from one source tree. The scaffold command is `pnpm new app:console --targets web,pwa,desktop`; `app:desktop` is a preset of the same command.
+2. **Renderer.** The renderer is bundled with tsdown and Vite, and the desktop target serves it from `app://`.
+3. **Shell.** `@stackra/platform` owns the shell and the capability ports (ADR 0250), with web, Electron and Expo drivers.
+4. **Generated outputs.** `stackra gen` emits the typed IPC bridge from `@DesktopAction`, the capability map, the offline map from `@Action({ offline })`, the PWA manifest and the electron-builder configuration.
+5. **Rejected.** Tauri is rejected; Electron is the desktop shell (ADR 0058).
+
+## Consequences
+
+- A feature lands in every target at once, because the targets share a source tree.
+- A target-specific behaviour is a driver, not a fork of the app.
+
+## Enforcement
+
+planned — the scaffolder test builds each target; gen fails when a `@DesktopAction` has no bridge entry.
+
+## Owner defaults recorded here
+
+- **On-prem.** One signed binary with runtime configuration, in place of a per-environment build (desktop and PWA plan, owner-accepted defaults).
+- **Spikes first.** Four one-day spikes run before implementation of this group begins (plan section 10): (a) Electron push support and `node:sqlite` availability; (b) OPFS and the SQLite-WASM worker on the `app://` scheme; (c) HeroUI and Tailwind v4 under a strict CSP; (d) Playwright `_electron` against the packaged app on macOS arm64.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0058](/adr/0058-desktop-is-electron) decisions 1 to 3; [0126](/adr/0126-member-shapes-and-scaffold-templates); [0164](/adr/0164-console-panels-are-resources-rendered-by-the-panel-package) decision 6.
+Sources: desktop and PWA owner decision, ACCEPTED core (`stackra-decisions-2026-10-19.md` L954, 2026-10-20 night); plan `stackra-notes/desktop-pwa-offline-plan.md` sections 1 and 8.

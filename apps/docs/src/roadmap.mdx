@@ -55,6 +55,12 @@ Every package row adds its own "Done when" line to this list.
   </Step>
 </Steps>
 
+## Build order and delivery scope
+
+The build order is the Figentra OS order from [0205](/adr/0205-the-figentra-os-build-order-and-the-first-slice): foundation first; then identity, tenancy and access; then audit, settings and entitlements; then notifications and files; then search, registry, experience and content; then webhooks, integrations and the developer platform; then workflow and AI; then billing, usage and payments; then the rest.
+
+Delivery is SaaS first ([0248](/adr/0248-delivery-scope-saas-first-on-prem-kept-green)). Everything in the register is built. The SaaS path is finished and sold first. On-prem and air-gapped builds stay green in CI, but are not sold or described as finished until they are solid.
+
 ## Phases at a glance
 
 | Phase | Name                                | Waves            | Linear project                         | Starts after       | Exit milestone |

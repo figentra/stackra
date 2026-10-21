@@ -1,0 +1,41 @@
+---
+title: "0238 — Database and connection model: one server per environment, one logical database per service"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0014](/adr/0014-data-ownership-and-orm) and [0097](/adr/0097-model-and-database-packages).
+  Closes gap P0-7 with the answer below.
+</Note>
+
+## Context
+
+[0014](/adr/0014-data-ownership-and-orm) gave each service one database. Topologies (ADR 0169) can pack several services into one deployable, and connection pooling was not decided. The owner's database answer (mem L932, 2026-10-20) follows Encore's own model exactly.
+
+## Decision
+
+1. **Server.** One Postgres server per environment. RDS is the default; Aurora or Neon are optional.
+2. **Databases.** Every declared database is its own logical database, one per service. This holds for monolith, grouped and split topologies alike, so topology never changes how databases are declared.
+3. **Roles.** Each service has its own database role. Each container has its own credentials.
+
+## Consequences
+
+- Grouping services into one deployable never merges their data.
+- The owner's answer says to follow what Encore does; the rest of the connection detail is an implementation choice (below), not a decision.
+
+## Enforcement
+
+planned — gen emits one database declaration per service.
+
+## Implementation notes and open questions
+
+To confirm in the first-service spec, following Encore's own behaviour. These are not decisions of this ADR:
+
+1. Tenant context is set with `set_config(..., true)` inside the action transaction (ADR 0136), as Encore's transaction model suggests.
+2. Pooling: transaction-mode pooling through a proxy (RDS Proxy or PgBouncer, depending on where the service runs), with a pool budget per deployable group in `runway.yaml` (ADR 0168). The owner has not chosen the proxy or the budget sizes.
+3. The per-group pool budget sizes are set when the first deployable exists.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0014](/adr/0014-data-ownership-and-orm), [0097](/adr/0097-model-and-database-packages). Sources: owner database answer (`stackra-decisions-2026-10-19.md` L932, 2026-10-20),
+Encore's AWS infrastructure documentation (verified by the owner's notes); gap P0-7.

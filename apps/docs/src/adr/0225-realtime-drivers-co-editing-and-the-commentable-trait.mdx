@@ -1,0 +1,32 @@
+---
+title: "0225 — Realtime drivers, co-editing and the Commentable trait"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends the realtime row of [0084](/adr/0084-figentra-os-package-port-plan) and the trait list of
+  [0096](/adr/0096-trait-naming-grammar).
+</Note>
+
+## Context
+
+Users see changes live, and some documents are edited by several people at once. The owner's realtime answers RT1, RT2 and CO1 (mem L812–814, 2026-10-20) fix the transport, the drivers, presence and co-editing. Presence and co-editing are no longer a Pro-only package (contradiction C-06).
+
+## Decision
+
+1. **Transport (RT1).** WebSocket, with a server-sent-events fallback. Channels are authenticated, and presence is supported. Drivers: a native driver on Valkey or Postgres pub/sub, Centrifugo, Ably and Pusher. IAM authorises each channel.
+2. **Presence and co-editing (RT2).** Presence and cursors. Rich documents are co-edited with Yjs (a CRDT), and the state is saved as snapshots. Form records keep optimistic concurrency control instead.
+3. **Commentable (CO1).** A `@Commentable` trait adds comments to any model.
+
+## Consequences
+
+- A form record cannot be lost to a concurrent edit, because forms keep the version check.
+- A rich document can be edited by several people without a lock, and its history is its snapshots.
+
+## Enforcement
+
+planned — the channel authorisation test; the Yjs snapshot round-trip test.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: the realtime row of [0084](/adr/0084-figentra-os-package-port-plan), the trait list of [0096](/adr/0096-trait-naming-grammar). Sources: owner realtime answers RT1, RT2, CO1 (`stackra-decisions-2026-10-19.md` L812–814, 2026-10-20). Contradiction C-06.

@@ -1,0 +1,40 @@
+---
+title: "0241 — Identity first slice: central login app, the BFF and the identity reference service"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Builds on
+  [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral).
+  Closes gap P0-6 and the identity placement of thin item 4.
+</Note>
+
+## Context
+
+Every product (console, Academorix, Juristra and the rest) sends its users through one central login, the way a large platform's sign-in works. The owner's identity answers (mem L933–934, 2026-10-20) fix the model. The first slice (ADR 0205) needs to know where each piece runs.
+
+## Decision
+
+1. **Central login app.** One login app at an identity domain. Every product redirects to it for OIDC single sign-on. ZITADEL sits behind it.
+2. **Web BFF.** The BFF is only for the browser session: an HttpOnly cookie, tokens kept out of JavaScript. It is not the place for cross-device data.
+3. **Cross-device data.** Data such as a cart or preferences is server state in the service that owns it, updated in real time by push, with an offline mutation queue on the client (ADR 0252).
+4. **Mobile and desktop.** OIDC with PKCE.
+5. **Identity reference service.** It holds the apps, the organisations, the mapping from tenant to ZITADEL org, and the identity events. Login stays with ZITADEL (ADR 0206).
+6. **Customisation.** The login is customisable per tenant.
+
+## Consequences
+
+- A user signs in once for every product, and a product never sees a password.
+- The BFF is small, so a change to cross-device data does not touch the session code.
+
+## Enforcement
+
+planned — the single-sign-on test runs two products against the same login app in staging.
+
+## Open questions
+
+1. The owner's confirmation of the BFF scope was recorded as "owner to confirm" on 2026-10-20 (mem L933). The memory later records the owner's "CONFIRMED" line (L934), which this ADR follows.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on: [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral). Sources: owner identity answers (`stackra-decisions-2026-10-19.md` L933–934, 2026-10-20); gap analysis P0-6 (B-10).

@@ -1,0 +1,41 @@
+---
+title: "0235 — Devices and IoT: minimal now, full later"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+The owner asked on 2026-10-20 about devices beyond web and mobile, such as sensors, gateways and kiosks. The decision file records the answer
+(end of file, "IoT"): build the minimum now, and leave the full platform for later. Devices must be identified, authenticated and revocable like
+any other principal, so they go through identity rather than a side channel.
+
+## Decision
+
+1. **Devices are principals in identity.** Each tenant has a device registry in identity. A device authenticates with the OAuth device flow, with
+   client credentials, or with mTLS. A device credential can be revoked.
+2. **`@stackra/devices` contracts.** The package provides a telemetry port and a command port. The HTTP driver ships now. An MQTT driver comes later.
+3. **Device events** follow the event naming of ADR 0231 (`<module-key>.<aggregate>.<verb>.v<n>`), for example `fleet.device.reported.v1`.
+4. **Later, as contracts and stubs only.** Firmware and over-the-air updates, fleet dashboards and edge sync are defined as contracts and stubs now.
+   None is implemented in this wave.
+5. **Category of `@stackra/devices`** is not set in the decision file. It is chosen when the package is created, and it must be one of the categories of
+   [0127](/adr/0127-package-categories-including-infrastructure).
+
+## Consequences
+
+- A device is revoked the same way as a user session, so there is one revocation path.
+- Adding MQTT later is a driver change behind the same port.
+- Until the fleet features exist, a device sends telemetry and receives commands over HTTP only.
+
+## Enforcement
+
+planned — the identity service rejects a device credential after revocation, and the telemetry port has a conformance test for each driver.
+
+## Alternatives
+
+- Devices as ordinary users: not chosen; a device has its own credential types (device flow, mTLS).
+- Full IoT platform now: not chosen; the owner asked for minimal now.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner question on IoT (`stackra-decisions-2026-10-19.md`, Gap-analysis answers, 2026-10-20) and the owner's answer
+"minimal now, full later" (end of file, "IoT", 2026-10-20).

@@ -1,7 +1,22 @@
 ---
 title: "0014 — Data ownership and ORM"
-description: "Accepted · 2026-10-19"
+description: "Accepted, amended by 0160 · 2026-10-19"
 ---
+
+<Note>
+  Restated by [0256](/adr/0256-client-storage-one-stackra-storage-package): MikroORM runs on the
+  server only; clients use `@stackra/storage`.
+</Note>
+
+<Note>
+  Amended by [0238](/adr/0238-database-and-connection-model): one Postgres server per environment,
+  one logical database per service, and transaction-mode pooling.
+</Note>
+
+<Note>
+  Amended by [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions), decision 6:
+  raw SQL only in module service methods, and the approved Postgres extensions.
+</Note>
 
 ## Context
 

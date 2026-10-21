@@ -1,0 +1,41 @@
+---
+title: "0243 — Organisations on the tenant tree: consolidated billing, guardrails and the standalone exit"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Builds on [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) (the
+  tenant tree) and [0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan) (the scope tree).
+</Note>
+
+## Context
+
+A company has several tenants, and it wants one bill, one set of rules and one way to leave. The owner's organisation model (mem L887–901, 2026-10-20) fixes it on the AWS-style organisation, which is a parent tenant with child tenants.
+
+## Decision
+
+1. **Kinds.** A tenant is personal or organisation. A product setting allows personal workspaces. A personal workspace converts to an organisation and keeps its data, its subscription and its URL. The tenant switcher shows the personal workspace and the organisations.
+2. **Consolidated billing.** The organisation pays by default, with a per-child usage breakdown. A child may be self-paying.
+3. **Guardrails.** SCP-like policies: organisation deny policies and locked settings flow down the tree. An organisation policy is a ceiling, as with AWS SCPs: IAM decides within it. Any explicit deny, from the organisation or from IAM, beats any allow (register D-08, owner answer "Part-D clarifications").
+4. **Join and move.** An organisation can invite or join existing standalone tenants. Their billing moves to the organisation, with approval from both sides for a move between organisations.
+5. **Standalone exit.** A member leaves and becomes standalone through a readiness checklist: verified owner email and phone, billing contact and address, its own payment method, accepted terms, KYB if it sells, no balance, and the organisation's SSO and connections replaced. It leaves with its data as a root tenant with its own subscription.
+6. **Checklist engine.** A generic checklist engine is shared with onboarding. A check has a status, a fix link and a verifier.
+7. **Gaps, all included.** Ownership transfer (with step-up and a cooling-off period), sole-owner protection, break-glass organisation recovery, multiple owners and billing admins, merging personal workspaces into an organisation, splitting a tenant out with export, a domain claim (auto-join, and inviting personal workspaces on the domain), and organisation-level reporting across children through explicit audited grants.
+8. **Users.** A user can leave a membership, or delete the account through the erase saga, which is blocked while the user is the sole owner until ownership is transferred.
+
+## Consequences
+
+- One bill for a company, with each child's usage visible, and a child can leave with its data.
+- Guardrails flow down, so a child tenant cannot switch off a policy its organisation set.
+
+## Enforcement
+
+planned — the checklist engine's tests cover each check; the sole-owner rule is enforced by the membership service.
+
+## Open questions
+
+None. The deny combination is settled in decision 3.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner organisation model (`stackra-decisions-2026-10-19.md` L887–901, 2026-10-20). Builds on [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region).

@@ -1,0 +1,37 @@
+---
+title: "0212 — Audit: evidence, access logs, a hash chain and retention"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>Supersedes [0047](/adr/0047-audit-service-via-events). Closes gap C43 (audit part).</Note>
+
+## Context
+
+[0047](/adr/0047-audit-service-via-events) (Proposed) routed audit through events without a tamper-evidence rule or a retention rule. The owner's audit answers AU1 to AU8 and SC8 (mem L644–653, L552, 2026-10-20) fix them.
+
+## Decision
+
+1. **What is audited (AU1).** Every action, every data change (a redacted diff through `@Auditable`), security events, and sensitive reads.
+2. **Envelope (AU2).** A rich envelope on each record.
+3. **Tamper evidence (AU3).** Storage is append-only. Each tenant has a hash chain. A KMS-signed checkpoint is written daily. S3 Object Lock holds the records. `stackra audit:verify` checks the chain.
+4. **Same transaction (AU4).** Evidence goes to the outbox in the same transaction as the change. Operator, break-glass and impersonation paths fail closed.
+5. **Reads.** `@AccessLogged` writes application-level access logs. pgaudit records direct database sessions in production. There is no CDC (change-data-capture) tool.
+6. **Retention (AU5 and SC8).** Thirteen months hot, in partitioned Postgres. Cold storage is S3 Parquet. Money events are kept seven years.
+7. **Tenant access (AU6).** A tenant can view and export its own audit log. A SIEM stream is a Pro entitlement tier.
+
+## Consequences
+
+- An audit gap is detectable, because a broken chain fails verification.
+- Audit is written with the change, so a change without its audit record cannot commit.
+
+## Enforcement
+
+planned — `stackra audit:verify` in CI against a sample tenant; the outbox test covers the same-transaction rule.
+
+## Open questions
+
+1. Volume budget and batching window for read audits, and whether a failed read audit blocks the read (register D-11). The owner decides.
+
+## Supersedes and sources
+
+Supersedes: [0047](/adr/0047-audit-service-via-events). Sources: owner audit answers AU1–AU8 (`stackra-decisions-2026-10-19.md` L644–653, 2026-10-20); SC8 (L552). Closes gap C43 (audit part).

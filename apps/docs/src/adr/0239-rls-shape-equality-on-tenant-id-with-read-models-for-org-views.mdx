@@ -1,0 +1,34 @@
+---
+title: "0239 — RLS shape: equality on tenant_id, with read models for organisation views"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Builds on [0014](/adr/0014-data-ownership-and-orm),
+  [0134](/adr/0134-data-invariants-classification-and-delete-lifecycle) and
+  [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region). Closes gap P0-4.
+</Note>
+
+## Context
+
+Each tenant owns its rows, and an organisation needs views across its children: consolidated billing, organisation reporting and parent operators. Row-level security could express the tree directly, but that puts tree logic in every policy and makes every query on a business table pay for it. The owner's answer (mem L931, 2026-10-20) keeps the policy simple.
+
+## Decision
+
+1. **Business tables.** Row-level security uses equality on `tenant_id` only. There is no tree logic in the policy.
+2. **Organisation views.** Consolidated billing, organisation reporting and parent views come from read models. Audited jobs and events build them, under an audited service role.
+3. **Operator grants.** A parent reads a child's rows only through an explicit, audited operator grant (ADR 0210). The bypass is one clause, named by an ADR (rule `tenancy`, point 5).
+4. **Scope path.** The IAM scope path (ADR 0208) stays a predicate inside one tenant. It is not part of the row-level security policy of a business table.
+
+## Consequences
+
+- A business table's policy is the same for every table, so the isolation test is one pattern.
+- An organisation's report is a read model, which can lag, and the lag is part of its contract.
+
+## Enforcement
+
+planned — the RLS catalogue audit: every table with `tenant_id` has enable, force and an equality policy (the rule `tenancy` and the constitution's tenancy page).
+
+## Supersedes and sources
+
+Supersedes: none. Builds on: [0014](/adr/0014-data-ownership-and-orm), [0134](/adr/0134-data-invariants-classification-and-delete-lifecycle), [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region). Sources: owner RLS answer (`stackra-decisions-2026-10-19.md` L931, 2026-10-20); gap analysis P0-4 (B-05).

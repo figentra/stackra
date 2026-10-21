@@ -3,6 +3,17 @@ title: "0126 — Member shapes and scaffold templates"
 description: "Accepted · 2026-10-20"
 ---
 
+<Note>
+  Amended by [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron): one app member builds
+  web, PWA and desktop targets.
+</Note>
+
+<Note>
+  Amended by [0234](/adr/0234-module-assets-and-storage): files shipped with a package live in
+  `assets/`, exported as `./assets/*`, not `resources/`. `resources/` is reserved for `@Resource`
+  declarations ([0164](/adr/0164-console-panels-are-resources-rendered-by-the-panel-package)).
+</Note>
+
 ## Context
 
 `pnpm new` still rendered shapes the owner has since replaced. Packages came in three archetypes from

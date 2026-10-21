@@ -1,0 +1,39 @@
+---
+title: "0191 — Email deliverability"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0035](/adr/0035-resend-email-with-spf-dkim-dmarc). The SPF, DKIM and DMARC steps of
+  0035 (decisions 1 to 3) carry forward.
+</Note>
+
+## Context
+
+[0035](/adr/0035-resend-email-with-spf-dkim-dmarc) (Proposed) chose Resend with the mail-authentication records. The owner's answer PP9 (mem L562, 2026-10-20) adds subdomains per environment, separate streams, a DMARC ramp, custom sending domains for tenants, and an SMTP relay on-prem.
+
+## Decision
+
+1. **Subdomains.** Email is sent from a subdomain per environment.
+2. **Streams.** Transactional and marketing mail use separate streams.
+3. **DMARC ramp.** DMARC policy ramps to `reject`.
+4. **Tenant sending domains.** Tenants can use their own sending domain. This is a Pro entitlement (ADR 0242).
+5. **On-prem.** An SMTP relay is used, behind the same mail driver.
+6. **Provider.** Resend sits behind the mail driver, so the provider can change.
+
+## Consequences
+
+- A marketing problem cannot damage transactional delivery, because the streams are separate.
+- A tenant sending domain is a plan feature, not a code path.
+
+## Enforcement
+
+planned — the DNS records are checked by the infrastructure stack (ADR 0171); the mail driver's contract test covers the SMTP relay.
+
+## Alternatives
+
+- One stream for all mail: rejected; a marketing complaint would affect password resets.
+
+## Supersedes and sources
+
+Supersedes: [0035](/adr/0035-resend-email-with-spf-dkim-dmarc). Sources: owner answer PP9 (`stackra-decisions-2026-10-19.md` L562, 2026-10-20). Closes gap C39.

@@ -1,0 +1,49 @@
+---
+title: "0170 — Deployment: what deploys where, and how a release is promoted"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>Supersedes [0030](/adr/0030-encore-cloud-on-owner-aws). Closes gap B28 (ECS).</Note>
+
+## Context
+
+[0030](/adr/0030-encore-cloud-on-owner-aws) (Proposed) placed deployments without the release path, the promotion rule or the rollback. The owner's deployment
+answers (mem L422–427, L357, L444–445, L451, 2026-10-20) settle what deploys where and how a release moves.
+
+## Decision
+
+1. **Scope (DP1).** Stackra deploys only its internal infrastructure. Reference apps run only in CI and in ephemeral stacks.
+2. **First deploy path (DP2, open).** A spike comes first (STA-136). If the Encore Cloud deploy path works, it is the deploy path. Otherwise the path is Docker plus ECS.
+3. **Figentra OS SaaS (DP3).** The OS SaaS runs on Encore Cloud, on our AWS, for v1. CI builds Docker images from day one.
+4. **What is promoted (DP4).** SaaS promotes the commit SHA. On-prem promotes the image digest.
+5. **Environments (DP5).** Local, preview, staging and production, in every tool.
+6. **Flow (DP6).** A merge to main deploys staging automatically. Production goes through `runway promote`, behind a GitHub Environment that the owner approves.
+7. **Previews (DP7 and DP8).** Stackra has no previews. Figentra OS gets previews with a 7-day TTL, and only synthetic data.
+8. **Rollback (DP14).** Rollback redeploys the last good release within 15 minutes. The owner triggers it.
+9. **Strategy (DP16).** Deploys go all at once, behind a health gate, with automatic rollback.
+10. **Records and gate (DP23 and DP24).** Deploy records go to the GitHub Deployments API, a Linear release and Slack. The production gate is a health endpoint that returns
+    the SHA, a Playwright smoke test and a 15-minute error watch.
+
+## Consequences
+
+- A release is identified by a SHA (SaaS) or a digest (on-prem), so a rollback has one target.
+- Production never deploys without the owner's approval in the environment.
+
+## Enforcement
+
+planned — the GitHub Environment protection for production, the health gate and the rollback job in `runbooks/deploys.mdx` (final pass). The DP2 spike result will be
+recorded as a new ADR, which replaces the open branch in decision 2.
+
+## Open questions
+
+1. DP2: whether the Encore Cloud deploy path works. The spike (STA-136) decides between the two branches of decision 2.
+
+## Alternatives
+
+- Preview environments for Stackra: rejected by DP7.
+- Automatic production deploys: rejected by DP6.
+
+## Supersedes and sources
+
+Supersedes: [0030](/adr/0030-encore-cloud-on-owner-aws). Sources: owner deployment answers (`stackra-decisions-2026-10-19.md` L357, L422–427, L444–445, L451, 2026-10-20);
+DP2 (L357). Closes gap B28.

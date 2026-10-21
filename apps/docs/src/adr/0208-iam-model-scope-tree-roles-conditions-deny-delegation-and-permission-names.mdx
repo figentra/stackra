@@ -1,0 +1,46 @@
+---
+title: "0208 — The IAM model: scope tree, roles, conditions and deny, delegation and permission names"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes decisions 4, 6 and 7 of [0087](/adr/0087-identity-and-iam-are-driver-packages),
+  together with
+  [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral). The
+  scope tree is free code, and its depth is a plan entitlement (ADR 0240). This corrects the
+  register's earlier "deep trees are Pro" line (C-04b).
+</Note>
+
+<Note>
+  The depth numbers in decision 5 are superseded by ADR 0240 and ADR 0242 (Starter 2, Pro 4,
+  Business 8, Enterprise unlimited; no Free plan). The body is unchanged.
+</Note>
+
+## Context
+
+IAM decides who may do what in which scope. The owner's IAM answers (mem L594–595, L618–628, L878, 2026-10-20) define the scope tree, roles, conditions, delegation, and access reviews. The
+scope-tree tier was first written as Pro and later changed to free code with plan-gated depth (L878, the later line wins).
+
+## Decision
+
+1. **Scope tree (A1).** A generic scope tree of platform, product, tenant, then levels declared by a product, on ltree. Grants inherit downward. The tree's shape is declared in code. **The tree is free code everywhere. Its depth is gated by the OS plan entitlement (ADR 0240).**
+2. **Roles (A2).** System roles are shipped by modules. Tenants add custom roles. A grant is a role, a principal, a scope and an optional expiry.
+3. **Conditions and deny (A3).** Structured conditions and explicit deny, with deny overriding allow, in the first release. No expressions.
+4. **Delegation (A4).** A principal can delegate only at or below its own scope, and only roles it holds. Separation-of-duties role pairs are supported.
+5. **Free and Pro lines (A7, as corrected).** Free: role-based access, custom roles, one level below the tenant, conditions and delegation. Paid entitlements: relationship-based access, separation-of-duties rules, unlimited depth, the edge decision point, and the OpenFGA and OPA adapters, which come later (Deferred in 0011, and 0227).
+6. **Permission names (A10).** Are those of ADR 0132.
+7. **Access reviews (A11).** Review campaigns run on a schedule.
+
+## Consequences
+
+- A tenant on the lowest plan still gets a usable hierarchy of one level, and it can grow by plan.
+- A deny always wins, so a broad allow cannot override a specific restriction.
+
+## Enforcement
+
+planned — the IAM test suite checks deny-overrides-allow and the delegation bound; the depth limit is checked against the plan entitlement.
+
+## Supersedes and sources
+
+Supersedes: decisions 4, 6 and 7 of [0087](/adr/0087-identity-and-iam-are-driver-packages) (with [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)).
+Sources: owner IAM answers A1–A11 (`stackra-decisions-2026-10-19.md` L594–595, L618–628, 2026-10-20); the scope-tree answer (L878, 2026-10-20 night). Contradiction C-04b.

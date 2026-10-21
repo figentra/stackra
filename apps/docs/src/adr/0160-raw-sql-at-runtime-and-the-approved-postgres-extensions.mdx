@@ -1,0 +1,39 @@
+---
+title: "0160 — Raw SQL at runtime and the approved Postgres extensions"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>Amends [0014](/adr/0014-data-ownership-and-orm), decision 6 (raw SQL and extensions).</Note>
+
+## Context
+
+[0014](/adr/0014-data-ownership-and-orm) chose MikroORM and did not say when raw SQL is allowed. The owner's answers P15 and DA11
+(mem L537, 2026-10-20) fix where raw SQL may appear, and which Postgres extensions are approved.
+
+## Decision
+
+1. **Where raw SQL may appear (P15).** Typed `raw()` is allowed only in a module service method of `@stackra/database`. Results are
+   typed with Zod. Queries are parameterised only. The row-level security session applies tenant scope. Each raw query carries a
+   `// raw-sql:` comment with the reason. Actions contain no SQL.
+2. **Approved extensions (DA11).** pgvector, pg_trgm, ltree, citext and pgcrypto are approved. PostGIS is not approved yet.
+
+## Consequences
+
+- SQL review is confined to service methods, so an action cannot hide a query.
+- A new extension is an ADR change, because each extension is a dependency of every environment.
+
+## Enforcement
+
+planned — the validator rejects `raw(` outside a module service method, and rejects a raw query with no `// raw-sql:` reason.
+
+## Alternatives
+
+- SQL in actions: rejected by P15.
+- PostGIS now: not approved (DA11); a future ADR would decide it.
+
+## Supersedes and sources
+
+Supersedes: none.
+
+Amends: [0014](/adr/0014-data-ownership-and-orm) decision 6. Sources: owner intent-map item P15 (accepted, `stackra-notes/owner-docs-intent-map.md`,
+Part 4), owner answer DA11 (`stackra-decisions-2026-10-19.md` L537, 2026-10-20).

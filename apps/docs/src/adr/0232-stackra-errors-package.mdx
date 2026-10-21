@@ -1,0 +1,61 @@
+---
+title: "0232 — @stackra/errors package"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Carries the error envelope of [0140](/adr/0140-error-envelope-and-error-kinds). Its category is
+  `foundation` ([0127](/adr/0127-package-categories-including-infrastructure)).
+</Note>
+
+## Context
+
+Errors were thrown as raw `Error` objects and strings, and each package shaped them differently. The envelope and the ten kinds are fixed in
+[0140](/adr/0140-error-envelope-and-error-kinds), and machine codes are snake_case ([0231](/adr/0231-naming-and-casing-standard)). The owner
+answered on 2026-10-20 that one package holds the base error and the platform hooks for each runtime.
+
+## Decision
+
+1. **Package and category.** `@stackra/errors` is a foundation package. It has these entries, and no others unless a later ADR adds one:
+   `core`, `react`, `native`, `node` and `testing`.
+2. **core: `StackraError`.** The base class carries:
+   - `category`: one of the ten categories of 0140 (the envelope's field name);
+   - `code`: a snake_case machine code;
+   - `retryable`;
+   - `cause`;
+   - `details`;
+   - `fieldErrors`;
+   - an i18n message key derived from the code (0162);
+   - `correlationId`;
+   - `serialize()` to the `ErrorEnvelope` of 0140, and `deserialize()` back.
+3. **Every error extends the base.** All package, app and service errors extend `StackraError`. Code never throws a raw `Error` or a
+   string. A lint rule enforces this, and the code-standards steward checks it in review.
+4. **react.** `ErrorBoundary`, the React Router 7 route `errorElement`, a `useErrorHandler` hook, and a mapping from category to user
+   experience. The mapping includes toasts, and an `entitlement_required` error shows the upgrade path (0139).
+5. **native.** A React Native boundary, the `ErrorUtils` global handler, and handlers for unhandled promise rejections.
+6. **node.** Process-level handlers for uncaught exceptions and unhandled rejections.
+7. **testing.** Helpers that assert a category, a code and an envelope, so tests check the contract and not the message text.
+8. **Reporter port.** Error tracking is a port with a Sentry driver. Before any report leaves the process, personal data is scrubbed
+   (classification of 0134 applies). Reports carry fingerprints. The port is wired through the logger ([0147](/adr/0147-logger-and-runtime-telemetry-defaults))
+   and the observability package ([0073](/adr/0073-observability-better-stack-sentry-encore)).
+
+## Consequences
+
+- A thrown error always has a category and a code, so the transport mappings of 0140 never meet an unknown error.
+- A client sees the same envelope whether the error came from a service, an app or the platform.
+- Adding an error means choosing one of the ten kinds. A new kind is an ADR change (0140).
+
+## Enforcement
+
+planned — a house lint rule forbids `throw new Error(` and `throw "..."` in packages, apps and services, and the code-standards steward reviews
+the rule's exceptions. The envelope round-trip is tested in `core`, and the category-to-UX mapping is tested in `react`.
+
+## Alternatives
+
+- Keep raw `Error` objects and strings: rejected; the envelope could not be generated from them.
+- A separate error package per runtime without a base: rejected; each runtime would shape errors differently.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0140](/adr/0140-error-envelope-and-error-kinds). Sources: owner answer on `@stackra/errors` (2026-10-20); the
+error kinds and snake_case rule of 0140 and 0231.

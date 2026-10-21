@@ -1,0 +1,39 @@
+---
+title: "0236 — Translation providers as connectors"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+Translation has two parts: machine translation, which produces a first draft of a string, and translation-management systems (TMS), which hold the
+strings that people translate. The owner's idea on 2026-10-20 (end of file, "Translation integrations"), with a recommendation from the assistant,
+puts both behind one port in `@stackra/i18n`. The owner's localization service in Figentra OS holds tenant translations.
+
+## Decision
+
+1. **`@stackra/i18n` exposes a translation-provider port.** The port is the only way the package reaches an outside translator.
+2. **Machine translation ships as connectors:** Google Translate, DeepL, AWS Translate, and the AI runtime of [0156](/adr/0156-ai-runtime-provider-drivers-memory-and-guardrails).
+3. **TMS sync ships as connectors:** Lokalise, Crowdin, Phrase, Localazy and Tolgee.
+4. **Connectors are delivered through the integrations service and marketplace**, not built into `@stackra/i18n`.
+5. **The Figentra OS localization service** owns tenant translations and TMS sync. This is an OS item, not a Stackra package.
+6. **Keys do not change.** A connector moves catalogues in and out of the registry. The key forms are those of ADR 0231, for example `billing::invoice.refund_confirm`.
+
+## Consequences
+
+- A new translator is a connector, so `@stackra/i18n` does not grow a vendor SDK.
+- Catalogues from a TMS return to the same `lang/` files that the assets rule defines (ADR 0234), so the source of truth stays in the repository.
+
+## Enforcement
+
+planned — the boundaries rule bans vendor translation SDKs in `@stackra/i18n`, and the port has a conformance test for each connector.
+
+## Alternatives
+
+- Vendor SDKs inside `@stackra/i18n`: rejected by decision 1 and by the no-vendor-SDK rule of packages (0147).
+- Tenant translations stored in the package: rejected; tenant translations belong to the OS localization service.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on: [0147](/adr/0147-logger-and-runtime-telemetry-defaults) (no vendor SDKs in packages), [0234](/adr/0234-module-assets-and-storage) (`lang/`).
+Sources: the owner's idea and the assistant's recommendation (`stackra-decisions-2026-10-19.md`, end of file, "Translation integrations", 2026-10-20);
+the owner's acceptance of the recommendation (2026-10-20).

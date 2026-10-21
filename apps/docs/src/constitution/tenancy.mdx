@@ -1,6 +1,6 @@
 ---
 title: "Tenancy"
-description: "Two-layer tenant isolation, where the tenant context comes from, the isolation tests every tenant-owned table needs, and the rules for the Pro scope tree."
+description: "Two-layer tenant isolation, where the tenant context comes from, the isolation tests every tenant-owned table needs, and the rules for the scope tree."
 icon: "layers"
 ---
 
@@ -23,9 +23,9 @@ icon: "layers"
 
 Hand-written RLS is not allowed. The scoped-table pattern emits the columns, indexes and policy. The mechanism is decided in [ADR 0014](/adr/0014-data-ownership-and-orm), not here. Migrations that backfill tenant tables use a dedicated bypass clause in the policy. Decide it in the migration template, not on the first backfill.
 
-## Scope tree (Pro)
+## Scope tree (free code)
 
-The scope tree is a Pro driver, `@stackra-pro/scope`; free tenancy has no scope dependency ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope), owner decisions S2, S3 and S12). When a product installs it, a tenant's data is organised in a tree of scopes (for example organisation, branch, team), each with an `ltree` path, and these rules bind. `withScope` also appends the scope-path predicate from the principal's granted paths.
+The scope tree is free code in `@stackra/iam` and `@stackra/tenancy`, with no `@stackra-pro` package ([0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan)). Its depth is a plan entitlement; the numbers are in ADR 0242. When a product uses the tree, a tenant's data is organised in a tree of scopes (for example organisation, branch, team), each with an `ltree` path, and these rules bind. `withScope` also appends the scope-path predicate from the principal's granted paths.
 
 | Table kind        | Columns                                                                |
 | ----------------- | ---------------------------------------------------------------------- |
@@ -59,3 +59,4 @@ Every service with tenant-owned tables ships an isolation test that proves:
 ## History
 
 - 2026-10-20, [0125](/adr/0125-constitution-amended-to-match-accepted-adrs): the scope tree moved out of the base law into a Pro section ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope), owner decisions S2, S3, S12).
+- 2026-10-20, [0229](/adr/0229-constitution-amended-for-the-2026-10-20-decisions): the tenant tree and IAM scope re-enter the base law ([0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names), [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region)); deep trees are a plan entitlement ([0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan)).

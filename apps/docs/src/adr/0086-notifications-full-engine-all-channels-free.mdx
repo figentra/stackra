@@ -3,6 +3,12 @@ title: "0086 — @stackra/notifications is a full engine, with every channel fre
 description: "Proposed · 2026-10-19"
 ---
 
+<Note>
+  Amended by
+  [0223](/adr/0223-notifications-channels-cascading-templates-manual-sends-and-preferences):
+  channels, cascading templates, manual sends and preferences.
+</Note>
+
 ## Context
 
 The Figentra OS notifications package is a stub. The owner wants a full enterprise package from day one, not a thin channel wrapper. The Pro list first put the SMS, WhatsApp and push drivers and the template editor in Pro. The owner then moved every channel to free and kept only operator tooling in Pro ([0077](/adr/0077-open-core-free-and-pro-lists)). The detailed design is a spec-kit spec, `specs/001-notifications/spec.md`, drafted separately ([PR #14](https://github.com/figentra/stackra/pull/14)). This page records the scope only.

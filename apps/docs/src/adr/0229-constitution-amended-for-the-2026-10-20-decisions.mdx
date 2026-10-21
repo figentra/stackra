@@ -1,0 +1,49 @@
+---
+title: "0229 — The constitution amended for the 2026-10-20 decisions"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Builds on [0125](/adr/0125-constitution-amended-to-match-accepted-adrs), which amended the
+  constitution to match the ADRs accepted at that time. This record closes its three open items: the
+  auth flag, the audit step and the secret sync.
+</Note>
+
+## Context
+
+The constitution is the law. The owner's answers of 2026-10-20 and the ADRs of waves 1 to 3 changed several laws after
+0125 was written. The law pages still stated the old rule in places, so a reader of the law would not see the new one.
+
+## Decision
+
+1. **Law pages amended.**
+   - **Tenancy.** The tenant tree and IAM scope re-enter the base law ([0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names),
+     [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region)). Deep trees are a plan entitlement ([0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan)).
+   - **Security.** Two laws are added. SEC8 names ZITADEL as the one identity provider ([0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)),
+     step-up for L3 and L4 actions ([0207](/adr/0207-authentication-assurance-and-machine-identities)), and break-glass operator access ([0188](/adr/0188-operator-access-and-the-encryption-key-hierarchy)).
+     SEC9 fixes the pipeline order ([0138](/adr/0138-pipeline-order-is-fixed)) and audits every action ([0136](/adr/0136-action-runtime-contract), [0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention)).
+   - **HTTP and events.** Event names carry the module-key prefix, `<module-key>.<aggregate>.<verb>.v<n>` ([0141](/adr/0141-integration-event-names-and-envelope)). The auth flag comes from the action's
+     `auth` option and its API area ([0082](/adr/0082-public-ids-and-api-areas)), enforced at the gateway ([0237](/adr/0237-generated-api-gateway-in-four-layers)). PUT is an idempotent transition. Errors follow the envelope in [0140](/adr/0140-error-envelope-and-error-kinds).
+   - **Secrets.** Production secrets come from Infisical, and runway syncs them into the runtime store ([0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets)).
+     This overrides decision 8 of [0009](/adr/0009-secrets-two-mechanisms), which recorded Secret Sync as an alternative not adopted.
+   - **Delegation.** Model policy follows [0193](/adr/0193-agents-and-model-policy). The economy, standard and frontier tiers are replaced.
+   - **Boundaries.** Tokens and typed config are `define*` values, the one carve-out ([0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned)).
+2. **Projected copies regenerated.** `.specify/memory/constitution.md` and `AGENTS.md` are regenerated with `pnpm agents:sync`, in the same change.
+3. **History entries.** Each amended law page has a History entry that names this record.
+
+## Consequences
+
+- A reader of the law sees the 2026-10-20 rule, not the older one. Each law names the ADR it follows.
+- The security and HTTP laws now carry rules that are planned, not yet checked. Their enforcement lines say so.
+
+## Enforcement
+
+planned — the projection check in `pnpm agents:sync --check` fails when the constitution projection or `AGENTS.md` is hand-edited.
+
+## Alternatives
+
+- Leave the law as it stands and let the ADRs win on conflict. Rejected, because the constitution is the document a new contributor reads first.
+
+## Supersedes and sources
+
+Supersedes: none. Completes: [0125](/adr/0125-constitution-amended-to-match-accepted-adrs) (its open items). Sources: the wave 4 entry for 0229 in the decision register (B20, SEC1 and the auth flag, SEC3); the owner answers of 2026-10-20 referenced in each ADR above.

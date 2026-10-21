@@ -1,0 +1,41 @@
+---
+title: "0256 — Client storage: one @stackra/storage package with named stores and per-platform drivers"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Restates [0011](/adr/0011-rejected-and-deferred-technologies): the sync engine stays Deferred with
+  its triggers. Restates [0014](/adr/0014-data-ownership-and-orm): MikroORM runs on the server only.
+</Note>
+
+## Context
+
+Clients need local storage for preferences, sessions, caches, the offline queue, secrets and files. An earlier plan proposed a separate `@stackra/local-store` package. The owner decided on 2026-10-20 night ("Client storage FINAL") that one package covers all of it, with SQLite read models as one of its entries.
+
+## Decision
+
+1. **One package.** `@stackra/storage` is the only client storage package. There is no `@stackra/local-store`.
+2. **Injected service.** A `Storage` service is injected, with named stores: `prefs`, `session`, `cache`, `outbox` (the offline queue), `secrets` and `files`.
+3. **Drivers per platform.** Web: `local`, `session`, `indexeddb`, `opfs` and `webcrypto`. Native: `mmkv`, `sqlite`, `secure-store` and `expo-fs`. Desktop: `safe-storage` and `fs`.
+4. **Behaviour.** Optional encryption and a time-to-live per store. Values are typed with Zod.
+5. **SQL entry.** The Phase 2 SQLite read models are the `./sql` entry of `@stackra/storage`.
+6. **No ORM on clients.** MikroORM and any other ORM never run on a client (ADR 0014 applies to the server).
+7. **Sync engine.** Still Deferred (ADR 0011), with the revival triggers of the plan.
+
+## Consequences
+
+- One API covers every client store, so an agent learns one storage surface.
+- Read models on a client are disposable and regenerated, never the source of truth.
+
+## Enforcement
+
+planned — the validator rejects an ORM import in a client app; each driver has a contract test against the `Storage` interface.
+
+## Owner defaults recorded here
+
+- **Web offline encryption.** The web offline store is encrypted with a non-extractable WebCrypto key: the page can use the key to encrypt and decrypt, but cannot read its raw bytes.
+
+## Supersedes and sources
+
+Supersedes: none (replaces the earlier draft `@stackra/local-store`, which is not written). Restates: [0011](/adr/0011-rejected-and-deferred-technologies), [0014](/adr/0014-data-ownership-and-orm).
+Sources: owner decision "Client storage FINAL" (`stackra-decisions-2026-10-19.md` L957, 2026-10-20 night); plan `stackra-notes/desktop-pwa-offline-plan.md` sections 4 and 8.

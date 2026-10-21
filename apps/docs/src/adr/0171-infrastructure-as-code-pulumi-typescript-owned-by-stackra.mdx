@@ -1,0 +1,47 @@
+---
+title: "0171 — Infrastructure as code: Pulumi TypeScript packages owned by Stackra"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends and accepts [0026](/adr/0026-turborepo-remote-cache-on-r2) (the remote cache is built now,
+  with signed artifacts). Closes gap C50 in part.
+</Note>
+
+## Context
+
+The infrastructure was written in Terraform. The owner decided on 2026-10-20 (DP9 and the infrastructure answers, mem L428–442 and L470–473) to rewrite it in Pulumi
+TypeScript, keep only what is needed, and let Stackra own the infrastructure packages.
+
+## Decision
+
+1. **Rewrite (DP9).** The `figentra/platform` Terraform is rewritten in Pulumi TypeScript, keeping only what is needed. The scope groups are listed in memory L428–432.
+2. **Packages (infrastructure category).** `@stackra/infra-aws`, `@stackra/infra-cloudflare`, `@stackra/infra-github`, `@stackra/infra-observability`,
+   `@stackra/infra-identity` and `@stackra/infra-mobile`, in the infrastructure category (ADR 0127).
+3. **Generator.** The `stackra infra` CLI generates and previews a Pulumi program from `app-manifest.json`.
+4. **Stacks.** Real stacks live in a small private repository. State is in S3, encrypted with KMS.
+5. **Licensing.** Cloudflare, GitHub, observability, identity and the AWS foundation are free. The own-cloud runtime stack (VPC, ECS, RDS, cache and queues) is
+   `@stackra-pro`.
+6. **Core stack.** One core Pulumi stack in the shared and tooling account holds the zones and DNS, the R2 Turbo cache, the GitHub rulesets, Sentry and Better Stack, the agent
+   box, and the Infisical identities. Infisical stays on Infisical Cloud EU.
+7. **Remote cache (CI4).** The R2 Worker remote cache is built now with signed artifacts. Forks get no access.
+8. **Rulesets (CI14).** Rulesets are applied through the Pulumi GitHub provider (contradiction C-26).
+
+## Consequences
+
+- Infrastructure is code in the same language as the product, reviewed in the same way.
+- The customer's own cloud is a Pro stack, so the free packages do not carry a runtime stack.
+
+## Enforcement
+
+planned — `stackra infra` previews are reviewed in CI; state encryption is a bucket policy checked by the infrastructure stack.
+
+## Alternatives
+
+- Keep Terraform: superseded by DP9.
+- A hosted infrastructure product: not chosen; the infrastructure packages are ours.
+
+## Supersedes and sources
+
+Supersedes: none. Amends and accepts: [0026](/adr/0026-turborepo-remote-cache-on-r2). Sources: owner infrastructure answers DP9, CI4 and CI14 (`stackra-decisions-2026-10-19.md`
+L409, L428–442, L470–473, 2026-10-20); contradiction C-26.

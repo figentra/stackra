@@ -1,0 +1,33 @@
+---
+title: "0248 — Delivery scope: build everything, SaaS first, on-prem and air-gapped kept green"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Relates to [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) (what
+  deploys where) and [0179](/adr/0179-on-prem-and-air-gapped-delivery) (on-prem delivery).
+</Note>
+
+## Context
+
+The owner wants everything built, with SaaS first. On-prem and air-gapped builds must stay buildable and tested, but the owner does not want them sold until they are solid. The owner's delivery answer (mem L935, 2026-10-20) fixes that order.
+
+## Decision
+
+1. **Build.** Everything in the register is built.
+2. **SaaS first.** The SaaS path is finished and sold first.
+3. **On-prem and air-gapped.** Builds stay green in CI, so they never break silently. They are not sold, and not described as finished, until they are solid.
+4. **Sales.** An on-prem offer needs the owner's decision after the on-prem gates (ADR 0179) pass in CI.
+
+## Consequences
+
+- On-prem work is never lost to a broken build, but it is not on the revenue path.
+- The owner decides when on-prem is sold, so the sales promise is not made by a build status.
+
+## Enforcement
+
+planned — the on-prem CI matrix runs on every release, and a red on-prem build blocks the release tag.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner delivery answer (`stackra-decisions-2026-10-19.md` L935, 2026-10-20).

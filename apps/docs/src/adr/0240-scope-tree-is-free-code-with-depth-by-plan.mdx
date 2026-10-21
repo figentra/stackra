@@ -1,0 +1,36 @@
+---
+title: "0240 — The scope tree is free code; its depth is a plan entitlement"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Corrects the Pro statements about the scope tree in
+  [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names) and
+  the tenancy rule. Resolves contradiction C-04b and closes gap B-06 (P0-5). Supersedes
+  [0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope) for the scope tree.
+</Note>
+
+## Context
+
+The scope tree was first described as a Pro package, `@stackra-pro/scope`. The owner's later answer (mem L878, 2026-10-20 night) changed it: the tree is free code everywhere, and plans unlock depth (the numbers are in ADR 0242). Settings and IAM share the tree. The rule `tenancy` and the constitution's tenancy page still described the Pro package, which this ADR corrects.
+
+## Decision
+
+1. **Free code.** The scope tree is free code in `@stackra/iam` and `@stackra/tenancy`. There is no `@stackra-pro/scope` package.
+2. **Depth is a plan entitlement.** Depth is a plan entitlement; the numbers are in ADR 0242 (Starter 2, Pro 4, Business 8, Enterprise unlimited, with no Free plan). The plan entitlement is the gate (ADR 0215).
+3. **Shared tree.** Settings (ADR 0213) and IAM (ADR 0208) use the same tree.
+4. **Rules updated.** `.agents/rules/tenancy.md` (point 3) and the constitution's tenancy page (the "Scope tree" section) describe free code with depth by plan, in the same change as this ADR.
+5. **The rest of the shape stays.** Nodes use `scope_id` as their primary key. Tables that belong to a node carry `scope_id` and a denormalised `scope_path` with a GiST index (ADR 0239 keeps this out of the business-table policy).
+
+## Consequences
+
+- A product gets the tree without a separate package, and its depth is sold as a plan.
+- A deep tree costs the same to store as a shallow one, so the plan gate is the only control on depth.
+
+## Enforcement
+
+planned — the depth check against the plan entitlement at tree creation; the validator rejects a `@stackra-pro/scope` dependency.
+
+## Supersedes and sources
+
+Supersedes: the scope-tree part of [0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope) and the Pro statements of [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names). Sources: owner scope-tree answer (`stackra-decisions-2026-10-19.md` L878, 2026-10-20 night); gap analysis P0-5 (B-06); contradiction C-04b.

@@ -1,0 +1,34 @@
+---
+title: "0250 — @stackra/platform: capability ports, drivers, capability gate and the client-manifest capability section"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Extends [0138](/adr/0138-pipeline-order-is-fixed) and
+  [0109](/adr/0109-registry-manifests-published-by-ci).
+</Note>
+
+## Context
+
+Each client target offers different device and shell capabilities: a browser, a desktop shell and a native app do not expose the same APIs. The desktop and PWA plan (section 2) puts one platform package in the experience category, with ports for each capability and one driver per target.
+
+## Decision
+
+1. **Package.** `@stackra/platform` (experience category) owns the shell and the capability ports. The peripheral and storage packages are separate (ADRs 0253 and 0256).
+2. **Ports and drivers.** Each capability is a port. Drivers exist for web, Electron and Expo. A driver is chosen by the target at build time.
+3. **Capability gate.** A capability a target does not offer returns a typed refusal in the error envelope (ADR 0140, `region_unsupported`-style category `unavailable`), not a crash.
+4. **Client manifest.** The client manifest gains a capability section, written by gen, listing the capabilities each target requires (ADR 0109).
+
+## Consequences
+
+- A feature that needs a capability declares it, and the build fails for a target that cannot provide it.
+- Web is the baseline. Native and desktop drivers add capabilities; they never remove one.
+
+## Enforcement
+
+planned — gen checks each `@Action` against the capability map of its target; the validator rejects a driver with a missing port method.
+
+## Supersedes and sources
+
+Supersedes: none. Extends: [0138](/adr/0138-pipeline-order-is-fixed), [0109](/adr/0109-registry-manifests-published-by-ci). Sources: desktop and PWA owner decision (`stackra-decisions-2026-10-19.md` L954, 2026-10-20 night);
+plan `stackra-notes/desktop-pwa-offline-plan.md` section 2.

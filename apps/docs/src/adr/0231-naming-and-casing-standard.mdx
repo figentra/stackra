@@ -1,0 +1,81 @@
+---
+title: "0231 — Naming and casing standard"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Restates the forms already decided in [0132](/adr/0132-permissions-catalogue-and-policy-providers)
+  (permission keys), [0141](/adr/0141-integration-event-names-and-envelope) (event names),
+  [0137](/adr/0137-declared-action-options-and-refusal-codes) (machine codes) and
+  [0135](/adr/0135-public-id-format) (public ids), and builds on
+  [0006](/adr/0006-naming-exports-and-imports) and
+  [0128](/adr/0128-code-conventions-enums-classes-components-and-kind-folders). The always-on rule
+  is `.agents/rules/naming-and-casing.md`.
+</Note>
+
+## Context
+
+Casing was decided piece by piece: files in ADR 0006, code shapes in 0128, permission keys in 0132, event names in 0141, machine codes in 0137,
+public ids in 0135. On 2026-10-20 (night) the owner agreed one convention table, recorded in the decision file as "Naming convention FINAL".
+This ADR is that table.
+
+## Decision
+
+1. **Code style (TypeScript).** Whole words; acronyms are cased as words (`userId`, `ApiClient`, `loadHttpUrl`). No `I` prefix on
+   interfaces. Abbreviations are limited to an allow-list: `id`, `url`, `api`, `db`, `i18n`, `ui`. Booleans read `is`, `has` or `can`.
+   Event handlers are `on` or `handle`. Hooks start with `use`. Module-level constants are SCREAMING_SNAKE.
+2. **The table.**
+
+| Thing                                                                 | Convention                                                              | Example                                                                                        |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Files                                                                 | kebab-case, with a kind suffix (ADR 0006)                               | `token.class.ts`, `class-provider.interface.ts`                                                |
+| Packages                                                              | `@stackra/<kebab>`; services `@figentra/service-<kebab>`                | `@stackra/vite-plugin`, `@figentra/service-identity`                                           |
+| Public ids                                                            | `<prefix>_<26 characters>` (ADR 0135)                                   | `user_01jh4q...`                                                                               |
+| Action keys                                                           | `<module>.<resource>.<verb>@<version>`                                  | `billing.invoice.refund@1`                                                                     |
+| Permissions                                                           | `<module>.<resource>.<action>` (ADR 0132)                               | `billing.invoice.refund`                                                                       |
+| Events                                                                | `<module-key>.<aggregate>.<verb>.v<n>` (ADR 0141)                       | `billing.invoice.paid.v1`                                                                      |
+| Machine codes (categories, error codes, refusal codes, event reasons) | snake_case (ADR 0137, 0140)                                             | `not_found`, `entitlement_required`, `step_up_required`                                        |
+| URL paths                                                             | kebab-case, plural resource names                                       | `/invoices/:invoiceId/refunds`                                                                 |
+| JSON keys and query parameters                                        | camelCase                                                               | `{ "invoiceId": "..." }`                                                                       |
+| Database tables                                                       | snake_case, plural                                                      | `invoice_lines`                                                                                |
+| Database indexes and foreign keys                                     | `idx_` and `fk_` prefixes                                               | `idx_invoice_lines_invoice_id`, `fk_invoice_lines_invoice`                                     |
+| Environment variables                                                 | SCREAMING_SNAKE, with the prefixes of decision 4                        | `STACKRA_PAYMENTS__TIMEOUT_MS`                                                                 |
+| Branches                                                              | `figentra/sta-<n>-<slug>`                                               | `figentra/sta-176-adr-wave-1-part-5`                                                           |
+| Design tokens                                                         | CSS custom property form and dotted form                                | `--color-ink-900` and `color.ink.900`                                                          |
+| Asset keys, i18n keys, template keys, stub keys (namespace lookups)   | `<module>::<path>` (decision 3)                                         | `flags::public/images/eg.svg`, `billing::invoice.refund_confirm`, `billing::mail/invoice-paid` |
+| DI token constants                                                    | SCREAMING_SNAKE constant, with a `<module>.<TypeName>` key (decision 5) | `INVOICE_REPOSITORY`                                                                           |
+
+3. **Namespace lookups use `::`.** Content owned by a module is looked up with `<module>::<path>`: i18n keys, assets (ADR 0234), templates
+   and stubs. Wire identifiers keep dots: permissions, events, action keys and DI token keys.
+4. **Environment prefixes.**
+   - Public values (never secrets; a lint and a validator check enforce this): `VITE_`, `EXPO_PUBLIC_`, `RENDERER_VITE_`.
+   - Server values: `STACKRA_`, `FIGENTRA_`, `MAIN_VITE_`.
+   - Secrets are named `<PROVIDER>_<PURPOSE>`, for example `STRIPE_SECRET_KEY`.
+   - Reserved, owned by tools: `ENCORE_`, `TURBO_`, `NODE_`, `CI`, `GITHUB_`, `INFISICAL_`, `EAS_`.
+5. **DI tokens.** A token is a constant made with `defineToken`, with a dotted key of the form `<module>.<TypeName>`:
+   `export const INVOICE_REPOSITORY = defineToken<InvoiceRepository>("billing.InvoiceRepository")`. Code injects the constant. String
+   injection is banned. A concrete `@Injectable` class is its own token.
+
+## Consequences
+
+- One table answers a naming question. The always-on rule carries the same table, so agents see it in every session.
+- The secret example in `.agents/rules/secrets.md` now uses `STRIPE_SECRET_KEY`, which matches decision 4.
+- Text elsewhere that uses another form is stale and is fixed when it is next touched.
+
+## Enforcement
+
+planned — the oxlint `unicorn/filename-case` rule (kebab-case files), the house lint rules of [0129](/adr/0129-house-lint-plugin-and-coding-standard)
+for code style and DI tokens, the public-prefix lint for `VITE_`, `EXPO_PUBLIC_` and `RENDERER_VITE_`, and the validator checks for machine codes,
+event names, permission keys and namespace lookups.
+
+## Alternatives
+
+- Acronyms in full caps (`userID`, `loadHTTPURL`): rejected; acronyms are cased as words.
+- Dots for every identifier, including asset and i18n keys: rejected; `::` separates the module from its content.
+
+## Supersedes and sources
+
+Supersedes: none. Restates the forms of [0132](/adr/0132-permissions-catalogue-and-policy-providers), [0141](/adr/0141-integration-event-names-and-envelope),
+[0137](/adr/0137-declared-action-options-and-refusal-codes) and [0135](/adr/0135-public-id-format). Sources: the owner's "Naming convention FINAL"
+(`stackra-decisions-2026-10-19.md`, end of file, 2026-10-20); A10 (L627); C27 and the module-key confirmation (L855, L930); ADR 0006; ADR 0128; the
+code-conventions proposal (`stackra-notes/code-conventions-proposal.md`, section 2).

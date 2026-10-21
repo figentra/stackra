@@ -1,0 +1,48 @@
+---
+title: "0177 — Package distribution and release lines: npmjs for free, Keygen Cloud for Pro"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0025](/adr/0025-packages-publish-to-private-registry). The `npm.figentra.com` registry
+  is kept until the migration in decision 3 is done.
+</Note>
+
+## Context
+
+[0025](/adr/0025-packages-publish-to-private-registry) (Accepted) published packages to a private registry. The owner's registry answers PK1–PK7 (mem L455–473, L396, 2026-10-20) moved the free packages to
+npmjs with provenance and the Pro packages to Keygen Cloud. Railway is no longer used (ops L31), and the Railway registry trial was dropped.
+
+## Decision
+
+1. **Free packages (PK1).** `@stackra/*` publishes openly to npmjs with provenance, from CI with the bot token through OIDC. The changesets `access` setting is `public`.
+2. **Pro packages (PK2 and PK3).** Keygen Cloud serves the `@stackra-pro` packages and images. The Cloudflare Worker `npm-registry` is retired after `@figentra/cli` and vellum have migrated. `npm.figentra.com` stays up until then.
+3. **Migration.** Delete `npm.figentra.com` only after Academorix and the release job have switched, and after the tarballs have migrated.
+4. **Release checks (PK4).** A full verify, `publint`, `attw`, and a packed-tarball smoke test in Node, Vite and Metro. A changeset is required. The owner merges the version pull request.
+5. **Versions (PK5 and PK7).** One fixed version for all `@stackra/*`. Pro follows the same major and minor, and ships within a week.
+6. **Deprecation (PK6).** A deprecation lasts one minor before 1.0 and one major after. LTS starts at the first on-prem contract.
+7. **Canaries (DX7).** Canary snapshot releases are published.
+8. **Carried forward from 0025.** Decision 3 (`dist` and the `@stackra/source` condition) and decision 4 stay.
+
+## Consequences
+
+- A free package is installable from npmjs with no account, and the provenance shows where it was built.
+- Pro packages need a Keygen token, so their distribution follows the licence (ADR 0178).
+
+## Enforcement
+
+planned — the release workflow publishes with provenance, and `publint` and `attw` run in the release job.
+
+## Open questions
+
+1. The day `npm.figentra.com` is switched off. The owner decides after the migration in decision 3.
+
+## Alternatives
+
+- One private registry for everything: superseded; free packages go to npmjs.
+- Verdaccio on Railway: dropped; Railway is gone (ops L31).
+
+## Supersedes and sources
+
+Supersedes: [0025](/adr/0025-packages-publish-to-private-registry). Sources: owner answers PK1–PK7, DX7 (`stackra-decisions-2026-10-19.md` L455–473, L396, 2026-10-20); ops L31.
+Contradiction C-08 is closed by this ADR. Contradiction C-37 is closed by decision 1.

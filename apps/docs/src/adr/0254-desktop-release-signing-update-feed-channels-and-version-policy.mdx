@@ -1,0 +1,42 @@
+---
+title: "0254 — Desktop release: signing, notarisation, the R2 update feed, channels and version policy"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Fulfils decision 4 of [0058](/adr/0058-desktop-is-electron) (the MR7–9 pipeline) as refined by
+  [0181](/adr/0181-the-desktop-app-pipeline).
+</Note>
+
+## Context
+
+The desktop pipeline needs signing, an update feed and a version policy. The owner accepted the defaults on 2026-10-20 night: build the pipeline unsigned, and turn signing on only when a desktop deliverable is named; AppImage only, no app stores on day one; electron-updater on R2 with beta and stable channels; Electron 44.9.1 now, with major upgrades within four weeks.
+
+## Decision
+
+1. **Unsigned first.** The pipeline builds unsigned. Signing (macOS notarisation and Azure Trusted Signing) turns on when a desktop deliverable is named.
+2. **Distribution.** AppImage only. No app stores on day one.
+3. **Update feed.** electron-updater reads an R2 feed with beta and stable channels.
+4. **Version.** Electron 44.9.1 now. A major Electron version is adopted within four weeks of its release.
+5. **Rollout.** Staged rollout from 20% to 100% (ADR 0181).
+
+## Consequences
+
+- A desktop build is testable before a certificate exists, and signing is a switch.
+- A customer on AppImage gets updates from the R2 feed without a store.
+
+## Enforcement
+
+planned — the release job builds the AppImage on each release tag; the update feed is checked by the channel test; the Electron version is pinned in the lock file and checked by `pnpm validate`.
+
+## Open questions
+
+1. The day a desktop deliverable is named, which triggers signing. The owner names it.
+
+## Owner defaults recorded here
+
+- **Tray keep-alive.** Notifications arrive while the app runs. A tray keep-alive is opt-in: the user turns it on, and it is off by default.
+
+## Supersedes and sources
+
+Supersedes: none. Fulfils decision 4 of [0058](/adr/0058-desktop-is-electron). Refines: [0181](/adr/0181-the-desktop-app-pipeline). Sources: desktop and PWA owner decision, defaults (`stackra-decisions-2026-10-19.md` L954, 2026-10-20 night).
