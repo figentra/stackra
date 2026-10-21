@@ -86,3 +86,91 @@ test("git runs as the bot with a token-free, non-persisted credential setup", ()
   );
   assert.ok(!args.some((arg) => /ghs_|x-access-token/.test(arg)));
 });
+
+test("STA-216: aliases, file-sourced GraphQL and encoded merge paths are refused", async () => {
+  const { unsafeArgs } = await import("../bot-gh.mjs");
+  for (const [tool, args] of [
+    ["git", ["-c", "alias.x=credential", "x", "fill"]],
+    ["git", ["-calias.p=push", "p"]],
+    ["git", ["-c", "include.path=/tmp/x", "status"]],
+    ["git", ["--config-env=alias.x=V", "x"]],
+    ["gh", ["alias", "set", "x", "pr merge"]],
+    ["gh", ["api", "graphql", "-F", "query=@q.graphql"]],
+    ["gh", ["api", "-X", "POST", "graphql", "--input", "q.json"]],
+    ["gh", ["api", "graphql", "-f", "query=@q.graphql"]],
+  ])
+    assert.ok(unsafeArgs(tool, args), `${tool} ${args.join(" ")}`);
+  for (const [tool, args] of [
+    ["git", ["-c", "user.name=x", "status"]],
+    ["gh", ["api", "graphql", "-f", "query=query { viewer { login } }"]],
+    ["gh", ["pr", "create", "--body", "alias set"]],
+  ])
+    assert.equal(unsafeArgs(tool, args), null, `${tool} ${args.join(" ")}`);
+  for (const path of [
+    "repos/x/y/pulls/12//merge",
+    "repos/x/y/pulls%2F12%2Fmerge",
+    "repos/x/y/pulls/12%2fmerge",
+  ])
+    assert.equal(mergesPr(["api", "-X", "PUT", path]), true, path);
+});
+
+test("STA-216 review: git config writes, risky -c keys and normalised merge paths", async () => {
+  const { unsafeArgs } = await import("../bot-gh.mjs");
+  for (const args of [
+    ["config", "--global", "alias.x", "credential fill"],
+    ["config", "--file", "f", "includeIf.gitdir:/.path", "x"],
+    ["-c", "core.fsmonitor=x", "status"],
+    ["-c", "core.sshCommand=x", "fetch"],
+    ["-c", "core.pager=x", "log"],
+    ["-c", "core.editor=x", "commit"],
+    ["-c", "credential.helper=x", "status"],
+    ["-ccore.pager=x", "log"],
+  ])
+    assert.ok(unsafeArgs("git", args), args.join(" "));
+  for (const args of [
+    ["config", "--get", "user.name"],
+    ["-c", "user.name=x", "status"],
+  ])
+    assert.equal(unsafeArgs("git", args), null, args.join(" "));
+  for (const path of [
+    "repos/x/y/pulls/12/%6derge",
+    "repos/x/y/pulls/12/./merge",
+    "repos/x/y/pulls/4/../5/merge",
+    "repos/x/y/pulls/12/%252e/merge",
+    "repos/x/y/pulls//12///merge",
+  ])
+    assert.equal(mergesPr(["api", "-X", "PUT", path]), true, path);
+  assert.equal(mergesPr(["api", "repos/x/y/pulls/12/files"]), false);
+});
+
+test("STA-216 re-review: git config is read-only, -c is an allow-list", async () => {
+  const { unsafeArgs } = await import("../bot-gh.mjs");
+  for (const args of [
+    ["config", "alias.p", "x", "--get"],
+    ["config", "user.name", "x"],
+    ["config", "-e"],
+    ["config", "--get", "x", "--replace-all"],
+    ["config", "set", "alias.x", "y"],
+    ["config", "--file", "f", "alias.x", "y"],
+    ["config"],
+    ["-c", "remote.origin.push=x", "status"],
+    ["-c", "url.x.insteadOf=y", "status"],
+    ["-c", "core.askPass=x", "status"],
+    ["-c", "diff.external=x", "diff"],
+    ["-c", "gpg.program=x", "status"],
+    ["-c", "pager.log=x", "log"],
+  ])
+    assert.ok(unsafeArgs("git", args), args.join(" "));
+  for (const args of [
+    ["config", "--get-regexp", "remote"],
+    ["config", "--show-origin", "--list"],
+  ])
+    assert.equal(unsafeArgs("git", args), null, args.join(" "));
+});
+
+test("STA-216: the -c allow-list is exact keys", async () => {
+  const { unsafeArgs } = await import("../bot-gh.mjs");
+  for (const key of ["color.pager=sh", "status.displayCommentPrefix=x", "advice.foo=x"])
+    assert.ok(unsafeArgs("git", ["-c", key, "status"]), key);
+  assert.equal(unsafeArgs("git", ["-c", "color.ui=never", "status"]), null);
+});

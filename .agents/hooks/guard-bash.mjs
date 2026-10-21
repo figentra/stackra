@@ -44,8 +44,86 @@ function stripHeredocs(raw) {
   );
 }
 
-/** git's global options before the subcommand. */
-const GIT_OPTS = String.raw`(?:(?:-[Cc]\s+\S+|--(?:git-dir|work-tree|namespace)(?:=\S+|\s+\S+)|--no-pager|--literal-pathspecs)\s+)*`;
+/** The only `-c` keys an agent may set: display and identity, none runs a command or redirects a remote (STA-216). */
+const ALLOWED_C =
+  /^(?:color\.ui|color\.diff|color\.status|color\.branch|core\.quotepath|core\.abbrev|core\.precomposeunicode|user\.name|user\.email|advice\.detachedhead|diff\.renames|diff\.algorithm|diff\.context|diff\.noprefix|log\.abbrevcommit|log\.decorate|log\.date|merge\.ff|merge\.conflictstyle|pull\.rebase|pull\.ff|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.short|status\.branch|status\.showuntrackedfiles)$/i;
+/** `git config` modes that only read; the first option must be one of them. */
+const CONFIG_READ = new Set([
+  "--get",
+  "--get-all",
+  "--get-regexp",
+  "--get-urlmatch",
+  "--list",
+  "-l",
+  "get",
+  "list",
+]);
+const CONFIG_WRITE = new Set([
+  "--add",
+  "--replace-all",
+  "--unset",
+  "--unset-all",
+  "-e",
+  "--edit",
+  "--rename-section",
+  "--remove-section",
+  "set",
+  "unset",
+  "edit",
+]);
+/** Words of a `git config` command line: stops at an unquoted separator or `#` comment; a quoted word is never a flag. */
+function configWords(rest) {
+  const out = [];
+  let cur = null;
+  let quoted = false;
+  const end = () => {
+    if (cur !== null) out.push(quoted ? "\0" + cur : cur);
+    cur = null;
+    quoted = false;
+  };
+  for (let i = 0; i < rest.length; i++) {
+    const ch = rest[i];
+    if (ch === "'" || ch === '"') {
+      const close = rest.indexOf(ch, i + 1);
+      const stop = close === -1 ? rest.length : close;
+      cur = (cur ?? "") + rest.slice(i + 1, stop);
+      quoted = true;
+      i = stop;
+    } else if (/\s/.test(ch) && ch !== "\n") end();
+    else if (/[|;&\n]/.test(ch) || (ch === "#" && cur === null)) break;
+    else cur = (cur ?? "") + ch;
+  }
+  end();
+  return out;
+}
+/** True when `git config` words are not a plain read: the first option reads, and no write flag follows. */
+function configWrites(words) {
+  const [first, ...rest] = words;
+  const reads =
+    CONFIG_READ.has(first) ||
+    (["--show-origin", "--show-scope"].includes(first) && rest.some((w) => CONFIG_READ.has(w)));
+  return !reads || rest.some((w) => CONFIG_WRITE.has(w));
+}
+/** Every `git … config …` or `git -c <key>` in `d` that could write config or run a command (STA-216). */
+function gitConfigUnsafe(d) {
+  const re = new RegExp(String.raw`\bgit\s+(?:--\s+)?(${GIT_OPTS})`, "g");
+  const opt = new RegExp(
+    String.raw`-c\s+(?<v>${Q})|-C\s+(?:${Q})|--(?:git-dir|work-tree|namespace)(?:=(?:${Q})|\s+(?:${Q}))|--\S+|-[pP]`,
+    "g",
+  );
+  for (const m of d.matchAll(re)) {
+    for (const t of m[1].matchAll(opt))
+      if (t.groups.v !== undefined && !ALLOWED_C.test(unquote(t.groups.v).split("=")[0]))
+        return true;
+    const rest = d.slice(m.index + m[0].length);
+    if (/^config\b/.test(rest) && configWrites(configWords(rest.slice(6)))) return true;
+  }
+  return false;
+}
+/** An option value: a quoted string (spaces allowed) or one word. */
+const Q = String.raw`"[^"]*"|'[^']*'|\S+`;
+/** git's global options before the subcommand (STA-216: quoted values, the boolean options). */
+const GIT_OPTS = String.raw`(?:(?:-[Cc]\s+(?:${Q})|--(?:git-dir|work-tree|namespace)(?:=(?:${Q})|\s+(?:${Q}))|--exec-path(?:=\S+)?|--(?:no-pager|paginate|bare|literal-pathspecs|no-replace-objects|glob-pathspecs|noglob-pathspecs|icase-pathspecs|no-optional-locks)|-[pP])\s+)*`;
 /** `git` (or `pnpm bot:git --`) followed by any global options before the subcommand. */
 const GIT = String.raw`\bgit\s+(?:--\s+)?` + GIT_OPTS;
 
@@ -71,10 +149,50 @@ const NETWORK_GIT = BARE_GIT(
  * backtick body, inside double quotes too, and every `sh -c` / `eval` string. Single-quoted text stays literal.
  * shortcut: one nesting level per pass and no alias or function expansion; deliberate workarounds stay open.
  */
+/**
+ * The body of every `$(` at every depth, outermost included: parentheses are counted outside quotes, so a nested
+ * `$(…)` or a `"(y)"` does not end a body early. An unbalanced `$(` takes the rest of the string (fail closed).
+ */
+function dollarBodies(c) {
+  const s = c.replace(/'[^']*'/g, "''");
+  const out = [];
+  for (let i = s.indexOf("$("); i >= 0; i = s.indexOf("$(", i + 1)) {
+    let depth = 1;
+    let quote = "";
+    let j = i + 2;
+    for (; j < s.length && depth > 0; j++) {
+      const ch = s[j];
+      if (quote === "'") {
+        if (ch === "'") quote = "";
+      } else if (quote === '"') {
+        if (ch === "\\") j++;
+        else if (ch === '"') quote = "";
+      } else if (ch === "'" || ch === '"') quote = ch;
+      else if (ch === "\\") j++;
+      else if (ch === "(") depth++;
+      else if (ch === ")") depth--;
+    }
+    out.push(s.slice(i + 2, depth === 0 ? j - 1 : s.length));
+  }
+  return out;
+}
+/** The raw text of every `$(…)` / backtick body (single quotes stay literal) and `sh -c` / `eval` string. */
+function nestedRaw(c) {
+  const out = [];
+  const literal = c.replace(/'[^']*'/g, "''");
+  out.push(...dollarBodies(c));
+  for (const m of literal.matchAll(/`([^`]*)`/g)) out.push(m[1]);
+  for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
+    out.push(m[2], ...nestedRaw(m[2]));
+  return out;
+}
+/** Texts a rule that needs the quoted values scans: the command with prose dropped, and every nested command in full. */
+const scanTexts = (c) => [dropMessages(c), ...nestedRaw(c).map(dropMessages)];
 function runnable(c) {
   const out = [blank(c)];
   const literal = c.replace(/'[^']*'/g, "''");
-  for (const m of literal.matchAll(/\$\(([^()]*)\)|`([^`]*)`/g)) out.push(blank(m[1] ?? m[2]));
+  for (const b of dollarBodies(c)) out.push(blank(b));
+  for (const m of literal.matchAll(/`([^`]*)`/g)) out.push(blank(m[1]));
   for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
     out.push(...runnable(m[2]));
   return out;
@@ -91,12 +209,39 @@ function git(cwd, ...args) {
 /** Quoted strings blanked, so a word inside `node -e '...'` or `--body "..."` is not mistaken for a command. */
 const blank = (c) => c.replace(/'[^']*'|"(?:\\.|[^"\\])*"/g, '""');
 
-/** Command segments (split on separators, quotes kept). */
-const segments = (c) => c.split(/&&|\|\||[|;&\n]/);
+/** Command segments: split on separators outside quotes (a `;` inside `-c "a;b"` does not hide a push). */
+function segments(c) {
+  const out = [];
+  let cur = "";
+  let quote = "";
+  for (let i = 0; i < c.length; i++) {
+    const ch = c[i];
+    if (quote) {
+      if (ch === "\\" && quote === '"') cur += ch + (c[++i] ?? "");
+      else {
+        cur += ch;
+        if (ch === quote) quote = "";
+      }
+    } else if (ch === "'" || ch === '"') {
+      quote = ch;
+      cur += ch;
+    } else if (/[|;&\n]/.test(ch)) {
+      out.push(cur);
+      cur = "";
+    } else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
 const unquote = (w) => w.replace(/^['"]+|['"]+$/g, "");
-/** Commit / tag message text is prose, not a command: blank the quoted `-m` / `--message` value. */
+/**
+ * Prose is not a command: blank the quoted `-m` / `--message` / `--title` / `--body` value and the text of
+ * `pnpm linear comment <KEY> "…"` (STA-216), so a PR body or a comment may mention `pr merge` or `push origin main`.
+ */
 const dropMessages = (c) =>
-  c.replace(/(\s(?:-m|--message)(?:\s+|=))("(?:\\.|[^"\\])*"|'[^']*')/g, "$1MSG");
+  c
+    .replace(/(\s(?:-m|--message|--title|--body)(?:\s+|=))("(?:\\.|[^"\\])*"|'[^']*')/g, "$1MSG")
+    .replace(/(\blinear\s+comment\s+\S+\s+)("(?:\\.|[^"\\])*"|'[^']*')/g, "$1MSG");
 
 /** `infisical secrets` with no subcommand (only flags / flag values) lists every value. */
 const INFISICAL_SUBCOMMANDS = new Set(["get", "set", "delete", "folders", "generate-example-env"]);
@@ -131,6 +276,10 @@ const expandHome = (p) => {
 function pushesMain(c, cwd) {
   const PUSH = new RegExp(String.raw`\bgit\s+(?:--\s+)?(` + GIT_OPTS + String.raw`)push\b(.*)$`);
   let dir = cwd;
+  // GIT_DIR= / GIT_WORK_TREE= anywhere (inline prefix, `export`, `env`) move the push's repository (STA-216).
+  const envTarget = [...c.matchAll(new RegExp(String.raw`\bGIT_(DIR|WORK_TREE)=(${Q})`, "g"))].map(
+    ([, k, v]) => [k === "DIR" ? "--git-dir" : "--work-tree", expandHome(v)],
+  );
   return segments(dropMessages(c)).some((seg) => {
     const cd = seg.match(/^\s*(?:cd|pushd)\s+(\S+)\s*$/);
     if (cd) {
@@ -149,21 +298,58 @@ function pushesMain(c, cwd) {
     if (dir === null) return true;
     // Only the location options are replayed; a `-c` value could run code (core.fsmonitor), so it is dropped.
     const target = [];
-    for (const [, opt, value] of m[1].matchAll(/(-C|--git-dir|--work-tree)(?:=|\s+)(\S+)/g)) {
-      const v = expandHome(value);
+    for (const [opt, v] of envTarget) {
       if (v === null) return true;
-      target.push(...(opt === "-C" ? ["-C", v] : [`${opt}=${v}`]));
+      target.push(`${opt}=${v}`);
     }
-    return git(dir, ...target, "symbolic-ref", "--short", "HEAD") === "main";
+    // Tokenised in order: a `-c a=--git-dir=x` value is consumed as a value, never read as an option.
+    const tokens = new RegExp(
+      String.raw`(?<bare>--bare)|(?<opt>-C|--git-dir|--work-tree)(?:=|\s+)(?<value>${Q})|-c\s+(?:${Q})|--namespace(?:=(?:${Q})|\s+(?:${Q}))|--[a-z-]+(?:=\S+)?|-[pP]`,
+      "g",
+    );
+    for (const { groups: g } of m[1].matchAll(tokens)) {
+      if (g.bare) target.push("--bare");
+      if (!g.opt) continue;
+      const v = expandHome(g.value);
+      if (v === null) return true;
+      target.push(...(g.opt === "-C" ? ["-C", v] : [`${g.opt}=${v}`]));
+    }
+    // A checkout that cannot be resolved counts as main.
+    const branch = git(dir, ...target, "symbolic-ref", "--short", "HEAD");
+    return branch === "" || branch === "main";
   });
 }
 
 /** `pnpm bot:gh` merging a PR: `pr merge`, `api …/pulls/<n>/merge` (any method), or a GraphQL merge mutation. */
 const MERGE =
-  /\bpr\s+(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?merge\b|\bpulls\/\d+\/merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/;
+  /\bpr\s+(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?merge\b|\bpulls(?:\/|%2F)+\d+(?:\/|%2F)+merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/i;
+/** A word percent-decoded (up to three layers), then slashes collapsed and `.` / `..` segments resolved (STA-216). */
+function normalizeWord(w) {
+  let d = w;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const n = decodeURIComponent(d);
+      if (n === d) break;
+      d = n;
+    } catch {
+      break;
+    }
+  }
+  const out = [];
+  for (const seg of d.split("/")) {
+    if (seg === "" || seg === ".") continue;
+    if (seg === "..") out.pop();
+    else out.push(seg);
+  }
+  return out.join("/");
+}
 const botMerges = (c) =>
   [dropMessages(c), ...runnable(c)].some((t) =>
-    segments(t).some((s) => /\bbot:gh\b/.test(blank(s)) && MERGE.test(s)),
+    segments(t).some(
+      (s) =>
+        /\bbot:gh\b/.test(blank(s)) &&
+        (MERGE.test(s) || MERGE.test(s.replace(/\S+/g, normalizeWord))),
+    ),
   );
 
 /** True when `rm` is given both recursive and force, in any flag spelling. */
@@ -289,8 +475,50 @@ const rules = [
   },
   {
     // STA-214: pack plumbing pushes or fetches without the push-to-main check; no agent needs it.
-    rx: (c) => runs(c, new RegExp(GIT + String.raw`(?:send|receive|fetch|upload)-pack\b`)),
-    why: "`git send-pack`, `receive-pack`, `fetch-pack` and `upload-pack` are pack plumbing that bypasses the push guard. Use `pnpm bot:git -- push origin HEAD` or `pnpm bot:git -- fetch origin`.",
+    // The binary by path (`/usr/lib/git-core/git-send-pack`) is the same plumbing as `git send-pack`.
+    rx: (c) =>
+      runs(c, new RegExp(GIT + String.raw`(?:send|receive|fetch|upload)-pack\b`)) ||
+      runs(c, new RegExp(BARE + String.raw`git-(?:send|receive|fetch|upload)-pack\b`)),
+    why: "`git send-pack`, `receive-pack`, `fetch-pack` and `upload-pack` (and the `git-*-pack` binaries) are pack plumbing that bypasses the push guard. Use `pnpm bot:git -- push origin HEAD` or `pnpm bot:git -- fetch origin`.",
+  },
+  {
+    // STA-216: a config alias runs any git command (`-c alias.x=credential x fill`, `-c alias.p=push p origin main`);
+    // an included config file or GIT_CONFIG_* env can define one too.
+    // Also `git config alias.x …` writes, the config-file env (`GIT_CONFIG_GLOBAL`, `HOME=`, `XDG_CONFIG_HOME=`) and pager env.
+    rx: (c) =>
+      scanTexts(c).some(
+        (d) =>
+          /\b(?:git|man)\b/.test(d) &&
+          (/(?:^|\s)(?:GIT_EDITOR|GIT_SEQUENCE_EDITOR)=(?!(?:true|:|cat)(?:\s|$))|(?:^|\s)(?:--config-env\b|(?:GIT_CONFIG(?:_GLOBAL|_SYSTEM|_COUNT|_KEY_\d+|_PARAMETERS)?|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER|GIT_ASKPASS|SSH_ASKPASS|GIT_EXEC_PATH|GIT_SSH(?:_COMMAND)?|GIT_PROXY_COMMAND|GIT_EXTERNAL_DIFF|GIT_TEMPLATE_DIR)=)/i.test(
+            d,
+          ) ||
+            gitConfigUnsafe(d)),
+      ),
+    why: "git `-c` outside a short display/identity allow-list, any `git config` that is not a read (`--get`, `--list`, ...), `--config-env`, and the `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=`, `PAGER=`, `MANPAGER=`, `GIT_PAGER=`, `GIT_ASKPASS=`, `SSH_ASKPASS=`, `GIT_EXEC_PATH=`, `GIT_SSH[_COMMAND]=` and `GIT_PROXY_COMMAND=` prefixes make git run another command, redefine a remote or alias past the push and credential guards. Agents never write git config.",
+  },
+  {
+    // `man -P <cmd>` and `--pager=<cmd>` run <cmd>; plain `man git-credential` stays allowed.
+    rx: (c) =>
+      scanTexts(c).some((d) =>
+        /\bman\b[^|;&\n]*\s-(?:[a-zA-Z]*[PHBTC]\b|-(?:pager|html|browser|troff|ditroff|config-file))/.test(
+          d,
+        ),
+      ),
+    why: "`man -P`, `-H`, `-B`, `-T`, `-C` and their long forms (`--pager`, `--html`, ...) run an arbitrary command. Read the page with plain `man <page>`.",
+  },
+  {
+    // STA-216: a GraphQL document read from a file or a substitution cannot be checked for a merge mutation;
+    // `gh alias` rewrites the owner's gh config. tools/scripts/bot-gh.mjs denies both as well.
+    rx: (c) =>
+      [dropMessages(c), ...runnable(c)].some((t) =>
+        segments(t).some(
+          (s) =>
+            /\bbot:gh\b/.test(blank(s)) &&
+            (/\balias\s+(?:set|import|delete)\b/.test(s) ||
+              (/\bapi\s+(?:-\S+\s+)*graphql\b/.test(s) && /=@|--input\b|\$\(|`/.test(s))),
+        ),
+      ),
+    why: "`pnpm bot:gh -- api graphql` with the query from a file (`-F query=@f`, `--input`) or a substitution, and `gh alias set`, are denied: the query cannot be checked for a merge mutation. Inline the query, or merge with `pnpm pr:merge <n>`.",
   },
   {
     rx: (c) => runs(c, BARE_GH),
@@ -310,7 +538,8 @@ const rules = [
         new RegExp(
           String.raw`\bbot:(?:gh|review)\s+(?:--\s+)?auth\b|\bbot:git\s+(?:--\s+)?(?:\S+\s+)*?credential\b|` +
             // STA-214: `git credential fill` and `git credential-<helper> get` answer with the owner's token.
-            String.raw`\bgit(?:-|\s+(?:--\s+)?` +
+            // `man git-credential` and similar read-only help is not a credential call (STA-216).
+            String.raw`(?<!\b(?:man|help|which|whereis|type)\s+(?:-\S+\s+)*)\bgit(?:-|\s+(?:--\s+)?` +
             GIT_OPTS +
             String.raw`)credential\b`,
         ),

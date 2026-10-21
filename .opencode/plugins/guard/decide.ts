@@ -94,10 +94,68 @@ const subcommands = (cmd: string): string[] =>
     .map((s) => s.trim())
     .filter(Boolean);
 
+/** Global options whose value is the next word (`--git-dir=x` carries its value and is skipped as a flag). */
+const GIT_VALUE_OPTS = new Set(["-C", "-c", "--git-dir", "--work-tree", "--namespace"]);
+/** The only `-c` keys an agent may set: display and identity, none runs a command or redirects a remote (STA-216). */
+const ALLOWED_C =
+  /^(?:color\.ui|color\.diff|color\.status|color\.branch|core\.quotepath|core\.abbrev|core\.precomposeunicode|user\.name|user\.email|advice\.detachedhead|diff\.renames|diff\.algorithm|diff\.context|diff\.noprefix|log\.abbrevcommit|log\.decorate|log\.date|merge\.ff|merge\.conflictstyle|pull\.rebase|pull\.ff|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.short|status\.branch|status\.showuntrackedfiles)$/i;
+const CONFIG_READ = new Set([
+  "--get",
+  "--get-all",
+  "--get-regexp",
+  "--get-urlmatch",
+  "--list",
+  "-l",
+  "get",
+  "list",
+]);
+const CONFIG_WRITE = new Set([
+  "--add",
+  "--replace-all",
+  "--unset",
+  "--unset-all",
+  "-e",
+  "--edit",
+  "--rename-section",
+  "--remove-section",
+  "set",
+  "unset",
+  "edit",
+]);
+/** `git config` arguments that are not a plain read: the first option reads, and no write flag follows. */
+function configWrites(args: string[]): boolean {
+  const hash = args.findIndex((a) => a.startsWith("#"));
+  const [first, ...rest] = hash < 0 ? args : args.slice(0, hash);
+  const reads =
+    CONFIG_READ.has(first) ||
+    (["--show-origin", "--show-scope"].includes(first) && rest.some((w) => CONFIG_READ.has(w)));
+  return !reads || rest.some((w) => CONFIG_WRITE.has(w));
+}
+/** `-c` outside the allow-list, `--config-env`, or a `git config` that is not a read (STA-216). */
+const gitAliasConfig = (args: string[]): boolean => {
+  let sub = -1;
+  for (let i = 0; i < args.length && sub < 0; i++) {
+    if (GIT_VALUE_OPTS.has(args[i])) i++;
+    else if (!args[i].startsWith("-")) sub = i;
+  }
+  return (
+    args.some(
+      (a, i) =>
+        /^--config-env\b/.test(a) ||
+        (a === "-c" && !ALLOWED_C.test((args[i + 1] ?? "").split("=")[0])) ||
+        /^-c./.test(a),
+    ) ||
+    (args[sub] === "config" && configWrites(args.slice(sub + 1)))
+  );
+};
+/** Env prefixes that swap git's config files or the pager (STA-216). */
+const CONFIG_ENV =
+  /(?:^|\s)(?:GIT_EDITOR|GIT_SEQUENCE_EDITOR)=(?!(?:true|:|cat)(?:\s|$))|(?:^|\s)(?:GIT_CONFIG[A-Z_0-9]*|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER|GIT_ASKPASS|SSH_ASKPASS|GIT_EXEC_PATH|GIT_SSH(?:_COMMAND)?|GIT_PROXY_COMMAND|GIT_EXTERNAL_DIFF|GIT_TEMPLATE_DIR)=/;
+
 /** git's subcommand, skipping global options (`-C dir`, `-c k=v`, `--git-dir=…`). */
 function gitSubcommand(args: string[]): string {
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === "-C" || args[i] === "-c") i++;
+    if (GIT_VALUE_OPTS.has(args[i])) i++;
     else if (!args[i].startsWith("-")) return args[i];
   }
   return "";
@@ -139,7 +197,15 @@ function denyExecutor(sub: string, cmd: string, args: string[]): Decision {
     return deny(
       `\`encore ${args[0]}\` touches a shared environment or its secrets; the owner runs it.`,
     );
+  if (/^git-(?:send|receive|fetch|upload)-pack$/.test(cmd))
+    return deny(
+      `\`${cmd}\` is pack plumbing that bypasses the git checks; executors never run it.`,
+    );
   if (cmd === "git") {
+    if (gitAliasConfig(args) || CONFIG_ENV.test(sub))
+      return deny(
+        "git `-c` / `config` for alias, include, core.fsmonitor|sshCommand|pager|editor|hooksPath and credential keys, `--config-env`, and the GIT_CONFIG*, HOME, XDG_CONFIG_HOME and pager env prefixes make git run other commands past the guard.",
+      );
     const g = gitSubcommand(args);
     const readOnly = g === "worktree" && args.includes("list");
     if (
@@ -175,6 +241,14 @@ function denySub(sub: string): Decision {
     return deny(
       "printing the environment leaks injected tokens. Echo the one variable you need (never a secret's value).",
     );
+  if (
+    (cmd === "man" &&
+      args.some((a) =>
+        /^-[a-zA-Z]*[PHBTC]\b|^--(?:pager|html|browser|troff|ditroff|config-file)/.test(a),
+      )) ||
+    /(?:^|\s)(?:MANPAGER|PAGER)=/.test(sub)
+  )
+    return deny("`man -P`, `--pager` and the PAGER env run an arbitrary command as the pager.");
   if (cmd === "infisical" && args[0] === "export")
     return deny("`infisical export` dumps secret values. Humans only.");
   for (const t of tokens(sub))

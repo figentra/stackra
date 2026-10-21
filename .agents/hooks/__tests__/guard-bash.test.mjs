@@ -405,3 +405,225 @@ test("bot push resolves -C, --git-dir, --work-tree and cd targets", () => {
   assert.equal(decision(`pnpm bot:git -- -C ${feature} push`, main), "allow");
   for (const d of [main, feature]) rmSync(d, { recursive: true, force: true });
 });
+
+// STA-216 (guard hardening round 3)
+const round3Allowed = [
+  'pnpm bot:gh -- pr create --title "fix: pr merge guard" --body "mentions pulls/12/merge and mergePullRequest"',
+  "pnpm bot:gh -- pr edit 5 --body 'never gh pr merge'",
+  'pnpm linear comment STA-216 "never git push origin main or pnpm bot:gh -- pr merge"',
+  "man git-credential",
+  "man -a git-credential-store",
+  "pnpm bot:gh -- api graphql -f query='query { viewer { login } }'",
+  "pnpm bot:gh -- api graphql -F owner=figentra -f query='query { viewer { login } }'",
+  "pnpm bot:git -- -P log -1",
+  "pnpm bot:git -- --no-pager --paginate status",
+];
+const round3Denied = [
+  "pnpm bot:git -- -c alias.x=credential x fill",
+  "pnpm bot:git -- -c 'alias.p=push p origin main' p origin main",
+  'git -c "alias.sp=send-pack" sp origin',
+  "git --config-env=alias.x=VAR x",
+  "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.x GIT_CONFIG_VALUE_0=push git x origin main",
+  "pnpm bot:gh -- api graphql -F query=@merge.graphql",
+  "pnpm bot:gh -- api graphql --input q.json",
+  "pnpm bot:gh -- api graphql -f query=@q.graphql",
+  'pnpm bot:gh -- api graphql -f query="$(cat q.graphql)"',
+  "pnpm bot:gh -- alias set x 'pr merge'",
+  "/usr/lib/git-core/git-send-pack origin main",
+  "git-receive-pack .",
+  "env git-upload-pack .",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/12//merge",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls%2F12%2Fmerge",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/12%2Fmerge",
+  "pnpm bot:git -- --paginate -c core.pager=x credential fill",
+];
+for (const c of round3Allowed) test(`allow: ${c}`, () => assert.equal(denied(c), false));
+for (const c of round3Denied) test(`deny: ${c}`, () => assert.equal(denied(c), true));
+
+test("push target: quoted -c, crafted -c values, GIT_DIR / GIT_WORK_TREE prefixes, unresolvable", () => {
+  const repo = (branch) => {
+    const d = mkdtempSync(join(tmpdir(), "guard-bash-"));
+    spawnSync("git", ["init", "-q", "-b", branch], { cwd: d });
+    return d;
+  };
+  const main = repo("main");
+  const feature = repo("feature/x");
+  for (const c of [
+    `pnpm bot:git -- -c "user.name=a b" -C ${main} push origin HEAD`,
+    `pnpm bot:git -- -c 'color.ui=a;b' -C ${main} push origin HEAD`,
+    `pnpm bot:git -- -c core.abbrev=--git-dir=${feature}/.git --git-dir=${main}/.git push`,
+    `GIT_DIR=${main}/.git pnpm bot:git -- push origin HEAD`,
+    `GIT_DIR='${main}/.git' pnpm bot:git -- push`,
+    `export GIT_DIR=${main}/.git; pnpm bot:git -- push`,
+    `GIT_WORK_TREE=${main} GIT_DIR=${main}/.git pnpm bot:git -- push`,
+    "GIT_DIR=$X pnpm bot:git -- push",
+    `pnpm bot:git -- --bare -C ${tmpdir()} push`,
+  ])
+    assert.equal(decision(c, feature), "deny", c);
+  for (const c of [
+    `pnpm bot:git -- -c "user.name=a b" -C ${feature} push origin HEAD`,
+    `pnpm bot:git -- -c core.abbrev=--git-dir=${main}/.git push origin HEAD`,
+    `GIT_DIR=${feature}/.git pnpm bot:git -- push origin HEAD`,
+  ])
+    assert.equal(decision(c, feature), "allow", c);
+  for (const d of [main, feature]) rmSync(d, { recursive: true, force: true });
+});
+
+// STA-216 review round: config writes, config/pager env, man -P, encoded merge paths, more -c keys
+const round3bAllowed = [
+  "git config --get user.name",
+  "git config --list",
+  "git config --show-origin --get-regexp remote",
+  "pnpm bot:git -- -c color.ui=never -c core.quotepath=off log -1",
+  "man ls",
+  "pnpm bot:git -- config --get remote.origin.url",
+  "man git-credential",
+  "man -a git-credential",
+  "pnpm bot:gh -- api -X PUT repos/x/y/pulls/12/files",
+];
+const round3bDenied = [
+  "git config --global alias.x 'credential fill'",
+  "git config --system alias.p push",
+  "git config --local include.path /tmp/x",
+  "git config --file /tmp/c includeIf.gitdir:/.path /tmp/x",
+  "git config core.fsmonitor 'sh x'",
+  "pnpm bot:git -- config --global alias.x '!sh'",
+  "pnpm bot:git -- -c core.fsmonitor=x status",
+  "git -c core.sshCommand=x fetch",
+  "git -c core.pager=x log",
+  "git -c core.editor=x commit",
+  "git -c credential.helper=x status",
+  "GIT_CONFIG_GLOBAL=/tmp/c git x",
+  "GIT_CONFIG_SYSTEM=/tmp/c pnpm bot:git -- x",
+  "GIT_CONFIG=/tmp/c git x",
+  "HOME=/tmp/h git x",
+  "XDG_CONFIG_HOME=/tmp/h pnpm bot:git -- x",
+  "man -P 'sh -c x' git-credential",
+  "man --pager=sh git-credential",
+  "man -aP sh ls",
+  "MANPAGER=sh man git-credential",
+  "PAGER='sh -c x' man ls",
+  "GIT_PAGER=sh git log",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/12/%6derge",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/12/./merge",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/4/../5/merge",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/12/%2e/merge",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/12/%252e%252e/12/merge",
+];
+for (const c of round3bAllowed) test(`allow: ${c}`, () => assert.equal(denied(c), false));
+for (const c of round3bDenied) test(`deny: ${c}`, () => assert.equal(denied(c), true));
+
+// STA-216 re-review: git config is read-only, -c is an allow-list, more env and man options
+const round3cDenied = [
+  "git config alias.p x --get",
+  "git config alias.r x # --get",
+  'git config alias.t "cred x fill" # -l',
+  'git config alias.t "x --get"',
+  "pnpm bot:git -- config alias.p x --get",
+  "git config user.name x",
+  "git config --global --get user.name",
+  "git config -e",
+  "git config --edit",
+  "git config --add remote.origin.push x",
+  "git config --get x --replace-all",
+  "git config --unset alias.x",
+  "git config --replace-all alias.x y",
+  "git config set alias.x y",
+  "git config unset alias.x",
+  "git config edit",
+  "git config --file /tmp/c alias.x y",
+  "git config",
+  "git -c remote.origin.push=refs/heads/x:refs/heads/main status",
+  "git -c url.x.insteadOf=y status",
+  "git -c url.x.pushInsteadOf=y status",
+  "git -c remote.o.pushurl=y status",
+  "git -c core.askPass=x status",
+  "git -c core.gitProxy=x status",
+  "git -c diff.external=x diff",
+  "git -c uploadpack.packObjectsHook=x status",
+  "git -c gpg.program=x status",
+  "git -c pager.log=x log",
+  "GIT_ASKPASS=x git fetch",
+  "GIT_EXEC_PATH=/tmp/x git status",
+  "SSH_ASKPASS=x pnpm bot:git -- status",
+  "GIT_SSH=x git status",
+  "GIT_SSH_COMMAND=x git status",
+  "GIT_PROXY_COMMAND=x git status",
+  "man -H sh ls",
+  "man -B sh ls",
+  "man -T sh ls",
+  "man --html=sh ls",
+  "man -aH sh ls",
+];
+for (const c of round3cDenied) test(`deny: ${c}`, () => assert.equal(denied(c), true));
+
+// STA-216 re-review 3: commands nested in prose values are still checked; exact -c keys; more env prefixes
+const nestedBodies = [
+  "git config alias.p 'x y'",
+  "HOME=/tmp/h git p",
+  "git -c alias.p=x p",
+  "man -P sh ls",
+  "GIT_EDITOR=sh git commit",
+];
+const proseForms = [
+  (b) => `git commit -m "$(${b})"`,
+  (b) => `git commit -m "\`${b}\`"`,
+  (b) => `pnpm bot:gh -- pr create --title "$(${b})" --body ok`,
+  (b) => `pnpm bot:gh -- pr create --title t --body "$(${b})"`,
+  (b) => `pnpm bot:gh -- pr create --body "\`${b}\`"`,
+  (b) => `pnpm linear comment STA-216 "$(${b})"`,
+  (b) => `pnpm linear comment STA-216 "\`${b}\`"`,
+];
+for (const b of nestedBodies)
+  for (const form of proseForms)
+    test(`deny: ${form(b)}`, () => assert.equal(denied(form(b)), true));
+for (const c of [
+  'git commit -m "docs: git config alias.x and HOME=/tmp man -P"',
+  "pnpm bot:gh -- pr create --title t --body 'uses $(git config alias.p x) text'",
+  'pnpm linear comment STA-216 "note: git -c alias.p=x p"',
+  'git commit -m "$(git config --get user.name)"',
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));
+for (const c of [
+  "GIT_EDITOR=sh git commit",
+  "GIT_SEQUENCE_EDITOR=sh git rebase -i",
+  "GIT_EXTERNAL_DIFF=sh git diff",
+  "GIT_TEMPLATE_DIR=/tmp/t pnpm bot:git -- init",
+  "git -c color.pager=sh log",
+  "git -c status.displayCommentPrefix=x status",
+  "git -c advice.foo=x status",
+  "git -c color.ui=never log",
+])
+  test(`${/color\.ui/.test(c) ? "allow" : "deny"}: ${c}`, () =>
+    assert.equal(denied(c), !/color\.ui/.test(c)));
+
+// STA-216 final round: nested and parenthesised $(...) bodies, GIT_EDITOR with a harmless value
+const deepBodies = [
+  "git config alias.p $(echo y)",
+  "HOME=/x git p $(true)",
+  'git config alias.p "(y)"',
+  "git -c alias.p=$(echo x) p",
+  "echo $(echo $(HOME=/x git p))",
+  "man -P $(echo sh) ls",
+];
+for (const b of deepBodies)
+  for (const form of proseForms)
+    test(`deny: ${form(b)}`, () => assert.equal(denied(form(b)), true));
+test("deny: an unbalanced $( scans the rest of the string", () => {
+  assert.equal(denied('git commit -m "$(git config alias.p x"'), true);
+  assert.equal(denied('git commit -m "$(echo (a) ; HOME=/x git p"'), true);
+});
+for (const c of [
+  "GIT_EDITOR=true git rebase --continue",
+  "GIT_SEQUENCE_EDITOR=: git rebase -i main",
+  "GIT_EDITOR=cat git commit",
+  'git commit -m "$(echo (a) done)"',
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));
+for (const c of [
+  "GIT_EDITOR=sh git commit",
+  "GIT_EDITOR='true x' git commit",
+  "GIT_SEQUENCE_EDITOR=vim git rebase -i",
+  "GIT_EDITOR=true-x git commit",
+])
+  test(`deny: ${c}`, () => assert.equal(denied(c), true));

@@ -65,6 +65,27 @@ export function leaksToken(tool, args) {
   return tool === "git" ? /^credential(-|$)/.test(first) : first === "auth";
 }
 
+/** A word percent-decoded (up to three layers), then slashes collapsed and `.` / `..` segments resolved (STA-216). */
+function normalizeWord(w) {
+  let d = w;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const n = decodeURIComponent(d);
+      if (n === d) break;
+      d = n;
+    } catch {
+      break;
+    }
+  }
+  const out = [];
+  for (const seg of d.split("/")) {
+    if (seg === "" || seg === ".") continue;
+    if (seg === "..") out.pop();
+    else out.push(seg);
+  }
+  return out.join("/");
+}
+
 /**
  * Merges outside `pnpm pr:merge` (STA-214, ADR 0119): `gh pr merge`, `gh api …/pulls/<n>/merge` with any method, and
  * the GraphQL merge mutations. pr-merge.mjs runs gh itself after its checks, so it never comes through here.
@@ -72,12 +93,74 @@ export function leaksToken(tool, args) {
 export function mergesPr(args) {
   const [group, verb] = words("gh", args);
   if (group === "pr") return verb === "merge";
-  return (
-    group === "api" &&
-    args.some((a) =>
-      /\bpulls\/\d+\/merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/.test(a),
-    )
-  );
+  return group === "api" && args.some((a) => MERGE.test(a) || MERGE.test(normalizeWord(a)));
+}
+
+/** The only `-c` keys an agent may set: display and identity, none runs a command or redirects a remote (STA-216). */
+const ALLOWED_C =
+  /^(?:color\.ui|color\.diff|color\.status|color\.branch|core\.quotepath|core\.abbrev|core\.precomposeunicode|user\.name|user\.email|advice\.detachedhead|diff\.renames|diff\.algorithm|diff\.context|diff\.noprefix|log\.abbrevcommit|log\.decorate|log\.date|merge\.ff|merge\.conflictstyle|pull\.rebase|pull\.ff|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.short|status\.branch|status\.showuntrackedfiles)$/i;
+const CONFIG_READ = new Set([
+  "--get",
+  "--get-all",
+  "--get-regexp",
+  "--get-urlmatch",
+  "--list",
+  "-l",
+  "get",
+  "list",
+]);
+const CONFIG_WRITE = new Set([
+  "--add",
+  "--replace-all",
+  "--unset",
+  "--unset-all",
+  "-e",
+  "--edit",
+  "--rename-section",
+  "--remove-section",
+  "set",
+  "unset",
+  "edit",
+]);
+/** `git config` arguments (after the subcommand) that are not a plain read: the first option reads, no write flag follows. */
+export function configWrites(args) {
+  const [first, ...rest] = args.slice(0, args.findIndex((a) => a.startsWith("#")) + 1 || undefined);
+  const reads =
+    CONFIG_READ.has(first) ||
+    (["--show-origin", "--show-scope"].includes(first) && rest.some((w) => CONFIG_READ.has(w)));
+  return !reads || rest.some((w) => CONFIG_WRITE.has(w));
+}
+const MERGE = /\bpulls\/\d+\/merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/i;
+
+/**
+ * Why a command is refused regardless of tool (STA-216), or null. git: `-c alias.*` / `-c include*` / `--config-env`
+ * run any git command past the guards. gh: `alias` rewrites the owner's gh config; `api graphql` with the document
+ * from a file (`-F query=@f`, `--input`) cannot be checked for a merge mutation, so file-sourced GraphQL is denied.
+ */
+export function unsafeArgs(tool, args) {
+  if (tool === "git") {
+    let sub = -1;
+    for (let i = 0; i < args.length && sub < 0; i++) {
+      if (["-c", "-C", "--git-dir", "--work-tree", "--namespace"].includes(args[i])) i++;
+      else if (!args[i].startsWith("-")) sub = i;
+    }
+    const bad =
+      args.some(
+        (a, i) =>
+          /^--config-env\b/.test(a) ||
+          (a === "-c" && !ALLOWED_C.test((args[i + 1] ?? "").split("=")[0])) ||
+          /^-c./.test(a),
+      ) ||
+      (args[sub] === "config" && configWrites(args.slice(sub + 1)));
+    return bad
+      ? "`-c` outside the display/identity allow-list, any `git config` that is not a read, and `--config-env` bypass the guards"
+      : null;
+  }
+  const [group] = words("gh", args);
+  if (group === "alias") return "`gh alias` rewrites the owner's gh config";
+  if (group === "api" && args.includes("graphql") && args.some((a) => /=@|^@|^--input\b/.test(a)))
+    return "GraphQL from a file cannot be checked for a merge mutation; inline the query";
+  return null;
 }
 
 /** The non-flag words: git's `-c`/`-C`/`--git-dir`/`--work-tree`/`--namespace` and gh's `-R`/`--repo` values skipped. */
@@ -101,6 +184,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   }
   if (leaksToken(tool, args)) {
     process.stderr.write("bot-gh: `gh auth` and `git credential` would expose the bot token\n");
+    process.exit(2);
+  }
+  const unsafe = unsafeArgs(tool === "review" ? "gh" : tool, args);
+  if (unsafe) {
+    process.stderr.write(`bot-gh: ${unsafe}\n`);
     process.exit(2);
   }
   if (tool !== "git" && mergesPr(args)) {

@@ -58,11 +58,40 @@ quotes too), and every `sh -c` or `eval` string. It denies:
 - network `git` at command position: `push`, `fetch`, `pull`, `clone`, `ls-remote`, `submodule`, `subtree`,
   `remote update|show|prune` and `archive --remote`, for every repository, public or private. Each goes through
   `pnpm bot:git --`. A bot push to `main` is denied too, with the branch read in the checkout the push runs in
-  (after a `cd`, `-C <dir>`, `--git-dir` or `--work-tree`; an unknown `$VAR` target counts as `main`);
-- pack plumbing, bare or through `pnpm bot:git`: `send-pack`, `receive-pack`, `fetch-pack` and `upload-pack`;
+  (after a `cd`, `-C <dir>`, `--git-dir`, `--work-tree` or a `GIT_DIR=` / `GIT_WORK_TREE=` assignment; quoted `-c`
+  values are read whole; an unknown `$VAR` target or an unresolvable checkout counts as `main`);
+- git configuration, which agents never write. `git config` is allowed only as a read: the first option must be
+  `--get`, `--get-all`, `--get-regexp`, `--get-urlmatch`, `--list`, `-l`, `get` or `list` (or `--show-origin` /
+  `--show-scope` followed by one of those), with no write flag after it (`--add`, `--replace-all`, `--unset*`,
+  `-e`, `--edit`, `set`, `unset`, `edit`). Every other form is denied, also through `pnpm bot:git --`, with `#`
+  comments and quoted values taken out before parsing (`git config alias.x y --get` and `... # --get` are writes).
+  `-c <key>=<value>` is an allow-list too: only a short list of exact display and identity keys (`color.ui`, `color.diff`,
+  `color.status`, `color.branch`, `core.quotepath`, `core.abbrev`, `user.name`, `user.email`, `diff.renames`,
+  `log.decorate`, `merge.ff`, `pull.rebase`, `push.default`, `status.short` and a few more, no wildcards; the list is
+  `ALLOWED_C` in the three guards); any other key (`alias.*`, `include*`, `remote.*.push`, `url.*.insteadOf`, `core.askPass`,
+  `core.fsmonitor`, `credential.*`, `pager.*`, `gpg.program`, ...) is denied, as is `--config-env`. An alias or a
+  redirected remote runs any git command under another name, past every rule above. The env prefixes that swap
+  git's config, helpers or pager are denied on a `git` or `man` command: `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=`,
+  `PAGER=`, `MANPAGER=`, `GIT_PAGER=`, `GIT_ASKPASS=`, `SSH_ASKPASS=`, `GIT_EXEC_PATH=`, `GIT_SSH=`,
+  `GIT_SSH_COMMAND=`, `GIT_PROXY_COMMAND=`, `GIT_EDITOR=` and `GIT_SEQUENCE_EDITOR=` (allowed only as exactly `true`, `:` or `cat`, for a non-interactive rebase
+  or commit), `GIT_EXTERNAL_DIFF=` and `GIT_TEMPLATE_DIR=`. These rules also read the body of every `$(...)` at every
+  depth (parentheses counted outside quotes; an unbalanced `$(` scans the rest of the string), backticks, `sh -c` or `eval` that sits in a
+  `-m`, `--body`, `--title` or `pnpm linear comment` value: the prose is ignored, a real command in it is not.
+  `bot-gh.mjs` refuses the `-c` and `git config` forms too;
+- `man -P`, `-H`, `-B`, `-T`, `-C` and `--pager`, `--html`, `--browser`, `--troff`, `--config-file`, which run a
+  command; plain read-only help such as `man git-credential` stays allowed;
+- pack plumbing, bare, through `pnpm bot:git` or as the binary (`git-send-pack`): `send-pack`, `receive-pack`,
+  `fetch-pack` and `upload-pack`;
 - a merge outside `pnpm pr:merge`: `pnpm bot:gh -- pr merge ...`, `pnpm bot:gh -- api .../pulls/<n>/merge` with any
   method, and the `mergePullRequest` / `enablePullRequestAutoMerge` GraphQL mutations. `bot-gh.mjs` refuses them
-  itself as well;
+  itself as well. The path is percent-decoded (up to three layers), slashes are collapsed and `.` / `..` segments
+  resolved before matching, so `pulls/<n>//merge`, `%2F`, `%6derge`, `pulls/<n>/./merge` and
+  `pulls/<m>/../<n>/merge` are all merges. Prose does not count: the quoted value of
+  `--title`, `--body`, `-m` and the text of `pnpm linear comment` are not scanned;
+- `pnpm bot:gh -- api graphql` with the query from a file (`-F query=@f`, `-f query=@f`, `--input`) or a
+  substitution, and `pnpm bot:gh -- alias ...`: the query cannot be checked for a merge mutation, and an alias
+  rewrites the owner's gh config. Inline the query (`bot-gh.mjs` refuses these as well). A query held in a shell variable cannot be seen by the
+  hook, but `bot-gh.mjs` receives the expanded arguments and refuses the merge mutation there (defence in depth);
 - anything that could print or store a token: `pnpm bot:token`, a `$GH_TOKEN` or `$GITHUB_TOKEN` reference,
   `pnpm bot:gh -- auth ...`, `pnpm bot:review -- auth ...`, and `git credential fill|approve|reject` or a
   `git credential-<helper>` (`credential-osxkeychain get` included), bare or through `pnpm bot:git`; they answer
@@ -77,8 +106,13 @@ fetch, pull, clone, ls-remote, submodule, subtree, remote update, remote show, r
 
 ## Honest limit
 
+REST writes to `main` without a PR (`POST /merges`, `PATCH git/refs/heads/main`, `PUT contents` with `branch=main`)
+are not matched by the guards. Branch protection must stop them, and it does so for non-admins only: enable
+`enforce_admins` or a ruleset for `main` (owner setting, step 1 below).
+
 The guards are an accident guard, not isolation. They do not follow aliases, shell functions, variables used as a
-command name, `npx` or `pnpm dlx`. Agents run as the owner's macOS user, so the keychain and `~/.config/gh` are
+command name, `npx` or `pnpm dlx`, a command written into a heredoc that is then piped to a shell, or a command word
+obfuscated by the shell (`g""it`, `$'\x67it'`, a variable holding the word). Agents run as the owner's macOS user, so the keychain and `~/.config/gh` are
 readable by any process an agent starts. The structural fix is owner steps 5 and 6 below: after them, an agent's
 plain `gh` or `git` finds no owner credential to fall back to. Full isolation needs agents to run as a separate OS
 user, or on the EC2 agent host, where the owner's login does not exist.

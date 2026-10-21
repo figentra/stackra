@@ -240,3 +240,94 @@ test("edits must resolve inside the session's worktree root", () => {
   assert.equal(decideEdit("/repo/.claude/worktrees/a", wt).kind, "deny");
   assert.equal(decideEdit("/etc/hosts", wt).kind, "deny");
 });
+
+test("STA-216: spaced global git options, -c alias.*, pack binaries", () => {
+  for (const c of [
+    "git --git-dir .git push origin main",
+    "git --work-tree . --namespace x push",
+    "git -c alias.x=push x origin main",
+    "git -c 'alias.sp=send-pack' sp",
+    "git --config-env=alias.x=V x",
+    "git -c include.path=/tmp/x status",
+    "/usr/lib/git-core/git-send-pack origin main",
+    "git-receive-pack .",
+    "git-upload-pack .",
+    "git --paginate -P push",
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    "man git-credential",
+    "git status",
+    "git -c user.name=x log -1",
+    "git --git-dir .git status",
+  ])
+    assert.equal(kind(c), "allow", c);
+});
+
+test("STA-216 review: git config writes, config env, risky -c keys, man pager", () => {
+  for (const c of [
+    "git config --global alias.x 'credential fill'",
+    "git config --local include.path /tmp/x",
+    "git -c core.fsmonitor=x status",
+    "git -c credential.helper=x status",
+    "GIT_CONFIG_GLOBAL=/tmp/c git x",
+    "HOME=/tmp/h git x",
+    "XDG_CONFIG_HOME=/tmp/h git x",
+    "man -P 'sh -c x' ls",
+    "man --pager=sh ls",
+    "MANPAGER=sh man ls",
+    "PAGER=sh man ls",
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of ["man ls", "man -a git-credential"]) assert.equal(kind(c), "allow", c);
+});
+
+test("STA-216 re-review: git config is read-only, -c allow-list, more env, man options", () => {
+  for (const c of [
+    "git config alias.p x --get",
+    "git config alias.r x # --get",
+    "git config user.name x",
+    "git config -e",
+    "git config set alias.x y",
+    "git -c remote.origin.push=x status",
+    "git -c url.x.insteadOf=y status",
+    "git -c core.askPass=x status",
+    "GIT_ASKPASS=x git fetch",
+    "GIT_SSH_COMMAND=x git status",
+    "GIT_EXEC_PATH=/tmp git status",
+    "man -H sh ls",
+    "man -T sh ls",
+    "man --html=sh ls",
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    "git config --get user.name",
+    "git config --list",
+    "git -c color.ui=never log -1",
+  ])
+    assert.equal(kind(c), "allow", c);
+});
+
+test("STA-216: exact -c keys and editor, diff and template env prefixes", () => {
+  for (const c of [
+    "git -c color.pager=sh log",
+    "git -c advice.foo=x status",
+    "GIT_EDITOR=sh git commit",
+    "GIT_SEQUENCE_EDITOR=sh git rebase",
+    "GIT_EXTERNAL_DIFF=sh git diff",
+    "GIT_TEMPLATE_DIR=/tmp git init",
+  ])
+    assert.equal(kind(c), "deny", c);
+  assert.equal(kind("git -c color.ui=never log"), "allow");
+});
+
+test("STA-216: GIT_EDITOR is allowed only as true, : or cat", () => {
+  for (const c of [
+    "GIT_EDITOR=true git log",
+    "GIT_SEQUENCE_EDITOR=: git log",
+    "GIT_EDITOR=cat git log",
+  ])
+    assert.equal(kind(c), "allow", c);
+  for (const c of ["GIT_EDITOR=sh git log", "GIT_SEQUENCE_EDITOR=vim git log"])
+    assert.equal(kind(c), "deny", c);
+});
