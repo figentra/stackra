@@ -8,6 +8,8 @@ A member is anything `pnpm-workspace.yaml` lists: `apps/*`, `packages/<category>
 
 ## Required files
 
+Every member has the files below; `LICENSE` is for packages and tooling only.
+
 | File            | Holds                                                                                                                                                                |
 | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `package.json`  | The manifest fields below; scripts from the [task vocabulary](/guides/tooling)                                                                                       |
@@ -98,7 +100,7 @@ Shapes: [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates). Flags and to
 
 | Rule                                                                                | Check                                                                 | Status |
 | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------ |
-| `README.md`, `AGENTS.md`, `CHANGELOG.md`, `LICENSE` exist                           | `validate-repository.mjs` (`checkFiles`)                              | Yes    |
+| `README.md`, `AGENTS.md`, `CHANGELOG.md` exist; `LICENSE` too for packages, tooling | `validate-repository.mjs` (`checkFiles`)                              | Yes    |
 | `AGENTS.md` has a `## PII` heading                                                  | `validate-repository.mjs`                                             | Yes    |
 | Package `LICENSE` equals the root `LICENSE`; apps and services have none            | `validate-repository.mjs`                                             | Yes    |
 | `description` non-empty, `license` is `MIT` (`UNLICENSED` for apps, services)       | `validate-repository.mjs`                                             | Yes    |
