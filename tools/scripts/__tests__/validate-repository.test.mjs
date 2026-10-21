@@ -110,9 +110,34 @@ test("missing files, PII, license drift, manifest hygiene", () => {
   assert.equal(f.length, 7);
 });
 
+test("apps and services are UNLICENSED with no LICENSE file (ADR 0195)", () => {
+  const app = { dir: "apps/console", pkg: { description: "x", license: "UNLICENSED" } };
+  assert.deepEqual(
+    checkFiles({ ...filesOk, ...app, files: ["README.md", "AGENTS.md", "CHANGELOG.md"] }),
+    [],
+  );
+  assert.equal(checkFiles({ ...filesOk, ...app }).length, 1);
+  assert.equal(
+    checkFiles({
+      ...filesOk,
+      dir: "services/health",
+      files: ["README.md", "AGENTS.md", "CHANGELOG.md"],
+    }).length,
+    1,
+  );
+});
+
 test("sideEffects and exports rules apply to tier:lib only", () => {
   const pkg = { description: "x", license: "MIT", exports: "./dist/a.js" };
-  assert.deepEqual(checkFiles({ ...filesOk, dir: "apps/console", pkg }), []);
+  assert.deepEqual(
+    checkFiles({
+      ...filesOk,
+      dir: "apps/console",
+      pkg: { ...pkg, license: "UNLICENSED" },
+      files: ["README.md", "AGENTS.md", "CHANGELOG.md"],
+    }),
+    [],
+  );
   assert.deepEqual(checkFiles({ ...filesOk, dir: "packages/tooling/vitest", pkg }), []);
 });
 

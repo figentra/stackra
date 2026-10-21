@@ -170,7 +170,8 @@ export function scaffold({
       mkdirSync(dirname(target), { recursive: true });
       writeFileSync(target, fill(readFileSync(src, "utf8"), /\.jsonc?$/.test(out)));
     }
-  files.push("LICENSE");
+  const licensed = kind === "package" || kind === "tooling";
+  if (licensed) files.push("LICENSE");
   if (!dryRun) {
     if (kind === "package") {
       const file = join(dest, "package.json");
@@ -182,10 +183,12 @@ export function scaffold({
       };
       writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
     }
-    const license = existsSync(join(root, "LICENSE"))
-      ? join(root, "LICENSE")
-      : join(ROOT, "LICENSE");
-    copyFileSync(license, join(dest, "LICENSE"));
+    const license = !licensed
+      ? undefined
+      : existsSync(join(root, "LICENSE"))
+        ? join(root, "LICENSE")
+        : join(ROOT, "LICENSE");
+    if (license) copyFileSync(license, join(dest, "LICENSE"));
     if (format)
       execFileSync("pnpm", ["exec", "oxfmt", "--write", dest], { cwd: ROOT, stdio: "inherit" });
   }

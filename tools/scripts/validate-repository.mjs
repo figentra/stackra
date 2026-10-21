@@ -117,14 +117,18 @@ export function check({ dir, pkg, turbo, tsconfig }) {
 /** Required-files and manifest-hygiene findings for one member. `files` is the set of top-level entry names. */
 export function checkFiles({ dir, pkg, files, agents, licenseText, rootLicense }) {
   const out = [];
-  for (const f of ["README.md", "AGENTS.md", "CHANGELOG.md", "LICENSE"])
+  // ADR 0195 decision 7: @stackra/* is MIT with a LICENSE; @figentra/* apps and services are UNLICENSED with none.
+  const unlicensed = ["tier:app", "tier:service"].includes(tierFor(dir));
+  for (const f of ["README.md", "AGENTS.md", "CHANGELOG.md", ...(unlicensed ? [] : ["LICENSE"])])
     if (!files.includes(f)) out.push(`${f} missing`);
   if (files.includes("AGENTS.md") && !/^## PII/m.test(agents ?? ""))
     out.push('AGENTS.md has no "## PII" section');
-  if (files.includes("LICENSE") && licenseText !== rootLicense)
+  if (unlicensed && files.includes("LICENSE")) out.push("LICENSE must not exist (ADR 0195)");
+  if (!unlicensed && files.includes("LICENSE") && licenseText !== rootLicense)
     out.push("LICENSE differs from the root LICENSE");
   if (!pkg.description?.trim()) out.push("package.json has no description");
-  if (pkg.license !== "MIT") out.push('package.json license must be "MIT" (ADR 0024)');
+  const license = unlicensed ? "UNLICENSED" : "MIT";
+  if (pkg.license !== license) out.push(`package.json license must be "${license}" (ADR 0195)`);
   if (tierFor(dir) === "tier:lib") {
     if (pkg.sideEffects !== false) out.push("package.json sideEffects must be false");
     out.push(...checkExports(pkg.exports));

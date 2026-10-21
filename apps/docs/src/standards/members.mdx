@@ -8,15 +8,15 @@ A member is anything `pnpm-workspace.yaml` lists: `apps/*`, `packages/<category>
 
 ## Required files
 
-| File            | Holds                                                                             |
-| --------------- | --------------------------------------------------------------------------------- |
-| `package.json`  | The manifest fields below; scripts from the [task vocabulary](/guides/tooling)    |
-| `turbo.jsonc`   | `{ "extends": ["//"], "tags": ["tier:<x>"] }` with exactly one tier tag           |
-| `tsconfig.json` | Extends one `@stackra/typescript-config/<preset>` and nothing else                |
-| `README.md`     | What it is, a tasks table of its scripts, the structure of `src/`, how to run it  |
-| `AGENTS.md`     | Where code goes, rules that fail the build, tasks, and a mandatory `## PII` table |
-| `CHANGELOG.md`  | `# <package name>` and a note that Changesets writes it; never hand-edited        |
-| `LICENSE`       | A byte-for-byte copy of the root `LICENSE`: a licence travels with the artifact   |
+| File            | Holds                                                                                                                                                                |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `package.json`  | The manifest fields below; scripts from the [task vocabulary](/guides/tooling)                                                                                       |
+| `turbo.jsonc`   | `{ "extends": ["//"], "tags": ["tier:<x>"] }` with exactly one tier tag                                                                                              |
+| `tsconfig.json` | Extends one `@stackra/typescript-config/<preset>` and nothing else                                                                                                   |
+| `README.md`     | What it is, a tasks table of its scripts, the structure of `src/`, how to run it                                                                                     |
+| `AGENTS.md`     | Where code goes, rules that fail the build, tasks, and a mandatory `## PII` table                                                                                    |
+| `CHANGELOG.md`  | `# <package name>` and a note that Changesets writes it; never hand-edited                                                                                           |
+| `LICENSE`       | Packages and tooling only: a byte-for-byte copy of the root `LICENSE`. Apps and services carry none ([0195](/adr/0195-organisation-legal-and-release-communication)) |
 
 A member with a build or tests also carries `vitest.config.ts` (extends a `@stackra/vitest-config` preset) and `tsdown.config.ts` (when `build` is `tsdown`), each starting with the [file contract](/standards/code-style#file-contract). All source lives in `src/`.
 
@@ -40,7 +40,7 @@ Presence of the heading is checked; whether the table is still true is a review 
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `name`        | `@stackra/<name>`; apps `@figentra/<dir>`; services `@figentra/service-<name>`                                                                                                                                                                         |
 | `description` | Non-empty, one sentence                                                                                                                                                                                                                                |
-| `license`     | `"MIT"` ([0024](/adr/0024-mit-license-with-exclusions))                                                                                                                                                                                                |
+| `license`     | `"MIT"` for `@stackra/*` ([0024](/adr/0024-mit-license-with-exclusions)); `"UNLICENSED"` for apps and services ([0195](/adr/0195-organisation-legal-and-release-communication))                                                                        |
 | `private`     | `true` until a package is published                                                                                                                                                                                                                    |
 | `type`        | `"module"`                                                                                                                                                                                                                                             |
 | `sideEffects` | `false` on every `tier:lib` package                                                                                                                                                                                                                    |
@@ -73,7 +73,7 @@ The direction rule is a law: see [Boundaries](/constitution/boundaries) and [ADR
 
 ## Scaffolding
 
-`pnpm new <kind> <name> [--category <c>] [--entries <list>|none] [--description "<text>"] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the target repo's `LICENSE`, and formats the result. Then run `pnpm install` and `pnpm verify`.
+`pnpm new <kind> <name> [--category <c>] [--entries <list>|none] [--description "<text>"] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the target repo's `LICENSE` (packages and tooling only), and formats the result. Then run `pnpm install` and `pnpm verify`.
 
 | Kind          | Template                     | Lands in                                             |
 | ------------- | ---------------------------- | ---------------------------------------------------- |
@@ -100,8 +100,8 @@ Shapes: [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates). Flags and to
 | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------ |
 | `README.md`, `AGENTS.md`, `CHANGELOG.md`, `LICENSE` exist                           | `validate-repository.mjs` (`checkFiles`)                              | Yes    |
 | `AGENTS.md` has a `## PII` heading                                                  | `validate-repository.mjs`                                             | Yes    |
-| `LICENSE` equals the root `LICENSE`                                                 | `validate-repository.mjs`                                             | Yes    |
-| `description` non-empty, `license` is `MIT`                                         | `validate-repository.mjs`                                             | Yes    |
+| Package `LICENSE` equals the root `LICENSE`; apps and services have none            | `validate-repository.mjs`                                             | Yes    |
+| `description` non-empty, `license` is `MIT` (`UNLICENSED` for apps, services)       | `validate-repository.mjs`                                             | Yes    |
 | `name` is `@stackra/<name>`, `@figentra/<dir>` or `@figentra/service-<dir>`         | `validate-repository.mjs`                                             | Yes    |
 | Exactly one `tier:*` tag matching the directory; extends `//`                       | `validate-repository.mjs` (`check`)                                   | Yes    |
 | `tsconfig.json` extends `@stackra/typescript-config/<preset>`                       | `validate-repository.mjs`                                             | Yes    |

@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "description": "Stackra documentation site — Mintlify (docs.json + MDX).",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "cd src && mint dev --port 3333",
