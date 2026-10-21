@@ -58,15 +58,38 @@ export function reviewerAllows(args) {
 
 /**
  * Commands that would print the token or store it (STA-208): `gh auth …` (token, status --show-token, login,
- * setup-git) and `git credential …` (fill answers with the token). git's `-c`/`-C` values are skipped.
+ * setup-git) and `git credential …` / `git credential-<helper> …` (they answer with a token).
  */
 export function leaksToken(tool, args) {
-  const words = [];
+  const [first = ""] = words(tool, args);
+  return tool === "git" ? /^credential(-|$)/.test(first) : first === "auth";
+}
+
+/**
+ * Merges outside `pnpm pr:merge` (STA-214, ADR 0119): `gh pr merge`, `gh api …/pulls/<n>/merge` with any method, and
+ * the GraphQL merge mutations. pr-merge.mjs runs gh itself after its checks, so it never comes through here.
+ */
+export function mergesPr(args) {
+  const [group, verb] = words("gh", args);
+  if (group === "pr") return verb === "merge";
+  return (
+    group === "api" &&
+    args.some((a) =>
+      /\bpulls\/\d+\/merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/.test(a),
+    )
+  );
+}
+
+/** The non-flag words: git's `-c`/`-C`/`--git-dir`/`--work-tree`/`--namespace` and gh's `-R`/`--repo` values skipped. */
+function words(tool, args) {
+  const takesValue =
+    tool === "git" ? ["-c", "-C", "--git-dir", "--work-tree", "--namespace"] : ["-R", "--repo"];
+  const out = [];
   for (let i = 0; i < args.length; i++) {
-    if (tool === "git" && ["-c", "-C"].includes(args[i])) i++;
-    else if (!args[i].startsWith("-")) words.push(args[i]);
+    if (takesValue.includes(args[i])) i++;
+    else if (!args[i].startsWith("-")) out.push(args[i]);
   }
-  return words[0] === (tool === "git" ? "credential" : "auth");
+  return out;
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -78,6 +101,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   }
   if (leaksToken(tool, args)) {
     process.stderr.write("bot-gh: `gh auth` and `git credential` would expose the bot token\n");
+    process.exit(2);
+  }
+  if (tool !== "git" && mergesPr(args)) {
+    process.stderr.write("bot-gh: agents merge only through `pnpm pr:merge <n>`\n");
     process.exit(2);
   }
   if (tool === "review" && !reviewerAllows(args)) {
