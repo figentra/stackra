@@ -389,3 +389,29 @@ test("STA-254 re-review: $$, case and comments in a substitution, escaped backti
   ])
     assert.equal(kind(c), "allow", c);
 });
+
+test("STA-254 re-review 3: escaped word boundaries, heredocs only in plain state, case pattern commands", () => {
+  for (const c of [
+    "echo `echo x\\ # ; git push origin main`",
+    "echo `echo x\\ # ; infisical export`",
+    `echo $(echo x\\ # ; git push origin main)`,
+    `echo $(echo x\\ # ; infisical export)`,
+    `echo $(echo x\\;# ; git push origin main)`,
+    `echo $(echo x\\\n# ; git push origin main)`,
+    `echo '<<EOF'\ngit push origin main\nEOF`,
+    `cat <<<EOF\ngit push origin main\nEOF`,
+    `echo "<<EOF"\ninfisical export\nEOF`,
+    `echo $((1<<EOF))\ngit push origin main\nEOF`,
+    `echo x # <<EOF\ngit push origin main\nEOF`,
+    `echo "$(case a in a) git push origin main ;; esac)"`,
+    `cat <<A <<B\na\nA\n$(git push origin main)\nB`,
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    `cat <<-EOF\n\tgit push origin main is prose\n\tEOF`,
+    `echo $((1 << 2))`,
+    `cat <<<"it's fine"`,
+    `cat > notes.md <<'EOF'\nrun git push origin main; it's fine\nEOF`,
+  ])
+    assert.equal(kind(c), "allow", c);
+});

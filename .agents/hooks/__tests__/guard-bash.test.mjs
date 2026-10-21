@@ -701,3 +701,29 @@ for (const c of [
   `cat > notes.md <<'EOF'\n$(git push origin main) stays text\nEOF`,
 ])
   test(`allow: ${c}`, () => assert.equal(denied(c), false));
+
+// STA-254 re-review 3: an escaped space, `;` or newline is not a word start for `#`; heredocs only in plain
+// state (not quoted, not `<<<`, not arithmetic or a comment); a case pattern `)` starts a command.
+for (const c of [
+  "echo `echo x\\ # ; git push origin main`",
+  "echo `echo x\\ # ; infisical export`",
+  `echo $(echo x\\ # ; git push origin main)`,
+  `echo $(echo x\\ # ; infisical export)`,
+  `echo $(echo x\\;# ; git push origin main)`,
+  `echo $(echo x\\\n# ; git push origin main)`,
+  `echo '<<EOF'\ngit push origin main\nEOF`,
+  `cat <<<EOF\ngit push origin main\nEOF`,
+  `echo "<<EOF"\ninfisical export\nEOF`,
+  `echo $((1<<EOF))\ngit push origin main\nEOF`,
+  `echo x # <<EOF\ngit push origin main\nEOF`,
+  `git commit -m "$(case a in a) git push origin main ;; esac)"`,
+  `cat <<A <<B\na\nA\n$(git push origin main)\nB`,
+])
+  test(`deny: ${c}`, () => assert.equal(denied(c), true));
+for (const c of [
+  `cat <<-EOF\n\tgit push origin main is prose\n\tEOF`,
+  `echo $((1 << 2))`,
+  `cat <<<"it's fine"`,
+  `pnpm bot:gh -- pr create --title t --body-file - <<'EOF'\nrun git push origin main; it's fine\nEOF`,
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));
