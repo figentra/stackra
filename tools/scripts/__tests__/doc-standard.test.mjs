@@ -200,6 +200,23 @@ test("a block with no purpose sentence is a finding", () => {
   assert.match(findings[0], /without a purpose sentence/);
 });
 
+test("a package name with an @ mid-sentence is prose, not a tag, so the summary still counts", () => {
+  const findings = checkFile(
+    PATH,
+    file(`\n/** Uses @stackra/logger for output. */\nexport const x = 1;\n`),
+  );
+  assert.deepEqual(findings, []);
+});
+
+test("a tag at the start of a line ends the summary, so a tag-only block has no purpose sentence", () => {
+  const findings = checkFile(
+    PATH,
+    file(`\n/**\n * Thing.\n * @remarks Long note here.\n */\nexport const x = 1;\n`),
+  );
+  assert.equal(findings.length, 1);
+  assert.match(findings[0], /without a purpose sentence/);
+});
+
 test("a line comment between the block and the declaration keeps the block attached", () => {
   const findings = checkFile(
     PATH,

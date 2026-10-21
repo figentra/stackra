@@ -153,13 +153,13 @@ function docOf(sf, text, node) {
  * @returns a problem description, or undefined.
  */
 function summaryProblem(doc) {
-  const summary = doc
+  const lines = doc
     .replace(/^\/\*\*|\*\/$/g, "")
     .split("\n")
-    .map((line) => line.replace(/^\s*\*\s?/, ""))
-    .join(" ")
-    .split(/\s@\w/)[0]
-    .trim();
+    .map((line) => line.replace(/^\s*\*?\s?/, ""));
+  // Only a tag that starts a line ends the summary; `@stackra/logger` mid-sentence is prose.
+  const tagAt = lines.findIndex((line) => /^@\w/.test(line.trim()));
+  const summary = (tagAt === -1 ? lines : lines.slice(0, tagAt)).join(" ").trim();
   return summary.split(/\s+/).filter(Boolean).length < MIN_SUMMARY_WORDS
     ? "has a TSDoc block without a purpose sentence (ADR 0007)"
     : undefined;
