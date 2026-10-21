@@ -90,11 +90,16 @@ hold fewer permissions than the builder app.
 - `.agents/hooks/guard-bash.mjs`: denies agent commands that write `owner-approval` or `owner-approved`, or post
   `AI-REVIEW:` through `gh` or `pnpm bot:gh`. For rule 5 it denies plain `gh`, network `git` outside `pnpm bot:git`
   (push, fetch, pull, clone, ls-remote, submodule, subtree, remote update/show/prune, archive `--remote`),
-  `pnpm bot:token`, `$GH_TOKEN`, `bot:gh -- auth` and `bot:git -- credential`, also inside `$(…)`, backticks,
-  `sh -c` and `eval`. Tests in `.agents/hooks/__tests__/guard-bash.test.mjs`.
-- `tools/scripts/bot-gh.mjs` (`leaksToken`): the wrappers refuse `gh auth` and `git credential`.
-- `.opencode/plugins/guard/decide.ts`: executors run no `gh`, none of those network `git` commands, and no
-  `pnpm bot:*` or `pr:merge`, with the same substitution bodies checked.
+  `pnpm bot:token`, `$GH_TOKEN`, `bot:gh -- auth`, `git credential` and `git credential-<helper>` (bare or through
+  `bot:git`), pack plumbing (`send-pack`, `receive-pack`, `fetch-pack`, `upload-pack`), a bot push to `main` read in
+  the push's own checkout (`cd`, `-C`, `--git-dir`, `--work-tree`), and any merge outside `pnpm pr:merge`
+  (`bot:gh -- pr merge`, `api …/pulls/<n>/merge` with any method, the GraphQL merge mutations), also inside `$(…)`,
+  backticks, `sh -c` and `eval`. Tests in `.agents/hooks/__tests__/guard-bash.test.mjs`.
+- `tools/scripts/bot-gh.mjs` (`leaksToken`, `mergesPr`): the wrappers refuse `gh auth`, `git credential`,
+  `git credential-*` and every merge, which only `pnpm pr:merge` performs.
+- `.opencode/plugins/guard/decide.ts`: executors run no `gh`, none of those network `git` commands, no pack
+  plumbing, no `git credential` or `git-credential-*`, and no `pnpm bot:*` or `pr:merge`, with the same substitution
+  bodies checked.
 - Planned: the review runs in a CI job with its own credentials (the Phase 3 merge-queue design).
 
 ## Supersedes and sources

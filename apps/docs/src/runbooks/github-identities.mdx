@@ -57,17 +57,23 @@ quotes too), and every `sh -c` or `eval` string. It denies:
   `GH_TOKEN` is set to;
 - network `git` at command position: `push`, `fetch`, `pull`, `clone`, `ls-remote`, `submodule`, `subtree`,
   `remote update|show|prune` and `archive --remote`, for every repository, public or private. Each goes through
-  `pnpm bot:git --`. A bot push to `main` is denied too;
-- anything that could print or store a bot token: `pnpm bot:token`, a `$GH_TOKEN` or `$GITHUB_TOKEN` reference,
-  `pnpm bot:gh -- auth ...`, `pnpm bot:review -- auth ...` and `pnpm bot:git -- credential ...`. `bot-gh.mjs`
-  refuses `gh auth` and `git credential` itself as well.
+  `pnpm bot:git --`. A bot push to `main` is denied too, with the branch read in the checkout the push runs in
+  (after a `cd`, `-C <dir>`, `--git-dir` or `--work-tree`; an unknown `$VAR` target counts as `main`);
+- pack plumbing, bare or through `pnpm bot:git`: `send-pack`, `receive-pack`, `fetch-pack` and `upload-pack`;
+- a merge outside `pnpm pr:merge`: `pnpm bot:gh -- pr merge ...`, `pnpm bot:gh -- api .../pulls/<n>/merge` with any
+  method, and the `mergePullRequest` / `enablePullRequestAutoMerge` GraphQL mutations. `bot-gh.mjs` refuses them
+  itself as well;
+- anything that could print or store a token: `pnpm bot:token`, a `$GH_TOKEN` or `$GITHUB_TOKEN` reference,
+  `pnpm bot:gh -- auth ...`, `pnpm bot:review -- auth ...`, and `git credential fill|approve|reject` or a
+  `git credential-<helper>` (`credential-osxkeychain get` included), bare or through `pnpm bot:git`; they answer
+  with the owner's token. `bot-gh.mjs` refuses `gh auth`, `git credential` and `git credential-*` itself as well.
 
 Local `git` (status, log, diff, add, commit, switch, rebase, worktree, remote -v) needs no login and stays allowed.
 A plain `git commit` carries the developer's git name, so builders commit with `pnpm bot:git -- commit`.
 
 The OpenCode guard (`.opencode/plugins/guard/decide.ts`) is stricter. Executors run no `gh`, and no `git` push,
-fetch, pull, clone, ls-remote, submodule, subtree, remote update, remote show, remote prune or archive with
-`--remote`. They also run no `pnpm bot:*` and no `pnpm pr:merge`, and the same substitution bodies are checked.
+fetch, pull, clone, ls-remote, submodule, subtree, remote update, remote show, remote prune, archive with
+`--remote`, pack plumbing, `credential` or `credential-<helper>`. They also run no `pnpm bot:*` and no `pnpm pr:merge`, and the same substitution bodies are checked.
 
 ## Honest limit
 
