@@ -1,6 +1,6 @@
 ---
 title: "0206 — ZITADEL is the identity provider; @stackra/identity is provider-neutral"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0268 · 2026-10-20"
 ---
 
 <Note>
@@ -8,6 +8,12 @@ description: "Accepted · 2026-10-20"
   [0087](/adr/0087-identity-and-iam-are-driver-packages) (0087 is superseded together with
   [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names).
   [0051](/adr/0051-better-auth-identity-service) is already superseded; its note now points here.
+</Note>
+
+<Note>
+  Amended by [0268](/adr/0268-register-answers-thin-items-r1-to-r18): R3: Stackra builds no login
+  UI. Decision 7 (the login app) is withdrawn. The identity service is a thin control plane over
+  ZITADEL.
 </Note>
 
 ## Context

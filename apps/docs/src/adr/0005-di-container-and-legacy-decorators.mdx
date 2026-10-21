@@ -12,7 +12,8 @@ description: "Accepted, amended by 0143, 0145, 0263 · 2026-10-19"
 
 <Note>
   Amended by [0263](/adr/0263-di-stays-and-gen-writes-the-wiring): a constructor parameter whose
-  type is a class needs no `@Inject` token; gen reads the type. String injection stays banned.
+  type is a class or a same-named token needs no `@Inject`; `@Inject` is for named instances only.
+  Gen reads the type. String injection stays banned.
 </Note>
 
 ## Context

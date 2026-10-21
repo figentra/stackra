@@ -1,0 +1,62 @@
+---
+title: "0265 — Hook points: owner-declared transform and verify hooks, with implicit Before and After on actions"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Amends [0101](/adr/0101-action-first-workflow-behind-when-needed) (decision 4: "before and after
+  hooks" is the hook model of this ADR) and
+  [0261](/adr/0261-generated-stackra-modules-in-stackra-gen) (decision 1: gen also writes
+  `hooks.ts`).
+</Note>
+
+## Context
+
+Other modules need to change a value in an action, or to refuse it, without editing the owner's code. Three mechanisms were weighed.
+Magento-style plugins can wrap any public method with `around`, which hides control flow and makes every method an API. Medusa-style
+workflow hooks are named and owner-declared, but they belong to workflows only. Laravel-style events cannot change a value. The owner
+settled on 2026-10-21 that a hook point is declared by the module that runs it, has one of two kinds, and is printed by gen.
+
+## Decision
+
+1. **Hook points are declared and owned.** `defineHooks(key, { ... })` in the owning module's `hooks/` folder declares named points. Each
+   point has one of two kinds:
+   - **transform**: receives a value and a context, and returns the value. Implementers run in `order`, and each one receives the
+     previous one's output;
+   - **verify**: receives a context, and returns nothing or throws a `StackraError` with a snake_case refusal code
+     ([0140](/adr/0140-error-envelope-and-error-kinds)).
+     There is no `around` and no observe point. Observing is an event listener ([0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders)).
+2. **Implicit points on every action.** Every `@Action` has `Before(ActionClass)`, which transforms the validated input, and
+   `After(ActionClass)`, which transforms the output before it is returned. This replaces the open "before and after hooks" of
+   [0101](/adr/0101-action-first-workflow-behind-when-needed) decision 4 with named, typed points.
+3. **Implementers live in the extender's folder.** A hook class is decorated `@Hook(Point, { order, extends })` and sits in the
+   `hooks/` folder of the module that extends the point. Equal `order` values on one point are a gen error.
+4. **The owner calls the point explicitly.** The owner's code calls `this.hooks.transform(OrderHooks.totals.adjust, base, draft, ctx)`,
+   so the call site is greppable.
+5. **Typed extensions.** A hook may declare `extends: { <namespace>: ZodSchema }`. Gen merges `extensions.<namespace>` into the owning
+   action's input schema, the manifest, the OpenAPI projection and every generated client. An output extension works the same way on
+   `After(...)`. A namespace used by two hooks is a gen error.
+6. **Rules that keep hooks safe.** A hook runs inside the owner's transaction and pipeline. It makes no network call (a lint), and it
+   writes only the module's own data. Anything else uses `ctx.afterCommit` or an event. Hooks are in-process only. Another service never
+   hooks into a module; it listens to events, or the module exposes a port.
+7. **The chain is printed.** Gen writes `.stackra/gen/hooks.ts`, which lists every point with its implementers in order and their file paths.
+8. **A hook point is part of its module's contract.** Changing its types follows the deprecation rule of
+   [0131](/adr/0131-module-key-version-and-deprecation).
+
+## Consequences
+
+- A reviewer answers "who changes the order total?" by reading one generated file.
+- A transform cannot hide control flow, because the order is printed and the call is explicit.
+- Extension of an action needs no workflow, and the extended input reaches the console and the clients with its type.
+- A module must declare its points before a customer can extend them, which is more work for the owner.
+
+## Enforcement
+
+planned — gen fails on equal `order` values on one point, on an `extends` namespace collision, and on a hook point with no declaration; the
+house lint fails a network call inside a hook. Nothing checks these yet.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0101](/adr/0101-action-first-workflow-behind-when-needed), [0261](/adr/0261-generated-stackra-modules-in-stackra-gen).
+Relates to [0136](/adr/0136-action-runtime-contract) (the handler context and transaction). Sources: owner settlement in chat, 2026-10-21
+(programming model question Q3).

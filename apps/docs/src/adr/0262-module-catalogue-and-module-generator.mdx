@@ -1,51 +1,62 @@
 ---
-title: "0262 — Module catalogue per service and the module generator"
+title: "0262 — Module catalogue generated from code, module plans in spec folders, and the module generator"
 description: "Accepted · 2026-10-21"
 ---
 
 <Note>
   Relates to [0126](/adr/0126-member-shapes-and-scaffold-templates) (the generator and the kind
-  folders; `module` is one more kind of the generator, and member shapes do not change) and
-  [0007](/adr/0007-source-documentation-standard) (the contract docblocks).
+  folders; `module` is one more kind of the generator, and member shapes do not change),
+  [0158](/adr/0158-gen-artefacts-openapi-manifest-and-client) (the committed manifest that the
+  catalogue is rendered from) and [0007](/adr/0007-source-documentation-standard) (the contract
+  docblocks).
 </Note>
 
 ## Context
 
-A new feature starts as a blank folder that each author fills differently. An agent that adds a module has no machine-readable
-statement of what the module contributes, so its files drift from the intent. The owner decided on 2026-10-21 that the intent is
-written once, as data, and the files are emitted from it.
+A new feature starts as a blank folder that each author fills differently. An agent that adds a module needs a machine-readable
+statement of what the module contributes, and a catalogue written by hand would become a second source of truth beside the code. The
+owner settled on 2026-10-21 that the code is the truth, the catalogue is generated from it, and a plan is data that is consumed once.
 
 ## Decision
 
-1. **Catalogue per service.** Each service has a machine-readable catalogue, `docs/catalogue/<svc>.yaml`, in the figentra-os repository.
-   A Markdown rendering is generated from it for review. Stackra packages have a package catalogue in this repository, with the same shape.
-2. **The generator.** `pnpm new module <svc> <feature>` reads the module's catalogue entry and emits files:
+1. **Code is the truth; the catalogue is generated.** The committed `app-manifest.json` ([0158](/adr/0158-gen-artefacts-openapi-manifest-and-client))
+   holds what each module contributes. `stackra catalogue` renders the catalogue from that manifest, as YAML for machines and Markdown
+   for review, plus a small hand-written overlay. The overlay holds what code cannot hold: `summary`, `home.reason`, `source` citations
+   and open `questions`. Each service has one catalogue, and each package has one with the same shape.
+2. **Plans live in spec folders.** A module that does not exist yet is planned in `.agents/specs/<sta-n>/module-plan.yaml`, with the
+   same schema as the catalogue. `pnpm new module` consumes the plan once to emit stubs. It does not keep the plan as a second copy.
+3. **The generator.** `pnpm new module <svc> <feature>` reads the module's plan, when one exists, and emits:
    - the module file, its README, `definePermissions`, `defineEvents`, settings and `contracts`;
    - `@Model` stubs with TODO fields;
    - `@Action` and `@Query` stubs with a `key@1`, Zod placeholders, a permission and a risk level;
    - an `@Resource` stub;
    - an action body that throws `not_implemented`;
    - a module boot test.
-3. **Contract docblocks.** Every emitted file opens with a contract block ([0007](/adr/0007-source-documentation-standard)) taken from
-   the catalogue, so a file says what it is for before anyone edits it.
-4. **Idempotent.** A re-run adds the files that are missing and never overwrites a file that exists. A re-run that finds nothing
+4. **Contract docblocks.** Every emitted file opens with a contract block ([0007](/adr/0007-source-documentation-standard)) taken from
+   the plan, so a file says what it is for before anyone edits it.
+5. **Idempotent.** A re-run adds the files that are missing and never overwrites a file that exists. A re-run that finds nothing
    missing changes nothing.
-5. **No empty folders.** A kind folder is created with its first file ([0126](/adr/0126-member-shapes-and-scaffold-templates)
+6. **No empty folders.** A kind folder is created with its first file ([0126](/adr/0126-member-shapes-and-scaffold-templates)
    decision 3).
-6. **The catalogue is the review surface.** A change to a module's contributions starts in its catalogue entry, then the files follow.
+7. **Drift is a to-do list.** `stackra catalogue --diff` shows the plan against the code. A difference is a task for the author. The
+   generator never rewrites code to match a plan, and the plan never overrides the code.
+8. **Pilot catalogues move to plans.** A hand-written catalogue file is split into one plan file per module as each module is built.
+   The published catalogue is always the generated one.
 
 ## Consequences
 
 - A module starts in a shape that passes the validator, and each stub fails loudly until it is implemented.
-- The catalogue becomes a second source of truth beside the code. Drift between them is a finding, so the check in Enforcement is required.
-- Authors who edit the code without updating the catalogue leave the catalogue wrong; the generator never rewrites the code to match it.
+- The catalogue cannot drift from the code, because it is rendered from the manifest. A plan that has not been built shows up as a diff.
+- Authors who change a module's contributions change the code and the manifest follows; there is no second catalogue to keep in step.
+- Plans need a schema, which `pnpm validate` checks.
 
 ## Enforcement
 
 planned — `tools/scripts/__tests__/scaffold.test.mjs` renders a module twice and asserts that the second run creates no file and changes none,
-and that every emitted file opens with a contract block. Planned: `pnpm validate` checks each catalogue against its schema.
+and that every emitted file opens with a contract block. Planned: `pnpm validate` checks each `module-plan.yaml` against its schema, and
+`stackra catalogue --diff` runs in CI as a report, not a gate.
 
 ## Supersedes and sources
 
-Supersedes: none. Relates to [0126](/adr/0126-member-shapes-and-scaffold-templates) and [0007](/adr/0007-source-documentation-standard).
-Sources: owner decision in chat, 2026-10-21 (module catalogue and generator).
+Supersedes: none. Relates to [0126](/adr/0126-member-shapes-and-scaffold-templates), [0007](/adr/0007-source-documentation-standard) and
+[0158](/adr/0158-gen-artefacts-openapi-manifest-and-client). Sources: owner settlement in chat, 2026-10-21 (programming model question Q10).

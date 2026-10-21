@@ -11,8 +11,9 @@ description: "Accepted, amended by 0143, 0147, 0263 · 2026-10-19"
 </Note>
 
 <Note>
-  Amended by [0263](/adr/0263-di-stays-and-gen-writes-the-wiring): decision 2 (explicit tokens)
-  applies only to ports with several drivers; the wiring of a member's own classes is generated.
+  Amended by [0263](/adr/0263-di-stays-and-gen-writes-the-wiring): decision 2 (explicit tokens) is
+  replaced. Interface ports and config have same-named tokens, a constructor needs no `@Inject`, and
+  `@Inject` is for named instances only. Gen writes the wiring of a member's own classes.
 </Note>
 
 ## Context

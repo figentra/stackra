@@ -363,7 +363,12 @@
               "adr/0260-cross-service-calls-through-injected-clients-and-events",
               "adr/0261-generated-stackra-modules-in-stackra-gen",
               "adr/0262-module-catalogue-and-module-generator",
-              "adr/0263-di-stays-and-gen-writes-the-wiring"
+              "adr/0263-di-stays-and-gen-writes-the-wiring",
+              "adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders",
+              "adr/0265-hook-points-transform-and-verify",
+              "adr/0266-capabilities-phase-in-one-option-one-driver-memory-first",
+              "adr/0267-infisical-agent-vault-deferred",
+              "adr/0268-register-answers-thin-items-r1-to-r18"
             ]
           }
         ]

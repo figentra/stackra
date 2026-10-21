@@ -1,6 +1,6 @@
 ---
 title: "0261 — Generated #stackra modules: real files in .stackra/gen, imported through the #stackra alias"
-description: "Accepted · 2026-10-21"
+description: "Accepted, amended by 0265 · 2026-10-21"
 ---
 
 <Note>
@@ -11,6 +11,12 @@ description: "Accepted · 2026-10-21"
   [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron) and
   [0250](/adr/0250-stackra-platform-capability-ports-drivers-and-gate) (the `capabilities` output)
   and [0263](/adr/0263-di-stays-and-gen-writes-the-wiring) (the `wiring` output).
+</Note>
+
+<Note>
+  Amended by [0265](/adr/0265-hook-points-transform-and-verify): Gen also writes
+  `.stackra/gen/hooks.ts`, which lists every hook point with its implementers in order and their
+  file paths (decision 1 lists the outputs, and `hooks.ts` is one of them).
 </Note>
 
 ## Context

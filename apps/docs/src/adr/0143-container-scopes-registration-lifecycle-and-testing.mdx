@@ -12,7 +12,8 @@ description: "Accepted, amended by 0263 · 2026-10-20"
 <Note>
   Amended by [0263](/adr/0263-di-stays-and-gen-writes-the-wiring): a module's own providers are
   wired by gen and are not registered by hand. `forRoot` and `forRootAsync` for third-party modules
-  stay. Tests use `createTestingModule(Module).override(Port, fake)`.
+  stay, and `forRoot` takes code only; values come from the config layers. Tests use
+  `createTestingModule(Module).override(Port, fake)`.
 </Note>
 
 ## Context

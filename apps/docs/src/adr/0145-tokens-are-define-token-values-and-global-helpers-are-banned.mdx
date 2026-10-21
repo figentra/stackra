@@ -1,6 +1,6 @@
 ---
 title: "0145 — Tokens are defineToken values; container-backed global helpers are banned"
-description: "Accepted, amended by 0247, 0263 · 2026-10-20"
+description: "Accepted, amended by 0247, 0263, 0264 · 2026-10-20"
 ---
 
 <Note>
@@ -15,8 +15,15 @@ description: "Accepted, amended by 0247, 0263 · 2026-10-20"
 </Note>
 
 <Note>
-  Amended by [0263](/adr/0263-di-stays-and-gen-writes-the-wiring): `defineToken` is for ports with
-  several drivers; a class is its own token. Typed config is unchanged.
+  Amended by [0263](/adr/0263-di-stays-and-gen-writes-the-wiring) (decision 3): every interface port
+  has a same-named `defineToken` value, and `defineConfig` returns a same-named type. A constructor
+  typed with either needs no `@Inject`. A class is its own token.
+</Note>
+
+<Note>
+  Amended by [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders)
+  (decision 4): the define family is closed at eight entries. `defineHooks` and `defineComponents`
+  are added.
 </Note>
 
 ## Context
