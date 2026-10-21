@@ -70,14 +70,38 @@ export function leaksToken(tool, args) {
  * the GraphQL merge mutations. pr-merge.mjs runs gh itself after its checks, so it never comes through here.
  */
 export function mergesPr(args) {
-  const [group, verb] = words("gh", args);
+  const [group] = words("gh", args);
   if (group === "pr") return verb === "merge";
   return (
     group === "api" &&
     args.some((a) =>
-      /\bpulls\/\d+\/merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/.test(a),
+      /\bpulls(?:\/|%2F)+\d+(?:\/|%2F)+merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/i.test(
+        a,
+      ),
     )
   );
+}
+
+/**
+ * Why a command is refused regardless of tool (STA-216), or null. git: `-c alias.*` / `-c include*` / `--config-env`
+ * run any git command past the guards. gh: `alias` rewrites the owner's gh config; `api graphql` with the document
+ * from a file (`-F query=@f`, `--input`) cannot be checked for a merge mutation, so file-sourced GraphQL is denied.
+ */
+export function unsafeArgs(tool, args) {
+  if (tool === "git") {
+    const bad = args.some(
+      (a, i) =>
+        /^--config-env\b/.test(a) ||
+        (a === "-c" && /^(?:alias\.|include)/i.test(args[i + 1] ?? "")) ||
+        /^-c(?:alias\.|include)/i.test(a),
+    );
+    return bad ? "`-c alias.*`, `-c include*` and `--config-env` bypass the guards" : null;
+  }
+  const [group] = words("gh", args);
+  if (group === "alias") return "`gh alias` rewrites the owner's gh config";
+  if (group === "api" && args.includes("graphql") && args.some((a) => /=@|^@|^--input\b/.test(a)))
+    return "GraphQL from a file cannot be checked for a merge mutation; inline the query";
+  return null;
 }
 
 /** The non-flag words: git's `-c`/`-C`/`--git-dir`/`--work-tree`/`--namespace` and gh's `-R`/`--repo` values skipped. */
@@ -101,6 +125,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   }
   if (leaksToken(tool, args)) {
     process.stderr.write("bot-gh: `gh auth` and `git credential` would expose the bot token\n");
+    process.exit(2);
+  }
+  const unsafe = unsafeArgs(tool === "review" ? "gh" : tool, args);
+  if (unsafe) {
+    process.stderr.write(`bot-gh: ${unsafe}\n`);
     process.exit(2);
   }
   if (tool !== "git" && mergesPr(args)) {

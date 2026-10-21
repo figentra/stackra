@@ -58,11 +58,19 @@ quotes too), and every `sh -c` or `eval` string. It denies:
 - network `git` at command position: `push`, `fetch`, `pull`, `clone`, `ls-remote`, `submodule`, `subtree`,
   `remote update|show|prune` and `archive --remote`, for every repository, public or private. Each goes through
   `pnpm bot:git --`. A bot push to `main` is denied too, with the branch read in the checkout the push runs in
-  (after a `cd`, `-C <dir>`, `--git-dir` or `--work-tree`; an unknown `$VAR` target counts as `main`);
-- pack plumbing, bare or through `pnpm bot:git`: `send-pack`, `receive-pack`, `fetch-pack` and `upload-pack`;
+  (after a `cd`, `-C <dir>`, `--git-dir`, `--work-tree` or a `GIT_DIR=` / `GIT_WORK_TREE=` assignment; quoted `-c`
+  values are read whole; an unknown `$VAR` target or an unresolvable checkout counts as `main`);
+- `git -c alias.*`, `-c include*`, `--config-env` and `GIT_CONFIG_*`: an alias runs any git command under another
+  name (`-c alias.x=credential x fill`), past every rule above. `bot-gh.mjs` refuses them too;
+- pack plumbing, bare, through `pnpm bot:git` or as the binary (`git-send-pack`): `send-pack`, `receive-pack`,
+  `fetch-pack` and `upload-pack`;
 - a merge outside `pnpm pr:merge`: `pnpm bot:gh -- pr merge ...`, `pnpm bot:gh -- api .../pulls/<n>/merge` with any
   method, and the `mergePullRequest` / `enablePullRequestAutoMerge` GraphQL mutations. `bot-gh.mjs` refuses them
-  itself as well;
+  itself as well, also with `pulls/<n>//merge` and `%2F`-encoded paths. Prose does not count: the quoted value of
+  `--title`, `--body`, `-m` and the text of `pnpm linear comment` are not scanned;
+- `pnpm bot:gh -- api graphql` with the query from a file (`-F query=@f`, `-f query=@f`, `--input`) or a
+  substitution, and `pnpm bot:gh -- alias ...`: the query cannot be checked for a merge mutation, and an alias
+  rewrites the owner's gh config. Inline the query (`bot-gh.mjs` refuses these as well);
 - anything that could print or store a token: `pnpm bot:token`, a `$GH_TOKEN` or `$GITHUB_TOKEN` reference,
   `pnpm bot:gh -- auth ...`, `pnpm bot:review -- auth ...`, and `git credential fill|approve|reject` or a
   `git credential-<helper>` (`credential-osxkeychain get` included), bare or through `pnpm bot:git`; they answer
@@ -76,6 +84,10 @@ fetch, pull, clone, ls-remote, submodule, subtree, remote update, remote show, r
 `--remote`, pack plumbing, `credential` or `credential-<helper>`. They also run no `pnpm bot:*` and no `pnpm pr:merge`, and the same substitution bodies are checked.
 
 ## Honest limit
+
+REST writes to `main` without a PR (`POST /merges`, `PATCH git/refs/heads/main`, `PUT contents` with `branch=main`)
+are not matched by the guards. Branch protection must stop them, and it does so for non-admins only: enable
+`enforce_admins` or a ruleset for `main` (owner setting, step 1 below).
 
 The guards are an accident guard, not isolation. They do not follow aliases, shell functions, variables used as a
 command name, `npx` or `pnpm dlx`. Agents run as the owner's macOS user, so the keychain and `~/.config/gh` are

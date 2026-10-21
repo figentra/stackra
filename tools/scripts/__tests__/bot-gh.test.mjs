@@ -86,3 +86,30 @@ test("git runs as the bot with a token-free, non-persisted credential setup", ()
   );
   assert.ok(!args.some((arg) => /ghs_|x-access-token/.test(arg)));
 });
+
+test("STA-216: aliases, file-sourced GraphQL and encoded merge paths are refused", async () => {
+  const { unsafeArgs } = await import("../bot-gh.mjs");
+  for (const [tool, args] of [
+    ["git", ["-c", "alias.x=credential", "x", "fill"]],
+    ["git", ["-calias.p=push", "p"]],
+    ["git", ["-c", "include.path=/tmp/x", "status"]],
+    ["git", ["--config-env=alias.x=V", "x"]],
+    ["gh", ["alias", "set", "x", "pr merge"]],
+    ["gh", ["api", "graphql", "-F", "query=@q.graphql"]],
+    ["gh", ["api", "-X", "POST", "graphql", "--input", "q.json"]],
+    ["gh", ["api", "graphql", "-f", "query=@q.graphql"]],
+  ])
+    assert.ok(unsafeArgs(tool, args), `${tool} ${args.join(" ")}`);
+  for (const [tool, args] of [
+    ["git", ["-c", "user.name=x", "status"]],
+    ["gh", ["api", "graphql", "-f", "query=query { viewer { login } }"]],
+    ["gh", ["pr", "create", "--body", "alias set"]],
+  ])
+    assert.equal(unsafeArgs(tool, args), null, `${tool} ${args.join(" ")}`);
+  for (const path of [
+    "repos/x/y/pulls/12//merge",
+    "repos/x/y/pulls%2F12%2Fmerge",
+    "repos/x/y/pulls/12%2fmerge",
+  ])
+    assert.equal(mergesPr(["api", "-X", "PUT", path]), true, path);
+});

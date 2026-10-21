@@ -44,8 +44,10 @@ function stripHeredocs(raw) {
   );
 }
 
-/** git's global options before the subcommand. */
-const GIT_OPTS = String.raw`(?:(?:-[Cc]\s+\S+|--(?:git-dir|work-tree|namespace)(?:=\S+|\s+\S+)|--no-pager|--literal-pathspecs)\s+)*`;
+/** An option value: a quoted string (spaces allowed) or one word. */
+const Q = String.raw`"[^"]*"|'[^']*'|\S+`;
+/** git's global options before the subcommand (STA-216: quoted values, the boolean options). */
+const GIT_OPTS = String.raw`(?:(?:-[Cc]\s+(?:${Q})|--(?:git-dir|work-tree|namespace)(?:=(?:${Q})|\s+(?:${Q}))|--exec-path(?:=\S+)?|--(?:no-pager|paginate|bare|literal-pathspecs|no-replace-objects|glob-pathspecs|noglob-pathspecs|icase-pathspecs|no-optional-locks)|-[pP])\s+)*`;
 /** `git` (or `pnpm bot:git --`) followed by any global options before the subcommand. */
 const GIT = String.raw`\bgit\s+(?:--\s+)?` + GIT_OPTS;
 
@@ -91,12 +93,39 @@ function git(cwd, ...args) {
 /** Quoted strings blanked, so a word inside `node -e '...'` or `--body "..."` is not mistaken for a command. */
 const blank = (c) => c.replace(/'[^']*'|"(?:\\.|[^"\\])*"/g, '""');
 
-/** Command segments (split on separators, quotes kept). */
-const segments = (c) => c.split(/&&|\|\||[|;&\n]/);
+/** Command segments: split on separators outside quotes (a `;` inside `-c "a;b"` does not hide a push). */
+function segments(c) {
+  const out = [];
+  let cur = "";
+  let quote = "";
+  for (let i = 0; i < c.length; i++) {
+    const ch = c[i];
+    if (quote) {
+      if (ch === "\\" && quote === '"') cur += ch + (c[++i] ?? "");
+      else {
+        cur += ch;
+        if (ch === quote) quote = "";
+      }
+    } else if (ch === "'" || ch === '"') {
+      quote = ch;
+      cur += ch;
+    } else if (/[|;&\n]/.test(ch)) {
+      out.push(cur);
+      cur = "";
+    } else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
 const unquote = (w) => w.replace(/^['"]+|['"]+$/g, "");
-/** Commit / tag message text is prose, not a command: blank the quoted `-m` / `--message` value. */
+/**
+ * Prose is not a command: blank the quoted `-m` / `--message` / `--title` / `--body` value and the text of
+ * `pnpm linear comment <KEY> "…"` (STA-216), so a PR body or a comment may mention `pr merge` or `push origin main`.
+ */
 const dropMessages = (c) =>
-  c.replace(/(\s(?:-m|--message)(?:\s+|=))("(?:\\.|[^"\\])*"|'[^']*')/g, "$1MSG");
+  c
+    .replace(/(\s(?:-m|--message|--title|--body)(?:\s+|=))("(?:\\.|[^"\\])*"|'[^']*')/g, "$1MSG")
+    .replace(/(\blinear\s+comment\s+\S+\s+)("(?:\\.|[^"\\])*"|'[^']*')/g, "$1MSG");
 
 /** `infisical secrets` with no subcommand (only flags / flag values) lists every value. */
 const INFISICAL_SUBCOMMANDS = new Set(["get", "set", "delete", "folders", "generate-example-env"]);
@@ -131,6 +160,10 @@ const expandHome = (p) => {
 function pushesMain(c, cwd) {
   const PUSH = new RegExp(String.raw`\bgit\s+(?:--\s+)?(` + GIT_OPTS + String.raw`)push\b(.*)$`);
   let dir = cwd;
+  // GIT_DIR= / GIT_WORK_TREE= anywhere (inline prefix, `export`, `env`) move the push's repository (STA-216).
+  const envTarget = [...c.matchAll(new RegExp(String.raw`\bGIT_(DIR|WORK_TREE)=(${Q})`, "g"))].map(
+    ([, k, v]) => [k === "DIR" ? "--git-dir" : "--work-tree", expandHome(v)],
+  );
   return segments(dropMessages(c)).some((seg) => {
     const cd = seg.match(/^\s*(?:cd|pushd)\s+(\S+)\s*$/);
     if (cd) {
@@ -149,18 +182,31 @@ function pushesMain(c, cwd) {
     if (dir === null) return true;
     // Only the location options are replayed; a `-c` value could run code (core.fsmonitor), so it is dropped.
     const target = [];
-    for (const [, opt, value] of m[1].matchAll(/(-C|--git-dir|--work-tree)(?:=|\s+)(\S+)/g)) {
-      const v = expandHome(value);
+    for (const [opt, v] of envTarget) {
       if (v === null) return true;
-      target.push(...(opt === "-C" ? ["-C", v] : [`${opt}=${v}`]));
+      target.push(`${opt}=${v}`);
     }
-    return git(dir, ...target, "symbolic-ref", "--short", "HEAD") === "main";
+    // Tokenised in order: a `-c a=--git-dir=x` value is consumed as a value, never read as an option.
+    const tokens = new RegExp(
+      String.raw`(?<bare>--bare)|(?<opt>-C|--git-dir|--work-tree)(?:=|\s+)(?<value>${Q})|-c\s+(?:${Q})|--namespace(?:=(?:${Q})|\s+(?:${Q}))|--[a-z-]+(?:=\S+)?|-[pP]`,
+      "g",
+    );
+    for (const { groups: g } of m[1].matchAll(tokens)) {
+      if (g.bare) target.push("--bare");
+      if (!g.opt) continue;
+      const v = expandHome(g.value);
+      if (v === null) return true;
+      target.push(...(g.opt === "-C" ? ["-C", v] : [`${g.opt}=${v}`]));
+    }
+    // A checkout that cannot be resolved counts as main.
+    const branch = git(dir, ...target, "symbolic-ref", "--short", "HEAD");
+    return branch === "" || branch === "main";
   });
 }
 
 /** `pnpm bot:gh` merging a PR: `pr merge`, `api …/pulls/<n>/merge` (any method), or a GraphQL merge mutation. */
 const MERGE =
-  /\bpr\s+(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?merge\b|\bpulls\/\d+\/merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/;
+  /\bpr\s+(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?merge\b|\bpulls(?:\/|%2F)+\d+(?:\/|%2F)+merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/i;
 const botMerges = (c) =>
   [dropMessages(c), ...runnable(c)].some((t) =>
     segments(t).some((s) => /\bbot:gh\b/.test(blank(s)) && MERGE.test(s)),
@@ -289,8 +335,35 @@ const rules = [
   },
   {
     // STA-214: pack plumbing pushes or fetches without the push-to-main check; no agent needs it.
-    rx: (c) => runs(c, new RegExp(GIT + String.raw`(?:send|receive|fetch|upload)-pack\b`)),
-    why: "`git send-pack`, `receive-pack`, `fetch-pack` and `upload-pack` are pack plumbing that bypasses the push guard. Use `pnpm bot:git -- push origin HEAD` or `pnpm bot:git -- fetch origin`.",
+    // The binary by path (`/usr/lib/git-core/git-send-pack`) is the same plumbing as `git send-pack`.
+    rx: (c) =>
+      runs(c, new RegExp(GIT + String.raw`(?:send|receive|fetch|upload)-pack\b`)) ||
+      runs(c, new RegExp(BARE + String.raw`git-(?:send|receive|fetch|upload)-pack\b`)),
+    why: "`git send-pack`, `receive-pack`, `fetch-pack` and `upload-pack` (and the `git-*-pack` binaries) are pack plumbing that bypasses the push guard. Use `pnpm bot:git -- push origin HEAD` or `pnpm bot:git -- fetch origin`.",
+  },
+  {
+    // STA-216: a config alias runs any git command (`-c alias.x=credential x fill`, `-c alias.p=push p origin main`);
+    // an included config file or GIT_CONFIG_* env can define one too.
+    rx: (c) =>
+      /\bgit\b/.test(c) &&
+      /(?:^|\s)(?:-c\s*['"]?(?:alias\.|include)|--config-env\b|GIT_CONFIG_(?:COUNT|KEY_\d+|PARAMETERS)=)/i.test(
+        dropMessages(c),
+      ),
+    why: "`git -c alias.*`, `-c include*`, `--config-env` and `GIT_CONFIG_*` define git aliases that bypass the push and credential guards. Run the real subcommand.",
+  },
+  {
+    // STA-216: a GraphQL document read from a file or a substitution cannot be checked for a merge mutation;
+    // `gh alias` rewrites the owner's gh config. tools/scripts/bot-gh.mjs denies both as well.
+    rx: (c) =>
+      [dropMessages(c), ...runnable(c)].some((t) =>
+        segments(t).some(
+          (s) =>
+            /\bbot:gh\b/.test(blank(s)) &&
+            (/\balias\s+(?:set|import|delete)\b/.test(s) ||
+              (/\bapi\s+(?:-\S+\s+)*graphql\b/.test(s) && /=@|--input\b|\$\(|`/.test(s))),
+        ),
+      ),
+    why: "`pnpm bot:gh -- api graphql` with the query from a file (`-F query=@f`, `--input`) or a substitution, and `gh alias set`, are denied: the query cannot be checked for a merge mutation. Inline the query, or merge with `pnpm pr:merge <n>`.",
   },
   {
     rx: (c) => runs(c, BARE_GH),
@@ -310,7 +383,8 @@ const rules = [
         new RegExp(
           String.raw`\bbot:(?:gh|review)\s+(?:--\s+)?auth\b|\bbot:git\s+(?:--\s+)?(?:\S+\s+)*?credential\b|` +
             // STA-214: `git credential fill` and `git credential-<helper> get` answer with the owner's token.
-            String.raw`\bgit(?:-|\s+(?:--\s+)?` +
+            // `man git-credential` and similar read-only help is not a credential call (STA-216).
+            String.raw`(?<!\b(?:man|help|which|whereis|type)\s+(?:-\S+\s+)*)\bgit(?:-|\s+(?:--\s+)?` +
             GIT_OPTS +
             String.raw`)credential\b`,
         ),

@@ -94,10 +94,21 @@ const subcommands = (cmd: string): string[] =>
     .map((s) => s.trim())
     .filter(Boolean);
 
+/** Global options whose value is the next word (`--git-dir=x` carries its value and is skipped as a flag). */
+const GIT_VALUE_OPTS = new Set(["-C", "-c", "--git-dir", "--work-tree", "--namespace"]);
+/** `-c alias.*` / `-c include*` / `--config-env` run any git command under another name (STA-216). */
+const gitAliasConfig = (args: string[]): boolean =>
+  args.some(
+    (a, i) =>
+      /^--config-env\b/.test(a) ||
+      (a === "-c" && /^(?:alias\.|include)/i.test(args[i + 1] ?? "")) ||
+      /^-c(?:alias\.|include)/i.test(a),
+  );
+
 /** git's subcommand, skipping global options (`-C dir`, `-c k=v`, `--git-dir=…`). */
 function gitSubcommand(args: string[]): string {
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === "-C" || args[i] === "-c") i++;
+    if (GIT_VALUE_OPTS.has(args[i])) i++;
     else if (!args[i].startsWith("-")) return args[i];
   }
   return "";
@@ -139,7 +150,15 @@ function denyExecutor(sub: string, cmd: string, args: string[]): Decision {
     return deny(
       `\`encore ${args[0]}\` touches a shared environment or its secrets; the owner runs it.`,
     );
+  if (/^git-(?:send|receive|fetch|upload)-pack$/.test(cmd))
+    return deny(
+      `\`${cmd}\` is pack plumbing that bypasses the git checks; executors never run it.`,
+    );
   if (cmd === "git") {
+    if (gitAliasConfig(args) || /\bGIT_CONFIG_(?:COUNT|KEY_\d+|PARAMETERS)=/.test(sub))
+      return deny(
+        "`git -c alias.*`, `-c include*` and `--config-env` rename git commands past the guard.",
+      );
     const g = gitSubcommand(args);
     const readOnly = g === "worktree" && args.includes("list");
     if (

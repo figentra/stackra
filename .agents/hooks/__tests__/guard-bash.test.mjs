@@ -405,3 +405,66 @@ test("bot push resolves -C, --git-dir, --work-tree and cd targets", () => {
   assert.equal(decision(`pnpm bot:git -- -C ${feature} push`, main), "allow");
   for (const d of [main, feature]) rmSync(d, { recursive: true, force: true });
 });
+
+// STA-216 (guard hardening round 3)
+const round3Allowed = [
+  'pnpm bot:gh -- pr create --title "fix: pr merge guard" --body "mentions pulls/12/merge and mergePullRequest"',
+  "pnpm bot:gh -- pr edit 5 --body 'never gh pr merge'",
+  'pnpm linear comment STA-216 "never git push origin main or pnpm bot:gh -- pr merge"',
+  "man git-credential",
+  "man -a git-credential-store",
+  "pnpm bot:gh -- api graphql -f query='query { viewer { login } }'",
+  "pnpm bot:gh -- api graphql -F owner=figentra -f query='query { viewer { login } }'",
+  "pnpm bot:git -- -P log -1",
+  "pnpm bot:git -- --no-pager --paginate status",
+];
+const round3Denied = [
+  "pnpm bot:git -- -c alias.x=credential x fill",
+  "pnpm bot:git -- -c 'alias.p=push p origin main' p origin main",
+  'git -c "alias.sp=send-pack" sp origin',
+  "git --config-env=alias.x=VAR x",
+  "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.x GIT_CONFIG_VALUE_0=push git x origin main",
+  "pnpm bot:gh -- api graphql -F query=@merge.graphql",
+  "pnpm bot:gh -- api graphql --input q.json",
+  "pnpm bot:gh -- api graphql -f query=@q.graphql",
+  'pnpm bot:gh -- api graphql -f query="$(cat q.graphql)"',
+  "pnpm bot:gh -- alias set x 'pr merge'",
+  "/usr/lib/git-core/git-send-pack origin main",
+  "git-receive-pack .",
+  "env git-upload-pack .",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/12//merge",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls%2F12%2Fmerge",
+  "pnpm bot:gh -- api -X PUT repos/figentra/stackra/pulls/12%2Fmerge",
+  "pnpm bot:git -- --paginate -c core.pager=x credential fill",
+];
+for (const c of round3Allowed) test(`allow: ${c}`, () => assert.equal(denied(c), false));
+for (const c of round3Denied) test(`deny: ${c}`, () => assert.equal(denied(c), true));
+
+test("push target: quoted -c, crafted -c values, GIT_DIR / GIT_WORK_TREE prefixes, unresolvable", () => {
+  const repo = (branch) => {
+    const d = mkdtempSync(join(tmpdir(), "guard-bash-"));
+    spawnSync("git", ["init", "-q", "-b", branch], { cwd: d });
+    return d;
+  };
+  const main = repo("main");
+  const feature = repo("feature/x");
+  for (const c of [
+    `pnpm bot:git -- -c "user.name=a b" -C ${main} push origin HEAD`,
+    `pnpm bot:git -- -c 'x=a;b' -C ${main} push origin HEAD`,
+    `pnpm bot:git -- -c a=--git-dir=${feature}/.git --git-dir=${main}/.git push`,
+    `GIT_DIR=${main}/.git pnpm bot:git -- push origin HEAD`,
+    `GIT_DIR='${main}/.git' pnpm bot:git -- push`,
+    `export GIT_DIR=${main}/.git; pnpm bot:git -- push`,
+    `GIT_WORK_TREE=${main} GIT_DIR=${main}/.git pnpm bot:git -- push`,
+    "GIT_DIR=$X pnpm bot:git -- push",
+    `pnpm bot:git -- --bare -C ${tmpdir()} push`,
+  ])
+    assert.equal(decision(c, feature), "deny", c);
+  for (const c of [
+    `pnpm bot:git -- -c "user.name=a b" -C ${feature} push origin HEAD`,
+    `pnpm bot:git -- -c a=--git-dir=${main}/.git push origin HEAD`,
+    `GIT_DIR=${feature}/.git pnpm bot:git -- push origin HEAD`,
+  ])
+    assert.equal(decision(c, feature), "allow", c);
+  for (const d of [main, feature]) rmSync(d, { recursive: true, force: true });
+});

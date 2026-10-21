@@ -240,3 +240,26 @@ test("edits must resolve inside the session's worktree root", () => {
   assert.equal(decideEdit("/repo/.claude/worktrees/a", wt).kind, "deny");
   assert.equal(decideEdit("/etc/hosts", wt).kind, "deny");
 });
+
+test("STA-216: spaced global git options, -c alias.*, pack binaries", () => {
+  for (const c of [
+    "git --git-dir .git push origin main",
+    "git --work-tree . --namespace x push",
+    "git -c alias.x=push x origin main",
+    "git -c 'alias.sp=send-pack' sp",
+    "git --config-env=alias.x=V x",
+    "git -c include.path=/tmp/x status",
+    "/usr/lib/git-core/git-send-pack origin main",
+    "git-receive-pack .",
+    "git-upload-pack .",
+    "git --paginate -P push",
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    "man git-credential",
+    "git status",
+    "git -c user.name=x log -1",
+    "git --git-dir .git status",
+  ])
+    assert.equal(kind(c), "allow", c);
+});

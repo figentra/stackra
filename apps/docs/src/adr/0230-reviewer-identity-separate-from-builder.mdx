@@ -93,13 +93,19 @@ hold fewer permissions than the builder app.
   `pnpm bot:token`, `$GH_TOKEN`, `bot:gh -- auth`, `git credential` and `git credential-<helper>` (bare or through
   `bot:git`), pack plumbing (`send-pack`, `receive-pack`, `fetch-pack`, `upload-pack`), a bot push to `main` read in
   the push's own checkout (`cd`, `-C`, `--git-dir`, `--work-tree`), and any merge outside `pnpm pr:merge`
-  (`bot:gh -- pr merge`, `api …/pulls/<n>/merge` with any method, the GraphQL merge mutations), also inside `$(…)`,
-  backticks, `sh -c` and `eval`. Tests in `.agents/hooks/__tests__/guard-bash.test.mjs`.
-- `tools/scripts/bot-gh.mjs` (`leaksToken`, `mergesPr`): the wrappers refuse `gh auth`, `git credential`,
-  `git credential-*` and every merge, which only `pnpm pr:merge` performs.
+  (`bot:gh -- pr merge`, `api …/pulls/<n>/merge` with any method and its `//` and `%2F` spellings, the GraphQL merge
+  mutations), also inside `$(…)`, backticks, `sh -c` and `eval`; the quoted `--title`, `--body`, `-m` text and
+  `pnpm linear comment` text are prose and not scanned. STA-216 adds: `git -c alias.*`, `-c include*`, `--config-env`
+  and `GIT_CONFIG_*`; quoted `-c` values and `GIT_DIR=` / `GIT_WORK_TREE=` in the push-target resolution (an
+  unresolvable checkout counts as `main`); `git-*-pack` binaries by path; `bot:gh -- api graphql` from a file
+  (`-F query=@f`, `--input`) or substitution, and `bot:gh -- alias`. Tests in `.agents/hooks/__tests__/guard-bash.test.mjs`.
+- `tools/scripts/bot-gh.mjs` (`leaksToken`, `mergesPr`, `unsafeArgs`): the wrappers refuse `gh auth`, `git credential`,
+  `git credential-*`, every merge (which only `pnpm pr:merge` performs), git `-c alias.*` / `--config-env`, `gh alias`
+  and file-sourced `gh api graphql`.
 - `.opencode/plugins/guard/decide.ts`: executors run no `gh`, none of those network `git` commands, no pack
-  plumbing, no `git credential` or `git-credential-*`, and no `pnpm bot:*` or `pr:merge`, with the same substitution
-  bodies checked.
+  plumbing, no `git credential` or `git-credential-*`, no `git-*-pack` binary, no `git -c alias.*` / `--config-env`, and no
+  `pnpm bot:*` or `pr:merge`, with the same substitution bodies checked. The subcommand is read past spaced
+  `--git-dir`, `--work-tree`, `--namespace`, `-C` and `-c` values.
 - Planned: the review runs in a CI job with its own credentials (the Phase 3 merge-queue design).
 
 ## Supersedes and sources
