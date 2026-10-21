@@ -35,7 +35,7 @@ Keys are `<module>::<path>`: `flags::public/images/eg.svg`, `billing::invoice.re
 
 ```ts
 // server
-constructor(@Inject(ASSETS) private readonly assets: Assets) {}
+constructor(private readonly assets: Assets) {} // Assets is a same-named token (ADR 0263)
 const logoUrl = this.assets.url("billing::public/images/logo.svg");
 const vatTable = await this.assets.read("billing::data/vat-rates.json");
 ```
@@ -52,7 +52,7 @@ return <img src={logo.url} alt={t("billing::brand.logo_alt")} />;
 helper:
 
 ```ts
-constructor(@Inject(FILESYSTEM) private readonly files: Filesystem) {}
+constructor(private readonly files: Filesystem) {} // same-named token (ADR 0263)
 const url = this.files.disk("public").url(path);
 const signed = await this.files.disk("private").temporaryUrl(path, { expiresInSeconds: 300 });
 ```

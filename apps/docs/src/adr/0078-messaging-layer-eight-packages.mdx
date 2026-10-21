@@ -1,6 +1,6 @@
 ---
 title: "0078 — The messaging layer: eight packages, one question each"
-description: "Accepted, amended by 0141, 0148 · 2026-10-19"
+description: "Accepted, amended by 0141, 0148, 0260 · 2026-10-19"
 ---
 
 <Note>
@@ -12,6 +12,12 @@ description: "Accepted, amended by 0141, 0148 · 2026-10-19"
 <Note>
   Amended by [0141](/adr/0141-integration-event-names-and-envelope): event names carry no service
   prefix.
+</Note>
+
+<Note>
+  Amended by [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events): Integration
+  event shapes are read from the producer's committed `app-manifest.json`, not from its
+  `./contracts` entry (decision 3 of this ADR is amended accordingly).
 </Note>
 
 ## Context

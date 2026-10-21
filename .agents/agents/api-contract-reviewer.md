@@ -35,8 +35,8 @@ codes), 0140 (error envelope), 0141 (event names and envelope), 0155 (queries ar
 7. L0–L1 queries are tools automatically; a write is a tool only with `@AsTool`; L3+ needs a named human (0155).
 8. A breaking change carries a new version or a deprecation with a sunset of at least six months (0131, 0136); read
    `stackra diff` output once it exists (0157).
-9. The client is generated and published by CI, never hand-written or committed; `app-manifest.json` and `openapi.json`
-   are regenerated in the same change (0158).
+9. The client is generated from the committed `app-manifest.json` (0260), never hand-written or committed; `app-manifest.json`
+   and `openapi.json` are regenerated in the same change (0158, 0260). The CI-published client is for consumers outside the repository.
 
 ## Never
 

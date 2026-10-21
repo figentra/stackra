@@ -1,11 +1,17 @@
 ---
 title: "0132 — Permissions are a module catalogue; policies are providers"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0263 · 2026-10-20"
 ---
 
 <Note>
   Forward note: the naming table of [0231](/adr/0231-naming-and-casing-standard) (accepted) restates
   this key form.
+</Note>
+
+<Note>
+  Amended by [0263](/adr/0263-di-stays-and-gen-writes-the-wiring): A policy method is named by a
+  permission verb (decision 4). Gen binds `ctx.authorize(Permissions.x, record)` to the method of
+  the same verb, and fails on a verb with no permission.
 </Note>
 
 ## Context

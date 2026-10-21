@@ -1,0 +1,73 @@
+---
+title: "0264 — Declaration vocabulary: one module key grammar, the define family closed at eight, kind folders, and one listener form"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Amends [0098](/adr/0098-actions-are-the-unit) (decision 2: `@AsListener` is removed),
+  [0144](/adr/0144-metadata-registry-and-explorers) (decision 5: `@Setting` stays a field
+  decorator), [0126](/adr/0126-member-shapes-and-scaffold-templates) (decision 3: new kind folders),
+  [0130](/adr/0130-module-layout-by-semantic-kind) (decision 1: new kind folders),
+  [0131](/adr/0131-module-key-version-and-deprecation) (decision 1: the key is one segment; decision
+  3: `name` is gone),
+  [0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events) (decision 3:
+  model keys are snake_case),
+  [0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned) (decision 2: the
+  define family), [0231](/adr/0231-naming-and-casing-standard) (module keys and model keys in the
+  naming table) and [0234](/adr/0234-module-assets-and-storage) (decision 2: the namespace is the
+  module key) and [0247](/adr/0247-declaration-rule-decorators-annotate-define-creates-values)
+  (decision 2: the family).
+</Note>
+
+## Context
+
+Keys appear in permissions, events, action keys, settings and i18n namespaces. Two key forms were in use: a module `key` and a separate
+`name`, and dotted module keys that make `<module>.<resource>.<action>` and `<module>.<aggregate>.<verb>.v<n>` ambiguous. The define
+family was described in three places and had no closed list. Kind folders were listed without hooks, widgets, pages, links, drivers and
+ai. The owner settled these on 2026-10-21.
+
+## Decision
+
+1. **One key grammar.** A module `key` is one segment, snake_case for a multi-word key (`orders`, `giftcards`, `loyalty_kit`), and
+   globally unique. The key is also the namespace for permissions, events, action keys, settings, i18n, assets and templates. The
+   `@Module({ name })` field is removed, so `name` and `key` are never both used.
+2. **Model keys follow it.** A model key is snake_case under its module, `inventory.stock_level`, not `inventory.stockLevel`.
+3. **Dotted module keys are refused.** The grammars of [0132](/adr/0132-permissions-catalogue-and-policy-providers) and
+   [0141](/adr/0141-integration-event-names-and-envelope) parse only when the module segment has no dot.
+4. **The define family is closed.** The family has eight entries: `defineToken`, `defineConfig`, `definePermissions`, `defineEvents`,
+   `defineHooks`, `defineComponents`, `defineMeters` with `defineEntitlements`, and `defineSkill` with `definePrompts`. The last two pairs
+   count as one entry each. `defineHooks` and `defineComponents` are new. A new member of the family takes an ADR.
+5. **Settings stay a decorated class.** A `@Settings` class holds `@Setting` fields ([0144](/adr/0144-metadata-registry-and-explorers)).
+   Code reads them with `SettingsReader.get(OrderSettings)`, which returns the typed object for the current scope.
+6. **The authoring rule.** Decorators annotate what the framework calls. `define*` creates values that other code references
+   ([0247](/adr/0247-declaration-rule-decorators-annotate-define-creates-values)). A string literal where a reference exists is refused,
+   in a permission, an event, `refreshOn`, `invalidateOn`, an `@OnEvent` argument or a hook point. The exceptions are a remote component
+   key and the wire names in generated files.
+7. **Kind folders.** `hooks/`, `widgets/`, `pages/`, `links/`, `drivers/` and `ai/` join the kind folders of
+   [0130](/adr/0130-module-layout-by-semantic-kind). Each appears with its first file.
+8. **One listener form.** `@AsListener` is removed. A reaction is `@OnEvent(Events.x, options)` on a method of a class in `listeners/`.
+   A listener that must run a whole action calls it through the action bus.
+9. **Jobs are actions.** "Job" is not a class kind. It is the `@AsJob` adapter on an `@Action`, and `@Cron` only dispatches it.
+10. **Two senses of "service" stay.** A deployable is `services/<name>/`. A module service is an `@Injectable` in `services/` inside a
+    module. Agents tell them apart by context.
+
+## Consequences
+
+- A permission, an event, an action key and an i18n key share one prefix, so a reviewer reads the module from any of them.
+- A typo in a key is a type error at the use site, because the key is a value from a `define*` call.
+- Renaming a module key is a breaking change under [0131](/adr/0131-module-key-version-and-deprecation). A key is chosen once.
+- The family is closed, so a new kind of value needs an ADR. That is intended.
+
+## Enforcement
+
+planned — gen fails on a module key collision, on a key with uppercase letters or dots, on a `define*` outside the family, on a `name`
+field in a `@Module`, and on a string where a reference is required (the lint of [0247](/adr/0247-declaration-rule-decorators-annotate-define-creates-values)).
+Nothing checks these yet.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0098](/adr/0098-actions-are-the-unit), [0144](/adr/0144-metadata-registry-and-explorers), [0126](/adr/0126-member-shapes-and-scaffold-templates),
+[0130](/adr/0130-module-layout-by-semantic-kind), [0131](/adr/0131-module-key-version-and-deprecation),
+[0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events), [0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned),
+[0231](/adr/0231-naming-and-casing-standard), [0234](/adr/0234-module-assets-and-storage), [0247](/adr/0247-declaration-rule-decorators-annotate-define-creates-values).
+Sources: owner settlement in chat, 2026-10-21 (programming model questions Q1, Q2 and Q7).

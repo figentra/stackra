@@ -1,12 +1,17 @@
 ---
 title: "0163 — Reports, exports, imports and declared read models"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0260 · 2026-10-20"
 ---
 
 <Note>
   Amends [0011](/adr/0011-rejected-and-deferred-technologies): the reporting and read-model
   capabilities here are built in the platform. The 0011 row changes are in the final pass (ADR
   0227).
+</Note>
+
+<Note>
+  Amended by [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events): a consumer's
+  read model of another service's data is a `@Projection` fed by that service's integration events.
 </Note>
 
 ## Context

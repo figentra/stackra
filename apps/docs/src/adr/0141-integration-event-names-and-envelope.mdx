@@ -1,6 +1,6 @@
 ---
 title: "0141 — Integration event names and the envelope"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0260 · 2026-10-20"
 ---
 
 <Note>
@@ -9,6 +9,12 @@ description: "Accepted · 2026-10-20"
   event-naming item of 0125. Changes the name form of C27 by adding the module key (see below).
   Forward note: the naming table of [0231](/adr/0231-naming-and-casing-standard) (accepted) restates
   this form.
+</Note>
+
+<Note>
+  Amended by [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events): An event
+  becomes an integration event when its `defineEvents` entry is marked `public: true`. The name
+  format of this ADR is unchanged.
 </Note>
 
 ## Context

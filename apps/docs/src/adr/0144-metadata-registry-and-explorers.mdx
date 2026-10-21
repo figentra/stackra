@@ -1,11 +1,22 @@
 ---
 title: "0144 — A typed MetadataRegistry, and every decorator package ships an Explorer"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0263, 0264 · 2026-10-20"
 ---
 
 <Note>
   Amends [0090](/adr/0090-codegen-discovery-by-root-module) and
   [0117](/adr/0117-contracts-placement-and-decorator-ownership), decision C2 (decorator ownership).
+</Note>
+
+<Note>
+  Amended by [0263](/adr/0263-di-stays-and-gen-writes-the-wiring): gen reads constructor parameter
+  types, as well as decorator metadata, to write `.stackra/gen/wiring.ts`.
+</Note>
+
+<Note>
+  Amended by [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders)
+  (decision 5): `@Setting` stays a field decorator inside a `@Settings` class. Settings are not a
+  `define*` value.
 </Note>
 
 ## Context

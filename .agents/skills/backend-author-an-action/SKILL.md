@@ -19,7 +19,7 @@ The shapes below follow the ADRs. Once `@stackra/actions` ships, its API docs ar
 | Several steps, waits, compensation?        | Still one action key; a `@Workflow` sits behind it only when the 0101 criteria hit.     |
 | Risk (ADR 0099)                            | L0 read, L1 own-data write, L2 others' data, L3 money/permissions/bulk, L4 irreversible. |
 | Who may call it?                           | `actors: ['user', 'agent', 'service', ...]`; any other actor type is refused.          |
-| Exposed how?                               | Adapters: `@AsEndpoint`, `@AsTool`, `@AsCommand`, `@AsJob`, `@AsListener`.               |
+| Exposed how?                               | Adapters: `@AsEndpoint`, `@AsTool`, `@AsCommand`, `@AsJob`.               |
 
 ## Worked example: refund an invoice
 

@@ -1,0 +1,53 @@
+---
+title: "0267 — Infisical Agent Vault is deferred; the model never sees a secret, and egress is direct"
+description: "Deferred · 2026-10-21"
+---
+
+<Note>
+  Supersedes [0106](/adr/0106-infisical-agent-vault-per-environment): the Agent Vault proxy, its
+  drivers and its sessions are deferred. The rule that the model never sees a secret stands, and
+  decision 1 restates it.
+</Note>
+
+## Context
+
+[0106](/adr/0106-infisical-agent-vault-per-environment) adopted Infisical Agent Vault as an HTTP proxy that injects credentials into the
+requests of coding agents and product AI egress, with a `direct` driver and an `agent-vault` driver in each environment. Two questions were
+left open there: the Infisical plan tier that includes Agent Vault, and whether it can be self-hosted. The owner settled on 2026-10-21 to
+defer Agent Vault, so the production path is built without it until those questions are answered.
+
+## Decision
+
+1. **The rule stands.** The model never sees a secret. AWS (Bedrock, S3 and the rest) is reached through IAM roles, never keys.
+2. **Agent Vault is deferred.** No environment uses the Agent Vault proxy for coding agents, for `delegate.mjs` tasks, or for product AI
+   egress. No `agent-vault` driver is built.
+3. **Egress is direct.** `@stackra/ai` egress uses the `direct` driver in every environment. Secret references are resolved by the runtime,
+   as the local-development row of [0106](/adr/0106-infisical-agent-vault-per-environment) already does.
+4. **Tenant credentials are unchanged.** Tenant BYO OAuth and API credentials stay in the connections store
+   ([0107](/adr/0107-connections-store-and-three-key-homes)).
+5. **Developer machines use what is in force.** Until a revival, coding agents and developer machines use the Infisical paths already in force:
+   the `/agents` vault layout of [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets).
+
+## Consequences
+
+- No proxy is a production component. The SaaS path has one fewer moving part, and on-prem never needed one.
+- A leaked agent transcript can hold a long-lived credential from the `/agents` vault, not a short-lived session token. The guard that refuses
+  printing a secret stays the control.
+- The `delegate.mjs` per-task session of 0106 is not built. A task that needs a credential reads it from the vault as any other command does.
+
+## Enforcement
+
+None yet. The deferral is a review check: a change that adds an `agent-vault` driver, an `HTTPS_PROXY` session setting or a per-task
+session needs a new ADR first. The guard rule that 0106 planned for session tokens is not built.
+
+## Revival trigger
+
+Both open questions of [0106](/adr/0106-infisical-agent-vault-per-environment) are answered: the Infisical plan tier that includes Agent Vault,
+and whether it can be self-hosted for on-prem and air-gapped delivery.
+
+## Supersedes and sources
+
+Supersedes: [0106](/adr/0106-infisical-agent-vault-per-environment). Relates to [0100](/adr/0100-ai-model-and-ownership),
+[0107](/adr/0107-connections-store-and-three-key-homes) and
+[0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets). Sources: owner settlement in chat, 2026-10-21 (register item R12:
+defer Agent Vault).

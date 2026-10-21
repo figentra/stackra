@@ -1,11 +1,16 @@
 ---
 title: "0142 — Cross-service transport goes through drivers"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0260 · 2026-10-20"
 ---
 
 <Note>
   Supersedes [0032](/adr/0032-rest-api-generated-client-uuidv7-ids): REST `api()` with the Encore
   client is no longer the transport rule. Services talk through transport drivers.
+</Note>
+
+<Note>
+  Amended by [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events): in-process
+  or RPC is chosen by topology inside the driver; the consumer's code is the same.
 </Note>
 
 ## Context

@@ -1,6 +1,6 @@
 ---
 name: backend-module-and-root-module
-description: Structure Stackra code as modules - the @Module with its key and name, the root module declared in package.json for gen, src/modules/<feature>/ kind folders, imports and exports, forRoot and forFeature registration, provider scopes, lifecycle hooks and createTestingModule. Use when creating a service, a package's root module, a feature module, or wiring providers.
+description: Structure Stackra code as modules - the @Module with its key, the root module declared in package.json for gen, src/modules/<feature>/ kind folders, imports and exports, forRoot and forFeature registration, provider scopes, lifecycle hooks and createTestingModule. Use when creating a service, a package's root module, a feature module, or wiring providers.
 ---
 
 # Modules and the root module
@@ -17,7 +17,7 @@ services/billing/                       # or packages/<category>/<name>/
 ├── config/billing.config.ts            # deploy-time config (ADR 0146)
 └── src/
     ├── main.ts                         # bootstraps the root module
-    ├── billing.module.ts               # root @Module: imports feature modules, nothing else
+    ├── billing.module.ts               # root @Module: key and third-party imports only; gen wires the rest (ADR 0263)
     ├── contracts/index.ts              # types-only ./contracts entry (ADR 0117)
     ├── __tests__/billing.module.test.ts
     └── modules/
@@ -40,23 +40,26 @@ inward: actions, listeners and workflows use services and models; models import 
 
 ```ts
 // src/modules/invoices/invoices.module.ts
-import { Module } from "@stackra/container";
-import { RefundInvoiceAction } from "#modules/invoices/actions/refund-invoice.action";
-import { ListInvoicesQuery } from "#modules/invoices/queries/list-invoices.query";
+import { Injectable, Module } from "@stackra/container";
 import { InvoiceService } from "#modules/invoices/services/invoice.service";
 import { INVOICE_PERMISSIONS } from "#modules/invoices/permissions/invoice.permissions";
 
 @Module({
-  key: "billing",              // required, dotted, unique across the manifest; prefixes action, permission,
-  name: "billing",             // event and setting keys (ADR 0131); `name` is the asset/i18n namespace (ADR 0234)
-  providers: [InvoiceService, RefundInvoiceAction, ListInvoicesQuery],
+  key: "billing",              // required, one snake_case segment, unique across the manifest; the namespace of its
+                               // actions, permissions, events, settings, i18n and assets (ADR 0264, 0131, 0234)
   permissions: INVOICE_PERMISSIONS,
-  exports: [InvoiceService],
+  exports: [InvoiceService],   // no providers list: gen discovers the folder's @Injectable classes (ADR 0263)
 })
 export class InvoicesModule {}
 
-// src/billing.module.ts — the root module only hosts
-@Module({ key: "billing.service", imports: [InvoicesModule, DatabaseModule.forFeature([Invoice])] })
+// src/modules/invoices/actions/refund-invoice.action.ts — plain class, typed constructor params, no @Inject
+@Injectable()
+export class RefundInvoiceAction {
+  constructor(private readonly invoices: InvoiceService) {}
+}
+
+// src/billing.module.ts — the root module declares the key and third-party imports only
+@Module({ key: "billing_service", imports: [DatabaseModule.forFeature([Invoice])] })
 export class BillingModule {}
 ```
 
@@ -78,13 +81,17 @@ sunset })` marks a deprecated action, event, field, setting or trait.
 - Lifecycle: `onModuleInit`, `onApplicationBootstrap`, `beforeApplicationShutdown`, `onModuleDestroy`,
   `onApplicationShutdown`. Explorers run at bootstrap; readiness only after it.
 - A circular dependency is a boot error; there is no `forwardRef`.
-- Tokens are `defineToken<T>()` values or classes, never strings (skill `backend-define-family`).
+- A local class is its own token. Every interface port and every `defineConfig` value has a same-named token, so a constructor
+  typed with it needs no `@Inject`. `@Inject` is only for a named instance, and strings are never tokens (ADR 0263; skill
+  `backend-define-family`).
+- A module's own providers are wired by gen from `.stackra/gen/wiring.ts`; authors write no `providers` array and no
+  imports for their own classes (ADR 0263).
 
 ## Testing
 
 ```ts
-const module = await createTestingModule({ imports: [InvoicesModule] })
-  .overrideProvider(PAYMENT_GATEWAY).useValue(fakeGateway)
+const module = await createTestingModule(InvoicesModule)
+  .override(PAYMENT_GATEWAY, fakeGateway)
   .compile();
 const action = module.get(RefundInvoiceAction);
 ```
@@ -93,6 +100,7 @@ const action = module.get(RefundInvoiceAction);
 
 - Contributions declared in a service or app file outside a module (gen fails, ADR 0111).
 - `app()`, `config()`, `logger()` global helpers; inject instead (ADR 0145).
+- A `providers` array, module imports or an `@Inject(TOKEN)` for a member's own classes (ADR 0263).
 - A global metadata polyfill or type-based auto-wiring (ADR 0005).
 - `../` imports; use the member's `#` aliases (ADR 0233).
 

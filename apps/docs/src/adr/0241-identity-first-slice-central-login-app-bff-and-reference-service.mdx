@@ -1,12 +1,19 @@
 ---
 title: "0241 — Identity first slice: central login app, the BFF and the identity reference service"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0268 · 2026-10-20"
 ---
 
 <Note>
   Builds on
   [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral).
   Closes gap P0-6 and the identity placement of thin item 4.
+</Note>
+
+<Note>
+  Amended by [0268](/adr/0268-register-answers-thin-items-r1-to-r18): R3: the central login app is
+  not built, and Stackra builds no login UI. Decisions 1 and 6 are withdrawn. ZITADEL's hosted
+  sign-in pages are used, and ZITADEL's own branding replaces the per-tenant login customisation of
+  decision 6. The identity reference service of decision 5 stands.
 </Note>
 
 ## Context
