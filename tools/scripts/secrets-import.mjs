@@ -56,12 +56,14 @@ const sha256 = (data) => createHash("sha256").update(data).digest("hex");
 /** An error whose message is a fixed, value-free string. */
 class Refusal extends Error {}
 
+const NOT_A_DIRECTORY = "inbox is not a real directory";
+
 /** The inbox entries: secret files to import, and value-free problems. Never opens a file. */
 export function scanInbox(inbox) {
   const st = lstatSync(inbox, { throwIfNoEntry: false });
   if (!st) return { entries: [], problems: [{ file: inbox, error: "inbox does not exist" }] };
   if (st.isSymbolicLink() || !st.isDirectory())
-    return { entries: [], problems: [{ file: inbox, error: "inbox is not a real directory" }] };
+    return { entries: [], problems: [{ file: inbox, error: NOT_A_DIRECTORY }] };
   const entries = [];
   const problems = [];
   for (const file of readdirSync(inbox).sort()) {
@@ -414,8 +416,15 @@ export function main(
   if (o.list) {
     for (const e of entries) say(e.file);
     for (const p of problems) say(`${p.file}  (refused: ${p.error})`);
-    audit(home, { actor, action: "list", result: "ok", count: entries.length });
-    return 0;
+    // A missing inbox is just empty; one that is a symlink or not a folder is refused, and that is a failure.
+    const refused = problems.some((p) => p.file === inbox && p.error === NOT_A_DIRECTORY);
+    audit(home, {
+      actor,
+      action: "list",
+      result: refused ? "refused" : "ok",
+      count: entries.length,
+    });
+    return refused ? 1 : 0;
   }
 
   const refused = (f) => problems.some((p) => p.file === f);

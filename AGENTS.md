@@ -516,8 +516,14 @@ file holding just that value; there is no `--value` flag.
 
 - `guard-bash.mjs`: Blocks `infisical export`, `infisical secrets get` without `--silent`, a bare `infisical secrets`
   (lists values) and `infisical run -- env|printenv`
-- `guard-bash.mjs`: Blocks any command that names `Secrets-inbox` or the import confirm key (`pnpm secrets:import`
-  never needs to)
+- `guard-bash.mjs` (matcher `.agents/hooks/_inbox.mjs`, shared with the OpenCode guard): blocks any command in which
+  a word, after unquoting, names `Secrets-inbox` (any case) or the import confirm key. Two kinds of word are exempt: a
+  grep/rg/ag pattern, and a `--title`/`--body`/`--message`/`-m` value with no `$(` or backtick. Program text
+  (`perl -e`, awk, sed) and command-running prose are still checked. Also blocked: a path token (pattern and script
+  files, `x=…` assignments, `@file` values and `file://` URLs included) whose glob, rooted at home (`~`, `$HOME`,
+  `/Users/<you>`, or relative while the shell's cwd is home, following `cd`), could match the inbox; and a recursive
+  read (`grep -r`, `rg`, `find`, `du`, `cp -a/-r`, `tar`, `rsync`, `zip`) of home or above, including no path operand
+  from home. `pnpm secrets:import` never needs to do any of these.
 - `guard-paths.mjs`: Blocks writes to `.env`, `.env.*`, `.dev.vars`, `.ci-env` and `.sentryclirc`, and every
   Read/Grep/Glob/Write/Edit under `~/Secrets-inbox/`
 - `.gitleaks.toml`: Scans for accidental secret commits

@@ -5,6 +5,8 @@
 // shortcut: commands are split on && || ; | and newlines without honouring quotes, and `sh -c "<inner>"`
 // is not unwrapped; good enough for agent-typed commands, upgrade to a real shell parser if one slips through.
 import { resolve, sep } from "node:path";
+// The inbox matcher is shared with the Claude hooks (one matcher, ADR 0257): paths, globs rooted at home, recursive reads.
+import { commandReachesInbox, reachesInbox } from "../../../.agents/hooks/_inbox.mjs";
 
 export type Decision = { kind: "allow" } | { kind: "deny"; reason: string };
 
@@ -31,32 +33,19 @@ const SECRET_FILE = [
   /(^|\/)\.ci-env$/,
   /(^|\/)\.sentryclirc$/,
   /(^|\/)\.infisical([^/]*$|\/)/,
-  // The secrets inbox (ADR 0257): only `pnpm secrets:import` touches it, and it never prints a value.
-  /(^|\/)Secrets-inbox(\/|$)/i,
-  /(^|\/)secrets-confirm\.key$/,
 ];
 // Committed, value-free files: the env template and Infisical's project config.
 const SECRET_OK = /(^|\/)(\.env\.example|\.infisical\.(yaml|json))$/;
 
-/** A glob segment (`Secrets-inbo?`, `S*inbox`, not a bare `*`) that would match the inbox. Accident guard only. */
-const globNamesInbox = (s: string): boolean =>
-  s.split("/").some((seg) => {
-    if (!/[*?]/.test(seg) || /^[*?]+$/.test(seg)) return false;
-    const rx = seg
-      .replace(/[.+^$()|\\[\]{}]/g, "\\$&")
-      .replace(/\*+/g, ".*")
-      .replace(/\?/g, ".");
-    return new RegExp(`^${rx}$`, "i").test("Secrets-inbox");
-  });
-
 export function isSecretPath(p: string): boolean {
   const s = p.trim().replace(/^['"]+|['"]+$/g, "");
-  return !SECRET_OK.test(s) && (SECRET_FILE.some((r) => r.test(s)) || globNamesInbox(s));
+  return !SECRET_OK.test(s) && SECRET_FILE.some((r) => r.test(s));
 }
 
 /** read / edit tool paths. */
-export function decidePath(path: string): Decision {
-  return isSecretPath(path)
+export function decidePath(path: string, cwd?: string): Decision {
+  // The secrets inbox (ADR 0257): only `pnpm secrets:import` touches it, and it never prints a value.
+  return isSecretPath(path) || reachesInbox(path, { cwd })
     ? deny(
         `${path} holds secret values and is never read or written by an agent. Names only; values are set by a human (Infisical).`,
       )
@@ -68,7 +57,7 @@ export function decidePath(path: string): Decision {
  * in the main checkout itself; delegated work belongs in a worktree (`pnpm delegate`).
  */
 export function decideEdit(path: string, ctx: GuardContext): Decision {
-  const secret = decidePath(path);
+  const secret = decidePath(path, ctx.root);
   if (secret.kind === "deny") return secret;
   const root = resolve(ctx.root);
   if (!resolve(root, path).startsWith(root + sep))
@@ -181,8 +170,14 @@ function denySub(sub: string): Decision {
   return ALLOW;
 }
 
-export function decideShell(raw: string): Decision {
-  for (const s of subcommands(stripHeredocs(raw))) {
+/** `cwd` is the shell's directory, so a relative glob run from home is caught; unknown, relative tokens pass. */
+export function decideShell(raw: string, cwd?: string): Decision {
+  const cmd = stripHeredocs(raw);
+  if (commandReachesInbox(cmd, { cwd }))
+    return deny(
+      "~/Secrets-inbox/ (and the import confirm key) are never read, listed, copied or moved. Use `pnpm secrets:import --list` for names and `pnpm secrets:import [--dry-run] [NAME]` to import; it never prints a value.",
+    );
+  for (const s of subcommands(cmd)) {
     const d = denySub(s);
     if (d.kind === "deny") return d;
   }

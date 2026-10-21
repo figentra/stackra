@@ -256,6 +256,20 @@ test("--list prints file names only", () => {
   assert.deepEqual(scanInbox(inbox).entries, [{ file: "LISTED_KEY.pem", name: "LISTED_KEY" }]);
 });
 
+test("--list exits 1 when the inbox itself is refused (symlink or not a directory) (STA-194)", () => {
+  const linked = mkdtempSync(join(tmpdir(), "secrets-import-list-link-"));
+  mkdirSync(join(linked, "elsewhere"));
+  symlinkSync(join(linked, "elsewhere"), join(linked, "Secrets-inbox"));
+  const linkRun = run(linked, ["--list"], fakeInfisical().runner);
+  assert.equal(linkRun.code, 1);
+  assert.match(linkRun.out, /refused: inbox is not a real directory/);
+  const file = mkdtempSync(join(tmpdir(), "secrets-import-list-file-"));
+  writeFileSync(join(file, "Secrets-inbox"), canary());
+  assert.equal(run(file, ["--list"], fakeInfisical().runner).code, 1);
+  const { home } = setup();
+  assert.equal(run(home, ["--list"], fakeInfisical().runner).code, 0);
+});
+
 test("CLI: no --value flag, unknown flags are not echoed, missing inbox is reported", () => {
   const home = mkdtempSync(join(tmpdir(), "secrets-import-cli-"));
   const v = canary();

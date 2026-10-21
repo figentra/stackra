@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { homedir } from "node:os";
 
 const hook = new URL("../guard-paths.mjs", import.meta.url).pathname;
 const denied = (file_path, key = "file_path") => {
@@ -71,9 +72,9 @@ test("allow: AGENTS.md hand-written section", () =>
 
 // The secrets inbox: denied for every tool, read tools included; other reads stay allowed.
 // @covers sta-185:FR-004 sta-185:P-004
-const decide = (tool_name, tool_input) => {
+const decide = (tool_name, tool_input, cwd) => {
   const r = spawnSync("node", [hook], {
-    input: JSON.stringify({ tool_name, tool_input }),
+    input: JSON.stringify({ tool_name, tool_input, cwd }),
     encoding: "utf8",
   });
   assert.equal(r.status, 0);
@@ -108,3 +109,14 @@ for (const [tool, input] of [
   ["Write", { file_path: "/r/apps/docs/src/runbooks/secrets.mdx", content: "~/Secrets-inbox/" }],
 ])
   test(`allow ${tool}: ${JSON.stringify(input)}`, () => assert.equal(decide(tool, input), false));
+
+// STA-207: relative paths and globs resolve against the session cwd, so from home they reach the inbox.
+for (const [tool, input] of [
+  ["Grep", { pattern: "BEGIN", path: ".", glob: "S*inbox/*" }],
+  ["Grep", { pattern: "BEGIN", path: "Projects/..", glob: "Secrets-inbo?/*" }],
+  ["Glob", { pattern: "S*inbox/*", path: "." }],
+])
+  test(`deny from home ${tool}: ${JSON.stringify(input)}`, () => {
+    assert.equal(decide(tool, input, homedir()), true);
+    assert.equal(decide(tool, input, "/tmp"), false);
+  });

@@ -83,7 +83,8 @@ async function main() {
     [input.tool_name === "Glob" ? str(ti.path) : undefined, false],
     [input.tool_name === "Glob" && str(ti.pattern) ? under(base, ti.pattern) : undefined, false],
   ].filter(([p]) => str(p));
-  const hit = checks.find(([p, recursive]) => reachesInbox(p, { recursive }));
+  const cwd = String(input.cwd ?? "") || undefined; // relative paths and globs resolve against the session cwd
+  const hit = checks.find(([p, recursive]) => reachesInbox(p, { recursive, cwd }));
   if (hit)
     deny(
       EVENT,

@@ -67,11 +67,11 @@ export default {
       for (const r of e.resources) {
         const d =
           e.action === "shell"
-            ? decideShell(r)
+            ? decideShell(r, root)
             : e.action === "edit"
               ? decideEdit(r, ctxFor(root))
               : e.action === "read"
-                ? decidePath(r)
+                ? decidePath(r, root)
                 : { kind: "allow" as const };
         if (d.kind === "deny") {
           e.effect = "deny";
@@ -83,7 +83,7 @@ export default {
 
     // 2. Execution layer: deny again (belt and braces) with the real cwd's command.
     await ctx.shell.hook("create.before", (e) => {
-      const d = decideShell(e.command);
+      const d = decideShell(e.command, e.cwd);
       if (d.kind === "deny") e.command = `echo ${JSON.stringify(d.reason)} >&2; exit 126`;
     });
   },
