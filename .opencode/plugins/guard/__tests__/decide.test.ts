@@ -320,3 +320,14 @@ test("STA-216: exact -c keys and editor, diff and template env prefixes", () => 
     assert.equal(kind(c), "deny", c);
   assert.equal(kind("git -c color.ui=never log"), "allow");
 });
+
+test("STA-216: GIT_EDITOR is allowed only as true, : or cat", () => {
+  for (const c of [
+    "GIT_EDITOR=true git log",
+    "GIT_SEQUENCE_EDITOR=: git log",
+    "GIT_EDITOR=cat git log",
+  ])
+    assert.equal(kind(c), "allow", c);
+  for (const c of ["GIT_EDITOR=sh git log", "GIT_SEQUENCE_EDITOR=vim git log"])
+    assert.equal(kind(c), "deny", c);
+});

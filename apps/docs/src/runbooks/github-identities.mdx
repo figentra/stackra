@@ -73,8 +73,9 @@ quotes too), and every `sh -c` or `eval` string. It denies:
   redirected remote runs any git command under another name, past every rule above. The env prefixes that swap
   git's config, helpers or pager are denied on a `git` or `man` command: `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=`,
   `PAGER=`, `MANPAGER=`, `GIT_PAGER=`, `GIT_ASKPASS=`, `SSH_ASKPASS=`, `GIT_EXEC_PATH=`, `GIT_SSH=`,
-  `GIT_SSH_COMMAND=`, `GIT_PROXY_COMMAND=`, `GIT_EDITOR=`, `GIT_SEQUENCE_EDITOR=`, `GIT_EXTERNAL_DIFF=` and
-  `GIT_TEMPLATE_DIR=`. These rules also read a command inside `$(...)`, backticks, `sh -c` or `eval` that sits in a
+  `GIT_SSH_COMMAND=`, `GIT_PROXY_COMMAND=`, `GIT_EDITOR=` and `GIT_SEQUENCE_EDITOR=` (allowed only as exactly `true`, `:` or `cat`, for a non-interactive rebase
+  or commit), `GIT_EXTERNAL_DIFF=` and `GIT_TEMPLATE_DIR=`. These rules also read the body of every `$(...)` at every
+  depth (parentheses counted outside quotes; an unbalanced `$(` scans the rest of the string), backticks, `sh -c` or `eval` that sits in a
   `-m`, `--body`, `--title` or `pnpm linear comment` value: the prose is ignored, a real command in it is not.
   `bot-gh.mjs` refuses the `-c` and `git config` forms too;
 - `man -P`, `-H`, `-B`, `-T`, `-C` and `--pager`, `--html`, `--browser`, `--troff`, `--config-file`, which run a
@@ -110,7 +111,8 @@ are not matched by the guards. Branch protection must stop them, and it does so 
 `enforce_admins` or a ruleset for `main` (owner setting, step 1 below).
 
 The guards are an accident guard, not isolation. They do not follow aliases, shell functions, variables used as a
-command name, `npx` or `pnpm dlx`. Agents run as the owner's macOS user, so the keychain and `~/.config/gh` are
+command name, `npx` or `pnpm dlx`, a command written into a heredoc that is then piped to a shell, or a command word
+obfuscated by the shell (`g""it`, `$'\x67it'`, a variable holding the word). Agents run as the owner's macOS user, so the keychain and `~/.config/gh` are
 readable by any process an agent starts. The structural fix is owner steps 5 and 6 below: after them, an agent's
 plain `gh` or `git` finds no owner credential to fall back to. Full isolation needs agents to run as a separate OS
 user, or on the EC2 agent host, where the owner's login does not exist.

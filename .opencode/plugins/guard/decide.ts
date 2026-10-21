@@ -150,7 +150,7 @@ const gitAliasConfig = (args: string[]): boolean => {
 };
 /** Env prefixes that swap git's config files or the pager (STA-216). */
 const CONFIG_ENV =
-  /(?:^|\s)(?:GIT_CONFIG[A-Z_0-9]*|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER|GIT_ASKPASS|SSH_ASKPASS|GIT_EXEC_PATH|GIT_SSH(?:_COMMAND)?|GIT_PROXY_COMMAND|GIT_EDITOR|GIT_SEQUENCE_EDITOR|GIT_EXTERNAL_DIFF|GIT_TEMPLATE_DIR)=/;
+  /(?:^|\s)(?:GIT_EDITOR|GIT_SEQUENCE_EDITOR)=(?!(?:true|:|cat)(?:\s|$))|(?:^|\s)(?:GIT_CONFIG[A-Z_0-9]*|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER|GIT_ASKPASS|SSH_ASKPASS|GIT_EXEC_PATH|GIT_SSH(?:_COMMAND)?|GIT_PROXY_COMMAND|GIT_EXTERNAL_DIFF|GIT_TEMPLATE_DIR)=/;
 
 /** git's subcommand, skipping global options (`-C dir`, `-c k=v`, `--git-dir=…`). */
 function gitSubcommand(args: string[]): string {

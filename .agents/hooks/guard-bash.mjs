@@ -149,11 +149,39 @@ const NETWORK_GIT = BARE_GIT(
  * backtick body, inside double quotes too, and every `sh -c` / `eval` string. Single-quoted text stays literal.
  * shortcut: one nesting level per pass and no alias or function expansion; deliberate workarounds stay open.
  */
+/**
+ * The body of every `$(` at every depth, outermost included: parentheses are counted outside quotes, so a nested
+ * `$(…)` or a `"(y)"` does not end a body early. An unbalanced `$(` takes the rest of the string (fail closed).
+ */
+function dollarBodies(c) {
+  const s = c.replace(/'[^']*'/g, "''");
+  const out = [];
+  for (let i = s.indexOf("$("); i >= 0; i = s.indexOf("$(", i + 1)) {
+    let depth = 1;
+    let quote = "";
+    let j = i + 2;
+    for (; j < s.length && depth > 0; j++) {
+      const ch = s[j];
+      if (quote === "'") {
+        if (ch === "'") quote = "";
+      } else if (quote === '"') {
+        if (ch === "\\") j++;
+        else if (ch === '"') quote = "";
+      } else if (ch === "'" || ch === '"') quote = ch;
+      else if (ch === "\\") j++;
+      else if (ch === "(") depth++;
+      else if (ch === ")") depth--;
+    }
+    out.push(s.slice(i + 2, depth === 0 ? j - 1 : s.length));
+  }
+  return out;
+}
 /** The raw text of every `$(…)` / backtick body (single quotes stay literal) and `sh -c` / `eval` string. */
 function nestedRaw(c) {
   const out = [];
   const literal = c.replace(/'[^']*'/g, "''");
-  for (const m of literal.matchAll(/\$\(([^()]*)\)|`([^`]*)`/g)) out.push(m[1] ?? m[2]);
+  out.push(...dollarBodies(c));
+  for (const m of literal.matchAll(/`([^`]*)`/g)) out.push(m[1]);
   for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
     out.push(m[2], ...nestedRaw(m[2]));
   return out;
@@ -163,7 +191,8 @@ const scanTexts = (c) => [dropMessages(c), ...nestedRaw(c).map(dropMessages)];
 function runnable(c) {
   const out = [blank(c)];
   const literal = c.replace(/'[^']*'/g, "''");
-  for (const m of literal.matchAll(/\$\(([^()]*)\)|`([^`]*)`/g)) out.push(blank(m[1] ?? m[2]));
+  for (const b of dollarBodies(c)) out.push(blank(b));
+  for (const m of literal.matchAll(/`([^`]*)`/g)) out.push(blank(m[1]));
   for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
     out.push(...runnable(m[2]));
   return out;
@@ -460,7 +489,7 @@ const rules = [
       scanTexts(c).some(
         (d) =>
           /\b(?:git|man)\b/.test(d) &&
-          (/(?:^|\s)(?:--config-env\b|(?:GIT_CONFIG(?:_GLOBAL|_SYSTEM|_COUNT|_KEY_\d+|_PARAMETERS)?|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER|GIT_ASKPASS|SSH_ASKPASS|GIT_EXEC_PATH|GIT_SSH(?:_COMMAND)?|GIT_PROXY_COMMAND|GIT_EDITOR|GIT_SEQUENCE_EDITOR|GIT_EXTERNAL_DIFF|GIT_TEMPLATE_DIR)=)/i.test(
+          (/(?:^|\s)(?:GIT_EDITOR|GIT_SEQUENCE_EDITOR)=(?!(?:true|:|cat)(?:\s|$))|(?:^|\s)(?:--config-env\b|(?:GIT_CONFIG(?:_GLOBAL|_SYSTEM|_COUNT|_KEY_\d+|_PARAMETERS)?|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER|GIT_ASKPASS|SSH_ASKPASS|GIT_EXEC_PATH|GIT_SSH(?:_COMMAND)?|GIT_PROXY_COMMAND|GIT_EXTERNAL_DIFF|GIT_TEMPLATE_DIR)=)/i.test(
             d,
           ) ||
             gitConfigUnsafe(d)),

@@ -596,3 +596,34 @@ for (const c of [
 ])
   test(`${/color\.ui/.test(c) ? "allow" : "deny"}: ${c}`, () =>
     assert.equal(denied(c), !/color\.ui/.test(c)));
+
+// STA-216 final round: nested and parenthesised $(...) bodies, GIT_EDITOR with a harmless value
+const deepBodies = [
+  "git config alias.p $(echo y)",
+  "HOME=/x git p $(true)",
+  'git config alias.p "(y)"',
+  "git -c alias.p=$(echo x) p",
+  "echo $(echo $(HOME=/x git p))",
+  "man -P $(echo sh) ls",
+];
+for (const b of deepBodies)
+  for (const form of proseForms)
+    test(`deny: ${form(b)}`, () => assert.equal(denied(form(b)), true));
+test("deny: an unbalanced $( scans the rest of the string", () => {
+  assert.equal(denied('git commit -m "$(git config alias.p x"'), true);
+  assert.equal(denied('git commit -m "$(echo (a) ; HOME=/x git p"'), true);
+});
+for (const c of [
+  "GIT_EDITOR=true git rebase --continue",
+  "GIT_SEQUENCE_EDITOR=: git rebase -i main",
+  "GIT_EDITOR=cat git commit",
+  'git commit -m "$(echo (a) done)"',
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));
+for (const c of [
+  "GIT_EDITOR=sh git commit",
+  "GIT_EDITOR='true x' git commit",
+  "GIT_SEQUENCE_EDITOR=vim git rebase -i",
+  "GIT_EDITOR=true-x git commit",
+])
+  test(`deny: ${c}`, () => assert.equal(denied(c), true));
