@@ -1,0 +1,52 @@
+---
+title: "0280 — Sandbox to live promotion and the environment banner"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Specifies the sandbox promotion that
+  [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) decision 8 (T7)
+  leaves to the OS, using the settings packs of
+  [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions).
+</Note>
+
+## Context
+
+A tenant builds its configuration in a sandbox and then needs it in live without re-entering it. People also act in the wrong environment
+when nothing on screen says which one they are in. The owner's answer to the screenshot gap review of 2026-10-21 (item 11) adds promotion and a
+banner.
+
+## Decision
+
+1. **Promotion copies configuration.** Configuration is copied or promoted from a sandbox to live: the catalog, settings packs and webhooks.
+2. **Keys are never copied.** API keys and other credentials are never copied; live gets newly issued keys.
+3. **Where it runs.** Promotion runs through the sandboxes module of `@figentra/service-tenancy` and the packs of `@figentra/service-settings`.
+4. **Reviewed diff.** Promotion is shown as a diff between sandbox and live, and applies only after review.
+5. **Environment banner.** A persistent environment banner (sandbox, staging) is shown in the `@stackra/panel` PanelShell and in apps.
+
+## Consequences
+
+- Live configuration has a reviewable origin, and a credential never crosses environments.
+- Each promotable kind needs a diff and an apply step, which is work for the owners of the catalog, settings and webhooks.
+- The banner costs a strip of screen on non-production environments.
+
+## Enforcement
+
+planned — a promotion test asserts no key or secret appears in the copied set; a panel test asserts the banner renders on every non-production
+environment and not in production.
+
+## Open details
+
+The owner did not give these; the conservative default below applies until an ADR changes it.
+
+1. **Who approves.** An owner or administrator of the live tenant; applying is a high-risk action that needs the step-up of
+   [0207](/adr/0207-authentication-assurance-and-machine-identities) decision 1.
+2. **Webhooks.** Endpoints and subscriptions are copied; signing secrets are new, like keys.
+3. **Data.** Tenant business data (customers, orders, records) is never promoted.
+4. **Banner.** Cannot be dismissed; production shows none.
+5. **Direction.** Sandbox to live only; live to sandbox is a reset, not a promotion.
+
+## Supersedes and sources
+
+Supersedes: none. Specifies: [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) decision 8 (T7). Sources: owner
+answers in chat, 2026-10-21 (screenshot gap review, item 11).

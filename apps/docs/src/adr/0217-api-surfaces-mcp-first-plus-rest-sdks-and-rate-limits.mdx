@@ -1,11 +1,22 @@
 ---
 title: "0217 — API surfaces: MCP first plus REST, SDKs and rate limits"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0274, 0278 · 2026-10-20"
 ---
 
 <Note>
   Supersedes [0038](/adr/0038-rate-limits-app-buckets-and-waf). Notes on
   [0039](/adr/0039-openapi-mintlify-and-oauth-guide) (generated OpenAPI and the SDKs).
+</Note>
+
+<Note>
+  Amended by [0274](/adr/0274-app-grants-and-the-connect-app-page): calls from OAuth apps and MCP
+  clients are checked by the gateway against an app grant of (user, client, workspace, scopes).
+</Note>
+
+<Note>
+  Amended by [0278](/adr/0278-api-key-lifecycle): API keys follow one lifecycle: shown once and
+  hashed, a scanner-registered prefix, scopes, last-used time and IP, rotation with an overlap
+  window, expiry and revoke.
 </Note>
 
 ## Context

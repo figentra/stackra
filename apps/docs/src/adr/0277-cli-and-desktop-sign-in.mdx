@@ -1,0 +1,55 @@
+---
+title: "0277 — CLI and desktop sign-in: loopback PKCE, device code and the OS keychain"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Builds on [0241](/adr/0241-identity-first-slice-central-login-app-bff-and-reference-service)
+  (decision 4, OIDC with PKCE on mobile and desktop) and
+  [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral).
+</Note>
+
+## Context
+
+`@stackra/cli` and the Electron desktop target ([0058](/adr/0058-desktop-is-electron)) need to sign a user in without a login UI of their own
+([0268](/adr/0268-register-answers-thin-items-r1-to-r18) R3) and to keep the token safe on the machine. The owner's answer to the screenshot gap
+review of 2026-10-21 (item 8) fixes the flow, the storage and revocation.
+
+## Decision
+
+1. **Browser loopback with PKCE is the default.** The CLI opens the browser at ZITADEL's hosted sign-in, listens on a loopback address for the
+   redirect, and completes the authorisation-code flow with PKCE.
+2. **Device code for headless.** Where no browser can open (SSH, containers), the CLI uses the device-code flow.
+3. **OS keychain only.** Tokens are stored in the operating system keychain. They are never written to a plain file.
+4. **Short-lived access, rotated refresh token.** Access tokens follow
+   [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral) decision 8 (5 to 15 minutes); the CLI and
+   desktop use 10 minutes. The refresh token is rotated on each use. It lasts 30 days for normal users and is capped at 12 hours for staff and
+   platform accounts, as [0207](/adr/0207-authentication-assurance-and-machine-identities) decision 3 sets for sessions.
+5. **Revoke from Sessions.** Each CLI or desktop sign-in appears in "Sessions" in user settings, served by `@figentra/service-identity`, and
+   can be revoked there.
+6. **Same flow for desktop.** The Electron desktop target uses the same flow and storage.
+
+## Consequences
+
+- No password or MFA prompt is ever typed into the CLI; ZITADEL handles both.
+- A stolen laptop disk image does not expose a token in a dotfile, and a lost machine is cut off from Sessions.
+- Machines without a keychain need another path (open detail 2).
+
+## Enforcement
+
+planned — a CLI test asserts no token is written under the config directory; an identity test asserts a revoked session's refresh token is
+refused.
+
+## Open details
+
+The owner did not give these; the conservative default below applies until an ADR changes it.
+
+1. **No keychain available.** The CLI refuses to persist the token and keeps it in memory for the one command; automation uses an API key
+   ([0278](/adr/0278-api-key-lifecycle)) instead.
+2. **Keychains.** macOS Keychain, Windows Credential Manager and the Linux Secret Service.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on: [0241](/adr/0241-identity-first-slice-central-login-app-bff-and-reference-service),
+[0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral). Sources: owner answers in chat, 2026-10-21
+(screenshot gap review, item 8).

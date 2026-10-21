@@ -1,11 +1,17 @@
 ---
 title: "0186 — Backups and disaster recovery"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0272 · 2026-10-20"
 ---
 
 <Note>
   Supersedes [0048](/adr/0048-point-in-time-recovery-and-quarterly-restore-drill). The drill record
   of 0048 decisions 3 to 5 carries forward.
+</Note>
+
+<Note>
+  Amended by [0272](/adr/0272-account-model-personal-workspace-and-opt-in-organisations): decision 6
+  stands. Every tenant carries a `region` field set to the one region, so a later cell is data plus
+  a picker.
 </Note>
 
 ## Context
