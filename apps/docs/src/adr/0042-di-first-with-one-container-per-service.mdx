@@ -1,6 +1,6 @@
 ---
 title: "0042 — DI-first with one container per service"
-description: "Accepted, amended by 0143, 0147 · 2026-10-19"
+description: "Accepted, amended by 0143, 0147, 0263 · 2026-10-19"
 ---
 
 <Note>
@@ -8,6 +8,12 @@ description: "Accepted, amended by 0143, 0147 · 2026-10-19"
   [0143](/adr/0143-container-scopes-registration-lifecycle-and-testing) (scopes, registration,
   lifecycle, testing) and [0147](/adr/0147-logger-and-runtime-telemetry-defaults) (runtime
   telemetry).
+</Note>
+
+<Note>
+  Amended by [0263](/adr/0263-di-stays-and-gen-writes-the-wiring): decision 2 (explicit tokens) is
+  replaced. Interface ports and config have same-named tokens, a constructor needs no `@Inject`, and
+  `@Inject` is for named instances only. Gen writes the wiring of a member's own classes.
 </Note>
 
 ## Context

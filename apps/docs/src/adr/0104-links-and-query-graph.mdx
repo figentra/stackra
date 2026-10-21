@@ -1,7 +1,13 @@
 ---
 title: "0104 — Cross-module relations are @Link declarations, read through query.graph"
-description: "Accepted · 2026-10-19"
+description: "Accepted, amended by 0268 · 2026-10-19"
 ---
+
+<Note>
+  Amended by [0268](/adr/0268-register-answers-thin-items-r1-to-r18): R10: `query.graph` returns at
+  most 20 rows per relation by default and at most 100. Depth is at most 3, and fan-out is at most
+  1,000 rows per call.
+</Note>
 
 ## Context
 

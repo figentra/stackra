@@ -1,0 +1,83 @@
+---
+title: "0268 — Register answers of 2026-10-21: the thin items R1 to R18 settled, each recorded on the page it changes"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Amends [0059](/adr/0059-offline-encrypted-query-cache-and-mutation-queue) (R16),
+  [0061](/adr/0061-mobile-keeps-react-navigation-and-native-tabs) (R17),
+  [0065](/adr/0065-linear-gate-is-checked-offline) (R14),
+  [0080](/adr/0080-i18n-is-the-figentra-i18n-port) (R15),
+  [0090](/adr/0090-codegen-discovery-by-root-module) (R8),
+  [0091](/adr/0091-generated-encore-app-in-stackra-folder) (R7),
+  [0099](/adr/0099-risk-scale-l0-to-l4) (R9), [0104](/adr/0104-links-and-query-graph) (R10),
+  [0118](/adr/0118-api-versioning-dormant-package) (R13),
+  [0127](/adr/0127-package-categories-including-infrastructure) (R5, confirmed),
+  [0128](/adr/0128-code-conventions-enums-classes-components-and-kind-folders) (R1),
+  [0136](/adr/0136-action-runtime-contract) (R11),
+  [0158](/adr/0158-gen-artefacts-openapi-manifest-and-client) (R7),
+  [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs) (R11),
+  [0199](/adr/0199-developer-experience-create-stackra-app-upgrades-stackra-dev-and-docs) (R2),
+  [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral) (R3),
+  [0220](/adr/0220-stackra-money-and-the-ledger-package) (R4),
+  [0241](/adr/0241-identity-first-slice-central-login-app-bff-and-reference-service) (R3) and
+  [0252](/adr/0252-offline-on-every-client-completing-the-mutation-queue) (R16).
+</Note>
+
+## Context
+
+The decision register listed eighteen thin items: decisions that were open or assumed and had no owner answer. The owner answered all of
+them on 2026-10-21, and each answer is recorded here as an amendment to the page it changes. Where a thin item had no page to change, it is
+recorded in the decision below. The Agent Vault deferral (R12) is a supersession, so it has its own page,
+[0267](/adr/0267-infisical-agent-vault-deferred).
+
+## Decision
+
+1. **R1, code conventions.** The code-conventions proposal is adopted. Its constant, utility, hook, context and no-inline-types rules are in force
+   as [0128](/adr/0128-code-conventions-enums-classes-components-and-kind-folders) decision 5 described them as assumed. The comment and JSDoc
+   rules are decided on [0007](/adr/0007-source-documentation-standard), not here.
+2. **R2, per-member documentation.** Each member has a README and a generated `API.md`. A generated `llms.txt` is published. `AGENTS.md` stays
+   within about 8,000 tokens.
+3. **R3, identity.** The identity service is a thin control plane over ZITADEL. Stackra builds no login UI. ZITADEL's hosted
+   sign-in pages are used, and ZITADEL's own branding replaces the per-tenant login customisation of
+   [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral) decision 7 and
+   [0241](/adr/0241-identity-first-slice-central-login-app-bff-and-reference-service) decision 6. The central login app of 0241 is not built.
+4. **R4, tax.** `@stackra/tax` is a port with a memory driver. The ZATCA and UAE tax rules are OS-only, and no Stackra package carries
+   them. The category of `@stackra/tax` is assigned in its spec.
+5. **R5, categories.** The package categories of [0127](/adr/0127-package-categories-including-infrastructure) are confirmed as they stand.
+6. **R6, DV2.** Recorded outside Stackra. DV2 is a service-level decision of the private OS product, so no Stackra page changes.
+7. **R7, manifest and member roots.** `app-manifest.json` sits at the member root and is committed. `.stackra/encore` is not a workspace member.
+   Gen writes `infra.config.json`.
+8. **R8, documentation app.** A documentation app imports only the `./contracts` entries and the generated clients of the members it documents.
+   It never imports module source.
+9. **R9, AI risk.** Read actions are low risk, write actions are medium, and delete, money, permission and bulk operations are high risk
+   and require approval. These are AI exposure tiers. They are not the L0 to L4 action levels of
+   [0099](/adr/0099-risk-scale-l0-to-l4) decision 1, which are unchanged.
+10. **R10, `query.graph` limits.** The default page size per relation is 20 and the maximum is 100. Depth is at most 3, and fan-out is at most
+    1,000 rows per call.
+11. **R11, versions and rendering.** An old major version of a `key@major` stays supported for 12 months after its successor ships. There is no
+    server rendering of L2 pages in v1.
+12. **R12, Agent Vault.** Deferred. Recorded in [0267](/adr/0267-infisical-agent-vault-deferred).
+13. **R13, client versions.** First-party clients pin the newest dated version.
+14. **R14, the `linear` field.** Each member's `package.json` `linear` field is `{ project }`, and it names the member's Linear project.
+15. **R15, i18n.** Messages use ICU syntax, and keys are typed.
+16. **R16, conflicts.** The storage package owns the conflict data. The experience package owns the UI that resolves it.
+17. **R17, mobile modules.** Mobile modules are compile-time. A product variant is a module that is compiled into the app, not a runtime plugin
+    and not a separate app.
+18. **R18, small utilities.** The remaining small utilities are settled in spec clarification, not in ADRs. No page changes.
+
+## Consequences
+
+- A reader of any amended page sees the register answer in a note, with the same status it had before.
+- Two Proposed pages, [0059](/adr/0059-offline-encrypted-query-cache-and-mutation-queue) and [0252](/adr/0252-offline-on-every-client-completing-the-mutation-queue),
+  carry the R16 split. Their status is unchanged here.
+- The R6 decision and the R18 decision leave no Stackra page. A reader finds them in this list.
+
+## Enforcement
+
+planned — no check is named for these answers yet. Each amended page carries its own Enforcement line, and the answers become checks
+only when those lines are filled in by a later change.
+
+## Supersedes and sources
+
+Supersedes: none. Amends the pages listed in the note above. Sources: owner settlement in chat, 2026-10-21 (decision register items R1 to R18).

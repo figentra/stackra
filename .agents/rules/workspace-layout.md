@@ -78,6 +78,12 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 - Mobile: Expo React Native app
 - Entry: `src/main.ts`
 
+## Generated Output
+
+- `stackra gen` writes real typed files to `.stackra/gen/` (`routes`, `navigation`, `i18n`, `resources`, `assets`, `clients`, `services`, `permissions`, `settings`, `capabilities`, `wiring`, `hooks`). Code imports them only as `#stackra/<name>`, through the member's `imports` map (ADR 0261, 0233)
+- `.stackra/*` is gitignored; `.stackra/gen/` is never committed and is never edited by hand
+- DI wiring is generated into `.stackra/gen/wiring.ts`; a module is a folder and authors write no provider lists (ADR 0263)
+
 ## Forbidden Paths
 
 - No root `tests/` - tests live beside code

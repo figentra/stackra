@@ -1,0 +1,59 @@
+---
+title: "0259 — Module placement: three homes and the placement test"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Amends [0111](/adr/0111-module-is-the-unit-of-contribution) (a service root module is wiring
+  only), [0126](/adr/0126-member-shapes-and-scaffold-templates) (where a feature module lives) and
+  [0130](/adr/0130-module-layout-by-semantic-kind) (the kind-folder layout applies in every home).
+  Consistent with [0010](/adr/0010-services-are-independent-workspace-members) (no cross-service
+  imports) and [0117](/adr/0117-contracts-placement-and-decorator-ownership) (contracts).
+</Note>
+
+## Context
+
+A feature module can be written in three places: inside a service, in the private figentra-os repository's
+`packages/` (`@figentra/*`, [0126](/adr/0126-member-shapes-and-scaffold-templates) decision 7 and FO5/FO7), or in this
+repository's public `@stackra/*` packages. Without a rule, logic that two products need ends up copied, or a Figentra business
+rule leaks into a public package. The owner decided the placement on 2026-10-21, after reviewing the trade-offs.
+
+## Decision
+
+1. **Three homes.**
+   - **A. `@stackra/*` (public, `packages/<category>/<name>`).** Mechanisms and generic capability kits with no Figentra
+     business rules. A package in this home ships configurable modules (`forRoot` and `defineConfig`).
+   - **B. figentra-os `packages/` (`@figentra/*`, private).** OS domain modules and logic used by two or more OS services or
+     OS apps.
+   - **C. Default: `services/<svc>/src/modules/<feature>/`.** Kind folders as in [0130](/adr/0130-module-layout-by-semantic-kind).
+2. **Placement test.** Start a feature in its service (C). Move it to B when a second OS consumer (another service or an OS
+   app) needs it. Move it to A only when it holds zero Figentra business rules and a second product, not Figentra, would use it.
+3. **Moving is moving a folder.** A module moves by moving its folder and its package entry. Its key, its permissions and its
+   contracts do not change, so consumers keep working.
+4. **A service root module is wiring only** ([0111](/adr/0111-module-is-the-unit-of-contribution)). It holds no business logic.
+   The provider wiring is written by gen, not by hand ([0263](/adr/0263-di-stays-and-gen-writes-the-wiring)).
+5. **A module from home A or B contributes exactly as one from home C** ([0111](/adr/0111-module-is-the-unit-of-contribution)
+   decision 4). Its folders follow the kind folders of [0130](/adr/0130-module-layout-by-semantic-kind).
+6. **Shared logic is never copied between services.** Logic shared by services goes to home B; a service never imports another
+   service's module ([0260](/adr/0260-cross-service-calls-through-injected-clients-and-events)).
+
+## Consequences
+
+- A feature starts cheap, in the one service that needs it, and moves only when a second consumer appears.
+- Home A carries a higher bar: a package with one Figentra rule in it is not public.
+- Home B needs a private package flow in figentra-os and its own validator run; the placement test does not remove that cost.
+- A reviewer can reject a module placed in the wrong home by applying the test, without a tool.
+
+## Enforcement
+
+planned — `pnpm validate` rejects a `@stackra/*` package that imports an `@figentra/*` package, and the figentra-os validator
+(scaffolded from the same generator, [0126](/adr/0126-member-shapes-and-scaffold-templates)) rejects a service importing another
+service's source. The placement test itself is a review check. Nothing checks it mechanically yet.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0111](/adr/0111-module-is-the-unit-of-contribution), [0126](/adr/0126-member-shapes-and-scaffold-templates),
+[0130](/adr/0130-module-layout-by-semantic-kind). Sources: owner decision in chat, 2026-10-21 (module placement, cross-service and
+generated modules), and the owner's programming-model settlement of the same day, which keeps this placement test as it stands;
+FO5 and FO7 as cited in
+[0126](/adr/0126-member-shapes-and-scaffold-templates).

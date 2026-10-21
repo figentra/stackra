@@ -17,6 +17,6 @@ Every name follows ADR 0231 (`/adr/0231-naming-and-casing-standard`). The summar
 - **Database**: snake_case plural tables; `idx_` and `fk_` names for indexes and foreign keys.
 - **Environment variables and secrets**: SCREAMING_SNAKE. Public values use `VITE_`, `EXPO_PUBLIC_` or `RENDERER_VITE_` and never hold a secret. Server values use `STACKRA_`, `FIGENTRA_` or `MAIN_VITE_`. Secrets are `<PROVIDER>_<PURPOSE>`. Tool-reserved prefixes are `ENCORE_`, `TURBO_`, `NODE_`, `CI`, `GITHUB_`, `INFISICAL_`, `EAS_`.
 - **Namespace lookups** (i18n keys, assets, templates, stubs) use `<module>::<path>`, for example `billing::invoice.refund_confirm` and `flags::public/images/eg.svg`.
-- **DI tokens** are constants made with `defineToken`, with a `<module>.<TypeName>` key: `export const INVOICE_REPOSITORY = defineToken<InvoiceRepository>("billing.InvoiceRepository")`. String injection is banned.
+- **DI tokens**: every interface port and every `defineConfig` value has a same-named token, so the constant takes the type's name, with a `<module>.<TypeName>` key: `export const InvoiceStorage = defineToken<InvoiceStorage>("billing.InvoiceStorage")` (ADR 0263). A constructor typed with it needs no `@Inject`, for one driver or many. `@Inject` is only for a named instance. A class is its own token. String injection is banned.
 
 Enforcement: planned — oxlint `unicorn/filename-case` (kebab-case files), the house lint rules of ADR 0129, the public-prefix lint, and the validator checks named in ADR 0231.

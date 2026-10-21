@@ -1,12 +1,19 @@
 ---
 title: "0143 — Container scopes, module registration, lifecycle and testing"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0263 · 2026-10-20"
 ---
 
 <Note>
   Amends [0042](/adr/0042-di-first-with-one-container-per-service) (accepted in this change; its
   spike passed) and [0005](/adr/0005-di-container-and-legacy-decorators). Decisions CT1 to CT4 are
   added to 0042.
+</Note>
+
+<Note>
+  Amended by [0263](/adr/0263-di-stays-and-gen-writes-the-wiring): a module's own providers are
+  wired by gen and are not registered by hand. `forRoot` and `forRootAsync` for third-party modules
+  stay, and `forRoot` takes code only; values come from the config layers. Tests use
+  `createTestingModule(Module).override(Port, fake)`.
 </Note>
 
 ## Context

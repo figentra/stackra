@@ -1,6 +1,6 @@
 ---
 title: "0158 — Gen artefacts: committed OpenAPI and manifest, a CI-published client, deploy-mode targets"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0260, 0268 · 2026-10-20"
 ---
 
 <Note>
@@ -8,6 +8,19 @@ description: "Accepted · 2026-10-20"
   [0124](/adr/0124-encore-is-the-generated-runtime-target). 0124 decision 4 says only the app
   manifest is committed; it now also commits the OpenAPI file. Amends 0039 (final pass), whose open
   item this closes.
+</Note>
+
+<Note>
+  Amended by [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events): the
+  committed `app-manifest.json` is the single contract source. Clients and event maps are generated
+  from it, and `openapi.json` is a projection of it. The CI-published client remains for consumers
+  outside the repository.
+</Note>
+
+<Note>
+  Amended by [0268](/adr/0268-register-answers-thin-items-r1-to-r18) (R7): `app-manifest.json` sits
+  at the member root and is committed. `.stackra/encore` is not a workspace member. Gen writes
+  `infra.config.json`.
 </Note>
 
 ## Context

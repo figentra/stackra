@@ -1,6 +1,6 @@
 ---
 title: "0231 — Naming and casing standard"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0264 · 2026-10-20"
 ---
 
 <Note>
@@ -11,6 +11,13 @@ description: "Accepted · 2026-10-20"
   [0006](/adr/0006-naming-exports-and-imports) and
   [0128](/adr/0128-code-conventions-enums-classes-components-and-kind-folders). The always-on rule
   is `.agents/rules/naming-and-casing.md`.
+</Note>
+
+<Note>
+  Amended by [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders): A
+  module key is one snake_case segment (decision 1), and model keys are snake_case (decision 2).
+  Dotted module keys are not used. Token constants for interface ports and `defineConfig` values
+  take the type's name (0263 decision 3); SCREAMING_SNAKE applies to other module-level constants.
 </Note>
 
 ## Context

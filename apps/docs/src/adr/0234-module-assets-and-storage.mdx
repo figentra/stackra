@@ -1,6 +1,6 @@
 ---
 title: "0234 — Module assets and storage"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0263, 0264 · 2026-10-20"
 ---
 
 <Note>
@@ -9,6 +9,18 @@ description: "Accepted · 2026-10-20"
   assets collector. "Resource" is reserved for `@Resource`, the admin-UI declaration of
   [0164](/adr/0164-console-panels-are-resources-rendered-by-the-panel-package). Files shipped with a
   package are **assets**.
+</Note>
+
+<Note>
+  Amended by [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders):
+  The namespace is the module's `key`, and the `name` field is removed (decision 1). Decision 2's
+  `@Module({name})` no longer applies.
+</Note>
+
+<Note>
+  Amended by [0263](/adr/0263-di-stays-and-gen-writes-the-wiring) (decision 3): the `Assets` port is
+  a same-named token, so a constructor typed `Assets` needs no `@Inject`. The `ASSETS` token named
+  in decision 3's list is replaced by that value.
 </Note>
 
 ## Context

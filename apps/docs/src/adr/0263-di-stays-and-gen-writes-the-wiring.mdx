@@ -1,0 +1,88 @@
+---
+title: "0263 — DI stays; gen writes the wiring: same-name tokens, inferred module edges, config layers"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Amends [0005](/adr/0005-di-container-and-legacy-decorators) (decision 3: a constructor parameter
+  whose type is a class or a same-named token needs no `@Inject`; `@Inject` is for named instances),
+  [0042](/adr/0042-di-first-with-one-container-per-service) (decision 2: tokens are same-named
+  values, and gen writes them), [0132](/adr/0132-permissions-catalogue-and-policy-providers)
+  (decision 4: a policy method is a permission verb, bound by gen),
+  [0143](/adr/0143-container-scopes-registration-lifecycle-and-testing) (registration: `forRoot`
+  takes code only, and a module's own providers are wired by gen),
+  [0144](/adr/0144-metadata-registry-and-explorers) (gen reads constructor types as well as
+  decorator metadata),
+  [0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned) (decision 1: a
+  `defineToken` value exists for every interface port, and `defineConfig` returns a same-named type)
+  and [0146](/adr/0146-package-configuration-typescript-layers-and-secret-references) (values live
+  in the config layers, and `forRoot` takes no values). String injection stays banned.
+</Note>
+
+## Context
+
+Dependency injection answers "which implementation, for whom, now" at runtime. It swaps a driver per deploy mode, scopes a request to
+its tenant, actor and transaction, lets a test replace a provider, and manages lifecycle. Codegen answers "what exists" at build time.
+The authoring cost of the container was the explicit wiring each author wrote by hand: an `@Inject` token on every constructor parameter,
+a `providers` list and module imports for the author's own classes, and two places where a value could be set. The owner settled on
+2026-10-21 that the container stays, gen writes the wiring, and the rules below apply.
+
+## Decision
+
+1. **DI stays.** The container of [0005](/adr/0005-di-container-and-legacy-decorators) and the scopes and lifecycle of
+   [0143](/adr/0143-container-scopes-registration-lifecycle-and-testing) are unchanged. No runtime reflection or auto-wiring replaces them.
+2. **Authors write plain classes.** A class that another class depends on is decorated with a kind decorator, or with `@Injectable()`
+   when it carries none, and declares typed constructor parameters. The author writes no `@Inject` token, no `providers` list and no
+   module imports for the author's own classes.
+3. **Same-name rule for ports and config.** Every interface port has a same-named `defineToken` value, and `defineConfig(key, schema,
+defaults)` returns a value with a same-named type. A constructor parameter typed with either needs no `@Inject`. This holds for one
+   implementer or many, because the token exists for the interface, not for the number of drivers. A class is its own token.
+4. **`@Inject` is for named instances only.** `@Inject` remains only where a type alone is ambiguous, which is a named instance from
+   `forRoot({ instances })` ([0143](/adr/0143-container-scopes-registration-lifecycle-and-testing)).
+5. **Gen reads the types.** `stackra gen` reads the constructor parameter types at build time with ts-morph. It uses no `reflect-metadata`
+   and no `design:paramtypes` at runtime ([0005](/adr/0005-di-container-and-legacy-decorators) decision 3 stands).
+6. **Module file: four facts.** The `@Module` file holds `key`, `exports`, configurable `imports` and `dependsOn`. The `key` is the
+   namespace defined by [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders). The file holds no `providers`
+   list, and no `name`.
+7. **Folder is the kind.** Gen discovers the providers of a module from its folder: every class with a kind decorator, and every class with
+   an `@OnEvent` method. The scope comes from the class (`@Injectable({ scope })`).
+8. **Sibling edges are inferred.** When a class injects a class that a sibling module exports, gen adds the edge. Gen fails when the
+   injected class is not exported, and on any module cycle. `dependsOn` is only for an edge gen cannot see, such as a link-only dependency.
+   `imports` lists configurable modules only, never a sibling.
+9. **Config is data; `forRoot` is code.** Values, including the built-in driver choice, live in the config layers of
+   [0146](/adr/0146-package-configuration-typescript-layers-and-secret-references): package defaults, then the host's
+   `config/<pkg>.config.ts` through `hostConfig(...)`, then env, then `runway.yaml`. `forRoot()` takes no values; it takes a custom driver
+   class or a factory. `forFeature(Model)` registers per-module things. `ConfigurableModuleBuilder` gains
+   `setDriverSelection(Port, { fromConfig, drivers, override })`, so every package selects drivers the same way.
+10. **Policy methods are permission verbs.** Gen binds `ctx.authorize(Permissions.x, record)` to the policy method named by the verb of
+    the permission. Gen fails when a verb has no permission. The binding is written to `wiring.ts`.
+11. **Gen emits the wiring.** `stackra gen` writes `.stackra/gen/wiring.ts`, which lists every provider with its module, scope and
+    constructor tokens (with the source line), the module graph, the port table and the check results
+    ([0261](/adr/0261-generated-stackra-modules-in-stackra-gen)).
+12. **Test overrides.** A test replaces a provider with `createTestingModule(Module).override(Port, fake)`. The test never edits the real
+    wiring.
+13. **Strings stay banned.** A string is never an injection token ([0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned)).
+
+## Consequences
+
+- An author reads a class's dependencies in its constructor, and reviewers no longer check a provider list in a module file.
+- A port that gains a second driver adds no token change. An agent changes the driver, not the wiring.
+- A wiring mistake moves to build time. An unresolved constructor type, an injection of a non-exported class, or a cycle fails
+  `stackra gen`, not the first request.
+- Config has one place per value. A reviewer finds a value in a layer file, and `forRoot` changes only when code changes.
+- Gen becomes load-bearing: the wiring file is generated and must be correct for every member.
+
+## Enforcement
+
+planned — `stackra gen` fails on an unresolved constructor parameter type, on an injection of a non-exported class, on a module cycle, on a
+policy verb with no permission, and on a string injection token. Planned: `pnpm validate` rejects a `providers` array in a `*.module.ts`
+file and a `name` field in a `@Module`, and the conformance test of [0144](/adr/0144-metadata-registry-and-explorers) checks that
+`wiring.ts` agrees with the Explorers.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0005](/adr/0005-di-container-and-legacy-decorators), [0042](/adr/0042-di-first-with-one-container-per-service),
+[0132](/adr/0132-permissions-catalogue-and-policy-providers), [0143](/adr/0143-container-scopes-registration-lifecycle-and-testing),
+[0144](/adr/0144-metadata-registry-and-explorers), [0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned),
+[0146](/adr/0146-package-configuration-typescript-layers-and-secret-references), [0234](/adr/0234-module-assets-and-storage). Sources: owner settlement in chat, 2026-10-21
+(programming model questions Q6, Q8, Q9 and Q11, and review points 1 and 2 of this pull request).

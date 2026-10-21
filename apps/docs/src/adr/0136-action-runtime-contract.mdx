@@ -1,11 +1,16 @@
 ---
 title: "0136 — The action runtime contract: handler context, transaction, idempotency and versions"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0268 · 2026-10-20"
 ---
 
 <Note>
   Supersedes [0036](/adr/0036-idempotency-cache-and-postgres). Amends
   [0098](/adr/0098-actions-are-the-unit) and [0118](/adr/0118-api-versioning-dormant-package).
+</Note>
+
+<Note>
+  Amended by [0268](/adr/0268-register-answers-thin-items-r1-to-r18): R11: an old major of a
+  `key@major` stays supported for 12 months after its successor ships.
 </Note>
 
 ## Context

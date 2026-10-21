@@ -1,12 +1,18 @@
 ---
 title: "0133 — Field semantics, model keys, rename-safe fields and lifecycle events"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0264 · 2026-10-20"
 ---
 
 <Note>
   Amends [0095](/adr/0095-zod-inside-field-decorators), [0096](/adr/0096-trait-naming-grammar) and
   [0097](/adr/0097-model-and-database-packages). Those pages keep their decisions; this ADR adds the
   field types, keys and events.
+</Note>
+
+<Note>
+  Amended by [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders): A
+  model key is snake_case under its module key, for example `inventory.stock_level`, not
+  `inventory.stockLevel` (decision 2).
 </Note>
 
 ## Context

@@ -1,0 +1,108 @@
+---
+title: "0260 — Cross-service reach: one generated client with call, command and typed events"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Amends [0117](/adr/0117-contracts-placement-and-decorator-ownership): a generated client and a
+  port are contracts-entry surfaces, and a consumer imports neither from another service's source.
+</Note>
+
+<Note>
+  Amends [0142](/adr/0142-cross-service-transport-through-drivers): the choice between an in-process
+  call and an RPC call is made by deployment topology inside the driver, and the consumer's code
+  does not change.
+</Note>
+
+<Note>
+  Amends [0158](/adr/0158-gen-artefacts-openapi-manifest-and-client): the committed
+  `app-manifest.json` is the single contract source. Clients and event maps are generated from it,
+  and `openapi.json` is a projection of it.
+</Note>
+
+<Note>
+  Amends [0163](/adr/0163-reports-exports-imports-and-declared-read-models): a consumer's read model
+  of another service's data is a `@Projection` fed by that service's integration events.
+</Note>
+
+<Note>
+  Amends [0078](/adr/0078-messaging-layer-eight-packages) (decision 3): integration event shapes are
+  read from the producer's committed manifest, not from its `./contracts` entry.
+</Note>
+
+<Note>
+  Amends [0141](/adr/0141-integration-event-names-and-envelope): an event becomes an integration
+  event when its `defineEvents` entry is marked `public: true`. The name format does not change.
+</Note>
+
+## Context
+
+[0010](/adr/0010-services-are-independent-workspace-members) says services are independent and never import each other's source.
+[0142](/adr/0142-cross-service-transport-through-drivers) moved the transport behind drivers. What was missing is the reach a consumer
+writes. Nest-style string patterns compile with typos, and two contract sources (an OpenAPI file for calls, a `./contracts` entry for
+events) drift apart. The owner settled the surface on 2026-10-21: one generated client per service, three modes on one action key, and
+one contract source.
+
+## Decision
+
+1. **No direct access.** A service never imports another service's code, tables or `Topic`, and never queries another service's
+   database.
+2. **One contract source.** The producer's committed `app-manifest.json` ([0158](/adr/0158-gen-artefacts-openapi-manifest-and-client))
+   holds its actions, queries and events with JSON Schema, refusal codes and hook-extended inputs. `openapi.json` is a projection of
+   it for external consumers. `./contracts` is the TypeScript authoring source that gen reads to write the manifest. A consumer never
+   reads a producer's `./contracts`.
+3. **One generated client per service, injected.** `stackra gen` builds the client from the manifest. The client is a class, so it is
+   its own token ([0263](/adr/0263-di-stays-and-gen-writes-the-wiring)) and a consumer receives it through its constructor:
+
+   ```ts
+   constructor(private readonly commerce: CommerceClient) {}
+   ```
+
+   The type is imported from the generated `#stackra/clients` module ([0261](/adr/0261-generated-stackra-modules-in-stackra-gen)).
+
+4. **Three modes, one action key, one pipeline.** Each mode targets the producer's action key and runs through the producer's pipeline,
+   so its permissions, tenancy and audit apply.
+   - **Call**: `await commerce.order.price(input)`. The consumer needs the answer now. The call is synchronous.
+   - **Command**: `await notifications.message.send.queue(input)`. The consumer does not need the answer. The command is queued on the
+     **producer's** queue driver, runs at least once, is deduplicated by a derived idempotency key, and returns a receipt.
+   - **Event**: `@OnEvent(Commerce.order.placed)`. Something happened. Consumers subscribe to the typed descriptor the generated event map
+     provides, and the descriptor carries the versioned wire name of [0141](/adr/0141-integration-event-names-and-envelope).
+5. **Integration events are declared by the producer.** A `defineEvents` entry marked `public: true` is an integration event. It goes
+   through the outbox ([0078](/adr/0078-messaging-layer-eight-packages)), and its shape is exported in the manifest.
+6. **Topology picks the transport.** When producer and consumer run in one process, the generated client calls the action pipeline
+   directly. When they run as separate deployments, it uses RPC through the driver of
+   [0142](/adr/0142-cross-service-transport-through-drivers). Commands use the producer's queue driver. The consumer's code is the same
+   in both cases.
+7. **Read models for queries.** A consumer that needs another service's data in its own queries keeps an event-fed read model
+   (`@Projection`, [0163](/adr/0163-reports-exports-imports-and-declared-read-models)). It never queries the producer's tables.
+8. **Shared logic is not a client.** Logic that two services need goes to a figentra-os package
+   ([0259](/adr/0259-module-placement-three-homes), home B), not into a client.
+9. **Stackra packages use ports.** A Stackra package that needs service data defines a port in its `./contracts` entry
+   ([0117](/adr/0117-contracts-placement-and-decorator-ownership)). The service implements the port, and gen wires it
+   ([0263](/adr/0263-di-stays-and-gen-writes-the-wiring)). The package never imports the service.
+10. **Tests override the client.** A consumer's test replaces the client with a fake through `createTestingModule(...).override(...)`
+    ([0263](/adr/0263-di-stays-and-gen-writes-the-wiring)).
+
+## Consequences
+
+- A consumer's code reads like local dependency injection, and a reviewer sees the dependency in the constructor.
+- A wrong key, event or payload is a type error at the call site, because the client and the event map come from one manifest.
+- Commands remove the hand-written retry loop that fire-and-forget work otherwise needs. A command that fails is retried by the producer's
+  queue.
+- Read models add storage and an explicit lag; the consumer owns that staleness.
+- Each service needs a committed manifest before consumers can generate against it.
+
+## Enforcement
+
+planned — a boundaries rule bans imports of another service's package or path, which extends the rule of
+[0010](/adr/0010-services-are-independent-workspace-members). Planned: `stackra gen` fails when a consumer names a service with no
+committed `app-manifest.json`; `stackra gen --check` fails when the committed `openapi.json` is not the projection of the manifest; and the
+conformance test of [0144](/adr/0144-metadata-registry-and-explorers) checks that the event map matches the manifest.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0078](/adr/0078-messaging-layer-eight-packages), [0117](/adr/0117-contracts-placement-and-decorator-ownership),
+[0141](/adr/0141-integration-event-names-and-envelope), [0142](/adr/0142-cross-service-transport-through-drivers),
+[0158](/adr/0158-gen-artefacts-openapi-manifest-and-client), [0163](/adr/0163-reports-exports-imports-and-declared-read-models).
+Relates to [0010](/adr/0010-services-are-independent-workspace-members). Sources: owner settlement in chat, 2026-10-21 (programming model
+questions Q4 and Q5, and review point 4 of this pull request).

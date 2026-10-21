@@ -8,6 +8,11 @@ description: "Proposed · 2026-10-20"
   every client) and [0079](/adr/0079-client-state-is-stackra-state).
 </Note>
 
+<Note>
+  Settled by [0268](/adr/0268-register-answers-thin-items-r1-to-r18): R16: the storage package owns
+  the conflict data, and the experience package owns the UI that resolves it.
+</Note>
+
 ## Context
 
 ADR 0059 gave the mobile app an encrypted query cache and a mutation queue. The desktop and PWA plan (section 3.2, rows 1 to 12) lists what a queue on every client needs: client-minted ids, version preconditions, retention, a leader election, action-version survival, and an `offline:` option on `@Action`. The owner accepted the offline direction; the rows themselves are the plan's recommendations and were not each decided.
