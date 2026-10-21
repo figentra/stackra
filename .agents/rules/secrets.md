@@ -114,7 +114,7 @@ Each article below is bound to a check:
 1. **Secrets never in git** → `gitleaks` pre-commit + CI scan
 2. **No .env files** → `guard-paths` hook
 3. **CI secrets from OIDC** → GitHub Actions OIDC (Phase 2)
-4. **Production values reach runtimes by Infisical sync** (ADR 0173, decision 1), and only the `secret-manager` agent writes values through `pnpm secrets:import` (ADR 0173, decision 7; planned). Review checks the sync, not a manual copy.
+4. **Production values reach runtimes by Infisical sync** (ADR 0173, decision 1), and only the `secret-manager` agent writes values through `pnpm secrets:import` (ADR 0173, decision 7; ADR 0257). Review checks the sync, not a manual copy.
 5. **Nobody reads a value; the inbox flow writes blind** → `tools/scripts/secrets-import.mjs` (+ its test, which
    asserts no canary value reaches output, audit log or argv), `guard-bash` / `guard-paths` inbox rules
 
