@@ -5,6 +5,9 @@
  *          The coverage thresholds themselves live in the repo root `vitest.shared.ts` (`withCoverage`), so one
  *          place owns the gate. Resolution prefers the `@stackra/source` export condition (ADR 0025), so a test reads a
  *          workspace package's source, not its built dist; the rest of each list is Vite's default.
+ * Boundary: the base config only; it declares no test and no setup file.
+ * Runtime: node
+ * Governing contract: ADR 0007 (documentation); ADR 0022 (test placement).
  * Owner: release-operations · Secrets: forbidden
  */
 import { defineConfig } from "vitest/config";

@@ -8,6 +8,9 @@
  * `oxc.decorator.legacy` is `experimentalDecorators`. `@stackra/typescript-config/decorators` sets the
  * matching tsc flags so `tsc --noEmit` and the test transform agree. This file is the only place the option
  * names live.
+ * Boundary: adds the legacy decorator transform to the base preset; it does not emit metadata.
+ * Runtime: node
+ * Governing contract: ADR 0005 (legacy decorators); ADR 0007 (documentation).
  * Owner: release-operations · Secrets: forbidden
  */
 import { defineConfig, mergeConfig } from "vitest/config";

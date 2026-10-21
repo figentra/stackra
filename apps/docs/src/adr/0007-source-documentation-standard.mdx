@@ -1,11 +1,16 @@
 ---
 title: "0007 — Source documentation standard"
-description: "Accepted, amended by 0128 · 2026-10-19"
+description: "Accepted, amended by 0128 and 2026-10-21 · 2026-10-19"
 ---
 
 <Note>
   Amended by [0128](/adr/0128-code-conventions-enums-classes-components-and-kind-folders): the
   documentation rules for classes and members are assumed there, pending the owner.
+</Note>
+
+<Note>
+  Amended 2026-10-21 (STA-215): the format is TSDoc, and members, tokens and the header are
+  required. See the amendment at the end of this page.
 </Note>
 
 ## Context
@@ -37,9 +42,38 @@ what the file is for and which rule governs it. Doc comments that restate a sign
 
 ## Enforcement
 
-Planned: a doc-standard check in `tools/scripts` (port basalt `doc-standard.mjs`) that requires the header and TSDoc on
-exports and runs in `pnpm validate`. Until then headers exist by convention, as in `lefthook.yml`, `turbo.jsonc` and `pnpm-workspace.yaml`.
+`tools/scripts/doc-standard.mjs` (test: `tools/scripts/__tests__/doc-standard.test.mjs`) runs in `pnpm validate`. It uses
+the TypeScript compiler API to check the file contract header and the TSDoc presence rules of the amendment below, and it
+rejects types in `@param`, `@returns`, `@throws` and `@property`. oxlint's `jsdoc/check-tag-names` (in
+`packages/tooling/oxlint/src/base.jsonc`) holds the tag names to TSDoc. oxlint 1.86 has no `jsdoc/no-types`, so the type
+ban lives in the check. The check never judges wording: a block that restates the signature is a review finding.
+
+## Amendment 2026-10-21: TSDoc on members, tokens and the check
+
+**Context.** The owner found exported interfaces, class methods and DI token files with no docblocks. Decision 2 asked
+for TSDoc on exported symbols only, and its check stayed planned, so nothing enforced it. The owner settled the format
+in STA-215. This amendment replaces decision 2 where the two differ.
+
+**Decision.**
+
+1. **The format is TSDoc, not JSDoc with types.** Types never appear in a tag. Write `@param name - meaning`, never
+   `@param {type} name`; no typed `@returns`. TypeScript owns the types.
+2. **Required on:**
+   - every exported symbol;
+   - every property and method signature of an exported interface or type literal;
+   - every public and protected member of an exported class (`private` and `#` members are internal);
+   - every DI token constant made with `defineToken`. The block says what resolves to the token and which package or app
+     provides it.
+3. **What the block says.** A purpose sentence always. `@param` and `@returns` only where meaning, units or edge behaviour
+   are not in the type (for example, "returns false and changes nothing on a repeat"). `@throws` for each typed error a
+   caller must handle. `@defaultValue` on optional config properties. `@example` on public entry points. `@remarks` for
+   longer notes. `@deprecated` with the replacement and the removal target.
+4. **The header.** Decision 1 applies to every `.ts` and `.tsx` source file in `packages/`, `services/` and `apps/`,
+   excluding tests, generated code and declaration files. Its `Runtime:` field is one of the five values in decision 1.
+
+**Consequences.** The check is mechanical: it verifies presence and the typed-tag ban, and review judges the wording.
+Writing cost rises for interface members, class methods and tokens. That is the point of the amendment.
 
 ## Supersedes and sources
 
-Supersedes: none. Sources: basalt `adr/0011-documentation-and-source-comment-standard`; figentra `docs/constitution/documentation.md`.
+Supersedes: none. Amends: decision 2 of this page (by the amendment above). Sources: basalt `adr/0011-documentation-and-source-comment-standard`; figentra `docs/constitution/documentation.md`; owner ruling in STA-215.

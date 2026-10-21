@@ -106,6 +106,53 @@ Types carry the weight first: no `any`, generics have meaningful names, an expor
 
 Interfaces and types say what they represent and who produces and consumes them; each property says its meaning, unit or format, and who sets it. Boilerplate is a finding: a comment that restates the signature teaches readers to skip comments.
 
+### What must carry TSDoc
+
+[ADR 0007](/adr/0007-source-documentation-standard), amended on 2026-10-21, makes the block required on:
+
+- every exported symbol;
+- every property and method signature of an exported interface or type literal;
+- every public and protected member of an exported class (`private` and `#` members are internal);
+- every DI token made with `defineToken`, whose block says what resolves to it and which package or app provides it.
+
+Types never appear in a tag: write `@param name - meaning`, never `@param {type} name`, and no typed `@returns` or `@throws`. TypeScript owns the types.
+
+### Worked example
+
+```ts
+/** Settings for one payment provider connection. */
+export interface ProviderOptions {
+  /** The provider API key, read from the secret store; never a literal. */
+  readonly apiKey: string;
+  /**
+   * Milliseconds to wait for one call before it fails as unavailable.
+   *
+   * @defaultValue `10_000`
+   */
+  readonly timeoutMs?: number;
+  /** How many times a failed call is retried, with backoff, before it fails. */
+  readonly retries?: number;
+}
+
+/** Resolves to the payment gateway; the billing module provides it. */
+export const PAYMENT_GATEWAY = defineToken<PaymentGateway>("billing.PaymentGateway");
+
+/**
+ * Charge an invoice through the configured provider. Repeats with one key charge nothing twice.
+ *
+ * @param invoiceId - the invoice to charge, as its public id.
+ * @param idempotencyKey - a repeat with the same key returns the first receipt.
+ * @returns the receipt the provider issued for the first successful charge.
+ * @throws PaymentError with code `payment_declined` when the provider refuses the card.
+ */
+export async function charge(invoiceId: string, idempotencyKey: string): Promise<Receipt> {
+  // ...
+}
+```
+
+`@returns` is kept here because the receipt's meaning (first successful charge) is not in the type. Drop it when the
+type already says everything.
+
 ### Comments in code
 
 Explain why, not what the next line says. Required before a workaround, a security-relevant check, a deliberate deviation and a non-obvious ordering. Forbidden: restating comments, commented-out code, and a TODO without an owner and a tracking reference.
@@ -134,16 +181,16 @@ A rejected promise or listener failure is reported through the package's logger 
 
 ## What enforces this
 
-| Rule                                                             | Check                                                               | Status |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------- | ------ |
-| Formatting                                                       | `oxfmt --check` (`format:check`, lefthook pre-commit)               | Yes    |
-| No `any`, no non-null assertion, no unused code, no cycles       | oxlint base preset                                                  | Yes    |
-| `import type` for type-only imports                              | oxlint `typescript/consistent-type-imports` (off in decorators)     | Yes    |
-| No deep import of `@stackra/*/src/*`                             | oxlint `boundaries.jsonc`                                           | Yes    |
-| Kebab-case names, one export per file, barrel shape              | planned: validator check                                            | No     |
-| No extension or `/index` in relative specifiers                  | planned: import-style check in the validator                        | No     |
-| `#` subpath imports instead of `../` climbs; `imports` map drift | planned: validator check                                            | No     |
-| File contract header and TSDoc on exports                        | planned: doc-standard check in `pnpm validate`                      | No     |
-| Typed errors with `code` and `hint`                              | review (`code-standards-steward`, planned role) until a lint exists | No     |
+| Rule                                                                         | Check                                                               | Status |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------ |
+| Formatting                                                                   | `oxfmt --check` (`format:check`, lefthook pre-commit)               | Yes    |
+| No `any`, no non-null assertion, no unused code, no cycles                   | oxlint base preset                                                  | Yes    |
+| `import type` for type-only imports                                          | oxlint `typescript/consistent-type-imports` (off in decorators)     | Yes    |
+| No deep import of `@stackra/*/src/*`                                         | oxlint `boundaries.jsonc`                                           | Yes    |
+| Kebab-case names, one export per file, barrel shape                          | planned: validator check                                            | No     |
+| No extension or `/index` in relative specifiers                              | planned: import-style check in the validator                        | No     |
+| `#` subpath imports instead of `../` climbs; `imports` map drift             | planned: validator check                                            | No     |
+| File contract header, TSDoc on exports, members and tokens, no types in tags | `tools/scripts/doc-standard.mjs` in `pnpm validate`                 | Yes    |
+| Typed errors with `code` and `hint`                                          | review (`code-standards-steward`, planned role) until a lint exists | No     |
 
 The planned `code-standards-steward` splits, renames and moves files to meet the naming and barrel rules without changing behaviour; see the [agent roster](/agents/roster).

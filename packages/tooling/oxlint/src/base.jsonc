@@ -22,6 +22,31 @@
     // Side-effect imports for CSS and polyfills.
     "import/no-unassigned-import": "off",
     "import/no-cycle": "error",
+    // TSDoc tags (ADR 0007, amended 2026-10-21). oxlint 1.86 has no jsdoc/no-types, so the `{type}`
+    // ban lives in tools/scripts/doc-standard.mjs.
+    "jsdoc/check-tag-names": [
+      "error",
+      {
+        "definedTags": [
+          "alpha",
+          "beta",
+          "decorator",
+          "defaultValue",
+          "eventProperty",
+          "experimental",
+          "internal",
+          "label",
+          "link",
+          "packageDocumentation",
+          "privateRemarks",
+          "public",
+          "remarks",
+          "sealed",
+          "typeParam",
+          "virtual",
+        ],
+      },
+    ],
   },
   "ignorePatterns": [
     "**/dist/**",

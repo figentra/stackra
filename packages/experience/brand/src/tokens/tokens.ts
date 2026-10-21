@@ -1,32 +1,57 @@
-/** Stackra brand — TypeScript token definitions. Mirrors the CSS custom properties in assets/heroui/web.css. */
+/**
+ * Stackra file contract:
+ * Purpose: the TypeScript token definitions for colour, type, spacing, radius, shadow and motion. They mirror the CSS
+ *          custom properties in assets/heroui/web.css, so a web or native consumer reads the same values.
+ * Boundary: constant values and their shapes; no runtime logic and no theme switching.
+ * Runtime: isomorphic
+ * Governing contract: ADR 0007 (documentation).
+ */
 
+/** One colour token: its value in each theme, and the hex equivalent for platforms that take hex. */
 export interface ColorToken {
+  /** The CSS colour (oklch) in the light theme. */
   readonly light: string;
+  /** The CSS colour (oklch) in the dark theme. */
   readonly dark: string;
+  /** The sRGB hex equivalent of `light`, for platforms that take hex. */
   readonly hexLight: string;
+  /** The sRGB hex equivalent of `dark`, for platforms that take hex. */
   readonly hexDark: string;
 }
 
+/** A text style: the CSS `font` shorthand and its letter spacing. */
 export interface TypographyToken {
+  /** The CSS `font` shorthand: weight, size and line height, then a family from `fontFamily`. */
   readonly font: string;
+  /** The CSS `letter-spacing` value, in em. */
   readonly letterSpacing: string;
 }
 
+/** One step of the spacing scale. */
 export interface SpacingToken {
+  /** The CSS length, in px. */
   readonly value: string;
 }
 
+/** One corner radius. */
 export interface RadiusToken {
+  /** The CSS `border-radius` value; a percentage for the app tile. */
   readonly value: string;
 }
 
+/** A surface shadow, with a value for each theme. */
 export interface ShadowToken {
+  /** The CSS `box-shadow` value in the light theme. */
   readonly light: string;
+  /** The CSS `box-shadow` value in the dark theme. */
   readonly dark: string;
 }
 
+/** One motion step. */
 export interface MotionToken {
+  /** The CSS transition duration, in milliseconds. */
   readonly duration: string;
+  /** The CSS timing function. */
   readonly easing: string;
 }
 
@@ -34,6 +59,11 @@ export interface MotionToken {
 /* Color tokens                                                        */
 /* ------------------------------------------------------------------ */
 
+/**
+ * The colour palette: the Figentra neutrals, surfaces, semantic roles, fields, Stackra artwork colours and the role
+ * aliases. Each entry is a `ColorToken`. Components read the role aliases (`background`, `accent`, ...); the steel and
+ * graphite entries are artwork and never a UI role.
+ */
 export const colors = {
   // Figentra neutrals
   amber: {
@@ -317,12 +347,14 @@ export const colors = {
 /* Typography tokens                                                   */
 /* ------------------------------------------------------------------ */
 
+/** The three font stacks: `sans` and `mono` for Latin text, `arabic` for RTL text. Each is a CSS font-family list. */
 export const fontFamily = {
   sans: '"Geist", ui-sans-serif, system-ui, sans-serif',
   mono: '"Geist Mono", ui-monospace, "SFMono-Regular", "Menlo", monospace',
   arabic: '"IBM Plex Sans Arabic", "Geist", system-ui, "Segoe UI", "Tahoma", sans-serif',
 } as const;
 
+/** The text styles. Each entry is a `TypographyToken`; the `Ar` suffix marks the Arabic variant of a style. */
 export const typography = {
   display: { font: `600 56px/1.05 ${fontFamily.sans}`, letterSpacing: "-0.035em" },
   h1: { font: `600 40px/1.1 ${fontFamily.sans}`, letterSpacing: "-0.03em" },
@@ -346,6 +378,7 @@ export const typography = {
 /* Spacing tokens                                                      */
 /* ------------------------------------------------------------------ */
 
+/** The spacing scale, `space-<n>`, in px. Each entry is a `SpacingToken`. */
 export const spacing = {
   "space-1": { value: "4px" },
   "space-2": { value: "8px" },
@@ -365,6 +398,7 @@ export const spacing = {
 /* Radius tokens                                                       */
 /* ------------------------------------------------------------------ */
 
+/** The corner radii. Each entry is a `RadiusToken`; `radius` is the base radius. */
 export const radius = {
   radius: { value: "0.25rem" },
   "radius-sm": { value: "2px" },
@@ -377,6 +411,7 @@ export const radius = {
 /* Shadow tokens                                                       */
 /* ------------------------------------------------------------------ */
 
+/** The surface, overlay and field shadows. Each entry is a `ShadowToken` with a light and a dark value. */
 export const shadows = {
   surface: {
     light:
@@ -398,6 +433,7 @@ export const shadows = {
 /* Motion tokens                                                       */
 /* ------------------------------------------------------------------ */
 
+/** The motion steps: `fast`, `base`, and `blink` for the cursor. Each entry is a `MotionToken`. */
 export const motion = {
   fast: { duration: "150ms", easing: "ease-out" },
   base: { duration: "250ms", easing: "ease-in-out" },
@@ -408,6 +444,7 @@ export const motion = {
 /* Convenience: all token groups                                       */
 /* ------------------------------------------------------------------ */
 
+/** Every token group in one object, for a consumer that takes the whole set. `tokens.colors` is `colors`. */
 export const tokens = {
   colors,
   fontFamily,

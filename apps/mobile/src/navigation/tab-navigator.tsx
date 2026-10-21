@@ -1,3 +1,10 @@
+/**
+ * Stackra file contract:
+ * Purpose: the tab shell, with one native stack per tab so each tab root gets its large title.
+ * Boundary: the tabs and their stacks; the screens themselves come from `../screens`.
+ * Runtime: react-native
+ * Governing contract: ADR 0007 (documentation).
+ */
 import { createNativeBottomTabNavigator } from "@bottom-tabs/react-navigation";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useThemeColor } from "heroui-native";
