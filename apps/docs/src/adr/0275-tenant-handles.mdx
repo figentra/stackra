@@ -24,7 +24,7 @@ the handle.
    and `i`; `o` and `0`; `rn` and `m`; `vv` and `w`), so a confusable handle cannot squat a reserved or taken one.
 6. **Availability check.** An availability-check endpoint answers whether a handle is free, valid and not reserved. Signup uses it as the user
    types.
-7. **Changing a handle.** A handle can change. The old handle redirects to the new one for 90 days, then answers 404 or 410. It is never
+7. **Changing a handle.** A handle can change. The old handle redirects to the new one for 90 days, then answers 410 (open detail 5). It is never
    released to another tenant: it stays reserved to the original tenant for good.
 8. **Purged tenants.** When a tenant is purged, its handles stay reserved as tombstones for at least 1 year.
 
@@ -38,7 +38,7 @@ the handle.
 ## Enforcement
 
 planned — a validation test covers the format, the length bounds, the reserved list and the lookalike folding; an endpoint test covers
-availability, including a retired and a tombstoned handle; a route test asserts the 90-day redirect and the 404 or 410 after it.
+availability, including a retired and a tombstoned handle; a route test asserts the 90-day redirect and the 410 after it.
 
 ## Open details
 
@@ -48,7 +48,7 @@ The owner did not give these; the conservative default below applies until an AD
 2. **Who changes it.** A tenant owner.
 3. **Rate of change.** At most one handle change per 30 days.
 4. **Case.** Input is lowercased before every check.
-5. **After the redirect period.** The old handle answers 410.
+5. **After the redirect period.** The old handle answers 410 Gone, not 404.
 
 ## Supersedes and sources
 

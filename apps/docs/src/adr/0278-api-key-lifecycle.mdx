@@ -23,12 +23,14 @@ item 9, and the issuer decision that followed the PR review) set the issuer and 
 
 1. **Stackra issues API keys.** `@figentra/service-identity` issues API keys for programmatic access by developers and integrations.
 2. **Each key maps to a ZITADEL machine identity.** The gateway ([0237](/adr/0237-generated-api-gateway-in-four-layers)) validates the key and
-   maps it to a ZITADEL machine identity, whose permissions the call carries. ZITADEL stays the issuer for sign-in, OIDC and machine-to-machine
-   JWTs.
+   maps it to a ZITADEL machine identity. The machine identity is the principal; its permissions are its IAM grants
+   ([0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names)), decided by the policy decision point
+   ([0209](/adr/0209-iam-enforcement-pipeline-gate-sql-predicate-embedded-pdp-and-service-calls)). ZITADEL stays the issuer for sign-in, OIDC
+   and machine-to-machine JWTs.
 3. **Shown once, stored hashed.** The secret is shown once at creation and stored only as a hash.
 4. **Prefix registered with GitHub secret scanning.** Every key starts with a recognisable prefix registered with GitHub secret scanning.
-5. **Checksum suffix.** The key ends with a checksum (as GitHub's CRC32 suffix does), so a scanner and the gateway reject a mistyped or
-   made-up key without a database lookup.
+5. **Checksum suffix.** The key ends with a CRC32 checksum (as GitHub's suffix does). It catches typos and malformed keys, so a scanner and the
+   gateway reject them without a database lookup. It does not prove a key is authentic; only the hash lookup does.
 6. **Tenant tokens are bound to one tenant.** A tenant service token works only in the tenant it was issued for.
 7. **Scopes.** A key carries scopes, and the gateway checks each call against them.
 8. **Last used.** The key list shows each key's last-used time and IP address.
@@ -41,7 +43,8 @@ item 9, and the issuer decision that followed the PR review) set the issuer and 
 ## Consequences
 
 - A leaked key is revoked when GitHub reports it, not found by the customer weeks later.
-- Permissions live in one place: the ZITADEL machine identity. The key is a credential for it, not a second permission model.
+- The key is a credential, not a second permission model: the machine identity is the principal, its permissions are its IAM grants (0208),
+  and the policy decision point (0209) decides each call.
 - service-identity owns key issuance, hashing, the checksum format and the secret-scanning endpoint.
 - Rotation does not need a deploy at the exact moment the old key dies, because of the overlap window.
 - Last-used data is written on calls, so its write path must stay cheap (sampled or batched).
