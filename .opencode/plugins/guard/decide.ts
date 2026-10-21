@@ -98,7 +98,7 @@ const subcommands = (cmd: string): string[] =>
 const GIT_VALUE_OPTS = new Set(["-C", "-c", "--git-dir", "--work-tree", "--namespace"]);
 /** The only `-c` keys an agent may set: display and identity, none runs a command or redirects a remote (STA-216). */
 const ALLOWED_C =
-  /^(?:color\.[\w.-]+|core\.(?:quotepath|abbrev|precomposeunicode)|user\.(?:name|email)|advice\.[\w.-]+|diff\.(?:renames|algorithm|context|noprefix)|log\.(?:abbrevcommit|decorate|date)|merge\.(?:ff|conflictstyle)|pull\.(?:rebase|ff)|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.\w+)$/i;
+  /^(?:color\.ui|color\.diff|color\.status|color\.branch|core\.quotepath|core\.abbrev|core\.precomposeunicode|user\.name|user\.email|advice\.detachedhead|diff\.renames|diff\.algorithm|diff\.context|diff\.noprefix|log\.abbrevcommit|log\.decorate|log\.date|merge\.ff|merge\.conflictstyle|pull\.rebase|pull\.ff|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.short|status\.branch|status\.showuntrackedfiles)$/i;
 const CONFIG_READ = new Set([
   "--get",
   "--get-all",
@@ -150,7 +150,7 @@ const gitAliasConfig = (args: string[]): boolean => {
 };
 /** Env prefixes that swap git's config files or the pager (STA-216). */
 const CONFIG_ENV =
-  /(?:^|\s)(?:GIT_CONFIG[A-Z_0-9]*|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER|GIT_ASKPASS|SSH_ASKPASS|GIT_EXEC_PATH|GIT_SSH(?:_COMMAND)?|GIT_PROXY_COMMAND)=/;
+  /(?:^|\s)(?:GIT_CONFIG[A-Z_0-9]*|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER|GIT_ASKPASS|SSH_ASKPASS|GIT_EXEC_PATH|GIT_SSH(?:_COMMAND)?|GIT_PROXY_COMMAND|GIT_EDITOR|GIT_SEQUENCE_EDITOR|GIT_EXTERNAL_DIFF|GIT_TEMPLATE_DIR)=/;
 
 /** git's subcommand, skipping global options (`-C dir`, `-c k=v`, `--git-dir=…`). */
 function gitSubcommand(args: string[]): string {

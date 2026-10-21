@@ -65,14 +65,18 @@ quotes too), and every `sh -c` or `eval` string. It denies:
   `--show-scope` followed by one of those), with no write flag after it (`--add`, `--replace-all`, `--unset*`,
   `-e`, `--edit`, `set`, `unset`, `edit`). Every other form is denied, also through `pnpm bot:git --`, with `#`
   comments and quoted values taken out before parsing (`git config alias.x y --get` and `... # --get` are writes).
-  `-c <key>=<value>` is an allow-list too: only display and identity keys (`color.*`, `core.quotepath`, `core.abbrev`,
-  `user.name`, `user.email`, `advice.*`, `diff.*` display keys, `log.*`, `merge.ff`, `pull.*`, `push.default`,
-  `status.*` and a few more); any other key (`alias.*`, `include*`, `remote.*.push`, `url.*.insteadOf`, `core.askPass`,
+  `-c <key>=<value>` is an allow-list too: only a short list of exact display and identity keys (`color.ui`, `color.diff`,
+  `color.status`, `color.branch`, `core.quotepath`, `core.abbrev`, `user.name`, `user.email`, `diff.renames`,
+  `log.decorate`, `merge.ff`, `pull.rebase`, `push.default`, `status.short` and a few more, no wildcards; the list is
+  `ALLOWED_C` in the three guards); any other key (`alias.*`, `include*`, `remote.*.push`, `url.*.insteadOf`, `core.askPass`,
   `core.fsmonitor`, `credential.*`, `pager.*`, `gpg.program`, ...) is denied, as is `--config-env`. An alias or a
   redirected remote runs any git command under another name, past every rule above. The env prefixes that swap
   git's config, helpers or pager are denied on a `git` or `man` command: `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=`,
   `PAGER=`, `MANPAGER=`, `GIT_PAGER=`, `GIT_ASKPASS=`, `SSH_ASKPASS=`, `GIT_EXEC_PATH=`, `GIT_SSH=`,
-  `GIT_SSH_COMMAND=` and `GIT_PROXY_COMMAND=`. `bot-gh.mjs` refuses the `-c` and `git config` forms too;
+  `GIT_SSH_COMMAND=`, `GIT_PROXY_COMMAND=`, `GIT_EDITOR=`, `GIT_SEQUENCE_EDITOR=`, `GIT_EXTERNAL_DIFF=` and
+  `GIT_TEMPLATE_DIR=`. These rules also read a command inside `$(...)`, backticks, `sh -c` or `eval` that sits in a
+  `-m`, `--body`, `--title` or `pnpm linear comment` value: the prose is ignored, a real command in it is not.
+  `bot-gh.mjs` refuses the `-c` and `git config` forms too;
 - `man -P`, `-H`, `-B`, `-T`, `-C` and `--pager`, `--html`, `--browser`, `--troff`, `--config-file`, which run a
   command; plain read-only help such as `man git-credential` stays allowed;
 - pack plumbing, bare, through `pnpm bot:git` or as the binary (`git-send-pack`): `send-pack`, `receive-pack`,

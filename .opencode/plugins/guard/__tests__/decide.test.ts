@@ -307,3 +307,16 @@ test("STA-216 re-review: git config is read-only, -c allow-list, more env, man o
   ])
     assert.equal(kind(c), "allow", c);
 });
+
+test("STA-216: exact -c keys and editor, diff and template env prefixes", () => {
+  for (const c of [
+    "git -c color.pager=sh log",
+    "git -c advice.foo=x status",
+    "GIT_EDITOR=sh git commit",
+    "GIT_SEQUENCE_EDITOR=sh git rebase",
+    "GIT_EXTERNAL_DIFF=sh git diff",
+    "GIT_TEMPLATE_DIR=/tmp git init",
+  ])
+    assert.equal(kind(c), "deny", c);
+  assert.equal(kind("git -c color.ui=never log"), "allow");
+});

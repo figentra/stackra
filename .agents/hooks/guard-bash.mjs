@@ -46,7 +46,7 @@ function stripHeredocs(raw) {
 
 /** The only `-c` keys an agent may set: display and identity, none runs a command or redirects a remote (STA-216). */
 const ALLOWED_C =
-  /^(?:color\.[\w.-]+|core\.(?:quotepath|abbrev|precomposeunicode)|user\.(?:name|email)|advice\.[\w.-]+|diff\.(?:renames|algorithm|context|noprefix)|log\.(?:abbrevcommit|decorate|date)|merge\.(?:ff|conflictstyle)|pull\.(?:rebase|ff)|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.\w+)$/i;
+  /^(?:color\.ui|color\.diff|color\.status|color\.branch|core\.quotepath|core\.abbrev|core\.precomposeunicode|user\.name|user\.email|advice\.detachedhead|diff\.renames|diff\.algorithm|diff\.context|diff\.noprefix|log\.abbrevcommit|log\.decorate|log\.date|merge\.ff|merge\.conflictstyle|pull\.rebase|pull\.ff|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.short|status\.branch|status\.showuntrackedfiles)$/i;
 /** `git config` modes that only read; the first option must be one of them. */
 const CONFIG_READ = new Set([
   "--get",
@@ -149,6 +149,17 @@ const NETWORK_GIT = BARE_GIT(
  * backtick body, inside double quotes too, and every `sh -c` / `eval` string. Single-quoted text stays literal.
  * shortcut: one nesting level per pass and no alias or function expansion; deliberate workarounds stay open.
  */
+/** The raw text of every `$(…)` / backtick body (single quotes stay literal) and `sh -c` / `eval` string. */
+function nestedRaw(c) {
+  const out = [];
+  const literal = c.replace(/'[^']*'/g, "''");
+  for (const m of literal.matchAll(/\$\(([^()]*)\)|`([^`]*)`/g)) out.push(m[1] ?? m[2]);
+  for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
+    out.push(m[2], ...nestedRaw(m[2]));
+  return out;
+}
+/** Texts a rule that needs the quoted values scans: the command with prose dropped, and every nested command in full. */
+const scanTexts = (c) => [dropMessages(c), ...nestedRaw(c).map(dropMessages)];
 function runnable(c) {
   const out = [blank(c)];
   const literal = c.replace(/'[^']*'/g, "''");
@@ -445,23 +456,24 @@ const rules = [
     // STA-216: a config alias runs any git command (`-c alias.x=credential x fill`, `-c alias.p=push p origin main`);
     // an included config file or GIT_CONFIG_* env can define one too.
     // Also `git config alias.x …` writes, the config-file env (`GIT_CONFIG_GLOBAL`, `HOME=`, `XDG_CONFIG_HOME=`) and pager env.
-    rx: (c) => {
-      const d = dropMessages(c);
-      return (
-        /\b(?:git|man)\b/.test(c) &&
-        (/(?:^|\s)(?:--config-env\b|(?:GIT_CONFIG(?:_GLOBAL|_SYSTEM|_COUNT|_KEY_\d+|_PARAMETERS)?|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER|GIT_ASKPASS|SSH_ASKPASS|GIT_EXEC_PATH|GIT_SSH(?:_COMMAND)?|GIT_PROXY_COMMAND)=)/i.test(
-          d,
-        ) ||
-          gitConfigUnsafe(d))
-      );
-    },
+    rx: (c) =>
+      scanTexts(c).some(
+        (d) =>
+          /\b(?:git|man)\b/.test(d) &&
+          (/(?:^|\s)(?:--config-env\b|(?:GIT_CONFIG(?:_GLOBAL|_SYSTEM|_COUNT|_KEY_\d+|_PARAMETERS)?|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER|GIT_ASKPASS|SSH_ASKPASS|GIT_EXEC_PATH|GIT_SSH(?:_COMMAND)?|GIT_PROXY_COMMAND|GIT_EDITOR|GIT_SEQUENCE_EDITOR|GIT_EXTERNAL_DIFF|GIT_TEMPLATE_DIR)=)/i.test(
+            d,
+          ) ||
+            gitConfigUnsafe(d)),
+      ),
     why: "git `-c` outside a short display/identity allow-list, any `git config` that is not a read (`--get`, `--list`, ...), `--config-env`, and the `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=`, `PAGER=`, `MANPAGER=`, `GIT_PAGER=`, `GIT_ASKPASS=`, `SSH_ASKPASS=`, `GIT_EXEC_PATH=`, `GIT_SSH[_COMMAND]=` and `GIT_PROXY_COMMAND=` prefixes make git run another command, redefine a remote or alias past the push and credential guards. Agents never write git config.",
   },
   {
     // `man -P <cmd>` and `--pager=<cmd>` run <cmd>; plain `man git-credential` stays allowed.
     rx: (c) =>
-      /\bman\b[^|;&\n]*\s-(?:[a-zA-Z]*[PHBTC]\b|-(?:pager|html|browser|troff|ditroff|config-file))/.test(
-        dropMessages(c),
+      scanTexts(c).some((d) =>
+        /\bman\b[^|;&\n]*\s-(?:[a-zA-Z]*[PHBTC]\b|-(?:pager|html|browser|troff|ditroff|config-file))/.test(
+          d,
+        ),
       ),
     why: "`man -P`, `-H`, `-B`, `-T`, `-C` and their long forms (`--pager`, `--html`, ...) run an arbitrary command. Read the page with plain `man <page>`.",
   },

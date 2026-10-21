@@ -98,7 +98,7 @@ export function mergesPr(args) {
 
 /** The only `-c` keys an agent may set: display and identity, none runs a command or redirects a remote (STA-216). */
 const ALLOWED_C =
-  /^(?:color\.[\w.-]+|core\.(?:quotepath|abbrev|precomposeunicode)|user\.(?:name|email)|advice\.[\w.-]+|diff\.(?:renames|algorithm|context|noprefix)|log\.(?:abbrevcommit|decorate|date)|merge\.(?:ff|conflictstyle)|pull\.(?:rebase|ff)|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.\w+)$/i;
+  /^(?:color\.ui|color\.diff|color\.status|color\.branch|core\.quotepath|core\.abbrev|core\.precomposeunicode|user\.name|user\.email|advice\.detachedhead|diff\.renames|diff\.algorithm|diff\.context|diff\.noprefix|log\.abbrevcommit|log\.decorate|log\.date|merge\.ff|merge\.conflictstyle|pull\.rebase|pull\.ff|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.short|status\.branch|status\.showuntrackedfiles)$/i;
 const CONFIG_READ = new Set([
   "--get",
   "--get-all",

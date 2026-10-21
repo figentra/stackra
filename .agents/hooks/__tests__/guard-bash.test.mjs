@@ -556,3 +556,43 @@ const round3cDenied = [
   "man -aH sh ls",
 ];
 for (const c of round3cDenied) test(`deny: ${c}`, () => assert.equal(denied(c), true));
+
+// STA-216 re-review 3: commands nested in prose values are still checked; exact -c keys; more env prefixes
+const nestedBodies = [
+  "git config alias.p 'x y'",
+  "HOME=/tmp/h git p",
+  "git -c alias.p=x p",
+  "man -P sh ls",
+  "GIT_EDITOR=sh git commit",
+];
+const proseForms = [
+  (b) => `git commit -m "$(${b})"`,
+  (b) => `git commit -m "\`${b}\`"`,
+  (b) => `pnpm bot:gh -- pr create --title "$(${b})" --body ok`,
+  (b) => `pnpm bot:gh -- pr create --title t --body "$(${b})"`,
+  (b) => `pnpm bot:gh -- pr create --body "\`${b}\`"`,
+  (b) => `pnpm linear comment STA-216 "$(${b})"`,
+  (b) => `pnpm linear comment STA-216 "\`${b}\`"`,
+];
+for (const b of nestedBodies)
+  for (const form of proseForms)
+    test(`deny: ${form(b)}`, () => assert.equal(denied(form(b)), true));
+for (const c of [
+  'git commit -m "docs: git config alias.x and HOME=/tmp man -P"',
+  "pnpm bot:gh -- pr create --title t --body 'uses $(git config alias.p x) text'",
+  'pnpm linear comment STA-216 "note: git -c alias.p=x p"',
+  'git commit -m "$(git config --get user.name)"',
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));
+for (const c of [
+  "GIT_EDITOR=sh git commit",
+  "GIT_SEQUENCE_EDITOR=sh git rebase -i",
+  "GIT_EXTERNAL_DIFF=sh git diff",
+  "GIT_TEMPLATE_DIR=/tmp/t pnpm bot:git -- init",
+  "git -c color.pager=sh log",
+  "git -c status.displayCommentPrefix=x status",
+  "git -c advice.foo=x status",
+  "git -c color.ui=never log",
+])
+  test(`${/color\.ui/.test(c) ? "allow" : "deny"}: ${c}`, () =>
+    assert.equal(denied(c), !/color\.ui/.test(c)));

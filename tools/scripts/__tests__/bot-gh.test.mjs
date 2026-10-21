@@ -167,3 +167,10 @@ test("STA-216 re-review: git config is read-only, -c is an allow-list", async ()
   ])
     assert.equal(unsafeArgs("git", args), null, args.join(" "));
 });
+
+test("STA-216: the -c allow-list is exact keys", async () => {
+  const { unsafeArgs } = await import("../bot-gh.mjs");
+  for (const key of ["color.pager=sh", "status.displayCommentPrefix=x", "advice.foo=x"])
+    assert.ok(unsafeArgs("git", ["-c", key, "status"]), key);
+  assert.equal(unsafeArgs("git", ["-c", "color.ui=never", "status"]), null);
+});

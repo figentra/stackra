@@ -97,8 +97,8 @@ hold fewer permissions than the builder app.
   mutations), also inside `$(…)`, backticks, `sh -c` and `eval`; the quoted `--title`, `--body`, `-m` text and
   `pnpm linear comment` text are prose and not scanned. STA-216 adds: `git config` is read-only (the first option
   must be a read mode and no write flag may follow; every other form is denied), git `-c` is an allow-list of
-  display and identity keys, `--config-env`, the `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=`, pager, `GIT_ASKPASS=`,
-  `SSH_ASKPASS=`, `GIT_EXEC_PATH=`, `GIT_SSH[_COMMAND]=` and `GIT_PROXY_COMMAND=` env prefixes, and `man -P|-H|-B|-T|-C`
+  exact display and identity keys (also inside `$(…)` or backticks within prose values), `--config-env`, the `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=`, pager, `GIT_ASKPASS=`,
+  `SSH_ASKPASS=`, `GIT_EXEC_PATH=`, `GIT_SSH[_COMMAND]=` and `GIT_PROXY_COMMAND=`, `GIT_EDITOR=`, `GIT_SEQUENCE_EDITOR=`, `GIT_EXTERNAL_DIFF=` and `GIT_TEMPLATE_DIR=` env prefixes, and `man -P|-H|-B|-T|-C`
   and their long forms; merge paths are
   percent-decoded and dot segments resolved before matching; quoted `-c` values and `GIT_DIR=` / `GIT_WORK_TREE=` in the push-target resolution (an
   unresolvable checkout counts as `main`); `git-*-pack` binaries by path; `bot:gh -- api graphql` from a file
