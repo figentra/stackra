@@ -30,7 +30,7 @@ runway, topology, deployment), 0174 (supply chain), 0177 (npmjs for free, Keygen
 6. Desktop: unsigned until a deliverable is named; AppImage only; staged 20 → 100 % (0254).
 7. Promotion: staging deploys on merge; production only through the owner-approved GitHub Environment (0170).
 
-Run only read commands: `gh run list`, `gh run view`, `gh pr checks`, `pnpm changeset:status`.
+Run only read commands, as the bot (STA-208): `pnpm bot:gh -- run list`, `pnpm bot:gh -- run view`, `pnpm bot:gh -- pr checks`, `pnpm changeset:status`.
 
 ## Never
 

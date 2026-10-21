@@ -5,6 +5,8 @@
 // shortcut: commands are split on && || ; | and newlines without honouring quotes, and `sh -c "<inner>"`
 // is not unwrapped; good enough for agent-typed commands, upgrade to a real shell parser if one slips through.
 import { resolve, sep } from "node:path";
+// The inbox matcher is shared with the Claude hooks (one matcher, ADR 0257): paths, globs rooted at home, recursive reads.
+import { commandReachesInbox, reachesInbox } from "../../../.agents/hooks/_inbox.mjs";
 
 export type Decision = { kind: "allow" } | { kind: "deny"; reason: string };
 
@@ -31,32 +33,19 @@ const SECRET_FILE = [
   /(^|\/)\.ci-env$/,
   /(^|\/)\.sentryclirc$/,
   /(^|\/)\.infisical([^/]*$|\/)/,
-  // The secrets inbox (ADR 0257): only `pnpm secrets:import` touches it, and it never prints a value.
-  /(^|\/)Secrets-inbox(\/|$)/i,
-  /(^|\/)secrets-confirm\.key$/,
 ];
 // Committed, value-free files: the env template and Infisical's project config.
 const SECRET_OK = /(^|\/)(\.env\.example|\.infisical\.(yaml|json))$/;
 
-/** A glob segment (`Secrets-inbo?`, `S*inbox`, not a bare `*`) that would match the inbox. Accident guard only. */
-const globNamesInbox = (s: string): boolean =>
-  s.split("/").some((seg) => {
-    if (!/[*?]/.test(seg) || /^[*?]+$/.test(seg)) return false;
-    const rx = seg
-      .replace(/[.+^$()|\\[\]{}]/g, "\\$&")
-      .replace(/\*+/g, ".*")
-      .replace(/\?/g, ".");
-    return new RegExp(`^${rx}$`, "i").test("Secrets-inbox");
-  });
-
 export function isSecretPath(p: string): boolean {
   const s = p.trim().replace(/^['"]+|['"]+$/g, "");
-  return !SECRET_OK.test(s) && (SECRET_FILE.some((r) => r.test(s)) || globNamesInbox(s));
+  return !SECRET_OK.test(s) && SECRET_FILE.some((r) => r.test(s));
 }
 
 /** read / edit tool paths. */
-export function decidePath(path: string): Decision {
-  return isSecretPath(path)
+export function decidePath(path: string, cwd?: string): Decision {
+  // The secrets inbox (ADR 0257): only `pnpm secrets:import` touches it, and it never prints a value.
+  return isSecretPath(path) || reachesInbox(path, { cwd })
     ? deny(
         `${path} holds secret values and is never read or written by an agent. Names only; values are set by a human (Infisical).`,
       )
@@ -68,7 +57,7 @@ export function decidePath(path: string): Decision {
  * in the main checkout itself; delegated work belongs in a worktree (`pnpm delegate`).
  */
 export function decideEdit(path: string, ctx: GuardContext): Decision {
-  const secret = decidePath(path);
+  const secret = decidePath(path, ctx.root);
   if (secret.kind === "deny") return secret;
   const root = resolve(ctx.root);
   if (!resolve(root, path).startsWith(root + sep))
@@ -115,12 +104,25 @@ function gitSubcommand(args: string[]): string {
 }
 
 const OWNER_ONLY_CLI = new Set(["gh", "wrangler", "curl", "wget"]);
-const GIT_OWNER_ONLY = new Set(["push", "commit", "merge", "rebase", "tag", "worktree"]);
+// Network git too (STA-208): on a private repo a fetch falls back to the owner's credential helper.
+const GIT_OWNER_ONLY = new Set(
+  "push commit merge rebase tag worktree fetch pull clone ls-remote submodule subtree".split(" "),
+);
+/** `git remote update|show|prune` and `git archive --remote` reach the remote too. */
+const networkGit = (g: string, args: string[]): boolean =>
+  (g === "remote" && args.some((a) => ["update", "show", "prune"].includes(a))) ||
+  (g === "archive" && args.some((a) => a.startsWith("--remote")));
+/** The GitHub bot wrappers (STA-208): the lead reaches GitHub as the bot; executors not at all. */
+const BOT_SCRIPT = /^(?:bot:(?:gh|git|review|token)|pr:merge)$/;
 
 /** Executors run unattended: anything that leaves the worktree, ships, or rewrites history is the lead's. */
 function denyExecutor(sub: string, cmd: string, args: string[]): Decision {
   if (OWNER_ONLY_CLI.has(cmd))
     return deny(`\`${cmd}\` reaches the network or a shared account; executors never run it.`);
+  if (/\bbot:token\b/.test(sub) || (cmd === "pnpm" && args.some((a) => BOT_SCRIPT.test(a))))
+    return deny(
+      "the GitHub bot wrappers (`pnpm bot:*`, `pnpm pr:merge`) are the lead's; executors leave changes in the worktree.",
+    );
   if (
     cmd === "infisical" &&
     args[0] === "secrets" &&
@@ -135,7 +137,12 @@ function denyExecutor(sub: string, cmd: string, args: string[]): Decision {
     );
   if (cmd === "git") {
     const g = gitSubcommand(args);
-    if (GIT_OWNER_ONLY.has(g) || (g === "branch" && args.includes("-D")))
+    const readOnly = g === "worktree" && args.includes("list");
+    if (
+      (GIT_OWNER_ONLY.has(g) && !readOnly) ||
+      networkGit(g, args) ||
+      (g === "branch" && args.includes("-D"))
+    )
       return deny(
         `\`git ${g}\` is the lead's job; executors leave changes uncommitted in the worktree.`,
       );
@@ -181,10 +188,29 @@ function denySub(sub: string): Decision {
   return ALLOW;
 }
 
-export function decideShell(raw: string): Decision {
-  for (const s of subcommands(stripHeredocs(raw))) {
-    const d = denySub(s);
-    if (d.kind === "deny") return d;
-  }
+/** `cwd` is the shell's directory, so a relative glob run from home is caught; unknown, relative tokens pass. */
+export function decideShell(raw: string, cwd?: string): Decision {
+  const cmd = stripHeredocs(raw);
+  if (commandReachesInbox(cmd, { cwd }))
+    return deny(
+      "~/Secrets-inbox/ (and the import confirm key) are never read, listed, copied or moved. Use `pnpm secrets:import --list` for names and `pnpm secrets:import [--dry-run] [NAME]` to import; it never prints a value.",
+    );
+  for (const text of [cmd, ...nested(cmd)])
+    for (const s of subcommands(text)) {
+      const d = denySub(s);
+      if (d.kind === "deny") return d;
+    }
   return ALLOW;
+}
+
+/**
+ * Commands the shell also runs: `$(…)` and backtick bodies (inside double quotes too; single quotes stay literal)
+ * and `sh -c` / `eval` strings (STA-208 review H2). shortcut: one nesting level, no alias expansion.
+ */
+function nested(cmd: string): string[] {
+  const literal = cmd.replace(/'[^']*'/g, "''");
+  const out = [...literal.matchAll(/\$\(([^()]*)\)|`([^`]*)`/g)].map((m) => m[1] ?? m[2]);
+  for (const m of cmd.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
+    out.push(m[2], ...nested(m[2]));
+  return out;
 }

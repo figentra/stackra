@@ -56,11 +56,28 @@ export function reviewerAllows(args) {
   return group === "api" && !args.some(write);
 }
 
+/**
+ * Commands that would print the token or store it (STA-208): `gh auth …` (token, status --show-token, login,
+ * setup-git) and `git credential …` (fill answers with the token). git's `-c`/`-C` values are skipped.
+ */
+export function leaksToken(tool, args) {
+  const words = [];
+  for (let i = 0; i < args.length; i++) {
+    if (tool === "git" && ["-c", "-C"].includes(args[i])) i++;
+    else if (!args[i].startsWith("-")) words.push(args[i]);
+  }
+  return words[0] === (tool === "git" ? "credential" : "auth");
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [tool, ...rest] = process.argv.slice(2);
   const args = rest[0] === "--" ? rest.slice(1) : rest;
   if (tool !== "gh" && tool !== "git" && tool !== "review") {
     process.stderr.write("usage: bot-gh.mjs gh|git|review [args...]\n");
+    process.exit(2);
+  }
+  if (leaksToken(tool, args)) {
+    process.stderr.write("bot-gh: `gh auth` and `git credential` would expose the bot token\n");
     process.exit(2);
   }
   if (tool === "review" && !reviewerAllows(args)) {
