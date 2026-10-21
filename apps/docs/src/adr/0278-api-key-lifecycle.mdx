@@ -1,57 +1,72 @@
 ---
-title: "0278 — API key lifecycle: shown once, scanner prefix, rotation overlap, expiry and revoke"
+title: "0278 — API keys: Stackra issues them, with a scanner prefix, checksum, rotation overlap, expiry and revoke"
 description: "Accepted · 2026-10-21"
 ---
 
 <Note>
-  Amends [0087](/adr/0087-identity-and-iam-are-driver-packages) (decision 5, the token rules it
-  restates and extends) and [0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits)
-  (API keys used on the REST and MCP surfaces).
+  Amends [0207](/adr/0207-authentication-assurance-and-machine-identities) decision 2: API keys for
+  programmatic access are issued by Stackra and mapped to a ZITADEL machine identity. Restates and
+  extends the token rules of [0087](/adr/0087-identity-and-iam-are-driver-packages) decision 5
+  (cross-reference only; 0087 stays superseded by 0206). Amends
+  [0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits) (API keys used on the REST
+  and MCP surfaces).
 </Note>
 
 ## Context
 
-[0087](/adr/0087-identity-and-iam-are-driver-packages) decision 5 said tokens are shown once, stored hashed, scoped and revocable, and
-[0207](/adr/0207-authentication-assurance-and-machine-identities) decision 2 names personal access tokens and tenant service tokens. Neither
-says how a key is rotated, recognised when leaked, or seen in use. The owner's answer to the screenshot gap review of 2026-10-21 (item 9) sets
-the whole lifecycle.
+[0207](/adr/0207-authentication-assurance-and-machine-identities) decision 2 sends every machine identity through ZITADEL, and
+[0087](/adr/0087-identity-and-iam-are-driver-packages) decision 5 said tokens are shown once, stored hashed, scoped and revocable. Neither says
+who issues an API key, how it is rotated, recognised when leaked, or seen in use. The owner's answers of 2026-10-21 (screenshot gap review,
+item 9, and the issuer decision that followed the PR review) set the issuer and the whole lifecycle.
 
 ## Decision
 
-1. **Shown once, stored hashed.** The secret is shown once at creation and stored only as a hash.
-2. **Recognisable prefix.** Every key starts with a recognisable prefix registered with GitHub secret scanning, so a leaked key is reported.
-3. **Scopes.** A key carries scopes, and the gateway checks each call against them.
-4. **Last used.** The key list shows each key's last-used time and IP address.
-5. **Rotation with overlap.** Rotating a key issues a new one; old and new both work during an overlap window, then the old one stops.
-6. **Expiry.** A key has an expiry.
-7. **Revoke.** A key can be revoked at once.
-8. **Example usage.** Each key's page shows an example usage snippet for that key's scopes.
+1. **Stackra issues API keys.** `@figentra/service-identity` issues API keys for programmatic access by developers and integrations.
+2. **Each key maps to a ZITADEL machine identity.** The gateway ([0237](/adr/0237-generated-api-gateway-in-four-layers)) validates the key and
+   maps it to a ZITADEL machine identity, whose permissions the call carries. ZITADEL stays the issuer for sign-in, OIDC and machine-to-machine
+   JWTs.
+3. **Shown once, stored hashed.** The secret is shown once at creation and stored only as a hash.
+4. **Prefix registered with GitHub secret scanning.** Every key starts with a recognisable prefix registered with GitHub secret scanning.
+5. **Checksum suffix.** The key ends with a checksum (as GitHub's CRC32 suffix does), so a scanner and the gateway reject a mistyped or
+   made-up key without a database lookup.
+6. **Tenant tokens are bound to one tenant.** A tenant service token works only in the tenant it was issued for.
+7. **Scopes.** A key carries scopes, and the gateway checks each call against them.
+8. **Last used.** The key list shows each key's last-used time and IP address.
+9. **Rotation with overlap.** Rotating a key issues a new one; old and new both work during an overlap window, then the old one stops.
+10. **Expiry.** A key has an expiry.
+11. **Revoke, and auto-revoke on a scanning report.** A key can be revoked at once. A key reported by GitHub secret scanning is revoked
+    automatically and its owner is notified.
+12. **Example usage.** Each key's page shows an example usage snippet for that key's scopes.
 
 ## Consequences
 
-- A leaked key found by GitHub is revoked by our scanning endpoint, not found by the customer weeks later.
+- A leaked key is revoked when GitHub reports it, not found by the customer weeks later.
+- Permissions live in one place: the ZITADEL machine identity. The key is a credential for it, not a second permission model.
+- service-identity owns key issuance, hashing, the checksum format and the secret-scanning endpoint.
 - Rotation does not need a deploy at the exact moment the old key dies, because of the overlap window.
 - Last-used data is written on calls, so its write path must stay cheap (sampled or batched).
 
 ## Enforcement
 
-planned — a storage test asserts no plaintext key is persisted; a gateway test asserts both keys work inside the overlap window and only the
-new one after it; a test asserts expired and revoked keys are refused.
+planned — a storage test asserts no plaintext key is persisted; a gateway test rejects a bad checksum before lookup, refuses a tenant token in
+another tenant, accepts both keys inside the overlap window and only the new one after it, and refuses expired and revoked keys; a test of the
+secret-scanning endpoint asserts a reported key is revoked.
 
 ## Open details
 
 The owner did not give these; the conservative default below applies until an ADR changes it.
 
-1. **Prefix.** `<product>_<env>_` followed by the secret, for example `stk_live_` and `stk_test_`; the exact strings are fixed when the
-   GitHub secret-scanning partnership is filed.
-2. **Overlap window.** 24 hours by default, settable up to 7 days.
-3. **Expiry.** Required at creation, 90 days by default, at most 1 year.
-4. **Leak response.** A key reported by secret scanning is revoked automatically and its owner notified.
+1. **Prefix.** `<product>_<env>_` followed by the secret and the checksum, for example `stk_live_` and `stk_test_`; the exact strings are
+   fixed when the GitHub secret-scanning partnership is filed.
+2. **Checksum.** CRC32 of the secret, base62-encoded, as the last 6 characters.
+3. **Overlap window.** 24 hours by default, settable up to 7 days.
+4. **Expiry.** Required at creation, 90 days by default, at most 1 year.
 5. **Last-used IP retention.** Follows the access-log retention of
    [0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention).
 
 ## Supersedes and sources
 
-Supersedes: none. Amends: [0087](/adr/0087-identity-and-iam-are-driver-packages),
-[0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits). Sources: owner answers in chat, 2026-10-21 (screenshot gap review,
-item 9).
+Supersedes: none. Amends: [0207](/adr/0207-authentication-assurance-and-machine-identities) decision 2,
+[0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits). Cross-references:
+[0087](/adr/0087-identity-and-iam-are-driver-packages) decision 5.
+Sources: owner answers in chat, 2026-10-21 (screenshot gap review, item 9; issuer decision after the PR review).

@@ -21,7 +21,10 @@ review of 2026-10-21 (item 8) fixes the flow, the storage and revocation.
    redirect, and completes the authorisation-code flow with PKCE.
 2. **Device code for headless.** Where no browser can open (SSH, containers), the CLI uses the device-code flow.
 3. **OS keychain only.** Tokens are stored in the operating system keychain. They are never written to a plain file.
-4. **Short-lived access, refresh token.** The access token is short-lived and renewed with a refresh token.
+4. **Short-lived access, rotated refresh token.** Access tokens follow
+   [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral) decision 8 (5 to 15 minutes); the CLI and
+   desktop use 10 minutes. The refresh token is rotated on each use. It lasts 30 days for normal users and is capped at 12 hours for staff and
+   platform accounts, as [0207](/adr/0207-authentication-assurance-and-machine-identities) decision 3 sets for sessions.
 5. **Revoke from Sessions.** Each CLI or desktop sign-in appears in "Sessions" in user settings, served by `@figentra/service-identity`, and
    can be revoked there.
 6. **Same flow for desktop.** The Electron desktop target uses the same flow and storage.
@@ -41,11 +44,9 @@ refused.
 
 The owner did not give these; the conservative default below applies until an ADR changes it.
 
-1. **Lifetimes.** Access token 1 hour; refresh token 30 days, rotated on each use, in line with the session length of
-   [0207](/adr/0207-authentication-assurance-and-machine-identities) decision 3.
-2. **No keychain available.** The CLI refuses to persist the token and keeps it in memory for the one command; automation uses an API key
+1. **No keychain available.** The CLI refuses to persist the token and keeps it in memory for the one command; automation uses an API key
    ([0278](/adr/0278-api-key-lifecycle)) instead.
-3. **Keychains.** macOS Keychain, Windows Credential Manager and the Linux Secret Service.
+2. **Keychains.** macOS Keychain, Windows Credential Manager and the Linux Secret Service.
 
 ## Supersedes and sources
 

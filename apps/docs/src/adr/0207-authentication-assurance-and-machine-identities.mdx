@@ -1,12 +1,19 @@
 ---
 title: "0207 — Authentication assurance and machine identities"
-description: "Accepted, amended by 0274 · 2026-10-20"
+description: "Accepted, amended by 0274, 0278 · 2026-10-20"
 ---
 
 <Note>
   Amended by [0274](/adr/0274-app-grants-and-the-connect-app-page): decision 2 is refined for OAuth
   apps. The first connection shows the Connect-app page, and the approval is saved as an app grant
   that the gateway checks on every call.
+</Note>
+
+<Note>
+  Amended by [0278](/adr/0278-api-key-lifecycle): decision 2 is refined for API keys. Stackra's
+  identity service issues prefixed, hashed, checksummed API keys for programmatic access; the
+  gateway validates each key and maps it to a ZITADEL machine identity whose permissions it carries.
+  ZITADEL stays the issuer for sign-in, OIDC and machine-to-machine JWTs.
 </Note>
 
 ## Context

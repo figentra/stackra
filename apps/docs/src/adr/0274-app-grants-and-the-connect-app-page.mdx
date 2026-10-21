@@ -22,13 +22,18 @@ the console.
 
 1. **ZITADEL signs in.** ZITADEL's hosted pages sign the user in and issue a user token with broad scopes. Stackra still builds no login UI.
 2. **Connect-app page.** On the first connection of an OAuth app or MCP client, the console shows a "Connect app" page. It is an ordinary app
-   screen after sign-in, not a login page. The user picks the workspace and reviews the permissions, grouped from the service-access catalogue.
+   screen after sign-in, not a login page. The user picks the workspace and reviews the permissions, grouped from the permission catalogue:
+   the permission names of [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names).
 3. **App grant.** Approval saves an app grant of (user, client, workspace, scopes) in `@figentra/service-identity`.
 4. **The gateway checks the grant.** Every call from the client is checked against its grant by the gateway
-   ([0237](/adr/0237-generated-api-gateway-in-four-layers)). A call outside the grant's workspace or scopes is refused, even when the user's
-   broad token would allow it.
-5. **Revocation.** "Connected apps" in user settings lists the grants and revokes one in one click.
-6. **MCP elicitation.** An MCP client may ask for the workspace inside the client, through an MCP elicitation, instead of a browser trip.
+   ([0237](/adr/0237-generated-api-gateway-in-four-layers)). The grant is found from the token's client claim, never from a request header. A
+   call outside the grant's workspace or scopes is refused, even when the user's broad token would allow it.
+5. **No grant, no call.** A third-party client with no grant is refused. First-party clients are an explicit list and are exempt from the grant
+   check.
+6. **Every entry point.** The narrowed scopes apply at every entry point that accepts the token: the REST gateway, the MCP gateway, realtime
+   connections and service-to-service calls that carry the user token.
+7. **Revocation.** "Connected apps" in user settings lists the grants and revokes one in one click.
+8. **MCP elicitation.** An MCP client may ask for the workspace inside the client, through an MCP elicitation, instead of a browser trip.
 
 ## Consequences
 
@@ -38,8 +43,9 @@ the console.
 
 ## Enforcement
 
-planned — a gateway test refuses a call outside the grant's workspace and outside its scopes; a test asserts that revoking a grant refuses
-the next call.
+planned — a gateway test refuses a call outside the grant's workspace and outside its scopes, and a call from a third-party client with no
+grant; the same cases run against the MCP gateway, realtime and a service-to-service call carrying the user token; a test asserts that a
+grant header is ignored and that revoking a grant refuses the next call.
 
 ## Open details
 

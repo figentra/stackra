@@ -17,9 +17,11 @@ exist. The owner's answer to the screenshot gap review of 2026-10-21 (item 10) s
 
 ## Decision
 
-1. **Hostname registry.** service-tenancy keeps a registry of tenant hostnames. A hostname belongs to at most one tenant.
+1. **Hostname registry.** service-tenancy keeps a registry of tenant hostnames. A hostname belongs to at most one tenant. The registry
+   refuses our own zones and any hostname already verified by another tenant.
 2. **Ownership first.** The tenant proves ownership with a TXT record, and adds the ACME TXT record for the certificate. Only then is a CNAME to
-   the edge accepted.
+   the edge accepted. The ownership TXT value is a random token generated for each tenant, hostname and attempt, so a value cannot be reused
+   across tenants or replayed after a failed attempt.
 3. **Verification states.** Each hostname moves through named verification states (open detail 1), and the console shows the current state and
    the record still missing.
 4. **TLS.** Certificates are issued and renewed through Cloudflare for SaaS (0175 decision 2), configured by `@stackra/infra-cloudflare`.
@@ -27,6 +29,10 @@ exist. The owner's answer to the screenshot gap review of 2026-10-21 (item 10) s
 6. **Primary domain.** A tenant has one primary domain. Its other verified domains redirect to it.
 7. **Removal and re-verification.** A tenant can remove a domain, which releases it from the registry. A verified domain is re-verified
    periodically, and a domain that fails re-verification stops serving (open detail 2).
+8. **No dangling hostname.** When a domain is removed, fails or expires, its Cloudflare custom hostname is deleted at once.
+9. **Domain claim.** The domain claim of
+   [0243](/adr/0243-organisations-on-the-tenant-tree-consolidated-billing-guardrails-and-standalone-exit) decision 7 (auto-join, inviting
+   personal workspaces on the domain) reuses this registry and its ownership proof.
 
 ## Consequences
 
@@ -36,8 +42,9 @@ exist. The owner's answer to the screenshot gap review of 2026-10-21 (item 10) s
 
 ## Enforcement
 
-planned — a state-machine test covers each transition; a registry test refuses a hostname held by another tenant; the event name is checked by
-the event-name rule of [0141](/adr/0141-integration-event-names-and-envelope).
+planned — a state-machine test covers each transition and asserts the Cloudflare custom hostname is deleted on removal, failure and expiry;
+a registry test refuses our own zones and a hostname verified by another tenant; a test asserts a TXT token from another tenant or an earlier
+attempt does not verify; the event name is checked by the event-name rule of [0141](/adr/0141-integration-event-names-and-envelope).
 
 ## Open details
 

@@ -20,30 +20,35 @@ the handle.
 2. **Format.** Lowercase slug of `[a-z0-9-]`, with length bounds (open detail 1).
 3. **Uniqueness.** A handle is unique across all tenants of a product.
 4. **Reserved words.** A reserved-word list blocks system names, product names, brand names and route segments.
-5. **Availability check.** An availability-check endpoint answers whether a handle is free, valid and not reserved. Signup uses it as the user
+5. **Lookalikes.** The reserved-list check and the new-handle uniqueness check compare a normalised form that folds ASCII lookalikes (`l`, `1`
+   and `i`; `o` and `0`; `rn` and `m`; `vv` and `w`), so a confusable handle cannot squat a reserved or taken one.
+6. **Availability check.** An availability-check endpoint answers whether a handle is free, valid and not reserved. Signup uses it as the user
    types.
-6. **Changing a handle.** A handle can change, and the old handle redirects to the new one for a period (open detail 2).
+7. **Changing a handle.** A handle can change. The old handle redirects to the new one for 90 days, then answers 404 or 410. It is never
+   released to another tenant: it stays reserved to the original tenant for good.
+8. **Purged tenants.** When a tenant is purged, its handles stay reserved as tombstones for at least 1 year.
 
 ## Consequences
 
 - A rename of the display name never breaks a link.
 - The reserved list is data that grows with routes and products, so it needs an owner (service-tenancy).
-- A changed handle is held for its redirect period, so a squatter cannot take it at once.
+- An old link can never lead to a different tenant, so handle changes cannot be used for phishing through stale links.
+- Retired and tombstoned handles accumulate; the namespace shrinks slowly.
 
 ## Enforcement
 
-planned — a validation test covers the format, the length bounds and the reserved list; an endpoint test covers availability; a route test
-asserts the redirect from an old handle.
+planned — a validation test covers the format, the length bounds, the reserved list and the lookalike folding; an endpoint test covers
+availability, including a retired and a tombstoned handle; a route test asserts the 90-day redirect and the 404 or 410 after it.
 
 ## Open details
 
 The owner did not give these; the conservative default below applies until an ADR changes it.
 
 1. **Length and shape.** 3 to 32 characters, starting with a letter, with no leading, trailing or repeated hyphen.
-2. **Change policy.** Changeable by a tenant owner. The old handle redirects for 90 days and stays reserved for the same tenant during that
-   time; after it, the old handle is released.
+2. **Who changes it.** A tenant owner.
 3. **Rate of change.** At most one handle change per 30 days.
-4. **Case and lookalikes.** Input is lowercased; no confusable-character check beyond the ASCII format.
+4. **Case.** Input is lowercased before every check.
+5. **After the redirect period.** The old handle answers 410.
 
 ## Supersedes and sources
 
