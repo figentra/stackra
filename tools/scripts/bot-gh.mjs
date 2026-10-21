@@ -96,8 +96,40 @@ export function mergesPr(args) {
   return group === "api" && args.some((a) => MERGE.test(a) || MERGE.test(normalizeWord(a)));
 }
 
-/** Config keys that run code or redefine git commands (STA-216). */
-const BAD_KEY = String.raw`(?:alias\.|include|core\.(?:fsmonitor|sshcommand|pager|editor|hookspath)|credential\.)`;
+/** The only `-c` keys an agent may set: display and identity, none runs a command or redirects a remote (STA-216). */
+const ALLOWED_C =
+  /^(?:color\.[\w.-]+|core\.(?:quotepath|abbrev|precomposeunicode)|user\.(?:name|email)|advice\.[\w.-]+|diff\.(?:renames|algorithm|context|noprefix)|log\.(?:abbrevcommit|decorate|date)|merge\.(?:ff|conflictstyle)|pull\.(?:rebase|ff)|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.\w+)$/i;
+const CONFIG_READ = new Set([
+  "--get",
+  "--get-all",
+  "--get-regexp",
+  "--get-urlmatch",
+  "--list",
+  "-l",
+  "get",
+  "list",
+]);
+const CONFIG_WRITE = new Set([
+  "--add",
+  "--replace-all",
+  "--unset",
+  "--unset-all",
+  "-e",
+  "--edit",
+  "--rename-section",
+  "--remove-section",
+  "set",
+  "unset",
+  "edit",
+]);
+/** `git config` arguments (after the subcommand) that are not a plain read: the first option reads, no write flag follows. */
+export function configWrites(args) {
+  const [first, ...rest] = args.slice(0, args.findIndex((a) => a.startsWith("#")) + 1 || undefined);
+  const reads =
+    CONFIG_READ.has(first) ||
+    (["--show-origin", "--show-scope"].includes(first) && rest.some((w) => CONFIG_READ.has(w)));
+  return !reads || rest.some((w) => CONFIG_WRITE.has(w));
+}
 const MERGE = /\bpulls\/\d+\/merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/i;
 
 /**
@@ -107,18 +139,21 @@ const MERGE = /\bpulls\/\d+\/merge\b|\b(?:mergePullRequest|enablePullRequestAuto
  */
 export function unsafeArgs(tool, args) {
   if (tool === "git") {
-    const key = new RegExp(`^${BAD_KEY}`, "i");
-    const config =
-      words("git", args)[0] === "config" && !args.some((a) => /^(?:--get|--list$|-l$)/.test(a));
-    const bad = args.some(
-      (a, i) =>
-        /^--config-env\b/.test(a) ||
-        (a === "-c" && key.test(args[i + 1] ?? "")) ||
-        (/^-c./.test(a) && key.test(a.slice(2))) ||
-        (config && key.test(a)),
-    );
+    let sub = -1;
+    for (let i = 0; i < args.length && sub < 0; i++) {
+      if (["-c", "-C", "--git-dir", "--work-tree", "--namespace"].includes(args[i])) i++;
+      else if (!args[i].startsWith("-")) sub = i;
+    }
+    const bad =
+      args.some(
+        (a, i) =>
+          /^--config-env\b/.test(a) ||
+          (a === "-c" && !ALLOWED_C.test((args[i + 1] ?? "").split("=")[0])) ||
+          /^-c./.test(a),
+      ) ||
+      (args[sub] === "config" && configWrites(args.slice(sub + 1)));
     return bad
-      ? "`-c` / `git config` for alias.*, include*, core.fsmonitor|sshCommand|pager|editor|hooksPath and credential.*, and `--config-env`, bypass the guards"
+      ? "`-c` outside the display/identity allow-list, any `git config` that is not a read, and `--config-env` bypass the guards"
       : null;
   }
   const [group] = words("gh", args);

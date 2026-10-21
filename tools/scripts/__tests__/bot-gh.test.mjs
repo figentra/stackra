@@ -128,7 +128,7 @@ test("STA-216 review: git config writes, risky -c keys and normalised merge path
   ])
     assert.ok(unsafeArgs("git", args), args.join(" "));
   for (const args of [
-    ["config", "user.name", "x"],
+    ["config", "--get", "user.name"],
     ["-c", "user.name=x", "status"],
   ])
     assert.equal(unsafeArgs("git", args), null, args.join(" "));
@@ -141,4 +141,29 @@ test("STA-216 review: git config writes, risky -c keys and normalised merge path
   ])
     assert.equal(mergesPr(["api", "-X", "PUT", path]), true, path);
   assert.equal(mergesPr(["api", "repos/x/y/pulls/12/files"]), false);
+});
+
+test("STA-216 re-review: git config is read-only, -c is an allow-list", async () => {
+  const { unsafeArgs } = await import("../bot-gh.mjs");
+  for (const args of [
+    ["config", "alias.p", "x", "--get"],
+    ["config", "user.name", "x"],
+    ["config", "-e"],
+    ["config", "--get", "x", "--replace-all"],
+    ["config", "set", "alias.x", "y"],
+    ["config", "--file", "f", "alias.x", "y"],
+    ["config"],
+    ["-c", "remote.origin.push=x", "status"],
+    ["-c", "url.x.insteadOf=y", "status"],
+    ["-c", "core.askPass=x", "status"],
+    ["-c", "diff.external=x", "diff"],
+    ["-c", "gpg.program=x", "status"],
+    ["-c", "pager.log=x", "log"],
+  ])
+    assert.ok(unsafeArgs("git", args), args.join(" "));
+  for (const args of [
+    ["config", "--get-regexp", "remote"],
+    ["config", "--show-origin", "--list"],
+  ])
+    assert.equal(unsafeArgs("git", args), null, args.join(" "));
 });

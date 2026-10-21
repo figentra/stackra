@@ -44,8 +44,82 @@ function stripHeredocs(raw) {
   );
 }
 
-/** Config keys that run code or redefine git commands (STA-216). */
-const BAD_KEY = String.raw`(?:alias\.|include|core\.(?:fsmonitor|sshcommand|pager|editor|hookspath)|credential\.)`;
+/** The only `-c` keys an agent may set: display and identity, none runs a command or redirects a remote (STA-216). */
+const ALLOWED_C =
+  /^(?:color\.[\w.-]+|core\.(?:quotepath|abbrev|precomposeunicode)|user\.(?:name|email)|advice\.[\w.-]+|diff\.(?:renames|algorithm|context|noprefix)|log\.(?:abbrevcommit|decorate|date)|merge\.(?:ff|conflictstyle)|pull\.(?:rebase|ff)|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.\w+)$/i;
+/** `git config` modes that only read; the first option must be one of them. */
+const CONFIG_READ = new Set([
+  "--get",
+  "--get-all",
+  "--get-regexp",
+  "--get-urlmatch",
+  "--list",
+  "-l",
+  "get",
+  "list",
+]);
+const CONFIG_WRITE = new Set([
+  "--add",
+  "--replace-all",
+  "--unset",
+  "--unset-all",
+  "-e",
+  "--edit",
+  "--rename-section",
+  "--remove-section",
+  "set",
+  "unset",
+  "edit",
+]);
+/** Words of a `git config` command line: stops at an unquoted separator or `#` comment; a quoted word is never a flag. */
+function configWords(rest) {
+  const out = [];
+  let cur = null;
+  let quoted = false;
+  const end = () => {
+    if (cur !== null) out.push(quoted ? "\0" + cur : cur);
+    cur = null;
+    quoted = false;
+  };
+  for (let i = 0; i < rest.length; i++) {
+    const ch = rest[i];
+    if (ch === "'" || ch === '"') {
+      const close = rest.indexOf(ch, i + 1);
+      const stop = close === -1 ? rest.length : close;
+      cur = (cur ?? "") + rest.slice(i + 1, stop);
+      quoted = true;
+      i = stop;
+    } else if (/\s/.test(ch) && ch !== "\n") end();
+    else if (/[|;&\n]/.test(ch) || (ch === "#" && cur === null)) break;
+    else cur = (cur ?? "") + ch;
+  }
+  end();
+  return out;
+}
+/** True when `git config` words are not a plain read: the first option reads, and no write flag follows. */
+function configWrites(words) {
+  const [first, ...rest] = words;
+  const reads =
+    CONFIG_READ.has(first) ||
+    (["--show-origin", "--show-scope"].includes(first) && rest.some((w) => CONFIG_READ.has(w)));
+  return !reads || rest.some((w) => CONFIG_WRITE.has(w));
+}
+/** Every `git … config …` or `git -c <key>` in `d` that could write config or run a command (STA-216). */
+function gitConfigUnsafe(d) {
+  const re = new RegExp(String.raw`\bgit\s+(?:--\s+)?(${GIT_OPTS})`, "g");
+  const opt = new RegExp(
+    String.raw`-c\s+(?<v>${Q})|-C\s+(?:${Q})|--(?:git-dir|work-tree|namespace)(?:=(?:${Q})|\s+(?:${Q}))|--\S+|-[pP]`,
+    "g",
+  );
+  for (const m of d.matchAll(re)) {
+    for (const t of m[1].matchAll(opt))
+      if (t.groups.v !== undefined && !ALLOWED_C.test(unquote(t.groups.v).split("=")[0]))
+        return true;
+    const rest = d.slice(m.index + m[0].length);
+    if (/^config\b/.test(rest) && configWrites(configWords(rest.slice(6)))) return true;
+  }
+  return false;
+}
 /** An option value: a quoted string (spaces allowed) or one word. */
 const Q = String.raw`"[^"]*"|'[^']*'|\S+`;
 /** git's global options before the subcommand (STA-216: quoted values, the boolean options). */
@@ -375,22 +449,21 @@ const rules = [
       const d = dropMessages(c);
       return (
         /\b(?:git|man)\b/.test(c) &&
-        (new RegExp(
-          String.raw`(?:^|\s)(?:-c\s*['"]?${BAD_KEY}|--config-env\b|(?:GIT_CONFIG(?:_GLOBAL|_SYSTEM|_COUNT|_KEY_\d+|_PARAMETERS)?|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER)=)`,
-          "i",
-        ).test(d) ||
-          new RegExp(
-            String.raw`\bgit\b[^|;&\n]*\sconfig\b(?![^|;&\n]*\s(?:--get|--list|-l)\b)[^|;&\n]*\s['"]?${BAD_KEY}`,
-            "i",
-          ).test(d))
+        (/(?:^|\s)(?:--config-env\b|(?:GIT_CONFIG(?:_GLOBAL|_SYSTEM|_COUNT|_KEY_\d+|_PARAMETERS)?|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER|GIT_ASKPASS|SSH_ASKPASS|GIT_EXEC_PATH|GIT_SSH(?:_COMMAND)?|GIT_PROXY_COMMAND)=)/i.test(
+          d,
+        ) ||
+          gitConfigUnsafe(d))
       );
     },
-    why: "`git -c` / `git config` for `alias.*`, `include*`, `core.fsmonitor|sshCommand|pager|editor|hooksPath` and `credential.*`, `--config-env`, and the `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=`, `PAGER=`, `MANPAGER=` and `GIT_PAGER=` prefixes make git or man run another command past the push and credential guards. Run the real subcommand.",
+    why: "git `-c` outside a short display/identity allow-list, any `git config` that is not a read (`--get`, `--list`, ...), `--config-env`, and the `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=`, `PAGER=`, `MANPAGER=`, `GIT_PAGER=`, `GIT_ASKPASS=`, `SSH_ASKPASS=`, `GIT_EXEC_PATH=`, `GIT_SSH[_COMMAND]=` and `GIT_PROXY_COMMAND=` prefixes make git run another command, redefine a remote or alias past the push and credential guards. Agents never write git config.",
   },
   {
     // `man -P <cmd>` and `--pager=<cmd>` run <cmd>; plain `man git-credential` stays allowed.
-    rx: (c) => /\bman\b[^|;&\n]*\s-(?:[a-zA-Z]*P|-pager)/.test(dropMessages(c)),
-    why: "`man -P` and `man --pager` run an arbitrary command as the pager. Read the page with plain `man <page>`.",
+    rx: (c) =>
+      /\bman\b[^|;&\n]*\s-(?:[a-zA-Z]*[PHBTC]\b|-(?:pager|html|browser|troff|ditroff|config-file))/.test(
+        dropMessages(c),
+      ),
+    why: "`man -P`, `-H`, `-B`, `-T`, `-C` and their long forms (`--pager`, `--html`, ...) run an arbitrary command. Read the page with plain `man <page>`.",
   },
   {
     // STA-216: a GraphQL document read from a file or a substitution cannot be checked for a merge mutation;

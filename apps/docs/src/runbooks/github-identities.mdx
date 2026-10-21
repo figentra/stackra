@@ -60,16 +60,21 @@ quotes too), and every `sh -c` or `eval` string. It denies:
   `pnpm bot:git --`. A bot push to `main` is denied too, with the branch read in the checkout the push runs in
   (after a `cd`, `-C <dir>`, `--git-dir`, `--work-tree` or a `GIT_DIR=` / `GIT_WORK_TREE=` assignment; quoted `-c`
   values are read whole; an unknown `$VAR` target or an unresolvable checkout counts as `main`);
-- git config that redefines or runs commands, by `-c`, by `git config` writes (`--global`, `--system`, `--local`,
-  `--file`, also through `pnpm bot:git --`) or by `--config-env`: keys `alias.*`, `include*`, `core.fsmonitor`,
-  `core.sshCommand`, `core.pager`, `core.editor`, `core.hooksPath` and `credential.*`. An alias runs any git command
-  under another name (`-c alias.x=credential x fill`), past every rule above. Reading a key (`git config --get`,
-  `--list`) stays allowed. The env prefixes that swap git's config files or pager are denied on a `git` or `man`
-  command: `GIT_CONFIG`, `GIT_CONFIG_GLOBAL`, `GIT_CONFIG_SYSTEM`, `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_<n>`,
-  `GIT_CONFIG_PARAMETERS`, `HOME=`, `XDG_CONFIG_HOME=`, `PAGER=`, `MANPAGER=` and `GIT_PAGER=`. `bot-gh.mjs` refuses
-  the `-c` and `git config` forms too;
-- `man -P <cmd>` and `man --pager=<cmd>`, which run `<cmd>`; plain read-only help such as `man git-credential` stays
-  allowed;
+- git configuration, which agents never write. `git config` is allowed only as a read: the first option must be
+  `--get`, `--get-all`, `--get-regexp`, `--get-urlmatch`, `--list`, `-l`, `get` or `list` (or `--show-origin` /
+  `--show-scope` followed by one of those), with no write flag after it (`--add`, `--replace-all`, `--unset*`,
+  `-e`, `--edit`, `set`, `unset`, `edit`). Every other form is denied, also through `pnpm bot:git --`, with `#`
+  comments and quoted values taken out before parsing (`git config alias.x y --get` and `... # --get` are writes).
+  `-c <key>=<value>` is an allow-list too: only display and identity keys (`color.*`, `core.quotepath`, `core.abbrev`,
+  `user.name`, `user.email`, `advice.*`, `diff.*` display keys, `log.*`, `merge.ff`, `pull.*`, `push.default`,
+  `status.*` and a few more); any other key (`alias.*`, `include*`, `remote.*.push`, `url.*.insteadOf`, `core.askPass`,
+  `core.fsmonitor`, `credential.*`, `pager.*`, `gpg.program`, ...) is denied, as is `--config-env`. An alias or a
+  redirected remote runs any git command under another name, past every rule above. The env prefixes that swap
+  git's config, helpers or pager are denied on a `git` or `man` command: `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=`,
+  `PAGER=`, `MANPAGER=`, `GIT_PAGER=`, `GIT_ASKPASS=`, `SSH_ASKPASS=`, `GIT_EXEC_PATH=`, `GIT_SSH=`,
+  `GIT_SSH_COMMAND=` and `GIT_PROXY_COMMAND=`. `bot-gh.mjs` refuses the `-c` and `git config` forms too;
+- `man -P`, `-H`, `-B`, `-T`, `-C` and `--pager`, `--html`, `--browser`, `--troff`, `--config-file`, which run a
+  command; plain read-only help such as `man git-credential` stays allowed;
 - pack plumbing, bare, through `pnpm bot:git` or as the binary (`git-send-pack`): `send-pack`, `receive-pack`,
   `fetch-pack` and `upload-pack`;
 - a merge outside `pnpm pr:merge`: `pnpm bot:gh -- pr merge ...`, `pnpm bot:gh -- api .../pulls/<n>/merge` with any

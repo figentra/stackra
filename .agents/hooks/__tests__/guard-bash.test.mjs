@@ -450,8 +450,8 @@ test("push target: quoted -c, crafted -c values, GIT_DIR / GIT_WORK_TREE prefixe
   const feature = repo("feature/x");
   for (const c of [
     `pnpm bot:git -- -c "user.name=a b" -C ${main} push origin HEAD`,
-    `pnpm bot:git -- -c 'x=a;b' -C ${main} push origin HEAD`,
-    `pnpm bot:git -- -c a=--git-dir=${feature}/.git --git-dir=${main}/.git push`,
+    `pnpm bot:git -- -c 'color.ui=a;b' -C ${main} push origin HEAD`,
+    `pnpm bot:git -- -c core.abbrev=--git-dir=${feature}/.git --git-dir=${main}/.git push`,
     `GIT_DIR=${main}/.git pnpm bot:git -- push origin HEAD`,
     `GIT_DIR='${main}/.git' pnpm bot:git -- push`,
     `export GIT_DIR=${main}/.git; pnpm bot:git -- push`,
@@ -462,7 +462,7 @@ test("push target: quoted -c, crafted -c values, GIT_DIR / GIT_WORK_TREE prefixe
     assert.equal(decision(c, feature), "deny", c);
   for (const c of [
     `pnpm bot:git -- -c "user.name=a b" -C ${feature} push origin HEAD`,
-    `pnpm bot:git -- -c a=--git-dir=${main}/.git push origin HEAD`,
+    `pnpm bot:git -- -c core.abbrev=--git-dir=${main}/.git push origin HEAD`,
     `GIT_DIR=${feature}/.git pnpm bot:git -- push origin HEAD`,
   ])
     assert.equal(decision(c, feature), "allow", c);
@@ -471,7 +471,11 @@ test("push target: quoted -c, crafted -c values, GIT_DIR / GIT_WORK_TREE prefixe
 
 // STA-216 review round: config writes, config/pager env, man -P, encoded merge paths, more -c keys
 const round3bAllowed = [
-  "git config user.name x",
+  "git config --get user.name",
+  "git config --list",
+  "git config --show-origin --get-regexp remote",
+  "pnpm bot:git -- -c color.ui=never -c core.quotepath=off log -1",
+  "man ls",
   "pnpm bot:git -- config --get remote.origin.url",
   "man git-credential",
   "man -a git-credential",
@@ -508,3 +512,47 @@ const round3bDenied = [
 ];
 for (const c of round3bAllowed) test(`allow: ${c}`, () => assert.equal(denied(c), false));
 for (const c of round3bDenied) test(`deny: ${c}`, () => assert.equal(denied(c), true));
+
+// STA-216 re-review: git config is read-only, -c is an allow-list, more env and man options
+const round3cDenied = [
+  "git config alias.p x --get",
+  "git config alias.r x # --get",
+  'git config alias.t "cred x fill" # -l',
+  'git config alias.t "x --get"',
+  "pnpm bot:git -- config alias.p x --get",
+  "git config user.name x",
+  "git config --global --get user.name",
+  "git config -e",
+  "git config --edit",
+  "git config --add remote.origin.push x",
+  "git config --get x --replace-all",
+  "git config --unset alias.x",
+  "git config --replace-all alias.x y",
+  "git config set alias.x y",
+  "git config unset alias.x",
+  "git config edit",
+  "git config --file /tmp/c alias.x y",
+  "git config",
+  "git -c remote.origin.push=refs/heads/x:refs/heads/main status",
+  "git -c url.x.insteadOf=y status",
+  "git -c url.x.pushInsteadOf=y status",
+  "git -c remote.o.pushurl=y status",
+  "git -c core.askPass=x status",
+  "git -c core.gitProxy=x status",
+  "git -c diff.external=x diff",
+  "git -c uploadpack.packObjectsHook=x status",
+  "git -c gpg.program=x status",
+  "git -c pager.log=x log",
+  "GIT_ASKPASS=x git fetch",
+  "GIT_EXEC_PATH=/tmp/x git status",
+  "SSH_ASKPASS=x pnpm bot:git -- status",
+  "GIT_SSH=x git status",
+  "GIT_SSH_COMMAND=x git status",
+  "GIT_PROXY_COMMAND=x git status",
+  "man -H sh ls",
+  "man -B sh ls",
+  "man -T sh ls",
+  "man --html=sh ls",
+  "man -aH sh ls",
+];
+for (const c of round3cDenied) test(`deny: ${c}`, () => assert.equal(denied(c), true));

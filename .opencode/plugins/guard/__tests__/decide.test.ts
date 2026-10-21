@@ -281,3 +281,29 @@ test("STA-216 review: git config writes, config env, risky -c keys, man pager", 
     assert.equal(kind(c), "deny", c);
   for (const c of ["man ls", "man -a git-credential"]) assert.equal(kind(c), "allow", c);
 });
+
+test("STA-216 re-review: git config is read-only, -c allow-list, more env, man options", () => {
+  for (const c of [
+    "git config alias.p x --get",
+    "git config alias.r x # --get",
+    "git config user.name x",
+    "git config -e",
+    "git config set alias.x y",
+    "git -c remote.origin.push=x status",
+    "git -c url.x.insteadOf=y status",
+    "git -c core.askPass=x status",
+    "GIT_ASKPASS=x git fetch",
+    "GIT_SSH_COMMAND=x git status",
+    "GIT_EXEC_PATH=/tmp git status",
+    "man -H sh ls",
+    "man -T sh ls",
+    "man --html=sh ls",
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    "git config --get user.name",
+    "git config --list",
+    "git -c color.ui=never log -1",
+  ])
+    assert.equal(kind(c), "allow", c);
+});

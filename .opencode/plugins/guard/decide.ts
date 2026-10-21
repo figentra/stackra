@@ -96,23 +96,61 @@ const subcommands = (cmd: string): string[] =>
 
 /** Global options whose value is the next word (`--git-dir=x` carries its value and is skipped as a flag). */
 const GIT_VALUE_OPTS = new Set(["-C", "-c", "--git-dir", "--work-tree", "--namespace"]);
-/** Config keys that run code or redefine git commands (STA-216). */
-const BAD_KEY =
-  /^(?:alias\.|include|core\.(?:fsmonitor|sshcommand|pager|editor|hookspath)|credential\.)/i;
-/** `-c` / `git config` for those keys and `--config-env` make git run another command (STA-216). */
+/** The only `-c` keys an agent may set: display and identity, none runs a command or redirects a remote (STA-216). */
+const ALLOWED_C =
+  /^(?:color\.[\w.-]+|core\.(?:quotepath|abbrev|precomposeunicode)|user\.(?:name|email)|advice\.[\w.-]+|diff\.(?:renames|algorithm|context|noprefix)|log\.(?:abbrevcommit|decorate|date)|merge\.(?:ff|conflictstyle)|pull\.(?:rebase|ff)|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.\w+)$/i;
+const CONFIG_READ = new Set([
+  "--get",
+  "--get-all",
+  "--get-regexp",
+  "--get-urlmatch",
+  "--list",
+  "-l",
+  "get",
+  "list",
+]);
+const CONFIG_WRITE = new Set([
+  "--add",
+  "--replace-all",
+  "--unset",
+  "--unset-all",
+  "-e",
+  "--edit",
+  "--rename-section",
+  "--remove-section",
+  "set",
+  "unset",
+  "edit",
+]);
+/** `git config` arguments that are not a plain read: the first option reads, and no write flag follows. */
+function configWrites(args: string[]): boolean {
+  const hash = args.findIndex((a) => a.startsWith("#"));
+  const [first, ...rest] = hash < 0 ? args : args.slice(0, hash);
+  const reads =
+    CONFIG_READ.has(first) ||
+    (["--show-origin", "--show-scope"].includes(first) && rest.some((w) => CONFIG_READ.has(w)));
+  return !reads || rest.some((w) => CONFIG_WRITE.has(w));
+}
+/** `-c` outside the allow-list, `--config-env`, or a `git config` that is not a read (STA-216). */
 const gitAliasConfig = (args: string[]): boolean => {
-  const config = args.includes("config") && !args.some((a) => /^(?:--get|--list$|-l$)/.test(a));
-  return args.some(
-    (a, i) =>
-      /^--config-env\b/.test(a) ||
-      (a === "-c" && BAD_KEY.test(args[i + 1] ?? "")) ||
-      (/^-c./.test(a) && BAD_KEY.test(a.slice(2))) ||
-      (config && BAD_KEY.test(a)),
+  let sub = -1;
+  for (let i = 0; i < args.length && sub < 0; i++) {
+    if (GIT_VALUE_OPTS.has(args[i])) i++;
+    else if (!args[i].startsWith("-")) sub = i;
+  }
+  return (
+    args.some(
+      (a, i) =>
+        /^--config-env\b/.test(a) ||
+        (a === "-c" && !ALLOWED_C.test((args[i + 1] ?? "").split("=")[0])) ||
+        /^-c./.test(a),
+    ) ||
+    (args[sub] === "config" && configWrites(args.slice(sub + 1)))
   );
 };
 /** Env prefixes that swap git's config files or the pager (STA-216). */
 const CONFIG_ENV =
-  /(?:^|\s)(?:GIT_CONFIG[A-Z_0-9]*|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER)=/;
+  /(?:^|\s)(?:GIT_CONFIG[A-Z_0-9]*|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER|GIT_ASKPASS|SSH_ASKPASS|GIT_EXEC_PATH|GIT_SSH(?:_COMMAND)?|GIT_PROXY_COMMAND)=/;
 
 /** git's subcommand, skipping global options (`-C dir`, `-c k=v`, `--git-dir=…`). */
 function gitSubcommand(args: string[]): string {
@@ -204,7 +242,10 @@ function denySub(sub: string): Decision {
       "printing the environment leaks injected tokens. Echo the one variable you need (never a secret's value).",
     );
   if (
-    (cmd === "man" && args.some((a) => /^-[a-zA-Z]*P|^--pager/.test(a))) ||
+    (cmd === "man" &&
+      args.some((a) =>
+        /^-[a-zA-Z]*[PHBTC]\b|^--(?:pager|html|browser|troff|ditroff|config-file)/.test(a),
+      )) ||
     /(?:^|\s)(?:MANPAGER|PAGER)=/.test(sub)
   )
     return deny("`man -P`, `--pager` and the PAGER env run an arbitrary command as the pager.");
