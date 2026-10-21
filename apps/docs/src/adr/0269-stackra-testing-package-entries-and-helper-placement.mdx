@@ -5,7 +5,9 @@ description: "Accepted · 2026-10-21"
 
 <Note>
   Amends [0022](/adr/0022-tests-live-in-tests-folders) (decision 4: shared fixtures and doubles live
-  in `@stackra/testing`, and domain helpers in each owning package's `./testing` entry).
+  in `@stackra/testing`, and domain helpers in each owning package's `./testing` entry) and
+  [0126](/adr/0126-member-shapes-and-scaffold-templates) (decision 2: a named exception for the
+  `./e2e` and `./contract` entries of `@stackra/testing` only).
 </Note>
 
 ## Context
@@ -37,6 +39,13 @@ reverses an earlier answer of the same day, which put every helper in one packag
    tiers of [0182](/adr/0182-testing-strategy-v2-tiers-coverage-infrastructure-and-policies). Which kind of test uses which entry is
    set in the test-by-kind table (`standards/testing-by-kind`), and the contents of each entry are set by the package build.
 
+6. **Named exception to [0126](/adr/0126-member-shapes-and-scaffold-templates) decision 2.** Decision 2 of 0126 lists the entries a
+   package may have: `.`, `./contracts`, `./node`, `./react`, `./native`, `./testing` and `./devtools`. For `@stackra/testing`
+   alone, the entries `./e2e` and `./contract` are added to that list, with these names. Nothing else in the entry list changes,
+   and no other package gets these entries. `@stackra/testing/contract` is a subpath of the testing package; it is unrelated to a
+   member's `./contracts` entry (the vocabulary entry of [0117](/adr/0117-contracts-placement-and-decorator-ownership)), and the two
+   names do not mean the same thing.
+
 ## Consequences
 
 - A package's tests import its domain helpers from its own `./testing` entry, so a helper is never copied between packages.
@@ -52,5 +61,6 @@ planned — the hoisting test in `packages/developer/testing/src/__tests__/` (bu
 
 ## Supersedes and sources
 
-Supersedes: none. Amends: [0022](/adr/0022-tests-live-in-tests-folders) decision 4. Sources: owner answers on testing helpers, 2026-10-21
+Supersedes: none. Amends: [0022](/adr/0022-tests-live-in-tests-folders) decision 4; [0126](/adr/0126-member-shapes-and-scaffold-templates)
+decision 2 (named exception, decision 6 above). Sources: owner answers on testing helpers, 2026-10-21
 (the reversal of the earlier answer of the same day); [0126](/adr/0126-member-shapes-and-scaffold-templates) decision 2 (entries).

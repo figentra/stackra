@@ -1,6 +1,6 @@
 ---
 title: "0126 — Member shapes and scaffold templates"
-description: "Accepted, amended by 0234, 0249, 0259, 0264 · 2026-10-20"
+description: "Accepted, amended by 0234, 0249, 0259, 0264, 0269 · 2026-10-20"
 ---
 
 <Note>
@@ -107,6 +107,12 @@ for every new member, so they are decided here together.
   `encore.service.ts` or `encore.app`; `checkTestPlacement` bans `*.stories.*`.
 - Planned: a validator check that a package's entry folders match its `exports` and `tsdown.config.ts`, and an oxlint rule
   that entries never import each other.
+
+<Note>
+  Amended by [0269](/adr/0269-stackra-testing-package-entries-and-helper-placement) (decision 6):
+  decision 2's entry list has one named exception, the `./e2e` and `./contract` entries of
+  `@stackra/testing`.
+</Note>
 
 ## Amendment 2026-10-21: config, assets and the root-module test (STA-219)
 

@@ -84,20 +84,20 @@ member gets a category on 2026-10-21. This amendment records the placement of ea
    fit needs an ADR that adds the category.
 2. **The placement table.** Each row names the category; the source of the placement is the ADR or roadmap row given in brackets.
 
-   | Category       | Packages                                                                                                                                            |
-   | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-   | foundation     | support, container, config, logger, events, transport, query, network, router, i18n, storage [roadmap]; contracts, validation, errors [0232]        |
-   | data           | model, database, content, media, search, state-machine, assets, filesystem [0234 amends this table: assets and filesystem are data, not foundation] |
-   | application    | actions, ai, ir, registry                                                                                                                           |
-   | runtime        | outbox, queue, scheduler, workflow, realtime, locking, cache, app, devices [roadmap; devices by owner settlement, 2026-10-21]                       |
-   | communication  | webhooks, notifications, versioning, integrations, templates [0234 names templates in communication]                                                |
-   | security       | connections, entitlements, licensing, identity, iam, tenancy, consent, csp [roadmap]                                                                |
-   | experience     | ui, experience, navigation, console, panel, forms, kbd, pwa, platform [0250], peripherals [0253]                                                    |
-   | developer      | cli, gen, coding-standard, vite-plugin, devtools-kit, testing [roadmap; testing per the build plan's Phase T]                                       |
-   | cross-cutting  | brand (moved from experience), analytics, seo [roadmap]                                                                                             |
-   | state          | settings, feature-flags, theming, coordinator [roadmap]                                                                                             |
-   | commerce       | money, ledger, pricing primitives (decision 1 above)                                                                                                |
-   | infrastructure | the `@stackra/infra-*` packages (ADR 0171)                                                                                                          |
+   | Category       | Packages                                                                                                                                                                               |
+   | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | foundation     | support, container, config, logger, events, transport, query, network, router, i18n [roadmap]; contracts, validation, errors [0232]                                                    |
+   | data           | model, database, content, media, search, state-machine, assets, filesystem [0234 amends this table: assets and filesystem are data, not foundation], storage [structure.mjs, ADR 0256] |
+   | application    | actions, ai, ir, registry                                                                                                                                                              |
+   | runtime        | outbox, queue, scheduler, workflow, realtime, locking, cache, app, devices [roadmap; devices by owner settlement, 2026-10-21]                                                          |
+   | communication  | webhooks, notifications, versioning, integrations, templates [0234 names templates in communication]                                                                                   |
+   | security       | connections, entitlements, licensing, identity, iam, tenancy, consent, csp [roadmap]                                                                                                   |
+   | experience     | ui, experience, navigation, console, panel, forms, kbd, pwa, platform [0250], peripherals [0253]                                                                                       |
+   | developer      | cli, gen, coding-standard, vite-plugin, devtools-kit, testing [roadmap; testing per the build plan's Phase T]                                                                          |
+   | cross-cutting  | brand (moved from experience), analytics, seo [roadmap]                                                                                                                                |
+   | state          | settings, feature-flags, theming, coordinator [roadmap]                                                                                                                                |
+   | commerce       | money, ledger, pricing primitives (decision 1 above)                                                                                                                                   |
+   | infrastructure | the `@stackra/infra-*` packages (ADR 0171)                                                                                                                                             |
 
 3. **Brand moves to `cross-cutting`.** The package is at `packages/experience/brand` today. The folder move is a separate code change,
    not part of this ADR.
