@@ -13,7 +13,7 @@
 
 **Created**: 2026-10-19
 
-**Status**: Clarified; retargeted to the service by ADR 0270 (re-check in plan)
+**Status**: Clarified
 
 **Linear**: STA-35 <!-- https://linear.app/figentra/issue/STA-35 -->
 
