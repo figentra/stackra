@@ -608,7 +608,7 @@ stackra/
 ├── packages/               # tier:lib
 │   ├── application/        # Actions, AI, IR, registry
 │   ├── commerce/           # Money, ledger and pricing primitives
-│   ├── communication/      # Webhooks, versioning, integrations, templates
+│   ├── communication/      # Webhooks, versioning, integrations, templates, mail
 │   ├── cross-cutting/      # Brand
 │   ├── data/               # Model, database, content, media, search, state machine, assets, filesystem, storage
 │   ├── developer/          # CLI, gen (the codegen compiler), coding standard, Vite plugin

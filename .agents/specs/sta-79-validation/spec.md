@@ -189,7 +189,7 @@ EARS wording (ADR 0120 D18).
 - `@stackra/contracts`, `@stackra/support` and `@stackra/container` (W1.1, W1.2) are merged before this plan starts (roadmap dependency).
 - Zod is the version the catalog pins; Standard Schema compatibility comes from Zod itself.
 - The IR's SchemaIR-to-Zod conversion (ADR 0092) consumes this package's schema and is out of scope here.
-- Form adapters (react-hook-form, HeroUI) live in `@stackra/forms` and the apps, not here.
+- Form adapters (react-hook-form, HeroUI) live in `@stackra/ui/form` (ADR 0270; `@stackra/forms` is dropped) and the apps, not here.
 
 ## Open items
 
