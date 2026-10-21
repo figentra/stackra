@@ -74,22 +74,41 @@ export function reachesInbox(p, { recursive = false, home = homedir(), cwd } = {
  * - `bodies`: the text (of `literal`) of every direct substitution body, backtick bodies unescaped; callers
  *   scan each body again for the ones nested in it;
  * - `spans`: `[start, end)` in `c` of every outermost closed quoted span;
- * - `stripped`: `c` verbatim except each heredoc: operator → `<<HEREDOC`, body → its substitutions as `$(…)`.
+ * - `stripped`: `source` verbatim except each heredoc: operator → `<<HEREDOC`, body → its substitutions as `$(…)`;
+ * - `source`: `c` with every backslash-newline outside single quotes and stripped heredoc bodies removed, as the
+ *   shell does before parsing (`"$\⏎(cmd)"` runs `cmd`); every other output, `spans` included, refers to it.
  * A `${…}` opened inside double quotes or a heredoc body keeps `'` and `$'` literal (bash 5, zsh).
  * A heredoc read by a shell (`sh`, `bash`, `zsh`, `dash`, `ksh`, `eval`, `source`, `.` anywhere on its line,
- * `cat <<EOF | sh` included) is a script, so its body is never stripped.
+ * `cat <<EOF | sh` included), or whose operator line ends in `|` / `|&` (`cat <<EOF |⏎…⏎EOF⏎sh`), is a script, so
+ * its body is never stripped. A `)` or backtick that closes a substitution is not a word boundary (`$(x)#y`).
  * Fail closed: an unclosed `"`, `$(` or backtick runs to the end; an unclosed `'` stays visible.
  * Safety net: `rawSubstitutions` finds every `$(…)`, `<(…)`, `>(…)` and backtick body ignoring quotes; callers run
  * their deny rules on those bodies too, so a quoting edge case here can only cost a deny, never an allow.
  * shortcut: no aliases or functions; a body rescanned out of its `((…))` context can misread a
  * `<<` shift as a heredoc (only an unterminated one, which is then read as commands); a `(a)` case pattern is
- * not split from its command. Upgrade to a real parser if one slips through.
+ * not split from its command; a string piped into a shell (`echo '…' | sh`) and a script written then run
+ * (`tee f; sh f`) are not unwrapped (follow-ups). Upgrade to a real parser if one slips through.
  */
-export function scanShell(c, { heredoc = false } = {}) {
+export function scanShell(c, opts = {}) {
+  const first = scanOnce(c, opts);
+  if (!first.joins.length) return { ...first, source: c };
+  let source = "";
+  let at = 0;
+  for (const j of first.joins) {
+    source += c.slice(at, j);
+    at = j + 2;
+  }
+  return { ...scanOnce(source + c.slice(at), opts), source: source + c.slice(at) };
+}
+
+/** One pass of `scanShell` over `c` as given; `joins` lists where a backslash-newline sits outside single quotes. */
+function scanOnce(c, { heredoc = false } = {}) {
   let literal = "";
   let blanked = "";
   let quietFrom = -1; // where the outermost open double quote began; `blanked` hides text from there
   let escaped = -1; // index of the last character a backslash consumed: never a word boundary
+  let closedAt = -1; // index of the last `)` or backtick that closed a substitution: never a word boundary
+  const joins = [];
   let pending = []; // heredocs whose bodies start after the next newline
   const bodies = [];
   const spans = [];
@@ -110,7 +129,8 @@ export function scanShell(c, { heredoc = false } = {}) {
       bodies.push(f.kind === "bt" ? text.replace(/\\([`$\\])/g, "$1") : text);
     }
   };
-  const wordStart = (i) => i === 0 || (escaped !== i - 1 && /[\s;&|()<>`]/.test(c[i - 1]));
+  const wordStart = (i) =>
+    i === 0 || (escaped !== i - 1 && closedAt !== i - 1 && /[\s;&|()<>`]/.test(c[i - 1]));
   const word = (i, w) =>
     wordStart(i) &&
     c.startsWith(w, i) &&
@@ -164,6 +184,7 @@ export function scanShell(c, { heredoc = false } = {}) {
       emit(c.slice(i, i + 2));
       i++;
       if (ch === "\\") escaped = i;
+      if (ch === "\\" && c[i] === "\n") joins.push(i - 1);
       continue;
     }
     if (quoted(f)) {
@@ -235,7 +256,8 @@ export function scanShell(c, { heredoc = false } = {}) {
         if (d) {
           const from = c.lastIndexOf("\n", i - 1) + 1;
           const to = c.indexOf("\n", i);
-          const script = SHELL_WORD.test(c.slice(from, to < 0 ? c.length : to));
+          const line = c.slice(from, to < 0 ? c.length : to);
+          const script = SHELL_WORD.test(line) || /\|&?\s*$/.test(line);
           pending.push({ ...d, strip, frame: f, script });
           edits.push([i, d.end, "<<HEREDOC"]);
           emit("<<HEREDOC");
@@ -261,11 +283,13 @@ export function scanShell(c, { heredoc = false } = {}) {
           const two = f.arith && c[i + 1] === ")";
           emit(two ? "))" : ")");
           if (two) i++;
+          closedAt = i;
           continue;
         }
       } else if (f.kind === "bt" && ch === "`") {
         close();
         emit(ch);
+        closedAt = i;
         continue;
       }
       if ((ch === "<" || ch === ">") && c[i + 1] === "(") {
@@ -308,7 +332,7 @@ export function scanShell(c, { heredoc = false } = {}) {
     stripped += c.slice(at, start) + text;
     at = end;
   }
-  return { literal, blanked, bodies, spans, stripped: stripped + c.slice(at) };
+  return { literal, blanked, bodies, spans, joins, stripped: stripped + c.slice(at) };
 }
 
 /**
@@ -338,7 +362,8 @@ export function scriptStrings(c) {
  * parentheses while ignoring every quote. Only for deny rules: it can add a deny, never an allow. Accepted false
  * positive: a dangerous command written literally inside real single quotes (`echo '$(git push origin main)'`).
  */
-export function rawSubstitutions(c) {
+export function rawSubstitutions(raw) {
+  const c = raw.replace(/\\\n/g, ""); // backslash-newline goes first, quotes or not
   const out = [];
   for (let i = 0; i < c.length; i++) {
     if (c[i] === "\\") i++;

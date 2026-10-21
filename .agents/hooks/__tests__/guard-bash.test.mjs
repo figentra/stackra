@@ -786,3 +786,27 @@ for (const c of [
   "bash <<< 'pnpm verify'",
 ])
   test(`allow: ${c}`, () => assert.equal(denied(c), false));
+
+// STA-254 re-review 6: backslash-newline is removed before parsing (outside single quotes); a `)` or backtick
+// closing a substitution is not a word boundary for `#`; a heredoc line ending in `|` is a script.
+for (const c of [
+  'echo "$\\\n(git push origin main)"',
+  'git commit -m "$\\\n(git push origin main)"',
+  'pnpm linear comment STA-1 "$\\\n(git push origin main)"',
+  "echo $\\\n(git push origin main)",
+  'echo "$\\\n(infisical export)"',
+  "echo $\\\n(infisical export)",
+  "echo $(true)# ; git push origin main",
+  "echo $(true)# ; infisical export",
+  "echo `true`# ; git push origin main",
+  "cat <<EOF |\ngit push origin main\nEOF\nsh",
+  "cat <<EOF |&\ninfisical export\nEOF\nbash",
+])
+  test(`deny: ${c}`, () => assert.equal(denied(c), true));
+for (const c of [
+  'echo "line one \\\nline two, it\'s fine"',
+  "echo 'it\\\nstays' # single quotes keep the backslash-newline",
+  "echo $(date)  # it's a comment",
+  "cat <<EOF > notes.md\nwe don't run git push origin main here\nEOF",
+])
+  test(`allow: ${c}`, () => assert.equal(denied(c), false));

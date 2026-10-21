@@ -473,3 +473,27 @@ test("STA-254 re-review 5: literal ' in a quoted ${…}, shell-read heredocs and
   ])
     assert.equal(kind(c), "allow", c);
 });
+
+test("STA-254 re-review 6: backslash-newline first, no boundary after a closing ), heredoc piped to a later shell", () => {
+  for (const c of [
+    'echo "$\\\n(git push origin main)"',
+    'git commit -m "$\\\n(git push origin main)"',
+    'pnpm linear comment STA-1 "$\\\n(git push origin main)"',
+    "echo $\\\n(git push origin main)",
+    'echo "$\\\n(infisical export)"',
+    "echo $\\\n(infisical export)",
+    "echo $(true)# ; git push origin main",
+    "echo $(true)# ; infisical export",
+    "echo `true`# ; git push origin main",
+    "cat <<EOF |\ngit push origin main\nEOF\nsh",
+    "cat <<EOF |&\ninfisical export\nEOF\nbash",
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    'echo "line one \\\nline two, it\'s fine"',
+    "echo 'it\\\nstays' # single quotes keep the backslash-newline",
+    "echo $(date)  # it's a comment",
+    "cat <<EOF > notes.md\nwe don't run git push origin main here\nEOF",
+  ])
+    assert.equal(kind(c), "allow", c);
+});

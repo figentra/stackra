@@ -199,10 +199,12 @@ const unquote = (w) => w.replace(/^['"]+|['"]+$/g, "");
  * `pnpm linear comment <KEY> "…"` (STA-216), so a PR body or a comment may mention `pr merge` or `push origin main`.
  */
 const PROSE_BEFORE = /(?:\s(?:-m|--message|--title|--body)(?:\s+|=)|\blinear\s+comment\s+\S+\s+)$/;
-const dropMessages = (c) =>
-  scanShell(c)
-    .spans.filter(([start]) => PROSE_BEFORE.test(c.slice(0, start)))
-    .reduceRight((t, [start, end]) => t.slice(0, start) + "MSG" + t.slice(end), c);
+const dropMessages = (c) => {
+  const { spans, source } = scanShell(c);
+  return spans
+    .filter(([start]) => PROSE_BEFORE.test(source.slice(0, start)))
+    .reduceRight((t, [start, end]) => t.slice(0, start) + "MSG" + t.slice(end), source);
+};
 
 /** `infisical secrets` with no subcommand (only flags / flag values) lists every value. */
 const INFISICAL_SUBCOMMANDS = new Set(["get", "set", "delete", "folders", "generate-example-env"]);
