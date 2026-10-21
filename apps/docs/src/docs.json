@@ -369,7 +369,9 @@
               "adr/0266-capabilities-phase-in-one-option-one-driver-memory-first",
               "adr/0267-infisical-agent-vault-deferred",
               "adr/0268-register-answers-thin-items-r1-to-r18",
-              "adr/0269-stackra-testing-package-entries-and-helper-placement"
+              "adr/0269-stackra-testing-package-entries-and-helper-placement",
+              "adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels",
+              "adr/0271-saved-views"
             ]
           }
         ]

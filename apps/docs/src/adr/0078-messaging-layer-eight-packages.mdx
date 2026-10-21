@@ -5,6 +5,15 @@ description: "Accepted, amended by 0141, 0148, 0260 · 2026-10-19"
 
 <Note>
   Amended by
+  [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)
+  (decision 12): `@stackra/notifications` is dropped. "Tell a person?" is answered by the
+  notifications service (`@figentra/service-notifications`), which owns delivery, preferences, the
+  log and the in-app inbox; direct email uses the `Mailer` driver in `@stackra/mail`. Decision 9 no
+  longer places a notifications package in communication.
+</Note>
+
+<Note>
+  Amended by
   [0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules):
   decisions 5 and 6 gain the queue and scheduler features.
 </Note>
