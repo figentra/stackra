@@ -1,6 +1,6 @@
 ---
 description: Sync agent definitions (.agents/agents) to .claude/.opencode and report drift
-allowed-tools: Bash(pnpm agents:sync), Bash(pnpm agents:check), Bash(pnpm agents:lint)
+allowed-tools: Bash(pnpm agents:sync), Bash(pnpm agents:check)
 ---
 
 Sync the canonical agent definitions and verify there is no drift:
