@@ -24,7 +24,7 @@ emitter knows about Encore. Gen lives in the developer category, `packages/devel
 | `app-manifest.json` (every endpoint, topic, subscription, cron, route, area, middleware chain, asset, capability) | member root | yes | 0091, 0158, 0237 |
 | `openapi.json`                          | member root                  | yes        | 0158             |
 | The Encore app: `encore.app`, one `encore.service.ts` per service, `api()`, `Topic`, `Subscription`, `CronJob` adapters that call built service packages through the container | `.stackra/encore/` | no (gitignored) | 0091 |
-| Encore `secret()` declarations from config `secret('Name')` refs | `.stackra/encore/` | no | 0146 D5 |
+| Encore `secret()` declarations from config `secret('<PROVIDER>_<PURPOSE>')` refs | `.stackra/encore/` | no | 0146 D5 |
 | MikroORM `EntitySchema` and ordered SQL migrations | generated / migration stream | migrations yes | 0097, 0159 |
 | The `AssetKey` union and the manifest's assets section | `.stackra/` | no | 0234 |
 | The typed IPC bridge and allow-list from `@DesktopAction`, the capability and offline maps, the PWA manifest, electron-builder config | app target | no | 0249–0251 |
@@ -61,7 +61,7 @@ for authoring: never copy its `api()`, `encore.service.ts`, `~encore/clients` or
 | A raw webhook or stream               | `@Controller` in `raw/`                               |
 | A subscription                        | `@AsListener` / `@OnEvent` on a versioned event       |
 | A cron                                | `@Cron` or a scheduler decorator                      |
-| A secret                              | `secret('Name')` in `config/<pkg>.config.ts`           |
+| A secret                              | `secret('<PROVIDER>_<PURPOSE>')` in `config/<pkg>.config.ts`           |
 | A database                            | the service's database module; gen declares one per service (ADR 0238) |
 | Auth, CORS, rate limits               | the generated gateway and the action pipeline, never per endpoint code |
 

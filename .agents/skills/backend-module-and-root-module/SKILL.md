@@ -30,7 +30,8 @@ services/billing/                       # or packages/<category>/<name>/
             └── __tests__/
 ```
 
-Kind folders appear with their first file. `interfaces/`, `types/`, `constants/`, `tokens/`, `errors/` and `decorators/`
+Kind folders appear with their first file; `resources/` holds `@Resource` panel declarations (ADR 0126 decision 3;
+ADR 0130's list omits it, and the ADR steward reconciles the two). `interfaces/`, `types/`, `constants/`, `tokens/`, `errors/` and `decorators/`
 appear once there are two files of that kind (ADR 0128). There are **no** `controllers/`, `dtos/`, `repositories/`,
 `presentation/`, `helpers/` or `utils/` folders. `raw/` holds only raw `@Controller` endpoints. Dependencies point
 inward: actions, listeners and workflows use services and models; models import from no other folder.

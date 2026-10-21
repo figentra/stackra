@@ -55,7 +55,7 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
 | secret-manager            | executor | no                       | claude     |
 | code-reviewer             | reviewer | no (verdict gates merge) | claude     |
 | api-contract-reviewer     | reviewer | no                       | claude     |
-| accessibility-reviewer    | reviewer | critical and serious     | claude     |
+| accessibility-reviewer    | reviewer | no (axe in e2e blocks)   | claude     |
 | performance-reviewer      | reviewer | no                       | claude     |
 | design-brand-reviewer     | reviewer | no                       | claude     |
 | code-standards-steward    | steward  | no                       | both       |

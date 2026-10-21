@@ -45,7 +45,7 @@ Run `pnpm --filter <member> test typecheck build`, then `pnpm verify`.
 ## Never
 
 Touches signing certificates, notarisation credentials or the R2 update feed (`release-operations` and a human). Adds
-Tauri, a sync engine (deferred, ADR 0011) or a native module without evidence. Commits.
+Tauri, a sync engine (deferred, ADR 0227) or a native module without evidence. Commits.
 
 ## Hand-offs and review chain
 

@@ -61,8 +61,9 @@ code 0091 and 0124 reject. The owner accepted the roster and skills plan with ei
 - `tools/scripts/agents-sync.mjs` projects an agent only to assistants with a row for its tier and listed in its
   `assistants`, and `pnpm agents:check` fails on a stale projection (tests in
   `tools/scripts/__tests__/agents-sync.test.mjs`).
-- planned — the rejected-technology skill check in `agents-sync.mjs --lint` (decision 6), in the skills pull request of
-  STA-148.
+- `agents-sync.mjs --lint` and `--check` fail a skill in `.agents/skills/` that names rejected technology unless
+  `SKILL_TECH_ALLOWED` records the reason (decision 6), and a route that sends work to OpenCode for an agent not
+  projected there.
 
 ## Supersedes and sources
 

@@ -29,7 +29,7 @@ prose, never source code.
 - `apps/docs/src/adr/index.mdx` — the index table every ADR is listed in.
 - The two or three most recent ADRs, which show the conventions currently in use.
 - Every ADR that touches the concern at hand. Search `apps/docs/src/adr/` by keyword before assuming a topic
-  is undecided — ADR 0011 records what is rejected or deferred.
+  is undecided — ADR 0227 (which refreshes 0011) records what is rejected or deferred.
 - `AGENTS.md` and `.agents/rules/concurrent-sessions.md`.
 
 ## Owns

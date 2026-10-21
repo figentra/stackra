@@ -32,7 +32,7 @@ by number.
    package ships an Explorer (0144).
 5. Encore exists only as `stackra gen` output in `.stackra/encore` (0091, 0124): no `encore.*` file or `encore.dev` import
    in any member.
-6. Nothing from the rejected list of ADR 0011 (and its refresh); a deferred item only with its revival trigger met.
+6. Nothing from the rejected list of ADR 0227 (the refresh of 0011); a deferred item only with its revival trigger met.
 7. A new dependency comes from a catalog (`pnpm-workspace.yaml`) and has an owner; a change to `turbo.jsonc` or the
    catalogs has the owner's approval.
 8. A change that contradicts an Accepted ADR without a superseding one is `BLOCKED`.

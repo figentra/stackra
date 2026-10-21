@@ -43,7 +43,7 @@ One table, enforced by the house lint plugin and the validator as they land (ADR
 
 - **Classes**: `private` keyword, never `#private`; injected dependencies are `private readonly`.
 - **Components**: always a folder `x/{x.tsx, index.ts, __tests__/x.test.tsx}`; `XProps` exported from the component
-  file. No `*.stories.*`.
+  file. No story files (ADR 0128).
 - **Kind folders** once a module has two files of a kind: `interfaces/`, `types/`, `constants/`, `tokens/`, `errors/`,
   `decorators/`.
 - **Errors** extend `StackraError` (skill `backend-errors`).
