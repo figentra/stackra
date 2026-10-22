@@ -357,8 +357,11 @@ function scanOnce(c, { heredoc = false } = {}) {
  */
 export const stripHeredocs = (raw) => scanShell(raw).stripped;
 
-/** A shell's name: sh, bash, zsh, dash, ksh, csh, tcsh, ash, mksh, yash, posh, rbash, fish, versioned (`bash5`, `zsh-5.9`). */
-const SHELL_NAME = String.raw`(?:(?:ba|z|da|k|c|tc|a|mk|ya|po|rba)?sh|fish)(?:-?\d[\w.]*)?`;
+/**
+ * A shell's name: sh, bash, zsh, dash, ksh, csh, tcsh, ash, mksh, yash, posh, rbash, osh, fish, nu, xonsh,
+ * elvish, rc, es, versioned (`bash5`, `zsh-5.9`).
+ */
+const SHELL_NAME = String.raw`(?:(?:ba|z|da|k|c|tc|a|mk|ya|po|rba|o)?sh|fish|nu|xonsh|elvish|rc|es)(?:-?\d[\w.]*)?`;
 /** A shell (or `eval` / `source` / `.`) as a word: its heredoc or here-string is a script. */
 const SHELL_WORD = new RegExp(
   String.raw`(?:^|[\s;&|(\x60])(?:\S*/)?(?:${SHELL_NAME}|eval|source|\.)(?=[\s;&|)\x60]|$)`,
@@ -476,8 +479,13 @@ function runsFile(text, base) {
       if (at.name !== "eval" && s.redirects.some((r) => r.op === "<" && matches(r.target)))
         return true;
     }
-    const { i, raw } = nameOf(s);
+    if (programStrings(s).texts.some((t) => runsFile(t.text, base))) return true;
+    const { i, raw, name } = nameOf(s);
     if (i >= 0 && raw.includes("/") && matches(raw)) return true;
+    // `open -a Terminal f` runs f.
+    const rest = s.words.slice(i + 1);
+    if (name === "open" && rest.some((w) => /^-[a-zA-Z]*a/.test(w)) && rest.some(matches))
+      return true;
   }
   const name = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const file = String.raw`['"]?(?:\S*/)?${name}['"]?`;
@@ -665,12 +673,17 @@ function sedSafe(prog) {
     if (k < prog.length && !at(/[\s;}]/)) return false;
   }
 }
+/** Compressors `sort --compress-program` may name without running anything else. */
+const COMPRESSORS = new Set(["gzip", "pigz", "zstd", "xz", "lz4", "bzip2", "pbzip2", "lzop"]);
 /** Reader uses that run a command (`words` are the whole command): then the reader counts as a shell. */
 const READER_RUNS = {
   sort: (words) =>
-    words.some((w) => {
-      const flag = w.split("=")[0];
-      return flag.length > 4 && flag.startsWith("--com") && "--compress-program".startsWith(flag);
+    words.some((w, j) => {
+      const [flag, ...value] = w.split("=");
+      if (!(flag.length > 4 && flag.startsWith("--com") && "--compress-program".startsWith(flag)))
+        return false;
+      const program = (value.length ? value.join("=") : (words[j + 1] ?? "")).split("/").pop();
+      return !COMPRESSORS.has(program);
     }),
   rg: (words) => words.some((w) => /^--pre(?:=|$)/.test(w)),
   less: (words, s) =>
@@ -691,20 +704,202 @@ const READER_RUNS = {
 READER_RUNS.gawk = READER_RUNS.awk;
 
 /**
- * Commands that never run their operands: the shell-word fallback skips them (`cp -r source "$DEST"`). The
- * options that do run a program (`tar -I`, `rsync -e`, `scp -S`, `zip -TT`) put them back.
+ * Commands that never run their operands: the shell-word fallback skips them (`cp -r source "$DEST"`). Options
+ * that do run a program (`tar -I`, `rsync -e`, `git rebase -x`) are read by `programStrings`.
  */
 const NEVER_RUNS = new Set(
   "cp mv rm ls mkdir rmdir touch ln chmod chown tar zip unzip rsync scp git gh cat echo printf diff wc file stat du df open code cd pushd".split(
     " ",
   ),
 );
-const RUNS_PROGRAM =
-  /^(?:-I|-F|-e|-S|-TT|--(?:to-command|use-compress-program|checkpoint-action|rsh-command|info-script|new-volume-script|rsh|rsync-path|unzip-command))/;
-/** Package managers run a package script (never a shell word) unless the subcommand runs a binary. */
+/** Package managers: built-in subcommands, and options whose value is the next word. */
 const PACKAGE_MANAGERS = new Set(["pnpm", "npm", "yarn", "bun"]);
+const PACKAGE_BUILTINS = new Set(
+  "install i add remove rm uninstall un run run-script test t build lint verify why list ls outdated update up upgrade publish pack audit info view config store prune rebuild link unlink init".split(
+    " ",
+  ),
+);
+const PACKAGE_VALUE = new Set([
+  "--filter",
+  "-F",
+  "-C",
+  "--dir",
+  "--prefix",
+  "-w",
+  "--workspace",
+  "--cwd",
+]);
+/**
+ * True when a package manager only runs a package script or a built-in: no word is `exec`, `dlx`, `x`,
+ * `create` or a shell, and the first non-option word is a built-in. pnpm and yarn run an unknown first word
+ * like `exec` (`pnpm sh -c …`), so anything else is not exempt.
+ */
+function packageScriptOnly(words) {
+  if (
+    words.some((w) => ["exec", "dlx", "x", "create"].includes(w) || SHELL.test(w.split("/").pop()))
+  )
+    return false;
+  for (let j = 0; j < words.length; j++) {
+    if (words[j] === "--") return false;
+    if (!words[j].startsWith("-")) return PACKAGE_BUILTINS.has(words[j]);
+    if (PACKAGE_VALUE.has(words[j])) j++;
+  }
+  return true;
+}
 /** xargs options whose value is the next word. */
 const XARGS_VALUE = new Set(["-I", "-n", "-L", "-P", "-s", "-d", "-E", "-a", "-l"]);
+/** Words after which the next word is the command run (`pnpm exec "$X"`, `find -exec "$X"`). */
+const RUNS_NEXT = new Set(["exec", "dlx", "x", "-exec", "-execdir", "-ok", "-okdir"]);
+
+/** Options whose value is a command line the program runs, per program (`short` flags may be clustered). */
+const PROGRAM_OPTIONS = {
+  tar: {
+    short: "I",
+    long: [
+      "--use-compress-program",
+      "--to-command",
+      "--rsh-command",
+      "--info-script",
+      "--new-volume-script",
+    ],
+    exec: ["--checkpoint-action"],
+  },
+  rsync: { short: "e", long: ["--rsh", "--rsync-path"] },
+  scp: { short: "S", ssh: true },
+  sftp: { short: "S", ssh: true },
+  ssh: { ssh: true },
+  zip: { long: ["--unzip-command"], tt: true },
+};
+/** ssh options that run a local command (`-o ProxyCommand=…`). */
+const SSH_LOCAL = /^\s*(?:ProxyCommand|LocalCommand|KnownHostsCommand)\s*[= ]\s*(.*)$/is;
+/** The long option `flag` names, allowing GNU unique prefixes (`--to-com` for `--to-command`). */
+const longOption = (flag, list = []) => flag.length > 3 && list.some((l) => l.startsWith(flag));
+
+/** Push every program-running option value in `args` (with its `dyn` flag) through `add`. */
+function optionPrograms(args, dyn, spec, add) {
+  for (let j = 0; j < args.length; j++) {
+    const w = args[j];
+    if (w === "--") break;
+    if (w.startsWith("--")) {
+      const eq = w.indexOf("=");
+      const flag = eq < 0 ? w : w.slice(0, eq);
+      const isLong = longOption(flag, spec.long);
+      if (!isLong && !longOption(flag, spec.exec)) continue;
+      const value = eq < 0 ? (args[j + 1] ?? "") : w.slice(eq + 1);
+      const dynamic = eq < 0 ? dyn[j + 1] : dyn[j];
+      if (eq < 0) j++;
+      if (isLong) add(value, dynamic);
+      else if (value.startsWith("exec=")) add(value.slice(5), dynamic);
+    } else if (spec.tt && w.startsWith("-TT")) {
+      const attached = w.slice(3).replace(/^=/, "");
+      add(attached || (args[++j] ?? ""), attached ? dyn[j] : dyn[j]);
+    } else if (/^-[^-]/.test(w))
+      for (let k = 1; k < w.length; k++) {
+        if (w[k] !== spec.short && !(spec.ssh && w[k] === "o")) continue;
+        const attached = w.slice(k + 1);
+        const value = attached || (args[j + 1] ?? "");
+        const dynamic = attached ? dyn[j] : dyn[j + 1];
+        if (!attached) j++;
+        if (w[k] !== "o") add(value, dynamic);
+        else {
+          const m = SSH_LOCAL.exec(value);
+          if (m) add(m[1], dynamic);
+        }
+        break;
+      }
+  }
+}
+
+/** git global options whose value is the next word. */
+const GIT_VALUE_OPTIONS = new Set([
+  "-C",
+  "-c",
+  "--git-dir",
+  "--work-tree",
+  "--namespace",
+  "--super-prefix",
+]);
+/**
+ * Command lines git runs: `bisect run`, `submodule foreach`, `rebase -x`, `grep -O`, `difftool -x`,
+ * `filter-branch --*-filter` / `--setup`. `mergetool` and `difftool` without `-x` run a configured tool
+ * (unknown).
+ */
+function gitPrograms(args, dyn, add) {
+  let j = 0;
+  while (j < args.length && args[j].startsWith("-")) j += GIT_VALUE_OPTIONS.has(args[j]) ? 2 : 1;
+  const sub = args[j];
+  const rest = args.slice(j + 1);
+  const rdyn = dyn.slice(j + 1);
+  const command = (from) => {
+    while (from < rest.length && rest[from].startsWith("-")) from++;
+    add(rest.slice(from).join(" "), rdyn.slice(from).some(Boolean));
+  };
+  if (sub === "bisect" && rest[0] === "run") command(1);
+  else if (sub === "submodule" && rest.includes("foreach")) command(rest.indexOf("foreach") + 1);
+  else if (sub === "rebase") optionPrograms(rest, rdyn, { short: "x", long: ["--exec"] }, add);
+  else if (sub === "grep")
+    rest.forEach((w, k) => {
+      const m = /^-O(.+)$/s.exec(w) ?? /^--open-files[a-z-]*=(.*)$/s.exec(w);
+      if (m) add(m[1], rdyn[k]);
+    });
+  else if (sub === "difftool") {
+    let found = false;
+    optionPrograms(rest, rdyn, { short: "x", long: ["--extcmd"] }, (v, d) => {
+      found = true;
+      add(v, d);
+    });
+    if (!found) return true;
+  } else if (sub === "mergetool") return true;
+  else if (sub === "filter-branch")
+    optionPrograms(
+      rest,
+      rdyn,
+      {
+        long: [
+          "--env-filter",
+          "--tree-filter",
+          "--index-filter",
+          "--parent-filter",
+          "--msg-filter",
+          "--commit-filter",
+          "--tag-name-filter",
+          "--setup",
+        ],
+      },
+      add,
+    );
+  return false;
+}
+
+/**
+ * Command lines a simple command runs from option values, not words: `env -S '…'` (any position), the
+ * `PROGRAM_OPTIONS` values (`tar -I`, `rsync -e`, `scp -S`, `ssh -o ProxyCommand=`, `zip -TT`) and git's
+ * (`gitPrograms`). `texts` are checked like `sh -c` strings; `unknown` when git runs a configured tool.
+ */
+function programStrings(s) {
+  const texts = [];
+  const add = (text, dynamic) => texts.push({ text, dynamic: Boolean(dynamic) });
+  const env = s.words.findIndex((w) => w.split("/").pop() === "env");
+  if (env >= 0)
+    for (let k = env + 1; k < s.words.length && /^-|^\w+=/.test(s.words[k]); k++) {
+      const w = s.words[k];
+      const short = /^-[a-zA-Z]*S(.*)$/s.exec(w);
+      const eq = w.indexOf("=");
+      const long =
+        w.startsWith("--") && longOption(eq < 0 ? w : w.slice(0, eq), ["--split-string"]);
+      if (!short && !long) continue;
+      const attached = short ? short[1] : eq < 0 ? "" : w.slice(eq + 1);
+      add(attached || (s.words[k + 1] ?? ""), attached ? s.dyn[k] : s.dyn[k + 1]);
+      break;
+    }
+  const { i, name } = nameOf(s);
+  if (i < 0) return { texts, unknown: false };
+  const args = s.words.slice(i + 1);
+  const dyn = s.dyn.slice(i + 1);
+  if (PROGRAM_OPTIONS[name]) optionPrograms(args, dyn, PROGRAM_OPTIONS[name], add);
+  const unknown = name === "git" && gitPrograms(args, dyn, add);
+  return { texts, unknown };
+}
 
 /**
  * Where a simple command runs a shell (`sh`, `csh`, `bash5`, …), `eval`, `source` or `.`: `j` indexes `s.words`.
@@ -723,7 +918,7 @@ function shellAt(s) {
     return READER_RUNS[name]?.([name, ...after, ...s.words.slice(0, i)], s)
       ? { j: s.words.length - 1, name: "sh", reader: true }
       : null;
-  if (NEVER_RUNS.has(name) && !after.some((w) => RUNS_PROGRAM.test(w))) return null;
+  if (NEVER_RUNS.has(name)) return null;
   let from = i + 1;
   if (name === "xargs") {
     while (from < s.words.length && s.words[from].startsWith("-"))
@@ -731,14 +926,14 @@ function shellAt(s) {
     const inner = shellAt({ ...s, words: s.words.slice(from), dyn: s.dyn.slice(from) });
     return inner && { ...inner, j: inner.j + from };
   }
-  if (PACKAGE_MANAGERS.has(name)) {
-    const sub = after.find((w) => !w.startsWith("-"));
-    if (!["exec", "dlx", "x"].includes(sub ?? "")) return null;
-  }
+  if (PACKAGE_MANAGERS.has(name) && packageScriptOnly(after)) return null;
+  // A computed word counts only where the wrapped command goes: the first operand, or after `exec`.
+  const first = s.words.findIndex((w, j) => j >= from && !w.startsWith("-"));
   for (let j = from; j < s.words.length; j++) {
     const b = s.words[j].split("/").pop();
     if (SHELL.test(b) || b === "eval" || b === "source") return { j, name: b };
-    if (s.dyn[j] && /^[$`]/.test(s.words[j])) return { j, name: "$" };
+    const wrapped = j === first || RUNS_NEXT.has(s.words[j - 1]);
+    if (wrapped && s.dyn[j] && /^[$`]/.test(s.words[j])) return { j, name: "$" };
   }
   return null;
 }
@@ -863,6 +1058,10 @@ export function shellInputs(c) {
       const first = body === null ? undefined : simpleCommands(body)[0];
       if (first && readsStdin(first)) take(output(list, k));
     }
+    // Command lines in option values: `tar -I '…'`, `git rebase -x '…'`, `env -S '…'`.
+    const programs = programStrings(s);
+    if (programs.unknown) opaque = true;
+    for (const t of programs.texts) script([resolveWord(t.text, t.dynamic)]);
     // Script strings built at run time.
     if (runner === "eval") script(words.map((w, j) => resolveWord(w, dyn[j])));
     const flag = shell ? commandFlag(words) : -1;

