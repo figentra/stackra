@@ -1,7 +1,14 @@
 ---
 title: "0237 — The API gateway is generated, in four layers, with no gateway service"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0290 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0290](/adr/0290-dev-environment-and-cloudflare-services) (decisions 6 and 11): layer 1
+  also puts Cloudflare Access in front of every non-production host, with GitHub sign-in and
+  per-path bypass for callbacks and webhooks, and in front of the `/platform` area and the internal
+  dashboards in production. Tenant admin stays behind ZITADEL alone.
+</Note>
 
 <Note>
   Amends [0082](/adr/0082-public-ids-and-api-areas) and

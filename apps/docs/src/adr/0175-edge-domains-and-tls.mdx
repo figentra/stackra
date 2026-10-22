@@ -1,7 +1,14 @@
 ---
 title: "0175 — Edge, domains and TLS"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0290 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0290](/adr/0290-dev-environment-and-cloudflare-services): the dev and preview zone is
+  figentra.cloud (DV1), and the tenant fallback origin is under figentra.com (CF6). Decision 3's
+  `npm.` name is replaced: `npm.stackra.figentra.com` is deleted after the npflared migration, and
+  the Keygen name is chosen when the first `@stackra-pro` package ships (CF9).
+</Note>
 
 <Note>
   Supersedes [0063](/adr/0063-cloudflare-hosts-web-surfaces). The tenant domain flow is ADR 0210
