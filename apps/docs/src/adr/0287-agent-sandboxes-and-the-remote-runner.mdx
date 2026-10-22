@@ -1,0 +1,164 @@
+---
+title: "0287 — Agent sandboxes and the remote runner: one system, one image, short-lived credentials"
+description: "Accepted · 2026-10-22"
+---
+
+<Note>
+  Amends [0194](/adr/0194-developer-and-agent-compute): decisions 2 and 5 (the single box and the
+  limit of three worktree agents). Worktrees for agent work move into per-task sandboxes on the box,
+  and the box plan stays. Amends
+  [0174](/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation) decision 1
+  (public repositories publish images to GHCR; private ones stay on ECR). Amends
+  [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) (a Deferred row for a microVM tier
+  for tenant code). Leaves [0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step) and
+  [0267](/adr/0267-infisical-agent-vault-deferred) unchanged.
+</Note>
+
+## Context
+
+Agent work ran on one shared machine, with at most three worktree agents at once ([0194](/adr/0194-developer-and-agent-compute)).
+On 2026-10-22 the agent box queue at Academorix showed what that costs. CI jobs of 64 to 70 minutes held three of four
+boxes, and each box ran one job at a time at low load. A 16 GB box swapped, new spot boxes waited on AMI snapshots, and one
+seed test took 23 minutes. This ADR is about compute for internal development only. "Sandbox" in
+[0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region), [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial) and [0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner)
+means a tenant sandbox, which is data and is out of scope here. Tenant code stays in the pool of [0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step).
+
+## Decision
+
+### Purpose, placement and provider
+
+1. **Use (SB1).** Sandboxes run agent development, tests and workflow test runs, all internal. Tenant code keeps the
+   QuickJS-WASM and Pyodide pool of 0154, unchanged. Its tenant-code item in STA-307 becomes "confirm 0154 holds".
+2. **The package now (SB2, owner's choice).** The SandboxProvider port lives in `@stackra/sandbox`, in the runtime
+   category, now. It has a local Docker driver and an OpenSandbox driver. The alternative weighed was a
+   Figentra-internal script in `tools/scripts` until a product service needed the port. The owner chose the package
+   now, against that alternative. The package does not depend on Vellum, because Vellum records evidence and does not
+   orchestrate ([0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) decision 15).
+3. **Provider order (SB3).** The box with worktrees comes first, as 0194 plans. The spike measures OpenSandbox on the box
+   as the isolation layer, in place of a Linux user per agent. Daytona is the managed fallback at about 30 agents.
+4. **Host (SB4).** Sandboxes share the agent box of STA-236 until more than six are needed at once. Then a second
+   instance is added from the same image.
+5. **Isolation (SB5).** Docker containers run with user namespaces, with no host mounts beyond the task's worktree. Docker
+   is reachable for Testcontainers through a per-sandbox rootless daemon. gVisor and microVMs are not used on day one.
+6. **MicroVMs are deferred (SB6).** A microVM tier waits until untrusted third-party code must run outside 0154's limits,
+   for example marketplace app builds. When it is revived, the first choice is a hosted Firecracker (E2B), which needs no
+   KVM host of ours. This ADR adds the deferred row to [0227](/adr/0227-rejected-and-deferred-technologies-refreshed).
+
+### Lifecycle, limits and network
+
+7. **Limits (SB7).** The default sandbox is 2 vCPU, 8 GB of memory and 40 GB of disk. It stops after 60 idle minutes and
+   lasts at most 8 hours. A box runs at most six sandboxes concurrently. The pnpm store and the image cache are mounted
+   read-only from the host. The sizes match the 2 vCPU and 8 GB agent of 0194 and the memory of an m7i.4xlarge.
+8. **Egress (SB8).** Egress is denied by default, with an allowlist: the npm registry, GitHub, Anthropic and Bedrock,
+   Infisical (EU), Encore, ECR and GHCR, Docker Hub and Linear. Every connection is logged. Web research stays on the
+   coordinator, not in the sandbox.
+
+### Secrets
+
+9. **Infisical everywhere (SB9, owner's choice).** Each sandbox gets a short-lived Infisical machine identity, scoped to
+   its task's path, and runs its commands with `infisical run --`. Values exist only in the process environment: never on
+   disk and never in the model context. The alternative weighed was a GitHub App installation token per task, with no
+   Infisical identity inside a sandbox. The owner chose the Infisical identity. The reason the alternative gave still
+   holds: an agent's shell can read whatever is injected, so the credential must be short-lived and narrow, and it is.
+   Infisical Agent Vault stays Deferred under [0267](/adr/0267-infisical-agent-vault-deferred). It is evaluated in the
+   STA-307 spike, and a new ADR revives it only if it proves out.
+
+### Environment and images
+
+10. **One environment definition (SB10).** `.devcontainer/devcontainer.json` (STA-313) is the single environment source. CI
+    builds one image from it and `mise.toml`. The devcontainer, Codespaces, the box and the sandboxes all use that image.
+    Public repositories publish it to GHCR, and private repositories to ECR, the registry of
+    [0174](/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation). The image is prebuilt in CI and kept
+    warm (lesson 4).
+
+### Access for agents
+
+11. **One implementation, two entry points (SB11, owner's choice).** The sandbox sits behind the runner API of STA-255,
+    which takes a sandbox option. From day one it is also an MCP tool in `@stackra/mcp`, with a usage skill in
+    `@stackra/skills`, installed by `stackra agents setup` for Claude Code and OpenCode. The alternative weighed was the
+    runner flag first and MCP later. The owner chose both at once. The MCP tool wraps the same call, so there is still one
+    implementation. Vellum calls the same API and records the job; it does not orchestrate
+    ([0286](/adr/0286-vellum-as-the-sdlc-spike-bar-approvals-evidence-and-distribution) decision 11).
+
+### One system
+
+12. **The runner and the sandboxes are one system (SB12).** Runner jobs run inside sandboxes on the box or on its
+    autoscaled copies. CI takes the same lock. Open details, item 1, says how that sits with lesson 1.
+
+### Binding lessons from the Academorix box queue
+
+These seven requirements are binding on STA-255, STA-307 and STA-236. They were observed on 2026-10-22.
+
+1. **Separate capacity.** CI runners are pinned to dedicated boxes with a hard cap. Agent sandboxes never compete with CI
+   for the same slots.
+2. **Two job classes.** Heavy jobs (`encore test`, end-to-end tests and the full `verify`) take an exclusive slot on a box.
+   Light jobs (install, lint, typecheck and single test files) run in parallel slots. Slots are sized from measured CPU and
+   memory, not from one lock per box.
+3. **Memory sizing.** No 16 GB boxes for heavy jobs. A box runs one heavy job, on an m7i.4xlarge (64 GB), with light slots
+   beside it, within the sandbox limits of decision 7.
+4. **Warm images.** The sandbox image (decision 10) is prebuilt in CI and kept warm. Scale-out uses a ready image or a warm
+   pool, never a fresh AMI snapshot on the hot path.
+5. **Queue visibility.** The runner exposes the queue length, the wait time and the holder of each slot. An alert fires
+   when a wait exceeds 10 minutes, and the autoscaler adds a box from the warm image.
+6. **Fast tests by design.** Seeds are idempotent, and each test is isolated through fixtures, transactions or Testcontainers
+   snapshots. Long suites are sharded. A single test over 5 minutes fails review.
+7. **Main stays green.** A red main blocks new merges through the merge queue ([0288](/adr/0288-merging-the-queue-fallback-and-the-sta-302-order))
+   and pages the owning agent. Agents do not stack pull requests on a red main.
+
+### Exit criteria, caps and order
+
+13. **The spike bar (SB13).** STA-307 passes only if all of these hold:
+    - a warm sandbox starts in 10 seconds or less;
+    - at least six run concurrently on an m7i.4xlarge;
+    - Testcontainers works;
+    - the egress allowlist is enforced;
+    - only short-lived Infisical credentials are inside, as decision 9 says;
+    - it costs no more than $0.10 per agent-hour above the bare box.
+
+    If it fails, worktrees stay on the box. The bar is fixed before the spike, and the comparison is the box with worktrees
+    ([0194](/adr/0194-developer-and-agent-compute)).
+
+14. **Caps and residency (SB14).** Sandboxes fall under the box's caps of $150 a day and $4,500 a month. Any hosted fallback
+    needs an owner raise. Sandboxes run in eu-central-1, hold no tenant data, and use only synthetic seeds.
+15. **Account (OP3).** The shared tooling AWS account is created now, under AWS Organizations with Identity Center, as
+    [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) says. The box of STA-236 is built there, not in the
+    Academorix account.
+16. **Order (OP4).** STA-236 (the box) comes first, then STA-307 on the box, then STA-298 uses the box for evidence
+    ([0286](/adr/0286-vellum-as-the-sdlc-spike-bar-approvals-evidence-and-distribution) decision 11). The local Docker driver
+    is built first for STA-307. STA-298's steps that need no evidence may start on a laptop meanwhile.
+
+## Consequences
+
+- Agent capacity becomes sandbox capacity. Worktree agents move into sandboxes on the box, and the three-worktree limit of
+  0194 is replaced by the limit of six sandboxes per box, with at most one heavy job at a time.
+- CI needs its own dedicated boxes (lesson 1), which is extra infrastructure beside the agent box.
+- The agent's shell can read its own environment, so the credential is short-lived and narrow. The guard that blocks
+  `infisical run -- env` and `printenv` stays in force.
+- Two new surfaces must be built and kept in step: the `@stackra/sandbox` package and the MCP tool with its skill.
+- The sandbox image becomes a release artefact, built in CI and kept warm.
+
+## Enforcement
+
+planned — the bar of decision 13 is the STA-307 spike's own test; the egress allowlist and the logging of decision 8 need a
+test in `@stackra/sandbox`; the queue metrics and the alert of lesson 5 belong to the runner; the five-minute test limit of
+lesson 6 belongs to review until a test runner check exists; the warm-image build is a CI job.
+
+## Open details
+
+1. **SB12 and lesson 1 read together.** Decision 12 says CI takes the same lock as the runner, and lesson 1 says agent
+   sandboxes never compete with CI for the same slots. This record reads both as one lock implementation with separate
+   slot pools, so CI's dedicated boxes never wait behind agent sandboxes. The owner should confirm this reading.
+2. **The microVM tier and Agent Vault** each need their own ADR before they are used.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0194](/adr/0194-developer-and-agent-compute) (decisions 2 and 5),
+[0174](/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation) (decision 1, public images) and
+[0227](/adr/0227-rejected-and-deferred-technologies-refreshed) (one Deferred row). Related:
+[0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step), [0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra),
+[0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls),
+[0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets),
+[0267](/adr/0267-infisical-agent-vault-deferred), [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc),
+[0286](/adr/0286-vellum-as-the-sdlc-spike-bar-approvals-evidence-and-distribution),
+[0288](/adr/0288-merging-the-queue-fallback-and-the-sta-302-order). Sources: owner decisions of 2026-10-22 (SB1 to SB14, OP3
+and OP4); the seven Academorix box queue lessons of 2026-10-22; Linear STA-236, STA-255, STA-298, STA-307, STA-313 and STA-328.
