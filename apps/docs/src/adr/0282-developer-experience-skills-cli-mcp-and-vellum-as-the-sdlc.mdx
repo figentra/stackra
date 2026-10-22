@@ -1,0 +1,125 @@
+---
+title: "0282 — Developer experience: @stackra/skills, @stackra/cli, @stackra/mcp and Vellum as the SDLC"
+description: "Accepted · 2026-10-22"
+---
+
+<Note>
+  Amends [0016](/adr/0016-agents-source-of-truth) (where the agent source lives),
+  [0127](/adr/0127-package-categories-including-infrastructure) (the developer row) and
+  [0199](/adr/0199-developer-experience-create-stackra-app-upgrades-stackra-dev-and-docs) (how the
+  agent kit installs). Sets the condition under which [0067](/adr/0067-spec-kit-is-the-sdlc) and
+  decision D15 of [0121](/adr/0121-sdlc-tooling-roles-and-linear) are superseded.
+</Note>
+
+## Context
+
+Stackra's agent material (skills, rules, sub-agents, hooks) lives in this repository's `.agents/` and is projected into each assistant's directory by
+`tools/scripts/agents-sync.mjs` ([0016](/adr/0016-agents-source-of-truth)). Operations such as scaffolding, gen and validation live in
+`tools/scripts`. The public template (figentra/stackra-template) cannot copy those scripts without also copying Figentra-internal ones, and
+an agent kit committed into every project drifts and gives away the know-how. [0083](/adr/0083-npm-scopes-and-cli-names) already names
+`@stackra/cli` as the `stackra` binary, [0199](/adr/0199-developer-experience-create-stackra-app-upgrades-stackra-dev-and-docs) installs
+an agent kit through `stackra agents sync`, and [0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits) defines the
+product MCP gateway that exposes tenant actions. The SDLC is spec-kit ([0067](/adr/0067-spec-kit-is-the-sdlc), pinned by D15 of
+[0121](/adr/0121-sdlc-tooling-roles-and-linear)). Vellum (figentra/vellum, `@vellum/*`) is a separate product that already has protocol,
+engine, storage, renderers, method, plugins, CLI and MCP packages with tests. The owner decided the package split, the distribution model
+and the SDLC path in chat on 2026-10-22.
+
+## Decision
+
+### Packages
+
+1. **Three developer packages.** `@stackra/skills`, `@stackra/cli` and `@stackra/mcp` live in this monorepo in the `developer` category,
+   and each publishes to npm independently with changesets ([0177](/adr/0177-package-distribution-npmjs-and-keygen)). The public template
+   consumes them and ships no internal scripts.
+2. **`@stackra/skills` is the agent-neutral source.** Every Stackra skill, rule, sub-agent, command and hook is written once in one neutral
+   format: Markdown with frontmatter, like `@vellum/method`. Renderers write it into each tool's layout: Claude Code (`.claude/`), OpenCode
+   (`.opencode/`), Kiro (`.kiro/`), Cursor (`.cursor/rules`), and `AGENTS.md` for Codex, Gemini and others. The renderer layer is shared with
+   Vellum (`@vellum/renderers`), not duplicated. Projects pin a version through the catalog; updates arrive through changesets and Renovate.
+3. **`@stackra/cli` (`stackra`) runs every operation.** `new` (package, service, app and their kinds), `gen`, `validate`, `verify`, `doctor`,
+   `db diff`, `structure`, `agents setup|sync|check` and `spec` (which wraps Vellum). `agents sync|check` runs the skills renderers, installs
+   the guard hooks and renders `.mcp.json` from `.mcp.yaml`. Root `package.json` scripts call it. The scaffold templates live inside it.
+4. **Figentra-internal operations stay here.** Linear, the bot identities, the merge gate, the secrets inbox, delegation and the spend meter
+   stay in this repository's `tools/scripts` and are not part of the published CLI.
+5. **`@stackra/mcp` shares one core with the CLI and has two modes.** It is distinct from the product MCP gateway of
+   [0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits).
+   - **Local** (stdio, inside a repository): inspect the manifest (actions, events, routes, permissions, settings); create members and
+     kinds; run gen, validate and verify and explain failures; call actions; read traces; query the local database through the local
+     runtime. Writes go through the same commands and gates as the CLI.
+   - **Hosted** (`mcp.stackra.dev`, OAuth): anonymous, read-only search of docs, ADRs, the registry and examples. After sign-in, the user's
+     projects (environments, deploys, logs, manifests), read-only first. Deploy and other writes come later, and only behind explicit
+     approval.
+
+### Distribution and intellectual property
+
+6. **Layer 1, open conventions.** Structure, naming, decorators and boundaries are the public `@stackra/skills`. `stackra agents setup`
+   installs them at the user level (the Claude plugin marketplace, OpenCode and Kiro global config). They are never committed into a
+   repository, and they work offline.
+7. **Layer 2, know-how.** Generators, reviewer checklists, orchestration, the deeper SDLC method and fix playbooks are served at runtime by
+   the hosted MCP as tools and prompts after a licensed sign-in. The local plugin is a thin client, and nothing is written to disk. Layer 2
+   needs an online sign-in.
+8. **Layer 3, deterministic logic.** This is `@stackra/cli`. The basic commands are open; the Pro parts are compiled and licensed through
+   Keygen ([0177](/adr/0177-package-distribution-npmjs-and-keygen)).
+9. **What a project holds.** Projects and the template keep only `AGENTS.md` (project facts), `CLAUDE.md` and `.mcp.yaml`. They hold no
+   `.agents/`, no `.claude/agents`, `.claude/skills`, `.claude/commands` or `.claude/hooks`, and no OpenCode skill folders. The guard hooks
+   install at the user level through the plugin.
+
+### SDLC
+
+10. **Vellum becomes the SDLC if the spike passes.** If the Phase T spike (STA-298) passes, Vellum is Stackra's SDLC: the method, signed
+    approvals, recorded task evidence, a tamper-evident ledger, `vellum verify` in the Quality Gate, and a read-only MCP. A follow-up ADR then
+    supersedes [0067](/adr/0067-spec-kit-is-the-sdlc) and D15 of [0121](/adr/0121-sdlc-tooling-roles-and-linear), the existing specs in
+    `.agents/specs` migrate, and spec-kit (the `specify-cli` pin) is removed.
+11. **The `figentra/sdlc` Claude plugin is retired.** Its method lives in `@vellum/method`. Stackra's additions (the Impact questionnaire,
+    the Linear key, the risk and lane rules) become a Vellum preset.
+12. **Until the spike.** spec-kit stays and [0067](/adr/0067-spec-kit-is-the-sdlc) is unchanged. The spec-kit skills move into
+    `@stackra/skills` and the spec gate into `@stackra/cli` as those packages are built.
+13. **If the spike fails.** spec-kit stays, and Vellum is added only as the approval and evidence layer.
+14. **Where SDLC pieces go.** Method, prompts and templates go to skills. Deterministic checks (the spec gate, lint, evidence, the Linear
+    link) go to the CLI and the Quality Gate. Read-only spec status goes to the MCP. Approvals and the ledger stay in Vellum.
+15. **Vellum is continued, not rewritten.** Gaps such as `vellum sync` and the doctor categories are Vellum issues, filed in figentra/vellum.
+
+## Consequences
+
+- A project carries three small files instead of an agent tree, so an upgrade is a version bump and nothing drifts in the repository.
+- The know-how in layer 2 is not on disk, which protects it, but it is unavailable offline; layer 1 and the open CLI still work offline.
+- The renderer layer has two consumers (Stackra and Vellum), so a change to `@vellum/renderers` must keep both working.
+- `tools/scripts` splits in two: operations that move into `@stackra/cli` and Figentra-internal operations that stay. Each script needs a
+  home before the CLI ships.
+- Three more packages carry release checks, changesets and a version line.
+- Until STA-298 reports, spec-kit and the move of its skills and gate into the new packages run side by side.
+
+## Enforcement
+
+planned — each of the following, none of which exists yet:
+
+- The three packages pass the release checks of [0177](/adr/0177-package-distribution-npmjs-and-keygen) (`publint`, `attw`, the
+  packed-tarball smoke test) and carry changesets.
+- A packed-tarball test of `@stackra/cli` fails if a Figentra-internal command (Linear, bot identity, merge, secrets inbox, delegation,
+  spend) is present.
+- A packed-tarball test of `@stackra/skills` fails if layer-2 content (generators, reviewer checklists, orchestration, fix playbooks) is
+  present.
+- A template check in figentra/stackra-template fails on `.agents/`, `.claude/agents`, `.claude/skills`, `.claude/commands`,
+  `.claude/hooks` or an OpenCode skill folder.
+- `stackra agents check` fails on drift between `.mcp.yaml` and `.mcp.json`, as `pnpm agents:check` does in this repository today.
+- Tests of `@stackra/mcp` assert that local writes go through the CLI command core and that hosted writes refuse without approval.
+- If STA-298 passes, `vellum verify` runs in the Quality Gate.
+
+## Open details
+
+The owner did not give these; the conservative default below applies until an ADR changes it.
+
+1. **Where renderers write.** Decision 3 and decisions 6 and 9 meet here. `agents setup` writes the layer-1 files to each tool's user-level
+   location. `agents sync|check` writes only the project files of decision 9 and `.mcp.json`.
+2. **This repository's `.agents/`.** It stays the working source until `@stackra/skills` exists. Stackra content then moves into
+   `packages/developer/skills`, and Figentra-internal agents and rules stay in `.agents/`.
+3. **Offline layer 2.** A signed-out or offline session gets layer 1 only. Nothing from layer 2 is cached on disk.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0016](/adr/0016-agents-source-of-truth),
+[0127](/adr/0127-package-categories-including-infrastructure),
+[0199](/adr/0199-developer-experience-create-stackra-app-upgrades-stackra-dev-and-docs). Conditionally supersedes, through a follow-up
+ADR if STA-298 passes: [0067](/adr/0067-spec-kit-is-the-sdlc) and D15 of [0121](/adr/0121-sdlc-tooling-roles-and-linear). Related:
+[0083](/adr/0083-npm-scopes-and-cli-names), [0177](/adr/0177-package-distribution-npmjs-and-keygen),
+[0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits). Sources: owner decisions in chat, 2026-10-22 (packages, MCP
+modes and SDLC; then the three distribution layers).
