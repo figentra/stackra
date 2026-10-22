@@ -169,6 +169,29 @@ test("STA-302: a comment is not re-sent when the read fails for any reason but n
   assert.equal(sent.length, 1);
 });
 
+test("STA-302: only a missing comment re-sends; a document with a leading comment is still a write", async () => {
+  const seen = [];
+  const fetch = async (_url, init, options) => {
+    const { query } = JSON.parse(init.body);
+    seen.push([query.split("{")[0], options.idempotent]);
+    if (query.includes("commentCreate")) throw new TypeError("fetch failed");
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ errors: [{ message: "Entity not found: Issue" }] }),
+    };
+  };
+  const c = client({ env: { LINEAR_API_KEY: "k" }, fetch });
+  await assert.rejects(linear(c, { log: () => {} }).comment(ISSUE, "hi"), /outcome unknown.*Issue/);
+  assert.equal(seen.filter(([q]) => q.includes("CommentCreateInput")).length, 1);
+  await c.gql("# note\nmutation{issueCreate}").catch(() => {});
+  await c.gql("# note\nquery{viewer}").catch(() => {});
+  assert.deepEqual(seen.slice(-2), [
+    ["# note\nmutation", false],
+    ["# note\nquery", true],
+  ]);
+});
+
 test("create adds the agent label when an agent runs it; dry-run writes nothing", async () => {
   const { fetch, calls } = stub({
     teams: { data: { teams: { nodes: [{ id: "team" }] } } },

@@ -34,24 +34,40 @@ export const gitBotArgs = () => [
   "url.https://github.com/.insteadOf=ssh://git@github.com/",
 ];
 
+const CAPTURE_MIB = 256; // as pr-merge: a lockfile diff passes 1 MiB
+
 /**
- * Run gh/git as the bot; resolves to the exit status. A gh read is retried on a transient network error (STA-302):
- * its output is captured, and only the last attempt's is shown, so a cut-off attempt never prints twice.
+ * Run gh/git as the bot; resolves to the exit status. A gh read whose output goes to a pipe or file is retried on a
+ * transient network error (STA-302): its output is captured and only the last attempt's is shown, so a cut-off
+ * attempt never prints twice. At a terminal or with `--watch`, gh writes straight through (colour, table, pager, live
+ * progress) and runs once; a person re-runs it.
  */
 export async function runAsBot(tool, args, token) {
   const argv = tool === "git" ? [...gitBotArgs(), ...args] : args;
   const env = { ...process.env, GH_TOKEN: token, GH_PROMPT_DISABLED: "1" };
-  if (tool === "git" || !ghIdempotent(args))
+  const live = process.stdout.isTTY || args.some((a) => /^--watch(=|$)/.test(a));
+  if (tool === "git" || live || !ghIdempotent(args))
     return spawnSync(tool, argv, { stdio: "inherit", env }).status ?? 1;
   const r = spawnRetrying(tool, argv, {
     stdio: ["inherit", "pipe", "pipe"],
     env,
     encoding: "utf8",
-    maxBuffer: 256 * 1024 * 1024, // as pr-merge: a lockfile diff passes 1 MiB
+    maxBuffer: CAPTURE_MIB * 1024 * 1024,
   });
-  process.stderr.write(r.stderr ?? "");
-  // Wait for the flush: the caller exits right after, which would cut a large diff written to a pipe.
-  await new Promise((resolve) => process.stdout.write(r.stdout ?? "", resolve));
+  // A reader that stops early (`| head`) ends the command quietly, as gh does on SIGPIPE.
+  process.stdout.on("error", (error) => {
+    if (error.code !== "EPIPE") throw error;
+    process.exit(141);
+  });
+  // Wait for each flush: the caller exits right after, which would cut a large diff written to a pipe.
+  const write = (stream, text) => new Promise((resolve) => stream.write(text ?? "", resolve));
+  await write(process.stderr, r.stderr);
+  // spawnSync kills gh past maxBuffer (ENOBUFS); its cut-off output is not printed.
+  if (r.error) {
+    const why =
+      r.error.code === "ENOBUFS" ? `gh printed more than ${CAPTURE_MIB} MiB` : r.error.message;
+    await write(process.stderr, `bot-gh: ${why}\n`);
+  } else await write(process.stdout, r.stdout);
   return r.status ?? 1;
 }
 

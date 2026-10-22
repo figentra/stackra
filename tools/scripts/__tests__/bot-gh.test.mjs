@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { BOT_EMAIL, gitBotArgs, leaksToken, mergesPr, reviewerAllows } from "../bot-gh.mjs";
 import { fakeGh } from "./__fixtures__/fake-gh.mjs";
 
@@ -179,17 +179,17 @@ test("STA-216: the -c allow-list is exact keys", async () => {
 });
 
 /** `runAsBot("gh", args)` in a child whose PATH finds the fake gh first; its output and exit status. */
-const runAsBotWith = (gh, args) =>
-  spawnSync(
-    process.execPath,
-    [
-      "--input-type=module",
-      "-e",
-      `import { runAsBot } from ${JSON.stringify(new URL("../bot-gh.mjs", import.meta.url).href)};` +
-        `process.exitCode = await runAsBot("gh", ${JSON.stringify(args)}, "token");`,
-    ],
-    { encoding: "utf8", env: { ...process.env, PATH: gh.path } },
-  );
+const runAsBotArgv = (args, prelude = "") => [
+  "--input-type=module",
+  "-e",
+  `import { runAsBot } from ${JSON.stringify(new URL("../bot-gh.mjs", import.meta.url).href)};` +
+    `${prelude}process.exitCode = await runAsBot("gh", ${JSON.stringify(args)}, "token");`,
+];
+const runAsBotWith = (gh, args, prelude) =>
+  spawnSync(process.execPath, runAsBotArgv(args, prelude), {
+    encoding: "utf8",
+    env: { ...process.env, PATH: gh.path },
+  });
 
 test("STA-302: a retried gh read prints only the last attempt's output", () => {
   const cut = { out: '[{"page":1}]', err: "net/http: TLS handshake timeout\n", code: 1 };
@@ -211,4 +211,29 @@ test("STA-302: a retried gh read prints only the last attempt's output", () => {
   r = runAsBotWith(gh, ["pr", "comment", "7", "--body", "x"]);
   assert.equal(r.status, 1);
   assert.equal(gh.runs(), 1);
+});
+
+test("STA-302: at a terminal or with --watch, a gh read writes straight through and runs once", () => {
+  const blip = { out: "live\n", err: "HTTP 502: Bad Gateway\n", code: 1 };
+  let gh = fakeGh([blip, { out: "second\n" }]);
+  // A TTY is faked: the child's real stdout is a pipe, so only the path taken is observable.
+  let r = runAsBotWith(gh, ["pr", "view", "7"], "process.stdout.isTTY = true;");
+  assert.deepEqual([r.stdout, r.status, gh.runs()], ["live\n", 1, 1]);
+
+  gh = fakeGh([blip, { out: "second\n" }]);
+  r = runAsBotWith(gh, ["pr", "checks", "7", "--watch"]);
+  assert.deepEqual([r.stdout, r.status, gh.runs()], ["live\n", 1, 1]);
+});
+
+test("STA-302: a reader that stops early (`| head`) ends a captured read quietly with 141", async () => {
+  const gh = fakeGh([{ out: "x".repeat(8 * 1024 * 1024) }]);
+  const child = spawn(process.execPath, runAsBotArgv(["pr", "diff", "7"]), {
+    env: { ...process.env, PATH: gh.path },
+  });
+  let stderr = "";
+  child.stderr.on("data", (d) => (stderr += d));
+  child.stdout.once("data", () => child.stdout.destroy());
+  const code = await new Promise((resolve) => child.on("close", resolve));
+  assert.equal(code, 141);
+  assert.doesNotMatch(stderr, /EPIPE|Unhandled/);
 });

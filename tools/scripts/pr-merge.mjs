@@ -223,7 +223,11 @@ export function gh(args, token, idempotent = false) {
 /** A GraphQL call's data. A query is retried on a transient error, a mutation never: the document says which. */
 export const graphql = (query, fields, token) =>
   JSON.parse(
-    gh(["api", "graphql", "-f", `query=${query}`, ...fields], token, !/^\s*mutation\b/.test(query)),
+    gh(
+      ["api", "graphql", "-f", `query=${query}`, ...fields],
+      token,
+      botNetwork.isGraphqlRead(query),
+    ),
   ).data;
 
 /** Every page of a REST list endpoint, as one array. */
@@ -300,7 +304,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     if (repository.mergeQueue && !enqueueReady(botNetwork)) {
       throw new Error(
         `${pr.baseRefName} has a merge queue, but enqueueing needs CONNECT_TIMEOUT_MS >= 30000 and ` +
-          "RETRY_ATTEMPTS >= 2 in bot-token.mjs (owner order OP7, STA-302)",
+          "RETRY_ATTEMPTS >= 2 in bot-token.mjs (owner order OP7, STA-302); without undici the timeout is " +
+          "10 s: run `pnpm install`",
       );
     }
     if (repository.mergeQueue) {
