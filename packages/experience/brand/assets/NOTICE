@@ -7,3 +7,5 @@ public/favicon/, public/splash/, public/icons/, public/patterns/, public/illustr
 Exceptions:
 - public/fonts/ keeps its own licence: the SIL Open Font License texts beside the files (OFL-*.txt).
 - heroui/, tokens/ and public/fonts/fonts.css are design tokens and stylesheets, MIT like the rest of the package code.
+
+The Stackra and Figentra names and logos are trademarks; see TRADEMARKS.md at the repository root.
