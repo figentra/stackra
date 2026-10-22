@@ -1,6 +1,5 @@
-// Debug configurations. Dev servers start with `pnpm dev <member>` (stackra dev), which opens the
-// inspector ports below; these configurations attach to them, so nothing here hard-codes a port
-// that runway.yaml owns except the debugger ports.
+// Debug configurations. Start a member with its inspector on (for example node --inspect, or Electron
+// with --inspect=9230 --remote-debugging-port=9222), then attach with the matching configuration.
 {
   "version": "0.2.0",
   "configurations": [
@@ -26,7 +25,7 @@
       "skipFiles": ["<node_internals>/**"]
     },
     {
-      "name": "Attach: service (stackra dev --inspect)",
+      "name": "Attach: Node process (--inspect, port 9229)",
       "type": "node",
       "request": "attach",
       "port": 9229,

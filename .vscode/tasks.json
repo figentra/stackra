@@ -11,13 +11,6 @@
       "problemMatcher": ["$tsc"]
     },
     {
-      "label": "gen",
-      "detail": "stackra gen: regenerate .stackra/ for every member",
-      "type": "shell",
-      "command": "pnpm gen",
-      "problemMatcher": []
-    },
-    {
       "label": "test",
       "detail": "Every member's vitest suite",
       "type": "shell",
@@ -27,7 +20,7 @@
     },
     {
       "label": "dev",
-      "detail": "stackra dev: dev servers for the chosen members",
+      "detail": "turbo run dev: dev servers for every member that has one",
       "type": "shell",
       "command": "pnpm dev",
       "isBackground": true,
