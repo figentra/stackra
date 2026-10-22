@@ -6,8 +6,9 @@ description: "Accepted · 2026-10-22"
 <Note>
   Builds the merge queue that
   [0166](/adr/0166-ci-policy-runners-budgets-concurrency-and-check-matrix) decision 3 already
-  requires. The queue mechanics and the patch-id review binding are set by ADR 0285 (STA-233). This
-  ADR records only the fallback and the order of work.
+  requires. The queue mechanics and the patch-id review binding are set by [ADR
+  0285](/adr/0285-review-verdict-binds-to-the-patch-id) (STA-233). This ADR records only the
+  fallback and the order of work.
 </Note>
 
 ## Context
@@ -21,12 +22,12 @@ make the connection fix STA-302 a prerequisite of the enqueue path.
 ## Decision
 
 1. **Build the merge queue now (RW1).** The queue needs a `merge_group` trigger, a `merge_queue` rule in the `main` ruleset,
-   and `pr:merge` enqueuing a pull request instead of merging it. Its mechanics and the review binding are set by ADR 0285 (STA-233), which this ADR does not repeat.
+   and `pr:merge` enqueuing a pull request instead of merging it. Its mechanics and the review binding are set by [ADR 0285](/adr/0285-review-verdict-binds-to-the-patch-id) (STA-233), which this ADR does not repeat.
 2. **Fallback after one week (RW1).** If the queue is not live by 2026-10-29, one week after this decision, strict
    up-to-date checks are turned off on `main`. Until the queue lands, a full verify runs on every push to `main`. Automatic revert of a red run is part of the fallback. It is planned, not built, and tracked in STA-332.
 3. **Review binding (RW2).** An AI review verdict binds to the pull request's patch id, not its head commit. A clean rebase
    with an unchanged diff keeps the review, and any change to the diff voids it. The queue's merge-group run still tests the
-   commit that would land. ADR 0285 implements this.
+   commit that would land. [ADR 0285](/adr/0285-review-verdict-binds-to-the-patch-id) implements this.
 4. **STA-302 comes first (OP7).** STA-302, which makes `bot:gh` and `pr:merge` fail on slow GitHub connections, lands before
    the enqueue path is relied on. A flaky connection at enqueue would strand pull requests, and one failing call in five
    would turn every merge into a manual retry.
@@ -42,13 +43,13 @@ make the connection fix STA-302 a prerequisite of the enqueue path.
 
 ## Enforcement
 
-planned — the `merge_group` run in `.github/workflows/ci.yml` and the `merge_queue` rule, both set by ADR 0285. The STA-302
+In the repository: the `merge_group` run in `.github/workflows/ci.yml` and the `merge_queue` rule in `.github/rulesets/main.json`, both set by [ADR 0285](/adr/0285-review-verdict-binds-to-the-patch-id). The owner applies the ruleset on GitHub. The STA-302
 order is a Linear dependency of STA-234, not a repository check. The one-week fallback is a dated decision that the owner
 checks on 2026-10-29; nothing automates it. The automatic revert is planned under STA-332, so nothing reverts a red `main` yet.
 
 ## Supersedes and sources
 
 Supersedes: none. Implements decision 3 of [0166](/adr/0166-ci-policy-runners-budgets-concurrency-and-check-matrix).
-Related: [0119](/adr/0119-merge-policy-and-release-authority), [0230](/adr/0230-reviewer-identity-separate-from-builder),
+Related: [0119](/adr/0119-merge-policy-and-release-authority), [0230](/adr/0230-reviewer-identity-separate-from-builder), [0285](/adr/0285-review-verdict-binds-to-the-patch-id),
 [0287](/adr/0287-agent-sandboxes-and-the-remote-runner). Sources: owner decisions of 2026-10-22 (RW1, RW2 and OP7); Linear
 STA-233, STA-234, STA-302 and STA-328.
