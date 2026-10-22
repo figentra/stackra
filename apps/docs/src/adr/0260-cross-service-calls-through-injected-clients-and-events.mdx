@@ -9,7 +9,8 @@ description: "Accepted, amended by 0294 · 2026-10-21"
   member root, with `openapi.json` beside it (rule R10). The mode named "command" in decision 4 is a
   queued call, and the client's `.queue(input)` form is unchanged. Gen writes the manifest from the
   member's kind declarations, so `./contracts` is no longer the source the manifest is written from;
-  `src/contracts/` holds only ports, enums and types.
+  `src/contracts/` holds only ports, enums and types. The read model of decision 7 is the `Projection`
+  kind, a class that extends `Projection(Source, { ... })`, not a `@Projection` decorator.
 </Note>
 
 <Note>

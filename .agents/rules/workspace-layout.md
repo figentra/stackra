@@ -72,6 +72,9 @@ v3 shape where the member already allows it.
   `src/**` and `assets/**`
 - One root module, `src/<key>.module.ts` (`src/node/<key>.module.ts` in a package); the key is derived from the package
   name
+- Exempt from `stackra.config.ts` and the root module: the docs app (`apps/docs`, Mintlify, no TypeScript runtime) and
+  the `tier:config` presets in `packages/tooling/` (tool configuration, no module); the planned `member-root` check
+  (STA-339) skips them
 - Nobody writes `main.ts`, an entry barrel or a tool config: gen writes the runtime entries to `.stackra/entry/<target>.ts`
   and every tool config into `.stackra/` (ADR 0295)
 - Committed generated contracts at the member root: `stackra.manifest.json` and `openapi.json`

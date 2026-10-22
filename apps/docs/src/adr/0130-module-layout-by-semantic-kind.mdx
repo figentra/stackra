@@ -10,8 +10,9 @@ description: "Accepted, amended by 0259, 0264, 0294 · 2026-10-20"
   names: `links/`, `permissions/`, `policies/`, `settings/`, `states/`, `search/`, `seeds/`, `factories/`, `migrations/`,
   `mails/`, `widgets/`, `pages/`, `override-points/`, `versions/`, `guards/`, `tokens/`, `interfaces/`, `decorators/`,
   `contracts/` (in a module; a package keeps `src/contracts/`) and, in a module, `hooks/`. They join the banned list.
-  `resources/` holds only `resources/<model>/`. Decision 3 (`raw/`) and the `internal/` folder of the amendment of
-  2026-10-21 are not changed by 0294.
+  `resources/` holds only `resources/<model>/`. Decision 3 (`raw/`) stands, and the module table of 0294 lists it:
+  `raw/` holds `.controller.ts` files, each a class that extends `Controller({ path })` in place of `@Controller`. The
+  `internal/` folder of the amendment of 2026-10-21 is not changed by 0294.
 </Note>
 
 <Note>

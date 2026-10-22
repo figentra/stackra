@@ -28,7 +28,8 @@ misspelling in a pull request passes the gate.
    are exact ([0001](/adr/0001-monorepo-layout)).
 5. **Spell checking is enforced.** cspell checks the staged `md`, `mdx`, `ts`, `tsx`, `css` and `yaml` files in lefthook, and the
    Quality Gate checks them in CI. It is a catalog devDependency. Its dictionary is British English with `en` as the fallback,
-   because the repository's prose is British. Its word list stays in `cspell.config.yaml`. The Quality Gate is the gate; the
+   because the repository's prose is British. `cspell.config.yaml` sets `language: en` today; this decision moves it to
+   `en-GB` with the `en` fallback (`language: en-GB,en`). Its word list stays in `cspell.config.yaml`. The Quality Gate is the gate; the
    lefthook job gives early warning, as the lefthook configuration already states for its other jobs.
 6. **Class semantics in the TypeScript presets.** The presets set `useDefineForClassFields: true` explicitly, so class
    fields behave the same in tsc, tsgo, oxc and esbuild and no longer depend on `target`. `noImplicitOverride` and
@@ -51,7 +52,8 @@ Today `base.json` sets `noImplicitOverride` and `exactOptionalPropertyTypes`, an
 `useDefineForClassFields` is true only because the target is ES2022. The `encore.json` preset, for the Encore
 application, turns `noImplicitOverride` and `exactOptionalPropertyTypes` off because generated Encore code trips them.
 
-planned — `useDefineForClassFields: true` written in `base.json`; a validator check that the workspace has exactly these
+planned — `useDefineForClassFields: true` written in `base.json`; `language: en-GB,en` in `cspell.config.yaml`, which
+sets `language: en` today; a validator check that the workspace has exactly these
 five presets, and that each JavaScript preset exports its `<role>Preset` names;
 the release workflow publishes the five with provenance; a cspell job in `lefthook.yml` and a cspell step in the Quality Gate
 (`.github/workflows/ci.yml`) on the file types above. Nothing of this is in place yet: today the presets are private and cspell

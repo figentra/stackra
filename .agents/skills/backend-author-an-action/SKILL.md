@@ -136,8 +136,8 @@ six months (ADR 0131, 0136). Never change the shape of a published version.
 - `@Action`, `@Query`, `@AsEndpoint`, `@AsTool`, `@AsJob` or any other kind decorator: the base class is the kind.
 - A hand-written `key` prefix, permission string, risk level or route that gen derives.
 - `api()`, `encore.service.ts`, `APIError`, or any Encore import in a member (ADR 0124).
-- A controller for business behaviour; `@Controller` is only for raw endpoints (`/api/auth/*`, streaming). An inbound
-  webhook is a `WebhookEvent` class.
+- A controller for business behaviour, or the retired `@Controller` decorator. A raw endpoint (`/api/auth/*`,
+  streaming) is a class that extends `Controller({ path })` in `raw/`. An inbound webhook is a `WebhookEvent` class.
 - Reading tenant, actor or user id from the body, query or a client header.
 - Zod in a member, except the `@Field(zod)` escape hatch with a `// reason:` comment.
 

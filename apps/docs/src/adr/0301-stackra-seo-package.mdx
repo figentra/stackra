@@ -3,6 +3,13 @@ title: "0301 — @stackra/seo: sitemaps, robots rules, structured data, canonica
 description: "Accepted · 2026-10-22"
 ---
 
+<Note>
+  Amends [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs) with decisions 6
+  and 7: code that client route code calls, such as `alternates` and `localePath`, stays out of
+  `.server` modules, and a route's metadata follows the SEO chain of decision 7. The note on 0165
+  records the change.
+</Note>
+
 ## Context
 
 Public pages need the metadata that search engines and crawlers read: sitemaps, robots rules, structured data, canonical URLs,
@@ -48,8 +55,9 @@ Linear: STA-340 ([0294](/adr/0294-programming-model-v3-grammar-folders-identitie
 
 ## Supersedes and sources
 
-Supersedes: none. Related: [0116](/adr/0116-content-types-and-custom-fields) (the SEO fields of a content type),
+Supersedes: none. Amends: [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs)
+(decisions 6 and 7). Related: [0116](/adr/0116-content-types-and-custom-fields) (the SEO fields of a content type),
 [0127](/adr/0127-package-categories-including-infrastructure) (the cross-cutting category),
-[0129](/adr/0129-house-lint-plugin-and-coding-standard), [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs),
+[0129](/adr/0129-house-lint-plugin-and-coding-standard),
 [0232](/adr/0232-stackra-errors-package), [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)
 and [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding). Sources: the programming-model v3 wave of 2026-10-22, Linear STA-334.

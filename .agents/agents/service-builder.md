@@ -28,7 +28,7 @@ it until STA-344 converts them.
    the permission, and `actors` (ADR 0098, 0099, 0294); one transaction, events through the outbox, external calls
    after commit, idempotency for client writes (0136); declared options and refusal codes (0137). MCP with
    `tool: true`, a job with `job:`; a reaction is a `Listener` in `listeners/` typed by its event parameter (0264);
-   `@Controller` only for raw endpoints (0098). No kind decorators.
+   a `Controller` (`extends Controller({ path })` in `raw/`) only for raw endpoints (0098, 0294). No kind decorators.
 2. Queries at L0–L1 become MCP tools automatically; writes opt in with `tool: true`; L3+ needs a named human (0155).
 3. Modules at `src/modules/<key>/` in the group folders of ADR 0294; no `controllers/`, `dtos/`, `repositories/`,
    `guards/`, `links/` (0130 as amended); keys are derived from folder and package names and locked in
