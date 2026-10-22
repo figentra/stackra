@@ -1,0 +1,93 @@
+---
+title: "0291 — Porting and provenance: one assignment, one legal name, one vocabulary and fresh writing"
+description: "Accepted · 2026-10-22"
+---
+
+<Note>
+  Amends [0024](/adr/0024-mit-license-with-exclusions) (the copyright holder on the licence),
+  [0084](/adr/0084-figentra-os-package-port-plan) (decision 2: the port-action vocabulary),
+  [0102](/adr/0102-workflow-engine-in-process-journal) (the workflow core is written fresh, with
+  Medusa as reference only) and [0195](/adr/0195-organisation-legal-and-release-communication)
+  (decision 4: the notices for ported code). The reading rule is
+  `.agents/rules/third-party-sources.md`.
+</Note>
+
+## Context
+
+Porting code from earlier repositories, and relicensing it, needs one legal basis. The Figentra OS packages on main say "All
+rights reserved" under one entity name, while most of their commits are by another company. The MIT relicense covers three
+packages, on a branch that is not merged. The copyright holder appears under three different names across the notices, the
+public licence and the registry. The port planning uses four codes, while 0084 and the Linear titles say "port as-is", and the
+review found that `forRoot` and `#private` appear in 33 and 27 of 57 packages, so nothing ports unchanged. Two sources also
+carry traps: OSL-licensed code, and repositories with no licence at all. On 2026-10-22 the owner settled the legal basis, the
+name, the vocabulary, the notices, the fresh writes and the brand repository, as below.
+
+## Decision
+
+1. **One written rights assignment before any port (PT1, owner-only).** One written IP assignment, from Pixility, Inc.,
+   Stackra L.L.C and every Figentra entity, to the licensing entity of decision 2, covers Figentra OS, basalt, the
+   monorepo-main, the Academorix package `packages/figentra` and Vellum. No port merges before the assignment is signed.
+   The alternatives were a confirmation for each port, and writing everything fresh. Fresh writing would discard an estimated
+   130 to 190 builder-days of tested code, and one signature unblocks every port and the MIT relicense.
+2. **One legal name (PT2, owner-only, amends 0024).** The licensing entity is Figentra Technologies L.L.C. Its name appears on
+   every `LICENSE`, `NOTICE` and ported header, and it replaces "Figentra Technologies FZ-LLC", "Figentra" alone and the other
+   mixes. Follow-up changes: replace FZ-LLC in Stackra's `LICENSE`, `NOTICE` and `TRADEMARKS`, in the brand `NOTICE` and in the
+   template repository, and make Vellum's `LICENSE` match. Three names cannot all hold the copyright, so one name is used.
+3. **One port vocabulary (PT3, amends 0084).** The port actions are P, R, G and M, as the port planning defines them. P ports the
+   internals and rebuilds the shell. R rewrites, with the old code as reference and fixtures. G is greenfield. M merges into an
+   existing package. "Port as-is" is retired, because the bans leave nothing portable unchanged. The Linear
+   titles of the port issues are renamed to match. The action column of 0084's table is read with these codes. "Skip" and
+   "Pro" are not port actions and keep their meaning.
+4. **Provenance for ported code (PT4, amends 0195 decision 4).** First-party code, meaning our own earlier repositories, gets no
+   per-file header. Each package gets one `ORIGIN.md` line that names the source repository and commit. Third-party MIT,
+   Apache-2.0 and BSD code keeps its headers, and is listed in `THIRD_PARTY_NOTICES.md`. The validator checks that every
+   source repository named in `ORIGIN.md` appears in the assignment of decision 1. Headers on our own code carry no legal
+   weight once the assignment is signed, while notices on third-party code are a licence duty.
+5. **The workflow core is written fresh (PT5, amends 0102).** `@stackra/workflow` is written fresh, against
+   [0151](/adr/0151-workflow-engine-is-a-port-with-native-and-temporal-drivers) and [0152](/adr/0152-workflow-semantics-timeouts-waits-pinned-versions-and-one-graph-format)
+   and the durable-journal decision. Medusa is a reference only, so 0102's port of Medusa's MIT code is withdrawn. The Enterprise
+   paths stay excluded. The reason is that the v2 engine differs in shape, and reference-only keeps the licence surface at zero.
+   The driver port is recorded in [0292](/adr/0292-workflow-engine-drivers-a-postgres-journal-default-temporal-and-trigger-dev-to-evaluate).
+6. **Forms are written fresh (PT6).** The Academorix forms code is not lifted into `@stackra/ui/form`. The forms package was
+   retired on 2026-10-21. Form building is a document kind in `@stackra/builder` ([0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)),
+   and form rendering and validation are the `@stackra/ui/form` adapters ([0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs)).
+   The form adapters use open HeroUI components only, because HeroUI Pro is used only in our own apps ([0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps)).
+7. **Third-party sources follow one reading rule (PT7).** The rule is `.agents/rules/third-party-sources.md`. Copyleft code (OSL,
+   GPL, AGPL, LGPL) is read for behaviour only and never copied. Unlicensed repositories are never opened. MIT, Apache-2.0 and BSD
+   code may be ported with its notices. The licence allow-list of [0174](/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation)
+   applies to ported code, as it does to dependencies.
+8. **Brand kits in a private repository (PT8).** The brand kits of the other products move into a private `figentra/brand`
+   repository, with their sources and build script. Each product repository vendors its own kit in its brand package, under an
+   all-rights-reserved `NOTICE`, as [0024](/adr/0024-mit-license-with-exclusions) decision 2 already requires for brand marks.
+   The local copies are emptied only after their pushes are verified. The Stackra kit is already adopted (STA-173).
+9. **The basalt token engine is archived, then ported (PT9).** The `basalt-brand` branch is pushed to a private archive first, so
+   it is not lost. Its token engine is then ported (P) into `@stackra/brand` as its token build. The engine validates WCAG contrast.
+
+## Consequences
+
+- No port merges until the assignment is signed, so the first merged port comes later than the port plan assumed.
+- Workflow and forms are written fresh, which costs builder time. Earlier code is kept for behaviour only.
+- Each ported package carries an `ORIGIN.md` line, and the validator gains a coverage check.
+- The LICENSE, NOTICE and TRADEMARKS files change after the signature, and the port issues in Linear are renamed.
+
+## Enforcement
+
+planned — `tools/scripts/validate-repository.mjs` checks `ORIGIN.md` and `THIRD_PARTY_NOTICES.md` coverage (decision 4). The
+signature gate of decision 1 is an owner check before the first port merge. The legal-name follow-up of decision 2 is a
+planned check of the copyright line. The reading rule of decision 7 is read by agents and is not yet checked by a tool.
+
+## Open details
+
+1. **The per-row codes of 0084's table** are set on each port issue as it is picked up. This record does not re-code the table.
+2. **The signature itself** is not recorded here. The owner signs the assignment, and the ADR cites it only by decision.
+3. **Academorix's forms code** stays a reference only, and no fixture of it is copied without a rewrite.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0024](/adr/0024-mit-license-with-exclusions) (copyright holder),
+[0084](/adr/0084-figentra-os-package-port-plan) (decision 2 vocabulary), [0102](/adr/0102-workflow-engine-in-process-journal)
+(workflow core) and [0195](/adr/0195-organisation-legal-and-release-communication) (decision 4). Related:
+[0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs), [0174](/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation),
+[0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps), [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels),
+[0286](/adr/0286-vellum-as-the-sdlc-spike-bar-approvals-evidence-and-distribution), [0292](/adr/0292-workflow-engine-drivers-a-postgres-journal-default-temporal-and-trigger-dev-to-evaluate).
+Sources: owner decisions of 2026-10-22 (PT1 to PT9); Linear STA-173, STA-328 and the port issues that carry the P, R, G and M codes.

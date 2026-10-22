@@ -1,7 +1,13 @@
 ---
 title: "0102 — The workflow engine: in-process steps with a Postgres journal, outbox staging and hooks, ported from Medusa's MIT code"
-description: "Accepted, amended by 0151, 0152 · 2026-10-19"
+description: "Accepted, amended by 0151, 0152, 0291 · 2026-10-19"
 ---
+
+<Note>
+  Amended by [0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule) (decision 5):
+  `@stackra/workflow` is written fresh, with Medusa as reference only. Decision 6 below, which ports
+  Medusa's core, is withdrawn. The Enterprise exclusion stands.
+</Note>
 
 <Note>
   Amended by [0151](/adr/0151-workflow-engine-is-a-port-with-native-and-temporal-drivers) (a
