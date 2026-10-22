@@ -450,7 +450,7 @@ test("a route that sends an agent to OpenCode when the agent is not projected th
     withModels(root, partial);
     writeFileSync(
       join(root, ".agents/routing.yaml"),
-      "tasks:\n  review: { executor: opencode, model: p/x, agent: reviewer }\n  other: { executor: claude, model: opus, agent: reviewer }\n",
+      "tasks:\n  review:\n    executor: opencode\n    model: p/x\n    agent: reviewer\n  other:\n    executor: claude\n    model: opus\n    agent: reviewer\n",
     );
     const r = run(root, "--lint");
     assert.equal(r.code, 1);
@@ -738,6 +738,25 @@ test(".mcp.yaml renders to a comment-free .mcp.json, and --check catches drift",
     writeFileSync(join(root, ".mcp.json"), "{}\n");
     const drift = run(root, "--check");
     assert.equal(drift.code, 1);
-    assert.match(drift.out, /\.mcp\.json: stale/);
+    assert.match(drift.out, /\.mcp\.json: stale.*pnpm agents:sync/);
+  });
+});
+
+test("--check passes without a local .mcp.json, rejects invalid servers; --mcp-only renders quietly", () => {
+  withFixture({ "reviewer.md": READ_ONLY }, (root) => {
+    writeFileSync(
+      join(root, ".mcp.yaml"),
+      "mcpServers:\n  docs: { type: http, url: https://x.dev/mcp }\n",
+    );
+    assert.equal(run(root).code, 0);
+    rmSync(join(root, ".mcp.json"));
+    assert.equal(run(root, "--check").code, 0);
+    assert.equal(existsSync(join(root, ".mcp.json")), false);
+    assert.equal(run(root, "--mcp-only").code, 0);
+    assert.equal(existsSync(join(root, ".mcp.json")), true);
+    writeFileSync(join(root, ".mcp.yaml"), "mcpServers:\n  bad: { type: http }\n");
+    const bad = run(root, "--check");
+    assert.equal(bad.code, 1);
+    assert.match(bad.out, /server 'bad' needs a string command or url/);
   });
 });

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { costOf, evaluate, formatLine, parseBudget } from "../ai-spend.mjs";
 
 test("parseBudget reads the routing line and falls back to defaults", () => {
-  assert.deepEqual(parseBudget("budget: { dailyUsd: 90, warnAt: 0.5 }"), {
+  assert.deepEqual(parseBudget("budget:\n  dailyUsd: 90\n  warnAt: 0.5\n"), {
     dailyUsd: 90,
     warnAt: 0.5,
   });

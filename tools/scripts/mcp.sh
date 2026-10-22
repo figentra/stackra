@@ -9,7 +9,7 @@
 #   the process table.
 #
 # Why this script exists:
-#   - .mcp.json is typically committed to version control - secrets cannot be
+#   - .mcp.yaml is committed to version control - secrets cannot be
 #     stored as literals
 #   - Claude Code expands ${VAR} from its own environment; if unset, it silently
 #     disables the server

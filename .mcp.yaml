@@ -2,7 +2,7 @@
 # STACKRA — MCP SERVER CONFIGURATION (source)
 # ============================================================================
 # Claude Code reads only strict-JSON .mcp.json; `pnpm agents:sync` renders this
-# file into it and `pnpm agents:check` fails on drift. Edit here, never .mcp.json.
+# file into the gitignored .mcp.json (also on install). Edit here, never .mcp.json.
 #
 # - Credentials never live here: token servers run through tools/scripts/mcp.sh,
 #   which injects them from Infisical dev:/agents. `$NAME` is expanded by mcp.sh.

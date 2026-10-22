@@ -155,7 +155,7 @@ function checks() {
     ".mcp.json present",
     existsSync(".mcp.json") ? "ok" : "warn",
     "MCP servers for Claude Code",
-    "run pnpm agents:sync (renders it from the committed .mcp.yaml)",
+    "run pnpm agents:sync (renders it, gitignored, from the committed .mcp.yaml)",
   );
   return out;
 }

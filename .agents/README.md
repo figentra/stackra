@@ -22,7 +22,7 @@ A folder's `README.md` is documentation and is never projected.
 
 Generated files open with a provenance marker. `pnpm agents:check` (part of `pnpm validate`) fails on drift or on a
 hand-edited projection rather than silently overwriting it; `pnpm agents:sync` repairs it. agents-sync also renders
-`.mcp.yaml` into `.mcp.json` and the constitution into `.specify/memory/constitution.md`.
+`.mcp.yaml` into the gitignored local `.mcp.json` (`--mcp-only` on install; `--check` compares it only if present) and the constitution into `.specify/memory/constitution.md`.
 
 ```bash
 pnpm agents:sync                              # project into every detected assistant (.claude/, .opencode/)

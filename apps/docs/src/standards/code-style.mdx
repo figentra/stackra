@@ -78,6 +78,18 @@ Configuration and tooling files (`pnpm-workspace.yaml`, `turbo.jsonc`, `lefthook
 # Secrets: forbidden
 ```
 
+## One formatter and YAML style
+
+`oxfmt` is the only formatter, in the editor too: `.vscode/settings.json` sets `oxc.oxc-vscode` as the default formatter for TypeScript, JavaScript, JSON, JSONC, YAML, Markdown and CSS, formats on save, turns Prettier off and mirrors `.editorconfig` (LF, final newline, trimmed whitespace, ruler at 100). `.vscode/extensions.json` recommends the Oxc extension and marks Prettier and ESLint as unwanted.
+
+Repo-owned YAML (`lefthook.yml`, `.github/**`, `.mcp.yaml`, `.agents/*.yaml` and the like) uses block style:
+
+- Mappings are always block mappings. A flow mapping (`{ a: b }`) is never written; the one exception is the empty `{}` (`permissions: {}`), which has no block form.
+- A flow sequence is allowed only for a short list of scalars that fits on one line (`branches: [main]`). Anything longer or nested is a block sequence.
+- A trailing comment stays only when the line is still 100 characters or fewer; otherwise the comment moves to the line above.
+
+Generated and vendored YAML is exempt: `pnpm-lock.yaml`, `pnpm-workspace.yaml` (until STA-300), `.specify/**`, `.agents/skills/**` and `.agents/reference/**`. `pnpm validate` rejects a flow mapping and names the file and line.
+
 ## TSDoc
 
 Types carry the weight first: no `any`, generics have meaningful names, an exported type is its own documentation. Every exported symbol then gets TSDoc that says something the type does not.
@@ -184,6 +196,7 @@ A rejected promise or listener failure is reported through the package's logger 
 | Rule                                                                         | Check                                                               | Status |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------ |
 | Formatting                                                                   | `oxfmt --check` (`format:check`, lefthook pre-commit)               | Yes    |
+| No flow mappings in repo-owned YAML                                          | `checkYamlFlowMaps` in `validate-repository.mjs`                    | Yes    |
 | No `any`, no non-null assertion, no unused code, no cycles                   | oxlint base preset                                                  | Yes    |
 | `import type` for type-only imports                                          | oxlint `typescript/consistent-type-imports` (off in decorators)     | Yes    |
 | No deep import of `@stackra/*/src/*`                                         | oxlint `boundaries.jsonc`                                           | Yes    |

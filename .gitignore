@@ -53,3 +53,6 @@ expo-env.d.ts
 # Claude Code worktrees
 .claude/worktrees/
 .claude/settings.local.json
+
+# generated locally from .mcp.yaml by agents-sync
+.mcp.json
