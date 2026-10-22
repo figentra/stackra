@@ -26,5 +26,7 @@ The agent hooks, written once and wired into Claude Code by `.claude/settings.js
   wrappers (`pnpm exec`, `npx`, `mise exec --`), the checkout a git command targets, `agent_type`, and prose.
 - A hook fails open on its own errors (`failOpen`): a crashed hook never blocks work.
 - Change a pattern together with its test in `__tests__/`.
+- `__tests__/guard-differential.test.mjs` (wrapper x guarded command, 150+ allowed commands, a time bound) stays
+  green with every change to `_rules.mjs` or `_inbox.mjs`; a new wrapper or guarded command gets a row there.
 - What the hooks do not enforce yet is listed under Enforcement in each rule in [`../rules`](../rules); the docs page
   is [hooks](../../apps/docs/src/agents/hooks.mdx).

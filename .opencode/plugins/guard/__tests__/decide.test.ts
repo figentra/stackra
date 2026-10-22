@@ -887,7 +887,7 @@ test("executors commit locally and push only their own HEAD through bot:git (pha
     "git rebase main",
     "git tag v1",
     "git worktree add ../x",
-    "git config user.name x",
+    "git config --worktree user.name x",
     "git reset --hard",
     "git clean -fd",
     "rm -rf node_modules",
@@ -918,6 +918,7 @@ test("executors commit locally and push only their own HEAD through bot:git (pha
     "git stash drop stash@{0}",
     "git worktree remove ../x",
     "git reflog expire --all",
+    "git config user.name x", // the shared config: the owner's yes, so a deny here
     "docker compose down -v",
     `rm -rf ${main}/src`,
   ])
@@ -958,4 +959,29 @@ test("round 3: SQL drops, quoted command lines and ANSI-C words are denied for e
   ])
     assert.equal(kind(c), "deny", c);
   assert.equal(kind("rg 'DROP SCHEMA' services"), "allow");
+});
+
+test("round 4: substitutions, secret globs and one-string wrappers decide as the hooks do", () => {
+  for (const c of [
+    "diff <(git show HEAD:a.txt) a.txt",
+    "cmp <(git diff A B) <(git diff C D)",
+    "sort <(git ls-files) | head",
+    'x=$(git log -1 --format="%an (%ae)")',
+    "for p in $(git ls-files | grep -E '^(a|b)/'); do :; done",
+    "for f in $(find . \\( -name a \\)); do :; done",
+    "y=$(find . -name '*(1)*')",
+    "cat src/*.json",
+    "jq . *.json",
+    "git ls-files '*.json'",
+  ])
+    assert.equal(kind(c), "allow", c);
+  for (const c of [
+    "cat .env*",
+    "cat *.pem",
+    "watch 'infisical export'",
+    "ssh h 'encore secret set X'",
+    "tmux new -d 'wrangler secret put X'",
+    "git config user.name x",
+  ])
+    assert.equal(kind(c), "deny", c);
 });

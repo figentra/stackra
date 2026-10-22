@@ -101,38 +101,50 @@ const CONFIG_SCOPE =
   /^(?:--(?:local|global|system|worktree|show-origin|show-scope|includes|no-includes|null|name-only|bool|int|path|(?:file|blob|type|default)=\S*)|-z)$/;
 const CONFIG_SCOPE_VALUE = new Set(["-f", "--file", "--blob", "--type", "--default"]);
 /**
- * True when `git config` words are neither a read (past the scope options: a read mode, or one key alone,
- * `git config --global user.name`; no write flag anywhere) nor a local write of one allowed key
- * (`git config [--local] rerere.enabled true`).
+ * What `git config` words do: "" for a read (past the scope options: a read mode, or one key alone,
+ * `git config --global user.name`; no write flag anywhere) or a `--worktree` write of one allowed key; "ask" for a
+ * write of one allowed key to the repository's config, which every linked worktree shares
+ * (`git config rerere.enabled true`); "deny" for anything else. With linked worktrees git refuses `--worktree`
+ * unless `extensions.worktreeConfig` is on, so that write never reaches the shared file.
  */
 function configWrites(words) {
   let i = 0;
-  let shared = false; // a scope other than the repository's own config: --global, --system, --worktree, a file
+  let shared = false; // a scope outside the repository: --global, --system, a file
+  let worktree = false;
   for (; i < words.length; i++) {
     const w = words[i];
     if (CONFIG_SCOPE_VALUE.has(w)) shared ||= ["-f", "--file", "--blob"].includes(words[i++]);
-    else if (CONFIG_SCOPE.test(w)) shared ||= /^--(?:global|system|worktree|file=|blob=)/.test(w);
-    else break;
+    else if (CONFIG_SCOPE.test(w)) {
+      shared ||= /^--(?:global|system|file=|blob=)/.test(w);
+      worktree ||= w === "--worktree";
+    } else break;
   }
   const rest = words.slice(i);
-  if (rest.some((w) => CONFIG_WRITE.has(w))) return true;
-  if (CONFIG_READ.has(rest[0]) || (rest.length === 1 && !rest[0].startsWith("-"))) return false;
-  return !(rest.length === 2 && ALLOWED_C.test(rest[0]) && !shared);
+  if (rest.some((w) => CONFIG_WRITE.has(w))) return "deny";
+  if (CONFIG_READ.has(rest[0]) || (rest.length === 1 && !rest[0].startsWith("-"))) return "";
+  if (rest.length === 2 && ALLOWED_C.test(rest[0]) && !shared) return worktree ? "" : "ask";
+  return "deny";
 }
-/** Every `git … config …` or `git -c <key>` in `d` that could write config or run a command (STA-216). */
-function gitConfigUnsafe(d) {
+/**
+ * The strictest `configWrites` level of every `git … config …` in `d`; "deny" for a `git -c <key>` that could
+ * write config or run a command (STA-216).
+ */
+function gitConfigLevel(d) {
   const re = new RegExp(String.raw`\bgit\s+(?:--\s+)?(${GIT_OPTS})`, "g");
   const opt = new RegExp(
     String.raw`-c\s+(?<v>${Q})|-C\s+(?:${Q})|--(?:git-dir|work-tree|namespace)(?:=(?:${Q})|\s+(?:${Q}))|--\S+|-[pP]`,
     "g",
   );
+  let level = "";
   for (const m of d.matchAll(re)) {
     for (const t of m[1].matchAll(opt))
-      if (t.groups.v !== undefined && !allowedC(unquote(t.groups.v))) return true;
+      if (t.groups.v !== undefined && !allowedC(unquote(t.groups.v))) return "deny";
     const rest = d.slice(m.index + m[0].length);
-    if (/^config\b/.test(rest) && configWrites(configWords(rest.slice(6)))) return true;
+    const writes = /^config\b/.test(rest) ? configWrites(configWords(rest.slice(6))) : "";
+    if (writes === "deny") return "deny";
+    level ||= writes;
   }
-  return false;
+  return level;
 }
 /** An option value: one word, quoted parts allowed (`"a b"c`); one parse only, so a failed match never backtracks. */
 const Q = String.raw`(?:"[^"]*"|'[^']*'|[^\s"'])\S*`;
@@ -273,16 +285,17 @@ function nesting(f) {
     scriptDepth--;
   }
 }
+/** The command with prose dropped, and every nested command in full. */
+const proseFree = (c) => [dropMessages(c), ...nestedRaw(c).map(dropMessages)];
+/** Every command line passed as one quoted word in `c` or a nested command (`commandLines`). Memoised. */
+const lineCache = memoTable();
+const lineTexts = (c) => cached(lineCache, c, () => proseFree(c).flatMap((t) => commandLines(t)));
 /**
  * Texts a rule that needs the quoted values scans: the command with prose dropped, every nested command in full,
  * and every command line passed as one quoted word (`commandLines`). Memoised.
  */
 const scanTextCache = memoTable();
-const scanTexts = (c) =>
-  cached(scanTextCache, c, () => {
-    const texts = [dropMessages(c), ...nestedRaw(c).map(dropMessages)];
-    return [...texts, ...texts.flatMap((t) => commandLines(t))];
-  });
+const scanTexts = (c) => cached(scanTextCache, c, () => [...proseFree(c), ...lineTexts(c)]);
 /** Commands whose operands are text, patterns or programs in another language, never shell commands. */
 const TEXT_COMMANDS = new Set([
   "echo",
@@ -305,32 +318,60 @@ function readerCommand(words) {
   const sub = words.slice(i + 1).find((w) => !w.startsWith("-")) ?? "";
   return name === "git" && (sub === "log" || sub === "grep");
 }
-/** A word that holds `rm`, `find` or `git` as a command word. */
-const LINE_WORD = /(?:^|[\s;&|(`])(?:[^\s;&|()<>`]*\/)?(?:rm|find|git)(?=\s)/;
+/**
+ * A word that holds a guarded command name as a command word: `rm`, `find`, `git` (`bot:git` too) and the names
+ * the secret, deploy and release rules read (STA-330 review).
+ */
+const LINE_WORD =
+  /(?:^|[\s;&|(`:])(?:[^\s;&|()<>`]*\/)?(?:rm|find|git|infisical|encore|wrangler|changeset|drizzle-kit|mikro-orm|security)(?=[\s:])/;
+/**
+ * `w` without its `$(…)`, `<(…)`, `>(…)` and backtick bodies (`scanShell` reads those as their own texts). A paren
+ * that is quoted or escaped never opens or closes one (`$(git log --format="%an (%ae)")`, `$(find . \( … \))`).
+ */
+function outsideSubstitutions(w) {
+  const { spans, source } = scanShell(w);
+  const escaped = source.replace(/\\[\s\S]/g, "__");
+  let mask = "";
+  let at = 0;
+  for (const [a, b] of spans) {
+    mask += escaped.slice(at, a) + "_".repeat(b - a); // spans are in order and never overlap
+    at = b;
+  }
+  mask += escaped.slice(at);
+  for (let was = ""; was !== mask;)
+    [was, mask] = [mask, mask.replace(/[$<>]\([^()]*\)|`[^`]*`/g, (m) => "\0".repeat(m.length))];
+  return source.replace(/[\s\S]/g, (ch, i) => (mask[i] === "\0" ? "" : ch));
+}
+let lineDepth = 0;
 /**
  * Command lines passed as one quoted word or here-string to a wrapper the guard does not know (`tmux new -d '…'`,
- * `watch '…'`, `ssh h '…'`, `su -c '…'`, `at now <<< '…'`, a crontab line): a word with a space that holds `rm`,
- * `find` or `git` outside its substitutions (those are scanned as their own texts), in a command that is not prose
- * or a search (`readerCommand`), its own messages dropped, at any quoting depth up to `MAX_SCRIPTS` (STA-330 review).
- * Only the scanning rules read them (deletes, discards, pushes, stash), so other rules keep quoted text as prose.
+ * `watch '…'`, `ssh h '…'`, `su -c '…'`, `trap '…' EXIT`, `at now <<< '…'`, a crontab line): a word with a space
+ * that holds a guarded command name (`LINE_WORD`) outside its substitutions, in a command that is not prose or a
+ * search (`readerCommand`), its own messages dropped. A line is read again for the lines inside it, never when it
+ * is the text being read, and only up to `MAX_SCRIPTS` deep: past that it is not read, and this heuristic never
+ * denies by itself (STA-330 review). The delete, discard, push and stash rules read them, and the rules for the
+ * guarded names (`runsQuoted`); other rules keep quoted text as prose.
  */
 function commandLines(t) {
-  return nesting(() => {
+  if (lineDepth >= MAX_SCRIPTS) return [];
+  lineDepth++;
+  try {
     const out = [];
     for (const s of simpleCommands(t)) {
       if (readerCommand(s.words)) continue;
       const strings = s.redirects.filter((r) => r.op === "<<<").map((r) => r.target);
       for (const w of [...s.words, ...strings]) {
-        let plain = w;
-        for (let was = ""; was !== plain;)
-          [was, plain] = [plain, plain.replace(/\$\([^()]*\)|`[^`]*`/g, "")];
+        if (!/\s/.test(w)) continue;
+        const plain = outsideSubstitutions(w);
         if (!/\s/.test(plain) || !LINE_WORD.test(plain)) continue;
         const line = dropMessages(w);
-        out.push(line, ...commandLines(line));
+        out.push(line, ...(line === t ? [] : commandLines(line)));
       }
     }
     return out;
-  });
+  } finally {
+    lineDepth--;
+  }
 }
 /**
  * `scanTexts` paired with the directory each text starts in: the command starts in `cwd`; a nested text (a `$(…)`
@@ -360,6 +401,8 @@ const runnable = (c) =>
 /** True when any runnable text has a segment matching `rx`, or passes `rx` when it is a test (`atName`). */
 const runs = (c, rx) =>
   runnable(c).some((t) => (typeof rx === "function" ? rx(t) : segments(t).some((s) => rx.test(s))));
+/** `runs` over the command and every command line passed as one quoted word (`watch 'infisical export'`). */
+const runsQuoted = (c, rx) => [c, ...lineTexts(c)].some((t) => runs(t, rx));
 
 /**
  * At most this many git processes run for one decision (about 20 ms each; the hook is killed, and fails open, at
@@ -434,7 +477,7 @@ const dropMessages = (c) =>
 const INFISICAL_SUBCOMMANDS = new Set(["get", "set", "delete", "folders", "generate-example-env"]);
 function infisicalSecrets(c) {
   const verbs = [];
-  for (const t of runnable(c))
+  for (const t of [c, ...lineTexts(c)].flatMap(runnable))
     for (const seg of segments(t)) {
       const m = seg.match(/\binfisical\s+(?:-\S+\s+)*secrets\b(.*)$/);
       if (m) verbs.push(m[1].split(/\s+/).find((w) => INFISICAL_SUBCOMMANDS.has(unquote(w))) ?? "");
@@ -541,9 +584,11 @@ function walk(text, cwd) {
 }
 /**
  * The arguments that follow a command word, as the shell passes them: quotes removed, redirections dropped
- * (`--hard>/dev/null`, `<<<x`, `2>&1`, `&>f`), stopping at a separator or a `)` / `}` that closes a group.
+ * (`--hard>/dev/null`, `<<<x`, `2>&1`, `&>f`), stopping at a separator, a `)` / `}` that closes a group or the
+ * backtick that closes a body (`` echo `git push origin HEAD` ``).
  */
-const argWords = (tail) => simpleCommands(tail)[0]?.words.filter((w) => w !== "}") ?? [];
+const argWords = (tail) =>
+  simpleCommands(tail.split("`")[0])[0]?.words.filter((w) => w !== "}") ?? [];
 /** Segments whose words are search patterns or history, never a git action (`grep "git push origin main"`). */
 const READER_SEGMENT =
   /^\s*(?:\S*\/)?(?:rg|grep|egrep|fgrep|ag)\b|^\s*(?:\S*\/)?git\s+(?:-\S+\s+)*(?:log|grep)\b/;
@@ -654,26 +699,32 @@ const isRecursiveForce = (flags) =>
 const scratchRoot = () => realDir(`/tmp/claude-${process.getuid?.() ?? 0}`);
 const FIND_EXEC = new Set(["-exec", "-execdir", "-ok", "-okdir"]);
 const FIND_NAMES = /^-i?(?:name|path|wholename|regex)$/;
+/** `.git` and paths inside it that git always or usually holds: a find that may select one reaches the history. */
+const GIT_PATHS = [".git", ".git/HEAD", ".git/index", ".git/config", ".git/packed-refs"];
+GIT_PATHS.push(".git/refs/heads/main", ".git/objects/pack/x.pack", ".git/objects/pack/x.idx");
 /**
- * True when a find expression from `start` may select `.git`: an `-o`, a negation or a `,` (deny-leaning), or every
- * name test (`-name`, `-path`, `-regex` and their `-i` forms) matches it; with no name test it selects everything.
+ * True when a find expression from `start` may select `.git` or a path inside it (`GIT_PATHS`, STA-330 review): an
+ * `-o`, a negation or a `,` (deny-leaning), or every name test (`-name`, `-path`, `-regex` and their `-i` forms)
+ * matches one of them; with no name test it selects everything.
  */
 function findsGit(start, expr) {
   if (expr.some((w) => ["!", "-not", "-o", "-or", ","].includes(w))) return true;
-  return expr.every((w, i) => {
-    if (!FIND_NAMES.test(w)) return true;
-    const v = expr[i + 1] ?? "";
-    const flags = w.startsWith("-i") ? "i" : "";
-    const whole = `${start.replace(/\/+$/, "")}/.git`;
-    if (w.endsWith("name") && !w.endsWith("wholename"))
-      return new RegExp(globRx(v).source, flags).test(".git");
-    if (!w.endsWith("regex")) return new RegExp(globRx(v).source, flags).test(whole);
-    try {
-      return new RegExp(`^(?:${v})$`, flags).test(whole);
-    } catch {
-      return true;
-    }
-  });
+  const root = start.replace(/\/+$/, "");
+  return GIT_PATHS.some((p) =>
+    expr.every((w, i) => {
+      if (!FIND_NAMES.test(w)) return true;
+      const v = expr[i + 1] ?? "";
+      const flags = w.startsWith("-i") ? "i" : "";
+      if (w.endsWith("name") && !w.endsWith("wholename"))
+        return new RegExp(globRx(v).source, flags).test(basename(p));
+      if (!w.endsWith("regex")) return new RegExp(globRx(v).source, flags).test(`${root}/${p}`);
+      try {
+        return new RegExp(`^(?:${v})$`, flags).test(`${root}/${p}`);
+      } catch {
+        return true;
+      }
+    }),
+  );
 }
 const baseName = (w) => w.split("/").pop();
 /** At most this many `rm` and `find` words of one simple command are read; past it the command denies. */
@@ -755,18 +806,18 @@ function braces(w) {
   return out;
 }
 /**
- * A glob segment as a regex: `*`, `?` and `[…]`. `dots` lets a wildcard match a leading dot (deny-leaning for
- * `rm`); the shell's own globbing does not. `any` is what one wildcard character may be.
+ * A glob segment as a regex: `*`, `?` and `[…]`. A wildcard matches a leading dot too (deny-leaning for `rm`),
+ * which the shell's own globbing does not.
  */
-function globRx(seg, { dots = true, any = "." } = {}) {
+function globRx(seg) {
   const body = seg
     .replace(/\[\^/g, "[!")
     .replace(/[.+^${}()|\\]/g, "\\$&")
-    .replace(/\*+/g, `${any}*`)
-    .replace(/\?/g, any)
+    .replace(/\*+/g, ".*")
+    .replace(/\?/g, ".")
     .replace(/\[!/g, "[^");
   try {
-    return new RegExp(`^${dots || seg.startsWith(".") ? "" : "(?!\\.)"}${body}$`);
+    return new RegExp(`^${body}$`);
   } catch {
     return new RegExp(`^${seg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`); // an unclosed `[` is literal
   }
@@ -787,6 +838,9 @@ function expandGlob(dir, t) {
       continue;
     }
     const rx = globRx(segs[k]);
+    // A wildcard with a literal tail (`*/node_modules`) never matches `.git`, as in the shell (STA-330 review).
+    const tail = k < segs.length - 1 && !segs.slice(k + 1).some((s) => /[*?[]/.test(s));
+    const skip = (n) => tail && n === ".git" && !segs[k].startsWith(".");
     const next = [];
     for (const p of found) {
       let names = [];
@@ -795,7 +849,7 @@ function expandGlob(dir, t) {
       } catch {
         // an unreadable directory matches nothing, as in the shell
       }
-      next.push(...names.filter((n) => rx.test(n)).map((n) => p + slash + n));
+      next.push(...names.filter((n) => rx.test(n) && !skip(n)).map((n) => p + slash + n));
     }
     if (next.length > 1000) return null;
     found = next;
@@ -1218,15 +1272,16 @@ const SQL_CLIENTS = new Set([
   "duckdb",
 ]);
 /**
- * A SQL client runs: a word (or the first word of a quoted command line, `ssh h 'psql …'`) named like one, wherever
- * it stands (`docker exec pg psql`, `kubectl exec … -- mysql`), or `encore db shell`. Search commands are skipped.
+ * A SQL client runs: a word (or the first word of a quoted command line or here-string, `ssh h 'psql …'`,
+ * `at now <<< 'psql …'`) named like one, wherever it stands (`docker exec pg psql`, `kubectl exec … -- mysql`), or
+ * `encore db shell`. Search commands are skipped.
  */
 const runsSqlClient = (c) =>
   scanTexts(c).some((t) =>
     simpleCommands(t).some(
-      ({ words }) =>
+      ({ words, redirects }) =>
         !readerCommand(words) &&
-        words.some(
+        [...words, ...redirects.filter((r) => r.op === "<<<").map((r) => r.target)].some(
           (w, k) =>
             SQL_CLIENTS.has(baseName(w.trim().split(/\s+/)[0])) ||
             /^encore\s+db\s+shell\b/.test(w.trim()) ||
@@ -1243,7 +1298,7 @@ const runsSqlClient = (c) =>
 const RULES = [
   // --- Secrets: never print a value, never create a .env file (ADR 0173, ADR 0257) ------------
   {
-    rx: (c) => runs(c, /\binfisical\s+(?:-\S+\s+)*export\b/),
+    rx: (c) => runsQuoted(c, /\binfisical\s+(?:-\S+\s+)*export\b/),
     why: "Secrets guard: `infisical export` decrypts and prints every secret value. Agents never read a value; a secret reaches a process only through the pnpm script that needs it.",
   },
   {
@@ -1261,12 +1316,15 @@ const RULES = [
   },
   {
     rx: (c) =>
-      runs(c, /\binfisical\s+run\b[^|;&\n]*\s--\s+(?:\w+=\S*\s+)*(?:printenv\b|env\s*(?:$|-|\)))/),
+      runsQuoted(
+        c,
+        /\binfisical\s+run\b[^|;&\n]*\s--\s+(?:\w+=\S*\s+)*(?:printenv\b|env\s*(?:$|-|\)))/,
+      ),
     why: "Secrets guard: `infisical run -- env|printenv` prints the injected secret values. Run the command that needs them instead.",
   },
   {
     rx: (c) =>
-      runs(c, (t) =>
+      runsQuoted(c, (t) =>
         simpleCommands(t).some((s) => {
           const k = s.words.findIndex((w) => w.split("/").pop() === "infisical");
           const rest = s.words.slice(k + 1);
@@ -1282,7 +1340,7 @@ const RULES = [
   },
   {
     rx: (c) =>
-      runs(
+      runsQuoted(
         c,
         atName(
           String.raw`security\s+(?:find-(?:generic|internet)-password|dump-keychain|export)\b`,
@@ -1291,7 +1349,7 @@ const RULES = [
     why: "Secrets guard: `security find-generic-password`, `find-internet-password`, `dump-keychain` and `export` read the owner's keychain, in any form (`/usr/bin/security`, `timeout`, `pnpm exec`). Agents never read a credential.",
   },
   {
-    rx: (c) => runs(c, /\binfisical\s+(?:-\S+\s+)*run\b/),
+    rx: (c) => runsQuoted(c, /\binfisical\s+(?:-\S+\s+)*run\b/),
     decision: "ask",
     why: "Raw `infisical run` hands every /agents value to the process it starts; the owner confirms it. The pnpm scripts that need a token (`pnpm bot:gh`, `pnpm linear`) wrap it themselves.",
   },
@@ -1310,11 +1368,11 @@ const RULES = [
     why: "Secrets guard: ~/Secrets-inbox/ (and the import confirm key) are never read, listed, copied or moved by a command. Use `pnpm secrets:import --list` for names and `pnpm secrets:import [--dry-run] [NAME]` to import; it never prints a value.",
   },
   {
-    rx: (c) => runs(c, /\bencore\s+secret\s+(set|get|list\s+--values?)\b/),
+    rx: (c) => runsQuoted(c, /\bencore\s+secret\s+(set|get|list\s+--values?)\b/),
     why: 'Secrets guard: `encore secret set/get` are a human\'s to run. Declare the secret with `secret("NAME")` in code and name it in your report; a human sets the value per environment (synced from Infisical).',
   },
   {
-    rx: (c) => runs(c, /\bwrangler\s+secret\s+(put|bulk)\b/),
+    rx: (c) => runsQuoted(c, /\bwrangler\s+secret\s+(put|bulk)\b/),
     why: "Secrets guard: `wrangler secret put/bulk` are a human's to run, same as `encore secret set`. Declare the secret and name it in your report; a human sets the value per environment.",
   },
   {
@@ -1322,10 +1380,14 @@ const RULES = [
     // `< .env cat`, `source .env`, `cp a .env`, `cat key.pem`, `cat ~/.git-credentials`, `cat .env*`. A quoted
     // argument is checked whole (`cat "$HOME/.npmrc"`), so a grep pattern `"no .env files"` is no path; only
     // message values (`-m`, `--title`, `--body`, a `linear comment`) and heredoc bodies are prose (STA-330 review).
-    // `.env.example` and `*.example` are templates.
+    // A command line in one quoted word names files by its own words (`watch 'cat .env'`), outside prose and
+    // search commands. `.env.example` and `*.example` are templates.
     rx: (c) => {
-      const words = [dropMessages(c), ...nestedRaw(c).map(dropMessages)].flatMap((t) =>
-        simpleCommands(t).flatMap((s) => [...s.words, ...s.redirects.map((r) => r.target)]),
+      const words = proseFree(c).flatMap((t) =>
+        simpleCommands(t).flatMap((s) => {
+          const all = [...s.words, ...s.redirects.map((r) => r.target)];
+          return readerCommand(s.words) ? all : [...all, ...all.flatMap((w) => w.split(/\s+/))];
+        }),
       );
       const hit = [
         ...new Set([
@@ -1351,22 +1413,22 @@ const RULES = [
 
   // --- Encore and deploys: the environment-touching subcommands ---------------------------------
   {
-    rx: (c) => runs(c, /\bencore\s+db\s+reset\b/),
+    rx: (c) => runsQuoted(c, /\bencore\s+db\s+reset\b/),
     decision: "ask",
     why: "`encore db reset` destroys the local database and re-migrates; the owner confirms it.",
   },
   {
-    rx: (c) => runs(c, /\bencore\s+deploy\b/),
+    rx: (c) => runsQuoted(c, /\bencore\s+deploy\b/),
     why: "`encore deploy` ships to a shared environment; no agent runs it. Deploys belong to the release path.",
   },
   {
-    rx: (c) => runs(c, /\bencore\s+env\s+(set|create|delete)\b/),
+    rx: (c) => runsQuoted(c, /\bencore\s+env\s+(set|create|delete)\b/),
     decision: "ask",
     why: "`encore env set/create/delete` changes a shared environment; the owner confirms it.",
   },
   {
     rx: (c) =>
-      runs(
+      runsQuoted(
         c,
         atName(
           String.raw`wrangler\s+(?:[^|;&\n]*\s)?(?:deploy|rollback|delete|secret)\b|wrangler\b[^|;&\n]*\s--remote\b`,
@@ -1479,9 +1541,14 @@ const RULES = [
           (/(?:^|\s)(?:GIT_EDITOR|GIT_SEQUENCE_EDITOR)=(?!(?:true|:|cat)(?:\s|$))|(?:^|\s)(?:MANPAGER|PAGER|GIT_PAGER)=(?!(?:cat|less)(?:\s|$))|(?:^|\s)(?:--config-env\b|(?:GIT_CONFIG(?:_GLOBAL|_SYSTEM|_COUNT|_KEY_\d+|_PARAMETERS)?|HOME|XDG_CONFIG_HOME|GIT_ASKPASS|SSH_ASKPASS|GIT_EXEC_PATH|GIT_SSH(?:_COMMAND)?|GIT_PROXY_COMMAND|GIT_EXTERNAL_DIFF|GIT_TEMPLATE_DIR)=)/i.test(
             d,
           ) ||
-            gitConfigUnsafe(d)),
+            gitConfigLevel(d) === "deny"),
       ),
-    why: "git `-c` outside a short display/identity allow-list, any `git config` that is not a read or a local write of an allowed key, `--config-env`, and the `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=`, `GIT_ASKPASS=`, `SSH_ASKPASS=`, `GIT_EXEC_PATH=`, `GIT_SSH[_COMMAND]=` and `GIT_PROXY_COMMAND=` prefixes (and a pager other than `cat` or `less`) make git run another command, redefine a remote or alias past the push and credential guards. For an editor, `GIT_EDITOR=true` is already set in .claude/settings.json `env`.",
+    why: "git `-c` outside a short display/identity allow-list, any `git config` that is not a read or a write of an allowed key, `--config-env`, and the `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=`, `GIT_ASKPASS=`, `SSH_ASKPASS=`, `GIT_EXEC_PATH=`, `GIT_SSH[_COMMAND]=` and `GIT_PROXY_COMMAND=` prefixes (and a pager other than `cat` or `less`) make git run another command, redefine a remote or alias past the push and credential guards. For an editor, `GIT_EDITOR=true` is already set in .claude/settings.json `env`.",
+  },
+  {
+    rx: (c) => scanTexts(c).some((d) => /\bgit\b/.test(d) && gitConfigLevel(d) === "ask"),
+    decision: "ask",
+    why: "`git config <key> <value>` without `--worktree` writes the repository's config, which every linked worktree shares (`user.name`, `user.email`, `rerere.enabled`); the owner confirms it. Use `git config --worktree <key> <value>`, or `git -c <key>=<value>` for one command.",
   },
   {
     // `man -P <cmd>` and `--pager=<cmd>` run <cmd>; plain `man git-credential` stays allowed.
@@ -1559,7 +1626,7 @@ const RULES = [
     why: "`pnpm bot:review` posts as the reviewer identity, so only a reviewer agent runs it (the agents whose source sets `reviewer: true`, ADR 0230). A builder or the lead asks a reviewer agent for the verdict. Tripwire until the CI reviewer posts verdicts.",
   },
   {
-    rx: (c) => runs(c, new RegExp(GIT + String.raw`tag\s+(-a\s+)?\S+@\d`)),
+    rx: (c) => runsQuoted(c, new RegExp(GIT + String.raw`tag\s+(-a\s+)?\S+@\d`)),
     why: "Release tags (`<package>@x.y.z`) are created by CI from a merged version PR, never by hand.",
   },
 
@@ -1571,11 +1638,12 @@ const RULES = [
     why: "Dropping a database is a human decision. `encore db reset <service>` resets a local one, with the owner's yes.",
   },
   {
-    rx: (c) => runs(c, /\b(drizzle-kit|mikro-orm)\s+(push|migrate|migration:up|schema:update)\b/),
+    rx: (c) =>
+      runsQuoted(c, /\b(drizzle-kit|mikro-orm)\s+(push|migrate|migration:up|schema:update)\b/),
     why: "Encore applies migrations when the app runs. Write `<n>_<name>.up.sql` by hand, then `encore run`; never push directly to a database.",
   },
   {
-    rx: (c) => runs(c, /\bchangeset(\s+|:)version\b/),
+    rx: (c) => runsQuoted(c, /\bchangeset(\s+|:)version\b/),
     why: "`changeset version` runs in CI (the Release workflow's version PR). Locally, add a changeset with `pnpm changeset`; the version bump is the version PR's job.",
   },
 ];
@@ -1731,45 +1799,21 @@ const SECRET_FILE = [
   /(^|\/)\.infisical([^/]*$|\/)/,
 ];
 const SECRET_OK = /(^|\/)(\.env(\.[^/]*)?\.example|\.infisical\.(yaml|json))$/;
-/** A file name per `SECRET_FILE` and `HOME_SECRET` entry, for globs (`namesSecret`). */
-const SECRET_NAMES = [".env", ".env.local", ".dev.vars", ".ci-env", ".sentryclirc"];
-SECRET_NAMES.push("app.secrets.json", "tls.pem", "tls.key", ".infisical", "id_rsa", "id_ed25519");
-const HOME_SECRETS = [".config/gh/hosts.yml", ".git-credentials", ".ssh/id_rsa", ".ssh/id_ed25519"];
-HOME_SECRETS.push(
-  ".aws/credentials",
-  ".npmrc",
-  ".netrc",
-  ".docker/config.json",
-  ".expo/state.json",
-);
-HOME_SECRETS.push(".wrangler/config/default.toml", ".stackra/secrets-confirm.key");
 /** Credential files under home (the settings Read denies): gh, git, ssh, cloud, registry and CLI logins. */
 const HOME_SECRET =
   /^(?:\.config\/gh\/|\.git-credentials$|\.ssh\/id_|\.aws\/|\.npmrc$|\.netrc$|\.docker\/config\.json$|\.wrangler\/|Library\/Preferences\/\.wrangler\/|\.expo\/|Library\/Application Support\/encore\/|\.stackra\/secrets-confirm\.key$)/;
 /**
- * True when a command word names a secret file (`isSecretPath`), after brace expansion, or is a glob that could
- * match one (`.env*`, `.e?v`, `*.pem`, `~/.ssh/id_*`).
+ * True when a command word names a secret file (`isSecretPath`), after brace expansion, or is a glob whose literal
+ * text names one (`.env*`, `*.pem`, `*.secrets*`, `~/.ssh/id_*`). What a wildcard could match never counts, so
+ * `*.json` and `.*` name no secret (STA-330 review); a glob that spells a name with wildcards (`.e?v`) is a
+ * deliberate workaround the accident guard does not read.
  */
 function namesSecret(w) {
   for (const b of braces(w) ?? [w]) {
     if (isSecretPath(b)) return true;
-    const p = unquote(b).replace(/^(?:~|\$HOME|\$\{HOME\})(?=\/)/, HOME_DIR);
-    if (!/[*?[]/.test(p)) continue;
-    if (p.length > PATH_MAX) return true; // longer than any path: its regex may not even compile
-    const cut = p.lastIndexOf("/") + 1;
-    const shell = { dots: false, any: "[^/]" };
-    const last = globRx(p.slice(cut), shell);
-    // A last segment of wildcards only (`*`) matches every name: it names no secret by itself.
-    const named = /[^*?]/.test(p.slice(cut));
-    if (named && SECRET_NAMES.some((n) => last.test(n) && isSecretPath(p.slice(0, cut) + n)))
+    const p = unquote(b);
+    if (/[*?[]/.test(p) && p.split(/\*|\?|\[[^\]]*\]?/).some((lit) => lit && isSecretPath(lit)))
       return true;
-    const whole = new RegExp(
-      `^${p
-        .split("/")
-        .map((seg) => globRx(seg, shell).source.slice(1, -1))
-        .join("/")}$`,
-    );
-    if (HOME_SECRETS.some((h) => whole.test(`${HOME_DIR}/${h}`))) return true;
   }
   return false;
 }

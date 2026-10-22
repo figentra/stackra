@@ -1211,8 +1211,8 @@ for (const c of [
   "GIT_PAGER=cat git log -3",
   "PAGER=less man git-commit",
   "MANPAGER=cat man ls",
-  "git config rerere.enabled true",
-  "git config --local rerere.enabled true",
+  "git config --worktree rerere.enabled true",
+  "git config --worktree user.name x",
   "git submodule status",
   "git submodule summary",
   "pnpm exec oxfmt --check .agents/hooks",
@@ -1940,8 +1940,6 @@ test("round 1: quoted $HOME credential paths and secret globs", () => {
     'base64 "$HOME/.aws/credentials"',
     'cat "$HOME"/.netrc',
     "cat .env*",
-    "cat .e?v",
-    "cat .en[v]",
     "cat .e{n,x}v",
     "cat *.pem",
     "cat ~/.ssh/id_*",
@@ -1952,6 +1950,9 @@ test("round 1: quoted $HOME credential paths and secret globs", () => {
   for (const c of [
     "cat .env.example",
     "cat *.example",
+    // STA-330 review round 4: a glob names a secret only by its literal text; `.e?v` is a deliberate workaround
+    "cat .e?v",
+    "cat .en[v]",
     'grep -rn "no .env files" .agents/rules',
     'git commit -m "never cat ~/.npmrc or .env"',
     "ls packages/*/*",
@@ -2382,4 +2383,155 @@ test("round 3: a decision is bounded in time, failed git spawns and long operand
     );
   }
   done();
+});
+
+// ---- STA-330 review round 4 ---------------------------------------------------------------------------------
+
+test("round 4: a substitution or process substitution is never read as nesting too deep", () => {
+  for (const c of [
+    "diff <(git show HEAD:a.txt) a.txt",
+    "cmp <(git diff A B) <(git diff C D)",
+    "sort <(git ls-files) | head",
+    'x=$(git log -1 --format="%an (%ae)")',
+    "for p in $(git ls-files | grep -E '^(a|b)/'); do :; done",
+    "for f in $(find . \\( -name a \\)); do :; done",
+    "y=$(find . -name '*(1)*')",
+  ]) {
+    const t = performance.now();
+    const { decision: got, reason } = decideBash(c, { cwd: root });
+    assert.equal(got, "allow", `${c}: ${reason}`);
+    assert.ok(performance.now() - t < 250, c);
+  }
+  // the quoted line inside a substitution is still read
+  assert.equal(decideBash("x=$(tmux new -d 'rm -rf ~')", { cwd: root }).decision, "deny");
+});
+
+test("round 4: a glob names a secret only by its literal text", () => {
+  const cases = [];
+  for (const c of [
+    "cat src/*.json",
+    "ls *.json",
+    "jq . *.json",
+    "git add *.json",
+    "git ls-files '*.json'",
+    "git diff -- '*.json'",
+    "pnpm exec oxfmt *.json",
+    "cat a*",
+    "ls .*",
+    "cat *.md",
+  ])
+    cases.push([c, "allow"]);
+  for (const c of [
+    "cat .env*",
+    "cat apps/*/.env.local",
+    "cat *.pem",
+    "cat *.key",
+    "cat *.secrets*",
+    "cat .dev.vars*",
+    "cat .infisical*",
+    "ls ~/.ssh/id_*",
+    "cat ~/.aws/*",
+    "cat ~/.ss?/id_rsa",
+  ])
+    cases.push([c, "deny"]);
+  const wrongs = cases.filter(([c, want]) => decideBash(c, { cwd: root }).decision !== want);
+  assert.deepEqual(wrongs, []);
+});
+
+test("round 4: a one-string wrapper never hides a guarded command name", () => {
+  const cases = [];
+  for (const c of [
+    "watch 'infisical export'",
+    "script -c 'infisical secrets get FOO' /dev/null",
+    "parallel 'infisical export' ::: a",
+    "su -c 'infisical export'",
+    "tmux new -d 'infisical export'",
+    "at now <<< 'infisical export'",
+    "ssh h 'encore secret set X'",
+    "trap 'infisical export' EXIT",
+    "watch 'git tag @stackra/logger@1.0.0'",
+    "su -c 'drizzle-kit push'",
+    "ssh h 'changeset version'",
+    "ssh h 'pnpm changeset:version'",
+    "tmux new -d 'wrangler secret put X'",
+    "watch 'encore deploy'",
+    "ssh h 'security find-generic-password -s x'",
+    "watch 'cat .env'",
+    "at now <<< 'psql -c \"DROP DATABASE app\"'",
+    "ssh h 'pnpm bot:git -- push origin main'",
+  ])
+    cases.push([c, "deny"]);
+  for (const c of ["tmux new -d 'wrangler deploy'", "watch 'infisical run -- node x.js'"])
+    cases.push([c, "ask"]);
+  for (const c of [
+    "watch 'encore run'",
+    "ssh h 'infisical secrets folders get'",
+    'pnpm linear create --title "never run infisical export or encore deploy"',
+    "echo 'infisical export'",
+    "rg 'encore deploy' apps/docs",
+  ])
+    cases.push([c, "allow"]);
+  const wrongs = cases
+    .map(([c, want]) => [c, want, decideBash(c, { cwd: root }).decision])
+    .filter(([, want, got]) => got !== want);
+  assert.deepEqual(wrongs, []);
+});
+
+test("round 4: a find from the checkout root that may reach inside .git, and the shared git config", () => {
+  const { wrong, done } = sessionRepo();
+  const cases = [];
+  for (const c of [
+    "find . -path './.git/*' -delete",
+    "find . -path '*/.git/*' -delete",
+    "find . -name '*.pack' -delete",
+    "find . -name HEAD -delete",
+    "find . -name 'packed-refs' -exec rm -rf {} +",
+  ])
+    cases.push(["main", c, "deny"], ["wt", c, "deny"]);
+  for (const c of ["find . -name '*.tsbuildinfo' -delete", "find . -path './dist/*' -delete"])
+    cases.push(["wt", c, "allow"]);
+  for (const c of [
+    "git config user.name x",
+    "git config user.email x@y",
+    "git config rerere.enabled true",
+    "git config --local user.name x",
+  ])
+    cases.push(["wt", c, "ask"], ["main", c, "ask"]);
+  for (const c of [
+    "git config --worktree user.name x",
+    "git config --worktree rerere.enabled true",
+  ])
+    cases.push(["wt", c, "allow"]);
+  cases.push(["wt", "git config --worktree core.hooksPath x", "deny"]);
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 4: a wildcard with a literal tail never matches .git in a linked worktree", () => {
+  const { worktree, done } = repoWithWorktree();
+  mkdirSync(join(worktree, "packages", "a", "node_modules"), { recursive: true });
+  for (const c of ["rm -rf */node_modules", "rm -rf **/node_modules", "rm -rf */dist"])
+    assert.equal(decideBash(c, { cwd: worktree }).decision, "allow", c);
+  // a linked worktree's `.git` is a file: `*/*` reaches nothing in it, `.g*/x` names it
+  assert.equal(decideBash("rm -rf */*", { cwd: worktree }).decision, "allow");
+  assert.equal(decideBash("rm -rf .g*/x", { cwd: worktree }).decision, "deny");
+  done();
+});
+
+test("round 4: a 60 kB quoted command line is read in bounded time", () => {
+  for (const [open, unit, close] of [
+    ['tmux new -d "', "'x y' ", '"'],
+    ['watch "', "$(a) ", '"'],
+    ['watch "', "`a` ", '"'],
+    ['ssh h "', "infisical x ", '"'],
+    ['watch "', "(git x) ", '"'],
+    ['at now <<< "', "rm -rf x; ", '"'],
+  ]) {
+    const c = open + unit.repeat(Math.ceil(60_000 / unit.length)) + close;
+    const t = performance.now();
+    const { reason } = decideBash(c, { cwd: root });
+    const ms = performance.now() - t;
+    assert.doesNotMatch(reason, /could not read|nests/, JSON.stringify(unit));
+    assert.ok(ms < 1500, `${JSON.stringify(unit)} took ${ms.toFixed(0)} ms`);
+  }
 });
