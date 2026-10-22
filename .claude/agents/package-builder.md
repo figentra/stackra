@@ -25,7 +25,7 @@ The brief or spec task, the package's `README.md` and `AGENTS.md`, `apps/docs/sr
 
 1. Entries-first shape (ADR 0126, 0294): `src/contracts/` (the leaf), `src/config/`, `src/core/`, `src/node/` (the
    module), `src/react/`, `src/native/`, `src/testing/`, only with real code; entries point one way and barrels are
-   generated. New code follows the programming model v3; today's packages predate it until STA-337.
+   generated. New code follows the programming model v3; today's packages predate it until STA-344.
 2. Public types in `src/contracts/` (ports, enums, types); shared primitives in `@stackra/contracts` (0117).
 3. A kind is a base class the package exports; decorators are field, method and class-facet only, made with
    `createDecorator`, and a package that ships them has an Explorer at `src/<entry>/<pkg>.explorer.ts` (0144, 0294).

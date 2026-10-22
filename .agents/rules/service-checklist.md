@@ -18,7 +18,7 @@ is `src/modules/<key>/<key>.module.ts` with the module groups of ADR 0294 decisi
 
 Today's services (`example`, `health`) predate v3: each still has an authored `src/main.ts` and a `stackra.module` field
 in `package.json`, and `checkService` requires both until STA-339 changes the validator. Keep them until the codemod
-(STA-337) converts the members. Eight non-negotiables:
+(STA-344) converts the members. Eight non-negotiables:
 
 1. **Placement and group folders.** The placement test passes (`module-boundary`). Each file sits in its kind's one home group,
    named `<name>.<kind>.ts`, and declares its kind by its base class. Imports across folders use `#` aliases; a sibling

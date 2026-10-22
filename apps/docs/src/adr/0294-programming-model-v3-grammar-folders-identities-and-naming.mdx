@@ -23,6 +23,7 @@ description: "Accepted · 2026-10-22"
   [0091](/adr/0091-generated-encore-app-in-stackra-folder),
   [0117](/adr/0117-contracts-placement-and-decorator-ownership),
   [0126](/adr/0126-member-shapes-and-scaffold-templates),
+  [0127](/adr/0127-package-categories-including-infrastructure) (package names),
   [0158](/adr/0158-gen-artefacts-openapi-manifest-and-client),
   [0177](/adr/0177-package-distribution-npmjs-and-keygen),
   [0259](/adr/0259-module-placement-three-homes),
@@ -82,8 +83,9 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
 1. **The path says the kind (R1).** A file is `<scope>/<group>/<name>.<kind>.ts(x)`. A folder kind (routes, blocks,
    components) is `<scope>/<group>/<name>/<name>.<kind>.ts(x)`. The scope is a module folder (`src/modules/<key>/` in a
    service, `src/node/` in a package) or the member's `src/`. Each suffix has exactly one home group per tier, and a
-   group may hold several related suffixes. Tests sit in `__tests__/<name>.<kind>.test.ts` beside their subject
-   ([0022](/adr/0022-tests-live-in-tests-folders)).
+   group may hold several related suffixes. The one exception is `.change.ts`, which sits beside its subject: in
+   `events/` for an event version, in `schemas/` for a dated response change. Tests sit in
+   `__tests__/<name>.<kind>.test.ts` beside their subject ([0022](/adr/0022-tests-live-in-tests-folders)).
 
 2. **One primary export per file, named from the file (R2).** The class is `PascalCase(stem) + PascalCase(kind)`, so
    `cancel-order.action.ts` exports `CancelOrderAction`. Noun kinds (model, schema, enum, event, signal, analytics
@@ -96,7 +98,9 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
    kind base exported by a `@stackra/*` package, and that base's identifier is `PascalCase(kind)`, with these aliases:
    `.event.ts` takes `DomainEvent`, `IntegrationEvent` or `WebhookEvent`; `.error.ts` takes `Refusal`; `.service.ts`
    takes `Service` or `CrudService`; `.model.ts` takes `Model.with(...)`. An override or a placement extends the class it
-   overrides, as in `Widget.place(...)`. Options never hold a fact that gen derives.
+   overrides, as in `Widget.place(...)`. Options never hold a fact that gen derives. A member that replaces a base
+   member with a default, such as a resource's `table()` or a route's `meta`, is marked `override`; only an abstract
+   member (`handle`, `definition`, `check`) goes without it, because the presets keep `noImplicitOverride` on.
 
    ```ts
    // orders/actions/cancel-order.action.ts
@@ -113,6 +117,7 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
    Gen compiles each shape class to one Zod schema in `#stackra/schemas` and each model to MikroORM `EntitySchema`
    metadata, so authors do not write Zod. A listener and a notification react to the type of their event parameter. A
    workflow starts on an event only through `startOn:`. A driver choice is a config field typed `DriverName<Port>`.
+   Decisions 25 to 28 say how kind bases, the shape compiler, models and tables work in detail.
 
 5. **Names give identity (R5).** An author writes each wire name once: an action or query `key`, an event `name`, an
    analytics event `name`, a route `path` and a custom endpoint path. Every other identity is derived (decision 20).
@@ -123,7 +128,10 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
    - **Field:** constraints (`@Str`, `@Int`, `@Num`, `@List`), transforms (`@Trim`, `@Lowercase`), serializers (`@Hidden`,
      `@Visible`), relations (`@ManyToOne`, `@OneToMany`, `@ManyToMany`, `@OneToOne`), sources (`@Env`, `@Secret`),
      `@Setting(options)`, `@Renamed(old)` and the escape hatch `@Field(zod)`. A field decorator constrains, disambiguates,
-     transforms, serializes, relates or adds a source. It never restates a type.
+     transforms, serializes, relates or adds a source. It never restates a type. It records metadata only and never
+     installs an accessor, because a class field defined on the instance hides a prototype accessor. Each field
+     decorator is typed against its field, so the type checker refuses `@Int` on a string, `@List` on a field that is
+     not an array, and a `@Field(zod)` whose output type differs from the field.
    - **Method:** `@Step(options)` and `@Transition(options)`, for workflow steps and state transitions only.
    - **Class facet:** `@Index`, `@Searchable`, `@Auditable`, `@AccessLogged`, `@Lifetime`, `@Replaces` and `@Renamed`, for a
      table fact or a capability another package reads.
@@ -156,7 +164,9 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
 
 11. **Model references are thunks (R11).** Inside a decorator a model is a thunk, as in `@ManyToOne(() => Variant)`. A
     model is passed directly only as the first argument of a base factory: `Resource(Order)`, `Factory(Order)`,
-    `CrudService(Order)`, `StateMachine(Order)` and `Facts(Order)`.
+    `CrudService(Order)`, `StateMachine(Order)` and `Facts(Order)`. A relation to a model of the same module is typed
+    `Ref<T>` for one target or `Collection<T>` for many, and has a foreign key. A relation to a model of another
+    module is typed `Link<T>` (decision 28).
 
 12. **One member shape (R12).** Every member authors `stackra.config.ts` and one root module, `src/<key>.module.ts`
     (`src/node/<key>.module.ts` in a package). Nobody writes `main.ts` or an entry barrel; the generated entries are
@@ -184,13 +194,20 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
     | `drivers/`                           | `.driver.ts`                                                                                                 |
     | `extensions/`                        | `.extension-point.ts`, `.extension.ts`, `.interceptor.ts`                                                    |
     | `resources/<model>/`                 | `.resource.ts`, `.widget.ts`, `.document.ts`, `.notification.ts`, `.mail.tsx`                                |
-    | `database/migrations/`               | `NNNN-<name>.migration.ts`                                                                                   |
+    | `database/migrations/`               | `NNNN-<name>.migration.ts`, numbered per module                                                              |
     | `database/factories/`                | `<model>.factory.ts`                                                                                         |
     | `database/seeders/`                  | `minimal.seeder.ts`, `demo.seeder.ts`, `test.seeder.ts`                                                      |
     | `ai/`                                | `.prompt.ts`, `.skill.ts`, `.facts.ts`                                                                       |
     | `functions/`, `constants/`, `types/` | `.function.ts`, `.constant.ts`, `.type.ts`                                                                   |
 
     `resources/<model>/` names a model the module owns or may reference. Only an owned model has a `<model>.resource.ts`.
+
+    `database/` belongs to the module, like every other group: a service has one per module
+    (`src/modules/<key>/database/`) and a package has one in `src/node/`. Migrations are numbered per module, from
+    `0001` with no gaps, and a module's migrations change only its own Postgres schema (decision 20). Gen merges the
+    modules' streams, and those of the packages a host uses, into the ordered SQL of
+    [0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules) decision 2: modules in dependency order, then each
+    module's migrations by number.
 
 14. **App groups.** An app's `src/` holds the groups below.
 
@@ -254,6 +271,9 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
     | Panel, menu, shortcut, store, analytics event, bridge, block | `extends Panel({...})`, `Menu({ kind })`, `Shortcut({ keys })`, `Store({ persist })`, `AnalyticsEvent({ name })`, `Bridge({...})`, `Block({ category, icon })` | per kind |
     | Config                                                       | `extends Config`, or a subclass of a package's config class                                                                                                    | token    |
 
+    A menu builds its items in `items(m)` from a closed set of item verbs and options, with no CSS
+    ([0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries) decision 12).
+
 17. **Classes are the only tokens.** A constructor parameter names its token by its type, so there is no `@Inject`,
     `@Injectable` or string token. `@Lifetime(Lifetime.Request)` and `@Lifetime(Lifetime.Transient)` are the only scope
     markers; a class without one is a singleton, and the word "scope" is kept for settings and IAM. A named instance is
@@ -261,14 +281,21 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
 
 18. **Steps, actions and jobs.** A workflow's steps are its public async methods, run in declaration order. `@Step` takes
     only options: `after` (for a graph that is not a line), `when`, `heartbeat`, `retry`, `waitFor`, `correlate` and
-    `timeout`. `undo<Step>` compensates a step, and `output()` returns the run's result. A job is an action run from a
-    queue or a cron schedule through its `job:` option; it is not a kind.
+    `timeout`. `undo<Step>` compensates a step, and `output()` returns the run's result. The run's type is `Run<W>`,
+    whose conditional types test the bare workflow type `W`, not `this`, so `run.results.<step>` resolves inside a
+    subclass and includes inherited steps. A job is an action run from a queue or a cron schedule through its `job:`
+    option; it is not a kind.
 
 19. **Configuration is a class.** A configuration is `class X extends Config` in `src/config/<name>.config.ts`, with its
     key derived. A new configuration class extends a picked, omitted, partial or intersected class, or stands alone.
-    A host overrides a package's configuration with a `<Host><Base>` subclass that declares `override` members only. An environment value is
-    an `@Env("NAME")` field and a secret is a `@Secret("NAME")` field. A nested object is replaced whole by an override,
-    and a host merges it explicitly.
+    A host overrides a package's configuration with a `<Host><Base>` subclass that declares `override` members only and
+    no new field. An override of a field typed as a literal union, such as `DriverName<Port>` or an enum, restates the
+    base type (`override ledger: DriverName<LoyaltyLedger> = "memory"`), because a bare literal does not type-check
+    against the base, and `as const` is not used on an override. A custom driver class is bound with `@Replaces(Port)`.
+    An environment value is an `@Env("NAME")` field and a secret is a `@Secret("NAME")` field; the environment and
+    runway layers apply after the class is constructed. A nested object is replaced whole by an override, and a host
+    merges it explicitly. Retired: `defineConfig`, `registerAs`, `extendConfig`, the `override()` and `hostConfig(...)`
+    helpers, `@Config(key)` and `@DriverOf`.
 
 ### Derived identities
 
@@ -278,7 +305,7 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
     | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
     | Member key              | Package name without its scope, snake_case                                                                                     | `commerce`, `loyalty_kit`                           |
     | Module key              | Folder name, snake_case                                                                                                        | `orders`                                            |
-    | Model key, table        | `<module>.<snake(Class)>`; the table is snake_case and plural                                                                  | `orders.order_line`, `order_lines`                  |
+    | Model key, table        | `<module>.<snake(Class)>`; the table is snake_case and plural, in the module's Postgres schema                                 | `orders.order_line`, `orders.order_lines`           |
     | Permission              | `<module>.<snake(class minus "Permissions")>.<snake(static)>`                                                                  | `orders.order.cancel`                               |
     | Role, flag              | `<module>.<snake(class minus suffix)>`                                                                                         | `orders.order_clerk`, `orders.quick_order`          |
     | Settings group, field   | The module key; the field is the property name                                                                                 | `orders.autoCancelAfterMinutes`                     |
@@ -291,6 +318,12 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
     | Widget, block, route    | `<module>.<snake(stem)>`, `<member>.<snake(folder)>`, `Routes.<snake(folder)>`                                                 | `orders.revenue_today`, `web.cta_banner`            |
     | Seeder                  | `<module>.<profile>`                                                                                                           | `orders.demo`                                       |
     | i18n default keys       | `<module>::<kind>.<name>.<part>`                                                                                               | `orders::actions.order.cancel.confirm`              |
+
+    Each module's tables live in a Postgres schema named after the module key, inside the service's one logical
+    database ([0238](/adr/0238-database-and-connection-model)). Two modules of one service may therefore each own
+    a `Tag` model: their tables are `orders.tags` and `catalogue.tags`, where a table name derived from the class alone
+    would collide. Constraint names follow [0231](/adr/0231-naming-and-casing-standard): `idx_` for indexes, `fk_` for
+    foreign keys and `ck_` for check constraints.
 
 21. **Endpoints follow a convention.** Gen maps a key to a route the way Rails resource routing does.
 
@@ -317,55 +350,115 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
 23. **One meaning per word.** Each word below means only what its first column says. Where the right column says
     "retired", the word is not used for that thing.
 
-    | Word                                               | Means only                                                                                                                                      | Not this, or retired                                                                                                          |
-    | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-    | Member, package, service, app, worker              | Workspace members                                                                                                                               | —                                                                                                                             |
-    | Module                                             | A folder with `<key>.module.ts`; owns keys and exports                                                                                          | `@App` and `@Service` are retired                                                                                             |
-    | Entry                                              | A package subpath export: `.`, `./contracts`, `./node`, `./react`, `./native`, `./testing`                                                      | —                                                                                                                             |
-    | Tier, category, layer                              | The tier tag; `packages/<category>`; a config precedence layer                                                                                  | "Layer" never means an entry                                                                                                  |
-    | Action                                             | A write operation                                                                                                                               | A resource action is a button that runs an Action; React Router's `action` export is a route `submit()`                       |
-    | Query                                              | A read operation (L0 to L1, GET, cacheable, MCP tool)                                                                                           | —                                                                                                                             |
-    | Command                                            | A CLI command only                                                                                                                              | Palette and key entries are Shortcuts (`@stackra/kbd` becomes `@stackra/shortcuts`); the client's `.queue()` is a queued call |
-    | Job                                                | An action run from a queue or a cron (`job:` option)                                                                                            | Not a kind                                                                                                                    |
-    | Workflow, step, signal, heartbeat                  | A durable run; one of its methods; a fact sent into a parked run; liveness of a long step                                                       | A signal is not a component signal                                                                                            |
-    | Endpoint, tool                                     | HTTP exposure by convention; MCP exposure                                                                                                       | `@Controller` is for raw HTTP only                                                                                            |
-    | Permission                                         | A grantable right with a risk, as a static on `<Model>Permissions`                                                                              | —                                                                                                                             |
-    | Policy                                             | Record rules for one model, with methods named after verbs                                                                                      | Never a precondition                                                                                                          |
-    | Precondition                                       | Whether a call may run now, whoever asks (store paused, maintenance)                                                                            | Guard and Gate are retired as identifiers                                                                                     |
-    | Role                                               | A bundle of permissions granted at a scope                                                                                                      | The active role shapes presentation only ([0273](/adr/0273-active-role-within-a-tenant))                                      |
-    | Entitlement, flag                                  | A plan right; a release switch with an expiry                                                                                                   | —                                                                                                                             |
-    | Realm, area, scope                                 | An actor population; `ApiArea`; a settings scope or an IAM scope node                                                                           | A DI lifetime is a Lifetime; `Realm.TenantAdmin` is deleted                                                                   |
-    | Extension point, extension                         | A typed place to transform a value or refuse it; one implementer of one point                                                                   | Backend "hook" and "hook point" are retired                                                                                   |
-    | Interceptor                                        | Wraps a whole action call (the NestJS sense)                                                                                                    | —                                                                                                                             |
-    | Replacement                                        | Swaps a DI binding, as `@Replaces(Port)`                                                                                                        | —                                                                                                                             |
-    | Override                                           | Swaps a block or a Custom widget renderer, or an asset file, by path                                                                            | The override-point kind is retired                                                                                            |
-    | Hook                                               | React only: a `use*` function                                                                                                                   | —                                                                                                                             |
-    | Provider                                           | A React context component only                                                                                                                  | DI providers are bindings; `@ContextProvider` becomes the `Facts` kind                                                        |
-    | Binding                                            | A class registered in the container, printed in `wiring.ts`                                                                                     | —                                                                                                                             |
-    | Plugin                                             | Tool plugins only (Vite, oxlint, Expo)                                                                                                          | Not a Stackra kind                                                                                                            |
-    | Port, driver, adapter                              | An abstract contract class; its implementation; generated glue only                                                                             | —                                                                                                                             |
-    | Token                                              | The class itself                                                                                                                                | `defineToken`, string tokens and `@Inject` are retired                                                                        |
-    | Model, schema, view, relation, link                | A persisted entity; a wire shape; an output schema `<X>View`; a relation decorator; a relation to another module's model, with its mode derived | `@Link` and `links/` are retired                                                                                              |
-    | State machine, transition                          | A model field's lifecycle class; one of its methods                                                                                             | `states/` is retired                                                                                                          |
-    | Projection                                         | A read model fed by another service's events                                                                                                    | —                                                                                                                             |
-    | Config, settings, env, secret                      | Deploy-time configuration; tenant runtime settings; environment variables read through `@Env`; a reference resolved blind                       | —                                                                                                                             |
-    | Resource, resource page, relation manager          | One model's admin surface in one area: List, Create, Edit, View; a related-model table                                                          | —                                                                                                                             |
-    | Widget, slot                                       | A query bound to a display kind; a typed place on a page                                                                                        | —                                                                                                                             |
-    | Document, page                                     | A saved, tenant-editable block tree; what a route renders (coded, or a document of kind Page)                                                   | `@Page` is retired                                                                                                            |
-    | Block, component                                   | A component that documents can place (a props class and a renderer); any React function                                                         | —                                                                                                                             |
-    | Route, layout, panel, menu                         | A path and its page class; the frame around child routes; an app area; navigation data                                                          | "Shell" is not a kind                                                                                                         |
-    | Presentation, chrome                               | Page, Modal, Sheet, Drawer, FullScreen; the status bar, system navigation bar, tab bar and header                                               | "Navigation bar" alone is ambiguous and not used                                                                              |
-    | Store, storage, bucket                             | A client state class; `@stackra/storage`; a server file-storage declaration                                                                     | —                                                                                                                             |
-    | Notification, template, toast, broadcast           | A message to people; a channel body; a transient in-app message; a realtime push                                                                | Filament's "notifications" are toasts                                                                                         |
-    | Event                                              | `DomainEvent`, `IntegrationEvent`, `WebhookEvent`, `AnalyticsEvent`                                                                             | —                                                                                                                             |
-    | Change                                             | A versioned conversion of an event or a response (`up`, `down`)                                                                                 | `@Upcast` is retired                                                                                                          |
-    | Migration, factory, seeder, profile, fake, fixture | Laravel meanings; profiles are minimal, demo and test; fixtures are recorded external payloads only                                             | "Fetchers" are banned                                                                                                         |
-    | `stackra.manifest.json`                            | The member contract, committed at the member root                                                                                               | `app-manifest.json` is renamed; distinct from the generated PWA manifest and the Expo and Android manifests                   |
-    | Package names                                      | `@stackra/shortcuts` (was `@stackra/kbd`); `@stackra/notifications` (was `@stackra/mail`)                                                       | The old names are not used                                                                                                    |
+    | Word                                               | Means only                                                                                                                                | Not this, or retired                                                                                                          |
+    | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+    | Member, package, service, app, worker              | Workspace members                                                                                                                         | —                                                                                                                             |
+    | Module                                             | A folder with `<key>.module.ts`; owns keys and exports                                                                                    | `@App` and `@Service` are retired                                                                                             |
+    | Entry                                              | A package subpath export: `.`, `./contracts`, `./node`, `./react`, `./native`, `./testing`                                                | —                                                                                                                             |
+    | Tier, category, layer                              | The tier tag; `packages/<category>`; a config precedence layer                                                                            | "Layer" never means an entry                                                                                                  |
+    | Action                                             | A write operation                                                                                                                         | A resource action is a button that runs an Action; React Router's `action` export is a route `submit()`                       |
+    | Query                                              | A read operation (L0 to L1, GET, cacheable, MCP tool)                                                                                     | —                                                                                                                             |
+    | Command                                            | A CLI command only                                                                                                                        | Palette and key entries are Shortcuts (`@stackra/kbd` becomes `@stackra/shortcuts`); the client's `.queue()` is a queued call |
+    | Job                                                | An action run from a queue or a cron (`job:` option)                                                                                      | Not a kind                                                                                                                    |
+    | Workflow, step, signal, heartbeat                  | A durable run; one of its methods; a fact sent into a parked run; liveness of a long step                                                 | A signal is not a component signal                                                                                            |
+    | Endpoint, tool                                     | HTTP exposure by convention; MCP exposure                                                                                                 | `@Controller` is for raw HTTP only                                                                                            |
+    | Permission                                         | A grantable right with a risk, as a static on `<Model>Permissions`                                                                        | —                                                                                                                             |
+    | Policy                                             | Record rules for one model, with methods named after verbs                                                                                | Never a precondition                                                                                                          |
+    | Precondition                                       | Whether a call may run now, whoever asks (store paused, maintenance)                                                                      | Guard and Gate are retired as identifiers                                                                                     |
+    | Role                                               | A bundle of permissions granted at a scope                                                                                                | The active role shapes presentation only ([0273](/adr/0273-active-role-within-a-tenant))                                      |
+    | Entitlement, flag                                  | A plan right; a release switch with an expiry                                                                                             | —                                                                                                                             |
+    | Realm, area, scope                                 | An actor population; `ApiArea`; a settings scope or an IAM scope node                                                                     | A DI lifetime is a Lifetime; `Realm.TenantAdmin` is deleted                                                                   |
+    | Extension point, extension                         | A typed place to transform a value or refuse it; one implementer of one point                                                             | Backend "hook" and "hook point" are retired                                                                                   |
+    | Interceptor                                        | Wraps a whole action call (the NestJS sense)                                                                                              | —                                                                                                                             |
+    | Replacement                                        | Swaps a DI binding, as `@Replaces(Port)`                                                                                                  | —                                                                                                                             |
+    | Override                                           | Swaps a block or a Custom widget renderer, or an asset file, by path                                                                      | The override-point kind is retired                                                                                            |
+    | Hook                                               | React only: a `use*` function                                                                                                             | —                                                                                                                             |
+    | Provider                                           | A React context component only                                                                                                            | DI providers are bindings; `@ContextProvider` becomes the `Facts` kind                                                        |
+    | Binding                                            | A class registered in the container, printed in `wiring.ts`                                                                               | —                                                                                                                             |
+    | Plugin                                             | Tool plugins only (Vite, oxlint, Expo)                                                                                                    | Not a Stackra kind                                                                                                            |
+    | Port, driver, adapter                              | An abstract contract class; its implementation; generated glue only                                                                       | —                                                                                                                             |
+    | Token                                              | The class itself                                                                                                                          | `defineToken`, string tokens and `@Inject` are retired                                                                        |
+    | Model, schema, view, relation, link                | A persisted entity; a wire shape; an output schema `<X>View`; a relation decorator; a relation to another module's model, typed `Link<T>` | `@Link` and `links/` are retired                                                                                              |
+    | State machine, transition                          | A model field's lifecycle class; one of its methods                                                                                       | `states/` is retired                                                                                                          |
+    | Projection                                         | A read model fed by another service's events                                                                                              | —                                                                                                                             |
+    | Config, settings, env, secret                      | Deploy-time configuration; tenant runtime settings; environment variables read through `@Env`; a reference resolved blind                 | —                                                                                                                             |
+    | Resource, resource page, relation manager          | One model's admin surface in one area: List, Create, Edit, View; a related-model table                                                    | —                                                                                                                             |
+    | Widget, slot                                       | A query bound to a display kind; a typed place on a page                                                                                  | —                                                                                                                             |
+    | Document, page                                     | A saved, tenant-editable block tree; what a route renders (coded, or a document of kind Page)                                             | `@Page` is retired                                                                                                            |
+    | Block, component                                   | A component that documents can place (a props class and a renderer); any React function                                                   | —                                                                                                                             |
+    | Route, layout, panel, menu                         | A path and its page class; the frame around child routes; an app area; navigation data                                                    | "Shell" is not a kind                                                                                                         |
+    | Presentation, chrome                               | Page, Modal, Sheet, Drawer, FullScreen; the status bar, system navigation bar, tab bar and header                                         | "Navigation bar" alone is ambiguous and not used                                                                              |
+    | Store, storage, bucket                             | A client state class; `@stackra/storage`; a server file-storage declaration                                                               | —                                                                                                                             |
+    | Notification, template, toast, broadcast           | A message to people; a channel body; a transient in-app message; a realtime push                                                          | Filament's "notifications" are toasts                                                                                         |
+    | Event                                              | `DomainEvent`, `IntegrationEvent`, `WebhookEvent`, `AnalyticsEvent`                                                                       | —                                                                                                                             |
+    | Change                                             | A versioned conversion of an event or a response (`up`, `down`)                                                                           | `@Upcast` is retired                                                                                                          |
+    | Migration, factory, seeder, profile, fake, fixture | Laravel meanings; profiles are minimal, demo and test; fixtures are recorded external payloads only                                       | "Fetchers" are banned                                                                                                         |
+    | `stackra.manifest.json`                            | The member contract, committed at the member root                                                                                         | `app-manifest.json` is renamed; distinct from the generated PWA manifest and the Expo and Android manifests                   |
+    | Package names                                      | `@stackra/shortcuts` (was `@stackra/kbd`); `@stackra/notifications` (was `@stackra/mail`)                                                 | The old names are not used                                                                                                    |
 
 24. **Sibling modules import only public groups.** A module imports a sibling only through the sibling's exported classes,
     `schemas/`, `enums/`, `events/`, `errors/` and `access/*.permissions.ts`, and `models/` from `models/` and `database/`
     only, for relations. A package's `contracts/` is a leaf: it imports nothing else from the package.
+
+### Kind bases, the shape compiler and models
+
+Three spikes (STA-335) built a kind base usable both bare and called, the type-to-schema compiler on template shapes,
+and MikroORM `EntitySchema` emission from model classes. All three worked once the rules below were added.
+
+25. **The kind-package contract.** A kind package builds each kind base so that it works both as `extends X` and as
+    `extends X({ ... })`, and the declared type decides which forms a kind allows.
+    - Each factory returns an exported, named class type (`ActionClass`, `WorkflowClass<I>`, `ResourceClass<M>`), and
+      each instance base carries a type-only `~kind` brand, so one kind cannot stand in for another and a consumer's
+      declaration emit works. A parameter that takes a class of some kind, such as `operations.create` or `startOn`, is
+      typed `abstract new (...args: any[]) => XBase`, because a class with injected constructor parameters does not fit
+      a zero-argument constructor type.
+    - A kind base assigns no fields in its constructor and keeps no state made there. The presets set
+      `useDefineForClassFields: true` ([0300](/adr/0300-published-tooling-presets-and-enforced-spell-checking)
+      decision 6), and under that setting a subclass field declaration resets what a base constructor assigned.
+    - Declaration files erase kind options, decorators and initializers. Gen therefore reads a kind's options from source
+      for its own member, and from a dependency's committed `stackra.manifest.json` or generated output, never from the
+      dependency's `.d.ts`. A member that authors kinds never turns on `isolatedDeclarations`, which refuses an
+      expression such as `Action({ ... })` in an `extends` clause.
+
+26. **The shape compiler.** Gen compiles shape classes to Zod on the TypeScript 7 compiler API behind a small host seam,
+    with a TypeScript 6 host as the fallback; it does not use ts-morph. The rules are these:
+    - Gen sorts source files by path before it reads them, so its output does not change when the import graph does.
+    - `?:` compiles to `.exactOptional()`, because the presets set `exactOptionalPropertyTypes`. A `Date` field compiles
+      to a codec: ISO 8601 with an offset on the wire, a `Date` in code.
+    - A `number[]` or a map of numbers carries `@Int({ each: true })` or `@Num({ each: true })`.
+    - A default is a constant: a literal, an enum case, a literal-typed constant, or a value built by one of a closed set
+      of platform constructors that gen evaluates (`Duration.*`, `Money.of`). Any other initializer fails gen. A field
+      initialized with an enum case states the enum type (`status: OrderStatus = OrderStatus.PendingPayment`), or gen
+      sees only one literal and refuses it with the fix. Decorator arguments are literals or literal-typed constants.
+    - A union of schema classes compiles to a discriminated union, with an enum case as the discriminant. Any other union
+      beyond `T | null` needs the `@Field(zod)` hatch, which carries a reason.
+    - For each shape, gen also emits a type `X$Check` that asserts the compiled schema's output type equals the class's
+      fields, so the type checker proves the compiler right at no runtime cost.
+    - Generated schema names are qualified by module, so a class name used in two modules does not collide.
+    - A package ships its own generated schemas (its `X$`) and manifest entries. A host builds on them, with
+      `Base$.extend(...)` for a configuration override, `CursorInput` and `Page.of(...)`, and never compiles a
+      dependency's shapes again.
+    - The registry behind `DriverName<Port>` is keyed by the port's key, so two ports with the same members never share
+      driver names.
+    - The generated code uses zod 4 (4.1 or later is needed for codecs and `.exactOptional()`), pinned exactly at 4.6.7
+      in this repository's catalog and the template's.
+
+27. **Models hold no constructor-made state.** The ORM builds a loaded row without running its constructor, so a model
+    or trait has no `#private` field and no transient initializer, and a domain event that `order.record()` collects is
+    kept outside the instance. A model that narrows a trait field uses `declare`, because a redeclared field would
+    reset the trait's initializer. Models are built through `em.create`, factories or `CrudService`, never with `new`.
+    Gen's `EntitySchema` output indexes every many-to-one and link column (the Postgres platform does not index foreign
+    keys), maps a `string` with no `@Str({ max })` to `text`, writes defaults and enum items explicitly, emits the
+    optional-properties augmentation the ORM's `create` typing needs, and turns off the ORM's default-value inference.
+    `Money` is stored in minor units in a Postgres `bigint` column, read as a JavaScript `number`; the money type
+    refuses a value above `Number.MAX_SAFE_INTEGER`.
+
+28. **A cross-module relation is a `Link<T>`.** A relation to a model of another module is typed `Link<T>`. Gen stores
+    the target's public id in an indexed `<name>_id` column with no foreign key, no join and no target metadata.
+    `link.id` needs no load, a filter takes a raw id, and `link.load()` runs the owning module's generated query. A
+    `Link` has no `unwrap()`, so the ORM never treats it as a loadable reference. Gen derives whether a relation is a
+    link from module ownership, and fails with a fix when the annotation disagrees (`Ref<T>` across modules, `Link<T>`
+    inside one).
 
 ## Consequences
 
@@ -376,10 +469,12 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
 - A rename is a `@Renamed` and a reviewable manifest diff. A folder move no longer changes a wire name, but a changed key
   or name does, and the manifest shows it.
 - Gen does more work: it compiles types to Zod and MikroORM metadata, and it writes the manifest and the wiring. The
-  spikes of STA-335 come first, because they decide whether a callable and constructible base and the type compiler
-  work as designed.
-- The template and the members of this repository still use the pre-v3 shapes until STA-337 converts them, and the new
-  checks of STA-338 do not fail on them until those checks land.
+  spikes of STA-335 showed that the kind bases, the type compiler and the `EntitySchema` emission work, with the rules
+  of decisions 25 to 28; the spike code stays outside this repository and is not a package.
+- Kind authors give up a few TypeScript shortcuts: no `isolatedDeclarations`, `override` on every member that
+  replaces a default, and no constructor-made state in models or kind bases.
+- The template and the members of this repository still use the pre-v3 shapes until STA-337 (the template) and
+  STA-344 (this repository) convert them, and the new checks of STA-338 do not fail on them until those checks land.
 - Authors write `@Int` or `@Num` on every `number`. A plain `number` fails gen.
 - Derived names are less visible in source. `stackra ls <kind>`, which lists declarations from the manifest, is the way
   to see them; it is planned.
@@ -392,14 +487,21 @@ Nothing enforces this grammar yet. The folder tables in `tools/scripts/structure
 - planned — STA-338: the day-one lint rules `lines-between-class-members`, `multiline-decorator-options`,
   `no-empty-decorator` and `base-matches-suffix`, and the validator's `kind-path` check of the tables in this record.
 - planned — STA-340: the decorator-registry checks `no-kind-decorator`, `facet-target` and `no-parameter-decorator`;
-  `no-restricted-imports` for `defineToken`, `defineConfig`, `Injectable`, `Inject`, `Crud`, `Link`, `Override` and
-  `Provider`; the sibling-module boundary rules; and `structure.mjs` rebuilt as the single source of the tables in this
-  record.
-- planned — STA-335: the spikes (a base that is callable and constructible, the type-to-schema compiler on ten template
-  shapes, and MikroORM `EntitySchema` emission) run before any conversion.
+  `no-restricted-imports` for `defineToken`, `defineConfig`, `Injectable`, `Inject`, `Crud`, `Override` and `Provider`,
+  and for `Link` used as a decorator (the `Link<T>` type stays); a `no-restricted-imports` pattern that refuses a
+  `*.server` module in a file that is not a server file
+  ([0301](/adr/0301-stackra-seo-package) decision 6); `override-only` (an override declares no new field and uses no
+  `as const`); `no-new-shape` extended to models; a required `declare` when a model narrows a trait field; the
+  sibling-module boundary rules; and `structure.mjs` rebuilt as the single source of the tables in this record.
 - planned — STA-340: the gen checks `kind_suffix_mismatch`, `kind_class_name`, `two_kinds_in_file`, `kind_unregistered_base`,
-  `shape_number_kind`, `identity_changed` (with no `@Renamed`), `identity_collision` and `i18n_key_missing`. The
-  conversion of the template is STA-337.
+  `shape_number_kind`, `shape_unknown_type`, `shape_default_not_constant`, `shape_rule_not_constant`,
+  `shape_hatch_reason_missing`, `shape_decorator_type_mismatch`, `action_handle_signature`, `identity_changed` (with no
+  `@Renamed`), `identity_collision` and `i18n_key_missing`; the generated `X$Check` assertions; the link check of
+  decision 28; and the zod 4.6.7 entry in the `pnpm-workspace.yaml` catalog, which does not hold zod yet.
+- planned — STA-343: `useDefineForClassFields: true` set explicitly in the TypeScript presets
+  ([0300](/adr/0300-published-tooling-presets-and-enforced-spell-checking) decision 6).
+- The spikes of STA-335 ran outside this repository; their results are decisions 25 to 28. The conversion of the
+  template is STA-337, and the conversion of this repository's members is STA-344.
 
 ## Supersedes and sources
 
@@ -409,14 +511,15 @@ own decisions that this record does not touch.
 
 Related: [0003](/adr/0003-tier-dependency-direction), [0005](/adr/0005-di-container-and-legacy-decorators),
 [0022](/adr/0022-tests-live-in-tests-folders), [0090](/adr/0090-codegen-discovery-by-root-module),
-[0091](/adr/0091-generated-encore-app-in-stackra-folder), [0095](/adr/0095-zod-inside-field-decorators),
+[0238](/adr/0238-database-and-connection-model), [0091](/adr/0091-generated-encore-app-in-stackra-folder), [0095](/adr/0095-zod-inside-field-decorators),
 [0098](/adr/0098-actions-are-the-unit), [0126](/adr/0126-member-shapes-and-scaffold-templates),
 [0132](/adr/0132-permissions-catalogue-and-policy-providers), [0137](/adr/0137-declared-action-options-and-refusal-codes),
 [0138](/adr/0138-pipeline-order-is-fixed), [0140](/adr/0140-error-envelope-and-error-kinds),
 [0141](/adr/0141-integration-event-names-and-envelope), [0161](/adr/0161-state-machine-package),
 [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names),
 [0227](/adr/0227-rejected-and-deferred-technologies-refreshed),
-[0237](/adr/0237-generated-api-gateway-in-four-layers), [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles).
+[0237](/adr/0237-generated-api-gateway-in-four-layers), [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles),
+[0300](/adr/0300-published-tooling-presets-and-enforced-spell-checking) and [0301](/adr/0301-stackra-seo-package).
 The build and entry shape, the runway and the web runtime are in
 [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries),
 [0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups) and

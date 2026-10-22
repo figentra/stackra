@@ -27,7 +27,7 @@ Rules every member follows (`pnpm validate` enforces them):
 
 The programming model v3 is the target for new code (ADR 0294, 0295, 0296): a class declares its kind by its base
 class, each file sits in its kind's one home group, identities are derived and locked in `stackra.manifest.json`, and
-nobody writes `main.ts` or a tool config. No member is converted yet (STA-337) and its checks are planned (STA-338,
+nobody writes `main.ts` or a tool config. No member is converted yet (STA-344) and its checks are planned (STA-338,
 STA-339, STA-340), so today's code and `validate-repository.mjs` still show the older shapes.
 
 Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boundaries, knip). Conventional commits.
@@ -397,8 +397,8 @@ Services communicate through the generated Encore app (ADRs 0091 and 0124):
 
 Classes are the only DI tokens, and configuration is a `Config` class (ADR 0145 and 0146 as amended by 0294). Names and casing follow ADR 0231 and 0294.
 
-Today's code: the v3 shapes above are the target. No framework package ships yet, the example service still has a
-authored `src/main.ts`, and older pages still name `app-manifest.json`; the conversion is STA-337.
+Today's code: the v3 shapes above are the target. No framework package ships yet, the example service still has an
+authored `src/main.ts`, and older pages still name `app-manifest.json`; the conversion is STA-344.
 
 #### Enforcement
 
@@ -421,7 +421,7 @@ authored `src/main.ts`, and older pages still name `app-manifest.json`; the conv
 
 Every name follows ADR 0231 (`/adr/0231-naming-and-casing-standard`) as amended by the programming model v3, ADR 0294
 (`/adr/0294-programming-model-v3-grammar-folders-identities-and-naming`). The summary is below. A name that no row covers
-needs an ADR before use. v3 is the target: no member in this repository has been converted yet (STA-337), so existing
+needs an ADR before use. v3 is the target: no member in this repository has been converted yet (STA-344), so existing
 code may still show the older forms; write new code in the v3 form.
 
 - **Code style**: whole words; acronyms cased as words (`userId`, `ApiClient`, `loadHttpUrl`); no `I` prefix; abbreviations only `id`, `url`, `api`, `db`, `i18n`, `ui` (so `kbd` is refused: the package is `@stackra/shortcuts`); booleans `is`, `has`, `can`; handlers `on` or `handle`; React hooks `use`; module-level constants SCREAMING_SNAKE.
@@ -432,7 +432,7 @@ code may still show the older forms; write new code in the v3 form.
 - **Wire identifiers keep dots**: action keys `orders.order.cancel@1`, permissions `orders.order.cancel`, events `orders.order.paid.v1`.
 - **Machine codes** (categories, error codes, refusal codes, event reasons, gen error codes): snake_case.
 - **URL paths**: kebab-case, plural, derived from the key by the endpoint convention (`http-conventions`). **JSON keys and query parameters**: camelCase.
-- **Database**: snake_case plural tables; `idx_` and `fk_` names for indexes and foreign keys.
+- **Database**: snake_case plural tables in the module's Postgres schema (`orders.order_lines`); `idx_`, `fk_` and `ck_` names for indexes, foreign keys and check constraints.
 - **Environment variables and secrets**: SCREAMING_SNAKE. Public values use `VITE_`, `EXPO_PUBLIC_` or `RENDERER_VITE_` and never hold a secret. Server values use `STACKRA_`, `FIGENTRA_` or `MAIN_VITE_`. Secrets are `<PROVIDER>_<PURPOSE>`. Tool-reserved prefixes are `ENCORE_`, `TURBO_`, `NODE_`, `CI`, `GITHUB_`, `INFISICAL_`, `EAS_`.
 - **Namespace lookups** (i18n keys, assets, templates, stubs) use `<module>::<path>`, for example `orders::actions.order.cancel.confirm` and `flags::public/images/eg.svg`.
 - **DI**: classes are the only tokens. A constructor parameter names its dependency by its type; a port is an abstract class; a named instance is the type `Named<Port, "x">`. `defineToken`, string tokens, `@Inject` and `@Injectable` are retired (ADR 0145, 0263 as amended by 0294).
@@ -728,7 +728,7 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 The programming model v3 (ADR 0294, 0295) is the target shape below. Today's members predate it: the console, mobile
 app, example and health services and the static Worker still have an authored `src/main.ts`, and
 `validate-repository.mjs` (`checkService`) still requires `src/main.ts` and a `stackra.module` field in a service's
-`package.json` until STA-339 changes it. Convert nothing by hand ahead of the codemod (STA-337); write new code in the
+`package.json` until STA-339 changes it. Convert nothing by hand ahead of the codemod (STA-344); write new code in the
 v3 shape where the member already allows it.
 
 ##### Every member (ADR 0294 rule R12, ADR 0295)
@@ -756,7 +756,8 @@ v3 shape where the member already allows it.
 - Independent workspace members; feature modules in `src/modules/<key>/`, each with the module groups of ADR 0294
   decision 13 (`models/`, `actions/`, `queries/`, `schemas/`, `enums/`, `errors/`, `events/`, `listeners/`,
   `workflows/`, `access/`, `services/`, `drivers/`, `extensions/`, `resources/<model>/`, `database/{migrations,factories,seeders}/`,
-  `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its first file
+  `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its first file; `database/` is per module,
+  its migrations numbered per module, and each module's tables live in its own Postgres schema
 - Config classes in `src/config/`; the public type surface in `src/contracts/`
 
 ##### Apps (<name>)

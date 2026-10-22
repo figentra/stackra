@@ -10,7 +10,7 @@ the CLI, jobs, the console and the generated clients (ADR 0217); `stackra gen` e
 You never write `api()`, a controller for business behaviour, or an HTTP response by hand.
 
 This is the v3 target (ADR 0294). `@stackra/actions` and gen do not ship yet, and no member uses these shapes today
-(the conversion is STA-337); the package docs win once they ship.
+(the conversion is STA-344); the package docs win once they ship.
 
 ## Decide first
 

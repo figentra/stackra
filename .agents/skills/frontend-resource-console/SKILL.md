@@ -11,7 +11,7 @@ its widgets and documents in `resources/<model>/`; gen and the registry publish 
 operator, tenant admin, customer portal.
 
 This is the v3 target. `@stackra/panel` and gen do not ship yet, and the console is still a hello-world entry (the
-conversion is STA-337); the package docs win once they ship.
+conversion is STA-344); the package docs win once they ship.
 
 ## Decide first
 

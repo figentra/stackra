@@ -16,7 +16,7 @@ async function main() {
 
   if (has("endpoint", "route", " api", "handler", "controller"))
     hints.push(
-      "HTTP: services are plain TypeScript; endpoints are decorated actions (`@AsEndpoint`) and Encore is generated (ADR 0091/0124), never hand-written; typed Zod input/output; authenticated by default; cursor pagination on lists; prefixed public ids; typed errors; Idempotency-Key on writes (.agents/rules/http-conventions.md).",
+      "HTTP: services are plain TypeScript; behaviour is an action or query class (`extends Action({ key })`, `extends Query({ key })`), gen derives the route from the key and generates Encore (ADR 0091/0124/0294), never hand-written; input and output are the types of `handle` and gen compiles the Zod; authenticated by default; cursor pagination on lists; prefixed public ids; typed `Refusal` errors; Idempotency-Key on writes (.agents/rules/http-conventions.md).",
     );
   if (has("secret", "api key", "token", "credential", ".env", "infisical"))
     hints.push(
@@ -40,7 +40,7 @@ async function main() {
     );
   if (has("service", "microservice", "encore service", "worker", "gateway"))
     hints.push(
-      "Services are independent workspace members under `services/` (`@figentra/service-<name>`, entry `src/main.ts`), never importing each other or apps (ADR-0010). Check `.agents/rules/not-built-yet.md` before introducing a framework or runtime.",
+      "Services are independent workspace members under `services/` (`@figentra/service-<name>`), never importing each other or apps (ADR-0010). A member authors `stackra.config.ts` and one root module `src/<key>.module.ts`; gen writes the entry (ADR 0294/0295), though today's services still have an authored `src/main.ts` until they are converted (.agents/rules/service-checklist.md). Check `.agents/rules/not-built-yet.md` before introducing a framework or runtime.",
     );
   if (has("component", "screen", "page", "button", "design token", "brand"))
     hints.push(

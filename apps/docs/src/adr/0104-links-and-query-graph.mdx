@@ -7,17 +7,18 @@ description: "Accepted, amended by 0268, 0294 · 2026-10-19"
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
   programming model v3: `@Link` and the `links/` folder are retired. A relation to a model of
   another module is a relation decorator with a thunk, such as `@ManyToOne(() => Variant)`, typed
-  `Ref<T>` for one target and `Collection<T>` for many. Gen derives the link mode from the module
-  graph. The relation stores the target's public id with no foreign key, and `line.variant.load()`
-  runs the owning module's query to read the target. A relation inside one module stays an ordinary
-  relation with cascade rules, as decision 5 says. Decision 1 (a pivot owned by a link) is
+  `Link<T>` (0294 decision 28). Gen derives the link mode from module ownership. The relation stores
+  the target's public id in an indexed column with no foreign key and no join, `line.variant.id`
+  needs no load, and `line.variant.load()` runs the owning module's generated query to read the
+  target. A relation inside one module stays an ordinary relation with cascade rules, as decision 5
+  says, typed `Ref<T>` for one target and `Collection<T>` for many. Decision 1 (a pivot owned by a link) is
   superseded, because no link object exists. The new model does not address decision 2
   (`query.graph`), so this note does not settle the form of cross-module reads beyond `load()`.
   Decision 3 is unchanged.
 
-Enforcement of this note: planned — STA-340 (gen checks: a cross-module target typed as an entity
-instead of `Ref<T>`; a link that points up the module graph or forms a cycle; a foreign key or a
-cascade across modules).
+Enforcement of this note: planned — STA-340 (gen checks: a cross-module relation not typed
+`Link<T>`, or a `Link<T>` inside one module; a link that points up the module graph or forms a
+cycle; a foreign key or a cascade across modules).
 
 </Note>
 

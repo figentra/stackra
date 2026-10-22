@@ -50,7 +50,7 @@ A house skill that this repository writes carries a category prefix: `backend-`,
 
 ### House skills in this repository
 
-Each is grounded in the ADRs it cites, teaches the programming model v3 target (ADR 0294), uses a worked example (most use the orders module, `orders.order.cancel@1`), ends with the check that enforces it, and says that the package's own docs win once the package ships.
+Each is grounded in the ADRs it cites, uses a worked example (most use the orders module, `orders.order.cancel@1`), ends with the check that enforces it, and says that the package's own docs win once the package ships. The seven skills whose ADR column cites 0294 teach the programming model v3 target. `backend-errors`, `backend-assets-and-storage` and `backend-gen-and-encore-target` still teach the shapes from before v3 (`StackraError`, `app-manifest.json`, ts-morph) until they are rewritten (planned — STA-345); the docs, spec and mobile skills do not touch the programming model.
 
 | Skill                                     | Teaches                                                                                     | ADRs                                           |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------- |

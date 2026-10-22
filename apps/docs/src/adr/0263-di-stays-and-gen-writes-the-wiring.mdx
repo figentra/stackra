@@ -11,7 +11,10 @@ description: "Accepted, amended by 0294 · 2026-10-21"
   decision 6 (the module file holds `exports`, `imports` on roots only and `wrap` on app roots only, with a derived key
   and no `providers` list or `name`); decision 7 (gen discovers a module's providers by base class in the group folders,
   and the scope comes from `@Lifetime`); decision 9 (config is a class, and the driver choice is a config field typed
-  `DriverName<Port>`). Decisions 1, 5, 8, 10, 11, 12 and 13 stand.
+  `DriverName<Port>`; the host layer is a `<Host><Base>` subclass with `override` members only, so `hostConfig(...)`
+  and the `override()` helper are retired, and a custom driver class is bound with `@Replaces(Port)`). Decision 5
+  stands with one change: gen reads the constructor types on the TypeScript 7 compiler API, with a TypeScript 6 host as
+  the fallback, not with ts-morph (0294 decision 26). Decisions 1, 8, 10, 11, 12 and 13 stand.
 </Note>
 
 <Note>

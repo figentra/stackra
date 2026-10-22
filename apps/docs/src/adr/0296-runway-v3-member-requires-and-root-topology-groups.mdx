@@ -18,13 +18,13 @@ description: "Accepted · 2026-10-22"
 
 ## Context
 
-Runway today is one file per repository. It holds the deployables, the resources and their sizes, the scaling, the release policy, the domains and the secrets map. Topology, which packs logical services into deployables, is decided in a second record. A service that needs a dedicated cache or search index has no place to say so except the shared file, and the root must know every member's needs in order to size it.
+[ADR 0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml) decision 4 gives each repository one root `runway.yaml`, and its decision 5 lists the sections that file holds: deployables and providers, resources and scaling, the release policy, domains and the secrets map. Topology, which packs logical services into deployables, is decided in [ADR 0169](/adr/0169-topology-runway-yaml-packs-logical-services-into-deployables). The JSON Schemas in `tools/schemas/` already go further. `runway-root.schema.json`, `runway-app.schema.json` and `runway-service.schema.json` describe runway format version 2, which splits the root from member runways. In version 2 a member runway names itself in a required `member` key and also holds facts about where it runs: for each environment, its `deployable`, its `isolate` flag and its `resources`. A service that needs a dedicated cache or search index has no field that says so or why, and the facts about placement are split between the member and the root.
 
 Those are two different facts. What a member needs changes with its code. Where a member runs, and which processes it shares, changes with the environment and the account. Splitting them lets a member state its requirements beside its code, and lets the root decide placement once for each environment.
 
 ## Decision
 
-1. **A member runway states WHAT.** A member that needs runtime resources has a `runway.yaml` at its member root. It declares `version: 3` and three things:
+1. **A member runway states WHAT.** A member that needs runtime resources has a `runway.yaml` at its member root. The member is the one whose folder holds the file, so the file does not name it. It declares `version: 3` and three things:
    - `requires`: one entry per resource the member needs beyond what gen derives from `stackra.manifest.json`. An entry names an `engine` and whether the resource is `dedicated`. A dedicated resource also has a `reason`, one line that says why the member cannot share a resource.
    - `secrets`: the names of the secrets the member reads. The file holds names only, never values ([ADR 0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets)).
    - `environments.<name>`: the member's sizes and values for each environment. These are a port, the database storage and extensions, the cache size, replicas and eviction policy, queue settings, and the `config` values that set the member's config classes for that environment. Those values are the last layer of configuration.
@@ -111,11 +111,11 @@ environments:
 
 ## Enforcement
 
-Today the only check that reaches these files is `checkYamlFlowMaps` in `tools/scripts/validate-repository.mjs`, which covers the block-style rule for repository YAML. No runway file is committed yet, and the JSON Schema that ADR 0168 requires is not written.
+Today the only check that reaches these files is `checkYamlFlowMaps` in `tools/scripts/validate-repository.mjs`, which covers the block-style rule for repository YAML. No runway file is committed yet. The schemas on main describe format version 2: `tools/schemas/runway-root.schema.json`, `tools/schemas/runway-app.schema.json` and `tools/schemas/runway-service.schema.json` fix `version` at 2, and both member schemas require `member`, so a version 3 member runway fails them. Editors read these schemas, and the static Worker serves them; `pnpm validate` does not check runway files against them yet.
 
 Planned, tracked in STA-339:
 
-- planned — STA-339: a schema for both files, checked by `pnpm validate`. It fails when a member runway holds a root key, when a grouped environment does not place each member exactly once, when an engine is not allowed by ADR 0227, and when `dedicated` has no `reason`.
+- planned — STA-339: the three schemas are replaced by version 3 schemas. The member schemas fix `version` at 3, have no `member` key and refuse every root key; the root schema gains the topology groups of decision 2. `pnpm validate` checks every runway file against them. It fails when a member runway holds a root key, when a grouped environment does not place each member exactly once, when an engine is not allowed by ADR 0227, and when `dedicated` has no `reason`.
 - planned — STA-339: gen fails when a `requires` entry has no driver.
 
 ## Supersedes and related

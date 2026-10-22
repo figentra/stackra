@@ -73,8 +73,8 @@ Services communicate through the generated Encore app (ADRs 0091 and 0124):
 
 Classes are the only DI tokens, and configuration is a `Config` class (ADR 0145 and 0146 as amended by 0294). Names and casing follow ADR 0231 and 0294.
 
-Today's code: the v3 shapes above are the target. No framework package ships yet, the example service still has a
-authored `src/main.ts`, and older pages still name `app-manifest.json`; the conversion is STA-337.
+Today's code: the v3 shapes above are the target. No framework package ships yet, the example service still has an
+authored `src/main.ts`, and older pages still name `app-manifest.json`; the conversion is STA-344.
 
 ## Enforcement
 

@@ -6,7 +6,7 @@ description: Name and shape TypeScript in Stackra (programming model v3) - the n
 # Naming, casing and code conventions
 
 One table, enforced by the house lint plugin and the validator as they land (ADR 0129). ADR 0231 as amended by the
-programming model v3 (ADR 0294) is the source. v3 is the target: no member is converted yet (STA-337) and the checks
+programming model v3 (ADR 0294) is the source. v3 is the target: no member is converted yet (STA-344) and the checks
 are planned (STA-338, STA-340), so write new code in this form even where old code differs.
 
 ## The table
@@ -24,8 +24,8 @@ are planned (STA-338, STA-340), so write new code in this form even where old co
 | Machine codes (errors, refusals, reasons) | snake_case; error codes derived from the class                 | `order_not_payable`, `step_up_required`                  |
 | URL paths                                 | Derived from the key, kebab-case, plural                       | `PUT /orders/:orderId/cancel`                            |
 | JSON keys and query parameters            | camelCase                                                      | `{ "orderId": "..." }`                                   |
-| Database tables                           | snake_case, plural, derived from the model                     | `order_lines`                                            |
-| Indexes and foreign keys                  | `idx_` / `fk_` prefixes                                        | `idx_order_lines_order_id`                               |
+| Database tables                           | snake_case, plural, in the module's Postgres schema            | `orders.order_lines`                                     |
+| Indexes, foreign keys, check constraints  | `idx_` / `fk_` / `ck_` prefixes                                | `idx_order_lines_order_id`, `ck_orders_status`           |
 | Environment variables                     | SCREAMING_SNAKE; public prefixes never hold secrets            | `STACKRA_COMMERCE__TIMEOUT_MS`                           |
 | Branches                                  | `figentra/sta-<n>-<slug>`                                      | `figentra/sta-334-v3-adr-wave`                           |
 | Design tokens                             | CSS property and dotted forms                                  | `--color-ink-900`, `color.ink.900`                       |

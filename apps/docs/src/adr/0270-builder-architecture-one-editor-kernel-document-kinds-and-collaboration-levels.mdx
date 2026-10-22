@@ -24,7 +24,9 @@ description: "Accepted, amended by 0294 · 2026-10-21"
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming). Decision 3's `@Block` is
   retired: a block extends `Block({ category, icon })`. Decision 8's `@Route({ document })` is retired with the `@Route`
   decorator: a route is a route class that renders a document, and a coded document is declared by a `Document` class.
-  `@Page` is retired too: a page is a document of kind Page. The document kinds and surfaces of decision 6 are unchanged.
+  `@Page` is retired too: a page is a document of kind Page. Decision 12's `@stackra/mail`, the package with the
+  `Mailer` driver, is renamed `@stackra/notifications` (0294 decision 23); the notifications service of decision 12 is
+  unchanged. The document kinds and surfaces of decision 6 are unchanged.
 </Note>
 
 ## Context

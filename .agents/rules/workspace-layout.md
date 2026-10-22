@@ -62,7 +62,7 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 The programming model v3 (ADR 0294, 0295) is the target shape below. Today's members predate it: the console, mobile
 app, example and health services and the static Worker still have an authored `src/main.ts`, and
 `validate-repository.mjs` (`checkService`) still requires `src/main.ts` and a `stackra.module` field in a service's
-`package.json` until STA-339 changes it. Convert nothing by hand ahead of the codemod (STA-337); write new code in the
+`package.json` until STA-339 changes it. Convert nothing by hand ahead of the codemod (STA-344); write new code in the
 v3 shape where the member already allows it.
 
 ### Every member (ADR 0294 rule R12, ADR 0295)
@@ -90,7 +90,8 @@ v3 shape where the member already allows it.
 - Independent workspace members; feature modules in `src/modules/<key>/`, each with the module groups of ADR 0294
   decision 13 (`models/`, `actions/`, `queries/`, `schemas/`, `enums/`, `errors/`, `events/`, `listeners/`,
   `workflows/`, `access/`, `services/`, `drivers/`, `extensions/`, `resources/<model>/`, `database/{migrations,factories,seeders}/`,
-  `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its first file
+  `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its first file; `database/` is per module,
+  its migrations numbered per module, and each module's tables live in its own Postgres schema
 - Config classes in `src/config/`; the public type surface in `src/contracts/`
 
 ### Apps (<name>)

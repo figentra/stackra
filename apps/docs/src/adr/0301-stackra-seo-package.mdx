@@ -40,9 +40,11 @@ package in the cross-cutting category as planned; this ADR decides what it holds
 ## Enforcement
 
 planned — tests in `@stackra/seo` for the escaper (values that try to close the script element or add markup), the sitemap paging
-at the protocol limits, the robots groups, the redirect status and target, and the order of the SEO chain. The
-`no-restricted-imports` lint rule for `*.server` modules in files that are not server files ([0129](/adr/0129-house-lint-plugin-and-coding-standard))
-covers the move in decision 6. Linear: STA-341.
+at the protocol limits, the robots groups, the redirect status and target, and the order of the SEO chain. Linear: STA-341.
+
+planned — a `no-restricted-imports` pattern that refuses a `*.server` module in a file that is not a server file, which
+keeps the move of decision 6 from coming back. No such rule exists yet in `@stackra/oxlint-config` or `.oxlintrc.jsonc`.
+Linear: STA-340 ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) Enforcement).
 
 ## Supersedes and sources
 

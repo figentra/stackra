@@ -11,7 +11,11 @@ description: "Accepted, amended by 0264, 0294 · 2026-10-20"
   amended by 0294), so `defineToken` and the same-named token carve-out no longer apply. The banned
   identifiers (`*Guard`, `*Gate`, `*HookPoint`, `defineToken`, `defineConfig`, `@Inject`, and the
   `kbd` abbreviation) are refused, and the words of 0294's dictionary govern names. `@stackra/kbd`
-  becomes `@stackra/shortcuts`.
+  becomes `@stackra/shortcuts`, and `@stackra/mail` becomes `@stackra/notifications`. In the
+  database rows, a table stays snake_case and plural but lives in its module's Postgres schema
+  (`orders.order_lines`, 0294 decision 20), and check constraints take the `ck_` prefix beside the
+  `idx_` and `fk_` prefixes (`ck_orders_status`). `@stackra/database` ships the ORM naming strategy
+  that applies these prefixes.
 </Note>
 
 <Note>

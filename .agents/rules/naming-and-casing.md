@@ -8,7 +8,7 @@ description: One naming convention for Stackra. Files kebab-case with a kind suf
 
 Every name follows ADR 0231 (`/adr/0231-naming-and-casing-standard`) as amended by the programming model v3, ADR 0294
 (`/adr/0294-programming-model-v3-grammar-folders-identities-and-naming`). The summary is below. A name that no row covers
-needs an ADR before use. v3 is the target: no member in this repository has been converted yet (STA-337), so existing
+needs an ADR before use. v3 is the target: no member in this repository has been converted yet (STA-344), so existing
 code may still show the older forms; write new code in the v3 form.
 
 - **Code style**: whole words; acronyms cased as words (`userId`, `ApiClient`, `loadHttpUrl`); no `I` prefix; abbreviations only `id`, `url`, `api`, `db`, `i18n`, `ui` (so `kbd` is refused: the package is `@stackra/shortcuts`); booleans `is`, `has`, `can`; handlers `on` or `handle`; React hooks `use`; module-level constants SCREAMING_SNAKE.
@@ -19,7 +19,7 @@ code may still show the older forms; write new code in the v3 form.
 - **Wire identifiers keep dots**: action keys `orders.order.cancel@1`, permissions `orders.order.cancel`, events `orders.order.paid.v1`.
 - **Machine codes** (categories, error codes, refusal codes, event reasons, gen error codes): snake_case.
 - **URL paths**: kebab-case, plural, derived from the key by the endpoint convention (`http-conventions`). **JSON keys and query parameters**: camelCase.
-- **Database**: snake_case plural tables; `idx_` and `fk_` names for indexes and foreign keys.
+- **Database**: snake_case plural tables in the module's Postgres schema (`orders.order_lines`); `idx_`, `fk_` and `ck_` names for indexes, foreign keys and check constraints.
 - **Environment variables and secrets**: SCREAMING_SNAKE. Public values use `VITE_`, `EXPO_PUBLIC_` or `RENDERER_VITE_` and never hold a secret. Server values use `STACKRA_`, `FIGENTRA_` or `MAIN_VITE_`. Secrets are `<PROVIDER>_<PURPOSE>`. Tool-reserved prefixes are `ENCORE_`, `TURBO_`, `NODE_`, `CI`, `GITHUB_`, `INFISICAL_`, `EAS_`.
 - **Namespace lookups** (i18n keys, assets, templates, stubs) use `<module>::<path>`, for example `orders::actions.order.cancel.confirm` and `flags::public/images/eg.svg`.
 - **DI**: classes are the only tokens. A constructor parameter names its dependency by its type; a port is an abstract class; a named instance is the type `Named<Port, "x">`. `defineToken`, string tokens, `@Inject` and `@Injectable` are retired (ADR 0145, 0263 as amended by 0294).

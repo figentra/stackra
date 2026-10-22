@@ -5,16 +5,19 @@ description: "Accepted, amended by 0294 · 2026-10-20"
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
-  programming model v3: migrations live in each member's `database/migrations/` folder, named
-  `NNNN-<name>.migration.ts` and numbered in sequence. `stackra db diff` writes them, and a
-  migration class extends `Migration`. A migration has no `down()`: a bad migration is fixed by a
-  later one, as decision 4 already requires, and the validator refuses a `down()`. A package keeps
-  its migrations in its own `database/migrations/` folder, and gen pulls them into the host
-  (decision 1). Decisions 2 and 3 are unchanged.
+  programming model v3: migrations live in each module's `database/migrations/` folder
+  (`src/modules/<key>/database/migrations/` in a service, `src/node/database/migrations/` in a
+  package), named `NNNN-<name>.migration.ts`. The number counts per module, from `0001` with no
+  gaps, and a module's migrations change only its own Postgres schema (0294 decision 20). `stackra
+  db diff` writes them, and a migration class extends `Migration`. A migration has no `down()`: a
+  bad migration is fixed by a later one, as decision 4 already requires, and the validator refuses
+  a `down()`. Gen pulls a package's migrations into the host (decision 1) and writes the ordered SQL
+  of decision 2 with modules in dependency order, then each module's migrations by number.
+  Decisions 2 and 3 are otherwise unchanged.
 
 Enforcement of this note: planned — STA-338 (the kind-path check for `database/migrations/`);
-STA-340 (the validator's database-folder check: a migration not named `NNNN-<kebab>`, a gap in the
-sequence, or a `down()`).
+STA-340 (the validator's database-folder check: a migration not named `NNNN-<kebab>`, a gap in a
+module's sequence, or a `down()`).
 
 </Note>
 

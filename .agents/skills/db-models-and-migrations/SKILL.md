@@ -1,6 +1,6 @@
 ---
 name: db-models-and-migrations
-description: Model and migrate data in Stackra (programming model v3) - model classes that extend Model.with(...traits) with typed fields, relation decorators with thunks, Ref and Collection, classification, the EntitySchema gen emits for MikroORM, state machines, @stackra/database as the only ORM importer, gen-ordered SQL migrations with expand-and-contract and timeouts, the raw SQL rule and approved extensions, row-level security as equality on tenant_id, one logical database per service, and factories, seeders and migrations in database/. Use when adding or changing a model, field, index, migration, RLS policy or seed.
+description: Model and migrate data in Stackra (programming model v3) - model classes that extend Model.with(...traits) with typed fields, relation decorators with thunks, Ref, Link and Collection, a Postgres schema per module, classification, the EntitySchema gen emits for MikroORM, state machines, @stackra/database as the only ORM importer, gen-ordered SQL migrations with expand-and-contract and timeouts, the raw SQL rule and approved extensions, row-level security as equality on tenant_id, one logical database per service, and factories, seeders and migrations in database/. Use when adding or changing a model, field, index, migration, RLS policy or seed.
 ---
 
 # Models and migrations
@@ -10,13 +10,13 @@ MikroORM is the one ORM, it runs only on the server, and only `@stackra/database
 and orders the SQL migrations (ADR 0294 rule R4).
 
 This is the v3 target. `@stackra/model`, `@stackra/database` and gen do not ship yet, and no member holds a model today
-(the conversion is STA-337); the package docs win once they ship.
+(the conversion is STA-344); the package docs win once they ship.
 
 ## Worked example: an order line
 
 ```ts
-// src/modules/orders/models/order-line.model.ts — key `orders.order_line`, table `order_lines`, ids `oln_…`
-import { ManyToOne, Model, OnDelete, type Ref } from "@stackra/model";
+// src/modules/orders/models/order-line.model.ts — key `orders.order_line`, table `orders.order_lines`, ids `oln_…`
+import { type Link, ManyToOne, Model, OnDelete, type Ref } from "@stackra/model";
 import { BelongsToTenant, HasPublicId } from "@stackra/model/traits";
 import type { Money } from "@stackra/money";
 import { Int } from "@stackra/validation";
@@ -29,29 +29,37 @@ export class OrderLine extends Model.with(HasPublicId("oln"), BelongsToTenant) {
   @ManyToOne(() => Order, { onDelete: OnDelete.Cascade })
   order!: Ref<Order>;
 
-  /** Another module's model: gen derives a link (the `var_…` id, no foreign key); `load()` runs its query. */
+  /** Another module's model: a link (indexed `variant_id`, no foreign key); `load()` runs its query. */
   @ManyToOne(() => Variant)
-  variant!: Ref<Variant>;
+  variant!: Link<Variant>;
 
   @Int({ min: 1 })
   quantity!: number;
 
-  unitPrice!: Money; // two columns: unit_price_minor, unit_price_currency
+  unitPrice!: Money; // two columns: unit_price_minor (bigint, read as a number), unit_price_currency
 }
 ```
 
 - **The type is the column.** `?:` is optional, `| null` is nullable, the initializer is the default. A `number` needs
   `@Int` or `@Num`. A literal union or `any` fails gen: use an `Enum.of` enum or a `Schema` class (ADR 0095 as amended).
-- **Keys are derived** (`<module>.<snake(Class)>`, table snake_case plural) and locked in `stackra.manifest.json`; a
-  rename of a class or field needs `@Renamed(old)` (ADR 0133 as amended).
+- **Keys are derived** (`<module>.<snake(Class)>`, table snake_case plural in the module's Postgres schema, so
+  `orders.tags` and `catalogue.tags` can both exist) and locked in `stackra.manifest.json`; a rename of a class or field
+  needs `@Renamed(old)` (ADR 0133 as amended, ADR 0294 decision 20).
 - **Relations** use thunks: `@ManyToOne(() => X)`, `@OneToMany`, `@ManyToMany` (declared on one side, `owner: true`),
-  `@OneToOne`, typed `Ref<T>` or `new Collection<T>(this)`. A relation to another module's model is a link with no
-  foreign key or cascade; `@Link` and `links/` are retired (ADR 0104 as amended).
+  `@OneToOne`, typed `Ref<T>` or `new Collection<T>(this)` inside one module. A relation to another module's model is
+  typed `Link<T>`: an indexed id column with no foreign key, join or cascade, and gen fails when the type and the
+  module ownership disagree; `@Link` and `links/` are retired (ADR 0104 as amended, ADR 0294 decision 28).
+- **No constructor-made state.** A loaded row skips the constructor, so no `#private` fields or transient initializers;
+  narrow a trait field with `declare`; build models with `em.create`, a factory or `CrudService`, never `new`
+  (ADR 0294 decision 27).
 - **Facets**: `@Index([...], { unique })`, `@Searchable({ ... })`, `@Auditable`.
 - **Status fields** are governed by a `StateMachine(Model, { field })` class in `models/<model>.state-machine.ts` with
   `@Transition({ from, to })` methods; nothing else writes the field (ADR 0161 as amended).
 - Every field carries a classification before it stores personal data (ADR 0134); public ids are `<prefix>_<26>` over
-  a UUIDv7 and the database id never leaves the service (ADR 0135); indexes and foreign keys are named `idx_` and `fk_`.
+  a UUIDv7 and the database id never leaves the service (ADR 0135); indexes, foreign keys and check constraints are
+  named `idx_`, `fk_` and `ck_` (ADR 0231 as amended).
+- `Money` is stored in minor units in a `bigint` column read as a JavaScript `number`; the money type refuses a value
+  above `Number.MAX_SAFE_INTEGER`.
 - Lists: cursor pagination by default; eager loading or the DataLoader, never N+1.
 
 ## Tenancy (ADR 0239, `.agents/rules/tenancy.md`)
@@ -63,9 +71,10 @@ of tenant A and an unscoped query returns zero rows.
 
 ## Migrations (ADR 0159)
 
-`stackra db diff` writes each migration to the module's `database/migrations/NNNN-<name>.migration.ts`, numbered in
-sequence, as a class that extends `Migration`. Gen orders them, including migrations shipped in packages, into the host's
-stream; Encore's runner applies them in SaaS, a pre-upgrade job on-prem. A migration has **no `down()`** (ADR 0159 as
+`stackra db diff` writes each migration to the module's `database/migrations/NNNN-<name>.migration.ts`, numbered per
+module from `0001` with no gaps, as a class that extends `Migration`; it changes only that module's schema. Gen orders
+the streams, including migrations shipped in packages, into the host's ordered SQL (modules in dependency order, then by
+number); Encore's runner applies them in SaaS, a pre-upgrade job on-prem. A migration has **no `down()`** (ADR 0159 as
 amended).
 
 1. **Expand and contract.** Add the new column, backfill, switch reads, and only in a later release drop the old one.
@@ -76,11 +85,11 @@ amended).
 6. The squawk lint runs in CI.
 
 ```sql
--- database/migrations/0003-add-order-due-at.migration.ts (expand), the SQL it runs
+-- src/modules/orders/database/migrations/0003-add-order-due-at.migration.ts (expand), the SQL it runs
 SET lock_timeout = '3s'; SET statement_timeout = '30s';
-ALTER TABLE orders ADD COLUMN due_at timestamptz;
--- database/migrations/0004-index-order-due-at.migration.ts (its own migration)
-CREATE INDEX CONCURRENTLY idx_orders_tenant_id_due_at ON orders (tenant_id, due_at);
+ALTER TABLE orders.orders ADD COLUMN due_at timestamptz;
+-- src/modules/orders/database/migrations/0004-index-order-due-at.migration.ts (its own migration)
+CREATE INDEX CONCURRENTLY idx_orders_tenant_id_due_at ON orders.orders (tenant_id, due_at);
 ```
 
 ## Raw SQL (ADR 0160)
@@ -91,8 +100,9 @@ pgcrypto; PostGIS is not approved.
 
 ## Databases (ADR 0238)
 
-One Postgres server per environment; one logical database and one role per service, in every topology. No service reads
-another service's tables; use its client or its events (ADR 0014, 0142).
+One Postgres server per environment; one logical database and one role per service, in every topology, with one
+Postgres schema per module inside it. No service reads another service's tables; use its client or its events
+(ADR 0014, 0142).
 
 ## Factories and seeders (ADR 0190 as amended)
 

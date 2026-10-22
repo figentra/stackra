@@ -19,7 +19,7 @@ output of `stackra gen` in `.stackra/encore` (ADR 0091, 0124), so you never writ
 The brief, the service's `AGENTS.md`, `.agents/rules/service-checklist.md`, `.agents/rules/http-conventions.md`,
 `apps/docs/src/standards/services.mdx`, and the skills `backend-author-an-action`, `backend-module-and-root-module`,
 `backend-errors`, `ai-mcp-tools`. New code follows the programming model v3 (ADR 0294 to 0296); today's members predate
-it until STA-337 converts them.
+it until STA-344 converts them.
 
 ## Rules
 

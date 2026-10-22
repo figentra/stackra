@@ -90,7 +90,7 @@ Today a member declares its build in several hand-written places. A service has 
     }
     ```
 
-12. **Tab bar items come from routes, then one menu.** A route declares `tab: { order, icon }`, and it may override chrome for its own screen. The app may rearrange the items in one `menus/tab-bar.menu.ts`, which extends `Menu({ kind: MenuKind.TabBar })` and starts from `m.tabs()`. The tenant and the active role then adjust the items at run time, which [0273](/adr/0273-active-role-within-a-tenant) allows for presentation. `MenuKind` is a closed set: App, Tray, Dock, Context, Navigation, Sidebar, TabBar and AppShortcuts.
+12. **Tab bar items come from routes, then one menu.** A route declares `tab: { order, icon }`, and it may override chrome for its own screen. The app may rearrange the items in one `menus/tab-bar.menu.ts`, which extends `Menu({ kind: MenuKind.TabBar })` and starts from `m.tabs()`. The tenant and the active role then adjust the items at run time, which [0273](/adr/0273-active-role-within-a-tenant) allows for presentation. `MenuKind` is a closed set: App, Tray, Dock, Context, Navigation, Sidebar, TabBar and AppShortcuts. Every menu builds its items in `items(m)` from a closed set of item verbs (route, link, action, shortcut, group, separator, navigation and tabs) with closed options and no CSS. An item's `permission` controls access, and its `roles` shape presentation only.
 
 ## Consequences
 
