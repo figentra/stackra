@@ -27,8 +27,7 @@ and the first publish. This record applies those answers. The static Worker's na
 
 ### Workers and the deploy provider
 
-1. **The Cloudflare Workers provider (RW3).** Runway's first `cloudflare-workers` provider is a reusable workflow that runs
-   `wrangler deploy` on release. The static Worker is its first user. Pulumi takes over the zone, the DNS and the API token
+1. **The Cloudflare Workers provider (RW3).** Runway's first `cloudflare-workers` provider is a reusable workflow that runs `wrangler deploy` on release. Decided reading: the same workflow also runs on pushes to `main` that touch the Worker's paths, and on schema tags, as 0284 specifies for the static Worker, so the provider covers main pushes and tags as well as releases. The static Worker is its first user. Pulumi takes over the zone, the DNS and the API token
    once the core stack exists. The alternative weighed was Workers Builds, a git integration that bypasses CI and Infisical.
 2. **Both Workers now (RW11).** The static Worker and the R2 Turbo cache Worker of
    [0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra) are both built now, on the provider of
@@ -55,12 +54,11 @@ and the first publish. This record applies those answers. The static Worker's na
 
 ### Previews
 
-7. **One host for every pull-request preview (RW8, owner's choice).** A preview lives under one host, `pr-<n>.figentra.cloud`.
+7. **One host for Figentra OS pull-request previews (RW8, owner's choice).** A preview lives under one host, `pr-<n>.figentra.cloud`. Previews are for Figentra OS only; Stackra has no previews, as decision 7 of 0170 says.
    A preview router Worker on figentra.cloud serves it. It proxies `/api/*` to the Encore Cloud preview URL for that pull
    request, and it serves the console preview at `/`. Mobile preview builds use an EAS Update channel named `pr-<n>`, pointed
    at the same host. Previews last 7 days and use synthetic data only. The alternative weighed was a backend preview plus a
-   console Worker at a separate `pr-<n>-console` name, which the owner did not choose. This amends decision 7 of 0170 for
-   the previews 0170 allows; its 7-day TTL and synthetic-data rules are unchanged.
+   console Worker at a separate `pr-<n>-console` name, which the owner did not choose. This amends decision 7 of 0170 for the Figentra OS previews that 0170 allows; its 7-day TTL and synthetic-data rules are unchanged.
 
 ### On-prem bundles
 
@@ -94,7 +92,7 @@ and the first publish. This record applies those answers. The static Worker's na
 ## Consequences
 
 - The Workers, their tokens and the R2 cache become deployables with their own release path, built on one provider.
-- One Encore app is one deploy unit. Independent scaling depends on the outcome of spike STA-136.
+- One Encore app is one deploy unit. Independent scaling depends on the outcome of spike STA-136, and the isolation rule of [0169](/adr/0169-topology-runway-yaml-packs-logical-services-into-deployables) still applies inside the one app.
 - Previews need a router Worker, a per-pull-request EAS channel and cleanup after 7 days.
 - On-prem packaging is smaller until the first prospect, and the Helm and Zarf work waits for it.
 - The bootstrap token exists for seven days and is the one exception to the no-long-lived-token rule of 0177.
@@ -105,21 +103,6 @@ planned — `pnpm validate` checks `runway.yaml` against its JSON Schema ([0168]
 including the new kinds. Gen checks the topology inside the one Encore app. STA-136 is the test for independent scaling and
 for the git path. The 7-day preview cleanup is a planned scheduled job. The Compose smoke test is a release job. After the
 bootstrap, the release job must publish only through trusted publishing (decision 2 of the 2026-10-21 amendment to 0177).
-
-## Open details
-
-1. **RW3 and the static Worker's trigger.** Decision 1 says the provider deploys on release. The static Worker workflow of
-   0284 deploys on pushes to `main` that touch its paths and on schema tags. This record does not change 0284's trigger, and
-   the owner should say which one is meant.
-2. **Previews for Stackra.** RW8 says every pull-request preview lives under one host, while
-   [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) decision 7 says Stackra has no previews.
-   This record applies the one-host rule to the Figentra OS previews that 0170 allows and leaves Stackra's position
-   unchanged. The owner should confirm.
-3. **Isolation inside one app.** [0169](/adr/0169-topology-runway-yaml-packs-logical-services-into-deployables) requires
-   identity and payments to be isolated in SaaS. The answers do not say how that holds inside one Encore app. STA-136 has to
-   show it.
-4. **Preview names.** The pattern `pr-<n>-<app>` in the dev-zone answers is superseded for previews by decision 7 of this
-   record, as [0290](/adr/0290-dev-environment-and-cloudflare-services) notes.
 
 ## Supersedes and sources
 

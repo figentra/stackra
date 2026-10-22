@@ -114,16 +114,14 @@ alternative is named.
 
 planned — the Access applications and tunnels in `@stackra/infra-cloudflare` ([0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra)),
 when the core stack exists. `stackra dev --tunnel` is checked by its own tests. The heavy-test hook of decision 7 is a hook
-under `.agents/hooks`, not yet built. Turnstile wiring is checked by review. The 410-or-redirect and deletion steps of
-decisions 17 and 18 are owner steps, logged in Linear.
+under `.agents/hooks`, not yet built. Turnstile wiring is checked by review. The deletion of decision 17 and the redirect of decision 18 are owner steps, logged in Linear.
 
-## Open details
+## Decided, with triggers
 
-1. **Preview names.** The `pr-<n>-<app>` example of the dev-zone answers is superseded for previews by decision 7 of
-   [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing). The owner should confirm.
-2. **The home for private packages (CF8).** No home is chosen. It is revisited when the consumers have moved.
-3. **figentra.email.** The zone has no use until someone decides one.
-4. **The Keygen domain.** Its name is not chosen until the first `@stackra-pro` package ships.
+1. **Previews.** Pull-request previews use the single host of [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing) decision 7, so the `pr-<n>-<app>` example in the dev-zone answers does not apply to previews.
+2. **Private packages (CF8).** This decision chooses no home for private `@figentra/*` packages. The choice is revisited when every consumer has migrated, as decision 16 says.
+3. **figentra.email.** This decision gives figentra.email no use. A use needs its own decision.
+4. **The Keygen domain.** Its name is chosen when the first `@stackra-pro` package ships, as decision 17 says.
 
 ## Supersedes and sources
 

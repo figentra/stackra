@@ -28,8 +28,7 @@ and Encore's own Temporal guide covers Go only, so the Temporal integration has 
    decision 3, named for what it is.
 3. **A Temporal driver on the TypeScript SDK (PT5).** The Temporal driver integrates the Temporal TypeScript SDK directly,
    because Encore's Temporal guide covers Go only. It runs on Temporal Cloud or self-hosted, and it is chosen per environment,
-   as 0151 decision 4 says. This record does not change whether the driver is part of Pro. 0151 decision 4 still says it is,
-   and the owner should confirm that.
+   as 0151 decision 4 says. The driver is part of Pro, as 0151 decision 4 says, and this record keeps that placement.
 4. **Trigger.dev is to be evaluated (PT5).** A Trigger.dev driver is evaluated before any decision. This record neither accepts
    nor rejects it. It becomes a driver only through a later ADR, after the evaluation.
 5. **One contract for every driver.** The semantics of [0152](/adr/0152-workflow-semantics-timeouts-waits-pinned-versions-and-one-graph-format)
@@ -50,11 +49,9 @@ and Encore's own Temporal guide covers Go only, so the Temporal integration has 
 planned — the conformance suite of 0152, run on every driver of the port, and the purity lint of 0151 decision 5. A driver is
 not listed in a release until this ADR, or a later one, names it. Neither check is built yet.
 
-## Open details
+## Follow-ups
 
-1. **The Pro placement of the Temporal driver.** 0151 decision 4 says it is part of Pro. The answers do not change that, and
-   this record keeps it. The owner should confirm it.
-2. **The Trigger.dev evaluation.** Its criteria are not set here. They belong to the evaluation itself.
+1. **Trigger.dev.** The evaluation sets its own criteria. Adopting the driver needs a later ADR (decision 4).
 
 ## Supersedes and sources
 

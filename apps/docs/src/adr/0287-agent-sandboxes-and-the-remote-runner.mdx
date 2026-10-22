@@ -83,7 +83,7 @@ means a tenant sandbox, which is data and is out of scope here. Tenant code stay
 ### One system
 
 12. **The runner and the sandboxes are one system (SB12).** Runner jobs run inside sandboxes on the box or on its
-    autoscaled copies. CI takes the same lock. Open details, item 1, says how that sits with lesson 1.
+    autoscaled copies. Decided reading: CI and agents use one lock implementation, with separate slot pools. CI runners keep their dedicated boxes under a hard cap (lesson 1), and agent sandboxes take only agent slots, so CI never waits behind agent sandboxes.
 
 ### Binding lessons from the Academorix box queue
 
@@ -142,13 +142,6 @@ These seven requirements are binding on STA-255, STA-307 and STA-236. They were 
 planned — the bar of decision 13 is the STA-307 spike's own test; the egress allowlist and the logging of decision 8 need a
 test in `@stackra/sandbox`; the queue metrics and the alert of lesson 5 belong to the runner; the five-minute test limit of
 lesson 6 belongs to review until a test runner check exists; the warm-image build is a CI job.
-
-## Open details
-
-1. **SB12 and lesson 1 read together.** Decision 12 says CI takes the same lock as the runner, and lesson 1 says agent
-   sandboxes never compete with CI for the same slots. This record reads both as one lock implementation with separate
-   slot pools, so CI's dedicated boxes never wait behind agent sandboxes. The owner should confirm this reading.
-2. **The microVM tier and Agent Vault** each need their own ADR before they are used.
 
 ## Supersedes and sources
 

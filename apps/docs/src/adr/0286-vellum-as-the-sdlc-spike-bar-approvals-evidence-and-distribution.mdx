@@ -30,8 +30,7 @@ records its reasoning, so the page can be read without other documents.
    are verified. Nothing unpushed is deleted. Broken worktree links make an accidental prune likely, and committing
    as-is keeps each change reviewable.
 2. **The pass bar for STA-298 (VL3).** STA-298 passes only if its written criteria hold and four further checks hold:
-   - an agent session cannot produce a valid approval, because no signing key is reachable from it (see open
-     details, item 1);
+   - an agent session cannot produce a valid approval, because no signing key is reachable from it. Decided reading: this binds builder sessions, which cannot reach the reviewer key, and the reviewer identity of decision 4 is the only identity that signs;
    - evidence recorded on the box or the remote runner verifies on the owner's machine;
    - the Quality Gate adds 60 seconds or less;
    - one full issue costs the lead no more than 15 extra minutes compared with spec-kit.
@@ -121,15 +120,9 @@ planned — `vellum verify` inside the Quality Gate once STA-298 passes (decisio
 the spike's own tests, run on the box and the Mac. The lane rules of decision 5 move into `tools/scripts/spec-gate.mjs`
 when Vellum replaces spec-kit. No check yet enforces decision 4.
 
-## Open details
+## Dependencies
 
-1. **The first spike check reads against decision 4.** The first check of decision 2 says an agent session cannot
-   produce a valid approval, but decision 4 gives approvals to a reviewer identity, which is itself an agent. This
-   record reads that check as applying to builder sessions, which cannot reach the reviewer key. Whether the reviewer's
-   own runner counts as an agent session is for the owner to confirm before the spike is judged.
-2. **The reviewer key path is not built.** Today both bot apps' credentials sit in the same Infisical folder on one
-   machine ([0230](/adr/0230-reviewer-identity-separate-from-builder)). Decision 4 needs a path that builder agents
-   cannot read, which is stricter than today.
+The reviewer key path (STA-238) is not built. Today both bot apps' credentials sit in the same Infisical folder on one machine ([0230](/adr/0230-reviewer-identity-separate-from-builder)). Decision 4 needs a path that builder agents cannot read, which is stricter than today, so decision 4 cannot be met until STA-238 delivers that path.
 
 ## Supersedes and sources
 
