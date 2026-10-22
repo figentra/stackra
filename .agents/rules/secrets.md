@@ -50,7 +50,7 @@ infisical run -- encore run
 **CI/CD:**
 
 A CI job logs in to Infisical by GitHub OIDC for one step and reads `/ci` only (ADR 0009 D2); no token is a repository
-secret. No deploy command exists yet (`encore deploy` is denied by `guard-bash`; the deploy path is open, DP2).
+secret. Workers deploy from CI with a Cloudflare token read from Infisical `/ci` over GitHub OIDC (ADR 0284, ADR 0289). The Encore deploy stays denied: `encore deploy` is blocked by `guard-bash` until the deploy spike STA-136 (DP2) settles the Encore path.
 
 **MCP servers:**
 Token-based MCP servers launch through the `tools/scripts/mcp.sh` vault wrapper (reads from `/agents`). This is a
@@ -69,6 +69,7 @@ In Infisical `/agents` (local):
 In Infisical `/ci` (CI/CD):
 
 - `TURBO_TOKEN` - Turborepo remote cache
+- `CLOUDFLARE_API_TOKEN` - Cloudflare Worker deploys from CI (ADR 0284, ADR 0289)
 - `ENCORE_API_KEY` - Encore deployment, once a deploy path exists (DP2)
 - `SENTRY_AUTH_TOKEN` - Sentry releases (optional)
 

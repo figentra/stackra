@@ -385,7 +385,14 @@
               "adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc",
               "adr/0283-browser-extension-agent-connector-deferred",
               "adr/0284-hosted-static-files-one-cloudflare-static-assets-worker",
-              "adr/0285-review-verdict-binds-to-the-patch-id"
+              "adr/0285-review-verdict-binds-to-the-patch-id",
+              "adr/0286-vellum-as-the-sdlc-spike-bar-approvals-evidence-and-distribution",
+              "adr/0287-agent-sandboxes-and-the-remote-runner",
+              "adr/0288-merging-the-queue-fallback-and-the-sta-302-order",
+              "adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing",
+              "adr/0290-dev-environment-and-cloudflare-services",
+              "adr/0291-porting-provenance-and-the-third-party-reading-rule",
+              "adr/0292-workflow-engine-drivers-a-postgres-journal-default-temporal-and-trigger-dev-to-evaluate"
             ]
           }
         ]

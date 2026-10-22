@@ -1,0 +1,62 @@
+---
+title: "0292 — Workflow engine drivers: a Postgres-journal default, a Temporal driver, and Trigger.dev to evaluate"
+description: "Accepted · 2026-10-22"
+---
+
+<Note>
+  Amends [0151](/adr/0151-workflow-engine-is-a-port-with-native-and-temporal-drivers): decision 3
+  (the native driver is named the Postgres-journal driver and works on-prem and air-gapped),
+  decision 4 (the Temporal driver integrates the TypeScript SDK directly) and the enforcement line
+  (the conformance suite runs on each driver). Amends
+  [0152](/adr/0152-workflow-semantics-timeouts-waits-pinned-versions-and-one-graph-format): the
+  semantics it fixes are the contract of every driver, not only of the two drivers it named.
+</Note>
+
+## Context
+
+[0151](/adr/0151-workflow-engine-is-a-port-with-native-and-temporal-drivers) put the workflow engine behind a `WorkflowEngine`
+port, with a native driver and a Temporal driver. The engine is now written fresh ([0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule)
+decision 5), and on 2026-10-22 the owner settled the drivers it will ship with. The default has to run on-prem and air-gapped,
+and Encore's own Temporal guide covers Go only, so the Temporal integration has to be done directly against the TypeScript SDK.
+
+## Decision
+
+1. **A driver port, with one set of workflows.** `@stackra/workflow` sits behind the `WorkflowEngine` port of 0151 decision 2.
+   Drivers implement the port. Workflows are written once, with `@Workflow` and `@Step` as 0151 decision 1 says.
+2. **The Postgres-journal driver is the default (PT5).** The built-in durable driver records runs in a Postgres journal. It is
+   the default, it costs nothing, and it works on-prem and air-gapped as well as in SaaS. This is the native driver of 0151
+   decision 3, named for what it is.
+3. **A Temporal driver on the TypeScript SDK (PT5).** The Temporal driver integrates the Temporal TypeScript SDK directly,
+   because Encore's Temporal guide covers Go only. It runs on Temporal Cloud or self-hosted, and it is chosen per environment,
+   as 0151 decision 4 says. The driver is part of Pro, as 0151 decision 4 says, and this record keeps that placement.
+4. **Trigger.dev is to be evaluated (PT5).** A Trigger.dev driver is evaluated before any decision. This record neither accepts
+   nor rejects it. It becomes a driver only through a later ADR, after the evaluation.
+5. **One contract for every driver.** The semantics of [0152](/adr/0152-workflow-semantics-timeouts-waits-pinned-versions-and-one-graph-format)
+   are the contract every driver meets: timeouts and waits, the version pin of a run, the operations, and one graph format. The
+   conformance suite of 0152 runs on each driver in the port, not only on the two named in 0151.
+6. **Authoring does not change.** Workflows stay declarative graphs, and the purity lint of 0151 decision 5 applies to every driver.
+   The decorator rule of [0094](/adr/0094-decorators-only-authoring) stands.
+
+## Consequences
+
+- An on-prem or air-gapped install runs workflows with no extra infrastructure, because the default is Postgres.
+- Temporal is one driver among several, and its integration is a project of its own, against the TypeScript SDK.
+- Trigger.dev stays an open evaluation, and adopting it needs a new ADR.
+- Each new driver costs a full conformance run before it ships.
+
+## Enforcement
+
+planned — the conformance suite of 0152, run on every driver of the port, and the purity lint of 0151 decision 5. A driver is
+not listed in a release until this ADR, or a later one, names it. Neither check is built yet.
+
+## Follow-ups
+
+1. **Trigger.dev.** The evaluation sets its own criteria. Adopting the driver needs a later ADR (decision 4).
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0151](/adr/0151-workflow-engine-is-a-port-with-native-and-temporal-drivers) (decisions 3 and 4, and the
+enforcement line) and [0152](/adr/0152-workflow-semantics-timeouts-waits-pinned-versions-and-one-graph-format) (the contract
+of the drivers). Related: [0094](/adr/0094-decorators-only-authoring), [0102](/adr/0102-workflow-engine-in-process-journal),
+[0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule). Sources: owner decisions of 2026-10-22 (PT5, with its
+driver port); Linear STA-328.

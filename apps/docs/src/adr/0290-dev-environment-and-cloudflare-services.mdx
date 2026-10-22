@@ -1,0 +1,137 @@
+---
+title: "0290 — Dev environment and Cloudflare services: zones, tunnels, Access, Turnstile, email and npm names"
+description: "Accepted · 2026-10-22"
+---
+
+<Note>
+  Amends [0175](/adr/0175-edge-domains-and-tls): decision 1 of this ADR sets the dev zone, decision
+  3 of this ADR the tenant fallback origin, and decision 17 of this ADR replaces 0175's decision 3
+  (the `npm.` name). Amends
+  [0199](/adr/0199-developer-experience-create-stackra-app-upgrades-stackra-dev-and-docs) (the
+  `stackra dev` loop: `--tunnel` and the heavy-test hook). Amends
+  [0237](/adr/0237-generated-api-gateway-in-four-layers) (layer 1 gets Access in front of
+  non-production hosts and of operator surfaces). Resolves STA-323.
+</Note>
+
+## Context
+
+The dev environment and the Cloudflare account need one plan before tunnels, previews and mail can be built. The account
+holds three zones on the Free plan, two of them empty, one Worker and one R2 bucket for npm. There are no tunnels and no
+Access applications, and the Clerk records from an earlier provider are still on figentra.com. On 2026-10-22 the owner
+settled the zone, the naming, the access model, the Turnstile scope, inbound email and the npm names, and this record
+resolves STA-323, which held the dev-environment scope in comments. Where the owner chose against the recommendation, the
+alternative is named.
+
+## Decision
+
+### Zones and names
+
+1. **The dev and preview zone is figentra.cloud (DV1, owner-only).** The zone is owned and empty, so it costs nothing.
+   It also keeps dev cookies off figentra.com. The alternatives were to buy figentra.dev or to use subdomains of figentra.com.
+2. **One label deep on the dev zone (DV2).** Every dev name is one label deep, so Universal SSL covers it and no paid
+   certificate is needed. Tunnels use `<app>-<dev>` and staging uses `<app>-staging`. Pull-request previews use the single
+   host of [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing) decision 7, which
+   supersedes the `pr-<n>-<app>` example in the answer. Extra custom names are welcome as one-label hosts. Vanity
+   nameservers (ns1.figentra.cloud) are skipped, because they are a Business-plan feature with no benefit here.
+3. **Tenants point at figentra.com (CF6).** The fallback origin for Cloudflare for SaaS is a production name under
+   figentra.com, for example `cname.figentra.com`. figentra.cloud serves dev only, so dev and tenant traffic keep separate
+   access and WAF rules. This amends [0175](/adr/0175-edge-domains-and-tls).
+
+### Tunnels and the dev loop
+
+4. **A named tunnel per machine (DV3).** Each machine, the Mac and the box, runs a named Cloudflare Tunnel, started by
+   `stackra dev --tunnel`. Its ingress rules come from the ports in `runway.yaml`. The tunnel token comes from Infisical
+   `/agents` through `infisical run`, and it never touches disk. The alternatives were quick tunnels with random names, and
+   ngrok or Tailscale Funnel. OAuth and webhook providers need stable hostnames, and Cloudflare is the vendor already in use.
+5. **The core stack creates tunnels and their DNS (DV4).** The Pulumi core stack ([0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra))
+   creates each tunnel and its DNS record. `stackra dev` only runs `cloudflared`, so it never holds a DNS-edit token. Until
+   the core stack exists, a one-off script creates them and the run is logged in Linear.
+6. **Access on every non-production host (DV5, amends 0237).** Access guards every dev, preview and staging host. Sign-in
+   goes through the GitHub organisation. Callback and webhook paths are bypassed per path, as listed in config, and machines
+   use Access service tokens. Signed webhooks are still verified ([0224](/adr/0224-stackra-webhooks)). The alternatives were
+   Access on staging only, or none. Access is free at our size, it keeps unfinished apps private, and it does not depend on
+   ZITADEL while that is still being built.
+7. **The laptop runs the dev loop (DV6, amends 0199).** `stackra dev` runs gen in watch mode and `encore run` on the laptop.
+   Tests and heavy builds go to the remote runner of [0287](/adr/0287-agent-sandboxes-and-the-remote-runner), and a hook
+   refuses heavy test commands run locally. The alternatives were `stackra dev --remote` on the box, or everything remote.
+   Editing stays fast locally, and the heavy work moves to the box.
+8. **ZITADEL for daily work (DV7).** A local ZITADEL container, from [0199](/adr/0199-developer-experience-create-stackra-app-upgrades-stackra-dev-and-docs),
+   serves daily work. A shared ZITADEL Cloud dev instance is used only for staging and for OAuth flows that need a public
+   callback, which the tunnel of decision 4 covers. This follows [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral).
+9. **Codespaces on demand (DV8).** Codespaces prebuilds are off. Codespaces is used on demand within the $50 monthly cap of
+   [0194](/adr/0194-developer-and-agent-compute), because prebuild storage and compute would use up the cap.
+
+### Cloudflare services
+
+10. **Turnstile on forms, not on APIs (CF1).** Turnstile protects our own public forms: the waitlist, contact, the Connect-app
+    page, and public actions with `auth: false`. It also protects ZITADEL login, through its own bot protection or our login
+    app ([0241](/adr/0241-identity-first-slice-central-login-app-bff-and-reference-service)). API abuse belongs to the edge rate limits ([0237](/adr/0237-generated-api-gateway-in-four-layers))
+    and to API keys ([0278](/adr/0278-api-key-lifecycle)).
+11. **Access on operator surfaces in production (CF2, amends 0237).** Access guards the `/platform` area and the internal
+    dashboards in production. Tenant admin stays behind ZITADEL alone, so tenants never need a Cloudflare login. Operator
+    access is the most valuable target, and a second factor at the edge costs nothing.
+12. **Resend handles inbound product email (CF3, owner's choice).** Inbound product email, meaning reply parsing and tenant
+    inbound addresses, uses Resend inbound. The recommendation was Email Routing on figentra.email with an Email Worker, and
+    the owner chose Resend instead. Staff mail on figentra.com is not changed, and this record gives figentra.email no use.
+    The related ADRs are [0191](/adr/0191-email-deliverability) and [0223](/adr/0223-notifications-channels-cascading-templates-manual-sends-and-preferences).
+13. **Free plan until the first public API (CF4, owner-only).** figentra.com stays on Cloudflare's Free plan until the first
+    public API launch. Then it moves to Pro, for managed WAF rules and more rate-limit rules. Until then the application
+    limits of [0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits) carry the load, because nothing public is live.
+14. **No install scripts (CF5).** The static Worker serves no install scripts. The CLI installs through `npx` or `pnpm dlx`,
+    and later through Homebrew. A `curl | sh` host is not built. Another host needs its own ADR, because `curl | sh` adds a
+    supply-chain surface and a signing duty that nothing needs yet ([0174](/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation)).
+15. **Hand-made resources move into Pulumi (CF7).** The zones, the `npm-registry` Worker, the docs records and the custom
+    domains are imported into the core stack once it exists. Until then, every manual change gets a Linear comment. An
+    import is cheaper than a rebuild.
+
+### npm names and the docs host
+
+16. **npflared stays until every consumer has moved (CF8, owner-only).** The `npm-registry` Worker keeps serving
+    `npm.figentra.com` until every consumer has migrated. The home for private `@figentra/*` packages is revisited then, and
+    the GitHub Packages option that the question proposed is not chosen. This keeps the retirement rule of
+    [0177](/adr/0177-package-distribution-npmjs-and-keygen). Vellum no longer depends on it, because it publishes publicly
+    ([0286](/adr/0286-vellum-as-the-sdlc-spike-bar-approvals-evidence-and-distribution) decision 7).
+17. **The `npm.stackra.figentra.com` name is deleted after the migration (CF9, owner's choice).** The name is deleted once
+    the npflared consumers have moved. The Keygen custom domain gets its own name when the first `@stackra-pro` package
+    ships. The recommendation was to repoint the name at Keygen, or to return 410 until then, and the owner chose deletion.
+    This amends decision 3 of [0175](/adr/0175-edge-domains-and-tls).
+18. **`docs.figentra.com` redirects for now (CF10, owner-only).** It redirects to `docs.stackra.figentra.com` until Figentra
+    OS has public docs, and then it gets a second Mintlify project. Mintlify charges per project, and Figentra OS has nothing
+    public yet ([0002](/adr/0002-docs-on-mintlify)).
+19. **The Clerk records come out after a check (CF11, owner-only).** The Clerk records on figentra.com (`accounts.`,
+    `clerk.`, `clkmail.` and the DKIM keys) are deleted only after confirming that nothing uses Clerk, Academorix included.
+    The deletion goes through Pulumi once the zone is imported (decision 15). Clerk is not in the stack
+    ([0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)), and a dangling record invites takeover.
+
+## Consequences
+
+- Dev traffic and tenant traffic sit on separate zones, and tunnels with Access are the dev access model.
+- Turnstile is a form control. It is not a control on API calls, and API abuse is handled at the edge and with API keys.
+- The `npm.stackra` name goes away after the migration. The Keygen name waits for the first `@stackra-pro` package.
+- The Cloudflare work that follows is an import (CF7), the tunnel stack (DV4), the Access applications (DV5) and the Resend
+  inbound setup (CF3). The Clerk records are removed after the check.
+
+## Enforcement
+
+planned — the Access applications and tunnels in `@stackra/infra-cloudflare` ([0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra)),
+when the core stack exists. `stackra dev --tunnel` is checked by its own tests. The heavy-test hook of decision 7 is a hook
+under `.agents/hooks`, not yet built. Turnstile wiring is checked by review. The deletion of decision 17 and the redirect of decision 18 are owner steps, logged in Linear.
+
+## Decided, with triggers
+
+1. **Previews.** Pull-request previews use the single host of [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing) decision 7, so the `pr-<n>-<app>` example in the dev-zone answers does not apply to previews.
+2. **Private packages (CF8).** This decision chooses no home for private `@figentra/*` packages. The choice is revisited when every consumer has migrated, as decision 16 says.
+3. **figentra.email.** This decision gives figentra.email no use. A use needs its own decision.
+4. **The Keygen domain.** Its name is chosen when the first `@stackra-pro` package ships, as decision 17 says.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0175](/adr/0175-edge-domains-and-tls) (the dev zone, the tenant fallback origin and decision 3),
+[0199](/adr/0199-developer-experience-create-stackra-app-upgrades-stackra-dev-and-docs) (the dev loop) and
+[0237](/adr/0237-generated-api-gateway-in-four-layers) (layer 1). Related: [0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra),
+[0177](/adr/0177-package-distribution-npmjs-and-keygen), [0194](/adr/0194-developer-and-agent-compute),
+[0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral),
+[0207](/adr/0207-authentication-assurance-and-machine-identities), [0224](/adr/0224-stackra-webhooks),
+[0286](/adr/0286-vellum-as-the-sdlc-spike-bar-approvals-evidence-and-distribution),
+[0287](/adr/0287-agent-sandboxes-and-the-remote-runner), [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing).
+Sources: owner decisions of 2026-10-22 (DV1 to DV8 and CF1 to CF11); Linear STA-323 (resolved by this ADR), STA-313 and STA-328.

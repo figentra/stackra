@@ -1,7 +1,14 @@
 ---
 title: "0199 — Developer experience: create-stackra-app, upgrades, stackra dev, docs and the agent kit"
-description: "Accepted, amended by 0268, 0282 · 2026-10-20"
+description: "Accepted, amended by 0268, 0282, 0290 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0290](/adr/0290-dev-environment-and-cloudflare-services) (decisions 4 and 7): `stackra
+  dev --tunnel` starts a named Cloudflare Tunnel per machine, with its token from Infisical
+  `/agents`. The laptop runs gen and `encore run`, heavy test commands go to the remote runner, and
+  a hook refuses them locally.
+</Note>
 
 <Note>
   Amended by [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc): the agent
