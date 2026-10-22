@@ -1,7 +1,16 @@
 ---
 title: "0177 — Package distribution and release lines: npmjs for free, Keygen Cloud for Pro"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0289 · 2026-10-20"
 ---
+
+<Note>
+  Amended by
+  [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing) decision
+  11: the 2026-10-21 amendment, decision 2, forbids a long-lived npm token. The first publish of
+  each package may use one granular token, limited to publishing, valid for 7 days and stored in
+  Infisical `/ci`. The owner then adds trusted publishers and revokes the token. The steady state is
+  unchanged.
+</Note>
 
 <Note>
   Supersedes [0025](/adr/0025-packages-publish-to-private-registry). The `npm.figentra.com` registry

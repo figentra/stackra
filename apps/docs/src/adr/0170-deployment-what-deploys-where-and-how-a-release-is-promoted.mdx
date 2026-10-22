@@ -1,7 +1,11 @@
 ---
 title: "0170 — Deployment: what deploys where, and how a release is promoted"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0289 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing) decision 7: each pull-request preview lives under one host, `pr-<n>.figentra.cloud`, behind a router Worker. The 7-day TTL and the synthetic data are unchanged. Stackra's own position on previews is an open detail of 0289.
+</Note>
 
 <Note>Supersedes [0030](/adr/0030-encore-cloud-on-owner-aws). Closes gap B28 (ECS).</Note>
 

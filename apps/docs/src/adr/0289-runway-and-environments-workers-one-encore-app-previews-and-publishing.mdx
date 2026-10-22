@@ -1,0 +1,137 @@
+---
+title: "0289 — Runway and environments: Workers, one Encore app, one preview host and publishing"
+description: "Accepted · 2026-10-22"
+---
+
+<Note>
+  Amends [0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml) (decision 5:
+  the resource kinds of `runway.yaml`),
+  [0169](/adr/0169-topology-runway-yaml-packs-logical-services-into-deployables) (open question 1:
+  one Encore app), [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted)
+  (decision 7: the preview design),
+  [0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra) (decision 4: the
+  stacks repository), [0177](/adr/0177-package-distribution-npmjs-and-keygen) (the 2026-10-21
+  amendment, decision 2: a first-publish bootstrap token) and
+  [0179](/adr/0179-on-prem-and-air-gapped-delivery) (decisions 1 and 3: which bundles come first).
+</Note>
+
+## Context
+
+Runway ([0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml)) builds its deploy path in the order
+npm, Cloudflare Workers, Encore Cloud, EAS, then AWS or on-prem. On 2026-10-22 the owner settled the open questions of that
+path: the first provider, the resource kinds, the Encore topology, the preview design, the bundles, the stacks repository
+and the first publish. This record applies those answers. The static Worker's name and host are already decided by
+[0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker) and are not repeated here.
+
+## Decision
+
+### Workers and the deploy provider
+
+1. **The Cloudflare Workers provider (RW3).** Runway's first `cloudflare-workers` provider is a reusable workflow that runs
+   `wrangler deploy` on release. The static Worker is its first user. Pulumi takes over the zone, the DNS and the API token
+   once the core stack exists. The alternative weighed was Workers Builds, a git integration that bypasses CI and Infisical.
+2. **Both Workers now (RW11).** The static Worker and the R2 Turbo cache Worker of
+   [0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra) are both built now, on the provider of
+   decision 1.
+3. **The static Worker's name (RW5).** The member is `workers/static` (`@figentra/worker-static`), serving
+   `static.stackra.figentra.com`, as [0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker) decides.
+
+### Resource kinds
+
+4. **Three kinds now (RW4, owner's choice).** `runway.yaml` gains the resource kinds `static` (a Workers static-assets site),
+   `sandboxHosts` and `tunnels`. The alternative weighed was to add a kind only when something deploys with it, and to keep
+   tunnels out of `runway.yaml`, because tunnels are dev configuration and not deployables. The owner chose all three now.
+
+### Encore Cloud
+
+5. **One generated Encore app (RW7, owner's choice).** Gen produces one Encore app that combines every service
+   ([0091](/adr/0091-generated-encore-app-in-stackra-folder) and [0124](/adr/0124-encore-is-the-generated-runtime-target)).
+   Topology groups from [0169](/adr/0169-topology-runway-yaml-packs-logical-services-into-deployables) live inside that app.
+   STA-136 checks whether groups scale independently inside the one app. The alternative weighed was one app per deployable
+   group, the safe default for isolation and scaling, which the spike will now test instead.
+6. **The deploy spike runs now (RW6).** Spike STA-136 runs now, in a spike repository with a generated app, so the Encore
+   Cloud work stops waiting on it. Its result is recorded in a new ADR, which replaces the open branch of
+   [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) decision 2.
+
+### Previews
+
+7. **One host for every pull-request preview (RW8, owner's choice).** A preview lives under one host, `pr-<n>.figentra.cloud`.
+   A preview router Worker on figentra.cloud serves it. It proxies `/api/*` to the Encore Cloud preview URL for that pull
+   request, and it serves the console preview at `/`. Mobile preview builds use an EAS Update channel named `pr-<n>`, pointed
+   at the same host. Previews last 7 days and use synthetic data only. The alternative weighed was a backend preview plus a
+   console Worker at a separate `pr-<n>-console` name, which the owner did not choose. This amends decision 7 of 0170 for
+   the previews 0170 allows; its 7-day TTL and synthetic-data rules are unchanged.
+
+### On-prem bundles
+
+8. **Compose first, the rest at the first prospect (RW9).** A Compose smoke test runs on every release from the first
+   deployable. Helm charts and Zarf packages start with the first on-prem prospect. This amends decisions 1 and 3 of
+   [0179](/adr/0179-on-prem-and-air-gapped-delivery), which put Helm, Zarf and Compose on day one. On-prem stays green and is
+   not sold until it is solid, as [0248](/adr/0248-delivery-scope-saas-first-on-prem-kept-green) says.
+
+### Stacks repository
+
+9. **The stacks repository is `figentra/infra` (RW10, owner-confirmed).** The real Pulumi stacks live in a private repository,
+   `figentra/infra`, with their state in S3, encrypted with KMS, in the tooling account
+   ([0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls)). Runway stays the tool inside Stackra
+   ([0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml)). The core stack holds the zones, the DNS,
+   the R2 cache, the rulesets, the agent box and the Infisical identities. This amends decision 4 of 0171, which did not name
+   the repository.
+
+### Publishing
+
+10. **Snapshots on every merge to main (OP1).** Every public `@stackra/*` package publishes `0.0.0-next-<sha>` under the npm
+    tag `next` on every merge to `main`, as changesets snapshot releases over OIDC. The four tooling configs go first. This
+    implements the canary releases of decision 7 of [0177](/adr/0177-package-distribution-npmjs-and-keygen), and it is what
+    lets Figentra OS install (STA-209, STA-210, STA-321).
+11. **A bootstrap token for the first publish (OP2, owner-only).** The owner creates one granular npm token, limited to
+    publishing `@stackra` packages and valid for 7 days, and stores it through the secrets inbox
+    ([0257](/adr/0257-secret-manager-agent-and-the-secrets-inbox)) in Infisical `/ci`. The first publish of each package runs
+    from CI with it. The owner then adds a trusted publisher for each package, and the token is revoked. Nobody reads the
+    token value. This is an exception to decision 2 of the 2026-10-21 amendment to 0177, which forbids a long-lived token and
+    any Infisical step for npm. The trusted-publisher rule holds once the bootstrap is finished.
+
+## Consequences
+
+- The Workers, their tokens and the R2 cache become deployables with their own release path, built on one provider.
+- One Encore app is one deploy unit. Independent scaling depends on the outcome of spike STA-136.
+- Previews need a router Worker, a per-pull-request EAS channel and cleanup after 7 days.
+- On-prem packaging is smaller until the first prospect, and the Helm and Zarf work waits for it.
+- The bootstrap token exists for seven days and is the one exception to the no-long-lived-token rule of 0177.
+
+## Enforcement
+
+planned — `pnpm validate` checks `runway.yaml` against its JSON Schema ([0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml)),
+including the new kinds. Gen checks the topology inside the one Encore app. STA-136 is the test for independent scaling and
+for the git path. The 7-day preview cleanup is a planned scheduled job. The Compose smoke test is a release job. After the
+bootstrap, the release job must publish only through trusted publishing (decision 2 of the 2026-10-21 amendment to 0177).
+
+## Open details
+
+1. **RW3 and the static Worker's trigger.** Decision 1 says the provider deploys on release. The static Worker workflow of
+   0284 deploys on pushes to `main` that touch its paths and on schema tags. This record does not change 0284's trigger, and
+   the owner should say which one is meant.
+2. **Previews for Stackra.** RW8 says every pull-request preview lives under one host, while
+   [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) decision 7 says Stackra has no previews.
+   This record applies the one-host rule to the Figentra OS previews that 0170 allows and leaves Stackra's position
+   unchanged. The owner should confirm.
+3. **Isolation inside one app.** [0169](/adr/0169-topology-runway-yaml-packs-logical-services-into-deployables) requires
+   identity and payments to be isolated in SaaS. The answers do not say how that holds inside one Encore app. STA-136 has to
+   show it.
+4. **Preview names.** The pattern `pr-<n>-<app>` in the dev-zone answers is superseded for previews by decision 7 of this
+   record, as [0290](/adr/0290-dev-environment-and-cloudflare-services) notes.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml) (decision 5),
+[0169](/adr/0169-topology-runway-yaml-packs-logical-services-into-deployables) (open question 1),
+[0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) (decision 7),
+[0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra) (decision 4),
+[0177](/adr/0177-package-distribution-npmjs-and-keygen) (the 2026-10-21 amendment, decision 2) and
+[0179](/adr/0179-on-prem-and-air-gapped-delivery) (decisions 1 and 3). Implements
+[0026](/adr/0026-turborepo-remote-cache-on-r2) and the build order of [0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml).
+Related: [0091](/adr/0091-generated-encore-app-in-stackra-folder), [0124](/adr/0124-encore-is-the-generated-runtime-target),
+[0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls), [0248](/adr/0248-delivery-scope-saas-first-on-prem-kept-green),
+[0257](/adr/0257-secret-manager-agent-and-the-secrets-inbox), [0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker),
+[0290](/adr/0290-dev-environment-and-cloudflare-services). Sources: owner decisions of 2026-10-22 (RW1 to RW11, OP1 and OP2);
+Linear STA-136, STA-209, STA-210, STA-321, STA-322 and STA-328.
