@@ -20,7 +20,10 @@
  *      - Owner: an APPROVED pull request review by the owner user (`figentra-usr`) on the head SHA whose body ends
  *        with the token `owner-approval`. A comment never counts for the owner.
  *   4. a PR labelled `design` or `risk:R3` also has an owner APPROVED review on the head SHA, or `owner-approved`.
- *   With a merge queue it refuses to enqueue until STA-302 lands (owner order OP7, `enqueueReady`).
+ *   With a merge queue it enqueues only while `enqueueReady` holds (owner order OP7): bot-token.mjs keeps a 30 s
+ *   connect timeout and retries (STA-302).
+ * Network: gh reads retry on transient errors (bot-token.mjs); the merge or enqueue runs again after a transient
+ *   failure only when a re-read shows the PR neither merged nor queued.
  * Convention: the reviewer posts `AI-REVIEW: PASS <full head sha> base=<base ref> patch=<patch id>` (or `FAIL <sha>`) as a new
  *   comment through `pnpm bot:review -- pr comment <n> --body-file <f>`, and never edits a verdict.
  * Exit: 0 merged or queued, 1 refused (reasons on stderr), 2 usage.
@@ -84,8 +87,8 @@ export function samePatchShas(pr, comments, patchOf) {
 }
 
 /**
- * OP7: the enqueue path stays shut until STA-302 gives the bot's network layer a 30 s connect timeout and retries,
- * which it declares as `CONNECT_TIMEOUT_MS` and `RETRY_ATTEMPTS` exports of `bot-token.mjs`.
+ * OP7: the enqueue path is open only while the bot's network layer has a 30 s connect timeout and retries (STA-302),
+ * declared as the `CONNECT_TIMEOUT_MS` and `RETRY_ATTEMPTS` exports of `bot-token.mjs`.
  */
 export const enqueueReady = (network) =>
   network.CONNECT_TIMEOUT_MS >= 30_000 && network.RETRY_ATTEMPTS >= 2;
@@ -201,13 +204,17 @@ export function parseArgs(argv) {
   return rest.length === 1 && /^\d+$/.test(rest[0]) && valid ? { n: rest[0], repo } : null;
 }
 
-function gh(args, token) {
+/** gh's stdout; a read (`idempotent`) is retried on a transient error, a merge or enqueue is not. */
+function gh(args, token, idempotent = true) {
   // 256 MiB: a compare diff with lockfile churn passes 1 MiB, and a cut-off diff would void rebase survival.
-  const r = spawnSync("gh", args, {
+  const options = {
     encoding: "utf8",
     env: { ...process.env, GH_TOKEN: token },
     maxBuffer: 256 * 1024 * 1024,
-  });
+  };
+  const r = idempotent
+    ? botNetwork.spawnRetrying("gh", args, options)
+    : spawnSync("gh", args, options);
   if (r.error) throw new Error(`gh ${args[0]} ${args[1]} failed: ${r.error.message}`);
   if (r.status !== 0) throw new Error(`gh ${args[0]} ${args[1]} failed: ${r.stderr.trim()}`);
   return r.stdout;
@@ -269,44 +276,52 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       process.exit(1);
     }
     const [owner, name] = repo.startsWith("{") ? ["{owner}", "{repo}"] : repo.split("/");
-    const graphql = (query, fields) =>
-      JSON.parse(gh(["api", "graphql", "-f", `query=${query}`, ...fields], token)).data;
+    const graphql = (query, fields, idempotent = true) =>
+      JSON.parse(gh(["api", "graphql", "-f", `query=${query}`, ...fields], token, idempotent)).data;
+    // -F (typed) fills gh's {owner}/{repo} placeholders and makes n an Int.
+    const where = ["-F", `o=${owner}`, "-F", `r=${name}`, "-F", `n=${n}`];
     const { repository } = graphql(
       "query($o:String!,$r:String!,$n:Int!,$b:String!){repository(owner:$o,name:$r){" +
         "mergeQueue(branch:$b){id} pullRequest(number:$n){id}}}",
-      // -F (typed) fills gh's {owner}/{repo} placeholders and makes n an Int.
-      ["-F", `o=${owner}`, "-F", `r=${name}`, "-F", `n=${n}`, "-f", `b=${pr.baseRefName}`],
+      [...where, "-f", `b=${pr.baseRefName}`],
     );
     if (repository.mergeQueue && !enqueueReady(botNetwork)) {
       throw new Error(
-        `${pr.baseRefName} has a merge queue, but enqueueing waits for STA-302 (connect timeout and retries ` +
-          "in bot-token.mjs, owner order OP7); land STA-302 first, then run pr:merge again",
+        `${pr.baseRefName} has a merge queue, but enqueueing needs CONNECT_TIMEOUT_MS >= 30000 and ` +
+          "RETRY_ATTEMPTS >= 2 in bot-token.mjs (owner order OP7, STA-302)",
       );
     }
     if (repository.mergeQueue) {
       // The queue squashes and deletes the branch (ruleset merge method, delete_branch_on_merge).
-      const { enqueuePullRequest } = graphql(
-        "mutation($id:ID!,$h:GitObjectID!){enqueuePullRequest(input:" +
-          "{pullRequestId:$id,expectedHeadOid:$h}){mergeQueueEntry{position state}}}",
-        ["-f", `id=${repository.pullRequest.id}`, "-f", `h=${pr.headRefOid}`],
+      const queued = () => {
+        const { pullRequest } = graphql(
+          "query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){" +
+            "pullRequest(number:$n){state mergeQueueEntry{id}}}}",
+          where,
+        ).repository;
+        return Boolean(pullRequest.mergeQueueEntry) || pullRequest.state === "MERGED";
+      };
+      const entry = await botNetwork.retryUnlessLanded(
+        () =>
+          graphql(
+            "mutation($id:ID!,$h:GitObjectID!){enqueuePullRequest(input:" +
+              "{pullRequestId:$id,expectedHeadOid:$h}){mergeQueueEntry{position state}}}",
+            ["-f", `id=${repository.pullRequest.id}`, "-f", `h=${pr.headRefOid}`],
+            false,
+          ).enqueuePullRequest.mergeQueueEntry,
+        queued,
       );
-      const entry = enqueuePullRequest.mergeQueueEntry;
-      process.stdout.write(
-        `queued #${n} at ${pr.headRefOid}: position ${entry.position}, ${entry.state}\n`,
-      );
+      const place = entry
+        ? `position ${entry.position}, ${entry.state}`
+        : "landed before a transient error";
+      process.stdout.write(`queued #${n} at ${pr.headRefOid}: ${place}\n`);
     } else {
-      gh(
-        [
-          "pr",
-          "merge",
-          n,
-          ...R,
-          "--squash",
-          "--delete-branch",
-          "--match-head-commit",
-          pr.headRefOid,
-        ],
-        token,
+      const merged = () =>
+        JSON.parse(gh(["pr", "view", n, ...R, "--json", "state"], token)).state === "MERGED";
+      const merge = ["pr", "merge", n, ...R, "--squash", "--delete-branch"];
+      await botNetwork.retryUnlessLanded(
+        () => gh([...merge, "--match-head-commit", pr.headRefOid], token, false),
+        merged,
       );
       process.stdout.write(`merged #${n} at ${pr.headRefOid}\n`);
     }

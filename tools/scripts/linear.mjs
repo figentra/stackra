@@ -17,11 +17,16 @@
  *   LINEAR_AGENT_CLIENT_SECRET (client_credentials) when it expires or is absent. LINEAR_API_KEY (personal key)
  *   is the fallback. They reach the process only through `infisical run --env=dev --path=/agents` (the
  *   `pnpm linear` script) or CI repo secrets. Never printed.
+ * Network: through bot-token.mjs (STA-302): reads, issue updates and the token mint retry on transient errors; a
+ *   comment carries a client-chosen id and is re-sent only when a read shows the failed attempt did not land; other
+ *   writes run once.
  * Secrets: read from the environment only; never written, logged or echoed.
  */
 import { execFileSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { parseArgs } from "node:util";
 import { pathToFileURL } from "node:url";
+import { netFetch, retryUnlessLanded } from "./bot-token.mjs";
 
 export const TEAM = "STA";
 const API = "https://api.linear.app/graphql";
@@ -43,16 +48,20 @@ export function auth(env = process.env) {
 
 /** A client_credentials token for the "Stackra Agent" app. The error never carries the response body. */
 export async function mint(env, fetch) {
-  const res = await fetch(TOKEN_URL, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "client_credentials",
-      client_id: env.LINEAR_AGENT_CLIENT_ID,
-      client_secret: env.LINEAR_AGENT_CLIENT_SECRET,
-      scope: SCOPE,
-    }),
-  });
+  const res = await fetch(
+    TOKEN_URL,
+    {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: env.LINEAR_AGENT_CLIENT_ID,
+        client_secret: env.LINEAR_AGENT_CLIENT_SECRET,
+        scope: SCOPE,
+      }),
+    },
+    { idempotent: true },
+  );
   const json = await res.json().catch(() => ({}));
   if (!res.ok || !json.access_token)
     throw new Error(`Linear app token mint failed (HTTP ${res.status})`);
@@ -71,7 +80,7 @@ const isAuthError = (res, json) =>
  * A GraphQL client. A missing or expired app token is (re-)minted from the client credentials, once per call;
  * if that fails and a personal key exists, the client falls back to it. Errors carry Linear's messages, never a token.
  */
-export function client({ env = process.env, fetch = globalThis.fetch } = {}) {
+export function client({ env = process.env, fetch = netFetch } = {}) {
   const a = auth(env);
   const state = { ...a };
   const fallback = () => {
@@ -86,12 +95,18 @@ export function client({ env = process.env, fetch = globalThis.fetch } = {}) {
       if (!fallback()) throw e;
     }
   };
+  // A read or an issueUpdate (it sets values) is safe to repeat; netFetch retries it.
+  const idempotent = (query) => !/^\s*mutation\b/.test(query) || /\bissueUpdate\(/.test(query);
   const post = async (query, variables) => {
-    const res = await fetch(API, {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: state.header },
-      body: JSON.stringify({ query, variables }),
-    });
+    const res = await fetch(
+      API,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: state.header },
+        body: JSON.stringify({ query, variables }),
+      },
+      { idempotent: idempotent(query) },
+    );
     return { res, json: await res.json().catch(() => ({})) };
   };
   const gql = async (query, variables = {}) => {
@@ -235,11 +250,17 @@ export function linear(c, { dry = false, log = console.log } = {}) {
       if (!c.app) return;
       await api.update(issue, { delegateId: await api.viewerId() }, "delegate to Stackra Agent");
     },
+    /** The comment's own id lets a retry ask whether the failed attempt landed, so it never posts twice. */
     async comment(issue, body) {
+      const id = randomUUID();
       await write(`comment on ${issue.identifier}: ${body.split("\n")[0]}`, () =>
-        gql(`mutation($i:CommentCreateInput!){commentCreate(input:$i){success}}`, {
-          i: { issueId: issue.id, body },
-        }),
+        retryUnlessLanded(
+          () =>
+            gql(`mutation($i:CommentCreateInput!){commentCreate(input:$i){success}}`, {
+              i: { id, issueId: issue.id, body },
+            }),
+          () => gql(`query($id:String!){comment(id:$id){id}}`, { id }).then(Boolean, () => false),
+        ),
       );
     },
     async link(issue, url, title) {

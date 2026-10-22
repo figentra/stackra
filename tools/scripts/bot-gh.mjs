@@ -12,7 +12,7 @@
  */
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { mintToken } from "./bot-token.mjs";
+import { ghIdempotent, mintToken, netFetch, spawnRetrying } from "./bot-token.mjs";
 
 // Bot user id from `gh api /users/stackra-bot%5Bbot%5D` (not the app id).
 export const BOT_NAME = "stackra-bot[bot]";
@@ -34,11 +34,20 @@ export const gitBotArgs = () => [
   "url.https://github.com/.insteadOf=ssh://git@github.com/",
 ];
 
-/** Run gh/git as the bot; returns the exit status. */
+/** Run gh/git as the bot; returns the exit status. A gh read is retried on a transient network error (STA-302). */
 export function runAsBot(tool, args, token) {
   const argv = tool === "git" ? [...gitBotArgs(), ...args] : args;
   const env = { ...process.env, GH_TOKEN: token, GH_PROMPT_DISABLED: "1" };
-  return spawnSync(tool, argv, { stdio: "inherit", env }).status ?? 1;
+  if (tool === "git" || !ghIdempotent(args))
+    return spawnSync(tool, argv, { stdio: "inherit", env }).status ?? 1;
+  // stderr is captured so the retry can read it, then shown.
+  const r = spawnRetrying(tool, argv, {
+    stdio: ["inherit", "inherit", "pipe"],
+    env,
+    encoding: "utf8",
+  });
+  process.stderr.write(r.stderr ?? "");
+  return r.status ?? 1;
 }
 
 /** gh subcommands the reviewer identity may run: read a PR, then comment or review. Never push, merge or edit. */
@@ -204,7 +213,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   }
   try {
     if (tool === "review")
-      process.exit(runAsBot("gh", args, await mintToken(process.env, fetch, "STACKRA_REVIEWER")));
+      process.exit(
+        runAsBot("gh", args, await mintToken(process.env, netFetch, "STACKRA_REVIEWER")),
+      );
     process.exit(runAsBot(tool, args, await mintToken()));
   } catch (error) {
     process.stderr.write(`bot-gh: ${error.message}\n`);

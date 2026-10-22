@@ -8,7 +8,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { auth, client, digest, main, prCarriesKey } from "../linear.mjs";
+import { auth, client, digest, linear, main, prCarriesKey } from "../linear.mjs";
 import { adrStatuses, apply, plan, prKeys } from "../linear-reconcile.mjs";
 
 const SECRET = "lin_api_SECRETVALUE";
@@ -113,6 +113,38 @@ test("start moves to In Progress, delegates to the app (not assignee) and commen
     .map((c) => JSON.parse(c.init.body))
     .find((b) => b.query.includes("commentCreate"));
   assert.match(comment.variables.i.body, /figentra\/sta-7-x/);
+});
+
+test("STA-302: a failed comment is re-sent with its own id only when a read shows it did not land", async () => {
+  const sent = [];
+  const retried = new Map();
+  let landed = false;
+  const answer = (json) => ({ ok: true, status: 200, json: async () => json });
+  const fetch = async (_url, init, options) => {
+    const { query, variables } = JSON.parse(init.body);
+    retried.set(query.split("(")[0], options.idempotent);
+    if (query.includes("commentCreate")) {
+      sent.push(variables.i.id);
+      if (sent.length === 1) throw new TypeError("fetch failed");
+      return answer({ data: { commentCreate: { success: true } } });
+    }
+    return answer(
+      landed
+        ? { data: { comment: { id: variables.id } } }
+        : { errors: [{ message: "Entity not found" }] },
+    );
+  };
+  const L = linear(client({ env: { LINEAR_API_KEY: "k" }, fetch }), { log: () => {} });
+  await L.comment(ISSUE, "hi");
+  assert.equal(sent.length, 2);
+  assert.equal(sent[0], sent[1]);
+  assert.match(sent[0], /^[0-9a-f-]{36}$/);
+  assert.deepEqual(Object.fromEntries(retried), { mutation: false, query: true });
+
+  sent.length = 0;
+  landed = true;
+  await L.comment(ISSUE, "hi");
+  assert.equal(sent.length, 1);
 });
 
 test("create adds the agent label when an agent runs it; dry-run writes nothing", async () => {

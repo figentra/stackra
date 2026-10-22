@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import * as network from "../bot-token.mjs";
 import {
   actor,
   aiReview,
@@ -295,4 +296,8 @@ test("OP7: enqueueing waits for STA-302's connect timeout and retries", () => {
   assert.equal(enqueueReady({ CONNECT_TIMEOUT_MS: 10_000, RETRY_ATTEMPTS: 4 }), false);
   assert.equal(enqueueReady({ CONNECT_TIMEOUT_MS: 30_000, RETRY_ATTEMPTS: 1 }), false);
   assert.equal(enqueueReady({ CONNECT_TIMEOUT_MS: 30_000, RETRY_ATTEMPTS: 4 }), true);
+});
+
+test("OP7: STA-302 opened the enqueue path — bot-token.mjs declares the timeout and retries", () => {
+  assert.equal(enqueueReady(network), true);
 });
