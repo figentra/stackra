@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.stackra.figentra.com/runway/service.json",
+  "$id": "https://static.stackra.figentra.com/schemas/runway/service.json",
   "$comment": "Stackra file contract: Purpose: the shape of a SERVICE member's runway.yaml. Boundary: shape only; what the service IS is stackra.config.ts, what it NEEDS is derived by gen into the manifest `infra`, and the root runway (runway/root.json) holds destinations and defaults. Runtime: node (editors and validators). Governing contract: ADR 0168 (runway.yaml schema), ADR 0169 (deployables), ADR 0238 (logical databases and pool budgets), ADR 0266 (mail driver), ADR 0173 (secret names), ADR 0190 (health), ADR 0146 (config layers).",
   "title": "runway.yaml (service member)",
   "description": "How and where one service runs, per environment: dev port, the deployable it joins (ADR 0169), resources, the sizes of what it needs, drivers, secret NAMES, health thresholds and per-environment config. What it needs is derived by gen into the manifest `infra`; this file only sizes it. No secret value, no business value.",

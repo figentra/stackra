@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.stackra.figentra.com/stackra-lock.json",
+  "$id": "https://static.stackra.figentra.com/schemas/stackra-lock.json",
   "$comment": "Stackra file contract: Purpose: the shape of stackra.lock.yaml, the workspace's pin of every external producer manifest. Boundary: shape only; `stackra gen` resolves the revisions. Runtime: node (editors and validators). Governing contract: ADR 0158 (the manifest is the contract), ADR 0260 (clients are generated from manifests), ADR 0231 (module keys).",
   "title": "stackra.lock.yaml",
   "description": "The pinned revision of every external producer manifest this workspace builds clients from, once per workspace. `stackra gen` reads each producer's committed `.stackra/app-manifest.json` at this revision, and every generated `clients.ts` header cites it (ADR 0158, ADR 0260). Producer to revision only: no secret and no URL. A producer that lives in this repository is not listed; its manifest is read from the working tree.",

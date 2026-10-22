@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.stackra.figentra.com/runway/root.json",
+  "$id": "https://static.stackra.figentra.com/schemas/runway/root.json",
   "$comment": "Stackra file contract: Purpose: the shape of the ROOT runway.yaml, the infrastructure itself. Boundary: shape only; `stackra infra`, `stackra gen`, `stackra dev` and the runway workflows read the file. Member facts live in member runways (runway/app.json, runway/service.json). Runtime: node (editors and validators). Governing contract: ADR 0168 (one schema-validated runway.yaml, its sections), ADR 0169 (topology), ADR 0170 (environments, release), ADR 0171 (ref: values), ADR 0173 (secrets), ADR 0175 (edge), ADR 0184 (observability), ADR 0238 (one database server per environment).",
   "title": "runway.yaml (root)",
   "description": "The root runway: destinations per environment, shared resources, provider target blocks, the edge, the secrets defaults, the release policy and the defaults members inherit (ADR 0168, 0169, 0170, 0173). It never lists deployables: gen collects them from every member's runway.yaml. No secret value. `ref:<path>` resolves from the private stacks repo's Pulumi config at infra time (ADR 0171 d4).",

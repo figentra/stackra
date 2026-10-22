@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.stackra.figentra.com/branch-protection.json",
+  "$id": "https://static.stackra.figentra.com/schemas/branch-protection.json",
   "$comment": "Stackra file contract: Purpose: the shape of .github/branch-protection.json, the committed branch rules. Boundary: shape only; a human applies the rules in GitHub settings or with the REST call. Runtime: node (editors and validators). Governing contract: ADR 0012 (code host and CI); GitHub REST 'Update branch protection' for the `rules` fields.",
   "title": ".github/branch-protection.json",
   "description": "Branch protection for one branch. `rules` is the request body of GitHub's PUT /repos/{owner}/{repo}/branches/{branch}/protection; `comment` and `branch` are this file's own wrapper.",

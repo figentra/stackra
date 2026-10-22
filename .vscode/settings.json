@@ -40,8 +40,11 @@
   "editor.insertSpaces": true,
 
   // ── TypeScript: the repo's version, project-relative imports, `#` subpath imports ──────────────
-  "js/ts.tsdk.path": "node_modules/typescript/lib",
-  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+  // TypeScript 7 ships only the native `tsc` (no tsserver.js), so the editor runs the official
+  // "TypeScript 7" extension (TypeScriptTeam.native-preview) with its bundled native build instead of
+  // a `tsdk.path`. Members compile with the catalog's TypeScript 7; the stackra root's TypeScript 6
+  // exists only for doc-standard and must not drive the editor.
+  "js/ts.experimental.useTsgo": true,
   "js/ts.preferences.importModuleSpecifier": "non-relative",
   "js/ts.preferences.preferTypeOnlyAutoImports": true,
   "js/ts.updateImportsOnFileMove.enabled": "always",
@@ -71,7 +74,7 @@
     "https://biomejs.dev/": true,
     "https://mintlify.com/": true,
     "https://opencode.ai/": true,
-    "https://schemas.stackra.figentra.com/": true
+    "https://static.stackra.figentra.com/schemas/": true
   },
   // A file's own `$schema` wins over these mappings, so they cover only files that carry none.
   "json.schemas": [
@@ -121,7 +124,7 @@
   "yaml.schemas": {
     // Installed tools: the package's own schema file, so it matches the pinned version exactly.
     "./node_modules/lefthook/schema.json": "lefthook.yml",
-    // Stackra's own schemas (tools/schemas; their $id is schemas.stackra.figentra.com, not hosted yet).
+    // Stackra's own schemas (tools/schemas; their $id is static.stackra.figentra.com, not hosted yet).
     "./tools/schemas/mcp.schema.json": ".mcp.yaml",
     // Tools without a workspace package: the tool's own published schema.
     "https://raw.githubusercontent.com/DavidAnson/markdownlint/main/schema/markdownlint-config-schema.json": ".markdownlint.yaml",

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.stackra.figentra.com/mcp.json",
+  "$id": "https://static.stackra.figentra.com/schemas/mcp.json",
   "$comment": "Stackra file contract: Purpose: the shape of .mcp.yaml, the one committed MCP server list. Boundary: shape only; the renderer (`pnpm agents:sync` here, `stackra mcp sync` in a project) writes the gitignored .mcp.json. Runtime: node (editors and validators). Governing contract: ADR 0282 (developer MCP), ADR 0196 (repository config is YAML), ADR 0173 (no secret value in a file).",
   "title": ".mcp.yaml",
   "description": "Every MCP server the project uses, in one file (ADR 0282). It is rendered into the gitignored .mcp.json that Claude Code reads. Server definitions only, never a token: a token server runs through a wrapper that injects `$NAME` values from Infisical into that one process (ADR 0173).",

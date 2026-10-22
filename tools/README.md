@@ -17,5 +17,5 @@ Repository tooling that is not a workspace member: it has no `package.json`, no 
   prints a secret.
 - Tests sit in `scripts/__tests__/` and run with `node --test` in `pnpm validate`.
 - Schemas are the source of truth for runway (root, app, service), `stackra.lock.yaml`, `.mcp.yaml` and
-  `.github/branch-protection.json`. Each keeps its `https://schemas.stackra.figentra.com/` `$id` for later hosting; until then
+  `.github/branch-protection.json`. Each keeps its `https://static.stackra.figentra.com/schemas/` `$id` for later hosting; until then
   `.vscode/settings.json` maps them by relative path, and stackra-template carries a copy in its `schemas/` folder.
