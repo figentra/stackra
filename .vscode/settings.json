@@ -56,6 +56,20 @@
     "**/.vscode/*.json": "jsonc",
     "*.mdx": "mdx"
   },
+  // Remote $schema URLs load only from trusted hosts (VS Code asks otherwise and shows "Unable to load").
+  "json.schemaDownload.enable": true,
+  "json.schemaDownload.trustedDomains": {
+    "https://json.schemastore.org/": true,
+    "https://www.schemastore.org/": true,
+    "https://unpkg.com/": true,
+    "https://cdn.jsdelivr.net/": true,
+    "https://raw.githubusercontent.com/": true,
+    "https://turborepo.com/": true,
+    "https://turbo.build/": true,
+    "https://biomejs.dev/": true,
+    "https://mintlify.com/": true,
+    "https://schemas.stackra.dev/": true
+  },
   "json.schemas": [
     {
       "fileMatch": ["*.jsonc", "**/tsconfig*.json", "**/.vscode/*.json"],
