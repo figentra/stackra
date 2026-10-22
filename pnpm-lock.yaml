@@ -311,6 +311,10 @@ catalogs:
     lefthook:
       specifier: 2.2.2
       version: 2.2.2
+  tooling:
+    typescript:
+      specifier: 6.0.3
+      version: 6.0.3
 
 overrides:
   '@mintlify/previewing>is-online': 12.0.2
@@ -351,7 +355,7 @@ importers:
         specifier: catalog:build
         version: 2.11.9
       typescript:
-        specifier: catalog:mobile
+        specifier: catalog:tooling
         version: 6.0.3
       yaml:
         specifier: 'catalog:'
