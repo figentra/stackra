@@ -12,9 +12,9 @@ import { fileURLToPath } from "node:url";
 
 export const DEFAULT_BUDGET = { dailyUsd: 150, warnAt: 0.8 };
 
-/** shortcut: reads the one-line `budget: { dailyUsd: N, warnAt: N }` entry by regex, not a YAML parser. */
+/** shortcut: reads the indented `budget:` block (`dailyUsd: N`, `warnAt: N`) by regex, not a YAML parser. */
 export function parseBudget(yamlText) {
-  const line = /^budget:\s*\{([^}]*)\}/m.exec(yamlText)?.[1] ?? "";
+  const line = /^budget:[ \t]*\n((?:[ \t]+\S.*\n?)*)/m.exec(yamlText)?.[1] ?? "";
   const num = (key, fallback) => {
     const m = new RegExp(`${key}:\\s*([0-9.]+)`).exec(line);
     return m ? Number(m[1]) : fallback;

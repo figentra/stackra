@@ -685,6 +685,7 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 - `turbo boundaries` checks dependency direction
 - `tools/scripts/validate-repository.mjs` checks tier tags, file existence, and config formats: repo-owned config is YAML; `.jsonc` only where the reader has no YAML support (`MUST_STAY_JSONC`), `.json` only where it takes no comments (`MUST_STAY_JSON`)
 - `packages/tooling/oxlint/src/boundaries.jsonc` enforces layer rules
+- Repo-owned YAML is block style: no flow mappings (`{ a: b }`, empty `{}` aside), flow sequences only for short scalar lists on one line, trailing comments only while the line stays within 100 characters; `checkYamlFlowMaps` in `validate-repository.mjs` enforces it (STA-299)
 
 #### See Also
 

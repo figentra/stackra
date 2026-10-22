@@ -40,18 +40,12 @@ function linearSync(args) {
     );
 }
 
-/** shortcut: `name: { k: v, … }` flow maps under `tasks:` (oxfmt may wrap them over lines); no nesting. */
+/** shortcut: two-space `name:` entries under `tasks:` with four-space `key: value` lines; no deeper nesting. */
 export function parseRouting(yamlText) {
   const tasks = {};
-  for (const m of yamlText.matchAll(/^ {2}([\w-]+):\s*\{([^}]*)\}/gm)) {
+  for (const m of yamlText.matchAll(/^ {2}([\w-]+):[ \t]*\n((?: {4}\S.*\n?)+)/gm)) {
     tasks[m[1]] = Object.fromEntries(
-      m[2]
-        .split(",")
-        .filter((kv) => kv.includes(":"))
-        .map((kv) => {
-          const i = kv.indexOf(":");
-          return [kv.slice(0, i).trim(), kv.slice(i + 1).trim()];
-        }),
+      [...m[2].matchAll(/^ {4}([\w-]+):\s*(.+)$/gm)].map((kv) => [kv[1], kv[2].trim()]),
     );
   }
   return { tasks, budget: parseBudget(yamlText) };

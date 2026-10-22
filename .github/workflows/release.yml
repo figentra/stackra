@@ -28,7 +28,8 @@ jobs:
     permissions:
       contents: write # push the version-PR branch and the version tags
       pull-requests: write # open and update the version PR
-      id-token: write # ADR 0177 amendment: pnpm trusted publishing (GitHub OIDC) and the provenance statement; no npm token
+      # ADR 0177 amendment: pnpm trusted publishing (GitHub OIDC) and the provenance statement; no npm token
+      id-token: write
 
     steps:
       # stackra-bot token (owner decision A1): a version PR pushed with GITHUB_TOKEN never triggers the
