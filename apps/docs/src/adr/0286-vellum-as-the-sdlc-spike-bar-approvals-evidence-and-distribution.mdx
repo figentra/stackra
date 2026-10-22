@@ -1,0 +1,140 @@
+---
+title: "0286 — Vellum as the SDLC: spike bar, approvals, evidence, distribution and licence"
+description: "Accepted · 2026-10-22"
+---
+
+<Note>
+  Amends [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc): decision 1
+  (four developer packages, with `@stackra/renderers` added), decision 2 (the renderer layer moves
+  to `@stackra/renderers`), decision 12 (the Stackra preset is split between `@stackra/skills` and
+  `.agents/`) and decision 16 (where Vellum work is tracked). Decisions 11 and 14 gain the
+  conditions below. The spike and the rule that Vellum becomes the SDLC only if it passes are
+  unchanged.
+</Note>
+
+## Context
+
+Vellum (figentra/vellum, a separate product) enforces spec lifecycles: approvals are signed, and task evidence is
+recorded in a hash-chained ledger in git. [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc)
+makes Vellum the SDLC only if spike STA-298 passes, and until then spec-kit stays. The owner's decisions of
+2026-10-22 answer the questions 0282 left open: how Vellum is distributed, who signs approvals, where task commands
+run, who owns the renderers, the licence and visibility, and the bar the spike must clear. Each decision below
+records its reasoning, so the page can be read without other documents.
+
+## Decision
+
+### Spike and adoption
+
+1. **Save the uncommitted Vellum work first (VL1).** Each uncommitted working tree is committed as it is to a
+   `wip/<branch>` branch, pushed to figentra/vellum, and then re-cloned. A local copy is deleted only after its pushes
+   are verified. Nothing unpushed is deleted. Broken worktree links make an accidental prune likely, and committing
+   as-is keeps each change reviewable.
+2. **The pass bar for STA-298 (VL3).** STA-298 passes only if its written criteria hold and four further checks hold:
+   - an agent session cannot produce a valid approval, because no signing key is reachable from it (see open
+     details, item 1);
+   - evidence recorded on the box or the remote runner verifies on the owner's machine;
+   - the Quality Gate adds 60 seconds or less;
+   - one full issue costs the lead no more than 15 extra minutes compared with spec-kit.
+
+   The bar is set before the spike starts, so the spike cannot turn into adoption by default.
+
+3. **Adoption follows a pass.** If STA-298 passes, a follow-up ADR supersedes
+   [0067](/adr/0067-spec-kit-is-the-sdlc) and decision D15 of
+   [0121](/adr/0121-sdlc-tooling-roles-and-linear), as decision 11 of 0282 says. If it fails, decision 14 of 0282
+   applies: spec-kit stays and Vellum is only the approval and evidence layer.
+
+### Approvals and lanes
+
+4. **Approvals are given by the reviewer identity (VL4).** The separate reviewer identity approves Vellum tasks by
+   default. Its signing key sits in an Infisical path that builder agents cannot read (STA-238). The owner approves
+   only changes at change-risk R3 and above, which cover security, secrets, money and releases
+   ([0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk)). There is no hardware-key ceremony. This is not one
+   of the three options that were weighed: the reviewer key is extended from low-risk lanes to every lane below R3.
+   The reason is the owner's stated aim of minimal human interaction, with the owner's time kept for R3 and above.
+   Builders never approve their own work ([0230](/adr/0230-reviewer-identity-separate-from-builder)).
+5. **Lanes need different proof (VL5).** The full and lite lanes need a signed approval and recorded evidence. The
+   bug lane records evidence only, because its failing test is already the evidence. The trivial lane needs neither.
+   The lanes are those of [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk).
+
+### Packages and distribution
+
+6. **The renderers belong to Stackra (VL6).** The renderer layer moves into this repository as the published
+   `@stackra/renderers` package in the developer category, and Vellum depends on it from npmjs. `@vellum/renderers`
+   is no longer the shared package. The reason: Stackra is public, has release checks and a fixed version
+   ([0177](/adr/0177-package-distribution-npmjs-and-keygen)), and is the larger consumer, while a public package should
+   not depend on a product whose distribution is still open. The developer packages become four: `@stackra/skills`,
+   `@stackra/cli`, `@stackra/mcp` and `@stackra/renderers`.
+7. **One public package (VL8).** Vellum is distributed as one public package, `@figentra/vellum`, published to npmjs
+   with provenance. It bundles the internal `@vellum/*` packages, which stay workspace-private. Vellum leaves the
+   private registry.
+8. **Private until 1.0 (VL9).** figentra/vellum stays private until version 1.0, then goes public. Its MIT licence text
+   is already in place, so the later change costs nothing. The legal name on its licence follows
+   [0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule).
+9. **Free for now (VL10).** Vellum is free and MIT-licensed as an adoption path into Stackra. Whether team features
+   become paid is reviewed when the first team asks. No price is set.
+10. **Brand direction approved, nothing published (VL16).** The Vellum brand direction is approved. Nothing is
+    published until the repository is public (decision 8). The brand kit follows
+    [0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule).
+
+### Task commands, merge and specs
+
+11. **Task commands run on the remote runner (VL7).** `vellum task complete --command` runs through the remote runner
+    of [0287](/adr/0287-agent-sandboxes-and-the-remote-runner) (STA-255). Vellum records the runner job id, the git tree
+    hash, the exit status and an output digest. Light commands may still run locally. Remote evidence is a Vellum
+    feature, filed as an STA issue (decision 14).
+12. **`pr:merge` stays the only merger (VL13).** `vellum verify` is a step inside the required Quality Gate, and
+    Vellum's `automatedMergePermitted` stays off in Stackra's policy. [0119](/adr/0119-merge-policy-and-release-authority)
+    and [0166](/adr/0166-ci-policy-runners-budgets-concurrency-and-check-matrix) are unchanged.
+13. **Existing specs (VL14).** If the spike passes, `vellum adopt` runs on open specs only. Done specs stay frozen as
+    spec-kit history, with no retroactive approvals, because retroactive approvals would be fake evidence.
+
+### Toolchain, assistants and tracking
+
+14. **Tracking (VL/OP5, amends 0282 decision 16).** Vellum work is tracked in Linear team STA with the `vellum` label.
+    The code lives in figentra/vellum, and branches follow Linear's naming, `figentra/sta-<n>-<slug>`, in that
+    repository, so `pnpm linear` works unchanged. Gaps such as `vellum sync` are STA issues, not issues in
+    figentra/vellum.
+15. **Preset split (VL2, amends 0282 decision 12).** Vellum's engine stays in figentra/vellum. The open Stackra preset,
+    which holds the Impact questionnaire and the risk and lane rules, ships in `@stackra/skills`. Linear and the
+    internal process rules stay in `.agents/` in this repository. The preset is not a `presets/stackra` folder in
+    figentra/vellum.
+16. **Assistants (VL12).** Claude Code and OpenCode are supported and tested in the spike. The Kiro and Cursor renderers
+    are kept and marked untested.
+17. **Toolchain (VL11).** After the spike passes, Vellum moves to Node 24, pnpm 12, oxfmt (Prettier is dropped), tsdown,
+    the published `@stackra/*-config` presets and the runway reusable workflows. The formatter-proof task parser must
+    pass under oxfmt first. Until the spike has passed, Vellum keeps its own toolchain.
+18. **Repositories (VL15).** Stackra is the first repository, for the spike, and Figentra OS follows once the spike
+    passes. Academorix and the other product repositories stay out until someone asks.
+
+## Consequences
+
+- Vellum gains a remote-evidence feature, a reviewer-identity approval path and the `vellum` label in Linear.
+- Approvals depend on the reviewer key path (STA-238). Until that path exists, decision 4 cannot be met, and no task can
+  be approved under it.
+- The renderer layer has a second consumer in `@stackra/renderers`, so a change to it must keep Stackra and Vellum
+  working.
+- If STA-298 fails, decisions 3 (adoption), 13 (adopt specs) and 17 (toolchain) do not apply, and spec-kit stays.
+
+## Enforcement
+
+planned — `vellum verify` inside the Quality Gate once STA-298 passes (decision 12). The four checks of decision 2 are
+the spike's own tests, run on the box and the Mac. The lane rules of decision 5 move into `tools/scripts/spec-gate.mjs`
+when Vellum replaces spec-kit. No check yet enforces decision 4.
+
+## Open details
+
+1. **The first spike check reads against decision 4.** The first check of decision 2 says an agent session cannot
+   produce a valid approval, but decision 4 gives approvals to a reviewer identity, which is itself an agent. This
+   record reads that check as applying to builder sessions, which cannot reach the reviewer key. Whether the reviewer's
+   own runner counts as an agent session is for the owner to confirm before the spike is judged.
+2. **The reviewer key path is not built.** Today both bot apps' credentials sit in the same Infisical folder on one
+   machine ([0230](/adr/0230-reviewer-identity-separate-from-builder)). Decision 4 needs a path that builder agents
+   cannot read, which is stricter than today.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) (decisions 1, 2, 12 and 16; decisions 11 and 14 gain conditions). Related: [0067](/adr/0067-spec-kit-is-the-sdlc),
+[0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk), [0177](/adr/0177-package-distribution-npmjs-and-keygen),
+[0230](/adr/0230-reviewer-identity-separate-from-builder), [0287](/adr/0287-agent-sandboxes-and-the-remote-runner),
+[0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule). Sources: owner decisions of 2026-10-22 (VL1 to
+VL16 and OP5); Linear STA-298, STA-238, STA-255 and STA-328.
