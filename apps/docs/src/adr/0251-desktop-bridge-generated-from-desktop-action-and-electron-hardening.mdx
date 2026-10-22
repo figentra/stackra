@@ -1,7 +1,15 @@
 ---
 title: "0251 — The desktop bridge is generated from @DesktopAction; the Electron hardening baseline"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): the
+  bridge and the allow-list of decisions 1 and 2 are generated from `Bridge` kind classes
+  (`extends Bridge({...})`), not from `@DesktopAction` declarations. A package ships its standard
+  bridges behind its ports, and an app writes `src/bridges/<name>.bridge.ts` only for a
+  main-process need that no package covers. Decisions 3 and 4 stand.
+</Note>
 
 <Note>
   Fulfils the planned enforcement of [0058](/adr/0058-desktop-is-electron). Builds on

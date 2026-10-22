@@ -1,7 +1,16 @@
 ---
 title: "0117 — Shared primitives live in @stackra/contracts, each package has a types-only ./contracts entry, and each package owns its decorators"
-description: "Accepted, amended by 0140, 0141, 0144, 0260 · 2026-10-19"
+description: "Accepted, amended by 0140, 0141, 0144, 0260, 0294, 0295 · 2026-10-19"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) and
+  [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries): a package's
+  `src/contracts/` is a leaf. It holds ports, enums and types, and imports nothing from the
+  package's other folders. Core, node, react, native and testing import it, never the reverse. Entry
+  barrels are generated from the entry folders and never authored, and no symbol is exported from
+  two entries. The `./contracts` entry of decision 2 is unchanged.
+</Note>
 
 <Note>
   Amended by

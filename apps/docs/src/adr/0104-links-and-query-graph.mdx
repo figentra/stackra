@@ -1,7 +1,25 @@
 ---
 title: "0104 — Cross-module relations are @Link declarations, read through query.graph"
-description: "Accepted, amended by 0268 · 2026-10-19"
+description: "Accepted, amended by 0268, 0294 · 2026-10-19"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: `@Link` and the `links/` folder are retired. A relation to a model of
+  another module is a relation decorator with a thunk, such as `@ManyToOne(() => Variant)`, typed
+  `Ref<T>` for one target and `Collection<T>` for many. Gen derives the link mode from the module
+  graph. The relation stores the target's public id with no foreign key, and `line.variant.load()`
+  runs the owning module's query to read the target. A relation inside one module stays an ordinary
+  relation with cascade rules, as decision 5 says. Decision 1 (a pivot owned by a link) is
+  superseded, because no link object exists. The new model does not address decision 2
+  (`query.graph`), so this note does not settle the form of cross-module reads beyond `load()`.
+  Decision 3 is unchanged.
+
+Enforcement of this note: planned — STA-340 (gen checks: a cross-module target typed as an entity
+instead of `Ref<T>`; a link that points up the module graph or forms a cycle; a foreign key or a
+cascade across modules).
+
+</Note>
 
 <Note>
   Amended by [0268](/adr/0268-register-answers-thin-items-r1-to-r18): R10: `query.graph` returns at

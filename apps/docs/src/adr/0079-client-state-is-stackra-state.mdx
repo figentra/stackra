@@ -1,7 +1,18 @@
 ---
 title: "0079 — Client state is @stackra/state (ported Figentra signals); Query owns optimism and the offline queue"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0252, 0256, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: a local client state class is declared with the `Store` kind, as
+  `extends Store({ persist })`, in the app's `stores/` folder as `<name>.store.ts`. The `@Store`
+  decorator and the `StoreBase` class are retired. The rest of this page is unchanged.
+
+Enforcement of this note: planned — STA-338 (the decorator-registry check `no-kind-decorator`, and
+the kind-path check for `stores/`).
+
+</Note>
 
 <Note>
   Amended by [0252](/adr/0252-offline-on-every-client-completing-the-mutation-queue) and

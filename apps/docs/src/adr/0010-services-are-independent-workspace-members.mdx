@@ -1,7 +1,11 @@
 ---
 title: "0010 — Services are independent workspace members"
-description: "Accepted · 2026-10-19"
+description: "Accepted, amended by 0294, 0295 · 2026-10-19"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (rule R12) and [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries): decision 1 no longer authors a `src/main.ts`. A service has one `stackra.config.ts`, one root module at `src/<key>.module.ts`, and a runtime entry that gen writes to `.stackra/entry/`. The other rules of this page stand.
+</Note>
 
 <Note>
   Amended by [0204](/adr/0204-reference-services-identity-notes-and-registry): reference services,

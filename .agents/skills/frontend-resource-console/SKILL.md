@@ -1,79 +1,89 @@
 ---
 name: frontend-resource-console
-description: Build console screens as declarations - @Resource with form and infolist schemas from model fields, tables with columns, filters, sorts and bulk actions bound to @Action, relation panels, navigation, @Page and @Widget - rendered by @stackra/panel on @stackra/ui, with L2 tenant overrides and custom pages as the escape hatch. Use for any admin, operator, tenant-admin or customer-portal screen.
+description: Build console screens as declarations in the programming model v3 - a class that extends Resource(Model, { navigation, operations }) in resources/<model>/ with table, form and infolist builders bound to actions, widgets as a query plus a display kind in typed slots, Widget.place, Document instead of @Page, notifications on the Messages tab, toasts, route folders with .error.tsx and .fallback.tsx, and path-bound overrides - rendered by @stackra/panel on @stackra/ui. Use for any admin, operator, tenant-admin or customer-portal screen.
 ---
 
 # Console resources
 
-Console screens are **declared by modules and rendered generically** (ADR 0164). A module declares `@Resource`,
-`@Page` and `@Widget`; gen and the registry publish them; `@stackra/panel`, built on `@stackra/ui`, draws them on web and
-native. Coded screens are the exception. Panels: platform admin, product operator, tenant admin, customer portal.
-Shapes follow the ADRs; `@stackra/panel` docs win once it ships.
+Console screens are **declared by modules and rendered generically** (ADR 0164, 0294). A module declares a resource,
+its widgets and documents in `resources/<model>/`; gen and the registry publish them; `@stackra/panel`, built on
+`@stackra/ui`, draws them on web and native. Coded screens are the exception. Panels: platform admin, product
+operator, tenant admin, customer portal.
+
+This is the v3 target. `@stackra/panel` and gen do not ship yet, and the console is still a hello-world entry (the
+conversion is STA-337); the package docs win once they ship.
 
 ## Decide first
 
-| Need                                              | Use                                                                 |
-| ------------------------------------------------- | ------------------------------------------------------------------- |
-| List, view, create, edit a model                  | `@Resource` on the model, actions bound to its table and form        |
-| A dashboard tile, a stat, a chart                 | `@Widget`, data from a `@Query`                                     |
-| A screen that is not a model                      | `@Page` composed of registered components                            |
-| A tenant wants a different layout                 | An L2 override document (ADR 0110): data that only references code  |
-| Nothing above fits                                | A custom page in the app (escape hatch), reviewed by design and a11y |
+| Need                                   | Use                                                                                  |
+| -------------------------------------- | ------------------------------------------------------------------------------------ |
+| List, view, create, edit a model       | `extends Resource(Model, { navigation, operations })` in `resources/<model>/`        |
+| A dashboard tile, a stat, a chart      | `extends Widget({ slot, query, display })`: a query bound to a display kind          |
+| Put a package's widget on your page    | `Widget.place(Base, { slot, params })`                                               |
+| A saved, tenant-editable page          | `extends Document({ kind, path, blocks })` (`@Page` is retired, ADR 0110 as amended) |
+| A tenant wants a different block       | An override at `overrides/<owner>/<block-or-widget>.override.tsx` (ADR 0234)         |
+| Nothing above fits                     | A route folder in the app (escape hatch), reviewed by design and a11y               |
 
 ## Worked example
 
-Resource declarations live in the module's `resources/` kind folder (ADR 0126 decision 3).
-
 ```ts
-// src/modules/invoices/resources/invoice.resource.ts
-import { Resource, Table, Column, Filter, Form, Field, Infolist, Entry } from "@stackra/panel";
-import { Invoice } from "#modules/invoices/models/invoice.model";
-import { RefundInvoiceAction } from "#modules/invoices/actions/refund-invoice.action";
+// src/modules/orders/resources/order/order.resource.ts
+import { Resource } from "@stackra/panel";
+import { CancelOrderAction } from "#modules/orders/actions/cancel-order.action";
+import { Order } from "#modules/orders/models/order.model";
 
-@Resource({
-  model: Invoice,
-  key: "billing.invoices",
-  label: "billing::resources.invoices",
-  navigation: { group: "billing::nav.finance", icon: "receipt", order: 10 },
-  panels: ["tenant-admin", "product-operator"],
-})
-export class InvoiceResource {
-  table = Table.of(Invoice, {
-    columns: [
-      Column.text("number").sortable().searchable(),
-      Column.money("totalMinor", { currencyField: "currency" }).sortable(),
-      Column.badge("status"),
-      Column.dateTime("issuedAt").sortable(),
-    ],
-    filters: [Filter.select("status"), Filter.dateRange("issuedAt")],
-    defaultSort: { issuedAt: "desc" },
-    rowActions: [RefundInvoiceAction],     // bound by reference; gen fails if the action does not exist
-    bulkActions: [],
+/** Orders in the tenant admin: List, View and Create; no Edit page, because there is no `update` operation. */
+export class OrderResource extends Resource(Order, {
+  navigation: { group: NavigationGroup.Sales, icon: "receipt", order: 10 },
+  operations: { list: true, get: true, create: true },
+}) {
+  table = this.tableOf({
+    columns: (t) => [t.text("number").sortable().searchable(), t.money("total").sortable(), t.enum("status")],
+    filters: (f) => [f.enum("status"), f.dateRange("createdAt")],
+    defaultSort: { createdAt: SortDirection.Desc },
   });
 
-  form = Form.of(Invoice, { fields: [Field.from("customerId"), Field.from("dueAt"), Field.repeater("lines")] });
-  infolist = Infolist.of(Invoice, { entries: [Entry.from("number"), Entry.from("status"), Entry.relation("payments")] });
+  actions = [CancelOrderAction]; // bound by reference; buttons hide when the policy denies
+
+  toasts = { [CancelOrderAction.key]: "orders::toasts.order_cancelled" };
 }
 ```
 
-Field types, validation and labels come from the model's field decorators (ADR 0095), so the form needs no duplicated
-rules. A row action shows the confirmation, modal form, notifications and after-effects the action declares
-(ADR 0139); visibility and the disabled state come from IAM and entitlements, with an upgrade prompt when the
-entitlement is missing.
+- **`operations`** says which pages exist and makes gen write the standard actions over `CrudService(Order)`; an
+  operation needs a permission verb on `OrderPermissions` (ADR 0105, 0164 as amended).
+- **Builders** (`table`, `form`, `infolist`, `relations`, `actions`, `bulkActions`, `toasts`) are the only builders in
+  a module. Form keys are checked against the action's input; field types, validation and labels come from the types
+  (ADR 0095 as amended), so the form repeats no rules.
+- **Toasts** are transient messages (Filament's "notifications"); a **notification** in the same folder
+  (`extends Notification({ category })` with its `.mail.tsx`) appears on the View page's Messages tab.
+- **Widgets**: display kinds are Kpi, KpiGroup, Chart, Table, List, Progress, Timeline, View and Custom; only Custom
+  takes a renderer. Slots are typed (`Slots.Orders.Order.List.Header`); `refreshEvery` is at least 30 seconds;
+  `refreshOn` names events.
+
+## Routes and components (ADR 0053, 0165, 0232 as amended)
+
+- A route is a folder `routes/<name>/` with `<name>.route.ts` (`extends Route({ path, ... })` with `loader`, `submit`
+  and `meta`), `<name>.tsx`, optional `<name>.error.tsx` (`ErrorBoundary`) and `<name>.fallback.tsx`
+  (`HydrateFallback`), `<name>.server.ts` for server-only code and `__tests__/`. The class is never a component.
+- A component is a folder `components/<name>/` with `<name>.tsx`, optional parts and `use-<name>.ts`, an `index.ts`
+  that exports only the component and its Props, and `__tests__/`. No class components.
+- Presentation (Page, Modal, Sheet, Drawer, FullScreen) is a route option; menus are `extends Menu({ kind })`.
+- Code-based routes, compiled to React Router 7 on web and React Navigation on mobile; no file-system routing.
 
 ## Web rules
 
-- Vite and React Router 7 with code-based routes; no other React framework and no file-based routing (ADR 0165).
-- HeroUI v3 through `@stackra/ui`; form adapters live in `@stackra/ui`, never in the app. HeroUI Pro only in our own apps;
-  free packages never depend on Pro components (ADR 0165, 0197).
+- Vite and React Router 7 framework mode; no other React framework (ADR 0165).
+- HeroUI v3 through `@stackra/ui`; form adapters live in `@stackra/ui`, never in the app. HeroUI Pro only in our own
+  apps; free packages never depend on Pro components (ADR 0165, 0197).
 - Strings are `<module>::key` i18n keys; logical properties; tokens only; light and dark (ADR 0080, 0231).
 - Budgets: entry 200 KB gzipped, route chunk 100 KB, LCP 2.5 s, INP 200 ms, CLS 0.1 (ADR 0183).
 
 ## Never
 
+- `@Resource`, `@Widget`, `@Page`, `@Route` or any other kind decorator.
 - A hand-coded list or edit screen for a model that a resource covers.
 - Business logic in a component; a button calls an action.
-- Code, markup or expressions in tenant override data (ADR 0110).
+- Code, markup or expressions in tenant document or override data (ADR 0110).
 
 ## Check
 

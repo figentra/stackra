@@ -1,7 +1,23 @@
 ---
 title: "0217 — API surfaces: MCP first plus REST, SDKs and rate limits"
-description: "Accepted, amended by 0274, 0278 · 2026-10-20"
+description: "Accepted, amended by 0274, 0278, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3, for decision 1. REST routes are derived from each action's key by
+  convention, so nothing is written per action. `x.list` maps to `GET /xs`, `x.get` to
+  `GET /xs/:xId`, `x.create` to `POST /xs`, `x.update` to `PATCH /xs/:xId` and `x.delete` to
+  `DELETE /xs/:xId`. Another action verb maps to `PUT /xs/:xId/<verb>` when its input carries the
+  id, and to `POST /xs/<verb>` otherwise. A query name maps to `GET /xs/<name>`. The `endpoint`
+  option overrides a route, and `endpoint: false` removes it. An action whose actors include neither
+  a user nor an agent has no public route. Decision 1's rule that an action is declared once still
+  holds, and so does the rest of this page.
+
+Enforcement of this note: planned — STA-340 (gen checks: an endpoint collision; GET on an action,
+or a non-GET on a query).
+
+</Note>
 
 <Note>
   Supersedes [0038](/adr/0038-rate-limits-app-buckets-and-waf). Notes on

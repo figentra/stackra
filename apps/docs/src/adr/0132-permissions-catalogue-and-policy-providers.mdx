@@ -1,7 +1,29 @@
 ---
 title: "0132 — Permissions are a module catalogue; policies are providers"
-description: "Accepted, amended by 0263 · 2026-10-20"
+description: "Accepted, amended by 0263, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3. Decision 1 is superseded: a module's permissions are no longer one
+  `definePermissions()` value. Each model has a `<Model>Permissions` class that extends
+  `Permissions` and declares one `static readonly` per verb, valued by its risk (`Permission.L0` to
+  `Permission.L4`), in `access/<model>.permissions.ts`. The module's catalogue is what gen collects
+  from those classes. Decision 2 holds in form: keys are `<module>.<resource>.<action>`, now derived
+  from the class and static names, so `orders.order.cancel` is not written by hand. Decision 4 is
+  superseded in form. A record policy extends `Policy(<Model>Permissions)`. Its methods are named
+  after verbs and return `Decision.Allow`, `Decision.Deny` or `Decision.Abstain`, and any deny still
+  wins. `@Policy` is retired. Gen binds `ctx.authorize(record)` to the method named after the
+  action's permission verb, as [0263](/adr/0263-di-stays-and-gen-writes-the-wiring) already
+  recorded. Decisions 3, 5 and 6 hold in substance. A permission's key follows the identity rule of
+  the programming model v3, so a rename needs `@Renamed`. The new model does not state where a
+  permission's label and description live, so this note does not settle them.
+
+Enforcement of this note: planned — STA-338 (the kind-path check for `access/`); STA-340 (gen
+checks: a permissions static that is not a `Permission.Lx` value; a policy method with no matching
+verb; wildcard use outside system roles; `identity_changed` for a changed key).
+
+</Note>
 
 <Note>
   Forward note: the naming table of [0231](/adr/0231-naming-and-casing-standard) (accepted) restates

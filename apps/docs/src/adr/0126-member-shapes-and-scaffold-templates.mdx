@@ -1,7 +1,11 @@
 ---
 title: "0126 — Member shapes and scaffold templates"
-description: "Accepted, amended by 0234, 0249, 0259, 0264, 0269, 0281 · 2026-10-20"
+description: "Accepted, amended by 0234, 0249, 0259, 0264, 0269, 0281, 0294, 0295 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) and [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries): a service or app has no authored `src/main.ts`. Its root module is `src/<key>.module.ts`, its one definition is `stackra.config.ts`, and its runtime entry is generated into `.stackra/entry/`. The `stackra.module` field of decision 1 is not needed to find the root module. A package's entry barrels are generated from its entry folders and never authored, and its `src/contracts/` is a leaf. Until the validator changes (STA-339), `checkService` in `tools/scripts/validate-repository.mjs` still requires `src/main.ts`.
+</Note>
 
 <Note>
   Amended by [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron): one app member builds

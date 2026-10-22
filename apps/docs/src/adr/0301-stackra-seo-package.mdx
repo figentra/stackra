@@ -1,0 +1,53 @@
+---
+title: "0301 — @stackra/seo: sitemaps, robots rules, structured data, canonical redirects and alternates"
+description: "Accepted · 2026-10-22"
+---
+
+## Context
+
+Public pages need the metadata that search engines and crawlers read: sitemaps, robots rules, structured data, canonical URLs,
+hreflang alternates and the locale path of each page. Two problems came up. Some of this code sat in `.server` modules, but
+route code that runs in the browser also needs the alternates and the locale path, so those modules reached the client bundle.
+And structured data written into a page without escaping can close its script element. The metadata of a route also comes from
+several places, so it needs one defined order. [0127](/adr/0127-package-categories-including-infrastructure) lists an `seo`
+package in the cross-cutting category as planned; this ADR decides what it holds.
+
+## Decision
+
+1. **One package, `@stackra/seo`, in the cross-cutting category.** It owns sitemaps, robots rules, the structured-data escaper,
+   canonical redirects, alternates and locale paths.
+2. **Sitemaps are paged.** A site publishes a sitemap index that points to pages of URLs. Each page stays within the sitemap
+   protocol limits of 50,000 URLs and 50 MB uncompressed.
+3. **Robots rules are groups, one per crawler.** A rule written for one crawler does not apply to another.
+4. **Structured data goes through the escaper.** JSON-LD is serialised so that no value can close the script element or start
+   markup. A page does not write structured data raw.
+5. **Canonical redirects depend on the URL alone.** `ctx.redirectToCanonical` answers with a permanent redirect to the page's
+   canonical URL. It never depends on the visitor, as [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding)
+   requires for locale paths.
+6. **Alternates and locale paths are ordinary functions.** `alternates` and `localePath` move out of `.server` modules into
+   `@stackra/seo`, so client route code can call them. The route adapter takes the clients it needs from the load context.
+7. **One SEO chain per route.** Metadata is built in this order: the app's defaults, the route's static `seo`, the route's
+   `meta()` method, then the tenant's SEO record ([0116](/adr/0116-content-types-and-custom-fields)). The canonical URL,
+   alternates, site name and Open Graph image are derived, so a route passes only the fields that differ.
+
+## Consequences
+
+- A route author writes only what differs from the defaults.
+- Structured data cannot break a page, and robots rules and sitemaps are generated from one place, not written by hand.
+- A route that needs a locale path imports it like any other function, from client or server code.
+- A large site has a sitemap index and several sitemap pages, not one file.
+
+## Enforcement
+
+planned — tests in `@stackra/seo` for the escaper (values that try to close the script element or add markup), the sitemap paging
+at the protocol limits, the robots groups, the redirect status and target, and the order of the SEO chain. The
+`no-restricted-imports` lint rule for `*.server` modules in files that are not server files ([0129](/adr/0129-house-lint-plugin-and-coding-standard))
+covers the move in decision 6. Linear: STA-341.
+
+## Supersedes and sources
+
+Supersedes: none. Related: [0116](/adr/0116-content-types-and-custom-fields) (the SEO fields of a content type),
+[0127](/adr/0127-package-categories-including-infrastructure) (the cross-cutting category),
+[0129](/adr/0129-house-lint-plugin-and-coding-standard), [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs),
+[0232](/adr/0232-stackra-errors-package), [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)
+and [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding). Sources: the programming-model v3 wave of 2026-10-22, Linear STA-334.

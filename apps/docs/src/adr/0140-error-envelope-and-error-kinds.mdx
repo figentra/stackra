@@ -1,7 +1,21 @@
 ---
 title: "0140 — The error envelope and error kinds"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3. The envelope and the ten categories are unchanged. A precondition that
+  refuses a call raises a `Refusal` of kind `FailedPrecondition`, which is reported under the
+  `precondition_failed` category, so the precondition step has a category of its own. Each refusal
+  is raised by the pipeline step that makes the check, in the order of
+  [0138](/adr/0138-pipeline-order-is-fixed), as amended. The category of a refused feature flag is
+  not fixed by the new model, and this note does not settle it.
+
+Enforcement of this note: planned — STA-340 (the mapping tests of decision 3, extended to the
+precondition category).
+
+</Note>
 
 <Note>
   Amends [0117](/adr/0117-contracts-placement-and-decorator-ownership), decision C1 (error shapes in

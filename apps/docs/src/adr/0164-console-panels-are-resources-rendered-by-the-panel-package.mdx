@@ -1,11 +1,22 @@
 ---
 title: "0164 — Console panels are Filament-style resources rendered by @stackra/panel"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0249, 0294 · 2026-10-20"
 ---
 
 <Note>
   Amended by [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron), decision 6: the console
   is one member that also builds the PWA and desktop targets.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), which replaces the
+  decorators of decision 1. A resource extends `Resource(Model, { navigation, operations })`; its `operations`
+  map says which pages exist, so List, View and Create follow from it and an Edit page exists only when `update` does.
+  Notifications declared in a resource's folder appear on the View page's Messages tab, with the delivery log, a
+  preview and resend. A widget extends `Widget({ slot, query, display, refreshOn })`, is a query with a display kind,
+  and takes a typed slot on a resource page; only the Custom kind takes a renderer, and `refreshEvery` is at least 30
+  seconds. A host places a package's widget with `Widget.place`. `@Resource`, `@Widget` and `@Page` are retired; a
+  saved page is a `Document` (see [0110](/adr/0110-experience-is-the-sdui-service-at-l2)).
 </Note>
 
 <Note>

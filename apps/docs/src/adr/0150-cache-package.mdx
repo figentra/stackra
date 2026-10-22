@@ -1,7 +1,14 @@
 ---
 title: "0150 — @stackra/cache"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0297 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding):
+  decision 1 gains a fifth driver, the Workers cache. A web query caches its data through a cache
+  profile, served stale while it refreshes, with one origin call for concurrent misses on one key.
+  HTML is not cached. The other decisions stand.
+</Note>
 
 ## Context
 

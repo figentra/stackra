@@ -1,7 +1,21 @@
 ---
 title: "0118 — @stackra/versioning is built now and stays dormant: date versions pinned per API key or OAuth app"
-description: "Accepted, amended by 0136, 0268 · 2026-10-19"
+description: "Accepted, amended by 0136, 0237, 0268, 0294 · 2026-10-19"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3. The dated versions, the response transform chain, the pinning rules and the
+  unversioned paths of this ADR are unchanged, and so are the `.vN` names of integration events.
+  What changes is how a conversion is written. A conversion of a response or of an event is a
+  `Change` class with `up` and `down` functions, kept beside the schema or event it converts, in a
+  `*.change.ts` file. A dated response change takes `date`, an event change takes `from`, and both
+  carry `sunset`. `@Upcast` is retired. Domain events are never versioned.
+
+Enforcement of this note: planned — STA-340 (gen check and a contract test for each `Change`
+class). The planned check of this page stands.
+
+</Note>
 
 <Note>
   Amended by [0237](/adr/0237-generated-api-gateway-in-four-layers): the version header is handled

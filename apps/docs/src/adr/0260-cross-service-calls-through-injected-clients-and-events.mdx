@@ -1,7 +1,16 @@
 ---
 title: "0260 — Cross-service reach: one generated client with call, command and typed events"
-description: "Accepted · 2026-10-21"
+description: "Accepted, amended by 0294 · 2026-10-21"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): the
+  committed contract that this record calls `app-manifest.json` is `stackra.manifest.json` at the
+  member root, with `openapi.json` beside it (rule R10). The mode named "command" in decision 4 is a
+  queued call, and the client's `.queue(input)` form is unchanged. Gen writes the manifest from the
+  member's kind declarations, so `./contracts` is no longer the source the manifest is written from;
+  `src/contracts/` holds only ports, enums and types.
+</Note>
 
 <Note>
   Amends [0117](/adr/0117-contracts-placement-and-decorator-ownership): a generated client and a

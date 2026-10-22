@@ -1,7 +1,22 @@
 ---
 title: "0159 — Migrations: gen-ordered SQL, migrations shipped in packages, and safety rules"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: migrations live in each member's `database/migrations/` folder, named
+  `NNNN-<name>.migration.ts` and numbered in sequence. `stackra db diff` writes them, and a
+  migration class extends `Migration`. A migration has no `down()`: a bad migration is fixed by a
+  later one, as decision 4 already requires, and the validator refuses a `down()`. A package keeps
+  its migrations in its own `database/migrations/` folder, and gen pulls them into the host
+  (decision 1). Decisions 2 and 3 are unchanged.
+
+Enforcement of this note: planned — STA-338 (the kind-path check for `database/migrations/`);
+STA-340 (the validator's database-folder check: a migration not named `NNNN-<kebab>`, a gap in the
+sequence, or a `down()`).
+
+</Note>
 
 <Note>
   Amends [0097](/adr/0097-model-and-database-packages) and

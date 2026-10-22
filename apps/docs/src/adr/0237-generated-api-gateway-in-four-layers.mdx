@@ -1,6 +1,6 @@
 ---
 title: "0237 — The API gateway is generated, in four layers, with no gateway service"
-description: "Accepted, amended by 0290 · 2026-10-20"
+description: "Accepted, amended by 0290, 0297 · 2026-10-20"
 ---
 
 <Note>
@@ -15,6 +15,13 @@ description: "Accepted, amended by 0290 · 2026-10-20"
   [0118](/adr/0118-api-versioning-dormant-package). The gate chain it uses is
   [0138](/adr/0138-pipeline-order-is-fixed). The rejection of a separate gateway product in
   [0011](/adr/0011-rejected-and-deferred-technologies) stands.
+</Note>
+
+<Note>
+  Amended by [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding),
+  decision 6: the web Worker forwards a W3C `traceparent`, a visitor address that it signs with an
+  HMAC, and `Sec-Purpose` to the API. The API verifies the signature before it uses the address. No
+  gateway service is added.
 </Note>
 
 ## Context

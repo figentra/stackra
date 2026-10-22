@@ -1,11 +1,20 @@
 ---
 title: "0232 — @stackra/errors package"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0294 · 2026-10-20"
 ---
 
 <Note>
   Carries the error envelope of [0140](/adr/0140-error-envelope-and-error-kinds). Its category is
   `foundation` ([0127](/adr/0127-package-categories-including-infrastructure)).
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) and read with
+  [0053](/adr/0053-decorator-route-classes-compiled-to-router-adapters). In framework mode a route's error UI is its
+  `ErrorBoundary` export, which the route's `<name>.error.tsx` provides; decision 4's `errorElement` is the library-mode
+  form of the same boundary. Errors bubble from the route to its layout, then to `src/app.error.tsx`, then to the default
+  in `@stackra/errors/react`. Boundary components read the error with `useRouteErrorInfo()` and never log it. Generated code
+  reports each error once, through the reporter port of decision 8.
 </Note>
 
 ## Context

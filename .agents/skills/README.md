@@ -11,7 +11,7 @@ directly. The spec-kit skills (`speckit-*`) are not here: spec-kit renders them 
 | Web UI                 | `heroui-react`, `frontend-design`, `accessibility`, `playwright-best-practices`                                             |
 | Mobile                 | `heroui-native`, `react-native-best-practices`, `expo-*` (animation, data-fetching, design-system, dev-client, upgrade), `eas-*` (app-stores, update, workflows) |
 | Services and vendors   | `resend` (behind the mail driver), `stripe-best-practices` (billing work only)                                              |
-| House                  | `docs-adr`, `docs-spec-flow`, `backend-author-an-action`, `backend-module-and-root-module`, `backend-decorator-package-with-explorer`, `backend-define-family`, `backend-errors`, `backend-assets-and-storage`, `backend-gen-and-encore-target`, `frontend-resource-console`, `db-models-and-migrations`, `ai-mcp-tools`, `code-naming-and-casing`, `mobile-eas-setup`, `mobile-release`, `mobile-store-listing` |
+| House                  | `docs-adr`, `docs-spec-flow`, `backend-author-an-action`, `backend-module-and-root-module`, `backend-decorator-package-with-explorer`, `backend-errors`, `backend-assets-and-storage`, `backend-gen-and-encore-target`, `frontend-resource-console`, `db-models-and-migrations`, `ai-mcp-tools`, `code-naming-and-casing`, `mobile-eas-setup`, `mobile-release`, `mobile-store-listing` |
 
 ## Rules
 
@@ -25,6 +25,8 @@ directly. The spec-kit skills (`speckit-*`) are not here: spec-kit renders them 
   [`AGENTS.md`](../../AGENTS.md) disagree, `AGENTS.md` wins.
 - oxfmt and oxlint skip this folder and `../reference` (`.oxfmtrc.jsonc`, `.oxlintrc.jsonc`, `lefthook.yml`).
 - Retired (ADR 0258): `encore-getting-started`, `encore-migrate`, `encore-frontend`, `sanity-best-practices` (Sanity is
-  dropped, ADR 0114) and `typescript-patterns` (its alias rule contradicts ADR 0233).
+  dropped, ADR 0114) and `typescript-patterns` (its alias rule contradicts ADR 0233). Retired (ADR 0294):
+  `backend-define-family`, because kinds are base classes and configuration is a `Config` class; the
+  `define*` family is only the member config functions in `stackra.config.ts`.
 
 Docs: [skills](../../apps/docs/src/agents/skills.mdx).

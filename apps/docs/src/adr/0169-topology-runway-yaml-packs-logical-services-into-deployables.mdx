@@ -1,7 +1,16 @@
 ---
 title: "0169 — Topology: runway.yaml packs logical services into deployables"
-description: "Accepted, amended by 0289 · 2026-10-20"
+description: "Accepted, amended by 0289, 0296 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups), which supersedes
+  decision 3 (gen packs logical services into deployables). The root runway names the members of
+  each group, and gen checks that each member is placed exactly once. Decisions 1, 2 and 4 stand.
+  The first open question is answered in part: the groups are process allocations inside one
+  generated Encore application ([ADR 0091](/adr/0091-generated-encore-app-in-stackra-folder)).
+  Whether a group scales on its own is still open.
+</Note>
 
 <Note>
   Amended by

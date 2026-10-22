@@ -1,0 +1,86 @@
+---
+title: "0297 — Web runtime on Workers: prerender with a fixed site, cache data not HTML, locale paths without redirects, and Worker forwarding"
+description: "Accepted · 2026-10-22"
+---
+
+<Note>
+  Amends [0237](/adr/0237-generated-api-gateway-in-four-layers) with decision 6: the web Worker
+  forwards three headers to the API, and the API verifies the signed visitor address. Amends
+  [0150](/adr/0150-cache-package) with decision 3: `@stackra/cache` gains a Workers cache driver.
+</Note>
+
+## Context
+
+Public pages, such as a marketing site or a tenant storefront, are React Router 7 framework-mode apps that a Cloudflare Worker
+serves ([0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs)). The console is a static single-page app
+and stays one ([0052](/adr/0052-console-is-a-vite-react-spa)). [0176](/adr/0176-marketing-site-placeholder-then-prerendered-from-the-experience-service)
+planned later prerendering from the experience service. Three questions needed a rule: when a page may be prerendered, what
+is cached, and how a locale or market is chosen.
+
+A prerendered page is one file that every visitor to its URL receives, so it is correct only for a site fixed at build time.
+Caching the HTML of a multi-tenant page shares one tenant's content with another tenant's visitors unless the key covers
+everything that changes the page. A locale or market chosen by cookie, language header or IP address gives one URL different
+answers, which breaks shared caches and crawlers.
+
+## Decision
+
+1. **Web renders run on Cloudflare Workers.** A React Router 7 framework-mode app is served by a Worker. The console is
+   excluded: it stays a static single-page app.
+2. **Prerendering needs a fixed site.** A route may set `prerender: true` only when `SiteConfig.fixedSiteId` is set. Gen writes
+   `run_worker_first: ['/*', '!/assets/*']` for a web member, so the Worker sees every page request (for CSP, redirects and
+   headers) and only the asset paths skip it.
+3. **Cache data, not HTML.** A query takes a cache profile: `ctx.query(Query, input, { cache: CacheProfile })`. The key covers
+   the query, its input, the site, the locale, the market and the version, so two visitors who would see different content
+   never share an entry. Entries are served stale while they refresh, and concurrent misses for one key share one origin call
+   (single-flight). A Workers cache driver in `@stackra/cache` implements this; it is one more driver beside the four in
+   [0150](/adr/0150-cache-package). HTML responses are `Cache-Control: private, no-cache`.
+4. **Locale and market paths are static, with no HTML redirects.**
+   - Each locale has its own path prefix, a lowercase BCP 47 tag such as `/ar-sa/`. A sub-folder market puts the locale and the
+     market in that first segment.
+   - The server never redirects an HTML request because of a cookie, the `Accept-Language` header or the visitor's IP address.
+     A page offers the other locale in a suggestion banner, which the browser renders.
+   - Responses send no `Vary` header, because the URL alone selects the content.
+   - Server path parsers strip the `.data` suffix that the router adds to data requests before they match a locale or a route.
+5. **React Router middleware is on, with typed context.** The middleware future flag is enabled in the React Router config.
+   Values that middleware passes down are typed context keys, not an untyped bag.
+6. **The Worker forwards three things to the API.**
+   - The W3C `traceparent` header, so one edge request and the service calls it makes share one trace
+     ([0184](/adr/0184-telemetry-opentelemetry-otlp-slis-heartbeats-and-log-retention)).
+   - The visitor's IP address, signed with an HMAC by the Worker. The API verifies the signature before it uses the address,
+     so a client cannot set the address by sending its own header.
+   - The `Sec-Purpose` header, so the API can tell prefetch and prerender requests from real visits.
+
+## Consequences
+
+- A prerendered page is the same for every visitor. A page that needs visitor-specific or tenant-specific data fetches it
+  through a cached query.
+- The locale is part of the URL, so a link can be shared and cached as it is. A visitor who lands on the wrong locale sees a
+  banner and keeps the page they asked for.
+- Shared caches store one copy per URL, because nothing varies the response.
+- The Worker runs for every page request, so a failure in it affects every page.
+
+## Enforcement
+
+planned — gen refuses `prerender: true` without `SiteConfig.fixedSiteId` and writes the `run_worker_first` value above; a test per
+cache-key part (query, input, site, locale, market, version); a test that no HTML GET response sets a cookie, asserted in the
+end-to-end suite; and a test that the API rejects a visitor address whose signature does not verify. Linear: STA-341.
+
+## Alternatives
+
+- Prerender once for each known site at build time: not chosen. Decision 2 is the one condition for prerendering.
+- `run_worker_first: true` for every path: not chosen, because asset requests would run the Worker too.
+- Cache full pages at the Worker: not chosen. A key mistake would show one tenant's page to another tenant's visitors.
+- Browser caching only: not chosen. The browser cache is per visitor and does not share a fetched result across visitors.
+- Markets by domain only: not chosen. The first path segment carries the market for sub-folder markets (decision 4).
+- A geo-IP redirect on `/` only: not chosen. Decision 4 forbids redirects on visitor signals.
+- A service binding that passes the address in the call context: not chosen; decision 6 forwards headers instead.
+- Trusting `CF-Connecting-IP` on the API zone: not chosen. A signature lets the API check where the address came from; trusting one header does not.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0237](/adr/0237-generated-api-gateway-in-four-layers) (decision 6) and
+[0150](/adr/0150-cache-package) (decision 3). Builds on
+[0052](/adr/0052-console-is-a-vite-react-spa), [0150](/adr/0150-cache-package), [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs),
+[0175](/adr/0175-edge-domains-and-tls), [0176](/adr/0176-marketing-site-placeholder-then-prerendered-from-the-experience-service) and
+[0184](/adr/0184-telemetry-opentelemetry-otlp-slis-heartbeats-and-log-retention). Related: [0298](/adr/0298-consent-and-analytics),
+[0301](/adr/0301-stackra-seo-package). Sources: the programming-model v3 wave of 2026-10-22, Linear STA-334.

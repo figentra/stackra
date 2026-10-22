@@ -1,7 +1,23 @@
 ---
 title: "0138 — The pipeline order is fixed; apps toggle and parameterise gates"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: the pipeline order is now tenancy, permission, precondition, entitlement,
+  flag, idempotency, interceptors, and then `handle`. Decision 1's order (tenancy, iam, policy,
+  entitlement) is superseded. The record policy is no longer a pipeline slot: it runs inside
+  `handle`, through `ctx.authorize(record)`. The flag slot is new, after entitlement. Decision 2 is
+  restated: an app's gate is a precondition, declared per action in `preconditions:`, and it runs
+  after the permission check, so it never runs before tenancy or permission. Decision 3's warning
+  stands. The position of consent slots (decision 4) is not in the v3 order, and this note does not
+  settle it.
+
+Enforcement of this note: planned — the pipeline in `@stackra/actions` refuses a reordered chain
+(as already planned), and STA-340 (gen check: a precondition on a query fails).
+
+</Note>
 
 <Note>
   Supersedes [0081](/adr/0081-gate-chain-configurable-per-app). The "fully configurable" gate chain

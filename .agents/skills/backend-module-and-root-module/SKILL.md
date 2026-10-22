@@ -1,109 +1,116 @@
 ---
 name: backend-module-and-root-module
-description: Structure Stackra code as modules - the @Module with its key, the root module declared in package.json for gen, src/modules/<feature>/ kind folders, imports and exports, forRoot and forFeature registration, provider scopes, lifecycle hooks and createTestingModule. Use when creating a service, a package's root module, a feature module, or wiring providers.
+description: Structure Stackra code as modules in the programming model v3 - one root module per member at src/<key>.module.ts, feature modules in src/modules/<key>/ with the group folders, Module({ exports, imports, wrap }), derived keys, classes as the only tokens, @Lifetime, config classes, generated wiring and entries, and createTestingModule. Use when creating a service, a package's root module, a feature module, or wiring bindings.
 ---
 
 # Modules and the root module
 
-The module is the unit of contribution (ADR 0111): a feature module declares its actions, queries, listeners, settings,
-permissions, resources and assets, and a service or app only hosts modules. `stackra gen` discovers everything through
-each member's **root module** (ADR 0090). Shapes follow the ADRs; `@stackra/container` docs win once it ships.
+The module is the unit of contribution (ADR 0111): a feature module holds its actions, queries, listeners, settings,
+permissions, resources and assets, and a service or app only hosts modules. Every member has **one root module** and
+`stackra.config.ts`; gen writes the wiring and the runtime entries (ADR 0294 rule R12, ADR 0295).
 
-## Layout (ADR 0126, 0130)
+This is the v3 target. `@stackra/container` and gen do not ship yet. Today `services/example` and `services/health`
+still have an authored `src/main.ts` and a `stackra.module` field in `package.json`, which `checkService` requires until
+STA-339; the conversion is STA-337. The package docs win once they ship.
+
+## Layout (ADR 0294 decisions 13 to 15)
 
 ```text
-services/billing/                       # or packages/<category>/<name>/
-├── package.json                        # "stackra": { "module": "./src/billing.module.ts" }
-├── config/billing.config.ts            # deploy-time config (ADR 0146)
+services/commerce/                      # or packages/<category>/<name>/
+├── package.json  tsconfig.json  turbo.jsonc
+├── stackra.config.ts                   # defineService({ ... }): static data only (ADR 0295)
+├── stackra.manifest.json  openapi.json # committed, generated: the member contract
+├── runway.yaml                         # what the member requires (ADR 0296)
+├── assets/{lang,ai,data,public}/
 └── src/
-    ├── main.ts                         # bootstraps the root module
-    ├── billing.module.ts               # root @Module: key and third-party imports only; gen wires the rest (ADR 0263)
-    ├── contracts/index.ts              # types-only ./contracts entry (ADR 0117)
-    ├── __tests__/billing.module.test.ts
+    ├── commerce.module.ts              # the root module; key `commerce` from the package name
+    ├── config/commerce.config.ts       # class CommerceConfig extends Config
+    ├── contracts/index.ts              # type-only public surface
     └── modules/
-        └── invoices/
-            ├── invoices.module.ts
-            ├── assets/{public,lang,templates,stubs,data}/   # ADR 0234, created with the first file
-            ├── models/      actions/    queries/   services/
-            ├── events/      listeners/  workflows/ policies/
-            ├── permissions/ settings/   contracts/ resources/
-            └── __tests__/
+        └── orders/
+            ├── orders.module.ts        # OrdersModule extends Module({ exports: [OrderService] })
+            ├── orders.settings.ts      # one settings group per module
+            ├── models/  actions/  queries/  schemas/  enums/  errors/  events/  listeners/
+            ├── workflows/  access/  services/  drivers/  extensions/  resources/<model>/
+            ├── database/{migrations,factories,seeders}/  ai/  functions/  constants/  types/
+            └── __tests__/orders.module.int.test.ts
 ```
 
-Kind folders appear with their first file; `resources/` holds `@Resource` panel declarations (ADR 0126 decision 3;
-ADR 0130's list omits it, and the ADR steward reconciles the two). `interfaces/`, `types/`, `constants/`, `tokens/`, `errors/` and `decorators/`
-appear once there are two files of that kind (ADR 0128). There are **no** `controllers/`, `dtos/`, `repositories/`,
-`presentation/`, `helpers/` or `utils/` folders. `raw/` holds only raw `@Controller` endpoints. Dependencies point
-inward: actions, listeners and workflows use services and models; models import from no other folder.
+A group folder appears with its first file. Each suffix has one home (`.permissions.ts`, `.policy.ts`, `.role.ts`,
+`.precondition.ts` and `.flag.ts` all live in `access/`). Retired folders: `controllers/`, `dtos/`, `repositories/`,
+`guards/`, `links/`, `permissions/`, `policies/`, `states/`, `hooks/`, `seeds/`, `versions/`, `mails/`,
+`override-points/`, `tokens/`, `utils/`, `helpers/`. In a package the module is `src/node/` and its root module is
+`src/node/<key>.module.ts`.
 
 ## Worked example
 
 ```ts
-// src/modules/invoices/invoices.module.ts
-import { Injectable, Module } from "@stackra/container";
-import { InvoiceService } from "#modules/invoices/services/invoice.service";
-import { INVOICE_PERMISSIONS } from "#modules/invoices/permissions/invoice.permissions";
+// src/modules/orders/orders.module.ts — key `orders`, from the folder name
+import { Module } from "@stackra/container";
+import { OrderService } from "#modules/orders/services/order.service";
 
-@Module({
-  key: "billing",              // required, one snake_case segment, unique across the manifest; the namespace of its
-                               // actions, permissions, events, settings, i18n and assets (ADR 0264, 0131, 0234)
-  permissions: INVOICE_PERMISSIONS,
-  exports: [InvoiceService],   // no providers list: gen discovers the folder's @Injectable classes (ADR 0263)
-})
-export class InvoicesModule {}
+/** Orders: placement, payment, fulfilment. Exports the service other modules may inject. */
+export class OrdersModule extends Module({ exports: [OrderService] }) {}
 
-// src/modules/invoices/actions/refund-invoice.action.ts — plain class, typed constructor params, no @Inject
-@Injectable()
-export class RefundInvoiceAction {
-  constructor(private readonly invoices: InvoiceService) {}
-}
-
-// src/billing.module.ts — the root module declares the key and third-party imports only
-@Module({ key: "billing_service", imports: [DatabaseModule.forFeature([Invoice])] })
-export class BillingModule {}
+// src/commerce.module.ts — the root module; only a root lists imports
+export class CommerceModule extends Module({ imports: [OrdersModule, CatalogueModule, AccessLogModule] }) {}
 ```
 
-```json
-// package.json
-{ "name": "@figentra/service-billing", "stackra": { "module": "./src/billing.module.ts" } }
-```
+- **No `providers` list.** Gen finds every binding in the module's group folders by its base class and prints them, with
+  their lifetimes, in `.stackra/gen/wiring.ts` (ADR 0263 as amended).
+- **Keys are derived and locked.** The module key is the folder name; the member key is the package name without its
+  scope. `stackra.manifest.json` locks them; a rename needs `@Renamed(old)`.
+- **`wrap`** (`Module({ wrap: [MapProvider] })`) is the one escape hatch for a React provider, on an app's root module
+  only.
+- **Siblings** import only another module's exported classes and public groups (`module-boundary` rule).
 
-The module version is the package's semver; there is no second version (ADR 0131). `@Deprecated({ since, replacement,
-sunset })` marks a deprecated action, event, field, setting or trait.
+## Injection (ADR 0005, 0143, 0145, 0263 as amended by 0294)
 
-## Registration (ADR 0143)
-
-- `Module.forRoot(options)` / `forRootAsync({ useFactory, inject })` once per app; `forFeature(...)` per consuming
-  module; `register(...)` for a one-off. Named instances: `forRoot({ default, instances })`.
-- Scopes: `singleton` (default), `request` (per request, job or workflow step, via `AsyncLocalStorage`; carries tenant,
-  actor, locale, trace), `transient`. A singleton never injects a request-scoped provider; it injects the context
-  accessor. Checked at boot.
-- Lifecycle: `onModuleInit`, `onApplicationBootstrap`, `beforeApplicationShutdown`, `onModuleDestroy`,
-  `onApplicationShutdown`. Explorers run at bootstrap; readiness only after it.
+- Classes are the only tokens. A constructor parameter's type is its token: no `@Injectable`, no `@Inject`, no string
+  or symbol token, no `defineToken`. A port is an abstract class that extends `Port`; a driver extends `Driver(Port)`.
+- A named instance is the type `Named<LoyaltyLedger, "primary">`.
+- Lifetime: a singleton by default; `@Lifetime(Lifetime.Request)` or `@Lifetime(Lifetime.Transient)` otherwise. A
+  singleton never injects a request-lifetime class (checked at boot).
+- Swap a binding with `@Replaces(Port)` on the replacing class.
+- A closed platform set (container, config, actions, request context, clock, database, cache, queue, events and
+  outbox, workflow, settings, i18n, logger, iam, realtime and every Config class) is injectable everywhere; authors
+  cannot declare a global.
 - A circular dependency is a boot error; there is no `forwardRef`.
-- A local class is its own token. Every interface port and every `defineConfig` value has a same-named token, so a constructor
-  typed with it needs no `@Inject`. `@Inject` is only for a named instance, and strings are never tokens (ADR 0263; skill
-  `backend-define-family`).
-- A module's own providers are wired by gen from `.stackra/gen/wiring.ts`; authors write no `providers` array and no
-  imports for their own classes (ADR 0263).
+
+## Configuration (ADR 0146 as amended)
+
+```ts
+// src/config/commerce.config.ts — key `commerce`
+export class CommerceConfig extends Config {
+  storefrontBaseUrl = "http://localhost:4001";
+
+  @Env("STOREFRONT_TIMEOUT_MS")
+  @Int({ min: 100 })
+  timeoutMs = 5_000;
+
+  @Secret("PRICING_API_KEY")
+  pricingApiKey!: SecretRef;
+}
+```
+
+A host overrides a package's config with a `<Host><Base>` subclass that declares `override` members only. No
+`defineConfig`, `forRoot` or `registerAs`.
 
 ## Testing
 
 ```ts
-const module = await createTestingModule(InvoicesModule)
-  .override(PAYMENT_GATEWAY, fakeGateway)
-  .compile();
-const action = module.get(RefundInvoiceAction);
+const app = await createTestingModule(CommerceModule).override(PaymentGateway, fakeGateway).compile();
+const action = app.get(CancelOrderAction);
 ```
 
 ## Never
 
-- Contributions declared in a service or app file outside a module (gen fails, ADR 0111).
+- An authored `main.ts`, entry barrel, `providers` array or `imports` on a non-root module.
+- `@Module`, `@Injectable`, `@Inject`, `@Provider` or any other kind decorator.
 - `app()`, `config()`, `logger()` global helpers; inject instead (ADR 0145).
-- A `providers` array, module imports or an `@Inject(TOKEN)` for a member's own classes (ADR 0263).
-- A global metadata polyfill or type-based auto-wiring (ADR 0005).
+- A global metadata polyfill or type-based auto-wiring through reflection (ADR 0005).
 - `../` imports; use the member's `#` aliases (ADR 0233).
 
 ## Check
 
-`pnpm validate` (service shape, `stackra.module` exists), `pnpm --filter <member> test`, `pnpm verify`.
+`pnpm validate`, `pnpm --filter <member> test`, `pnpm verify`.

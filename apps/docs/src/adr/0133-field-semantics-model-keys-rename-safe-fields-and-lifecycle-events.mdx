@@ -1,7 +1,27 @@
 ---
 title: "0133 — Field semantics, model keys, rename-safe fields and lifecycle events"
-description: "Accepted, amended by 0264 · 2026-10-20"
+description: "Accepted, amended by 0264, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3, for the field decorators, the model key, renames and lifecycle events of
+  this page. Decisions 1 and 2 are replaced by the type rule of
+  [0095](/adr/0095-zod-inside-field-decorators), as amended: an optional field is `?:`, a nullable
+  field is `| null`, and money, JSON, URLs and similar values are types rather than decorators.
+  `@Decimal`, `@Phone` and `@Computed` are not in the v3 decorator set, and this note does not
+  settle them. `@Geo` stays deferred. Decision 3's `@Model({ key })` is retired: the model key is
+  derived from the module and the class name, and a change to it needs `@Renamed`. Decision 4's
+  `@Stored({ column, renamedFrom })` is replaced by `@Renamed(old)`, which the manifest lock checks.
+  Decision 5's `@Crud` is retired, as [0105](/adr/0105-crud-generates-service-methods) records.
+  Decision 8 is restated: the lifecycle events remain, and a `Listener` subscribes to each one by
+  the type of its parameter. No observer class exists. Decisions 6 and 7 are unchanged, apart from
+  the trait names, which this note does not change.
+
+Enforcement of this note: planned — STA-340 (gen check `identity_changed`: a changed identity
+without `@Renamed` fails through the manifest lock).
+
+</Note>
 
 <Note>
   Amends [0095](/adr/0095-zod-inside-field-decorators), [0096](/adr/0096-trait-naming-grammar) and

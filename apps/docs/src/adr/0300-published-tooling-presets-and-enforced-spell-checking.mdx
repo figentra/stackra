@@ -1,0 +1,61 @@
+---
+title: "0300 — Five published tooling presets, and spell checking that the gate enforces"
+description: "Accepted · 2026-10-22"
+---
+
+## Context
+
+Every member extends shared presets for TypeScript, oxlint, vitest and tsdown ([0001](/adr/0001-monorepo-layout)), and commitlint
+checks commit messages. All five presets are private workspace packages, and their exports do not share one naming pattern
+(some export a named preset, some a default export, some a set of named configs). No project outside this repository can use
+them, so a project that wants the same checks copies them, and the copies drift.
+
+Spell checking has a `cspell.config.yaml` that the editor reads. No lefthook job and no step of the Quality Gate runs it, so a
+misspelling in a pull request passes the gate.
+
+## Decision
+
+1. **Exactly five presets.** They are `@stackra/typescript-config`, `@stackra/oxlint-config`, `@stackra/vitest-config`,
+   `@stackra/tsdown-config` and `@stackra/commitlint-config`.
+2. **Role-named exports.** A JavaScript preset exports its configurations as `<role>Preset` names, such as `libraryPreset` or
+   `servicePreset`, so a consumer picks the role by name. The TypeScript presets are JSON files, so they keep their subpath
+   names (`@stackra/typescript-config/<role>`).
+3. **Published to npm.** The five packages are free packages. They publish to npmjs with provenance, as
+   [0177](/adr/0177-package-distribution-npmjs-and-keygen) sets for every free package.
+4. **Consumed through a catalog.** A member pins a preset as `catalog:stackra`, through the `stackra` catalog in
+   `pnpm-workspace.yaml`. A project outside this repository declares the same catalog in its own workspace file. Versions
+   are exact ([0001](/adr/0001-monorepo-layout)).
+5. **Spell checking is enforced.** cspell checks the staged `md`, `mdx`, `ts`, `tsx`, `css` and `yaml` files in lefthook, and the
+   Quality Gate checks them in CI. It is a catalog devDependency. Its dictionary is British English with `en` as the fallback,
+   because the repository's prose is British. Its word list stays in `cspell.config.yaml`. The Quality Gate is the gate; the
+   lefthook job gives early warning, as the lefthook configuration already states for its other jobs.
+
+## Consequences
+
+- A project outside this repository gets the same lint, format, test and commit checks as the workspace, from npm.
+- A preset changes in one catalog entry, and every member picks it up through its pin.
+- A spelling error in a checked file fails the Quality Gate, so a new word goes into the word list.
+- Publishing five packages adds a release step, which the release checks of [0177](/adr/0177-package-distribution-npmjs-and-keygen)
+  cover.
+
+## Enforcement
+
+planned — a validator check that the workspace has exactly these five presets, and that each exports its `<role>Preset` names;
+the release workflow publishes the five with provenance; a cspell job in `lefthook.yml` and a cspell step in the Quality Gate
+(`.github/workflows/ci.yml`) on the file types above. Nothing of this is in place yet: today the presets are private and cspell
+runs only in the editor. Linear: STA-343.
+
+## Alternatives
+
+- Private copies per project, as today: not chosen. The copies drift.
+- One merged config package: not chosen. Each preset matches one tool, and a merged package would couple them.
+- Spell checking in the editor only: not chosen. A misspelling then passes the gate.
+- Remove cspell: not chosen. The word list and the British dictionary keep prose consistent.
+
+## Supersedes and sources
+
+Supersedes: none. Related: [0001](/adr/0001-monorepo-layout) (the preset layout and the catalogs),
+[0126](/adr/0126-member-shapes-and-scaffold-templates) (the `tooling` member shape),
+[0129](/adr/0129-house-lint-plugin-and-coding-standard) (the house lint rules in `@stackra/oxlint-config`),
+[0177](/adr/0177-package-distribution-npmjs-and-keygen) (free packages on npmjs) and
+[0196](/adr/0196-repository-config-is-yaml-wherever-the-reader-supports-it) (repository config is YAML). Sources: the programming-model v3 wave of 2026-10-22, Linear STA-334.

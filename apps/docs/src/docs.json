@@ -392,7 +392,15 @@
               "adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing",
               "adr/0290-dev-environment-and-cloudflare-services",
               "adr/0291-porting-provenance-and-the-third-party-reading-rule",
-              "adr/0292-workflow-engine-drivers-a-postgres-journal-default-temporal-and-trigger-dev-to-evaluate"
+              "adr/0292-workflow-engine-drivers-a-postgres-journal-default-temporal-and-trigger-dev-to-evaluate",
+              "adr/0294-programming-model-v3-grammar-folders-identities-and-naming",
+              "adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries",
+              "adr/0296-runway-v3-member-requires-and-root-topology-groups",
+              "adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding",
+              "adr/0298-consent-and-analytics",
+              "adr/0299-docs-runway",
+              "adr/0300-published-tooling-presets-and-enforced-spell-checking",
+              "adr/0301-stackra-seo-package"
             ]
           }
         ]

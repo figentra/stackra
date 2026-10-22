@@ -1,6 +1,6 @@
 ---
 title: "0270 — Builder architecture: one editor kernel, document kinds and collaboration levels"
-description: "Accepted · 2026-10-21"
+description: "Accepted, amended by 0294 · 2026-10-21"
 ---
 
 <Note>
@@ -18,6 +18,13 @@ description: "Accepted · 2026-10-21"
   rows), [0202](/adr/0202-stackra-pro-is-developer-side-os-capability-is-free-code) (decision 1, the
   studio area) and [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions)
   (decision 8, preferences owner). Each carries a note pointing here.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming). Decision 3's `@Block` is
+  retired: a block extends `Block({ category, icon })`. Decision 8's `@Route({ document })` is retired with the `@Route`
+  decorator: a route is a route class that renders a document, and a coded document is declared by a `Document` class.
+  `@Page` is retired too: a page is a document of kind Page. The document kinds and surfaces of decision 6 are unchanged.
 </Note>
 
 ## Context

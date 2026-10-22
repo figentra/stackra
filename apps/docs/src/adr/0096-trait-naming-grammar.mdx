@@ -1,7 +1,21 @@
 ---
 title: "0096 — Trait naming grammar and the trait list"
-description: "Accepted, amended by 0133, 0162 · 2026-10-19"
+description: "Accepted, amended by 0133, 0162, 0225, 0270, 0294 · 2026-10-19"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: `HasFactory` is removed from the trait table. A factory is a class that
+  extends `Factory(Model)` in the module's `database/factories/` folder, and a model names no
+  factory. A model's reactions to its own lifecycle are `Listener` classes that subscribe to the
+  lifecycle events of
+  [0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events), so no trait
+  provides them. This note does not change the grammar of decision 2 or the names of the traits in
+  the table.
+
+Enforcement of this note: planned — STA-338 (the kind-path check for `database/factories/`).
+
+</Note>
 
 <Note>
   Amended by

@@ -1,7 +1,20 @@
 ---
 title: "0213 — Settings v2: the full cascade, flags as a settings kind, YAML packs and revisions"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0270, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: a module's settings are one group at its root, as
+  [0108](/adr/0108-scoped-settings) now records. Flags are no longer settings. A flag extends
+  `Flag({ expires, removalIssue, default })` in the module's `access/` folder, as `<name>.flag.ts`.
+  Its owner is derived from its module, so the hand-written `owner` option is dropped. Decision 3's
+  statement that a flag is a settings kind is superseded. Its targeting, the platform-level kill
+  switches and the build-time flags are unchanged. Decisions 1, 2 and 4 to 8 are unchanged.
+
+Enforcement of this note: planned — STA-338 (the kind-path check for `access/`).
+
+</Note>
 
 <Note>
   Amended by
