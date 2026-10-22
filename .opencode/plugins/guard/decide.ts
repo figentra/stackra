@@ -2,8 +2,8 @@
 // Ported from the Academorix guard; mirrors .agents/hooks/guard-bash.mjs + guard-paths.mjs for the secret rules.
 // The executor rules (owner-only CLIs, git history, releases) live here rather than only in opencode.jsonc,
 // whose permission list is order-sensitive; the jsonc denies stay as a second layer.
-// shortcut: commands are split on && || ; | and newlines without honouring quotes, and `sh -c "<inner>"`
-// is not unwrapped; good enough for agent-typed commands, upgrade to a real shell parser if one slips through.
+// shortcut: commands are split on && || ; | and newlines without honouring quotes; nested scripts come from the
+// shared scanShell / scriptStrings / shellInputs; upgrade to a real shell parser if one slips through.
 import { resolve, sep } from "node:path";
 // The inbox matcher is shared with the Claude hooks (one matcher, ADR 0257): paths, globs rooted at home, recursive reads.
 import {
@@ -12,6 +12,7 @@ import {
   reachesInbox,
   scanShell,
   scriptStrings,
+  shellInputs,
   stripHeredocs,
 } from "../../../.agents/hooks/_inbox.mjs";
 
@@ -280,21 +281,29 @@ export function decideShell(raw: string, cwd?: string): Decision {
       "~/Secrets-inbox/ (and the import confirm key) are never read, listed, copied or moved. Use `pnpm secrets:import --list` for names and `pnpm secrets:import [--dry-run] [NAME]` to import; it never prints a value.",
     );
   // Safety net (STA-254): substitution bodies found with quotes ignored can only add denies.
+  // `literal` splits a case pattern from its command (`a) cmd`, `(a) cmd`).
   for (const text of [
     cmd,
+    scanShell(cmd).literal,
     ...nested(cmd),
     ...rawSubstitutions(cmd).flatMap((b) => [b, ...nested(b)]),
-  ])
+  ]) {
+    // STA-291: a shell reading a pipe or a file written earlier from text the guard cannot read.
+    if (shellInputs(text).opaque)
+      return deny(
+        "a shell runs text the guard cannot read (`curl … | sh`, `cat x | sh`, `cmd > f; sh f`). Run the commands directly.",
+      );
     for (const s of subcommands(text)) {
       const d = denySub(s);
       if (d.kind === "deny") return d;
     }
+  }
   return ALLOW;
 }
 
 /**
  * Commands the shell also runs: `$(…)` and backtick bodies (inside double quotes too; single quotes stay literal)
- * and `sh -c` / `eval` strings (STA-208 review H2), at any depth via the shared `scanShell` (STA-254). shortcut: no alias expansion.
+ * and `sh -c` / `eval` strings (STA-208 review H2), at any depth via the shared `scanShell` (STA-254), plus function, alias and piped script bodies (STA-291).
  */
 function nested(cmd: string): string[] {
   const out = scanShell(cmd).bodies.flatMap((b) => [b, ...nested(b)]);

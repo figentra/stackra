@@ -497,3 +497,49 @@ test("STA-254 re-review 6: backslash-newline first, no boundary after a closing 
   ])
     assert.equal(kind(c), "allow", c);
 });
+
+test("STA-291: piped and written-then-run scripts, (a) case patterns, function, group and alias bodies", () => {
+  for (const c of [
+    "echo 'gh pr list' | sh",
+    "printf 'gh pr list\\n' | bash",
+    "printf '%s\\n' 'git fetch origin' | sh",
+    "echo -e 'true\\ngh pr list' | sh",
+    "echo 'gh pr list' | tee log | sh",
+    "echo 'gh pr list' | source /dev/stdin",
+    "tee f.sh <<'EOF'\ngh pr list\nEOF\nsh f.sh",
+    "cat > f.sh <<EOF\ngit fetch origin\nEOF\nbash f.sh",
+    "cat > f.sh <<'EOF'\ngh pr list\nEOF\nchmod +x f.sh && ./f.sh",
+    "echo 'gh pr list' > /tmp/f.sh; source /tmp/f.sh",
+    "echo 'gh pr list' > f && sh f",
+    "printf 'gh pr list' >> f && . f",
+    "case a in (a) gh pr list;; esac",
+    "case a in a) gh pr list;; esac",
+    "case x in\n(a) gh pr list ;;\nesac",
+    "echo $(case a in (a) git fetch origin ;; esac)",
+    "f() { gh pr list; }; f",
+    "function f { gh pr list; }",
+    "function f() { git fetch origin; }",
+    "{ gh pr list; }",
+    "alias p='gh pr list'",
+    "alias a='ls' p=\"gh pr list\"",
+    // a shell reading text the guard cannot read
+    "cat x.sh | sh",
+    'echo "$CMD" | bash',
+    "pnpm build > f.sh && sh f.sh",
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    "cat > notes.md <<'EOF'\nnever run gh pr list | sh\nEOF",
+    "cat <<EOF > notes.md\ngh pr list is denied\nEOF",
+    "pnpm verify | tee log",
+    "pnpm verify 2>&1 | tee /tmp/verify.log",
+    "echo 'echo hi' | sh",
+    "cat > run.sh <<'EOF'\ngit status\nEOF\nbash run.sh",
+    "echo 'pnpm verify' > f.sh && sh f.sh",
+    "echo hi > out.txt && cat out.txt",
+    "alias ll='ls -la'",
+    "f() { echo hi; }; f",
+    "case x in (a) echo a;; esac",
+  ])
+    assert.equal(kind(c), "allow", c);
+});

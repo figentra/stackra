@@ -84,10 +84,12 @@ export function reachesInbox(p, { recursive = false, home = homedir(), cwd } = {
  * Fail closed: an unclosed `"`, `$(` or backtick runs to the end; an unclosed `'` stays visible.
  * Safety net: `rawSubstitutions` finds every `$(…)`, `<(…)`, `>(…)` and backtick body ignoring quotes; callers run
  * their deny rules on those bodies too, so a quoting edge case here can only cost a deny, never an allow.
- * shortcut: no aliases or functions; a body rescanned out of its `((…))` context can misread a
- * `<<` shift as a heredoc (only an unterminated one, which is then read as commands); a `(a)` case pattern is
- * not split from its command; a string piped into a shell (`echo '…' | sh`) and a script written then run
- * (`tee f; sh f`) are not unwrapped (follow-ups). Upgrade to a real parser if one slips through.
+ * A heredoc written to a file (`> f`, `tee f`) that a later shell, `source`, `.` or `./f` runs is a script too
+ * (STA-291). A case pattern's optional `(` is skipped, so `(a) cmd` splits like `a) cmd`.
+ * Function, alias and pipe-to-shell bodies are `scriptStrings`' job (STA-291).
+ * shortcut: a body rescanned out of its `((…))` context can misread a `<<` shift as a heredoc (only an
+ * unterminated one, which is then read as commands); a file is matched to its run by basename only. Upgrade to
+ * a real parser if one slips through.
  */
 export function scanShell(c, opts = {}) {
   const first = scanOnce(c, opts);
@@ -257,7 +259,11 @@ function scanOnce(c, { heredoc = false } = {}) {
           const from = c.lastIndexOf("\n", i - 1) + 1;
           const to = c.indexOf("\n", i);
           const line = c.slice(from, to < 0 ? c.length : to);
-          const script = SHELL_WORD.test(line) || /\|&?\s*$/.test(line);
+          const rest = c.slice(to < 0 ? c.length : to);
+          const script =
+            SHELL_WORD.test(line) ||
+            /\|&?\s*$/.test(line) ||
+            writtenFiles(line).some((file) => runsFile(rest, file));
           pending.push({ ...d, strip, frame: f, script });
           edits.push([i, d.end, "<<HEREDOC"]);
           emit("<<HEREDOC");
@@ -272,6 +278,13 @@ function scanOnce(c, { heredoc = false } = {}) {
           emit("((");
           i++;
           stack.push(frame("cmd", { arith: true }));
+          continue;
+        } else if (
+          ch === "(" &&
+          f.cases > 0 &&
+          /(?:^|[\s;&])in$|;[;&]&?$/.test(c.slice(0, i).trimEnd())
+        ) {
+          emit(ch); // a case pattern's optional `(`: its `)` ends the pattern (`(a) git push` is two commands)
           continue;
         } else if (ch === "(") f.parens++;
         else if (ch === ")" && f.parens > 0) f.parens--;
@@ -345,7 +358,22 @@ export const stripHeredocs = (raw) => scanShell(raw).stripped;
 /** A shell (or `eval` / `source` / `.`) as a word: its heredoc or here-string is a script. */
 const SHELL_WORD = /(?:^|[\s;&|(`])(?:\S*\/)?(?:(?:ba|z|da|k)?sh|eval|source|\.)(?=[\s;&|)`]|$)/;
 
-/** Script text a shell runs from a string: `sh -c "…"`, `eval "…"` and a here-string read by a shell. */
+/** Command position, for a definition: start, a separator, a group or a substitution opener. */
+const DEFINE_AT = String.raw`(?:^|[;&|(){}\n\x60]\s*)`;
+/** A function header (`f() {`, `function f {`) or a `{` group opener; replaced by `;`, its body is commands. */
+const FUNCTION = new RegExp(
+  String.raw`(${DEFINE_AT})(?:(?:function\s+[\w.:@-]+(?:\s*\(\s*\))?|[\w.:@-]+\s*\(\s*\))\s*[{(]|\{(?=\s))`,
+  "g",
+);
+const ALIAS = new RegExp(DEFINE_AT + String.raw`alias\s`, "g");
+const ALIAS_VALUE = /\s*(?:-\w+\s+)*[^\s=;&|]+=(?:'([^']*)'|"((?:\\.|[^"\\])*)"|([^\s;&|]*))/y;
+
+/**
+ * Script text a shell runs from a string: `sh -c "…"`, `eval "…"`, a here-string read by a shell, and (STA-291)
+ * a function or group body, an alias value, the literal text piped into a shell (`echo '…' | sh`) and the
+ * literal content of a file written then run (`echo … > f && sh f`). Text a shell runs that cannot be read
+ * (`curl … | sh`) is `shellInputs(c).opaque`.
+ */
 export function scriptStrings(c) {
   const out = [];
   for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
@@ -354,7 +382,174 @@ export function scriptStrings(c) {
     /(?:^|[\s;&|(`])(?:\S*\/)?(?:(?:ba|z|da|k)?sh|source|\.)(?=\s)[^;&|\n]*<<<\s*(?:(["'])((?:\\.|(?!\1)[^\\])*)\1|(\S+))/g,
   ))
     out.push(m[2] ?? m[3]);
+  const bodies = c.replace(FUNCTION, "$1;");
+  if (bodies !== c) out.push(bodies);
+  for (const m of c.matchAll(ALIAS)) {
+    ALIAS_VALUE.lastIndex = m.index + m[0].length;
+    for (let d; (d = ALIAS_VALUE.exec(c));) out.push(d[1] ?? d[2] ?? d[3]);
+  }
+  out.push(...shellInputs(c).scripts);
   return out;
+}
+
+/** Basenames of the files a command line writes: `> f`, `>> f`, `&> f`, `tee [-a] f…`. */
+function writtenFiles(line) {
+  const out = [];
+  for (const m of line.matchAll(/(?:^|[^<>&\d])(?:1?>>?\|?|&>>?)\s*(['"]?)([^\s;&|<>()'"]+)\1/g))
+    out.push(m[2]);
+  for (const m of line.matchAll(/\btee\s+([^;&|<>\n]*)/g))
+    out.push(...m[1].split(/\s+/).filter((w) => w && !w.startsWith("-")));
+  return out
+    .map((f) =>
+      f
+        .replace(/^['"]|['"]$/g, "")
+        .split("/")
+        .pop(),
+    )
+    .filter(Boolean);
+}
+
+/** True when `text` runs a file named `base` (any directory): `sh [-x] f`, `source f`, `. f`, or `./f` as a command. */
+function runsFile(text, base) {
+  const name = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const file = String.raw`['"]?(?:\S*/)?${name}['"]?(?=[\s;&|)\x60]|$)`;
+  return new RegExp(
+    String.raw`(?:^|[\s;&|(\x60])(?:\S*/)?(?:(?:ba|z|da|k)?sh|source|\.)[ \t]+(?:[^\s;&|]+[ \t]+)*?${file}|` +
+      String.raw`${DEFINE_AT}(?:\w+=\S*\s+)*(?:(?:sudo|exec|command|nohup|time|env)\s+)*['"]?\S*/${name}['"]?(?=[\s;&|)\x60]|$)`,
+    "m",
+  ).test(text);
+}
+
+/**
+ * Top-level simple commands of `c`: unquoted words, redirections, whether an expansion (`$`, backtick) sits
+ * outside single quotes (`dynamic`), the operator after it and where that operator ends. Substitution bodies
+ * are skipped whole; they are scanned on their own.
+ */
+function simpleCommands(c) {
+  const out = [];
+  const fresh = () => ({ words: [], redirects: [], dynamic: false, op: "", end: 0 });
+  let cur = fresh();
+  let word = null;
+  let redirect = null;
+  const end = () => {
+    if (word === null) return;
+    if (redirect) cur.redirects.push({ op: redirect, target: word });
+    else cur.words.push(word);
+    word = null;
+    redirect = null;
+  };
+  const push = (op, at) => {
+    end();
+    redirect = null;
+    out.push(Object.assign(cur, { op, end: at }));
+    cur = fresh();
+  };
+  for (let i = 0; i < c.length; i++) {
+    const ch = c[i];
+    if (ch === "\\") word = (word ?? "") + (c[++i] ?? "");
+    else if (ch === "'") {
+      const j = c.indexOf("'", i + 1);
+      const stop = j < 0 ? c.length : j;
+      word = (word ?? "") + c.slice(i + 1, stop);
+      i = stop;
+    } else if (ch === '"') {
+      let j = i + 1;
+      while (j < c.length && c[j] !== '"') j += c[j] === "\\" ? 2 : 1;
+      const text = c.slice(i + 1, j);
+      if (/[$`]/.test(text)) cur.dynamic = true;
+      word = (word ?? "") + text;
+      i = j;
+    } else if (ch === "$" || ch === "`") {
+      cur.dynamic = true;
+      let j = i;
+      if (ch === "`") for (j = i + 1; j < c.length && c[j] !== "`";) j += c[j] === "\\" ? 2 : 1;
+      else if (c[i + 1] === "(")
+        for (let depth = 0, k = i + 1; k < c.length; k++) {
+          j = k;
+          if (c[k] === "(") depth++;
+          else if (c[k] === ")" && --depth === 0) break;
+        }
+      word = (word ?? "") + c.slice(i, j + 1);
+      i = j;
+    } else if (ch === "<" || ch === ">" || (ch === "&" && c[i + 1] === ">")) {
+      const fd = word !== null && /^\d+$/.test(word) ? word : null;
+      if (fd !== null) word = null;
+      else end();
+      const op = /^(?:&>>?|<<<|<<-?|<>|<&|>&|>>|>\||<|>)/.exec(c.slice(i))[0];
+      redirect = (fd ?? "") + op;
+      i += op.length - 1;
+    } else if (/[|&;\n()]/.test(ch)) {
+      const two = c.slice(i, i + 2);
+      const op = ["||", "&&", ";;", "|&"].includes(two) ? two : ch;
+      i += op.length - 1;
+      push(op === "|&" ? "|" : op, i + 1);
+    } else if (/\s/.test(ch)) end();
+    else word = (word ?? "") + ch;
+  }
+  push("", c.length);
+  return out.filter((s) => s.words.length || s.redirects.length);
+}
+
+/** Index of the command name: past assignments and wrappers. */
+const commandAt = (words) => {
+  let i = 0;
+  while (i < words.length && (PREFIX.has(words[i]) || /^\w+=/.test(words[i]))) i++;
+  return i;
+};
+
+/**
+ * What simple command `k` prints when the guard can read it: `echo` / `printf` of literal words, `cat` or `tee`
+ * of a heredoc ("": a run heredoc's body is already scanned as commands), a here-string, or the pipe into it.
+ * Null when unknown: another command, an expansion, or an escape other than `\n` / `\t`.
+ */
+function output(list, k) {
+  const s = list[k];
+  if (s.dynamic) return null;
+  const i = commandAt(s.words);
+  const name = (s.words[i] ?? "").split("/").pop();
+  const args = s.words.slice(i + 1);
+  const stdin = () => {
+    const h = s.redirects.find((r) => r.op.startsWith("<<"));
+    if (h) return h.op === "<<<" ? h.target : "";
+    return k > 0 && list[k - 1].op === "|" ? output(list, k - 1) : null;
+  };
+  let text;
+  if (name === "echo")
+    text = args.filter((a, j) => !args.slice(0, j + 1).every((f) => /^-[neE]+$/.test(f))).join(" ");
+  else if (name === "printf") {
+    const [format = "", ...rest] = args[0] === "--" ? args.slice(1) : args;
+    if (format === "-v") return "";
+    text = format.replace(/%[sb]/g, () => rest.shift() ?? "") + rest.map((a) => `\n${a}`).join("");
+  } else if ((name === "cat" && !args.length) || name === "tee") return stdin();
+  else return null;
+  const plain = text.replace(/\\[nt]/g, "\n");
+  return /\\/.test(plain) ? null : plain;
+}
+
+/**
+ * Text a shell runs from a pipe or a file written earlier in the same command line (STA-291): `echo '…' | sh`,
+ * `printf … | bash`, `echo … > f && sh f`, `cat > f <<EOF … EOF; ./f`. `scripts` is the readable text; `opaque`
+ * is true when a shell runs text the guard cannot read (`curl … | sh`, `cat x | sh`, `cmd > f; sh f`).
+ */
+export function shellInputs(c) {
+  const list = simpleCommands(c);
+  const scripts = [];
+  let opaque = false;
+  const take = (text) => (text === null ? (opaque = true) : scripts.push(text));
+  list.forEach((s, k) => {
+    const i = commandAt(s.words);
+    const name = (s.words[i] ?? "").split("/").pop();
+    const readsPipe = /^(?:ba|z|da|k)?sh$/.test(name)
+      ? !s.words.includes("-c")
+      : name === "source" || name === ".";
+    if (k > 0 && list[k - 1].op === "|" && readsPipe) take(output(list, k - 1));
+    const targets = s.redirects
+      .filter((r) => /^1?(?:>>?|>\||&>>?)$/.test(r.op))
+      .map((r) => r.target);
+    if (name === "tee") targets.push(...s.words.slice(i + 1).filter((w) => !w.startsWith("-")));
+    if (targets.some((t) => runsFile(c.slice(s.end), t.split("/").pop()))) take(output(list, k));
+  });
+  return { scripts, opaque };
 }
 
 /**
