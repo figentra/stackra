@@ -703,6 +703,7 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 
 - **Service checklist** — `services/**`: read `.agents/rules/service-checklist.md`
 - **Task vocabulary** — `**/package.json`, `turbo.jsonc`: read `.agents/rules/task-vocabulary.md`
+- **Third-party sources** — `apps/**`, `packages/**`, `services/**`, `workers/**`, `tools/**`: read `.agents/rules/third-party-sources.md`
 
 ### On request
 
