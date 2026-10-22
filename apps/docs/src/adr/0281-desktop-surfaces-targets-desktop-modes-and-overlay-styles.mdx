@@ -12,6 +12,14 @@ description: "Accepted · 2026-10-22"
   [0254](/adr/0254-desktop-release-signing-update-feed-channels-and-version-policy) stands.
 </Note>
 
+<Note>
+  Amends [0126](/adr/0126-member-shapes-and-scaffold-templates) (its 2026-10-21 amendment, for app
+  members, and the app and service member shapes) and
+  [0146](/adr/0146-package-configuration-typescript-layers-and-secret-references) decision 1 (CF1):
+  an app's config files under `src/config/` are named per fact or topic, not per package, and
+  `stackra.config.ts` is a required file at the root of every app and service member.
+</Note>
+
 ## Context
 
 ADR 0249 builds web, PWA and Electron desktop from one app member, but does not say how an app picks its targets or which
@@ -24,19 +32,30 @@ in chat on 2026-10-22.
 
 1. **One member, one codebase, listed targets.** An app member declares its targets in `stackra.config.ts` at the
    member root, which holds the one app definition per member: `targets: [Target.Web, Target.Pwa, Target.Desktop]`.
-   `stackra gen` builds only the listed targets. There is no second codebase per target (ADR 0249). Desktop options live in
-   `src/config/desktop.config.ts`, the config location of ADR 0126.
+   `stackra gen` builds only the listed targets. There is no second codebase per target (ADR 0249).
+   - **Required root file.** `stackra.config.ts` joins the app and service member shapes of ADR 0126 as a required file
+     at the member root, and `pnpm new` creates it.
+   - **Config files by topic.** Following the owner's "one fact, one file" decision of 2026-10-21, an app's config files
+     sit under `src/config/` and are named by fact or topic, not by package: `desktop.config.ts`, `theming.config.ts`,
+     `consent.config.ts` and so on. This amends ADR 0146 decision 1 (CF1, `<pkg>.config.ts`) and the 2026-10-21
+     amendment of ADR 0126 (decision 1, `src/config/<name>.config.ts`) for app members. Desktop options live in
+     `src/config/desktop.config.ts`.
 2. **Capability matrix.** What each target can offer:
 
-   | Surface                             | Web         | PWA               | Desktop                                                                                               |
-   | ----------------------------------- | ----------- | ----------------- | ----------------------------------------------------------------------------------------------------- |
-   | Normal window                       | browser tab | standalone window | window                                                                                                |
-   | Dock icon                           | no          | yes               | yes, except in `Tray` mode                                                                            |
-   | Tray or menu-bar icon               | no          | no                | yes                                                                                                   |
-   | System-wide shortcuts               | no          | no                | yes                                                                                                   |
-   | Floating always-on-top overlays     | no          | no                | yes                                                                                                   |
-   | App shortcuts, share target, badges | no          | yes               | yes                                                                                                   |
-   | Offline                             | partial     | service worker    | SQLite through `@stackra/storage`'s `./sql` entry (ADR 0256 Phase 2); until it lands, the `fs` driver |
+   | Surface                             | Web                      | PWA                               | Desktop                                   |
+   | ----------------------------------- | ------------------------ | --------------------------------- | ----------------------------------------- |
+   | Normal window                       | browser tab              | standalone window                 | window                                    |
+   | Dock icon                           | no                       | yes                               | yes, except in `Tray` mode                |
+   | Tray or menu-bar icon               | no                       | no                                | yes                                       |
+   | System-wide shortcuts               | no                       | no                                | yes                                       |
+   | Floating always-on-top overlays     | no                       | no                                | yes                                       |
+   | App shortcuts, share target, badges | no                       | yes                               | yes                                       |
+   | Offline                             | storage + mutation queue | the same, plus the service worker | SQLite, or the `fs` driver until it lands |
+
+   Offline follows ADR 0252 (offline on every client). Web uses the `@stackra/storage` web drivers (IndexedDB) and the
+   offline mutation queue. PWA has the same, plus the service worker for the app shell and background sync (ADR 0255).
+   Desktop uses SQLite through the `./sql` entry of `@stackra/storage` (ADR 0256 Phase 2), and the `fs` driver until that
+   lands.
 
    Config never claims a capability its targets lack. Validation rejects a desktop-only option (`mode`, `overlays`, a
    global shortcut, the tray) when `Target.Desktop` is not in `targets`.
@@ -76,10 +95,11 @@ in chat on 2026-10-22.
      C1. Placing it in `@stackra/platform` would make the build tools depend on the package that holds the Electron and
      Expo drivers.
    - `DesktopMode`, `OverlayStyle` and `OverlayAnchor` live in `@stackra/platform`. Only `desktop.config.ts` and the
-     platform shell read them, the same way each package owns the vocabulary of its own config (ADR 0117 C2, ADR 0146).
+     platform shell read them, the same way each package owns the vocabulary of its own config (ADR 0117 decision 3, the membership test of ADR 0015; ADR 0146).
 
 ## Consequences
 
+- `pnpm new` writes `stackra.config.ts` for app and service members, and the scaffold test checks it.
 - An app chooses its surfaces in two config files, and a feature written once runs in a tab, a PWA, the desktop window and
   an overlay.
 - A PWA config that asks for a tray or a global shortcut fails validation instead of shipping a silent no-op.
@@ -101,10 +121,13 @@ in chat on 2026-10-22.
 
 ## Supersedes and sources
 
-Supersedes: none. Extends: [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron),
+Supersedes: none. Amends: [0126](/adr/0126-member-shapes-and-scaffold-templates) (its 2026-10-21 amendment for app
+members, and the app and service member shapes),
+[0146](/adr/0146-package-configuration-typescript-layers-and-secret-references) decision 1 (CF1). Extends: [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron),
 [0250](/adr/0250-stackra-platform-capability-ports-drivers-and-gate),
 [0251](/adr/0251-desktop-bridge-generated-from-desktop-action-and-electron-hardening). Consistent with:
 [0254](/adr/0254-desktop-release-signing-update-feed-channels-and-version-policy) (tray keep-alive opt-in),
+[0252](/adr/0252-offline-on-every-client-completing-the-mutation-queue) (offline on every client),
 [0255](/adr/0255-pwa-service-worker-scope-and-push-per-platform) (PWA offline),
 [0256](/adr/0256-client-storage-one-stackra-storage-package) (desktop SQLite through the `./sql` entry, `fs` driver until then). Sources: owner decision in chat,
 2026-10-22 (STA-292).
