@@ -411,6 +411,7 @@ means not yet. A row changes only by a new ADR. Full table with revival triggers
 | Database sharding                                                                                           | Deferred | one region and one primary; cells come later (`/adr/0186-backups-and-disaster-recovery`)                                                                                                                                                                               |
 | Infisical Agent Vault (a credential proxy for coding agents and delegated tasks)                            | Deferred | Infisical paths already in force; the model never sees a secret and egress is direct (`/adr/0267-infisical-agent-vault-deferred`)                                                                                                                                      |
 | A browser-extension agent connector (an agent acting inside the user's browser via an extension)            | Deferred | server-side connectors and MCP tools; Playwright in sandboxes for browsing (`/adr/0283-browser-extension-agent-connector-deferred`)                                                                                                                                    |
+| A microVM tier for tenant code or other untrusted code                                                      | Deferred | The sandboxed code step and its WASM pool ([0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step)); revival first tries hosted Firecracker ([0287](/adr/0287-agent-sandboxes-and-the-remote-runner))                                                         |
 | A second non-TypeScript runtime for services                                                                | Deferred | TypeScript service members (`/adr/0010-services-are-independent-workspace-members`)                                                                                                                                                                                    |
 
 Enforcement: `FORBIDDEN_DEPENDENCIES` in `tools/scripts/validate-repository.mjs` (eslint, prettier, jest, nest,
@@ -467,7 +468,7 @@ infisical run -- encore run
 **CI/CD:**
 
 A CI job logs in to Infisical by GitHub OIDC for one step and reads `/ci` only (ADR 0009 D2); no token is a repository
-secret. No deploy command exists yet (`encore deploy` is denied by `guard-bash`; the deploy path is open, DP2).
+secret. Workers deploy from CI with a Cloudflare token read from Infisical `/ci` over GitHub OIDC (ADR 0284, ADR 0289). The Encore deploy stays denied: `encore deploy` is blocked by `guard-bash` until the deploy spike STA-136 (DP2) settles the Encore path.
 
 **MCP servers:**
 Token-based MCP servers launch through the `tools/scripts/mcp.sh` vault wrapper (reads from `/agents`). This is a
@@ -486,6 +487,7 @@ In Infisical `/agents` (local):
 In Infisical `/ci` (CI/CD):
 
 - `TURBO_TOKEN` - Turborepo remote cache
+- `CLOUDFLARE_API_TOKEN` - Cloudflare Worker deploys from CI (ADR 0284, ADR 0289)
 - `ENCORE_API_KEY` - Encore deployment, once a deploy path exists (DP2)
 - `SENTRY_AUTH_TOKEN` - Sentry releases (optional)
 
