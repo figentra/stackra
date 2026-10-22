@@ -87,7 +87,7 @@ says what is missing. Full steps: [quickstart](apps/docs/src/quickstart.mdx) and
 | `.notes/`                                        | a private git submodule for the owner only; excluded from every check                                   |
 
 Root configuration: `pnpm-workspace.yaml` (members and version catalogs), `turbo.jsonc` (tasks and tier tags),
-`mise.toml` (toolchain), `lefthook.yml` (git hooks), `commitlint.config.mjs`, `.oxlintrc.jsonc`, `.oxfmtrc.jsonc`,
+`mise.toml` (toolchain), `lefthook.yml` (git hooks), `.commitlintrc.yaml`, `.oxlintrc.jsonc`, `.oxfmtrc.jsonc`,
 `knip.jsonc`, `.gitleaks.toml`, `.mcp.yaml` (MCP servers, rendered to `.mcp.json`) and `opencode.jsonc`.
 
 ## Tiers and the key rules

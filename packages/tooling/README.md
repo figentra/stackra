@@ -3,12 +3,13 @@
 The shared configuration presets every member extends, tagged `tier:config`. They have no workspace dependencies and
 sit at the bottom of the dependency graph ([ADR 0003](../../apps/docs/src/adr/0003-tier-dependency-direction.mdx)).
 
-| Package                    | Presets for                                                                   |
-| -------------------------- | ----------------------------------------------------------------------------- |
-| [`typescript`](typescript) | `@stackra/typescript-config`: tsconfig presets (`base`, `node`, `library`, …) |
-| [`oxlint`](oxlint)         | `@stackra/oxlint-config`: oxlint presets, including the boundaries rules      |
-| [`vitest`](vitest)         | `@stackra/vitest-config`: vitest presets and the coverage helper              |
-| [`tsdown`](tsdown)         | `@stackra/tsdown-config`: the `library()` build preset                        |
+| Package                    | Presets for                                                                      |
+| -------------------------- | -------------------------------------------------------------------------------- |
+| [`typescript`](typescript) | `@stackra/typescript-config`: tsconfig presets (`base`, `node`, `library`, …)    |
+| [`oxlint`](oxlint)         | `@stackra/oxlint-config`: oxlint presets, including the boundaries rules         |
+| [`vitest`](vitest)         | `@stackra/vitest-config`: vitest presets and the coverage helper                 |
+| [`tsdown`](tsdown)         | `@stackra/tsdown-config`: the `library()` build preset                           |
+| [`commitlint`](commitlint) | `@stackra/commitlint-config`: conventional commits and the `refs-issue-key` rule |
 
 ## Rules
 

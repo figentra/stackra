@@ -28,6 +28,6 @@ state.** Every agent, including subagents and OpenCode executors without the Lin
 
 ## Enforcement
 
-`commitlint.config.mjs` (`refs-linear-key`, lefthook and the Quality Gate over the PR range); `linear.mjs check-pr`
+`.commitlintrc.yaml` (`refs-issue-key`, lefthook and the Quality Gate over the PR range); `linear.mjs check-pr`
 in the Quality Gate; `requireIssue` in `tools/scripts/delegate.mjs`; `.github/workflows/linear-sync.yml`
 (`tools/scripts/linear-reconcile.mjs`) moves states, closes decided ADR issues and labels stale work.

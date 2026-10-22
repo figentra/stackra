@@ -52,7 +52,7 @@
     "@changesets/changelog-git": "catalog:release",
     "@changesets/cli": "catalog:release",
     "@commitlint/cli": "catalog:release",
-    "@commitlint/config-conventional": "catalog:release",
+    "@stackra/commitlint-config": "workspace:*",
     "@types/node": "catalog:",
     "knip": "catalog:quality",
     "lefthook": "catalog:release",
