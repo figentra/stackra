@@ -1,7 +1,14 @@
 ---
 title: "0016 — `.agents/` is the source of truth"
-description: "Accepted · 2026-10-19"
+description: "Accepted, amended by 0282 · 2026-10-19"
 ---
+
+<Note>
+  Amended by [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc): the
+  Stackra skills, rules, sub-agents, commands and hooks are authored in `@stackra/skills` and
+  installed at the user level. A project built on Stackra keeps only `AGENTS.md`, `CLAUDE.md` and
+  `.mcp.yaml`.
+</Note>
 
 <Note>Rules 4 and 5 are superseded by [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk) and [0121](/adr/0121-sdlc-tooling-roles-and-linear): specs live in `.agents/specs/sta-<n>-<slug>/` through a spec-kit preset wrap, and the `sdlc` plugin is retired. The other rules stand.</Note>
 

@@ -98,6 +98,12 @@ export const ENTRIES = Object.freeze([
   { name: "devtools", reason: "developer tooling, only with real code", adr: "0126" },
 ]);
 
+/** Named exception to ENTRIES: `@stackra/testing` alone also has these two entries, and no other package does (ADR 0269 d6). */
+const TESTING_PACKAGE_ENTRIES = Object.freeze([
+  { name: "e2e", reason: "end-to-end tier helpers", adr: "0269" },
+  { name: "contract", reason: "contract tier helpers", adr: "0269" },
+]);
+
 /** The entry name list, in exports order. */
 export const ENTRY_NAMES = Object.freeze(ENTRIES.map((e) => e.name));
 
@@ -209,10 +215,17 @@ export const KIND_FOLDERS = Object.freeze(
       "enum",
       "contract",
       "const-object enums with a same-named union type; the enum keyword is banned",
-      "0128 d1 (file name only; no ADR names the folder)",
+      "0130",
     ],
     ["errors", "error", "contract", "StackraError subclasses", "0232"],
     ["schemas", "schema", "contract", "Zod schemas", "0095"],
+    [
+      "internal",
+      null,
+      "unit",
+      "helpers shared by two or more files of one package; never exported from a barrel; test in `internal/__tests__/`",
+      "0006",
+    ],
     [
       "components",
       null,
@@ -248,11 +261,11 @@ export const REACT_HOOK = Object.freeze({
 });
 
 /**
- * Static files shipped with a module live in `assets/` beside the root module, not under `src/` (ADR 0234 d2).
+ * Static files shipped with a module live in `assets/` at the package root, not under `src/` (ADR 0177, ADR 0234 d2).
  * `lang` feeds the i18n registry; the other folders carry their own rules in ADR 0234.
  */
 export const ASSETS = Object.freeze({
-  location: "assets/ beside the root module",
+  location: "assets/ at the package root",
   folders: Object.freeze(["public", "lang", "templates", "stubs", "data"]),
   test: null,
   reason: "static files shipped with a module; the word resource is reserved for @Resource",
@@ -477,6 +490,8 @@ export function renderStructureDoc() {
       ENTRIES.map((e) => [code(e.name), e.reason, `ADR ${e.adr}`]),
     ),
     "",
+    `Exception: ${code("@stackra/testing")} alone also has ${TESTING_PACKAGE_ENTRIES.map((e) => code(e.name)).join(" and ")} (ADR 0269 d6). No other package does.`,
+    "",
     "## Kind folders",
     "",
     "Code of a module sits in these folders under `src/`. A file's suffix names its kind; the test column is the tier its file needs.",
@@ -496,7 +511,7 @@ export function renderStructureDoc() {
     "",
     `React hooks: ${code("use-<name>.ts")} beside their component, test ${code("use-<name>.test.ts")} (unit), ADR ${REACT_HOOK.adr}. Extension hooks are the only ${code("hooks/")} files.`,
     "",
-    `Static files: ${code("assets/<kind>/")} beside the root module (${code("public")}, ${code("lang")}, ${code("templates")}, ${code("stubs")}, ${code("data")}), ADR ${ASSETS.adr}. ${ASSETS.reason}.`,
+    `Static files: ${code("assets/<kind>/")} at the package root (${code("public")}, ${code("lang")}, ${code("templates")}, ${code("stubs")}, ${code("data")}), ADR ${ASSETS.adr}. ${ASSETS.reason}.`,
     "",
     "## Banned folders",
     "",
