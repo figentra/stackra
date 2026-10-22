@@ -189,4 +189,5 @@ secrets and security are in the [secrets](apps/docs/src/constitution/secrets.mdx
 
 The code is MIT ([`LICENSE`](LICENSE)). The Stackra logos, marks and brand images are not, and the fonts keep their
 SIL Open Font License: see [`NOTICE`](NOTICE) and
-[ADR 0024](apps/docs/src/adr/0024-mit-license-with-exclusions.mdx).
+[ADR 0024](apps/docs/src/adr/0024-mit-license-with-exclusions.mdx). The Stackra and Figentra names and logos are trademarks: see
+[`TRADEMARKS.md`](TRADEMARKS.md).
