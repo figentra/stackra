@@ -33,7 +33,7 @@ import {
   rawSubstitutions,
   scanShell,
   scriptStrings,
-  shellInputs,
+  runsOpaque,
   stripHeredocs,
 } from "./_inbox.mjs";
 
@@ -487,7 +487,7 @@ const rules = [
   },
   {
     // STA-291: a shell reading a pipe or a file written earlier from text the guard cannot read.
-    rx: (c) => [c, ...nestedRaw(c)].some((t) => shellInputs(t).opaque),
+    rx: runsOpaque,
     decision: "ask",
     why: "A shell runs text the guard cannot read (`curl … | sh`, `cat x | sh`, `cmd > f; sh f`); a human confirms it. Run the commands directly instead.",
   },

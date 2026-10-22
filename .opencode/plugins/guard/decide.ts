@@ -12,7 +12,7 @@ import {
   reachesInbox,
   scanShell,
   scriptStrings,
-  shellInputs,
+  runsOpaque,
   stripHeredocs,
 } from "../../../.agents/hooks/_inbox.mjs";
 
@@ -280,6 +280,11 @@ export function decideShell(raw: string, cwd?: string): Decision {
     return deny(
       "~/Secrets-inbox/ (and the import confirm key) are never read, listed, copied or moved. Use `pnpm secrets:import --list` for names and `pnpm secrets:import [--dry-run] [NAME]` to import; it never prints a value.",
     );
+  // STA-291: a shell reading a pipe, a substitution or a file written earlier from text the guard cannot read.
+  if (runsOpaque(cmd))
+    return deny(
+      'a shell runs text the guard cannot read (`curl … | sh`, `cat x | sh`, `eval "$x"`, `cmd > f; sh f`). Run the commands directly.',
+    );
   // Safety net (STA-254): substitution bodies found with quotes ignored can only add denies.
   // `literal` splits a case pattern from its command (`a) cmd`, `(a) cmd`).
   for (const text of [
@@ -287,17 +292,11 @@ export function decideShell(raw: string, cwd?: string): Decision {
     scanShell(cmd).literal,
     ...nested(cmd),
     ...rawSubstitutions(cmd).flatMap((b) => [b, ...nested(b)]),
-  ]) {
-    // STA-291: a shell reading a pipe or a file written earlier from text the guard cannot read.
-    if (shellInputs(text).opaque)
-      return deny(
-        "a shell runs text the guard cannot read (`curl … | sh`, `cat x | sh`, `cmd > f; sh f`). Run the commands directly.",
-      );
+  ])
     for (const s of subcommands(text)) {
       const d = denySub(s);
       if (d.kind === "deny") return d;
     }
-  }
   return ALLOW;
 }
 
