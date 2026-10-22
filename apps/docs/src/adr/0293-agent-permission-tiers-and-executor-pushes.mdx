@@ -54,8 +54,11 @@ cover what GitHub cannot see.
    in every mode. The hooks add only what a prefix rule cannot see, from one module, `.agents/hooks/_rules.mjs`, which
    `guard-bash.mjs`, `guard-paths.mjs` and the OpenCode guard plugin all evaluate: runner wrappers (`pnpm [exec|dlx]`,
    `pnpm <bin>`, `npx`, `npm exec`, `mise exec --`) are looked through like `sudo`, `env`, `timeout` or a shell
-   keyword; a quoted or escaped command name is read unquoted; quoted prose is not a command; the checkout a git
-   command targets is resolved through `cd`, `-C`, `--git-dir` and `GIT_DIR=`.
+   keyword; a quoted or escaped command name is read unquoted; quoted prose is not a command; arguments are read as
+   the shell passes them (quotes, redirections, groups and subshells); the checkout a git command targets is resolved
+   through `cd` (a subshell's ends at its `)`, a failed one leaves the old directory), `-C`, `--git-dir` and
+   `GIT_DIR=`. Every decision is linear in the command, and a command nested deeper than the guard reads is denied,
+   because a hook that runs out of time fails open.
    `opencode.jsonc` repeats the tiers as order-sensitive patterns.
 3. **Own worktree only.** `reset --hard`, `checkout` or `restore` of the tree, `checkout -f`,
    `switch --discard-changes`, `clean -f` and `worktree remove --force` run only when the target checkout is the
@@ -63,15 +66,19 @@ cover what GitHub cannot see.
    session's own checkout or the session scratchpad, never on a worktree itself. A subagent whose shell starts in the
    main checkout and reaches a nested worktree by `cd` or `-C` gets an ask, because the guard cannot tell its own
    worktree from another agent's; build output there needs no yes. Worktrees use WIP commits, never the shared stash.
-4. **`pnpm bot:review` is for reviewer agents.** Only an agent type whose source sets `reviewer: true` (projected by
+4. **`owner-approved` is the owner's.** No agent command writes the label, in any spelling or from a computed value
+   (the guard and `bot-gh.mjs`, which sees the expanded arguments), and `pnpm pr:merge` counts it only when the latest
+   `labeled` / `unlabeled` issue event for it is a `labeled` by the owner user, never a bot; an API error refuses the
+   merge.
+5. **`pnpm bot:review` is for reviewer agents.** Only an agent type whose source sets `reviewer: true` (projected by
    `agents-sync` into `.agents/hooks/_reviewer-agents.mjs`) may run it. This is a tripwire, not a boundary: a builder
    can still spawn a reviewer. Once a CI job posts the review verdict, no local agent runs `bot:review`.
-5. **Executors commit and push their own feature branch** (amends rule 1 of
+6. **Executors commit and push their own feature branch** (amends rule 1 of
    [0066](/adr/0066-delegation-to-opencode-by-routing-matrix)). An OpenCode executor commits on its delegate branch
    and runs `pnpm bot:git -- fetch origin [<ref>]` and `pnpm bot:git -- push [--force-with-lease] origin HEAD`; every other bot
    wrapper (`bot:gh`, `bot:review`, `bot:token`, `pr:merge`, `linear`), Infisical and raw network git stay the lead's.
    The lead still reviews, opens the pull request and merges through `pnpm pr:merge`.
-6. **An agent never widens the project rules.** An OpenCode agent's frontmatter permissions only narrow
+7. **An agent never widens the project rules.** An OpenCode agent's frontmatter permissions only narrow
    `opencode.jsonc`; `agents-sync` refuses an `allow` effect for an agent projected to OpenCode.
 
 ## Consequences
@@ -99,6 +106,8 @@ cover what GitHub cannot see.
 - `tools/scripts/agents-sync.mjs`: the `reviewer` flag, the generated `.agents/hooks/_reviewer-agents.mjs` (drift fails
   `pnpm agents:check`), and the refusal of an `allow` permission for an OpenCode agent.
 - `tools/scripts/delegate.mjs` (`RULES`): the executor prompt says to commit and push its own branch.
+- `tools/scripts/pr-merge.mjs` (`ownerLabelled`) and `tools/scripts/bot-gh.mjs` (`unsafeArgs`) for rule 4, with tests
+  in `tools/scripts/__tests__/pr-merge.test.mjs` and `bot-gh.test.mjs`.
 
 ## Supersedes and sources
 

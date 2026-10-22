@@ -14,10 +14,13 @@
 // blanked (`runs`), heredoc bodies are stripped, and `-m` / `--title` / `--body` values are dropped
 // (`dropMessages`). Substitution bodies, `sh -c` / `eval` strings and function bodies are commands.
 import { spawnSync } from "node:child_process";
-import { realpathSync } from "node:fs";
+import { readdirSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import {
+  cached,
+  clearCaches,
+  memoTable,
   WRAPPERS,
   WRAPPER_VALUE,
   XARGS_VALUE,
@@ -33,6 +36,9 @@ import {
   stripHeredocs,
 } from "./_inbox.mjs";
 import { REVIEWER_AGENTS } from "./_reviewer-agents.mjs";
+
+/** The home directory, read once: `homedir()` is a system call, and every word is checked against it. */
+const HOME_DIR = homedir();
 
 /** The only `-c` keys an agent may set: display, identity and rerere; none runs a command or redirects a remote. */
 const ALLOWED_C =
@@ -128,43 +134,90 @@ function gitConfigUnsafe(d) {
   }
   return false;
 }
-/** An option value: a quoted string (spaces allowed) or one word. */
-const Q = String.raw`"[^"]*"|'[^']*'|\S+`;
+/** An option value: one word, quoted parts allowed (`"a b"c`); one parse only, so a failed match never backtracks. */
+const Q = String.raw`(?:"[^"]*"|'[^']*'|[^\s"'])\S*`;
 /** git's global options before the subcommand (STA-216: quoted values, the boolean options). */
 const GIT_OPTS = String.raw`(?:(?:-[Cc]\s+(?:${Q})|--(?:git-dir|work-tree|namespace)(?:=(?:${Q})|\s+(?:${Q}))|--exec-path(?:=\S+)?|--(?:no-pager|paginate|bare|literal-pathspecs|no-replace-objects|glob-pathspecs|noglob-pathspecs|icase-pathspecs|no-optional-locks)|-[pP])\s+)*`;
 /** `git` (or `pnpm bot:git --`) followed by any global options before the subcommand. */
 const GIT = String.raw`\bgit\s+(?:--\s+)?` + GIT_OPTS;
 
-/** Wrapper options whose value is the next word (`sudo -u x`, `nice -n 5`, `xargs -I {}`), as one character class. */
-const VALUE_FLAGS = [...new Set([...WRAPPER_VALUE, ...XARGS_VALUE])]
-  .map((f) => f.slice(1))
-  .join("");
+/** Words that run the command after them, and the shell keywords that open a command. */
+const LEAD_WORDS = new Set([...WRAPPERS, "xargs", "caffeinate", "watch", "script", "arch"]);
+const KEYWORDS = new Set([
+  "if",
+  "elif",
+  "while",
+  "until",
+  "then",
+  "do",
+  "else",
+  "!",
+  "{",
+  "coproc",
+]);
+/** Wrapper options whose value is the next word (`sudo -u x`, `nice -n 5`, `xargs -I {}`, `arch -arch x`). */
+const VALUE_FLAGS = new Set([...WRAPPER_VALUE, ...XARGS_VALUE, "-arch"]);
 /**
- * Words before a command name: the shared wrappers with their options, values, durations and assignments
- * (`timeout 5`, `nice -n 5`, `sudo -u x`, `env -i A=1`, `stdbuf -oL`), `xargs`, `caffeinate`, `watch`,
- * `script -q <file>`, `command -p` (not `command -v`: it prints a path) and the shell keywords that open a
- * command (`if`, `then`, `do`, `!`, `{`).
+ * Indexes of the words of a simple command that may be its command name, by one linear walk (STA-330 review: the
+ * old nested regex backtracked exponentially): past assignments, keywords and wrappers with their options,
+ * durations and option values (`timeout 5`, `nice -n 5`, `sudo -u x`, `env -i A=1`, `script -q <file>`). A word a
+ * wrapper option may have taken as its value is tried as the name too (`sudo -s gh` runs gh), so no reading of
+ * the words is missed. `command -v x` only looks a name up.
  */
-const LEAD = String.raw`(?:(?:\S*/)?(?:${[...WRAPPERS, "xargs", "caffeinate", "watch"].filter((w) => w !== "command").join("|")})(?:\s+(?:-[${VALUE_FLAGS}]\s+\S+|-\S+|\d+(?:\.\d+)?[smhd]?|\w+=\S*))*|(?:\S*/)?script(?:\s+-\S+)*(?:\s+\S+)?|command(?:\s+-p)?|if|elif|while|until|then|do|else|!|\{)\s+`;
-/** Command position: start, or after a separator, behind `VAR=x` assignments, wrappers and keywords. */
-const CMDPOS = String.raw`(?:^|[|;&(\n\x60])\s*(?:${LEAD}|\w+=(?:\$\([^)]*\)|\S*)\s+)*`;
+function nameIndexes(words) {
+  const out = [];
+  let wrapped = false;
+  let value = false; // the word may be the value of the option before it
+  let file = false; // `script`'s file operand, before its command
+  for (let k = 0; k < words.length; k++) {
+    const w = words[k];
+    const b = w.split("/").pop();
+    out.push(k);
+    if (b === "command" && /^-[a-zA-Z]*[vV]/.test(words[k + 1] ?? "")) break;
+    if (KEYWORDS.has(w) || /^\w+=/.test(w)) continue;
+    if (LEAD_WORDS.has(b)) {
+      [wrapped, value, file] = [true, false, b === "script"];
+    } else if (wrapped && w.startsWith("-")) value = VALUE_FLAGS.has(w);
+    else if (wrapped && /^\d+(?:\.\d+)?[smhd]?$/.test(w)) value = false;
+    else if (wrapped && value) value = false;
+    else if (wrapped && file) file = false;
+    else break;
+  }
+  return out;
+}
+const namesCache = memoTable();
+/** Offsets in `t` where a command name may start, over every simple command (`nameIndexes`); memoised. */
+const nameOffsets = (t) =>
+  cached(namesCache, t, () =>
+    simpleCommands(t).flatMap((s) => nameIndexes(s.words).map((k) => s.at[k])),
+  );
+/**
+ * A test that a command of a text, from its name on, matches `tail` (a path before the name allowed). Wrappers
+ * and keywords are walked by `nameIndexes`; runners (`pnpm exec`, `npx`) are dropped by `lookThroughRunners`.
+ */
+const atName = (tail) => {
+  const rx = new RegExp(String.raw`(?:[^\s;&|()<>]*/)?(?:${tail})`, "y");
+  return (t) =>
+    nameOffsets(t).some((i) => {
+      rx.lastIndex = i;
+      return rx.test(t);
+    });
+};
+/** The end of a command name: a space, an operator or the end. */
+const END = String.raw`(?=[\s;&|()<>]|$)`;
 
 /**
- * Owner-login guard (STA-208, ADR 0230 rule 5): `gh` and `git` at command position run with the owner's
- * `gh auth` login and git credential helper. Agents use the bot wrappers instead, which fail closed when no token
- * can be minted. Wrappers and keywords are looked through (`CMDPOS`); runners (`pnpm exec`, `npx`) by
- * `lookThroughRunners`.
+ * Owner-login guard (STA-208, ADR 0230 rule 5): `gh` and `git` as a command name run with the owner's `gh auth`
+ * login and git credential helper. Agents use the bot wrappers instead, which fail closed when no token can be
+ * minted.
  */
-const BARE = CMDPOS + String.raw`(?:\S*/)?`;
-const BARE_GH = new RegExp(BARE + String.raw`gh(?:\s|$)`);
-const BARE_GIT = (sub) =>
-  new RegExp(BARE + String.raw`git\s+` + GIT_OPTS + String.raw`(?:${sub})\b`);
+const BARE_GH = atName("gh" + END);
 /**
  * Every git subcommand that talks to a remote. All of them go through `pnpm bot:git`, public repos included.
  * `submodule status` and `submodule summary` read only the local checkout.
  */
-const NETWORK_GIT = BARE_GIT(
-  String.raw`push|fetch|pull|clone|ls-remote|submodule(?!\s+(?:status|summary)\b)|subtree|remote\s+(?:update|show|prune)|archive\s+[^|;&\n]*--remote`,
+const NETWORK_GIT = atName(
+  String.raw`git\s+${GIT_OPTS}(?:push|fetch|pull|clone|ls-remote|submodule(?!\s+(?:status|summary)\b)|subtree|remote\s+(?:update|show|prune)|archive\s+[^|;&\n]*--remote)\b`,
 );
 
 /**
@@ -180,10 +233,34 @@ const RUNNERS = new RegExp(String.raw`(^|[|;&(\n\x60]\s*)((?:\w+=\S*\s+)*)(?:${R
 export const lookThroughRunners = (c) => c.replace(RUNNERS, "$1$2");
 
 /** The text of every `$(…)` / backtick body at any depth (single quotes stay literal) and `sh -c` / `eval` string. */
-function nestedRaw(c) {
-  const out = scanShell(c).bodies.flatMap((b) => [b, ...nestedRaw(b)]);
-  for (const s of scriptStrings(c)) out.push(s, ...nestedRaw(s));
-  return out;
+const nestedCache = memoTable();
+const nestedRaw = (c) =>
+  cached(nestedCache, c, () =>
+    nesting(() => {
+      const out = scanShell(c).bodies.flatMap((b) => [b, ...nestedRaw(b)]);
+      for (const s of scriptStrings(c)) out.push(s, ...nestedRaw(s));
+      return out;
+    }),
+  );
+/**
+ * Script strings nest at most this deep (`sh -c "eval '…'"`): each level is a new text to scan, and a chain like
+ * `eval x eval x …` peels one level per two words, which made a decision quadratic (STA-330 review).
+ */
+const MAX_SCRIPTS = 8;
+let scriptDepth = 0;
+let tooDeep = false;
+/** `f()` one script level deeper; past `MAX_SCRIPTS` it reads nothing and the decision denies (`TOO_DEEP`). */
+function nesting(f) {
+  if (scriptDepth >= MAX_SCRIPTS) {
+    tooDeep = true;
+    return [];
+  }
+  scriptDepth++;
+  try {
+    return f();
+  } finally {
+    scriptDepth--;
+  }
 }
 /** Texts a rule that needs the quoted values scans: the command with prose dropped, and every nested command in full. */
 const scanTexts = (c) => [dropMessages(c), ...nestedRaw(c).map(dropMessages)];
@@ -196,37 +273,41 @@ const scanBases = (c, cwd) => {
   const base = /(?:^|[\s;&|(`'"])(?:cd|pushd)(?:\s|$)/.test(outer) ? null : cwd;
   return [[outer, cwd], ...nested.map((t) => [t, base])];
 };
-const runnableCache = new Map();
+const runnableCache = memoTable();
 /**
  * The text a shell runs: the quote-blanked command (prose in `--body "…"` is ignored), plus every `$(…)` and
  * backtick body at any depth, inside double quotes too (`scanShell`, STA-254), and every `sh -c` / `eval` string.
  * Single-quoted text stays literal. Function, alias and piped or written-then-run script text come from
  * `scriptStrings` (STA-291); deliberate workarounds stay open. Memoised: every rule reads the same texts.
  */
-function runnable(c) {
-  const hit = runnableCache.get(c);
-  if (hit) return hit;
-  const { blanked, bodies } = scanShell(c);
-  const out = [blanked, ...bodies.flatMap(runnable)];
-  for (const s of scriptStrings(c)) out.push(...runnable(s));
-  if (runnableCache.size > 200) runnableCache.clear(); // the OpenCode plugin is long-lived
-  runnableCache.set(c, out);
-  return out;
-}
-/** True when any runnable text has a segment matching `rx`. */
-const runs = (c, rx) => runnable(c).some((t) => segments(t).some((s) => rx.test(s)));
+const runnable = (c) =>
+  cached(runnableCache, c, () =>
+    nesting(() => {
+      const { blanked, bodies } = scanShell(c);
+      const out = [blanked, ...bodies.flatMap(runnable)];
+      for (const s of scriptStrings(c)) out.push(...runnable(s));
+      return out;
+    }),
+  );
+/** True when any runnable text has a segment matching `rx`, or passes `rx` when it is a test (`atName`). */
+const runs = (c, rx) =>
+  runnable(c).some((t) => (typeof rx === "function" ? rx(t) : segments(t).some((s) => rx.test(s))));
 
-/** `git` output in `cwd`, or "" when git fails. */
-function git(cwd, ...args) {
-  const r = spawnSync("git", args, { cwd, encoding: "utf8" });
-  return r.status === 0 ? r.stdout.trim() : "";
-}
+/** `git` output in `cwd`, or "" when git fails; memoised for one decision. */
+const gitCache = memoTable();
+const git = (cwd, ...args) =>
+  cached(gitCache, JSON.stringify([cwd, args]), () => {
+    const r = spawnSync("git", args, { cwd, encoding: "utf8" });
+    return r.status === 0 ? r.stdout.trim() : "";
+  });
 
 /** Quoted strings blanked, so a word inside `node -e '...'` or `--body "..."` is not mistaken for a command. */
 const blank = (c) => scanShell(c).blanked;
 
 /** Command segments: split on separators outside quotes (a `;` inside `-c "a;b"` does not hide a push). */
-function segments(c) {
+const segmentCache = memoTable();
+const segments = (c) => cached(segmentCache, c, () => splitSegments(c));
+function splitSegments(c) {
   const out = [];
   let cur = "";
   let quote = "";
@@ -249,24 +330,20 @@ function segments(c) {
   out.push(cur);
   return out;
 }
-/** `words` without redirections: `2>&1`, `2>/dev/null`, `>log`, and a bare operator with its target (`> log`). */
-const dropRedirects = (words) =>
-  words.filter(
-    (w, k) =>
-      !/^\d*(?:[<>]|&>)/.test(w) && !/^\d*(?:[<>]{1,2}|&>>?|>&|<&|>\|)$/.test(words[k - 1] ?? ""),
-  );
 const unquote = (w) => w.replace(/^['"]+|['"]+$/g, "");
 /**
  * Prose is not a command: blank the quoted `-m` / `--message` / `--title` / `--body` value and the text of
  * `pnpm linear comment <KEY> "…"` (STA-216), so a PR body or a comment may mention `pr merge` or `push origin main`.
  */
 const PROSE_BEFORE = /(?:\s(?:-m|--message|--title|--body)(?:\s+|=)|\blinear\s+comment\s+\S+\s+)$/;
-const dropMessages = (c) => {
-  const { spans, source } = scanShell(c);
-  return spans
-    .filter(([start]) => PROSE_BEFORE.test(source.slice(0, start)))
-    .reduceRight((t, [start, end]) => t.slice(0, start) + "MSG" + t.slice(end), source);
-};
+const messageCache = memoTable();
+const dropMessages = (c) =>
+  cached(messageCache, c, () => {
+    const { spans, source } = scanShell(c);
+    return spans
+      .filter(([start]) => PROSE_BEFORE.test(source.slice(Math.max(0, start - 300), start)))
+      .reduceRight((t, [start, end]) => t.slice(0, start) + "MSG" + t.slice(end), source);
+  });
 
 /** The `infisical secrets` subcommand a runnable segment uses: "get", "set", "delete", "folders", or "" (bare). */
 const INFISICAL_SUBCOMMANDS = new Set(["get", "set", "delete", "folders", "generate-example-env"]);
@@ -280,17 +357,17 @@ function infisicalSecrets(c) {
   return verbs;
 }
 
-/** The branch a push refspec writes to: `+src:refs/heads/dst` → `dst`. */
+/** The branch a push refspec writes to: `+src:refs/heads/dst` (or `heads/dst`) → `dst`. */
 const refspecDest = (r) =>
   r
     .replace(/^\+/, "")
     .split(":")
     .pop()
-    .replace(/^refs\/heads\//, "");
+    .replace(/^(?:refs\/)?heads\//, "");
 
 /** `~` and `$HOME` expanded; any other `$` or backtick, or an empty (blanked) word, makes the path unknown (null). */
 const expandHome = (p) => {
-  const e = unquote(p).replace(/^(?:~|\$HOME|\$\{HOME\})(?=\/|$)/, homedir());
+  const e = unquote(p).replace(/^(?:~|\$HOME|\$\{HOME\})(?=\/|$)/, HOME_DIR);
   return e === "" || /[$`]/.test(e) ? null : e;
 };
 
@@ -306,17 +383,73 @@ function realDir(p) {
 
 /** The directory a `cd` / `pushd` operand moves `dir` to; null when unknown (`$X`, `-`, an unknown base). */
 function moveTo(dir, to) {
-  if (to === undefined) return homedir();
+  if (to === undefined) return HOME_DIR;
   if (to === "-") return null;
   const e = expandHome(to);
   if (e === null) return null;
   if (e.startsWith("/")) return e;
   return dir === null ? null : resolve(dir, e);
 }
-/** A segment that is only a `cd` (in a subshell or group too): its operand is group 1. */
-const CD = /^\s*[({]?\s*(?:cd|pushd)(?:\s+(\S+))?\s*[)}]?\s*$/;
-/** A `cd` buried in a script string or subshell: the base of later relative paths is unknown. */
+/** A `cd` buried in a word (`$(cd x)`, `sh -c "cd x"`, `then cd x`): the directory after it is unknown. */
 const NESTED_CD = /(?:^|[\s;&|(`'"])(?:cd|pushd)\s/;
+/** At most this many possible directories are followed; past it the directory is unknown. */
+const MAX_DIRS = 16;
+const union = (a, b) => {
+  const u = [...new Set([...a, ...b])];
+  return u.length > MAX_DIRS ? [null] : u;
+};
+/**
+ * The simple commands of `text` in order (`simpleCommands`), each with its own text (`src`) and every directory it
+ * may run in (`dirs`, null when unknown; STA-330 review). `cd` / `pushd` are followed: a command right after
+ * `cd x &&` runs in x; after `cd x;` or `cd x ||` in x, or where it was when the `cd` failed. A `( … )` subshell's
+ * `cd` ends at its `)`. A `cd` in a pipeline or in the background, `popd`, `env -C` / `--chdir`, and a `cd` nested
+ * in a word make the directory unknown.
+ */
+function walk(text, cwd) {
+  const out = [];
+  const saved = [];
+  let dirs = [cwd];
+  let back = null; // the directories if a `cd` earlier in this `&&` chain failed
+  let prev = "";
+  let start = 0;
+  for (const s of simpleCommands(text, { all: true })) {
+    const src = text.slice(start, s.end - s.op.length);
+    const from = start;
+    start = s.end;
+    const words = s.words[0] === "{" ? s.words.slice(1) : s.words;
+    if (words[0] === "cd" || words[0] === "pushd") {
+      const to = words.slice(1).find((w) => w !== "--" && !/^-[LPe@]+$/.test(w));
+      const forked = prev === "|" || s.op === "|" || s.op === "&";
+      const moved = forked ? [null] : dirs.map((d) => moveTo(d, to));
+      if (s.op === "&&" && !forked && prev !== "||") {
+        back ??= dirs;
+        dirs = moved;
+      } else dirs = union(dirs, moved);
+    } else if (words[0] === "popd") dirs = [null];
+    else if (words.length) {
+      if (NESTED_CD.test(src)) dirs = [null];
+      const env = words.some((w) => ["env", "sudo"].includes(w.split("/").pop()));
+      const chdir = words.some((w) => /^--chdir\b/.test(w) || (env && /^-[a-zA-Z]*[CD]/.test(w)));
+      const at = s.at.map((i) => i - from); // word offsets in `src`
+      out.push({ src, words: s.words, at, dirs: chdir ? [null] : dirs });
+    }
+    if (s.op === "(") {
+      saved.push([dirs, back]);
+      back = null;
+    } else if (s.op === ")") [dirs, back] = saved.pop() ?? [[null], null];
+    else if (s.op !== "&&" && back) {
+      dirs = union(dirs, back);
+      back = null;
+    }
+    prev = s.op;
+  }
+  return out;
+}
+/**
+ * The arguments that follow a command word, as the shell passes them: quotes removed, redirections dropped
+ * (`--hard>/dev/null`, `<<<x`, `2>&1`, `&>f`), stopping at a separator or a `)` / `}` that closes a group.
+ */
+const argWords = (tail) => simpleCommands(tail)[0]?.words.filter((w) => w !== "}") ?? [];
 /** Segments whose words are search patterns or history, never a git action (`grep "git push origin main"`). */
 const READER_SEGMENT =
   /^\s*(?:\S*\/)?(?:rg|grep|egrep|fgrep|ag)\b|^\s*(?:\S*\/)?git\s+(?:-\S+\s+)*(?:log|grep)\b/;
@@ -332,55 +465,58 @@ const TARGET_TOKENS = new RegExp(
 );
 
 /**
- * Every git command in `text` (separators split, `cd` followed in order) with the checkout it runs in: `dir` (the
- * shell's directory, null when unknown) and `target`, the location options replayed for a `git rev-parse` there
- * (`-C`, `--git-dir`, `--work-tree`, `--bare`, and `GIT_DIR=` / `GIT_WORK_TREE=` anywhere), null when unknown.
- * `run(...args)` runs git in that checkout and returns "" when it fails or the checkout is unknown.
+ * Every git command in `text` (`walk`: separators, groups and `cd` followed) with the checkout it runs in, once per
+ * directory it may run in: `args` (`argWords`), and `run(...args)`, which runs git with the location options
+ * replayed (`-C`, `--git-dir`, `--work-tree`, `--bare`, and `GIT_DIR=` / `GIT_WORK_TREE=` anywhere) and returns ""
+ * when it fails or the checkout is unknown.
  */
-function gitCommands(text, cwd) {
+const gitCommands = (text, cwd) =>
+  cached(gitCommandCache, `${cwd}\0${text}`, () => readGitCommands(text, cwd));
+/** Seven rules read the same git commands. */
+const gitCommandCache = memoTable();
+function readGitCommands(text, cwd) {
   const out = [];
   const env = [...text.matchAll(new RegExp(String.raw`\bGIT_(DIR|WORK_TREE)=(${Q})`, "g"))].map(
     ([, k, v]) => [k === "DIR" ? "--git-dir" : "--work-tree", expandHome(v)],
   );
-  let dir = cwd;
-  for (const seg of segments(text)) {
-    const cd = CD.exec(seg);
-    if (cd) {
-      dir = moveTo(dir, cd[1]);
-      continue;
-    }
-    if (NESTED_CD.test(seg)) dir = null;
-    if (READER_SEGMENT.test(seg)) continue;
+  for (const { src, words, at, dirs } of walk(text, cwd)) {
+    if (READER_SEGMENT.test(src)) continue;
+    let next = 0; // the word the next match's subcommand starts, when it is a word of this command
     // Every `git` word outside quotes (a path like `GIT_DIR=x/.git git …` holds two); quoted text is prose here,
     // and the commands nested in it are scanned as their own texts.
-    const quoted = scanShell(seg).spans;
-    for (const m of seg.matchAll(GIT_WORD)) {
+    const quoted = scanShell(src).spans;
+    for (const m of src.matchAll(GIT_WORD)) {
       if (quoted.some(([a, b]) => m.index >= a && m.index < b)) continue;
-      let target = [];
+      let where = [];
       for (const [opt, v] of env)
-        target = v === null || target === null ? null : [...target, `${opt}=${v}`];
+        where = v === null || where === null ? null : [...where, `${opt}=${v}`];
       for (const { groups: g } of m[1].matchAll(TARGET_TOKENS)) {
-        if (target === null) break;
-        if (g.bare) target.push("--bare");
+        if (where === null) break;
+        if (g.bare) where.push("--bare");
         if (!g.opt) continue;
         const v = expandHome(g.value);
-        if (v === null) target = null;
-        else target.push(...(g.opt === "-C" ? ["-C", v] : [`${g.opt}=${v}`]));
+        if (v === null) where = null;
+        else where.push(...(g.opt === "-C" ? ["-C", v] : [`${g.opt}=${v}`]));
       }
-      const at = dir;
-      const where = target;
-      out.push({
-        sub: m[2],
-        args: dropRedirects(
-          seg
-            .slice(m.index + m[0].length + m[2].length)
-            .split(/\s+/)
-            .filter(Boolean),
-        ).map(unquote),
-        bot: /\bbot:git\b|\bbot-gh\.mjs\s+git\b/.test(seg),
-        gitDir: where === null || where.some((w) => /^--(?:git-dir|bare)\b/.test(w)),
-        run: (...args) => (at === null || where === null ? "" : git(at, ...where, ...args)),
-      });
+      const target = where;
+      const subAt = m.index + m[0].length;
+      while (next < at.length && at[next] < subAt) next++;
+      // A subcommand that is a word of this command takes the words after it; one inside a substitution or a
+      // quoted script is tokenised from its own text.
+      const args =
+        at[next] === subAt && words[next].startsWith(m[2])
+          ? words.slice(next + 1)
+          : argWords(src.slice(subAt + m[2].length));
+      const bot = /\bbot:git\b|\bbot-gh\.mjs\s+git\b/.test(src);
+      const gitDir = target === null || target.some((w) => /^--(?:git-dir|bare)\b/.test(w));
+      for (const dir of dirs)
+        out.push({
+          sub: m[2],
+          args,
+          bot,
+          gitDir,
+          run: (...a) => (dir === null || target === null ? "" : git(dir, ...target, ...a)),
+        });
     }
   }
   return out;
@@ -391,12 +527,12 @@ function gitCommands(text, cwd) {
  * git-common-dir) rather than a linked worktree, and the linked worktrees nested inside it (`.claude/worktrees/*`).
  */
 function ownCheckout(cwd) {
-  const top = git(cwd, "rev-parse", "--show-toplevel");
-  if (!top) return { root: "", main: true, nested: [] };
-  const root = realDir(top);
-  const [dir, common] = git(cwd, "rev-parse", "--git-dir", "--git-common-dir")
+  const [top, ...dirs] = git(cwd, "rev-parse", "--show-toplevel", "--git-dir", "--git-common-dir")
     .split("\n")
-    .map((p) => realDir(resolve(cwd, p)));
+    .filter(Boolean);
+  if (!top || dirs.length !== 2) return { root: "", main: true, nested: [] };
+  const root = realDir(top);
+  const [dir, common] = dirs.map((p) => realDir(resolve(cwd, p)));
   const nested = git(cwd, "worktree", "list", "--porcelain")
     .split("\n")
     .filter((l) => l.startsWith("worktree "))
@@ -405,61 +541,176 @@ function ownCheckout(cwd) {
   return { root, main: dir === common, nested };
 }
 
-/** True when `rm` is given both recursive and force, in any flag spelling. */
+/** A long option `f` names `name`, GNU unique prefixes included (`--recu` for `--recursive`). */
+const longFlag = (f, name) => f.length >= 3 && name.startsWith(f.split("=")[0]);
+/** True when `rm` is given both recursive and force, in any flag spelling (`-rf`, `-r -f`, `--recursive --force`). */
 const isRecursiveForce = (flags) =>
-  (flags.some((f) => /^-[a-zA-Z]*[rR]/.test(f)) || flags.includes("--recursive")) &&
-  (flags.some((f) => /^-[a-zA-Z]*f/.test(f)) || flags.includes("--force"));
+  flags.some((f) => /^-[a-zA-Z]*[rR]/.test(f) || longFlag(f, "--recursive")) &&
+  flags.some((f) => /^-[a-zA-Z]*f/.test(f) || longFlag(f, "--force"));
 /** The scratchpad root Claude Code gives a session: `/tmp/claude-<uid>` through its symlinks. */
 const scratchRoot = () => realDir(`/tmp/claude-${process.getuid?.() ?? 0}`);
-
+const FIND_EXEC = new Set(["-exec", "-execdir", "-ok", "-okdir"]);
+const baseName = (w) => w.split("/").pop();
 /**
- * Where each `rm -rf` operand lands (`rmPlace`), memoised per command. `cd` segments are followed; a relative
- * operand after an unknown `cd` (`cd $X`, a `cd` in a script string), `~`, `$` expansions and a bare `*` deny.
+ * What a simple command deletes recursively, read at its command name (`nameIndexes`, so `sudo`, `xargs`, `nice`
+ * are looked through): the operands of `rm` with recursive and force (after `--`, every word) and of `git rm` (null
+ * with `-C`: its pathspecs are not from here), and the start paths of `find … -delete` or `find … -exec rm` (as
+ * `{ under }`: find deletes what is below them); null for operands the guard cannot read (`xargs rm -rf` takes
+ * them from its input).
  */
-const rmPlaces = (c, ctx) => ctx.memo(`rm\0${c}`, () => rmScan(c, ctx));
-function rmScan(c, ctx) {
+function deletedPaths(words) {
   const out = [];
-  for (const [text, base] of scanBases(c, ctx.cwd)) {
-    let dir = base;
-    for (const seg of segments(text)) {
-      const cd = CD.exec(seg);
-      if (cd) {
-        dir = moveTo(dir, cd[1]);
-        continue;
-      }
-      if (NESTED_CD.test(seg)) dir = null;
-      const quoted = scanShell(seg).spans; // `echo "rm -rf /"` is prose; `bash -c "…"` is scanned as its own text
-      for (const m of seg.matchAll(/\brm\s+([^|;\n)]*)/g)) {
-        if (quoted.some(([a, b]) => m.index >= a && m.index < b)) continue;
-        const words = dropRedirects(m[1].split(/\s+/).filter(Boolean)).map(unquote).filter(Boolean);
-        if (!isRecursiveForce(words.filter((w) => w.startsWith("-")))) continue;
-        for (const t of words.filter((w) => !w.startsWith("-"))) out.push(rmPlace(t, dir, ctx));
-      }
+  for (const k of nameIndexes(words)) {
+    const name = baseName(words[k]);
+    let at = name === "rm" ? k : -1;
+    if (name === "git") {
+      let j = k + 1;
+      while ((words[j] ?? "").startsWith("-"))
+        j += /^-[Cc]$|^--(?:git-dir|work-tree|namespace)$/.test(words[j]) ? 2 : 1;
+      if (words[j] === "rm") at = j;
+      if (at >= 0 && words.slice(k + 1, j).some((w) => /^-C$|^--(?:git-dir|work-tree)/.test(w)))
+        out.push(null);
+    }
+    if (at >= 0) {
+      const rest = words.slice(at + 1);
+      const dash = rest.indexOf("--");
+      const before = dash < 0 ? rest : rest.slice(0, dash);
+      if (!isRecursiveForce(before.filter((x) => x.startsWith("-")))) continue;
+      if (words.slice(0, k).some((x) => baseName(x) === "xargs")) out.push(null);
+      out.push(
+        ...before.filter((x) => !x.startsWith("-")),
+        ...(dash < 0 ? [] : rest.slice(dash + 1)),
+      );
+    } else if (name === "find") {
+      let j = k + 1;
+      while (/^-(?:[HLP]|O\d*|D)$/.test(words[j] ?? "")) j += words[j] === "-D" ? 2 : 1;
+      const from = j;
+      while (j < words.length && !/^[-(!)]/.test(words[j])) j++;
+      const rest = words.slice(j);
+      const rm = (x, i) => FIND_EXEC.has(x) && baseName(rest[i + 1] ?? "") === "rm";
+      if (rest.includes("-delete") || rest.some(rm))
+        out.push(...(j > from ? words.slice(from, j) : ["."]).map((under) => ({ under })));
     }
   }
   return out;
 }
+
+/**
+ * Where each recursive delete (`deletedPaths`) lands (`rmPlace`), memoised per command. `walk` follows `cd`; a
+ * relative operand where the directory is unknown denies.
+ */
+const rmPlaces = (c, ctx) => ctx.memo(`rm\0${c}`, () => rmScan(c, ctx));
+function rmScan(c, ctx) {
+  const out = [];
+  for (const [text, start] of scanBases(c, ctx.cwd))
+    for (const { words, dirs } of walk(text, start))
+      for (const t of deletedPaths(words))
+        for (const dir of dirs)
+          out.push(
+            t === null ? "deny" : t.under ? rmPlace(t.under, dir, ctx, true) : rmPlace(t, dir, ctx),
+          );
+  return out;
+}
 /** Build output and caches, regenerated by a build or `pnpm install`: removable in any worktree. */
 const REGENERABLE = /^(?:node_modules|dist|\.turbo|\.stackra|coverage|\.cache)$/;
+/** `w` with its brace expansions (`{a,b}`, nested too), or null past 64 words. */
+function braces(w) {
+  const m = /\{([^{}]*,[^{}]*)\}/.exec(w);
+  if (!m) return [w];
+  const out = [];
+  for (const alt of m[1].split(",")) {
+    const more = braces(w.slice(0, m.index) + alt + w.slice(m.index + m[0].length));
+    if (more === null || out.push(...more) > 64) return null;
+  }
+  return out;
+}
+/**
+ * A glob segment as a regex: `*`, `?` and `[…]`. `dots` lets a wildcard match a leading dot (deny-leaning for
+ * `rm`); the shell's own globbing does not. `any` is what one wildcard character may be.
+ */
+function globRx(seg, { dots = true, any = "." } = {}) {
+  const body = seg
+    .replace(/\[\^/g, "[!")
+    .replace(/[.+^${}()|\\]/g, "\\$&")
+    .replace(/\*+/g, `${any}*`)
+    .replace(/\?/g, any)
+    .replace(/\[!/g, "[^");
+  try {
+    return new RegExp(`^${dots || seg.startsWith(".") ? "" : "(?!\\.)"}${body}$`);
+  } catch {
+    return new RegExp(`^${seg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`); // an unclosed `[` is literal
+  }
+}
+/**
+ * The paths a word's glob expands to from `dir`, one segment at a time with `readdirSync` (symlinks followed, as
+ * the shell does); null past 1000. shortcut: zsh `**` is read as `*`, one level; deeper zsh matches never follow a
+ * symlink and stay under a checked one.
+ */
+function expandGlob(dir, t) {
+  if (!/[*?[]/.test(t)) return [t];
+  let found = [""];
+  const segs = t.split("/");
+  for (let k = 0; k < segs.length; k++) {
+    const slash = k === 0 ? "" : "/";
+    if (!/[*?[]/.test(segs[k])) {
+      found = found.map((p) => p + slash + segs[k]);
+      continue;
+    }
+    const rx = globRx(segs[k]);
+    const next = [];
+    for (const p of found) {
+      let names = [];
+      try {
+        names = readdirSync(physical(dir, p ? `${p}/` : t.startsWith("/") ? "/" : "./"));
+      } catch {
+        // an unreadable directory matches nothing, as in the shell
+      }
+      next.push(...names.filter((n) => rx.test(n)).map((n) => p + slash + n));
+    }
+    if (next.length > 1000) return null;
+    found = next;
+  }
+  return found;
+}
+/**
+ * Where path `t` lands from `dir` as the kernel walks it: every symlink before the last segment followed (`l/..`
+ * is the parent of l's target, not `.`), and the last one too when `t` ends in `/`, `/.` or `/..`; rm removes a
+ * final symlink itself.
+ */
+function physical(dir, t) {
+  let cur = t.startsWith("/") ? "/" : dir;
+  for (const seg of t.split("/")) {
+    if (seg === "" || seg === ".") continue;
+    cur = seg === ".." ? dirname(realDir(cur)) : join(realDir(cur), seg);
+  }
+  return /(?:^|\/)(?:\.\.?)?$/.test(t) ? realDir(cur) : join(realDir(dirname(cur)), basename(cur));
+}
 /**
  * Where `rm -rf <t>`, run in `dir` (null when unknown), lands: "ok" strictly inside this session's own checkout or
  * the scratchpad; "nested" strictly inside a linked worktree nested in that checkout (another agent's, or this
  * session's reached by `cd` from the main checkout), unless it is build output; "deny" anywhere else, a nested
- * worktree itself, or a path that contains one.
+ * worktree itself, or a path that contains one. Braces and globs are expanded first; `~`, `$` and a bare `*` deny.
+ * `under`: only what is below `t` goes (`find t -delete`), so `t` may be the checkout or scratchpad root itself.
  */
-function rmPlace(t, dir, ctx) {
+function rmPlace(t, dir, ctx, under = false) {
   if (/^[~$]/.test(t) || /[$`]/.test(t) || /^(\.\/)?\.?\*$/.test(t)) return "deny";
   if (!t.startsWith("/") && dir === null) return "deny";
-  // The entry itself, not a symlink's target: rm removes the link.
-  const path = resolve(dir ?? "/", t);
-  const real = join(realDir(dirname(path)), basename(path));
+  const paths = [];
+  for (const w of braces(t) ?? [null]) {
+    const found = w === null ? null : expandGlob(dir ?? "/", w);
+    if (found === null) return "deny";
+    paths.push(...found);
+  }
+  const places = paths.map((p) => landing(physical(dir ?? "/", p), ctx, under));
+  return places.includes("deny") ? "deny" : places.includes("nested") ? "nested" : "ok";
+}
+/** The place (`rmPlace`) of one physical path. */
+function landing(real, ctx, under) {
   const own = ctx.own();
-  const inside = [own.root, scratchRoot()].some((r) => r && real.startsWith(r + sep));
-  // A glob reaches everything under its static part (`.claude/worktrees/*`).
-  const probe = /[*?[]/.test(real) ? dirname(real.slice(0, real.search(/[*?[]/) + 1)) : real;
-  if (!inside) return "deny";
-  if (own.nested.some((w) => w === probe || w.startsWith(probe + sep))) return "deny";
-  if (!own.nested.some((w) => probe.startsWith(w + sep))) return "ok";
+  const inside = (r) => r && (real.startsWith(r + sep) || (under && real === r));
+  if (![own.root, scratchRoot()].some(inside)) return "deny";
+  if (own.nested.some((w) => w === real || w.startsWith(real + sep))) return "deny";
+  if (!own.nested.some((w) => real.startsWith(w + sep))) return "ok";
   return REGENERABLE.test(basename(real)) ? "ok" : "nested";
 }
 
@@ -474,7 +725,7 @@ function pushesMain(c, ctx) {
   return scanBases(c, ctx.cwd).some(([t, base]) =>
     gitCommands(t, base).some((g) => {
       if (g.sub !== "push") return false;
-      if (g.args.some((a) => a === "--all" || a === "--mirror")) return true;
+      if (g.args.some((a) => /^--(?:all|branches|mirror)$/.test(a))) return true;
       const refs = pushRefs(g.args);
       if (refs.some((r) => refspecDest(r) === "main")) return true;
       const implicit = refs.length <= 1 || refs.slice(1).every((r) => r === "HEAD");
@@ -531,7 +782,9 @@ function pushRefusal(c, ctx) {
       for (const r of refs.filter((x) => !isTagRef(x))) {
         const [src, dst, ...more] = r.split(":");
         const ok =
-          (src === "HEAD" || own.has(src)) && (dst === undefined || own.has(dst)) && !more.length;
+          (src === "HEAD" || src === "@" || own.has(src)) &&
+          (dst === undefined || own.has(dst.replace(/^heads\//, ""))) &&
+          !more.length;
         if (!ok)
           return `Push guard: \`pnpm bot:git\` pushes only \`HEAD\` or the current branch (${branch || "detached"}), never another branch. Use \`pnpm bot:git -- push origin HEAD\`.`;
       }
@@ -663,20 +916,72 @@ const botMerges = (c) =>
     ),
   );
 
-/** A label write of `owner-approved` / `owner-approval`: `--add-label` / `--label`, `issues/<n>/labels`, `labels[]`. */
-const LABEL_WRITE =
-  /--(?:add-)?label(?:=|\s+)\S*owner-approv|\bissues\/\d+\/labels\b.*owner-approv|labels\[\]\S*owner-approv/i;
+/** gh flags whose value is prose (a title, a body, a description), and the label flags (`-l`, `--add-label`). */
+const GH_PROSE = /^(?:-t|--title|-b|--body|-d|--description)$/;
+const GH_PROSE_JOINED = /^--(?:title|body|description)=/;
+const GH_LABEL = /^(?:-l|--label|--add-label)$/;
+const GH_LABEL_JOINED = /^(?:--label=|--add-label=|-l.)/;
+/** An `api` path, field or GraphQL document that writes labels. */
+const API_LABELS =
+  /(?:^|\/|%2F)labels\b|\blabels(?:\[\])?=|\blabelIds\b|Labels?\w*Labelable\b|\b(?:create|update)Label\b/i;
+const OWNER_LABEL = /owner-approv/i;
+/** The method of a `gh api` call: `-X x`, `-Xx`, `--method x`, `--method=x`; GET when a field-less call names none. */
+function apiWrites(args) {
+  let method = "";
+  args.forEach((w, k) => {
+    const m = /^(?:-X|--method=?)(.*)$/.exec(w);
+    if (m) method = (m[1] || args[k + 1] || "").toUpperCase();
+  });
+  const fields = args.some((w) => /^-[a-zA-Z]*[fF]|^--(?:field|raw-field|input)\b/.test(w));
+  return method ? method !== "GET" : fields;
+}
+/**
+ * ADR 0230 rule 4 tripwire (STA-330 review): a gh command that writes labels (`pr|issue create|edit`, `label
+ * create|edit|clone`, an `api` label write) and names `owner-approved` anywhere but in a title, body or
+ * description (`-l`, `--label`, `--add-label`, `=` joined, comma lists, quoted, `labels[]=`, a GraphQL document),
+ * or whose label value is computed (`$(…)`, backticks, a variable). pr-merge checks who added the label.
+ */
+function writesOwnerLabel(c) {
+  for (const t of [dropMessages(c), ...nestedRaw(c).map(dropMessages)])
+    for (const { words, dyn } of simpleCommands(t)) {
+      const g = words.findIndex((w) => baseName(w) === "gh" || /^bot:(?:gh|review)$/.test(w));
+      if (g < 0) continue;
+      let j = g + 1;
+      while (j < words.length && /^(?:--|-R|--repo(?:=.*)?)$/.test(words[j]))
+        j += /^(?:-R|--repo)$/.test(words[j]) ? 2 : 1;
+      const [sub, verb] = words.slice(j, j + 2);
+      const args = words.slice(j + 2);
+      const adyn = dyn.slice(j + 2);
+      const edits =
+        (["pr", "issue"].includes(sub) && ["create", "edit"].includes(verb)) ||
+        (sub === "label" && ["create", "edit", "clone"].includes(verb));
+      if (sub === "api") {
+        const all = words.slice(j + 1);
+        if (apiWrites(all) && all.some((w) => API_LABELS.test(w)))
+          if (all.some((w, k) => OWNER_LABEL.test(w) || dyn[j + 1 + k])) return true;
+        continue;
+      }
+      if (!edits) continue;
+      for (let k = 0; k < args.length; k++) {
+        const w = args[k];
+        if (GH_PROSE.test(w)) k++;
+        else if (GH_PROSE_JOINED.test(w)) continue;
+        else if (OWNER_LABEL.test(w)) return true;
+        else if (GH_LABEL.test(w) && adyn[k + 1]) return true;
+        else if ((GH_LABEL_JOINED.test(w) || sub === "label") && adyn[k]) return true;
+      }
+    }
+  return false;
+}
 /** A `-b` / `--body` value that ends in the owner's approval token. */
 const APPROVE_BODY =
   /(?:^|\s)(?:-b|--body)(?:=|\s+)(?:"[^"]*owner-approval\s*"|'[^']*owner-approval\s*'|\S*owner-approval)(?=\s|$)/i;
 /**
- * ADR 0230 rule 4 tripwire: a `gh` command that writes the owner's label, or an approving `pr review` whose body
- * ends in `owner-approval`. Titles and bodies that only mention the words are prose.
+ * ADR 0230 rule 4 tripwire: a gh command that writes the owner's label (`writesOwnerLabel`), or an approving
+ * `pr review` whose body ends in `owner-approval`. Titles and bodies that only mention the words are prose.
  */
 const writesOwnerApproval = (c) =>
-  [dropMessages(c), ...nestedRaw(c)].some((t) =>
-    segments(t).some((s) => /\bgh\b/.test(s) && LABEL_WRITE.test(s)),
-  ) ||
+  writesOwnerLabel(c) ||
   [c, ...nestedRaw(c)].some((t) =>
     segments(t).some(
       (s) =>
@@ -721,22 +1026,43 @@ const computedName = (c) =>
     }),
   );
 
-/** Running the reviewer wrapper: `pnpm bot:review`, or `bot-gh.mjs review` directly. */
-const BOT_REVIEW =
-  /(?:^|[\s(])(?:\S*\/)?(?:pnpm|npm|yarn)\s+(?:-\S+\s+)*(?:run\s+)?bot:review\b|\bbot-gh\.mjs\s+review\b/;
+/** Package-manager options whose value is the next word (`pnpm -C dir`, `pnpm --filter x`). */
+const PM_VALUE = /^(?:-C|-F|--filter|--dir|--prefix|-w|--workspace|--cwd)$/;
+/**
+ * Running the reviewer wrapper: `bot:review` as a package script at a command name (`pnpm [options] [run]
+ * bot:review`, wrappers and `$(…)` included), or `bot-gh.mjs review` directly.
+ */
+const runsBotReview = (t) =>
+  /\bbot-gh\.mjs\s+review\b/.test(t) ||
+  simpleCommands(t).some(({ words }) =>
+    nameIndexes(words).some((k) => {
+      let j = k;
+      if (["pnpm", "npm", "yarn"].includes(baseName(words[k]))) {
+        for (j = k + 1; (words[j] ?? "").startsWith("-");) j += PM_VALUE.test(words[j]) ? 2 : 1;
+        if (["run", "run-script"].includes(words[j])) j++;
+      }
+      return words[j] === "bot:review";
+    }),
+  );
 
+/** A command that prints the whole environment: `printenv`, `env`, `export -p`, `declare -x`, bare `set`. */
+const PRINTS_ENV = atName(
+  String.raw`(?:printenv|env(?:\s+-[0v]+|\s+-u\s+\S+)*|set|(?:export|declare|typeset)(?:\s+-[a-zA-Z]*[xp][a-zA-Z]*)?)\s*(?:$|[|;&)\n<>]|\d+>|&>)`,
+);
 /** `ps` listing process environments (`-E`, or a BSD option cluster with `e`: `ps eww`), `launchctl procinfo`. */
 const listsProcessEnv = (c) =>
   runnable(c).some((t) =>
-    segments(t).some((s) => {
-      if (new RegExp(BARE + String.raw`launchctl\s+procinfo\b`).test(s)) return true;
-      const m = new RegExp(BARE + String.raw`ps(?:\s+(.*))?$`).exec(s);
-      if (!m) return false;
-      const args = (m[1] ?? "").split(/\s+/).filter(Boolean);
-      return (
-        args.some((a) => /^-[a-zA-Z]*E/.test(a)) || /^[a-zA-Z]*e[a-zA-Z]*$/.test(args[0] ?? "")
-      );
-    }),
+    simpleCommands(t).some((s) =>
+      nameIndexes(s.words).some((k) => {
+        const [name, ...args] = s.words.slice(k);
+        const b = name.split("/").pop();
+        if (b === "launchctl") return args[0] === "procinfo";
+        if (b !== "ps") return false;
+        return (
+          args.some((a) => /^-[a-zA-Z]*E/.test(a)) || /^[a-zA-Z]*e[a-zA-Z]*$/.test(args[0] ?? "")
+        );
+      }),
+    ),
   );
 
 /**
@@ -770,9 +1096,17 @@ const RULES = [
   },
   {
     rx: (c) =>
-      runs(
-        c,
-        /\binfisical\b[^|;&\n]*?\s(?:user\s+get\s+token\b|token\s+renew\b|login\b[^|;&\n]*\s--plain\b)/,
+      runs(c, (t) =>
+        simpleCommands(t).some((s) => {
+          const k = s.words.findIndex((w) => w.split("/").pop() === "infisical");
+          const rest = s.words.slice(k + 1);
+          const line = ` ${rest.join(" ")} `;
+          return (
+            k >= 0 &&
+            (/ user get token | token renew /.test(line) ||
+              (rest.includes("login") && rest.some((w) => /^--plain(?:=|$)/.test(w))))
+          );
+        }),
       ),
     why: "Secrets guard: `infisical user get token`, `infisical token renew` and `infisical login --plain` print an Infisical access token, which reads every secret. Nobody reads a token; the pnpm scripts that need one run under `infisical run` themselves.",
   },
@@ -780,9 +1114,8 @@ const RULES = [
     rx: (c) =>
       runs(
         c,
-        new RegExp(
-          BARE +
-            String.raw`security\s+(?:find-(?:generic|internet)-password|dump-keychain|export)\b`,
+        atName(
+          String.raw`security\s+(?:find-(?:generic|internet)-password|dump-keychain|export)\b`,
         ),
       ),
     why: "Secrets guard: `security find-generic-password`, `find-internet-password`, `dump-keychain` and `export` read the owner's keychain, in any form (`/usr/bin/security`, `timeout`, `pnpm exec`). Agents never read a credential.",
@@ -815,13 +1148,21 @@ const RULES = [
     why: "Secrets guard: `wrangler secret put/bulk` are a human's to run, same as `encore secret set`. Declare the secret and name it in your report; a human sets the value per environment.",
   },
   {
-    // Any word of the text the shell runs that names a secret file (`isSecretPath`): `cat x/.env`, `base64 .env`,
-    // `< .env cat`, `source .env`, `cp a .env`, `cat key.pem`, `cat ~/.git-credentials`. Quoted prose is blanked
-    // (`runs`), so a commit message or a grep pattern may name `.env`; `.env.example` and `*.example` are templates.
+    // Any word of the text the shell runs that names a secret file (`namesSecret`): `cat x/.env`, `base64 .env`,
+    // `< .env cat`, `source .env`, `cp a .env`, `cat key.pem`, `cat ~/.git-credentials`, `cat .env*`. A quoted
+    // argument is checked whole (`cat "$HOME/.npmrc"`), so a grep pattern `"no .env files"` is no path; only
+    // message values (`-m`, `--title`, `--body`, a `linear comment`) and heredoc bodies are prose (STA-330 review).
+    // `.env.example` and `*.example` are templates.
     rx: (c) => {
-      const hit = runnable(c)
-        .flatMap((t) => t.split(/[\s=<>()|;&\x60'"]+/))
-        .find(isSecretPath);
+      const words = [dropMessages(c), ...nestedRaw(c).map(dropMessages)].flatMap((t) =>
+        simpleCommands(t).flatMap((s) => [...s.words, ...s.redirects.map((r) => r.target)]),
+      );
+      const hit = [
+        ...new Set([
+          ...runnable(c).flatMap((t) => t.split(/[\s=<>()|;&\x60'"]+/)),
+          ...words.flatMap((w) => [w, ...w.split("=").slice(1)]),
+        ]),
+      ].find(namesSecret);
       return hit
         ? `Secrets guard: \`${hit}\` holds secret values; a command never reads, copies, writes or prints it, and never creates a .env file. Secrets come from Infisical (ADR 0173); application secrets use Encore secret().`
         : false;
@@ -829,11 +1170,8 @@ const RULES = [
     why: "",
   },
   {
-    scan: "bare",
-    rx: new RegExp(
-      CMDPOS +
-        String.raw`(?:printenv|env(?:\s+-[0v]+|\s+-u\s+\S+)*|set|(?:export|declare|typeset)(?:\s+-[a-zA-Z]*[xp][a-zA-Z]*)?)\s*(?:$|[|;&)\n])`,
-    ),
+    // A redirection ends it too: `printenv > f` writes every value where a later `cat` reads it.
+    rx: (c) => runs(c, PRINTS_ENV),
     why: "Printing the whole environment (`printenv`, `env`, `export -p`, `declare -x`, bare `set`) can leak an injected token into the transcript. Echo the single variable you need, without its value if it is a secret.",
   },
   {
@@ -860,18 +1198,15 @@ const RULES = [
     rx: (c) =>
       runs(
         c,
-        new RegExp(
-          BARE +
-            String.raw`wrangler\s+(?:[^|;&\n]*\s)?(?:deploy|rollback|delete|secret)\b|` +
-            BARE +
-            String.raw`wrangler\b[^|;&\n]*\s--remote\b`,
+        atName(
+          String.raw`wrangler\s+(?:[^|;&\n]*\s)?(?:deploy|rollback|delete|secret)\b|wrangler\b[^|;&\n]*\s--remote\b`,
         ),
       ),
     decision: "ask",
     why: "`wrangler deploy`, `rollback`, `delete`, `secret` and `--remote` change Cloudflare with the owner's login; the owner confirms it.",
   },
   {
-    rx: (c) => runs(c, new RegExp(BARE + String.raw`eas(?:\s|$)`)),
+    rx: (c) => runs(c, atName("eas" + END)),
     decision: "ask",
     why: "`eas` builds, submits and updates on the owner's Expo login; the owner confirms it.",
   },
@@ -879,11 +1214,8 @@ const RULES = [
     rx: (c) =>
       runs(
         c,
-        new RegExp(
-          BARE +
-            String.raw`(?:npx|pnpx|bunx)(?:\s|$)|` +
-            BARE +
-            String.raw`(?:pnpm\s+(?:-\S+\s+)*dlx|npm\s+(?:-\S+\s+)*(?:exec|x))(?:\s|$)`,
+        atName(
+          String.raw`(?:npx|pnpx|bunx|pnpm\s+(?:-\S+\s+)*dlx|npm\s+(?:-\S+\s+)*(?:exec|x))` + END,
         ),
       ),
     decision: "ask",
@@ -906,8 +1238,16 @@ const RULES = [
   },
   { rx: pushRefusal, why: "" },
   {
-    rx: (c) =>
-      runs(c, /\bbot:git\b.*\bpush\b.*(?:\s--(?:tags|follow-tags)\b|\srefs\/tags\/|\s[^\s:]*@\d)/),
+    rx: (c, ctx) =>
+      scanBases(c, ctx.cwd).some(([t, start]) =>
+        gitCommands(t, start).some(
+          (g) =>
+            g.bot &&
+            g.sub === "push" &&
+            (g.args.some((a) => /^--(?:tags|follow-tags)$/.test(a)) ||
+              pushRefs(g.args).slice(1).some(isTagRef)),
+        ),
+      ),
     decision: "ask",
     why: "A bot push of tags (`--tags`, `--follow-tags`, `refs/tags/*`, `<package>@x`) publishes a release marker no ruleset protects; the owner confirms it.",
   },
@@ -955,7 +1295,7 @@ const RULES = [
     // The binary by path (`/usr/lib/git-core/git-send-pack`) is the same plumbing as `git send-pack`.
     rx: (c) =>
       runs(c, new RegExp(GIT + String.raw`(?:send|receive|fetch|upload)-pack\b`)) ||
-      runs(c, new RegExp(BARE + String.raw`git-(?:send|receive|fetch|upload)-pack\b`)),
+      runs(c, atName(String.raw`git-(?:send|receive|fetch|upload)-pack\b`)),
     why: "`git send-pack`, `receive-pack`, `fetch-pack` and `upload-pack` (and the `git-*-pack` binaries) are pack plumbing that bypasses the push guard. Use `pnpm bot:git -- push origin HEAD` or `pnpm bot:git -- fetch origin`.",
   },
   {
@@ -1045,7 +1385,7 @@ const RULES = [
     why: "AI-REVIEW verdicts are posted only by the reviewer identity: `pnpm bot:review -- pr comment <n> --body-file <f>`, from a reviewer agent, never on the reviewer's own work.",
   },
   {
-    rx: (c, ctx) => runs(c, BOT_REVIEW) && !REVIEWER_AGENTS.has(ctx.agentType),
+    rx: (c, ctx) => !REVIEWER_AGENTS.has(ctx.agentType) && runs(c, runsBotReview),
     why: "`pnpm bot:review` posts as the reviewer identity, so only a reviewer agent runs it (the agents whose source sets `reviewer: true`, ADR 0230). A builder or the lead asks a reviewer agent for the verdict. Tripwire until the CI reviewer posts verdicts.",
   },
   {
@@ -1098,6 +1438,32 @@ function forms(t) {
   return [...new Set([t, lookThroughRunners(t), ...(d ? [d, lookThroughRunners(d)] : [])])];
 }
 
+/**
+ * Substitutions nested deeper than this are not read: every level is scanned again, so a deeper command would
+ * cost more than the hook's time limit, and the hook fails open when it is killed (STA-330 review).
+ */
+const MAX_DEPTH = 16;
+const TOO_DEEP = `The command nests \`$(…)\`, \`<(…)\` or backtick substitutions more than ${MAX_DEPTH} levels deep, or script strings (\`sh -c\`, \`eval\`) more than ${MAX_SCRIPTS}, which the guard does not read. Split it into plain commands.`;
+/** The deepest nesting of `$(`, `<(`, `>(` and backtick bodies in `c`, quotes ignored (deny-leaning). */
+function substitutionDepth(c) {
+  const stack = []; // true for a substitution's `(`, false for a plain one
+  let depth = 0;
+  let max = 0;
+  let tick = false;
+  for (let i = 0; i < c.length; i++) {
+    const ch = c[i];
+    if (ch === "\\") i++;
+    else if (ch === "`") tick = !tick;
+    else if (ch === "(") {
+      const sub = "$<>".includes(c[i - 1] ?? "");
+      stack.push(sub);
+      if (sub) depth++;
+    } else if (ch === ")" && stack.pop()) depth--;
+    max = Math.max(max, depth + (tick ? 1 : 0));
+  }
+  return max;
+}
+
 /** The evaluation context: the shell's directory, the subagent type, the session's own checkout (lazy) and a memo. */
 function context(cwd, agentType) {
   let own;
@@ -1117,8 +1483,16 @@ function context(cwd, agentType) {
  * @param {{ cwd?: string, agentType?: string }} [options] the shell's directory and the subagent type (`agent_type`)
  */
 export function decideBash(raw, { cwd = process.cwd(), agentType = "" } = {}) {
+  clearCaches();
+  if (substitutionDepth(raw) > MAX_DEPTH) return { decision: "deny", reason: TOO_DEEP };
   const cmd = stripHeredocs(raw);
   const ctx = context(cwd, agentType);
+  tooDeep = false;
+  for (const text of forms(cmd)) {
+    runnable(text);
+    nestedRaw(text);
+  }
+  if (tooDeep) return { decision: "deny", reason: TOO_DEEP };
   const check = (rule, text) => {
     const target = rule.scan === "bare" ? blank(text) : text;
     const hit = typeof rule.rx === "function" ? rule.rx(target, ctx) : rule.rx.test(target);
@@ -1154,17 +1528,57 @@ const SECRET_FILE = [
   /(^|\/)\.(?:ci-env|sentryclirc)$/i,
   /(^|\/)[^/]*\.secrets[^/]*$/i,
   /\.(?:pem|key)$/i,
+  /(^|\/)id_(?:rsa|dsa|ecdsa|ed25519)(?:_[^/.]*)?$/,
   /(^|\/)\.infisical([^/]*$|\/)/,
 ];
 const SECRET_OK = /(^|\/)(\.env(\.[^/]*)?\.example|\.infisical\.(yaml|json))$/;
+/** A file name per `SECRET_FILE` and `HOME_SECRET` entry, for globs (`namesSecret`). */
+const SECRET_NAMES = [".env", ".env.local", ".dev.vars", ".ci-env", ".sentryclirc"];
+SECRET_NAMES.push("app.secrets.json", "tls.pem", "tls.key", ".infisical", "id_rsa", "id_ed25519");
+const HOME_SECRETS = [".config/gh/hosts.yml", ".git-credentials", ".ssh/id_rsa", ".ssh/id_ed25519"];
+HOME_SECRETS.push(
+  ".aws/credentials",
+  ".npmrc",
+  ".netrc",
+  ".docker/config.json",
+  ".expo/state.json",
+);
+HOME_SECRETS.push(".wrangler/config/default.toml", ".stackra/secrets-confirm.key");
 /** Credential files under home (the settings Read denies): gh, git, ssh, cloud, registry and CLI logins. */
 const HOME_SECRET =
   /^(?:\.config\/gh\/|\.git-credentials$|\.ssh\/id_|\.aws\/|\.npmrc$|\.netrc$|\.docker\/config\.json$|\.wrangler\/|Library\/Preferences\/\.wrangler\/|\.expo\/|Library\/Application Support\/encore\/|\.stackra\/secrets-confirm\.key$)/;
+/**
+ * True when a command word names a secret file (`isSecretPath`), after brace expansion, or is a glob that could
+ * match one (`.env*`, `.e?v`, `*.pem`, `~/.ssh/id_*`).
+ */
+function namesSecret(w) {
+  for (const b of braces(w) ?? [w]) {
+    if (isSecretPath(b)) return true;
+    const p = unquote(b).replace(/^(?:~|\$HOME|\$\{HOME\})(?=\/)/, HOME_DIR);
+    if (!/[*?[]/.test(p)) continue;
+    const cut = p.lastIndexOf("/") + 1;
+    const shell = { dots: false, any: "[^/]" };
+    const last = globRx(p.slice(cut), shell);
+    // A last segment of wildcards only (`*`) matches every name: it names no secret by itself.
+    const named = /[^*?]/.test(p.slice(cut));
+    if (named && SECRET_NAMES.some((n) => last.test(n) && isSecretPath(p.slice(0, cut) + n)))
+      return true;
+    const whole = new RegExp(
+      `^${p
+        .split("/")
+        .map((seg) => globRx(seg, shell).source.slice(1, -1))
+        .join("/")}$`,
+    );
+    if (HOME_SECRETS.some((h) => whole.test(`${HOME_DIR}/${h}`))) return true;
+  }
+  return false;
+}
+
 /** True when `p` names a file that holds secret values (ADR 0173). */
 export function isSecretPath(p) {
   const s = p.trim().replace(/^['"]+|['"]+$/g, "");
-  const home = s.replace(/^(?:~|\$HOME|\$\{HOME\})(?=\/)/, homedir());
-  if (home.startsWith(homedir() + "/") && HOME_SECRET.test(home.slice(homedir().length + 1)))
+  const home = s.replace(/^(?:~|\$HOME|\$\{HOME\})(?=\/)/, HOME_DIR);
+  if (home.startsWith(HOME_DIR + "/") && HOME_SECRET.test(home.slice(HOME_DIR.length + 1)))
     return true;
   return !SECRET_OK.test(s) && SECRET_FILE.some((r) => r.test(s));
 }

@@ -5,6 +5,27 @@
 import { homedir } from "node:os";
 import { resolve } from "node:path";
 
+/** Memo tables, one per scan; `clearCaches` empties them all (`decideBash` does, before each decision). */
+const tables = [];
+export const memoTable = () => {
+  const table = new Map();
+  tables.push(table);
+  return table;
+};
+export const clearCaches = () => tables.forEach((table) => table.clear());
+/**
+ * `f()` for text `c`, computed once per decision: every rule reads the same texts, and a capped table that
+ * emptied itself mid-decision rescanned them all (STA-330 review). The cap is only a safety net for a process
+ * that never clears (results are read, never changed).
+ */
+export function cached(table, c, f) {
+  if (table.has(c)) return table.get(c);
+  if (table.size > 50_000) table.clear();
+  const value = f();
+  table.set(c, value);
+  return value;
+}
+
 const INBOX = "Secrets-inbox";
 const KEY = "secrets-confirm.key";
 
@@ -94,6 +115,11 @@ export function reachesInbox(p, { recursive = false, home = homedir(), cwd } = {
  * (`PATH=.:$PATH f`); zsh alias quoting and global aliases. Upgrade to a real parser if one slips through.
  */
 export function scanShell(c, opts = {}) {
+  // Every rule scans the same texts: memoised (results are read, never changed).
+  return opts.heredoc ? scanTwice(c, opts) : cached(scanCache, c, () => scanTwice(c, opts));
+}
+const scanCache = memoTable();
+function scanTwice(c, opts) {
   const first = scanOnce(c, opts);
   if (!first.joins.length) return { ...first, source: c };
   let source = "";
@@ -383,7 +409,9 @@ const ALIAS_VALUE = /\s*(?:-\w+\s+)*[^\s=;&|]+=(?:'([^']*)'|"((?:\\.|[^"\\])*)"|
  * literal content of a file written then run (`echo … > f && sh f`). Text a shell runs that cannot be read
  * (`curl … | sh`) is `shellInputs(c).opaque`.
  */
-export function scriptStrings(c) {
+export const scriptStrings = (c) => cached(scriptCache, c, () => findScriptStrings(c));
+const scriptCache = memoTable();
+function findScriptStrings(c) {
   const out = [];
   for (const m of c.matchAll(
     new RegExp(String.raw`\b(?:${SHELL_NAME}\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1`, "g"),
@@ -495,16 +523,30 @@ function runsFile(text, base) {
 }
 
 /**
- * Top-level simple commands of `c`: unquoted words with whether each holds an expansion (`dyn`), redirections,
- * whether any expansion (`$`, backtick, `<(…)`) sits outside single quotes (`dynamic`), the operator after it
- * and where that operator ends. Substitution bodies are kept whole inside their word.
+ * Top-level simple commands of `c`: unquoted words with whether each holds an expansion (`dyn`) and where each
+ * starts in `c` (`at`), redirections, whether any expansion (`$`, backtick, `<(…)`) sits outside single quotes
+ * (`dynamic`), the operator after it and where that operator ends. Substitution bodies are kept whole inside their
+ * word. `all` keeps the empty commands too, so every `(` and `)` operator shows.
  */
-export function simpleCommands(c) {
+export const simpleCommands = (c, { all = false } = {}) =>
+  cached(all ? commandsAllCache : commandsCache, c, () => splitCommands(c, all));
+const commandsCache = memoTable();
+const commandsAllCache = memoTable();
+function splitCommands(c, all) {
   const out = [];
-  const fresh = () => ({ words: [], dyn: [], redirects: [], dynamic: false, op: "", end: 0 });
+  const fresh = () => ({
+    words: [],
+    dyn: [],
+    at: [],
+    redirects: [],
+    dynamic: false,
+    op: "",
+    end: 0,
+  });
   let lessEnv = false; // LESSOPEN / LESSCLOSE set in this or an earlier command of the line
   let cur = fresh();
   let word = null;
+  let wordAt = 0;
   let wordDyn = false;
   let redirect = null;
   const end = () => {
@@ -513,6 +555,7 @@ export function simpleCommands(c) {
     else {
       cur.words.push(word);
       cur.dyn.push(wordDyn);
+      cur.at.push(wordAt);
     }
     word = null;
     wordDyn = false;
@@ -541,6 +584,7 @@ export function simpleCommands(c) {
   };
   for (let i = 0; i < c.length; i++) {
     const ch = c[i];
+    if (word === null) wordAt = i;
     if (ch === "\\") word = (word ?? "") + (c[++i] ?? "");
     else if (ch === "'") {
       const j = c.indexOf("'", i + 1);
@@ -579,7 +623,7 @@ export function simpleCommands(c) {
     else word = (word ?? "") + ch;
   }
   push("", c.length);
-  return out.filter((s) => s.words.length || s.redirects.length);
+  return all ? out : out.filter((s) => s.words.length || s.redirects.length);
 }
 
 /**
@@ -1117,7 +1161,21 @@ export function shellInputs(c) {
  * `''` is not mistaken for an unknown script.
  */
 export const runsOpaque = (c) =>
-  shellInputs(c).opaque || [...rawSubstitutions(c), ...scriptStrings(c)].some(runsOpaque);
+  cached(opaqueCache, c, () => {
+    // Script strings nested past 8 levels are not read: unreadable, so opaque (STA-330 review).
+    if (opaqueDepth >= 8) return true;
+    opaqueDepth++;
+    try {
+      // `rawSubstitutions` already holds every depth: recursing into each body too was exponential.
+      return [c, ...rawSubstitutions(c)].some(
+        (t) => shellInputs(t).opaque || scriptStrings(t).some(runsOpaque),
+      );
+    } finally {
+      opaqueDepth--;
+    }
+  });
+const opaqueCache = memoTable();
+let opaqueDepth = 0;
 
 /**
  * The safety net (STA-254): every `$(…)`, `<(…)`, `>(…)` and backtick body at any depth, found by balanced
@@ -1224,6 +1282,22 @@ const COMMANDS = {
   awk: AWK,
   gawk: AWK,
   perl: { program: /^-[a-zA-Z]*[eE]$/, first: "path" }, // `-e`, `-ne`, `-lne`; else the first word is a script
+  // fd's first positional is its pattern; the paths follow (none: the current directory).
+  fd: {
+    value: [
+      "-e",
+      "--extension",
+      "-t",
+      "--type",
+      "-E",
+      "--exclude",
+      "-d",
+      "--max-depth",
+      "-S",
+      "--size",
+    ],
+    first: "pattern",
+  },
 };
 /** Flags whose value is prose (an issue title, a commit message), never a path, unless it runs a command. */
 const PROSE_FLAG = /^(?:--title|--body|--message|-m)$/;
@@ -1295,6 +1369,8 @@ export function commandReachesInbox(cmd, { cwd, home = homedir() } = {}) {
   for (const words of lex(cmd)) {
     const { name, paths, texts, operands } = classify(words);
     if (texts.some((w) => LITERAL.test(w))) return true;
+    // `mdfind` without `-onlyin` searches the whole Spotlight index, home included.
+    if (name === "mdfind" && !operands.some((w) => /^-onlyin$/i.test(w))) return true;
     const recursive =
       RECURSIVE.test(paths.join(" ")) ||
       ["tree", "fd", "mdfind"].includes(name) ||

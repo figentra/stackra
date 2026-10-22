@@ -137,6 +137,9 @@ for (const file_path of [
   `${homedir()}/.config/gh/hosts.yml`,
   "~/.ssh/id_ed25519",
   "$HOME/.aws/credentials",
+  // STA-330 review round 1: a private key copied anywhere, by its ssh name
+  "/r/deploy/id_rsa",
+  "/r/id_ed25519_ci",
 ])
   test(`deny Read: ${file_path}`, () => assert.equal(decide("Read", { file_path }), true));
 for (const file_path of [
@@ -145,5 +148,7 @@ for (const file_path of [
   "/r/.npmrc",
   "/r/.infisical.yaml",
   "/r/apps/console/src/env.ts",
+  "/r/deploy/id_rsa.pub",
+  "/r/src/valid_id_rsa_check.ts",
 ])
   test(`allow Read: ${file_path}`, () => assert.equal(decide("Read", { file_path }), false));

@@ -104,6 +104,12 @@ test("STA-216: aliases, file-sourced GraphQL and encoded merge paths are refused
     ["git", ["-c", "include.path=/tmp/x", "status"]],
     ["git", ["--config-env=alias.x=V", "x"]],
     ["gh", ["alias", "set", "x", "pr merge"]],
+    // STA-330 review: the real arguments, after the shell expanded `$(printf owner-approved)` or "a, b"
+    ["gh", ["pr", "edit", "113", "--add-label", "design, owner-approved"]],
+    ["gh", ["-R", "figentra/stackra", "pr", "create", "-l", "design", "-l", "OWNER-APPROVED"]],
+    ["gh", ["issue", "edit", "4", "--add-label=owner-approved"]],
+    ["gh", ["label", "edit", "design", "--name", "owner-approved"]],
+    ["gh", ["api", "repos/x/y/issues/4/labels", "-f", "labels[]=owner-approved"]],
     ["gh", ["api", "graphql", "-F", "query=@q.graphql"]],
     ["gh", ["api", "-X", "POST", "graphql", "--input", "q.json"]],
     ["gh", ["api", "graphql", "-f", "query=@q.graphql"]],
@@ -113,6 +119,9 @@ test("STA-216: aliases, file-sourced GraphQL and encoded merge paths are refused
     ["git", ["-c", "user.name=x", "status"]],
     ["gh", ["api", "graphql", "-f", "query=query { viewer { login } }"]],
     ["gh", ["pr", "create", "--body", "alias set"]],
+    ["gh", ["pr", "create", "--title", "the owner-approved label", "--body", "owner-approved"]],
+    ["gh", ["pr", "list", "--label", "owner-approved"]],
+    ["gh", ["api", "repos/x/y/issues/4/comments", "-f", "body=the owner-approved label"]],
   ])
     assert.equal(unsafeArgs(tool, args), null, `${tool} ${args.join(" ")}`);
   for (const path of [

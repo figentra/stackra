@@ -9,6 +9,7 @@ import {
   gh,
   graphql,
   OWNER,
+  ownerLabelled,
   parseArgs,
   patchId,
   REVIEWER,
@@ -205,7 +206,64 @@ test("design / risk:R3 need an owner approval on the head SHA or owner-approved"
   assert.match(blockers(pr({ labels }), green, {}, ok, notOwner).join(), /owner approval/);
   assert.deepEqual(blockers(pr({ labels }), green, {}, ok, [review({ body: "" })]), []);
   const labelled = [{ name: "design" }, { name: "owner-approved" }];
-  assert.deepEqual(blockers(pr({ labels: labelled }), green, {}, ok), []);
+  const byOwner = [labelEvent("labeled", OWNER, "User")];
+  assert.deepEqual(blockers(pr({ labels: labelled }), green, {}, ok, [], undefined, byOwner), []);
+});
+
+// Shapes as the REST issue events API returns them.
+const labelEvent = (event, login, type, created_at = T0, name = "owner-approved", id = 1) => ({
+  id,
+  event,
+  label: { name },
+  actor: { login, type },
+  created_at,
+});
+
+test("STA-330 review: owner-approved counts only when the owner added it and it was not removed since", () => {
+  const labels = [{ name: "design" }, { name: "owner-approved" }];
+  const ok = [reviewer(PASS)];
+  const merge = (events) => blockers(pr({ labels }), green, {}, ok, [], undefined, events);
+  assert.deepEqual(merge([labelEvent("labeled", OWNER, "User")]), []);
+  // the label on the PR alone, or added by anyone but the owner, never counts
+  for (const events of [
+    [],
+    [labelEvent("labeled", "stackra-bot[bot]", "Bot")],
+    [labelEvent("labeled", "someone", "User")],
+    [labelEvent("labeled", `${OWNER}[bot]`, "Bot")],
+    [labelEvent("labeled", OWNER, "Bot")],
+    [labelEvent("labeled", OWNER, "User", T0, "design")],
+    // the owner's label removed, then a bot put it back
+    [
+      labelEvent("labeled", OWNER, "User", T0),
+      labelEvent("unlabeled", OWNER, "User", T1),
+      labelEvent("labeled", "stackra-bot[bot]", "Bot", T2),
+    ],
+  ])
+    assert.match(
+      merge(events).join(),
+      /owner-approved label added by figentra-usr/,
+      JSON.stringify(events),
+    );
+  // the latest event decides, in time order whatever the array order
+  assert.equal(
+    ownerLabelled([
+      labelEvent("labeled", OWNER, "User", T2, "owner-approved", 3),
+      labelEvent("labeled", "stackra-bot[bot]", "Bot", T0, "owner-approved", 1),
+    ]),
+    true,
+  );
+  assert.equal(
+    ownerLabelled([
+      labelEvent("unlabeled", "someone", "User", T2, "owner-approved", 3),
+      labelEvent("labeled", OWNER, "User", T0, "owner-approved", 1),
+    ]),
+    false,
+  );
+  // an owner review on the head still passes without the label
+  assert.deepEqual(
+    blockers(pr({ labels }), green, {}, ok, [review({ body: "" })], undefined, []),
+    [],
+  );
 });
 
 const OLD = "fedcba9876543210fedcba9876543210fedcba98";

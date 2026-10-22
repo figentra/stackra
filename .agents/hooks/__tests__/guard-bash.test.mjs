@@ -1,9 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
+
+import { decideBash } from "../_rules.mjs";
 
 const hook = new URL("../guard-bash.mjs", import.meta.url).pathname;
 /** The hook's permissionDecision ("deny", "ask"), or "allow" when it prints nothing. */
@@ -1589,3 +1591,471 @@ for (const c of [
   "git -c commit.gpgsign=false commit -m wip",
 ])
   test(`allow (STA-330 review): ${c}`, () => assert.equal(decision(c), "allow"));
+
+// ---- STA-330 review round 1 ---------------------------------------------------------------------------------
+// In-process (`decideBash`), so a table of cases stays fast. A temporary repository on main with linked worktrees
+// a (feature/x, the session's own) and b (another agent's); a holds `dist/` and symlinks to home and to /.
+
+function sessionRepo() {
+  const { main, worktree, done } = repoWithWorktree();
+  const other = join(main, ".claude", "worktrees", "b");
+  spawnSync("git", ["worktree", "add", "-q", "-b", "feature/y", other], { cwd: main });
+  mkdirSync(join(worktree, "dist"));
+  symlinkSync(homedir(), join(worktree, "lnk"));
+  symlinkSync("/", join(worktree, "up"));
+  const places = { main, wt: worktree, other, home: homedir() };
+  const scratch = `/tmp/claude-${process.getuid?.() ?? 0}`;
+  const fill = (c) =>
+    c
+      .replaceAll("$MAIN", main)
+      .replaceAll("$WT", worktree)
+      .replaceAll("$OTHER", other)
+      .replaceAll("$SCRATCH", scratch);
+  /** Every case `[place, command, want, agentType?]` that decides otherwise, as readable lines. */
+  const wrong = (cases) =>
+    cases
+      .map(([at, c, want, agentType]) => {
+        const got = decideBash(fill(c), { cwd: places[at], agentType }).decision;
+        return got === want ? null : `${got} (want ${want}) [${at}] ${c}`;
+      })
+      .filter(Boolean);
+  return { wrong, done };
+}
+
+test("round 1: a trailing `)`, an attached redirection or a group never hides a git argument", () => {
+  const { wrong, done } = sessionRepo();
+  const cases = [
+    ["wt", "(git -C $MAIN reset --hard)", "deny"],
+    ["wt", "(cd $MAIN && git reset --hard)", "deny"],
+    ["main", "git reset --hard>/dev/null", "deny"],
+    ["main", "git reset --hard<<<x", "deny"],
+    ["main", "git clean -fd&>/dev/null", "deny"],
+    ["main", "{ git reset --hard; }", "deny"],
+    ["wt", "(cd $WT && pnpm bot:git -- push origin HEAD)", "allow"],
+    ["wt", "x=$(pnpm bot:git -- push origin HEAD)", "allow"],
+    ["wt", "pnpm bot:git -- push origin HEAD>/dev/null", "allow"],
+    ["wt", "git stash apply 2>&1", "deny"],
+  ];
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 1: the shared stash stack, through every wrapper", () => {
+  const { wrong, done } = sessionRepo();
+  const wrappers = [
+    ["", ""],
+    ["pnpm exec ", ""],
+    ["npx ", ""],
+    ["mise exec -- ", ""],
+    ["timeout 5 ", ""],
+    ["nice -n 5 ", ""],
+    ["env -i A=1 ", ""],
+    ["sudo -u x ", ""],
+    ["command ", ""],
+    ["(", ")"],
+    ["{ ", "; }"],
+    ["x=$(", ")"],
+    ['echo "$(', ')"'],
+    ["bash -c '", "'"],
+    ["if true; then ", "; fi"],
+    ["( cd $WT && ", " )"],
+    ["nohup ", " &"],
+  ];
+  const cases = [];
+  for (const [pre, post] of wrappers) {
+    for (const verb of ["pop", "clear", "branch x", "apply", "drop", "apply --index", "drop -q"])
+      for (const at of ["wt", "main"]) cases.push([at, `${pre}git stash ${verb}${post}`, "deny"]);
+    for (const verb of ["apply stash@{1}", "drop stash@{0}", "apply stash@{1}>/dev/null", "list"])
+      cases.push(["wt", `${pre}git stash ${verb}${post}`, pre === "npx " ? "ask" : "allow"]);
+  }
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 1: discarding work runs only in the own worktree, however the checkout is reached", () => {
+  const { wrong, done } = sessionRepo();
+  const cases = [];
+  const discarding = [
+    "reset --hard",
+    "reset --merge",
+    "reset --keep",
+    "checkout .",
+    "checkout -- .",
+    "restore .",
+    "checkout -f main",
+    "switch -f main",
+    "switch --discard-changes main",
+    "clean -f",
+    "reset --hard 2>&1",
+  ];
+  for (const d of discarding) cases.push(["wt", `git ${d}`, "allow"], ["main", `git ${d}`, "deny"]);
+  // every way to reach another checkout, for two of them (each case runs git)
+  for (const d of ["reset --hard", "clean -fd"]) {
+    for (const reach of [
+      `git -C $MAIN ${d}`,
+      `cd $MAIN && git ${d}`,
+      `cd $MAIN; git ${d}`,
+      `(cd $MAIN && git ${d})`,
+      `(git -C $MAIN ${d})`,
+      `{ cd $MAIN; git ${d}; }`,
+      `git --git-dir=$MAIN/.git ${d}`,
+      `git --work-tree=$MAIN ${d}`,
+      `GIT_DIR=$MAIN/.git git ${d}`,
+      `cd ../../.. && git ${d}`,
+      `cd $OTHER && git ${d}`,
+      `x=$(cd $MAIN && git ${d})`,
+      `bash -c 'cd $MAIN && git ${d}'`,
+      `cd $MAIN || exit; git ${d}`,
+      `cd $MAIN | true; git ${d}`,
+      `timeout 5 git -C $MAIN ${d}`,
+    ])
+      cases.push(["wt", reach, "deny"]);
+    // a subshell's `cd` ends at its `)`; a `cd` that may fail leaves the old directory possible
+    cases.push(
+      ["main", `cd $WT && git ${d}`, "ask"],
+      ["main", `(cd $WT && git ${d})`, "ask"],
+      ["main", `(cd $WT) && git ${d}`, "deny"],
+      ["main", `cd $WT/none; git ${d}`, "deny"],
+      ["wt", `(cd $MAIN); git ${d}`, "allow"],
+    );
+  }
+  for (const f of ["--force", "-f"])
+    cases.push(
+      ["wt", `git worktree remove ${f} $WT`, "allow"],
+      ["wt", `(git worktree remove ${f} $OTHER)`, "deny"],
+      ["main", `git worktree remove ${f} $WT`, "ask"],
+    );
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 1: rm -rf through cd chains, .., symlinks, home, globs, --, split flags, xargs and find", () => {
+  const { wrong, done } = sessionRepo();
+  const cases = [];
+  for (const c of [
+    "rm -rf dist",
+    "rm -rf dist/../src",
+    "rm -rf ./dist/",
+    "rm -rf lnk",
+    "rm -rf -- -x",
+    "rm -rf {dist,build}",
+    "rm -rf d*",
+    "rm -- -rf /",
+    "find . -delete",
+    "find dist -name '*.map' -exec rm -f {} \\;",
+    "(cd /tmp) && rm -rf x",
+    "cd $SCRATCH/none; rm -rf x",
+    "(cd $SCRATCH && rm -rf x)",
+  ])
+    cases.push(["wt", c, "allow"]);
+  for (const c of [
+    "cd .. && rm -rf a",
+    "rm -rf ../x",
+    "rm -rf ./../x",
+    "rm -rf dist/../..",
+    "rm -rf lnk/",
+    "rm -rf lnk/.",
+    "rm -rf lnk/x",
+    "rm -rf lnk/..",
+    "rm -rf l*/",
+    "rm -rf l?k/x",
+    "rm -rf up/tmp",
+    "rm -rf ~/x",
+    'rm -rf "$HOME"',
+    "rm -rf ${HOME}/x",
+    "rm -rf ./*",
+    "rm -rf /tm?",
+    "rm -rf {dist,/}",
+    "rm -rf {a,b}{a,b}{a,b}{a,b}{a,b}{a,b}{a,b}",
+    "rm -rf -- /",
+    "rm -r -f /",
+    "rm -fr /",
+    "rm --recursive --force /",
+    "rm --recu --forc /",
+    "rm / -rf",
+    "rm -f -r -- /",
+    "echo / | xargs rm -rf",
+    "xargs -I{} rm -rf {}",
+    "find / -delete",
+    "find ~ -name x -delete",
+    "find -L / -delete",
+    "find / -exec rm -rf {} \\;",
+    "find / -exec rm {} +",
+    "find / -execdir rm -rf {} +",
+    "cd /tmp && rm -rf x",
+    "(cd /tmp && rm -rf x)",
+    "cd /tmp | rm -rf x",
+    "sudo rm -rf /",
+    "nice -n 5 rm -rf /",
+    "\\rm -rf /",
+    "r''m -rf /",
+    "pnpm exec rm -rf /",
+    "(rm -rf /)",
+    "rm -rf />/dev/null",
+    "git -C $MAIN rm -rf .",
+    "rm -rf $OTHER/src",
+  ])
+    cases.push(["wt", c, "deny"]);
+  // from home: a `cd` that may fail, a backgrounded `cd` and a subshell's `cd` leave home possible
+  for (const c of [
+    "cd $SCRATCH/none; rm -rf Projects",
+    "cd $SCRATCH/none || true; rm -rf x",
+    "cd $SCRATCH & rm -rf x",
+    "(cd $SCRATCH) && rm -rf x",
+  ])
+    cases.push(["home", c, "deny"]);
+  cases.push(
+    ["home", "cd $SCRATCH && rm -rf x", "allow"],
+    ["main", "rm -rf .claude/worktrees/*", "deny"],
+    ["main", "find . -delete", "deny"],
+    ["main", "rm -rf .claude/worktrees/a/dist", "allow"],
+    ["main", "rm -rf .claude/worktrees/a/src", "ask"],
+  );
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 1: push guard refspecs, options, URLs and other branches", () => {
+  const { wrong, done } = sessionRepo();
+  const B = "pnpm bot:git -- push";
+  const cases = [];
+  for (const c of [
+    `${B} origin HEAD:main`,
+    `${B} origin +HEAD`,
+    `${B} origin :feature/x`,
+    `${B} origin refs/heads/main`,
+    `${B} origin HEAD:refs/heads/main`,
+    `${B} origin HEAD:heads/main`,
+    `${B} --all origin`,
+    `${B} --branches origin`,
+    `${B} --mirror origin`,
+    `${B} https://github.com/figentra/stackra.git HEAD:main`,
+    `${B} https://github.com/figentra/stackra.git main`,
+    `${B} origin other`,
+    `${B} origin HEAD:other`,
+    `${B} origin feature/x:feature/y`,
+    `${B} origin @:main`,
+    `${B} origin HEAD --force`,
+    `${B} -o x origin main`,
+    `${B} --push-option=x origin HEAD:main`,
+    `(${B} origin HEAD:main)`,
+    `${B} origin HEAD:main 2>&1 | tail -3`,
+  ])
+    cases.push(["wt", c, "deny"]);
+  for (const c of [
+    `${B} origin HEAD`,
+    `${B} -o ci.skip origin HEAD`,
+    `${B} --push-option=x origin HEAD`,
+    `${B} -o main origin HEAD`,
+    `${B} https://github.com/figentra/stackra.git HEAD`,
+    `${B} origin @`,
+    `${B} --force-with-lease=feature/x origin HEAD`,
+    `${B} origin HEAD:refs/heads/feature/x`,
+    `{ ${B} origin HEAD; }`,
+  ])
+    cases.push(["wt", c, "allow"]);
+  for (const c of [`${B} --tags`, `${B} origin refs/tags/v1`, `${B} origin @stackra/x@1.0.0`])
+    cases.push(["wt", c, "ask"]);
+  cases.push(
+    ["main", `${B} origin HEAD`, "deny"],
+    ["main", `(cd $WT) && ${B} origin HEAD`, "deny"],
+    ["main", `(cd $WT && ${B} origin HEAD)`, "allow"],
+  );
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 1: bot:review only from a reviewer agent type, in every spelling", () => {
+  const { wrong, done } = sessionRepo();
+  const cases = [];
+  for (const c of [
+    "pnpm bot:review -- pr view 1",
+    "pnpm -C . bot:review -- pr view 1",
+    "pnpm --filter x bot:review",
+    "pnpm run bot:review -- pr view 1",
+    "npm run bot:review",
+    "timeout 5 pnpm bot:review -- pr view 1",
+    "(pnpm bot:review -- pr view 1)",
+    "x=$(pnpm bot:review -- pr view 1)",
+    "bash -c 'pnpm bot:review -- pr view 1'",
+    "node tools/scripts/bot-gh.mjs review pr view 1",
+  ]) {
+    // missing, a builder, or a spoofed near-name: never the reviewer identity
+    for (const agent of [
+      undefined,
+      "",
+      "package-builder",
+      "Code-Reviewer",
+      "code-reviewer ",
+      "reviewer",
+    ])
+      cases.push(["wt", c, "deny", agent]);
+    for (const agent of ["code-reviewer", "security-tenancy-reviewer"])
+      cases.push(["wt", c, "allow", agent]);
+  }
+  cases.push(["wt", "grep bot:review package.json", "allow", "package-builder"]);
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 1: the owner-approved label in any spelling, and computed label values", () => {
+  const { wrong, done } = sessionRepo();
+  const G = "pnpm bot:gh --";
+  const cases = [];
+  for (const c of [
+    `${G} pr create --title x --body y -l design -l owner-approved`,
+    `${G} pr edit 113 --add-label "design, owner-approved"`,
+    `${G} pr edit 113 --add-label $(printf owner-approved)`,
+    `${G} pr edit 113 --add-label=owner-approved`,
+    `${G} pr edit 113 -lowner-approved`,
+    `${G} pr edit 113 --add-label "$L"`,
+    `${G} pr edit 113 --add-label owner-$(echo approved)`,
+    `${G} issue edit 113 --add-label OWNER-APPROVED`,
+    `${G} pr edit 113 --add-label 'owner-'approved`,
+    `${G} api repos/figentra/stackra/issues/113/labels -f "labels[]=$L"`,
+    `${G} api -X PATCH repos/figentra/stackra/labels/x -f new_name=owner-approved`,
+    `${G} label edit design --name owner-approved`,
+    `${G} api graphql -f query='mutation { addLabelsToLabelable(input: {labelIds: ["owner-approved"]}) { x } }'`,
+    `x=$(${G} pr edit 113 --add-label owner-approved)`,
+  ])
+    cases.push(["main", c, "deny"]);
+  for (const c of [
+    `${G} pr view 113 --json labels --jq '.labels[] | select(.name=="owner-approved")'`,
+    `${G} pr list --label owner-approved`,
+    `${G} pr edit 113 --add-label design`,
+    `${G} label edit design --description "not owner-approved"`,
+  ])
+    cases.push(["main", c, "allow"]);
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 1: quoted $HOME credential paths and secret globs", () => {
+  const { wrong, done } = sessionRepo();
+  const cases = [];
+  for (const c of [
+    'cat "$HOME/.git-credentials"',
+    'cat "${HOME}/.npmrc"',
+    'cp "$HOME/.ssh/id_ed25519" /tmp/k',
+    'base64 "$HOME/.aws/credentials"',
+    'cat "$HOME"/.netrc',
+    "cat .env*",
+    "cat .e?v",
+    "cat .en[v]",
+    "cat .e{n,x}v",
+    "cat *.pem",
+    "cat ~/.ssh/id_*",
+    "cat ~/.ss?/id_rsa",
+    "cat id_rsa",
+  ])
+    cases.push(["main", c, "deny"]);
+  for (const c of [
+    "cat .env.example",
+    "cat *.example",
+    'grep -rn "no .env files" .agents/rules',
+    'git commit -m "never cat ~/.npmrc or .env"',
+    "ls packages/*/*",
+  ])
+    cases.push(["main", c, "allow"]);
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 1: recursive readers (ls -R, tree, fd, mdfind) and subshell closers reach the inbox", () => {
+  const { wrong, done } = sessionRepo();
+  const cases = [];
+  for (const c of [
+    "ls -R ~",
+    "ls -lR ~",
+    "tree ~",
+    "tree -L 2 ~",
+    "fd x ~",
+    "fd -H . ~",
+    "mdfind -onlyin ~ x",
+    "mdfind x",
+    "(ls -R ~)",
+    "x=$(tree ~)",
+    "{ fd x ~; }",
+    'echo "$(mdfind -onlyin ~ x)"',
+    "(cd ~ && ls -R)",
+    "(cd ~ && fd x)",
+    "cd ~ && (tree)",
+    "ls -R ~)",
+  ])
+    cases.push(["main", c, "deny"]);
+  for (const c of ["ls -R", "tree", "fd x"]) cases.push(["home", c, "deny"]);
+  for (const c of [
+    "ls -R ~/Projects",
+    "tree packages",
+    "fd -e ts . packages",
+    "mdfind -onlyin packages x",
+    "ls -R packages)",
+  ])
+    cases.push(["main", c, "allow"]);
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 1: the command name past wrappers, keywords and option values, without backtracking", () => {
+  const { wrong, done } = sessionRepo();
+  const cases = [];
+  for (const c of [
+    "sudo -s gh pr merge 1",
+    "coproc gh pr merge 1",
+    "arch -arm64 gh pr merge 1",
+    "arch -arch x86_64 gh pr merge 1",
+    "time -p gh pr merge 1",
+    "printenv > /tmp/env.txt",
+    "echo $(printenv)",
+    "timeout 5 launchctl procinfo 1",
+  ])
+    cases.push(["main", c, "deny"]);
+  for (const c of ["command -v gh", "xargs -0 grep -l gh", "printenv HOME", "set -e; ls"])
+    cases.push(["main", c, "allow"]);
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 1: every decision is linear in the input (the hook is killed, and fails open, at 5 s)", () => {
+  const cwd = root;
+  decideBash("gh pr list", { cwd }); // warm up
+  /** The fastest of three runs, in ms. */
+  const timed = (c) => {
+    let best = Infinity;
+    let got = "";
+    for (let i = 0; i < 3; i++) {
+      const t = performance.now();
+      got = decideBash(c, { cwd }).decision;
+      best = Math.min(best, performance.now() - t);
+    }
+    return { got, best };
+  };
+  for (const [unit, tail, want] of [
+    ["nice -n 5 ", "gh pr merge 113", "deny"],
+    ["sudo -u -u ", "gh pr merge 113", "deny"],
+    ["A=$(x) ", "gh pr merge 113", "deny"],
+    ["timeout 5 ", "git push origin main", "deny"],
+    ["env -i A=1 ", "printenv", "deny"],
+    ["pnpm --filter=x ", "exec gh pr merge 113", "deny"],
+    ["$(", "gh pr merge 113", "deny"],
+    ["( ", "gh pr merge 113", "deny"],
+    ["x | ", "gh pr merge 113", "deny"],
+    ["cd x && ", "gh pr merge 113", "deny"],
+    ['"a" ', "; gh pr merge 113", "deny"],
+    ["infisical login ", "--plain", "deny"],
+    ['eval "x ', "; gh pr merge 113", "deny"],
+    ["git -C a ", "; git push origin main", "deny"],
+    ["-u x ", "; gh pr list", "deny"],
+  ]) {
+    const c = unit.repeat(200) + tail;
+    const { got, best } = timed(c);
+    assert.equal(got, want, unit);
+    assert.ok(best < 100, `${JSON.stringify(unit)} x200 took ${best.toFixed(0)} ms`);
+  }
+  // 10 kB through the hook process itself, well inside its 5 s limit
+  const big =
+    "nice -n 5 sudo -u -u A=$(x) cd x && ".repeat(300).slice(0, 10_000) + "; gh pr merge 113";
+  const t = performance.now();
+  assert.equal(decision(big), "deny");
+  assert.ok(performance.now() - t < 2500, `10 kB took ${(performance.now() - t).toFixed(0)} ms`);
+});

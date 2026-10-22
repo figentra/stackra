@@ -188,11 +188,34 @@ export function unsafeArgs(tool, args) {
       ? "`-c` outside the display/identity allow-list, any `git config` that is not a read, and `--config-env` bypass the guards"
       : null;
   }
-  const [group] = words("gh", args);
+  const [group, verb] = words("gh", args);
   if (group === "alias") return "`gh alias` rewrites the owner's gh config";
+  if (writesOwnerLabel(group, verb, args))
+    return "`owner-approved` records the owner's own decision; an agent never adds it (ADR 0230 rule 4)";
   if (group === "api" && args.includes("graphql") && args.some((a) => /=@|^@|^--input\b/.test(a)))
     return "GraphQL from a file cannot be checked for a merge mutation; inline the query";
   return null;
+}
+
+/**
+ * A label write (`pr|issue create|edit`, `label create|edit|clone`, an `api` call on labels) that names
+ * `owner-approved` outside a title, body or description. Here the arguments are the real ones, after the shell
+ * expanded them, so no spelling hides the label (STA-330 review).
+ */
+function writesOwnerLabel(group, verb, args) {
+  const edits =
+    (["pr", "issue"].includes(group) && ["create", "edit"].includes(verb)) ||
+    (group === "label" && ["create", "edit", "clone"].includes(verb)) ||
+    (group === "api" && args.some((a) => /(?:^|\/)labels\b|\blabels(?:\[\])?=|Label/.test(a)));
+  return (
+    edits &&
+    args.some(
+      (a, i) =>
+        /owner-approv/i.test(a) &&
+        !/^(?:-t|--title|-b|--body|-d|--description)$/.test(args[i - 1] ?? "") &&
+        !/^--(?:title|body|description)=/.test(a),
+    )
+  );
 }
 
 /** The non-flag words: git's `-c`/`-C`/`--git-dir`/`--work-tree`/`--namespace` and gh's `-R`/`--repo` values skipped. */

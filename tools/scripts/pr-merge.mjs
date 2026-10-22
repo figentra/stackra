@@ -19,7 +19,9 @@
  *        PR author or the head commit's author or committer.
  *      - Owner: an APPROVED pull request review by the owner user (`figentra-usr`) on the head SHA whose body ends
  *        with the token `owner-approval`. A comment never counts for the owner.
- *   4. a PR labelled `design` or `risk:R3` also has an owner APPROVED review on the head SHA, or `owner-approved`.
+ *   4. a PR labelled `design` or `risk:R3` also has an owner APPROVED review on the head SHA, or `owner-approved`
+ *      put there by the owner: the latest `labeled` / `unlabeled` issue event for it is a `labeled` whose actor is
+ *      the owner user, never a bot (ADR 0293). The events are read only then; an API error refuses the merge.
  *   With a merge queue it enqueues only while `enqueueReady` holds (owner order OP7): bot-token.mjs keeps a 30 s
  *   connect timeout and retries (STA-302).
  * Network: gh reads retry on transient errors (bot-token.mjs); the merge or enqueue runs again after a transient
@@ -104,6 +106,27 @@ export const actor = (login = "") =>
 export const byReviewerApp = (c) =>
   c.user?.type === "Bot" && c.performed_via_github_app?.slug === REVIEWER;
 
+/** The label that stands for the owner's yes on a gated PR; only the owner adds it (ADR 0230 rule 4). */
+export const OWNER_LABEL = "owner-approved";
+/**
+ * True when the owner put `owner-approved` on the PR and nobody took it off since: the latest `labeled` /
+ * `unlabeled` event for it (REST issue events) is a `labeled` by the owner user (`user.type` User, never a bot or
+ * an app account). A label any other actor added never counts, whatever the PR's labels say.
+ */
+export function ownerLabelled(events) {
+  const last = events
+    .filter((e) => ["labeled", "unlabeled"].includes(e.event) && e.label?.name === OWNER_LABEL)
+    .sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id)
+    .at(-1);
+  const who = last?.actor;
+  return (
+    last?.event === "labeled" &&
+    who?.type === "User" &&
+    who.login === OWNER &&
+    !/\[bot\]$/i.test(who.login)
+  );
+}
+
 /** A REST pull request review approving `sha` by the owner user with the `owner-approval` token. */
 export const ownerApproves = (r, sha) =>
   r.user?.type === "User" &&
@@ -152,9 +175,18 @@ export function aiReview(pr, comments, reviews, authors = [], same = new Set()) 
 
 /**
  * Reasons the PR may not merge; empty means merge. `checkRuns` are the head SHA's "Quality Gate" runs; `comments`
- * and `reviews` are the REST issue comments and pull reviews; `same` is `samePatchShas`.
+ * and `reviews` are the REST issue comments and pull reviews; `same` is `samePatchShas`; `events` are the REST
+ * issue events (`ownerLabelled`), empty when not read.
  */
-export function blockers(pr, checkRuns, headCommit = {}, comments = [], reviews = [], same) {
+export function blockers(
+  pr,
+  checkRuns,
+  headCommit = {},
+  comments = [],
+  reviews = [],
+  same = undefined,
+  events = [],
+) {
   const reasons = [];
   const sha = pr.headRefOid;
   if (pr.state !== "OPEN") reasons.push(`PR is ${pr.state}`);
@@ -175,7 +207,7 @@ export function blockers(pr, checkRuns, headCommit = {}, comments = [], reviews 
   const labels = pr.labels.map((l) => l.name);
   const gated = GATED_LABELS.filter((l) => labels.includes(l));
   const ownerApproved =
-    labels.includes("owner-approved") ||
+    (labels.includes(OWNER_LABEL) && ownerLabelled(events)) ||
     reviews.some(
       (r) =>
         r.user?.type === "User" &&
@@ -185,7 +217,7 @@ export function blockers(pr, checkRuns, headCommit = {}, comments = [], reviews 
     );
   if (gated.length && !ownerApproved)
     reasons.push(
-      `labelled ${gated.join(", ")}: needs an owner approval on ${sha} or the owner-approved label`,
+      `labelled ${gated.join(", ")}: needs an owner approval on ${sha} or the ${OWNER_LABEL} label added by ${OWNER}${labels.includes(OWNER_LABEL) ? ` (the ${OWNER_LABEL} label on it was not added by ${OWNER}, or was removed since)` : ""}`,
     );
   return reasons;
 }
@@ -285,7 +317,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       }
     };
     const same = samePatchShas(pr, comments, patchOf);
-    const reasons = blockers(pr, runs, headCommit, comments, reviews, same);
+    // Who added owner-approved: read only when it decides the merge; `list` throws (refuse) on an API error.
+    const labels = pr.labels.map((l) => l.name);
+    const events =
+      labels.includes(OWNER_LABEL) && GATED_LABELS.some((l) => labels.includes(l))
+        ? list(`repos/${repo}/issues/${n}/events?per_page=100`, token)
+        : [];
+    const reasons = blockers(pr, runs, headCommit, comments, reviews, same, events);
     if (reasons.length) {
       process.stderr.write(
         `pr-merge: not merging #${n}:\n${reasons.map((r) => `  - ${r}`).join("\n")}\n`,
