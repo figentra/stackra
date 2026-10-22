@@ -1,7 +1,22 @@
 ---
 title: "0264 — Declaration vocabulary: one module key grammar, the define family closed at eight, kind folders, and one listener form"
-description: "Accepted · 2026-10-21"
+description: "Accepted, amended by 0294 · 2026-10-21"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): decision 1: the module key
+  is derived from the folder name and the member key from the package name, both locked in `stackra.manifest.json`, so
+  no `key` option is written; the one-segment, snake_case rule stands. Decision 4: the member functions of the define
+  family are `defineApp`, `defineService`, `definePackage` and `defineWorker`, called only from `stackra.config.ts`;
+  the other members are replaced by kind classes, except `defineMeters`, which 0294 does not place. Decision 5: a
+  settings group is `extends Settings({ scopes })` in `<key>.settings.ts` at the module root, one per module; `@Setting`
+  stays a field decorator; `@Settings` is retired, and code reads a group through the injected settings service, as in
+  `this.settings.get(OrdersSettings)`. Decision 6: decorators annotate members and facets, base classes declare kinds,
+  and `define*` is for member config files only. Decision 7: the folder list is replaced by the group tables of 0294.
+  Decision 8: a listener is `extends Listener`, with `handle(event, ctx)`, and reacts to the type of its event
+  parameter; `@AsListener` and `@OnEvent` are retired. Decision 9: jobs are still actions, and a job is an action with a
+  `job:` option; `@AsJob` and `@Cron` are retired. Decision 10 stands.
+</Note>
 
 <Note>
   Amends [0098](/adr/0098-actions-are-the-unit) (decision 2: `@AsListener` is removed),

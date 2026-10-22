@@ -1,7 +1,16 @@
 ---
 title: "0247 — Declaration rule: decorators annotate code, define* creates values"
-description: "Accepted, amended by 0264 · 2026-10-20"
+description: "Accepted, amended by 0264, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming):
+  decorators annotate members and facets, and a base class declares a kind, so decision 1's list of
+  kind decorators no longer holds. The `define*` functions are the member config functions of
+  [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders) decision 4,
+  which amends decision 2. The other `define*` values of decision 2 are replaced by kind classes.
+  `defineMeters` is not placed by 0294, and 0294 does not retire it.
+</Note>
 
 <Note>
   Amends [0094](/adr/0094-decorators-only-authoring) and

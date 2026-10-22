@@ -1,11 +1,19 @@
 ---
 title: "0110 — The experience service is server-driven UI at level L2: trees of registered coded components, no code over the wire"
-description: "Accepted, amended by 0139, 0154, 0164 · 2026-10-19"
+description: "Accepted, amended by 0139, 0154, 0164, 0294 · 2026-10-19"
 ---
 
 <Note>
   Amended by [0164](/adr/0164-console-panels-are-resources-rendered-by-the-panel-package): panels
   are resources, with tenant L2 overrides and custom pages as the escape hatch.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): data bindings name query
+  keys, and a query is a class that extends `Query({ key })`; event bindings name action keys, as before.
+  A widget is a query with a display kind (Kpi, KpiGroup, Chart, Table, List, Progress, Timeline, View or Custom); only
+  Custom takes a renderer. A saved L2 document is a `Document` class, `extends Document({ kind, path, blocks })`, which
+  replaces `@Page`. Documents still hold references to registered code only, as decision 4 requires.
 </Note>
 
 <Note>

@@ -1,0 +1,119 @@
+---
+title: "0295 — Build and entry: stackra.config.ts, generated tool configs and entries"
+description: "Accepted · 2026-10-22"
+---
+
+<Note>
+  Amends [0010](/adr/0010-services-are-independent-workspace-members),
+  [0117](/adr/0117-contracts-placement-and-decorator-ownership) and
+  [0126](/adr/0126-member-shapes-and-scaffold-templates) (no authored `main.ts`; generated entries),
+  [0091](/adr/0091-generated-encore-app-in-stackra-folder) and
+  [0261](/adr/0261-generated-stackra-modules-in-stackra-gen) (the generated outputs), and
+  [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron) and
+  [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles) (the app definition
+  and native chrome). Builds on
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (the member shape,
+  rule R12).
+</Note>
+
+## Context
+
+Today a member declares its build in several hand-written places. A service has an authored `src/main.ts` and names its root module in `package.json`. An app keeps its own Vite, Expo, Metro, Maestro, Wrangler and electron-builder files, and those files repeat facts the member already states, such as its name, its bundle identifier and its targets. A generator cannot rewrite them safely, because people edit them by hand as well.
+
+[ADR 0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) gives every member one shape: `stackra.config.ts` and one root module. This record says how everything else is produced. An author states each fact once, in a typed section of `stackra.config.ts` when only build tools read it, or in a Config class when the running app reads it. Gen writes every tool file and every runtime entry into `.stackra/`, which is never committed. The few escape hatches are closed and visible in review.
+
+## Decision
+
+1. **One app definition per member.** `stackra.config.ts` at the member root calls one `define*` function: `defineApp`, `defineService`, `definePackage` or `defineWorker`. The argument is static data (enum values, literals and tokens), never a function or an environment read, so gen reads it from the syntax tree without running it. The member key comes from the package name. There is no `key` option.
+
+2. **Identity and targets sit at the top of `defineApp`.** The call holds the app's `name`, `scheme`, `area`, `env` and `targets`, then one section per platform or tool it uses: `ios`, `android`, `expo`, `eas`, `maestro`, `e2e`, `html`, `pwa`, `vite` and `electron`. A section that no target uses is not written.
+
+   ```ts
+   // apps/mobile/stackra.config.ts
+   export default defineApp({
+     targets: [Target.Ios, Target.Android],
+     area: ApiArea.App,
+     env: MobileEnv,
+     name: "Acme",
+     scheme: "acme",
+     ios: { bundleId: "com.acme.app", supportsTablet: true },
+     expo: { experiments: { reactCompiler: true } },
+     eas: { build: { resourceClass: ResourceClass.Medium, autoIncrement: true } },
+   });
+   ```
+
+3. **Each tool section has the tool's shape, minus what Stackra owns.** A section is typed as the tool's own configuration with the keys Stackra owns removed, so setting an owned key is a type error. A `raw` key passes through only the keys that gen does not own.
+
+4. **Where a fact goes.** Apply the test in order:
+   1. The same in every environment and read only by build tools: a `stackra.config.ts` section.
+   2. Read by code while the app runs: a Config class in `src/config/`. This covers `desktop.config.ts` (modes and overlays, [ADR 0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles)) and `chrome.config.ts` (decision 11). Gen copies their start values into the tool files that need them.
+   3. Different per environment: the member runway ([ADR 0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)). Examples are EAS build profiles and channels, public `EXPO_PUBLIC_` values and the Sentry project.
+   4. An account or vendor identifier, such as the EAS project, the Apple team, the App Store Connect identifier or the Play identifier: the root runway ([ADR 0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)).
+   5. Derivable from other facts: nobody writes it. Permission text comes from the language files, plugins come from the drivers in use, and icons, splash screens, locales, deep-link domains and versions are derived.
+
+5. **Gen writes every tool file into `.stackra/`.** The generated files are the Expo configuration, `eas.json`, the Metro, Babel and Maestro configuration, Vite, Vitest, Playwright, tsdown, Wrangler, electron-builder, `index.html`, the per-locale web manifests, the service worker, the icons and splash screens, and one `.easignore` at the repository root. Babel is written only when a section adds a plugin. A tool that reads only the member root gets a gitignored shim there ([ADR 0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), rule R10). A hand edit to a generated file is overwritten on the next run ([ADR 0261](/adr/0261-generated-stackra-modules-in-stackra-gen)).
+
+6. **Code escapes are closed.** Code hatches live only in `vite.extend.ts`, `expo.extend.ts`, `metro.extend.ts` and `electron.extend.ts` at the member root. Each is add-only, opens with a `Reason:` header and is listed in `stackra.manifest.json`. Gen applies the hatch to its own output and fails when any owned key has changed.
+
+7. **Runtime entries are generated.** Gen writes each runtime entry to `.stackra/entry/<target>.ts`. The entry calls `createApp` from the subpath for its target, passes the member's root module and the generated wiring, and exports the result. No one writes `main.ts` or an entry barrel ([ADR 0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), rule R12). A service's entry looks like this:
+
+   ```ts
+   // .stackra/entry/server.ts (generated)
+   import { createApp } from "@stackra/app/server";
+   import { wiring } from "#stackra/wiring";
+   import { CommerceModule } from "../../src/commerce.module";
+
+   export const app = await createApp(CommerceModule, { wiring });
+   ```
+
+8. **`createApp` returns the object of its runtime.** The return type follows the subpath:
+
+   | Subpath                 | Returns                                                         |
+   | ----------------------- | --------------------------------------------------------------- |
+   | `@stackra/app/server`   | `ServerApp`: `key`, `ready()`, `drain()`, `close()`, `handlers` |
+   | `@stackra/app/browser`  | `BrowserApp`: `mount(root)`, `hydrate()`, `router`              |
+   | `@stackra/app/native`   | `NativeApp`: `Root`                                             |
+   | `@stackra/app/worker`   | `WorkerApp`: `fetch(request, env, ctx)`                         |
+   | `@stackra/app/electron` | `DesktopApp`: `start()`, `windows`                              |
+
+9. **No service factory.** There is no `createService` and no `createMicroservice`. Whether a member runs alone, in a group or in a monolith is root runway topology ([ADR 0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)), not code. A package has no runtime entry; a host imports the package's root module. Tests build the root module with `createTestingModule(Root)` and replace ports with `.override(Port, fake)`, as [0263](/adr/0263-di-stays-and-gen-writes-the-wiring) decision 12 already says.
+
+10. **The client mounts what the app contains.** On the client, `createApp` mounts the context of every config class in the module graph, in graph order. For the platform packages that order is session, tenancy, query, realtime, flags, push, platform, theme, i18n, consent, analytics and telemetry, and then the UI kit with its toasts. `Module({ wrap })` is the only way to add a provider component, and it is allowed only on an app's root module. `@Provider` and `@App` are retired. An app's `src` uses no container API.
+
+11. **Native chrome is a Config class.** The status bar, the system navigation bar, the tab bar and the header are fields of a `ChromeConfig` subclass in `src/config/chrome.config.ts`. The shell reads them while the app runs, and gen copies their start values into the Expo configuration. Colours are brand tokens, not literals.
+
+    ```ts
+    // apps/mobile/src/config/chrome.config.ts
+    export class MobileChromeConfig extends ChromeConfig {
+      override statusBar = { ...this.statusBar, style: StatusBarStyle.Auto };
+      override tabBar = { ...this.tabBar, labels: TabBarLabels.Always, minimizeOnScroll: true };
+    }
+    ```
+
+12. **Tab bar items come from routes, then one menu.** A route declares `tab: { order, icon }`, and it may override chrome for its own screen. The app may rearrange the items in one `menus/tab-bar.menu.ts`, which extends `Menu({ kind: MenuKind.TabBar })` and starts from `m.tabs()`. The tenant and the active role then adjust the items at run time, which [0273](/adr/0273-active-role-within-a-tenant) allows for presentation. `MenuKind` is a closed set: App, Tray, Dock, Context, Navigation, Sidebar, TabBar and AppShortcuts. Every menu builds its items in `items(m)` from a closed set of item verbs (route, link, action, shortcut, group, separator, navigation and tabs) with closed options and no CSS. An item's `permission` controls access, and its `roles` shape presentation only.
+
+## Consequences
+
+- A member's build is one file to read and, for most changes, one file to edit. A tool setting that no section covers is reached through `raw`, and a fact that already appears elsewhere is never written twice.
+- Nobody edits a tool file by hand, so the files cannot drift from the facts they were made from.
+- The cost is an ordering rule. Gen runs before any build or test, as it already must for `.stackra/gen/` ([ADR 0261](/adr/0261-generated-stackra-modules-in-stackra-gen)). A new tool version may wait for a gen change before a member can use it.
+- Native chrome has a single home: a screen overrides it in one place, and the tab bar is one menu file.
+
+## Enforcement
+
+Nothing generates these files yet: `packages/developer` holds only a README. Two existing checks still enforce the retired shape until the validator changes:
+
+- `checkService` in `tools/scripts/validate-repository.mjs` requires `src/main.ts` and a `stackra.module` field in `package.json`.
+- `.gitignore` ignores `.stackra/*` but re-includes `.stackra/app-manifest.json`, so `.stackra/` is not yet fully ignored.
+
+Planned, all tracked in STA-339:
+
+- planned — STA-339: gen writes the tool files, the runtime entries and the root shims, and `stackra gen --check` runs in `pnpm verify`.
+- planned — STA-339: the `tool-configs` validator check. A tracked tool config inside a member fails; a `*.extend.ts` outside the closed set, or without a `Reason:` header, fails; a hatch that touches an owned key fails at gen.
+- planned — STA-339: the `member-root` validator check. A missing `stackra.config.ts` or root module fails, and so do an authored `src/main.ts` and an authored package barrel.
+- planned — STA-339: the `entries` check. Each runtime entry calls `createApp` for its target, and a package's `exports` match its entry folders.
+- planned — STA-339: gen fails when a bundle identifier changes after its first upload, unless an ADR records the change.
+
+## Supersedes and related
+
+Supersedes: none. Amends: [0010](/adr/0010-services-are-independent-workspace-members), [0117](/adr/0117-contracts-placement-and-decorator-ownership) and [0126](/adr/0126-member-shapes-and-scaffold-templates) (one root module, generated entries), [0091](/adr/0091-generated-encore-app-in-stackra-folder) and [0261](/adr/0261-generated-stackra-modules-in-stackra-gen) (the generated outputs), and [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron) and [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles) (the app definition and native chrome). Related: [0090](/adr/0090-codegen-discovery-by-root-module), [0124](/adr/0124-encore-is-the-generated-runtime-target), [0138](/adr/0138-pipeline-order-is-fixed), [0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned), [0273](/adr/0273-active-role-within-a-tenant), [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) and [0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups). Sources: the programming-model v3 wave of 2026-10-22, Linear STA-334.

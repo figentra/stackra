@@ -5,12 +5,12 @@ global rules. Full guides: `apps/docs` (`pnpm docs`). Every member keeps its cod
 
 | Path                                                       | Holds                                                                                                                                                     | Tier tag       |
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| `apps/console`                                             | `@figentra/console` — hello-world entry `src/main.ts`                                                                                                     | `tier:app`     |
-| `apps/mobile`                                              | `@figentra/mobile` — hello-world entry `src/main.ts`                                                                                                      | `tier:app`     |
+| `apps/console`                                             | `@figentra/console` — Vite web app; authored `src/main.ts` until v3 generates the entry (ADR 0295)                                                        | `tier:app`     |
+| `apps/mobile`                                              | `@figentra/mobile` — Expo app; authored `src/main.ts` until v3 generates the entry (ADR 0295)                                                             | `tier:app`     |
 | `apps/docs`                                                | `@figentra/docs` — Mintlify; `docs.json`, pages and `assets/` all in `src/`; ADRs in `src/adr`; `pnpm docs`                                               | `tier:app`     |
 | `packages/<category>/<name>`                               | `@stackra/<name>`, flat inside one category: foundation, application, communication, cross-cutting, data, developer, experience, runtime, security, state | `tier:lib`     |
-| `packages/tooling/*`                                       | `@stackra/{typescript,oxlint,vitest,tsdown}-config` presets                                                                                               | `tier:config`  |
-| `services/<name>`                                          | `@figentra/service-<name>` — one member per service (`example`, `health`), entry `src/main.ts`                                                            | `tier:service` |
+| `packages/tooling/*`                                       | `@stackra/{typescript,oxlint,vitest,tsdown,commitlint}-config`, exactly five presets (ADR 0300)                                                           | `tier:config`  |
+| `services/<name>`                                          | `@figentra/service-<name>` — one member per service (`example`, `health`); root module `src/<key>.module.ts` (ADR 0294)                                   | `tier:service` |
 | `workers/<name>`                                           | `@figentra/worker-<name>` — Cloudflare Worker members (`static`: `stackra-static`, static.stackra.figentra.com), `wrangler.jsonc`, ADR 0284               | `tier:app`     |
 | `tools/scripts`                                            | `validate-repository.mjs` (+ test); `scaffold.mjs` (+ test) — `pnpm new <kind> <name>`, templates in `tools/scaffold`                                     | —              |
 | `.agents/hooks`, `.claude/settings.json`, `opencode.jsonc` | agent hooks and config                                                                                                                                    | —              |
@@ -24,6 +24,11 @@ Rules every member follows (`pnpm validate` enforces them):
 - A package never imports an app, a service or `encore.dev`, nor another package's `src/`.
 - A JSON config is `.jsonc` (comments welcome) when its tool reads JSONC; tsconfig files keep `.json` and take comments.
   The files that must stay strict `.json`, with the reason, are `MUST_STAY_JSON` in `tools/scripts/validate-repository.mjs`.
+
+The programming model v3 is the target for new code (ADR 0294, 0295, 0296): a class declares its kind by its base
+class, each file sits in its kind's one home group, identities are derived and locked in `stackra.manifest.json`, and
+nobody writes `main.ts` or a tool config. No member is converted yet (STA-344) and its checks are planned (STA-338,
+STA-339, STA-340), so today's code and `validate-repository.mjs` still show the older shapes.
 
 Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boundaries, knip). Conventional commits.
 
@@ -135,21 +140,64 @@ If two agents conflict:
 ### HTTP Conventions
 
 Services are plain TypeScript. You never write `encore.dev`, `api()` or `encore.service.ts` in a service: behaviour is
-a decorated action (ADR 0094, 0098), and `stackra gen` emits the Encore `api()` adapters into the gitignored
-`.stackra/encore/` (ADR 0091, 0124). The rules below are what the generated endpoints must satisfy, so they shape how
-you author actions.
+an action or a query class (ADR 0098 as amended by 0294), and `stackra gen` emits the Encore `api()` adapters into the
+gitignored `.stackra/encore/` (ADR 0091, 0124). The rules below are what the generated endpoints must satisfy, so they
+shape how you author actions.
+
+The programming model v3 (ADR 0294) is the target. `@stackra/actions` and gen do not ship yet, so the shapes below are
+the contract they will implement, not code that runs today; the package docs win once they ship.
+
+#### Action or query
+
+| Question       | Action                              | Query                                   |
+| -------------- | ----------------------------------- | --------------------------------------- |
+| Changes state? | Yes: `extends Action({ key, ... })` | No: `extends Query({ key, ... })`       |
+| Risk           | From its permission, L0 to L4       | From its permission, L0 or L1 only      |
+| HTTP method    | `POST`, `PUT`, `PATCH` or `DELETE`  | `GET`                                   |
+| MCP tool       | Only with `tool: true`              | Yes, under the caller's own permissions |
+| Cache          | Never                               | May take a cache profile (ADR 0297)     |
+| Preconditions  | `preconditions: [...]`              | None                                    |
 
 #### Endpoints
 
-An action exposes itself over HTTP with `@AsEndpoint`. `@Controller` is only for raw endpoints that are not actions
-(webhook receivers, `/api/auth/*`, streaming). Shapes are illustrative; the authoritative decorator API is in the
-package docs.
+An action or query is exposed over HTTP by convention: gen derives the route from its key, so nothing is declared per
+action (ADR 0294 decision 21, ADR 0217 as amended). Input and output are the parameter and return types of `handle`.
+`@Controller` is only for raw endpoints that are not actions (`/api/auth/*`, streaming); an inbound webhook is a
+`WebhookEvent` class.
+
+| Key                                    | Route                       |
+| -------------------------------------- | --------------------------- |
+| `x.list`                               | `GET /xs`                   |
+| `x.get`                                | `GET /xs/:xId`              |
+| `x.create`                             | `POST /xs`                  |
+| `x.update`                             | `PATCH /xs/:xId`            |
+| `x.delete`                             | `DELETE /xs/:xId`           |
+| Any other action verb, input has `xId` | `PUT /xs/:xId/<verb-kebab>` |
+| Any other action verb, otherwise       | `POST /xs/<verb-kebab>`     |
+| Any other query name                   | `GET /xs/<name-kebab>`      |
+
+`endpoint: { method, path }` overrides the route and `endpoint: false` removes it. An action whose actors include
+neither a user nor an agent gets no public endpoint.
 
 ```typescript
-@Action({ key: "user.get@1", input: GetUserInput, output: UserOutput, permission: "identity.user.read" })
-@AsEndpoint({ method: "GET", path: "/users/:id" })
-async getUser(input: GetUserInput): Promise<UserOutput> {
-  // ...
+// src/modules/orders/actions/cancel-order.action.ts — orders.order.cancel@1, PUT /orders/:orderId/cancel
+export class CancelOrderInput extends Schema {
+  orderId!: PublicId<"ord">;
+}
+
+export class CancelOrderAction extends Action({
+  key: "order.cancel",
+  actors: [ActorKind.User, ActorKind.Agent],
+}) {
+  constructor(private readonly orders: OrderService) {
+    super();
+  }
+
+  async handle(input: CancelOrderInput, ctx: ActionContext): Promise<CancelOrderOutput> {
+    const order = await this.orders.findOneOrFail(input.orderId);
+    await ctx.authorize(order); // the permission from the key, refined by OrderPolicy#cancel
+    // ...
+  }
 }
 ```
 
@@ -157,7 +205,7 @@ async getUser(input: GetUserInput): Promise<UserOutput> {
 
 HTTP methods **by idempotency**:
 
-- `GET` - Safe, idempotent, no body (`@Query`)
+- `GET` - Safe, idempotent, no body (queries only)
 - `PUT` - Idempotent state transition (`/archive`, `/activate`), per the HTTP and events law
 - `DELETE` - Idempotent
 - `POST` - Non-idempotent, creates resources
@@ -165,73 +213,85 @@ HTTP methods **by idempotency**:
 
 #### Authentication
 
-Every endpoint is authenticated by default. A public endpoint opts out explicitly with `auth: false` on the action;
-the flag applies to the action's API area (ADR 0082), and the gateway enforces it (ADR 0237):
+Every endpoint is authenticated by default. A public endpoint opts out explicitly with `auth: false` in the action's
+or query's options; the flag applies to its API area (ADR 0082), and the gateway enforces it (ADR 0237):
 
 ```typescript
-@Action({ key: "health.get@1", output: HealthOutput, auth: false })
-@AsEndpoint({ method: "GET", path: "/health" })
+export class GetHealthQuery extends Query({ key: "health.get", auth: false }) {
+  async handle(): Promise<HealthOutput> {
+    // ...
+  }
+}
 ```
 
 The caller is the typed `Actor` the action pipeline provides (ADR 0098); never read a user id from the request body.
+The permission is derived from the key, and record rules run through `ctx.authorize(record)` (ADR 0132 as amended).
 
 #### Request/Response
 
 ##### Always typed
 
-Input and output are Zod schemas on the action (ADR 0095); the TypeScript types are inferred from them.
+Input and output are `Schema` classes whose TypeScript types are the rules (ADR 0095 as amended by 0294). A `number`
+carries `@Int` or `@Num`; constraints are `@Str`, `@Int`, `@Num` and `@List`. Gen compiles each class to one Zod schema
+in `#stackra/schemas`; authors write no Zod except through the `@Field(zod)` escape hatch with a `// reason:` comment.
 
 ```typescript
-const GetUserInput = z.object({ id: z.string() });
-const UserOutput = z.object({
-  id: z.string(),
-  email: z.string().email(),
-  createdAt: z.string().datetime(), // ISO 8601
-});
+export class UserView extends Schema {
+  id!: PublicId<"usr">;
+
+  email!: Email;
+
+  createdAt!: Date; // ISO 8601 on the wire
+}
 ```
 
 ##### Cursor pagination
 
 ```typescript
-const ListUsersInput = z.object({
-  cursor: z.string().optional(),
-  limit: z.number().int().min(1).max(100).default(20),
-});
-const ListUsersOutput = z.object({
-  users: z.array(UserOutput),
-  nextCursor: z.string().optional(),
-  hasMore: z.boolean(),
-});
+export class ListUsersInput extends CursorInput {} // cursor, limit 1–100 (default 20)
+
+export class ListUsersOutput extends Page.of(UserView) {} // items, nextCursor, hasMore
 ```
 
 ##### Prefixed IDs
 
-Use prefixed ids externally (`user_01H2J3K4L5M6N7P8Q9R0`); never expose database ids.
+Use prefixed ids externally (`usr_01H2J3K4L5M6N7P8Q9R0`, typed `PublicId<"usr">`); never expose database ids.
 
 #### Idempotency
 
-Non-GET operations support the `Idempotency-Key` header. The action pipeline has an idempotency step (ADR 0098), so an
-action declares that it is idempotent-keyed and the pipeline deduplicates; do not hand-roll key storage in a handler.
+Non-GET operations support the `Idempotency-Key` header. The action pipeline has an idempotency step (ADR 0098, 0138),
+so an action declares `idempotency:` in its options and the pipeline deduplicates; do not hand-roll key storage in a
+handler. The pipeline order is tenancy, permission, precondition, entitlement, flag, idempotency, interceptors, then
+`handle` (ADR 0138 as amended).
 
 #### Versioning
 
 **Versioned events, not endpoints.**
 
 - Endpoints are immutable (no `/v1`, `/v2`)
-- Events are versioned and prefixed by module key: `<module-key>.<aggregate>.<verb>.v<n>` (`identity.user.created.v1`, `identity.user.created.v2`, ADR 0141)
+- An integration event writes its `name` once; gen derives `<module-key>.<name>.v<n>` (`identity.user.created.v1`, ADR 0141 as amended). A breaking change sets `version: n` and adds a `Change` class beside the event
 - New endpoint → new path
 - API versions are dates: the `Stackra-Version` header, pinned per API key or OAuth app, through the dormant `@stackra/versioning` package. Paths stay unversioned (`/adr/0118-api-versioning-dormant-package`)
 
 #### Error Handling
 
-Throw a typed error from the action; the generated adapter maps it to the matching HTTP status (not found, permission
-denied, invalid argument, and so on). The error envelope and its kinds follow ADR 0140. Never build HTTP responses by hand and never import `APIError` in a service.
+Throw a typed error from the action: a class that extends `Refusal({ kind })`, whose code is derived from its name
+(`OrderNotPayableError` → `order_not_payable`). The generated adapter maps it to the matching HTTP status (not found,
+permission denied, invalid argument, precondition failed, and so on). The error envelope and its kinds follow ADR 0140.
+Never build HTTP responses by hand and never import `APIError` in a service.
+
+#### Enforcement
+
+- `validate-repository.mjs` (`checkService`) refuses Encore files in a service (ADR 0124)
+- planned — STA-340: the gen checks for an endpoint collision, GET on an action or non-GET on a query, a query above
+  L1, `cache` on an action and a precondition on a query; until gen ships, review (`api-contract-reviewer`) checks this
+  rule
 
 #### See Also
 
 - Constitution: http-and-events
 - ADR-0091, ADR-0124: Encore is generated into `.stackra/encore`
-- ADR-0094, ADR-0098: decorators-only authoring, actions are the unit
+- ADR-0294: programming model v3 (kinds, endpoint convention, derived identities); ADR-0098: actions are the unit
 - ADR-0010: Services are independent members
 - ADR-0082 (API areas and auth), ADR-0237 (generated gateway), ADR-0140 (error envelope), ADR-0141 (event names)
 - Standards: api-contracts
@@ -284,8 +344,10 @@ config → lib → app
 
 1. **No upstream imports** - A tier never imports from tiers above it
 2. **No cross-app imports** - Apps don't import from other apps
-3. **No cross-service imports** - Services don't import from other services (use Pub/Sub)
+3. **No cross-service imports** - Services don't import from other services (use events or the generated client)
 4. **Packages import from own layer or below** - Never from apps/services
+5. **Inside a package, entries point one way** - `src/contracts/` is a leaf; `core` imports `contracts`; `node`, `react` and `native` import `core`; `testing` imports them all. No symbol is exported from two entries (ADR 0294 decision 15, ADR 0117 as amended)
+6. **Sibling modules import only public groups** - a module reaches a sibling only through its exported classes, `schemas/`, `enums/`, `events/`, `errors/` and `access/*.permissions.ts`, and through `models/` only from `models/` and `database/`, for relations (ADR 0294 decision 24). Imports use `#modules/<key>/<group>/...` (ADR 0233 as amended)
 
 #### Forbidden Patterns
 
@@ -301,6 +363,9 @@ import { stripe } from "@figentra/service-payments";
 
 // ❌ Cross-app import
 import { Header } from "@figentra/console/src/header";
+
+// ❌ A sibling module's private group
+import { OrderPricingService } from "#modules/orders/services/order-pricing.service"; // not exported by OrdersModule
 ```
 
 #### Allowed Patterns
@@ -315,54 +380,66 @@ import { logger } from "@stackra/logger";
 // ✅ Package importing from lower package
 import { config } from "@stackra/config";
 
-// ✅ Config presets have no imports
-import { defineConfig } from "tsdown";
+// ✅ A sibling module's public group
+import { OrderPermissions } from "#modules/orders/access/order.permissions";
 ```
 
 #### Services
 
-Services communicate via (the generated Encore app carries both, ADRs 0091 and 0124):
+Services communicate through the generated Encore app (ADRs 0091 and 0124):
 
-- **Integration events** - `@OnEvent` on a versioned event name in the form `<module-key>.<aggregate>.<verb>.v<n>` (`identity.user.created.v1`), shapes from the producer's `./contracts` (ADR 0078, ADR 0141)
-- **Typed client calls, commands and events** - `stackra gen` generates one typed client per service from its committed `app-manifest.json`, injected through the constructor from `#stackra/clients`: `client.x.y(input)` to call, `client.x.y.queue(input)` to command, and `@OnEvent(Producer.x)` for an event (ADR 0260, 0261)
+- **Integration events** - a class that extends `IntegrationEvent({ name })`; the author writes `name` once and gen derives the wire name `<module-key>.<name>.v<n>` (`identity.user.created.v1`). A consumer is a `Listener` whose `handle(event: E)` parameter type is the producer's event (ADR 0078, 0141 and 0264 as amended by 0294)
+- **Typed client calls and events** - `stackra gen` generates one typed client per service from its committed `stackra.manifest.json`, injected through the constructor from `#stackra/clients`: `client.x.y(input)` to call and `client.x.y.queue(input)` for a queued call (ADR 0260, 0261 as amended by 0294)
 - **Read models** - a consumer's copy of another service's data is a `@Projection` fed by that service's events (ADR 0163, 0260)
 - Transport is a driver behind the port (ADR 0142). Never direct imports of another service's source, tables or `Topic`
-- A Stackra package that needs service data defines a port in its `./contracts` entry; the service implements it (ADR 0260)
-- Feature modules live in one of three homes: the service (default), a figentra-os `@figentra/*` package used by two or more OS consumers, or a `@stackra/*` package with no Figentra rules (ADR 0259)
+- A Stackra package that needs service data defines a port (an abstract class) in `src/contracts/ports/`; the service implements it (ADR 0260)
+- Feature modules live in one of three homes: the service (default), a figentra-os `@figentra/*` package used by two or more OS consumers, or a `@stackra/*` package with no Figentra rules. The module layout is the same in all three (ADR 0259 as amended by 0294)
 
-Tokens and typed config are `define*` values, the one carve-out to the no-`define*` rule (ADR 0145). Names and casing follow ADR 0231.
+Classes are the only DI tokens, and configuration is a `Config` class (ADR 0145 and 0146 as amended by 0294). Names and casing follow ADR 0231 and 0294.
+
+Today's code: the v3 shapes above are the target. No framework package ships yet, the example service still has an
+authored `src/main.ts`, and older pages still name `app-manifest.json`; the conversion is STA-344.
 
 #### Enforcement
 
 - `turbo boundaries` enforces tier direction
 - `packages/tooling/oxlint/src/boundaries.jsonc` blocks forbidden imports
 - `tools/scripts/validate-repository.mjs` checks tier tags
+- planned — STA-340: the `contracts`-is-a-leaf and sibling-module boundary rules in `boundaries.jsonc`; STA-339: the `entries` validator check
 
 #### See Also
 
 - ADR-0003: Tier dependency direction
 - ADR-0004: Package archetypes and layers
-- ADR-0141 (event names), ADR-0142 (transport drivers), ADR-0145 (define* tokens), ADR-0231 (naming and casing standard)
+- ADR-0294: Programming model v3 (groups, entries, sibling imports)
+- ADR-0141 (event names), ADR-0142 (transport drivers), ADR-0145 (tokens are classes), ADR-0231 (naming and casing standard)
 - Constitution: boundaries (placement test)
 
 <!-- source: .agents/rules/naming-and-casing.md -->
 
 ### Naming and casing
 
-Every name follows ADR 0231 (`/adr/0231-naming-and-casing-standard`). The summary is below. A name that no row covers needs an ADR before use.
+Every name follows ADR 0231 (`/adr/0231-naming-and-casing-standard`) as amended by the programming model v3, ADR 0294
+(`/adr/0294-programming-model-v3-grammar-folders-identities-and-naming`). The summary is below. A name that no row covers
+needs an ADR before use. v3 is the target: no member in this repository has been converted yet (STA-344), so existing
+code may still show the older forms; write new code in the v3 form.
 
-- **Code style**: whole words; acronyms cased as words (`userId`, `ApiClient`, `loadHttpUrl`); no `I` prefix; abbreviations only `id`, `url`, `api`, `db`, `i18n`, `ui`; booleans `is`, `has`, `can`; handlers `on` or `handle`; hooks `use`; module-level constants SCREAMING_SNAKE.
-- **Files**: kebab-case with a kind suffix (ADR 0006). **Packages**: `@stackra/<kebab>`; services `@figentra/service-<kebab>`.
-- **Public ids**: `<prefix>_<26 characters>`. **Branches**: `figentra/sta-<n>-<slug>`.
-- **Action keys**: `billing.invoice.refund@1`. **Permissions**: `billing.invoice.refund`. **Events**: `billing.invoice.paid.v1`. Wire identifiers keep dots.
-- **Machine codes** (categories, error codes, refusal codes, event reasons): snake_case.
-- **URL paths**: kebab-case, plural. **JSON keys and query parameters**: camelCase.
-- **Database**: snake_case plural tables; `idx_` and `fk_` names for indexes and foreign keys.
+- **Code style**: whole words; acronyms cased as words (`userId`, `ApiClient`, `loadHttpUrl`); no `I` prefix; abbreviations only `id`, `url`, `api`, `db`, `i18n`, `ui` (so `kbd` is refused: the package is `@stackra/shortcuts`); booleans `is`, `has`, `can`; handlers `on` or `handle`; React hooks `use`; module-level constants SCREAMING_SNAKE.
+- **Files**: kebab-case `<name>.<kind>.ts(x)` in the kind's one home group (ADR 0294 decisions 1 and 13 to 15). **Packages**: `@stackra/<kebab>`; services `@figentra/service-<kebab>`.
+- **Class names**: one primary export per file, named `PascalCase(stem) + PascalCase(kind)`: `cancel-order.action.ts` exports `CancelOrderAction`. Noun kinds (model, schema, enum, event, signal, analytics event, type) take no suffix; error classes end in `Error`. Companions in the same file: `<Name>Input` and `<Name>Output` (action, query, prompt), `<Name>Props` (component), `<Name>Data` (notification).
+- **Identities are derived, not typed** (ADR 0294 decision 20): module key from the folder, member key from the package name, permission `<module>.<model>.<verb>` from a `<Model>Permissions` static, error code from the class name. Written once: an action or query `key` (`order.cancel`, which becomes `orders.order.cancel@1`), an event `name` (`order.paid`, which becomes `orders.order.paid.v1`), a route `path`. `stackra.manifest.json` locks each one; a change needs `@Renamed(old)`.
+- **Public ids**: `<prefix>_<26 characters>`, typed `PublicId<"ord">`; only a seeder's `static ids` spells one out. **Branches**: `figentra/sta-<n>-<slug>`.
+- **Wire identifiers keep dots**: action keys `orders.order.cancel@1`, permissions `orders.order.cancel`, events `orders.order.paid.v1`.
+- **Machine codes** (categories, error codes, refusal codes, event reasons, gen error codes): snake_case.
+- **URL paths**: kebab-case, plural, derived from the key by the endpoint convention (`http-conventions`). **JSON keys and query parameters**: camelCase.
+- **Database**: snake_case plural tables in the module's Postgres schema (`orders.order_lines`); `idx_`, `fk_` and `ck_` names for indexes, foreign keys and check constraints.
 - **Environment variables and secrets**: SCREAMING_SNAKE. Public values use `VITE_`, `EXPO_PUBLIC_` or `RENDERER_VITE_` and never hold a secret. Server values use `STACKRA_`, `FIGENTRA_` or `MAIN_VITE_`. Secrets are `<PROVIDER>_<PURPOSE>`. Tool-reserved prefixes are `ENCORE_`, `TURBO_`, `NODE_`, `CI`, `GITHUB_`, `INFISICAL_`, `EAS_`.
-- **Namespace lookups** (i18n keys, assets, templates, stubs) use `<module>::<path>`, for example `billing::invoice.refund_confirm` and `flags::public/images/eg.svg`.
-- **DI tokens**: every interface port and every `defineConfig` value has a same-named token, so the constant takes the type's name, with a `<module>.<TypeName>` key: `export const InvoiceStorage = defineToken<InvoiceStorage>("billing.InvoiceStorage")` (ADR 0263). A constructor typed with it needs no `@Inject`, for one driver or many. `@Inject` is only for a named instance. A class is its own token. String injection is banned.
+- **Namespace lookups** (i18n keys, assets, templates, stubs) use `<module>::<path>`, for example `orders::actions.order.cancel.confirm` and `flags::public/images/eg.svg`.
+- **DI**: classes are the only tokens. A constructor parameter names its dependency by its type; a port is an abstract class; a named instance is the type `Named<Port, "x">`. `defineToken`, string tokens, `@Inject` and `@Injectable` are retired (ADR 0145, 0263 as amended by 0294).
+- **One meaning per word** (ADR 0294 decision 23): Precondition, never Guard or Gate; extension point and extension, never a backend hook; Hook means a React `use*` function only; Provider means a React context component only (DI registrations are bindings); Command means a CLI command only; Lifetime, never scope, for DI. Banned identifiers: `*Guard`, `*Gate`, `*HookPoint`.
+- **The decorator test**: if the folder, the suffix, the base class, a field type, a method name or a derived name already says it, write no decorator. Only field, method (`@Step`, `@Transition`) and class-facet decorators exist; there are no kind decorators.
 
-Enforcement: planned — oxlint `unicorn/filename-case` (kebab-case files), the house lint rules of ADR 0129, the public-prefix lint, and the validator checks named in ADR 0231.
+Enforcement: planned — STA-338 (`base-matches-suffix` and the validator's `kind-path` check), STA-340 (the decorator-registry checks, the `names` validator row for abbreviations and banned identifiers, the gen checks `kind_class_name` and `identity_changed`), and oxlint `unicorn/filename-case` and the house rules of ADR 0129. Nothing here is checked yet.
 
 <!-- source: .agents/rules/not-built-yet.md -->
 
@@ -608,7 +685,7 @@ stackra/
 ├── packages/               # tier:lib
 │   ├── application/        # Actions, AI, IR, registry
 │   ├── commerce/           # Money, ledger and pricing primitives
-│   ├── communication/      # Webhooks, versioning, integrations, mail
+│   ├── communication/      # Webhooks, versioning, integrations, notifications
 │   ├── cross-cutting/      # Brand
 │   ├── data/               # Model, database, content, media, search, state machine, assets, filesystem, storage
 │   ├── developer/          # CLI, gen (the codegen compiler), coding standard, Vite plugin
@@ -648,57 +725,86 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 
 #### What Goes Where
 
+The programming model v3 (ADR 0294, 0295) is the target shape below. Today's members predate it: the console, mobile
+app, example and health services and the static Worker still have an authored `src/main.ts`, and
+`validate-repository.mjs` (`checkService`) still requires `src/main.ts` and a `stackra.module` field in a service's
+`package.json` until STA-339 changes it. Convert nothing by hand ahead of the codemod (STA-344); write new code in the
+v3 shape where the member already allows it.
+
+##### Every member (ADR 0294 rule R12, ADR 0295)
+
+- Authors `package.json`, `tsconfig.json`, `turbo.jsonc`, `stackra.config.ts` (one `defineApp`, `defineService`,
+  `definePackage` or `defineWorker` call, static data only), `runway.yaml` when it needs runtime resources (ADR 0296),
+  `src/**` and `assets/**`
+- One root module, `src/<key>.module.ts` (`src/node/<key>.module.ts` in a package); the key is derived from the package
+  name
+- Nobody writes `main.ts`, an entry barrel or a tool config: gen writes the runtime entries to `.stackra/entry/<target>.ts`
+  and every tool config into `.stackra/` (ADR 0295)
+- Committed generated contracts at the member root: `stackra.manifest.json` and `openapi.json`
+- Tests: `src/**/__tests__/` only (ADR 0022)
+
 ##### Packages (<category>/<name>)
 
-- Shared code consumed by apps/services
-- Organized by layer: foundation, application, communication, etc.
-- Entry point: `src/index.ts`
-- Tests: `src/**/__tests__/` only (ADR 0022)
+- Shared code consumed by apps/services, organised by category: foundation, application, communication, etc.
+- Entry folders: `src/contracts/` (the leaf: `ports/`, `enums/`, `types/`), `src/config/`, `src/core/`, `src/node/` (the
+  module, with the module groups), `src/react/<name>/`, `src/native/<name>/`, `src/testing/` (ADR 0294 decision 15)
+- Entries: `.`, `./contracts`, `./node`, `./react`, `./native`, `./testing`; the barrels are generated
 
 ##### Services (<name>)
 
 - Backend services in plain TypeScript; `stackra gen` emits the Encore app (ADRs 0091, 0124)
-- Independent workspace members
-- Entry: `src/main.ts`
-- Tests: `src/__tests__/`
+- Independent workspace members; feature modules in `src/modules/<key>/`, each with the module groups of ADR 0294
+  decision 13 (`models/`, `actions/`, `queries/`, `schemas/`, `enums/`, `errors/`, `events/`, `listeners/`,
+  `workflows/`, `access/`, `services/`, `drivers/`, `extensions/`, `resources/<model>/`, `database/{migrations,factories,seeders}/`,
+  `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its first file; `database/` is per module,
+  its migrations numbered per module, and each module's tables live in its own Postgres schema
+- Config classes in `src/config/`; the public type surface in `src/contracts/`
 
 ##### Apps (<name>)
 
-- Console: Minimal Vite app
-- Docs: Mintlify documentation site
-- Mobile: Expo React Native app
-- Entry: `src/main.ts`
+- Console: Vite web app; Docs: Mintlify documentation site; Mobile: Expo React Native app
+- App groups (ADR 0294 decision 14): `src/<key>.module.ts`, `src/app.error.tsx`, `config/`, `routes/<name>/`,
+  `components/<name>/`, `blocks/<name>/`, `panels/`, `menus/`, `shortcuts/`, `documents/`, `stores/`, `flags/`,
+  `analytics/`, `bridges/`, `hooks/` (two or more importers), `overrides/<owner>/`, `enums/`, `types/`, `styles/`
+- Docs (`apps/docs`) is the exception: Mintlify pages, `docs.json` and `assets/` in `src/`
 
 ##### Workers (<name>)
 
 - Cloudflare Worker members, `@figentra/worker-<name>`, tier `tier:app` (ADR 0284)
-- `wrangler.jsonc` at the member root (hand-written until `stackra gen` emits Workers config); deployed only from CI
-- Build entry: `src/main.ts`; tests: `src/**/__tests__/`
+- `wrangler.jsonc` at the member root is hand-written until gen writes the Workers config (ADR 0295, STA-339); deployed
+  only from CI
+- Tests: `src/**/__tests__/`
 
 #### Generated Output
 
-- `stackra gen` writes real typed files to `.stackra/gen/` (`routes`, `navigation`, `i18n`, `resources`, `assets`, `clients`, `services`, `permissions`, `settings`, `capabilities`, `wiring`, `hooks`). Code imports them only as `#stackra/<name>`, through the member's `imports` map (ADR 0261, 0233)
-- `.stackra/*` is gitignored; `.stackra/gen/` is never committed and is never edited by hand
-- DI wiring is generated into `.stackra/gen/wiring.ts`; a module is a folder and authors write no provider lists (ADR 0263)
+- `stackra gen` writes real typed files to `.stackra/gen/` (`routes`, `navigation`, `i18n`, `resources`, `assets`, `clients`, `services`, `permissions`, `settings`, `capabilities`, `wiring`, `hooks`, `schemas`). Code imports them only as `#stackra/<name>`, through the member's `imports` map (ADR 0261, 0233)
+- Target: `.stackra/` is fully gitignored, and the committed contract is `stackra.manifest.json` at the member root (ADR 0294 rule R10). Today `.gitignore` still re-includes `.stackra/app-manifest.json`; STA-339 removes the exception
+- DI wiring is generated into `.stackra/gen/wiring.ts`; a module is a folder, classes are the only tokens, and authors write no provider lists (ADR 0263 as amended by 0294)
 
 #### Forbidden Paths
 
 - No root `tests/` - tests live beside code
 - No `src/` in workspace root
 - No packages directly in `packages/` - must have category folder
-- Tooling presets live in `packages/tooling/<name>/src/` (one flat layer); no `packages/tooling/<name>/src/lib/`
+- Tooling presets live in `packages/tooling/<name>/src/` (one flat layer); no `packages/tooling/<name>/src/lib/`. There are
+  exactly five: typescript, oxlint, vitest, tsdown and commitlint (ADR 0300)
+- Folders named after a retired kind: `links/`, `permissions/`, `guards/`, `hooks/` (inside a module), `states/`,
+  `search/`, `repositories/`, `seeds/`, `versions/`, `mails/`, `override-points/`, `tokens/`, `utils/`, `helpers/`
+  (ADR 0294, 0130 as amended)
 
 #### Enforcement
 
 - `turbo boundaries` checks dependency direction
 - `tools/scripts/validate-repository.mjs` checks tier tags, file existence, and config formats: repo-owned config is YAML; `.jsonc` only where the reader has no YAML support (`MUST_STAY_JSONC`), `.json` only where it takes no comments (`MUST_STAY_JSON`)
 - `packages/tooling/oxlint/src/boundaries.jsonc` enforces layer rules
+- planned — STA-338: the `kind-path` check of the v3 group tables; STA-339: the `member-root`, `tool-configs`, `manifest` and `runway` checks; STA-340: the other v3 validator rows (ADR 0294 to 0296)
 - Repo-owned YAML is block style: no flow mappings (`{ a: b }`, empty `{}` aside), flow sequences only for short scalar lists on one line, trailing comments only while the line stays within 100 characters; `checkYamlFlowMaps` in `validate-repository.mjs` enforces it (STA-299)
 
 #### See Also
 
 - ADR-0004: Package archetypes and layers
 - ADR-0003: Tier dependency direction
+- ADR-0294, ADR-0295, ADR-0296: programming model v3, build and entry, runway v3
 - Standards: members (required files per tier)
 
 ### Read before touching matching files

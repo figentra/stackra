@@ -1,7 +1,16 @@
 ---
 title: "0261 — Generated #stackra modules: real files in .stackra/gen, imported through the #stackra alias"
-description: "Accepted, amended by 0265 · 2026-10-21"
+description: "Accepted, amended by 0265, 0294, 0295 · 2026-10-21"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) and
+  [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries): the outputs
+  of decision 1 include `schemas` (`#stackra/schemas`, one Zod schema per shape class). The
+  committed artefacts that decision 5 leaves unchanged are now `stackra.manifest.json` and
+  `openapi.json` at the member root, and `.stackra/` is fully gitignored (ADR 0294, rule R10). Gen
+  also writes the tool configs and the runtime entries into `.stackra/` (ADR 0295).
+</Note>
 
 <Note>
   Relates to [0090](/adr/0090-codegen-discovery-by-root-module) (the discovery that feeds these

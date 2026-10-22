@@ -1,6 +1,6 @@
 ---
 title: "0234 — Module assets and storage"
-description: "Accepted, amended by 0263, 0264 · 2026-10-20"
+description: "Accepted, amended by 0263, 0264, 0294 · 2026-10-20"
 ---
 
 <Note>
@@ -15,6 +15,14 @@ description: "Accepted, amended by 0263, 0264 · 2026-10-20"
   Amended by [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders):
   The namespace is the module's `key`, and the `name` field is removed (decision 1). Decision 2's
   `@Module({name})` no longer applies.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), decision 9: overrides are
+  path-bound and typed, with no decorator. A file override replaces the module file at the same path, as decision 9
+  already says. A component override is a file at `overrides/<owner>/<block-or-widget>.override.tsx`; it replaces the
+  block or Custom widget at that path and is typed against that block's props. The override-point kind is retired, so blocks and
+  Custom widgets are the only replaceable components. Behaviour is replaced through `@Replaces`, which swaps a DI binding.
 </Note>
 
 <Note>

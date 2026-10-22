@@ -1,7 +1,19 @@
 ---
 title: "0145 — Tokens are defineToken values; container-backed global helpers are banned"
-description: "Accepted, amended by 0247, 0263, 0264 · 2026-10-20"
+description: "Accepted, amended by 0247, 0263, 0264, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): classes
+  are the only tokens. `defineToken` is retired, and so are string and symbol tokens (decision 1). A
+  port is an abstract class in `src/contracts/ports/`. The define family of decision 2 is replaced
+  by kind classes, except the member config functions of
+  [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders) decision 4:
+  `definePermissions` becomes the `Permissions` class, `defineEvents` the event classes,
+  `defineSkill` and `definePrompts` the `Skill` and `Prompt` classes, `defineEntitlements` the
+  `Entitlement` class, and `defineConfig` the `Config` class. `defineMeters` is not placed by 0294.
+  Decisions 3 to 6 stand.
+</Note>
 
 <Note>
   Amended by [0247](/adr/0247-declaration-rule-decorators-annotate-define-creates-values): the

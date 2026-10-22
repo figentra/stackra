@@ -1,7 +1,22 @@
 ---
 title: "0231 — Naming and casing standard"
-description: "Accepted, amended by 0264 · 2026-10-20"
+description: "Accepted, amended by 0264, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): a class
+  name is `PascalCase(stem)` plus `PascalCase(kind)`, with no suffix for noun kinds and an `Error`
+  ending for error classes. The DI token rows and decision 5 are retired, because classes are the
+  only tokens ([0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned),
+  amended by 0294), so `defineToken` and the same-named token carve-out no longer apply. The banned
+  identifiers (`*Guard`, `*Gate`, `*HookPoint`, `defineToken`, `defineConfig`, `@Inject`, and the
+  `kbd` abbreviation) are refused, and the words of 0294's dictionary govern names. `@stackra/kbd`
+  becomes `@stackra/shortcuts`, and `@stackra/mail` becomes `@stackra/notifications`. In the
+  database rows, a table stays snake_case and plural but lives in its module's Postgres schema
+  (`orders.order_lines`, 0294 decision 20), and check constraints take the `ck_` prefix beside the
+  `idx_` and `fk_` prefixes (`ck_orders_status`). `@stackra/database` ships the ORM naming strategy
+  that applies these prefixes.
+</Note>
 
 <Note>
   Restates the forms already decided in [0132](/adr/0132-permissions-catalogue-and-policy-providers)

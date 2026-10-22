@@ -1,7 +1,11 @@
 ---
 title: "0259 — Module placement: three homes and the placement test"
-description: "Accepted · 2026-10-21"
+description: "Accepted, amended by 0294 · 2026-10-21"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): one module layout applies in all three homes. A module in a service (`src/modules/<key>/`), in a figentra-os package or in a `@stackra/*` package (`src/node/`) uses the same group folders and suffixes, so a module has the same shape in every home. A module has no `forRoot` and no `defineConfig`; its configurable values are config classes ([ADR 0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned)). The `forRoot` and `defineConfig` wording of decision 1 for home A is retired. The placement test itself is unchanged.
+</Note>
 
 <Note>
   Amends [0111](/adr/0111-module-is-the-unit-of-contribution) (a service root module is wiring

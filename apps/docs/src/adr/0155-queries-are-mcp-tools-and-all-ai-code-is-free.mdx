@@ -1,7 +1,19 @@
 ---
 title: "0155 — AI-native rule: queries are MCP tools, and all AI code is free"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0245, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3, for decision 1. The opt-in for writes is the `tool: true` option of the
+  action's base class, which replaces `@AsTool`. A query at risk level L0 or L1 is still an MCP tool
+  by default, under the caller's own permissions. Risk now belongs to the permission the action uses
+  (see [0099](/adr/0099-risk-scale-l0-to-l4)), so an action whose permission is L3 or above still
+  needs a named human. Decisions 2 to 5 are unchanged.
+
+Enforcement of this note: planned — STA-340 (gen derives MCP tools from queries at L0 and L1).
+
+</Note>
 
 <Note>
   Amended by

@@ -1,23 +1,28 @@
 ---
 name: ai-mcp-tools
-description: Expose Stackra capabilities to AI agents - which queries become MCP tools automatically, opting writes in with @AsTool, risk levels and human approval, intents for the command palette and AI triggers, @ContextProvider facts, defineSkill and definePrompts, plans that run as workflows, and the entitlement refusal. Use when an action or query should be callable by an agent, or when building agent-facing context, skills or prompts.
+description: Expose Stackra capabilities to AI agents in the programming model v3 - which queries become MCP tools automatically, opting writes in with tool true, risk from the permission and human approval, intents for the command palette and AI triggers, Facts, Skill and Prompt kinds in the module's ai/ folder, plans that run as workflows, and the entitlement refusal. Use when an action or query should be callable by an agent, or when building agent-facing context, skills or prompts.
 ---
 
 # AI and MCP tools
 
 AI and MCP are in every package and service from the start, and all of it is free code (ADR 0155). An agent is a
-principal: it acts through the same actions, the same pipeline and the same permissions as a human, as an `agent` actor
-`onBehalfOf` the user (ADR 0098). Tools are **generated** from actions, never hand-written (ADR 0245). Shapes follow the
-ADRs; `@stackra/ai` docs win once it ships.
+principal: it acts through the same actions, the same pipeline and the same permissions as a human, as an agent actor
+on behalf of the user (ADR 0098). Tools are **generated** from actions and queries, never hand-written (ADR 0245).
 
-## What becomes a tool (ADR 0155)
+This is the v3 target (ADR 0294, 0155 and 0245 as amended). `@stackra/ai` and gen do not ship yet; the package docs win
+once they ship.
 
-| Declaration                         | MCP exposure                                                        |
-| ----------------------------------- | ------------------------------------------------------------------- |
-| `@Query` at risk L0 or L1           | A tool automatically, under the caller's own permissions            |
-| `@Action` (any write)               | Only with `@AsTool`                                                 |
-| Any action at L3 or above           | Always needs a named human approval, even as a tool                 |
-| Plan steps at L2 and above          | The user approves the plan before it runs (ADR 0245)                |
+## What becomes a tool (ADR 0155 as amended)
+
+| Declaration                                  | MCP exposure                                                 |
+| -------------------------------------------- | ------------------------------------------------------------ |
+| `extends Query({ key })` (permission L0, L1) | A tool automatically, under the caller's own permissions     |
+| `extends Action({ key })` (any write)        | Only with `tool: true` in its options                        |
+| Any action whose permission is L3 or above   | Always needs a named human approval, even as a tool          |
+| Plan steps at L2 and above                   | The user approves the plan before it runs (ADR 0245)         |
+
+Risk lives on the permission (`static readonly refund = Permission.L3` on `InvoicePermissions`), so an action declares
+no level and the MCP hints follow from the permission (ADR 0099 as amended).
 
 One MCP gateway in the `ai` service serves one server per tenant over Streamable HTTP, authenticates with OAuth through
 ZITADEL, filters tools by IAM and entitlements, and audits each call. A tenant that is not entitled gets
@@ -26,41 +31,54 @@ ZITADEL, filters tools by IAM and entitlements, and audits each call. A tenant t
 ## Worked example
 
 ```ts
-@Query({
-  key: "billing.invoice.list@1",
-  input: ListInvoicesInput, output: ListInvoicesOutput,
-  permission: "billing.invoice.read", risk: "L0",
-  actors: ["user", "agent", "service"],
-  intents: ["show unpaid invoices", "which invoices are overdue"],   // the intent router and command palette
-  description: "Lists invoices visible to the caller, newest first, cursor-paginated.", // the tool description
-})
-export class ListInvoicesQuery { /* ... */ }
-
-@Action({ key: "billing.invoice.refund@1", risk: "L3", actors: ["user", "agent"], /* ... */ })
-@AsTool()          // opt in; L3 means a human approves each call
-export class RefundInvoiceAction { /* ... */ }
-```
-
-Write tool descriptions for a model: what it does, what it returns, when not to use it. Inputs are the action's Zod
-schema, so field descriptions on the schema reach the model.
-
-## Context, skills, prompts (ADR 0245)
-
-```ts
-@ContextProvider({ key: "billing.invoice-context", for: "record:billing.invoice" })
-export class InvoiceContext {
-  async provide(invoiceId: string, ctx: ContextRequest) { /* facts about one record, permission-checked */ }
+// src/modules/billing/queries/list-invoices.query.ts — billing.invoice.list@1, a tool automatically
+/** Lists invoices visible to the caller, newest first, cursor-paginated. */
+export class ListInvoicesQuery extends Query({
+  key: "invoice.list",
+  actors: [ActorKind.User, ActorKind.Agent, ActorKind.Service],
+  intents: ["show unpaid invoices", "which invoices are overdue"], // the intent router and the command palette
+}) {
+  async handle(input: ListInvoicesInput, ctx: QueryContext): Promise<ListInvoicesOutput> {
+    // ...
+  }
 }
 
-export const REFUNDS_SKILL = defineSkill({
-  key: "billing.refunds",
-  instructions: "billing::ai/refunds.md",        // loaded on demand: progressive disclosure
-  tools: ["billing.invoice.list@1", "billing.invoice.refund@1"],
-  examples: [/* input → expected tool calls */],
-});
-
-export const BILLING_PROMPTS = definePrompts("billing", { "explain-invoice": { version: 1, template: "billing::ai/explain.md" } });
+// src/modules/billing/actions/refund-invoice.action.ts — opt in; L3 on the permission means a human approves each call
+export class RefundInvoiceAction extends Action({
+  key: "invoice.refund",
+  actors: [ActorKind.User, ActorKind.Agent],
+  tool: true,
+}) {
+  // ...
+}
 ```
+
+The class TSDoc is the tool description: say what it does, what it returns and when not to use it. The input schema is
+compiled from the `handle` parameter type, so field TSDoc reaches the model.
+
+## Facts, skills and prompts (ADR 0245 as amended)
+
+Each is a kind class in the module's `ai/` folder:
+
+```ts
+// ai/invoice.facts.ts — facts about one invoice, permission-checked
+export class InvoiceFacts extends Facts(Invoice) {
+  async provide(invoice: Invoice, ctx: FactsContext): Promise<InvoiceFactsData> {
+    // ...
+  }
+}
+
+// ai/refunds.skill.ts
+export class RefundsSkill extends Skill({
+  instructions: "billing::ai/refunds.md", // loaded on demand: progressive disclosure
+  tools: [ListInvoicesQuery, RefundInvoiceAction],
+}) {}
+
+// ai/explain-invoice.prompt.ts — a versioned prompt with its evaluations
+export class ExplainInvoicePrompt extends Prompt({ template: "billing::ai/explain.md", version: 1 }) {}
+```
+
+`defineSkill`, `definePrompts` and `@ContextProvider` are retired.
 
 - A **plan** is a list of actions with inputs that an agent proposes; it runs as an ephemeral workflow (ADR 0152);
   the runner refuses a step the approving user lacks permission for.
@@ -70,7 +88,8 @@ export const BILLING_PROMPTS = definePrompts("billing", { "explain-invoice": { v
 
 ## Never
 
-- A hand-written MCP tool or a tool that bypasses an action.
+- A hand-written MCP tool, a tool that bypasses an action, or `@AsTool` (retired: use `tool: true`).
+- A risk level on an action; it comes from the permission.
 - A tool that reads tenant or user identity from its input.
 - A secret or credential visible to the model; credentials are secret refs resolved by the runtime (ADR 0267, 0107).
 - Asking in a spec "does this need AI?": the answer is always yes (ADR 0155).
@@ -78,4 +97,4 @@ export const BILLING_PROMPTS = definePrompts("billing", { "explain-invoice": { v
 ## Check
 
 `pnpm --filter <member> test`, then `pnpm verify`. Review: `api-contract-reviewer`, and `security-tenancy-reviewer` for
-any tool at L2 or above.
+any tool whose permission is L2 or above.

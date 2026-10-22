@@ -1,7 +1,23 @@
 ---
 title: "0101 — Every operation is an action; a workflow sits behind it only when the criteria hit"
-description: "Accepted, amended by 0265 · 2026-10-19"
+description: "Accepted, amended by 0265, 0294 · 2026-10-19"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: the rule of this ADR holds. The kinds named in decision 1 are base classes,
+  `extends Action({ key })` and `extends Query({ key })`. A workflow is a class that extends
+  `Workflow(...)`, and its public async methods are its steps (see
+  [0152](/adr/0152-workflow-semantics-timeouts-waits-pinned-versions-and-one-graph-format)). An
+  action starts a workflow with `ctx.run(Workflow, input)`, and an event starts one only through the
+  workflow's `startOn` option. Adapters still never expose a workflow directly. The criteria of
+  decision 3 are unchanged. The reads of decision 5 are `Query` classes, and cross-module reads
+  follow [0104](/adr/0104-links-and-query-graph) as amended.
+
+Enforcement of this note: planned — STA-340 (gen warns when an action calls another module's
+client without a workflow, and fails a workflow reachable from an adapter).
+
+</Note>
 
 <Note>
   Amended by [0265](/adr/0265-hook-points-transform-and-verify): The before and after hooks of

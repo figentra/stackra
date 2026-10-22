@@ -1,7 +1,16 @@
 ---
 title: "0091 — The Encore app is generated into .stackra/encore; services hold no Encore files"
-description: "Accepted, amended by 0158, 0268 · 2026-10-19"
+description: "Accepted, amended by 0158, 0268, 0294, 0295 · 2026-10-19"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (rule R10)
+  and [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries): decision
+  3's committed file is `stackra.manifest.json` at the member root, beside `openapi.json`, not
+  `app-manifest.json` under `.stackra/`. `.stackra/` is fully gitignored, with no exception. The
+  generated Encore application stays in `.stackra/encore/`, and the runtime entries of ADR 0295 are
+  written to `.stackra/entry/`.
+</Note>
 
 <Note>
   Amended by [0158](/adr/0158-gen-artefacts-openapi-manifest-and-client): openapi.json and

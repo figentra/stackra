@@ -1,7 +1,47 @@
 ---
 title: "0098 — Actions are the unit of behaviour, in @stackra/actions, with one pipeline and a typed actor"
-description: "Accepted, amended by 0136, 0137, 0139, 0155, 0264 · 2026-10-19"
+description: "Accepted, amended by 0136, 0137, 0139, 0155, 0211, 0264, 0294 · 2026-10-19"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3, which restates decisions 1 to 5 in the new form. Decisions 6 and 7 (the
+  actor model) are unchanged. Where this note and the text below differ, this note governs.
+
+Decision 1 is superseded. An action or a query is a base class that takes its options:
+`extends Action({ key, actors, ... })` for a write, and `extends Query({ key, ... })` for a read.
+No decorator names the kind. The author writes the `key`, and gen adds the module prefix and the
+major version. The permission defaults from the key, the risk comes from that permission (see
+[0099](/adr/0099-risk-scale-l0-to-l4)), and the input and output are the parameter and return
+types of `handle`, from which gen compiles the schemas.
+
+Decision 2 is superseded. The HTTP route follows the endpoint convention of the programming model
+v3, derived from the key with an optional `endpoint` override. An action is an MCP tool only when
+its options say `tool: true`, and a job is an action with a `job:` option. `@AsEndpoint`,
+`@AsTool`, `@AsJob` and `@AsCommand` are not in the v3 decorator set, and the word command now
+means a CLI command only. `@AsListener` was already removed by
+[0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders). AI exposure
+stays default-deny.
+
+Decision 3's list of steps is superseded by the order in
+[0138](/adr/0138-pipeline-order-is-fixed), as amended: tenancy, permission, precondition,
+entitlement, flag, idempotency, interceptors, and then `handle`. The record rule runs inside
+`handle`, through `ctx.authorize(record)`. Approval, budget, evidence and audit appear in decision
+3 but not in that order, and this note does not settle their place. The `@AccessLogged` facet
+records access and stays.
+
+Decision 4 is superseded by [0105](/adr/0105-crud-generates-service-methods). A service extends
+`CrudService(Model)`, and a resource's `operations` map generates the standard actions. Decision 5
+keeps `@Controller` for raw endpoints only. Inbound webhooks are `WebhookEvent` classes, so they
+need no controller. The `ux` option of [0139](/adr/0139-actions-declare-their-user-experience)
+becomes resource `toasts`. Guards are preconditions, declared in `preconditions:` and run after
+the permission check. A workflow started from an action is `ctx.run(Workflow, input)`.
+
+Enforcement of this note: planned — STA-338 (`base-matches-suffix`, and the kind-path check for
+`actions/` and `queries/`); STA-340 (gen checks: a permission that cannot be derived; an endpoint
+collision; GET on an action or a non-GET on a query; a query above L1; a precondition on a query).
+
+</Note>
 
 <Note>
   Amended by [0211](/adr/0211-memberships-and-support-access): the actor gains the acting-as marker.

@@ -1,6 +1,6 @@
 ---
 title: "0165 — The web client stack restated: the @stackra/ui contract, form adapters, no Next.js"
-description: "Accepted, amended by 0268 · 2026-10-20"
+description: "Accepted, amended by 0268, 0294, 0301 · 2026-10-20"
 ---
 
 <Note>
@@ -12,6 +12,15 @@ description: "Accepted, amended by 0268 · 2026-10-20"
 <Note>
   Amended by [0268](/adr/0268-register-answers-thin-items-r1-to-r18): R11: there is no server
   rendering of L2 pages in v1.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) and
+  [0301](/adr/0301-stackra-seo-package). A route is a folder holding its page class, its `.tsx`, and optionally `.error.tsx`
+  (React Router `ErrorBoundary`) and `.fallback.tsx` (`HydrateFallback`), as mapped in [0053](/adr/0053-decorator-route-classes-compiled-to-router-adapters).
+  A route's `submit()` is its React Router action. Presentation (Page, Modal, Sheet, Drawer or FullScreen) is set on the route
+  with `over:` and `side:` where it applies. `<name>.server.ts` marks code that never reaches the browser. The SEO chain runs
+  app defaults, then the route's static `seo`, then `meta()`, then the tenant's SEO record; the derived fields are defined in 0301.
 </Note>
 
 ## Context

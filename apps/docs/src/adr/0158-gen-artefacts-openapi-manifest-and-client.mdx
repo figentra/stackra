@@ -1,7 +1,15 @@
 ---
 title: "0158 — Gen artefacts: committed OpenAPI and manifest, a CI-published client, deploy-mode targets"
-description: "Accepted, amended by 0260, 0268 · 2026-10-20"
+description: "Accepted, amended by 0260, 0268, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (rule
+  R10): the committed contract is `stackra.manifest.json` at the member root, not
+  `app-manifest.json`. `openapi.json` is committed beside it at the same root, and `.stackra/` is
+  fully gitignored. Read each reference to `app-manifest.json` on this page as
+  `stackra.manifest.json`.
+</Note>
 
 <Note>
   Amends [0091](/adr/0091-generated-encore-app-in-stackra-folder) and

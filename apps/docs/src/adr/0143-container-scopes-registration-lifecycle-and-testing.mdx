@@ -1,7 +1,15 @@
 ---
 title: "0143 — Container scopes, module registration, lifecycle and testing"
-description: "Accepted, amended by 0263 · 2026-10-20"
+description: "Accepted, amended by 0263, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): the scope
+  of a class is marked by `@Lifetime(Lifetime.Request)` or `@Lifetime(Lifetime.Transient)`, a class
+  facet. A class with neither is a singleton. The word "scope" is kept for settings and IAM, and
+  decision 1's `@Injectable` scope option is retired. The boot check of decision 1 (a singleton may
+  not inject a request-scoped class) stands.
+</Note>
 
 <Note>
   Amends [0042](/adr/0042-di-first-with-one-container-per-service) (accepted in this change; its

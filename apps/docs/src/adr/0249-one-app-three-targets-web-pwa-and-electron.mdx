@@ -1,7 +1,19 @@
 ---
 title: "0249 — One app, three targets: web, PWA and Electron desktop from one member"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0294, 0295 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) and
+  [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries): the app
+  definition is one `defineApp` call with the targets at its top and one section per tool, and the
+  outputs of decision 4 are written into `.stackra/`, including the electron-builder configuration
+  and the web manifests. The `@DesktopAction` bridge of decision 4 becomes the `Bridge` kind in
+  `bridges/`, and the offline setting is a field of the query configuration, not an action option.
+  Desktop mode and overlays stay in `desktop.config.ts` ([ADR
+  0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles)). `MenuKind` gains
+  `TabBar`.
+</Note>
 
 <Note>
   Amends [0058](/adr/0058-desktop-is-electron), decisions 1 to 3, and

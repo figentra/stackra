@@ -1,7 +1,24 @@
 ---
 title: "0151 — The workflow engine is a port with a native driver and a Temporal driver"
-description: "Accepted, amended by 0292 · 2026-10-20"
+description: "Accepted, amended by 0292, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3, which changes the form of decisions 1 and 5. A workflow is a class that
+  extends `Workflow({ startOn, correlate, timeout })`, or `Workflow<Input>({ timeout })` when an
+  action starts it. Its public async methods are its steps, run in declaration order, and `@Step`
+  takes options only. `@Workflow` is retired, and `@Step` stays as the method decorator for its
+  options. The body of a workflow is therefore that class. The step graph follows from declaration
+  order and the `after` option, not from a separate declarative graph. The purity rule of decision 5
+  applies to each `when` expression. The engine port (decision 2), the drivers (decisions 3 and 4)
+  and the conformance suite (decision 6) are unchanged.
+
+Enforcement of this note: planned — STA-340 (the `workflow-purity` lint, which forbids timers and
+sleeps and limits public methods to steps, `undo<Step>` methods and `output`; and the purity check
+of each `when` expression); STA-338 (`base-matches-suffix` for `.workflow.ts`).
+
+</Note>
 
 <Note>
   Amended by

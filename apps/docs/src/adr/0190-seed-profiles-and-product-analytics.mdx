@@ -1,7 +1,22 @@
 ---
 title: "0190 — Seed profiles and our product analytics"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: seeders live in `database/seeders/` and take their profile from the file
+  name: `minimal.seeder.ts`, `demo.seeder.ts` and `test.seeder.ts`. A seeder's identity is
+  `<module>.<profile>`, such as `orders.demo`. A seeder declares the public ids it creates in a
+  `static ids` object, and other members read those ids through the generated client namespace. No
+  other file types a public id in code. A `minimal` seeder imports no factory, and seeders run in
+  the order their imports imply. Decision 1 (the three profiles) is unchanged.
+
+Enforcement of this note: planned — STA-338 (the kind-path check for `database/seeders/`); STA-340
+(gen checks: a seeder not named `minimal`, `demo` or `test`; a `minimal` seeder that imports a
+factory; an unknown `ids` reference; the `no-string-identity` lint).
+
+</Note>
 
 ## Context
 

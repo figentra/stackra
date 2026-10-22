@@ -1,7 +1,17 @@
 ---
 title: "0127 — Package categories, including infrastructure and commerce"
-description: "Accepted, amended by 0282, 0286 · 2026-10-20"
+description: "Accepted, amended by 0282, 0286, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), whose
+  dictionary gives each word one meaning (decision 23): in the communication row, `mail` is renamed
+  `notifications` (`@stackra/notifications`, which keeps the `Mailer` driver), and in the experience
+  row, `kbd` is renamed `shortcuts` (`@stackra/shortcuts`). The amendment section below reads
+  `@stackra/notifications` where it says `@stackra/mail`. The notifications service of
+  [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)
+  is unchanged, and the old package names are not used.
+</Note>
 
 <Note>
   Amended by [0286](/adr/0286-vellum-as-the-sdlc-spike-bar-approvals-evidence-and-distribution): the

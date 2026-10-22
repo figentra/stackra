@@ -1,0 +1,66 @@
+---
+title: "0298 — Consent and analytics: decline by default, Global Privacy Control refuses, and a bounded queue for events before a decision"
+description: "Accepted · 2026-10-22"
+---
+
+## Context
+
+A web surface that sets a non-essential cookie or sends an analytics event needs the visitor's decision first, and the rules
+for asking differ by region. This ADR covers that visitor consent to cookies and analytics on web surfaces. It is a different
+thing from three others in this repository:
+
+- the privacy operations of [0189](/adr/0189-privacy-operations-and-data-retention) (export, erasure and retention of personal
+  data);
+- the per-action consent slot of [0137](/adr/0137-declared-action-options-and-refusal-codes) and
+  [0138](/adr/0138-pipeline-order-is-fixed), which is a check inside the action pipeline;
+- Stackra's own product analytics in [0190](/adr/0190-seed-profiles-and-product-analytics), which measures how Stackra is used.
+
+Operational telemetry carries no personal data
+([0184](/adr/0184-telemetry-opentelemetry-otlp-slis-heartbeats-and-log-retention)); visitor analytics is governed here
+instead. The web surfaces are described in
+[0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding), whose pages are shared HTML and
+cannot depend on a cookie.
+
+## Decision
+
+1. **Decline by default.** Until a visitor decides, a page sets no cookie other than the one that stores the decision, and
+   sends no analytics event.
+2. **Global Privacy Control means refuse.** A browser that sends the Global Privacy Control signal is treated as having refused.
+   The browser reads the signal, because consent state exists only on the client (decision 6).
+3. **The decision is a cookie that carries a policy version.** The cookie records the decision and the version of the consent
+   policy it answered. A new policy version asks the visitor again.
+4. **Regions have defaults.** A region's default comes from the consent configuration. A region with no configured default
+   uses decision 1.
+5. **Events before a decision wait in a queue.** `@stackra/analytics` holds events fired before a decision in a queue that is
+   bounded and ordered. On acceptance the queue is sent in its order. On refusal the queue is discarded unsent. The bound is a
+   value in the analytics configuration.
+6. **Consent state lives only in the browser.** The banner and the stored decision are rendered and read on the client. The
+   server never renders the banner state, and no GET response for an HTML page sets a cookie.
+
+## Consequences
+
+- A visitor who accepts on the first page view keeps that view and the events fired before the answer.
+- A visitor who refuses leaves no analytics events, including the ones that waited in the queue.
+- The banner appears once the browser has read the stored decision, so the first paint of a page shows no decision state.
+- Every web surface that sends analytics goes through `@stackra/analytics`, so every event meets the same queue and the same
+  refusal.
+
+## Enforcement
+
+planned — tests in `@stackra/analytics` for the queue bound, the order, the discard on refusal, that nothing is sent before a
+decision, and that Global Privacy Control counts as a refusal; an end-to-end test that no HTML GET response sets a cookie.
+Linear: STA-341.
+
+## Alternatives
+
+- Drop events fired before a decision: not chosen. A visitor who accepts on the first page would lose those events.
+- Server-render the banner state: not chosen. The HTML would then depend on a cookie, which the cache rules in
+  [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding) forbid.
+
+## Supersedes and sources
+
+Supersedes: none. Related: [0127](/adr/0127-package-categories-including-infrastructure) (the consent and analytics rows),
+[0134](/adr/0134-data-invariants-classification-and-delete-lifecycle), [0137](/adr/0137-declared-action-options-and-refusal-codes),
+[0138](/adr/0138-pipeline-order-is-fixed), [0184](/adr/0184-telemetry-opentelemetry-otlp-slis-heartbeats-and-log-retention),
+[0189](/adr/0189-privacy-operations-and-data-retention), [0190](/adr/0190-seed-profiles-and-product-analytics),
+[0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding). Sources: the programming-model v3 wave of 2026-10-22, Linear STA-334.

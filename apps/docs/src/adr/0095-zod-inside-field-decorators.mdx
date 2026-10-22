@@ -1,7 +1,37 @@
 ---
 title: "0095 — @stackra/validation: Laravel-style decorators compiled to one Zod schema, plus an output serializer"
-description: "Accepted, amended by 0133, 0162 · 2026-10-19"
+description: "Accepted, amended by 0133, 0162, 0294 · 2026-10-19"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3, which restates decisions 2, 3, 5 and 6. Where this note and the text below
+  differ, this note governs.
+
+The type of a field is its rule, its column type and its wire type. The initializer is the
+default, `?:` marks an optional field, and `| null` marks a nullable one. A `number` field carries
+`@Int` or `@Num`. Literal unions, `any` and unknown alias types are refused by gen, which asks for
+an enum or a `Schema` class instead. The field decorators are constraints (`@Str`, `@Int`, `@Num`,
+`@List`), transforms (`@Trim`, `@Lowercase`), the serializer (`@Hidden`, `@Visible({ audience })`)
+and the escape hatch `@Field(zod)`. The escape hatch needs a `// reason:` comment, and it is the
+only place Zod appears in a member. The other shorthands of decisions 2, 5 and 6 are not in that
+decorator set and are removed: `@Min`, `@Max`, `@Email`, `@Between`, `@Enum`, `@Date`, `@After`,
+`@ArrayOf`, `@Nested`, `@Uuid`, `@Optional`, `@Default`, `@ToInt`, `@ToBoolean`, `@ToDate`,
+`@Transform`, `@Expose`, `@Cast` and `@Format`.
+
+Gen compiles each shape class to one Zod schema in `#stackra/schemas`. Validation, forms, the API
+and the MCP tool schemas read that schema, and authors never write Zod. `@stackra/validation`
+refuses to validate a class that gen has not compiled, so it fails closed. The async rules of
+decision 4 (`@Exists` and `@Unique`) are not addressed by the new model, so they stand as written
+until that is decided. The field decorators recorded in
+[0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events) are replaced
+by the type rule.
+
+Enforcement of this note: planned — STA-335 (the type-to-schema compiler spike, which runs first)
+and STA-340 (gen checks `shape_unknown_type`, `shape_number_kind` and
+`shape_decorator_type_mismatch`).
+
+</Note>
 
 <Note>
   Amended by [0162](/adr/0162-validation-translatable-fields-and-entityschema-placement): async

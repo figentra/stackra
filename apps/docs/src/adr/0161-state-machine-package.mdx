@@ -1,7 +1,27 @@
 ---
 title: "0161 — @stackra/state-machine"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: a machine is a class that extends `StateMachine(Model, { field, history })`,
+  where the options name the model field the machine governs. The states are the `Enum.of` of that
+  field. Each transition is a method decorated with `@Transition({ from, to })`, and a caller
+  invokes it directly, for example `this.lifecycle.cancel(order, reason)`. The machine checks
+  `from`, runs the method's change and effects in the caller's unit of work, sets `to`, and records
+  the history. Decision 2's definition (`@StateMachine({ key, initial })` with a constant object of
+  states) and decision 3's attachment (`@UsesStateMachine` and `stateMachine.apply`) are superseded.
+  The initial state is the initializer of the field. Decision 4 changes its surfaces: transitions
+  reach panels and MCP through the actions that call them, not as tools of their own. Decisions 5
+  and 6 are unaffected. Where they say "guard", read "precondition", as the naming dictionary of the
+  programming model v3 requires.
+
+Enforcement of this note: planned — STA-340 (`state-field-write`, which refuses a write to a
+governed field outside its machine; gen checks for a transition state outside the field's enum,
+and for an unreachable state as a warning).
+
+</Note>
 
 <Note>
   Amends [0097](/adr/0097-model-and-database-packages), decision 1: the state machine moves out of

@@ -19,22 +19,26 @@ output of `stackra gen` in `.stackra/encore` (ADR 0091, 0124), so you never writ
 
 The brief, the service's `AGENTS.md`, `.agents/rules/service-checklist.md`, `.agents/rules/http-conventions.md`,
 `apps/docs/src/standards/services.mdx`, and the skills `backend-author-an-action`, `backend-module-and-root-module`,
-`backend-define-family`, `backend-errors`, `ai-mcp-tools`.
+`backend-errors`, `ai-mcp-tools`. New code follows the programming model v3 (ADR 0294 to 0296); today's members predate
+it until STA-344 converts them.
 
 ## Rules
 
-1. Behaviour is an action: `@Action` writes and `@Query` reads with `key@version`, Zod input and output, permission,
-   risk, `actors` (ADR 0098, 0099); `handle(input, ctx)`, one transaction, events through the outbox, external calls
-   after commit, idempotency for client writes (0136); declared options and refusal codes (0137); the UX declaration
-   (0139). Expose with `@AsEndpoint`, `@AsTool`, `@AsJob`, `@AsCommand`; a reaction is an `@OnEvent` listener in `listeners/` (0098, 0264); `@Controller` only for raw endpoints (0098).
-2. Queries at L0–L1 become MCP tools automatically; writes opt in with `@AsTool`; L3+ needs a named human (0155).
-3. Modules at `src/modules/<feature>/` in kind folders; no `controllers/`, `dtos/`, `repositories/` (0130); every
-   `@Module` has a `key` (0131); the root module is declared in `package.json` (0090, 0126).
-4. Events are `<module-key>.<aggregate>.<verb>.v<n>` with the shared envelope (0141); cross-service use goes through a
+1. Behaviour is an action: `extends Action({ key })` for a write and `extends Query({ key })` for a read, with input
+   and output from the `handle(input, ctx)` signature, the permission and the endpoint derived from the key, risk on
+   the permission, and `actors` (ADR 0098, 0099, 0294); one transaction, events through the outbox, external calls
+   after commit, idempotency for client writes (0136); declared options and refusal codes (0137). MCP with
+   `tool: true`, a job with `job:`; a reaction is a `Listener` in `listeners/` typed by its event parameter (0264);
+   `@Controller` only for raw endpoints (0098). No kind decorators.
+2. Queries at L0–L1 become MCP tools automatically; writes opt in with `tool: true`; L3+ needs a named human (0155).
+3. Modules at `src/modules/<key>/` in the group folders of ADR 0294; no `controllers/`, `dtos/`, `repositories/`,
+   `guards/`, `links/` (0130 as amended); keys are derived from folder and package names and locked in
+   `stackra.manifest.json`; one root module at `src/<key>.module.ts` (0294, 0295).
+4. An integration event writes its `name` once and gen derives `<module-key>.<name>.v<n>`, with the shared envelope (0141); cross-service use goes through a
    generated client or an event, never another service's source (0142).
-5. Errors extend `StackraError` (0232); `#` aliases only (0233); names per 0231.
+5. Errors extend `Refusal({ kind })` (0232, 0294); `#` aliases only (0233); names per 0231.
 6. Tenant, scope and actor come only from the action context (0136, 0210).
-7. Models and migrations are `data-engineer`'s; secrets are named by `secret('Name')` in config (0146), and a value is set
+7. Models and migrations are `data-engineer`'s; secrets are named by a `@Secret("NAME")` field of a config class (0146), and a value is set
    by a human or the `secret-manager` flow (ADR 0257), never by you.
 
 Run `pnpm --filter @figentra/service-<name> test typecheck build`, then `pnpm verify`.

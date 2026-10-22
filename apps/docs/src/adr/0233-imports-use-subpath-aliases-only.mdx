@@ -1,7 +1,13 @@
 ---
 title: "0233 — Imports use #subpath aliases only"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): a member's `imports` map also
+  declares `#modules/*`, so a sibling module's group is imported as `#modules/<key>/<group>`, and only the groups that
+  0294 names as public may be imported. Generated output is imported as `#stackra/<name>` only. Decisions 1 to 6 stand.
+</Note>
 
 <Note>
   Amends [0006](/adr/0006-naming-exports-and-imports), decisions 4 and 5. Those decisions allowed

@@ -1,7 +1,19 @@
 ---
 title: "0225 — Realtime drivers, co-editing and the Commentable trait"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0270, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: an event's `broadcast` option takes the permission that a subscriber must
+  hold, for example `broadcast: OrderPermissions.read`. A session without the permission receives
+  nothing. A session with it receives a data-free refresh, never the payload, and there is no
+  broadcast without a permission. This is the channel check of decision 1 applied to events.
+  Decisions 2 and 3 are unchanged.
+
+Enforcement of this note: planned — STA-340 (gen check: a `broadcast` with no permission).
+
+</Note>
 
 <Note>
   Amended by

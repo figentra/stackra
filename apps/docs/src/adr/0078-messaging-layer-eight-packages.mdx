@@ -1,7 +1,23 @@
 ---
 title: "0078 — The messaging layer: eight packages, one question each"
-description: "Accepted, amended by 0141, 0148, 0260 · 2026-10-19"
+description: "Accepted, amended by 0141, 0148, 0260, 0270, 0294 · 2026-10-19"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3, decision 3: the event kinds are classes. A domain event extends
+  `DomainEvent`, carries typed fields, is built with `create()`, and is never versioned or sent as a
+  webhook. An integration event extends `IntegrationEvent({ name, ... })`: its author writes the
+  `name` once, and gen adds the module key and the version (see
+  [0141](/adr/0141-integration-event-names-and-envelope)). The `public` flag is retired. An inbound
+  webhook is a `WebhookEvent` class, not a controller. The `@stackra/mail` package named in the
+  0270 note below, which holds the `Mailer` driver, is renamed `@stackra/notifications` (0294
+  decision 23); the notifications service is unchanged. Decisions 1, 2 and 4 are unchanged.
+
+Enforcement of this note: planned — STA-340 (gen check: a version or a webhook option on a domain
+event fails).
+
+</Note>
 
 <Note>
   Amended by

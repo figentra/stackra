@@ -1,7 +1,23 @@
 ---
 title: "0108 — Scoped settings: each service owns its values; the registry owns the schema"
-description: "Accepted · 2026-10-19"
+description: "Accepted, amended by 0213, 0294 · 2026-10-19"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: each module has one settings group, declared in `<module>.settings.ts` at
+  the module root as `extends Settings({ scopes })`. The group key is the module key, and each
+  setting is a typed field of that class. `@Setting` takes options only, for example
+  `@Setting({ lockable: true })`, and an empty `@Setting()` is not allowed. `@Settings` is retired,
+  so decision 1's decorator form is superseded by the class form. The scope chain of decision 2 is
+  unchanged. Decision 4 (`@ConnectionRef`) and decision 11 (`@SettingsMigration`) name decorators
+  that the v3 decorator set does not contain, so this note does not settle their form.
+
+Enforcement of this note: planned — STA-338 (`no-empty-decorator`, which rejects an empty
+`@Setting()`, and the kind-path check for `<module>.settings.ts`); STA-340 (gen check: a settings
+group with no `scopes`).
+
+</Note>
 
 <Note>
   Amended by [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions): the

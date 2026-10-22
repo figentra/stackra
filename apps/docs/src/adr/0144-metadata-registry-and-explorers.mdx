@@ -1,7 +1,17 @@
 ---
 title: "0144 — A typed MetadataRegistry, and every decorator package ships an Explorer"
-description: "Accepted, amended by 0263, 0264 · 2026-10-20"
+description: "Accepted, amended by 0263, 0264, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): every decorator is made with
+  `createDecorator` from `@stackra/container` and registered with the kinds it may target. The class facets are
+  `@Index`, `@Searchable`, `@Auditable`, `@AccessLogged`, `@Lifetime`, `@Replaces` and `@Renamed`; the method decorators
+  are `@Step` and `@Transition`. Decision 2's list is replaced: a kind is its base class, so the kind decorators it names
+  are retired, and `@Command`, `@Processor` and `@PriceModel` are not among the categories 0294 allows, so they are not
+  used until a later record places them. A package that ships decorators keeps its Explorer at
+  `src/<entry>/<pkg>.explorer.ts`; decision 1 otherwise stands.
+</Note>
 
 <Note>
   Amends [0090](/adr/0090-codegen-discovery-by-root-module) and

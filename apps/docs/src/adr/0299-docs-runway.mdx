@@ -1,0 +1,56 @@
+---
+title: "0299 — Docs runway: Mintlify deployed from CI behind the checks, with the runway shape of the other apps"
+description: "Accepted · 2026-10-22"
+---
+
+<Note>
+  Amends [0002](/adr/0002-docs-on-mintlify): CI deploys the site after the checks pass, and the
+  deploy on every push through the Mintlify GitHub app is switched off when the CI deploy lands.
+</Note>
+
+## Context
+
+The documentation site (`apps/docs`) is a Mintlify site ([0002](/adr/0002-docs-on-mintlify)). Mintlify deploys it on every push
+through its GitHub integration. That deploy sits outside the turbo graph, outside the Quality Gate and outside any runway record,
+while the other apps and services are described by a runway file that a root runway places ([0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml),
+[0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)). The docs host is `docs.stackra.figentra.com`
+([0175](/adr/0175-edge-domains-and-tls)), and DNS for the Stackra zone belongs to the Pulumi stack
+([0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra)).
+
+## Decision
+
+1. **Mintlify is the destination.** The docs member deploys to Mintlify ([0002](/adr/0002-docs-on-mintlify)) at `docs.stackra.figentra.com`.
+   Its DNS record is in the Pulumi stack, not set by hand.
+2. **CI deploys, after the checks.** `mint validate`, `mint broken-links` and `mint a11y` run on the pull request and must pass
+   before merge. CI deploys the merged change. Deploy on every push through the Mintlify GitHub integration is not kept.
+3. **The admin key stays in the CI vault.** The Mintlify admin key is held in Infisical at `/ci` ([0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets)),
+   and only the deploy job reads it.
+4. **A smoke test follows each deploy.** After a deploy, a smoke test checks that the published site serves its pages. A failed
+   check fails the deploy job.
+5. **Generated docs inputs are committed.** Pages and data that `stackra gen` writes for the docs are committed, and
+   `stackra gen --check` fails when they are out of date.
+6. **The docs member has a runway.** It declares what it needs in its member runway, and the root runway places the Mintlify
+   destination, as [0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups) sets for every member.
+
+## Consequences
+
+- A docs change reaches the site only after the checks pass and the change merges. A broken link or an accessibility failure
+  blocks the pull request.
+- The admin key is read by one job, not by every workflow.
+- The Mintlify push integration is switched off when the CI deploy lands, so a change is not deployed twice.
+- The docs member gets a runway file, which the runway schema checks like every other member's.
+
+## Enforcement
+
+In place: the `build` (`mint validate`) and `lint` (`mint broken-links`) tasks of `@figentra/docs` run in the turbo graph and in
+`pnpm verify` ([0002](/adr/0002-docs-on-mintlify)).
+
+planned — the `mint a11y` check in the Quality Gate; the CI deploy job; the post-deploy smoke test; `stackra gen --check` for the
+committed docs inputs; and the docs runway file checked against the runway schema. Linear: STA-342.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0002](/adr/0002-docs-on-mintlify) (hosting). Builds on [0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml),
+[0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra), [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets),
+[0175](/adr/0175-edge-domains-and-tls) and [0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups). Related:
+[0039](/adr/0039-openapi-mintlify-and-oauth-guide) (generated API reference pages on Mintlify). Sources: the programming-model v3 wave of 2026-10-22, Linear STA-334.

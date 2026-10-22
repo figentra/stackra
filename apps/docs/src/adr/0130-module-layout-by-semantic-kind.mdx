@@ -1,7 +1,18 @@
 ---
 title: "0130 — Module layout by semantic kind; no controllers"
-description: "Accepted, amended by 0259, 0264 · 2026-10-20"
+description: "Accepted, amended by 0259, 0264, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): the kind-folder lists of
+  decisions 1 and 2 and of the amendment of 2026-10-21 are replaced by the module and app group tables of 0294, and a
+  group folder appears with its first file. These folders are retired, and their files move to the groups that 0294
+  names: `links/`, `permissions/`, `policies/`, `settings/`, `states/`, `search/`, `seeds/`, `factories/`, `migrations/`,
+  `mails/`, `widgets/`, `pages/`, `override-points/`, `versions/`, `guards/`, `tokens/`, `interfaces/`, `decorators/`,
+  `contracts/` (in a module; a package keeps `src/contracts/`) and, in a module, `hooks/`. They join the banned list.
+  `resources/` holds only `resources/<model>/`. Decision 3 (`raw/`) and the `internal/` folder of the amendment of
+  2026-10-21 are not changed by 0294.
+</Note>
 
 <Note>
   Supersedes [0040](/adr/0040-ddd-feature-modules-in-services). It builds on the member shape in

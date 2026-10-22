@@ -1,7 +1,15 @@
 ---
 title: "0094 — Decorators are the only authoring style; workflows are declarative @Step graphs"
-description: "Accepted, amended by 0145, 0152 · 2026-10-19"
+description: "Accepted, amended by 0145, 0152, 0247, 0294 · 2026-10-19"
 ---
+
+<Note>
+  Decision 1 is superseded by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming):
+  a class declares its kind by its base class (`extends Action({ key })`), and decorators are field, method and
+  class facet decorators only. Decision 3 is amended by 0294: the steps of a workflow are its public async methods,
+  in declaration order; `@Step` takes step options only, with `compensate` replaced by an `undo<Step>` method and
+  `input` no longer an option; and an event starts a run only through `startOn:`.
+</Note>
 
 <Note>
   Amended by [0247](/adr/0247-declaration-rule-decorators-annotate-define-creates-values):

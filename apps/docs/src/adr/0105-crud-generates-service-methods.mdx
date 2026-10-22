@@ -1,7 +1,22 @@
 ---
 title: "0105 — @Crud generates a model's service methods and opt-in actions"
-description: "Accepted · 2026-10-19"
+description: "Accepted, amended by 0294 · 2026-10-19"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: `@Crud` is retired. A module service that needs the generated CRUD methods
+  extends `CrudService(Model)`, which inherits them, so nothing is written to disk. A hand-written
+  method of the same name still overrides one, as decision 2 says. Decision 1 is superseded in form:
+  `CrudService` takes the model, and the CRUD API is unchanged. Decision 3 is superseded in form:
+  generated actions are not requested from a decorator. A resource lists its operations, and an
+  operation set to `true` makes gen write a standard action that calls the inherited method.
+  Decision 4 (no controllers) is unchanged.
+
+Enforcement of this note: planned — STA-340 (gen checks: an operation with no permission verb; the
+action rules of [0098](/adr/0098-actions-are-the-unit) apply to every generated action).
+
+</Note>
 
 ## Context
 

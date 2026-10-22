@@ -1,7 +1,17 @@
 ---
 title: "0128 — Code conventions: enums, classes, components and kind folders"
-description: "Accepted, amended by 0268 · 2026-10-20"
+description: "Accepted, amended by 0268, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): decision 1 (an enum is
+  `Enum.of({ ... })` with a type of the same name, in `<name>.enum.ts`, and its labels come from i18n). Decision 2 (a
+  component is a folder, `components/<name>/`, holding `<name>.tsx`, optional parts and `use-<name>.ts`, an `index.ts`
+  that exports only the component and its Props, and `__tests__/`; there are no class components). Decision 4 (the
+  kind-folder list is replaced by the group tables of 0294). Decision 5, as amended on 2026-10-21 (a React hook used by
+  one component sits beside it; a hook with two or more importers is `hooks/use-<name>.ts`; the `*.hook.ts` extension
+  files are retired with hook points). Plain functions live in `functions/<name>.function.ts`. Decision 3 stands.
+</Note>
 
 <Note>
   Amends [0006](/adr/0006-naming-exports-and-imports) and

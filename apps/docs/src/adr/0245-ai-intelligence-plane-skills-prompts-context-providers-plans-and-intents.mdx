@@ -1,7 +1,22 @@
 ---
 title: "0245 — The AI intelligence plane: skills, prompts, context providers, plans and intents over actions"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3, for decisions 5, 6 and 7. Skills, prompts and context facts become kinds,
+  each declared by a base class in the module's `ai/` folder: `extends Skill({...})` in
+  `<name>.skill.ts`, `extends Prompt({...})` in `<name>.prompt.ts`, and `extends Facts(Model)` in
+  `<name>.facts.ts`. `defineSkill`, `definePrompts` and `@ContextProvider` are retired. Facts are
+  bound to a model by the argument of their base class. What each kind declares is unchanged:
+  instructions, tools, examples and knowledge for a skill; a versioned prompt with its evaluations;
+  and a model's facts for the context. Decisions 1 to 4, 8 and 9 are unchanged.
+
+Enforcement of this note: planned — STA-338 (the kind-path check for `ai/`); the MCP generator's
+check that each tool maps to an action, as already planned.
+
+</Note>
 
 <Note>
   Amends [0100](/adr/0100-ai-model-and-ownership) and

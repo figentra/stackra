@@ -1,7 +1,20 @@
 ---
 title: "0273 — Active role: one presentation role per session inside a tenant"
-description: "Accepted · 2026-10-21"
+description: "Accepted, amended by 0294 · 2026-10-21"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: a role is an `extends Role({ grants })` class in the module's `access/`
+  folder, as
+  [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names) now
+  records. A menu item takes two options with separate jobs: `permission` controls access, and
+  `roles` selects what the menu shows for each active role. Decision 2 holds: the active role never
+  grants or removes a permission. Decision 3 is carried by the `roles` option.
+
+Enforcement of this note: no new check. The planned checks of this page stand.
+
+</Note>
 
 <Note>
   Amends [0211](/adr/0211-memberships-and-support-access): a membership with several roles gains an

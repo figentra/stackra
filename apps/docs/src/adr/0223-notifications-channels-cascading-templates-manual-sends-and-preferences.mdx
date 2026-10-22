@@ -1,7 +1,26 @@
 ---
 title: "0223 — Notifications: more channels, cascading templates, manual sends and preferences"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0270, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3. A notification extends `Notification({ category })`. It is placed in the
+  `resources/<model>/` folder of the model it concerns, and it is triggered by the type of its
+  `recipients(event)` parameter. Each channel is a method the class declares, and a channel with no
+  method is not sent. The mail body is a React Email `.mail.tsx` file bound by name. SMS and push
+  text are ICU messages in the lang files. Tenant copy changes through lang overrides and
+  email-template documents, never through code. The package `@stackra/mail` is renamed
+  `@stackra/notifications`. Decisions 1 to 4 are unchanged in substance. The rename does not move
+  preferences: the note on decision 5 from
+  [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)
+  still applies.
+
+Enforcement of this note: planned — STA-338 (the kind-path check for `resources/<model>/`);
+STA-340 (gen checks: no channel method; a missing mail template; a missing SMS lang key in any
+locale; an SMS over its length limit).
+
+</Note>
 
 <Note>
   Amended by

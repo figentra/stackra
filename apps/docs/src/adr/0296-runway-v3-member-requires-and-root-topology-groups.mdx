@@ -1,0 +1,123 @@
+---
+title: "0296 — Runway v3: member requires and root topology groups"
+description: "Accepted · 2026-10-22"
+---
+
+<Note>
+  Supersedes in part [0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml)
+  (decisions 4 and 5) and
+  [0169](/adr/0169-topology-runway-yaml-packs-logical-services-into-deployables) (decision 3), and
+  amends [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing)
+  (where the resource kinds of decision 4 and the groups of decision 5 are declared). Builds on
+  [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets) (secret names and values),
+  [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) (deferred engines),
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (the member shape)
+  and [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries) (the build
+  shape). Parts of the superseded pages that this record does not name stand.
+</Note>
+
+## Context
+
+[ADR 0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml) decision 4 gives each repository one root `runway.yaml`, and its decision 5 lists the sections that file holds: deployables and providers, resources and scaling, the release policy, domains and the secrets map. Topology, which packs logical services into deployables, is decided in [ADR 0169](/adr/0169-topology-runway-yaml-packs-logical-services-into-deployables). The JSON Schemas in `tools/schemas/` already go further. `runway-root.schema.json`, `runway-app.schema.json` and `runway-service.schema.json` describe runway format version 2, which splits the root from member runways. In version 2 a member runway names itself in a required `member` key and also holds facts about where it runs: for each environment, its `deployable`, its `isolate` flag and its `resources`. A service that needs a dedicated cache or search index has no field that says so or why, and the facts about placement are split between the member and the root.
+
+Those are two different facts. What a member needs changes with its code. Where a member runs, and which processes it shares, changes with the environment and the account. Splitting them lets a member state its requirements beside its code, and lets the root decide placement once for each environment.
+
+## Decision
+
+1. **A member runway states WHAT.** A member that needs runtime resources has a `runway.yaml` at its member root. The member is the one whose folder holds the file, so the file does not name it. It declares `version: 3` and three things:
+   - `requires`: one entry per resource the member needs beyond what gen derives from `stackra.manifest.json`. An entry names an `engine` and whether the resource is `dedicated`. A dedicated resource also has a `reason`, one line that says why the member cannot share a resource.
+   - `secrets`: the names of the secrets the member reads. The file holds names only, never values ([ADR 0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets)).
+   - `environments.<name>`: the member's sizes and values for each environment. These are a port, the database storage and extensions, the cache size, replicas and eviction policy, queue settings, and the `config` values that set the member's config classes for that environment. Those values are the last layer of configuration.
+
+   A member runway never holds `member`, `deployable`, `isolate`, `group`, `cpu`, `memory` or `instances`. Those are root facts.
+
+2. **The root runway states WHERE and HOW PACKED.** The repository's root `runway.yaml` holds the providers, destinations, shared pools, domains, defaults and the topology of each environment. A topology has:
+   - `mode`: `monolith`, `grouped` or `split`;
+   - `isolate`: the members that keep their own database server and network policy;
+   - `default`: the group for members that no group lists;
+   - `groups`: for each group, its `members`, its `cpu`, `memory` and `instances` (`min` and `max`), and `workers.split` where its workers run apart.
+
+   In a grouped environment every member is placed in exactly one group.
+
+3. **Groups are process allocations.** Each group is a process allocation inside the one generated Encore application ([ADR 0091](/adr/0091-generated-encore-app-in-stackra-folder)). This is the one-app rule of [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing) decision 5: the groups are not separate Encore applications. Whether a group scales on its own is not decided here.
+
+4. **A dependency with one user belongs to that user.** A dependency that only one member needs is declared by that member, not by the root. The identity provider ([ADR 0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)) belongs to the identity member, and a development container belongs to the driver package that needs it.
+
+5. **Engines follow ADR 0227.** `requires.<resource>.engine` accepts only an engine that ADR 0227 neither defers nor rejects. A dedicated search resource takes `postgres`, and the schema refuses the deferred engines. A dedicated search engine returns only through a new record, once the revival trigger of ADR 0227 has fired.
+
+6. **Both files are block-style YAML.** They follow the repository's YAML rule: no flow mappings, and flow sequences only for short scalar lists on one line.
+
+A member runway looks like this:
+
+```yaml
+# services/commerce/runway.yaml
+version: 3
+
+requires:
+  cache:
+    dedicated: true
+    engine: valkey
+    reason: price snapshots and cart sessions need their own eviction policy
+  search:
+    dedicated: true
+    engine: postgres
+    reason: storefront search must not compete with order writes
+
+secrets: [PRICING_API_KEY]
+
+environments:
+  production:
+    database:
+      storageGb: 100
+      extensions: [ltree, pg_trgm]
+    cache:
+      memoryMb: 2048
+      eviction: allkeys-lru
+    config:
+      commerce:
+        storefrontBaseUrl: https://www.acme.example
+```
+
+The root holds the topology of each environment, in the same block style:
+
+```yaml
+# runway.yaml (root, production topology)
+environments:
+  production:
+    topology:
+      mode: grouped
+      isolate: [identity, payments-ledger]
+      groups:
+        identity:
+          members: [identity]
+          instances:
+            min: 2
+            max: 6
+        commerce:
+          members: [commerce, pricing, invoicing]
+          instances:
+            min: 2
+            max: 10
+          workers:
+            split: true
+```
+
+## Consequences
+
+- A requirement sits beside the code that needs it, and a dedicated resource cannot be declared without a reason.
+- The root is the one file that decides where members run and how they are packed, so it is the file a reviewer checks for placement.
+- Adding a member to an environment is one line in one group of the root file. The validator fails until the member is placed, so nothing runs unplaced. This is the cost of having the root pack.
+- A group's size has one source, the root, because member runways carry no sizes for groups.
+
+## Enforcement
+
+Today the only check that reaches these files is `checkYamlFlowMaps` in `tools/scripts/validate-repository.mjs`, which covers the block-style rule for repository YAML. No runway file is committed yet. The schemas on main describe format version 2: `tools/schemas/runway-root.schema.json`, `tools/schemas/runway-app.schema.json` and `tools/schemas/runway-service.schema.json` fix `version` at 2, and both member schemas require `member`, so a version 3 member runway fails them. Editors read these schemas, and the static Worker serves them; `pnpm validate` does not check runway files against them yet.
+
+Planned, tracked in STA-339:
+
+- planned — STA-339: the three schemas are replaced by version 3 schemas. The member schemas fix `version` at 3, have no `member` key and refuse every root key; the root schema gains the topology groups of decision 2. `pnpm validate` checks every runway file against them. It fails when a member runway holds a root key, when a grouped environment does not place each member exactly once, when an engine is not allowed by ADR 0227, and when `dedicated` has no `reason`.
+- planned — STA-339: gen fails when a `requires` entry has no driver.
+
+## Supersedes and related
+
+Supersedes in part: [0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml) decision 4 (the one-file rule: the repository keeps one root file, and each member that needs resources has its own) and decision 5 (which sections the root file holds: resources and scaling move to the member and the topology, while the secrets map and the release policy are not changed by this record); and [0169](/adr/0169-topology-runway-yaml-packs-logical-services-into-deployables) decision 3 (gen packs services into deployables: the root now names the members of each group, and gen checks their placement). Decisions 1, 2, 3 and 6 of 0168, and 1, 2 and 4 of 0169, stand. Amends: [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing) (decisions 4 and 5). Related: [0091](/adr/0091-generated-encore-app-in-stackra-folder), [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets), [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral), [0227](/adr/0227-rejected-and-deferred-technologies-refreshed), [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) and [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries). Sources: the programming-model v3 wave of 2026-10-22, Linear STA-334.

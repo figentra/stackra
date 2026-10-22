@@ -1,7 +1,18 @@
 ---
 title: "0281 — Desktop surfaces: targets per app, desktop modes and overlay styles"
-description: "Accepted · 2026-10-22"
+description: "Accepted, amended by 0295 · 2026-10-22"
 ---
+
+<Note>
+  Amended by [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries):
+  `stackra.config.ts` holds one `defineApp` call. Its identity and `targets` sit at the top of the
+  call, and each tool or platform has its own section. Desktop mode and overlays stay in
+  `src/config/desktop.config.ts`, a Config class read while the app runs. Decision 8's list of
+  readers changes: gen, the CLI and the scaffolder read `stackra.config.ts` from its syntax tree,
+  and `@stackra/platform` reads the desktop config class rather than the member file. `MenuKind`
+  gains `TabBar`; its closed list is App, Tray, Dock, Context, Navigation, Sidebar, TabBar and
+  AppShortcuts.
+</Note>
 
 <Note>
   Extends [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron) (one app, several targets),

@@ -1,7 +1,21 @@
 ---
 title: "0208 — The IAM model: scope tree, roles, conditions and deny, delegation and permission names"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0240, 0242, 0294 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: decision 2 is restated. A module declares its roles as
+  `extends Role({ grants })` in its `access/` folder, and `grants` names `<Model>Permissions`
+  statics. System roles are shipped this way. Gen checks each grant against the catalogue, and a
+  system permission is never granted to a role. Decision 6 follows the amended
+  [0132](/adr/0132-permissions-catalogue-and-policy-providers). Decisions 1, 3, 4, 5 and 7 are
+  unchanged.
+
+Enforcement of this note: planned — STA-340 (gen checks: a role granting an unknown permission; a
+system permission granted to a role).
+
+</Note>
 
 <Note>
   Supersedes decisions 4, 6 and 7 of [0087](/adr/0087-identity-and-iam-are-driver-packages),

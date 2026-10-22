@@ -18,20 +18,22 @@ interface that touches two packages is still one task, briefed as such.
 
 The brief or spec task, the package's `README.md` and `AGENTS.md`, `apps/docs/src/guides/packages.mdx`,
 `apps/docs/src/standards/packages.mdx`, and the skills `backend-module-and-root-module`,
-`backend-decorator-package-with-explorer`, `backend-define-family`, `backend-errors`, `code-naming-and-casing`, `tdd`,
+`backend-decorator-package-with-explorer`, `backend-errors`, `code-naming-and-casing`, `tdd`,
 `vitest` (skills named here that are not yet vendored arrive with STA-148's skills pull request).
 
 ## Rules
 
-1. Entries-first shape (ADR 0126): core in `src/core/`, plus only the entries with real code among `./contracts`,
-   `./node`, `./react`, `./native`, `./testing`, `./devtools`; an entry never imports another entry.
-2. Public types in the types-only `./contracts` entry; shared primitives in `@stackra/contracts` (0117).
-3. A package that defines decorators owns them and ships an Explorer over the container's `DiscoveryService` (0144).
-   Decorators annotate code; `define*` creates values (0247, 0145). No `reflect-metadata` (0005).
-4. Config in `config/<pkg>.config.ts` with `defineConfig` and `secret('Name')` references (0146).
-5. Errors extend `StackraError` with a category and a snake_case code (0140, 0232); never `throw new Error`.
+1. Entries-first shape (ADR 0126, 0294): `src/contracts/` (the leaf), `src/config/`, `src/core/`, `src/node/` (the
+   module), `src/react/`, `src/native/`, `src/testing/`, only with real code; entries point one way and barrels are
+   generated. New code follows the programming model v3; today's packages predate it until STA-344.
+2. Public types in `src/contracts/` (ports, enums, types); shared primitives in `@stackra/contracts` (0117).
+3. A kind is a base class the package exports; decorators are field, method and class-facet only, made with
+   `createDecorator`, and a package that ships them has an Explorer at `src/<entry>/<pkg>.explorer.ts` (0144, 0294).
+   Classes are the only DI tokens (0145). No `reflect-metadata` (0005).
+4. Config is `class <Pkg>Config extends Config` in `src/config/<pkg>.config.ts`, with `@Env` and `@Secret` fields (0146).
+5. Errors extend `Refusal({ kind })`, with a code derived from the class name (0140, 0232, 0294); never `throw new Error`.
 6. Imports leave a folder only through `#` aliases from the `imports` map; no `../` (0233). Assets live in `assets/`
-   (0234). Naming per 0231; no `enum`, no `#private` (0128).
+   (0234). Naming per 0231 and 0294; `Enum.of`, no `enum`, no `#private` (0128).
 7. Tests in `__tests__/` beside the subject with the tier infix (0022, 0182).
 8. Versions only from catalogs or `workspace:*`.
 
