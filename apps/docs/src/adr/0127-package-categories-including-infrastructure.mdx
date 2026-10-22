@@ -133,7 +133,8 @@ L753), commerce category and errors placement (owner answers, 2026-10-20). Open 
 
 ## Amendment 2026-10-22: no templates package (STA-252)
 
-The `communication` row no longer lists `templates`. The owner decision is "no templates package": mail code owns
-`MailRenderer`, and notifications is a service (see decision 5 of
-[0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)). The row keeps webhooks,
+The `communication` row no longer lists `templates`. "No templates package" is the owner decision of 2026-10-21,
+recorded with the package-map changes (pwa and network move into platform, router into navigation, and there is no
+templates package). Mail code renders mail through `@stackra/mail`. Forms and notifications are settled in decision 12 of
+[0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels). The row keeps webhooks,
 versioning, integrations and mail.

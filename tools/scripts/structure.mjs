@@ -99,7 +99,7 @@ export const ENTRIES = Object.freeze([
 ]);
 
 /** Named exception to ENTRIES: `@stackra/testing` alone also has these two entries, and no other package does (ADR 0269 d6). */
-export const TESTING_PACKAGE_ENTRIES = Object.freeze([
+const TESTING_PACKAGE_ENTRIES = Object.freeze([
   { name: "e2e", reason: "end-to-end tier helpers", adr: "0269" },
   { name: "contract", reason: "contract tier helpers", adr: "0269" },
 ]);
