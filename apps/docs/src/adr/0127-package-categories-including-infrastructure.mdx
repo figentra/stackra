@@ -98,7 +98,7 @@ member gets a category on 2026-10-21. This amendment records the placement of ea
    | data           | model, database, content, media, search, state-machine, assets, filesystem [0234 amends this table: assets and filesystem are data, not foundation], storage [structure.mjs, ADR 0256] |
    | application    | actions, ai, ir, registry                                                                                                                                                              |
    | runtime        | outbox, queue, scheduler, workflow, realtime, locking, cache, app, devices [roadmap; devices by owner settlement, 2026-10-21]                                                          |
-   | communication  | webhooks, versioning, integrations, templates [0234 names templates in communication; notifications is a service per 0270], mail [0270; the registry places it here]                   |
+   | communication  | webhooks, versioning, integrations, mail [0270; the registry places it here]                                                                                                           |
    | security       | connections, entitlements, licensing, identity, iam, tenancy, consent, csp [roadmap]                                                                                                   |
    | experience     | ui, experience, navigation, console, panel, kbd, pwa, platform [0250], peripherals [0253], builder, collaboration [0270; forms dropped]                                                |
    | developer      | cli, gen, coding-standard, vite-plugin, devtools-kit, testing [roadmap; testing per the build plan's Phase T]                                                                          |
@@ -130,3 +130,11 @@ Amends: [0028](/adr/0028-package-categories-appear-with-first-package) and
 [0084](/adr/0084-figentra-os-package-port-plan) (the category lists). Sources: owner questionnaire, framework round
 (FW2 a, `stackra-decisions-2026-10-19.md` L339), infrastructure category (L437), placements (L405, L566, L567, L737,
 L753), commerce category and errors placement (owner answers, 2026-10-20). Open question: (1) confirm `state`.
+
+## Amendment 2026-10-22: no templates package (STA-252)
+
+The `communication` row no longer lists `templates`. "No templates package" is the owner decision of 2026-10-21,
+recorded with the package-map changes (pwa and network move into platform, router into navigation, and there is no
+templates package). Mail code renders mail through `@stackra/mail`. Forms and notifications are settled in decision 12 of
+[0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels). The row keeps webhooks,
+versioning, integrations and mail.
