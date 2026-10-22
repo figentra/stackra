@@ -332,6 +332,7 @@ test("STA-302: gh() and graphql() retry reads only; a write that omits the flag 
     { value: ok.out, runs: 2 },
   );
   assert.equal(run(() => graphql("mutation{enqueuePullRequest}", [], "t")).runs, 1);
+  assert.equal(run(() => graphql("# note\nmutation{enqueuePullRequest}", [], "t")).runs, 1);
   assert.deepEqual(
     run(() => graphql("query{x}", [], "t")),
     { value: { x: 1 }, runs: 2 },

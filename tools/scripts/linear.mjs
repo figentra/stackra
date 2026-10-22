@@ -26,7 +26,7 @@ import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { parseArgs } from "node:util";
 import { pathToFileURL } from "node:url";
-import { netFetch, retryUnlessLanded } from "./bot-token.mjs";
+import { isGraphqlRead, netFetch, retryUnlessLanded } from "./bot-token.mjs";
 
 export const TEAM = "STA";
 const API = "https://api.linear.app/graphql";
@@ -96,7 +96,7 @@ export function client({ env = process.env, fetch = netFetch } = {}) {
     }
   };
   // A read or an issueUpdate (it sets values) is safe to repeat; netFetch retries it.
-  const idempotent = (query) => !/^\s*mutation\b/.test(query) || /\bissueUpdate\(/.test(query);
+  const idempotent = (query) => isGraphqlRead(query) || /\bissueUpdate\(/.test(query);
   const post = async (query, variables) => {
     const res = await fetch(
       API,
@@ -262,7 +262,7 @@ export function linear(c, { dry = false, log = console.log } = {}) {
           // Re-send only on Linear's explicit not-found; any other read error leaves the outcome unknown.
           () =>
             gql(`query($id:String!){comment(id:$id){id}}`, { id }).then(Boolean, (error) => {
-              if (/Entity not found/i.test(error.message)) return false;
+              if (/\bEntity not found: Comment\b/.test(error.message)) return false;
               throw error;
             }),
         ),

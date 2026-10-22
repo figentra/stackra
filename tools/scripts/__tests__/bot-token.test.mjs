@@ -12,6 +12,7 @@ import {
   backoff,
   CONNECT_TIMEOUT_MS,
   ghIdempotent,
+  isGraphqlRead,
   mintToken,
   netFetch,
   RETRY_ATTEMPTS,
@@ -274,4 +275,26 @@ test("spawnRetrying re-runs a command that fails with transient output, and only
   r = run(9, "HTTP 422: Validation Failed");
   assert.equal(r.status, 1);
   assert.equal(readFileSync(counter, "utf8"), "4");
+});
+
+test("isGraphqlRead: a query or a bare selection after comments; anything else is a write", () => {
+  for (const doc of [
+    "query{a}",
+    "  query Q($n:Int){a}",
+    "{a}",
+    "# note\nquery{a}",
+    "#a\n#b\n\n{a}",
+  ])
+    assert.equal(isGraphqlRead(doc), true, doc);
+  for (const doc of [
+    "mutation{a}",
+    "# note\nmutation{a}",
+    "  # q\n  mutation M{a}",
+    "subscription{a}",
+    "fragment F on X{a} query{...F}",
+    "queryX{a}",
+    "# query{a}",
+    "#".repeat(5000),
+  ])
+    assert.equal(isGraphqlRead(doc), false, doc);
 });

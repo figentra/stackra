@@ -106,6 +106,12 @@ export async function retryUnlessLanded(run, landed, wait = sleep) {
   }
 }
 
+/**
+ * True for a GraphQL document that only reads: after leading whitespace and `#` comments it opens with `query` or `{`.
+ * Anything else (a mutation, a subscription, a leading fragment) counts as a write and is never retried.
+ */
+export const isGraphqlRead = (document) => /^(?:\s|#[^\n]*(?:\n|$))*(?:query\b|\{)/.test(document);
+
 /** gh commands safe to repeat: view, list, diff, checks and status subcommands, `gh search`, and `gh api` as GET. */
 export function ghIdempotent(args) {
   const [group, verb] = args.filter(
