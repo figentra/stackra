@@ -36,6 +36,8 @@ playwright-report/
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
 
 # pnpm content-addressable cache if a tool points it here
 .cache/
