@@ -6,7 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "prepare": "lefthook install && node tools/scripts/agents-sync.mjs --mcp-only || true",
+    "prepare": "lefthook install && node tools/scripts/agents-sync.mjs --mcp-only",
     "dev": "turbo run dev",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
