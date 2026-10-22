@@ -1,7 +1,14 @@
 ---
 title: "0152 — Workflow semantics: timeouts, waits, pinned versions, operations and one graph format"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0292 · 2026-10-20"
 ---
+
+<Note>
+  Amended by
+  [0292](/adr/0292-workflow-engine-drivers-a-postgres-journal-default-temporal-and-trigger-dev-to-evaluate):
+  the semantics fixed here are the contract of every driver in the port, and the conformance suite
+  runs on each driver, not only on the two named in 0151.
+</Note>
 
 <Note>
   Amends [0102](/adr/0102-workflow-engine-in-process-journal) and

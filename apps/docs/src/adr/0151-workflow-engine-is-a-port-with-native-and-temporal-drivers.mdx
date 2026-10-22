@@ -1,7 +1,15 @@
 ---
 title: "0151 — The workflow engine is a port with a native driver and a Temporal driver"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0292 · 2026-10-20"
 ---
+
+<Note>
+  Amended by
+  [0292](/adr/0292-workflow-engine-drivers-a-postgres-journal-default-temporal-and-trigger-dev-to-evaluate):
+  decision 3's native driver is named the Postgres-journal driver, is the default, and works on-prem
+  and air-gapped. Decision 4's Temporal driver integrates the TypeScript SDK directly. Trigger.dev
+  is to be evaluated. The enforcement line covers each driver.
+</Note>
 
 <Note>
   Amends [0102](/adr/0102-workflow-engine-in-process-journal): the engine sits behind a port, and
