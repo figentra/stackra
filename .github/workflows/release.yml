@@ -1,3 +1,12 @@
+# Stackra file contract:
+# Purpose: release on every push to main (and workflow_dispatch with `dry_run`). With pending
+#          changesets it opens or updates the "version packages" PR as stackra-bot; on that PR's merge
+#          it publishes the public packages to npmjs with provenance, then uploads a CycloneDX SBOM.
+#          The job runs in the protected `release` environment, which needs a required reviewer's
+#          approval: a run shows "waiting" until the owner approves it, by design (runbook, release).
+# Owner: release-operations
+# Secrets: STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (environment or repository secrets, the
+#          stackra-bot app token, owner decision A1). npm publishing uses GitHub OIDC; no npm token.
 name: Release
 
 on:

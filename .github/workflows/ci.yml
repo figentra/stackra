@@ -1,3 +1,10 @@
+# Stackra file contract:
+# Purpose: the Quality Gate, the one required check on every pull request to main and every push to
+#          main (install, Linear key check, format, lint, typecheck, test, build, validate, boundaries,
+#          knip, secrets scan, agent sync). Branch protection requires the `Quality Gate` job by name;
+#          never rename it. `deploy-staging` is a placeholder that deploys nothing.
+# Owner: release-operations
+# Secrets: none. contents: read only; no OIDC token, no repository secret.
 name: CI
 
 on:
