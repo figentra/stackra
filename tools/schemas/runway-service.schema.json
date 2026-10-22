@@ -1,27 +1,42 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.stackra.figentra.com/runway/service.json",
+  "$comment": "Stackra file contract: Purpose: the shape of a SERVICE member's runway.yaml. Boundary: shape only; what the service IS is stackra.config.ts, what it NEEDS is derived by gen into the manifest `infra`, and the root runway (runway/root.json) holds destinations and defaults. Runtime: node (editors and validators). Governing contract: ADR 0168 (runway.yaml schema), ADR 0169 (deployables), ADR 0238 (logical databases and pool budgets), ADR 0266 (mail driver), ADR 0173 (secret names), ADR 0190 (health), ADR 0146 (config layers).",
   "title": "runway.yaml (service member)",
-  "description": "How and where one service runs, per environment: dev port, the deployable it joins (ADR 0169), resources, the sizes of what it needs, drivers, secret NAMES, health thresholds, per-environment config. What it needs is derived by gen into the manifest `infra`; this file only sizes it (ADR 0168, 0238, 0266, 0173).",
+  "description": "How and where one service runs, per environment: dev port, the deployable it joins (ADR 0169), resources, the sizes of what it needs, drivers, secret NAMES, health thresholds and per-environment config. What it needs is derived by gen into the manifest `infra`; this file only sizes it. No secret value, no business value.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "member", "environments"],
   "properties": {
-    "$schema": { "type": "string" },
-    "version": { "const": 2 },
+    "$schema": {
+      "type": "string",
+      "description": "The schema reference `stackra validate` reads (`@stackra/runway/schema/service.json`). Editors use the `# yaml-language-server: $schema=` comment instead.",
+      "examples": ["@stackra/runway/schema/service.json"]
+    },
+    "version": {
+      "const": 2,
+      "description": "Runway format version."
+    },
     "member": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9_-]*$",
-      "description": "Must equal stackra.config.ts `key`."
+      "description": "The member key. Must equal stackra.config.ts `key`.",
+      "examples": ["commerce"]
     },
     "secrets": {
       "type": "object",
-      "description": "Every @Secret of src/config/* by NAME; gen fails on a missing one (ADR 0173).",
+      "description": "Every @Secret of src/config/*, by NAME; gen fails on a missing one. Values live in Infisical (ADR 0173).",
       "propertyNames": { "$ref": "#/$defs/secretName" },
       "additionalProperties": {
         "type": "object",
+        "description": "Options of one secret; `{}` takes the defaults.",
         "additionalProperties": false,
-        "properties": { "path": { "type": "string" } }
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "A `providers.infisical.paths` key; defaults to root `secrets.defaultPath`."
+          }
+        }
       }
     },
     "health": {
@@ -31,124 +46,297 @@
       "properties": {
         "readiness": {
           "type": "object",
+          "description": "Readiness probe thresholds.",
           "properties": {
-            "requireMigrations": { "type": "boolean" },
-            "timeoutSeconds": { "type": "number", "exclusiveMinimum": 0 }
+            "requireMigrations": {
+              "type": "boolean",
+              "description": "Not ready until every migration has run."
+            },
+            "timeoutSeconds": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Time a readiness check may take."
+            }
           }
         },
         "liveness": {
           "type": "object",
-          "properties": { "eventLoopLagMs": { "type": "integer", "minimum": 1 } }
+          "description": "Liveness probe thresholds.",
+          "properties": {
+            "eventLoopLagMs": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Event loop lag above which the process counts as stuck."
+            }
+          }
         }
       }
     },
     "environments": {
       "type": "object",
+      "description": "Per-environment values. Names are fixed (ADR 0170 DP5).",
       "propertyNames": { "enum": ["dev", "preview", "staging", "production"] },
       "additionalProperties": { "$ref": "#/$defs/environment" }
     }
   },
   "$defs": {
-    "secretName": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
-    "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+    "secretName": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*$",
+      "description": "Secret name in SCREAMING_SNAKE, `<PROVIDER>_<PURPOSE>` (ADR 0231).",
+      "examples": ["RESEND_API_KEY"]
+    },
+    "port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "description": "A TCP port. Lanes add N × `portStep` per worktree."
+    },
     "resources": {
       "type": "object",
+      "description": "Compute size and scaling of one process.",
       "properties": {
-        "cpu": { "type": "number", "exclusiveMinimum": 0 },
-        "memory": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?(Mi|Gi)$" },
+        "cpu": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "vCPUs per instance.",
+          "examples": [0.5, 1]
+        },
+        "memory": {
+          "type": "string",
+          "pattern": "^[0-9]+(\\.[0-9]+)?(Mi|Gi)$",
+          "description": "Memory per instance, in Mi or Gi.",
+          "examples": ["512Mi", "2Gi"]
+        },
         "instances": {
           "type": "object",
+          "description": "Instance count bounds.",
           "properties": {
-            "min": { "type": "integer", "minimum": 0 },
-            "max": { "type": "integer", "minimum": 1 }
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Fewest instances kept running."
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Most instances scaling may add."
+            }
           }
         },
         "scaling": {
           "type": "object",
+          "description": "Autoscaling rule.",
           "properties": {
-            "metric": { "type": "string", "examples": ["cpu"] },
-            "target": { "type": "number" }
+            "metric": {
+              "type": "string",
+              "description": "Metric that drives scaling.",
+              "examples": ["cpu"]
+            },
+            "target": {
+              "type": "number",
+              "description": "Target value of the metric, in percent for cpu."
+            }
           }
         }
       }
     },
     "drivers": {
       "type": "object",
+      "description": "Driver per port in this environment; overrides the root defaults.",
       "properties": {
-        "queue": { "type": "string", "examples": ["memory", "encore-pubsub"] },
-        "cache": { "type": "string", "examples": ["memory", "valkey"] },
-        "events": { "type": "string", "examples": ["memory", "encore-pubsub"] },
-        "workflow": { "type": "string", "examples": ["native"] },
-        "realtime": { "type": "string", "examples": ["memory", "sse"] },
-        "scheduler": { "type": "string", "examples": ["croner"] },
-        "storage": { "type": "string", "examples": ["local", "s3"] },
+        "queue": {
+          "type": "string",
+          "description": "Job queue driver.",
+          "examples": ["memory", "encore-pubsub"]
+        },
+        "cache": {
+          "type": "string",
+          "description": "Cache driver.",
+          "examples": ["memory", "valkey"]
+        },
+        "events": {
+          "type": "string",
+          "description": "Integration event bus driver (ADR 0142).",
+          "examples": ["memory", "encore-pubsub"]
+        },
+        "workflow": {
+          "type": "string",
+          "description": "Workflow engine driver.",
+          "examples": ["native"]
+        },
+        "realtime": {
+          "type": "string",
+          "description": "Realtime push driver.",
+          "examples": ["memory", "sse"]
+        },
+        "scheduler": {
+          "type": "string",
+          "description": "Cron scheduler driver.",
+          "examples": ["croner"]
+        },
+        "storage": {
+          "type": "string",
+          "description": "Object storage driver.",
+          "examples": ["local", "s3"]
+        },
         "mail": {
           "type": "string",
-          "examples": ["memory", "notifications"],
-          "description": "The one home of the mail driver choice (ADR 0266)."
+          "description": "Mail driver. This file is the one home of that choice (ADR 0266).",
+          "examples": ["memory", "notifications"]
         },
-        "search": { "type": "string", "examples": ["memory", "postgres"] },
-        "media": { "type": "string", "examples": ["memory", "s3"] },
-        "webhooks": { "type": "string", "examples": ["memory", "native"] }
+        "search": {
+          "type": "string",
+          "description": "Search driver (ADR 0221).",
+          "examples": ["memory", "postgres"]
+        },
+        "media": {
+          "type": "string",
+          "description": "Media driver.",
+          "examples": ["memory", "s3"]
+        },
+        "webhooks": {
+          "type": "string",
+          "description": "Webhooks driver.",
+          "examples": ["memory", "native"]
+        }
       },
-      "additionalProperties": { "type": "string" }
+      "additionalProperties": {
+        "type": "string",
+        "description": "Driver of another port."
+      }
     },
     "queue": {
       "type": "object",
+      "description": "Size of one queue. Its name comes from the manifest.",
       "properties": {
-        "visibilityTimeoutSeconds": { "type": "integer", "minimum": 0 },
-        "dlq": { "type": "boolean" }
+        "visibilityTimeoutSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How long a taken message stays hidden before it is retried."
+        },
+        "dlq": {
+          "type": "boolean",
+          "description": "Give the queue a dead-letter queue."
+        }
       }
     },
     "environment": {
       "type": "object",
+      "description": "One environment of a service member.",
       "additionalProperties": false,
       "properties": {
-        "port": { "$ref": "#/$defs/port" },
-        "host": { "type": "string" },
-        "devConsolePort": { "$ref": "#/$defs/port" },
+        "port": {
+          "$ref": "#/$defs/port",
+          "description": "The service's own listener when run standalone; under `encore run` the root gateway fronts it."
+        },
+        "host": {
+          "type": "string",
+          "description": "Dev host.",
+          "examples": ["localhost"]
+        },
+        "devConsolePort": {
+          "$ref": "#/$defs/port",
+          "description": "Port of the service's dev console."
+        },
         "deployable": {
           "type": "string",
-          "description": "The deployable this service is packed into (ADR 0169); dev is a monolith."
+          "description": "The deployable this service is packed into (ADR 0169). Dev is a monolith; services in one deployable call each other in-process.",
+          "examples": ["core"]
         },
-        "isolate": { "type": "boolean" },
+        "isolate": {
+          "type": "boolean",
+          "description": "Never pack this service with another. Root `isolate` wins (ADR 0169 d1)."
+        },
         "resources": { "$ref": "#/$defs/resources" },
-        "poolBudget": { "type": "integer", "minimum": 1 },
+        "poolBudget": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Database connections this service may hold on the shared server (ADR 0238)."
+        },
         "drivers": { "$ref": "#/$defs/drivers" },
         "database": {
           "type": "object",
+          "description": "Size of the service's logical database on the shared server (ADR 0238 d2).",
           "properties": {
-            "plan": { "type": "string", "examples": ["shared"] },
-            "storageGb": { "type": "number", "exclusiveMinimum": 0 },
-            "extensions": { "type": "array", "items": { "type": "string" } },
-            "readReplica": { "type": "boolean" }
+            "plan": {
+              "type": "string",
+              "description": "Database plan; `shared` puts every preview on one small server.",
+              "examples": ["shared"]
+            },
+            "storageGb": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Storage budget in GB."
+            },
+            "extensions": {
+              "type": "array",
+              "description": "Postgres extensions the service needs, from the approved list (ADR 0160).",
+              "items": { "type": "string" },
+              "examples": [["ltree", "pg_trgm"]]
+            },
+            "readReplica": {
+              "type": "boolean",
+              "description": "Give the service a read replica."
+            }
           }
         },
         "cache": {
           "type": "object",
-          "properties": { "keyspaceMb": { "type": "integer", "minimum": 1 } }
+          "description": "Size of the service's cache keyspace.",
+          "properties": {
+            "keyspaceMb": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Keyspace budget in MB."
+            }
+          }
         },
-        "buckets": { "type": "object", "additionalProperties": { "type": "object" } },
+        "buckets": {
+          "type": "object",
+          "description": "Size per `@Bucket` from the manifest.",
+          "additionalProperties": {
+            "type": "object",
+            "description": "Size of one bucket (`storageGb`)."
+          }
+        },
         "queues": {
           "type": "object",
-          "description": "Names come from the manifest (`@AsJob` / `@OnEvent`); sizes here.",
+          "description": "Size per queue. Names come from the manifest (`@AsJob` / `@OnEvent` queues).",
           "additionalProperties": { "$ref": "#/$defs/queue" }
         },
-        "crons": { "type": "object", "properties": { "enabled": { "type": "boolean" } } },
+        "crons": {
+          "type": "object",
+          "description": "Cron jobs from `@Cron`.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Run crons. `encore run` does not, so dev turns them off (ADR 0091)."
+            }
+          }
+        },
         "secrets": {
           "type": "array",
+          "description": "The secret names this environment receives.",
           "items": { "$ref": "#/$defs/secretName" },
           "uniqueItems": true
         },
         "config": {
           "type": "object",
-          "description": "The last config layer (ADR 0146 CF3), keyed by config key.",
-          "additionalProperties": { "type": "object" }
+          "description": "The last config layer (ADR 0146 CF3): per-environment @Env values and driver names, keyed by config key.",
+          "additionalProperties": {
+            "type": "object",
+            "description": "Overrides of one config class."
+          }
         },
         "workers": {
           "type": "object",
+          "description": "Background work (queues, crons, outbox) split into its own `<member>-worker` process.",
           "properties": {
-            "split": { "type": "boolean" },
+            "split": {
+              "type": "boolean",
+              "description": "Run background work in a separate process."
+            },
             "resources": { "$ref": "#/$defs/resources" }
           }
         }

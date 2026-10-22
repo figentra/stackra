@@ -1,73 +1,92 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.stackra.figentra.com/runway/root.json",
+  "$comment": "Stackra file contract: Purpose: the shape of the ROOT runway.yaml, the infrastructure itself. Boundary: shape only; `stackra infra`, `stackra gen`, `stackra dev` and the runway workflows read the file. Member facts live in member runways (runway/app.json, runway/service.json). Runtime: node (editors and validators). Governing contract: ADR 0168 (one schema-validated runway.yaml, its sections), ADR 0169 (topology), ADR 0170 (environments, release), ADR 0171 (ref: values), ADR 0173 (secrets), ADR 0175 (edge), ADR 0184 (observability), ADR 0238 (one database server per environment).",
   "title": "runway.yaml (root)",
-  "description": "The root runway: destinations per environment, shared resources, targets, the edge, the secrets defaults, the release policy and the defaults members inherit (ADR 0168, 0169, 0170, 0173). It never lists deployables: gen collects them from every member's runway.yaml. No secret value; `ref:<path>` resolves from the stacks repo's Pulumi config at infra time (ADR 0171 d4).",
+  "description": "The root runway: destinations per environment, shared resources, provider target blocks, the edge, the secrets defaults, the release policy and the defaults members inherit (ADR 0168, 0169, 0170, 0173). It never lists deployables: gen collects them from every member's runway.yaml. No secret value. `ref:<path>` resolves from the private stacks repo's Pulumi config at infra time (ADR 0171 d4).",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "project", "environments"],
   "properties": {
     "$schema": {
-      "type": "string"
+      "type": "string",
+      "description": "The schema reference `stackra validate` reads (`@stackra/runway/schema/root.json`). Editors use the `# yaml-language-server: $schema=` comment instead.",
+      "examples": ["@stackra/runway/schema/root.json"]
     },
     "version": {
-      "const": 2
+      "const": 2,
+      "description": "Runway format version. Version 2 splits root and member runways (ADR 0169)."
     },
     "project": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9-]*$",
-      "description": "Prefix for stacks, images, Workers and tags."
+      "description": "Prefix for stacks (`<project>/staging`), images (`<project>-core`), Workers and tags.",
+      "examples": ["acme-platform"]
     },
     "providers": {
       "type": "object",
-      "description": "Every account and vendor, named once.",
+      "description": "Every account and vendor, named once. Values are public ids or `ref:<path>`; never a secret.",
+      "$comment": "Typed for the providers whose shape the runway tools rely on; any other provider is an object of ids so a new vendor needs no schema change.",
       "properties": {
         "aws": {
           "type": "object",
+          "description": "AWS accounts, Pulumi state, ECR and cost controls.",
           "properties": {
             "region": {
               "type": "string",
-              "description": "One region (ADR 0186)."
+              "description": "The one region (ADR 0186). A tenant's region is immutable (ADR 0210 d4).",
+              "examples": ["me-central-1"]
             },
             "accounts": {
               "type": "object",
+              "description": "Account role → account id or `ref:` (shared, nonprod, prod).",
               "additionalProperties": {
                 "$ref": "#/$defs/value"
               }
             },
             "state": {
-              "type": "object"
+              "type": "object",
+              "description": "Pulumi state: the S3 bucket and KMS key (ADR 0171 d4)."
             },
             "ecr": {
-              "type": "object"
+              "type": "object",
+              "description": "Image registry: the owning account and the scan, SBOM and signing tools."
             },
             "budgets": {
-              "type": "object"
+              "type": "object",
+              "description": "Cost alerts: percentage thresholds and the point non-production stops."
             },
             "requiredTags": {
               "type": "array",
+              "description": "Tags every resource must carry.",
               "items": {
                 "type": "string"
-              }
+              },
+              "examples": [["env", "service", "tenant"]]
             }
           }
         },
         "encore": {
           "type": "object",
+          "description": "Encore Cloud.",
           "properties": {
             "app": {
-              "type": "string"
+              "type": "string",
+              "description": "Encore Cloud app id (public)."
             }
           }
         },
         "cloudflare": {
           "type": "object",
+          "description": "Cloudflare account and DNS zones (ADR 0175).",
           "properties": {
             "accountId": {
-              "$ref": "#/$defs/value"
+              "$ref": "#/$defs/value",
+              "description": "Account id or `ref:`."
             },
             "zones": {
               "type": "object",
+              "description": "Zone name → zone id or `ref:`. Member runways name hosts under these zones.",
               "additionalProperties": {
                 "$ref": "#/$defs/value"
               }
@@ -75,44 +94,56 @@
           }
         },
         "github": {
-          "type": "object"
+          "type": "object",
+          "description": "GitHub org, repository and deployment environments with their reviewers (ADR 0170 d6)."
         },
         "infisical": {
           "type": "object",
+          "description": "The secret store (ADR 0173).",
           "properties": {
             "domain": {
               "type": "string",
-              "pattern": "^https://"
+              "pattern": "^https://",
+              "description": "Infisical instance URL.",
+              "examples": ["https://eu.infisical.com"]
             },
             "workspace": {
-              "$ref": "#/$defs/value"
+              "$ref": "#/$defs/value",
+              "description": "Infisical project id or `ref:`."
             },
             "environments": {
               "type": "object",
+              "description": "Runway environment → Infisical environment slug.",
               "propertyNames": {
                 "$ref": "#/$defs/envName"
               },
               "additionalProperties": {
-                "type": "string"
+                "type": "string",
+                "description": "Infisical environment slug.",
+                "examples": ["prod"]
               }
             },
             "paths": {
               "type": "object",
+              "description": "Named secret folders (runtime, ci, agents). A member may name `path: ci`.",
               "additionalProperties": {
                 "type": "string",
-                "pattern": "^/"
+                "pattern": "^/",
+                "description": "Folder path in the Infisical project.",
+                "examples": ["/runtime"]
               }
             }
           }
         }
       },
       "additionalProperties": {
-        "type": "object"
+        "type": "object",
+        "description": "Another vendor: public ids or `ref:` values."
       }
     },
     "environments": {
       "type": "object",
-      "description": "Exactly these four names in every tool (ADR 0170 DP5; `local` is `dev`).",
+      "description": "Per-environment destinations, shared resources and member defaults. Exactly these four names in every tool (ADR 0170 DP5; `local` is `dev`).",
       "propertyNames": {
         "$ref": "#/$defs/envName"
       },
@@ -122,32 +153,36 @@
     },
     "targets": {
       "type": "object",
-      "description": "Provider shape, selected by `environments.<env>.destinations.*`.",
+      "description": "Provider shape per destination, selected by `environments.<env>.destinations.*`.",
       "propertyNames": {
         "$ref": "#/$defs/destination"
       },
       "additionalProperties": {
-        "type": "object"
+        "type": "object",
+        "description": "Settings of that destination (cloud, compute, registry, signing, rollout)."
       }
     },
     "edge": {
       "type": "object",
-      "description": "Edge rules (ADR 0175, 0237 layer 1)."
+      "description": "The edge in front of every public host: proxying, WAF, bot mode, per-IP rate limit, TLS, the API host and the analytics proxy path (ADR 0175, ADR 0237 layer 1)."
     },
     "secrets": {
       "type": "object",
-      "description": "Vault defaults; names are declared by members (ADR 0168 d5, 0173, 0257).",
+      "description": "Vault defaults. Secret NAMES are declared by members (ADR 0168 d5, 0173, 0257).",
       "additionalProperties": false,
       "properties": {
         "sync": {
-          "enum": ["on-deploy"]
+          "enum": ["on-deploy"],
+          "description": "When runway copies Infisical values into the runtimes (Encore, Workers, EAS, compose, Kubernetes)."
         },
         "defaultPath": {
-          "type": "string"
+          "type": "string",
+          "description": "The `providers.infisical.paths` key a member secret uses unless it names another.",
+          "examples": ["runtime"]
         },
         "ci": {
           "type": "array",
-          "description": "CI-only secret names the release workflows read over OIDC; never a runtime.",
+          "description": "CI-only secret names the release workflows read over OIDC; never given to a runtime.",
           "items": {
             "$ref": "#/$defs/secretName"
           },
@@ -157,26 +192,31 @@
     },
     "release": {
       "type": "object",
-      "description": "Release policy (ADR 0170)."
+      "description": "Release policy: the promotion unit, gates, strategy, rollback, records, build order and on-prem upgrades (ADR 0170)."
     },
     "observability": {
       "type": "object",
-      "description": "Observability defaults (ADR 0184)."
+      "description": "Observability defaults: log retention, heartbeats and when SLOs start (ADR 0184)."
     }
   },
   "$defs": {
     "envName": {
-      "enum": ["dev", "preview", "staging", "production"]
+      "enum": ["dev", "preview", "staging", "production"],
+      "description": "Environment name (ADR 0170 DP5)."
     },
     "secretName": {
       "type": "string",
-      "pattern": "^[A-Z][A-Z0-9_]*$"
+      "pattern": "^[A-Z][A-Z0-9_]*$",
+      "description": "Secret name in SCREAMING_SNAKE (ADR 0231).",
+      "examples": ["TURBO_TOKEN"]
     },
     "value": {
-      "type": ["string", "number", "boolean"]
+      "type": ["string", "number", "boolean"],
+      "description": "A public value, or `ref:<path>` resolved from the stacks repo at infra time (ADR 0171 d4)."
     },
     "destination": {
       "type": "string",
+      "description": "Where a kind of member runs. Each name has a block under `targets`.",
       "examples": [
         "compose",
         "vite-dev",
@@ -191,90 +231,113 @@
     },
     "drivers": {
       "type": "object",
-      "description": "Default driver per port; a member runway overrides one per environment.",
+      "description": "Default driver per port. A member runway overrides one per environment.",
       "properties": {
         "queue": {
           "type": "string",
+          "description": "Job queue driver.",
           "examples": ["memory", "encore-pubsub"]
         },
         "cache": {
           "type": "string",
+          "description": "Cache driver.",
           "examples": ["memory", "valkey"]
         },
         "events": {
           "type": "string",
+          "description": "Integration event bus driver (ADR 0142).",
           "examples": ["memory", "encore-pubsub"]
         },
         "workflow": {
           "type": "string",
+          "description": "Workflow engine driver.",
           "examples": ["native"]
         },
         "realtime": {
           "type": "string",
+          "description": "Realtime push driver.",
           "examples": ["memory", "sse"]
         },
         "scheduler": {
           "type": "string",
+          "description": "Cron scheduler driver.",
           "examples": ["croner"]
         },
         "storage": {
           "type": "string",
+          "description": "Object storage driver.",
           "examples": ["local", "s3"]
         },
         "mail": {
           "type": "string",
+          "description": "The per-environment layer of `MailConfig.driver`: `memory` in dev and preview, `notifications` in staging and production.",
           "examples": ["memory", "notifications"]
         },
         "search": {
           "type": "string",
+          "description": "Default of the `@stackra/search` port (ADR 0221).",
           "examples": ["memory", "postgres"]
         },
         "media": {
           "type": "string",
+          "description": "Default of the `@stackra/media` port.",
           "examples": ["memory", "s3"]
         },
         "webhooks": {
           "type": "string",
+          "description": "Default of the `@stackra/webhooks` port.",
           "examples": ["memory", "native"]
         }
       },
       "additionalProperties": {
-        "type": "string"
+        "type": "string",
+        "description": "Driver of another port."
       }
     },
     "resources": {
       "type": "object",
+      "description": "Compute size and scaling of one process.",
       "properties": {
         "cpu": {
           "type": "number",
-          "exclusiveMinimum": 0
+          "exclusiveMinimum": 0,
+          "description": "vCPUs per instance.",
+          "examples": [0.25, 1]
         },
         "memory": {
           "type": "string",
-          "pattern": "^[0-9]+(\\.[0-9]+)?(Mi|Gi)$"
+          "pattern": "^[0-9]+(\\.[0-9]+)?(Mi|Gi)$",
+          "description": "Memory per instance, in Mi or Gi.",
+          "examples": ["512Mi", "2Gi"]
         },
         "instances": {
           "type": "object",
+          "description": "Instance count bounds.",
           "properties": {
             "min": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "description": "Fewest instances kept running."
             },
             "max": {
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "description": "Most instances scaling may add."
             }
           }
         },
         "scaling": {
           "type": "object",
+          "description": "Autoscaling rule.",
           "properties": {
             "metric": {
               "type": "string",
+              "description": "Metric that drives scaling.",
               "examples": ["cpu"]
             },
             "target": {
-              "type": "number"
+              "type": "number",
+              "description": "Target value of the metric, in percent for cpu."
             }
           }
         }
@@ -282,11 +345,12 @@
     },
     "environment": {
       "type": "object",
+      "description": "One environment of the root runway.",
       "additionalProperties": false,
       "properties": {
         "destinations": {
           "type": "object",
-          "description": "Where each kind of member runs; a member runway may override its own.",
+          "description": "Where each kind of member runs. A member runway may override its own.",
           "propertyNames": {
             "enum": ["services", "web", "mobile", "desktop"]
           },
@@ -296,82 +360,104 @@
         },
         "infra": {
           "type": "object",
-          "description": "The containers `stackra dev` brings.",
+          "description": "Dev only: the containers `stackra dev` brings (gateway, postgres, valkey, minio, zitadel, mailpit, otel-lgtm). A driver set to `memory` in every service removes its container.",
           "additionalProperties": {
-            "type": "object"
+            "type": "object",
+            "description": "One container: image, ports and when it starts."
           }
         },
         "lanes": {
           "type": "object",
-          "description": "Worktree N adds N*portStep to every dev port.",
+          "description": "Dev only: worktree N adds N × `portStep` to every dev port, member and infra.",
           "properties": {
             "enabled": {
-              "type": "boolean"
+              "type": "boolean",
+              "description": "Turn lanes on."
             },
             "portStep": {
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "description": "Port offset per lane.",
+              "examples": [100]
             },
             "from": {
-              "type": "string"
+              "type": "string",
+              "description": "Environment variable holding the lane number.",
+              "examples": ["STACKRA_LANE"]
             }
           }
         },
         "https": {
-          "type": "object"
+          "type": "object",
+          "description": "Dev only: a local CA and `<key>.localhost` names behind one proxy."
         },
         "proxy": {
-          "type": "object"
+          "type": "object",
+          "description": "Dev only: routes by Host to member dev ports; needed only for `*.localhost` or https."
         },
         "encore": {
-          "type": "object"
+          "type": "object",
+          "description": "Encore Cloud environment name, account and process allocation (`from-deployables`)."
         },
         "ttl": {
           "type": "string",
-          "pattern": "^[0-9]+[hd]$"
+          "pattern": "^[0-9]+[hd]$",
+          "description": "Preview only: how long a per-pull-request environment lives.",
+          "examples": ["7d"]
         },
         "data": {
           "type": "string",
+          "description": "Preview only: which data a preview gets.",
           "examples": ["synthetic"]
         },
         "shared": {
           "type": "object",
-          "description": "Shared resources: one database server per environment (ADR 0238 d1), cache, queues, network, buckets.",
+          "description": "Resources shared by every member: ONE database server per environment (ADR 0238 d1), the cache cluster, the queue provider, networking and bucket defaults.",
+          "additionalProperties": false,
           "properties": {
             "network": {
-              "type": "object"
+              "type": "object",
+              "description": "VPC and load balancer."
             },
             "database": {
-              "type": "object"
+              "type": "object",
+              "description": "The Postgres server: engine, class, storage, Multi-AZ, backups, extensions and pooling."
             },
             "cache": {
-              "type": "object"
+              "type": "object",
+              "description": "The cache cluster: engine, node type and replicas."
             },
             "queues": {
-              "type": "object"
+              "type": "object",
+              "description": "The queue provider and dead-letter default."
             },
             "buckets": {
-              "type": "object"
+              "type": "object",
+              "description": "Defaults for every member bucket: versioning and lifecycle."
             }
-          },
-          "additionalProperties": false
+          }
         },
         "defaults": {
           "type": "object",
-          "description": "Defaults every member of that kind inherits.",
+          "description": "Defaults every member of that kind inherits in this environment.",
+          "additionalProperties": false,
           "properties": {
             "service": {
               "type": "object",
+              "description": "Service member defaults.",
               "properties": {
                 "resources": {
                   "$ref": "#/$defs/resources"
                 },
                 "deployable": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "The deployable a service joins unless it names another (ADR 0169).",
+                  "examples": ["core"]
                 },
                 "poolBudget": {
                   "type": "integer",
-                  "minimum": 1
+                  "minimum": 1,
+                  "description": "Database connections one service may hold (ADR 0238)."
                 },
                 "drivers": {
                   "$ref": "#/$defs/drivers"
@@ -379,59 +465,77 @@
               }
             },
             "app": {
-              "type": "object"
+              "type": "object",
+              "description": "App member defaults (dev server flags, Workers observability)."
             }
-          },
-          "additionalProperties": false
+          }
         },
         "isolate": {
           "type": "array",
-          "description": "Services never packed with another (ADR 0169 d1); a member runway cannot undo it.",
+          "description": "Services never packed with another (ADR 0169 d1). A member runway cannot undo it.",
           "items": {
             "type": "string"
-          }
+          },
+          "examples": [["identity", "payments"]]
         },
         "domains": {
           "type": "object",
+          "description": "How member hosts are named in this environment.",
           "properties": {
             "zone": {
-              "type": "string"
+              "type": "string",
+              "description": "A zone from `providers.cloudflare.zones`."
             },
             "pattern": {
-              "type": "string"
+              "type": "string",
+              "description": "Host pattern; `${member}` and `${pr}` are expanded.",
+              "examples": ["${member}-pr-${pr}.preview", "${member}.staging"]
             },
             "tenantDomains": {
-              "type": "string"
+              "type": "string",
+              "description": "How tenant custom domains are served.",
+              "examples": ["cloudflare-for-saas"]
             }
           }
         },
         "deploy": {
           "type": "object",
+          "description": "What triggers a deploy and what gates it (ADR 0170).",
           "properties": {
             "on": {
-              "enum": ["pull-request", "merge-to-main", "promote"]
+              "enum": ["pull-request", "merge-to-main", "promote"],
+              "description": "Trigger: each pull request, each merge to main, or `runway promote <sha>`."
             },
             "gate": {
-              "type": "string"
+              "type": "string",
+              "description": "Post-deploy gate (DP24).",
+              "examples": ["health"]
             },
             "approval": {
-              "type": "string"
+              "type": "string",
+              "description": "Who approves a promotion.",
+              "examples": ["github-environment"]
             }
           }
         },
         "mobile": {
           "type": "object",
+          "description": "Mobile release defaults members inherit.",
           "properties": {
             "channel": {
-              "type": "string"
+              "type": "string",
+              "description": "EAS update channel."
             }
           }
         },
         "desktop": {
           "type": "object",
+          "description": "Desktop release defaults members inherit.",
           "properties": {
             "channel": {
-              "type": "string"
+              "type": "string",
+              "description": "electron-updater channel; `latest` is stable (ADR 0254).",
+              "examples": ["beta", "latest"]
             }
           }
         }

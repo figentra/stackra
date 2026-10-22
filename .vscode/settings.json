@@ -56,7 +56,8 @@
     "**/.vscode/*.json": "jsonc",
     "*.mdx": "mdx"
   },
-  // Remote $schema URLs load only from trusted hosts (VS Code asks otherwise and shows "Unable to load").
+  // Remote $schema URLs load only from trusted hosts (VS Code shows "Location ... is untrusted"
+  // otherwise). Local paths (./node_modules, ./tools/schemas) need no entry.
   "json.schemaDownload.enable": true,
   "json.schemaDownload.trustedDomains": {
     "https://json.schemastore.org/": true,
@@ -72,33 +73,39 @@
     "https://opencode.ai/": true,
     "https://schemas.stackra.figentra.com/": true
   },
+  // A file's own `$schema` wins over these mappings, so they cover only files that carry none.
   "json.schemas": [
+    // JSONC files: oxfmt writes trailing commas, so the JSON service must accept them.
     {
       "fileMatch": ["*.jsonc", "**/tsconfig*.json", "**/.vscode/*.json"],
       "schema": { "allowTrailingCommas": true }
     },
-    // Files with no inline $schema. Installed packages resolve from node_modules (no download, no
-    // trust prompt); the rest are SchemaStore or the tool's own schema, pinned where the URL allows.
+    // Claude Code's preview servers (.claude/launch.json), from SchemaStore.
     {
       "fileMatch": ["**/.claude/launch.json"],
       "url": "https://www.schemastore.org/claude-code-launch.json"
     },
+    // tsconfig presets have no tsconfig*.json name, so VS Code would not recognise them.
     {
       "fileMatch": ["**/packages/tooling/typescript/src/*.json"],
       "url": "https://www.schemastore.org/tsconfig.json"
     },
+    // oxlint presets: the installed oxlint's own schema (local file, no download or trust prompt).
     {
       "fileMatch": ["**/packages/tooling/oxlint/src/*.jsonc"],
       "url": "./node_modules/oxlint/configuration_schema.json"
     },
+    // Expo app config, pinned to SDK 57 (the catalog's expo). The scaffold copy holds {{placeholders}}.
     {
       "fileMatch": ["**/apps/*/app.json"],
       "url": "https://www.schemastore.org/expo-57.0.0.json"
     },
+    // EAS build profiles: eas-cli publishes one schema on main (eas-cli is not a workspace dependency).
     {
       "fileMatch": ["**/apps/*/eas.json", "**/tools/scaffold/templates/apps/mobile/eas.json"],
       "url": "https://raw.githubusercontent.com/expo/eas-cli/main/packages/eas-json/schema/eas.schema.json"
     },
+    // Stackra's own schema; mapped here so the GitHub API payload carries no $schema key.
     {
       "fileMatch": ["**/.github/branch-protection.json"],
       "url": "./tools/schemas/branch-protection.schema.json"
@@ -106,16 +113,22 @@
   ],
 
   // ── YAML: schemas for the config files that have one ──────────────────────────────────────────
+  // A `# yaml-language-server: $schema=` comment in a file wins over these mappings. SchemaStore
+  // stays on as a fallback for files listed nowhere.
   "yaml.format.enable": false,
   "yaml.validate": true,
   "yaml.schemaStore.enable": true,
-  // Stackra's own schemas live in tools/schemas (offline today; their $id is schemas.stackra.figentra.com).
   "yaml.schemas": {
+    // Installed tools: the package's own schema file, so it matches the pinned version exactly.
     "./node_modules/lefthook/schema.json": "lefthook.yml",
+    // Stackra's own schemas (tools/schemas; their $id is schemas.stackra.figentra.com, not hosted yet).
     "./tools/schemas/mcp.schema.json": ".mcp.yaml",
+    // Tools without a workspace package: the tool's own published schema.
     "https://raw.githubusercontent.com/DavidAnson/markdownlint/main/schema/markdownlint-config-schema.json": ".markdownlint.yaml",
     "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/packages/cspell-types/cspell.schema.json": "cspell.config.yaml",
+    // electron-builder's own schema (SchemaStore's copy predates the `universal` arch).
     "https://unpkg.com/app-builder-lib@26/scheme.json": "**/electron-builder.yml",
+    // SchemaStore.
     "https://json.schemastore.org/commitlintrc.json": ".commitlintrc.yaml",
     "https://json.schemastore.org/pnpm-workspace.json": "pnpm-workspace.yaml",
     "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
@@ -123,6 +136,7 @@
 
   // ── TOML: Even Better TOML (keys are regexes on the file URI; files also carry `#:schema`) ────────
   "evenBetterToml.schema.associations": {
+    // mise publishes its own schema; gitleaks has one on SchemaStore.
     ".*/mise\\.toml$": "https://mise.jdx.dev/schema/mise.json",
     ".*/\\.gitleaks\\.toml$": "https://www.schemastore.org/gitleaks.json"
   },
