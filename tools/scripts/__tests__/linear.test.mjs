@@ -131,7 +131,7 @@ test("STA-302: a failed comment is re-sent with its own id only when a read show
     return answer(
       landed
         ? { data: { comment: { id: variables.id } } }
-        : { errors: [{ message: "Entity not found" }] },
+        : { errors: [{ message: "Entity not found: Comment" }] },
     );
   };
   const L = linear(client({ env: { LINEAR_API_KEY: "k" }, fetch }), { log: () => {} });
@@ -144,6 +144,28 @@ test("STA-302: a failed comment is re-sent with its own id only when a read show
   sent.length = 0;
   landed = true;
   await L.comment(ISSUE, "hi");
+  assert.equal(sent.length, 1);
+});
+
+test("STA-302: a comment is not re-sent when the read fails for any reason but not-found", async () => {
+  const sent = [];
+  const fetch = async (_url, init) => {
+    const { query, variables } = JSON.parse(init.body);
+    if (query.includes("commentCreate")) {
+      sent.push(variables.i.id);
+      throw new TypeError("fetch failed");
+    }
+    return {
+      ok: false,
+      status: 429,
+      json: async () => ({ errors: [{ message: "Rate limited" }] }),
+    };
+  };
+  const L = linear(client({ env: { LINEAR_API_KEY: "k" }, fetch }), { log: () => {} });
+  await assert.rejects(
+    L.comment(ISSUE, "hi"),
+    /^Error: fetch failed; outcome unknown.*Rate limited/,
+  );
   assert.equal(sent.length, 1);
 });
 

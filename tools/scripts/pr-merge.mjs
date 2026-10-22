@@ -204,8 +204,8 @@ export function parseArgs(argv) {
   return rest.length === 1 && /^\d+$/.test(rest[0]) && valid ? { n: rest[0], repo } : null;
 }
 
-/** gh's stdout; a read (`idempotent`) is retried on a transient error, a merge or enqueue is not. */
-function gh(args, token, idempotent = true) {
+/** gh's stdout. Only a call marked `idempotent` (a read) is retried on a transient error; a write runs once. */
+export function gh(args, token, idempotent = false) {
   // 256 MiB: a compare diff with lockfile churn passes 1 MiB, and a cut-off diff would void rebase survival.
   const options = {
     encoding: "utf8",
@@ -220,8 +220,15 @@ function gh(args, token, idempotent = true) {
   return r.stdout;
 }
 
+/** A GraphQL call's data. A query is retried on a transient error, a mutation never: the document says which. */
+export const graphql = (query, fields, token) =>
+  JSON.parse(
+    gh(["api", "graphql", "-f", `query=${query}`, ...fields], token, !/^\s*mutation\b/.test(query)),
+  ).data;
+
 /** Every page of a REST list endpoint, as one array. */
-const list = (path, token) => JSON.parse(gh(["api", "--paginate", "--slurp", path], token)).flat();
+const list = (path, token) =>
+  JSON.parse(gh(["api", "--paginate", "--slurp", path], token, true)).flat();
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const parsed = parseArgs(process.argv.slice(2));
@@ -234,16 +241,21 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
     const token = await botNetwork.mintToken();
     const fields = "number,state,isDraft,headRefOid,baseRefName,labels,author";
-    const pr = JSON.parse(gh(["pr", "view", n, ...R, "--json", fields], token));
+    const pr = JSON.parse(gh(["pr", "view", n, ...R, "--json", fields], token, true));
     const runs = JSON.parse(
       gh(
         ["api", `repos/${repo}/commits/${pr.headRefOid}/check-runs?check_name=Quality%20Gate`],
         token,
+        true,
       ),
     ).check_runs;
     // The head commit's GitHub author and committer (null when the email maps to no account).
     const headCommit = JSON.parse(
-      gh(["api", `repos/${repo}/commits/${pr.headRefOid}`, "--jq", "{author,committer}"], token),
+      gh(
+        ["api", `repos/${repo}/commits/${pr.headRefOid}`, "--jq", "{author,committer}"],
+        token,
+        true,
+      ),
     );
     // REST, not `gh pr view`: only REST carries user.type, performed_via_github_app and updated_at.
     const comments = list(`repos/${repo}/issues/${n}/comments?per_page=100`, token);
@@ -259,6 +271,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
             `repos/${repo}/compare/${pr.baseRefName}...${commit}`,
           ],
           token,
+          true,
         );
         return patchId(diff);
       } catch (error) {
@@ -276,14 +289,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       process.exit(1);
     }
     const [owner, name] = repo.startsWith("{") ? ["{owner}", "{repo}"] : repo.split("/");
-    const graphql = (query, fields, idempotent = true) =>
-      JSON.parse(gh(["api", "graphql", "-f", `query=${query}`, ...fields], token, idempotent)).data;
     // -F (typed) fills gh's {owner}/{repo} placeholders and makes n an Int.
     const where = ["-F", `o=${owner}`, "-F", `r=${name}`, "-F", `n=${n}`];
     const { repository } = graphql(
       "query($o:String!,$r:String!,$n:Int!,$b:String!){repository(owner:$o,name:$r){" +
         "mergeQueue(branch:$b){id} pullRequest(number:$n){id}}}",
       [...where, "-f", `b=${pr.baseRefName}`],
+      token,
     );
     if (repository.mergeQueue && !enqueueReady(botNetwork)) {
       throw new Error(
@@ -298,6 +310,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
           "query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){" +
             "pullRequest(number:$n){state mergeQueueEntry{id}}}}",
           where,
+          token,
         ).repository;
         return Boolean(pullRequest.mergeQueueEntry) || pullRequest.state === "MERGED";
       };
@@ -307,7 +320,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
             "mutation($id:ID!,$h:GitObjectID!){enqueuePullRequest(input:" +
               "{pullRequestId:$id,expectedHeadOid:$h}){mergeQueueEntry{position state}}}",
             ["-f", `id=${repository.pullRequest.id}`, "-f", `h=${pr.headRefOid}`],
-            false,
+            token,
           ).enqueuePullRequest.mergeQueueEntry,
         queued,
       );
@@ -317,10 +330,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       process.stdout.write(`queued #${n} at ${pr.headRefOid}: ${place}\n`);
     } else {
       const merged = () =>
-        JSON.parse(gh(["pr", "view", n, ...R, "--json", "state"], token)).state === "MERGED";
+        JSON.parse(gh(["pr", "view", n, ...R, "--json", "state"], token, true)).state === "MERGED";
       const merge = ["pr", "merge", n, ...R, "--squash", "--delete-branch"];
       await botNetwork.retryUnlessLanded(
-        () => gh([...merge, "--match-head-commit", pr.headRefOid], token, false),
+        () => gh([...merge, "--match-head-commit", pr.headRefOid], token),
         merged,
       );
       process.stdout.write(`merged #${n} at ${pr.headRefOid}\n`);

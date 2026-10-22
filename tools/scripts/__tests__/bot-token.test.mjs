@@ -1,10 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync, verify } from "node:crypto";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { copyFileSync, mkdtempSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import {
   appJwt,
   backoff,
@@ -16,6 +18,7 @@ import {
   retryUnlessLanded,
   spawnRetrying,
 } from "../bot-token.mjs";
+import { enqueueReady } from "../pr-merge.mjs";
 
 const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
 const pem = privateKey.export({ type: "pkcs8", format: "pem" });
@@ -172,6 +175,56 @@ test("retryUnlessLanded re-runs a write only when a fresh read says it did not l
     /422/,
   );
   assert.equal(reads, 0);
+});
+
+test("retryUnlessLanded re-reads after the last send; a failing re-read keeps the send's error", async () => {
+  let runs = 0;
+  let reads = 0;
+  const gateway = () => {
+    runs++;
+    throw new Error("gh pr merge failed: HTTP 504: Gateway Timeout");
+  };
+  // The 4th send lands although its response is lost: success, not a failure.
+  assert.equal(await retryUnlessLanded(gateway, () => ++reads >= 4, noWait), undefined);
+  assert.deepEqual([runs, reads], [4, 4]);
+
+  runs = 0;
+  await assert.rejects(
+    retryUnlessLanded(gateway, () => false, noWait),
+    /^Error: gh pr merge/,
+  );
+  assert.equal(runs, RETRY_ATTEMPTS);
+
+  runs = 0;
+  const unread = () => {
+    throw new Error("gh pr view failed: i/o timeout");
+  };
+  await assert.rejects(retryUnlessLanded(gateway, unread, noWait), (error) => {
+    assert.match(
+      error.message,
+      /^gh pr merge failed: HTTP 504.*outcome unknown.*gh pr view failed/,
+    );
+    return true;
+  });
+  assert.equal(runs, 1);
+});
+
+test("without undici the timeout reads 10 s, so the OP7 enqueue gate stays shut", () => {
+  // A copy outside the repository cannot resolve undici, as in linear-sync (no `pnpm install`).
+  const dir = mkdtempSync(join(tmpdir(), "no-undici-"));
+  copyFileSync(new URL("../bot-token.mjs", import.meta.url), join(dir, "bot-token.mjs"));
+  const r = spawnSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      `const m = await import(${JSON.stringify(pathToFileURL(join(dir, "bot-token.mjs")).href)});` +
+        "console.log(m.CONNECT_TIMEOUT_MS, m.RETRY_ATTEMPTS);",
+    ],
+    { encoding: "utf8" },
+  );
+  assert.equal(r.stdout.trim(), "10000 4", r.stderr);
+  assert.equal(enqueueReady({ CONNECT_TIMEOUT_MS: 10_000, RETRY_ATTEMPTS: 4 }), false);
 });
 
 test("ghIdempotent: reads and GET api calls retry; writes do not", () => {

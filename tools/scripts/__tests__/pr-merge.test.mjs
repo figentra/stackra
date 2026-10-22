@@ -6,12 +6,15 @@ import {
   aiReview,
   blockers,
   enqueueReady,
+  gh,
+  graphql,
   OWNER,
   parseArgs,
   patchId,
   REVIEWER,
   samePatchShas,
 } from "../pr-merge.mjs";
+import { fakeGh } from "./__fixtures__/fake-gh.mjs";
 
 const SHA = "0123456789abcdef0123456789abcdef01234567";
 const T0 = "2026-10-19T10:00:00Z";
@@ -300,4 +303,37 @@ test("OP7: enqueueing waits for STA-302's connect timeout and retries", () => {
 
 test("OP7: STA-302 opened the enqueue path — bot-token.mjs declares the timeout and retries", () => {
   assert.equal(enqueueReady(network), true);
+});
+
+test("STA-302: gh() and graphql() retry reads only; a write that omits the flag runs once", () => {
+  const blip = { err: "HTTP 502: Bad Gateway\n", code: 1 };
+  const ok = { out: '{"data":{"x":1}}' };
+  const path = process.env.PATH;
+  const run = (call) => {
+    const fake = fakeGh([blip, ok]);
+    process.env.PATH = fake.path;
+    try {
+      return { value: call(), runs: fake.runs() };
+    } catch (error) {
+      return { error: error.message, runs: fake.runs() };
+    } finally {
+      process.env.PATH = path;
+    }
+  };
+  assert.deepEqual(
+    run(() => gh(["pr", "merge", "1"], "t")),
+    {
+      error: "gh pr merge failed: HTTP 502: Bad Gateway",
+      runs: 1,
+    },
+  );
+  assert.deepEqual(
+    run(() => gh(["pr", "view", "1"], "t", true)),
+    { value: ok.out, runs: 2 },
+  );
+  assert.equal(run(() => graphql("mutation{enqueuePullRequest}", [], "t")).runs, 1);
+  assert.deepEqual(
+    run(() => graphql("query{x}", [], "t")),
+    { value: { x: 1 }, runs: 2 },
+  );
 });

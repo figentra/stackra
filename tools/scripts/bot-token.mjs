@@ -18,8 +18,17 @@ import { spawnSync } from "node:child_process";
 import { sign } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
-/** Connect timeout of every GitHub and Linear call; undici's 10 s default failed 1 slow connect in 5 (STA-302). */
-export const CONNECT_TIMEOUT_MS = 30_000;
+// linear-sync runs node without `pnpm install`: there the global fetch (10 s connect timeout) keeps only the retries.
+const undici = await import("undici").catch((error) => {
+  if (error.code === "ERR_MODULE_NOT_FOUND") return null;
+  throw error;
+});
+
+/**
+ * Connect timeout of every GitHub and Linear fetch; undici's 10 s default failed 1 slow connect in 5 (STA-302). It
+ * reads 10 s where undici is not installed, so the OP7 gate (`enqueueReady`) stays shut there.
+ */
+export const CONNECT_TIMEOUT_MS = undici ? 30_000 : 10_000;
 /** Tries of an idempotent call, the first included. */
 export const RETRY_ATTEMPTS = 4;
 /** Ceiling of the first backoff; retry n waits a random 0 to BACKOFF_MS * 2^(n-1) ms. */
@@ -29,8 +38,6 @@ const RETRY_STATUS = new Set([502, 503, 504]);
 const TRANSIENT =
   /fetch failed|UND_ERR_(?:CONNECT_TIMEOUT|SOCKET)|ECONNRESET|ETIMEDOUT|EAI_AGAIN|connection reset|i\/o timeout|TLS handshake timeout|timed out|Timeout exceeded|unexpected EOF|HTTP 50[234]\b|Bad Gateway|Service Unavailable|Gateway Time-?out/i;
 
-// linear-sync runs node without `pnpm install`: there the global fetch (10 s connect timeout) keeps only the retries.
-const undici = await import("undici").catch(() => null);
 const dispatcher =
   undici && new undici.Agent({ connectTimeout: CONNECT_TIMEOUT_MS, autoSelectFamily: true });
 
@@ -69,25 +76,34 @@ export async function netFetch(url, init = {}, options = {}) {
 }
 
 /**
- * A call that is not idempotent (merge, enqueue, comment): after a TRANSIENT failure it runs again only when
- * `landed()`, a fresh read, says the failed attempt did not land. Resolves to run()'s value, or undefined if it landed.
+ * A call that is not idempotent (merge, enqueue, comment): after each TRANSIENT failure, the last one included,
+ * `landed()` (a fresh read) says whether it landed anyway; only when it did not is the call run again. Resolves to
+ * run()'s value, or undefined if it landed. A failing read keeps the call's own error and says the outcome is unknown.
  */
 export async function retryUnlessLanded(run, landed, wait = sleep) {
-  let done = false;
-  const result = await retry(
-    () =>
-      Promise.resolve()
-        .then(run)
-        .then(
-          (value) => ({ value }),
-          (error) => ({ error }),
-        ),
-    async (r) => Boolean(r.error) && TRANSIENT.test(r.error.message) && !(done = await landed()),
-    wait,
-  );
-  if (done) return undefined;
-  if (result.error) throw result.error;
-  return result.value;
+  for (let n = 1; ; n++) {
+    let error;
+    try {
+      return await run();
+    } catch (failure) {
+      error = failure;
+    }
+    if (!TRANSIENT.test(error.message)) throw error;
+    let done;
+    try {
+      done = await landed();
+    } catch (read) {
+      throw new Error(
+        `${error.message}; outcome unknown, check it by hand (re-read failed: ${read.message})`,
+        {
+          cause: error,
+        },
+      );
+    }
+    if (done) return undefined;
+    if (n >= RETRY_ATTEMPTS) throw error;
+    await wait(backoff(n));
+  }
 }
 
 /** gh commands safe to repeat: view, list, diff, checks and status subcommands, `gh search`, and `gh api` as GET. */

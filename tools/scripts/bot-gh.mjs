@@ -34,19 +34,24 @@ export const gitBotArgs = () => [
   "url.https://github.com/.insteadOf=ssh://git@github.com/",
 ];
 
-/** Run gh/git as the bot; returns the exit status. A gh read is retried on a transient network error (STA-302). */
-export function runAsBot(tool, args, token) {
+/**
+ * Run gh/git as the bot; resolves to the exit status. A gh read is retried on a transient network error (STA-302):
+ * its output is captured, and only the last attempt's is shown, so a cut-off attempt never prints twice.
+ */
+export async function runAsBot(tool, args, token) {
   const argv = tool === "git" ? [...gitBotArgs(), ...args] : args;
   const env = { ...process.env, GH_TOKEN: token, GH_PROMPT_DISABLED: "1" };
   if (tool === "git" || !ghIdempotent(args))
     return spawnSync(tool, argv, { stdio: "inherit", env }).status ?? 1;
-  // stderr is captured so the retry can read it, then shown.
   const r = spawnRetrying(tool, argv, {
-    stdio: ["inherit", "inherit", "pipe"],
+    stdio: ["inherit", "pipe", "pipe"],
     env,
     encoding: "utf8",
+    maxBuffer: 256 * 1024 * 1024, // as pr-merge: a lockfile diff passes 1 MiB
   });
   process.stderr.write(r.stderr ?? "");
+  // Wait for the flush: the caller exits right after, which would cut a large diff written to a pipe.
+  await new Promise((resolve) => process.stdout.write(r.stdout ?? "", resolve));
   return r.status ?? 1;
 }
 
@@ -214,9 +219,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
     if (tool === "review")
       process.exit(
-        runAsBot("gh", args, await mintToken(process.env, netFetch, "STACKRA_REVIEWER")),
+        await runAsBot("gh", args, await mintToken(process.env, netFetch, "STACKRA_REVIEWER")),
       );
-    process.exit(runAsBot(tool, args, await mintToken()));
+    process.exit(await runAsBot(tool, args, await mintToken()));
   } catch (error) {
     process.stderr.write(`bot-gh: ${error.message}\n`);
     process.exit(1);

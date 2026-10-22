@@ -18,8 +18,8 @@
  *   is the fallback. They reach the process only through `infisical run --env=dev --path=/agents` (the
  *   `pnpm linear` script) or CI repo secrets. Never printed.
  * Network: through bot-token.mjs (STA-302): reads, issue updates and the token mint retry on transient errors; a
- *   comment carries a client-chosen id and is re-sent only when a read shows the failed attempt did not land; other
- *   writes run once.
+ *   comment carries a client-chosen id and is re-sent only when a read finds no comment with it (any other read error
+ *   fails, outcome unknown); other writes run once.
  * Secrets: read from the environment only; never written, logged or echoed.
  */
 import { execFileSync } from "node:child_process";
@@ -259,7 +259,12 @@ export function linear(c, { dry = false, log = console.log } = {}) {
             gql(`mutation($i:CommentCreateInput!){commentCreate(input:$i){success}}`, {
               i: { id, issueId: issue.id, body },
             }),
-          () => gql(`query($id:String!){comment(id:$id){id}}`, { id }).then(Boolean, () => false),
+          // Re-send only on Linear's explicit not-found; any other read error leaves the outcome unknown.
+          () =>
+            gql(`query($id:String!){comment(id:$id){id}}`, { id }).then(Boolean, (error) => {
+              if (/Entity not found/i.test(error.message)) return false;
+              throw error;
+            }),
         ),
       );
     },
