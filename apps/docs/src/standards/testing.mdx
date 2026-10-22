@@ -36,7 +36,7 @@ When a surface publishes many similar cases (commands, routes, validation rules,
 
 ## What a green run proves
 
-`pnpm verify` runs, in order: `turbo run format:check lint typecheck test build`, then `pnpm validate` (script tests plus the repository-shape validator), `pnpm boundaries` and `pnpm knip`. A green run proves formatting, lint and type-correctness for every member, that each member's suite passes, that every build emits, and that the workspace contract holds (required files, tier tags, catalog versions, no unused code).
+`pnpm verify` runs, in order: `pnpm format:check` (oxfmt and shfmt over the whole repository), `turbo run lint typecheck test build`, then `pnpm validate` (script tests plus the repository-shape validator), `pnpm boundaries` and `pnpm knip`. A green run proves formatting, lint and type-correctness for every member, that each member's suite passes, that every build emits, and that the workspace contract holds (required files, tier tags, catalog versions, no unused code).
 
 It does **not** prove three things:
 

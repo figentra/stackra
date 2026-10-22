@@ -10,6 +10,22 @@ The working rules live in [`AGENTS.md`](AGENTS.md) and `.agents/rules/`; the ful
 5. `pnpm verify` must be green (format, lint, typecheck, test, build, validate, boundaries, knip).
 6. Open a pull request using the template. A separate reviewer approves; nobody merges their own change.
 
+## Formatting
+
+One formatter per file type, the same in the editor, the pre-commit hook and CI:
+
+| Tool                     | Owns                                                                                                                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| oxfmt (`.oxfmtrc.jsonc`) | `ts` `tsx` `mts` `cts` `js` `jsx` `mjs` `cjs`, `json` `jsonc` `json5`, `yaml` `yml`, `toml`, `md` `mdx`, `css` `scss` `less`, `html`, `graphql`, `vue` |
+| shfmt (`mise.toml` pin)  | `sh`, with options from `.editorconfig` (2 spaces, `switch_case_indent`, `binary_next_line`)                                                           |
+
+- oxfmt formats whole files only: VS Code "Format Selection" is not supported, so save formats the whole file
+  (`.vscode/settings.json`). Even Better TOML stays for TOML schemas and validation, not formatting.
+- `pnpm format` writes, `pnpm format:check` checks (CI runs it; `pnpm verify` starts with it). lefthook checks
+  staged files on commit. `.oxfmtrc.jsonc` ignores generated and vendored paths only; `.specify/**` is skipped
+  by both tools as spec-kit upstream content.
+- Another file type gets a formatter only when oxfmt cannot format it, and is added to this table.
+
 ## Merging
 
 - `Quality Gate` is the only required check, enforced by the `main` ruleset (squash only, linear history, branch

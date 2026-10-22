@@ -9,6 +9,8 @@
 node = "24.22.0" # ADR 0019 D3: exact
 pnpm = "12.6.0"
 gitleaks = "8.30.1"
+# shell formatter for *.sh (oxfmt has no shell support); reads .editorconfig
+shfmt = "3.14.1"
 # Developer-machine CLIs the repo calls. Not pinned here (no mise backend carries them):
 #   opencode (v2 installer: https://opencode.ai/install), encore (brew install encoredev/tap/encore), aws, claude.
 # mise `infisical` reads .infisical.yaml from 0.44 on; maestro also needs a JDK on PATH.

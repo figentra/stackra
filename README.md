@@ -127,7 +127,7 @@ The rules in full, and what enforces each one, are in [`AGENTS.md`](AGENTS.md).
 | `pnpm verify:affected`                       | the turbo half of `verify`, only for members changed since `main`                     |
 | `pnpm validate`                              | repository shape, spec gates, hook tests and the agent sync check                     |
 | `pnpm build` / `test` / `lint` / `typecheck` | one turbo task across every member                                                    |
-| `pnpm format` / `pnpm format:check`          | oxfmt, writing or checking                                                            |
+| `pnpm format` / `pnpm format:check`          | oxfmt (and shfmt for `*.sh`) over the repo, writing or checking                       |
 | `pnpm boundaries`                            | `turbo boundaries`: the tier direction                                                |
 | `pnpm knip`                                  | unused files, exports and dependencies                                                |
 | `pnpm docs` / `pnpm console` / `pnpm mobile` | run one app in dev mode                                                               |

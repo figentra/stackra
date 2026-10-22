@@ -1,15 +1,18 @@
 // Recommended extensions for this repo. One formatter (oxfmt) and one linter (oxlint), both through Oxc;
+// shfmt formats shell scripts only, the one language oxfmt does not support.
 // Prettier and ESLint are rejected (not-built-yet rule), so they are listed as unwanted.
 {
   "recommendations": [
     "TypeScriptTeam.native-preview",
-    // Format and lint: oxfmt + oxlint
+    // Format and lint: oxfmt + oxlint; shfmt for *.sh
     "oxc.oxc-vscode",
+    "mkhl.shfmt",
     "editorconfig.editorconfig",
     // Tests: vitest (unit, int, contract) and Playwright (e2e)
     "vitest.explorer",
     "ms-playwright.playwright",
-    // Config files: YAML (runway, workflows, lefthook), TOML (mise), MDX (docs)
+    // Config files: YAML (runway, workflows, lefthook), TOML (mise; validation and schemas only,
+    // oxfmt formats it), MDX (docs)
     "redhat.vscode-yaml",
     "tamasfe.even-better-toml",
     "unifiedjs.vscode-mdx",

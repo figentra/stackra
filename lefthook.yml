@@ -10,11 +10,26 @@ pre-commit:
   parallel: true
   jobs:
     - name: oxfmt
-      glob: "*.{ts,tsx,js,mjs,cjs,json,jsonc,md,mdx,yaml,yml,css}"
+      # every type oxfmt formats (CONTRIBUTING.md, "Formatting"); .oxfmtrc.jsonc ignores the rest
+      glob:
+        - "*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}"
+        - "*.{json,jsonc,json5,yaml,yml,toml,md,mdx}"
+        - "*.{css,scss,less,html,graphql,vue}"
       # --check, not --write: stage_fixed made lefthook stash unstaged work, which conflicts while the loop
       # edits other members mid-commit (see apps/docs/src/agents/concurrent-sessions.mdx); the gate formats a member before it passes.
       # oxfmt exits 2 when every staged file is on its ignore list (pnpm-lock.yaml alone): that is not a finding.
       run: sh -c 'pnpm exec oxfmt --check "$@"; s=$?; [ $s -eq 2 ] && exit 0; exit $s' -- {staged_files}
+    - name: shfmt
+      glob: "*.sh"
+      exclude:
+        - ".specify/**"
+      # oxfmt has no shell support; shfmt reads .editorconfig. Same advisory fallback as gitleaks.
+      run: |
+        if command -v shfmt >/dev/null 2>&1; then
+          shfmt -d {staged_files}
+        else
+          echo "shfmt not installed (mise install) — CI still checks"
+        fi
     - name: oxlint
       glob: "*.{ts,tsx,js,mjs,cjs}"
       exclude:
