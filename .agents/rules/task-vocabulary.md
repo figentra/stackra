@@ -23,7 +23,8 @@ Members use these names and no synonyms (`tsc`, `check-types`, `fmt`, `cov`, `se
 A member declares only the scripts it has work for (a docs app has no `typecheck`; `tooling` presets have no
 `build`). Services and apps also have `start`; Expo has `ios`, `android`, `doctor`; docs has `a11y`.
 
-Root: `pnpm build|typecheck|lint|test|format|format:check|clean` run `turbo run <task>`. `pnpm check` is
+Root: `pnpm build|typecheck|lint|test|clean` run `turbo run <task>`. Root `pnpm format|format:check` run oxfmt
+over the whole repository (root files included) plus shfmt on `*.sh`, not turbo. `pnpm check` is
 format:check + lint + typecheck. `pnpm verify` is the full gate (add `validate`, `boundaries`, `knip`);
 `pnpm verify:affected` limits it to changed members. Run one member with `pnpm --filter <name> <script>`.
 

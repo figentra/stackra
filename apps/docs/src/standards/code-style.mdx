@@ -195,7 +195,7 @@ A rejected promise or listener failure is reported through the package's logger 
 
 | Rule                                                                         | Check                                                               | Status |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------ |
-| Formatting                                                                   | `oxfmt --check` (`format:check`, lefthook pre-commit)               | Yes    |
+| Formatting                                                                   | `oxfmt --check`, `shfmt -d` (`format:check`, lefthook pre-commit)   | Yes    |
 | No flow mappings in repo-owned YAML                                          | `checkYamlFlowMaps` in `validate-repository.mjs`                    | Yes    |
 | No `any`, no non-null assertion, no unused code, no cycles                   | oxlint base preset                                                  | Yes    |
 | `import type` for type-only imports                                          | oxlint `typescript/consistent-type-imports` (off in decorators)     | Yes    |

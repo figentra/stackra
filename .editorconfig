@@ -22,3 +22,8 @@ indent_style = tab
 
 [*.sql]
 indent_size = 2
+
+# shfmt reads this section natively (`-ci -bn`); the indent comes from [*]
+[*.{sh,bash}]
+switch_case_indent = true
+binary_next_line = true
