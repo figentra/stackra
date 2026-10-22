@@ -32,10 +32,13 @@ One formatter per file type, the same in the editor, the pre-commit hook and CI:
   pushes, merge queue; `.github/rulesets/main.json`). Merges go through `pnpm pr:merge`, which needs an
   `AI-REVIEW: PASS` from the `stackra-reviewer` app (`pnpm bot:review`), never the author, and then enqueues the PR.
   The queue runs the gate on the PR on top of `main` and squash-merges it; a branch need not be up to date first.
-  A verdict survives a clean rebase or update-branch while the diff's `git patch-id --stable` is unchanged
+  A verdict survives a clean rebase or update-branch while the diff's `git patch-id --verbatim` is unchanged
   ([ADR 0285](apps/docs/src/adr/0285-review-verdict-binds-to-the-patch-id.mdx)); any diff change needs a new review
   ([ADR 0230](apps/docs/src/adr/0230-reviewer-identity-separate-from-builder.mdx),
   [ADR 0119](apps/docs/src/adr/0119-merge-policy-and-release-authority.mdx)). Never `--admin`, never a push to `main`.
+- Order (owner decision OP7): the `merge_queue` rule in `.github/rulesets/main.json` is applied only after STA-302
+  (a 30-second connect timeout and retries for the bot's GitHub calls) lands. Until then `main` has no queue and
+  `pnpm pr:merge` squash-merges directly; it refuses to enqueue while `bot-token.mjs` lacks that support.
 - A PR's branch is Linear-named (`figentra/sta-<n>-<slug>`) and its title or branch names the STA key, or it carries
   the `chore-lane` label; `pnpm linear check-pr` enforces it in CI.
 - `.github/` changes are CI and permission changes, change risk R3

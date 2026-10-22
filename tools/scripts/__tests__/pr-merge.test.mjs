@@ -4,6 +4,7 @@ import {
   actor,
   aiReview,
   blockers,
+  enqueueReady,
   OWNER,
   parseArgs,
   patchId,
@@ -217,13 +218,26 @@ test("STA-234: a verdict on an earlier head with the same patch id counts as the
   const changed = samePatchShas(pr(), [oldPass], (c) => ({ [SHA]: P2, [OLD]: P1 })[c]);
   assert.equal(changed.size, 0);
   assert.match(blockers(pr(), green, builtByBot, [oldPass], [], changed).join(), /no AI review/);
-  // A FAIL on a same-patch earlier head stays sticky, strict or loose.
-  for (const body of [`AI-REVIEW: FAIL ${OLD}`, `AI-REVIEW: FAIL ${OLD} see H1`]) {
-    const fail = reviewer(body, T1);
-    assert.equal(verdict([fail, reviewer(PASS)], [], pr()), "PASS", "no same set");
-    const failed = aiReview(pr(), [fail, reviewer(PASS)], [], [], new Set([OLD])).verdict;
-    assert.equal(failed, "FAIL", body);
+});
+
+test("STA-234: a FAIL on a same-patch earlier head stays sticky, strict, short or with trailing text", () => {
+  // The real path: samePatchShas parses the comments, then aiReview counts them.
+  const patches = { [SHA]: P1, [OLD]: P1 };
+  const patchOf = (c) => patches[Object.keys(patches).find((k) => k.startsWith(c))] ?? null;
+  const counted = (comments) =>
+    aiReview(pr(), comments, [], [], samePatchShas(pr(), comments, patchOf)).verdict;
+  const oldPass = reviewer(`AI-REVIEW: PASS ${OLD} base=main`, T0);
+  for (const fail of [
+    `AI-REVIEW: FAIL ${OLD}`,
+    `AI-REVIEW: FAIL ${OLD.slice(0, 9)}`,
+    `AI-REVIEW: FAIL ${OLD} blocking: tenant leak`,
+  ]) {
+    assert.equal(counted([oldPass, reviewer(fail, T1)]), "FAIL", fail);
+    assert.equal(counted([reviewer(fail, T0), reviewer(PASS, T1)]), "FAIL", fail);
   }
+  // A FAIL for an earlier head whose diff differs is cleared by the new diff, as before.
+  patches[OLD] = P2;
+  assert.equal(counted([reviewer(`AI-REVIEW: FAIL ${OLD.slice(0, 9)}`), reviewer(PASS)]), "PASS");
 });
 
 test("STA-234: patch= is used only when the earlier head is gone; only the app's verdicts count", () => {
@@ -236,17 +250,49 @@ test("STA-234: patch= is used only when the earlier head is gone; only the app's
   assert.equal(samePatchShas(pr(), [claimed(P1)], both).size, 0);
   const user = userComment(REVIEWER, `AI-REVIEW: PASS ${OLD} base=main patch=${P1}`);
   assert.equal(samePatchShas(pr(), [user], gone).size, 0);
+  // An edited verdict's claim is not read, and disagreeing claims cancel out.
+  const edited = reviewer(`AI-REVIEW: PASS ${OLD} base=main patch=${P1}`, T0, T1);
+  assert.equal(samePatchShas(pr(), [edited], gone).size, 0);
+  assert.equal(samePatchShas(pr(), [claimed(P1), claimed(P2)], gone).size, 0);
   // No head patch id (compare failed): nothing carries over.
   assert.equal(samePatchShas(pr(), [claimed(P1)], () => null).size, 0);
   // The head's own PASS may carry patch=.
   assert.equal(verdict([reviewer(`AI-REVIEW: PASS ${SHA} base=main patch=${P1}`)]), "PASS");
 });
 
-test("patchId ignores line numbers and changes with the content", () => {
-  const diff = (at, line) =>
-    `diff --git a/x b/x\n--- a/x\n+++ b/x\n@@ -${at},1 +${at},1 @@\n-old\n+${line}\n`;
+test("patchId ignores line numbers and changes with the content, whitespace included", () => {
+  const diff = (at, ...lines) =>
+    `diff --git a/x b/x\n--- a/x\n+++ b/x\n@@ -${at},1 +${at},${lines.length} @@\n-old\n` +
+    lines.map((l) => `+${l}\n`).join("");
   assert.match(patchId(diff(1, "new")), /^[0-9a-f]{40}$/);
   assert.equal(patchId(diff(1, "new")), patchId(diff(40, "new")));
   assert.notEqual(patchId(diff(1, "new")), patchId(diff(1, "other")));
+  // Whitespace-only differences change the id (`--stable` would give one id for each pair).
+  assert.notEqual(patchId(diff(1, "echo /tmp/x")), patchId(diff(1, "echo / tmp/x")));
+  assert.notEqual(
+    patchId(diff(1, "  - run: deploy", "    if: github.ref == y")),
+    patchId(diff(1, "  - run: deploy", "  if: github.ref == y")),
+  );
   assert.equal(patchId(""), null);
+});
+
+test("ADR 0285 end to end: a rebase that only shifts lines keeps the PASS, a whitespace edit voids it", () => {
+  const diff = (at, line) =>
+    `diff --git a/ci.yml b/ci.yml\n--- a/ci.yml\n+++ b/ci.yml\n@@ -${at},2 +${at},2 @@\n` +
+    ` steps:\n-  old\n+${line}\n`;
+  const oldPass = reviewer(`AI-REVIEW: PASS ${OLD} base=main`);
+  const run = (headDiff) => {
+    const diffs = { [OLD]: diff(3, "    if: github.ref == y"), [SHA]: headDiff };
+    const same = samePatchShas(pr(), [oldPass], (c) => patchId(diffs[c]));
+    return blockers(pr(), green, builtByBot, [oldPass], [], same);
+  };
+  assert.deepEqual(run(diff(30, "    if: github.ref == y")), []);
+  assert.match(run(diff(3, "  if: github.ref == y")).join(), /no AI review/);
+});
+
+test("OP7: enqueueing waits for STA-302's connect timeout and retries", () => {
+  assert.equal(enqueueReady({ mintToken() {} }), false);
+  assert.equal(enqueueReady({ CONNECT_TIMEOUT_MS: 10_000, RETRY_ATTEMPTS: 4 }), false);
+  assert.equal(enqueueReady({ CONNECT_TIMEOUT_MS: 30_000, RETRY_ATTEMPTS: 1 }), false);
+  assert.equal(enqueueReady({ CONNECT_TIMEOUT_MS: 30_000, RETRY_ATTEMPTS: 4 }), true);
 });

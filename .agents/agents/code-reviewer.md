@@ -37,7 +37,7 @@ Run read-only: `pnpm bot:review -- pr diff <n>`, `pnpm bot:review -- pr view <n>
 
 Post one **new** issue comment with `pnpm bot:review -- pr comment <n> --body-file <file>`. Never `pr review`, never an edit:
 `pnpm bot:review` posts as the `stackra-reviewer` App, the only identity whose verdict `pnpm pr:merge` counts (ADR 0230). The first line is `AI-REVIEW: PASS <full 40-hex head sha> base=<base ref> patch=<patch id>` or
-`AI-REVIEW: FAIL <head sha>`; the patch id is the first word of `pnpm bot:review -- pr diff <n> | git patch-id --stable`.
+`AI-REVIEW: FAIL <head sha>`; the patch id is the first word of `pnpm bot:review -- pr diff <n> | git patch-id --verbatim`.
 The verdict survives a clean rebase or update-branch that leaves the patch id unchanged (STA-234); a FAIL is sticky
 for that diff; any diff change or a re-targeted base needs a new review. Never
 post a verdict through plain `gh`, and never write `owner-approval`.
