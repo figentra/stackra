@@ -1,0 +1,42 @@
+---
+title: "0283 — A browser-extension agent connector is deferred"
+description: "Deferred · 2026-10-22"
+---
+
+<Note>
+  Amends [0227](/adr/0227-rejected-and-deferred-technologies-refreshed): a row is added for a
+  browser-extension agent connector, which is deferred. The table changes only by a new ADR, and
+  0283 is that ADR.
+</Note>
+
+## Context
+
+An agent can act inside the user's own browser through an extension: it reads the pages the user has open and clicks and types there, with
+the user's signed-in sessions. Stackra's agents reach outside systems through server-side connectors and MCP tools
+([0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free), [0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits)),
+and browse in sandboxes. The owner decided on 2026-10-22 to defer a browser-extension connector.
+
+## Decision
+
+1. **Deferred.** No browser-extension agent connector is built or shipped: no extension, no bridge from the extension to `@stackra/ai`, and no
+   agent tool that drives the user's browser.
+2. **Use instead.** Server-side connectors and MCP tools for outside systems; Playwright in sandboxes when an agent must browse.
+3. **The table.** [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) carries the row, with this ADR as its source.
+
+## Consequences
+
+- An agent never acts with the user's browser sessions, so there is no extension to distribute, review or keep in step with browser stores.
+- A task that only works inside a signed-in browser page is not automated until a connector or an API covers it.
+
+## Enforcement
+
+None yet. The deferral is a review check: a change that adds a browser extension or an agent tool that drives the user's browser needs a new
+ADR first.
+
+## Revival trigger
+
+A paying customer needs in-browser automation.
+
+## Supersedes and sources
+
+Supersedes nothing. Amends [0227](/adr/0227-rejected-and-deferred-technologies-refreshed). Sources: owner decision, 2026-10-22 (STA-290).
