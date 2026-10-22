@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the doc-standard check (ADR 0007, amended 2026-10-21). For every tracked source file in packages, services
- *          and apps it requires the contract header, a TSDoc block on exported symbols, exported interface and
+ * Purpose: the doc-standard check (ADR 0007, amended 2026-10-21). For every tracked source file in packages, services,
+ *          apps and workers it requires the contract header, a TSDoc block on exported symbols, exported interface and
  *          type-literal members, public and protected class members and DI token constants, and it rejects types
  *          inside doc tags. It parses with the TypeScript compiler API and never type-checks.
  * Boundary: reads tracked files and reports findings; it never edits a file and never judges the wording of a block.
@@ -41,7 +41,7 @@ const MIN_SUMMARY_WORDS = 3;
  * @param path - repository-relative path, forward slashes.
  */
 export function isInScope(path) {
-  if (!/^(packages|services|apps)\/.+\/src\/.+\.tsx?$/.test(path)) return false;
+  if (!/^(packages|services|apps|workers)\/.+\/src\/.+\.tsx?$/.test(path)) return false;
   return !/(__tests__\/|\.test\.tsx?$|\.d\.ts$|\/generated\/|encore\.gen\/)/.test(path);
 }
 

@@ -241,7 +241,8 @@ export * from "./other";
   assert.deepEqual(findings, []);
 });
 
-test("isInScope governs src files of packages, services and apps only", () => {
+test("isInScope governs src files of packages, services, apps and workers only", () => {
+  assert.equal(isInScope("workers/static/src/main.ts"), true);
   assert.equal(isInScope("packages/foundation/fixture/src/index.ts"), true);
   assert.equal(isInScope("services/health/src/health.module.ts"), true);
   assert.equal(isInScope("apps/mobile/src/app.tsx"), true);

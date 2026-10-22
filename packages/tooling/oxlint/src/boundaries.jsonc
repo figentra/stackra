@@ -69,6 +69,7 @@
                 "group": [
                   "**/apps/**",
                   "**/services/**",
+                  "**/workers/**",
                   "encore.dev",
                   "encore.dev/*",
                   "~encore/*",
@@ -96,6 +97,7 @@
                 "group": [
                   "**/apps/**",
                   "**/services/**",
+                  "**/workers/**",
                   "encore.dev",
                   "encore.dev/*",
                   "~encore/*",
@@ -139,6 +141,7 @@
                 "group": [
                   "**/apps/**",
                   "**/services/**",
+                  "**/workers/**",
                   "encore.dev",
                   "encore.dev/*",
                   "~encore/*",
@@ -180,6 +183,7 @@
                 "group": [
                   "**/apps/**",
                   "**/services/**",
+                  "**/workers/**",
                   "encore.dev",
                   "encore.dev/*",
                   "~encore/*",
@@ -213,6 +217,7 @@
                 "group": [
                   "**/apps/**",
                   "**/services/**",
+                  "**/workers/**",
                   "encore.dev",
                   "encore.dev/*",
                   "~encore/*",

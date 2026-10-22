@@ -1,0 +1,26 @@
+// Stackra file contract:
+// Purpose: the Cloudflare Worker that serves Stackra's hosted static files (ADR 0284). Assets only: no Worker script;
+//          Cloudflare serves dist/site directly and applies its generated `_headers` file (CORS, immutable cache).
+// Owner: release-operations · Secrets: forbidden — CI passes CLOUDFLARE_API_TOKEN from Infisical /ci in the environment.
+// Carve-out (ADR 0284 decision 8): hand-written until `stackra gen` emits Workers config from runway.yaml (ADR 0168).
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Named like the existing `npm-registry` Worker on the same account.
+  "name": "stackra-static",
+  // Figentra Technologies L.L.C. An account id is an identifier, not a credential; the API token grants access.
+  "account_id": "d861f9ac9df28b7f0b1298cc0c89bc9d",
+  // Pinned: bumped on purpose, never set to "today" on every deploy.
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    // Written by `pnpm build` (src/main.ts) from tools/schemas and every schemas@<version> tag.
+    "directory": "./dist/site",
+    // An unknown path is a plain 404, never index.json or an HTML page.
+    "not_found_handling": "none",
+  },
+  // A Custom Domain: Cloudflare creates the DNS record and issues the certificate for the two-level hostname itself,
+  // so no Advanced Certificate Manager is needed. The zone figentra.com is on the same account.
+  "routes": [{ "pattern": "static.stackra.figentra.com", "custom_domain": true }],
+  // The custom domain is the only public URL: no *.workers.dev address and no preview URLs to keep in sync.
+  "workers_dev": false,
+  "preview_urls": false,
+}

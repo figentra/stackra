@@ -36,7 +36,7 @@
   // Boundaries: the dependency direction from packages/tooling/oxlint/src/boundaries.jsonc.
   //   tier:config  — tooling presets; depend on nothing workspace-local
   //   tier:lib     — packages/*/*; never depend on a deployable
-  //   tier:app     — apps/*; consume config and libs, talk to services over the wire only
+  //   tier:app     — apps/* and workers/* (ADR 0284); consume config and libs, talk to services over the wire only
   //   tier:service — services/*; top of the graph
   // Each member declares its tag in its own turbo.jsonc (`"tags": ["tier:lib"]`); validate-repository
   // checks that every member has exactly one tier tag matching its directory.
