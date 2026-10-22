@@ -325,6 +325,7 @@ const blocked = [
   "pnpm bot:gh -- api repos/figentra/stackra/pulls/12/merge --method put",
   "pnpm bot:gh -- api graphql -f query='mutation { mergePullRequest(input: {pullRequestId: \"x\"}) { clientMutationId } }'",
   "pnpm bot:gh -- api graphql -f query='mutation { enablePullRequestAutoMerge(input: {}) { clientMutationId } }'",
+  "pnpm bot:gh -- api graphql -f query='mutation { enqueuePullRequest(input: {}) { clientMutationId } }'",
   "bash -c 'pnpm bot:gh -- pr merge 12'",
   // STA-214: pack plumbing bypasses the push guard
   "git send-pack https://github.com/figentra/stackra.git main",

@@ -83,7 +83,7 @@ quotes too), and every `sh -c` or `eval` string. It denies:
 - pack plumbing, bare, through `pnpm bot:git` or as the binary (`git-send-pack`): `send-pack`, `receive-pack`,
   `fetch-pack` and `upload-pack`;
 - a merge outside `pnpm pr:merge`: `pnpm bot:gh -- pr merge ...`, `pnpm bot:gh -- api .../pulls/<n>/merge` with any
-  method, and the `mergePullRequest` / `enablePullRequestAutoMerge` GraphQL mutations. `bot-gh.mjs` refuses them
+  method, and the `mergePullRequest` / `enablePullRequestAutoMerge` / `enqueuePullRequest` GraphQL mutations. `bot-gh.mjs` refuses them
   itself as well. The path is percent-decoded (up to three layers), slashes are collapsed and `.` / `..` segments
   resolved before matching, so `pulls/<n>//merge`, `%2F`, `%6derge`, `pulls/<n>/./merge` and
   `pulls/<m>/../<n>/merge` are all merges. Prose does not count: the quoted value of

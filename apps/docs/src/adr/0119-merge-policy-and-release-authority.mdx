@@ -1,12 +1,17 @@
 ---
 title: "0119 — Merge policy: Quality Gate is the only required check; Claude merges only through pnpm pr:merge"
-description: "Accepted · 2026-10-19"
+description: "Accepted, amended by 0285 · 2026-10-19"
 ---
 
 <Note>
   Amended by [0166](/adr/0166-ci-policy-runners-budgets-concurrency-and-check-matrix): public
   repositories use a merge queue; private repositories run an affected check plus a full verify on
   main.
+</Note>
+
+<Note>
+  Amended by [0285](/adr/0285-review-verdict-binds-to-the-patch-id): the AI review verdict for the
+  head commit includes one for an earlier head with the same patch id.
 </Note>
 
 ## Context
@@ -37,8 +42,9 @@ requests (Round 6). CODEOWNERS names a handle that is not a GitHub user.
 
 ## Enforcement
 
-Existing: branch protection on `main` (0 approvals, Quality Gate required). Planned: `tools/scripts/pr-merge.mjs`; a
-`guard-bash` rule that blocks `gh pr merge` outside `pnpm pr:merge`.
+Existing: the `main` ruleset (0 approvals, Quality Gate required; committed as `.github/rulesets/main.json`),
+`tools/scripts/pr-merge.mjs` (enqueues when a merge queue exists, STA-233) and the `guard-bash` rule that blocks
+`gh pr merge` outside `pnpm pr:merge`.
 
 ## Supersedes and sources
 

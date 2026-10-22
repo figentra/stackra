@@ -130,7 +130,8 @@ export function configWrites(args) {
     (["--show-origin", "--show-scope"].includes(first) && rest.some((w) => CONFIG_READ.has(w)));
   return !reads || rest.some((w) => CONFIG_WRITE.has(w));
 }
-const MERGE = /\bpulls\/\d+\/merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/i;
+const MERGE =
+  /\bpulls\/\d+\/merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest)\b/i;
 
 /**
  * Why a command is refused regardless of tool (STA-216), or null. git: `-c alias.*` / `-c include*` / `--config-env`

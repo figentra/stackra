@@ -14,6 +14,7 @@ test("STA-214: credential helpers leak too; merges go only through pnpm pr:merge
     ["api", "-XPUT", "repos/x/y/pulls/1/merge", "-f", "merge_method=squash"],
     ["api", "graphql", "-f", "query=mutation { mergePullRequest(input: {}) { clientMutationId } }"],
     ["api", "graphql", "-f", "query=mutation { enablePullRequestAutoMerge(input: {}) { x } }"],
+    ["api", "graphql", "-f", "query=mutation { enqueuePullRequest(input: {}) { x } }"],
   ])
     assert.equal(mergesPr(args), true, args.join(" "));
   for (const args of [

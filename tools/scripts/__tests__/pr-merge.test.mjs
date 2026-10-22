@@ -1,6 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { actor, aiReview, blockers, OWNER, parseArgs, REVIEWER } from "../pr-merge.mjs";
+import {
+  actor,
+  aiReview,
+  blockers,
+  enqueueReady,
+  OWNER,
+  parseArgs,
+  patchId,
+  REVIEWER,
+  samePatchShas,
+} from "../pr-merge.mjs";
 
 const SHA = "0123456789abcdef0123456789abcdef01234567";
 const T0 = "2026-10-19T10:00:00Z";
@@ -192,4 +202,97 @@ test("design / risk:R3 need an owner approval on the head SHA or owner-approved"
   assert.deepEqual(blockers(pr({ labels }), green, {}, ok, [review({ body: "" })]), []);
   const labelled = [{ name: "design" }, { name: "owner-approved" }];
   assert.deepEqual(blockers(pr({ labels: labelled }), green, {}, ok), []);
+});
+
+const OLD = "fedcba9876543210fedcba9876543210fedcba98";
+const P1 = "1".repeat(40);
+const P2 = "2".repeat(40);
+
+test("STA-234: a verdict on an earlier head with the same patch id counts as the head's", () => {
+  const oldPass = reviewer(`AI-REVIEW: PASS ${OLD} base=main`);
+  const patches = { [SHA]: P1, [OLD]: P1 };
+  const same = samePatchShas(pr(), [oldPass], (c) => patches[c] ?? null);
+  assert.deepEqual([...same], [OLD]);
+  assert.deepEqual(blockers(pr(), green, builtByBot, [oldPass], [], same), []);
+  // Any diff change voids it.
+  const changed = samePatchShas(pr(), [oldPass], (c) => ({ [SHA]: P2, [OLD]: P1 })[c]);
+  assert.equal(changed.size, 0);
+  assert.match(blockers(pr(), green, builtByBot, [oldPass], [], changed).join(), /no AI review/);
+});
+
+test("STA-234: a FAIL on a same-patch earlier head stays sticky, strict, short or with trailing text", () => {
+  // The real path: samePatchShas parses the comments, then aiReview counts them.
+  const patches = { [SHA]: P1, [OLD]: P1 };
+  const patchOf = (c) => patches[Object.keys(patches).find((k) => k.startsWith(c))] ?? null;
+  const counted = (comments) =>
+    aiReview(pr(), comments, [], [], samePatchShas(pr(), comments, patchOf)).verdict;
+  const oldPass = reviewer(`AI-REVIEW: PASS ${OLD} base=main`, T0);
+  for (const fail of [
+    `AI-REVIEW: FAIL ${OLD}`,
+    `AI-REVIEW: FAIL ${OLD.slice(0, 9)}`,
+    `AI-REVIEW: FAIL ${OLD} blocking: tenant leak`,
+  ]) {
+    assert.equal(counted([oldPass, reviewer(fail, T1)]), "FAIL", fail);
+    assert.equal(counted([reviewer(fail, T0), reviewer(PASS, T1)]), "FAIL", fail);
+  }
+  // A FAIL for an earlier head whose diff differs is cleared by the new diff, as before.
+  patches[OLD] = P2;
+  assert.equal(counted([reviewer(`AI-REVIEW: FAIL ${OLD.slice(0, 9)}`), reviewer(PASS)]), "PASS");
+});
+
+test("STA-234: patch= is used only when the earlier head is gone; only the app's verdicts count", () => {
+  const claimed = (patch) => reviewer(`AI-REVIEW: PASS ${OLD} base=main patch=${patch}`);
+  const gone = (c) => (c === SHA ? P1 : null);
+  assert.deepEqual([...samePatchShas(pr(), [claimed(P1)], gone)], [OLD]);
+  assert.equal(samePatchShas(pr(), [claimed(P2)], gone).size, 0);
+  // A recomputed patch id beats the claim.
+  const both = (c) => ({ [SHA]: P1, [OLD]: P2 })[c];
+  assert.equal(samePatchShas(pr(), [claimed(P1)], both).size, 0);
+  const user = userComment(REVIEWER, `AI-REVIEW: PASS ${OLD} base=main patch=${P1}`);
+  assert.equal(samePatchShas(pr(), [user], gone).size, 0);
+  // An edited verdict's claim is not read, and disagreeing claims cancel out.
+  const edited = reviewer(`AI-REVIEW: PASS ${OLD} base=main patch=${P1}`, T0, T1);
+  assert.equal(samePatchShas(pr(), [edited], gone).size, 0);
+  assert.equal(samePatchShas(pr(), [claimed(P1), claimed(P2)], gone).size, 0);
+  // No head patch id (compare failed): nothing carries over.
+  assert.equal(samePatchShas(pr(), [claimed(P1)], () => null).size, 0);
+  // The head's own PASS may carry patch=.
+  assert.equal(verdict([reviewer(`AI-REVIEW: PASS ${SHA} base=main patch=${P1}`)]), "PASS");
+});
+
+test("patchId ignores line numbers and changes with the content, whitespace included", () => {
+  const diff = (at, ...lines) =>
+    `diff --git a/x b/x\n--- a/x\n+++ b/x\n@@ -${at},1 +${at},${lines.length} @@\n-old\n` +
+    lines.map((l) => `+${l}\n`).join("");
+  assert.match(patchId(diff(1, "new")), /^[0-9a-f]{40}$/);
+  assert.equal(patchId(diff(1, "new")), patchId(diff(40, "new")));
+  assert.notEqual(patchId(diff(1, "new")), patchId(diff(1, "other")));
+  // Whitespace-only differences change the id (`--stable` would give one id for each pair).
+  assert.notEqual(patchId(diff(1, "echo /tmp/x")), patchId(diff(1, "echo / tmp/x")));
+  assert.notEqual(
+    patchId(diff(1, "  - run: deploy", "    if: github.ref == y")),
+    patchId(diff(1, "  - run: deploy", "  if: github.ref == y")),
+  );
+  assert.equal(patchId(""), null);
+});
+
+test("ADR 0285 end to end: a rebase that only shifts lines keeps the PASS, a whitespace edit voids it", () => {
+  const diff = (at, line) =>
+    `diff --git a/ci.yml b/ci.yml\n--- a/ci.yml\n+++ b/ci.yml\n@@ -${at},2 +${at},2 @@\n` +
+    ` steps:\n-  old\n+${line}\n`;
+  const oldPass = reviewer(`AI-REVIEW: PASS ${OLD} base=main`);
+  const run = (headDiff) => {
+    const diffs = { [OLD]: diff(3, "    if: github.ref == y"), [SHA]: headDiff };
+    const same = samePatchShas(pr(), [oldPass], (c) => patchId(diffs[c]));
+    return blockers(pr(), green, builtByBot, [oldPass], [], same);
+  };
+  assert.deepEqual(run(diff(30, "    if: github.ref == y")), []);
+  assert.match(run(diff(3, "  if: github.ref == y")).join(), /no AI review/);
+});
+
+test("OP7: enqueueing waits for STA-302's connect timeout and retries", () => {
+  assert.equal(enqueueReady({ mintToken() {} }), false);
+  assert.equal(enqueueReady({ CONNECT_TIMEOUT_MS: 10_000, RETRY_ATTEMPTS: 4 }), false);
+  assert.equal(enqueueReady({ CONNECT_TIMEOUT_MS: 30_000, RETRY_ATTEMPTS: 1 }), false);
+  assert.equal(enqueueReady({ CONNECT_TIMEOUT_MS: 30_000, RETRY_ATTEMPTS: 4 }), true);
 });

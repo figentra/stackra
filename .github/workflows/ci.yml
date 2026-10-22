@@ -1,6 +1,6 @@
 # Stackra file contract:
-# Purpose: the Quality Gate, the one required check on every pull request to main and every push to
-#          main (install, Linear key check, format, lint, typecheck, test, build, validate, boundaries,
+# Purpose: the Quality Gate, the one required check on every pull request to main, every merge-queue
+#          group commit (merge_group, ADR 0166 CI3) and every push to main (install, Linear key check, format, lint, typecheck, test, build, validate, boundaries,
 #          knip, secrets scan, agent sync). Branch protection requires the `Quality Gate` job by name;
 #          never rename it. `deploy-staging` is a placeholder that deploys nothing.
 # Owner: release-operations
@@ -14,6 +14,10 @@ on:
     branches: [main]
     # ready_for_review re-runs the gate when a draft PR is marked ready, so the Tasked rule applies.
     types: [opened, synchronize, reopened, ready_for_review]
+  # ADR 0166 CI3 (STA-233): the merge queue runs the full gate on the group commit (PR on top of main), so a PR need
+  # not be up to date with main before it is queued.
+  merge_group:
+    types: [checks_requested]
 
 # ADR 0019 D2: least privilege. Nothing in the gate writes to the repository or holds an OIDC token.
 permissions:
