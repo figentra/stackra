@@ -33,6 +33,7 @@ import {
   rawSubstitutions,
   scanShell,
   scriptStrings,
+  runsOpaque,
   stripHeredocs,
 } from "./_inbox.mjs";
 
@@ -149,7 +150,8 @@ const scanTexts = (c) => [dropMessages(c), ...nestedRaw(c).map(dropMessages)];
 /**
  * The text a shell runs: the quote-blanked command (prose in `--body "…"` is ignored), plus every `$(…)` and
  * backtick body at any depth, inside double quotes too (`scanShell`, STA-254), and every `sh -c` / `eval` string.
- * Single-quoted text stays literal. shortcut: no alias or function expansion; deliberate workarounds stay open.
+ * Single-quoted text stays literal. Function, alias and piped or written-then-run script text come from
+ * `scriptStrings` (STA-291); deliberate workarounds stay open.
  */
 function runnable(c) {
   const { blanked, bodies } = scanShell(c);
@@ -482,6 +484,12 @@ const rules = [
         ),
       ),
     why: "`pnpm bot:gh -- api graphql` with the query from a file (`-F query=@f`, `--input`) or a substitution, and `gh alias set`, are denied: the query cannot be checked for a merge mutation. Inline the query, or merge with `pnpm pr:merge <n>`.",
+  },
+  {
+    // STA-291: a shell reading a pipe or a file written earlier from text the guard cannot read.
+    rx: runsOpaque,
+    decision: "ask",
+    why: "A shell runs text the guard cannot read (`curl … | sh`, `cat x | sh`, `cmd > f; sh f`); a human confirms it. Run the commands directly instead.",
   },
   {
     rx: (c) => runs(c, BARE_GH),
