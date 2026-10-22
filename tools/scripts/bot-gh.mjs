@@ -7,7 +7,8 @@
  *   only identity whose `AI-REVIEW:` verdict pr-merge accepts. It may only read a PR and comment or review on it.
  * git: author and committer are the bot; pushes go over https with `gh auth git-credential` as the only credential
  *   helper, and ssh remotes are rewritten to https for this one command. Everything is `-c`, so nothing is written
- *   to .git/config and the token never appears in argv.
+ *   to .git/config and the token never appears in argv. No hook runs (`core.hooksPath=/dev/null`): the CI gate runs
+ *   the checks a hook would, and a hook is repository code that would see every /agents value.
  * Secrets: the token lives only in the child's environment; never printed.
  */
 import { spawnSync } from "node:child_process";
@@ -32,6 +33,9 @@ export const gitBotArgs = () => [
   "url.https://github.com/.insteadOf=git@github.com:",
   "-c",
   "url.https://github.com/.insteadOf=ssh://git@github.com/",
+  // A hook (lefthook's pre-push runs the worktree's lefthook.yml) would run repo code with every /agents value.
+  "-c",
+  "core.hooksPath=/dev/null",
 ];
 
 const CAPTURE_MIB = 256; // as pr-merge: a lockfile diff passes 1 MiB

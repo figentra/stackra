@@ -57,13 +57,16 @@ cover what GitHub cannot see.
    keyword; a quoted or escaped command name is read unquoted; quoted prose is not a command; arguments are read as
    the shell passes them (quotes, redirections, groups and subshells); the checkout a git command targets is resolved
    through `cd` (a subshell's ends at its `)`, a failed one leaves the old directory), `-C`, `--git-dir` and
-   `GIT_DIR=`. Every decision is linear in the command, and a command nested deeper than the guard reads is denied,
-   because a hook that runs out of time fails open.
+   `GIT_DIR=`; every word named `rm` or `find` is read as a command, so an unknown wrapper never hides a recursive
+   delete. Every decision is linear in the command, and a command nested deeper than the guard reads, or needing more
+   git lookups than it runs in its time limit, is denied, because a hook that runs out of time fails open. Settings
+   keep the prefix denies for `rm -rf /` and `rm -rf ~`, `$HOME`; a prefix deny of every absolute path would also
+   refuse the scratchpad that rule 3 allows.
    `opencode.jsonc` repeats the tiers as order-sensitive patterns.
 3. **Own worktree only.** `reset --hard`, `checkout` or `restore` of the tree, `checkout -f`,
    `switch --discard-changes`, `clean -f` and `worktree remove --force` run only when the target checkout is the
    session's own linked worktree, never the main checkout or another agent's worktree. `rm -rf` runs only inside the
-   session's own checkout or the session scratchpad, never on a worktree itself. A subagent whose shell starts in the
+   session's own checkout or the session scratchpad, never on a worktree itself or `.git`. A subagent whose shell starts in the
    main checkout and reaches a nested worktree by `cd` or `-C` gets an ask, because the guard cannot tell its own
    worktree from another agent's; build output there needs no yes. Worktrees use WIP commits, never the shared stash.
 4. **`owner-approved` is the owner's.** No agent command writes the label, in any spelling or from a computed value
@@ -77,6 +80,8 @@ cover what GitHub cannot see.
    [0066](/adr/0066-delegation-to-opencode-by-routing-matrix)). An OpenCode executor commits on its delegate branch
    and runs `pnpm bot:git -- fetch origin [<ref>]` and `pnpm bot:git -- push [--force-with-lease] origin HEAD`; every other bot
    wrapper (`bot:gh`, `bot:review`, `bot:token`, `pr:merge`, `linear`), Infisical and raw network git stay the lead's.
+   `pnpm bot:git` runs no git hook (`core.hooksPath=/dev/null`): a hook is code from the worktree being pushed (lefthook
+   runs its `lefthook.yml`) and would see every /agents value; the Quality Gate runs the checks a hook would.
    The lead still reviews, opens the pull request and merges through `pnpm pr:merge`.
 7. **An agent never widens the project rules.** An OpenCode agent's frontmatter permissions only narrow
    `opencode.jsonc`; `agents-sync` refuses an `allow` effect for an agent projected to OpenCode.

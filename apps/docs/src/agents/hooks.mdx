@@ -37,9 +37,11 @@ command they wrap. Prose is not a command: quoted text, heredoc bodies and `-m` 
 `linear comment` values are blanked, while `$(…)`, backticks, `sh -c` and `eval` bodies are checked. Arguments are
 read as the shell passes them: quotes removed, redirections (`2>&1`, `>log`, `<<<x`) and a closing `)` or `}` are
 not operands, and a quoted argument such as `"$HOME/.npmrc"` is still a path. `cd` is followed in order: a subshell's
-`cd` ends at its `)`, and after a `cd` that may fail (`cd x; …`, `cd x || …`) both directories count. Every decision
-takes time linear in the command; a command nesting substitutions more than 16 deep or script strings more than 8
-deep is denied unread, because the hook fails open when its five seconds run out.
+`cd` ends at its `)`, and after a `cd` that may fail (`cd x; …`, `cd x || …`) both directories count. Every word
+named `rm` or `find` is read as a command, so a wrapper the guard does not know (`setsid`, `flock f`, `op run --`)
+never hides a recursive delete. Every decision takes time linear in the command; a command nesting substitutions
+more than 16 deep or script strings more than 8 deep, or needing more than 48 git lookups, is denied unread, because
+the hook fails open when its five seconds run out.
 
 | Tier | Commands                                                                                                                                                                                                                |
 | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -49,7 +51,7 @@ deep is denied unread, because the hook fails open when its five seconds run out
 | Deny | Plain `gh`, network `git`, pack plumbing; `bot:git` options that run a program (`--upload-pack`, `--receive-pack`, `--exec`, `clone -u`, `rebase -x`, `submodule foreach`)                                              |
 | Deny | A push to main; `--force` without a lease, `-f`, `--delete`, `--mirror`, `--prune`, `+refspec`, `:branch`; a `bot:git` push of anything but `HEAD` or the current branch                                                |
 | Deny | `reset --hard`, `checkout`/`restore .`, `checkout -f`, `switch --discard-changes`, `clean -f` and `worktree remove --force` in the main checkout or another agent's worktree                                            |
-| Deny | `rm -rf` outside the session's own checkout and the scratchpad, or of a worktree itself; `git stash pop`, `clear`, `branch`, and `apply`/`drop` without a ref                                                           |
+| Deny | `rm -rf` outside the session's own checkout and the scratchpad, of a worktree itself or of `.git`; `git stash pop`, `clear`, `branch`, and `apply`/`drop` without a ref                                                 |
 | Deny | `bot:review` from an agent type without `reviewer: true`, any merge or ref move outside `pnpm pr:merge`, the owner's label (any spelling, or a computed label value) or approving review, an `AI-REVIEW:` body via `gh` |
 | Deny | `encore deploy`, `encore secret set/get`, `wrangler secret put/bulk`, `git tag <package>@<version>`, `DROP DATABASE/SCHEMA`, ORM push or migrate, `changeset version`                                                   |
 | Ask  | Raw `infisical run`, `infisical secrets delete`, `secrets:import … --confirm`, `encore db reset`, `encore env set/create/delete`, `wrangler deploy` and `--remote`, `eas`                                               |

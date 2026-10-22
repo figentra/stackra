@@ -1,6 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
+import { chmodSync, existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { BOT_EMAIL, gitBotArgs, leaksToken, mergesPr, reviewerAllows } from "../bot-gh.mjs";
 import { fakeGh } from "./__fixtures__/fake-gh.mjs";
 
@@ -94,6 +97,20 @@ test("git runs as the bot with a token-free, non-persisted credential setup", ()
     args.indexOf("credential.helper=") < args.indexOf("credential.helper=!gh auth git-credential"),
   );
   assert.ok(!args.some((arg) => /ghs_|x-access-token/.test(arg)));
+});
+
+test("STA-330 review: bot git never runs the repository's hooks, which would see every /agents value", () => {
+  const repo = mkdtempSync(join(tmpdir(), "bot-git-hooks-"));
+  const git = (...a) => spawnSync("git", a, { cwd: repo, encoding: "utf8" });
+  git("init", "-q");
+  const marker = join(repo, "hook-ran");
+  // lefthook installs here; a worktree's lefthook.yml decides what it runs, so an agent can edit it
+  writeFileSync(join(repo, ".git", "hooks", "pre-commit"), `#!/bin/sh\ntouch '${marker}'\n`);
+  chmodSync(join(repo, ".git", "hooks", "pre-commit"), 0o755);
+  const r = git(...gitBotArgs(), "commit", "-q", "--allow-empty", "-m", "x");
+  assert.equal(r.status, 0, r.stderr);
+  assert.ok(!existsSync(marker), "the pre-commit hook ran as the bot");
+  rmSync(repo, { recursive: true, force: true });
 });
 
 test("STA-216: aliases, file-sourced GraphQL and encoded merge paths are refused", async () => {

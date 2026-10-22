@@ -390,17 +390,20 @@ export const stripHeredocs = (raw) => scanShell(raw).stripped;
 const SHELL_NAME = String.raw`(?:(?:ba|z|da|k|c|tc|a|mk|ya|po|rba|o)?sh|fish|nu|xonsh|elvish|rc|es)(?:-?\d[\w.]*)?`;
 /** A shell (or `eval` / `source` / `.`) as a word: its heredoc or here-string is a script. */
 const SHELL_WORD = new RegExp(
-  String.raw`(?:^|[\s;&|(\x60])(?:\S*/)?(?:${SHELL_NAME}|eval|source|\.)(?=[\s;&|)\x60]|$)`,
+  String.raw`(?:^|[\s;&|(\x60])(?:[^\s;&|()<>\x60]*/)?(?:${SHELL_NAME}|eval|source|\.)(?=[\s;&|)\x60]|$)`,
 );
 
-/** Command position, for a definition: start, a separator, a group or a substitution opener. */
-const DEFINE_AT = String.raw`(?:^|[;&|(){}\n\x60]\s*)`;
+/**
+ * Command position, for a definition: start, a separator, a group or a substitution opener. A lookbehind, after a
+ * lookahead for the definition's first character, so a run of blank lines is not rescanned from every line.
+ */
+const DEFINE_AT = String.raw`(?<=(?:^|[;&|(){}\n\x60])\s*)`;
 /** A function header (`f() {`, `function f {`) or a `{` group opener; replaced by `;`, its body is commands. */
 const FUNCTION = new RegExp(
-  String.raw`(${DEFINE_AT})(?:(?:function\s+[\w.:@-]+(?:\s*\(\s*\))?|[\w.:@-]+\s*\(\s*\))\s*[{(]|\{(?=\s))`,
+  String.raw`(?=[\w.:@{-])${DEFINE_AT}(?:(?:function\s+[\w.:@-]+(?:\s*\(\s*\))?|[\w.:@-]+\s*\(\s*\))\s*[{(]|\{(?=\s))`,
   "g",
 );
-const ALIAS = new RegExp(DEFINE_AT + String.raw`alias\s`, "g");
+const ALIAS = new RegExp(String.raw`(?=alias\s)${DEFINE_AT}alias\s`, "g");
 const ALIAS_VALUE = /\s*(?:-\w+\s+)*[^\s=;&|]+=(?:'([^']*)'|"((?:\\.|[^"\\])*)"|([^\s;&|]*))/y;
 
 /**
@@ -419,12 +422,12 @@ function findScriptStrings(c) {
     out.push(m[2]);
   for (const m of c.matchAll(
     new RegExp(
-      String.raw`(?:^|[\s;&|(\x60])(?:\S*/)?(?:${SHELL_NAME}|source|\.)(?=\s)[^;&|\n]*<<<\s*(?:(["'])((?:\\.|(?!\1)[^\\])*)\1|(\S+))`,
+      String.raw`(?:^|[\s;&|(\x60])(?:[^\s;&|()<>\x60]*/)?(?:${SHELL_NAME}|source|\.)(?=\s)[^;&|\n]*<<<\s*(?:(["'])((?:\\.|(?!\1)[^\\])*)\1|(\S+))`,
       "g",
     ),
   ))
     out.push(m[2] ?? m[3]);
-  const bodies = c.replace(FUNCTION, "$1;");
+  const bodies = c.replace(FUNCTION, ";");
   if (bodies !== c) out.push(bodies);
   for (const m of c.matchAll(ALIAS)) {
     ALIAS_VALUE.lastIndex = m.index + m[0].length;

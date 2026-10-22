@@ -2059,3 +2059,135 @@ test("round 1: every decision is linear in the input (the hook is killed, and fa
   assert.equal(decision(big), "deny");
   assert.ok(performance.now() - t < 2500, `10 kB took ${(performance.now() - t).toFixed(0)} ms`);
 });
+
+// ---- STA-330 review round 2 ---------------------------------------------------------------------------------
+
+test("round 2: `mise exec` ends at its own `--`, so the command's `--` never hides it", () => {
+  const { wrong, done } = sessionRepo();
+  const cases = [];
+  for (const c of [
+    "mise exec -- rm -rf -- /",
+    "mise exec -- rm -rf -- ~",
+    "mise x -- rm -rf -- /",
+    "mise exec -- rm -fr -- /",
+    "mise exec -- sudo rm -rf -- /",
+    "mise exec -- env rm -rf -- /",
+    "mise exec -- git rm -rf -- .",
+    "mise exec node@22 -- rm -rf -- /",
+    "mise exec -- gh pr merge 1 -- x",
+    "mise exec -- git push origin main -- x",
+  ])
+    cases.push(["wt", c, "deny"]);
+  for (const c of [
+    "mise exec -- pnpm bot:review -- pr comment 1 --body-file x",
+    "mise x -- pnpm bot:review -- pr view 1",
+  ]) {
+    cases.push(["wt", c, "deny", ""], ["wt", c, "deny", "package-builder"]);
+    cases.push(["wt", c, "allow", "code-reviewer"]);
+  }
+  for (const c of ["mise exec -- rm -rf -- dist", "mise exec -- pnpm test -- --watch=false"])
+    cases.push(["wt", c, "allow"]);
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 2: no wrapper hides `rm -rf`, `find -delete` or `bot:review`, known or not", () => {
+  const { wrong, done } = sessionRepo();
+  const cases = [];
+  const wrappers = [
+    "setsid ",
+    "flock /tmp/l ",
+    "parallel ",
+    "strace -f ",
+    "direnv exec . ",
+    "op run -- ",
+    "doppler run -- ",
+    "dotenv -- ",
+    "tmux new -d ",
+    "screen -dm ",
+    "unbuffer ",
+    "taskpolicy -c utility ",
+    "ionice -c 3 ",
+    "chronic ",
+    "proxychains ",
+    "sandbox-exec -n no-network ",
+    "gtimeout 5 ",
+  ];
+  for (const w of wrappers) {
+    for (const c of [
+      "rm -rf /",
+      "rm -rf ~",
+      "rm -fr -- /",
+      "find / -delete",
+      "git -C $MAIN rm -rf x",
+    ])
+      cases.push(["wt", w + c, "deny"]);
+    // parallel appends operands from its input, so it denies like xargs
+    cases.push(["wt", `${w}rm -rf dist`, w === "parallel " ? "deny" : "allow"]);
+    cases.push(["wt", `${w}pnpm bot:review -- pr view 1`, "deny", ""]);
+    cases.push(["wt", `${w}pnpm bot:review -- pr view 1`, "allow", "code-reviewer"]);
+  }
+  for (const c of [
+    "ls | parallel rm -rf",
+    "git rm -r --cached dist",
+    "docker rm -f x",
+    "echo rm -rf dist",
+  ])
+    cases.push(["wt", c, c.startsWith("ls") ? "deny" : "allow"]);
+  cases.push(["wt", "pnpm exec grep -n bot:review package.json", "allow", ""]);
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 2: `rm -rf .git` and anything under it is refused, from any checkout", () => {
+  const { wrong, done } = sessionRepo();
+  const cases = [];
+  for (const at of ["main", "wt"])
+    for (const c of ["rm -rf .git", "rm -rf ./.git/", "rm -rf .git/objects", "rm -fr .gi?"])
+      cases.push([at, c, "deny"]);
+  cases.push(["main", "rm -rf $MAIN/.git", "deny"], ["wt", "rm -rf .github-cache", "allow"]);
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 2: the settings floor keeps the rm -rf denies for /, ~ and $HOME", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const settings = JSON.parse(await readFile(join(root, ".claude", "settings.json"), "utf8"));
+  for (const rule of [
+    "Bash(rm -rf /)",
+    "Bash(rm -rf / *)",
+    "Bash(rm -rf ~*)",
+    "Bash(rm -rf $HOME*)",
+  ])
+    assert.ok(settings.permissions.deny.includes(rule), rule);
+});
+
+test("round 2: decisions stay linear in blank lines, separators, path depth and git lookups", () => {
+  const cwd = root;
+  const timed = (c) => {
+    const t = performance.now();
+    const { decision: got, reason } = decideBash(c, { cwd });
+    return { got, reason, ms: performance.now() - t };
+  };
+  for (const [name, c, want] of [
+    ["20,000 blank lines", "\n".repeat(20_000) + "gh pr merge 1", "deny"],
+    ["20,000 `x;`", "x;".repeat(20_000) + "gh pr merge 1", "deny"],
+    ["20,000 `ls\\n`", "ls\n".repeat(20_000), "allow"],
+    ["a 1000-segment path", "rm -rf " + "a/".repeat(1000), "allow"],
+    ["40 rm words", "rm ".repeat(40) + "-rf dist", "deny"],
+  ]) {
+    const { got, ms } = timed(c);
+    assert.equal(got, want, name);
+    assert.ok(ms < 1500, `${name} took ${ms.toFixed(0)} ms`);
+  }
+  // Each git lookup is a process; past the cap the decision denies instead of running out the hook's 5 s.
+  for (const c of [
+    "git branch -D " + Array.from({ length: 200 }, (_, i) => `b${i}`).join(" "),
+    Array.from({ length: 200 }, (_, i) => `git -C /tmp/x${i} reset --hard`).join("; "),
+  ]) {
+    const { got, reason, ms } = timed(c);
+    assert.equal(got, "deny");
+    assert.match(reason, /git lookups/);
+    assert.ok(ms < 2500, `${c.slice(0, 30)} took ${ms.toFixed(0)} ms`);
+  }
+});
