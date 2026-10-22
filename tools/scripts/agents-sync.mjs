@@ -21,7 +21,7 @@
  *   OpenCode natively).
  *
  *   MCP — `.mcp.yaml` (annotated, the source) is rendered to `.mcp.json`
- *   (comment-free), the only project MCP file Claude Code reads.
+ *   (comment-free, gitignored, rendered locally), the only project MCP file Claude Code reads.
  *
  * ---------------------------------------------------------------------------
  * Neutral rule frontmatter schema (`.agents/rules/*.md`):
@@ -79,6 +79,7 @@
  *   node tools/scripts/agents-sync.mjs --assistant=claude,opencode
  *   node tools/scripts/agents-sync.mjs --prune         # also remove stale links/generated files
  *   node tools/scripts/agents-sync.mjs --list          # show the mapping and exit
+ *   node tools/scripts/agents-sync.mjs --mcp-only      # render .mcp.json only (install-time `prepare`)
  *   node tools/scripts/agents-sync.mjs --lint          # validate agent sources only; writes nothing
  *
  * Safety: a real file or directory sitting where a symlink or generated file
@@ -157,6 +158,7 @@ const CHECK = has("--check");
 const PRUNE = has("--prune");
 const LIST = has("--list");
 const LINT = has("--lint");
+const MCP_ONLY = has("--mcp-only");
 
 /** Assistants to sync: explicit if asked, else every one whose directory already exists. */
 function selectAssistants() {
@@ -1047,26 +1049,42 @@ function ensureInstructionsBlock(file, ruleEntries) {
   results.generated++;
 }
 
-/** Renders `.mcp.yaml` into `.mcp.json`, which Claude Code reads (it reads only strict JSON). */
+/**
+ * `.mcp.yaml` is the only committed MCP config; `.mcp.json` (strict JSON, which Claude Code reads) is
+ * gitignored and rendered locally. `--check` validates the YAML and servers, and compares a local
+ * `.mcp.json` only if one exists (a fresh clone has none).
+ */
 function ensureMcpJson() {
   const source = join(ROOT, ".mcp.yaml");
   if (!existsSync(source)) return;
-  let rendered;
+  let config;
   try {
-    rendered = `${JSON.stringify(parseYaml(readFileSync(source, "utf8")), null, 2)}\n`;
+    config = parseYaml(readFileSync(source, "utf8"));
   } catch (error) {
     results.broken.push(`.mcp.yaml: ${error.message}`);
     return;
   }
+  const servers = config?.mcpServers;
+  if (!servers || typeof servers !== "object" || Array.isArray(servers)) {
+    results.broken.push(".mcp.yaml: mcpServers must be a map of servers");
+    return;
+  }
+  for (const [name, server] of Object.entries(servers)) {
+    const isObject = server && typeof server === "object" && !Array.isArray(server);
+    if (!isObject || (typeof server.command !== "string" && typeof server.url !== "string"))
+      results.broken.push(`.mcp.yaml: server '${name}' needs a string command or url`);
+  }
+  if (results.broken.length > 0) return;
+  const rendered = `${JSON.stringify(config, null, 2)}\n`;
   const target = join(ROOT, ".mcp.json");
-  if (existsSync(target) && readFileSync(target, "utf8") === rendered) {
+  const present = existsSync(target);
+  if (present && readFileSync(target, "utf8") === rendered) {
     results.ok++;
     return;
   }
   if (CHECK) {
-    results.drift.push(
-      `.mcp.json: ${existsSync(target) ? "stale" : "missing"} (generated from .mcp.yaml)`,
-    );
+    if (present) results.drift.push(".mcp.json: stale (run `pnpm agents:sync` to re-render it)");
+    else results.ok++;
     return;
   }
   writeFileSync(target, rendered);
@@ -1204,6 +1222,15 @@ function markdownUnder(dir) {
 // ---------------------------------------------------------------------------
 
 function main() {
+  // Install-time path (`prepare`): render only `.mcp.json`; quiet, fast, never fails the install.
+  if (MCP_ONLY) {
+    try {
+      ensureMcpJson();
+    } catch {
+      /* offline or read-only checkout: the next `pnpm agents:sync` renders it */
+    }
+    return 0;
+  }
   if (!existsSync(join(ROOT, SOURCE))) {
     console.error(`agents-sync: ${SOURCE}/ does not exist — nothing to sync from.`);
     process.exit(2);

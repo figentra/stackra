@@ -218,7 +218,6 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       "apps/mobile/eas.json",
       "apps/docs/src/docs.json",
       ".claude/settings.json",
-      ".mcp.json",
       ".changeset/config.json",
       ".specify/integration.json",
       ".agents/skills/x/scripts/package.json",
