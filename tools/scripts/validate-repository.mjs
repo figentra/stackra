@@ -228,7 +228,6 @@ export const MUST_STAY_JSON = [
   ],
   [/^\.claude\/[\w.-]+\.json$/, "Claude Code settings/launch: fixed .json names"],
   [/^\.vscode\/(settings|extensions)\.json$/, "VS Code reads these fixed names (JSONC inside)"],
-  [/^\.mcp\.json$/, "Claude Code reads only .mcp.json; generated from .mcp.yaml"],
   [/^\.changeset\/config\.json$/, "@changesets/config JSON.parse on a fixed path"],
   [/^\.github\/branch-protection\.json$/, "GitHub REST API payload"],
   [

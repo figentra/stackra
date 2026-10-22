@@ -16,7 +16,7 @@ A new machine needs only this repository, a few logins and the commands below. N
    - `infisical login` (the project config is the committed `.infisical.yaml`).
    - Add a `bedrock` profile to `~/.aws/config`, then `aws sso login --profile bedrock`. OpenCode reaches Kimi K3 on Amazon Bedrock through it.
    - Sign in to Claude Code.
-6. **MCP servers:** `pnpm agents:sync` renders `.mcp.json` from the committed `.mcp.yaml`. Tokens come from Infisical through `tools/scripts/mcp.sh`, never from a file.
+6. **MCP servers:** `pnpm agents:sync` renders the gitignored `.mcp.json` from the committed `.mcp.yaml` (`pnpm install` does it too). Tokens come from Infisical through `tools/scripts/mcp.sh`, never from a file.
 7. **Check:** `pnpm doctor`.
 
 ## What `pnpm doctor` checks
