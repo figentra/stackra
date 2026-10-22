@@ -140,7 +140,9 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
    decorators are `@Model @Action @Query @Resource @Module @App @Service @Settings @Config @Event @Listener @OnEvent
 @Workflow @Widget @Route @Layout @Panel @Menu @Block @Document @Flag @Store @Shortcut @Bridge @Policy @Permissions
 @Permission @Guard @Link @Hook @HookPoint @Override @Provider @ContextProvider @Injectable @Inject @Crud @Mail
-@Migration @Seeder @Factory @AsEndpoint @AsTool @AsJob @Cron @DriverOf @Driver @MoneyColumn @HasState @Json`.
+@Migration @Seeder @Factory @AsEndpoint @AsTool @AsJob @Cron @DriverOf @Driver @MoneyColumn @HasState @Json
+@Controller @Projection`. A raw endpoint and a read model are base-class kinds like every other: `Controller` and
+   `Projection` in the kind table (decision 16).
    Every decorator is made with `createDecorator` from `@stackra/container` and is registered with the kinds it may
    target. The decorator test: if the folder, the suffix, the base class, a field type, a method name or a derived name
    already says it, write no decorator.
@@ -170,7 +172,9 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
 
 12. **One member shape (R12).** Every member authors `stackra.config.ts` and one root module, `src/<key>.module.ts`
     (`src/node/<key>.module.ts` in a package). Nobody writes `main.ts` or an entry barrel; the generated entries are
-    described in [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries).
+    described in [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries). Two kinds of
+    member are exempt and have neither file: the docs app (`apps/docs`, a Mintlify site with no TypeScript runtime)
+    and the `tier:config` presets in `packages/tooling/`, which are tool configuration and hold no module.
 
 ### Group folders and the kind table
 
@@ -180,7 +184,7 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
     | Group                                | Holds                                                                                                        |
     | ------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
     | (root)                               | `<key>.module.ts`, `<key>.settings.ts` (one settings group per module), `README.md`                          |
-    | `models/`                            | `.model.ts`, `.state-machine.ts`, `.bucket.ts`                                                               |
+    | `models/`                            | `.model.ts`, `.state-machine.ts`, `.bucket.ts`, `.projection.ts`                                             |
     | `actions/`                           | `.action.ts`                                                                                                 |
     | `queries/`                           | `.query.ts`                                                                                                  |
     | `schemas/`                           | `.schema.ts` (shapes shared by two or more files), `.change.ts` (dated response changes beside their schema) |
@@ -193,6 +197,7 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
     | `services/`                          | `.service.ts`, `.repository.ts` (only for named reads beyond `CrudService`)                                  |
     | `drivers/`                           | `.driver.ts`                                                                                                 |
     | `extensions/`                        | `.extension-point.ts`, `.extension.ts`, `.interceptor.ts`                                                    |
+    | `raw/`                               | `.controller.ts`, in a service only ([0130](/adr/0130-module-layout-by-semantic-kind) decision 3)            |
     | `resources/<model>/`                 | `.resource.ts`, `.widget.ts`, `.document.ts`, `.notification.ts`, `.mail.tsx`                                |
     | `database/migrations/`               | `NNNN-<name>.migration.ts`, numbered per module                                                              |
     | `database/factories/`                | `<model>.factory.ts`                                                                                         |
@@ -248,6 +253,7 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
     | Event                                                        | `extends DomainEvent`, `IntegrationEvent({ name, version, webhook, broadcast })` or `WebhookEvent({ path, scheme, secret })`                                   | no       |
     | Change                                                       | `extends Change(Subject, { from, sunset })` or `extends Change(Subject, { date, sunset })`                                                                     | no       |
     | Listener                                                     | `extends Listener` or `Listener({ queue, retry })`; `handle(event, ctx)`                                                                                       | yes      |
+    | Projection                                                   | `extends Projection(Source, { ... })`: a read model of another service's data, fed by that service's integration events                                        | yes      |
     | Workflow                                                     | `extends Workflow({ startOn, correlate, timeout })` or `Workflow<Input>({ timeout })`                                                                          | yes      |
     | Signal                                                       | `extends Signal`                                                                                                                                               | no       |
     | Permissions                                                  | `extends Permissions`, with `static readonly` verbs                                                                                                            | no       |
@@ -261,6 +267,7 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
     | Extension point                                              | `extends ExtensionPoint`, with `transform<T>()` and `verify<T>()` properties                                                                                   | no       |
     | Extension                                                    | `extends Extension(Point, { order })`, with one method named after one point                                                                                   | yes      |
     | Interceptor                                                  | `extends Interceptor`, with `intercept(ctx, next)`                                                                                                             | yes      |
+    | Controller                                                   | `extends Controller({ path })`, for a raw endpoint that is not an action: `/api/auth/*` or a stream. An inbound webhook is a `WebhookEvent`                    | yes      |
     | Resource                                                     | `extends Resource(Model, { navigation, operations, area })`                                                                                                    | yes      |
     | Widget                                                       | `extends Widget({ slot, query, display, refreshOn })` or `Widget.place(Base, { slot, params })`                                                                | no       |
     | Document                                                     | `extends Document({ kind, path, blocks })`                                                                                                                     | no       |
@@ -361,7 +368,7 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
     | Command                                            | A CLI command only                                                                                                                        | Palette and key entries are Shortcuts (`@stackra/kbd` becomes `@stackra/shortcuts`); the client's `.queue()` is a queued call |
     | Job                                                | An action run from a queue or a cron (`job:` option)                                                                                      | Not a kind                                                                                                                    |
     | Workflow, step, signal, heartbeat                  | A durable run; one of its methods; a fact sent into a parked run; liveness of a long step                                                 | A signal is not a component signal                                                                                            |
-    | Endpoint, tool                                     | HTTP exposure by convention; MCP exposure                                                                                                 | `@Controller` is for raw HTTP only                                                                                            |
+    | Endpoint, tool                                     | HTTP exposure by convention; MCP exposure                                                                                                 | A `Controller` (`extends Controller({ path })`) is for raw HTTP only; `@Controller` is retired                                |
     | Permission                                         | A grantable right with a risk, as a static on `<Model>Permissions`                                                                        | —                                                                                                                             |
     | Policy                                             | Record rules for one model, with methods named after verbs                                                                                | Never a precondition                                                                                                          |
     | Precondition                                       | Whether a call may run now, whoever asks (store paused, maintenance)                                                                      | Guard and Gate are retired as identifiers                                                                                     |
@@ -380,7 +387,7 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
     | Token                                              | The class itself                                                                                                                          | `defineToken`, string tokens and `@Inject` are retired                                                                        |
     | Model, schema, view, relation, link                | A persisted entity; a wire shape; an output schema `<X>View`; a relation decorator; a relation to another module's model, typed `Link<T>` | `@Link` and `links/` are retired                                                                                              |
     | State machine, transition                          | A model field's lifecycle class; one of its methods                                                                                       | `states/` is retired                                                                                                          |
-    | Projection                                         | A read model fed by another service's events                                                                                              | —                                                                                                                             |
+    | Projection                                         | A read model fed by another service's events, declared as `extends Projection(Source, { ... })`                                           | `@Projection` is retired                                                                                                      |
     | Config, settings, env, secret                      | Deploy-time configuration; tenant runtime settings; environment variables read through `@Env`; a reference resolved blind                 | —                                                                                                                             |
     | Resource, resource page, relation manager          | One model's admin surface in one area: List, Create, Edit, View; a related-model table                                                    | —                                                                                                                             |
     | Widget, slot                                       | A query bound to a display kind; a typed place on a page                                                                                  | —                                                                                                                             |
@@ -487,9 +494,10 @@ Nothing enforces this grammar yet. The folder tables in `tools/scripts/structure
 - planned — STA-338: the day-one lint rules `lines-between-class-members`, `multiline-decorator-options`,
   `no-empty-decorator` and `base-matches-suffix`, and the validator's `kind-path` check of the tables in this record.
 - planned — STA-340: the decorator-registry checks `no-kind-decorator`, `facet-target` and `no-parameter-decorator`;
-  `no-restricted-imports` for `defineToken`, `defineConfig`, `Injectable`, `Inject`, `Crud`, `Override` and `Provider`,
-  and for `Link` used as a decorator (the `Link<T>` type stays); a `no-restricted-imports` pattern that refuses a
-  `*.server` module in a file that is not a server file
+  `no-restricted-imports` for `defineToken`, `defineConfig`, `Injectable`, `Inject`, `Crud`, `Override` and `Provider`
+  imported from a `@stackra/*` package (that source only, so the `defineConfig` of a `vite`, `vitest/config`,
+  `tsdown` or `@playwright/test` config stays allowed), and for `Link` used as a decorator (the `Link<T>` type stays);
+  a `no-restricted-imports` pattern that refuses a `*.server` module in a file that is not a server file
   ([0301](/adr/0301-stackra-seo-package) decision 6); `override-only` (an override declares no new field and uses no
   `as const`); `no-new-shape` extended to models; a required `declare` when a model narrows a trait field; the
   sibling-module boundary rules; and `structure.mjs` rebuilt as the single source of the tables in this record.

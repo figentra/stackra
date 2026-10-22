@@ -32,8 +32,9 @@ records access and stays.
 
 Decision 4 is superseded by [0105](/adr/0105-crud-generates-service-methods). A service extends
 `CrudService(Model)`, and a resource's `operations` map generates the standard actions. Decision 5
-keeps `@Controller` for raw endpoints only. Inbound webhooks are `WebhookEvent` classes, so they
-need no controller. The `ux` option of [0139](/adr/0139-actions-declare-their-user-experience)
+keeps controllers for raw endpoints only, as the `Controller` kind: a class that extends
+`Controller({ path })` in the module's `raw/` group, with no `@Controller` decorator. Inbound
+webhooks are `WebhookEvent` classes, so they need no controller. The `ux` option of [0139](/adr/0139-actions-declare-their-user-experience)
 becomes resource `toasts`. Guards are preconditions, declared in `preconditions:` and run after
 the permission check. A workflow started from an action is `ctx.run(Workflow, input)`.
 

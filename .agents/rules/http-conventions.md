@@ -29,8 +29,9 @@ the contract they will implement, not code that runs today; the package docs win
 
 An action or query is exposed over HTTP by convention: gen derives the route from its key, so nothing is declared per
 action (ADR 0294 decision 21, ADR 0217 as amended). Input and output are the parameter and return types of `handle`.
-`@Controller` is only for raw endpoints that are not actions (`/api/auth/*`, streaming); an inbound webhook is a
-`WebhookEvent` class.
+A raw endpoint that is not an action (`/api/auth/*`, streaming) is a class that extends `Controller({ path })`, in
+the module's `raw/` group; the `@Controller` decorator is retired (ADR 0294). An inbound webhook is a `WebhookEvent`
+class.
 
 | Key                                    | Route                       |
 | -------------------------------------- | --------------------------- |

@@ -56,7 +56,9 @@ answers, which breaks shared caches and crawlers.
   through a cached query.
 - The locale is part of the URL, so a link can be shared and cached as it is. A visitor who lands on the wrong locale sees a
   banner and keeps the page they asked for.
-- Shared caches store one copy per URL, because nothing varies the response.
+- No shared cache stores a page: HTML is `private, no-cache` (decision 3), so a browser revalidates it and a shared cache
+  passes it through. What a shared cache keeps is the static assets, one copy per URL because no response varies, and the
+  query data of decision 3 under its full key.
 - The Worker runs for every page request, so a failure in it affects every page.
 
 ## Enforcement

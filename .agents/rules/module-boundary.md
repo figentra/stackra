@@ -66,7 +66,7 @@ Services communicate through the generated Encore app (ADRs 0091 and 0124):
 
 - **Integration events** - a class that extends `IntegrationEvent({ name })`; the author writes `name` once and gen derives the wire name `<module-key>.<name>.v<n>` (`identity.user.created.v1`). A consumer is a `Listener` whose `handle(event: E)` parameter type is the producer's event (ADR 0078, 0141 and 0264 as amended by 0294)
 - **Typed client calls and events** - `stackra gen` generates one typed client per service from its committed `stackra.manifest.json`, injected through the constructor from `#stackra/clients`: `client.x.y(input)` to call and `client.x.y.queue(input)` for a queued call (ADR 0260, 0261 as amended by 0294)
-- **Read models** - a consumer's copy of another service's data is a `@Projection` fed by that service's events (ADR 0163, 0260)
+- **Read models** - a consumer's copy of another service's data is a class that extends `Projection(Source, { ... })` in the module's `models/` group, fed by that service's integration events (ADR 0163, 0260 and 0294)
 - Transport is a driver behind the port (ADR 0142). Never direct imports of another service's source, tables or `Topic`
 - A Stackra package that needs service data defines a port (an abstract class) in `src/contracts/ports/`; the service implements it (ADR 0260)
 - Feature modules live in one of three homes: the service (default), a figentra-os `@figentra/*` package used by two or more OS consumers, or a `@stackra/*` package with no Figentra rules. The module layout is the same in all three (ADR 0259 as amended by 0294)

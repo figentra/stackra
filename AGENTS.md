@@ -162,8 +162,9 @@ the contract they will implement, not code that runs today; the package docs win
 
 An action or query is exposed over HTTP by convention: gen derives the route from its key, so nothing is declared per
 action (ADR 0294 decision 21, ADR 0217 as amended). Input and output are the parameter and return types of `handle`.
-`@Controller` is only for raw endpoints that are not actions (`/api/auth/*`, streaming); an inbound webhook is a
-`WebhookEvent` class.
+A raw endpoint that is not an action (`/api/auth/*`, streaming) is a class that extends `Controller({ path })`, in
+the module's `raw/` group; the `@Controller` decorator is retired (ADR 0294). An inbound webhook is a `WebhookEvent`
+class.
 
 | Key                                    | Route                       |
 | -------------------------------------- | --------------------------- |
@@ -390,7 +391,7 @@ Services communicate through the generated Encore app (ADRs 0091 and 0124):
 
 - **Integration events** - a class that extends `IntegrationEvent({ name })`; the author writes `name` once and gen derives the wire name `<module-key>.<name>.v<n>` (`identity.user.created.v1`). A consumer is a `Listener` whose `handle(event: E)` parameter type is the producer's event (ADR 0078, 0141 and 0264 as amended by 0294)
 - **Typed client calls and events** - `stackra gen` generates one typed client per service from its committed `stackra.manifest.json`, injected through the constructor from `#stackra/clients`: `client.x.y(input)` to call and `client.x.y.queue(input)` for a queued call (ADR 0260, 0261 as amended by 0294)
-- **Read models** - a consumer's copy of another service's data is a `@Projection` fed by that service's events (ADR 0163, 0260)
+- **Read models** - a consumer's copy of another service's data is a class that extends `Projection(Source, { ... })` in the module's `models/` group, fed by that service's integration events (ADR 0163, 0260 and 0294)
 - Transport is a driver behind the port (ADR 0142). Never direct imports of another service's source, tables or `Topic`
 - A Stackra package that needs service data defines a port (an abstract class) in `src/contracts/ports/`; the service implements it (ADR 0260)
 - Feature modules live in one of three homes: the service (default), a figentra-os `@figentra/*` package used by two or more OS consumers, or a `@stackra/*` package with no Figentra rules. The module layout is the same in all three (ADR 0259 as amended by 0294)
@@ -738,6 +739,9 @@ v3 shape where the member already allows it.
   `src/**` and `assets/**`
 - One root module, `src/<key>.module.ts` (`src/node/<key>.module.ts` in a package); the key is derived from the package
   name
+- Exempt from `stackra.config.ts` and the root module: the docs app (`apps/docs`, Mintlify, no TypeScript runtime) and
+  the `tier:config` presets in `packages/tooling/` (tool configuration, no module); the planned `member-root` check
+  (STA-339) skips them
 - Nobody writes `main.ts`, an entry barrel or a tool config: gen writes the runtime entries to `.stackra/entry/<target>.ts`
   and every tool config into `.stackra/` (ADR 0295)
 - Committed generated contracts at the member root: `stackra.manifest.json` and `openapi.json`

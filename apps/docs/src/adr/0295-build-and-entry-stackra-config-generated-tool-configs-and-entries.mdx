@@ -110,7 +110,7 @@ Planned, all tracked in STA-339:
 
 - planned — STA-339: gen writes the tool files, the runtime entries and the root shims, and `stackra gen --check` runs in `pnpm verify`.
 - planned — STA-339: the `tool-configs` validator check. A tracked tool config inside a member fails; a `*.extend.ts` outside the closed set, or without a `Reason:` header, fails; a hatch that touches an owned key fails at gen.
-- planned — STA-339: the `member-root` validator check. A missing `stackra.config.ts` or root module fails, and so do an authored `src/main.ts` and an authored package barrel.
+- planned — STA-339: the `member-root` validator check. A missing `stackra.config.ts` or root module fails, and so do an authored `src/main.ts` and an authored package barrel. The docs app and the `tier:config` presets are exempt ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) rule R12).
 - planned — STA-339: the `entries` check. Each runtime entry calls `createApp` for its target, and a package's `exports` match its entry folders.
 - planned — STA-339: gen fails when a bundle identifier changes after its first upload, unless an ADR records the change.
 
