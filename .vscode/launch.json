@@ -1,0 +1,79 @@
+// Debug configurations. Start a member with its inspector on (for example node --inspect, or Electron
+// with --inspect=9230 --remote-debugging-port=9222), then attach with the matching configuration.
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Vitest: current test file",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["exec", "vitest", "run", "${file}"],
+      // Run from the file's folder so the member's own vitest config applies.
+      "cwd": "${fileDirname}",
+      "console": "integratedTerminal",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      "name": "Node: current file",
+      "type": "node",
+      "request": "launch",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Attach: Node process (--inspect, port 9229)",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      "name": "Web: debug in Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:${input:devPort}",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "Desktop: Electron main",
+      "type": "node",
+      "request": "attach",
+      "port": 9230,
+      "restart": true,
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Desktop: Electron renderer",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9222,
+      "webRoot": "${workspaceFolder}/apps/console"
+    },
+    {
+      "name": "Mobile: attach to Expo (Hermes)",
+      "type": "expo",
+      "request": "attach",
+      "projectRoot": "${workspaceFolder}/apps/mobile",
+      "bundlerPort": "8081"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Desktop: main + renderer",
+      "configurations": ["Desktop: Electron main", "Desktop: Electron renderer"],
+      "stopAll": true
+    }
+  ],
+  "inputs": [
+    {
+      "id": "devPort",
+      "type": "promptString",
+      "description": "Dev server port (from the member's runway.yaml)"
+    }
+  ]
+}
