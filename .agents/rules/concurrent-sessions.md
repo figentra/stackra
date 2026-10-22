@@ -19,23 +19,19 @@ Before starting concurrent work:
 
 ## Worktree Strategy
 
-Create a worktree per agent:
+Create a worktree per agent **inside the repository**, under `.claude/worktrees/<name>` (gitignored). Never create
+one next to the repository (`../<name>`): sibling folders pile up in `~/Projects` and outlive their branch.
 
 ```bash
-# Main worktree: /Users/akouta/Projects/final-project
-git worktree add ../stackra-auth feature/auth
-
-# Agent 1: Authentication in worktree
-cd ../stackra-auth
+# From the repository root
+git worktree add .claude/worktrees/sta-123 -b figentra/sta-123-slug origin/main
+cd .claude/worktrees/sta-123
 pnpm install
-# Agent works here
+# Agent works here; another agent works in the main checkout or its own worktree
 
-# Agent 2: UI components in main worktree
-cd /Users/akouta/Projects/final-project
-# Agent works here
-
-# Merge when done
-git worktree remove ../stackra-auth
+# After the PR merges
+git worktree remove .claude/worktrees/sta-123
+git branch -D figentra/sta-123-slug
 ```
 
 ## Coordination Rules
