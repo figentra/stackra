@@ -9,6 +9,11 @@ description: "Accepted · 2026-10-19"
   main.
 </Note>
 
+<Note>
+  Amended by [0285](/adr/0285-review-verdict-binds-to-the-patch-id): the AI review verdict for the
+  head commit includes one for an earlier head with the same patch id.
+</Note>
+
 ## Context
 
 `main` required one approving review, and nobody can approve their own pull request, so green pull requests stalled; merges
@@ -37,8 +42,9 @@ requests (Round 6). CODEOWNERS names a handle that is not a GitHub user.
 
 ## Enforcement
 
-Existing: branch protection on `main` (0 approvals, Quality Gate required). Planned: `tools/scripts/pr-merge.mjs`; a
-`guard-bash` rule that blocks `gh pr merge` outside `pnpm pr:merge`.
+Existing: the `main` ruleset (0 approvals, Quality Gate required; committed as `.github/rulesets/main.json`),
+`tools/scripts/pr-merge.mjs` (enqueues when a merge queue exists, STA-233) and the `guard-bash` rule that blocks
+`gh pr merge` outside `pnpm pr:merge`.
 
 ## Supersedes and sources
 

@@ -285,9 +285,9 @@ function pushesMain(c, cwd) {
   });
 }
 
-/** `pnpm bot:gh` merging a PR: `pr merge`, `api …/pulls/<n>/merge` (any method), or a GraphQL merge mutation. */
+/** `pnpm bot:gh` merging a PR: `pr merge`, `api …/pulls/<n>/merge` (any method), or a GraphQL merge or enqueue mutation. */
 const MERGE =
-  /\bpr\s+(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?merge\b|\bpulls(?:\/|%2F)+\d+(?:\/|%2F)+merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge)\b/i;
+  /\bpr\s+(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?merge\b|\bpulls(?:\/|%2F)+\d+(?:\/|%2F)+merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest)\b/i;
 /** A word percent-decoded (up to three layers), then slashes collapsed and `.` / `..` segments resolved (STA-216). */
 function normalizeWord(w) {
   let d = w;
@@ -436,7 +436,7 @@ const rules = [
   // STA-208: agents never act with the owner's GitHub login (ADR 0230 rule 5). Accident guard: same macOS user.
   {
     rx: botMerges,
-    why: "Agents merge only through `pnpm pr:merge <n>` (ADR 0119, ADR 0230), which checks the gate and the reviewer's verdict. `pnpm bot:gh -- pr merge`, `api …/pulls/<n>/merge` and the GraphQL merge mutations are denied.",
+    why: "Agents merge only through `pnpm pr:merge <n>` (ADR 0119, ADR 0230), which checks the gate and the reviewer's verdict. `pnpm bot:gh -- pr merge`, `api …/pulls/<n>/merge` and the GraphQL merge and enqueue mutations are denied.",
   },
   {
     // STA-214: pack plumbing pushes or fetches without the push-to-main check; no agent needs it.

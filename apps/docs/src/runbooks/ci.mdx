@@ -14,7 +14,8 @@ icon: "workflow"
 
 ## The model
 
-- **One required check**, named `Quality Gate`, runs `pnpm verify` ([0119](/adr/0119-merge-policy-and-release-authority)). Branch protection on `main` requires it and nothing else.
+- **One required check**, named `Quality Gate`, runs `pnpm verify` ([0119](/adr/0119-merge-policy-and-release-authority)). The `main` ruleset (`.github/rulesets/main.json`) requires it and nothing else.
+- **Merge queue** ([0166](/adr/0166-ci-policy-runners-budgets-concurrency-and-check-matrix) CI3). `pnpm pr:merge` enqueues a reviewed, green pull request; the queue builds the pull request on top of `main` (groups of up to five, all green), runs the `Quality Gate` on the `merge_group` commit with a 60-minute timeout, and squash-merges. A pull request need not be up to date with `main`, and its `AI-REVIEW` verdict survives a clean rebase while the patch id is unchanged ([0285](/adr/0285-review-verdict-binds-to-the-patch-id)). A red group drops the failing pull request from the queue; fix it and run `pnpm pr:merge` again.
 - **Logic lives in pnpm scripts, not in workflow YAML.** The workflow installs the toolchain and calls a script. A step that exists only in YAML cannot be reproduced locally, and moving to another CI host stays cheap.
 - **Local and remote run the same command.** If `pnpm verify` is green on a clean clone, the check is green. The exceptions are listed under [What green does not prove](#what-green-does-not-prove).
 - **Verify needs zero secrets.** A pull request from a fork has no vault access, and a verify stage that needs one cannot check a fork's work at all.
@@ -120,12 +121,13 @@ Use this only when the host cannot run workflows at all (billing lock, outage, s
 
 ## Enforcement status
 
-| Rule                                   | Check                                                                 | State                     |
-| -------------------------------------- | --------------------------------------------------------------------- | ------------------------- |
-| `pnpm verify` is the single gate       | `ci.yml` `Quality Gate`                                               | Live                      |
-| Hooks are advisory                     | `lefthook.yml` (check-only, no auto-fix)                              | Live                      |
-| Conventional commits                   | commitlint in `commit-msg`; CI range check                            | Live                      |
-| Secrets scan                           | gitleaks in `pre-commit`, `pnpm secrets:scan`                         | Live                      |
-| Actions pinned by SHA, least privilege | Done by hand in every workflow; workflow lint (zizmor) and a pin test | Pins live, lint not built |
+| Rule                                   | Check                                                                      | State                                     |
+| -------------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------- |
+| `pnpm verify` is the single gate       | `ci.yml` `Quality Gate`                                                    | Live                                      |
+| Merge queue gates every merge          | `ci.yml` `merge_group`; `merge_queue` rule in `.github/rulesets/main.json` | Applied by the owner after STA-233 merges |
+| Hooks are advisory                     | `lefthook.yml` (check-only, no auto-fix)                                   | Live                                      |
+| Conventional commits                   | commitlint in `commit-msg`; CI range check                                 | Live                                      |
+| Secrets scan                           | gitleaks in `pre-commit`, `pnpm secrets:scan`                              | Live                                      |
+| Actions pinned by SHA, least privilege | Done by hand in every workflow; workflow lint (zizmor) and a pin test      | Pins live, lint not built                 |
 
 See also [Definition of done](/guides/definition-of-done), [Release](/runbooks/release) and [Testing](/standards/testing).

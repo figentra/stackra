@@ -1,6 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { actor, aiReview, blockers, OWNER, parseArgs, REVIEWER } from "../pr-merge.mjs";
+import {
+  actor,
+  aiReview,
+  blockers,
+  OWNER,
+  parseArgs,
+  patchId,
+  REVIEWER,
+  samePatchShas,
+} from "../pr-merge.mjs";
 
 const SHA = "0123456789abcdef0123456789abcdef01234567";
 const T0 = "2026-10-19T10:00:00Z";
@@ -192,4 +201,52 @@ test("design / risk:R3 need an owner approval on the head SHA or owner-approved"
   assert.deepEqual(blockers(pr({ labels }), green, {}, ok, [review({ body: "" })]), []);
   const labelled = [{ name: "design" }, { name: "owner-approved" }];
   assert.deepEqual(blockers(pr({ labels: labelled }), green, {}, ok), []);
+});
+
+const OLD = "fedcba9876543210fedcba9876543210fedcba98";
+const P1 = "1".repeat(40);
+const P2 = "2".repeat(40);
+
+test("STA-234: a verdict on an earlier head with the same patch id counts as the head's", () => {
+  const oldPass = reviewer(`AI-REVIEW: PASS ${OLD} base=main`);
+  const patches = { [SHA]: P1, [OLD]: P1 };
+  const same = samePatchShas(pr(), [oldPass], (c) => patches[c] ?? null);
+  assert.deepEqual([...same], [OLD]);
+  assert.deepEqual(blockers(pr(), green, builtByBot, [oldPass], [], same), []);
+  // Any diff change voids it.
+  const changed = samePatchShas(pr(), [oldPass], (c) => ({ [SHA]: P2, [OLD]: P1 })[c]);
+  assert.equal(changed.size, 0);
+  assert.match(blockers(pr(), green, builtByBot, [oldPass], [], changed).join(), /no AI review/);
+  // A FAIL on a same-patch earlier head stays sticky, strict or loose.
+  for (const body of [`AI-REVIEW: FAIL ${OLD}`, `AI-REVIEW: FAIL ${OLD} see H1`]) {
+    const fail = reviewer(body, T1);
+    assert.equal(verdict([fail, reviewer(PASS)], [], pr()), "PASS", "no same set");
+    const failed = aiReview(pr(), [fail, reviewer(PASS)], [], [], new Set([OLD])).verdict;
+    assert.equal(failed, "FAIL", body);
+  }
+});
+
+test("STA-234: patch= is used only when the earlier head is gone; only the app's verdicts count", () => {
+  const claimed = (patch) => reviewer(`AI-REVIEW: PASS ${OLD} base=main patch=${patch}`);
+  const gone = (c) => (c === SHA ? P1 : null);
+  assert.deepEqual([...samePatchShas(pr(), [claimed(P1)], gone)], [OLD]);
+  assert.equal(samePatchShas(pr(), [claimed(P2)], gone).size, 0);
+  // A recomputed patch id beats the claim.
+  const both = (c) => ({ [SHA]: P1, [OLD]: P2 })[c];
+  assert.equal(samePatchShas(pr(), [claimed(P1)], both).size, 0);
+  const user = userComment(REVIEWER, `AI-REVIEW: PASS ${OLD} base=main patch=${P1}`);
+  assert.equal(samePatchShas(pr(), [user], gone).size, 0);
+  // No head patch id (compare failed): nothing carries over.
+  assert.equal(samePatchShas(pr(), [claimed(P1)], () => null).size, 0);
+  // The head's own PASS may carry patch=.
+  assert.equal(verdict([reviewer(`AI-REVIEW: PASS ${SHA} base=main patch=${P1}`)]), "PASS");
+});
+
+test("patchId ignores line numbers and changes with the content", () => {
+  const diff = (at, line) =>
+    `diff --git a/x b/x\n--- a/x\n+++ b/x\n@@ -${at},1 +${at},1 @@\n-old\n+${line}\n`;
+  assert.match(patchId(diff(1, "new")), /^[0-9a-f]{40}$/);
+  assert.equal(patchId(diff(1, "new")), patchId(diff(40, "new")));
+  assert.notEqual(patchId(diff(1, "new")), patchId(diff(1, "other")));
+  assert.equal(patchId(""), null);
 });

@@ -28,15 +28,20 @@ One formatter per file type, the same in the editor, the pre-commit hook and CI:
 
 ## Merging
 
-- `Quality Gate` is the only required check, enforced by the `main` ruleset (squash only, linear history, branch
-  up to date, no force pushes). Merges go through `pnpm pr:merge`, which also needs the head commit's
-  `AI-REVIEW: PASS` from the `stackra-reviewer` app (`pnpm bot:review`), never the author
+- `Quality Gate` is the only required check, enforced by the `main` ruleset (squash only, linear history, no force
+  pushes, merge queue; `.github/rulesets/main.json`). Merges go through `pnpm pr:merge`, which needs an
+  `AI-REVIEW: PASS` from the `stackra-reviewer` app (`pnpm bot:review`), never the author, and then enqueues the PR.
+  The queue runs the gate on the PR on top of `main` and squash-merges it; a branch need not be up to date first.
+  A verdict survives a clean rebase or update-branch while the diff's `git patch-id --stable` is unchanged
+  ([ADR 0285](apps/docs/src/adr/0285-review-verdict-binds-to-the-patch-id.mdx)); any diff change needs a new review
   ([ADR 0230](apps/docs/src/adr/0230-reviewer-identity-separate-from-builder.mdx),
   [ADR 0119](apps/docs/src/adr/0119-merge-policy-and-release-authority.mdx)). Never `--admin`, never a push to `main`.
 - A PR's branch is Linear-named (`figentra/sta-<n>-<slug>`) and its title or branch names the STA key, or it carries
   the `chore-lane` label; `pnpm linear check-pr` enforces it in CI.
 - `.github/` changes are CI and permission changes, change risk R3
   ([ADR 0120](apps/docs/src/adr/0120-sdlc-spec-location-lanes-and-change-risk.mdx)).
-  `.github/branch-protection.json` stays strict JSON (`MUST_STAY_JSON`).
+  `.github/branch-protection.json` and `.github/rulesets/*.json` stay strict JSON (`MUST_STAY_JSON`); a ruleset
+  file changes in a PR first, and the owner applies it after merge (`gh api -X PUT repos/<repo>/rulesets/<id>
+--input .github/rulesets/main.json`).
 
 Report security issues privately, as described in [`SECURITY.md`](SECURITY.md).
