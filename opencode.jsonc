@@ -111,6 +111,8 @@
     { "action": "shell", "resource": "git ls-remote*", "effect": "deny" },
     { "action": "shell", "resource": "git remote update*", "effect": "deny" },
     { "action": "shell", "resource": "git submodule*", "effect": "deny" },
+    { "action": "shell", "resource": "git submodule status*", "effect": "allow" },
+    { "action": "shell", "resource": "git submodule summary*", "effect": "allow" },
     { "action": "shell", "resource": "git subtree*", "effect": "deny" },
     { "action": "shell", "resource": "git credential*", "effect": "deny" },
 
@@ -149,9 +151,10 @@
     { "action": "shell", "resource": "curl*", "effect": "deny" },
     { "action": "shell", "resource": "wget*", "effect": "deny" },
 
-    // Phase 2 (ADR 0293, amending ADR 0066): an executor fetches, and pushes its own feature branch, as the bot.
-    // The plugin keeps the push off main and off every other branch.
-    { "action": "shell", "resource": "pnpm bot:git -- fetch*", "effect": "allow" },
+    // Phase 2 (ADR 0293, amending ADR 0066): an executor fetches origin, and pushes its own feature branch, as the
+    // bot. The plugin keeps the push off main and off every other branch, and denies options that run a program.
+    { "action": "shell", "resource": "pnpm bot:git -- fetch origin", "effect": "allow" },
+    { "action": "shell", "resource": "pnpm bot:git -- fetch origin *", "effect": "allow" },
     { "action": "shell", "resource": "pnpm bot:git -- push origin HEAD", "effect": "allow" },
     {
       "action": "shell",

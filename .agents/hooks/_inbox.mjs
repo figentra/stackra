@@ -430,7 +430,7 @@ function writtenFiles(line) {
 }
 
 /** Commands that run the command after them (their options, `NAME=value` and a duration skipped). */
-const WRAPPERS = new Set([
+export const WRAPPERS = new Set([
   "sudo",
   "doas",
   "env",
@@ -444,7 +444,7 @@ const WRAPPERS = new Set([
   "stdbuf",
 ]);
 /** Wrapper options whose value is the next word (`sudo -u x`, `env -u NAME`, `nice -n 5`, `exec -a name`). */
-const WRAPPER_VALUE = new Set(["-u", "-n", "-a", "-g", "-C", "-k", "-s"]);
+export const WRAPPER_VALUE = new Set(["-u", "-n", "-a", "-g", "-C", "-k", "-s"]);
 const SHELL = new RegExp(`^${SHELL_NAME}$`);
 /** A shell, or `$` for a computed word that may be one (`caffeinate $SHELL`). */
 const shellLike = (name) => name === "$" || SHELL.test(name);
@@ -499,7 +499,7 @@ function runsFile(text, base) {
  * whether any expansion (`$`, backtick, `<(…)`) sits outside single quotes (`dynamic`), the operator after it
  * and where that operator ends. Substitution bodies are kept whole inside their word.
  */
-function simpleCommands(c) {
+export function simpleCommands(c) {
   const out = [];
   const fresh = () => ({ words: [], dyn: [], redirects: [], dynamic: false, op: "", end: 0 });
   let lessEnv = false; // LESSOPEN / LESSCLOSE set in this or an earlier command of the line
@@ -586,7 +586,7 @@ function simpleCommands(c) {
  * Index of the command name: past assignments, shell keywords and wrappers (`env -i A=1`, `nice -n 5`,
  * `timeout 5`, `busybox`). -1 when a wrapper builds the command from a string (`env -S`).
  */
-function commandAt(words) {
+export function commandAt(words) {
   let i = 0;
   let wrapped = false;
   while (i < words.length) {
@@ -747,7 +747,7 @@ function packageScriptOnly(words) {
   return true;
 }
 /** xargs options whose value is the next word. */
-const XARGS_VALUE = new Set(["-I", "-n", "-L", "-P", "-s", "-d", "-E", "-a", "-l"]);
+export const XARGS_VALUE = new Set(["-I", "-n", "-L", "-P", "-s", "-d", "-E", "-a", "-l"]);
 /** Words after which the next word is the command run (`pnpm exec "$X"`, `find -exec "$X"`). */
 const RUNS_NEXT = new Set(["exec", "dlx", "x", "-exec", "-execdir", "-ok", "-okdir"]);
 
@@ -868,7 +868,27 @@ function gitPrograms(args, dyn, add) {
       },
       add,
     );
+  // `--upload-pack`, `--receive-pack`, `--exec` (and clone's `-u`) name the program run for the remote end.
+  else if (["fetch", "pull", "ls-remote", "clone", "push", "archive"].includes(sub))
+    optionPrograms(
+      rest,
+      rdyn,
+      { short: sub === "clone" ? "u" : "", long: ["--upload-pack", "--receive-pack", "--exec"] },
+      add,
+    );
   return false;
+}
+
+/** True when git `args` (global options, the subcommand, its arguments) run a command line or a configured tool. */
+export function gitRunsProgram(args) {
+  let found = false;
+  return (
+    gitPrograms(
+      args,
+      args.map(() => false),
+      () => (found = true),
+    ) || found
+  );
 }
 
 /**
@@ -1225,13 +1245,18 @@ function classify(words) {
   while (i < words.length && (PREFIX.has(words[i]) || /^\w+=/.test(words[i]))) i++;
   const name = (words[i] ?? "").split("/").pop();
   const spec = COMMANDS[name];
+  // `[pnpm] linear comment <KEY> "…"`: the text after the key is prose.
+  const at = name === "linear" ? i : words[i + 1] === "linear" ? i + 1 : -1;
+  const proseFrom = at >= 0 && words[at + 1] === "comment" ? at + 3 : Infinity;
   const paths = words.slice(0, i + 1); // assignment values (`x=~/…`) are paths too
   const texts = [];
   let firstSeen = false;
   const pattern = (v) => /^[~$]/.test(v) && paths.push(v);
   for (let j = i + 1; j < words.length; j++) {
     const w = words[j];
-    if (PROSE_FLAG.test(w) || PROSE_EQ.test(w)) {
+    if (j >= proseFrom) {
+      if (RUNS.test(w)) paths.push(w);
+    } else if (PROSE_FLAG.test(w) || PROSE_EQ.test(w)) {
       const v = PROSE_FLAG.test(w) ? (words[++j] ?? "") : w;
       if (RUNS.test(v)) paths.push(v);
     } else if (spec && has(spec.value, w)) paths.push(w, words[++j] ?? "");
@@ -1270,7 +1295,10 @@ export function commandReachesInbox(cmd, { cwd, home = homedir() } = {}) {
   for (const words of lex(cmd)) {
     const { name, paths, texts, operands } = classify(words);
     if (texts.some((w) => LITERAL.test(w))) return true;
-    const recursive = RECURSIVE.test(paths.join(" "));
+    const recursive =
+      RECURSIVE.test(paths.join(" ")) ||
+      ["tree", "fd", "mdfind"].includes(name) ||
+      (name === "ls" && operands.some((w) => /^-\w*R/.test(w)));
     const opts = { recursive, home, cwd: dir };
     const tokens = paths.flatMap(tokensOf);
     if (tokens.some((t) => (URL.test(t) ? LITERAL.test(t) : reachesInbox(t, opts)))) return true;

@@ -31,22 +31,27 @@ Runs on session start, resume, compaction and clear. It prints the invariants: p
 
 The rules live in `.agents/hooks/_rules.mjs` and follow the tiers of [0293](/adr/0293-agent-permission-tiers-and-executor-pushes).
 Settings deny and ask rules in `.claude/settings.json` are the floor in every mode; the hook adds what a prefix rule
-cannot see. Every rule runs on the command and on its runner-free form, so `pnpm gh`, `pnpm exec infisical run`,
-`npx …` and `mise exec -- …` are judged like the command they wrap. Prose is not a command: quoted text, heredoc
-bodies and `-m` / `--title` / `--body` values are blanked, while `$(…)`, backticks, `sh -c` and `eval` bodies are
-checked.
+cannot see. Every rule runs on the command, its runner-free form and its dequoted form, so `pnpm gh`,
+`pnpm exec infisical run`, `npx …`, `mise exec -- …`, `timeout 5 gh`, `then gh` and `"gh"` are judged like the
+command they wrap. Prose is not a command: quoted text, heredoc bodies and `-m` / `--title` / `--body` /
+`linear comment` values are blanked, while `$(…)`, backticks, `sh -c` and `eval` bodies are checked. Redirections
+(`2>&1`, `> log`) are not operands.
 
 | Tier | Commands                                                                                                                                                                      |
 | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Deny | `infisical export`, `infisical secrets get` (every form) and `set`, a bare `infisical secrets`, `infisical run -- env\|printenv`, `env`, `printenv`, `ps -E`, `ps eww`        |
-| Deny | Reading or creating `.env*` and `.dev.vars`, the secrets inbox, `bot:token`, running `bot-token.mjs`, `$GH_TOKEN`, `git credential`, plain `gh`, network `git`, pack plumbing |
+| Deny | `infisical export`, `infisical secrets get` (every form) and `set`, a bare `infisical secrets`, `infisical run -- env\|printenv`, `infisical user get token`, `login --plain` |
+| Deny | `env`, `printenv`, `export -p`, `declare -x`, bare `set`, `ps -E`, `ps eww`, `security find-generic-password` and other keychain reads, `$…_TOKEN` / `$…_API_KEY`             |
+| Deny | Any command naming a secret file (`.env*`, `.dev.vars`, `*.pem`, `*.key`, `~/.git-credentials`, `~/.config/gh/`), the secrets inbox, `bot:token`, `git credential`            |
+| Deny | Plain `gh`, network `git`, pack plumbing; `bot:git` options that run a program (`--upload-pack`, `--receive-pack`, `--exec`, `clone -u`, `rebase -x`, `submodule foreach`)    |
 | Deny | A push to main; `--force` without a lease, `-f`, `--delete`, `--mirror`, `--prune`, `+refspec`, `:branch`; a `bot:git` push of anything but `HEAD` or the current branch      |
-| Deny | `reset --hard`, `checkout`/`restore .`, `checkout -f`, `switch --discard-changes`, `clean -f` and `worktree remove --force` outside the session's own linked worktree         |
-| Deny | `rm -rf` outside the session's own checkout (never a nested worktree) and the scratchpad; `git stash pop`, `clear`, `branch`, and `apply`/`drop` without a ref                |
-| Deny | `bot:review` from an agent type without `reviewer: true`, any merge outside `pnpm pr:merge`, the owner's label or approving review, `AI-REVIEW:` through plain `gh`           |
+| Deny | `reset --hard`, `checkout`/`restore .`, `checkout -f`, `switch --discard-changes`, `clean -f` and `worktree remove --force` in the main checkout or another agent's worktree  |
+| Deny | `rm -rf` outside the session's own checkout and the scratchpad, or of a worktree itself; `git stash pop`, `clear`, `branch`, and `apply`/`drop` without a ref                 |
+| Deny | `bot:review` from an agent type without `reviewer: true`, any merge or ref move outside `pnpm pr:merge`, the owner's label or approving review, an `AI-REVIEW:` body via `gh` |
 | Deny | `encore deploy`, `encore secret set/get`, `wrangler secret put/bulk`, `git tag <package>@<version>`, `DROP DATABASE/SCHEMA`, ORM push or migrate, `changeset version`         |
 | Ask  | Raw `infisical run`, `infisical secrets delete`, `secrets:import … --confirm`, `encore db reset`, `encore env set/create/delete`, `wrangler deploy` and `--remote`, `eas`     |
-| Ask  | `npx`, `pnpx`, `pnpm dlx`, `npm exec`, a `bot:git` push of tags, and a shell that runs text the guard cannot read (`curl … \| sh`)                                            |
+| Ask  | `npx`, `pnpx`, `pnpm dlx`, `npm exec`, a `bot:git` push of tags, and a shell that runs text the guard cannot read (`curl … \| sh`) or a computed command name (`$x …`)        |
+| Ask  | A `bot:gh` write (`api -X`/`-f`/`--input`, `repo edit`, `release`, `variable`, `secret`), a GraphQL label mutation, `git branch -D` of a branch no remote holds               |
+| Ask  | From the main checkout, discarding git or `rm -rf` in a nested linked worktree (`cd` or `-C`); build output there (`node_modules`, `dist`, `.turbo`) is allowed               |
 
 ### `guard-paths`
 

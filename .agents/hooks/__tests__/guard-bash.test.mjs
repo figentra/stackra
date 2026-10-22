@@ -509,7 +509,6 @@ const round3cDenied = [
   'git config alias.t "cred x fill" # -l',
   'git config alias.t "x --get"',
   "pnpm bot:git -- config alias.p x --get",
-  "git config --global --get user.name",
   "git config -e",
   "git config --edit",
   "git config --add remote.origin.push x",
@@ -1309,6 +1308,8 @@ test("bot:review runs only from a reviewer agent type", () => {
 
 test("destructive git runs only in the session's own linked worktree", () => {
   const { main, worktree, done } = repoWithWorktree();
+  const other = join(main, ".claude", "worktrees", "b");
+  spawnSync("git", ["worktree", "add", "-q", "-b", "feature/y", other], { cwd: main });
   const discarding = [
     "git reset --hard",
     "git reset --merge",
@@ -1327,7 +1328,14 @@ test("destructive git runs only in the session's own linked worktree", () => {
     assert.equal(decision(c, main), "deny", `main checkout: ${c}`);
     assert.equal(decision(`git -C ${main} ${c.slice(4)}`, worktree), "deny", `-C main: ${c}`);
     assert.equal(decision(`cd ${main} && ${c}`, worktree), "deny", `cd main: ${c}`);
-    assert.equal(decision(`cd ${worktree} && ${c}`, main), "deny", `another session's: ${c}`);
+    assert.equal(decision(`cd ${other} && ${c}`, worktree), "deny", `another agent's: ${c}`);
+    // STA-330 review: an orchestrated subagent's shell starts in the main checkout; a nested worktree asks
+    assert.equal(decision(`cd ${worktree} && ${c}`, main), "ask", `nested, cd from main: ${c}`);
+    assert.equal(
+      decision(`git -C ${worktree} ${c.slice(4)}`, main),
+      "ask",
+      `nested, -C from main: ${c}`,
+    );
   }
   assert.equal(decision("cd $X && git reset --hard", worktree), "deny");
   assert.equal(decision('git checkout "."', main), "deny");
@@ -1337,8 +1345,9 @@ test("destructive git runs only in the session's own linked worktree", () => {
   assert.equal(decision(`GIT_DIR=${main}/.git git reset --hard`, worktree), "deny");
   for (const c of ["git clean -n", "git restore --staged .", "git reset --soft HEAD~1"])
     assert.equal(decision(c, main), "allow", c);
-  // worktree remove --force: only the session's own worktree
-  assert.equal(decision(`git worktree remove --force ${worktree}`, main), "deny");
+  // worktree remove --force: only the session's own worktree; a nested one from the main checkout asks
+  assert.equal(decision(`git worktree remove --force ${worktree}`, main), "ask");
+  assert.equal(decision(`git worktree remove --force ${other}`, worktree), "deny");
   assert.equal(decision(`git worktree remove -f ${worktree}`, worktree), "allow");
   assert.equal(decision(`git worktree remove ${worktree}`, main), "allow");
   done();
@@ -1365,6 +1374,16 @@ test("rm -rf: own checkout (never a nested worktree), the scratchpad, cd followe
     assert.equal(decision(c, main), "allow", c);
   assert.equal(decision("rm -rf dist", worktree), "allow");
   assert.equal(decision(`rm -rf ${main}/src`, worktree), "deny");
+  // STA-330 review: from the main checkout, build output in a nested worktree goes; anything else there asks
+  for (const c of [
+    `rm -rf ${worktree}/node_modules`,
+    `cd ${worktree} && rm -rf node_modules dist .turbo`,
+    "rm -rf dist 2> /dev/null",
+    "rm -rf dist &>/dev/null",
+  ])
+    assert.equal(decision(c, main), "allow", c);
+  for (const c of [`rm -rf ${worktree}/src`, `cd ${worktree} && rm -rf src`])
+    assert.equal(decision(c, main), "ask", c);
   done();
 });
 
@@ -1397,6 +1416,11 @@ test("push forms: no force without a lease, no delete, only HEAD or the current 
     "pnpm bot:git -- push --force-with-lease origin HEAD",
     "pnpm bot:git -- push --force-with-lease --force-if-includes origin HEAD",
     "pnpm bot:git -- push",
+    // STA-330 review: a redirection is not a refspec
+    `pnpm bot:git -C ${worktree} push -u origin HEAD 2>&1 | tail -5`,
+    "pnpm bot:git -- push -u origin HEAD 2>/dev/null",
+    "pnpm bot:git -- push -u origin HEAD > /tmp/push.log",
+    "pnpm bot:git -- push --force-with-lease origin HEAD 2>&1",
   ])
     assert.equal(decision(c, worktree), "allow", c);
   for (const c of [
@@ -1408,3 +1432,160 @@ test("push forms: no force without a lease, no delete, only HEAD or the current 
     assert.equal(decision(c, worktree), "ask", c);
   done();
 });
+
+test("git branch -D asks only for a branch whose commits no remote holds", () => {
+  const { main, done } = repoWithWorktree();
+  const env = { ...process.env, GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t" };
+  Object.assign(env, { GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" });
+  const git = (...a) => spawnSync("git", a, { cwd: main, env, encoding: "utf8" }).stdout.trim();
+  git("config", "remote.origin.url", "https://example.invalid/x.git");
+  git("config", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*");
+  for (const b of ["scratch", "pushed", "merged"]) {
+    git("switch", "-q", "-c", b, "main");
+    git("commit", "-q", "--allow-empty", "-m", b);
+  }
+  git("switch", "-q", "main");
+  git("update-ref", "refs/remotes/origin/pushed", git("rev-parse", "pushed"));
+  // a squash-merged PR branch: GitHub deleted it, so after a fetch its upstream is gone
+  git("config", "branch.merged.remote", "origin");
+  git("config", "branch.merged.merge", "refs/heads/merged");
+  for (const c of ["git branch -D pushed", "git branch -D merged", "git branch -d scratch"])
+    assert.equal(decision(c, main), "allow", c);
+  for (const c of [
+    "git branch -D scratch",
+    "git branch -df scratch",
+    "git branch --delete --force scratch",
+    "cd $X && git branch -D scratch",
+  ])
+    assert.equal(decision(c, main), "ask", c);
+  done();
+});
+
+// ---- STA-330 review: the attack pass on PR 113 ------------------------------------------------------------
+
+for (const c of [
+  // wrappers with options, and the shell keywords that open a command
+  "timeout 10 gh pr merge 113",
+  "nice -n 5 gh pr merge 113",
+  "stdbuf -oL gh pr merge 113",
+  "doas gh pr merge 113",
+  "caffeinate -i gh pr merge 113",
+  "watch -n 1 gh pr list",
+  "script -q /dev/null gh pr merge 113",
+  "sudo -u x gh pr merge 113",
+  "env -i gh pr merge 113",
+  "command -p gh pr merge 113",
+  "timeout 5 git fetch origin",
+  "timeout 5 printenv",
+  "if true; then gh pr merge 113; fi",
+  "for i in 1; do gh pr merge 113; done",
+  "! gh pr merge 113",
+  "if gh pr merge 113; then echo; fi",
+  "while gh pr list; do :; done",
+  "if true; then git push origin x; fi",
+  "if true; then printenv; fi",
+  // bot:git options that run a program with every /agents value in its environment
+  "pnpm bot:git -- fetch --upload-pack 'touch /tmp/x' origin",
+  "pnpm bot:git -- fetch --upload-pack='touch /tmp/x' origin",
+  "pnpm bot:git -- ls-remote --upload-pack=x origin",
+  "pnpm bot:git -- clone -u x https://github.com/a/b",
+  "pnpm bot:git -- pull --upload-pack x origin",
+  "pnpm bot:git -- push --receive-pack=x origin HEAD",
+  "pnpm bot:git -- push --exec=x origin HEAD",
+  "pnpm bot:git -- rebase -x 'pnpm test' origin/main",
+  "pnpm bot:git -- bisect run pnpm test",
+  "pnpm bot:git -- submodule foreach 'echo x'",
+  "pnpm --silent bot:git -- -C /tmp/x fetch --upload-pack x origin",
+  // an Infisical access token and the keychain
+  "infisical user get token",
+  "infisical --domain x user get token --plain",
+  "infisical login --method=universal-auth --plain --silent",
+  "pnpm exec infisical user get token",
+  "security find-generic-password -s x -w",
+  "timeout 5 security find-generic-password -s x -w",
+  "command security find-internet-password -s x",
+  "/usr/bin/security dump-keychain",
+  "pnpm exec security find-generic-password -s x",
+  // a secret file named by any command
+  "cat apps/console/.env",
+  "base64 .env",
+  "xxd .env",
+  "< .env cat",
+  "source .env",
+  "cat key.pem",
+  "cat ~/.git-credentials",
+  "cat ~/.netrc",
+  "cat ~/.config/gh/hosts.yml",
+  'cat ".env"',
+  // merges and ref moves outside pr:merge
+  "pnpm bot:gh -- api graphql -f query='mutation { mergeBranch(input: {}) { clientMutationId } }'",
+  "pnpm bot:gh -- api graphql -f query='mutation { createCommitOnBranch(input: {}) { x } }'",
+  "pnpm bot:gh -- api graphql -f query='mutation { updateRef(input: {}) { x } }'",
+  "pnpm bot:gh -- api graphql -f query='mutation { updateRefs(input: {}) { x } }'",
+  "pnpm bot:gh -- api graphql -f query='mutation { deleteRef(input: {}) { x } }'",
+  "pnpm bot:gh -- api -X POST repos/figentra/stackra/merges -f base=main -f head=x",
+  // a quoted or escaped command name
+  '"gh" pr merge 1',
+  "g''h pr merge 1",
+  "\\gh pr merge 1",
+  '"git" push origin main',
+  "'printenv'",
+  // environment dumps
+  "export -p",
+  "declare -x",
+  "set",
+  "env -u X",
+  "echo $LINEAR_API_KEY",
+  // -c values that run a command
+  "git -c core.editor=vim commit",
+  "git -c core.editor='sh -c x' commit",
+])
+  test(`deny (STA-330 review): ${c}`, () => assert.equal(decision(c), "deny"));
+
+for (const c of [
+  "$x pr merge 1",
+  "$(echo gh) pr merge 1",
+  "pnpm bot:gh api -X POST repos/figentra/stackra/issues/113/comments -f body=hi",
+  "pnpm --silent bot:gh -- api -X DELETE repos/figentra/stackra/git/refs/heads/x",
+  "pnpm bot:gh repo edit --enable-auto-merge",
+  "pnpm --silent bot:gh -- release create v1",
+  "pnpm bot:gh variable set X",
+  'pnpm bot:gh -- api graphql -f query=\'mutation { addLabelsToLabelable(input: {labelableId: "x", labelIds: ["y"]}) { clientMutationId } }\'',
+])
+  test(`ask (STA-330 review): ${c}`, () => assert.equal(decision(c), "ask"));
+
+for (const c of [
+  "command -v gh",
+  "nice grep gh file",
+  "xargs -0 grep -l gh",
+  "pnpm bot:git -- fetch origin",
+  "pnpm bot:git -- fetch -u origin",
+  "security list-keychains",
+  "cat .npmrc",
+  "pnpm bot:gh -- api repos/figentra/stackra/pulls/113",
+  'pnpm bot:gh pr create --title "x" --body "use api -X POST to repo edit"',
+  'echo "a; gh pr merge 1"',
+  // git config reads, past any scope option
+  "git config user.email",
+  "git config core.hooksPath",
+  "git config --global user.name",
+  "git config --global --get user.name",
+  "git config --local --get remote.origin.url",
+  "git config --local -l",
+  // prose that names a guarded command
+  'git commit -m "fix(hooks): grep and cat of .env stay denied"',
+  'git commit -m "docs: never cp a .env file; use .env.example"',
+  'grep -rn "no .env files" .agents/rules',
+  'pnpm bot:gh pr create --title "fix(hooks): x" --body "Agents never cp .env.example to .env; secrets come from Infisical."',
+  'pnpm linear comment STA-330 "Checked: nothing does touch .env"',
+  'git commit -m "docs(secrets): infisical run -- printenv is denied"',
+  'pnpm linear comment STA-330 "the Secrets-inbox import works"',
+  // reading verdicts and replying to them is not posting one
+  "pnpm bot:gh api repos/figentra/stackra/issues/113/comments --jq '.[] | select(.body | startswith(\"AI-REVIEW:\")) | .body'",
+  'pnpm bot:gh pr comment 113 --body "Addressed the AI-REVIEW: findings in b65a930."',
+  // harmless -c values
+  "git -c core.editor=true rebase --continue",
+  "git -c sequence.editor=: rebase -i origin/main",
+  "git -c commit.gpgsign=false commit -m wip",
+])
+  test(`allow (STA-330 review): ${c}`, () => assert.equal(decision(c), "allow"));

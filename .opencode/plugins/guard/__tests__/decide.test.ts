@@ -895,6 +895,8 @@ test("executors commit locally and push only their own HEAD through bot:git (pha
     "pnpm bot:git -- fetch origin main",
     "pnpm bot:git -- push origin HEAD",
     "pnpm bot:git -- push --force-with-lease origin HEAD",
+    "git submodule status",
+    "git submodule summary",
   ])
     assert.equal(shell(c), "allow", c);
   for (const c of [
@@ -902,6 +904,12 @@ test("executors commit locally and push only their own HEAD through bot:git (pha
     "pnpm bot:git -- push origin feature/y",
     "pnpm bot:git -- push --force origin HEAD",
     "pnpm bot:git -- push --tags",
+    // STA-330 review: a fetch runs no program in the bot's environment, and executors fetch origin only
+    "pnpm bot:git -- fetch --upload-pack x origin",
+    "pnpm bot:git -- fetch origin --upload-pack=x",
+    "pnpm bot:git -- fetch https://github.com/a/b",
+    "pnpm bot:git -- rebase -x 'pnpm test' main",
+    "git submodule update --init",
     "pnpm bot:gh -- pr create --fill",
     "pnpm pr:merge 1",
     "pnpm linear comment STA-1 x",

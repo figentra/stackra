@@ -18,11 +18,17 @@ import { realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import {
+  WRAPPERS,
+  WRAPPER_VALUE,
+  XARGS_VALUE,
+  commandAt,
   commandReachesInbox,
+  gitRunsProgram,
   rawSubstitutions,
   reachesInbox,
   scanShell,
   scriptStrings,
+  simpleCommands,
   runsOpaque,
   stripHeredocs,
 } from "./_inbox.mjs";
@@ -31,7 +37,11 @@ import { REVIEWER_AGENTS } from "./_reviewer-agents.mjs";
 /** The only `-c` keys an agent may set: display, identity and rerere; none runs a command or redirects a remote. */
 const ALLOWED_C =
   /^(?:color\.ui|color\.diff|color\.status|color\.branch|core\.quotepath|core\.abbrev|core\.precomposeunicode|user\.name|user\.email|advice\.detachedhead|diff\.renames|diff\.algorithm|diff\.context|diff\.noprefix|log\.abbrevcommit|log\.decorate|log\.date|merge\.ff|merge\.conflictstyle|pull\.rebase|pull\.ff|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.short|status\.branch|status\.showuntrackedfiles|rerere\.enabled)$/i;
-/** `git config` modes that only read; the first option must be one of them. */
+/** `-c key=value` pairs that are safe only with this value: a no-op editor, signing off. */
+const SAFE_C_VALUE =
+  /^(?:(?:core|sequence)\.editor=(?:true|:|cat)|(?:commit|tag)\.gpgsign=false)$/i;
+const allowedC = (kv) => ALLOWED_C.test(kv.split("=")[0]) || SAFE_C_VALUE.test(kv);
+/** `git config` modes that only read; the first option after the scope must be one of them. */
 const CONFIG_READ = new Set([
   "--get",
   "--get-all",
@@ -80,18 +90,28 @@ function configWords(rest) {
   end();
   return out;
 }
+/** `git config` options before the mode that only pick a scope or an output format; `-f` / `--file` take a value. */
+const CONFIG_SCOPE =
+  /^(?:--(?:local|global|system|worktree|show-origin|show-scope|includes|no-includes|null|name-only|bool|int|path|(?:file|blob|type|default)=\S*)|-z)$/;
+const CONFIG_SCOPE_VALUE = new Set(["-f", "--file", "--blob", "--type", "--default"]);
 /**
- * True when `git config` words are neither a plain read (the first option reads, no write flag follows) nor a
- * local write of one allowed key (`git config [--local] rerere.enabled true`).
+ * True when `git config` words are neither a read (past the scope options: a read mode, or one key alone,
+ * `git config --global user.name`; no write flag anywhere) nor a local write of one allowed key
+ * (`git config [--local] rerere.enabled true`).
  */
 function configWrites(words) {
-  const [first, ...rest] = words;
-  const reads =
-    CONFIG_READ.has(first) ||
-    (["--show-origin", "--show-scope"].includes(first) && rest.some((w) => CONFIG_READ.has(w)));
-  const local = words[0] === "--local" ? words.slice(1) : words;
-  const allowedKey = local.length === 2 && ALLOWED_C.test(local[0]);
-  return !(reads || allowedKey) || rest.some((w) => CONFIG_WRITE.has(w));
+  let i = 0;
+  let shared = false; // a scope other than the repository's own config: --global, --system, --worktree, a file
+  for (; i < words.length; i++) {
+    const w = words[i];
+    if (CONFIG_SCOPE_VALUE.has(w)) shared ||= ["-f", "--file", "--blob"].includes(words[i++]);
+    else if (CONFIG_SCOPE.test(w)) shared ||= /^--(?:global|system|worktree|file=|blob=)/.test(w);
+    else break;
+  }
+  const rest = words.slice(i);
+  if (rest.some((w) => CONFIG_WRITE.has(w))) return true;
+  if (CONFIG_READ.has(rest[0]) || (rest.length === 1 && !rest[0].startsWith("-"))) return false;
+  return !(rest.length === 2 && ALLOWED_C.test(rest[0]) && !shared);
 }
 /** Every `git … config …` or `git -c <key>` in `d` that could write config or run a command (STA-216). */
 function gitConfigUnsafe(d) {
@@ -102,8 +122,7 @@ function gitConfigUnsafe(d) {
   );
   for (const m of d.matchAll(re)) {
     for (const t of m[1].matchAll(opt))
-      if (t.groups.v !== undefined && !ALLOWED_C.test(unquote(t.groups.v).split("=")[0]))
-        return true;
+      if (t.groups.v !== undefined && !allowedC(unquote(t.groups.v))) return true;
     const rest = d.slice(m.index + m[0].length);
     if (/^config\b/.test(rest) && configWrites(configWords(rest.slice(6)))) return true;
   }
@@ -116,16 +135,27 @@ const GIT_OPTS = String.raw`(?:(?:-[Cc]\s+(?:${Q})|--(?:git-dir|work-tree|namesp
 /** `git` (or `pnpm bot:git --`) followed by any global options before the subcommand. */
 const GIT = String.raw`\bgit\s+(?:--\s+)?` + GIT_OPTS;
 
-/** Command position: start, or after a separator, optionally behind `VAR=x` assignments. */
-const CMDPOS = String.raw`(?:^|[|;&(\n])\s*(?:\w+=\S*\s+)*`;
+/** Wrapper options whose value is the next word (`sudo -u x`, `nice -n 5`, `xargs -I {}`), as one character class. */
+const VALUE_FLAGS = [...new Set([...WRAPPER_VALUE, ...XARGS_VALUE])]
+  .map((f) => f.slice(1))
+  .join("");
+/**
+ * Words before a command name: the shared wrappers with their options, values, durations and assignments
+ * (`timeout 5`, `nice -n 5`, `sudo -u x`, `env -i A=1`, `stdbuf -oL`), `xargs`, `caffeinate`, `watch`,
+ * `script -q <file>`, `command -p` (not `command -v`: it prints a path) and the shell keywords that open a
+ * command (`if`, `then`, `do`, `!`, `{`).
+ */
+const LEAD = String.raw`(?:(?:\S*/)?(?:${[...WRAPPERS, "xargs", "caffeinate", "watch"].filter((w) => w !== "command").join("|")})(?:\s+(?:-[${VALUE_FLAGS}]\s+\S+|-\S+|\d+(?:\.\d+)?[smhd]?|\w+=\S*))*|(?:\S*/)?script(?:\s+-\S+)*(?:\s+\S+)?|command(?:\s+-p)?|if|elif|while|until|then|do|else|!|\{)\s+`;
+/** Command position: start, or after a separator, behind `VAR=x` assignments, wrappers and keywords. */
+const CMDPOS = String.raw`(?:^|[|;&(\n\x60])\s*(?:${LEAD}|\w+=(?:\$\([^)]*\)|\S*)\s+)*`;
 
 /**
  * Owner-login guard (STA-208, ADR 0230 rule 5): `gh` and `git` at command position run with the owner's
  * `gh auth` login and git credential helper. Agents use the bot wrappers instead, which fail closed when no token
- * can be minted. Wrappers like `sudo`, `env`, `xargs`, `time` are looked through; runners (`pnpm exec`, `npx`)
- * by `lookThroughRunners`.
+ * can be minted. Wrappers and keywords are looked through (`CMDPOS`); runners (`pnpm exec`, `npx`) by
+ * `lookThroughRunners`.
  */
-const BARE = String.raw`(?:^|[|;&(\n\x60])\s*(?:(?:sudo|command|exec|time|nohup|env|xargs(?:\s+-\S+)*)\s+|\w+=(?:\$\([^)]*\)|\S*)\s+)*(?:\S*/)?`;
+const BARE = CMDPOS + String.raw`(?:\S*/)?`;
 const BARE_GH = new RegExp(BARE + String.raw`gh(?:\s|$)`);
 const BARE_GIT = (sub) =>
   new RegExp(BARE + String.raw`git\s+` + GIT_OPTS + String.raw`(?:${sub})\b`);
@@ -211,14 +241,20 @@ function segments(c) {
     } else if (ch === "'" || ch === '"') {
       quote = ch;
       cur += ch;
-    } else if (/[|;&\n]/.test(ch)) {
+    } else if (/[|;\n]/.test(ch) || (ch === "&" && !/[<>]/.test(c[i - 1]) && c[i + 1] !== ">")) {
       out.push(cur);
       cur = "";
-    } else cur += ch;
+    } else cur += ch; // `2>&1`, `>&2` and `&>f` are redirections, not separators
   }
   out.push(cur);
   return out;
 }
+/** `words` without redirections: `2>&1`, `2>/dev/null`, `>log`, and a bare operator with its target (`> log`). */
+const dropRedirects = (words) =>
+  words.filter(
+    (w, k) =>
+      !/^\d*(?:[<>]|&>)/.test(w) && !/^\d*(?:[<>]{1,2}|&>>?|>&|<&|>\|)$/.test(words[k - 1] ?? ""),
+  );
 const unquote = (w) => w.replace(/^['"]+|['"]+$/g, "");
 /**
  * Prose is not a command: blank the quoted `-m` / `--message` / `--title` / `--body` value and the text of
@@ -335,12 +371,13 @@ function gitCommands(text, cwd) {
       const where = target;
       out.push({
         sub: m[2],
-        args: seg
-          .slice(m.index + m[0].length + m[2].length)
-          .split(/\s+/)
-          .filter(Boolean)
-          .map(unquote),
-        bot: /\bbot:git\b/.test(seg),
+        args: dropRedirects(
+          seg
+            .slice(m.index + m[0].length + m[2].length)
+            .split(/\s+/)
+            .filter(Boolean),
+        ).map(unquote),
+        bot: /\bbot:git\b|\bbot-gh\.mjs\s+git\b/.test(seg),
         gitDir: where === null || where.some((w) => /^--(?:git-dir|bare)\b/.test(w)),
         run: (...args) => (at === null || where === null ? "" : git(at, ...where, ...args)),
       });
@@ -376,11 +413,12 @@ const isRecursiveForce = (flags) =>
 const scratchRoot = () => realDir(`/tmp/claude-${process.getuid?.() ?? 0}`);
 
 /**
- * `rm -rf` on anything outside the allowed roots: strictly inside this session's own checkout (never a linked
- * worktree nested in it, nor a path that contains one) or the scratchpad. `cd` segments are followed; a relative
+ * Where each `rm -rf` operand lands (`rmPlace`), memoised per command. `cd` segments are followed; a relative
  * operand after an unknown `cd` (`cd $X`, a `cd` in a script string), `~`, `$` expansions and a bare `*` deny.
  */
-function unsafeRmRf(c, ctx) {
+const rmPlaces = (c, ctx) => ctx.memo(`rm\0${c}`, () => rmScan(c, ctx));
+function rmScan(c, ctx) {
+  const out = [];
   for (const [text, base] of scanBases(c, ctx.cwd)) {
     let dir = base;
     for (const seg of segments(text)) {
@@ -391,21 +429,27 @@ function unsafeRmRf(c, ctx) {
       }
       if (NESTED_CD.test(seg)) dir = null;
       const quoted = scanShell(seg).spans; // `echo "rm -rf /"` is prose; `bash -c "…"` is scanned as its own text
-      for (const m of seg.matchAll(/\brm\s+([^|;&\n)]*)/g)) {
+      for (const m of seg.matchAll(/\brm\s+([^|;\n)]*)/g)) {
         if (quoted.some(([a, b]) => m.index >= a && m.index < b)) continue;
-        const words = m[1].split(/\s+/).map(unquote).filter(Boolean);
+        const words = dropRedirects(m[1].split(/\s+/).filter(Boolean)).map(unquote).filter(Boolean);
         if (!isRecursiveForce(words.filter((w) => w.startsWith("-")))) continue;
-        for (const t of words.filter((w) => !w.startsWith("-")))
-          if (!rmAllowed(t, dir, ctx)) return true;
+        for (const t of words.filter((w) => !w.startsWith("-"))) out.push(rmPlace(t, dir, ctx));
       }
     }
   }
-  return false;
+  return out;
 }
-/** True when `rm -rf <t>`, run in `dir` (null when unknown), stays inside the allowed roots. */
-function rmAllowed(t, dir, ctx) {
-  if (/^[~$]/.test(t) || /[$`]/.test(t) || /^(\.\/)?\.?\*$/.test(t)) return false;
-  if (!t.startsWith("/") && dir === null) return false;
+/** Build output and caches, regenerated by a build or `pnpm install`: removable in any worktree. */
+const REGENERABLE = /^(?:node_modules|dist|\.turbo|\.stackra|coverage|\.cache)$/;
+/**
+ * Where `rm -rf <t>`, run in `dir` (null when unknown), lands: "ok" strictly inside this session's own checkout or
+ * the scratchpad; "nested" strictly inside a linked worktree nested in that checkout (another agent's, or this
+ * session's reached by `cd` from the main checkout), unless it is build output; "deny" anywhere else, a nested
+ * worktree itself, or a path that contains one.
+ */
+function rmPlace(t, dir, ctx) {
+  if (/^[~$]/.test(t) || /[$`]/.test(t) || /^(\.\/)?\.?\*$/.test(t)) return "deny";
+  if (!t.startsWith("/") && dir === null) return "deny";
   // The entry itself, not a symlink's target: rm removes the link.
   const path = resolve(dir ?? "/", t);
   const real = join(realDir(dirname(path)), basename(path));
@@ -413,10 +457,10 @@ function rmAllowed(t, dir, ctx) {
   const inside = [own.root, scratchRoot()].some((r) => r && real.startsWith(r + sep));
   // A glob reaches everything under its static part (`.claude/worktrees/*`).
   const probe = /[*?[]/.test(real) ? dirname(real.slice(0, real.search(/[*?[]/) + 1)) : real;
-  const nested = own.nested.some(
-    (w) => w === probe || w.startsWith(probe + sep) || probe.startsWith(w + sep),
-  );
-  return inside && !nested;
+  if (!inside) return "deny";
+  if (own.nested.some((w) => w === probe || w.startsWith(probe + sep))) return "deny";
+  if (!own.nested.some((w) => probe.startsWith(w + sep))) return "ok";
+  return REGENERABLE.test(basename(real)) ? "ok" : "nested";
 }
 
 /**
@@ -515,29 +559,59 @@ function discards({ sub, args }) {
   return false;
 }
 /**
- * True when `top` (a checkout's toplevel) is this session's own linked worktree. A command that names a git
- * directory (`--git-dir`, `GIT_DIR=`, `--bare`) is never the session's own: git then uses the cwd as the worktree
- * of another repository's index.
+ * Where a checkout (`top`, its toplevel) sits for this session: "own" (the session's own linked worktree),
+ * "nested" (a linked worktree nested in the session's checkout, reached by `cd` or `-C` from the main checkout:
+ * an orchestrated subagent's shell starts there) or "other". A command that names a git directory (`--git-dir`,
+ * `GIT_DIR=`, `--bare`) is "other": git then uses the cwd as the worktree of another repository's index.
  */
-const isOwn = (top, ctx, g) => {
+function placeOf(top, ctx, g) {
+  if (!top || g.gitDir) return "other";
   const own = ctx.own();
-  return Boolean(top) && !g.gitDir && !own.main && realDir(top) === own.root;
-};
-/** A discarding git command whose checkout is not this session's own linked worktree (`ownWorktreeOnly`). */
-const discardsOutsideOwn = (c, ctx) =>
-  scanBases(c, ctx.cwd).some(([t, base]) =>
-    gitCommands(t, base).some(
-      (g) => discards(g) && !isOwn(g.run("rev-parse", "--show-toplevel"), ctx, g),
+  const real = realDir(top);
+  if (!own.main && real === own.root) return "own";
+  return own.nested.includes(real) ? "nested" : "other";
+}
+/**
+ * The place (`placeOf`) of every git command that discards work: a discarding command (`discards`) and
+ * `git worktree remove --force|-f` (its path's checkout). Memoised per command: two rules read it.
+ */
+const discardPlaces = (c, ctx) =>
+  ctx.memo(`discard\0${c}`, () =>
+    scanBases(c, ctx.cwd).flatMap(([t, base]) =>
+      gitCommands(t, base).flatMap((g) => {
+        if (discards(g)) return [placeOf(g.run("rev-parse", "--show-toplevel"), ctx, g)];
+        if (g.sub !== "worktree" || g.args[0] !== "remove") return [];
+        if (!g.args.some((a) => /^(?:--force|-[a-zA-Z]*f[a-zA-Z]*)$/.test(a))) return [];
+        const path = g.args.slice(1).find((a) => !a.startsWith("-"));
+        return [
+          path ? placeOf(g.run("-C", path, "rev-parse", "--show-toplevel"), ctx, g) : "other",
+        ];
+      }),
     ),
   );
-/** `git worktree remove --force|-f` of anything but this session's own worktree. */
-const removesOtherWorktree = (c, ctx) =>
+/**
+ * `git branch -D` (or `-d --force`) of a branch whose commits exist only here: no remote-tracking ref holds its
+ * tip and its upstream is not gone (a squash-merged PR branch deleted on GitHub is gone after a fetch).
+ */
+const deletesUnpushedBranch = (c, ctx) =>
   scanBases(c, ctx.cwd).some(([t, base]) =>
     gitCommands(t, base).some((g) => {
-      if (g.sub !== "worktree" || g.args[0] !== "remove") return false;
-      if (!g.args.some((a) => /^(?:--force|-[a-zA-Z]*f[a-zA-Z]*)$/.test(a))) return false;
-      const path = g.args.slice(1).find((a) => !a.startsWith("-"));
-      return !path || !isOwn(g.run("-C", path, "rev-parse", "--show-toplevel"), ctx, g);
+      if (g.sub !== "branch") return false;
+      const flag = (re) => g.args.some((a) => re.test(a));
+      const force =
+        flag(/^-[a-zA-Z]*D/) ||
+        (flag(/^(?:-[a-zA-Z]*d[a-zA-Z]*|--delete)$/) && flag(/^(?:-[a-zA-Z]*f[a-zA-Z]*|--force)$/));
+      if (!force || flag(/^(?:-[a-zA-Z]*r[a-zA-Z]*|--remotes)$/)) return false;
+      return g.args
+        .filter((a) => !a.startsWith("-"))
+        .some((name) => {
+          const tip = g.run("rev-parse", "--verify", "--quiet", `refs/heads/${name}`);
+          if (!tip) return !g.run("rev-parse", "--git-dir"); // an unknown checkout asks; git refuses a missing branch
+          if (g.run("branch", "-r", "--contains", tip)) return false;
+          return (
+            g.run("for-each-ref", "--format=%(upstream:track)", `refs/heads/${name}`) !== "[gone]"
+          );
+        });
     }),
   );
 /** Why a `git stash` touches the stack every worktree shares, or null. */
@@ -554,9 +628,12 @@ function stashRefusal(c, ctx) {
   return null;
 }
 
-/** `pnpm bot:gh` merging a PR: `pr merge`, `api …/pulls/<n>/merge` (any method), or a GraphQL merge or enqueue mutation. */
+/**
+ * `pnpm bot:gh` merging or moving a branch outside `pr:merge`: `pr merge`, `api …/pulls/<n>/merge` (any method),
+ * `api repos/<o>/<r>/merges`, and the GraphQL merge, enqueue, commit-on-branch and ref mutations.
+ */
 const MERGE =
-  /\bpr\s+(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?merge\b|\bpulls(?:\/|%2F)+\d+(?:\/|%2F)+merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest)\b/i;
+  /\bpr\s+(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?merge\b|\bpulls(?:\/|%2F)+\d+(?:\/|%2F)+merge\b|\brepos(?:\/|%2F)+[^/\s%]+(?:\/|%2F)+[^/\s%]+(?:\/|%2F)+merges\b|\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest|mergeBranch|createCommitOnBranch|updateRefs?|deleteRef)\b/i;
 /** A word percent-decoded (up to three layers), then slashes collapsed and `.` / `..` segments resolved (STA-216). */
 function normalizeWord(w) {
   let d = w;
@@ -610,6 +687,40 @@ const writesOwnerApproval = (c) =>
     ),
   );
 
+/** A GraphQL label mutation: it takes label ids, so the label it writes cannot be read from the command. */
+const LABEL_MUTATION =
+  /\b(?:add|remove|replace|clear)Labels\w*Labelable\b|\b(?:create|update|delete)Label\b/;
+const botLabelMutation = (c) =>
+  [dropMessages(c), ...runnable(c)].some((t) =>
+    segments(t).some((s) => /\bbot:gh\b/.test(blank(s)) && LABEL_MUTATION.test(s)),
+  );
+/** A `pnpm bot:gh` write: `api` with a method or a field (pflag bundles: `-iX`), a repo edit, a release, a variable or secret. */
+const BOT_GH_WRITE =
+  /\bbot:gh\s+(?:--\s+)?(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:api\b[^|;&\n]*\s(?:-(?!-)[a-zA-Z]*[XfF]|--(?:method|field|raw-field|input)\b)|repo\s+(?:edit|delete|rename|archive)\b|release\s+(?:create|edit|delete|upload)\b|(?:variable|secret)\b)/;
+/**
+ * A `pnpm bot:git` command that runs a program in the bot's environment, which holds every /agents value:
+ * `--upload-pack`, `--receive-pack`, `--exec`, `clone -u`, `rebase -x`, `bisect run`, `submodule foreach`,
+ * `difftool`, `mergetool`, `filter-branch`, `grep -O` (`gitRunsProgram`).
+ */
+const botGitRunsProgram = (c) =>
+  scanTexts(c).some((t) =>
+    gitCommands(t, null).some((g) => g.bot && gitRunsProgram([g.sub, ...g.args])),
+  );
+/**
+ * A simple command whose name is computed (`$x pr merge`, `$(echo gh) …`, `env -S`): no text rule can read it.
+ * Script strings (`eval "$(mise activate zsh)"`) are `runsOpaque`'s, which trusts the toolchain's setup.
+ */
+const substitutionTexts = (c) => scanShell(c).bodies.flatMap((b) => [b, ...substitutionTexts(b)]);
+const computedName = (c) =>
+  [c, ...substitutionTexts(c)].some((t) =>
+    simpleCommands(t).some((s) => {
+      const i = commandAt(s.words);
+      // `$HOME/.local/bin/mise` is a path the text rules still read (`(?:\S*/)?gh`).
+      const name = (s.words[i] ?? "").replace(/^(?:\$HOME|\$\{HOME\})(?=\/)/, "");
+      return i < 0 || (i < s.words.length && s.dyn[i] && /[$`]/.test(name));
+    }),
+  );
+
 /** Running the reviewer wrapper: `pnpm bot:review`, or `bot-gh.mjs review` directly. */
 const BOT_REVIEW =
   /(?:^|[\s(])(?:\S*\/)?(?:pnpm|npm|yarn)\s+(?:-\S+\s+)*(?:run\s+)?bot:review\b|\bbot-gh\.mjs\s+review\b/;
@@ -653,8 +764,28 @@ const RULES = [
     why: "`infisical secrets delete` removes a value nobody can restore from git; the owner confirms it.",
   },
   {
-    rx: /\binfisical\s+run\b[^|;&\n]*\s--\s+(?:\w+=\S*\s+)*(?:printenv\b|env\s*(?:$|-|[|;&)\n]))/,
+    rx: (c) =>
+      runs(c, /\binfisical\s+run\b[^|;&\n]*\s--\s+(?:\w+=\S*\s+)*(?:printenv\b|env\s*(?:$|-|\)))/),
     why: "Secrets guard: `infisical run -- env|printenv` prints the injected secret values. Run the command that needs them instead.",
+  },
+  {
+    rx: (c) =>
+      runs(
+        c,
+        /\binfisical\b[^|;&\n]*?\s(?:user\s+get\s+token\b|token\s+renew\b|login\b[^|;&\n]*\s--plain\b)/,
+      ),
+    why: "Secrets guard: `infisical user get token`, `infisical token renew` and `infisical login --plain` print an Infisical access token, which reads every secret. Nobody reads a token; the pnpm scripts that need one run under `infisical run` themselves.",
+  },
+  {
+    rx: (c) =>
+      runs(
+        c,
+        new RegExp(
+          BARE +
+            String.raw`security\s+(?:find-(?:generic|internet)-password|dump-keychain|export)\b`,
+        ),
+      ),
+    why: "Secrets guard: `security find-generic-password`, `find-internet-password`, `dump-keychain` and `export` read the owner's keychain, in any form (`/usr/bin/security`, `timeout`, `pnpm exec`). Agents never read a credential.",
   },
   {
     rx: (c) => runs(c, /\binfisical\s+(?:-\S+\s+)*run\b/),
@@ -684,36 +815,26 @@ const RULES = [
     why: "Secrets guard: `wrangler secret put/bulk` are a human's to run, same as `encore secret set`. Declare the secret and name it in your report; a human sets the value per environment.",
   },
   {
-    // Reading any .env* (but not .env.example) into the transcript. The lookahead
-    // accepts end-of-string so `cat .env` (no trailing space) is caught too.
-    rx: /(?:^|[|;&\s])(cat|less|more|head|tail|bat|sed|awk|grep|strings)\b[^|;&\n]*\s(?:\.\/)?\.env(?:\.[A-Za-z0-9_-]+)?(?![\w-])/m,
-    allow: /\.env\.example$/,
-    why: "Secrets guard: there are no .env files in this repository; secrets are injected from Infisical. A token value is never read into the transcript.",
-  },
-  {
-    rx: /(?:^|[|;&\s])(cat|less|more|head|tail|bat|sed|awk|grep)\b[^|;&\n]*\s(?:\.\/)?\.dev\.vars(?:\s|$)/m,
-    why: "Secrets guard: .dev.vars (Wrangler's local secret file) holds live tokens and is never read into the transcript, same as .env.",
-  },
-  {
-    // Creating a .env* file from the shell (redirect, tee, touch, cp/mv/ln into one).
-    // Heredoc bodies are stripped first, so this only catches a shell-level write, not
-    // file prose. Exempts `cp/mv .env.example <dest>.example` (propagating a template),
-    // never a real .env destination.
+    // Any word of the text the shell runs that names a secret file (`isSecretPath`): `cat x/.env`, `base64 .env`,
+    // `< .env cat`, `source .env`, `cp a .env`, `cat key.pem`, `cat ~/.git-credentials`. Quoted prose is blanked
+    // (`runs`), so a commit message or a grep pattern may name `.env`; `.env.example` and `*.example` are templates.
     rx: (c) => {
-      const hit =
-        /(?:>|>>|\btee\b|\btouch\b|\bcp\b|\bmv\b|\bln\b)[^|;&\n]*\s(?:\.\/)?\.env(?:\.[A-Za-z0-9_-]+)?(?![\w-])/.test(
-          c,
-        );
-      if (!hit) return false;
-      // Allowed only when the SOURCE is .env.example AND the destination is .example too.
-      return !/^\s*(?:cp|mv|ln)\s+(?:\.\/)?\.env\.example\s+(?:\.\/)?\S*\.example\s*$/.test(c);
+      const hit = runnable(c)
+        .flatMap((t) => t.split(/[\s=<>()|;&\x60'"]+/))
+        .find(isSecretPath);
+      return hit
+        ? `Secrets guard: \`${hit}\` holds secret values; a command never reads, copies, writes or prints it, and never creates a .env file. Secrets come from Infisical (ADR 0173); application secrets use Encore secret().`
+        : false;
     },
-    why: "Secrets guard: never create a .env* file. Secrets only come from Infisical; application secrets use Encore secret().",
+    why: "",
   },
   {
     scan: "bare",
-    rx: new RegExp(CMDPOS + String.raw`(printenv|env)\s*(?:$|[|;&)\n])`),
-    why: "Printing the whole environment can leak an injected token into the transcript. Echo the single variable you need, without its value if it is a secret.",
+    rx: new RegExp(
+      CMDPOS +
+        String.raw`(?:printenv|env(?:\s+-[0v]+|\s+-u\s+\S+)*|set|(?:export|declare|typeset)(?:\s+-[a-zA-Z]*[xp][a-zA-Z]*)?)\s*(?:$|[|;&)\n])`,
+    ),
+    why: "Printing the whole environment (`printenv`, `env`, `export -p`, `declare -x`, bare `set`) can leak an injected token into the transcript. Echo the single variable you need, without its value if it is a secret.",
   },
   {
     rx: listsProcessEnv,
@@ -771,8 +892,13 @@ const RULES = [
 
   // --- History, worktrees and shared local state ------------------------------------------------
   {
-    rx: unsafeRmRf,
-    why: "`rm -rf` is allowed only strictly inside this session's own checkout (never a linked worktree nested in it) or the scratchpad (`/tmp/claude-<uid>/`). Never /, ~, $HOME, a `$` expansion, `*`, a path outside those roots, or a relative path after an unknown `cd`.",
+    rx: (c, ctx) => rmPlaces(c, ctx).includes("deny"),
+    why: "`rm -rf` is allowed only strictly inside this session's own checkout or the scratchpad (`/tmp/claude-<uid>/`), and inside a nested linked worktree with the owner's yes. Never /, ~, $HOME, a `$` expansion, `*`, a worktree itself, a path outside those roots, or a relative path after an unknown `cd`.",
+  },
+  {
+    rx: (c, ctx) => rmPlaces(c, ctx).includes("nested"),
+    decision: "ask",
+    why: "`rm -rf` inside a linked worktree nested in this checkout: it may be another agent's. The owner confirms it; build output (`node_modules`, `dist`, `.turbo`, `.stackra`, `coverage`, `.cache`) needs no yes. Run from inside your own worktree instead.",
   },
   {
     rx: pushesMain,
@@ -786,18 +912,43 @@ const RULES = [
     why: "A bot push of tags (`--tags`, `--follow-tags`, `refs/tags/*`, `<package>@x`) publishes a release marker no ruleset protects; the owner confirms it.",
   },
   {
-    rx: discardsOutsideOwn,
-    why: "This discards uncommitted work (`reset --hard`, `checkout`/`restore .`, `checkout -f`, `switch --discard-changes`, `clean -f`). It runs only in this session's own worktree, never in the main checkout or another agent's worktree. Name the paths, or make a WIP commit first. `git clean -n` previews anywhere.",
+    rx: (c, ctx) => discardPlaces(c, ctx).includes("other"),
+    why: "This discards uncommitted work (`reset --hard`, `checkout`/`restore .`, `checkout -f`, `switch --discard-changes`, `clean -f`, `worktree remove --force`). It runs only in this session's own worktree (a worktree nested in this checkout with the owner's yes), never in the main checkout or another repository. Name the paths, or make a WIP commit first; `git worktree remove <path>` refuses when dirty and `git clean -n` previews anywhere.",
   },
   {
-    rx: removesOtherWorktree,
-    why: "`git worktree remove --force` deletes uncommitted work. It is allowed only on this session's own worktree; another worktree belongs to another agent or the owner. Use `git worktree remove <path>` (it refuses when dirty).",
+    rx: (c, ctx) => discardPlaces(c, ctx).includes("nested"),
+    decision: "ask",
+    why: "This discards uncommitted work in a linked worktree nested in this checkout, reached by `cd` or `-C`: it may be another agent's. The owner confirms it. Run it from inside your own worktree (the session's working directory) instead.",
+  },
+  {
+    rx: deletesUnpushedBranch,
+    decision: "ask",
+    why: "`git branch -D` of a branch whose commits no remote holds (its upstream is not gone) deletes work git cannot fetch back; the owner confirms it. After a merged PR, `pnpm bot:git -- fetch --prune origin` marks the upstream gone.",
   },
   { rx: stashRefusal, why: "" },
   // STA-208: agents never act with the owner's GitHub login (ADR 0230 rule 5). Accident guard: same macOS user.
   {
     rx: botMerges,
-    why: "Agents merge only through `pnpm pr:merge <n>` (ADR 0119, ADR 0230), which checks the gate and the reviewer's verdict. `pnpm bot:gh -- pr merge`, `api …/pulls/<n>/merge` and the GraphQL merge and enqueue mutations are denied.",
+    why: "Agents merge only through `pnpm pr:merge <n>` (ADR 0119, ADR 0230), which checks the gate and the reviewer's verdict. `pnpm bot:gh -- pr merge`, `api …/pulls/<n>/merge`, `api …/merges` and the GraphQL merge, enqueue, `createCommitOnBranch` and ref mutations are denied.",
+  },
+  {
+    rx: botLabelMutation,
+    decision: "ask",
+    why: "A GraphQL label mutation takes label ids, so the guard cannot tell whether it writes `owner-approved`; the owner confirms it. Use `pnpm bot:gh -- pr edit <n> --add-label <name>`.",
+  },
+  {
+    rx: (c) => runs(c, BOT_GH_WRITE),
+    decision: "ask",
+    why: "A `pnpm bot:gh` write (`api` with `-X`, `--method`, `-f`, `-F`, `--field`, `--raw-field` or `--input`; `repo edit|delete|rename|archive`; `release create|edit|delete|upload`; `variable`; `secret`) acts with the bot's write access beyond a PR; the owner confirms it.",
+  },
+  {
+    rx: botGitRunsProgram,
+    why: "`pnpm bot:git` runs git with every /agents value in its environment, so an option that runs a program (`--upload-pack`, `--receive-pack`, `--exec`, `clone -u`, `rebase -x`, `bisect run`, `submodule foreach`, `difftool`, `mergetool`, `filter-branch`, `grep -O`) is denied. Run local git without the bot; use `pnpm bot:git` for fetch and push only.",
+  },
+  {
+    rx: computedName,
+    decision: "ask",
+    why: "The command name is computed (`$x …`, `$(…) …`, `env -S`), so the guard cannot read what runs; a human confirms it. Write the command name out.",
   },
   {
     // STA-214: pack plumbing pushes or fetches without the push-to-main check; no agent needs it.
@@ -865,7 +1016,9 @@ const RULES = [
     // The token belongs in the wrapper's child environment only, never in the transcript or in gh's config.
     rx: (c) =>
       runnable(c).some((t) => /\bbot:token\b/.test(t)) ||
-      /\$\{?(?:GH_TOKEN|GITHUB_TOKEN)\b/.test(scanShell(dropMessages(c)).literal) ||
+      /\$\{?\w*(?:TOKEN|_API_KEY|_SECRET|_PASSWORD|_PRIVATE_KEY)\b/.test(
+        scanShell(dropMessages(c)).literal,
+      ) ||
       runs(c, /(?:^|\s)(?:\S*\/)?(?:node|bun|deno|tsx)\b[^|;&\n]*(?:\s|\/)bot-token\.mjs\b/) ||
       runs(
         c,
@@ -878,7 +1031,7 @@ const RULES = [
             String.raw`)credential\b`,
         ),
       ),
-    why: "A token is never printed, read or handed to `gh auth`: `pnpm bot:token`, running `bot-token.mjs`, `$GH_TOKEN`, `bot:gh -- auth …`, and `git credential …` or `git credential-<helper> …` (bare or through `bot:git`) are denied. Use `pnpm bot:gh -- <args>`, which keeps the token in its child process.",
+    why: "A token is never printed, read or handed to `gh auth`: `pnpm bot:token`, running `bot-token.mjs`, `$GH_TOKEN` (any `$…_TOKEN`, `$…_API_KEY`, `$…_SECRET`), `bot:gh -- auth …`, and `git credential …` or `git credential-<helper> …` (bare or through `bot:git`) are denied. Use `pnpm bot:gh -- <args>`, which keeps the token in its child process.",
   },
   // ADR 0230: an agent never speaks for the owner, and only the reviewer identity posts verdicts. A tripwire, not
   // the control: pr-merge checks the verdict's author.
@@ -887,7 +1040,8 @@ const RULES = [
     why: "`owner-approval` / `owner-approved` record the owner's own decision; an agent never adds the label or submits an approving review that ends in the token. Ask the owner.",
   },
   {
-    rx: /(?:^|[\s;&|(:])gh\s+(?:--\s+)?(?:pr\s+(?:comment|review)|api)\b[^\n]*\bAI-REVIEW:/i,
+    // Only a write whose body starts with the token: a builder's reply or a `--jq` read may mention it.
+    rx: /(?:^|[\s;&|(:])gh\s+(?:--\s+)?(?:pr\s+(?:comment|review)\b[^\n]*\s(?:-b|--body)(?:=|\s+)["']?\s*AI-REVIEW:|api\b[^\n]*\s(?:-[fF]|--(?:raw-)?field)(?:=|\s+)["']?body=["']?\s*AI-REVIEW:)/i,
     why: "AI-REVIEW verdicts are posted only by the reviewer identity: `pnpm bot:review -- pr comment <n> --body-file <f>`, from a reviewer agent, never on the reviewer's own work.",
   },
   {
@@ -914,13 +1068,45 @@ const RULES = [
   },
 ];
 
-/** A text and its runner-free form, once each. */
-const forms = (t) => [...new Set([t, lookThroughRunners(t)])];
+/** A word re-quoted for the shell: plain words bare, an assignment's value quoted, an expansion double-quoted. */
+function requote(w, dynamic) {
+  if (/^[\w./:@%+,~{}!^-]*$/.test(w) && w) return w;
+  const eq = /^(\w+=)(.*)$/s.exec(w);
+  if (eq) return eq[1] + requote(eq[2], dynamic);
+  if (dynamic) return w.includes('"') ? w : `"${w}"`;
+  return `'${w.replaceAll("'", "'\\''")}'`;
+}
+/**
+ * `c` re-serialised from its unquoted words (`"gh"`, `g''h`, `\gh` → `gh`; `"a; b"` → `'a; b'`), so a quoted or
+ * escaped command name meets every rule. Null when `c` has no quote or backslash.
+ */
+function dequoted(c) {
+  if (!/['"\\]/.test(c)) return null;
+  return simpleCommands(c)
+    .map(
+      (s) =>
+        [
+          ...s.words.map((w, k) => requote(w, s.dyn[k])),
+          ...s.redirects.map((r) => r.op + requote(r.target, r.dynamic)),
+        ].join(" ") + (s.op ? ` ${s.op} ` : ""),
+    )
+    .join("");
+}
+/** A text, its runner-free form and its dequoted forms, once each. */
+function forms(t) {
+  const d = dequoted(t);
+  return [...new Set([t, lookThroughRunners(t), ...(d ? [d, lookThroughRunners(d)] : [])])];
+}
 
-/** The evaluation context: the shell's directory, the subagent type, and the session's own checkout (lazy). */
+/** The evaluation context: the shell's directory, the subagent type, the session's own checkout (lazy) and a memo. */
 function context(cwd, agentType) {
   let own;
-  return { cwd, agentType, own: () => (own ??= ownCheckout(cwd)) };
+  const cache = new Map();
+  const memo = (key, f) => {
+    if (!cache.has(key)) cache.set(key, f());
+    return cache.get(key);
+  };
+  return { cwd, agentType, memo, own: () => (own ??= ownCheckout(cwd)) };
 }
 
 /**
@@ -936,23 +1122,26 @@ export function decideBash(raw, { cwd = process.cwd(), agentType = "" } = {}) {
   const check = (rule, text) => {
     const target = rule.scan === "bare" ? blank(text) : text;
     const hit = typeof rule.rx === "function" ? rule.rx(target, ctx) : rule.rx.test(target);
-    if (!hit || (rule.allow && rule.allow.test(target))) return null;
+    if (!hit) return null;
     return typeof hit === "string" ? hit : rule.why;
   };
   let asked = null;
+  const all = forms(cmd);
   for (const rule of RULES)
-    for (const text of rule.lookThrough === false ? [cmd] : forms(cmd)) {
+    for (const text of rule.lookThrough === false ? [cmd] : all) {
       const why = check(rule, text);
       if (why && rule.decision !== "ask") return { decision: "deny", reason: why };
       if (why) asked ??= why;
     }
-  for (const body of rawSubstitutions(cmd))
-    for (const text of forms(body))
+  for (const body of rawSubstitutions(cmd)) {
+    const texts = forms(body);
+    for (const text of texts)
       for (const rule of RULES) {
         if (rule.lookThrough === false && text !== body) continue;
         const why = rule.decision === "ask" ? null : check(rule, text);
         if (why) return { decision: "deny", reason: why };
       }
+  }
   return asked ? { decision: "ask", reason: asked } : { decision: "allow", reason: "" };
 }
 
@@ -967,10 +1156,16 @@ const SECRET_FILE = [
   /\.(?:pem|key)$/i,
   /(^|\/)\.infisical([^/]*$|\/)/,
 ];
-const SECRET_OK = /(^|\/)(\.env\.example|\.infisical\.(yaml|json))$/;
+const SECRET_OK = /(^|\/)(\.env(\.[^/]*)?\.example|\.infisical\.(yaml|json))$/;
+/** Credential files under home (the settings Read denies): gh, git, ssh, cloud, registry and CLI logins. */
+const HOME_SECRET =
+  /^(?:\.config\/gh\/|\.git-credentials$|\.ssh\/id_|\.aws\/|\.npmrc$|\.netrc$|\.docker\/config\.json$|\.wrangler\/|Library\/Preferences\/\.wrangler\/|\.expo\/|Library\/Application Support\/encore\/|\.stackra\/secrets-confirm\.key$)/;
 /** True when `p` names a file that holds secret values (ADR 0173). */
 export function isSecretPath(p) {
   const s = p.trim().replace(/^['"]+|['"]+$/g, "");
+  const home = s.replace(/^(?:~|\$HOME|\$\{HOME\})(?=\/)/, homedir());
+  if (home.startsWith(homedir() + "/") && HOME_SECRET.test(home.slice(homedir().length + 1)))
+    return true;
   return !SECRET_OK.test(s) && SECRET_FILE.some((r) => r.test(s));
 }
 

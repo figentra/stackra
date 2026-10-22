@@ -131,7 +131,19 @@ for (const file_path of [
   "/r/certs/server.key",
   "/r/services/x/.secrets.local.json",
   "/r/.infisical/credentials",
+  // STA-330 review: the owner's credential files under home, as the settings Read denies list them
+  `${homedir()}/.git-credentials`,
+  "~/.netrc",
+  `${homedir()}/.config/gh/hosts.yml`,
+  "~/.ssh/id_ed25519",
+  "$HOME/.aws/credentials",
 ])
   test(`deny Read: ${file_path}`, () => assert.equal(decide("Read", { file_path }), true));
-for (const file_path of ["/r/.env.example", "/r/.infisical.yaml", "/r/apps/console/src/env.ts"])
+for (const file_path of [
+  "/r/.env.example",
+  "/r/.env.local.example",
+  "/r/.npmrc",
+  "/r/.infisical.yaml",
+  "/r/apps/console/src/env.ts",
+])
   test(`allow Read: ${file_path}`, () => assert.equal(decide("Read", { file_path }), false));

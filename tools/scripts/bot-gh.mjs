@@ -117,8 +117,9 @@ function normalizeWord(w) {
 }
 
 /**
- * Merges outside `pnpm pr:merge` (STA-214, ADR 0119): `gh pr merge`, `gh api …/pulls/<n>/merge` with any method, and
- * the GraphQL merge mutations. pr-merge.mjs runs gh itself after its checks, so it never comes through here.
+ * Merges outside `pnpm pr:merge` (STA-214, ADR 0119): `gh pr merge`, `gh api …/pulls/<n>/merge` with any method,
+ * `gh api repos/<o>/<r>/merges`, and the GraphQL merge, enqueue, commit-on-branch and ref mutations (ADR 0293).
+ * pr-merge.mjs runs gh itself after its checks, so it never comes through here.
  */
 export function mergesPr(args) {
   const [group, verb] = words("gh", args);
@@ -161,7 +162,7 @@ export function configWrites(args) {
   return !reads || rest.some((w) => CONFIG_WRITE.has(w));
 }
 const MERGE =
-  /\bpulls\/\d+\/merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest)\b/i;
+  /\bpulls\/\d+\/merge\b|\brepos\/[^/\s]+\/[^/\s]+\/merges\b|\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest|mergeBranch|createCommitOnBranch|updateRefs?|deleteRef)\b/i;
 
 /**
  * Why a command is refused regardless of tool (STA-216), or null. git: `-c alias.*` / `-c include*` / `--config-env`

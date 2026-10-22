@@ -36,12 +36,16 @@ cover what GitHub cannot see.
      `pnpm pr:merge` and `pnpm linear`, and read-only MCP servers.
    - **Ask**: deploys and remote cloud changes (`wrangler deploy`, `--remote`, `eas`, `encore env set`), unreviewed
      registry code (`npx`, `pnpx`, `pnpm dlx`), raw `infisical run`, `secrets:import … --confirm`,
-     `infisical secrets delete`, publishing and tag pushes, raw GitHub API writes through the bot, deleting local data
-     git cannot restore (`git stash drop`, `git branch -D`, `worktree remove --force`, `encore db reset`), MCP tools that
-     spend money or reach people, and shell text the guard cannot read.
-   - **Deny**: reading a secret value (`.env*`, `.dev.vars`, keys, `infisical export`, `infisical secrets get` in every
-     form, `infisical secrets set`, `env`, `printenv`, process-environment listings, `bot:token`, the secrets inbox);
-     the owner's credentials (`gh` in any form, raw network git, the owner's credential files); pushes that rewrite or
+     `infisical secrets delete`, publishing and tag pushes, raw GitHub API writes and GraphQL label mutations through
+     the bot, deleting local data git cannot restore (`git stash drop`, `git branch -D` of a branch no remote holds,
+     `encore db reset`), discarding git or `rm -rf` in a worktree nested in the main checkout when reached from there,
+     MCP tools that spend money or reach people, and shell text or a computed command name the guard cannot read.
+   - **Deny**: reading a secret value (any command naming `.env*`, `.dev.vars`, keys or the owner's credential files,
+     `infisical export`, `infisical secrets get` in every form, `infisical secrets set`, `infisical user get token`,
+     keychain reads, `env`, `printenv`, process-environment listings, `bot:token`, the secrets inbox); the owner's
+     credentials (`gh` in any form, raw network git); `pnpm bot:git` options that run a program in the bot's
+     environment (`--upload-pack`, `--receive-pack`, `--exec`, `rebase -x`, `submodule foreach`); merges and ref moves
+     outside `pnpm pr:merge` (`api …/merges`, `mergeBranch`, `createCommitOnBranch`, `updateRef`); pushes that rewrite or
      delete (to main, `--force` without a lease, `-f`, `+refspec`, `--delete`, `--mirror`, `--prune`, or any branch but
      the current one); `git stash pop`, `clear`, `branch` and `apply` without a ref; destructive git and `rm -rf`
      outside the session's own worktree and scratchpad; `changeset version`, release tags, `encore deploy`,
@@ -49,19 +53,22 @@ cover what GitHub cannot see.
 2. **Settings are the floor; one module holds the parsing.** The deny and ask rules in `.claude/settings.json` apply
    in every mode. The hooks add only what a prefix rule cannot see, from one module, `.agents/hooks/_rules.mjs`, which
    `guard-bash.mjs`, `guard-paths.mjs` and the OpenCode guard plugin all evaluate: runner wrappers (`pnpm [exec|dlx]`,
-   `pnpm <bin>`, `npx`, `npm exec`, `mise exec --`) are looked through like `sudo` or `env`; quoted prose is not a
-   command; the checkout a git command targets is resolved through `cd`, `-C`, `--git-dir` and `GIT_DIR=`.
+   `pnpm <bin>`, `npx`, `npm exec`, `mise exec --`) are looked through like `sudo`, `env`, `timeout` or a shell
+   keyword; a quoted or escaped command name is read unquoted; quoted prose is not a command; the checkout a git
+   command targets is resolved through `cd`, `-C`, `--git-dir` and `GIT_DIR=`.
    `opencode.jsonc` repeats the tiers as order-sensitive patterns.
 3. **Own worktree only.** `reset --hard`, `checkout` or `restore` of the tree, `checkout -f`,
    `switch --discard-changes`, `clean -f` and `worktree remove --force` run only when the target checkout is the
-   session's own linked worktree, never the main checkout. `rm -rf` runs only inside the session's own checkout
-   (never a worktree nested in it) or the session scratchpad. Worktrees use WIP commits, never the shared stash.
+   session's own linked worktree, never the main checkout or another agent's worktree. `rm -rf` runs only inside the
+   session's own checkout or the session scratchpad, never on a worktree itself. A subagent whose shell starts in the
+   main checkout and reaches a nested worktree by `cd` or `-C` gets an ask, because the guard cannot tell its own
+   worktree from another agent's; build output there needs no yes. Worktrees use WIP commits, never the shared stash.
 4. **`pnpm bot:review` is for reviewer agents.** Only an agent type whose source sets `reviewer: true` (projected by
    `agents-sync` into `.agents/hooks/_reviewer-agents.mjs`) may run it. This is a tripwire, not a boundary: a builder
    can still spawn a reviewer. Once a CI job posts the review verdict, no local agent runs `bot:review`.
 5. **Executors commit and push their own feature branch** (amends rule 1 of
    [0066](/adr/0066-delegation-to-opencode-by-routing-matrix)). An OpenCode executor commits on its delegate branch
-   and runs `pnpm bot:git -- fetch …` and `pnpm bot:git -- push [--force-with-lease] origin HEAD`; every other bot
+   and runs `pnpm bot:git -- fetch origin [<ref>]` and `pnpm bot:git -- push [--force-with-lease] origin HEAD`; every other bot
    wrapper (`bot:gh`, `bot:review`, `bot:token`, `pr:merge`, `linear`), Infisical and raw network git stay the lead's.
    The lead still reviews, opens the pull request and merges through `pnpm pr:merge`.
 6. **An agent never widens the project rules.** An OpenCode agent's frontmatter permissions only narrow

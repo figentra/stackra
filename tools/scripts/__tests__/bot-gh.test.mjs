@@ -17,6 +17,12 @@ test("STA-214: credential helpers leak too; merges go only through pnpm pr:merge
     ["api", "graphql", "-f", "query=mutation { mergePullRequest(input: {}) { clientMutationId } }"],
     ["api", "graphql", "-f", "query=mutation { enablePullRequestAutoMerge(input: {}) { x } }"],
     ["api", "graphql", "-f", "query=mutation { enqueuePullRequest(input: {}) { x } }"],
+    // ADR 0293: branch merges, commits on a branch and ref moves skip pr:merge too
+    ["api", "-X", "POST", "repos/figentra/stackra/merges", "-f", "base=main", "-f", "head=x"],
+    ["api", "graphql", "-f", "query=mutation { mergeBranch(input: {}) { clientMutationId } }"],
+    ["api", "graphql", "-f", "query=mutation { createCommitOnBranch(input: {}) { x } }"],
+    ["api", "graphql", "-f", "query=mutation { updateRefs(input: {}) { x } }"],
+    ["api", "graphql", "-f", "query=mutation { deleteRef(input: {}) { x } }"],
   ])
     assert.equal(mergesPr(args), true, args.join(" "));
   for (const args of [

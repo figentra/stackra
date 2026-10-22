@@ -125,11 +125,12 @@ const losesLocalData = (g: string, rest: string[]): boolean =>
 /** The GitHub and Linear wrappers run under the full /agents set (STA-208): the lead's, except the executor push. */
 const BOT_SCRIPT = /^(?:bot:\S+|pr:merge|linear|spec:linear)$/;
 /**
- * Phase 2 (ADR 0293, amending ADR 0066): an executor fetches, and pushes its own HEAD to its feature branch, through
- * `pnpm bot:git`; the shared rules keep that push off main and off every other branch.
+ * Phase 2 (ADR 0293, amending ADR 0066): an executor fetches origin (one ref at most), and pushes its own HEAD to its
+ * feature branch, through `pnpm bot:git`; the shared rules keep that push off main and off every other branch, and
+ * deny the options that run a program in the bot's environment.
  */
 const EXECUTOR_BOT_GIT =
-  /^pnpm bot:git (?:-- )?(?:fetch(?: .*)?|push (?:--force-with-lease )?origin HEAD)$/;
+  /^pnpm bot:git (?:-- )?(?:fetch origin(?: [\w./-]+)?|push (?:--force-with-lease )?origin HEAD)$/;
 
 /** Executors run unattended: anything that leaves the worktree, ships, or destroys local data is the lead's. */
 function denyExecutor(cmd: string, args: string[]): Decision {
@@ -141,7 +142,7 @@ function denyExecutor(cmd: string, args: string[]): Decision {
     return EXECUTOR_BOT_GIT.test([cmd, ...args].join(" "))
       ? ALLOW
       : deny(
-          "executors reach GitHub only as `pnpm bot:git -- fetch …` and `pnpm bot:git -- push [--force-with-lease] origin HEAD`; `pnpm bot:gh`, `bot:review`, `bot:token`, `pr:merge` and `linear` are the lead's.",
+          "executors reach GitHub only as `pnpm bot:git -- fetch origin [<ref>]` and `pnpm bot:git -- push [--force-with-lease] origin HEAD`; `pnpm bot:gh`, `bot:review`, `bot:token`, `pr:merge` and `linear` are the lead's.",
         );
   if (cmd === "encore" && ["deploy", "env", "secret"].includes(args[0] ?? ""))
     return deny(
@@ -155,7 +156,8 @@ function denyExecutor(cmd: string, args: string[]): Decision {
     return deny("`docker compose down -v` deletes volumes git cannot restore; the lead runs it.");
   if (cmd === "git") {
     const [g, rest] = gitSubcommand(args);
-    if (GIT_OWNER_ONLY.has(g) || networkGit(g, args))
+    const localSubmodule = g === "submodule" && ["status", "summary"].includes(rest[0] ?? "");
+    if ((GIT_OWNER_ONLY.has(g) && !localSubmodule) || networkGit(g, args))
       return deny(`\`git ${g}\` reaches a remote; executors push only through \`pnpm bot:git\`.`);
     if (losesLocalData(g, rest))
       return deny(
