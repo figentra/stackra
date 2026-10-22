@@ -433,34 +433,41 @@ const WRAPPERS = new Set([
 ]);
 /** Wrapper options whose value is the next word (`sudo -u x`, `env -u NAME`, `nice -n 5`, `exec -a name`). */
 const WRAPPER_VALUE = new Set(["-u", "-n", "-a", "-g", "-C", "-k", "-s"]);
-/** Command position, past assignments and wrappers, as a regex prefix. */
-const RUNNER =
-  String.raw`(?:^|[;&|(){}\n\x60])[ \t]*` +
-  String.raw`(?:\w+=\S*\s+)*(?:(?:\S*/)?(?:${[...WRAPPERS].join("|")})\s+(?:-\S+\s+|\w+=\S*\s+|\d\S*\s+)*)*`;
 const SHELL = /^(?:ba|z|da|k)?sh$/;
-/** The toolchain's own shell setup, trusted when its arguments are plain words (`eval "$(mise activate zsh)"`). */
+/**
+ * The toolchain's own shell setup, trusted when it is the bare command or under a known install directory and
+ * its arguments are plain words (`eval "$(mise activate zsh)"`, `eval "$(/opt/homebrew/bin/brew shellenv)"`).
+ */
 const TRUSTED =
-  /^\s*(?:\S*\/)?(?:mise\s+(?:activate|env|hook-env|completion)|brew\s+shellenv)(?:\s+[\w.=:/@+-]+)*\s*$/;
+  /^\s*(?:(?:\/opt\/homebrew\/bin|\/usr\/local\/bin|\/home\/linuxbrew\/\.linuxbrew\/bin|(?:\$HOME|\$\{HOME\}|~)\/\.local\/bin)\/)?(?:mise\s+(?:activate|env|hook-env|completion)|brew\s+shellenv)(?:\s+[\w.=:/@+-]+)*\s*$/;
 
 /**
- * True when `text` runs a file named `base` (any directory): a shell, `source` or `.` in command position with
- * it as an operand or `<` input (`sh -x f`, `sh<f`, a glob such as `sh f*`), `./f` as a command, or its
- * content substituted (`$(cat f)`, `$(<f)`, backticks) anywhere.
+ * True when `text` runs a file named `base` (any directory, globs and `find -exec`'s `{}` included): a shell,
+ * `source` or `.` found by `shellAt` with it as an operand or `<` input (`caffeinate sh f`, `sh<f`, `sh f*`,
+ * `find . -exec sh {} \;`), inside a `-c` or `eval` script, `./f` as a command, or its content substituted
+ * (`$(cat f)`, `$(<f)`, backticks) anywhere.
  */
 function runsFile(text, base) {
   const matches = (w) => {
+    if (w === "{}") return true;
     const b = w.split("/").pop();
     return Boolean(b) && segmentRx(b).test(base);
   };
-  const shellRx = new RegExp(
-    RUNNER + String.raw`(?:\S*/)?(?:(?:ba|z|da|k)?sh|source|\.)(?=[\s<]|$)([^;&|\n]*)`,
-    "gm",
-  );
-  for (const m of text.matchAll(shellRx))
-    if (operands(m[1]).some((w) => w && !w.startsWith("-") && matches(w))) return true;
-  const direct = String.raw`("[^"]*/[^"]*"|'[^']*/[^']*'|\S*/[^\s;&|)\x60]+)`;
-  for (const m of text.matchAll(new RegExp(RUNNER + direct, "gm")))
-    if (matches(operands(m[1])[0] ?? "")) return true;
+  for (const s of simpleCommands(text)) {
+    const at = shellAt(s);
+    if (at) {
+      const words = s.words.slice(at.j + 1);
+      const flag = SHELL.test(at.name) ? commandFlag(words) : -1;
+      if (at.name === "eval" && runsFile(words.join(" "), base)) return true;
+      if (flag >= 0 && runsFile(words[flag + 1] ?? "", base)) return true;
+      if (at.name !== "eval" && flag < 0 && words.some((w) => !w.startsWith("-") && matches(w)))
+        return true;
+      if (at.name !== "eval" && s.redirects.some((r) => r.op === "<" && matches(r.target)))
+        return true;
+    }
+    const { i, raw } = nameOf(s);
+    if (i >= 0 && raw.includes("/") && matches(raw)) return true;
+  }
   const name = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const file = String.raw`['"]?(?:\S*/)?${name}['"]?`;
   return new RegExp(
@@ -585,36 +592,77 @@ const nameOf = (s) => {
 
 /** Index of a shell's `-c` flag (`-c`, `-lc`) in `words`, or -1. */
 const commandFlag = (words) => words.findIndex((w) => /^-[a-z]*c[a-z]*$/i.test(w));
-/** Commands that only read their input, never run it (sed and awk only without a program that runs commands). */
+/** Commands that only read their input, never run it, unless `READER_RUNS` says this use does. */
 const READERS = new Set(
-  "grep egrep fgrep rg jq yq sort uniq wc head tail cat less more cut tr tee sed awk gawk column nl diff base64 tac rev".split(
+  "grep egrep fgrep rg jq sort uniq wc head tail cat less more cut tr tee sed awk gawk column nl base64 tac rev".split(
     " ",
   ),
 );
-/** sed `e` (command or `s///e` flag) or a script file; awk `system`, a pipe, `getline` or a program file. */
+/** A GNU sed program runs a command: an `e` command (any address) or an `s///e` flag. */
+const sedRuns = (program) =>
+  program.split(/[;\n{}]/).some((part) => {
+    const cmd = part
+      .trim()
+      .replace(
+        /^(?:\d+|\$|\/(?:\\.|[^/])*\/)?(?:\s*[,~]\s*(?:\d+|\$|\/(?:\\.|[^/])*\/))?\s*!?\s*/,
+        "",
+      );
+    if (/^e(?:\s|$)/.test(cmd)) return true;
+    if (cmd[0] !== "s" || cmd.length < 2) return false;
+    let k = 2;
+    for (let n = 0; k < cmd.length && n < 2; k++) {
+      if (cmd[k] === "\\") k++;
+      else if (cmd[k] === cmd[1]) n++;
+    }
+    return /e/.test(/^[a-zA-Z0-9]*/.exec(cmd.slice(k))[0]);
+  });
+/** Reader uses that run a command (`words` are the whole command): then the reader counts as a shell. */
 const READER_RUNS = {
-  sed: (words) =>
-    words.some((w) => /^-f|^--file|(?:^|[;{}\s])e(?:\s|;|$)|^s(.).*\1.*\1[a-zA-Z0-9]*e/.test(w)),
-  awk: (words) => words.some((w) => /^-f|system|getline|\|/.test(w)),
+  sort: (words) => words.some((w) => w.startsWith("--compress-program")),
+  rg: (words) => words.some((w) => /^--pre(?:=|$)/.test(w)),
+  less: (words) => words.some((w) => /^LESS(?:OPEN|CLOSE)=/.test(w) || w.includes("!")),
+  awk: (words) => words.some((w) => /^(?:-[a-zA-Z]*[fE]|--file|--exec)|system|getline|\|/.test(w)),
+  sed: (words) => {
+    const programs = [];
+    for (let j = 1; j < words.length; j++) {
+      const w = words[j];
+      if (/^(?:-[a-zA-Z]*f|--file)/.test(w)) return true;
+      if (/^-[a-zA-Z]*e$|^--expression$/.test(w)) programs.push(words[++j] ?? "");
+      else if (w.startsWith("--expression=")) programs.push(w.slice(13));
+    }
+    if (!programs.length) programs.push(words.slice(1).find((w) => !w.startsWith("-")) ?? "");
+    return programs.some(sedRuns);
+  },
 };
 READER_RUNS.gawk = READER_RUNS.awk;
 
 /**
- * True when a simple command runs its standard input as a script. Fast path: a shell without `-c`, `source`,
- * `.` (past the known wrappers). Otherwise fail closed: any word naming a shell (`caffeinate sh`,
- * `pnpm exec bash`, `flock f zsh`) or `source` counts, unless the command is a known reader (`grep -c sh`).
+ * Where a simple command runs a shell (`sh`, `bash`, …), `eval`, `source` or `.`: `j` indexes `s.words`.
+ * Fast path: the command name past the known wrappers. Otherwise fail closed: any later word naming a shell,
+ * `eval` or `source` (`caffeinate sh`, `pnpm exec bash`, `find . -exec sh {} \;`), unless the command is a
+ * known reader that does not run anything (`grep -c sh`). A reader that does run (`sed e`, `sort
+ * --compress-program`) reports itself, so its input counts as a script.
  */
-function readsStdin(s) {
+function shellAt(s) {
   const { i, name } = nameOf(s);
-  const words = s.words.slice(Math.max(i, 0) + 1);
-  if (SHELL.test(name)) return commandFlag(words) < 0;
-  if (name === "source" || name === ".") return true;
-  if (READERS.has(name)) return READER_RUNS[name]?.(words) ?? false;
-  return s.words.some(
-    (w, j) =>
-      w === "source" ||
-      (SHELL.test(w.split("/").pop()) && !/^-[a-z]*c[a-z]*$/i.test(s.words[j + 1] ?? "")),
-  );
+  if (i < 0) return null;
+  if (SHELL.test(name) || ["eval", "source", "."].includes(name)) return { j: i, name };
+  if (READERS.has(name))
+    return READER_RUNS[name]?.([name, ...s.words.slice(i + 1), ...s.words.slice(0, i)])
+      ? { j: s.words.length - 1, name: "sh", reader: true }
+      : null;
+  for (let j = i + 1; j < s.words.length; j++) {
+    const b = s.words[j].split("/").pop();
+    if (SHELL.test(b) || b === "eval" || b === "source") return { j, name: b };
+  }
+  return null;
+}
+
+/** True when a simple command runs its standard input as a script: a shell without `-c`, `source`, `.`. */
+function readsStdin(s) {
+  const at = shellAt(s);
+  if (!at || at.name === "eval") return false;
+  return at.reader || !SHELL.test(at.name) || commandFlag(s.words.slice(at.j + 1)) < 0;
 }
 
 /**
@@ -701,33 +749,36 @@ export function shellInputs(c) {
     parts.some((p) => p === null) ? (opaque = true) : scripts.push(parts.join(" "));
   list.forEach((s, k) => {
     const { i, raw, name } = nameOf(s);
-    const words = i < 0 ? [] : s.words.slice(i + 1);
-    const dyn = i < 0 ? [] : s.dyn.slice(i + 1);
+    const at = shellAt(s);
+    const runner = at && !at.reader ? at.name : "";
+    const words = at && !at.reader ? s.words.slice(at.j + 1) : [];
+    const dyn = at && !at.reader ? s.dyn.slice(at.j + 1) : [];
     const piped = k > 0 && list[k - 1].op === "|";
-    const shell = SHELL.test(name);
-    const xargsShell =
-      name === "xargs" &&
-      words.some((w) => /^(?:(?:ba|z|da|k)?sh|eval|source|\.)$/.test(w.split("/").pop()));
-    if (piped && (i < 0 || /[$`]/.test(raw) || xargsShell)) opaque = true;
+    const shell = SHELL.test(runner);
+    const sourced = shell || runner === "source" || runner === ".";
+    const xargsShell = name === "xargs" && at !== null;
+    // A reader that runs commands (`sed e`, `awk '{system(…)}'`, `sort --compress-program`): what it runs is
+    // built from its program and input, so it cannot be read.
+    if (at?.reader || (piped && (i < 0 || /[$`]/.test(raw) || xargsShell))) opaque = true;
     else if (piped && readsStdin(s)) take(output(list, k - 1));
     // A shell reading a process substitution: `sh <(…)`, `sh < <(…)`.
-    if (shell || name === "source" || name === ".")
+    if (sourced)
       for (const w of [...words, ...s.redirects.filter((r) => r.op === "<").map((r) => r.target)])
         if (w.startsWith("<(")) {
           const body = substitutionBody(w) ?? "";
           take(TRUSTED.test(body) ? "" : lastOutput(body));
         }
     // Output sent into a shell through `>(sh)`: `tee >(sh)`, `echo … > >(bash)`.
-    for (const w of [...words, ...s.redirects.map((r) => r.target)]) {
+    for (const w of [...s.words, ...s.redirects.map((r) => r.target)]) {
       const body = w.startsWith(">(") ? substitutionBody(w.replace(/^>/, "<")) : null;
       const first = body === null ? undefined : simpleCommands(body)[0];
       if (first && readsStdin(first)) take(output(list, k));
     }
     // Script strings built at run time.
-    if (name === "eval") script(words.map((w, j) => resolveWord(w, dyn[j])));
+    if (runner === "eval") script(words.map((w, j) => resolveWord(w, dyn[j])));
     const flag = shell ? commandFlag(words) : -1;
     if (flag >= 0 && flag + 1 < words.length) script([resolveWord(words[flag + 1], dyn[flag + 1])]);
-    if (shell || name === "source" || name === ".") {
+    if (sourced) {
       for (const r of s.redirects) if (r.op === "<<<") script([resolveWord(r.target, r.dynamic)]);
       // A script file named at run time (`sh "$F"`, `sh $(echo f)`); `$HOME` alone is fine.
       if (flag < 0)
@@ -740,7 +791,7 @@ export function shellInputs(c) {
     const targets = s.redirects
       .filter((r) => /^1?(?:>>?|>\||&>>?)$/.test(r.op))
       .map((r) => r.target);
-    if (name === "tee") targets.push(...words.filter((w) => !/^[-<>]/.test(w)));
+    if (name === "tee") targets.push(...s.words.slice(i + 1).filter((w) => !/^[-<>]/.test(w)));
     for (const t of targets) {
       const base = t.split("/").pop();
       if (!runsFile(c.slice(s.end), base)) continue;
