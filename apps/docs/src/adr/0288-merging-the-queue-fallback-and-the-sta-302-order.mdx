@@ -13,9 +13,7 @@ description: "Accepted · 2026-10-22"
 
 ## Context
 
-The `main` ruleset requires a branch to be up to date before it merges. So every merge forces each other open pull request
-to update its branch, which makes a new head commit, voids its review and re-runs the gate, although the reviewed change
-is the same. The merge queue of [0166](/adr/0166-ci-policy-runners-budgets-concurrency-and-check-matrix) removes that cost.
+The `main` ruleset requires a branch to be up to date before it merges. So every merge forces each other open pull request to update its branch, which re-runs the gate. Before ADR 0285, the new head also voided a review of an unchanged change; that ADR keeps the review when the patch id is the same. The merge queue of [0166](/adr/0166-ci-policy-runners-budgets-concurrency-and-check-matrix) removes that cost.
 It is decided but not built (STA-233 and STA-234). On 2026-10-22 the owner chose to build it now, with a fallback, and to
 make the connection fix STA-302 a prerequisite of the enqueue path.
 
@@ -31,21 +29,19 @@ make the connection fix STA-302 a prerequisite of the enqueue path.
 4. **STA-302 comes first (OP7).** STA-302, which makes `bot:gh` and `pr:merge` fail on slow GitHub connections, lands before
    the enqueue path is relied on. A flaky connection at enqueue would strand pull requests, and one failing call in five
    would turn every merge into a manual retry.
-5. **A red main stops merges.** A red `main` blocks new merges through the queue and pages the owning agent
-   ([0287](/adr/0287-agent-sandboxes-and-the-remote-runner) lesson 7). Agents do not stack pull requests on a red `main`.
+5. **A red main should stop merges and page the owning agent, once the queue is live.** Under the fallback nothing does either: a pull request merges on its own green head. The block and the page are planned under STA-333 ([0287](/adr/0287-agent-sandboxes-and-the-remote-runner) lesson 7). Agents do not stack pull requests on a red `main`; that is a rule agents follow, not a check.
 
 ## Consequences
 
-- Until the queue is live, the strict rule keeps forcing a re-run and a re-review on each merge. Building the queue removes
-  that cost.
-- Under the fallback, a bad change can land on `main` and stays there until the automatic revert is built (STA-332). Until then a red `main` blocks new merges and pages the owning agent (0287 lesson 7).
+- Until the queue is live, the strict rule keeps forcing a re-run of the gate on each merge. Building the queue removes that cost; ADR 0285 already keeps a review across a clean update.
+- Under the fallback, a bad change can land on `main` and stays there until the automatic revert is built (STA-332). Until then nothing blocks merges on a red `main` and nothing pages the owning agent; both are planned under STA-333.
 - A pull request enqueued over a broken client would be stranded, which is why STA-302 precedes the enqueue path.
 
 ## Enforcement
 
 In the repository: the `merge_group` run in `.github/workflows/ci.yml` and the `merge_queue` rule in `.github/rulesets/main.json`, both set by [ADR 0285](/adr/0285-review-verdict-binds-to-the-patch-id). The owner applies the ruleset on GitHub. The STA-302
 order is a Linear dependency of STA-234, not a repository check. The one-week fallback is a dated decision that the owner
-checks on 2026-10-29; nothing automates it. The automatic revert is planned under STA-332, so nothing reverts a red `main` yet.
+checks on 2026-10-29; nothing automates it. The automatic revert is planned under STA-332, so nothing reverts a red `main` yet. The block on merges and the page to the owning agent are planned under STA-333 (0287 lesson 7); nothing does either yet.
 
 ## Supersedes and sources
 

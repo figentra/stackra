@@ -84,7 +84,7 @@ and the first publish. This record applies those answers. The static Worker's na
     lets Figentra OS install (STA-209, STA-210, STA-321).
 11. **A bootstrap token for the first publish (OP2, owner-only).** The owner creates one granular npm token, limited to
     publishing `@stackra` packages and valid for 7 days, and stores it through the secrets inbox
-    ([0257](/adr/0257-secret-manager-agent-and-the-secrets-inbox)) in Infisical `/ci`. The first publish of each package runs
+    (`pnpm secrets:import`, as `.agents/rules/secrets.md` section 3 describes) in Infisical `/ci`. The first publish of each package runs
     from CI with it. The owner then adds a trusted publisher for each package, and the token is revoked. Nobody reads the
     token value. This is an exception to decision 2 of the 2026-10-21 amendment to 0177, which forbids a long-lived token and
     any Infisical step for npm. The trusted-publisher rule holds once the bootstrap is finished.
@@ -115,6 +115,6 @@ Supersedes: none. Amends [0168](/adr/0168-runway-public-reusable-workflows-build
 [0026](/adr/0026-turborepo-remote-cache-on-r2) and the build order of [0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml).
 Related: [0091](/adr/0091-generated-encore-app-in-stackra-folder), [0124](/adr/0124-encore-is-the-generated-runtime-target),
 [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls), [0248](/adr/0248-delivery-scope-saas-first-on-prem-kept-green),
-[0257](/adr/0257-secret-manager-agent-and-the-secrets-inbox), [0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker),
+[0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker),
 [0290](/adr/0290-dev-environment-and-cloudflare-services). Sources: owner decisions of 2026-10-22 (RW1 to RW11, OP1 and OP2);
 Linear STA-136, STA-209, STA-210, STA-321, STA-322 and STA-328.

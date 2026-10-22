@@ -4,12 +4,13 @@ description: "Accepted · 2026-10-22"
 ---
 
 <Note>
-  Amends [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc): decision 1
-  (four developer packages, with `@stackra/renderers` added), decision 2 (the renderer layer moves
-  to `@stackra/renderers`), decision 12 (the Stackra preset is split between `@stackra/skills` and
-  `.agents/`) and decision 16 (where Vellum work is tracked). Decisions 11 and 14 gain the
-  conditions below. The spike and the rule that Vellum becomes the SDLC only if it passes are
-  unchanged.
+  Amends [0127](/adr/0127-package-categories-including-infrastructure) (the developer row gains
+  `renderers`) and [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc):
+  decision 1 (four developer packages, with `@stackra/renderers` added), decision 2 (the renderer
+  layer moves to `@stackra/renderers`), decision 12 (the Stackra preset is split between
+  `@stackra/skills` and `.agents/`) and decision 16 (where Vellum work is tracked). Decisions 11 and
+  14 gain the conditions below. The spike and the rule that Vellum becomes the SDLC only if it
+  passes are unchanged.
 </Note>
 
 ## Context
@@ -45,9 +46,7 @@ records its reasoning, so the page can be read without other documents.
 ### Approvals and lanes
 
 4. **Approvals are given by the reviewer identity (VL4).** The separate reviewer identity approves Vellum tasks by
-   default. Its signing key sits in an Infisical path that builder agents cannot read (STA-238). The owner approves
-   only changes at change-risk R3 and above, which cover security, secrets, money and releases
-   ([0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk)). There is no hardware-key ceremony. This is not one
+   default. Its signing key sits in an Infisical path that builder agents cannot read (STA-238). The owner approves only changes at change-risk R3, the top class of [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk), which covers auth, iam, tenancy, money, PII, secrets, webhooks, crypto, CI permissions and agent guards. Releases stay owner-approved under [0119](/adr/0119-merge-policy-and-release-authority) decision 5, which this ADR does not change. There is no hardware-key ceremony. This is not one
    of the three options that were weighed: the reviewer key is extended from low-risk lanes to every lane below R3.
    The reason is the owner's stated aim of minimal human interaction, with the owner's time kept for R3 and above.
    Builders never approve their own work ([0230](/adr/0230-reviewer-identity-separate-from-builder)).
@@ -126,7 +125,7 @@ The reviewer key path (STA-238) is not built. Today both bot apps' credentials s
 
 ## Supersedes and sources
 
-Supersedes: none. Amends [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) (decisions 1, 2, 12 and 16; decisions 11 and 14 gain conditions). Related: [0067](/adr/0067-spec-kit-is-the-sdlc),
+Supersedes: none. Amends [0127](/adr/0127-package-categories-including-infrastructure) (the developer row) and [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) (decisions 1, 2, 12 and 16; decisions 11 and 14 gain conditions). Related: [0067](/adr/0067-spec-kit-is-the-sdlc),
 [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk), [0177](/adr/0177-package-distribution-npmjs-and-keygen),
 [0230](/adr/0230-reviewer-identity-separate-from-builder), [0287](/adr/0287-agent-sandboxes-and-the-remote-runner),
 [0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule). Sources: owner decisions of 2026-10-22 (VL1 to

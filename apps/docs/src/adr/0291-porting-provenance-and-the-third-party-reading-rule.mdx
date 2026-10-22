@@ -34,10 +34,10 @@ name, the vocabulary, the notices, the fresh writes and the brand repository, as
    internals and rebuilds the shell. R rewrites, with the old code as reference and fixtures. G is greenfield. M merges into an
    existing package. "Port as-is" is retired, because the bans leave nothing portable unchanged. The Linear
    titles of the port issues are renamed to match. The action column of 0084's table is read with these codes. "Skip" and
-   "Pro" are not port actions and keep their meaning.
+   "Pro" are not port actions and keep their meaning. The old action names map as follows: port as-is and port + adapt become P, redesign becomes R, and fresh becomes G. M is new and has no old name.
 4. **Provenance for ported code (PT4, amends 0195 decision 4).** First-party code, meaning our own earlier repositories, gets no
    per-file header. Each package gets one `ORIGIN.md` line that names the source repository and commit. Third-party MIT,
-   Apache-2.0 and BSD code keeps its headers, and is listed in `THIRD_PARTY_NOTICES.md`. The validator checks that every source repository named in `ORIGIN.md` is on the list of assigned sources that the owner keeps outside this repository. Headers on our own code carry no legal
+   Apache-2.0 and BSD code keeps its headers, and is listed in `THIRD_PARTY_NOTICES.md`. A coverage check (planned) confirms that every source repository named in `ORIGIN.md` is on the list of assigned sources, which the owner keeps outside this repository. It runs where that list is available, not in `pnpm validate` or CI. Headers on our own code carry no legal
    weight once the assignment is signed, while notices on third-party code are a licence duty.
 5. **The workflow core is written fresh (PT5, amends 0102).** `@stackra/workflow` is written fresh, against
    [0151](/adr/0151-workflow-engine-is-a-port-with-native-and-temporal-drivers) and [0152](/adr/0152-workflow-semantics-timeouts-waits-pinned-versions-and-one-graph-format)
@@ -64,11 +64,11 @@ name, the vocabulary, the notices, the fresh writes and the brand repository, as
 - No port merges until the assignment is signed, so the first merged port comes later than the port plan assumed.
 - Workflow and forms are written fresh, which costs builder time. Earlier code is kept for behaviour only.
 - Each ported package carries an `ORIGIN.md` line, and the validator gains a coverage check.
-- The LICENSE, NOTICE and TRADEMARKS files change after the signature, and the port issues in Linear are renamed.
+- The template repository and Vellum's `LICENSE` take the entity name (decision 2), and the port issues in Linear are renamed when picked up.
 
 ## Enforcement
 
-planned — `tools/scripts/validate-repository.mjs` checks `ORIGIN.md` and `THIRD_PARTY_NOTICES.md` coverage (decision 4). The
+planned — a coverage check of `ORIGIN.md` and `THIRD_PARTY_NOTICES.md` against the assigned list (decision 4), run where that list is available, not in `pnpm validate` or CI. The
 signature gate of decision 1 is an owner check before the first port merge. The legal-name follow-up of decision 2 is a
 planned check of the copyright line. The reading rule of decision 7 is read by agents and is not yet checked by a tool.
 
