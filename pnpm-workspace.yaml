@@ -2,13 +2,15 @@
 # Purpose: pnpm workspace membership plus the version catalogs every member's `catalog:`/`catalog:<name>`
 #          references resolve against. A member's package.json never carries a literal version — it names a
 #          catalog, so one bump here moves the whole repo. `pnpm validate` fails on any other specifier.
-# Scope: every member under apps/*, packages/<category>/<name>, services/*.
+# Scope: every member under apps/*, packages/<category>/<name>, services/*, workers/*.
 # Owner: release-operations (the owner reviews catalog changes)
 # Secrets: forbidden
 packages:
   - apps/*
   - packages/*/*
   - services/*
+  # Cloudflare Worker members (ADR 0284): deployed, tier:app.
+  - workers/*
 
 # `strict`: `pnpm add` only accepts versions that already exist in a catalog — a new dependency is added
 # here first, then referenced. tools/scripts/validate-repository.mjs enforces the same for hand edits.
@@ -108,6 +110,10 @@ catalogs:
   desktop:
     electron: 44.5.1
     electron-builder: 26.16.1
+  # Deploy CLIs. wrangler builds and deploys the Cloudflare Workers members (workers/static, ADR 0284); CI runs
+  # `wrangler deploy` with a token from Infisical /ci, never from a file.
+  deploy:
+    wrangler: 4.148.0
   # Documentation site (apps/docs).
   docs:
     mint: 4.2.985
@@ -135,6 +141,9 @@ allowBuilds:
   "@scarf/scarf": false
   # Native OS-keychain binding used only by `mint login`; local preview and validation work without it.
   keytar: false
+  # Cloudflare's Workers runtime, pulled in by wrangler (workers/static): its postinstall checks the platform binary that
+  # `wrangler dev` runs. `wrangler deploy` does not need it, but a skipped check leaves `pnpm dev` broken.
+  workerd: true
 
 minimumReleaseAgeExclude:
   - "@turbo/darwin-64@2.11.7"

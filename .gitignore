@@ -22,6 +22,9 @@ encore.gen/
 .env.*
 **/.secrets.local.cue
 
+# Wrangler local state (`wrangler dev`): miniflare storage and temporary bundles
+.wrangler/
+
 # Playwright
 test-results/
 playwright-report/

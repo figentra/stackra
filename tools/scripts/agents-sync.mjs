@@ -500,7 +500,7 @@ function projectsTo(agent, assistantName) {
  * (`<name>`, `*`, `{a,b}`, `NNNN`/`XX`) are templates, not references, and are skipped.
  */
 const REFERENCE =
-  /^(\.agents|\.claude|\.opencode|apps|packages|services|tools)\/|^(AGENTS|CLAUDE|README)\.md$|^(turbo\.jsonc|pnpm-workspace\.yaml|\.oxlintrc\.jsonc|mise\.toml|lefthook\.yml|opencode\.jsonc)$/;
+  /^(\.agents|\.claude|\.opencode|apps|packages|services|workers|tools)\/|^(AGENTS|CLAUDE|README)\.md$|^(turbo\.jsonc|pnpm-workspace\.yaml|\.oxlintrc\.jsonc|mise\.toml|lefthook\.yml|opencode\.jsonc)$/;
 
 function brokenReferences(body) {
   const refs = [...body.matchAll(/`([^`\s]+)`/g)]

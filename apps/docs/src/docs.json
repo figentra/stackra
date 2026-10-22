@@ -383,7 +383,8 @@
               "adr/0280-sandbox-to-live-promotion-and-environment-banner",
               "adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles",
               "adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc",
-              "adr/0283-browser-extension-agent-connector-deferred"
+              "adr/0283-browser-extension-agent-connector-deferred",
+              "adr/0284-hosted-static-files-one-cloudflare-static-assets-worker"
             ]
           }
         ]

@@ -61,17 +61,23 @@ const DEPENDENCY_FIELDS = [
 export function tierFor(dir) {
   if (dir === "") return null;
   if (dir.startsWith("apps/")) return "tier:app";
+  // ADR 0284: a Cloudflare Worker member is deployed like an app and reuses its tier.
+  if (dir.startsWith("workers/")) return "tier:app";
   if (dir.startsWith("packages/tooling/")) return "tier:config";
   if (dir.startsWith("packages/")) return "tier:lib";
   if (dir.startsWith("services/")) return "tier:service";
   return "unknown";
 }
 
-/** Expected npm name by placement: packages @stackra/<name>, apps @figentra/<dir>, services @figentra/service-<dir>. */
+/**
+ * Expected npm name by placement: packages @stackra/<name>, apps @figentra/<dir>, services @figentra/service-<dir>,
+ * workers @figentra/worker-<dir> (ADR 0284).
+ */
 export function expectedName(dir) {
   const base = dir.split("/").at(-1);
   if (dir.startsWith("apps/")) return `@figentra/${base}`;
   if (dir.startsWith("services/")) return `@figentra/service-${base}`;
+  if (dir.startsWith("workers/")) return `@figentra/worker-${base}`;
   if (dir.startsWith("packages/tooling/")) return `@stackra/${base}-config`;
   if (dir.startsWith("packages/")) return `@stackra/${base}`;
   return null;
@@ -101,7 +107,8 @@ export function check({ dir, pkg, turbo, tsconfig }) {
 
   const tier = tierFor(dir);
   if (tier === null) return out;
-  if (tier === "unknown") out.push("not under apps/*, packages/<category>/<name> or services/*");
+  if (tier === "unknown")
+    out.push("not under apps/*, packages/<category>/<name>, services/* or workers/*");
   if (!turbo) out.push("turbo.jsonc missing");
   else {
     if (!turbo.extends?.includes("//")) out.push('turbo.jsonc does not extend "//"');
@@ -265,6 +272,7 @@ export const MUST_STAY_JSONC = [
   [/^\.oxfmtrc\.jsonc$/, "oxfmt: .oxfmtrc.json / .jsonc only"],
   [/^knip\.jsonc$/, "knip: JSON/JSONC or knip.ts"],
   [/^opencode\.jsonc$/, "OpenCode: opencode.json / .jsonc only"],
+  [/(^|\/)wrangler\.jsonc$/, "Wrangler: wrangler.toml / .json / .jsonc only (ADR 0284)"],
 ];
 
 /**
@@ -348,7 +356,7 @@ const DEEP_RELATIVE = /^(?:\.\.\/){2,}/;
 const IMPORTS_EXEMPT =
   /^(?:packages\/tooling\/|tools\/scaffold\/templates\/packages\/tooling\/)|\/__tests__\/fixtures\//;
 export const isMemberSource = (p) =>
-  /^(?:apps|packages|services|tools\/scaffold\/templates)\/.+\.(?:ts|tsx|mts)$/.test(p) &&
+  /^(?:apps|packages|services|workers|tools\/scaffold\/templates)\/.+\.(?:ts|tsx|mts)$/.test(p) &&
   !IMPORTS_EXEMPT.test(p);
 
 /**

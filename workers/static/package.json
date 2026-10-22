@@ -1,0 +1,45 @@
+{
+  "name": "@figentra/worker-static",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Stackra hosted static files: the Cloudflare static-assets Worker behind static.stackra.figentra.com.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "imports": {
+    "#src/*": [
+      "./src/*",
+      "./src/*.ts",
+      "./src/*.tsx",
+      "./src/*/index.ts"
+    ],
+    "#stackra/*": [
+      "./.stackra/gen/*",
+      "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
+      "./.stackra/gen/*/index.ts"
+    ]
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "build": "tsdown && node dist/main.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist .turbo .wrangler"
+  },
+  "devDependencies": {
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality",
+    "wrangler": "catalog:deploy"
+  }
+}

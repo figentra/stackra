@@ -63,7 +63,9 @@ test("dependencies replaced by Accepted ADRs are forbidden", () => {
 const named = (dir, name) =>
   check({ ...ok, dir, pkg: { name } }).filter((m) => /package name/.test(m));
 
-test("names follow placement: packages @stackra, apps @figentra, services @figentra/service-", () => {
+test("names follow placement: packages @stackra, apps @figentra, services @figentra/service-, workers @figentra/worker-", () => {
+  assert.equal(named("workers/static", "@figentra/worker-static").length, 0);
+  assert.equal(named("workers/static", "@figentra/static").length, 1);
   assert.equal(named("apps/console", "@figentra/console").length, 0);
   assert.equal(named("services/health", "@figentra/service-health").length, 0);
   assert.equal(named("packages/tooling/vitest", "@stackra/vitest-config").length, 0);
@@ -75,6 +77,7 @@ test("names follow placement: packages @stackra, apps @figentra, services @figen
 
 test("tiers follow the directory", () => {
   assert.equal(tierFor("apps/docs"), "tier:app");
+  assert.equal(tierFor("workers/static"), "tier:app");
   assert.equal(tierFor("packages/tooling/vitest"), "tier:config");
   assert.equal(tierFor("packages/data/search"), "tier:lib");
   assert.equal(tierFor(""), null);
@@ -299,7 +302,12 @@ test("checkImports: allows same-folder, one-up, # aliases, packages, JSON and as
 });
 
 test("isMemberSource: member TS only; Node-loaded tooling presets and lint fixtures are exempt", () => {
-  for (const p of ["apps/console/src/main.ts", "packages/x/y/src/a.tsx", "services/s/src/m.mts"])
+  for (const p of [
+    "apps/console/src/main.ts",
+    "packages/x/y/src/a.tsx",
+    "services/s/src/m.mts",
+    "workers/w/src/main.ts",
+  ])
     assert.equal(isMemberSource(p), true);
   for (const p of [
     "packages/tooling/vitest/src/preset-react.ts",

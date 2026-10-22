@@ -36,6 +36,9 @@
       // @stackra/brand: read by src/global.css (Uniwind theme) and app.json (icons, splash), which knip doesn't trace.
       "ignoreDependencies": ["expo-updates", "@stackra/brand"],
     },
+    "workers/*": {
+      "project": ["src/**/*.ts"],
+    },
     "services/*": {
       // The root module is imported by `stackra gen` through package.json `stackra.module` (ADR 0090).
       "entry": ["src/*.module.ts"],

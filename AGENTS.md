@@ -11,6 +11,7 @@ global rules. Full guides: `apps/docs` (`pnpm docs`). Every member keeps its cod
 | `packages/<category>/<name>`                               | `@stackra/<name>`, flat inside one category: foundation, application, communication, cross-cutting, data, developer, experience, runtime, security, state | `tier:lib`     |
 | `packages/tooling/*`                                       | `@stackra/{typescript,oxlint,vitest,tsdown}-config` presets                                                                                               | `tier:config`  |
 | `services/<name>`                                          | `@figentra/service-<name>` — one member per service (`example`, `health`), entry `src/main.ts`                                                            | `tier:service` |
+| `workers/<name>`                                           | `@figentra/worker-<name>` — Cloudflare Worker members (`static`: `stackra-static`, static.stackra.figentra.com), `wrangler.jsonc`, ADR 0284               | `tier:app`     |
 | `tools/scripts`                                            | `validate-repository.mjs` (+ test); `scaffold.mjs` (+ test) — `pnpm new <kind> <name>`, templates in `tools/scaffold`                                     | —              |
 | `.agents/hooks`, `.claude/settings.json`, `opencode.jsonc` | agent hooks and config                                                                                                                                    | —              |
 | `.notes`                                                   | private owner-only submodule (`git submodule update --init .notes`); CI and agents never need it; never reference its contents from public docs           | —              |
@@ -618,6 +619,8 @@ stackra/
 ├── services/               # tier:service
 │   ├── example/            # Reference service (plain TypeScript)
 │   └── health/             # Health check service
+├── workers/                # tier:app (Cloudflare Workers, ADR 0284)
+│   └── static/             # stackra-static: hosted static files at static.stackra.figentra.com
 └── tools/
     ├── scripts/            # validation, scaffolding
     └── scaffold/           # Templates
@@ -630,12 +633,12 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 
 - `tier:config` - Tooling presets (no workspace dependencies)
 - `tier:lib` - Packages (category-based, never depend on apps/services)
-- `tier:app` - Apps (never depend on services)
+- `tier:app` - Apps and Cloudflare Worker members under `workers/` (never depend on services; ADR 0284)
 - `tier:service` - Services in plain TypeScript; Encore is generated into `.stackra/encore` (ADR 0124)
 
 #### Placement Test
 
-1. **Is it deployed?** → `tier:service` or `tier:app`
+1. **Is it deployed?** → `tier:service` or `tier:app` (a Cloudflare Worker goes in `workers/<name>`, ADR 0284)
 2. **Is it consumed by multiple apps/services?** → `tier:lib` in appropriate category
 3. **Is it build/lint/test configuration?** → `tier:config` in `packages/tooling/`
 4. **Is it a script?** → `tools/scripts/`
@@ -663,6 +666,12 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 - Docs: Mintlify documentation site
 - Mobile: Expo React Native app
 - Entry: `src/main.ts`
+
+##### Workers (<name>)
+
+- Cloudflare Worker members, `@figentra/worker-<name>`, tier `tier:app` (ADR 0284)
+- `wrangler.jsonc` at the member root (hand-written until `stackra gen` emits Workers config); deployed only from CI
+- Build entry: `src/main.ts`; tests: `src/**/__tests__/`
 
 #### Generated Output
 
