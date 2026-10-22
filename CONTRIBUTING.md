@@ -10,4 +10,17 @@ The working rules live in [`AGENTS.md`](AGENTS.md) and `.agents/rules/`; the ful
 5. `pnpm verify` must be green (format, lint, typecheck, test, build, validate, boundaries, knip).
 6. Open a pull request using the template. A separate reviewer approves; nobody merges their own change.
 
+## Merging
+
+- `Quality Gate` is the only required check, enforced by the `main` ruleset (squash only, linear history, branch
+  up to date, no force pushes). Merges go through `pnpm pr:merge`, which also needs the head commit's
+  `AI-REVIEW: PASS` from the `stackra-reviewer` app (`pnpm bot:review`), never the author
+  ([ADR 0230](apps/docs/src/adr/0230-reviewer-identity-separate-from-builder.mdx),
+  [ADR 0119](apps/docs/src/adr/0119-merge-policy-and-release-authority.mdx)). Never `--admin`, never a push to `main`.
+- A PR's branch is Linear-named (`figentra/sta-<n>-<slug>`) and its title or branch names the STA key, or it carries
+  the `chore-lane` label; `pnpm linear check-pr` enforces it in CI.
+- `.github/` changes are CI and permission changes, change risk R3
+  ([ADR 0120](apps/docs/src/adr/0120-sdlc-spec-location-lanes-and-change-risk.mdx)).
+  `.github/branch-protection.json` stays strict JSON (`MUST_STAY_JSON`).
+
 Report security issues privately, as described in [`SECURITY.md`](SECURITY.md).

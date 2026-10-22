@@ -50,23 +50,19 @@ Before starting concurrent work:
 
 #### Worktree Strategy
 
-Create a worktree per agent:
+Create a worktree per agent **inside the repository**, under `.claude/worktrees/<name>` (gitignored). Never create
+one next to the repository (`../<name>`): sibling folders pile up in `~/Projects` and outlive their branch.
 
 ```bash
-# Main worktree: /Users/akouta/Projects/final-project
-git worktree add ../stackra-auth feature/auth
-
-# Agent 1: Authentication in worktree
-cd ../stackra-auth
+# From the repository root
+git worktree add .claude/worktrees/sta-123 -b figentra/sta-123-slug origin/main
+cd .claude/worktrees/sta-123
 pnpm install
-# Agent works here
+# Agent works here; another agent works in the main checkout or its own worktree
 
-# Agent 2: UI components in main worktree
-cd /Users/akouta/Projects/final-project
-# Agent works here
-
-# Merge when done
-git worktree remove ../stackra-auth
+# After the PR merges
+git worktree remove .claude/worktrees/sta-123
+git branch -D figentra/sta-123-slug
 ```
 
 #### Coordination Rules
@@ -413,6 +409,7 @@ means not yet. A row changes only by a new ADR. Full table with revival triggers
 | An OLAP engine                                                                                              | Deferred | Postgres with the approved extensions (`/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions`)                                                                                                                                                            |
 | Database sharding                                                                                           | Deferred | one region and one primary; cells come later (`/adr/0186-backups-and-disaster-recovery`)                                                                                                                                                                               |
 | Infisical Agent Vault (a credential proxy for coding agents and delegated tasks)                            | Deferred | Infisical paths already in force; the model never sees a secret and egress is direct (`/adr/0267-infisical-agent-vault-deferred`)                                                                                                                                      |
+| A browser-extension agent connector (an agent acting inside the user's browser via an extension)            | Deferred | server-side connectors and MCP tools; Playwright in sandboxes for browsing (`/adr/0283-browser-extension-agent-connector-deferred`)                                                                                                                                    |
 | A second non-TypeScript runtime for services                                                                | Deferred | TypeScript service members (`/adr/0010-services-are-independent-workspace-members`)                                                                                                                                                                                    |
 
 Enforcement: `FORBIDDEN_DEPENDENCIES` in `tools/scripts/validate-repository.mjs` (eslint, prettier, jest, nest,

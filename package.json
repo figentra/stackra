@@ -59,7 +59,7 @@
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
     "turbo": "catalog:build",
-    "typescript": "catalog:mobile",
+    "typescript": "catalog:tooling",
     "yaml": "catalog:"
   },
   "engines": {
