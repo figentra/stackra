@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.stackra.dev/runway/service.json",
+  "$id": "https://schemas.stackra.figentra.com/runway/service.json",
   "title": "runway.yaml (service member)",
   "description": "How and where one service runs, per environment: dev port, the deployable it joins (ADR 0169), resources, the sizes of what it needs, drivers, secret NAMES, health thresholds, per-environment config. What it needs is derived by gen into the manifest `infra`; this file only sizes it (ADR 0168, 0238, 0266, 0173).",
   "type": "object",

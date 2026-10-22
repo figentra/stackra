@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.stackra.dev/branch-protection.json",
+  "$id": "https://schemas.stackra.figentra.com/branch-protection.json",
   "title": ".github/branch-protection.json",
   "description": "Branch protection for one branch: `rules` is the body of GitHub's PUT /repos/{owner}/{repo}/branches/{branch}/protection.",
   "type": "object",

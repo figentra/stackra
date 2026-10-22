@@ -70,7 +70,7 @@
     "https://biomejs.dev/": true,
     "https://mintlify.com/": true,
     "https://opencode.ai/": true,
-    "https://schemas.stackra.dev/": true
+    "https://schemas.stackra.figentra.com/": true
   },
   "json.schemas": [
     {
@@ -109,7 +109,7 @@
   "yaml.format.enable": false,
   "yaml.validate": true,
   "yaml.schemaStore.enable": true,
-  // Stackra's own schemas live in tools/schemas (offline today; their $id is schemas.stackra.dev).
+  // Stackra's own schemas live in tools/schemas (offline today; their $id is schemas.stackra.figentra.com).
   "yaml.schemas": {
     "./node_modules/lefthook/schema.json": "lefthook.yml",
     "./tools/schemas/mcp.schema.json": ".mcp.yaml",

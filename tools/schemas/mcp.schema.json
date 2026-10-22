@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.stackra.dev/mcp.json",
+  "$id": "https://schemas.stackra.figentra.com/mcp.json",
   "title": ".mcp.yaml",
   "description": "Every MCP server the project uses, in one file (ADR 0282). Rendered into the gitignored .mcp.json. Server definitions only, never a token: `$NAME` placeholders are injected at run time (ADR 0173).",
   "type": "object",

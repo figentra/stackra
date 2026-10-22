@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.stackra.dev/runway/app.json",
+  "$id": "https://schemas.stackra.figentra.com/runway/app.json",
   "title": "runway.yaml (app member)",
   "description": "How and where one app runs, per environment: the dev port (the only place it is written), domains, public vars, secret names, release channels, Workers knobs (ADR 0168, 0170, 0173, 0254). Identity is stackra.config.ts; behaviour is src/config/*; accounts and zones are the root runway. A value here may override a root default, never the reverse.",
   "type": "object",

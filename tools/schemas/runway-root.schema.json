@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.stackra.dev/runway/root.json",
+  "$id": "https://schemas.stackra.figentra.com/runway/root.json",
   "title": "runway.yaml (root)",
   "description": "The root runway: destinations per environment, shared resources, targets, the edge, the secrets defaults, the release policy and the defaults members inherit (ADR 0168, 0169, 0170, 0173). It never lists deployables: gen collects them from every member's runway.yaml. No secret value; `ref:<path>` resolves from the stacks repo's Pulumi config at infra time (ADR 0171 d4).",
   "type": "object",

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.stackra.dev/stackra-lock.json",
+  "$id": "https://schemas.stackra.figentra.com/stackra-lock.json",
   "title": "stackra.lock.yaml",
   "description": "The pinned revision of every external producer manifest this workspace builds clients from (ADR 0158, ADR 0260). Producer to revision only: no secret and no URL. A producer in this repository is not listed.",
   "type": "object",
