@@ -50,8 +50,9 @@
     { "action": "shell", "resource": "pnpm exec oxlint *", "effect": "allow" },
     { "action": "shell", "resource": "pnpm exec vitest *", "effect": "allow" },
     { "action": "shell", "resource": "pnpm exec tsc *", "effect": "allow" },
-    // The scripts these run hold the full /agents set: the lead's, except the executor's own push (below).
-    { "action": "shell", "resource": "pnpm *bot:*", "effect": "deny" },
+    // The scripts these run hold the full /agents set: the lead's, except the executor's own push (below). A leading
+    // `*` also catches an environment prefix (`NODE_OPTIONS=… pnpm bot:git …`), which the allows below never match.
+    { "action": "shell", "resource": "*pnpm *bot:*", "effect": "deny" },
     { "action": "shell", "resource": "pnpm *pr:merge*", "effect": "deny" },
     { "action": "shell", "resource": "pnpm *linear*", "effect": "deny" },
     { "action": "shell", "resource": "pnpm *secrets:*", "effect": "deny" },

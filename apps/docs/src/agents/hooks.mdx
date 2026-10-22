@@ -39,9 +39,15 @@ read as the shell passes them: quotes removed, redirections (`2>&1`, `>log`, `<<
 not operands, and a quoted argument such as `"$HOME/.npmrc"` is still a path. `cd` is followed in order: a subshell's
 `cd` ends at its `)`, and after a `cd` that may fail (`cd x; …`, `cd x || …`) both directories count. Every word
 named `rm` or `find` is read as a command, so a wrapper the guard does not know (`setsid`, `flock f`, `op run --`)
-never hides a recursive delete. Every decision takes time linear in the command; a command nesting substitutions
-more than 16 deep or script strings more than 8 deep, or needing more than 48 git lookups, is denied unread, because
-the hook fails open when its five seconds run out.
+never hides a recursive delete. A command line passed as one quoted word or here-string (`mise exec -c '…'`,
+`tmux new -d '…'`, `watch '…'`, `ssh h '…'`, `at now <<< '…'`) is read as commands too: `mise exec -c` by every
+rule, and any such word that holds `rm`, `find` or `git` by the delete, discard, push and stash rules. Once a SQL
+client runs (`psql`, `mysql`, `sqlite3`, `encore db shell`, behind `docker exec` too), its quoted, piped and
+heredoc text is read for `DROP DATABASE` / `SCHEMA`. A decision is bounded: a command nesting substitutions more
+than 16 deep or script strings more than 8 deep, needing more than 48 git lookups, or taking more than two seconds,
+is denied, because the hook fails open when its five seconds run out or it throws; a command that breaks the
+reader is denied for the same reason. A git lookup in a directory that does not exist is skipped, and a path
+longer than 4096 characters is denied unread.
 
 | Tier | Commands                                                                                                                                                                                                                |
 | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

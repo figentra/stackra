@@ -287,11 +287,11 @@ function scanOnce(c, { heredoc = false } = {}) {
           const from = c.lastIndexOf("\n", i - 1) + 1;
           const to = c.indexOf("\n", i);
           const line = c.slice(from, to < 0 ? c.length : to);
-          const rest = c.slice(to < 0 ? c.length : to);
+          const rest = to < 0 ? c.length : to;
           const script =
             SHELL_WORD.test(line) ||
             /\|&?\s*$/.test(line) ||
-            writtenFiles(line).some((file) => runsFile(rest, file));
+            writtenFiles(line).some((file) => runsFile(c, file, rest));
           pending.push({ ...d, strip, frame: f, script });
           edits.push([i, d.end, "<<HEREDOC"]);
           emit("<<HEREDOC");
@@ -420,13 +420,24 @@ function findScriptStrings(c) {
     new RegExp(String.raw`\b(?:${SHELL_NAME}\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1`, "g"),
   ))
     out.push(m[2]);
-  for (const m of c.matchAll(
-    new RegExp(
-      String.raw`(?:^|[\s;&|(\x60])(?:[^\s;&|()<>\x60]*/)?(?:${SHELL_NAME}|source|\.)(?=\s)[^;&|\n]*<<<\s*(?:(["'])((?:\\.|(?!\1)[^\\])*)\1|(\S+))`,
-      "g",
-    ),
-  ))
-    out.push(m[2] ?? m[3]);
+  // A here-string read by a shell, `source` or `.` in the same command; and `mise exec … -c '<cmd>'` (`x`,
+  // `--command`, `--command=`, `-c<cmd>`), which runs a command line like `sh -c`, its own `--` ending its options.
+  // One pass over the words (STA-330 review: a regex for the here-string was quadratic in `.` words).
+  for (const { words, redirects } of simpleCommands(c)) {
+    if (words.some((w) => SHELL.test(w.split("/").pop()) || /^(?:.*\/)?source$|^\.$/.test(w)))
+      for (const r of redirects) if (r.op === "<<<") out.push(r.target);
+    let mise = false;
+    for (let k = 0; k < words.length; k++) {
+      const w = words[k];
+      if (w.split("/").pop() === "mise" && /^(?:exec|x)$/.test(words[k + 1] ?? "")) {
+        mise = true;
+        k++;
+      } else if (!mise) continue;
+      else if (w === "--") mise = false;
+      else if (w === "-c" || w === "--command") out.push(words[++k] ?? "");
+      else if (/^(?:-c|--command=)/.test(w)) out.push(w.replace(/^(?:-c|--command=)/, ""));
+    }
+  }
   const bodies = c.replace(FUNCTION, ";");
   if (bodies !== c) out.push(bodies);
   for (const m of c.matchAll(ALIAS)) {
@@ -490,40 +501,55 @@ const TRUSTED =
  * True when `text` runs a file named `base` (any directory, globs and `find -exec`'s `{}` included): a shell,
  * `source` or `.` found by `shellAt` with it as an operand or `<` input (`caffeinate sh f`, `sh<f`, `sh f*`,
  * `find . -exec sh {} \;`), inside a `-c` or `eval` script, `./f` as a command, or its content substituted
- * (`$(cat f)`, `$(<f)`, backticks) anywhere.
+ * (`$(cat f)`, `$(<f)`, backticks) anywhere. `from`: only the commands that start at or after that offset.
+ * What each command runs is read once per text (`fileRunsOf`), so asking for every write in a line stays linear
+ * (STA-330 review: re-parsing the rest of the line per write was quadratic in time and memory).
  */
-function runsFile(text, base) {
-  const matches = (w) => {
-    if (w === "{}") return true;
-    const b = w.split("/").pop();
-    return Boolean(b) && segmentRx(b).test(base);
-  };
-  for (const s of simpleCommands(text)) {
-    const at = shellAt(s);
-    if (at) {
-      const words = s.words.slice(at.j + 1);
-      const flag = shellLike(at.name) ? commandFlag(words) : -1;
-      if (at.name === "eval" && runsFile(words.join(" "), base)) return true;
-      if (flag >= 0 && runsFile(words[flag + 1] ?? "", base)) return true;
-      if (at.name !== "eval" && flag < 0 && words.some((w) => !w.startsWith("-") && matches(w)))
-        return true;
-      if (at.name !== "eval" && s.redirects.some((r) => r.op === "<" && matches(r.target)))
-        return true;
-    }
-    if (programStrings(s).texts.some((t) => runsFile(t.text, base))) return true;
-    const { i, raw, name } = nameOf(s);
-    if (i >= 0 && raw.includes("/") && matches(raw)) return true;
-    // `open -a Terminal f` runs f.
-    const rest = s.words.slice(i + 1);
-    if (name === "open" && rest.some((w) => /^-[a-zA-Z]*a/.test(w)) && rest.some(matches))
-      return true;
-  }
-  const name = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const file = String.raw`['"]?(?:\S*/)?${name}['"]?`;
-  return new RegExp(
-    String.raw`\$\(\s*(?:cat\s+(?:-\S+\s+)*)?<?\s*${file}\s*\)|\x60\s*cat\s+(?:-\S+\s+)*${file}\s*\x60`,
-  ).test(text);
+function runsFile(text, base, from = 0) {
+  if (fileRunsOf(text).some(([start, runs]) => start >= from && runsIn(runs, base))) return true;
+  return substitutedFiles(text).some(([at, name]) => at >= from && name === base);
 }
+const runsIn = ({ words, texts }, base) =>
+  words.some((w) => w === "{}" || (w && segmentRx(w).test(base))) ||
+  texts.some((t) => runsFile(t, base));
+const fileRunsTable = memoTable();
+/** The simple commands of `text` that run a file or hold a script: where each starts, and what it runs. */
+const fileRunsOf = (text) =>
+  cached(fileRunsTable, text, () =>
+    simpleCommands(text)
+      .map((s, k, list) => [k ? list[k - 1].end : 0, fileRuns(s)])
+      .filter(([, runs]) => runs.words.length || runs.texts.length),
+  );
+function fileRuns(s) {
+  const words = [];
+  const texts = [];
+  const at = shellAt(s);
+  if (at) {
+    const rest = s.words.slice(at.j + 1);
+    const flag = shellLike(at.name) ? commandFlag(rest) : -1;
+    if (at.name === "eval") texts.push(rest.join(" "));
+    if (flag >= 0) texts.push(rest[flag + 1] ?? "");
+    if (at.name !== "eval" && flag < 0) words.push(...rest.filter((w) => !w.startsWith("-")));
+    if (at.name !== "eval")
+      words.push(...s.redirects.filter((r) => r.op === "<").map((r) => r.target));
+  }
+  texts.push(...programStrings(s).texts.map((t) => t.text));
+  const { i, raw, name } = nameOf(s);
+  if (i >= 0 && raw.includes("/")) words.push(raw);
+  // `open -a Terminal f` runs f.
+  const rest = s.words.slice(i + 1);
+  if (name === "open" && rest.some((w) => /^-[a-zA-Z]*a/.test(w))) words.push(...rest);
+  return { words: words.map((w) => (w === "{}" ? w : w.split("/").pop())), texts };
+}
+/** A file's content substituted: `$(cat f)`, `$(<f)`, `` `cat f` ``; the file is group 1 or 2. */
+const SUBSTITUTED_FILE =
+  /\$\(\s*(?:cat\s+(?:-\S+\s+)*)?<?\s*['"]?([^\s'"()\x60]+)['"]?\s*\)|\x60\s*cat\s+(?:-\S+\s+)*['"]?([^\s'"()\x60]+)['"]?\s*\x60/g;
+const substitutedTable = memoTable();
+/** The basenames of the files `text` substitutes, with their offsets. */
+const substitutedFiles = (text) =>
+  cached(substitutedTable, text, () =>
+    [...text.matchAll(SUBSTITUTED_FILE)].map((m) => [m.index, (m[1] ?? m[2]).split("/").pop()]),
+  );
 
 /**
  * Top-level simple commands of `c`: unquoted words with whether each holds an expansion (`dyn`) and where each
@@ -589,7 +615,13 @@ function splitCommands(c, all) {
     const ch = c[i];
     if (word === null) wordAt = i;
     if (ch === "\\") word = (word ?? "") + (c[++i] ?? "");
-    else if (ch === "'") {
+    else if (ch === "$" && c[i + 1] === "'" && ansiEnd(c, i + 2) < c.length) {
+      // ANSI-C quoting (`$'gh'`, `$'\x67h'`) is a literal word with its escapes decoded (STA-330 review); an
+      // unclosed one stays an expansion (deny-leaning).
+      const j = ansiEnd(c, i + 2);
+      word = (word ?? "") + ansiC(c.slice(i + 2, j));
+      i = j;
+    } else if (ch === "'") {
       const j = c.indexOf("'", i + 1);
       const stop = j < 0 ? c.length : j;
       word = (word ?? "") + c.slice(i + 1, stop);
@@ -628,6 +660,35 @@ function splitCommands(c, all) {
   push("", c.length);
   return all ? out : out.filter((s) => s.words.length || s.redirects.length);
 }
+
+/** Where the `$'…'` body that starts at `j` closes (`\'` escapes a quote), or `c.length`. */
+function ansiEnd(c, j) {
+  while (j < c.length && c[j] !== "'") j += c[j] === "\\" ? 2 : 1;
+  return j;
+}
+const ANSI_ESCAPES = {
+  a: "\x07",
+  b: "\b",
+  e: "\x1b",
+  E: "\x1b",
+  f: "\f",
+  n: "\n",
+  r: "\r",
+  t: "\t",
+  v: "\v",
+};
+/** The text of a `$'…'` body: `\xHH`, `\uHHHH`, `\UHHHHHHHH`, octal, `\cX` and the letter escapes decoded. */
+const ansiC = (s) =>
+  s.replace(
+    /\\(?:x([0-9a-fA-F]{1,2})|u([0-9a-fA-F]{1,4})|U([0-9a-fA-F]{1,8})|([0-7]{1,3})|c(.)|(.))/gs,
+    (_, x, u, big, oct, ctl, ch) => {
+      const code = x ?? u ?? big;
+      if (code) return String.fromCodePoint(Math.min(parseInt(code, 16), 0x10ffff));
+      if (oct) return String.fromCharCode(parseInt(oct, 8) & 0xff);
+      if (ctl) return String.fromCharCode(ctl.charCodeAt(0) & 31);
+      return ANSI_ESCAPES[ch] ?? ch;
+    },
+  );
 
 /**
  * Index of the command name: past assignments, shell keywords and wrappers (`env -i A=1`, `nice -n 5`,
@@ -976,7 +1037,7 @@ function programStrings(s) {
  * (`grep -c sh`, `cp source "$DEST"`, `pnpm lint --rule source`). `xargs` is judged by the command it runs. A
  * reader that does run (`sed e`, `sort --compress-program`) reports itself, so its input counts as unreadable.
  */
-function shellAt(s) {
+function shellAt(s, depth = 0) {
   const { i, name } = nameOf(s);
   if (i < 0) return null;
   if (SHELL.test(name) || ["eval", "source", "."].includes(name)) return { j: i, name };
@@ -988,9 +1049,12 @@ function shellAt(s) {
   if (NEVER_RUNS.has(name)) return null;
   let from = i + 1;
   if (name === "xargs") {
+    // A chain of xargs past 8 is unreadable: each level copies the words, and a long chain overflowed the stack,
+    // which fails open (STA-330 review).
+    if (depth >= 8) return { j: s.words.length - 1, name: "sh", reader: true };
     while (from < s.words.length && s.words[from].startsWith("-"))
       from += XARGS_VALUE.has(s.words[from]) ? 2 : 1;
-    const inner = shellAt({ ...s, words: s.words.slice(from), dyn: s.dyn.slice(from) });
+    const inner = shellAt({ ...s, words: s.words.slice(from), dyn: s.dyn.slice(from) }, depth + 1);
     return inner && { ...inner, j: inner.j + from };
   }
   if (PACKAGE_MANAGERS.has(name) && packageScriptOnly(after)) return null;
@@ -1149,7 +1213,7 @@ export function shellInputs(c) {
     if (name === "tee") targets.push(...s.words.slice(i + 1).filter((w) => !/^[-<>]/.test(w)));
     for (const t of targets) {
       const base = t.split("/").pop();
-      if (!runsFile(c.slice(s.end), base)) continue;
+      if (!runsFile(c, base, s.end)) continue;
       const text = output(list, k);
       take(text);
       if (text !== null) known.add(base);
@@ -1391,6 +1455,8 @@ export function commandReachesInbox(cmd, { cwd, home = homedir() } = {}) {
         /^[~$]/.test(expanded) || (!expanded.startsWith("/") && !dir)
           ? undefined
           : resolve(dir ?? "/", expanded);
+      // A `cd` chain past PATH_MAX is no real command, and resolving every word against it was quadratic.
+      if (dir && dir.length > 4096) return true;
     }
   }
   return false;

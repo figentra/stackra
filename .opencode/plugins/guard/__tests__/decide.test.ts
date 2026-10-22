@@ -925,5 +925,37 @@ test("executors commit locally and push only their own HEAD through bot:git (pha
   // the main checkout keeps its work
   for (const c of ["git reset --hard", "git clean -fd", "git checkout ."])
     assert.equal(decideShell(c, main).kind, "deny", c);
+  // STA-330 review round 3: the bot push form is the whole command; a prefix would run the executor's own code
+  // with every /agents value
+  for (const c of [
+    "NODE_OPTIONS=--require=./e.js pnpm bot:git -- fetch origin",
+    "PATH=./bin:$PATH pnpm bot:git -- push origin HEAD",
+    "BASH_ENV=./e.sh pnpm bot:git -- fetch origin",
+    "LD_PRELOAD=./e.so pnpm bot:git -- fetch origin",
+    "DYLD_INSERT_LIBRARIES=./e.dylib pnpm bot:git -- push origin HEAD",
+    "npm_config_node_options=--require=./e.js pnpm bot:git -- fetch origin",
+    "env NODE_OPTIONS=x pnpm bot:git -- fetch origin",
+    "sudo pnpm bot:git -- fetch origin",
+    "export NODE_OPTIONS=--require=./e.js; pnpm bot:git -- fetch origin",
+    "source ./e.sh && pnpm bot:git -- push origin HEAD",
+    "cd ../x && pnpm bot:git -- fetch origin",
+    "pnpm bot:git -- fetch origin && pnpm bot:git -- push origin HEAD",
+  ])
+    assert.equal(shell(c), "deny", c);
+  assert.equal(shell("  pnpm bot:git -- push origin HEAD\n"), "allow");
   done();
+});
+
+test("round 3: SQL drops, quoted command lines and ANSI-C words are denied for executors too", () => {
+  for (const c of [
+    "psql -c 'DROP DATABASE x'",
+    "echo 'DROP DATABASE x' | psql",
+    "psql <<'EOF'\nDROP SCHEMA x;\nEOF",
+    "mise exec -c 'rm -rf /'",
+    "tmux new -d 'rm -rf ~'",
+    "crontab - <<< '* * * * * rm -rf ~'",
+    "git tag $'@stackra/logger@1.0.0'",
+  ])
+    assert.equal(kind(c), "deny", c);
+  assert.equal(kind("rg 'DROP SCHEMA' services"), "allow");
 });

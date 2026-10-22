@@ -57,9 +57,11 @@ cover what GitHub cannot see.
    keyword; a quoted or escaped command name is read unquoted; quoted prose is not a command; arguments are read as
    the shell passes them (quotes, redirections, groups and subshells); the checkout a git command targets is resolved
    through `cd` (a subshell's ends at its `)`, a failed one leaves the old directory), `-C`, `--git-dir` and
-   `GIT_DIR=`; every word named `rm` or `find` is read as a command, so an unknown wrapper never hides a recursive
-   delete. Every decision is linear in the command, and a command nested deeper than the guard reads, or needing more
-   git lookups than it runs in its time limit, is denied, because a hook that runs out of time fails open. Settings
+   `GIT_DIR=`; every word named `rm` or `find` is read as a command, and a command line passed as one quoted word
+   that holds `rm`, `find` or `git` (`tmux new -d '…'`, `ssh h '…'`, `mise exec -c '…'`) is read as commands, so an
+   unknown wrapper never hides a recursive delete or a discard. A decision is bounded, not linear: a command nested
+   deeper than the guard reads, needing more git lookups than it runs, or taking longer than two seconds, is
+   denied, because a hook that runs out of time fails open. Settings
    keep the prefix denies for `rm -rf /` and `rm -rf ~`, `$HOME`; a prefix deny of every absolute path would also
    refuse the scratchpad that rule 3 allows.
    `opencode.jsonc` repeats the tiers as order-sensitive patterns.
@@ -81,7 +83,9 @@ cover what GitHub cannot see.
    and runs `pnpm bot:git -- fetch origin [<ref>]` and `pnpm bot:git -- push [--force-with-lease] origin HEAD`; every other bot
    wrapper (`bot:gh`, `bot:review`, `bot:token`, `pr:merge`, `linear`), Infisical and raw network git stay the lead's.
    `pnpm bot:git` runs no git hook (`core.hooksPath=/dev/null`): a hook is code from the worktree being pushed (lefthook
-   runs its `lefthook.yml`) and would see every /agents value; the Quality Gate runs the checks a hook would.
+   runs its `lefthook.yml`) and would see every /agents value; the Quality Gate runs the checks a hook would. The
+   executor's guard allows these two forms only as the whole command: an environment prefix (`NODE_OPTIONS=`,
+   `PATH=`, `env`), an `export` or `source` before it, or a `cd` would run the executor's own code with those values.
    The lead still reviews, opens the pull request and merges through `pnpm pr:merge`.
 7. **An agent never widens the project rules.** An OpenCode agent's frontmatter permissions only narrow
    `opencode.jsonc`; `agents-sync` refuses an `allow` effect for an agent projected to OpenCode.
@@ -94,6 +98,9 @@ cover what GitHub cannot see.
   gets its own pnpm script.
 - OpenCode executors push their own branch, so the lead no longer re-commits their output. They still do not update
   Linear themselves until the `/agents` Infisical folder is split.
+- `pnpm bot:git` still runs the worktree's own `package.json` script and `tools/scripts/bot-gh.mjs` with the /agents
+  values, so an executor that edits them before a push runs its code with those values. The guard does not see edits;
+  splitting the `/agents` folder, or pushing from the main checkout's copy of the script, closes it.
 - Every local rule stays an accident guard: hooks run as the owner's macOS user and fail open, and text rules miss
   `node -e`, child processes and wrappers they do not know. Isolation comes from GitHub's rulesets, a bot without
   admin rights, the CI reviewer and moving the owner's credentials out of agents' reach.

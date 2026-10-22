@@ -14,7 +14,7 @@
 // blanked (`runs`), heredoc bodies are stripped, and `-m` / `--title` / `--body` values are dropped
 // (`dropMessages`). Substitution bodies, `sh -c` / `eval` strings and function bodies are commands.
 import { spawnSync } from "node:child_process";
-import { readdirSync, realpathSync } from "node:fs";
+import { existsSync, readdirSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import {
@@ -230,7 +230,7 @@ const W = String.raw`[^\s|;&()<>\x60]`;
  * `npx -p pkg cmd` is read as `pkg cmd` (npx asks anyway). Upgrade when a runner option hides a command.
  * `mise exec` ends at its own first `--`, never at the command's (`mise exec -- rm -rf -- /`, STA-330 review).
  */
-const RUNNER = String.raw`(?:(?:${W}*\/)?(?:pnpm|npm|yarn)\s+(?:(?:-[CF]|--(?:filter|dir|prefix|workspace|cwd))(?:=|\s+)${W}+\s+|--?[\w-]+(?:=${W}+)?\s+)*(?:(?:exec|dlx|x)\s+(?:-${W}+\s+)*)?|(?:${W}*\/)?(?:npx|pnpx|bunx)\s+(?:-${W}+\s+)*|(?:${W}*\/)?mise\s+(?:exec|x)\s+(?:(?!--\s)[^|;&\n]*?\s)?--\s+)`;
+const RUNNER = String.raw`(?:(?:${W}*\/)?(?:pnpm|npm|yarn)\s+(?:(?:-[CF]|--(?:filter|dir|prefix|workspace|cwd))(?:=|\s+)${W}+\s+|--?[\w-]+(?:=${W}+)?\s+)*(?:(?:exec|dlx|x)\s+(?:-${W}+\s+)*)?|(?:${W}*\/)?(?:npx|pnpx|bunx)\s+(?:-${W}+\s+)*|(?:${W}*\/)?mise\s+(?:exec|x)\s+(?=\S)(?:(?!--\s)[^|;&\n]*?\s)?--\s+)`;
 /**
  * A runner at command position: a lookbehind, so a match starts only at a command's first word, and words that stop
  * at a separator (`W`, a `$(…)` or a backtick in an assignment), so no match scans past its own command: a run of
@@ -273,8 +273,65 @@ function nesting(f) {
     scriptDepth--;
   }
 }
-/** Texts a rule that needs the quoted values scans: the command with prose dropped, and every nested command in full. */
-const scanTexts = (c) => [dropMessages(c), ...nestedRaw(c).map(dropMessages)];
+/**
+ * Texts a rule that needs the quoted values scans: the command with prose dropped, every nested command in full,
+ * and every command line passed as one quoted word (`commandLines`). Memoised.
+ */
+const scanTextCache = memoTable();
+const scanTexts = (c) =>
+  cached(scanTextCache, c, () => {
+    const texts = [dropMessages(c), ...nestedRaw(c).map(dropMessages)];
+    return [...texts, ...texts.flatMap((t) => commandLines(t))];
+  });
+/** Commands whose operands are text, patterns or programs in another language, never shell commands. */
+const TEXT_COMMANDS = new Set([
+  "echo",
+  "printf",
+  "rg",
+  "grep",
+  "egrep",
+  "fgrep",
+  "ag",
+  "jq",
+  "sed",
+  "awk",
+  "gawk",
+]);
+/** A simple command whose words are prose, search patterns or history: `TEXT_COMMANDS`, `git log|grep`. */
+function readerCommand(words) {
+  const i = commandAt(words);
+  const name = baseName(words[i] ?? "");
+  if (TEXT_COMMANDS.has(name)) return true;
+  const sub = words.slice(i + 1).find((w) => !w.startsWith("-")) ?? "";
+  return name === "git" && (sub === "log" || sub === "grep");
+}
+/** A word that holds `rm`, `find` or `git` as a command word. */
+const LINE_WORD = /(?:^|[\s;&|(`])(?:[^\s;&|()<>`]*\/)?(?:rm|find|git)(?=\s)/;
+/**
+ * Command lines passed as one quoted word or here-string to a wrapper the guard does not know (`tmux new -d '…'`,
+ * `watch '…'`, `ssh h '…'`, `su -c '…'`, `at now <<< '…'`, a crontab line): a word with a space that holds `rm`,
+ * `find` or `git` outside its substitutions (those are scanned as their own texts), in a command that is not prose
+ * or a search (`readerCommand`), its own messages dropped, at any quoting depth up to `MAX_SCRIPTS` (STA-330 review).
+ * Only the scanning rules read them (deletes, discards, pushes, stash), so other rules keep quoted text as prose.
+ */
+function commandLines(t) {
+  return nesting(() => {
+    const out = [];
+    for (const s of simpleCommands(t)) {
+      if (readerCommand(s.words)) continue;
+      const strings = s.redirects.filter((r) => r.op === "<<<").map((r) => r.target);
+      for (const w of [...s.words, ...strings]) {
+        let plain = w;
+        for (let was = ""; was !== plain;)
+          [was, plain] = [plain, plain.replace(/\$\([^()]*\)|`[^`]*`/g, "")];
+        if (!/\s/.test(plain) || !LINE_WORD.test(plain)) continue;
+        const line = dropMessages(w);
+        out.push(line, ...commandLines(line));
+      }
+    }
+    return out;
+  });
+}
 /**
  * `scanTexts` paired with the directory each text starts in: the command starts in `cwd`; a nested text (a `$(…)`
  * body, an `sh -c` string) starts unknown once the command has a `cd`, because the order is lost.
@@ -311,11 +368,20 @@ const runs = (c, rx) =>
  */
 const MAX_GIT = 48;
 let gitRuns = 0;
+/**
+ * One decision works at most this long (ms); past it git answers "" and the decision denies (`TOO_SLOW`): the hook
+ * is killed, and fails open, at 5 s, and a git spawn can cost far more than its usual 20 ms (STA-330 review).
+ */
+const DEADLINE_MS = 2000;
+let deadline = Infinity;
+let gitLate = false; // a git lookup was skipped at the deadline
+const late = () => performance.now() > deadline;
 /** `git` output in `cwd`, or "" when git fails; memoised for one decision. */
 const gitCache = memoTable();
 const git = (cwd, ...args) =>
   cached(gitCache, JSON.stringify([cwd, args]), () => {
-    if (++gitRuns > MAX_GIT) return "";
+    // A spawn into a missing directory fails, and slows the next spawn by about 140 ms (STA-330 review).
+    if (++gitRuns > MAX_GIT || (gitLate ||= late()) || !existsSync(cwd)) return "";
     const r = spawnSync("git", args, { cwd, encoding: "utf8" });
     return r.status === 0 ? r.stdout.trim() : "";
   });
@@ -512,9 +578,18 @@ function readGitCommands(text, cwd) {
     let next = 0; // the word the next match's subcommand starts, when it is a word of this command
     // Every `git` word outside quotes (a path like `GIT_DIR=x/.git git …` holds two); quoted text is prose here,
     // and the commands nested in it are scanned as their own texts.
-    const quoted = scanShell(src).spans;
+    const quoted = scanShell(src).spans; // in order, never overlapping
+    let q = 0;
+    let seen = 0;
     for (const m of src.matchAll(GIT_WORD)) {
-      if (quoted.some(([a, b]) => m.index >= a && m.index < b)) continue;
+      while (q < quoted.length && quoted[q][1] <= m.index) q++;
+      if (q < quoted.length && quoted[q][0] <= m.index) continue;
+      // More git words than a command holds (`echo git git …`) are not read, which was quadratic: the decision
+      // denies as past the git cap.
+      if (++seen > MAX_DELETERS) {
+        gitRuns = MAX_GIT + 1;
+        break;
+      }
       let where = [];
       for (const [opt, v] of env)
         where = v === null || where === null ? null : [...where, `${opt}=${v}`];
@@ -578,6 +653,28 @@ const isRecursiveForce = (flags) =>
 /** The scratchpad root Claude Code gives a session: `/tmp/claude-<uid>` through its symlinks. */
 const scratchRoot = () => realDir(`/tmp/claude-${process.getuid?.() ?? 0}`);
 const FIND_EXEC = new Set(["-exec", "-execdir", "-ok", "-okdir"]);
+const FIND_NAMES = /^-i?(?:name|path|wholename|regex)$/;
+/**
+ * True when a find expression from `start` may select `.git`: an `-o`, a negation or a `,` (deny-leaning), or every
+ * name test (`-name`, `-path`, `-regex` and their `-i` forms) matches it; with no name test it selects everything.
+ */
+function findsGit(start, expr) {
+  if (expr.some((w) => ["!", "-not", "-o", "-or", ","].includes(w))) return true;
+  return expr.every((w, i) => {
+    if (!FIND_NAMES.test(w)) return true;
+    const v = expr[i + 1] ?? "";
+    const flags = w.startsWith("-i") ? "i" : "";
+    const whole = `${start.replace(/\/+$/, "")}/.git`;
+    if (w.endsWith("name") && !w.endsWith("wholename"))
+      return new RegExp(globRx(v).source, flags).test(".git");
+    if (!w.endsWith("regex")) return new RegExp(globRx(v).source, flags).test(whole);
+    try {
+      return new RegExp(`^(?:${v})$`, flags).test(whole);
+    } catch {
+      return true;
+    }
+  });
+}
 const baseName = (w) => w.split("/").pop();
 /** At most this many `rm` and `find` words of one simple command are read; past it the command denies. */
 const MAX_DELETERS = 32;
@@ -616,7 +713,12 @@ function deletedPaths(words) {
       const rest = words.slice(j);
       const rm = (x, i) => FIND_EXEC.has(x) && baseName(rest[i + 1] ?? "") === "rm";
       if (rest.includes("-delete") || rest.some(rm))
-        out.push(...(j > from ? words.slice(from, j) : ["."]).map((under) => ({ under })));
+        out.push(
+          ...(j > from ? words.slice(from, j) : ["."]).map((under) => ({
+            under,
+            git: findsGit(under, rest),
+          })),
+        );
     }
   }
   return out;
@@ -634,14 +736,15 @@ function rmScan(c, ctx) {
       for (const t of deletedPaths(words))
         for (const dir of dirs)
           out.push(
-            t === null ? "deny" : t.under ? rmPlace(t.under, dir, ctx, true) : rmPlace(t, dir, ctx),
+            t === null ? "deny" : t.under ? rmPlace(t.under, dir, ctx, t) : rmPlace(t, dir, ctx),
           );
   return out;
 }
 /** Build output and caches, regenerated by a build or `pnpm install`: removable in any worktree. */
 const REGENERABLE = /^(?:node_modules|dist|\.turbo|\.stackra|coverage|\.cache)$/;
-/** `w` with its brace expansions (`{a,b}`, nested too), or null past 64 words. */
+/** `w` with its brace expansions (`{a,b}`, nested too), or null past 64 words or 16 braces (a recursion each). */
 function braces(w) {
+  if (w.split("{").length > 17) return null;
   const m = /\{([^{}]*,[^{}]*)\}/.exec(w);
   if (!m) return [w];
   const out = [];
@@ -712,15 +815,19 @@ function physical(dir, t) {
   }
   return /(?:^|\/)(?:\.\.?)?$/.test(t) ? realDir(cur) : join(realDir(dirname(cur)), basename(cur));
 }
+/** A path longer than this fails in the kernel (Linux PATH_MAX; macOS has 1024); walking one costs quadratic time. */
+const PATH_MAX = 4096;
 /**
  * Where `rm -rf <t>`, run in `dir` (null when unknown), lands: "ok" strictly inside this session's own checkout or
  * the scratchpad; "nested" strictly inside a linked worktree nested in that checkout (another agent's, or this
  * session's reached by `cd` from the main checkout), unless it is build output; "deny" anywhere else, a nested
- * worktree itself, or a path that contains one. Braces and globs are expanded first; `~`, `$` and a bare `*` deny.
- * `under`: only what is below `t` goes (`find t -delete`), so `t` may be the checkout or scratchpad root itself.
+ * worktree itself, or a path that contains one. Braces and globs are expanded first; `~`, `$`, a bare `*` and a path
+ * past `PATH_MAX` deny. `under` (a find: `{ git }`): only what is below `t` goes (`find t -delete`), so `t` may be
+ * the checkout or scratchpad root itself, unless the find may select the checkout's `.git` (`findsGit`).
  */
-function rmPlace(t, dir, ctx, under = false) {
-  if (/^[~$]/.test(t) || /[$`]/.test(t) || /^(\.\/)?\.?\*$/.test(t)) return "deny";
+function rmPlace(t, dir, ctx, under = null) {
+  if (/^[~$]/.test(t) || /[$`]/.test(t) || /^(\.\/)?\.?\*$/.test(t) || t.length > PATH_MAX)
+    return "deny";
   if (!t.startsWith("/") && dir === null) return "deny";
   const paths = [];
   for (const w of braces(t) ?? [null]) {
@@ -736,6 +843,8 @@ function landing(real, ctx, under) {
   const own = ctx.own();
   const inside = (r) => r && (real.startsWith(r + sep) || (under && real === r));
   if (![own.root, scratchRoot()].some(inside)) return "deny";
+  // A find from the checkout root reaches its `.git` (a linked worktree's `.git` file links it).
+  if (under?.git && real === own.root) return "deny";
   // `.git` holds the history and every linked worktree's admin directory (a worktree's `.git` file links it).
   if (real.split(sep).includes(".git")) return "deny";
   if (own.nested.some((w) => w === real || w.startsWith(real + sep))) return "deny";
@@ -1085,14 +1194,44 @@ const listsProcessEnv = (c) =>
   runnable(c).some((t) =>
     simpleCommands(t).some((s) =>
       nameIndexes(s.words).some((k) => {
-        const [name, ...args] = s.words.slice(k);
-        const b = name.split("/").pop();
-        if (b === "launchctl") return args[0] === "procinfo";
+        const b = s.words[k].split("/").pop();
+        if (b === "launchctl") return s.words[k + 1] === "procinfo";
         if (b !== "ps") return false;
+        const args = s.words.slice(k + 1); // one `ps` per command: copying the words per name was quadratic
         return (
           args.some((a) => /^-[a-zA-Z]*E/.test(a)) || /^[a-zA-Z]*e[a-zA-Z]*$/.test(args[0] ?? "")
         );
       }),
+    ),
+  );
+
+const DROP_DB = /\bDROP\s+(?:DATABASE|SCHEMA)\b/i;
+const SQL_CLIENTS = new Set([
+  "psql",
+  "pgcli",
+  "usql",
+  "mysql",
+  "mariadb",
+  "mycli",
+  "sqlite3",
+  "litecli",
+  "duckdb",
+]);
+/**
+ * A SQL client runs: a word (or the first word of a quoted command line, `ssh h 'psql …'`) named like one, wherever
+ * it stands (`docker exec pg psql`, `kubectl exec … -- mysql`), or `encore db shell`. Search commands are skipped.
+ */
+const runsSqlClient = (c) =>
+  scanTexts(c).some((t) =>
+    simpleCommands(t).some(
+      ({ words }) =>
+        !readerCommand(words) &&
+        words.some(
+          (w, k) =>
+            SQL_CLIENTS.has(baseName(w.trim().split(/\s+/)[0])) ||
+            /^encore\s+db\s+shell\b/.test(w.trim()) ||
+            (baseName(w) === "encore" && words[k + 1] === "db" && words[k + 2] === "shell"),
+        ),
     ),
   );
 
@@ -1426,7 +1565,9 @@ const RULES = [
 
   // --- Database / release process ---------------------------------------------------------------
   {
-    rx: (c) => runs(c, /\bDROP\s+(DATABASE|SCHEMA)\b/i),
+    // SQL reaches a client quoted, piped, in a here-string or a heredoc: once a SQL client runs, the whole command
+    // is read, heredoc bodies included (STA-330 review).
+    rx: (c, ctx) => runs(c, DROP_DB) || (DROP_DB.test(ctx.raw) && runsSqlClient(c)),
     why: "Dropping a database is a human decision. `encore db reset <service>` resets a local one, with the owner's yes.",
   },
   {
@@ -1475,6 +1616,7 @@ function forms(t) {
  */
 const MAX_DEPTH = 16;
 const TOO_MANY_GIT = `The command needs more than ${MAX_GIT} git lookups (checkouts, branches, push targets) to decide, more than the guard runs in its time limit. Split it into smaller commands.`;
+const TOO_SLOW = `The command takes the guard more than ${DEADLINE_MS / 1000} s to decide (git lookups, paths, nesting), and a hook that runs out of time fails open. Split it into smaller commands.`;
 const TOO_DEEP = `The command nests \`$(…)\`, \`<(…)\` or backtick substitutions more than ${MAX_DEPTH} levels deep, or script strings (\`sh -c\`, \`eval\`) more than ${MAX_SCRIPTS}, which the guard does not read. Split it into plain commands.`;
 /** The deepest nesting of `$(`, `<(`, `>(` and backtick bodies in `c`, quotes ignored (deny-leaning). */
 function substitutionDepth(c) {
@@ -1496,15 +1638,18 @@ function substitutionDepth(c) {
   return max;
 }
 
-/** The evaluation context: the shell's directory, the subagent type, the session's own checkout (lazy) and a memo. */
-function context(cwd, agentType) {
+/**
+ * The evaluation context: the command as written (`raw`, heredoc bodies included), the shell's directory, the
+ * subagent type, the session's own checkout (lazy) and a memo.
+ */
+function context(raw, cwd, agentType) {
   let own;
   const cache = new Map();
   const memo = (key, f) => {
     if (!cache.has(key)) cache.set(key, f());
     return cache.get(key);
   };
-  return { cwd, agentType, memo, own: () => (own ??= ownCheckout(cwd)) };
+  return { raw, cwd, agentType, memo, own: () => (own ??= ownCheckout(cwd)) };
 }
 
 /**
@@ -1514,16 +1659,28 @@ function context(cwd, agentType) {
  * @param {string} raw the command as the agent wrote it
  * @param {{ cwd?: string, agentType?: string }} [options] the shell's directory and the subagent type (`agent_type`)
  */
-export function decideBash(raw, { cwd = process.cwd(), agentType = "" } = {}) {
+export function decideBash(raw, options = {}) {
+  try {
+    return decide(raw, options);
+  } catch (error) {
+    // A command that breaks the reader (a stack overflow, a regex too large) is not let through: the hook fails open.
+    return { decision: "deny", reason: `${UNREADABLE} (${error?.name ?? "error"})` };
+  }
+}
+const UNREADABLE =
+  "The guard could not read this command, so it is denied. Split it into plain commands";
+function decide(raw, { cwd = process.cwd(), agentType = "" } = {}) {
   clearCaches();
   gitRuns = 0;
+  gitLate = false;
+  deadline = performance.now() + DEADLINE_MS;
   if (substitutionDepth(raw) > MAX_DEPTH) return { decision: "deny", reason: TOO_DEEP };
   const cmd = stripHeredocs(raw);
-  const ctx = context(cwd, agentType);
+  const ctx = context(raw, cwd, agentType);
   tooDeep = false;
   for (const text of forms(cmd)) {
     runnable(text);
-    nestedRaw(text);
+    scanTexts(text);
   }
   if (tooDeep) return { decision: "deny", reason: TOO_DEEP };
   const check = (rule, text) => {
@@ -1532,12 +1689,18 @@ export function decideBash(raw, { cwd = process.cwd(), agentType = "" } = {}) {
     if (!hit) return null;
     return typeof hit === "string" ? hit : rule.why;
   };
-  // Past `MAX_GIT` a rule may have decided on an unknown checkout: the reason is the cap, not the rule.
-  const done = (d) => (gitRuns > MAX_GIT ? { decision: "deny", reason: TOO_MANY_GIT } : d);
+  // Past `MAX_GIT` or the deadline a rule may have decided on an unknown checkout: the reason is the cap.
+  const done = (d) =>
+    gitRuns > MAX_GIT
+      ? { decision: "deny", reason: TOO_MANY_GIT }
+      : gitLate || late()
+        ? { decision: "deny", reason: TOO_SLOW }
+        : d;
   let asked = null;
   const all = forms(cmd);
   for (const rule of RULES)
     for (const text of rule.lookThrough === false ? [cmd] : all) {
+      if (late()) return done(null);
       const why = check(rule, text);
       if (why && rule.decision !== "ask") return done({ decision: "deny", reason: why });
       if (why) asked ??= why;
@@ -1546,6 +1709,7 @@ export function decideBash(raw, { cwd = process.cwd(), agentType = "" } = {}) {
     const texts = forms(body);
     for (const text of texts)
       for (const rule of RULES) {
+        if (late()) return done(null);
         if (rule.lookThrough === false && text !== body) continue;
         const why = rule.decision === "ask" ? null : check(rule, text);
         if (why) return done({ decision: "deny", reason: why });
@@ -1591,6 +1755,7 @@ function namesSecret(w) {
     if (isSecretPath(b)) return true;
     const p = unquote(b).replace(/^(?:~|\$HOME|\$\{HOME\})(?=\/)/, HOME_DIR);
     if (!/[*?[]/.test(p)) continue;
+    if (p.length > PATH_MAX) return true; // longer than any path: its regex may not even compile
     const cut = p.lastIndexOf("/") + 1;
     const shell = { dots: false, any: "[^/]" };
     const last = globRx(p.slice(cut), shell);

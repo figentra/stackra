@@ -127,22 +127,24 @@ const BOT_SCRIPT = /^(?:bot:\S+|pr:merge|linear|spec:linear)$/;
 /**
  * Phase 2 (ADR 0293, amending ADR 0066): an executor fetches origin (one ref at most), and pushes its own HEAD to its
  * feature branch, through `pnpm bot:git`; the shared rules keep that push off main and off every other branch, and
- * deny the options that run a program in the bot's environment.
+ * deny the options that run a program in the bot's environment. The whole command must be one of these forms: a
+ * prefix (`NODE_OPTIONS=`, `PATH=`, `env`, `export …;`, `cd x &&`, `source f;`) would run the executor's own code
+ * with every /agents value (STA-330 review).
  */
 const EXECUTOR_BOT_GIT =
   /^pnpm bot:git (?:-- )?(?:fetch origin(?: [\w./-]+)?|push (?:--force-with-lease )?origin HEAD)$/;
 
 /** Executors run unattended: anything that leaves the worktree, ships, or destroys local data is the lead's. */
-function denyExecutor(cmd: string, args: string[]): Decision {
+function denyExecutor(cmd: string, args: string[], exact: boolean): Decision {
   if (OWNER_ONLY_CLI.has(cmd) || cmd.startsWith("git-credential"))
     return deny(
       `\`${cmd}\` reaches the network, a shared account or a secret store; executors never run it.`,
     );
   if (cmd === "pnpm" && args.some((a) => BOT_SCRIPT.test(a)))
-    return EXECUTOR_BOT_GIT.test([cmd, ...args].join(" "))
+    return exact
       ? ALLOW
       : deny(
-          "executors reach GitHub only as `pnpm bot:git -- fetch origin [<ref>]` and `pnpm bot:git -- push [--force-with-lease] origin HEAD`; `pnpm bot:gh`, `bot:review`, `bot:token`, `pr:merge` and `linear` are the lead's.",
+          "executors reach GitHub only as the whole command `pnpm bot:git -- fetch origin [<ref>]` or `pnpm bot:git -- push [--force-with-lease] origin HEAD`, with nothing before or after it; `pnpm bot:gh`, `bot:review`, `bot:token`, `pr:merge` and `linear` are the lead's.",
         );
   if (cmd === "encore" && ["deploy", "env", "secret"].includes(args[0] ?? ""))
     return deny(
@@ -167,12 +169,12 @@ function denyExecutor(cmd: string, args: string[]): Decision {
   return ALLOW;
 }
 
-function denySub(sub: string): Decision {
+function denySub(sub: string, exact: boolean): Decision {
   const ws = head(words(sub));
   const cmd = base(ws[0] ?? "");
   const args = ws.slice(1);
 
-  const executor = denyExecutor(cmd, args);
+  const executor = denyExecutor(cmd, args, exact);
   if (executor.kind === "deny") return executor;
 
   for (const t of tokens(sub))
@@ -193,6 +195,7 @@ function denySub(sub: string): Decision {
 export function decideShell(raw: string, cwd?: string): Decision {
   const shared = tier(decideBash(raw, { cwd: cwd ?? process.cwd() }));
   if (shared.kind === "deny") return shared;
+  const exact = EXECUTOR_BOT_GIT.test(raw.trim());
   const cmd = stripHeredocs(raw);
   // Substitution bodies found with quotes ignored can only add denies (STA-254); `literal` splits a case pattern
   // from its command (`a) cmd`, `(a) cmd`).
@@ -203,7 +206,7 @@ export function decideShell(raw: string, cwd?: string): Decision {
     ...rawSubstitutions(cmd).flatMap((b) => [b, ...nested(b)]),
   ])
     for (const s of subcommands(text)) {
-      const d = denySub(s);
+      const d = denySub(s, exact);
       if (d.kind === "deny") return d;
     }
   return ALLOW;

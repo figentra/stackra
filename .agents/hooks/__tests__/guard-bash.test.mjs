@@ -1741,7 +1741,7 @@ test("round 1: rm -rf through cd chains, .., symlinks, home, globs, --, split fl
     "rm -rf {dist,build}",
     "rm -rf d*",
     "rm -- -rf /",
-    "find . -delete",
+    "find dist -delete",
     "find dist -name '*.map' -exec rm -f {} \\;",
     "(cd /tmp) && rm -rf x",
     "cd $SCRATCH/none; rm -rf x",
@@ -2187,7 +2187,199 @@ test("round 2: decisions stay linear in blank lines, separators, path depth and 
   ]) {
     const { got, reason, ms } = timed(c);
     assert.equal(got, "deny");
-    assert.match(reason, /git lookups/);
+    assert.match(reason, /git lookups/); // the cap, or the deadline under load
     assert.ok(ms < 2500, `${c.slice(0, 30)} took ${ms.toFixed(0)} ms`);
   }
+});
+
+// ---- STA-330 review round 3 ---------------------------------------------------------------------------------
+
+test("round 3: DROP DATABASE / SCHEMA through a SQL client, quoted, piped or in a heredoc", () => {
+  const { wrong, done } = sessionRepo();
+  const cases = [];
+  for (const c of [
+    "psql -c 'DROP DATABASE x'",
+    'psql -c "DROP SCHEMA public CASCADE"',
+    "docker exec pg psql -U postgres -c 'DROP DATABASE app'",
+    "kubectl exec -it pg -- psql -c 'drop database app'",
+    "mysql -e 'DROP DATABASE x'",
+    "mariadb -e 'DROP SCHEMA x'",
+    "sqlite3 a.db 'DROP SCHEMA x'",
+    "echo 'DROP DATABASE x' | psql",
+    "psql <<'EOF'\nDROP DATABASE x;\nEOF",
+    "encore db shell svc <<< 'DROP DATABASE x'",
+    "ssh db 'psql -c \"DROP DATABASE x\"'",
+    "psql -c DROP DATABASE x",
+  ])
+    cases.push(["wt", c, "deny"]);
+  for (const c of [
+    "rg 'DROP SCHEMA' services",
+    'grep -rn "DROP DATABASE" services/psql',
+    "psql -c 'select 1'",
+    "cat > notes.md <<'EOF'\nDROP DATABASE x\nEOF",
+    'git commit -m "docs: psql -c DROP DATABASE is denied"',
+  ])
+    cases.push(["wt", c, "allow"]);
+  assert.deepEqual(wrong(cases), []);
+  assert.equal(decision("psql -c 'DROP DATABASE x'"), "deny");
+  done();
+});
+
+test("round 3: a command line in one quoted word or here-string never hides rm -rf or a discard", () => {
+  const { wrong, done } = sessionRepo();
+  const cases = [];
+  for (const c of [
+    "mise exec -c 'rm -rf /'",
+    'mise x -c "rm -rf ~"',
+    "mise exec node@22 -c 'rm -rf -- /'",
+    "mise exec --command='rm -rf /'",
+    "mise exec -c'rm -rf /'",
+    "mise exec -c 'gh pr merge 1'",
+    "mise exec -c 'git push origin main'",
+    "tmux new -d 'rm -rf ~'",
+    "tmux send-keys 'rm -rf /' Enter",
+    "watch 'rm -rf /'",
+    "watch -n 1 'sleep 1; rm -rf /'",
+    "parallel 'rm -rf /' ::: a",
+    "script -c 'rm -rf /' /dev/null",
+    "ssh host 'rm -rf /'",
+    "su -c 'rm -rf /'",
+    "flock /tmp/l -c 'rm -rf ~'",
+    "at now <<< 'rm -rf /'",
+    "crontab - <<< '* * * * * rm -rf ~'",
+    "tmux new -d \"sh -c 'rm -rf /'\"",
+    'tmux new -d "$(true) rm -rf / $(true)"',
+    "tmux new -d 'git -C $MAIN reset --hard'",
+    "watch 'git -C $MAIN clean -fd'",
+    "tmux new -d 'git stash pop'",
+  ])
+    cases.push(["wt", c, "deny"]);
+  for (const c of ["tmux new -d 'git reset --hard'", "watch 'git clean -fd'"])
+    cases.push(["main", c, "deny"], ["wt", c, "allow"]);
+  for (const c of [
+    "mise exec -c 'rm -rf dist'",
+    "mise exec -c 'pnpm test'",
+    "tmux new -d 'pnpm test'",
+    "watch 'git status'",
+    "ssh host 'ls -la'",
+    'echo "rm -rf / is denied; so is git stash pop"',
+    'printf "%s\\n" "git reset --hard"',
+    "x=$(git stash list)",
+    "git commit -m \"tmux new -d 'rm -rf /'\"",
+  ])
+    cases.push(["wt", c, "allow"]);
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 3: a find from the checkout root that may select .git is refused", () => {
+  const { wrong, done } = sessionRepo();
+  const cases = [];
+  for (const c of [
+    "find . -name .git -exec rm -rf {} +",
+    "find . -maxdepth 1 -name .git -delete",
+    "find . -delete",
+    "find ./ -delete",
+    "find $WT -delete",
+    "find . -name '.g*' -delete",
+    "find . -iname .GIT -delete",
+    "find . -path './.git' -delete",
+    "find . ! -name x -delete",
+    "find . -name x -o -delete",
+    "git rm -rf .",
+  ])
+    cases.push(["wt", c, "deny"]);
+  for (const c of [
+    "find . -name node_modules -prune -exec rm -rf {} +",
+    "find . -name '*.tsbuildinfo' -delete",
+    "find . -path './dist/*' -delete",
+    "find dist -delete",
+  ])
+    cases.push(["wt", c, "allow"]);
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 3: ANSI-C quoting ($'…') is read as the word it decodes to", () => {
+  const { wrong, done } = sessionRepo();
+  const cases = [];
+  for (const c of [
+    "git tag $'@stackra/logger@1.0.0'",
+    "pnpm bot:gh -- $'pr' edit 1 --add-label owner-approved",
+    "$'\\x67h' pr merge 1",
+    "$'g\\150' pr list",
+    "rm -rf $'/'",
+  ])
+    cases.push(["wt", c, "deny"]);
+  for (const c of ["echo $'a\\tb'", "printf $'%s\\n' x", "git tag $'v1'"])
+    cases.push(["wt", c, "allow"]);
+  assert.deepEqual(wrong(cases), []);
+  done();
+});
+
+test("round 3: a decision is bounded in time, failed git spawns and long operands included", () => {
+  const { done } = sessionRepo();
+  const R = ["git", "reset", "--hard"].join(" ");
+  // A spawn into a missing directory used to slow the next one by ~140 ms: 47 of them ran out the hook's 5 s.
+  const missing = Array.from({ length: 47 }, (_, i) => `cd /tmp/nx-missing-${i} && ${R}`).join(
+    "; ",
+  );
+  let t = performance.now();
+  assert.equal(decision(missing, root), "deny");
+  assert.ok(
+    performance.now() - t < 2500,
+    `47 missing cd took ${(performance.now() - t).toFixed(0)} ms`,
+  );
+  for (const [name, c, want] of [
+    ["a 16,000-segment rm operand", "rm -rf /tmp/" + "a/".repeat(16_000) + "a ~", "deny"],
+    ["mise exec and 100,000 spaces", "mise exec" + " ".repeat(100_000) + "x", "allow"],
+  ]) {
+    t = performance.now();
+    assert.equal(decideBash(c, { cwd: root }).decision, want, name);
+    assert.ok(
+      performance.now() - t < 1500,
+      `${name} took ${(performance.now() - t).toFixed(0)} ms`,
+    );
+  }
+  // Past the deadline the decision denies instead of running on into the hook's kill (the clock is stubbed).
+  const now = performance.now.bind(performance);
+  let calls = 0;
+  performance.now = () => now() + (++calls > 3 ? 60_000 : 0);
+  try {
+    const { decision: got, reason } = decideBash("git status", { cwd: root });
+    assert.equal(got, "deny");
+    assert.match(reason, /more than 2 s to decide/);
+  } finally {
+    performance.now = now;
+  }
+  assert.equal(decideBash("git status", { cwd: root }).decision, "allow");
+  // 60 kB of one construct each: decided in well under the hook's time, and never by breaking the reader
+  for (const unit of [
+    "{ ",
+    "! ",
+    "if ",
+    "a=b ",
+    "cd a; ",
+    "cd a && ",
+    "echo x > f; ",
+    "cat > f <<EOF\nx\nEOF\n",
+    "find . -name x ",
+    "xargs ",
+    "{a,b}",
+    "?",
+    "git ",
+    "'a git b' ",
+    "x=$(y) ",
+  ]) {
+    const c = unit.repeat(Math.ceil(60_000 / unit.length));
+    t = performance.now();
+    const { reason } = decideBash(c, { cwd: root });
+    const ms = performance.now() - t;
+    assert.doesNotMatch(reason, /could not read/, JSON.stringify(unit));
+    assert.ok(
+      ms < 1500,
+      `${JSON.stringify(unit)} x ${c.length / unit.length} took ${ms.toFixed(0)} ms`,
+    );
+  }
+  done();
 });
