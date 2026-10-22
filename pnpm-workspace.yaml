@@ -30,6 +30,10 @@ catalogs:
     typescript: 7.0.2
     tsdown: 0.23.1
     turbo: 2.11.9
+  # Root repo tooling that loads `typescript` as a JS API (tools/scripts/doc-standard.mjs), which TypeScript 7 (native)
+  # does not ship yet. Members keep `tsc` from catalog:build; their own node_modules/.bin comes first on PATH.
+  tooling:
+    typescript: 6.0.3
   # Format/lint/test tools every member's scripts run.
   quality:
     oxlint: 1.86.0
