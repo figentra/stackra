@@ -6,7 +6,7 @@
 import { render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
-import { routes } from "../../../routes";
+import { routes } from "#src/routes";
 
 describe("PanelShell", () => {
   it("renders the panel title around the index page", () => {

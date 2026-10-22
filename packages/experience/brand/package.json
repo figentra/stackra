@@ -19,6 +19,21 @@
   ],
   "type": "module",
   "sideEffects": false,
+  "imports": {
+    "#src/*": [
+      "./src/*",
+      "./src/*.ts",
+      "./src/*.tsx",
+      "./src/*/index.ts"
+    ],
+    "#assets/*": "./assets/*",
+    "#stackra/*": [
+      "./.stackra/gen/*",
+      "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
+      "./.stackra/gen/*/index.ts"
+    ]
+  },
   "exports": {
     ".": {
       "@stackra/source": "./src/index.ts",
