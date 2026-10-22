@@ -8,6 +8,7 @@
  *          Every test file anywhere in the repository sits directly in a __tests__/ folder (ADR 0022).
  *          Every JSON config is .jsonc unless its reader cannot take one (MUST_STAY_JSON).
  *          Repo-owned YAML has no flow mappings (block style; checkYamlFlowMaps).
+ *          Member TS imports carry no file extension and climb at most one folder (checkImports, ADR 0233).
  *          Prints the findings and exits 1; prints nothing on success. Adapted from Figentra's checks 1–5.
  * Scope: every member listed by `pnpm -r list --json --depth -1`; test placement covers every non-ignored file.
  * Owner: release-operations · Secrets: forbidden
@@ -334,6 +335,39 @@ export function checkTestPlacement(paths) {
   return out;
 }
 
+/** Import specifiers in TS source: `from "…"`, `import "…"`, `import("…")` and the vitest module helpers. */
+const IMPORT_SPECIFIER =
+  /(?:\bfrom\s*|^\s*import\s+|\bimport\s*\(\s*|\bvi\.(?:mock|doMock|importActual)\(\s*)["']([^"'\n]+)["']/gm;
+const TS_EXTENSION = /\.[cm]?[jt]sx?$/;
+const DEEP_RELATIVE = /^(?:\.\.\/){2,}/;
+/** Plain Node loads the tooling presets (they keep `./x.ts`); oxlint's fixtures break the rules on purpose. */
+const IMPORTS_EXEMPT =
+  /^(?:packages\/tooling\/|tools\/scaffold\/templates\/packages\/tooling\/)|\/__tests__\/fixtures\//;
+export const isMemberSource = (p) =>
+  /^(?:apps|packages|services|tools\/scaffold\/templates)\/.+\.(?:ts|tsx|mts)$/.test(p) &&
+  !IMPORTS_EXEMPT.test(p);
+
+/**
+ * ADR 0233 with the owner's rule of 2026-10-22: inside a member a TS import names no file extension (every preset
+ * resolves with `bundler`, set in base.json) and climbs at most one folder (`./x`, `../x`); a deeper reach uses
+ * the member's `#` alias from its package.json `imports` map. JSON imports and `?url`/`?raw` assets are untouched.
+ */
+export function checkImports(path, text) {
+  const out = [];
+  for (const [, spec] of text.matchAll(IMPORT_SPECIFIER)) {
+    if (!spec.startsWith(".") && !spec.startsWith("#")) continue;
+    if (TS_EXTENSION.test(spec))
+      out.push(
+        `${path}: import "${spec}" names a file extension; drop it (bundler resolution, ADR 0233)`,
+      );
+    if (DEEP_RELATIVE.test(spec))
+      out.push(
+        `${path}: import "${spec}" climbs two or more folders; use the member's # alias (ADR 0233)`,
+      );
+  }
+  return out;
+}
+
 function main() {
   const members = JSON.parse(
     execFileSync("pnpm", ["-r", "list", "--json", "--depth", "-1"], {
@@ -357,6 +391,8 @@ function main() {
     .filter((p) => p && existsSync(join(ROOT, p)));
   report("", checkTestPlacement(repoFiles));
   report("", checkJsonConfigs(repoFiles));
+  for (const p of repoFiles.filter(isMemberSource))
+    report("", checkImports(p, readFileSync(join(ROOT, p), "utf8")));
   for (const p of repoFiles.filter(isRepoOwnedYaml))
     report("", checkYamlFlowMaps(p, readFileSync(join(ROOT, p), "utf8")));
   // ADR 0024 decision 2: the brand marks carry their all-rights-reserved NOTICE.

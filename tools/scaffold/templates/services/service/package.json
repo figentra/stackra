@@ -16,6 +16,20 @@
       "default": "./dist/contracts.mjs"
     }
   },
+  "imports": {
+    "#src/*": [
+      "./src/*",
+      "./src/*.ts",
+      "./src/*.tsx",
+      "./src/*/index.ts"
+    ],
+    "#stackra/*": [
+      "./.stackra/gen/*",
+      "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
+      "./.stackra/gen/*/index.ts"
+    ]
+  },
   "scripts": {
     "dev": "tsdown --watch",
     "start": "node dist/main.mjs",

@@ -5,10 +5,12 @@ import {
   check,
   checkExports,
   checkFiles,
+  checkImports,
   checkJsonConfigs,
   checkService,
   checkTestPlacement,
   checkYamlFlowMaps,
+  isMemberSource,
   isRepoOwnedYaml,
   tierFor,
 } from "../validate-repository.mjs";
@@ -264,4 +266,47 @@ test("isRepoOwnedYaml: skips generated and vendored YAML", () => {
     "a.json",
   ])
     assert.equal(isRepoOwnedYaml(p), false);
+});
+
+test("checkImports: flags an extension in a TS import and a relative import climbing two folders", () => {
+  const src = [
+    'import { a } from "./a.js";',
+    'export * from "../b.ts";',
+    'const c = await import("#src/c.tsx");',
+    'vi.mock("../../d");',
+    'import "../../../e";',
+  ].join("\n");
+  assert.deepEqual(checkImports("x.ts", src), [
+    'x.ts: import "./a.js" names a file extension; drop it (bundler resolution, ADR 0233)',
+    'x.ts: import "../b.ts" names a file extension; drop it (bundler resolution, ADR 0233)',
+    'x.ts: import "#src/c.tsx" names a file extension; drop it (bundler resolution, ADR 0233)',
+    'x.ts: import "../../d" climbs two or more folders; use the member\'s # alias (ADR 0233)',
+    'x.ts: import "../../../e" climbs two or more folders; use the member\'s # alias (ADR 0233)',
+  ]);
+});
+
+test("checkImports: allows same-folder, one-up, # aliases, packages, JSON and asset queries", () => {
+  const src = [
+    'import { a } from "./a";',
+    'import { b } from "../b";',
+    'import { c } from "#src/deep/c";',
+    'import { z } from "zod";',
+    'import pkg from "../package.json" with { type: "json" };',
+    'import logo from "./logo.svg?url";',
+    'const u = new URL("../../assets/", import.meta.url);',
+  ].join("\n");
+  assert.deepEqual(checkImports("x.ts", src), []);
+});
+
+test("isMemberSource: member TS only; Node-loaded tooling presets and lint fixtures are exempt", () => {
+  for (const p of ["apps/console/src/main.ts", "packages/x/y/src/a.tsx", "services/s/src/m.mts"])
+    assert.equal(isMemberSource(p), true);
+  for (const p of [
+    "packages/tooling/vitest/src/preset-react.ts",
+    "packages/tooling/oxlint/src/__tests__/fixtures/packages/demo/pkg/src/index.ts",
+    "tools/scripts/scaffold.mjs",
+    ".opencode/plugins/guard/decide.ts",
+    "apps/console/src/a.js",
+  ])
+    assert.equal(isMemberSource(p), false);
 });

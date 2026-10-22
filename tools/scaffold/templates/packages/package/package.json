@@ -33,6 +33,20 @@
     },
     "./resources/*": "./resources/*"
   },
+  "imports": {
+    "#src/*": [
+      "./src/*",
+      "./src/*.ts",
+      "./src/*.tsx",
+      "./src/*/index.ts"
+    ],
+    "#stackra/*": [
+      "./.stackra/gen/*",
+      "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
+      "./.stackra/gen/*/index.ts"
+    ]
+  },
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
