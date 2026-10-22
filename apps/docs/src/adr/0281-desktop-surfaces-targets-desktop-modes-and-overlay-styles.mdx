@@ -22,20 +22,21 @@ in chat on 2026-10-22.
 
 ## Decision
 
-1. **One member, one codebase, listed targets.** An app member declares its targets in its `stackra.config.ts`:
-   `targets: [Target.Web, Target.Pwa, Target.Desktop]`. `stackra gen` builds only the listed targets. There is no second
-   codebase per target (ADR 0249).
+1. **One member, one codebase, listed targets.** An app member declares its targets in `stackra.config.ts` at the
+   member root, which holds the one app definition per member: `targets: [Target.Web, Target.Pwa, Target.Desktop]`.
+   `stackra gen` builds only the listed targets. There is no second codebase per target (ADR 0249). Desktop options live in
+   `src/config/desktop.config.ts`, the config location of ADR 0126.
 2. **Capability matrix.** What each target can offer:
 
-   | Surface                             | Web         | PWA               | Desktop                    |
-   | ----------------------------------- | ----------- | ----------------- | -------------------------- |
-   | Normal window                       | browser tab | standalone window | window                     |
-   | Dock icon                           | no          | yes               | yes, except in `Tray` mode |
-   | Tray or menu-bar icon               | no          | no                | yes                        |
-   | System-wide shortcuts               | no          | no                | yes                        |
-   | Floating always-on-top overlays     | no          | no                | yes                        |
-   | App shortcuts, share target, badges | no          | yes               | yes                        |
-   | Offline                             | partial     | service worker    | SQLite                     |
+   | Surface                             | Web         | PWA               | Desktop                                                                                               |
+   | ----------------------------------- | ----------- | ----------------- | ----------------------------------------------------------------------------------------------------- |
+   | Normal window                       | browser tab | standalone window | window                                                                                                |
+   | Dock icon                           | no          | yes               | yes, except in `Tray` mode                                                                            |
+   | Tray or menu-bar icon               | no          | no                | yes                                                                                                   |
+   | System-wide shortcuts               | no          | no                | yes                                                                                                   |
+   | Floating always-on-top overlays     | no          | no                | yes                                                                                                   |
+   | App shortcuts, share target, badges | no          | yes               | yes                                                                                                   |
+   | Offline                             | partial     | service worker    | SQLite through `@stackra/storage`'s `./sql` entry (ADR 0256 Phase 2); until it lands, the `fs` driver |
 
    Config never claims a capability its targets lack. Validation rejects a desktop-only option (`mode`, `overlays`, a
    global shortcut, the tray) when `Target.Desktop` is not in `targets`.
@@ -105,5 +106,5 @@ Supersedes: none. Extends: [0249](/adr/0249-one-app-three-targets-web-pwa-and-el
 [0251](/adr/0251-desktop-bridge-generated-from-desktop-action-and-electron-hardening). Consistent with:
 [0254](/adr/0254-desktop-release-signing-update-feed-channels-and-version-policy) (tray keep-alive opt-in),
 [0255](/adr/0255-pwa-service-worker-scope-and-push-per-platform) (PWA offline),
-[0256](/adr/0256-client-storage-one-stackra-storage-package) (desktop SQLite). Sources: owner decision in chat,
+[0256](/adr/0256-client-storage-one-stackra-storage-package) (desktop SQLite through the `./sql` entry, `fs` driver until then). Sources: owner decision in chat,
 2026-10-22 (STA-292).
