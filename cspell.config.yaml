@@ -1,0 +1,50 @@
+# Spelling for code and docs (Code Spell Checker). Add project words here, not to user settings.
+version: "0.2"
+language: en
+ignorePaths:
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/.turbo/**"
+  - pnpm-lock.yaml
+  - "**/assets/lang/ar/**"
+words:
+  - stackra
+  - figentra
+  - oxfmt
+  - oxlint
+  - oxc
+  - tsdown
+  - turborepo
+  - lefthook
+  - commitlint
+  - changesets
+  - gitleaks
+  - knip
+  - mise
+  - pnpm
+  - vitest
+  - uniwind
+  - heroui
+  - zitadel
+  - encore
+  - mikroorm
+  - runway
+  - keygen
+  - vellum
+  - infisical
+  - maestro
+  - expo
+  - hermes
+  - pulumi
+  - mintlify
+  - tanstack
+  - zod
+  - idempotency
+  - upsert
+  - realtime
+  - rtl
+  - pwa
+  - ssr
+  - tenancy
+  - entitlements
+  - monorepo

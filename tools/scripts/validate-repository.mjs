@@ -228,7 +228,10 @@ export const MUST_STAY_JSON = [
     "generic preset template: rename to .jsonc for a JSONC tool",
   ],
   [/^\.claude\/[\w.-]+\.json$/, "Claude Code settings/launch: fixed .json names"],
-  [/^\.vscode\/(settings|extensions)\.json$/, "VS Code reads these fixed names (JSONC inside)"],
+  [
+    /^\.vscode\/(settings|extensions|launch|tasks)\.json$/,
+    "VS Code reads these fixed names (JSONC inside)",
+  ],
   [/^\.changeset\/config\.json$/, "@changesets/config JSON.parse on a fixed path"],
   [/^\.github\/branch-protection\.json$/, "GitHub REST API payload"],
   [

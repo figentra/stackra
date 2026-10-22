@@ -1,11 +1,14 @@
-// One formatter: oxfmt through the Oxc extension, on save, for every language it owns.
-// Mirrors .editorconfig and .oxfmtrc.jsonc; Prettier is off (rejected, not-built-yet rule).
+// Workspace settings: one formatter (oxfmt) and one linter (oxlint) through the Oxc extension, the
+// repo's TypeScript, schemas for every config file, and the .editorconfig rules. Prettier and ESLint
+// are off (rejected). Personal preferences (theme, font, keybindings) belong in user settings.
 {
+  // ── Format: oxfmt on save, for every language it owns ─────────────────────────────────────────
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.formatOnSave": true,
+  "editor.formatOnPaste": false,
   "editor.rulers": [100],
   "prettier.enable": false,
-
+  "eslint.enable": false,
   "[typescript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[typescriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[javascript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
@@ -13,33 +16,133 @@
   "[json]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[jsonc]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[yaml]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[css]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[markdown]": {
     "editor.defaultFormatter": "oxc.oxc-vscode",
     // .editorconfig keeps trailing whitespace in Markdown (hard line breaks).
     "files.trimTrailingWhitespace": false
   },
-  "[css]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[mdx]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[toml]": { "editor.defaultFormatter": "tamasfe.even-better-toml" },
 
-  // .editorconfig
+  // ── Lint: oxlint (config .oxlintrc.jsonc), fixes on save ───────────────────────────────────────
+  "oxc.enable": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.oxc": "explicit"
+  },
+
+  // ── .editorconfig ───────────────────────────────────────────────────────────────────────────
   "files.eol": "\n",
   "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
   "files.trimTrailingWhitespace": true,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
 
-  "typescript.tsdk": "node_modules/typescript/lib",
+  // ── TypeScript: the repo's version, project-relative imports, `#` subpath imports ──────────────
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+  "js/ts.preferences.importModuleSpecifier": "non-relative",
+  "js/ts.preferences.preferTypeOnlyAutoImports": true,
+  "js/ts.updateImportsOnFileMove.enabled": "always",
 
+  // ── JSON with comments: trailing commas are allowed (oxfmt writes them) ───────────────────────
+  "files.associations": {
+    "*.jsonc": "jsonc",
+    "turbo.jsonc": "jsonc",
+    ".oxlintrc.jsonc": "jsonc",
+    ".oxfmtrc.jsonc": "jsonc",
+    "**/tsconfig*.json": "jsonc",
+    "**/.vscode/*.json": "jsonc",
+    "*.mdx": "mdx"
+  },
+  // Remote $schema URLs load only from trusted hosts (VS Code asks otherwise and shows "Unable to load").
+  "json.schemaDownload.enable": true,
+  "json.schemaDownload.trustedDomains": {
+    "https://json.schemastore.org/": true,
+    "https://www.schemastore.org/": true,
+    "https://unpkg.com/": true,
+    "https://cdn.jsdelivr.net/": true,
+    "https://raw.githubusercontent.com/": true,
+    "https://turborepo.com/": true,
+    "https://turbo.build/": true,
+    "https://biomejs.dev/": true,
+    "https://mintlify.com/": true,
+    "https://schemas.stackra.dev/": true
+  },
+  "json.schemas": [
+    {
+      "fileMatch": ["*.jsonc", "**/tsconfig*.json", "**/.vscode/*.json"],
+      "schema": { "allowTrailingCommas": true }
+    }
+  ],
+
+  // ── YAML: schemas for the config files that have one ──────────────────────────────────────────
+  "yaml.format.enable": false,
+  "yaml.validate": true,
+  "yaml.schemaStore.enable": true,
+  "yaml.schemas": {
+    "https://json.schemastore.org/lefthook.json": "lefthook.yml",
+    "https://json.schemastore.org/commitlintrc.json": ".commitlintrc.yaml",
+    "https://json.schemastore.org/pnpm-workspace.json": "pnpm-workspace.yaml",
+    "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
+  },
+
+  // ── Tailwind v4 / Uniwind class names in className, cn() and tv() ─────────────────────────────
+  "tailwindCSS.experimental.classRegex": [
+    ["cn\\(([^)]*)\\)", "[\"'`]([^\"'`]*)[\"'`]"],
+    ["tv\\(([^)]*)\\)", "[\"'`]([^\"'`]*)[\"'`]"]
+  ],
+  "tailwindCSS.classAttributes": ["class", "className", "classNames"],
+
+  // ── i18n: assets/lang/<locale>/<namespace>.json in every member ───────────────────────────────
+  "i18n-ally.localesPaths": [
+    "apps/*/assets/lang",
+    "services/*/assets/lang",
+    "packages/*/*/assets/lang"
+  ],
+  "i18n-ally.pathMatcher": "{locale}/{namespaces}.json",
+  "i18n-ally.namespace": true,
+  "i18n-ally.keystyle": "nested",
+  "i18n-ally.sourceLanguage": "en",
+  "i18n-ally.displayLanguage": "en",
+  "i18n-ally.enabledFrameworks": ["general"],
+
+  // ── Markdown: oxfmt formats, markdownlint checks structure (rules in .markdownlint.yaml) ────────
+  "markdown.validate.enabled": true,
+
+  // ── Tests ──────────────────────────────────────────────────────────────────────────────────
+  "playwright.reuseBrowser": true,
+
+  // ── Explorer: nest generated and companion files under their source ───────────────────────────
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "package.json": "pnpm-workspace.yaml, pnpm-lock.yaml, turbo.jsonc, knip.jsonc, .npmrc, mise.toml, .node-version",
+    ".oxlintrc.jsonc": ".oxfmtrc.jsonc, .editorconfig, .gitattributes, .gitleaks.toml",
+    "lefthook.yml": ".commitlintrc.yaml, cspell.config.yaml",
+    "README.md": "CONTRIBUTING.md, SECURITY.md, LICENSE, NOTICE, AGENTS.md, CLAUDE.md"
+  },
+
+  // ── Search and watching: skip build output and caches ────────────────────────────────────────
   "files.watcherExclude": {
     "**/node_modules/**": true,
     "**/dist/**": true,
     "**/.turbo/**": true,
-    "**/.stackra/**": true,
-    "**/coverage/**": true
+    "**/coverage/**": true,
+    "**/.expo/**": true,
+    "**/.stackra/**": true
   },
   "search.exclude": {
     "**/node_modules": true,
     "**/dist": true,
     "**/.turbo": true,
-    "**/.stackra": true,
     "**/coverage": true,
     "pnpm-lock.yaml": true
-  }
+  },
+
+  // ── Git: the repo's own hooks run through lefthook ─────────────────────────────────────────────
+  "git.allowNoVerifyCommit": false,
+  "git.branchProtection": ["main"],
+  "git.branchProtectionPrompt": "alwaysPrompt"
 }

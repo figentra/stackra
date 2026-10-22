@@ -1,0 +1,37 @@
+// Tasks for the command palette (Tasks: Run Task) and the default build/test shortcuts.
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "verify",
+      "detail": "Full gate: format, lint, typecheck, test, build, validate, boundaries, knip",
+      "type": "shell",
+      "command": "pnpm verify",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "test",
+      "detail": "Every member's vitest suite",
+      "type": "shell",
+      "command": "pnpm test",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "dev",
+      "detail": "turbo run dev: dev servers for every member that has one",
+      "type": "shell",
+      "command": "pnpm dev",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "format",
+      "detail": "oxfmt the whole repo",
+      "type": "shell",
+      "command": "pnpm format",
+      "problemMatcher": []
+    }
+  ]
+}

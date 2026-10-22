@@ -1,12 +1,44 @@
-// Editor setup for this repo: one formatter (oxfmt via Oxc), no Prettier, no ESLint.
+// Recommended extensions for this repo. One formatter (oxfmt) and one linter (oxlint), both through Oxc;
+// Prettier and ESLint are rejected (not-built-yet rule), so they are listed as unwanted.
 {
   "recommendations": [
+    // Format and lint: oxfmt + oxlint
     "oxc.oxc-vscode",
-    "vitest.explorer",
-    "redhat.vscode-yaml",
     "editorconfig.editorconfig",
+    // Tests: vitest (unit, int, contract) and Playwright (e2e)
+    "vitest.explorer",
+    "ms-playwright.playwright",
+    // Config files: YAML (runway, workflows, lefthook), TOML (mise), MDX (docs)
+    "redhat.vscode-yaml",
+    "tamasfe.even-better-toml",
+    "unifiedjs.vscode-mdx",
+    "github.vscode-github-actions",
+    // UI: Tailwind v4 / Uniwind class names, Expo
+    "bradlc.vscode-tailwindcss",
     "expo.vscode-expo-tools",
-    "bradlc.vscode-tailwindcss"
+    // TypeScript errors you can read, inline
+    "yoavbls.pretty-ts-errors",
+    "usernamehw.errorlens",
+    // Spelling in code and docs (English and the Arabic-ready word list lives in cspell.config.yaml)
+    "streetsidesoftware.code-spell-checker",
+    // Docs: Markdown rules (oxfmt formats; markdownlint flags structure) and Mermaid in previews
+    "davidanson.vscode-markdownlint",
+    "bierner.markdown-mermaid",
+    // i18n keys in assets/lang/<locale>/<namespace>.json, inline and with missing-key reports
+    "lokalise.i18n-ally",
+    // Data: Postgres through SQLTools, and SQLite files (the desktop offline store)
+    "mtxr.sqltools",
+    "mtxr.sqltools-driver-pg",
+    "qwtel.sqlite-viewer",
+    // Containers (generated compose files) and pull-request review in the editor
+    "ms-azuretools.vscode-docker",
+    "github.vscode-pull-request-github",
+    // AI pair: Claude Code
+    "anthropic.claude-code"
   ],
-  "unwantedRecommendations": ["esbenp.prettier-vscode", "dbaeumer.vscode-eslint"]
+  "unwantedRecommendations": [
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "rvest.vs-code-prettier-eslint"
+  ]
 }
