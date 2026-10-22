@@ -10,5 +10,6 @@ icon: "wrench"
 | `@stackra/oxlint-config`     | `base`, `node`, `react`, `decorators`, `boundaries`                                                                   | the root `.oxlintrc.jsonc` extends `boundaries`                          |
 | `@stackra/vitest-config`     | `preset`, `preset-react`, `preset-decorators`, `coverage`                                                             | `vitest.config.ts` → `mergeConfig(stackraVitest…, …)`                    |
 | `@stackra/tsdown-config`     | `library()`                                                                                                           | `tsdown.config.ts` of a built library                                    |
+| `@stackra/commitlint-config` | default preset, rule `refs-issue-key` (off until given an issue prefix)                                               | the root `.commitlintrc.yaml` extends it and enables the rule with `STA` |
 
 A member's config files extend exactly one preset and add only what's specific to that member, such as test globs or a Vite plugin.

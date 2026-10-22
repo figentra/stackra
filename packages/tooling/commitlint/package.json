@@ -1,0 +1,29 @@
+{
+  "name": "@stackra/commitlint-config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared commitlint preset: conventional commits, the house type list and lengths, and the opt-in refs-issue-key rule (the issue-tracker prefix is the rule's value).",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/preset.ts"
+  },
+  "scripts": {
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "lint": "oxlint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@commitlint/config-conventional": "catalog:release"
+  },
+  "devDependencies": {
+    "@stackra/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  }
+}

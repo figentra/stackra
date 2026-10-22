@@ -19,7 +19,8 @@
       "entry": ["src/*.ts", "src/**/__tests__/**/*.test.ts"],
       "project": ["*.ts", "src/**/*.ts"],
       // Extended by each preset package's tsconfig.json, which knip doesn't trace where no typecheck script runs.
-      "ignoreDependencies": ["@stackra/typescript-config"],
+      // @commitlint/config-conventional: named as a string in the commitlint preset's `extends`, which knip doesn't trace.
+      "ignoreDependencies": ["@stackra/typescript-config", "@commitlint/config-conventional"],
     },
     "packages/*/*": {
       "project": ["src/**/*.{ts,tsx}"],
