@@ -1,0 +1,109 @@
+---
+title: "0281 — Desktop surfaces: targets per app, desktop modes and overlay styles"
+description: "Accepted · 2026-10-22"
+---
+
+<Note>
+  Extends [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron) (one app, several targets),
+  [0250](/adr/0250-stackra-platform-capability-ports-drivers-and-gate) (capability ports in
+  `@stackra/platform`) and
+  [0251](/adr/0251-desktop-bridge-generated-from-desktop-action-and-electron-hardening) (the
+  Electron hardening baseline). The tray keep-alive default of
+  [0254](/adr/0254-desktop-release-signing-update-feed-channels-and-version-policy) stands.
+</Note>
+
+## Context
+
+ADR 0249 builds web, PWA and Electron desktop from one app member, but does not say how an app picks its targets or which
+window surfaces the desktop target offers. A desktop app can be a dock app, a menu-bar app or both, and can show floating
+overlays opened by a system-wide shortcut. A browser tab or an installed PWA can do none of the tray, global-shortcut or
+always-on-top work, and config must not pretend otherwise. The owner decided targets, desktop modes and two overlay styles
+in chat on 2026-10-22.
+
+## Decision
+
+1. **One member, one codebase, listed targets.** An app member declares its targets in its `stackra.config.ts`:
+   `targets: [Target.Web, Target.Pwa, Target.Desktop]`. `stackra gen` builds only the listed targets. There is no second
+   codebase per target (ADR 0249).
+2. **Capability matrix.** What each target can offer:
+
+   | Surface                             | Web         | PWA               | Desktop                    |
+   | ----------------------------------- | ----------- | ----------------- | -------------------------- |
+   | Normal window                       | browser tab | standalone window | window                     |
+   | Dock icon                           | no          | yes               | yes, except in `Tray` mode |
+   | Tray or menu-bar icon               | no          | no                | yes                        |
+   | System-wide shortcuts               | no          | no                | yes                        |
+   | Floating always-on-top overlays     | no          | no                | yes                        |
+   | App shortcuts, share target, badges | no          | yes               | yes                        |
+   | Offline                             | partial     | service worker    | SQLite                     |
+
+   Config never claims a capability its targets lack. Validation rejects a desktop-only option (`mode`, `overlays`, a
+   global shortcut, the tray) when `Target.Desktop` is not in `targets`.
+
+3. **Desktop mode.** `desktop.config.ts` sets `mode` to one `DesktopMode`:
+   - `Window`: a dock app with no tray icon.
+   - `Tray`: a menu-bar app only. There is no dock or taskbar icon, and the window opens from the tray icon.
+   - `Hybrid`: a window and a tray icon. Closing the window keeps the app in the tray only when the user has turned
+     that on; it is off by default (ADR 0254, tray keep-alive).
+4. **Named overlays.** `desktop.config.ts` declares named `overlays`. Each has a `style` (`OverlayStyle`):
+   - `Launcher`: a wide prompt bar centred on the active display that grows downward with results (Claude style). It
+     opens by global shortcut or tray menu and closes on Esc or blur. Its width is fixed and its height follows the
+     content.
+   - `Panel`: a card docked to a screen edge or under the tray icon (Gemini style). It opens by shortcut, tray menu or an
+     in-app button and closes by its button. It can be pinned, is resizable, and remembers its size and position.
+
+   Options shared by both styles: `route`; `shortcut` (user-rebindable, registered by the main process only, decision 6);
+   `alwaysOnTop`; the behaviour on blur; a vibrancy or blur background (opaque where the OS has none); `anchor`
+   (`OverlayAnchor`: `ScreenCenter`, `TrayIcon`, `EdgeRight`, `EdgeLeft`, `Cursor`); and the displays the overlay may
+   open on.
+
+5. **Two shells, no second implementation.** `@stackra/platform/react` ships `LauncherOverlay` and `PanelOverlay`. Any
+   route renders inside the configured shell, and the same route also works in the main window. A surface never gets its
+   own copy of a screen.
+6. **Global shortcuts and screen capture.** Global shortcuts are registered by the Electron main process only, never by
+   the renderer. Every shortcut is listed in config, checked for conflicts at startup, and can be rebound or disabled by
+   the user in settings. Screen capture (`display-capture`) is a permission that is off by default; the renderer stays
+   inside the hardening baseline of ADR 0251.
+7. **Defaults.**
+   - The console app: `Web`, `Pwa` and `Desktop`, desktop mode `Hybrid`, with a `quick` overlay of style `Launcher` on
+     `CommandOrControl+Shift+Space` and an `assistant` overlay of style `Panel` anchored `EdgeRight`.
+   - A web app: `Web` and `Pwa` only.
+8. **Where the enums live.** Each enum is a const object plus a same-named union type in a `<name>.enum.ts` file (ADR
+   0128).
+   - `Target` lives in `@stackra/contracts`. `stackra.config.ts` is read by `stackra gen`, the CLI and the scaffolder
+     (`pnpm new … --targets`, ADR 0249) as well as by `@stackra/platform`, so it is a shared primitive under ADR 0117
+     C1. Placing it in `@stackra/platform` would make the build tools depend on the package that holds the Electron and
+     Expo drivers.
+   - `DesktopMode`, `OverlayStyle` and `OverlayAnchor` live in `@stackra/platform`. Only `desktop.config.ts` and the
+     platform shell read them, the same way each package owns the vocabulary of its own config (ADR 0117 C2, ADR 0146).
+
+## Consequences
+
+- An app chooses its surfaces in two config files, and a feature written once runs in a tab, a PWA, the desktop window and
+  an overlay.
+- A PWA config that asks for a tray or a global shortcut fails validation instead of shipping a silent no-op.
+- `@stackra/platform` grows a tray port, a global-shortcut port, an overlay window manager and the two React shells; the
+  desktop drivers carry the per-OS differences (dock hiding, vibrancy, display placement).
+- Settings gains a shortcuts page (rebind and disable) and a screen-capture permission toggle.
+- Linear: the overlay shells, the tray and the shortcut work land in the `@stackra/platform` wave, not in a separate
+  project.
+
+## Enforcement
+
+- planned — the `stackra.config.ts` and `desktop.config.ts` schemas in `stackra gen` reject desktop-only options when
+  `Target.Desktop` is not a target, and gen emits only the listed targets.
+- planned — an oxlint boundary rule allows Electron `globalShortcut` and `Tray` imports only in the desktop main-process
+  entry; the renderer cannot reach them under ADR 0251 (context isolation, sandbox, generated IPC allow-list).
+- planned — a desktop driver test registers every configured shortcut at startup and fails on a conflict; a test checks
+  that the permission handler denies `display-capture` until the user grants it.
+- planned — a `@stackra/platform` test renders one route in the main window, `LauncherOverlay` and `PanelOverlay`.
+
+## Supersedes and sources
+
+Supersedes: none. Extends: [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron),
+[0250](/adr/0250-stackra-platform-capability-ports-drivers-and-gate),
+[0251](/adr/0251-desktop-bridge-generated-from-desktop-action-and-electron-hardening). Consistent with:
+[0254](/adr/0254-desktop-release-signing-update-feed-channels-and-version-policy) (tray keep-alive opt-in),
+[0255](/adr/0255-pwa-service-worker-scope-and-push-per-platform) (PWA offline),
+[0256](/adr/0256-client-storage-one-stackra-storage-package) (desktop SQLite). Sources: owner decision in chat,
+2026-10-22 (STA-292).

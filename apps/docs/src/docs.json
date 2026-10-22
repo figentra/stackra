@@ -380,7 +380,8 @@
               "adr/0277-cli-and-desktop-sign-in",
               "adr/0278-api-key-lifecycle",
               "adr/0279-signup-and-first-run-onboarding",
-              "adr/0280-sandbox-to-live-promotion-and-environment-banner"
+              "adr/0280-sandbox-to-live-promotion-and-environment-banner",
+              "adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles"
             ]
           }
         ]
