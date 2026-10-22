@@ -18,4 +18,4 @@ Porting or copying code from another project follows ADR 0291. Read this before 
 6. Ported code passes the licence allow-list of ADR 0174, as dependencies do.
 7. Medusa's Enterprise paths are never ported, copied or read for porting (ADR 0102).
 
-Enforcement: planned — `tools/scripts/validate-repository.mjs` checks `ORIGIN.md` and `THIRD_PARTY_NOTICES.md` coverage (ADR 0291). Rules 1, 2 and 5 rely on review until a check exists.
+Enforcement: planned — `pnpm validate` checks that each ported package has an `ORIGIN.md` line naming a source repository and a commit, and that its third-party code is listed in `THIRD_PARTY_NOTICES.md` (ADR 0291). The membership check against the assigned list runs outside CI and is planned too. Rules 1, 2 and 5 rely on review until a check exists.

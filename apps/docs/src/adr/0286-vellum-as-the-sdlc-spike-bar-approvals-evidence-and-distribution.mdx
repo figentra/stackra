@@ -46,7 +46,7 @@ records its reasoning, so the page can be read without other documents.
 ### Approvals and lanes
 
 4. **Approvals are given by the reviewer identity (VL4).** The separate reviewer identity approves Vellum tasks by
-   default. Its signing key sits in an Infisical path that builder agents cannot read (STA-238). The owner approves only changes at change-risk R3, the top class of [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk), which covers auth, iam, tenancy, money, PII, secrets, webhooks, crypto, CI permissions and agent guards. Releases stay owner-approved under [0119](/adr/0119-merge-policy-and-release-authority) decision 5, which this ADR does not change. There is no hardware-key ceremony. This is not one
+   default. Its signing key sits in an Infisical path that builder agents cannot read (STA-238). The owner approves only changes at change-risk R3, the top class of [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk), which includes auth, iam, tenancy, money, PII, secrets, webhooks, crypto, CI permissions and agent guards. Releases stay owner-approved under [0119](/adr/0119-merge-policy-and-release-authority) decision 5, which this ADR does not change. There is no hardware-key ceremony. This is not one
    of the three options that were weighed: the reviewer key is extended from low-risk lanes to every lane below R3.
    The reason is the owner's stated aim of minimal human interaction, with the owner's time kept for R3 and above.
    Builders never approve their own work ([0230](/adr/0230-reviewer-identity-separate-from-builder)).
