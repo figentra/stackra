@@ -60,6 +60,7 @@
     "oxlint": "catalog:quality",
     "turbo": "catalog:build",
     "typescript": "catalog:tooling",
+    "undici": "catalog:",
     "yaml": "catalog:"
   },
   "engines": {

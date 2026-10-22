@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { BOT_EMAIL, gitBotArgs, leaksToken, mergesPr, reviewerAllows } from "../bot-gh.mjs";
+import { fakeGh } from "./__fixtures__/fake-gh.mjs";
 
 test("STA-214: credential helpers leak too; merges go only through pnpm pr:merge", () => {
   assert.equal(leaksToken("git", ["credential-osxkeychain", "get"]), true);
@@ -174,4 +176,39 @@ test("STA-216: the -c allow-list is exact keys", async () => {
   for (const key of ["color.pager=sh", "status.displayCommentPrefix=x", "advice.foo=x"])
     assert.ok(unsafeArgs("git", ["-c", key, "status"]), key);
   assert.equal(unsafeArgs("git", ["-c", "color.ui=never", "status"]), null);
+});
+
+/** `runAsBot("gh", args)` in a child whose PATH finds the fake gh first; its output and exit status. */
+const runAsBotWith = (gh, args) =>
+  spawnSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      `import { runAsBot } from ${JSON.stringify(new URL("../bot-gh.mjs", import.meta.url).href)};` +
+        `process.exitCode = await runAsBot("gh", ${JSON.stringify(args)}, "token");`,
+    ],
+    { encoding: "utf8", env: { ...process.env, PATH: gh.path } },
+  );
+
+test("STA-302: a retried gh read prints only the last attempt's output", () => {
+  const cut = { out: '[{"page":1}]', err: "net/http: TLS handshake timeout\n", code: 1 };
+  let gh = fakeGh([cut, { out: '[{"page":1}]\n[{"page":2}]\n' }]);
+  let r = runAsBotWith(gh, ["api", "--paginate", "repos/a/b/issues"]);
+  assert.equal(r.stdout, '[{"page":1}]\n[{"page":2}]\n');
+  assert.equal(r.status, 0);
+  assert.equal(gh.runs(), 2);
+
+  // A final failure still fails, with that attempt's output only.
+  gh = fakeGh([cut, { out: "half", err: "HTTP 404: Not Found\n", code: 1 }]);
+  r = runAsBotWith(gh, ["pr", "diff", "7"]);
+  assert.equal(r.stdout, "half");
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /retrying gh pr \(2\/4\)[^]*HTTP 404/);
+
+  // A write runs once.
+  gh = fakeGh([cut, { out: "ok" }]);
+  r = runAsBotWith(gh, ["pr", "comment", "7", "--body", "x"]);
+  assert.equal(r.status, 1);
+  assert.equal(gh.runs(), 1);
 });
