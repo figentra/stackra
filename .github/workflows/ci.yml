@@ -28,11 +28,11 @@ jobs:
           persist-credentials: false
           submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
 
-      # ADR 0027 D2: toolchains come from mise.toml (node, pnpm, gitleaks), not per-tool setup actions.
+      # ADR 0027 D2: toolchains come from mise.toml (node, pnpm, gitleaks, shfmt), not setup actions.
       - name: Toolchain (mise)
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
-          install_args: node pnpm gitleaks
+          install_args: node pnpm gitleaks shfmt
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -52,6 +52,7 @@ jobs:
           case "$PR_BRANCH" in renovate/*|changeset-release/*) exit 0 ;; esac
           pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA"
 
+      # oxfmt on every supported file, then shfmt on *.sh (CONTRIBUTING.md, "Formatting").
       - name: Format check
         run: pnpm format:check
 

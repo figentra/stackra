@@ -1,29 +1,31 @@
 // Workspace settings: one formatter (oxfmt) and one linter (oxlint) through the Oxc extension, the
 // repo's TypeScript, schemas for every config file, and the .editorconfig rules. Prettier and ESLint
 // are off (rejected). Personal preferences (theme, font, keybindings) belong in user settings.
+//
+// Formatting standard (CONTRIBUTING.md, "Formatting"): oxfmt owns every language it supports, shfmt
+// owns shell scripts, and nothing else formats. The editor, lefthook and CI run the same tools with
+// the same config (.oxfmtrc.jsonc, .editorconfig), so a file saved here passes `pnpm format:check`.
 {
   // ── Format: oxfmt on save, for every language it owns ─────────────────────────────────────────
+  // oxfmt formats whole files only: "Format Selection" and format-on-type/paste are unsupported, so
+  // save formats the file ("file" mode), never just the modified ranges.
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
+  "editor.formatOnType": false,
   "editor.formatOnPaste": false,
   "editor.rulers": [100],
   "prettier.enable": false,
   "eslint.enable": false,
-  "[typescript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
-  "[typescriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
-  "[javascript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
-  "[javascriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
-  "[json]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
-  "[jsonc]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
-  "[yaml]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
-  "[css]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
-  "[markdown]": {
-    "editor.defaultFormatter": "oxc.oxc-vscode",
-    // .editorconfig keeps trailing whitespace in Markdown (hard line breaks).
-    "files.trimTrailingWhitespace": false
+  "[typescript][typescriptreact][javascript][javascriptreact][json][jsonc][json5][yaml][markdown][mdx][toml][css][scss][less][html][graphql][vue]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
-  "[mdx]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
-  "[toml]": { "editor.defaultFormatter": "tamasfe.even-better-toml" },
+  // .editorconfig keeps trailing whitespace in Markdown (hard line breaks).
+  "[markdown]": { "files.trimTrailingWhitespace": false },
+  // Shell has no oxfmt support: shfmt (pinned in mise.toml) formats it, reading .editorconfig.
+  "[shellscript]": { "editor.defaultFormatter": "mkhl.shfmt" },
+  // Even Better TOML stays for validation, completion and schemas only; the [toml] formatter above is
+  // oxfmt, so its own formatter (no on/off setting in 0.21) is never picked.
 
   // ── Lint: oxlint (config .oxlintrc.jsonc), fixes on save ───────────────────────────────────────
   "oxc.enable": true,
