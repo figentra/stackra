@@ -4,13 +4,15 @@
 //          the member lands.
 // Owner: release-operations · Secrets: forbidden
 {
-  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "$schema": "./node_modules/knip/schema.json",
   "workspaces": {
     ".": {
       "entry": ["tools/scripts/*.mjs"],
       "project": ["*.mjs", "tools/scripts/*.mjs"],
       // Run by lefthook's pre-commit hook, which knip does not read.
-      "ignoreDependencies": ["oxfmt"],
+      // @changesets/config: .changeset/config.json reads its schema from pnpm's hidden hoist
+      // (a transitive of @changesets/cli) so VS Code needs no download; it is never imported.
+      "ignoreDependencies": ["oxfmt", "@changesets/config"],
       // Developer-machine CLIs the root scripts shell out to (pinned outside pnpm).
       "ignoreBinaries": ["opencode", "infisical", "specify"],
     },

@@ -1,3 +1,4 @@
+#:schema https://mise.jdx.dev/schema/mise.json
 # Stackra file contract:
 # Purpose: pins the toolchain versions every contributor and CI job runs. `pnpm` here must match
 #          `packageManager` in package.json (corepack reads that one); a mismatch is a bug, not a choice.

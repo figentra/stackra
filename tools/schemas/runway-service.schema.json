@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.stackra.dev/runway/service.json",
+  "title": "runway.yaml (service member)",
+  "description": "How and where one service runs, per environment: dev port, the deployable it joins (ADR 0169), resources, the sizes of what it needs, drivers, secret NAMES, health thresholds, per-environment config. What it needs is derived by gen into the manifest `infra`; this file only sizes it (ADR 0168, 0238, 0266, 0173).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "member", "environments"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 2 },
+    "member": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*$",
+      "description": "Must equal stackra.config.ts `key`."
+    },
+    "secrets": {
+      "type": "object",
+      "description": "Every @Secret of src/config/* by NAME; gen fails on a missing one (ADR 0173).",
+      "propertyNames": { "$ref": "#/$defs/secretName" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      }
+    },
+    "health": {
+      "type": "object",
+      "description": "Thresholds only; the path and checks are stackra.config.ts `health` (ADR 0190).",
+      "additionalProperties": false,
+      "properties": {
+        "readiness": {
+          "type": "object",
+          "properties": {
+            "requireMigrations": { "type": "boolean" },
+            "timeoutSeconds": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "liveness": {
+          "type": "object",
+          "properties": { "eventLoopLagMs": { "type": "integer", "minimum": 1 } }
+        }
+      }
+    },
+    "environments": {
+      "type": "object",
+      "propertyNames": { "enum": ["dev", "preview", "staging", "production"] },
+      "additionalProperties": { "$ref": "#/$defs/environment" }
+    }
+  },
+  "$defs": {
+    "secretName": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+    "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "cpu": { "type": "number", "exclusiveMinimum": 0 },
+        "memory": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?(Mi|Gi)$" },
+        "instances": {
+          "type": "object",
+          "properties": {
+            "min": { "type": "integer", "minimum": 0 },
+            "max": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "scaling": {
+          "type": "object",
+          "properties": {
+            "metric": { "type": "string", "examples": ["cpu"] },
+            "target": { "type": "number" }
+          }
+        }
+      }
+    },
+    "drivers": {
+      "type": "object",
+      "properties": {
+        "queue": { "type": "string", "examples": ["memory", "encore-pubsub"] },
+        "cache": { "type": "string", "examples": ["memory", "valkey"] },
+        "events": { "type": "string", "examples": ["memory", "encore-pubsub"] },
+        "workflow": { "type": "string", "examples": ["native"] },
+        "realtime": { "type": "string", "examples": ["memory", "sse"] },
+        "scheduler": { "type": "string", "examples": ["croner"] },
+        "storage": { "type": "string", "examples": ["local", "s3"] },
+        "mail": {
+          "type": "string",
+          "examples": ["memory", "notifications"],
+          "description": "The one home of the mail driver choice (ADR 0266)."
+        },
+        "search": { "type": "string", "examples": ["memory", "postgres"] },
+        "media": { "type": "string", "examples": ["memory", "s3"] },
+        "webhooks": { "type": "string", "examples": ["memory", "native"] }
+      },
+      "additionalProperties": { "type": "string" }
+    },
+    "queue": {
+      "type": "object",
+      "properties": {
+        "visibilityTimeoutSeconds": { "type": "integer", "minimum": 0 },
+        "dlq": { "type": "boolean" }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "port": { "$ref": "#/$defs/port" },
+        "host": { "type": "string" },
+        "devConsolePort": { "$ref": "#/$defs/port" },
+        "deployable": {
+          "type": "string",
+          "description": "The deployable this service is packed into (ADR 0169); dev is a monolith."
+        },
+        "isolate": { "type": "boolean" },
+        "resources": { "$ref": "#/$defs/resources" },
+        "poolBudget": { "type": "integer", "minimum": 1 },
+        "drivers": { "$ref": "#/$defs/drivers" },
+        "database": {
+          "type": "object",
+          "properties": {
+            "plan": { "type": "string", "examples": ["shared"] },
+            "storageGb": { "type": "number", "exclusiveMinimum": 0 },
+            "extensions": { "type": "array", "items": { "type": "string" } },
+            "readReplica": { "type": "boolean" }
+          }
+        },
+        "cache": {
+          "type": "object",
+          "properties": { "keyspaceMb": { "type": "integer", "minimum": 1 } }
+        },
+        "buckets": { "type": "object", "additionalProperties": { "type": "object" } },
+        "queues": {
+          "type": "object",
+          "description": "Names come from the manifest (`@AsJob` / `@OnEvent`); sizes here.",
+          "additionalProperties": { "$ref": "#/$defs/queue" }
+        },
+        "crons": { "type": "object", "properties": { "enabled": { "type": "boolean" } } },
+        "secrets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/secretName" },
+          "uniqueItems": true
+        },
+        "config": {
+          "type": "object",
+          "description": "The last config layer (ADR 0146 CF3), keyed by config key.",
+          "additionalProperties": { "type": "object" }
+        },
+        "workers": {
+          "type": "object",
+          "properties": {
+            "split": { "type": "boolean" },
+            "resources": { "$ref": "#/$defs/resources" }
+          }
+        }
+      }
+    }
+  }
+}

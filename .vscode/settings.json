@@ -66,14 +66,42 @@
     "https://raw.githubusercontent.com/": true,
     "https://turborepo.com/": true,
     "https://turbo.build/": true,
+    "https://turborepo.dev/": true,
     "https://biomejs.dev/": true,
     "https://mintlify.com/": true,
+    "https://opencode.ai/": true,
     "https://schemas.stackra.dev/": true
   },
   "json.schemas": [
     {
       "fileMatch": ["*.jsonc", "**/tsconfig*.json", "**/.vscode/*.json"],
       "schema": { "allowTrailingCommas": true }
+    },
+    // Files with no inline $schema. Installed packages resolve from node_modules (no download, no
+    // trust prompt); the rest are SchemaStore or the tool's own schema, pinned where the URL allows.
+    {
+      "fileMatch": ["**/.claude/launch.json"],
+      "url": "https://www.schemastore.org/claude-code-launch.json"
+    },
+    {
+      "fileMatch": ["**/packages/tooling/typescript/src/*.json"],
+      "url": "https://www.schemastore.org/tsconfig.json"
+    },
+    {
+      "fileMatch": ["**/packages/tooling/oxlint/src/*.jsonc"],
+      "url": "./node_modules/oxlint/configuration_schema.json"
+    },
+    {
+      "fileMatch": ["**/apps/*/app.json"],
+      "url": "https://www.schemastore.org/expo-57.0.0.json"
+    },
+    {
+      "fileMatch": ["**/apps/*/eas.json", "**/tools/scaffold/templates/apps/mobile/eas.json"],
+      "url": "https://raw.githubusercontent.com/expo/eas-cli/main/packages/eas-json/schema/eas.schema.json"
+    },
+    {
+      "fileMatch": ["**/.github/branch-protection.json"],
+      "url": "./tools/schemas/branch-protection.schema.json"
     }
   ],
 
@@ -81,11 +109,22 @@
   "yaml.format.enable": false,
   "yaml.validate": true,
   "yaml.schemaStore.enable": true,
+  // Stackra's own schemas live in tools/schemas (offline today; their $id is schemas.stackra.dev).
   "yaml.schemas": {
-    "https://json.schemastore.org/lefthook.json": "lefthook.yml",
+    "./node_modules/lefthook/schema.json": "lefthook.yml",
+    "./tools/schemas/mcp.schema.json": ".mcp.yaml",
+    "https://raw.githubusercontent.com/DavidAnson/markdownlint/main/schema/markdownlint-config-schema.json": ".markdownlint.yaml",
+    "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/packages/cspell-types/cspell.schema.json": "cspell.config.yaml",
+    "https://unpkg.com/app-builder-lib@26/scheme.json": "**/electron-builder.yml",
     "https://json.schemastore.org/commitlintrc.json": ".commitlintrc.yaml",
     "https://json.schemastore.org/pnpm-workspace.json": "pnpm-workspace.yaml",
     "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
+  },
+
+  // ── TOML: Even Better TOML (keys are regexes on the file URI; files also carry `#:schema`) ────────
+  "evenBetterToml.schema.associations": {
+    ".*/mise\\.toml$": "https://mise.jdx.dev/schema/mise.json",
+    ".*/\\.gitleaks\\.toml$": "https://www.schemastore.org/gitleaks.json"
   },
 
   // ── Tailwind v4 / Uniwind class names in className, cn() and tv() ─────────────────────────────

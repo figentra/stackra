@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.stackra.dev/runway/app.json",
+  "title": "runway.yaml (app member)",
+  "description": "How and where one app runs, per environment: the dev port (the only place it is written), domains, public vars, secret names, release channels, Workers knobs (ADR 0168, 0170, 0173, 0254). Identity is stackra.config.ts; behaviour is src/config/*; accounts and zones are the root runway. A value here may override a root default, never the reverse.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "member", "environments"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 2 },
+    "member": { "$ref": "#/$defs/memberKey" },
+    "secrets": { "$ref": "#/$defs/secretMap" },
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string", "pattern": "^/" },
+        "expects": { "enum": ["sha"] }
+      }
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pwa": { "type": "object" },
+        "desktop": {
+          "type": "object",
+          "properties": {
+            "channels": { "type": "array", "items": { "type": "string" } },
+            "signing": { "type": "object", "additionalProperties": { "type": "boolean" } },
+            "feedPath": { "type": "string" },
+            "platforms": {
+              "type": "object",
+              "propertyNames": { "enum": ["mac", "windows", "linux"] },
+              "additionalProperties": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "mobile": {
+          "type": "object",
+          "properties": {
+            "profiles": {
+              "type": "object",
+              "description": "EAS build profiles; the channel is the profile name.",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "distribution": { "enum": ["internal", "store"] },
+                  "developmentClient": { "type": "boolean" },
+                  "simulator": { "type": "boolean" },
+                  "androidApk": { "type": "boolean" },
+                  "autoIncrement": { "type": "boolean" },
+                  "environment": { "type": "string" }
+                }
+              }
+            },
+            "submit": {
+              "type": "object",
+              "properties": {
+                "ios": { "type": "boolean" },
+                "android": { "type": "boolean" }
+              }
+            },
+            "whiteLabel": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": { "sentryProject": { "type": "string" } }
+    },
+    "environments": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/envName" },
+      "additionalProperties": { "$ref": "#/$defs/environment" }
+    }
+  },
+  "$defs": {
+    "envName": { "enum": ["dev", "preview", "staging", "production"] },
+    "memberKey": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*$",
+      "description": "Must equal stackra.config.ts `key`."
+    },
+    "secretName": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+    "secretMap": {
+      "type": "object",
+      "description": "Every @Secret by NAME; values live in Infisical and runway syncs them on deploy (ADR 0173).",
+      "propertyNames": { "$ref": "#/$defs/secretName" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Infisical path key; default root `secrets.defaultPath`."
+          }
+        }
+      }
+    },
+    "secretList": {
+      "type": "array",
+      "description": "The secret names this environment receives.",
+      "items": { "$ref": "#/$defs/secretName" },
+      "uniqueItems": true
+    },
+    "derived": {
+      "type": "object",
+      "description": "A value gen derives instead of a literal (ADR 0170: no literal ports).",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "from-port": { "type": "string" },
+        "from-member": { "type": "string" },
+        "scheme": { "type": "string" },
+        "path": { "type": "string" }
+      }
+    },
+    "vars": {
+      "type": "object",
+      "description": "Public (and server) values of the env class; gen checks the prefixes.",
+      "propertyNames": { "pattern": "^[A-Z][A-Z0-9_]*$" },
+      "additionalProperties": {
+        "anyOf": [{ "type": ["string", "number", "boolean"] }, { "$ref": "#/$defs/derived" }]
+      }
+    },
+    "config": {
+      "type": "object",
+      "description": "The last config layer (ADR 0146), keyed by config key.",
+      "additionalProperties": { "type": "object" }
+    },
+    "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "port": { "$ref": "#/$defs/port" },
+        "host": { "type": "string" },
+        "https": { "type": "boolean" },
+        "open": { "type": "boolean" },
+        "domain": { "type": "string" },
+        "aliases": { "type": "array", "items": { "type": "string" } },
+        "destination": { "type": "string" },
+        "vars": { "$ref": "#/$defs/vars" },
+        "secrets": { "$ref": "#/$defs/secretList" },
+        "config": { "$ref": "#/$defs/config" },
+        "e2e": { "type": "object" },
+        "workers": { "type": "object" },
+        "pwa": { "type": "object" },
+        "desktop": {
+          "type": "object",
+          "properties": {
+            "devtools": { "type": "boolean" },
+            "remoteDebugPort": { "$ref": "#/$defs/port" },
+            "pkceLoopbackPort": { "$ref": "#/$defs/port" },
+            "channel": { "type": "string" },
+            "rollout": { "type": "object" }
+          }
+        },
+        "mobile": {
+          "type": "object",
+          "properties": {
+            "metroPort": { "$ref": "#/$defs/port" },
+            "devClient": { "type": "boolean" },
+            "channel": { "type": "string" },
+            "profile": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

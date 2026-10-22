@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.stackra.dev/branch-protection.json",
+  "title": ".github/branch-protection.json",
+  "description": "Branch protection for one branch: `rules` is the body of GitHub's PUT /repos/{owner}/{repo}/branches/{branch}/protection.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["branch", "rules"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "comment": { "type": "string" },
+    "branch": { "type": "string", "minLength": 1 },
+    "rules": {
+      "type": "object",
+      "required": [
+        "required_status_checks",
+        "enforce_admins",
+        "required_pull_request_reviews",
+        "restrictions"
+      ],
+      "properties": {
+        "required_status_checks": {
+          "type": ["object", "null"],
+          "properties": {
+            "strict": { "type": "boolean" },
+            "contexts": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "enforce_admins": { "type": ["boolean", "null"] },
+        "required_pull_request_reviews": {
+          "type": ["object", "null"],
+          "properties": {
+            "dismiss_stale_reviews": { "type": "boolean" },
+            "require_code_owner_reviews": { "type": "boolean" },
+            "required_approving_review_count": { "type": "integer", "minimum": 0, "maximum": 6 },
+            "require_last_push_approval": { "type": "boolean" }
+          }
+        },
+        "restrictions": { "type": ["object", "null"] },
+        "required_linear_history": { "type": "boolean" },
+        "allow_force_pushes": { "type": ["boolean", "null"] },
+        "allow_deletions": { "type": "boolean" },
+        "block_creations": { "type": "boolean" },
+        "required_conversation_resolution": { "type": "boolean" },
+        "lock_branch": { "type": "boolean" },
+        "allow_fork_syncing": { "type": "boolean" }
+      }
+    }
+  }
+}

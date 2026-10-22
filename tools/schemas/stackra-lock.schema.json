@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.stackra.dev/stackra-lock.json",
+  "title": "stackra.lock.yaml",
+  "description": "The pinned revision of every external producer manifest this workspace builds clients from (ADR 0158, ADR 0260). Producer to revision only: no secret and no URL. A producer in this repository is not listed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "producers"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1, "description": "Lock file format version." },
+    "repository": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "This workspace's repository name (runway `project`)."
+    },
+    "producers": {
+      "type": "object",
+      "description": "Producer module key → the git revision of its committed `.stackra/app-manifest.json`.",
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_-]*$" },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{7,40}$",
+        "description": "Git commit SHA (7 to 40 hex characters)."
+      }
+    }
+  }
+}
