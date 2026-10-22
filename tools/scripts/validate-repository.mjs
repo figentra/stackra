@@ -235,6 +235,10 @@ export const MUST_STAY_JSON = [
   [/^\.changeset\/config\.json$/, "@changesets/config JSON.parse on a fixed path"],
   [/^\.github\/branch-protection\.json$/, "GitHub REST API payload"],
   [
+    /^tools\/schemas\/[\w-]+\.schema\.json$/,
+    "JSON Schema documents: editors and validators fetch them by URL or path as JSON",
+  ],
+  [
     /^packages\/experience\/brand\/assets\/tokens\/[\w-]+\.json$/,
     "brand-kit token output, vendored byte-for-byte; consumers JSON.parse it",
   ],
