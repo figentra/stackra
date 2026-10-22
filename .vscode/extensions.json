@@ -1,0 +1,12 @@
+// Editor setup for this repo: one formatter (oxfmt via Oxc), no Prettier, no ESLint.
+{
+  "recommendations": [
+    "oxc.oxc-vscode",
+    "vitest.explorer",
+    "redhat.vscode-yaml",
+    "editorconfig.editorconfig",
+    "expo.vscode-expo-tools",
+    "bradlc.vscode-tailwindcss"
+  ],
+  "unwantedRecommendations": ["esbenp.prettier-vscode", "dbaeumer.vscode-eslint"]
+}

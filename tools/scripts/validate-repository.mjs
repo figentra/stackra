@@ -7,6 +7,7 @@
  *          A service declares its root module (`stackra.module`, ADR 0090) and holds no Encore file (ADR 0126).
  *          Every test file anywhere in the repository sits directly in a __tests__/ folder (ADR 0022).
  *          Every JSON config is .jsonc unless its reader cannot take one (MUST_STAY_JSON).
+ *          Repo-owned YAML has no flow mappings (block style; checkYamlFlowMaps).
  *          Prints the findings and exits 1; prints nothing on success. Adapted from Figentra's checks 1–5.
  * Scope: every member listed by `pnpm -r list --json --depth -1`; test placement covers every non-ignored file.
  * Owner: release-operations · Secrets: forbidden
@@ -15,6 +16,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { LineCounter, parseDocument, visit } from "yaml";
 import { readJsonc } from "./jsonc.mjs";
 import { FORBIDDEN_FILES, SPEC_PATTERN, TEST_FILE_PATTERN } from "./structure.mjs";
 
@@ -225,6 +227,7 @@ export const MUST_STAY_JSON = [
     "generic preset template: rename to .jsonc for a JSONC tool",
   ],
   [/^\.claude\/[\w.-]+\.json$/, "Claude Code settings/launch: fixed .json names"],
+  [/^\.vscode\/(settings|extensions)\.json$/, "VS Code reads these fixed names (JSONC inside)"],
   [/^\.changeset\/config\.json$/, "@changesets/config JSON.parse on a fixed path"],
   [/^\.github\/branch-protection\.json$/, "GitHub REST API payload"],
   [
@@ -275,6 +278,38 @@ export function checkJsonConfigs(paths) {
   return out;
 }
 
+/** Generated or vendored YAML the flow-map rule does not own. pnpm-workspace.yaml joins when STA-300 lands. */
+const YAML_NOT_OWNED = [
+  /^pnpm-lock\.yaml$/,
+  /^pnpm-workspace\.yaml$/,
+  /^\.specify\//,
+  /^\.(agents|claude)\/(skills|reference)\//,
+  /^\.old\//,
+];
+
+export const isRepoOwnedYaml = (p) =>
+  /\.ya?ml$/.test(p) && !YAML_NOT_OWNED.some((re) => re.test(p));
+
+/**
+ * YAML standard (STA-299): repo-owned YAML has no flow mappings (`{ a: b }`); use a block mapping. Flow sequences
+ * of plain scalars stay allowed, and so does the empty `{}` (it has no block form, e.g. `permissions: {}`).
+ */
+export function checkYamlFlowMaps(path, text) {
+  const lineCounter = new LineCounter();
+  const doc = parseDocument(text, { lineCounter });
+  if (doc.errors.length)
+    return [`${path}: not valid YAML (${doc.errors[0].message.split("\n")[0]})`];
+  const out = [];
+  visit(doc, {
+    Map(_, node) {
+      if (!node.flow || node.items.length === 0) return;
+      const { line } = lineCounter.linePos(node.range[0]);
+      out.push(`${path}:${line}: flow mapping; write a block mapping (YAML standard, STA-299)`);
+    },
+  });
+  return out;
+}
+
 /**
  * ADR 0022: every `*.test.*` file sits directly in `__tests__/`; `.spec.*` is not used. Tier infixes (`.int`,
  * `.contract`, `.e2e`, `.load`) go before `.test` (TS1/TS2). No Storybook: `*.stories.*` is banned (ADR 0126).
@@ -319,6 +354,8 @@ function main() {
     .filter((p) => p && existsSync(join(ROOT, p)));
   report("", checkTestPlacement(repoFiles));
   report("", checkJsonConfigs(repoFiles));
+  for (const p of repoFiles.filter(isRepoOwnedYaml))
+    report("", checkYamlFlowMaps(p, readFileSync(join(ROOT, p), "utf8")));
   // ADR 0024 decision 2: the brand marks carry their all-rights-reserved NOTICE.
   if (!existsSync(join(ROOT, "packages/experience/brand/assets/NOTICE")))
     report("packages/experience/brand", ["assets/NOTICE missing (ADR 0024)"]);

@@ -8,6 +8,8 @@ import {
   checkJsonConfigs,
   checkService,
   checkTestPlacement,
+  checkYamlFlowMaps,
+  isRepoOwnedYaml,
   tierFor,
 } from "../validate-repository.mjs";
 
@@ -239,4 +241,27 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
     ),
     yamlOwed,
   );
+});
+
+test("checkYamlFlowMaps: names file and line of a flow mapping; allows block maps, flow lists and {}", () => {
+  const bad = "a: 1\nb:\n  c: { d: e }\n";
+  assert.deepEqual(checkYamlFlowMaps("x.yml", bad), [
+    "x.yml:3: flow mapping; write a block mapping (YAML standard, STA-299)",
+  ]);
+  assert.deepEqual(checkYamlFlowMaps("x.yml", "a: [b, c]\npermissions: {}\nd:\n  e: f\n"), []);
+  assert.equal(checkYamlFlowMaps("x.yml", "a: [")[0].startsWith("x.yml: not valid YAML"), true);
+});
+
+test("isRepoOwnedYaml: skips generated and vendored YAML", () => {
+  for (const p of ["lefthook.yml", ".github/workflows/ci.yml", ".agents/routing.yaml"])
+    assert.equal(isRepoOwnedYaml(p), true);
+  for (const p of [
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    ".specify/a.yml",
+    ".agents/skills/x/a.yml",
+    ".agents/reference/a.yml",
+    "a.json",
+  ])
+    assert.equal(isRepoOwnedYaml(p), false);
 });

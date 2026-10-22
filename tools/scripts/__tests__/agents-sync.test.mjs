@@ -450,7 +450,7 @@ test("a route that sends an agent to OpenCode when the agent is not projected th
     withModels(root, partial);
     writeFileSync(
       join(root, ".agents/routing.yaml"),
-      "tasks:\n  review: { executor: opencode, model: p/x, agent: reviewer }\n  other: { executor: claude, model: opus, agent: reviewer }\n",
+      "tasks:\n  review:\n    executor: opencode\n    model: p/x\n    agent: reviewer\n  other:\n    executor: claude\n    model: opus\n    agent: reviewer\n",
     );
     const r = run(root, "--lint");
     assert.equal(r.code, 1);

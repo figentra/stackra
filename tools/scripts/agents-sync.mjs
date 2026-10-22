@@ -1265,7 +1265,9 @@ function main() {
   const routingPath = join(ROOT, SOURCE, "routing.yaml");
   if (existsSync(routingPath) && modelMap()?.assistants.opencode) {
     const known = new Set(agentEntries.map((e) => e.replace(/\.md$/, "")));
-    for (const m of readFileSync(routingPath, "utf8").matchAll(/^ {2}([\w-]+):\s*\{([^}]*)\}/gm)) {
+    for (const m of readFileSync(routingPath, "utf8").matchAll(
+      /^ {2}([\w-]+):[ \t]*\n((?: {4}\S.*\n?)+)/gm,
+    )) {
       const executor = /executor:\s*([\w-]+)/.exec(m[2])?.[1];
       const agentName = /agent:\s*([\w-]+)/.exec(m[2])?.[1];
       if (executor !== "opencode" || !known.has(agentName)) continue;
