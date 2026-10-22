@@ -1,0 +1,45 @@
+// One formatter: oxfmt through the Oxc extension, on save, for every language it owns.
+// Mirrors .editorconfig and .oxfmtrc.jsonc; Prettier is off (rejected, not-built-yet rule).
+{
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "editor.formatOnSave": true,
+  "editor.rulers": [100],
+  "prettier.enable": false,
+
+  "[typescript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[javascript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[javascriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[json]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[yaml]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[markdown]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+    // .editorconfig keeps trailing whitespace in Markdown (hard line breaks).
+    "files.trimTrailingWhitespace": false
+  },
+  "[css]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+
+  // .editorconfig
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+
+  "typescript.tsdk": "node_modules/typescript/lib",
+
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.turbo/**": true,
+    "**/.stackra/**": true,
+    "**/coverage/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.turbo": true,
+    "**/.stackra": true,
+    "**/coverage": true,
+    "pnpm-lock.yaml": true
+  }
+}
