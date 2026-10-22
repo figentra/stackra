@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://static.stackra.figentra.com/schemas/mcp.json",
+  "$comment": "Stackra file contract: Purpose: the shape of .mcp.yaml, the one committed MCP server list. Boundary: shape only; the renderer (`pnpm agents:sync` here, `stackra mcp sync` in a project) writes the gitignored .mcp.json. Runtime: node (editors and validators). Governing contract: ADR 0282 (developer MCP), ADR 0196 (repository config is YAML), ADR 0173 (no secret value in a file).",
+  "title": ".mcp.yaml",
+  "description": "Every MCP server the project uses, in one file (ADR 0282). It is rendered into the gitignored .mcp.json that Claude Code reads. Server definitions only, never a token: a token server runs through a wrapper that injects `$NAME` values from Infisical into that one process (ADR 0173).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mcpServers"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional pointer to this schema. Editors use the `# yaml-language-server: $schema=` comment instead."
+    },
+    "mcpServers": {
+      "type": "object",
+      "description": "Server name → definition. The name is what the assistant shows (`mcp__<name>__<tool>`).",
+      "propertyNames": { "pattern": "^[a-z0-9][a-z0-9-]*$" },
+      "additionalProperties": {
+        "oneOf": [{ "$ref": "#/$defs/stdio" }, { "$ref": "#/$defs/remote" }]
+      }
+    }
+  },
+  "$defs": {
+    "noSecretValue": {
+      "type": "string",
+      "description": "A literal or a `$NAME` placeholder that the wrapper expands at run time. Never a secret value (ADR 0173).",
+      "examples": ["$CONTEXT7_API_KEY"]
+    },
+    "stdio": {
+      "type": "object",
+      "title": "Local (stdio) server",
+      "description": "A server started as a local process that speaks MCP over stdin and stdout.",
+      "additionalProperties": false,
+      "required": ["command"],
+      "properties": {
+        "type": {
+          "const": "stdio",
+          "description": "Transport. Optional: a definition with `command` is stdio."
+        },
+        "command": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Executable to run. A server that needs a token runs through the vault wrapper.",
+          "examples": ["npx", "pnpm", "./tools/scripts/mcp.sh"]
+        },
+        "args": {
+          "type": "array",
+          "description": "Arguments passed to `command`, in order.",
+          "items": { "$ref": "#/$defs/noSecretValue" }
+        },
+        "env": {
+          "type": "object",
+          "description": "Extra environment variables for the process. Values are literals or `$NAME` placeholders.",
+          "propertyNames": { "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "additionalProperties": { "$ref": "#/$defs/noSecretValue" }
+        },
+        "cwd": {
+          "type": "string",
+          "description": "Working directory of the process, relative to the repository root."
+        }
+      }
+    },
+    "remote": {
+      "type": "object",
+      "title": "Remote (http) server",
+      "description": "A hosted server reached over HTTP. It signs in with OAuth on first use (/mcp).",
+      "additionalProperties": false,
+      "required": ["type", "url"],
+      "properties": {
+        "type": {
+          "enum": ["http", "sse"],
+          "description": "Transport: `http` (streamable HTTP) or the older `sse`."
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https?://",
+          "description": "Server endpoint. Prefer a read-only endpoint for production data.",
+          "examples": ["https://mcp.linear.app/mcp"]
+        },
+        "headers": {
+          "type": "object",
+          "description": "Extra request headers. Values are literals or `$NAME` placeholders, never a token.",
+          "additionalProperties": { "$ref": "#/$defs/noSecretValue" }
+        }
+      }
+    }
+  }
+}

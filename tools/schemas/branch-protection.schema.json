@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://static.stackra.figentra.com/schemas/branch-protection.json",
+  "$comment": "Stackra file contract: Purpose: the shape of .github/branch-protection.json, the committed branch rules. Boundary: shape only; a human applies the rules in GitHub settings or with the REST call. Runtime: node (editors and validators). Governing contract: ADR 0012 (code host and CI); GitHub REST 'Update branch protection' for the `rules` fields.",
+  "title": ".github/branch-protection.json",
+  "description": "Branch protection for one branch. `rules` is the request body of GitHub's PUT /repos/{owner}/{repo}/branches/{branch}/protection; `comment` and `branch` are this file's own wrapper.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["branch", "rules"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional pointer to this schema. VS Code maps the file in .vscode/settings.json, so the API payload stays unchanged."
+    },
+    "comment": {
+      "type": "string",
+      "description": "How to apply the rules. Not sent to GitHub."
+    },
+    "branch": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The protected branch.",
+      "examples": ["main"]
+    },
+    "rules": {
+      "type": "object",
+      "description": "The REST request body. GitHub requires the four nullable keys to be present.",
+      "$comment": "Only fields GitHub documents are typed; others stay allowed so a new GitHub field is not an editor error.",
+      "required": [
+        "required_status_checks",
+        "enforce_admins",
+        "required_pull_request_reviews",
+        "restrictions"
+      ],
+      "properties": {
+        "required_status_checks": {
+          "type": ["object", "null"],
+          "description": "Status checks that must pass before merging; null disables them.",
+          "properties": {
+            "strict": {
+              "type": "boolean",
+              "description": "Require the branch to be up to date with the base before merging."
+            },
+            "contexts": {
+              "type": "array",
+              "description": "Check names that must pass.",
+              "items": { "type": "string" },
+              "examples": [["Quality Gate"]]
+            }
+          }
+        },
+        "enforce_admins": {
+          "type": ["boolean", "null"],
+          "description": "Apply the rules to administrators too."
+        },
+        "required_pull_request_reviews": {
+          "type": ["object", "null"],
+          "description": "Review requirements; null allows merging without a review.",
+          "properties": {
+            "dismiss_stale_reviews": {
+              "type": "boolean",
+              "description": "Dismiss approvals when new commits are pushed."
+            },
+            "require_code_owner_reviews": {
+              "type": "boolean",
+              "description": "Require a review from a CODEOWNERS owner."
+            },
+            "required_approving_review_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 6,
+              "description": "Approvals needed before merging (GitHub allows 0 to 6)."
+            },
+            "require_last_push_approval": {
+              "type": "boolean",
+              "description": "The last push must be approved by someone other than its author."
+            }
+          }
+        },
+        "restrictions": {
+          "type": ["object", "null"],
+          "description": "Who may push; null means anyone with write access."
+        },
+        "required_linear_history": {
+          "type": "boolean",
+          "description": "Forbid merge commits (squash or rebase only)."
+        },
+        "allow_force_pushes": {
+          "type": ["boolean", "null"],
+          "description": "Allow force pushes to the branch."
+        },
+        "allow_deletions": {
+          "type": "boolean",
+          "description": "Allow the branch to be deleted."
+        },
+        "block_creations": {
+          "type": "boolean",
+          "description": "Block creating branches that match the rule."
+        },
+        "required_conversation_resolution": {
+          "type": "boolean",
+          "description": "Every review thread must be resolved before merging."
+        },
+        "lock_branch": {
+          "type": "boolean",
+          "description": "Make the branch read-only."
+        },
+        "allow_fork_syncing": {
+          "type": "boolean",
+          "description": "Let forks sync a locked branch."
+        }
+      }
+    }
+  }
+}

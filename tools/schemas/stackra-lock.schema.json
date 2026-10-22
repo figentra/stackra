@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://static.stackra.figentra.com/schemas/stackra-lock.json",
+  "$comment": "Stackra file contract: Purpose: the shape of stackra.lock.yaml, the workspace's pin of every external producer manifest. Boundary: shape only; `stackra gen` resolves the revisions. Runtime: node (editors and validators). Governing contract: ADR 0158 (the manifest is the contract), ADR 0260 (clients are generated from manifests), ADR 0231 (module keys).",
+  "title": "stackra.lock.yaml",
+  "description": "The pinned revision of every external producer manifest this workspace builds clients from, once per workspace. `stackra gen` reads each producer's committed `.stackra/app-manifest.json` at this revision, and every generated `clients.ts` header cites it (ADR 0158, ADR 0260). Producer to revision only: no secret and no URL. A producer that lives in this repository is not listed; its manifest is read from the working tree.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "producers"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional pointer to this schema. Editors use the `# yaml-language-server: $schema=` comment instead."
+    },
+    "version": {
+      "const": 1,
+      "description": "Lock file format version. Only 1 exists."
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "This workspace's repository name, the same value as the root runway `project`.",
+      "examples": ["acme-platform"]
+    },
+    "producers": {
+      "type": "object",
+      "description": "Producer module key → git revision of its committed `.stackra/app-manifest.json`. Bumping a revision is one commit that regenerates every member.",
+      "$comment": "Keys are module keys (ADR 0231: lowercase words joined by `_` or `-`). Values are commit SHAs, never a branch or tag, so a build is reproducible.",
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_-]*$" },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{7,40}$",
+        "description": "Git commit SHA in the producer repository (7 to 40 lowercase hex characters).",
+        "examples": ["8e1b3d2"]
+      },
+      "examples": [{ "billing": "8e1b3d2", "identity": "2d4f6c8" }]
+    }
+  }
+}

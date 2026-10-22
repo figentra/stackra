@@ -2,6 +2,7 @@
 // Prettier and ESLint are rejected (not-built-yet rule), so they are listed as unwanted.
 {
   "recommendations": [
+    "TypeScriptTeam.native-preview",
     // Format and lint: oxfmt + oxlint
     "oxc.oxc-vscode",
     "editorconfig.editorconfig",

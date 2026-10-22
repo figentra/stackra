@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=./node_modules/lefthook/schema.json
 # Stackra file contract:
 # Purpose: git hooks — pre-commit format/lint on staged files and a secret scan, commit-msg conventional
 #          commits, pre-push typecheck. Installed by `pnpm install` (prepare → lefthook install).

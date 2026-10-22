@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=./tools/schemas/mcp.schema.json
 # ============================================================================
 # STACKRA — MCP SERVER CONFIGURATION (source)
 # ============================================================================
