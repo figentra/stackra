@@ -599,3 +599,20 @@ test("STA-291 review: wrappers, printf, computed shells, xargs, substituted scri
   ])
     assert.equal(kind(c), "allow", c);
 });
+
+test("STA-291 review rows: printf directives, xargs into a shell; normal sourcing stays allowed", () => {
+  for (const c of [
+    "printf '%.0sgh pr list' x | sh",
+    "printf '%cit fetch origin' g | sh",
+    "echo 'gh pr list' | xargs -I{} sh -c {}",
+    "echo 'gh pr list' | xargs -0 bash -c",
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    ". ./scripts/env.sh",
+    "source ~/.zshrc",
+    "alias gs='git status'",
+    "ls | xargs -n1 echo",
+  ])
+    assert.equal(kind(c), "allow", c);
+});

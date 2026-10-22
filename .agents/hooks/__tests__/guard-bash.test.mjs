@@ -919,3 +919,19 @@ for (const c of [
   "echo hi | env FOO=1 cat",
 ])
   test(`allow: ${c}`, () => assert.equal(decision(c), "allow"));
+
+// STA-291 review rows verbatim: printf directives, xargs into a shell; normal sourcing and xargs stay allowed.
+for (const c of [
+  "printf '%.0sgh pr list' x | sh",
+  "printf '%cit fetch origin' g | sh",
+  "echo 'gh pr list' | xargs -I{} sh -c {}",
+  "echo 'gh pr list' | xargs -0 bash -c",
+])
+  test(`ask: ${c}`, () => assert.equal(decision(c), "ask"));
+for (const c of [
+  ". ./scripts/env.sh",
+  "source ~/.zshrc",
+  "alias gs='git status'",
+  "ls | xargs -n1 echo",
+])
+  test(`allow: ${c}`, () => assert.equal(decision(c), "allow"));
