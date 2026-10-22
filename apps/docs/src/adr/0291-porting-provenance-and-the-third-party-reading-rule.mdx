@@ -24,9 +24,7 @@ name, the vocabulary, the notices, the fresh writes and the brand repository, as
 
 ## Decision
 
-1. **One written rights assignment before any port (PT1, owner-only).** One written IP assignment, from Pixility, Inc.,
-   Stackra L.L.C and every Figentra entity, to the licensing entity of decision 2, covers Figentra OS, basalt, the
-   monorepo-main, the Academorix package `packages/figentra` and Vellum. No port merges before the assignment is signed.
+1. **One written rights assignment before any port (PT1, owner-only).** One written IP assignment, from every entity that authored the source repositories, to the licensing entity of decision 2. No port merges before the assignment is signed. The specific list of entities and repositories is kept private.
    The alternatives were a confirmation for each port, and writing everything fresh. Fresh writing would discard an estimated
    130 to 190 builder-days of tested code, and one signature unblocks every port and the MIT relicense.
 2. **One legal name (PT2, owner-only, amends 0024).** The licensing entity is Figentra Technologies L.L.C. Its name appears on
@@ -40,8 +38,7 @@ name, the vocabulary, the notices, the fresh writes and the brand repository, as
    "Pro" are not port actions and keep their meaning.
 4. **Provenance for ported code (PT4, amends 0195 decision 4).** First-party code, meaning our own earlier repositories, gets no
    per-file header. Each package gets one `ORIGIN.md` line that names the source repository and commit. Third-party MIT,
-   Apache-2.0 and BSD code keeps its headers, and is listed in `THIRD_PARTY_NOTICES.md`. The validator checks that every
-   source repository named in `ORIGIN.md` appears in the assignment of decision 1. Headers on our own code carry no legal
+   Apache-2.0 and BSD code keeps its headers, and is listed in `THIRD_PARTY_NOTICES.md`. The validator checks that every source repository named in `ORIGIN.md` is on the list of assigned sources that the owner keeps outside this repository. Headers on our own code carry no legal
    weight once the assignment is signed, while notices on third-party code are a licence duty.
 5. **The workflow core is written fresh (PT5, amends 0102).** `@stackra/workflow` is written fresh, against
    [0151](/adr/0151-workflow-engine-is-a-port-with-native-and-temporal-drivers) and [0152](/adr/0152-workflow-semantics-timeouts-waits-pinned-versions-and-one-graph-format)

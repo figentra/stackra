@@ -5,8 +5,8 @@ description: "Accepted · 2026-10-22"
 
 <Note>
   Amends [0194](/adr/0194-developer-and-agent-compute): decisions 2 and 5 (the single box and the
-  limit of three worktree agents). Worktrees for agent work move into per-task sandboxes on the box,
-  and the box plan stays. Amends
+  limit of three worktree agents). Worktrees for agent work move into one fresh sandbox per task on
+  a pool of agent boxes, and the box plan stays. Amends
   [0174](/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation) decision 1
   (public repositories publish images to GHCR; private ones stay on ECR). Amends
   [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) (a Deferred row for a microVM tier
@@ -36,8 +36,8 @@ means a tenant sandbox, which is data and is out of scope here. Tenant code stay
    orchestrate ([0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) decision 15).
 3. **Provider order (SB3).** The box with worktrees comes first, as 0194 plans. The spike measures OpenSandbox on the box
    as the isolation layer, in place of a Linux user per agent. Daytona is the managed fallback at about 30 agents.
-4. **Host (SB4).** Sandboxes share the agent box of STA-236 until more than six are needed at once. Then a second
-   instance is added from the same image.
+4. **One fresh sandbox per task (SB4, owner's choice).** Each task gets one fresh container sandbox, created from the prebuilt image of decision 10 and destroyed when the task ends. No workspace is shared between tasks. Sandboxes run on a pool of agent boxes: the pool starts with one box, and instances from the same image are added past about six concurrent sandboxes. The alternative weighed was to share the agent box of STA-236 until more than six sandboxes were needed at once, with worktrees kept on it. The owner's rule is a fresh sandbox per task and never a shared workspace, and this decision follows it.
+
 5. **Isolation (SB5).** Docker containers run with user namespaces, with no host mounts beyond the task's worktree. Docker
    is reachable for Testcontainers through a per-sandbox rootless daemon. gVisor and microVMs are not used on day one.
 6. **MicroVMs are deferred (SB6).** A microVM tier waits until untrusted third-party code must run outside 0154's limits,
@@ -46,9 +46,8 @@ means a tenant sandbox, which is data and is out of scope here. Tenant code stay
 
 ### Lifecycle, limits and network
 
-7. **Limits (SB7).** The default sandbox is 2 vCPU, 8 GB of memory and 40 GB of disk. It stops after 60 idle minutes and
-   lasts at most 8 hours. A box runs at most six sandboxes concurrently. The pnpm store and the image cache are mounted
-   read-only from the host. The sizes match the 2 vCPU and 8 GB agent of 0194 and the memory of an m7i.4xlarge.
+7. **Limits on one task's sandbox (SB7).** The default sandbox is 2 vCPU, 8 GB of memory and 40 GB of disk. A sandbox stops after 60 idle minutes and lasts at most 8 hours. Both limits apply to a single task's sandbox, and a sandbox is never reused by another task. A box runs at most six sandboxes concurrently. The pnpm store and the image cache are mounted read-only from the host.
+
 8. **Egress (SB8).** Egress is denied by default, with an allowlist: the npm registry, GitHub, Anthropic and Bedrock,
    Infisical (EU), Encore, ECR and GHCR, Docker Hub and Linear. Every connection is logged. Web research stays on the
    coordinator, not in the sandbox.
@@ -118,7 +117,7 @@ These seven requirements are binding on STA-255, STA-307 and STA-236. They were 
     If it fails, worktrees stay on the box. The bar is fixed before the spike, and the comparison is the box with worktrees
     ([0194](/adr/0194-developer-and-agent-compute)).
 
-14. **Caps and residency (SB14).** Sandboxes fall under the box's caps of $150 a day and $4,500 a month. Any hosted fallback
+14. **Caps and residency (SB14).** Sandboxes fall under the box's caps of $150 a day and $4,500 a month, both set by this decision. Any hosted fallback
     needs an owner raise. Sandboxes run in eu-central-1, hold no tenant data, and use only synthetic seeds.
 15. **Account (OP3).** The shared tooling AWS account is created now, under AWS Organizations with Identity Center, as
     [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) says. The box of STA-236 is built there, not in the
@@ -129,7 +128,7 @@ These seven requirements are binding on STA-255, STA-307 and STA-236. They were 
 
 ## Consequences
 
-- Agent capacity becomes sandbox capacity. Worktree agents move into sandboxes on the box, and the three-worktree limit of
+- Agent capacity becomes sandbox capacity. Worktree agents move into one fresh sandbox per task on the agent boxes, and the three-worktree limit of
   0194 is replaced by the limit of six sandboxes per box, with at most one heavy job at a time.
 - CI needs its own dedicated boxes (lesson 1), which is extra infrastructure beside the agent box.
 - The agent's shell can read its own environment, so the credential is short-lived and narrow. The guard that blocks

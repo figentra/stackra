@@ -6,9 +6,8 @@ description: "Accepted · 2026-10-22"
 <Note>
   Builds the merge queue that
   [0166](/adr/0166-ci-policy-runners-budgets-concurrency-and-check-matrix) decision 3 already
-  requires. The queue mechanics and the patch-id review binding are set by
-  `0285-review-verdict-binds-to-the-patch-id`, in review in PR #110 and not yet on main. This ADR
-  records only the fallback and the order of work.
+  requires. The queue mechanics and the patch-id review binding are set by ADR 0285 (STA-233). This
+  ADR records only the fallback and the order of work.
 </Note>
 
 ## Context
@@ -22,11 +21,9 @@ make the connection fix STA-302 a prerequisite of the enqueue path.
 ## Decision
 
 1. **Build the merge queue now (RW1).** The queue needs a `merge_group` trigger, a `merge_queue` rule in the `main` ruleset,
-   and `pr:merge` enqueuing a pull request instead of merging it. Its mechanics and the review binding are set by
-   `0285-review-verdict-binds-to-the-patch-id` (PR #110), which this ADR does not repeat.
+   and `pr:merge` enqueuing a pull request instead of merging it. Its mechanics and the review binding are set by ADR 0285 (STA-233), which this ADR does not repeat.
 2. **Fallback after one week (RW1).** If the queue is not live by 2026-10-29, one week after this decision, strict
-   up-to-date checks are turned off on `main`. Until the queue lands, a full verify runs on every push to `main`, and a red
-   run reverts automatically.
+   up-to-date checks are turned off on `main`. Until the queue lands, a full verify runs on every push to `main`. Automatic revert of a red run is part of the fallback. It is planned, not built, and tracked in STA-332.
 3. **Review binding (RW2).** An AI review verdict binds to the pull request's patch id, not its head commit. A clean rebase
    with an unchanged diff keeps the review, and any change to the diff voids it. The queue's merge-group run still tests the
    commit that would land. ADR 0285 implements this.
@@ -40,14 +37,14 @@ make the connection fix STA-302 a prerequisite of the enqueue path.
 
 - Until the queue is live, the strict rule keeps forcing a re-run and a re-review on each merge. Building the queue removes
   that cost.
-- Under the fallback, a bad change can land on `main` and is reverted by the next red run, so `main` can be red for one run.
+- Under the fallback, a bad change can land on `main` and stays there until the automatic revert is built (STA-332). Until then a red `main` blocks new merges and pages the owning agent (0287 lesson 7).
 - A pull request enqueued over a broken client would be stranded, which is why STA-302 precedes the enqueue path.
 
 ## Enforcement
 
 planned — the `merge_group` run in `.github/workflows/ci.yml` and the `merge_queue` rule, both set by ADR 0285. The STA-302
 order is a Linear dependency of STA-234, not a repository check. The one-week fallback is a dated decision that the owner
-checks on 2026-10-29; nothing automates it.
+checks on 2026-10-29; nothing automates it. The automatic revert is planned under STA-332, so nothing reverts a red `main` yet.
 
 ## Supersedes and sources
 
