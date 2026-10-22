@@ -357,8 +357,12 @@ function scanOnce(c, { heredoc = false } = {}) {
  */
 export const stripHeredocs = (raw) => scanShell(raw).stripped;
 
+/** A shell's name: sh, bash, zsh, dash, ksh, csh, tcsh, ash, mksh, yash, posh, rbash, fish, versioned (`bash5`, `zsh-5.9`). */
+const SHELL_NAME = String.raw`(?:(?:ba|z|da|k|c|tc|a|mk|ya|po|rba)?sh|fish)(?:-?\d[\w.]*)?`;
 /** A shell (or `eval` / `source` / `.`) as a word: its heredoc or here-string is a script. */
-const SHELL_WORD = /(?:^|[\s;&|(`])(?:\S*\/)?(?:(?:ba|z|da|k)?sh|eval|source|\.)(?=[\s;&|)`]|$)/;
+const SHELL_WORD = new RegExp(
+  String.raw`(?:^|[\s;&|(\x60])(?:\S*/)?(?:${SHELL_NAME}|eval|source|\.)(?=[\s;&|)\x60]|$)`,
+);
 
 /** Command position, for a definition: start, a separator, a group or a substitution opener. */
 const DEFINE_AT = String.raw`(?:^|[;&|(){}\n\x60]\s*)`;
@@ -378,10 +382,15 @@ const ALIAS_VALUE = /\s*(?:-\w+\s+)*[^\s=;&|]+=(?:'([^']*)'|"((?:\\.|[^"\\])*)"|
  */
 export function scriptStrings(c) {
   const out = [];
-  for (const m of c.matchAll(/\b(?:(?:ba|z|da)?sh\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1/g))
+  for (const m of c.matchAll(
+    new RegExp(String.raw`\b(?:${SHELL_NAME}\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1`, "g"),
+  ))
     out.push(m[2]);
   for (const m of c.matchAll(
-    /(?:^|[\s;&|(`])(?:\S*\/)?(?:(?:ba|z|da|k)?sh|source|\.)(?=\s)[^;&|\n]*<<<\s*(?:(["'])((?:\\.|(?!\1)[^\\])*)\1|(\S+))/g,
+    new RegExp(
+      String.raw`(?:^|[\s;&|(\x60])(?:\S*/)?(?:${SHELL_NAME}|source|\.)(?=\s)[^;&|\n]*<<<\s*(?:(["'])((?:\\.|(?!\1)[^\\])*)\1|(\S+))`,
+      "g",
+    ),
   ))
     out.push(m[2] ?? m[3]);
   const bodies = c.replace(FUNCTION, "$1;");
@@ -433,7 +442,9 @@ const WRAPPERS = new Set([
 ]);
 /** Wrapper options whose value is the next word (`sudo -u x`, `env -u NAME`, `nice -n 5`, `exec -a name`). */
 const WRAPPER_VALUE = new Set(["-u", "-n", "-a", "-g", "-C", "-k", "-s"]);
-const SHELL = /^(?:ba|z|da|k)?sh$/;
+const SHELL = new RegExp(`^${SHELL_NAME}$`);
+/** A shell, or `$` for a computed word that may be one (`caffeinate $SHELL`). */
+const shellLike = (name) => name === "$" || SHELL.test(name);
 /**
  * The toolchain's own shell setup, trusted when it is the bare command or under a known install directory and
  * its arguments are plain words (`eval "$(mise activate zsh)"`, `eval "$(/opt/homebrew/bin/brew shellenv)"`).
@@ -457,7 +468,7 @@ function runsFile(text, base) {
     const at = shellAt(s);
     if (at) {
       const words = s.words.slice(at.j + 1);
-      const flag = SHELL.test(at.name) ? commandFlag(words) : -1;
+      const flag = shellLike(at.name) ? commandFlag(words) : -1;
       if (at.name === "eval" && runsFile(words.join(" "), base)) return true;
       if (flag >= 0 && runsFile(words[flag + 1] ?? "", base)) return true;
       if (at.name !== "eval" && flag < 0 && words.some((w) => !w.startsWith("-") && matches(w)))
@@ -483,6 +494,7 @@ function runsFile(text, base) {
 function simpleCommands(c) {
   const out = [];
   const fresh = () => ({ words: [], dyn: [], redirects: [], dynamic: false, op: "", end: 0 });
+  let lessEnv = false; // LESSOPEN / LESSCLOSE set in this or an earlier command of the line
   let cur = fresh();
   let word = null;
   let wordDyn = false;
@@ -501,7 +513,8 @@ function simpleCommands(c) {
   const push = (op, at) => {
     end();
     redirect = null;
-    out.push(Object.assign(cur, { op, end: at }));
+    lessEnv ||= cur.words.some((w) => /^LESS(?:OPEN|CLOSE)=/.test(w));
+    out.push(Object.assign(cur, { op, end: at, lessEnv }));
     cur = fresh();
   };
   /** Index of the `)` closing the `(` at `k`, or the last index. */
@@ -598,29 +611,70 @@ const READERS = new Set(
     " ",
   ),
 );
-/** A GNU sed program runs a command: an `e` command (any address) or an `s///e` flag. */
-const sedRuns = (program) =>
-  program.split(/[;\n{}]/).some((part) => {
-    const cmd = part
-      .trim()
-      .replace(
-        /^(?:\d+|\$|\/(?:\\.|[^/])*\/)?(?:\s*[,~]\s*(?:\d+|\$|\/(?:\\.|[^/])*\/))?\s*!?\s*/,
-        "",
-      );
-    if (/^e(?:\s|$)/.test(cmd)) return true;
-    if (cmd[0] !== "s" || cmd.length < 2) return false;
-    let k = 2;
-    for (let n = 0; k < cmd.length && n < 2; k++) {
-      if (cmd[k] === "\\") k++;
-      else if (cmd[k] === cmd[1]) n++;
+/**
+ * True when a sed program uses only commands that never run, read or write anything: addresses (`N`, `$`,
+ * `first~step`, `/re/` or `\cREc` with `I`/`M`, ranges with `,` `+N` `~N`, `!`), `p d q Q n N = l D P h H g G x
+ * z`, `s` without the `e` / `w` flags, `y`, `a i c` text, `b t T :label` and `{ }`. Anything else, unparsed
+ * forms included, counts as running (fail closed: GNU `e`, `s///e`, `w`, `W`, `r`, `R`).
+ */
+function sedSafe(prog) {
+  let k = 0;
+  const at = (re) => re.test(prog[k] ?? "");
+  const address = () => {
+    if (at(/\d/)) {
+      while (at(/[\d~]/)) k++;
+      return true;
     }
-    return /e/.test(/^[a-zA-Z0-9]*/.exec(cmd.slice(k))[0]);
-  });
+    if (at(/\$/)) return ++k > 0;
+    if (!at(/[/\\]/)) return true; // no address
+    const d = prog[k] === "\\" ? prog[++k] : "/";
+    for (k++; k < prog.length && prog[k] !== d; k++) if (prog[k] === "\\") k++;
+    if (k++ >= prog.length) return false;
+    while (at(/[IM]/)) k++;
+    return true;
+  };
+  for (;;) {
+    while (at(/[\s;}]/)) k++;
+    if (k >= prog.length) return true;
+    if (!address()) return false;
+    if (at(/,/)) {
+      k++;
+      if (at(/[+~]/)) k++;
+      if (!address()) return false;
+    }
+    while (at(/[ \t]/)) k++;
+    if (at(/!/)) k++;
+    while (at(/[ \t]/)) k++;
+    const c = prog[k++];
+    if (c === "{") continue;
+    if (c && "pdqQnN=lDPhHgGxz".includes(c)) while (at(/[\d \t]/)) k++;
+    else if (c && "btT:".includes(c)) while (k < prog.length && !at(/[;\n}]/)) k++;
+    else if (c && "aic".includes(c))
+      // text to the end of the line; a line ending in `\` continues it
+      for (; k < prog.length && !(at(/\n/) && prog[k - 1] !== "\\");) k++;
+    else if (c === "s" || c === "y") {
+      const d = prog[k++];
+      if (!d || /[\s\\\n]/.test(d)) return false;
+      for (let seen = 0; seen < 2; k++) {
+        if (k >= prog.length) return false;
+        if (prog[k] === "\\") k++;
+        else if (prog[k] === d) seen++;
+      }
+      if (c === "s") while (at(/[gpiImM0-9]/)) k++;
+    } else return false;
+    if (k < prog.length && !at(/[\s;}]/)) return false;
+  }
+}
 /** Reader uses that run a command (`words` are the whole command): then the reader counts as a shell. */
 const READER_RUNS = {
-  sort: (words) => words.some((w) => w.startsWith("--compress-program")),
+  sort: (words) =>
+    words.some((w) => {
+      const flag = w.split("=")[0];
+      return flag.length > 4 && flag.startsWith("--com") && "--compress-program".startsWith(flag);
+    }),
   rg: (words) => words.some((w) => /^--pre(?:=|$)/.test(w)),
-  less: (words) => words.some((w) => /^LESS(?:OPEN|CLOSE)=/.test(w) || w.includes("!")),
+  less: (words, s) =>
+    s.lessEnv || words.some((w) => /^LESS(?:OPEN|CLOSE)=/.test(w) || w.includes("!")),
   awk: (words) => words.some((w) => /^(?:-[a-zA-Z]*[fE]|--file|--exec)|system|getline|\|/.test(w)),
   sed: (words) => {
     const programs = [];
@@ -631,29 +685,60 @@ const READER_RUNS = {
       else if (w.startsWith("--expression=")) programs.push(w.slice(13));
     }
     if (!programs.length) programs.push(words.slice(1).find((w) => !w.startsWith("-")) ?? "");
-    return programs.some(sedRuns);
+    return !programs.every(sedSafe);
   },
 };
 READER_RUNS.gawk = READER_RUNS.awk;
 
 /**
- * Where a simple command runs a shell (`sh`, `bash`, …), `eval`, `source` or `.`: `j` indexes `s.words`.
+ * Commands that never run their operands: the shell-word fallback skips them (`cp -r source "$DEST"`). The
+ * options that do run a program (`tar -I`, `rsync -e`, `scp -S`, `zip -TT`) put them back.
+ */
+const NEVER_RUNS = new Set(
+  "cp mv rm ls mkdir rmdir touch ln chmod chown tar zip unzip rsync scp git gh cat echo printf diff wc file stat du df open code cd pushd".split(
+    " ",
+  ),
+);
+const RUNS_PROGRAM =
+  /^(?:-I|-F|-e|-S|-TT|--(?:to-command|use-compress-program|checkpoint-action|rsh-command|info-script|new-volume-script|rsh|rsync-path|unzip-command))/;
+/** Package managers run a package script (never a shell word) unless the subcommand runs a binary. */
+const PACKAGE_MANAGERS = new Set(["pnpm", "npm", "yarn", "bun"]);
+/** xargs options whose value is the next word. */
+const XARGS_VALUE = new Set(["-I", "-n", "-L", "-P", "-s", "-d", "-E", "-a", "-l"]);
+
+/**
+ * Where a simple command runs a shell (`sh`, `csh`, `bash5`, …), `eval`, `source` or `.`: `j` indexes `s.words`.
  * Fast path: the command name past the known wrappers. Otherwise fail closed: any later word naming a shell,
- * `eval` or `source` (`caffeinate sh`, `pnpm exec bash`, `find . -exec sh {} \;`), unless the command is a
- * known reader that does not run anything (`grep -c sh`). A reader that does run (`sed e`, `sort
- * --compress-program`) reports itself, so its input counts as a script.
+ * `eval` or `source` (`caffeinate sh`, `pnpm exec bash`, `find . -exec sh {} \;`), or a computed word that may
+ * be one (`caffeinate $SHELL`, name `$`), unless the command is a known reader or never runs its operands
+ * (`grep -c sh`, `cp source "$DEST"`, `pnpm lint --rule source`). `xargs` is judged by the command it runs. A
+ * reader that does run (`sed e`, `sort --compress-program`) reports itself, so its input counts as unreadable.
  */
 function shellAt(s) {
   const { i, name } = nameOf(s);
   if (i < 0) return null;
   if (SHELL.test(name) || ["eval", "source", "."].includes(name)) return { j: i, name };
+  const after = s.words.slice(i + 1);
   if (READERS.has(name))
-    return READER_RUNS[name]?.([name, ...s.words.slice(i + 1), ...s.words.slice(0, i)])
+    return READER_RUNS[name]?.([name, ...after, ...s.words.slice(0, i)], s)
       ? { j: s.words.length - 1, name: "sh", reader: true }
       : null;
-  for (let j = i + 1; j < s.words.length; j++) {
+  if (NEVER_RUNS.has(name) && !after.some((w) => RUNS_PROGRAM.test(w))) return null;
+  let from = i + 1;
+  if (name === "xargs") {
+    while (from < s.words.length && s.words[from].startsWith("-"))
+      from += XARGS_VALUE.has(s.words[from]) ? 2 : 1;
+    const inner = shellAt({ ...s, words: s.words.slice(from), dyn: s.dyn.slice(from) });
+    return inner && { ...inner, j: inner.j + from };
+  }
+  if (PACKAGE_MANAGERS.has(name)) {
+    const sub = after.find((w) => !w.startsWith("-"));
+    if (!["exec", "dlx", "x"].includes(sub ?? "")) return null;
+  }
+  for (let j = from; j < s.words.length; j++) {
     const b = s.words[j].split("/").pop();
     if (SHELL.test(b) || b === "eval" || b === "source") return { j, name: b };
+    if (s.dyn[j] && /^[$`]/.test(s.words[j])) return { j, name: "$" };
   }
   return null;
 }
@@ -662,7 +747,7 @@ function shellAt(s) {
 function readsStdin(s) {
   const at = shellAt(s);
   if (!at || at.name === "eval") return false;
-  return at.reader || !SHELL.test(at.name) || commandFlag(s.words.slice(at.j + 1)) < 0;
+  return at.reader || !shellLike(at.name) || commandFlag(s.words.slice(at.j + 1)) < 0;
 }
 
 /**
@@ -754,13 +839,17 @@ export function shellInputs(c) {
     const words = at && !at.reader ? s.words.slice(at.j + 1) : [];
     const dyn = at && !at.reader ? s.dyn.slice(at.j + 1) : [];
     const piped = k > 0 && list[k - 1].op === "|";
-    const shell = SHELL.test(runner);
+    const shell = shellLike(runner);
     const sourced = shell || runner === "source" || runner === ".";
     const xargsShell = name === "xargs" && at !== null;
     // A reader that runs commands (`sed e`, `awk '{system(…)}'`, `sort --compress-program`): what it runs is
     // built from its program and input, so it cannot be read.
     if (at?.reader || (piped && (i < 0 || /[$`]/.test(raw) || xargsShell))) opaque = true;
-    else if (piped && readsStdin(s)) take(output(list, k - 1));
+    // Readable input to an executing reader is checked too, so a forbidden command still denies.
+    if (at?.reader && piped) {
+      const text = output(list, k - 1);
+      if (text !== null) scripts.push(text);
+    } else if (piped && readsStdin(s)) take(output(list, k - 1));
     // A shell reading a process substitution: `sh <(…)`, `sh < <(…)`.
     if (sourced)
       for (const w of [...words, ...s.redirects.filter((r) => r.op === "<").map((r) => r.target)])
@@ -781,7 +870,7 @@ export function shellInputs(c) {
     if (sourced) {
       for (const r of s.redirects) if (r.op === "<<<") script([resolveWord(r.target, r.dynamic)]);
       // A script file named at run time (`sh "$F"`, `sh $(echo f)`); `$HOME` alone is fine.
-      if (flag < 0)
+      if (flag < 0 && runner !== "$")
         words.forEach((w, j) => {
           if (dyn[j] && !/^[<>]\(/.test(w) && /[$`]/.test(w.replace(/\$\{?HOME\}?(?!\w)/g, "")))
             opaque = true;
