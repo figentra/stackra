@@ -394,13 +394,19 @@ export function scriptStrings(c) {
   return out;
 }
 
+/** Words of `text`, a quoted word kept whole (`"f x"`), quotes removed; `<` separates. */
+const operands = (text) =>
+  (text.match(/"[^"]*"|'[^']*'|[^\s<"']+/g) ?? []).map((w) => w.replace(/^(["'])(.*)\1$/s, "$2"));
+
 /** Basenames of the files a command line writes: `> f`, `>> f`, `&> f`, `tee [-a] f…`. */
 function writtenFiles(line) {
   const out = [];
-  for (const m of line.matchAll(/(?:^|[^<>&\d])(?:1?>>?\|?|&>>?)\s*(['"]?)([^\s;&|<>()'"]+)\1/g))
-    out.push(m[2]);
+  for (const m of line.matchAll(
+    /(?:^|[^<>&\d])(?:1?>>?\|?|&>>?)\s*(?:"([^"]+)"|'([^']+)'|([^\s;&|<>()'"]+))/g,
+  ))
+    out.push(m[1] ?? m[2] ?? m[3]);
   for (const m of line.matchAll(/\btee\s+([^;&|<>\n]*)/g))
-    out.push(...m[1].split(/\s+/).filter((w) => w && !w.startsWith("-")));
+    out.push(...operands(m[1]).filter((w) => !w.startsWith("-")));
   return out
     .map((f) =>
       f
@@ -432,6 +438,9 @@ const RUNNER =
   String.raw`(?:^|[;&|(){}\n\x60])[ \t]*` +
   String.raw`(?:\w+=\S*\s+)*(?:(?:\S*/)?(?:${[...WRAPPERS].join("|")})\s+(?:-\S+\s+|\w+=\S*\s+|\d\S*\s+)*)*`;
 const SHELL = /^(?:ba|z|da|k)?sh$/;
+/** The toolchain's own shell setup, trusted when its arguments are plain words (`eval "$(mise activate zsh)"`). */
+const TRUSTED =
+  /^\s*(?:\S*\/)?(?:mise\s+(?:activate|env|hook-env|completion)|brew\s+shellenv)(?:\s+[\w.=:/@+-]+)*\s*$/;
 
 /**
  * True when `text` runs a file named `base` (any directory): a shell, `source` or `.` in command position with
@@ -440,10 +449,7 @@ const SHELL = /^(?:ba|z|da|k)?sh$/;
  */
 function runsFile(text, base) {
   const matches = (w) => {
-    const b = w
-      .replace(/^['"]+|['"]+$/g, "")
-      .split("/")
-      .pop();
+    const b = w.split("/").pop();
     return Boolean(b) && segmentRx(b).test(base);
   };
   const shellRx = new RegExp(
@@ -451,9 +457,10 @@ function runsFile(text, base) {
     "gm",
   );
   for (const m of text.matchAll(shellRx))
-    if (m[1].split(/[\s<]+/).some((w) => w && !w.startsWith("-") && matches(w))) return true;
-  for (const m of text.matchAll(new RegExp(RUNNER + String.raw`(['"]?\S*/[^\s;&|)\x60]+)`, "gm")))
-    if (matches(m[1])) return true;
+    if (operands(m[1]).some((w) => w && !w.startsWith("-") && matches(w))) return true;
+  const direct = String.raw`("[^"]*/[^"]*"|'[^']*/[^']*'|\S*/[^\s;&|)\x60]+)`;
+  for (const m of text.matchAll(new RegExp(RUNNER + direct, "gm")))
+    if (matches(operands(m[1])[0] ?? "")) return true;
   const name = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const file = String.raw`['"]?(?:\S*/)?${name}['"]?`;
   return new RegExp(
@@ -576,12 +583,38 @@ const nameOf = (s) => {
   return { i, raw, name: raw.split("/").pop() };
 };
 
-/** True when a simple command runs its standard input as a script: a shell without `-c`, `source`, `.`. */
+/** Index of a shell's `-c` flag (`-c`, `-lc`) in `words`, or -1. */
+const commandFlag = (words) => words.findIndex((w) => /^-[a-z]*c[a-z]*$/i.test(w));
+/** Commands that only read their input, never run it (sed and awk only without a program that runs commands). */
+const READERS = new Set(
+  "grep egrep fgrep rg jq yq sort uniq wc head tail cat less more cut tr tee sed awk gawk column nl diff base64 tac rev".split(
+    " ",
+  ),
+);
+/** sed `e` (command or `s///e` flag) or a script file; awk `system`, a pipe, `getline` or a program file. */
+const READER_RUNS = {
+  sed: (words) =>
+    words.some((w) => /^-f|^--file|(?:^|[;{}\s])e(?:\s|;|$)|^s(.).*\1.*\1[a-zA-Z0-9]*e/.test(w)),
+  awk: (words) => words.some((w) => /^-f|system|getline|\|/.test(w)),
+};
+READER_RUNS.gawk = READER_RUNS.awk;
+
+/**
+ * True when a simple command runs its standard input as a script. Fast path: a shell without `-c`, `source`,
+ * `.` (past the known wrappers). Otherwise fail closed: any word naming a shell (`caffeinate sh`,
+ * `pnpm exec bash`, `flock f zsh`) or `source` counts, unless the command is a known reader (`grep -c sh`).
+ */
 function readsStdin(s) {
   const { i, name } = nameOf(s);
-  return SHELL.test(name)
-    ? !s.words.slice(i + 1).includes("-c")
-    : name === "source" || name === ".";
+  const words = s.words.slice(Math.max(i, 0) + 1);
+  if (SHELL.test(name)) return commandFlag(words) < 0;
+  if (name === "source" || name === ".") return true;
+  if (READERS.has(name)) return READER_RUNS[name]?.(words) ?? false;
+  return s.words.some(
+    (w, j) =>
+      w === "source" ||
+      (SHELL.test(w.split("/").pop()) && !/^-[a-z]*c[a-z]*$/i.test(s.words[j + 1] ?? "")),
+  );
 }
 
 /**
@@ -644,20 +677,28 @@ export function shellInputs(c) {
   const known = new Set(); // written files whose content was read here
   let opaque = false;
   const take = (text) => (text === null ? (opaque = true) : scripts.push(text));
-  /** A script string (`eval` word, `sh -c` string, here-string): readable when literal or one readable substitution. */
-  const script = (word, dynamic) => {
-    if (!dynamic) return;
+  /** A word's text when readable: literal, the toolchain's own setup, one readable substitution, or a read file. */
+  const resolveWord = (word, dynamic) => {
+    if (!dynamic) return word;
     const body = substitutionBody(word);
-    const read = body === null ? null : lastOutput(body);
-    if (read !== null) scripts.push(read);
-    else if (
-      !(
-        body !== null &&
-        known.has(/^\s*(?:cat\s+)?<?\s*(\S+)\s*$/.exec(body)?.[1]?.split("/").pop())
+    if (body === null) return null;
+    if (TRUSTED.test(body)) return "";
+    const read = lastOutput(body);
+    if (read !== null) return read;
+    const file = /^\s*(?:cat\s+)?<?\s*(\S+)\s*$/.exec(body)?.[1];
+    return file &&
+      known.has(
+        file
+          .replace(/^(["'])(.*)\1$/, "$2")
+          .split("/")
+          .pop(),
       )
-    )
-      opaque = true;
+      ? ""
+      : null;
   };
+  /** One script from its words (`eval` joins them all): checked once, unreadable if any part is. */
+  const script = (parts) =>
+    parts.some((p) => p === null) ? (opaque = true) : scripts.push(parts.join(" "));
   list.forEach((s, k) => {
     const { i, raw, name } = nameOf(s);
     const words = i < 0 ? [] : s.words.slice(i + 1);
@@ -672,7 +713,10 @@ export function shellInputs(c) {
     // A shell reading a process substitution: `sh <(…)`, `sh < <(…)`.
     if (shell || name === "source" || name === ".")
       for (const w of [...words, ...s.redirects.filter((r) => r.op === "<").map((r) => r.target)])
-        if (w.startsWith("<(")) take(lastOutput(substitutionBody(w) ?? ""));
+        if (w.startsWith("<(")) {
+          const body = substitutionBody(w) ?? "";
+          take(TRUSTED.test(body) ? "" : lastOutput(body));
+        }
     // Output sent into a shell through `>(sh)`: `tee >(sh)`, `echo … > >(bash)`.
     for (const w of [...words, ...s.redirects.map((r) => r.target)]) {
       const body = w.startsWith(">(") ? substitutionBody(w.replace(/^>/, "<")) : null;
@@ -680,11 +724,18 @@ export function shellInputs(c) {
       if (first && readsStdin(first)) take(output(list, k));
     }
     // Script strings built at run time.
-    if (name === "eval") words.forEach((w, j) => script(w, dyn[j]));
-    const flag = shell ? words.indexOf("-c") : -1;
-    if (flag >= 0 && flag + 1 < words.length) script(words[flag + 1], dyn[flag + 1]);
-    if (shell || name === "source" || name === ".")
-      for (const r of s.redirects) if (r.op === "<<<") script(r.target, r.dynamic);
+    if (name === "eval") script(words.map((w, j) => resolveWord(w, dyn[j])));
+    const flag = shell ? commandFlag(words) : -1;
+    if (flag >= 0 && flag + 1 < words.length) script([resolveWord(words[flag + 1], dyn[flag + 1])]);
+    if (shell || name === "source" || name === ".") {
+      for (const r of s.redirects) if (r.op === "<<<") script([resolveWord(r.target, r.dynamic)]);
+      // A script file named at run time (`sh "$F"`, `sh $(echo f)`); `$HOME` alone is fine.
+      if (flag < 0)
+        words.forEach((w, j) => {
+          if (dyn[j] && !/^[<>]\(/.test(w) && /[$`]/.test(w.replace(/\$\{?HOME\}?(?!\w)/g, "")))
+            opaque = true;
+        });
+    }
     // A file written here and run later in the line.
     const targets = s.redirects
       .filter((r) => /^1?(?:>>?|>\||&>>?)$/.test(r.op))
