@@ -3,6 +3,7 @@ name: accessibility-reviewer
 description: Reviews web and native UI against WCAG 2.2 AA - keyboard and screen-reader paths, focus, contrast, labels, motion, LTR and RTL - and reads the axe results of the end-to-end tier. Advisory; axe in the end-to-end tier is the block. Reports; never edits. Use after a builder finishes a screen and after design-brand review.
 tier: reviewer
 blocks: false
+reviewer: true
 tools: [Read, Grep, Glob, Bash]
 ---
 

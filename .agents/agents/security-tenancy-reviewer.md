@@ -3,6 +3,7 @@ name: security-tenancy-reviewer
 description: Blocking security review of a change - authentication and authorization boundaries, tenant isolation, secrets, webhooks, SSRF, and secret/PII leakage into logs, events and errors. Reports; never edits. Use before merging anything that touches auth, stored data, secrets, webhooks, outbound HTTP or CI credentials.
 tier: guardian
 blocks: true
+reviewer: true
 tools: [Read, Grep, Glob, Bash]
 ---
 

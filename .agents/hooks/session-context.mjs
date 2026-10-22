@@ -30,7 +30,8 @@ const lines = [
   "4. Every test file sits directly in a __tests__/ folder beside its subject (src/**/__tests__/<name>.test.ts); there is no root tests/ folder and no .spec. An app's e2e lives in that app (ADR 0022, enforced by pnpm validate).",
   "5. Docs are apps/docs (Mintlify). Pages, assets and ADRs all live in apps/docs/src (ADRs in apps/docs/src/adr).",
   "6. Secrets: never print, read or write a value. Values are set by a human; developer tokens live in the vault.",
-  "7. Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boundaries, knip). Conventional commits; changesets for releases.",
+  "7. Worktrees: WIP commits, never stash (refs/stash is shared by every worktree). Destructive git and rm -rf run only in your own worktree (ADR 0293).",
+  "8. Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boundaries, knip). Conventional commits; changesets for releases.",
 ];
 if (dirty) lines.push("Working tree:", dirty);
 

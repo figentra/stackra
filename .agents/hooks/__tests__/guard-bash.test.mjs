@@ -7,9 +7,14 @@ import { join } from "node:path";
 
 const hook = new URL("../guard-bash.mjs", import.meta.url).pathname;
 /** The hook's permissionDecision ("deny", "ask"), or "allow" when it prints nothing. */
-const decision = (command, cwd) => {
+const decision = (command, cwd, agentType) => {
   const r = spawnSync("node", [hook], {
-    input: JSON.stringify({ tool_name: "Bash", tool_input: { command }, cwd }),
+    input: JSON.stringify({
+      tool_name: "Bash",
+      tool_input: { command },
+      cwd,
+      agent_type: agentType,
+    }),
     encoding: "utf8",
   });
   assert.equal(r.status, 0);
@@ -20,8 +25,6 @@ const root = spawnSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf
 
 const allowed = [
   "pnpm verify",
-  // ADR 0230: the reviewer identity posts verdicts; reading and grepping for them is fine
-  "pnpm bot:review -- pr comment 47 --body-file /tmp/review.md",
   "grep -n owner-approval tools/scripts/pr-merge.mjs",
   "cat package.json",
   `node -e "x.env"`,
@@ -29,10 +32,7 @@ const allowed = [
   "cat apps/x/eas.json",
   "grep -n env file",
   "env FOO=1 node x.js",
-  "infisical run -- encore run",
-  "infisical run --env=staging -- pnpm build",
   "bash tools/scripts/mcp.sh",
-  "infisical secrets get FOO --silent",
   "cat .env.example",
   "cp .env.example .env.local.example",
   "encore run",
@@ -45,15 +45,6 @@ const allowed = [
   `rm -rf ${root}/node_modules`,
   'git commit -m "chore: drop the rm -rf / guard text"',
   "git commit -m 'docs: never rm -rf ~'",
-  "infisical secrets get FOO --silent --env=dev",
-  "infisical secrets set FOO=bar",
-  "infisical secrets --env=dev set FOO=bar",
-  "infisical run -- env FOO=1 node x.js",
-  "infisical run -- pnpm test",
-  "pnpm bot:git -- push origin chore/permissions-hardening",
-  "pnpm bot:git -- push -u origin feature/main-menu",
-  "pnpm bot:git -- push origin maintenance",
-  "pnpm bot:git -- push origin domain:domain",
   'git commit -m "docs: never git push origin main"',
   "pnpm changeset",
   "cat > a.md <<'EOF'\nrm -rf x; printenv; echo hi > .env\nEOF",
@@ -67,7 +58,6 @@ const allowed = [
   "grep -n foo ~",
   "cp -r dist /tmp/x",
   "pnpm secrets:import --dry-run STACKRA_REVIEWER_APP_ID",
-  "pnpm secrets:import STACKRA_X --env prod --path /ci --confirm abc-123",
   'git commit -m "feat: import from ~/Secrets-inbox"',
   "cat > doc.md <<'EOF'\ncat ~/Secrets-inbox/X\nEOF",
   // STA-207: patterns, prose values, URLs and globs away from home are not inbox paths
@@ -90,7 +80,6 @@ const allowed = [
   "pnpm bot:gh -- run view 99 --log-failed",
   "pnpm bot:gh -- api repos/figentra/stackra/pulls/12",
   "pnpm bot:gh -- pr list -R figentra/os",
-  "pnpm bot:review -- pr diff 12",
   "pnpm pr:merge -R figentra/os 3",
   "pnpm bot:git -- -C ../figentra-os fetch origin",
   "pnpm bot:git -- fetch origin main",
@@ -191,10 +180,7 @@ const blocked = [
   "cp .env.example .env",
   "mv foo .env.production",
   "tee .env",
-  "encore db reset",
-  "encore db reset myservice",
   "rm -rf /",
-  "git reset --hard",
   // `infisical secrets` with no subcommand lists values
   "infisical secrets",
   "infisical secrets --env=prod",
@@ -348,15 +334,15 @@ test("relative globs are denied from home, allowed elsewhere", () => {
 });
 
 for (const c of [
-  "encore deploy",
-  "encore deploy --env=production",
   "encore env set prod",
   "encore env create staging",
   "encore env delete preview",
+  "encore db reset",
+  "encore db reset myservice",
 ])
   test(`ask: ${c}`, () => assert.equal(decision(c), "ask"));
 test("deny beats ask in the same command", () =>
-  assert.equal(decision("encore deploy && git reset --hard"), "deny"));
+  assert.equal(decision("encore db reset && infisical export"), "deny"));
 
 // A bot push with no refspec (or `HEAD`) targets main only when main is checked out; a bare `git push` never runs.
 test("bot push is denied on main, allowed on a branch; bare git push is always denied", () => {
@@ -393,12 +379,14 @@ test("bot push resolves -C, --git-dir, --work-tree and cd targets", () => {
     `pnpm bot:git -- -C ${tmpdir()} -C ${main.split("/").pop()} push`,
     "pnpm bot:git -- -C $REPO push origin HEAD",
     "cd $REPO && pnpm bot:git -- push",
+    // ADR 0293: a bot push writes only HEAD or the current branch of the checkout it runs in
+    `pnpm bot:git -- -C ${main} push origin feature/x`,
   ])
     assert.equal(decision(c, feature), "deny", c);
   for (const c of [
     "pnpm bot:git -- push origin HEAD",
     `pnpm bot:git -- -C ${feature} push origin HEAD`,
-    `pnpm bot:git -- -C ${main} push origin feature/x`,
+    `pnpm bot:git -- -C ${feature} push origin feature/x`,
     `cd ${feature} && pnpm bot:git -- push`,
   ])
     assert.equal(decision(c, feature), "allow", c);
@@ -472,6 +460,7 @@ test("push target: quoted -c, crafted -c values, GIT_DIR / GIT_WORK_TREE prefixe
 // STA-216 review round: config writes, config/pager env, man -P, encoded merge paths, more -c keys
 const round3bAllowed = [
   "git config --get user.name",
+  "git config user.name x",
   "git config --list",
   "git config --show-origin --get-regexp remote",
   "pnpm bot:git -- -c color.ui=never -c core.quotepath=off log -1",
@@ -520,7 +509,6 @@ const round3cDenied = [
   'git config alias.t "cred x fill" # -l',
   'git config alias.t "x --get"',
   "pnpm bot:git -- config alias.p x --get",
-  "git config user.name x",
   "git config --global --get user.name",
   "git config -e",
   "git config --edit",
@@ -1155,7 +1143,7 @@ for (const c of [
   "pnpm --filter x test",
   "pnpm -C apps/docs dev",
   "pnpm exec tsc",
-  "npx tsc",
+  "pnpm exec tsc --noEmit",
   "git bisect start",
   "open https://example.com",
   "code .",
@@ -1168,3 +1156,255 @@ for (const c of [
   "pnpm --silent bot:gh -- pr list",
 ])
   test(`allow: ${c}`, () => assert.equal(decision(c), "allow"));
+
+// ---- ADR 0293: the permission model (STA-330) --------------------------------------------------------------
+
+/** A temporary repository on main with one commit, and a linked worktree on feature/x nested in it. */
+function repoWithWorktree() {
+  const main = mkdtempSync(join(tmpdir(), "guard-bash-"));
+  const env = { ...process.env, GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t" };
+  Object.assign(env, { GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" });
+  spawnSync("git", ["init", "-q", "-b", "main"], { cwd: main });
+  spawnSync("git", ["commit", "-q", "--allow-empty", "-m", "x"], { cwd: main, env });
+  const worktree = join(main, ".claude", "worktrees", "a");
+  spawnSync("git", ["worktree", "add", "-q", "-b", "feature/x", worktree], { cwd: main });
+  return { main, worktree, done: () => rmSync(main, { recursive: true, force: true }) };
+}
+
+// Every live bypass the audit found: runners (`pnpm <bin>`, `pnpm exec`, `npx`, `mise exec --`) are looked through.
+for (const c of [
+  "pnpm gh pr merge 12",
+  "pnpm exec gh pr merge 12 --squash",
+  "pnpm --filter x exec gh api repos/figentra/stackra",
+  "npx gh pr list",
+  "mise exec -- gh pr list",
+  "pnpm exec infisical run -- printenv",
+  "pnpm git stash pop",
+  "pnpm printenv",
+  "pnpm -s exec printenv",
+  "npm exec -- printenv",
+  "pnpm exec git fetch origin",
+])
+  test(`deny (runner bypass): ${c}`, () => assert.equal(decision(c), "deny"));
+for (const c of [
+  "pnpm exec infisical run -- pnpm build",
+  "pnpm exec node tools/scripts/secrets-import.mjs --confirm abc-123",
+  "pnpm secrets:import STACKRA_X --env prod --path /ci --confirm abc-123",
+])
+  test(`ask (runner bypass): ${c}`, () => assert.equal(decision(c), "ask"));
+
+// Productivity: a pattern, a message or history that names a guarded command is prose, not a command.
+for (const c of [
+  'grep -rn "git push origin main" apps/docs',
+  "rg 'DROP SCHEMA' services",
+  'git log --grep "push origin main" --oneline',
+  'git grep -n "git reset --hard"',
+  'rg -n "infisical export" .agents',
+  'grep -n "changeset version" README.md',
+  'rg "encore secret set" apps/docs',
+  'grep -rn "drizzle-kit push" .',
+  'echo "never git push --force; use --force-with-lease"',
+  "rg 'wrangler secret put' workers",
+  'pnpm bot:gh -- pr create --title "docs: the owner-approved label" --body "owner-approval is the owner\'s"',
+  "pnpm bot:gh -- issue create --title 'owner-approved label audit' --body-file /tmp/b.md",
+  "GIT_PAGER=cat git log -3",
+  "PAGER=less man git-commit",
+  "MANPAGER=cat man ls",
+  "git config rerere.enabled true",
+  "git config --local rerere.enabled true",
+  "git submodule status",
+  "git submodule summary",
+  "pnpm exec oxfmt --check .agents/hooks",
+  "pnpm exec vitest run",
+  "pnpm exec oxlint .agents/hooks",
+  "git stash",
+  "git stash push -m wip",
+  "git stash list",
+  "git stash show -p stash@{1}",
+  "git stash apply stash@{0}",
+  "git clean -n",
+  "git clean --dry-run -d",
+  "git restore --staged .",
+  "node --test tools/scripts/__tests__/bot-token.test.mjs",
+  "cat tools/scripts/bot-token.mjs",
+  "infisical secrets folders get --env=dev",
+  "ps aux",
+  "ps -ef",
+  "ps -o pid,command -p 1",
+  'pnpm linear comment STA-330 "never git stash pop; push origin main"',
+  'echo "rm -rf / is denied; so is git stash pop"',
+  'git stash apply "stash@{0}"',
+])
+  test(`allow: ${c}`, () => assert.equal(decision(c), "allow"));
+
+for (const c of [
+  // infisical: `--silent` still prints the value; set writes one from the transcript
+  "infisical secrets get FOO --silent",
+  "infisical secrets get FOO --silent --env=dev",
+  "infisical secrets --env prod get FOO",
+  "infisical secrets set FOO=bar",
+  "infisical secrets --env=dev set FOO=bar",
+  // process environments
+  "ps -E",
+  "ps eww",
+  "ps auxe",
+  "ps -wwE -p 1",
+  "launchctl procinfo 1",
+  // deploys
+  "encore deploy",
+  "encore deploy --env=production",
+  // tokens
+  "node tools/scripts/bot-token.mjs",
+  "infisical run -- node tools/scripts/bot-token.mjs",
+  // the shared stash stack
+  "git stash pop",
+  "git stash clear",
+  "git stash branch x",
+  "git stash apply",
+  "git stash apply --index",
+  "git stash drop",
+  // network submodule commands stay the bot's
+  "git submodule update --init",
+  // the owner's label and approving review
+  "pnpm bot:gh -- issue edit 4 --add-label owner-approved",
+  "pnpm bot:gh -- pr edit 4 --label 'bug,owner-approved'",
+  "pnpm bot:gh -- api repos/figentra/stackra/issues/4/labels -f 'labels[]=owner-approved'",
+  'pnpm bot:gh -- pr review 4 --approve --body "Looks right. owner-approval"',
+  // git config stays read-only beyond the allowed keys; a pager other than cat or less runs a command
+  "git config --global rerere.enabled true",
+  "git config core.pager x",
+  "PAGER=sh man ls",
+])
+  test(`deny: ${c}`, () => assert.equal(decision(c), "deny"));
+
+for (const c of [
+  "infisical secrets delete FOO",
+  "infisical run -- pnpm test",
+  "infisical run --env=staging -- pnpm build",
+  "npx tsc",
+  "pnpx create-x",
+  "pnpm dlx some-tool",
+  "wrangler deploy",
+  "pnpm exec wrangler deploy",
+  "wrangler d1 execute db --remote --command 'select 1'",
+  "eas build --platform ios",
+])
+  test(`ask: ${c}`, () => assert.equal(decision(c), "ask"));
+for (const c of ["wrangler dev", "pnpm exec wrangler types"])
+  test(`allow: ${c}`, () => assert.equal(decision(c), "allow"));
+
+test("bot:review runs only from a reviewer agent type", () => {
+  for (const c of [
+    "pnpm bot:review -- pr comment 47 --body-file /tmp/review.md",
+    "pnpm bot:review -- pr diff 12",
+    "pnpm --silent bot:review -- pr view 12",
+  ]) {
+    assert.equal(decision(c), "deny", c);
+    assert.equal(decision(c, undefined, "package-builder"), "deny", c);
+    assert.equal(decision(c, undefined, "code-reviewer"), "allow", c);
+    assert.equal(decision(c, undefined, "architecture-guardian"), "allow", c);
+  }
+  assert.equal(decision('pnpm linear comment STA-1 "run pnpm bot:review later"'), "allow");
+});
+
+test("destructive git runs only in the session's own linked worktree", () => {
+  const { main, worktree, done } = repoWithWorktree();
+  const discarding = [
+    "git reset --hard",
+    "git reset --merge",
+    "git checkout .",
+    "git checkout -- .",
+    "git checkout -f main",
+    "git restore .",
+    "git restore -W --staged .",
+    "git switch --discard-changes main",
+    "git switch -f main",
+    "git clean -fd",
+    "git clean -xdf",
+  ];
+  for (const c of discarding) {
+    assert.equal(decision(c, worktree), "allow", `own worktree: ${c}`);
+    assert.equal(decision(c, main), "deny", `main checkout: ${c}`);
+    assert.equal(decision(`git -C ${main} ${c.slice(4)}`, worktree), "deny", `-C main: ${c}`);
+    assert.equal(decision(`cd ${main} && ${c}`, worktree), "deny", `cd main: ${c}`);
+    assert.equal(decision(`cd ${worktree} && ${c}`, main), "deny", `another session's: ${c}`);
+  }
+  assert.equal(decision("cd $X && git reset --hard", worktree), "deny");
+  assert.equal(decision('git checkout "."', main), "deny");
+  assert.equal(decision('bash -c "git reset --hard"', main), "deny");
+  assert.equal(decision('echo "git reset --hard"', main), "allow");
+  assert.equal(decision(`cd ${main} && echo "$(git reset --hard)"`, worktree), "deny");
+  assert.equal(decision(`GIT_DIR=${main}/.git git reset --hard`, worktree), "deny");
+  for (const c of ["git clean -n", "git restore --staged .", "git reset --soft HEAD~1"])
+    assert.equal(decision(c, main), "allow", c);
+  // worktree remove --force: only the session's own worktree
+  assert.equal(decision(`git worktree remove --force ${worktree}`, main), "deny");
+  assert.equal(decision(`git worktree remove -f ${worktree}`, worktree), "allow");
+  assert.equal(decision(`git worktree remove ${worktree}`, main), "allow");
+  done();
+});
+
+test("rm -rf: own checkout (never a nested worktree), the scratchpad, cd followed", () => {
+  const { main, worktree, done } = repoWithWorktree();
+  for (const c of [
+    "rm -rf .claude/worktrees/a",
+    "rm -rf .claude/worktrees/*",
+    "rm -rf .claude",
+    `rm -rf ${worktree}`,
+    "cd $X && rm -rf old",
+    'bash -c "cd /tmp && rm -rf build"',
+    "cd /tmp && rm -rf build",
+    'cd /tmp && echo "$(rm -rf build)"',
+  ])
+    assert.equal(decision(c, main), "deny", c);
+  for (const c of [
+    "rm -rf node_modules",
+    "cd .claude && rm -rf cache",
+    `rm -rf /tmp/claude-${process.getuid?.() ?? 0}/guard-bash-test`,
+  ])
+    assert.equal(decision(c, main), "allow", c);
+  assert.equal(decision("rm -rf dist", worktree), "allow");
+  assert.equal(decision(`rm -rf ${main}/src`, worktree), "deny");
+  done();
+});
+
+test("push forms: no force without a lease, no delete, only HEAD or the current branch", () => {
+  const { worktree, done } = repoWithWorktree();
+  for (const c of [
+    "pnpm bot:git -- push -f origin HEAD",
+    "pnpm bot:git -- push -uf origin HEAD",
+    "pnpm bot:git -- push --force origin HEAD",
+    "pnpm bot:git -- push --force --force-if-includes origin HEAD",
+    "pnpm bot:git -- push --delete origin feature/x",
+    "pnpm bot:git -- push -d origin feature/x",
+    "pnpm bot:git -- push origin :feature/x",
+    "pnpm bot:git -- push origin +HEAD",
+    "pnpm bot:git -- push origin +feature/x",
+    "pnpm bot:git -- push --mirror origin",
+    "pnpm bot:git -- push --prune origin",
+    "pnpm bot:git -- push origin other-branch",
+    "pnpm bot:git -- push origin HEAD:other-branch",
+    "pnpm bot:git -- push origin feature/x:main",
+    "pnpm bot:git -- push origin main",
+  ])
+    assert.equal(decision(c, worktree), "deny", c);
+  for (const c of [
+    "pnpm bot:git -- push origin HEAD",
+    "pnpm bot:git -- push -u origin HEAD",
+    "pnpm bot:git -- push origin feature/x",
+    "pnpm bot:git -- push origin HEAD:feature/x",
+    "pnpm bot:git -- push origin HEAD:refs/heads/feature/x",
+    "pnpm bot:git -- push --force-with-lease origin HEAD",
+    "pnpm bot:git -- push --force-with-lease --force-if-includes origin HEAD",
+    "pnpm bot:git -- push",
+  ])
+    assert.equal(decision(c, worktree), "allow", c);
+  for (const c of [
+    "pnpm bot:git -- push --tags",
+    "pnpm bot:git -- push --follow-tags origin HEAD",
+    "pnpm bot:git -- push origin @stackra/brand@1.2.0",
+    "pnpm bot:git -- push origin refs/tags/v1",
+  ])
+    assert.equal(decision(c, worktree), "ask", c);
+  done();
+});

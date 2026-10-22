@@ -56,7 +56,11 @@
  *   permissions:                   optional; explicit rules, overrides the
  *     - action: shell                         permissions OpenCode would derive
  *       resource: "git *"                     from `tools`
- *       effect: allow|ask|deny
+ *       effect: allow|ask|deny    `allow` is refused for an agent projected to OpenCode:
+ *                                  it never widens the project block in opencode.jsonc (ADR 0293)
+ *   reviewer: true                 optional; may run `pnpm bot:review` (ADR 0230, 0293).
+ *                                  Projected into .agents/hooks/_reviewer-agents.mjs,
+ *                                  never into an assistant's frontmatter
  *   assistants: [claude]           optional; the assistants it is projected to, default
  *                                  all. A tier an assistant has no row for in
  *                                  models.yaml is not projected to it either.
@@ -401,8 +405,11 @@ function normalizeAgent(data, entry, label) {
     "permissions",
     "skills",
     "assistants",
+    "reviewer",
   ]);
   for (const key of Object.keys(data)) if (!known.has(key)) errors.push(`unknown key '${key}'`);
+  if (data.reviewer !== undefined && typeof data.reviewer !== "boolean")
+    errors.push("'reviewer' must be true or false");
 
   if (data.name !== undefined && data.name !== stem)
     errors.push(`'name' is '${data.name}' but the file is ${entry} — they must match`);
@@ -480,6 +487,7 @@ function normalizeAgent(data, entry, label) {
     permissions: data.permissions,
     skills,
     assistants: data.assistants,
+    reviewer: data.reviewer === true,
   };
 }
 
@@ -638,14 +646,17 @@ function claudeAgentFrontmatter(agent) {
   return lines;
 }
 
-/** OpenCode has no tool grant, only permissions — so a missing tool becomes a deny. */
+/**
+ * OpenCode has no tool grant, only permissions — so a missing tool becomes a deny. A full grant adds nothing:
+ * an agent-level allow would override the project denies in opencode.jsonc (ADR 0293).
+ */
 function deriveOpenCodePermissions(tools) {
   if (!tools) return undefined;
   const granted = new Set(tools.map((t) => OPENCODE_ACTIONS[t]).filter(Boolean));
   const denied = [...new Set(Object.values(OPENCODE_ACTIONS))]
     .filter((action) => !granted.has(action))
     .map((action) => ({ action, resource: "*", effect: "deny" }));
-  return denied.length ? denied : [{ action: "*", resource: "*", effect: "allow" }];
+  return denied.length ? denied : undefined;
 }
 
 function openCodeAgentFrontmatter(agent) {
@@ -981,6 +992,42 @@ function ensureConstitution() {
   results.generated++;
 }
 
+const REVIEWERS_OUT = `${SOURCE}/hooks/_reviewer-agents.mjs`;
+
+/** The reviewer list module the bash guard reads: one name per agent whose source sets `reviewer: true`. */
+function renderReviewerAgents(names) {
+  const oneLine = `export const REVIEWER_AGENTS = new Set([${names.map((n) => `"${n}"`).join(", ")}]);`;
+  const set =
+    oneLine.length <= 100
+      ? oneLine
+      : ["export const REVIEWER_AGENTS = new Set([", ...names.map((n) => `  "${n}",`), "]);"].join(
+          "\n",
+        );
+  return [
+    `// generated from ${SOURCE}/agents (reviewer: true) by ${SCRIPT_REL} — edit the sources, not this file`,
+    "/** Agent types that may run `pnpm bot:review` (ADR 0230, ADR 0293); `guard-bash` denies every other caller. */",
+    set,
+    "",
+  ].join("\n");
+}
+
+/** Write `.agents/hooks/_reviewer-agents.mjs` from the agent sources; `--check` reports drift instead. */
+function ensureReviewerAgents(agentEntries) {
+  const names = agentEntries
+    .map((e) => loadAgent(e).agent)
+    .filter((a) => a.reviewer)
+    .map((a) => a.name)
+    .toSorted();
+  const rendered = renderReviewerAgents(names);
+  const out = join(ROOT, REVIEWERS_OUT);
+  if (!existsSync(dirname(out))) return; // no hooks in this checkout: nothing reads the list
+  if (existsSync(out) && readFileSync(out, "utf8") === rendered) return void results.ok++;
+  if (CHECK)
+    return void results.drift.push(`${REVIEWERS_OUT}: ${existsSync(out) ? "stale" : "missing"}`);
+  writeFileSync(out, rendered);
+  results.generated++;
+}
+
 /** Always-on rules in full; file-scoped and manual rules as an index pointing at their source. */
 function renderRulesBlock(ruleEntries) {
   const rules = ruleEntries.map((entry) => {
@@ -1246,6 +1293,10 @@ function main() {
   for (const entry of agentEntries) {
     const { sourceRel, agent, body } = loadAgent(entry);
     for (const defect of agentDefects(agent, body)) results.broken.push(`${sourceRel}: ${defect}`);
+    if (projectsTo(agent, "opencode") && agent.permissions?.some((p) => p.effect === "allow"))
+      results.broken.push(
+        `${sourceRel}: an OpenCode agent's permissions only narrow opencode.jsonc; 'allow' is refused (ADR 0293)`,
+      );
     if (agent.model !== undefined)
       results.overrides.push(
         `${sourceRel}: model '${agent.model}' overrides ${agent.tier ? `tier '${agent.tier}'` : `${MODEL_MAP_REL}`}`,
@@ -1324,6 +1375,7 @@ function main() {
 
   ensureConstitution();
   ensureMcpJson();
+  ensureReviewerAgents(agentEntries);
   const ruleSources = sourceEntries("rules");
   for (const name of assistants) {
     const { dir, map, instructionsBlock } = ASSISTANTS[name];

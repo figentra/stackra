@@ -20,7 +20,7 @@ async function main() {
     );
   if (has("secret", "api key", "token", "credential", ".env", "infisical"))
     hints.push(
-      'Secrets: two mechanisms — app secrets via Encore `secret("NAME")` (a human sets the value in the runtime store; no Infisical sync), dev/CI/MCP tokens via `infisical run -- <cmd>` and tools/scripts/mcp.sh. No .env files, never read or print a value (.agents/rules/secrets.md).',
+      'Secrets: Infisical is the source of every value (ADR 0173); runway syncs app secrets into Encore `secret("NAME")`, Workers and EAS on deploy. Dev and MCP tokens reach a process only through the pnpm script or tools/scripts/mcp.sh that needs them; raw `infisical run` asks the owner. No .env files, never read or print a value (.agents/rules/secrets.md).',
     );
   if (has("adr", "decision", "architecture decision", "supersede"))
     hints.push(

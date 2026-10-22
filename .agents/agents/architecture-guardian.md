@@ -3,6 +3,7 @@ name: architecture-guardian
 description: Blocking review of placement and decisions - tier direction, package category, member shape, module layout by kind, the not-built-yet table, and whether a change needs an ADR. Reports; never edits. Use before building anything at change risk R2 or above, a new member, package or dependency, or a change that moves code across a tier.
 tier: guardian
 blocks: true
+reviewer: true
 tools: [Read, Grep, Glob, Bash]
 ---
 

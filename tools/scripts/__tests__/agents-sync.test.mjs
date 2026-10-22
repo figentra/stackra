@@ -129,13 +129,11 @@ test("OpenCode denies every action the tool grant does not reach", () => {
   });
 });
 
-test("OpenCode allows everything when the grant reaches every action", () => {
+test("OpenCode adds no permissions when the grant reaches every action (ADR 0293)", () => {
   withFixture({ "builder.md": FULL }, (root) => {
     assert.equal(run(root).code, 0);
-    assert.match(
-      read(root, ".opencode/agents/builder.md"),
-      /permissions:\n {2}- action: "\*"\n {4}resource: "\*"\n {4}effect: allow\n/,
-    );
+    const out = read(root, ".opencode/agents/builder.md");
+    assert.doesNotMatch(out, /permissions:/, "an agent-level allow would override opencode.jsonc");
   });
 });
 
@@ -159,14 +157,53 @@ test("an anthropic/<id> model reaches Claude Code as the bare id", () => {
 test("explicit permissions pass through to OpenCode", () => {
   const src = READ_ONLY.replace(
     "model: sonnet\n",
-    'model: sonnet\npermissions:\n  - action: shell\n    resource: "git *"\n    effect: allow\n',
+    'model: sonnet\npermissions:\n  - action: shell\n    resource: "git *"\n    effect: deny\n',
   );
   withFixture({ "reviewer.md": src }, (root) => {
     assert.equal(run(root).code, 0);
     const opencode = read(root, ".opencode/agents/reviewer.md");
-    assert.match(opencode, /- action: "shell"\n {4}resource: "git \*"\n {4}effect: allow/);
+    assert.match(opencode, /- action: "shell"\n {4}resource: "git \*"\n {4}effect: deny/);
     assert.doesNotMatch(opencode, /action: "edit"/, "explicit permissions replace derived ones");
     assert.doesNotMatch(read(root, ".claude/agents/reviewer.md"), /permissions/);
+  });
+});
+
+test("an allow permission is refused for an OpenCode agent, kept for a Claude-only one (ADR 0293)", () => {
+  const allow =
+    'model: sonnet\npermissions:\n  - action: shell\n    resource: "git *"\n    effect: allow\n';
+  withFixture({ "reviewer.md": READ_ONLY.replace("model: sonnet\n", allow) }, (root) => {
+    const r = run(root);
+    assert.equal(r.code, 1);
+    assert.match(r.out, /'allow' is refused \(ADR 0293\)/);
+  });
+  const claudeOnly = READ_ONLY.replace("model: sonnet\n", `${allow}assistants: [claude]\n`);
+  withFixture({ "reviewer.md": claudeOnly }, (root) => assert.equal(run(root).code, 0));
+});
+
+/** A read-only agent source named `name`, with extra frontmatter lines. */
+const namedAgent = (name, extra = "") =>
+  READ_ONLY.replace("name: reviewer", `name: ${name}`).replace(
+    "model: sonnet\n",
+    `model: sonnet\n${extra}`,
+  );
+
+test("reviewer: true agents are projected into the hooks' reviewer list, sorted", () => {
+  const sources = {
+    "b-reviewer.md": namedAgent("b-reviewer", "reviewer: true\n"),
+    "a-reviewer.md": namedAgent("a-reviewer", "reviewer: true\n"),
+    "c.md": namedAgent("c"),
+  };
+  withFixture(sources, (root) => {
+    mkdirSync(join(root, ".agents/hooks"), { recursive: true });
+    assert.equal(run(root).code, 0);
+    const list = read(root, ".agents/hooks/_reviewer-agents.mjs");
+    assert.match(list, /new Set\(\["a-reviewer", "b-reviewer"\]\);/);
+    assert.equal(run(root, "--check").code, 0);
+    writeFileSync(
+      join(root, ".agents/hooks/_reviewer-agents.mjs"),
+      "export const REVIEWER_AGENTS = new Set();\n",
+    );
+    assert.equal(run(root, "--check").code, 1);
   });
 });
 

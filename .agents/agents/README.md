@@ -25,11 +25,13 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
    blocks: true | false # true = its FAIL stops the merge
    tools: [Read, Grep, Glob, Bash]
    assistants: [claude] # optional: only these assistants get it
+   reviewer: true # optional: may run `pnpm bot:review` (ADR 0230, 0293)
    ---
    ```
 
 3. Body sections: Mission, Owns, Checks, Never, Hand-offs. Keep it under about 80 lines.
-4. A reviewer or guardian gets no `Write`/`Edit`. Only list `Bash` if the body runs commands.
+4. A reviewer or guardian gets no `Write`/`Edit`. Only list `Bash` if the body runs commands. Set `reviewer: true`
+   only when the body posts a verdict with `pnpm bot:review`; `guard-bash` denies it to every other agent type.
 5. Tier to model lives in `models.yaml`; change a model there, not in an agent. OpenCode has rows only for the
    steward and executor tiers, so reviewers, guardians and the lead are never projected there; add
    `assistants: [claude]` to keep an executor or steward off OpenCode too (ADR 0258).

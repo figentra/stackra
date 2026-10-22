@@ -1,0 +1,1 @@
+../../.agents/hooks/_rules.mjs

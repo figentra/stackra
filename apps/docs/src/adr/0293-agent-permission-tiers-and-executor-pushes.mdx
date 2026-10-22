@@ -1,0 +1,99 @@
+---
+title: "0293 — Agent permissions: allow, ask and deny tiers, one rule module, executors push their own branch"
+description: "Accepted · 2026-10-22"
+---
+
+<Note>
+  Amends [0066](/adr/0066-delegation-to-opencode-by-routing-matrix) (rule 1: OpenCode executors now
+  commit and push their own feature branch). Builds on
+  [0230](/adr/0230-reviewer-identity-separate-from-builder) (reviewer identity and the owner's
+  login), [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets) (Infisical is the
+  source of every value), [0257](/adr/0257-secret-manager-agent-and-the-secrets-inbox) (nobody reads
+  a value) and [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) (the
+  guard later installs at user level). Rule 5 of 0230 is not amended here.
+</Note>
+
+## Context
+
+Claude Code and OpenCode each carried their own permission rules: `.claude/settings.json` and the bash and path hooks
+for Claude, `opencode.jsonc` and a guard plugin for OpenCode. The plugin's copy drifted (it lacked the `.dev.vars`,
+`$GH_TOKEN`, `DROP` and generated-file rules), and a permission audit on 2026-10-22 found live bypasses in both:
+`pnpm gh pr merge`, `pnpm exec infisical run`, `pnpm git stash pop`, `pnpm printenv` and
+`pnpm exec node …secrets-import.mjs --confirm` passed, because prefix rules and command-position regexes did not look
+through `pnpm`. At the same time the guards blocked ordinary work: `grep "git push origin main"` matched the push rule,
+`git reset --hard` was refused in an agent's own worktree, and `git stash pop` was allowed although `refs/stash` is
+shared by every worktree. OpenCode executors could not commit, so the lead re-did their git work by hand. GitHub's
+rulesets, the bot and reviewer split and `pnpm pr:merge` already decide what reaches main; local rules only have to
+cover what GitHub cannot see.
+
+## Decision
+
+1. **Three tiers, the same for both tools.** Allow, ask (a human confirms) and deny. OpenCode runs unattended and
+   `--auto` approves any ask, so for OpenCode every ask is a deny.
+   - **Allow**: local git in the session's own worktree (commit, branch, rebase, reset, cherry-pick, stash push, list,
+     show and `apply <ref>`), the repository's pnpm scripts by name, `pnpm exec` of the formatter, linter, test runner
+     and compiler, GitHub as `stackra-bot` through `pnpm bot:gh`, `pnpm bot:git -- fetch`, a bot push of `HEAD`,
+     `pnpm pr:merge` and `pnpm linear`, and read-only MCP servers.
+   - **Ask**: deploys and remote cloud changes (`wrangler deploy`, `--remote`, `eas`, `encore env set`), unreviewed
+     registry code (`npx`, `pnpx`, `pnpm dlx`), raw `infisical run`, `secrets:import … --confirm`,
+     `infisical secrets delete`, publishing and tag pushes, raw GitHub API writes through the bot, deleting local data
+     git cannot restore (`git stash drop`, `git branch -D`, `worktree remove --force`, `encore db reset`), MCP tools that
+     spend money or reach people, and shell text the guard cannot read.
+   - **Deny**: reading a secret value (`.env*`, `.dev.vars`, keys, `infisical export`, `infisical secrets get` in every
+     form, `infisical secrets set`, `env`, `printenv`, process-environment listings, `bot:token`, the secrets inbox);
+     the owner's credentials (`gh` in any form, raw network git, the owner's credential files); pushes that rewrite or
+     delete (to main, `--force` without a lease, `-f`, `+refspec`, `--delete`, `--mirror`, `--prune`, or any branch but
+     the current one); `git stash pop`, `clear`, `branch` and `apply` without a ref; destructive git and `rm -rf`
+     outside the session's own worktree and scratchpad; `changeset version`, release tags, `encore deploy`,
+     `encore secret set`, `DROP DATABASE` and ORM push or migrate.
+2. **Settings are the floor; one module holds the parsing.** The deny and ask rules in `.claude/settings.json` apply
+   in every mode. The hooks add only what a prefix rule cannot see, from one module, `.agents/hooks/_rules.mjs`, which
+   `guard-bash.mjs`, `guard-paths.mjs` and the OpenCode guard plugin all evaluate: runner wrappers (`pnpm [exec|dlx]`,
+   `pnpm <bin>`, `npx`, `npm exec`, `mise exec --`) are looked through like `sudo` or `env`; quoted prose is not a
+   command; the checkout a git command targets is resolved through `cd`, `-C`, `--git-dir` and `GIT_DIR=`.
+   `opencode.jsonc` repeats the tiers as order-sensitive patterns.
+3. **Own worktree only.** `reset --hard`, `checkout` or `restore` of the tree, `checkout -f`,
+   `switch --discard-changes`, `clean -f` and `worktree remove --force` run only when the target checkout is the
+   session's own linked worktree, never the main checkout. `rm -rf` runs only inside the session's own checkout
+   (never a worktree nested in it) or the session scratchpad. Worktrees use WIP commits, never the shared stash.
+4. **`pnpm bot:review` is for reviewer agents.** Only an agent type whose source sets `reviewer: true` (projected by
+   `agents-sync` into `.agents/hooks/_reviewer-agents.mjs`) may run it. This is a tripwire, not a boundary: a builder
+   can still spawn a reviewer. Once a CI job posts the review verdict, no local agent runs `bot:review`.
+5. **Executors commit and push their own feature branch** (amends rule 1 of
+   [0066](/adr/0066-delegation-to-opencode-by-routing-matrix)). An OpenCode executor commits on its delegate branch
+   and runs `pnpm bot:git -- fetch …` and `pnpm bot:git -- push [--force-with-lease] origin HEAD`; every other bot
+   wrapper (`bot:gh`, `bot:review`, `bot:token`, `pr:merge`, `linear`), Infisical and raw network git stay the lead's.
+   The lead still reviews, opens the pull request and merges through `pnpm pr:merge`.
+6. **An agent never widens the project rules.** An OpenCode agent's frontmatter permissions only narrow
+   `opencode.jsonc`; `agents-sync` refuses an `allow` effect for an agent projected to OpenCode.
+
+## Consequences
+
+- Ordinary work stops prompting: search patterns, commit messages and PR bodies that name a guarded command pass, and
+  an agent can reset or clean its own worktree. The main checkout and other agents' worktrees keep their work.
+- Raw `infisical run`, `npx` and `pnpm dlx` now prompt, so an unattended run stalls on them; a flow that needs a token
+  gets its own pnpm script.
+- OpenCode executors push their own branch, so the lead no longer re-commits their output. They still do not update
+  Linear themselves until the `/agents` Infisical folder is split.
+- Every local rule stays an accident guard: hooks run as the owner's macOS user and fail open, and text rules miss
+  `node -e`, child processes and wrappers they do not know. Isolation comes from GitHub's rulesets, a bot without
+  admin rights, the CI reviewer and moving the owner's credentials out of agents' reach.
+- Rule 5 of [0230](/adr/0230-reviewer-identity-separate-from-builder) still denies raw read-only network git; a later
+  amendment may allow it once no owner credential can answer it.
+
+## Enforcement
+
+- `.agents/hooks/_rules.mjs` (`decideBash`, `decideRead`, `decideWrite`), evaluated by `.agents/hooks/guard-bash.mjs`,
+  `.agents/hooks/guard-paths.mjs` and `.opencode/plugins/guard/decide.ts` (ask is deny there); tests in
+  `.agents/hooks/__tests__/guard-bash.test.mjs`, `.agents/hooks/__tests__/guard-paths.test.mjs` and
+  `.opencode/plugins/guard/__tests__/decide.test.ts`, including one regression test per bypass the audit found.
+- `.claude/settings.json` (`permissions.allow`, `ask`, `deny`, and `env` with `GIT_EDITOR=true`) and the `permissions`
+  block of `opencode.jsonc`.
+- `tools/scripts/agents-sync.mjs`: the `reviewer` flag, the generated `.agents/hooks/_reviewer-agents.mjs` (drift fails
+  `pnpm agents:check`), and the refusal of an `allow` permission for an OpenCode agent.
+- `tools/scripts/delegate.mjs` (`RULES`): the executor prompt says to commit and push its own branch.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0066](/adr/0066-delegation-to-opencode-by-routing-matrix) rule 1. Sources: the owner's
+decisions of 2026-10-22 (STA-330).

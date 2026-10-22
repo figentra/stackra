@@ -3,6 +3,7 @@ name: design-brand-reviewer
 description: Advisory UI review against the reuse-first checklist, design tokens and brand rules, for web and mobile. Returns PASS or BLOCK as advice; never blocks a merge itself. Use after a builder finishes a screen and before accessibility review.
 tier: reviewer
 blocks: false
+reviewer: true
 tools: [Read, Grep, Glob, Bash]
 ---
 
