@@ -128,7 +128,10 @@ fi
 requires_secret=false
 for arg in "$@"; do
   case "$arg" in
-    *'$'[A-Z_]*) requires_secret=true; break ;;
+    *'$'[A-Z_]*)
+      requires_secret=true
+      break
+      ;;
   esac
 done
 
