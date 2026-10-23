@@ -13,6 +13,22 @@ description: "Accepted · 2026-10-22"
   guard later installs at user level). Rule 5 of 0230 is not amended here.
 </Note>
 
+<Note>
+  Amended 2026-10-23 (STA-351): a subagent's hook ask is a deny. When the hook input carries an
+  `agent_id` (a subagent; the main thread never has one, a `claude --agent` session included), every
+  ask from the guard hook becomes a deny that carries its reason and one line on how to
+  rewrite the command so the guard can read it (no `bash -c`, `sh -c` or `eval` around a loop, no
+  computed command name), because the owner does not watch a subagent's prompts and the agent sat idle
+  until answered. The decisions in `HUMAN_ASKS` (`_rules.mjs`) still reach a human from a subagent:
+  `secrets:import … --confirm`, tag pushes, `encore db reset`, `encore env`, `wrangler deploy` and the
+  other Cloudflare changes, and `eas`. The main thread keeps every hook ask; the ask rules of
+  `.claude/settings.json` are not the hook's and can still prompt from a subagent. OpenCode's ask-to-deny
+  is the same `unattended` function. The `rm -rf` scratch place is the session's own scratchpad
+  directory (the hook input's `scratchpad_dir`, or `/tmp/claude-<uid>/<project>/<session>/scratchpad`
+  for the hook's `session_id` or `CLAUDE_CODE_SESSION_ID` and the project's own folder, its real path
+  only), no longer the whole `/tmp/claude-<uid>` tree.
+</Note>
+
 ## Context
 
 Claude Code and OpenCode each carried their own permission rules: `.claude/settings.json` and the bash and path hooks
@@ -29,7 +45,8 @@ cover what GitHub cannot see.
 ## Decision
 
 1. **Three tiers, the same for both tools.** Allow, ask (a human confirms) and deny. OpenCode runs unattended and
-   `--auto` approves any ask, so for OpenCode every ask is a deny.
+   `--auto` approves any ask, so for OpenCode every ask is a deny; so is a Claude subagent's hook ask, outside `HUMAN_ASKS`
+   (amendment of 2026-10-23).
    - **Allow**: local git in the session's own worktree (commit, branch, rebase, reset, cherry-pick, stash push, list,
      show and `apply <ref>`, `git config --worktree` of a display, identity or rerere key), the repository's pnpm
      scripts by name, `pnpm exec` of the formatter, linter, test runner and compiler, GitHub as `stackra-bot` through
@@ -79,7 +96,8 @@ cover what GitHub cannot see.
 3. **Own worktree only.** `reset --hard`, `checkout` or `restore` of the tree, `checkout -f`,
    `switch --discard-changes`, `clean -f` and `worktree remove --force` run only when the target checkout is the
    session's own linked worktree, never the main checkout or another agent's worktree. `rm -rf` runs only inside the
-   session's own checkout or the session scratchpad, never on a worktree itself or `.git`; a `find … -delete` (or
+   session's own checkout or the session's own scratchpad directory (not the `/tmp/claude-<uid>` root or another
+   project's or session's tree), never on a worktree itself or `.git`; a `find … -delete` (or
    `-exec rm`) from a checkout root is denied when its name tests may select `.git` or a file git keeps inside it
    (`-path './.git/*'`, `-name HEAD`, `-name '*.pack'`). A subagent whose shell starts in the
    main checkout and reaches a nested worktree by `cd` or `-C` gets an ask, because the guard cannot tell its own
