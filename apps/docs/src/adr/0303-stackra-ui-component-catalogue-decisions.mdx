@@ -103,8 +103,10 @@ raised. This page records the answers.
     - Resolution is per platform in `@stackra/icons`: `./react` maps a name to a `lucide-react` component and `./native` to a
       `lucide-react-native` one. A registry is fed in, through `defineIconRegistry` and an `IconRegistryProvider`; gen will later
       emit a registry of only the names used, and turn an unknown name into a gen error. The full Lucide map is an explicit
-      opt-in entry (`./react/lucide-registry`, `./native/lucide-registry`), because it is about 180 KB gzipped on web
-      and would use most of the entry budget of [0183](/adr/0183-quality-budgets-with-numbers); the playground registers only the icons it draws.
+      opt-in entry (`./react/lucide-registry`, `./native/lucide-registry`), because it is an estimated 180 KB gzipped on web (an estimate, not a
+      measurement) and would use most of the entry budget of [0183](/adr/0183-quality-budgets-with-numbers); the playground registers only
+      the icons it draws. The review measured the playground entry at 237.66 KB gzipped with the icons tree-shaken (no unused
+      Lucide name in the output). The pre-icons baseline is still to be recorded, so how much of it is HeroUI is not yet known.
       Custom and brand icons (SVGs under a package's or app's `assets/icons/`) join under their namespace and draw through the
       same `Icon`.
     - `Icon` takes `name: IconName`, not a component. The icon slots of Button, IconButton, CloseButton and Chip take an

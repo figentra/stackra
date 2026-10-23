@@ -171,8 +171,12 @@ describe("Icon (web)", () => {
   });
 
   it("draws nothing for a name no registry holds, and does not throw", () => {
-    const { container } = render(<Icon name="loyalty::unknown" />);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { container } = render(<Icon name="loyalty::unknown" label="Points" />);
     expect(container.querySelector("svg")).toBeNull();
+    // A labelled icon is meaningful, so losing it is reported (once per name) in development.
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"loyalty::unknown"'));
+    warn.mockRestore();
   });
 
   it("takes an icon name and refuses what the contract owns", () => {

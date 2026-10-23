@@ -18,6 +18,7 @@ import type { ComponentType } from "react";
 
 import type { IconContractProps } from "#contracts/types/icon-contract-props.type";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
+import { warnUnknownIcon } from "#core/functions/warn-unknown-icon.function";
 import { UI_ICONS } from "#native/icon/ui-icons.constant";
 
 /** Svg and View props that reach the drawn icon; the contract's props, colour and accessibility stay the wrapper's. */
@@ -62,9 +63,13 @@ export function Icon({
   // Called on every render, so the hook order is stable; the colour is used only when a tone is given.
   const toneColor = useThemeColor(tone === undefined || tone === "default" ? "foreground" : tone);
   // A cast, not an assignment: the contract's component props leave out `undefined` on purpose (so every Lucide icon
-  // is an IconComponent under exactOptionalPropertyTypes), which makes the reverse direction fail to compile.
+  // is an IconComponent under exactOptionalPropertyTypes), which makes the reverse direction fail to compile. The
+  // contract names the props this relies on for accessibility, tone and mirror; only the Svg pass-through is beyond it.
   const found = useIcon(iconName) ?? findIcon(UI_ICONS, iconName);
-  if (found === undefined) return null;
+  if (found === undefined) {
+    if (process.env.NODE_ENV !== "production") warnUnknownIcon(iconName, label);
+    return null;
+  }
   const Drawn = found as ComponentType<Omit<LucideProps, "color"> & { color?: string }>;
   const name = label
     ? { accessible: true, role: "img" as const, accessibilityLabel: label }

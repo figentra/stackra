@@ -80,6 +80,14 @@ switcher and is covered by Playwright and axe. `@stackra/brand` is deleted; its 
 - **P-033**: A Skeleton shows its children only when not loading, takes its loading state and animation from the enclosing SkeletonGroup unless it sets its own, and a group with a loading label exposes exactly that text while loading — Validates: FR-042, FR-043, FR-045
 - **P-034**: Props outside the Avatar, Spinner, Skeleton and SkeletonGroup contracts reach HeroUI unchanged on both runtimes — Validates: FR-042, FR-043
 - **P-035**: Every Avatar, Spinner and Skeleton sample of the playground shows what its contract promises, listed under its category — Validates: FR-046
+- **P-036**: `IconName` accepts a Lucide name, an alias and a namespaced custom name and nothing else, and `IconComponentProps` names every prop `Icon` hands the component — Validates: FR-047
+- **P-037**: The committed Lucide name list is exactly what the installed `lucide-react` and `lucide-react-native` ship, and no generated file names an icon outside it — Validates: FR-048
+- **P-038**: `findIcon` resolves a registered name or an alias from own properties only, and `isIconName` separates valid names from every other string — Validates: FR-049
+- **P-039**: A registry provider gives its icons their registry, nests with the nearest winning, and a name outside every registry resolves to nothing without throwing — Validates: FR-050
+- **P-040**: The Lucide re-exports and the full registry are opt-in entries that no other entry imports — Validates: FR-051
+- **P-041**: `Icon` draws the icon its name resolves to on both runtimes, nothing for an unregistered name (with one development warning per name), and no component prop — Validates: FR-052
+- **P-042**: An icon slot of Button, IconButton, CloseButton and Chip draws a name through `Icon` and an element as given — Validates: FR-053
+- **P-043**: Only `@stackra/icons` and `@stackra/ui` import a Lucide package, and the playground registers only the icons it draws — Validates: FR-054
 
 ## Contracts and events
 

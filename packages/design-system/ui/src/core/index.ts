@@ -10,3 +10,4 @@ export { UiConfig } from "#config/ui.config";
 export { ICON_SIZES } from "#core/constants/icon-sizes.constant";
 export { directionOf } from "#core/functions/direction-of.function";
 export { initialsOf } from "#core/functions/initials-of.function";
+export { warnUnknownIcon } from "#core/functions/warn-unknown-icon.function";

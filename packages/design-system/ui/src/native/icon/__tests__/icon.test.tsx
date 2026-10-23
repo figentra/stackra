@@ -130,8 +130,11 @@ describe("Icon (native)", () => {
   });
 
   it("draws nothing for a name no registry holds, and does not throw", () => {
-    render(<Icon name="loyalty::unknown" />);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    render(<Icon name="loyalty::unknown" label="Points" />);
     expect(screen.queryByTestId("icon")).toBeNull();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"loyalty::unknown"'));
+    warn.mockRestore();
   });
 
   it("takes an icon name and refuses what the contract owns", () => {

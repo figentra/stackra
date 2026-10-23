@@ -59,5 +59,13 @@ Linear sub-issues, all in this one pull request: [STA-361] Avatar, [STA-363] Spi
 
 - [x] T027 [US2] Avatar: contracts, `initialsOf`, `AVATAR_SQUARE_CLASS_NAME`, and the web and native components in `packages/design-system/ui/src` — covers: FR-041, FR-042, FR-043, FR-044, P-031, P-034 — route: frontend — deps: T013, T018
 - [x] T028 [US2] Spinner: contract and the web and native components in `packages/design-system/ui/src` — covers: FR-041, FR-042, FR-043, P-032, P-034 — route: frontend — deps: T013
-- [x] T029 [US2] Skeleton and SkeletonGroup: contracts, the web and native components, and the reduced-motion and right-to-left skeleton rules of `@stackra/tokens` — covers: FR-041, FR-042, FR-043, FR-045, P-033, P-034 — route: frontend — deps: T013
+- [x] T029 [US2] Skeleton and SkeletonGroup: contracts, the web and native components, and the reduced-motion and right-to-left skeleton rules of `packages/design-system/tokens` — covers: FR-041, FR-042, FR-043, FR-045, P-033, P-034 — route: frontend — deps: T013
 - [x] T030 [US3] The avatar, spinner and skeleton routes in `apps/playground/src`, with their e2e files — covers: FR-046, P-035, SC-006 — route: frontend — deps: T027, T028, T029
+
+## Phase 9: Icons (ADR 0303 decision 10)
+
+Linear issues: [STA-405] `@stackra/icons` and name-based icons, [STA-354] Icon.
+
+- [x] T031 [US2] The icons package: the `IconName` contract and the generated Lucide name list, `defineIconRegistry`, `findIcon`, `isIconName`, the per-platform registry providers and the opt-in Lucide entries in `packages/design-system/icons` — covers: FR-047, FR-048, FR-049, FR-050, FR-051, P-036, P-037, P-038, P-039, P-040 — route: package — deps: T013
+- [x] T032 [US2] `Icon` by name and the name-or-element icon slots of Button, IconButton, CloseButton and Chip in `packages/design-system/ui/src` — covers: FR-052, FR-053, P-041, P-042 — route: frontend — deps: T031
+- [x] T033 [US3] The playground registers only the icons it draws and imports no Lucide package in `apps/playground/src` — covers: FR-054, P-043 — route: frontend — deps: T032
