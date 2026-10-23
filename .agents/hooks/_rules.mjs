@@ -721,23 +721,30 @@ const isRecursiveForce = (flags) =>
   flags.some((f) => /^-[a-zA-Z]*[rR]/.test(f) || longFlag(f, "--recursive")) &&
   flags.some((f) => /^-[a-zA-Z]*f/.test(f) || longFlag(f, "--force"));
 /**
- * The scratchpad directory Claude Code gives the session `ids` name (the hook input's `session_id`, then
- * `CLAUDE_CODE_SESSION_ID`): `/tmp/claude-<uid>/<project>/<session id>/scratchpad`, the first that exists; "" when
- * none does. Only this directory is a scratch place for `rm -rf`: the root and other projects' or sessions' trees
- * are not (STA-351).
+ * The session's scratchpad directory (STA-351): the hook input's `scratchpad_dir` when the harness sends one, else
+ * `/tmp/claude-<uid>/<project>/<session id>/scratchpad` for one of `sessionIds` (`session_id`, then
+ * `CLAUDE_CODE_SESSION_ID`) and one of `projectDirs` (`CLAUDE_PROJECT_DIR`, then `cwd`; the harness names the
+ * project folder after its path, every character outside `[A-Za-z0-9]` a `-`), only when its real path is exactly
+ * that path under the real root, so a symlink or another project's folder never stands in for it; "" when none does.
+ * Only this directory is a scratch place for `rm -rf`: the root and other projects' or sessions' trees are not.
  */
-export function sessionScratchpad(...ids) {
+export function sessionScratchpad({ scratchpadDir = "", sessionIds = [], projectDirs = [] } = {}) {
+  if (scratchpadDir) return scratchpadDir;
   const root = `/tmp/claude-${process.getuid?.() ?? 0}`;
-  let projects = [];
+  let real;
   try {
-    projects = readdirSync(root);
+    real = realpathSync(root);
   } catch {
     return "";
   }
-  for (const id of ids.filter((x) => /^[\w-]+$/.test(x ?? "")))
-    for (const p of projects) {
-      const dir = join(root, p, id, "scratchpad");
-      if (existsSync(dir)) return dir;
+  for (const id of sessionIds.filter((x) => /^[\w-]+$/.test(x ?? "")))
+    for (const p of projectDirs.filter(Boolean)) {
+      const tail = [p.replace(/[^A-Za-z0-9]/g, "-"), id, "scratchpad"];
+      try {
+        if (realpathSync(join(root, ...tail)) === join(real, ...tail)) return join(root, ...tail);
+      } catch {
+        // not there: try the next
+      }
     }
   return "";
 }
@@ -940,7 +947,10 @@ function rmPlace(t, dir, ctx, under = null) {
 function landing(real, ctx, under) {
   const own = ctx.own();
   const inside = (r) => r && (real.startsWith(r + sep) || (under && real === r));
-  if (![own.root, ctx.scratch()].some(inside)) return "deny";
+  const scratch = ctx.scratch();
+  // The scratchpad directory itself may go too (`rm -rf <scratchpad>`), as before STA-351.
+  const inScratch = scratch && (real === scratch || real.startsWith(scratch + sep));
+  if (!inScratch && !inside(own.root)) return "deny";
   // A find from the checkout root reaches its `.git` (a linked worktree's `.git` file links it).
   if (under?.git && real === own.root) return "deny";
   // `.git` holds the history and every linked worktree's admin directory (a worktree's `.git` file links it).
@@ -1771,7 +1781,7 @@ function substitutionDepth(c) {
 
 /**
  * The evaluation context: the command as written (`raw`, heredoc bodies included), the shell's directory, the
- * subagent type, the session's scratchpad (resolved, lazy), the session's own checkout (lazy) and a memo.
+ * agent type, the session's scratchpad (resolved, lazy), the session's own checkout (lazy) and a memo.
  */
 function context(raw, cwd, agentType, scratchpad) {
   let checkout;
@@ -1795,11 +1805,13 @@ function context(raw, cwd, agentType, scratchpad) {
 /**
  * The tier for a shell command: `{ decision: "allow" | "ask" | "deny", reason }`. Every rule runs on the command
  * and on its runner-free form (`lookThroughRunners`); any deny wins over any ask. Safety net (STA-254): deny rules
- * also run on every substitution body found with quotes ignored. From a subagent (`agentType` set) an ask is a deny
- * (`unattended`) unless every ask it hit is in `HUMAN_ASKS`; the main session keeps its asks.
+ * also run on every substitution body found with quotes ignored. From a subagent (`subagent`: the hook input has an
+ * `agent_id`, which the main thread never has, `--agent` sessions included) an ask is a deny (`unattended`) unless
+ * every ask it hit is in `HUMAN_ASKS`; the main thread's hook asks stay asks.
  * @param {string} raw the command as the agent wrote it
- * @param {{ cwd?: string, agentType?: string, scratchpad?: string }} [options] the shell's directory, the subagent
- *   type (`agent_type`) and the session's scratchpad directory (`sessionScratchpad`; none: no scratch `rm -rf`)
+ * @param {{ cwd?: string, agentType?: string, subagent?: boolean, scratchpad?: string }} [options] the shell's
+ *   directory, the agent type (`agent_type`, for the reviewer rule), whether a subagent runs it (`agent_id`), and
+ *   the session's scratchpad directory (`sessionScratchpad`; none: no scratch `rm -rf`)
  */
 export function decideBash(raw, options = {}) {
   try {
@@ -1811,7 +1823,10 @@ export function decideBash(raw, options = {}) {
 }
 const UNREADABLE =
   "The guard could not read this command, so it is denied. Split it into plain commands";
-function decide(raw, { cwd = process.cwd(), agentType = "", scratchpad = "" } = {}) {
+function decide(
+  raw,
+  { cwd = process.cwd(), agentType = "", subagent = false, scratchpad = "" } = {},
+) {
   clearCaches();
   gitRuns = 0;
   gitLate = false;
@@ -1859,7 +1874,7 @@ function decide(raw, { cwd = process.cwd(), agentType = "", scratchpad = "" } = 
         if (why) return done({ decision: "deny", reason: why });
       }
   }
-  if (agentType && rewrite) return done(unattended({ decision: "ask", reason: rewrite }));
+  if (subagent && rewrite) return done(unattended({ decision: "ask", reason: rewrite }));
   return done(asked ? { decision: "ask", reason: asked } : { decision: "allow", reason: "" });
 }
 
@@ -1914,21 +1929,31 @@ const JQ_VALUES = {
  * Short options of a search that take a value, besides `-e` (a pattern) and `-f` (a pattern file): the value is the
  * rest of the cluster (`-A3`) or the next word. Only known ones: a missed value shifts the pattern onto a file.
  */
-const SEARCH_SHORT = { grep: "ABCDdm", rg: "ABCEMTdgjmrt", other: "ABCm" };
+const SEARCH_SHORT = {
+  grep: "ABCDdm",
+  rg: "ABCEMTdgjmrt",
+  ag: "ABCGgm",
+  ack: "ABCgmt",
+  git: "ABCm",
+};
 /** Long options of a search whose value may be the next word (`--include '*.ts'`); `=` joins it otherwise. */
 const SEARCH_LONG = new Set(
-  "include exclude exclude-dir exclude-from context after-context before-context max-count label binary-files devices directories group-separator glob iglob type type-not replace max-depth max-columns threads encoding type-add ignore-file pre pre-glob sort sortr max-filesize path-separator".split(
+  "include exclude exclude-dir exclude-from context after-context before-context max-count label binary-files devices directories group-separator glob iglob type type-not replace max-depth max-columns threads encoding type-add ignore-file pre pre-glob sort sortr max-filesize path-separator context-separator".split(
     " ",
   ),
 );
+/** rg's own valued long options that grep reads differently (`grep --color` takes no next word). */
+const RG_LONG = new Set(["color", "colors", "field-context-separator", "field-match-separator"]);
 const SEARCHES = new Set(["grep", "egrep", "fgrep", "rg", "ag", "ack"]);
 /**
  * The indexes of a search's pattern words from `from` (STA-351): every `-e` / `--regexp` value, attached
  * (`-ex`, `-e=x`, `-nex`, `--regexp=x`) or the next word, or else the first operand, other options' values
- * skipped. With `-f` / `--file` (clustered too: `-nf .env`) the pattern comes from that file, which stays a word.
+ * skipped. With `-f` / `--file` (clustered too: `-nf .env`) the pattern comes from that file, which stays a word;
+ * an attached one (`-f.env`, `-nf.env`) is returned in `files`.
  */
-function patternIndexes(words, from, short) {
+function patternIndexes(words, from, short, longs) {
   const out = [];
+  const files = [];
   const operands = [];
   let given = false;
   for (let j = from; j < words.length; j++) {
@@ -1942,20 +1967,31 @@ function patternIndexes(words, from, short) {
       const joined = long[2] === "=";
       if (long[1] === "regexp" || long[1] === "file") given = true;
       if (long[1] === "regexp") out.push(joined ? j : j + 1);
-      if (!joined && (long[1] === "regexp" || long[1] === "file" || SEARCH_LONG.has(long[1]))) j++;
+      if (!joined && (long[1] === "regexp" || long[1] === "file" || longs.has(long[1]))) j++;
     } else if (/^-./.test(w)) {
       for (let k = 1; k < w.length; k++) {
         if (!(w[k] === "e" || w[k] === "f" || short.includes(w[k]))) continue;
         const attached = k < w.length - 1;
         if (w[k] === "e" || w[k] === "f") given = true;
         if (w[k] === "e") out.push(attached ? j : j + 1);
+        if (w[k] === "f" && attached) files.push(w.slice(k + 1).replace(/^=/, ""));
         if (!attached) j++;
         break;
       }
     } else operands.push(j);
   }
   if (!given && operands.length) out.push(operands[0]);
-  return out;
+  return { pattern: new Set(out), files };
+}
+/** git's global options whose value is the next word (`-C dir`, `-c k=v`, `--git-dir x`). */
+const GIT_GLOBAL_VALUE = new Set(["-C", "-c", "--git-dir", "--work-tree", "--namespace"]);
+/** The index of git's subcommand after `git` at `i`, global options and their values skipped; -1 when none. */
+function gitSubcommandAt(words, i) {
+  for (let j = i + 1; j < words.length; j++) {
+    if (GIT_GLOBAL_VALUE.has(words[j])) j++;
+    else if (!words[j].startsWith("-")) return j;
+  }
+  return -1;
 }
 /** git options whose value is a search pattern, never a file: `log -S…`, `-G…`, `--grep=…` (STA-351). */
 const GIT_PATTERN = /^(?:-[SG]|--grep)$/;
@@ -1986,11 +2022,13 @@ function withoutPrograms(words) {
     if (words.includes("-f") || words.includes("--from-file")) return words;
     return drop(firstOperand(words, i + 1, name === "jq" ? JQ_VALUES : {}));
   }
-  const sub = name === "git" ? words.findIndex((w, j) => j > i && !w.startsWith("-")) : -1;
+  const sub = name === "git" ? gitSubcommandAt(words, i) : -1;
   if (SEARCHES.has(name) || words[sub] === "grep") {
-    const tool = name === "rg" ? "rg" : /^[ef]?grep$/.test(name) ? "grep" : "other";
-    const pattern = new Set(patternIndexes(words, sub >= 0 ? sub + 1 : i + 1, SEARCH_SHORT[tool]));
-    return words.filter((_, j) => !pattern.has(j));
+    const tool = sub >= 0 ? "git" : /^[ef]?grep$/.test(name) ? "grep" : name;
+    const longs = tool === "rg" ? new Set([...SEARCH_LONG, ...RG_LONG]) : SEARCH_LONG;
+    const from = sub >= 0 ? sub + 1 : i + 1;
+    const { pattern, files } = patternIndexes(words, from, SEARCH_SHORT[tool], longs);
+    return [...words.filter((_, j) => !pattern.has(j)), ...files];
   }
   if (["log", "show", "diff"].includes(words[sub]))
     return words.filter(

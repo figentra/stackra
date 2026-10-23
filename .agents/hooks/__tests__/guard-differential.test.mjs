@@ -58,11 +58,11 @@ const fill = (c) =>
 decideBash("git status", { cwd: wt }); // warm the module before anything is timed
 
 /** Every case `[command, want]` that decides otherwise or too slowly, as readable lines. */
-function wrong(cases, cwd = wt, agentType = "") {
+function wrong(cases, cwd = wt, subagent = false) {
   const out = [];
   for (const [c, want] of cases) {
     const [t, git] = [performance.now(), gitMs];
-    const { decision, reason } = decideBash(fill(c), { cwd, agentType, scratchpad });
+    const { decision, reason } = decideBash(fill(c), { cwd, subagent, scratchpad });
     const ms = performance.now() - t - (gitMs - git);
     if (decision !== want) out.push(`${decision} (want ${want}) ${c}  [${reason.slice(0, 60)}]`);
     if (ms >= LIMIT_MS) out.push(`${ms.toFixed(0)} ms (limit ${LIMIT_MS}) ${c}`);
@@ -226,7 +226,7 @@ test("differential: from a subagent, every ask outside HUMAN_ASKS is a deny (STA
           return [wrap(c), tier === "ask" && !(HUMAN.has(c) && !asks) ? "deny" : tier];
         }),
         wt,
-        "Explore",
+        true,
       ),
     ),
     [],
@@ -529,6 +529,7 @@ const ALLOWED = [
   "rm -rf packages/*/node_modules",
   "rm -rf packages/a/node_modules",
   "rm -rf $SCRATCH/x",
+  "rm -rf $SCRATCH",
   "rm -f a.txt",
   // prose, output and quoted lines that run nothing guarded
   'echo "rm -rf / is denied; so is git stash pop"',

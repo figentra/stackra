@@ -14,10 +14,12 @@ import {
 } from "../_rules.mjs";
 
 const hook = new URL("../guard-bash.mjs", import.meta.url).pathname;
-/** The hook's output for a payload; the session id comes only from the payload, never this process's env. */
-const run = (payload) => {
+/** The hook's output for a payload; the session and project come only from the payload and `extra`. */
+const run = (payload, extra = {}) => {
   const env = { ...process.env };
   delete env.CLAUDE_CODE_SESSION_ID;
+  delete env.CLAUDE_PROJECT_DIR;
+  Object.assign(env, extra);
   const r = spawnSync("node", [hook], {
     input: JSON.stringify({ tool_name: "Bash", ...payload }),
     encoding: "utf8",
@@ -27,8 +29,8 @@ const run = (payload) => {
   return r.stdout ? JSON.parse(r.stdout).hookSpecificOutput : { permissionDecision: "allow" };
 };
 /** The hook's permissionDecision ("deny", "ask"), or "allow" when it prints nothing. */
-const decision = (command, cwd, agentType, sessionId) =>
-  run({ tool_input: { command }, cwd, agent_type: agentType, session_id: sessionId })
+const decision = (command, cwd, agentType, agentId) =>
+  run({ tool_input: { command }, cwd, agent_type: agentType, agent_id: agentId })
     .permissionDecision;
 const denied = (command) => decision(command) === "deny";
 const root = spawnSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).stdout.trim();
@@ -2566,13 +2568,20 @@ const REWRITABLE_ASKS = [
   "git config user.email t@t",
 ];
 
-// The main session (no `agent_type`, or an empty one) keeps its asks.
-test("STA-351: from a subagent an ask is a deny with the reason and the rewrite hint", () => {
+// The subagent signal is `agent_id` (review round 1 B1): the main thread has none, a `claude --agent x` session
+// included, which has an `agent_type` and keeps its asks.
+test("STA-351: from a subagent (agent_id) an ask is a deny with the reason and the rewrite hint", () => {
   for (const c of REWRITABLE_ASKS) {
     const main = run({ tool_input: { command: c }, cwd: root });
-    const sub = run({ tool_input: { command: c }, cwd: root, agent_type: "Explore" });
+    const sub = run({
+      tool_input: { command: c },
+      cwd: root,
+      agent_type: "Explore",
+      agent_id: "a1",
+    });
     assert.equal(main.permissionDecision, "ask", c);
-    assert.equal(decision(c, root, ""), "ask", c);
+    assert.equal(decision(c, root, "service-builder"), "ask", `--agent session: ${c}`);
+    assert.equal(decision(c, root, "", "a1"), "deny", `agent_id alone: ${c}`);
     assert.equal(sub.permissionDecision, "deny", c);
     const why = main.permissionDecisionReason.split("\n")[0];
     assert.ok(sub.permissionDecisionReason.startsWith(`${why}\n${UNATTENDED_HINT}`), c);
@@ -2593,10 +2602,11 @@ test("STA-351: HUMAN_ASKS still ask from a subagent; mixed with another ask, a s
   assert.deepEqual([...HUMAN_ASKS].sort(), Object.keys(human).sort());
   for (const c of Object.values(human)) {
     assert.equal(decision(c, worktree), "ask", c);
-    assert.equal(decision(c, worktree, "Explore"), "ask", c);
+    assert.equal(decision(c, worktree, "Explore", "a1"), "ask", c);
   }
   assert.equal(decision("eas build; cat x | sh", worktree), "ask");
-  assert.equal(decision("eas build; cat x | sh", worktree, "Explore"), "deny");
+  assert.equal(decision("eas build; cat x | sh", worktree, "Explore"), "ask");
+  assert.equal(decision("eas build; cat x | sh", worktree, "Explore", "a1"), "deny");
   done();
 });
 
@@ -2627,6 +2637,11 @@ test("STA-351 round 6: attached or clustered -e / -f and --regexp= / --file= nev
     "git grep -nf .env x",
     "rg -ex .env",
     "rg -nf .env x",
+    // review round 1: an attached pattern file
+    "grep -f.env x",
+    "grep -nf.env x",
+    "grep -f=.env x",
+    "git -C packages grep -nf.env x",
   ])
     assert.equal(decideBash(c, { cwd: root }).decision, "deny", c);
   for (const c of ["grep -e .env x", "grep -nie .env.local src", "grep --regexp=.env x"])
@@ -2661,34 +2676,61 @@ test("STA-351 round 6: patterns in substitutions, git log values and valued sear
     "grep -rn --exclude '*.md' action.key src",
     "grep -rn --exclude-dir node_modules action.key src",
     "rg -g '*.ts' action.key src",
+    // review round 1: valued options per tool, and git's global options before the subcommand
+    'rg --color never "a.key" src',
+    "rg --context-separator x a.key src",
+    "ag -G ts a.key",
+    "ack -t js a.key",
+    "git -C packages log -S a.key",
+    "git -C packages grep -e a.key",
   ])
     assert.equal(decideBash(c, { cwd: root }).decision, "allow", c);
   for (const c of ["x=$(cat .env)", "git log -p -- .env", "grep -r KEY --include=.env ."])
     assert.equal(decideBash(c, { cwd: root }).decision, "deny", c);
 });
 
+/** `sessionScratchpad` for these session ids and project directories. */
+const findScratchpad = (sessionIds, projectDirs) => sessionScratchpad({ sessionIds, projectDirs });
+
 test("STA-351 round 6: rm -rf reaches only this session's scratchpad, from the hook's session_id", () => {
   const uid = process.getuid?.() ?? 0;
-  const project = `/tmp/claude-${uid}/stackra-guard-test-${process.pid}`;
+  const projectDir = `/stackra-guard-test-${process.pid}`; // its folder: every non-alphanumeric a "-"
+  const project = `/tmp/claude-${uid}/-stackra-guard-test-${process.pid}`;
+  const decoy = `/tmp/claude-${uid}/-AAA-decoy-${process.pid}`;
   const id = "00000000-0000-4000-8000-000000000351";
   const pad = join(project, id, "scratchpad");
+  const outside = mkdtempSync(join(tmpdir(), "guard-outside-"));
   mkdirSync(pad, { recursive: true });
+  mkdirSync(join(decoy, id), { recursive: true });
+  symlinkSync(outside, join(decoy, id, "scratchpad")); // review round 1 S1: a decoy pointing outside the root
+  symlinkSync(outside, join(project, "linked")); // a session folder that is a symlink
+  mkdirSync(join(outside, "scratchpad"));
+  const env = { CLAUDE_PROJECT_DIR: projectDir };
+  const inSession = (command, payload = {}) =>
+    run({ tool_input: { command }, cwd: root, session_id: id, ...payload }, env).permissionDecision;
   try {
-    assert.equal(sessionScratchpad(undefined, id), pad);
-    assert.equal(sessionScratchpad("no-such-session"), "");
-    assert.equal(sessionScratchpad("../x", ""), "");
-    assert.equal(decision(`rm -rf ${pad}/x`, root, "", id), "allow");
-    assert.equal(decision(`rm -rf ${pad}/x`, root, "Explore", id), "allow");
-    assert.equal(decision(`rm -rf ${pad}/x`, root), "deny"); // no session id, no scratchpad
+    assert.equal(findScratchpad([undefined, id], [undefined, projectDir]), pad);
+    assert.equal(findScratchpad(["no-such-session"], [projectDir]), "");
+    assert.equal(findScratchpad(["../x"], [projectDir]), "");
+    assert.equal(findScratchpad([id], ["/AAA/decoy"]), "");
+    assert.equal(findScratchpad([id], [`/AAA/decoy-${process.pid}`]), "");
+    assert.equal(findScratchpad(["linked"], [projectDir]), "");
+    assert.equal(sessionScratchpad({ scratchpadDir: outside, sessionIds: [id] }), outside);
+    for (const c of [`rm -rf ${pad}/x`, `rm -rf ${pad}`, `find ${pad} -delete`])
+      assert.equal(inSession(c), "allow", c);
+    assert.equal(inSession(`rm -rf ${pad}/x`, { agent_id: "a1" }), "allow");
+    assert.equal(inSession(`rm -rf ${outside}/x`, { scratchpad_dir: outside }), "allow");
+    assert.equal(inSession(`rm -rf ${pad}/x`, { session_id: undefined }), "deny"); // no session, no scratchpad
     for (const c of [
       `rm -rf /tmp/claude-${uid}/*`,
       `rm -rf /tmp/claude-${uid}/x`,
       `rm -rf ${project}/other-session/scratchpad/x`,
       `rm -rf ${pad}/..`,
-      `rm -rf ${pad}`,
+      `rm -rf ${decoy}/${id}/scratchpad/x`,
+      `rm -rf ${outside}/x`,
     ])
-      assert.equal(decision(c, root, "", id), "deny", c);
+      assert.equal(inSession(c), "deny", c);
   } finally {
-    rmSync(project, { recursive: true, force: true });
+    for (const d of [project, decoy, outside]) rmSync(d, { recursive: true, force: true });
   }
 });

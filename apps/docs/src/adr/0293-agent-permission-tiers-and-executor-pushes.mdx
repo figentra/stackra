@@ -14,16 +14,19 @@ description: "Accepted · 2026-10-22"
 </Note>
 
 <Note>
-  Amended 2026-10-23 (STA-351): a subagent's ask is a deny. When the hook input names a subagent
-  (non-empty `agent_type`), every ask becomes a deny that carries its reason and one line on how to
+  Amended 2026-10-23 (STA-351): a subagent's hook ask is a deny. When the hook input carries an
+  `agent_id` (a subagent; the main thread never has one, a `claude --agent` session included), every
+  ask from the guard hook becomes a deny that carries its reason and one line on how to
   rewrite the command so the guard can read it (no `bash -c`, `sh -c` or `eval` around a loop, no
   computed command name), because the owner does not watch a subagent's prompts and the agent sat idle
   until answered. The decisions in `HUMAN_ASKS` (`_rules.mjs`) still reach a human from a subagent:
   `secrets:import … --confirm`, tag pushes, `encore db reset`, `encore env`, `wrangler deploy` and the
-  other Cloudflare changes, and `eas`. The main session keeps every ask. OpenCode's ask-to-deny is the
-  same `unattended` function. The `rm -rf` scratch place is the session's own scratchpad directory
-  (`/tmp/claude-<uid>/<project>/<session>/scratchpad`, found from the hook's `session_id` or
-  `CLAUDE_CODE_SESSION_ID`), no longer the whole `/tmp/claude-<uid>` tree.
+  other Cloudflare changes, and `eas`. The main thread keeps every hook ask; the ask rules of
+  `.claude/settings.json` are not the hook's and can still prompt from a subagent. OpenCode's ask-to-deny
+  is the same `unattended` function. The `rm -rf` scratch place is the session's own scratchpad
+  directory (the hook input's `scratchpad_dir`, or `/tmp/claude-<uid>/<project>/<session>/scratchpad`
+  for the hook's `session_id` or `CLAUDE_CODE_SESSION_ID` and the project's own folder, its real path
+  only), no longer the whole `/tmp/claude-<uid>` tree.
 </Note>
 
 ## Context
@@ -42,7 +45,7 @@ cover what GitHub cannot see.
 ## Decision
 
 1. **Three tiers, the same for both tools.** Allow, ask (a human confirms) and deny. OpenCode runs unattended and
-   `--auto` approves any ask, so for OpenCode every ask is a deny; so is a Claude subagent's, outside `HUMAN_ASKS`
+   `--auto` approves any ask, so for OpenCode every ask is a deny; so is a Claude subagent's hook ask, outside `HUMAN_ASKS`
    (amendment of 2026-10-23).
    - **Allow**: local git in the session's own worktree (commit, branch, rebase, reset, cherry-pick, stash push, list,
      show and `apply <ref>`, `git config --worktree` of a display, identity or rerere key), the repository's pnpm
