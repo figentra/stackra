@@ -58,7 +58,7 @@ export class OrderResource extends Resource(Order, {
   (`extends Notification({ category })` with its `.mail.tsx`) appears on the View page's Messages tab.
 - **Widgets**: display kinds are Kpi, KpiGroup, Chart, Table, List, Progress, Timeline, View and Custom; only Custom
   takes a renderer. Slots are typed (`Slots.Orders.Order.List.Header`); `refreshEvery` is at least 30 seconds;
-  `refreshOn` names events.
+  `refreshOn` names integration events only (a domain event fails gen).
 
 ## Routes and components (ADR 0053, 0165, 0232 as amended)
 

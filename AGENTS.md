@@ -348,7 +348,7 @@ config → lib → app
 3. **No cross-service imports** - Services don't import from other services (use events or the generated client)
 4. **Packages import from own layer or below** - Never from apps/services
 5. **Inside a package, entries point one way** - `src/contracts/` is a leaf; `core` imports `contracts`; `node`, `react` and `native` import `core`; `testing` imports them all. No symbol is exported from two entries (ADR 0294 decision 15, ADR 0117 as amended)
-6. **Sibling modules import only public groups** - a module reaches a sibling only through its exported classes, `schemas/`, `enums/`, `events/`, `errors/` and `access/*.permissions.ts`, and through `models/` only from `models/` and `database/`, for relations (ADR 0294 decision 24). Imports use `#modules/<key>/<group>/...` (ADR 0233 as amended)
+6. **Sibling modules import only public groups** - a module reaches a sibling only through its exported classes, `schemas/`, `enums/`, `events/`, `errors/`, `access/*.permissions.ts` and `extensions/*.extension-point.ts`, and through `models/` only from `models/` and `database/`, for relations (ADR 0294 decision 24). Imports use `#modules/<key>/<group>/...` (ADR 0233 as amended)
 
 #### Forbidden Patterns
 
@@ -428,7 +428,7 @@ code may still show the older forms; write new code in the v3 form.
 - **Code style**: whole words; acronyms cased as words (`userId`, `ApiClient`, `loadHttpUrl`); no `I` prefix; abbreviations only `id`, `url`, `api`, `db`, `i18n`, `ui` (so `kbd` is refused: the package is `@stackra/shortcuts`); booleans `is`, `has`, `can`; handlers `on` or `handle`; React hooks `use`; module-level constants SCREAMING_SNAKE.
 - **Files**: kebab-case `<name>.<kind>.ts(x)` in the kind's one home group (ADR 0294 decisions 1 and 13 to 15). **Packages**: `@stackra/<kebab>`; services `@figentra/service-<kebab>`.
 - **Class names**: one primary export per file, named `PascalCase(stem) + PascalCase(kind)`: `cancel-order.action.ts` exports `CancelOrderAction`. Noun kinds (model, schema, enum, event, signal, analytics event, type) take no suffix; error classes end in `Error`. Companions in the same file: `<Name>Input` and `<Name>Output` (action, query, prompt), `<Name>Props` (component), `<Name>Data` (notification).
-- **Identities are derived, not typed** (ADR 0294 decision 20): module key from the folder, member key from the package name, permission `<module>.<model>.<verb>` from a `<Model>Permissions` static, error code from the class name. Written once: an action or query `key` (`order.cancel`, which becomes `orders.order.cancel@1`), an event `name` (`order.paid`, which becomes `orders.order.paid.v1`), a route `path`. `stackra.manifest.json` locks each one; a change needs `@Renamed(old)`.
+- **Identities are derived, not typed** (ADR 0294 decision 20): module key from the folder, member key from the member folder name, permission `<module>.<model>.<verb>` from a `<Model>Permissions` static, error code from the class name. Written once: an action or query `key` (`order.cancel`, which becomes `orders.order.cancel@1`), an event `name` (`order.paid`, which becomes `orders.order.paid.v1`), a route `path`. `stackra.manifest.json` locks each one; a change needs `@Renamed(old)`.
 - **Public ids**: `<prefix>_<26 characters>`, typed `PublicId<"ord">`; only a seeder's `static ids` spells one out. **Branches**: `figentra/sta-<n>-<slug>`.
 - **Wire identifiers keep dots**: action keys `orders.order.cancel@1`, permissions `orders.order.cancel`, events `orders.order.paid.v1`.
 - **Machine codes** (categories, error codes, refusal codes, event reasons, gen error codes): snake_case.
@@ -760,9 +760,10 @@ new code in the v3 shape where the member already allows it.
 - Backend services in plain TypeScript; `stackra gen` emits the Encore app (ADRs 0091, 0124)
 - Independent workspace members; feature modules in `src/modules/<key>/`, each with the module groups of ADR 0294
   decision 13 (`models/`, `actions/`, `queries/`, `schemas/`, `enums/`, `errors/`, `events/`, `listeners/`,
-  `workflows/`, `access/`, `services/`, `drivers/`, `extensions/`, `resources/<model>/`, `database/{migrations,factories,seeders}/`,
-  `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its first file; `database/` is per module,
-  its migrations numbered per module, and each module's tables live in its own Postgres schema
+  `workflows/`, `access/`, `services/`, `drivers/`, `extensions/`, `integrations/`, `connections/`, `resources/<model>/`,
+  `database/{migrations,factories,seeders}/`, `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its
+  first file; `database/` is per module, its migrations numbered per module, and each module's tables live in its own
+  Postgres schema
 - Config classes in `src/config/`; the public type surface in `src/contracts/`
 
 ##### Apps (<name>)
@@ -770,7 +771,8 @@ new code in the v3 shape where the member already allows it.
 - Console: Vite web app; Docs: Mintlify documentation site; Mobile: Expo React Native app
 - App groups (ADR 0294 decision 14): `src/<key>.module.ts`, `src/app.error.tsx`, `config/`, `routes/<name>/`,
   `components/<name>/`, `blocks/<name>/`, `panels/`, `menus/`, `shortcuts/`, `documents/`, `stores/`, `flags/`,
-  `analytics/`, `bridges/`, `hooks/` (two or more importers), `overrides/<owner>/`, `enums/`, `types/`, `styles/`
+  `analytics/`, `bridges/`, `hooks/` (two or more importers), `overrides/<owner>/`, `schemas/`, `errors/`, `enums/`,
+  `types/`, `styles/`
 - Docs (`apps/docs`) is the exception: Mintlify pages, `docs.json` and `assets/` in `src/`
 
 ##### Workers (<name>)
