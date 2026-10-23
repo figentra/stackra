@@ -3,15 +3,14 @@
  * Purpose: the page of the chip route: every variant by every tone in every size, start, end and both icons, a
  *          direction-aware chevron, chips inside running text and in a list, and a live sample that steps through
  *          variants and tones, all from `@stackra/ui/react` with real props.
- * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. Icons come from `lucide-react`
- *          through `Ui.Icon`.
+ * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. Icons are drawn by name
+ *          through `Ui.Icon`, from the registry in `components/playground-icons` (ADR 0303 decision 10).
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 3 and 7); ADR 0304; ADR 0060 (light, dark,
  *          RTL).
  */
 import { ChipVariant, Size, Tone } from "@stackra/ui/contracts";
 import * as Ui from "@stackra/ui/react";
-import { Check, ChevronRight } from "lucide-react";
 import { createElement, useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -111,20 +110,22 @@ export function Chip() {
       <PageSection id="chip-icons" title={STRINGS.icons} note={STRINGS.iconsNote}>
         <ul className={ROW}>
           <li>
-            <Ui.Chip tone="success" startIcon={<Ui.Icon as={Check} />}>
+            <Ui.Chip tone="success" startIcon="check">
               {STRINGS.start}
             </Ui.Chip>
           </li>
           <li>
-            <Ui.Chip endIcon={<Ui.Icon as={ChevronRight} isMirroredInRtl />}>{STRINGS.end}</Ui.Chip>
+            <Ui.Chip endIcon={<Ui.Icon name="chevron-right" isMirroredInRtl />}>
+              {STRINGS.end}
+            </Ui.Chip>
           </li>
           <li>
             <Ui.Chip
               variant="soft"
               tone="accent"
               size="lg"
-              startIcon={<Ui.Icon as={Check} />}
-              endIcon={<Ui.Icon as={ChevronRight} isMirroredInRtl />}
+              startIcon="check"
+              endIcon={<Ui.Icon name="chevron-right" isMirroredInRtl />}
             >
               {STRINGS.both}
             </Ui.Chip>
@@ -172,7 +173,7 @@ export function Chip() {
           </Ui.Button>
         </div>
         <div className={ROW}>
-          <Ui.Chip variant={variant} tone={tone} startIcon={<Ui.Icon as={Check} />}>
+          <Ui.Chip variant={variant} tone={tone} startIcon="check">
             {STRINGS.current(variant, tone)}
           </Ui.Chip>
         </div>

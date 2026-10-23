@@ -34,9 +34,9 @@
   "dependencies": {
     "@heroui/react": "catalog:frontend",
     "@heroui/styles": "catalog:frontend",
+    "@stackra/icons": "workspace:*",
     "@stackra/tokens": "workspace:*",
     "@stackra/ui": "workspace:*",
-    "lucide-react": "catalog:frontend",
     "react": "catalog:frontend",
     "react-dom": "catalog:frontend",
     "react-router": "catalog:frontend"

@@ -3,13 +3,12 @@
  * Purpose: the page of the close-button route: the default CloseButton, one with an icon of its own, a disabled one,
  *          and one inside a `Card` whose dismissal hides the card and a Button restores it, all from
  *          `@stackra/ui/react` with real props.
- * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. Icons come from `lucide-react`
- *          directly, because @stackra/ui does not re-export Lucide in wave 1 (ADR 0303 decision 3).
+ * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. Icons are drawn by name
+ *          through `Ui.Icon`, from the registry in `components/playground-icons` (ADR 0303 decision 10).
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 3 and 7); WCAG 2.2 SC 4.1.2 and 2.5.8.
  */
 import * as Ui from "@stackra/ui/react";
-import { CircleX } from "lucide-react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -57,7 +56,7 @@ export function CloseButton() {
             <Ui.CloseButton label={STRINGS.default} />
           </li>
           <li>
-            <Ui.CloseButton label={STRINGS.custom} icon={<Ui.Icon as={CircleX} size="sm" />} />
+            <Ui.CloseButton label={STRINGS.custom} icon={<Ui.Icon name="circle-x" size="sm" />} />
           </li>
           <li>
             <Ui.CloseButton label={STRINGS.disabled} isDisabled />

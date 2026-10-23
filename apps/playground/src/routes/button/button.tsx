@@ -3,14 +3,13 @@
  * Purpose: the page of the button route: every Button variant in every size, the disabled and loading states, start,
  *          end and both icons, a direction-aware chevron, full width, and live samples (a save that loads for a
  *          moment, a press counter), all from `@stackra/ui/react` with real props.
- * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. Icons come from `lucide-react`
- *          directly, because @stackra/ui does not re-export Lucide in wave 1 (ADR 0303 decision 3).
+ * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. Icons are drawn by name
+ *          through `Ui.Icon`, from the registry in `components/playground-icons` (ADR 0303 decision 10).
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 3 and 7); ADR 0060 (right-to-left).
  */
 import { ButtonVariant, Size } from "@stackra/ui/contracts";
 import * as Ui from "@stackra/ui/react";
-import { ChevronRight, Download, Plus } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -131,20 +130,23 @@ export function Button() {
       <PageSection id="button-icons" title={STRINGS.icons} note={STRINGS.iconsNote}>
         <ul className={ROW}>
           <Sample caption="startIcon">
-            <Ui.Button variant="secondary" startIcon={<Ui.Icon as={Plus} />}>
+            <Ui.Button variant="secondary" startIcon="plus">
               {STRINGS.add}
             </Ui.Button>
           </Sample>
           <Sample caption="endIcon">
-            <Ui.Button variant="secondary" endIcon={<Ui.Icon as={ChevronRight} isMirroredInRtl />}>
+            <Ui.Button
+              variant="secondary"
+              endIcon={<Ui.Icon name="chevron-right" isMirroredInRtl />}
+            >
               {STRINGS.next}
             </Ui.Button>
           </Sample>
           <Sample caption="startIcon + endIcon">
             <Ui.Button
               variant="secondary"
-              startIcon={<Ui.Icon as={Download} />}
-              endIcon={<Ui.Icon as={ChevronRight} isMirroredInRtl />}
+              startIcon="download"
+              endIcon={<Ui.Icon name="chevron-right" isMirroredInRtl />}
             >
               {STRINGS.download}
             </Ui.Button>

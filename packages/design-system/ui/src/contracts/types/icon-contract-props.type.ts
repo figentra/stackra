@@ -8,14 +8,15 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0165 (UI contract); ADR 0060 (right-to-left).
  */
+import type { IconName } from "@stackra/icons/contracts";
+
 import type { Size } from "#contracts/enums/size.enum";
 import type { TextTone } from "#contracts/enums/text-tone.enum";
-import type { IconComponent } from "#contracts/types/icon-component.type";
 
 /** Props shared by the web and native `Icon`. */
 export interface IconContractProps {
-  /** The icon component to draw: a Lucide icon such as `ChevronRight`, or any component with the same props. */
-  readonly as: IconComponent;
+  /** The icon to draw, by name: a Lucide name such as `chevron-right`, an alias, or a namespaced custom icon. A name no registry holds draws nothing. */
+  readonly name: IconName;
   /** The size: `sm` 16 px, `md` 20 px, `lg` 24 px. Left out, it is `md`, or the size the component holding it sets. */
   readonly size?: Size | undefined;
   /** The colour role it is drawn in, `muted` included as on Text. Left out, it takes the colour of its surroundings: the text on web, the holder on native. */

@@ -9,7 +9,7 @@
  *          decision 6 of STA-350 (thin wrappers).
  */
 import { Avatar as HeroAvatar, cn, type AvatarRootProps } from "@heroui/react";
-import { LucideProvider, UserRound } from "lucide-react";
+import { LucideProvider } from "lucide-react";
 import { useLocale } from "react-aria-components";
 
 import type { AvatarContractProps } from "#contracts/types/avatar-contract-props.type";
@@ -49,7 +49,7 @@ export function Avatar({
   const { locale } = useLocale();
   const initials = name ? initialsOf(name, locale) : "";
   const content =
-    fallback ?? (initials === "" ? <Icon as={UserRound} size={size ?? "md"} /> : initials);
+    fallback ?? (initials === "" ? <Icon name="user-round" size={size ?? "md"} /> : initials);
   // The image is `alt=""` because a `role="img"` root already carries the name and its children are presentational.
   const accessibility = label ? { role: "img", "aria-label": label } : { "aria-hidden": true };
 

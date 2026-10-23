@@ -13,13 +13,16 @@ import { AvatarShape, AvatarVariant, Size, Tone } from "@stackra/ui/contracts";
 import { DesignSystemProvider } from "@stackra/ui/react";
 import { act, render, screen, within } from "@testing-library/react";
 
+import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Avatar } from "#src/routes/avatar/avatar";
 import { AvatarRoute } from "#src/routes/avatar/avatar.route";
 
 function renderPage() {
   render(
     <DesignSystemProvider colorScheme="light" locale="en">
-      <Avatar />
+      <PlaygroundIcons>
+        <Avatar />
+      </PlaygroundIcons>
     </DesignSystemProvider>,
   );
 }

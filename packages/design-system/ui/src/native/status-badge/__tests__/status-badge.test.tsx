@@ -52,6 +52,17 @@ vi.mock("react-native", async () => {
 
 const propsOf = (name: string) => received.props[name] ?? {};
 
+// The slot's Icon needs a native runtime: a name draws a marker, an element is drawn as given.
+vi.mock("#native/slot-icon/slot-icon", async () => {
+  const { createElement } = await import("react");
+  return {
+    SlotIcon: ({ icon }: { readonly icon?: unknown }) =>
+      typeof icon === "string"
+        ? createElement("i", { "data-testid": "slot-icon", "data-name": icon })
+        : (icon ?? null),
+  };
+});
+
 describe("StatusBadge (native)", () => {
   beforeEach(() => {
     received.props = {};

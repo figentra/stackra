@@ -2,14 +2,13 @@
  * Stackra file contract:
  * Purpose: the page of the icon-button route: every IconButton variant in every size, each named by its `label`, the
  *          disabled and loading states, and a live press counter, all from `@stackra/ui/react` with real props.
- * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. Icons come from `lucide-react`
- *          directly, because @stackra/ui does not re-export Lucide in wave 1 (ADR 0303 decision 3).
+ * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. Icons are drawn by name
+ *          through `Ui.Icon`, from the registry in `components/playground-icons` (ADR 0303 decision 10).
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 3 and 7); WCAG 2.2 SC 4.1.2 and 2.5.8.
  */
 import { ButtonVariant, Size } from "@stackra/ui/contracts";
 import * as Ui from "@stackra/ui/react";
-import { Settings, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -80,7 +79,7 @@ export function IconButton() {
                     variant={variant}
                     size={size}
                     label={isDanger(variant) ? STRINGS.delete : STRINGS.settings}
-                    icon={<Ui.Icon as={isDanger(variant) ? Trash2 : Settings} />}
+                    icon={isDanger(variant) ? "trash" : "settings"}
                   />
                 </li>
               ))}
@@ -92,10 +91,10 @@ export function IconButton() {
       <PageSection id="icon-button-states" title={STRINGS.states} note={STRINGS.statesNote}>
         <ul className={ROW}>
           <li>
-            <Ui.IconButton isDisabled label={STRINGS.disabled} icon={<Ui.Icon as={Settings} />} />
+            <Ui.IconButton isDisabled label={STRINGS.disabled} icon="settings" />
           </li>
           <li>
-            <Ui.IconButton isLoading label={STRINGS.loading} icon={<Ui.Icon as={Settings} />} />
+            <Ui.IconButton isLoading label={STRINGS.loading} icon="settings" />
           </li>
         </ul>
       </PageSection>
@@ -104,7 +103,7 @@ export function IconButton() {
         <div className={ROW}>
           <Ui.IconButton
             label={STRINGS.count}
-            icon={<Ui.Icon as={Settings} />}
+            icon="settings"
             onPress={() => setCount((value) => value + 1)}
           />
           <output aria-live="polite" data-testid="press-count">
@@ -115,7 +114,7 @@ export function IconButton() {
           <Ui.IconButton
             variant="secondary"
             label={STRINGS.load}
-            icon={<Ui.Icon as={Settings} />}
+            icon="settings"
             isLoading={isLoading}
             onPress={() => setIsLoading(true)}
           />

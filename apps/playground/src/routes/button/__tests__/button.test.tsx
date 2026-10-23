@@ -10,13 +10,16 @@ import { ButtonVariant, Size } from "@stackra/ui/contracts";
 import { DesignSystemProvider } from "@stackra/ui/react";
 import { act, render, screen, within } from "@testing-library/react";
 
+import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Button } from "#src/routes/button/button";
 import { ButtonRoute } from "#src/routes/button/button.route";
 
 function renderPage() {
   render(
     <DesignSystemProvider colorScheme="light" locale="en">
-      <Button />
+      <PlaygroundIcons>
+        <Button />
+      </PlaygroundIcons>
     </DesignSystemProvider>,
   );
 }

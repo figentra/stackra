@@ -11,7 +11,6 @@
  *          decision 6 of STA-350.
  */
 import { LinkButton, type LinkButtonProps } from "heroui-native";
-import { ExternalLink } from "lucide-react-native";
 import { use } from "react";
 import { Linking } from "react-native";
 
@@ -92,7 +91,7 @@ export function Link({
       </LinkButton.Label>
       {isExternal ? (
         <Icon
-          as={ExternalLink}
+          name="external-link"
           size="sm"
           tone={tone === "default" ? undefined : tone}
           isMirroredInRtl

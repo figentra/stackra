@@ -14,6 +14,7 @@ import {
 import type { CloseButtonContractProps } from "#contracts/types/close-button-contract-props.type";
 import type { DistributiveOmit } from "#contracts/types/distributive-omit.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { SlotIcon } from "#native/slot-icon/slot-icon";
 
 /**
  * Props of the native CloseButton: the shared contract plus HeroUI Native's own close-button props, passed through
@@ -34,7 +35,7 @@ export function CloseButton({ label, icon, isDisabled, onPress, ...rest }: Close
       {...omitUndefined({ isDisabled, onPress })}
       accessibilityLabel={label}
     >
-      {icon}
+      {icon === undefined ? undefined : <SlotIcon icon={icon} />}
     </HeroCloseButton>
   );
 }

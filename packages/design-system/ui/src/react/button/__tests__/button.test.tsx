@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
-// @covers sta-350:FR-022 sta-350:FR-024 sta-350:P-016
+// @covers sta-350:FR-022 sta-350:FR-024 sta-350:P-016 sta-350:FR-053
 import { act, render, screen } from "@testing-library/react";
 import { createRef } from "react";
 
@@ -154,5 +154,15 @@ describe("Button (web)", () => {
     void (<Button isPending />);
     // @ts-expect-error `isFullWidth` is the one name for the full-width state
     void (<Button fullWidth />);
+  });
+
+  it("draws an icon name through Icon and an element as given", () => {
+    const { container } = render(
+      <Button startIcon="user-round" endIcon={<i data-testid="mine" />}>
+        Add
+      </Button>,
+    );
+    expect(container.querySelector("svg.lucide-user-round")).toBeTruthy();
+    expect(container.querySelector('[data-testid="mine"]')).toBeTruthy();
   });
 });

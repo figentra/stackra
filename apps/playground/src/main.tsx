@@ -13,6 +13,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 
+import { PlaygroundIcons } from "#src/components/playground-icons";
 import { PlaygroundShell } from "#src/components/playground-shell";
 import { Avatar } from "#src/routes/avatar/avatar";
 import { AvatarRoute } from "#src/routes/avatar/avatar.route";
@@ -91,6 +92,8 @@ if (!root) throw new Error("index.html is missing #root");
 
 createRoot(root).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <PlaygroundIcons>
+      <RouterProvider router={router} />
+    </PlaygroundIcons>
   </StrictMode>,
 );

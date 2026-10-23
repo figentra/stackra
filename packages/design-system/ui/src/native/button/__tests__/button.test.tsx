@@ -10,7 +10,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
-// @covers sta-350:FR-023 sta-350:FR-024 sta-350:P-016
+// @covers sta-350:FR-023 sta-350:FR-024 sta-350:P-016 sta-350:FR-053
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
@@ -58,9 +58,37 @@ const order = (container: HTMLElement) =>
 /** The accessibility state the button was handed, typed for the assertions. */
 const stateOf = () => propsOf("button")["accessibilityState"] as Record<string, unknown>;
 
+// The slot's Icon needs a native runtime: a name draws a marker, an element is drawn as given.
+vi.mock("#native/slot-icon/slot-icon", async () => {
+  const { createElement } = await import("react");
+  return {
+    SlotIcon: ({ icon }: { readonly icon?: unknown }) =>
+      typeof icon === "string"
+        ? createElement("i", { "data-testid": "slot-icon", "data-name": icon })
+        : (icon ?? null),
+  };
+});
+
+/** The icon names the slot stand-in drew, in document order. */
+const slotNames = (container: HTMLElement) =>
+  [...container.querySelectorAll('[data-testid="slot-icon"]')].map((node) =>
+    node.getAttribute("data-name"),
+  );
+
 describe("Button (native)", () => {
   beforeEach(() => {
     received.props = {};
+  });
+
+  it("draws an icon name through Icon on either side and an element as given", () => {
+    const { container } = render(
+      <Button startIcon="plus" endIcon="chevron-right">
+        Add
+      </Button>,
+    );
+    expect(slotNames(container)).toEqual(["plus", "chevron-right"]);
+    const second = render(<Button startIcon={<i data-testid="mine" />}>Add</Button>);
+    expect(second.container.querySelector('[data-testid="mine"]')).toBeTruthy();
   });
 
   it.each(ButtonVariant)("hands %s and every size to HeroUI Native unchanged", (variant) => {

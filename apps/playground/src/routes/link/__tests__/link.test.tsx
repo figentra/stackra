@@ -11,6 +11,7 @@ import { DesignSystemProvider } from "@stackra/ui/react";
 import { act, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 
+import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Link } from "#src/routes/link/link";
 import { LinkRoute } from "#src/routes/link/link.route";
 
@@ -18,7 +19,9 @@ function renderPage(url = "/link?scheme=dark&locale=ar") {
   render(
     <MemoryRouter initialEntries={[url]}>
       <DesignSystemProvider colorScheme="light" locale="en">
-        <Link />
+        <PlaygroundIcons>
+          <Link />
+        </PlaygroundIcons>
       </DesignSystemProvider>
     </MemoryRouter>,
   );

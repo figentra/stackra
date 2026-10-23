@@ -12,6 +12,7 @@ import type { ReactNode } from "react";
 
 import type { ButtonVariant } from "#contracts/enums/button-variant.enum";
 import type { Size } from "#contracts/enums/size.enum";
+import type { IconSlot } from "#contracts/types/icon-slot.type";
 
 /** Props shared by the web and native `Button`. */
 export interface ButtonContractProps {
@@ -27,10 +28,10 @@ export interface ButtonContractProps {
   readonly isLoading?: boolean | undefined;
   /** True to stretch the button to the full width of its container. */
   readonly isFullWidth?: boolean | undefined;
-  /** An element drawn before the label, on the inline-start side; any icon element. */
-  readonly startIcon?: ReactNode;
-  /** An element drawn after the label, on the inline-end side; any icon element. */
-  readonly endIcon?: ReactNode;
+  /** An element drawn before the label, on the inline-start side: an icon name or any icon element. */
+  readonly startIcon?: IconSlot;
+  /** An element drawn after the label, on the inline-end side: an icon name or any icon element. */
+  readonly endIcon?: IconSlot;
   /** The accessible name when it must differ from the visible label. */
   readonly label?: string | undefined;
   /** Called when the button is pressed, by pointer, touch or keyboard. */

@@ -13,6 +13,7 @@ import { Chip as HeroChip, cn, type ChipRootProps } from "@heroui/react";
 import type { ComponentPropsWithRef } from "react";
 
 import type { ChipContractProps } from "#contracts/types/chip-contract-props.type";
+import { SlotIcon } from "#react/slot-icon/slot-icon";
 
 /** HeroUI's props for a `span` chip: its own props plus the `span` attributes, as its generic signature spreads them. */
 type HeroChipProps = ChipRootProps<"span"> &
@@ -50,9 +51,9 @@ export function Chip({
       // `size-[1em]`: HeroUI sizes no icon inside a chip; the text's own size is the one that fits.
       className={cn("[&_svg]:size-[1em]", className) ?? ""}
     >
-      {startIcon}
+      <SlotIcon icon={startIcon} />
       {isText ? <HeroChip.Label>{children}</HeroChip.Label> : children}
-      {endIcon}
+      <SlotIcon icon={endIcon} />
     </HeroChip>
   );
 }

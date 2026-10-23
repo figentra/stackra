@@ -35,8 +35,8 @@ which groups it in the shell's navigation and on the index. The end-to-end suite
 
 Every finished component belongs here, to be checked, tried and tested: each variant, size, tone and state with a
 short caption, and at least one live sample (a pressable button that updates a counter or toggles state). Pages
-import the kit as `import * as Ui from "@stackra/ui/react"`; `@stackra/ui` does not re-export Lucide in wave 1, so
-icons come from `lucide-react` directly.
+import the kit as `import * as Ui from "@stackra/ui/react"`; icons are drawn by name (`<Ui.Icon name="search" />`), from the registry in
+`src/components/playground-icons`, which holds only the icons the pages use.
 
 ## Commands
 

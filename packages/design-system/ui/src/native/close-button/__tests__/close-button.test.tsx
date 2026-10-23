@@ -9,7 +9,7 @@
  *          placement).
  */
 // @vitest-environment jsdom
-// @covers sta-350:FR-023 sta-350:FR-024 sta-350:P-016
+// @covers sta-350:FR-023 sta-350:FR-024 sta-350:P-016 sta-350:FR-053
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
@@ -29,9 +29,31 @@ vi.mock("heroui-native", async () => {
   };
 });
 
+// The slot's Icon needs a native runtime: a name draws a marker, an element is drawn as given.
+vi.mock("#native/slot-icon/slot-icon", async () => {
+  const { createElement } = await import("react");
+  return {
+    SlotIcon: ({ icon }: { readonly icon?: unknown }) =>
+      typeof icon === "string"
+        ? createElement("i", { "data-testid": "slot-icon", "data-name": icon })
+        : (icon ?? null),
+  };
+});
+
+/** The icon names the slot stand-in drew, in document order. */
+const slotNames = (container: HTMLElement) =>
+  [...container.querySelectorAll('[data-testid="slot-icon"]')].map((node) =>
+    node.getAttribute("data-name"),
+  );
+
 describe("CloseButton (native)", () => {
   beforeEach(() => {
     received.props = {};
+  });
+
+  it("draws an icon name through Icon in place of the close mark", () => {
+    const { container } = render(<CloseButton label="Dismiss" icon="circle-x" />);
+    expect(slotNames(container)).toEqual(["circle-x"]);
   });
 
   it("names itself by label", () => {

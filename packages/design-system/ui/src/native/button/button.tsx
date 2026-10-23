@@ -25,6 +25,7 @@ import type { ButtonVariant } from "#contracts/enums/button-variant.enum";
 import type { ButtonContractProps } from "#contracts/types/button-contract-props.type";
 import type { DistributiveOmit } from "#contracts/types/distributive-omit.type";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
+import { SlotIcon } from "#native/slot-icon/slot-icon";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 
 /**
@@ -98,9 +99,9 @@ export function Button({
       accessibilityState={{ ...accessibilityState, disabled: isBlocked, busy: isLoading }}
     >
       <LucideProvider size={ICON_SIZES[size === "sm" ? "sm" : "md"]} color={labelColor}>
-        {isLoading ? <Spinner size="sm" color={labelColor} /> : startIcon}
+        {isLoading ? <Spinner size="sm" color={labelColor} /> : <SlotIcon icon={startIcon} />}
         {content}
-        {endIcon}
+        <SlotIcon icon={endIcon} />
       </LucideProvider>
     </HeroButton>
   );

@@ -13,6 +13,7 @@ import {
 
 import type { CloseButtonContractProps } from "#contracts/types/close-button-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { SlotIcon } from "#react/slot-icon/slot-icon";
 
 /**
  * Props of the web CloseButton: the shared contract plus HeroUI v3's own close-button props, passed through. HeroUI's
@@ -25,7 +26,7 @@ export type CloseButtonProps = CloseButtonContractProps &
 export function CloseButton({ label, icon, isDisabled, onPress, ...rest }: CloseButtonProps) {
   return (
     <HeroCloseButton {...rest} {...omitUndefined({ isDisabled, onPress })} aria-label={label}>
-      {icon}
+      {icon === undefined ? undefined : <SlotIcon icon={icon} />}
     </HeroCloseButton>
   );
 }

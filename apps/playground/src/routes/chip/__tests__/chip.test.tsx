@@ -10,13 +10,16 @@ import { DesignSystemProvider } from "@stackra/ui/react";
 import { act, render, screen, within } from "@testing-library/react";
 import { ChipVariant, Size, Tone } from "@stackra/ui/contracts";
 
+import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Chip } from "#src/routes/chip/chip";
 import { ChipRoute } from "#src/routes/chip/chip.route";
 
 function renderPage() {
   render(
     <DesignSystemProvider colorScheme="light" locale="en">
-      <Chip />
+      <PlaygroundIcons>
+        <Chip />
+      </PlaygroundIcons>
     </DesignSystemProvider>,
   );
 }

@@ -9,13 +9,16 @@
 import { DesignSystemProvider } from "@stackra/ui/react";
 import { act, render, screen, within } from "@testing-library/react";
 
+import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Badge } from "#src/routes/badge/badge";
 import { BadgeRoute } from "#src/routes/badge/badge.route";
 
 function renderPage() {
   render(
     <DesignSystemProvider colorScheme="light" locale="en">
-      <Badge />
+      <PlaygroundIcons>
+        <Badge />
+      </PlaygroundIcons>
     </DesignSystemProvider>,
   );
 }

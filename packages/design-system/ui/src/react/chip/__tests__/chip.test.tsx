@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0304 (decision 3); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
-// @covers sta-350:FR-033 sta-350:FR-034 sta-350:P-019 sta-350:P-023 sta-350:P-025
+// @covers sta-350:FR-033 sta-350:FR-034 sta-350:P-019 sta-350:P-023 sta-350:P-025 sta-350:FR-053
 import { render, screen } from "@testing-library/react";
 import { createElement, createRef } from "react";
 
@@ -115,5 +115,15 @@ describe("Chip (web)", () => {
     render(<Chip onClick={() => undefined}>x</Chip>);
     // @ts-expect-error the text is the chip's name, so a chip needs children
     render(<Chip />);
+  });
+
+  it("draws an icon name through Icon and an element as given", () => {
+    const { container } = render(
+      <Chip startIcon="user-round" endIcon={<i data-testid="mine" />}>
+        Done
+      </Chip>,
+    );
+    expect(container.querySelector("svg.lucide-user-round")).toBeTruthy();
+    expect(container.querySelector('[data-testid="mine"]')).toBeTruthy();
   });
 });

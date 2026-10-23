@@ -10,7 +10,6 @@
  */
 import { AvatarShape, AvatarVariant, Size, Tone } from "@stackra/ui/contracts";
 import * as Ui from "@stackra/ui/react";
-import { Building2 } from "lucide-react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -161,7 +160,7 @@ export function Avatar() {
             <Ui.Avatar
               shape="square"
               name={STRINGS.organisation}
-              fallback={<Ui.Icon as={Building2} />}
+              fallback={<Ui.Icon name="building" />}
               data-sample="organisation"
             />
             <Ui.Text tone="muted" type="small">

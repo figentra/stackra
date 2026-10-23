@@ -16,7 +16,7 @@ import {
   type AvatarRootProps,
   type ThemeColor,
 } from "heroui-native";
-import { LucideProvider, UserRound } from "lucide-react-native";
+import { LucideProvider } from "lucide-react-native";
 
 import type { AvatarContractProps } from "#contracts/types/avatar-contract-props.type";
 import { AVATAR_SQUARE_CLASS_NAME } from "#core/constants/avatar-square-class-name.constant";
@@ -81,7 +81,7 @@ export function Avatar({
   // string child as text, and one wrapped in a provider would reach a View, which React Native refuses.
   const isText = typeof fallback === "string" || typeof fallback === "number";
   const text = isText ? fallback : fallback === undefined && initials !== "" ? initials : undefined;
-  const content = fallback ?? <Icon as={UserRound} size={size ?? "md"} />;
+  const content = fallback ?? <Icon name="user-round" size={size ?? "md"} />;
   const isSquare = shape === "square";
   const accessibility = label
     ? { accessible: true, role: "img" as const, accessibilityLabel: label, alt: label }

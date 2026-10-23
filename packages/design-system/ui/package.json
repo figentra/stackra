@@ -112,6 +112,9 @@
     "format:check": "oxfmt --check .",
     "clean": "rm -rf dist coverage .turbo"
   },
+  "dependencies": {
+    "@stackra/icons": "workspace:*"
+  },
   "devDependencies": {
     "@heroui/react": "catalog:frontend",
     "@stackra/tsdown-config": "workspace:*",

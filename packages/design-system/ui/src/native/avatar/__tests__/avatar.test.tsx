@@ -137,9 +137,9 @@ describe("Avatar (native)", () => {
     expect(getByTestId("fallback").textContent).toBe("AL");
     expect(getByTestId("fallback").querySelector('[data-testid="provider"]')).toBeNull();
     rerender(<Avatar size="lg" />);
-    expect(propsOf("icon")).toMatchObject({ as: "UserRound", size: "lg" });
+    expect(propsOf("icon")).toMatchObject({ name: "user-round", size: "lg" });
     rerender(<Avatar name="   " />);
-    expect(propsOf("icon")).toMatchObject({ as: "UserRound", size: "md" });
+    expect(propsOf("icon")).toMatchObject({ name: "user-round", size: "md" });
   });
 
   it("sizes and colours a fallback icon through the Lucide provider, in the tone's soft foreground", () => {

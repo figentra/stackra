@@ -38,9 +38,9 @@ export type { CloseButtonContractProps } from "#contracts/types/close-button-con
 export type { DesignSystemProviderProps } from "#contracts/types/design-system-provider-props.type";
 export type { DesignSystemState } from "#contracts/types/design-system-state.type";
 export type { HeadingContractProps } from "#contracts/types/heading-contract-props.type";
-export type { IconComponent, IconComponentProps } from "#contracts/types/icon-component.type";
 export type { IconButtonContractProps } from "#contracts/types/icon-button-contract-props.type";
 export type { IconContractProps } from "#contracts/types/icon-contract-props.type";
+export type { IconSlot } from "#contracts/types/icon-slot.type";
 export type { LinkContractProps } from "#contracts/types/link-contract-props.type";
 export type { SeparatorContractProps } from "#contracts/types/separator-contract-props.type";
 export type { SkeletonContractProps } from "#contracts/types/skeleton-contract-props.type";

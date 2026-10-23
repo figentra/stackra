@@ -10,7 +10,6 @@
  */
 import { BadgePlacement, BadgeVariant, Size, Tone } from "@stackra/ui/contracts";
 import * as Ui from "@stackra/ui/react";
-import { Bell } from "lucide-react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -184,7 +183,7 @@ export function Badge() {
             <Ui.Badge.Anchor>
               <Disc />
               <Ui.Badge tone="danger" size="lg" label={STRINGS.icon}>
-                <Bell className="size-3" aria-hidden />
+                <Ui.Icon name="bell" className="size-3" />
               </Ui.Badge>
             </Ui.Badge.Anchor>
           </li>
@@ -197,7 +196,7 @@ export function Badge() {
             <Ui.IconButton
               variant="secondary"
               label={STRINGS.controlLabel(count)}
-              icon={<Ui.Icon as={Bell} />}
+              icon={<Ui.Icon name="bell" />}
               onPress={() => {
                 setCount((value) => value + 1);
                 setPresses((value) => value + 1);

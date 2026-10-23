@@ -10,7 +10,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0304 (decision 3); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
-// @covers sta-350:FR-033 sta-350:FR-035 sta-350:P-019 sta-350:P-023 sta-350:P-025
+// @covers sta-350:FR-033 sta-350:FR-035 sta-350:P-019 sta-350:P-023 sta-350:P-025 sta-350:FR-053
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
@@ -53,9 +53,37 @@ const order = (container: HTMLElement) =>
     (node) => node.getAttribute("data-testid") ?? node.textContent,
   );
 
+// The slot's Icon needs a native runtime: a name draws a marker, an element is drawn as given.
+vi.mock("#native/slot-icon/slot-icon", async () => {
+  const { createElement } = await import("react");
+  return {
+    SlotIcon: ({ icon }: { readonly icon?: unknown }) =>
+      typeof icon === "string"
+        ? createElement("i", { "data-testid": "slot-icon", "data-name": icon })
+        : (icon ?? null),
+  };
+});
+
+/** The icon names the slot stand-in drew, in document order. */
+const slotNames = (container: HTMLElement) =>
+  [...container.querySelectorAll('[data-testid="slot-icon"]')].map((node) =>
+    node.getAttribute("data-name"),
+  );
+
 describe("Chip (native)", () => {
   beforeEach(() => {
     received.props = {};
+  });
+
+  it("draws an icon name through Icon on either side and an element as given", () => {
+    const { container } = render(
+      <Chip startIcon="check" endIcon="chevron-right">
+        Done
+      </Chip>,
+    );
+    expect(slotNames(container)).toEqual(["check", "chevron-right"]);
+    const second = render(<Chip startIcon={<i data-testid="mine" />}>Done</Chip>);
+    expect(second.container.querySelector('[data-testid="mine"]')).toBeTruthy();
   });
 
   it("is a secondary, default, medium chip, not HeroUI Native's filled accent one", () => {

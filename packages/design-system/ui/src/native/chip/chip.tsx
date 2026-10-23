@@ -18,6 +18,7 @@ import type { ChipVariant } from "#contracts/enums/chip-variant.enum";
 import type { Size } from "#contracts/enums/size.enum";
 import type { Tone } from "#contracts/enums/tone.enum";
 import type { ChipContractProps } from "#contracts/types/chip-contract-props.type";
+import { SlotIcon } from "#native/slot-icon/slot-icon";
 
 /**
  * Props of the native Chip: the shared contract plus HeroUI Native's own chip props, passed through unchanged.
@@ -60,9 +61,9 @@ export function Chip({
     <HeroChip {...rest} variant={variant} color={tone} size={size}>
       {/* Both fields: a nested Lucide provider replaces every one the app's provider set. */}
       <LucideProvider size={CHIP_ICON_SIZE[size]} color={color}>
-        {startIcon}
+        <SlotIcon icon={startIcon} />
         {isText ? <HeroChip.Label>{children}</HeroChip.Label> : children}
-        {endIcon}
+        <SlotIcon icon={endIcon} />
       </LucideProvider>
     </HeroChip>
   );

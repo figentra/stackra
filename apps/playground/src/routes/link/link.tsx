@@ -6,14 +6,13 @@
  *          `@stackra/ui/react` with real props.
  * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n, text in another language
  *          carries its own `lang`. A hover-only link never sits inside a paragraph: the theme's link colour equals the
- *          text colour, so only the underline tells it apart there (WCAG 1.4.1). Icons come from `lucide-react`
- *          directly (ADR 0303 decision 3).
+ *          text colour, so only the underline tells it apart there (WCAG 1.4.1). Icons are drawn by name
+ *          through `Ui.Icon` (ADR 0303 decision 10).
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 5 and 7); ADR 0060 (right-to-left).
  */
 import { Tone } from "@stackra/ui/contracts";
 import * as Ui from "@stackra/ui/react";
-import { Settings } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useLocation } from "react-router";
 
@@ -135,7 +134,7 @@ export function Link() {
           </li>
           <li>
             <Ui.Link href="https://heroui.com" isExternal label={STRINGS.externalLabel}>
-              <Ui.Icon as={Settings} />
+              <Ui.Icon name="settings" />
             </Ui.Link>
           </li>
         </ul>
@@ -161,7 +160,7 @@ export function Link() {
           </li>
           <li>
             <Ui.Link href={`${here}#link-states`} label={STRINGS.settingsLabel}>
-              <Ui.Icon as={Settings} />
+              <Ui.Icon name="settings" />
             </Ui.Link>
           </li>
           <li>

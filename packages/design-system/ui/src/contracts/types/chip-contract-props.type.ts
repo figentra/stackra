@@ -13,6 +13,7 @@ import type { ReactNode } from "react";
 import type { ChipVariant } from "#contracts/enums/chip-variant.enum";
 import type { Size } from "#contracts/enums/size.enum";
 import type { Tone } from "#contracts/enums/tone.enum";
+import type { IconSlot } from "#contracts/types/icon-slot.type";
 
 /** Props shared by the web and native `Chip`. */
 export interface ChipContractProps {
@@ -24,8 +25,8 @@ export interface ChipContractProps {
   readonly size?: Size | undefined;
   /** The colour role of the chip, a theme role such as `success`. Defaults to `default`. */
   readonly tone?: Tone | undefined;
-  /** An element drawn before the text, on the inline-start side; any icon element, sized to the text. */
-  readonly startIcon?: ReactNode;
-  /** An element drawn after the text, on the inline-end side; any icon element, sized to the text. */
-  readonly endIcon?: ReactNode;
+  /** An element drawn before the text, on the inline-start side: an icon name or any icon element, sized to the text. */
+  readonly startIcon?: IconSlot;
+  /** An element drawn after the text, on the inline-end side: an icon name or any icon element, sized to the text. */
+  readonly endIcon?: IconSlot;
 }

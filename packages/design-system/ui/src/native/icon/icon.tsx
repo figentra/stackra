@@ -1,21 +1,24 @@
 /**
  * Stackra file contract:
- * Purpose: the native `Icon`: draws a lucide-react-native icon (or any component with the same props) at a Stackra
+ * Purpose: the native `Icon`: draws an icon by name, resolved through the `@stackra/icons` registry, at a Stackra
  *          size and in a tone's resolved theme colour (`useThemeColor`), hidden from VoiceOver and TalkBack unless it
  *          has a label, and mirrored in right-to-left (`useIsRTL`) when it points the reading way.
- * Boundary: draws one Svg; without a size or tone it follows the nearest LucideProvider (the holder's, or the
+ * Boundary: draws one Svg, or nothing for a name no registry holds; without a size or tone it follows the nearest LucideProvider (the holder's, or the
  *          DesignSystemProvider's default). React Native ignores `aria-*` on the Svg host view, so accessibility goes
  *          through the `accessibility*` props.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 3 and 7); ADR 0165 (HeroUI Native on native);
- *          ADR 0060 (RTL).
+ *          ADR 0060 (RTL); ADR 0303 (decision 10).
  */
+import { findIcon } from "@stackra/icons";
+import { useIcon } from "@stackra/icons/native";
 import { useIsRTL, useThemeColor } from "heroui-native";
 import type { LucideProps } from "lucide-react-native";
 import type { ComponentType } from "react";
 
 import type { IconContractProps } from "#contracts/types/icon-contract-props.type";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
+import { UI_ICONS } from "#native/icon/ui-icons.constant";
 
 /** Svg and View props that reach the drawn icon; the contract's props, colour and accessibility stay the wrapper's. */
 type IconPassthroughProps = Omit<
@@ -42,16 +45,27 @@ export type IconProps = IconContractProps & IconPassthroughProps;
 const MIRRORED_STYLE = { transform: [{ scaleX: -1 }] } as const;
 
 /**
- * Draws a lucide-react-native icon, or any component with the same props, at a Stackra size and tone. Without a
+ * Draws the icon a name stands for at a Stackra size and tone: the app's registry first, then the few icons this
+ * package draws itself. A name neither holds draws nothing. Without a
  * `label` it is decorative and hidden from screen readers. Without a `size` or `tone` it takes the holder's.
  */
-export function Icon({ as, size, tone, label, isMirroredInRtl, style, ...rest }: IconProps) {
+export function Icon({
+  name: iconName,
+  size,
+  tone,
+  label,
+  isMirroredInRtl,
+  style,
+  ...rest
+}: IconProps) {
   const isRtl = useIsRTL();
   // Called on every render, so the hook order is stable; the colour is used only when a tone is given.
   const toneColor = useThemeColor(tone === undefined || tone === "default" ? "foreground" : tone);
   // A cast, not an assignment: the contract's component props leave out `undefined` on purpose (so every Lucide icon
   // is an IconComponent under exactOptionalPropertyTypes), which makes the reverse direction fail to compile.
-  const Drawn = as as ComponentType<Omit<LucideProps, "color"> & { color?: string }>;
+  const found = useIcon(iconName) ?? findIcon(UI_ICONS, iconName);
+  if (found === undefined) return null;
+  const Drawn = found as ComponentType<Omit<LucideProps, "color"> & { color?: string }>;
   const name = label
     ? { accessible: true, role: "img" as const, accessibilityLabel: label }
     : {

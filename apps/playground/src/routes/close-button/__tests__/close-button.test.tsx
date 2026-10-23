@@ -9,13 +9,16 @@
 import { DesignSystemProvider } from "@stackra/ui/react";
 import { act, render, screen, within } from "@testing-library/react";
 
+import { PlaygroundIcons } from "#src/components/playground-icons";
 import { CloseButton } from "#src/routes/close-button/close-button";
 import { CloseButtonRoute } from "#src/routes/close-button/close-button.route";
 
 function renderPage() {
   render(
     <DesignSystemProvider colorScheme="light" locale="en">
-      <CloseButton />
+      <PlaygroundIcons>
+        <CloseButton />
+      </PlaygroundIcons>
     </DesignSystemProvider>,
   );
 }

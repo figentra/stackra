@@ -1,30 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: the page of the icon route: every Icon size, tone, decorative and labelled use, the directional icons that
- *          mirror in right-to-left beside ones that never do, an app's own SVG component drawn through Icon, the SVG
- *          props that pass through, and a live sample whose size and tone a button cycles.
- * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. Icons come from `lucide-react`
- *          directly, because @stackra/ui does not re-export Lucide in wave 1 (ADR 0303 decision 3).
+ *          mirror in right-to-left beside ones that never do, an alias and an app's own SVG component drawn by name
+ *          through Icon, the SVG props that pass through, and a live sample whose size and tone a button cycles.
+ * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. Icons are drawn by name from
+ *          the registry in `components/playground-icons`; the page nests a provider for its own custom icon.
  * Runtime: browser
- * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 3 and 7); ADR 0060 (right-to-left).
+ * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 7 and 10); ADR 0060 (right-to-left).
  */
+import { defineIconRegistry } from "@stackra/icons";
+import type { IconComponentProps, IconName } from "@stackra/icons/contracts";
+import { IconRegistryProvider } from "@stackra/icons/react";
 import { ICON_SIZES } from "@stackra/ui";
-import { Size, TextTone, type IconComponentProps } from "@stackra/ui/contracts";
+import { Size, TextTone } from "@stackra/ui/contracts";
 import * as Ui from "@stackra/ui/react";
-import {
-  ArrowRight,
-  ChevronRight,
-  Check,
-  CircleCheck,
-  Heart,
-  Play,
-  Plus,
-  Search,
-  SendHorizontal,
-  Star,
-  Undo2,
-  type LucideIcon,
-} from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { PageSection } from "#src/components/page-section";
@@ -34,7 +23,7 @@ import { IconRoute } from "#src/routes/icon/icon.route";
 const STRINGS = {
   documentTitle: `${IconRoute.title} · Stackra Playground`,
   intro:
-    "Icon draws a Lucide icon, or any component with the same props, at one of three sizes and in a colour role of the theme. It is hidden from screen readers unless it has a label, and it can mirror in right-to-left.",
+    "Icon draws an icon by name, at one of three sizes and in a colour role of the theme. The name is a Lucide name, a semantic alias or an app's own namespaced icon, and the registry decides what it draws. It is hidden from screen readers unless it has a label, and it can mirror in right-to-left.",
   sizes: "Sizes",
   sizesNote: "Decorative icons: no label, so assistive technology skips them.",
   tones: "Tones",
@@ -51,10 +40,11 @@ const STRINGS = {
     "Switch the language to Arabic: the icons that point the reading way flip, the ones that depict an object do not.",
   mirrored: "Mirrored in right-to-left",
   neverMirrored: "Never mirrored",
-  components: "Any icon component",
+  components: "Names, aliases and custom icons",
   componentsNote:
-    "An app's own SVG component with the same props is drawn through Icon, at all three sizes.",
-  rawElement: "A raw Lucide element, as an icon slot of a button takes it",
+    "An alias resolves to a Lucide icon, and an app's own SVG component is registered under its own namespace: both are drawn through Icon, by name.",
+  alias: "orders, an alias of shopping-cart",
+  rawElement: "A raw element, as an icon slot of a button takes it",
   passthrough: "Pass-through",
   passthroughNote:
     "Every other SVG prop reaches the icon: a thinner stroke and a class are set here.",
@@ -69,18 +59,18 @@ const STRINGS = {
 } as const;
 
 /** The directional icons that mirror, each labelled so it can be found by its name. */
-const MIRRORED: readonly (readonly [string, LucideIcon, string])[] = [
-  ["Next", ChevronRight, "ChevronRight"],
-  ["Continue", ArrowRight, "ArrowRight"],
-  ["Send", SendHorizontal, "SendHorizontal"],
-  ["Undo", Undo2, "Undo2"],
+const MIRRORED: readonly (readonly [string, IconName])[] = [
+  ["Next", "chevron-right"],
+  ["Continue", "arrow-right"],
+  ["Send", "send-horizontal"],
+  ["Undo", "undo-2"],
 ];
 
 /** The icons that depict an object, a check or media, and so are never mirrored. */
-const NEVER_MIRRORED: readonly (readonly [string, LucideIcon, string])[] = [
-  ["Search", Search, "Search"],
-  ["Done", Check, "Check"],
-  ["Play", Play, "Play"],
+const NEVER_MIRRORED: readonly (readonly [string, IconName])[] = [
+  ["Search", "search"],
+  ["Done", "check"],
+  ["Play", "play"],
 ];
 
 /** An app's own icon: a ring and a dot on Lucide's 24-unit grid, drawn in `currentColor` like a Lucide icon. */
@@ -100,6 +90,9 @@ function Mark({ size = 24, strokeWidth = 2 }: IconComponentProps) {
     </svg>
   );
 }
+
+/** The page's own custom icon, registered under its namespace so it is drawn by name like any other. */
+const PAGE_ICONS = defineIconRegistry({ "playground::mark": Mark });
 
 /** A sample with its caption underneath, the caption isolated left to right. */
 function Sample({ caption, children }: { caption: string; children: ReactNode }) {
@@ -138,7 +131,7 @@ export function Icon() {
         <ul className={ROW}>
           {Size.map((each) => (
             <Sample key={each} caption={`${each} · ${ICON_SIZES[each]} px`}>
-              <Ui.Icon as={Search} size={each} />
+              <Ui.Icon name="search" size={each} />
             </Sample>
           ))}
         </ul>
@@ -148,12 +141,12 @@ export function Icon() {
         <ul className={ROW}>
           {TextTone.map((each) => (
             <Sample key={each} caption={each}>
-              <Ui.Icon as={CircleCheck} size="lg" tone={each} label={each} />
+              <Ui.Icon name="circle-check" size="lg" tone={each} label={each} />
             </Sample>
           ))}
         </ul>
         <Ui.Text tone="muted" className="flex items-center gap-2">
-          <Ui.Icon as={CircleCheck} />
+          <Ui.Icon name="circle-check" />
           <bdi>{STRINGS.inherits}</bdi>
         </Ui.Text>
       </PageSection>
@@ -161,13 +154,13 @@ export function Icon() {
       <PageSection id="icon-names" title={STRINGS.names} note={STRINGS.namesNote}>
         <ul className={ROW}>
           <li className="flex items-center gap-2">
-            <Ui.Icon as={Heart} />
+            <Ui.Icon name="heart" />
             <Ui.Text>
               <bdi>{STRINGS.favourites}</bdi>
             </Ui.Text>
           </li>
           <li className="flex items-center gap-2">
-            <Ui.Icon as={Star} label={STRINGS.rated} />
+            <Ui.Icon name="star" label={STRINGS.rated} />
           </li>
         </ul>
       </PageSection>
@@ -175,42 +168,57 @@ export function Icon() {
       <PageSection id="icon-rtl" title={STRINGS.rtl} note={STRINGS.rtlNote}>
         <Ui.Heading level={3}>{STRINGS.mirrored}</Ui.Heading>
         <ul className={ROW}>
-          {MIRRORED.map(([name, component, caption]) => (
-            <Sample key={name} caption={caption}>
-              <Ui.Icon as={component} size="lg" label={name} isMirroredInRtl />
+          {MIRRORED.map(([label, name]) => (
+            <Sample key={label} caption={name}>
+              <Ui.Icon name={name} size="lg" label={label} isMirroredInRtl />
             </Sample>
           ))}
         </ul>
         <Ui.Heading level={3}>{STRINGS.neverMirrored}</Ui.Heading>
         <ul className={ROW}>
-          {NEVER_MIRRORED.map(([name, component, caption]) => (
-            <Sample key={name} caption={caption}>
-              <Ui.Icon as={component} size="lg" label={name} />
+          {NEVER_MIRRORED.map(([label, name]) => (
+            <Sample key={label} caption={name}>
+              <Ui.Icon name={name} size="lg" label={label} />
             </Sample>
           ))}
         </ul>
       </PageSection>
 
       <PageSection id="icon-components" title={STRINGS.components} note={STRINGS.componentsNote}>
-        <ul className={ROW}>
-          {Size.map((each) => (
-            <Sample key={each} caption={`Mark · ${each}`}>
-              <Ui.Icon as={Mark} size={each} />
+        <IconRegistryProvider registry={PAGE_ICONS}>
+          <ul className={ROW}>
+            <Sample caption={STRINGS.alias}>
+              <Ui.Icon name="orders" size="lg" />
             </Sample>
-          ))}
-          <Sample caption={STRINGS.rawElement}>
-            <Plus aria-hidden="true" />
-          </Sample>
-        </ul>
+            {Size.map((each) => (
+              <Sample key={each} caption={`playground::mark · ${each}`}>
+                <Ui.Icon name="playground::mark" size={each} />
+              </Sample>
+            ))}
+            <Sample caption={STRINGS.rawElement}>
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </Sample>
+          </ul>
+        </IconRegistryProvider>
       </PageSection>
 
       <PageSection id="icon-passthrough" title={STRINGS.passthrough} note={STRINGS.passthroughNote}>
         <ul className={ROW}>
           <Sample caption={STRINGS.thinStroke}>
-            <Ui.Icon as={Search} size="lg" strokeWidth={1.5} />
+            <Ui.Icon name="search" size="lg" strokeWidth={1.5} />
           </Sample>
           <Sample caption={STRINGS.withClass}>
-            <Ui.Icon as={Search} size="lg" className="opacity-50" data-testid="passed-class" />
+            <Ui.Icon name="search" size="lg" className="opacity-50" data-testid="passed-class" />
           </Sample>
         </ul>
       </PageSection>
@@ -233,7 +241,7 @@ export function Icon() {
           >
             {STRINGS.nextTone}
           </Ui.Button>
-          <Ui.Icon as={Star} size={size} tone={tone} data-testid="live-icon" />
+          <Ui.Icon name="star" size={size} tone={tone} data-testid="live-icon" />
         </div>
         <Ui.Text role="status" tone="muted">
           <bdi>{STRINGS.state(size, tone, presses)}</bdi>

@@ -117,3 +117,11 @@ test("the live icon changes size when its button is pressed", async ({ page }) =
   await expect(live).toHaveAttribute("width", "24");
   await expect(page.getByRole("status")).toContainText("pressed 1 time");
 });
+
+test("draws an alias and an app's own namespaced icon by name", async ({ page }) => {
+  await open(page, "light", "en");
+  const region = page.getByRole("region", { name: "Names, aliases and custom icons" });
+  // `orders` is an alias of `shopping-cart`; the three marks come from the page's own registry and the last svg is a raw element.
+  await expect(region.locator("svg.lucide-shopping-cart")).toHaveCount(1);
+  await expect(region.locator("svg:not(.lucide)")).toHaveCount(4);
+});

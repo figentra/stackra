@@ -6,18 +6,21 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0303 (decision 3); ADR 0022 (test placement).
  */
-// @covers sta-350:FR-016 sta-350:P-015
+// @covers sta-350:FR-052 sta-350:FR-016 sta-350:P-015
 import { TextTone } from "@stackra/ui/contracts";
 import { DesignSystemProvider } from "@stackra/ui/react";
 import { act, render, screen, within } from "@testing-library/react";
 
+import { PlaygroundIcons } from "#src/components/playground-icons";
 import { Icon } from "#src/routes/icon/icon";
 import { IconRoute } from "#src/routes/icon/icon.route";
 
 function renderPage(locale = "en") {
   render(
     <DesignSystemProvider colorScheme="light" locale={locale}>
-      <Icon />
+      <PlaygroundIcons>
+        <Icon />
+      </PlaygroundIcons>
     </DesignSystemProvider>,
   );
 }
@@ -100,12 +103,15 @@ describe("Icon page", () => {
       expect(screen.getByRole("img", { name }).style.transform, name).toBe("");
   });
 
-  it("draws an app's own component at the three sizes and passes className through", () => {
+  it("draws an alias and an app's own namespaced icon at the three sizes, and passes className through", () => {
     renderPage();
     const components = [
-      ...screen.getByRole("region", { name: "Any icon component" }).querySelectorAll("svg"),
+      ...screen
+        .getByRole("region", { name: "Names, aliases and custom icons" })
+        .querySelectorAll("svg"),
     ];
-    expect(components.slice(0, 3).map((svg) => svg.getAttribute("width"))).toEqual([
+    expect(components[0]?.classList.contains("lucide-shopping-cart")).toBe(true);
+    expect(components.slice(1, 4).map((svg) => svg.getAttribute("width"))).toEqual([
       "16",
       "20",
       "24",

@@ -41,12 +41,11 @@ raised. This page records the answers.
    - Our `DropZone` is built on React Aria's `DropZone` and `FileTrigger`. HeroUI Pro's DropZone is not used in `@stackra/ui`.
 3. **Icons are Lucide.**
    - The components use one icon set: Lucide (ISC licence, official packages for web and native).
-   - Every icon prop accepts any React element, so an app may pass another set (Heroicons, for example) without a change to the
-     component.
+   - An icon slot accepts an icon name or any React element, so an app may pass its own SVG without a change to the component
+     (decision 10 sets the name model).
    - `@stackra/ui` draws them from wave 1: its `Icon` renders `lucide-react` on the web and `lucide-react-native` on
      native, both optional peers of `@stackra/ui` and pinned in `catalog:frontend` and `catalog:mobile`.
-   - `@stackra/icons`, when it starts, re-exports Lucide on its web and native entries (and any name registry); the
-     components keep taking elements.
+   - `@stackra/icons` holds the Lucide maps for both platforms (decision 10), so `@stackra/ui` resolves a name through it.
 4. **Forms follow [0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters), now Accepted.** Form state is react-hook-form,
    validation is Zod and the HeroUI field adapters live in `@stackra/ui` ([0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs)
    decision 2). `react-hook-form` joins `catalog:frontend` with `FormField`, not in wave 1.
@@ -77,8 +76,8 @@ raised. This page records the answers.
    | Other states      | `isFullWidth`, `isExternal`, `isTruncated`, `isMirroredInRtl` | boolean                                                      | Button, Link, Text and Heading, Icon                                 | `fullWidth`, `truncate`                         |
    | Accessible name   | `label`                                                       | string                                                       | Button (override), IconButton and CloseButton (required), Icon, Link | `aria-label`, `accessibilityLabel`              |
    | Spoken state text | `<state>Label`                                                | string                                                       | Link `externalLabel`; later Button `loadingLabel`                    | none                                            |
-   | Icon slots        | `icon`, `startIcon`, `endIcon`                                | `ReactNode`                                                  | IconButton, CloseButton, Button                                      | `isIconOnly` (only through IconButton)          |
-   | Icon component    | `as`                                                          | `IconComponent`                                              | Icon                                                                 | Lucide `color`, `width`, `height`               |
+   | Icon slots        | `icon`, `startIcon`, `endIcon`                                | `IconSlot` (an `IconName` or an element)                     | IconButton, CloseButton, Button, Chip                                | `isIconOnly` (only through IconButton)          |
+   | Icon name         | `name`                                                        | `IconName`                                                   | Icon                                                                 | Lucide `color`, `width`, `height`               |
    | Press             | `onPress`                                                     | `() => void`                                                 | Button, IconButton, CloseButton, Link                                | none (the event still arrives)                  |
    | Contract type     | `<Name>ContractProps`                                         | contracts                                                    | all                                                                  | runtime file exports `<Name>Props`              |
 
@@ -94,6 +93,25 @@ raised. This page records the answers.
    - `h5`: 16 / 1.5 / 600 / 0
    - `h6`: 14 / 1.5 / 600 / 0
    - Each has an Arabic twin (`-ar`), applied to Arabic text only, at +1 px and +0.2 line height.
+10. **Icons are drawn by name.** Owner, 2026-10-23.
+    - A declaration (a resource, menu, widget, setting, action or document, and backend code) names an icon by `IconName`, a
+      plain string in the manifest and on the wire. It never imports a component.
+    - `@stackra/icons` is the one home of the model. Its `./contracts` entry exports `IconName`: a Lucide name from the pinned
+      set (kebab-case, generated from `lucide-react` and committed, with a test that fails when it drifts), a Stackra alias
+      (`orders` resolves to `shopping-cart`), or a namespaced custom name (`loyalty::points-badge`, the template type
+      `${string}::${string}`).
+    - Resolution is per platform in `@stackra/icons`: `./react` maps a name to a `lucide-react` component and `./native` to a
+      `lucide-react-native` one. A registry is fed in, through `defineIconRegistry` and an `IconRegistryProvider`; gen will later
+      emit a registry of only the names used, and turn an unknown name into a gen error. The full Lucide map is an explicit
+      opt-in entry (`./react/lucide-registry`, `./native/lucide-registry`), because it is about 180 KB gzipped on web
+      and would use most of the entry budget of [0183](/adr/0183-quality-budgets-with-numbers); the playground registers only the icons it draws.
+      Custom and brand icons (SVGs under a package's or app's `assets/icons/`) join under their namespace and draw through the
+      same `Icon`.
+    - `Icon` takes `name: IconName`, not a component. The icon slots of Button, IconButton, CloseButton and Chip take an
+      `IconName`, drawn through `Icon`, or an element, drawn as given. A name no registry holds draws nothing.
+    - Nothing outside `@stackra/icons` and `@stackra/ui` imports a Lucide package. Swapping the library changes only the maps in
+      `@stackra/icons`.
+    - Data-driven icons (a category icon a tenant picks) store an `IconName` string, checked with the exported `isIconName` guard.
 
 ## Consequences
 
@@ -109,6 +127,8 @@ raised. This page records the answers.
 - `pnpm-workspace.yaml` gains `lucide-react` (`catalog:frontend`) and `lucide-react-native` (`catalog:mobile`) in
   wave 1, and `@internationalized/date` and `react-hook-form` (`catalog:frontend`) with the first component that
   imports them (DateField, FormField). The file is the owner's ([concurrent sessions](/agents/concurrent-sessions)).
+- A declaration carries an icon as a string, so the manifest, the wire and the backend need no component import, and swapping the
+  library touches one package.
 - Every later component brief starts from the vocabulary of decision 7, so web and native, and one component and the
   next, read alike.
 - The link underline and the heading sizes are checked in a browser, by the playground's end-to-end tests, so a HeroUI class

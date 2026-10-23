@@ -13,6 +13,7 @@ import { Button as HeroButton, Spinner, type ButtonProps as HeroButtonProps } fr
 
 import type { ButtonContractProps } from "#contracts/types/button-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { SlotIcon } from "#react/slot-icon/slot-icon";
 
 /**
  * Props of the web Button: the shared contract plus HeroUI v3's own button props, passed through unchanged. HeroUI's
@@ -53,9 +54,13 @@ export function Button({
       fullWidth={isFullWidth ?? false}
       {...(label ? { "aria-label": label } : {})}
     >
-      {isLoading ? <Spinner color="current" size="sm" aria-hidden="true" /> : startIcon}
+      {isLoading ? (
+        <Spinner color="current" size="sm" aria-hidden="true" />
+      ) : (
+        <SlotIcon icon={startIcon} />
+      )}
       {children}
-      {endIcon}
+      <SlotIcon icon={endIcon} />
     </HeroButton>
   );
 }

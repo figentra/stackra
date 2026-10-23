@@ -9,7 +9,7 @@
  *          placement).
  */
 // @vitest-environment jsdom
-// @covers sta-350:FR-023 sta-350:FR-024 sta-350:P-016
+// @covers sta-350:FR-023 sta-350:FR-024 sta-350:P-016 sta-350:FR-053
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
@@ -44,9 +44,31 @@ vi.mock("lucide-react-native", async () => {
 const propsOf = (name: string) => received.props[name] ?? {};
 const icon = <i data-testid="icon" />;
 
+// The slot's Icon needs a native runtime: a name draws a marker, an element is drawn as given.
+vi.mock("#native/slot-icon/slot-icon", async () => {
+  const { createElement } = await import("react");
+  return {
+    SlotIcon: ({ icon: slot }: { readonly icon?: unknown }) =>
+      typeof slot === "string"
+        ? createElement("i", { "data-testid": "slot-icon", "data-name": slot })
+        : (slot ?? null),
+  };
+});
+
+/** The icon names the slot stand-in drew, in document order. */
+const slotNames = (container: HTMLElement) =>
+  [...container.querySelectorAll('[data-testid="slot-icon"]')].map((node) =>
+    node.getAttribute("data-name"),
+  );
+
 describe("IconButton (native)", () => {
   beforeEach(() => {
     received.props = {};
+  });
+
+  it("draws an icon name through Icon", () => {
+    const { container } = render(<IconButton icon="settings" label="Settings" />);
+    expect(slotNames(container)).toEqual(["settings"]);
   });
 
   it("is HeroUI Native's icon-only button, named by label, with the icon as its child", () => {
