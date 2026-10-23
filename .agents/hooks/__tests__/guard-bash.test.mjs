@@ -2715,11 +2715,9 @@ test("STA-351 round 6: rm -rf reaches only this session's scratchpad, from the h
     assert.equal(findScratchpad([id], ["/AAA/decoy"]), "");
     assert.equal(findScratchpad([id], [`/AAA/decoy-${process.pid}`]), "");
     assert.equal(findScratchpad(["linked"], [projectDir]), "");
-    assert.equal(sessionScratchpad({ scratchpadDir: outside, sessionIds: [id] }), outside);
     for (const c of [`rm -rf ${pad}/x`, `rm -rf ${pad}`, `find ${pad} -delete`])
       assert.equal(inSession(c), "allow", c);
     assert.equal(inSession(`rm -rf ${pad}/x`, { agent_id: "a1" }), "allow");
-    assert.equal(inSession(`rm -rf ${outside}/x`, { scratchpad_dir: outside }), "allow");
     assert.equal(inSession(`rm -rf ${pad}/x`, { session_id: undefined }), "deny"); // no session, no scratchpad
     for (const c of [
       `rm -rf /tmp/claude-${uid}/*`,
@@ -2733,4 +2731,65 @@ test("STA-351 round 6: rm -rf reaches only this session's scratchpad, from the h
   } finally {
     for (const d of [project, decoy, outside]) rmSync(d, { recursive: true, force: true });
   }
+});
+
+// ---- STA-351 follow-ups (after #122) --------------------------------------------------------------------------
+
+test("STA-351 follow-up: scratchpad_dir meets the same real-path check as the derived scratchpad", () => {
+  const uid = process.getuid?.() ?? 0;
+  const projectDir = `/stackra-guard-followup-${process.pid}`;
+  const project = `/tmp/claude-${uid}/-stackra-guard-followup-${process.pid}`;
+  const id = "00000000-0000-4000-8000-000000000352";
+  const swapped = "00000000-0000-4000-8000-000000000353";
+  const pad = join(project, id, "scratchpad");
+  const fake = join(project, swapped, "scratchpad");
+  const outside = mkdtempSync(join(tmpdir(), "guard-outside-"));
+  mkdirSync(pad, { recursive: true });
+  mkdirSync(join(project, swapped), { recursive: true });
+  symlinkSync(outside, fake); // a scratchpad swapped for a symlink out of the root
+  const env = { CLAUDE_PROJECT_DIR: projectDir };
+  const inSession = (command, payload) =>
+    run({ tool_input: { command }, cwd: root, ...payload }, env).permissionDecision;
+  try {
+    const find = (scratchpadDir, sessionIds) =>
+      sessionScratchpad({ scratchpadDir, sessionIds, projectDirs: [projectDir] });
+    assert.equal(find(pad, [id]), pad);
+    assert.equal(find(outside, [id]), "");
+    assert.equal(find(fake, [swapped]), "");
+    assert.equal(find(pad, ["another-session"]), "");
+    assert.equal(inSession(`rm -rf ${pad}/sub`, { session_id: id, scratchpad_dir: pad }), "allow");
+    for (const [c, payload] of [
+      [`rm -rf ${fake}/sub`, { session_id: swapped, scratchpad_dir: fake }],
+      [`rm -rf ${outside}/sub`, { session_id: id, scratchpad_dir: outside }],
+      [`rm -rf ${fake}/sub`, { session_id: id, scratchpad_dir: fake }],
+    ])
+      assert.equal(inSession(c, payload), "deny", c);
+  } finally {
+    for (const d of [project, outside]) rmSync(d, { recursive: true, force: true });
+  }
+});
+
+test("STA-351 follow-up: ag -g and ack -g take the pattern, so a secret file beside it still denies", () => {
+  for (const c of [
+    "ag -g x .env",
+    "ack -g x .env",
+    "ag -g x tls.pem",
+    "ack -g x ~/.git-credentials",
+  ])
+    assert.equal(decideBash(c, { cwd: root }).decision, "deny", c);
+  for (const c of ["ag -g a.key", "ack -g a.key"])
+    assert.equal(decideBash(c, { cwd: root }).decision, "allow", c);
+});
+
+test("STA-351 follow-up: a linear comment body and create title or description are prose", () => {
+  for (const c of [
+    'pnpm linear comment STA-351 "it\'s the .env file the guard read"',
+    'pnpm linear comment STA-351 "x=$HOME and .env"',
+    'pnpm --silent linear comment STA-351 "don\'t cat .env; use Infisical"',
+    'pnpm linear create --title "guard reads .env, it\'s wrong" --labels agent',
+    'pnpm linear create --title x --description "y=$PWD names .env"',
+  ])
+    assert.equal(decision(c, root), "allow", c);
+  for (const c of ["cat .env", 'pnpm linear comment STA-351 "$(cat .env)"'])
+    assert.equal(decision(c, root), "deny", c);
 });

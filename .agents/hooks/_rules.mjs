@@ -485,10 +485,11 @@ const unquote = (w) => w.replace(/^['"]+|['"]+$/g, "");
  * Prose is not a command: blank the quoted `-m` / `--message` / `--title` / `--body` / `--description` value and the
  * text of `pnpm linear comment <KEY> "…"` (STA-216), so a PR body or a comment may mention `pr merge` or
  * `push origin main`. A short-flag cluster ending in `m` (`commit -am`, `-sm`) is `-m`, unless it holds `c`: the
- * value of `sh -cm` is a command (STA-330 review).
+ * value of `sh -cm` is a command (STA-330 review). A dequoted value that starts `x=` is requoted after it
+ * (`x="$HOME …"`), so the span may follow a `name=` (STA-351).
  */
 const PROSE_BEFORE =
-  /(?:\s(?:-[abd-zA-Z]*m|--message|--title|--body|--description)(?:\s+|=)|\blinear\s+comment\s+\S+\s+)$/;
+  /(?:\s(?:-[abd-zA-Z]*m|--message|--title|--body|--description)(?:\s+|=)|\blinear\s+comment\s+\S+\s+)(?:\w+=)?$/;
 const messageCache = memoTable();
 const dropMessages = (c) =>
   cached(messageCache, c, () => {
@@ -722,14 +723,13 @@ const isRecursiveForce = (flags) =>
   flags.some((f) => /^-[a-zA-Z]*f/.test(f) || longFlag(f, "--force"));
 /**
  * The session's scratchpad directory (STA-351): the hook input's `scratchpad_dir` when the harness sends one, else
- * `/tmp/claude-<uid>/<project>/<session id>/scratchpad` for one of `sessionIds` (`session_id`, then
+ * `/tmp/claude-<uid>/<project>/<session id>/scratchpad`, for one of `sessionIds` (`session_id`, then
  * `CLAUDE_CODE_SESSION_ID`) and one of `projectDirs` (`CLAUDE_PROJECT_DIR`, then `cwd`; the harness names the
- * project folder after its path, every character outside `[A-Za-z0-9]` a `-`), only when its real path is exactly
- * that path under the real root, so a symlink or another project's folder never stands in for it; "" when none does.
- * Only this directory is a scratch place for `rm -rf`: the root and other projects' or sessions' trees are not.
+ * project folder after its path, every character outside `[A-Za-z0-9]` a `-`). Either one counts only when its real
+ * path is exactly such a path under the real root, so a symlink, another project's folder or another session's
+ * never stands in for it; "" when none does. Only this directory is a scratch place for `rm -rf`.
  */
 export function sessionScratchpad({ scratchpadDir = "", sessionIds = [], projectDirs = [] } = {}) {
-  if (scratchpadDir) return scratchpadDir;
   const root = `/tmp/claude-${process.getuid?.() ?? 0}`;
   let real;
   try {
@@ -737,15 +737,18 @@ export function sessionScratchpad({ scratchpadDir = "", sessionIds = [], project
   } catch {
     return "";
   }
-  for (const id of sessionIds.filter((x) => /^[\w-]+$/.test(x ?? "")))
-    for (const p of projectDirs.filter(Boolean)) {
-      const tail = [p.replace(/[^A-Za-z0-9]/g, "-"), id, "scratchpad"];
-      try {
-        if (realpathSync(join(root, ...tail)) === join(real, ...tail)) return join(root, ...tail);
-      } catch {
-        // not there: try the next
-      }
+  const ids = sessionIds.filter((x) => /^[\w-]+$/.test(x ?? ""));
+  const tails = projectDirs
+    .filter(Boolean)
+    .flatMap((p) => ids.map((id) => [p.replace(/[^A-Za-z0-9]/g, "-"), id, "scratchpad"]));
+  const expected = new Set(tails.map((t) => join(real, ...t)));
+  for (const dir of scratchpadDir ? [scratchpadDir] : tails.map((t) => join(root, ...t))) {
+    try {
+      if (expected.has(realpathSync(dir))) return dir;
+    } catch {
+      // not there: try the next
     }
+  }
   return "";
 }
 const FIND_EXEC = new Set(["-exec", "-execdir", "-ok", "-okdir"]);
@@ -1727,6 +1730,8 @@ function requote(w, dynamic, raw) {
   const eq = /^(\w+=)(.*)$/s.exec(w);
   if (eq) return eq[1] + requote(eq[2], dynamic);
   if (dynamic) return w.includes('"') ? w : `"${w}"`;
+  // One quoted string, so prose stays one span (`"it's .env"`, STA-351); `'\''` would split it.
+  if (w.includes("'") && !/["$\x60\\]/.test(w)) return `"${w}"`;
   return `'${w.replaceAll("'", "'\\''")}'`;
 }
 /**
@@ -1932,8 +1937,8 @@ const JQ_VALUES = {
 const SEARCH_SHORT = {
   grep: "ABCDdm",
   rg: "ABCEMTdgjmrt",
-  ag: "ABCGgm",
-  ack: "ABCgmt",
+  ag: "ABCGm", // `-g` is the pattern, never an option value
+  ack: "ABCmt",
   git: "ABCm",
 };
 /** Long options of a search whose value may be the next word (`--include '*.ts'`); `=` joins it otherwise. */
