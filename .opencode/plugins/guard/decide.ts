@@ -1,9 +1,12 @@
 // Decision functions for the Stackra OpenCode guard plugin (index.ts), covered by node:test.
 // The permission tiers live in .agents/hooks/_rules.mjs, shared with the Claude hooks (ADR 0293), so the two tools
 // never drift. OpenCode runs unattended (ADR 0066) and `--auto` approves any ask, so an ask is a deny here, through
-// the same `unattended` the Claude hook applies to a subagent's asks (STA-351). On top of the shared rules sits the
+// the same `unattended` the Claude hook applies to every ask outside `HUMAN_ASKS` (STA-400); here the deletes and
+// deploys in `HUMAN_ASKS` are denied too, so they stay with the lead. On top of the shared rules sits the
 // executor layer: what only the lead does (owner-only CLIs, the GitHub bot wrappers beyond the executor's own push,
-// Infisical, local data git cannot restore) and edits outside the worktree.
+// Infisical, local data git cannot restore) and edits outside the worktree. The categorical asks STA-400 allows for
+// Claude (`npx`, `pnpm dlx`, `eas`, `wrangler secret|--remote`, `secrets:import --confirm`) stay denied here through
+// the shared `executor` rules, so each wrapper the shared rules read through is covered.
 // opencode.jsonc repeats the same tiers as order-sensitive patterns, a second layer.
 // shortcut: executor commands are split on && || ; | and newlines without honouring quotes; nested scripts come
 // from the shared scanShell / scriptStrings; upgrade to a real shell parser if one slips through.
@@ -197,7 +200,9 @@ function denySub(sub: string, exact: boolean): Decision {
 
 /** `cwd` is the shell's directory: the own-worktree, push and rm rules resolve against it. */
 export function decideShell(raw: string, cwd?: string): Decision {
-  const shared = tier(decideBash(raw, { cwd: cwd ?? process.cwd() }));
+  // `executor`: the shared executor rules (npx, eas, wrangler secret|--remote, secrets:import --confirm), read
+  // through every runner and wrapper the shared rules know (STA-400 review).
+  const shared = tier(decideBash(raw, { cwd: cwd ?? process.cwd(), executor: true }));
   if (shared.kind === "deny") return shared;
   const exact = EXECUTOR_BOT_GIT.test(raw.trim());
   const cmd = stripHeredocs(raw);

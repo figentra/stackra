@@ -112,7 +112,11 @@
     "format:check": "oxfmt --check .",
     "clean": "rm -rf dist coverage .turbo"
   },
+  "dependencies": {
+    "@stackra/icons": "workspace:*"
+  },
   "devDependencies": {
+    "@heroui/react": "catalog:frontend",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
@@ -124,12 +128,16 @@
     "@vitest/coverage-v8": "catalog:quality",
     "heroui-native": "catalog:mobile",
     "jsdom": "catalog:frontend",
+    "lucide-react": "catalog:frontend",
+    "lucide-react-native": "catalog:mobile",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
     "react": "catalog:frontend",
     "react-aria-components": "catalog:frontend",
     "react-dom": "catalog:frontend",
+    "react-hook-form": "catalog:frontend",
     "react-native": "catalog:mobile",
+    "react-native-svg": "catalog:mobile",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "uniwind": "catalog:mobile",
@@ -138,9 +146,13 @@
   "peerDependencies": {
     "@heroui/react": "^3.2.6",
     "heroui-native": "^1.0.10",
+    "lucide-react": "^1.54.0",
+    "lucide-react-native": "^1.54.0",
     "react": ">=19.2.0",
     "react-aria-components": "^1.22.1",
+    "react-hook-form": "^7.89.0",
     "react-native": ">=0.86.0",
+    "react-native-svg": "^15.15.4",
     "uniwind": "^1.12.1"
   },
   "peerDependenciesMeta": {
@@ -150,10 +162,19 @@
     "heroui-native": {
       "optional": true
     },
+    "lucide-react": {
+      "optional": true
+    },
+    "lucide-react-native": {
+      "optional": true
+    },
     "react-aria-components": {
       "optional": true
     },
     "react-native": {
+      "optional": true
+    },
+    "react-native-svg": {
       "optional": true
     },
     "uniwind": {

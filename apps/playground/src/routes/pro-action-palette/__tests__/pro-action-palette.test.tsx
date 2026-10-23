@@ -23,7 +23,7 @@ describe("ProActionPalette", () => {
   it("sits at /pro-action-palette in the Pro group, and titles the page and the document", () => {
     render(<ProActionPalette />);
     expect(ProActionPaletteRoute.path).toBe("/pro-action-palette");
-    expect(ProActionPaletteRoute.group).toBe("Pro");
+    expect(ProActionPaletteRoute.category).toBe("Pro");
     expect(
       screen.getByRole("heading", { level: 1, name: ProActionPaletteRoute.title }),
     ).toBeTruthy();

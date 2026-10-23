@@ -22,7 +22,7 @@ describe("ProSidebar", () => {
   it("sits at /pro-sidebar in the Pro group, and titles the page and the document", () => {
     render(<ProSidebar />);
     expect(ProSidebarRoute.path).toBe("/pro-sidebar");
-    expect(ProSidebarRoute.group).toBe("Pro");
+    expect(ProSidebarRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProSidebarRoute.title })).toBeTruthy();
     expect(document.title).toBe("Sidebar · Stackra Playground");
   });

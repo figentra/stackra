@@ -29,6 +29,13 @@ default; a product brings its own brand as its own theme.
 @import "@stackra/tokens/themes/stackra/native.css";
 ```
 
+Both files also draw HeroUI's Typography in the theme's type scale. The web file does it in one `@layer components`
+block that restyles `.typography--h1` to `.typography--body-xs` from the `h1` to `h6`, `body`, `small` and `caption`
+tokens (with `:where(:lang(ar))` twins from the `-ar` tokens, and the weight modifiers restated after them). The native
+file writes `.text__root--type-*` in absolute px for HeroUI Native's text, and one `.type-<token>-ar` class per Arabic
+twin for `@stackra/ui`'s native Text to add. `defineTheme` therefore wants each type style's `size` in px, its
+`lineHeight` unitless or in px, and its `letterSpacing` zero, in `em` or in px.
+
 The web file switches modes the HeroUI way: light on `:root` and `[data-theme="light"]`, dark on `.dark` and
 `[data-theme="dark"]`. The native file defines the same variables in Uniwind's `@variant light` and `@variant dark`;
 switch with `Uniwind.setTheme`. Expo cannot load woff2, so native text uses the system face until TTF builds of the

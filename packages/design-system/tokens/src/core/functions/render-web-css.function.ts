@@ -2,13 +2,16 @@
  * Stackra file contract:
  * Purpose: renders a theme to the CSS custom properties HeroUI v3 reads on the web. Mode-independent tokens go on
  *          `:root`; the colour roles, palette and shadows go on `:root, [data-theme="light"]` and
- *          `.dark, [data-theme="dark"]`, the selectors HeroUI's theming docs prescribe for theme colours.
+ *          `.dark, [data-theme="dark"]`, the selectors HeroUI's theming docs prescribe for theme colours. A
+ *          `@layer components` block restyles HeroUI's Typography classes in the theme's type scale. HeroUI's
+ *          skeleton motion follows the reading direction and stops under reduced motion.
  * Boundary: a pure function from a Theme to a string; it validates nothing (`defineTheme` does) and writes no file.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0165 (HeroUI v3 on the web).
  */
 import { ColorRole } from "#contracts/enums/color-role.enum";
 import type { Theme } from "#contracts/types/theme.type";
+import { HEROUI_TYPOGRAPHY_TOKENS } from "#core/constants/heroui-typography-tokens.constant";
 
 const SHADOWS = ["surface", "overlay", "field"] as const;
 const FONT_FAMILIES = ["sans", "mono", "arabic"] as const;
@@ -17,8 +20,62 @@ const block = (selector: string, lines: readonly string[]) =>
   `${selector} {\n${lines.join("\n")}\n}`;
 
 /**
- * The web stylesheet of `theme`, to load after `@import "@heroui/styles"` and outside any cascade layer, so it
- * overrides HeroUI's defaults. Durations drop to 0ms under `prefers-reduced-motion`, and `:lang(ar)` documents take
+ * HeroUI's weight modifiers, stated again after the types: the `font` shorthand of a type resets `font-weight`, and
+ * HeroUI's own modifier rules sit before ours in the same layer, so without these `weight="bold"` would lose.
+ */
+const WEIGHT_MODIFIERS = [
+  ["normal", 400],
+  ["medium", 500],
+  ["semibold", 600],
+  ["bold", 700],
+] as const;
+
+/** A rule indented one level, for use inside the `@layer components` block. */
+const inRule = (selector: string, lines: readonly string[]) =>
+  `  ${selector} {\n${lines.join("\n")}\n  }`;
+
+/**
+ * The `@layer components` block that draws HeroUI's Typography classes in the theme's type scale (HeroUI's own
+ * customisation route). It stays inside the layer, because an unlayered rule would beat a caller's utilities. The
+ * Arabic rule uses `:where(:lang(...))`, which keeps it at one class of specificity: it wins over the Latin rule by
+ * order, and the weight modifiers below still win over both.
+ */
+function typographyLayer(theme: Theme): string {
+  const rules = HEROUI_TYPOGRAPHY_TOKENS.filter(({ token }) => token in theme.typography).flatMap(
+    ({ type, token }) => [
+      inRule(`.typography--${type}`, [
+        `    font: var(--${token});`,
+        `    letter-spacing: var(--${token}-letter-spacing);`,
+      ]),
+      ...(`${token}-ar` in theme.typography
+        ? [
+            inRule(`.typography--${type}:where(:lang(ar))`, [
+              `    font: var(--${token}-ar);`,
+              `    letter-spacing: var(--${token}-ar-letter-spacing);`,
+            ]),
+          ]
+        : []),
+    ],
+  );
+  const weights = WEIGHT_MODIFIERS.map(([name, weight]) =>
+    inRule(`.typography--weight-${name}`, [`    font-weight: ${weight};`]),
+  );
+  return `@layer components {\n${[...rules, ...weights].join("\n")}\n}`;
+}
+
+/** The selectors of every skeleton animation, which HeroUI v3 never stops under reduced motion. */
+const SKELETON_MOTION = [
+  ".skeleton--shimmer::after",
+  ".skeleton--shimmer::before",
+  ".skeleton--pulse",
+].join(",\n  ");
+
+/** The shimmer skeleton in a right-to-left context: by `:dir()`, or by a `dir="rtl"` on it or on an ancestor. */
+const RTL_SHIMMER = '.skeleton--shimmer:is(:dir(rtl), [dir="rtl"], [dir="rtl"] *)';
+
+/**
+ * The web stylesheet of `theme`, to load after `@import "@heroui/styles"` and outside any cascade layer (bar the
+ * typography block, which is in `components` on purpose), so it overrides HeroUI's defaults. Durations drop to 0ms under `prefers-reduced-motion`, and `:lang(ar)` documents take
  * the Arabic font stack.
  */
 export function renderWebCss(theme: Theme): string {
@@ -51,9 +108,16 @@ export function renderWebCss(theme: Theme): string {
     ]),
     block(':root,\n[data-theme="light"]', colours("light")),
     block('.dark,\n[data-theme="dark"]', colours("dark")),
+    // Unlayered, so the sweep beats HeroUI's `components` animation; `reverse` plays the keyframe backwards, which
+    // starts the light on the inline-start side (HeroUI's start is the physical left, so in a right-to-left layout it
+    // is the right), the way HeroUI Native sweeps in a right-to-left layout. The `[dir]` alternatives are there
+    // because a build that targets browsers without `:dir()` rewrites it into a `:lang()` list, which misses an
+    // English `lang` island inside a right-to-left page.
+    block(`${RTL_SHIMMER}::after,\n${RTL_SHIMMER}::before`, ["  animation-direction: reverse;"]),
     `@media (prefers-reduced-motion: reduce) {\n  :root {\n${motion
       .map(([name]) => `    --duration-${name}: 0ms;`)
-      .join("\n")}\n  }\n}`,
+      .join("\n")}\n  }\n  ${SKELETON_MOTION} {\n    animation: none;\n  }\n}`,
     block(":root:lang(ar)", ["  font-family: var(--font-arabic);"]),
+    typographyLayer(theme),
   ].join("\n\n")}\n`;
 }

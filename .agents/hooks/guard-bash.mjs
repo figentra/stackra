@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
  * PreToolUse (Bash): the permission tiers of ADR 0293 for a shell command. The rules live in `_rules.mjs`, shared
- * with the OpenCode guard; this hook only reads the payload (`cwd`, `agent_type`, `agent_id`, `session_id`) and
- * reports the decision: deny, ask (a human confirms), or nothing (allow). From a subagent (`agent_id` set; the main
- * thread never has one, `--agent` sessions included) `_rules.mjs` turns an ask into a deny, except the `HUMAN_ASKS`
- * (STA-351). Accident guard, not a boundary: it fails open on its own errors.
+ * with the OpenCode guard; this hook only reads the payload (`cwd`, `agent_type`, `session_id`) and reports the
+ * decision: deny, ask (a human confirms), or nothing (allow). Only the deletes and deploys in `HUMAN_ASKS` ask;
+ * `_rules.mjs` turns every other ask into a deny with a rewrite hint, main thread and subagent alike (STA-400).
+ * Accident guard, not a boundary: it fails open on its own errors.
  */
 import { readStdin, deny, ask, failOpen } from "./_io.mjs";
 import { decideBash, sessionScratchpad } from "./_rules.mjs";
@@ -18,7 +18,6 @@ async function main() {
   const { decision, reason } = decideBash(raw, {
     cwd,
     agentType: String(input.agent_type ?? ""),
-    subagent: Boolean(input.agent_id),
     scratchpad: sessionScratchpad({
       scratchpadDir: typeof input.scratchpad_dir === "string" ? input.scratchpad_dir : "",
       sessionIds: [input.session_id, process.env.CLAUDE_CODE_SESSION_ID],

@@ -27,7 +27,7 @@ describe("ProDataGrid", () => {
   it("sits at /pro-data-grid in the Pro group, and titles the page and the document", () => {
     render(<ProDataGrid />);
     expect(ProDataGridRoute.path).toBe("/pro-data-grid");
-    expect(ProDataGridRoute.group).toBe("Pro");
+    expect(ProDataGridRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProDataGridRoute.title })).toBeTruthy();
     expect(document.title).toBe("DataGrid · Stackra Playground");
   });

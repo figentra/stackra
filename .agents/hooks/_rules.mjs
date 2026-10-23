@@ -1,9 +1,9 @@
 // The agent permission rules (ADR 0293), one module for `guard-bash.mjs`, `guard-paths.mjs` and the OpenCode
 // guard (`.opencode/plugins/guard/decide.ts`), so the two tools never drift. Three tiers: allow, ask (a human
-// confirms; OpenCode and a Claude subagent run unattended, so `unattended` maps it to deny, except a subagent's
-// `HUMAN_ASKS`) and deny. Settings deny and ask rules are the floor;
-// these rules add only what a prefix pattern cannot see: runner wrappers (`pnpm exec`, `npx`, `mise exec --`),
-// which checkout a git command targets, `agent_type`, and quoted prose.
+// confirms; only the deletes and deploys in `HUMAN_ASKS` reach the owner, and the asks for a command the guard
+// cannot read are a deny through `unattended`, STA-400; OpenCode denies every ask) and deny. Settings deny and
+// ask rules are the floor; these rules add only what a prefix pattern cannot see: runner wrappers (`pnpm exec`,
+// `npx`, `mise exec --`), which checkout a git command targets, `agent_type`, and quoted prose.
 //
 // Secrets model (ADR 0173, ADR 0257): nobody reads a value. Developer, agent and CI tokens live in Infisical and
 // reach a process through the pnpm script that needs them; there are no `.env` files in this repository.
@@ -105,7 +105,7 @@ const CONFIG_SCOPE_VALUE = new Set(["-f", "--file", "--blob", "--type", "--defau
  * What `git config` words do: "" for a read (past the scope options: a read mode, or one key alone,
  * `git config --global user.name`; no write flag anywhere) or a `--worktree` write of one allowed key; "ask" for a
  * write of one allowed key to the repository's config, which every linked worktree shares
- * (`git config rerere.enabled true`); "deny" for anything else. With linked worktrees git refuses `--worktree`
+ * (`git config rerere.enabled true`; allowed since STA-400, no rule reads "ask"); "deny" for anything else. With linked worktrees git refuses `--worktree`
  * unless `extensions.worktreeConfig` is on, so that write never reaches the shared file.
  */
 function configWrites(words) {
@@ -240,7 +240,8 @@ const W = String.raw`[^\s|;&()<>\x60]`;
  * runs any binary on PATH when no script has the name), `npm exec`, `yarn`, `npx`, `pnpx`, `bunx` and
  * `mise exec … --`. `lookThroughRunners` drops them at command position, so `pnpm gh pr merge` is checked as
  * `gh pr merge`. shortcut: options that take a value are known only for pnpm (`-C`, `-F`, `--filter`, `--dir`);
- * `npx -p pkg cmd` is read as `pkg cmd` (npx asks anyway). Upgrade when a runner option hides a command.
+ * `npx -p pkg cmd` is read as `pkg cmd` (an OpenCode executor denies `npx` itself; for Claude, `npx` is allowed and
+ * the rules run on `pkg cmd`). Upgrade when a runner option hides a command.
  * `mise exec` ends at its own first `--`, never at the command's (`mise exec -- rm -rf -- /`, STA-330 review).
  */
 const RUNNER = String.raw`(?:(?:${W}*\/)?(?:pnpm|npm|yarn)\s+(?:(?:-[CF]|--(?:filter|dir|prefix|workspace|cwd))(?:=|\s+)${W}+\s+|--?[\w-]+(?:=${W}+)?\s+)*(?:(?:exec|dlx|x)\s+(?:-${W}+\s+)*)?|(?:${W}*\/)?(?:npx|pnpx|bunx)\s+(?:-${W}+\s+)*|(?:${W}*\/)?mise\s+(?:exec|x)\s+(?=\S)(?:(?!--\s)[^|;&\n]*?\s)?--\s+)`;
@@ -344,7 +345,7 @@ function readerCommand(words) {
  * turn (`ssh h "tmux new -d 'rm -rf ~'"`), and SQL clients for the drop rule (STA-330 review).
  */
 const LINE_WORD = new RegExp(
-  String.raw`(?:^|[\s;&|(\x60:'"])(?:[^\s;&|()<>\x60]*\/)?(?:rm|find|git|infisical|encore|wrangler|changeset|drizzle-kit|mikro-orm|security|${[...SQL_CLIENTS].join("|")})(?=[\s:])`,
+  String.raw`(?:^|[\s;&|(\x60:'"])(?:[^\s;&|()<>\x60]*\/)?(?:rm|find|git|infisical|encore|npx|pnpx|bunx|(?:wrangler|eas(?:-cli)?|npm|pnpm|yarn|changeset)(?:@[^\s;&|()<>\x60'"]*)?|drizzle-kit|mikro-orm|security|${[...SQL_CLIENTS].join("|")})(?=[\s:])`,
 );
 /**
  * `w` without its `$(…)`, `<(…)`, `>(…)` and backtick bodies (`scanShell` reads those as their own texts). A paren
@@ -423,8 +424,12 @@ const runnable = (c) =>
 /** True when any runnable text has a segment matching `rx`, or passes `rx` when it is a test (`atName`). */
 const runs = (c, rx) =>
   runnable(c).some((t) => (typeof rx === "function" ? rx(t) : segments(t).some((s) => rx.test(s))));
-/** `runs` over the command and every command line passed as one quoted word (`watch 'infisical export'`). */
-const runsQuoted = (c, rx) => [c, ...lineTexts(c)].some((t) => runs(t, rx));
+/**
+ * `runs` over the command and every command line passed as one quoted word (`watch 'infisical export'`), each line
+ * also with its runners dropped (`ssh h 'npx wrangler@3 deploy'`, STA-400 review).
+ */
+const runsQuoted = (c, rx) =>
+  [c, ...lineTexts(c).flatMap((l) => [l, lookThroughRunners(l)])].some((t) => runs(t, rx));
 
 /**
  * At most this many git processes run for one decision (about 20 ms each; the hook is killed, and fails open, at
@@ -502,13 +507,52 @@ const dropMessages = (c) =>
 /** The `infisical secrets` subcommand a runnable segment uses: "get", "set", "delete", "folders", or "" (bare). */
 const INFISICAL_SUBCOMMANDS = new Set(["get", "set", "delete", "folders", "generate-example-env"]);
 function infisicalSecrets(c) {
-  const verbs = [];
-  for (const t of [c, ...lineTexts(c)].flatMap(runnable))
-    for (const seg of segments(t)) {
-      const m = seg.match(/\binfisical\s+(?:-\S+\s+)*secrets\b(.*)$/);
-      if (m) verbs.push(m[1].split(/\s+/).find((w) => INFISICAL_SUBCOMMANDS.has(unquote(w))) ?? "");
-    }
-  return verbs;
+  return infisicalCommands(c)
+    .filter((x) => x.sub === "secrets")
+    .map((x) => x.rest.find((w) => INFISICAL_SUBCOMMANDS.has(w)) ?? "");
+}
+/** Infisical global options whose value is the next word (`--domain https://…`, `--log-level debug`). */
+const INFISICAL_VALUED = new Set(
+  "--domain --log-level --token --projectId --project-id --env --path --config --type --tags --format --output --output-file --file".split(
+    " ",
+  ),
+);
+/** Infisical commands: the first of these after `infisical` and its options is its subcommand. */
+const INFISICAL_COMMANDS = new Set(
+  "run secrets export login init user token scan vault bootstrap dynamic-secrets ssh agent gateway reset kms pki service-token folders help completion update".split(
+    " ",
+  ),
+);
+/**
+ * Every `infisical` command in `c` as `{ sub, rest }`: any path, `@infisical/cli`, a version, through runners and
+ * quoted lines. Global options and their values are skipped, and a word that is no known command is read as an
+ * unknown option's value, so `infisical --domain <url> secrets get X` is `secrets` (STA-400 review). Deny-leaning,
+ * like the token rule: any word named `infisical` starts one.
+ */
+const INFISICAL_NAME = /(?:^|\/)(?:infisical|@infisical\/cli)(?:@[^/]*)?$/;
+const infisicalCache = memoTable();
+function infisicalCommands(c) {
+  return cached(infisicalCache, c, () => readInfisical(c));
+}
+function readInfisical(c) {
+  const out = [];
+  const texts = [c, lookThroughRunners(c)];
+  for (const l of lineTexts(c)) texts.push(l, lookThroughRunners(l));
+  for (const t of texts.flatMap(runnable))
+    for (const s of simpleCommands(t))
+      s.words.forEach((w, k) => {
+        if (!INFISICAL_NAME.test(unquote(w))) return;
+        let j = k + 1;
+        for (; j < s.words.length; j++) {
+          const x = unquote(s.words[j]);
+          if (INFISICAL_NAME.test(x)) break; // the next one reads on from here: linear, not quadratic
+          if (INFISICAL_VALUED.has(x)) j++;
+          else if (!x.startsWith("-") && INFISICAL_COMMANDS.has(x)) break;
+        }
+        if (j < s.words.length && !INFISICAL_NAME.test(unquote(s.words[j])))
+          out.push({ sub: unquote(s.words[j]), rest: s.words.slice(j + 1).map(unquote) });
+      });
+  return out;
 }
 
 /** The branch a push refspec writes to: `+src:refs/heads/dst` (or `heads/dst`) → `dst`. */
@@ -784,12 +828,13 @@ const baseName = (w) => w.split("/").pop();
 /** At most this many `rm` and `find` words of one simple command are read; past it the command denies. */
 const MAX_DELETERS = 32;
 /**
- * What a simple command deletes recursively. Deny-leaning, like a text rule: every word named `rm` or `find` is
- * read as a command, so no wrapper hides one, known or not (`sudo`, `setsid`, `flock f`, `direnv exec .`,
- * `op run --`; STA-330 review). The operands of `rm` (or `git rm`) with recursive and force (after `--`, every
- * word), and the start paths of `find … -delete` or `find … -exec rm` (as `{ under }`: find deletes what is below
- * them); null for operands the guard cannot read (`xargs` and `parallel` take them from their input; `git -C x rm`
- * pathspecs are not from here).
+ * What a simple command deletes. Deny-leaning, like a text rule: every word named `rm` with recursive and force, or
+ * `find`, is read as a command, so no wrapper hides one, known or not (`sudo`, `setsid`, `flock f`,
+ * `direnv exec .`, `op run --`; STA-330 review). The operands of `rm` (or `git rm`) with recursive and force (after
+ * `--`, every word), and the start paths of `find … -delete` or `find … -exec rm` (as `{ under }`: find deletes
+ * what is below them); null for operands the guard cannot read (`xargs` and `parallel` take them from their input;
+ * `git -C x rm` pathspecs are not from here). STA-400: an `rm` at command position (or fed by `xargs`) without
+ * force counts too: recursive (`-r`, `-R`, `--recursive`) like `-rf`, a plain one as `{ plain }` (null: unread).
  */
 function deletedPaths(words) {
   const out = [];
@@ -802,14 +847,23 @@ function deletedPaths(words) {
       const rest = words.slice(k + 1);
       const dash = rest.indexOf("--");
       const before = dash < 0 ? rest : rest.slice(0, dash);
-      if (!isRecursiveForce(before.filter((x) => x.startsWith("-")))) continue;
+      const flags = before.filter((x) => x.startsWith("-"));
       const fed = head.some((x) => ["xargs", "parallel"].includes(baseName(x)));
-      const moved = head.some((x) => /^-C$|^--(?:git-dir|work-tree)/.test(x));
-      if (fed || (moved && head.some((x) => baseName(x) === "git"))) out.push(null);
-      out.push(
+      const force = isRecursiveForce(flags);
+      if (!force && !fed && !nameIndexes(words).includes(k)) continue;
+      const recursive =
+        force || flags.some((f) => /^-[a-zA-Z]*[rR]/.test(f) || longFlag(f, "--recursive"));
+      const operands = [
         ...before.filter((x) => !x.startsWith("-")),
         ...(dash < 0 ? [] : rest.slice(dash + 1)),
-      );
+      ];
+      if (!recursive) {
+        out.push(...(fed ? [{ plain: null }] : []), ...operands.map((x) => ({ plain: x })));
+        continue;
+      }
+      const moved = head.some((x) => /^-C$|^--(?:git-dir|work-tree)/.test(x));
+      if (fed || (moved && head.some((x) => baseName(x) === "git"))) out.push(null);
+      out.push(...operands);
     } else {
       let j = k + 1;
       while (/^-(?:[HLP]|O\d*|D)$/.test(words[j] ?? "")) j += words[j] === "-D" ? 2 : 1;
@@ -830,8 +884,9 @@ function deletedPaths(words) {
 }
 
 /**
- * Where each recursive delete (`deletedPaths`) lands (`rmPlace`), memoised per command. `walk` follows `cd`; a
- * relative operand where the directory is unknown denies.
+ * Where each delete (`deletedPaths`) lands (`rmPlace`), memoised per command. `walk` follows `cd`; a relative
+ * operand where the directory is unknown denies. A plain `rm` (no recursion) never denies: where a recursive one
+ * would, it is "own" (the owner confirms it).
  */
 const rmPlaces = (c, ctx) => ctx.memo(`rm\0${c}`, () => rmScan(c, ctx));
 function rmScan(c, ctx) {
@@ -841,7 +896,15 @@ function rmScan(c, ctx) {
       for (const t of deletedPaths(words))
         for (const dir of dirs)
           out.push(
-            t === null ? "deny" : t.under ? rmPlace(t.under, dir, ctx, t) : rmPlace(t, dir, ctx),
+            t === null
+              ? "deny"
+              : t.plain !== undefined
+                ? t.plain === null || rmPlace(t.plain, dir, ctx) === "deny"
+                  ? "own"
+                  : rmPlace(t.plain, dir, ctx)
+                : t.under
+                  ? rmPlace(t.under, dir, ctx, t)
+                  : rmPlace(t, dir, ctx),
           );
   return out;
 }
@@ -926,8 +989,9 @@ function physical(dir, t) {
 /** A path longer than this fails in the kernel (Linux PATH_MAX; macOS has 1024); walking one costs quadratic time. */
 const PATH_MAX = 4096;
 /**
- * Where `rm -rf <t>`, run in `dir` (null when unknown), lands: "ok" strictly inside this session's own checkout or
- * the scratchpad; "nested" strictly inside a linked worktree nested in that checkout (another agent's, or this
+ * Where `rm -rf <t>`, run in `dir` (null when unknown), lands: "ok" in the scratchpad or build output
+ * (`REGENERABLE`, any segment) strictly inside this session's own checkout; "own" elsewhere strictly inside that
+ * checkout (STA-400: a delete the owner confirms); "nested" strictly inside a linked worktree nested in that checkout (another agent's, or this
  * session's reached by `cd` from the main checkout), unless it is build output; "deny" anywhere else, a nested
  * worktree itself, or a path that contains one. Braces and globs are expanded first; `~`, `$`, a bare `*` and a path
  * past `PATH_MAX` deny. `under` (a find: `{ git }`): only what is below `t` goes (`find t -delete`), so `t` may be
@@ -944,7 +1008,8 @@ function rmPlace(t, dir, ctx, under = null) {
     paths.push(...(found.length ? found : [w])); // an unmatched glob stays literal, as in bash
   }
   const places = paths.map((p) => landing(physical(dir ?? "/", p), ctx, under));
-  return places.includes("deny") ? "deny" : places.includes("nested") ? "nested" : "ok";
+  for (const p of ["deny", "nested", "own"]) if (places.includes(p)) return p;
+  return "ok";
 }
 /** The place (`rmPlace`) of one physical path. */
 function landing(real, ctx, under) {
@@ -959,7 +1024,14 @@ function landing(real, ctx, under) {
   // `.git` holds the history and every linked worktree's admin directory (a worktree's `.git` file links it).
   if (real.split(sep).includes(".git")) return "deny";
   if (own.nested.some((w) => w === real || w.startsWith(real + sep))) return "deny";
-  if (!own.nested.some((w) => real.startsWith(w + sep))) return "ok";
+  if (inScratch) return "ok";
+  if (!own.nested.some((w) => real.startsWith(w + sep)))
+    return real
+      .slice(own.root.length + 1)
+      .split(sep)
+      .some((x) => REGENERABLE.test(x))
+      ? "ok"
+      : "own";
   return REGENERABLE.test(basename(real)) ? "ok" : "nested";
 }
 
@@ -1248,9 +1320,20 @@ const botLabelMutation = (c) =>
   [dropMessages(c), ...runnable(c)].some((t) =>
     segments(t).some((s) => /\bbot:gh\b/.test(blank(s)) && LABEL_MUTATION.test(s)),
   );
-/** A `pnpm bot:gh` write: `api` with a method or a field (pflag bundles: `-iX`), a repo edit, a release, a variable or secret. */
-const BOT_GH_WRITE =
-  /\bbot:gh\s+(?:--\s+)?(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:api\b[^|;&\n]*\s(?:-(?!-)[a-zA-Z]*[XfF]|--(?:method|field|raw-field|input)\b)|repo\s+(?:edit|delete|rename|archive)\b|release\s+(?:create|edit|delete|upload)\b|(?:variable|secret)\b)/;
+/**
+ * A `pnpm bot:gh` release, delete or deploy: `release create|edit|delete|upload`, `<noun> delete` (`repo`,
+ * `variable`, `secret`, `issue`, `label`, `run`, `cache`), `workflow run` of a deploy workflow, and `api` with a
+ * `DELETE` method in any spelling (`-X DELETE`, `-X=DELETE`, `-vX DELETE`, `--method=DELETE`) or a `dispatches` path.
+ */
+const BOT_GH_RELEASE_DELETE =
+  /\bbot:gh\s+(?:--\s+)?(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:release\s+(?:create|edit|delete|upload)\b|[\w-]+\s+delete\b|workflow\s+run\s+[^|;&\n]*deploy|api\b[^|;&\n]*(?:\s-[a-zA-Z]*X(?:=|\s*)DELETE\b|\s--method(?:=|\s+)DELETE\b|\/dispatches\b))/i;
+/** A GraphQL `delete…` mutation through `pnpm bot:gh` (the query is a quoted value, so the raw text is read). */
+const botGraphqlDelete = (c) =>
+  [dropMessages(c), ...runnable(c)].some((t) =>
+    segments(t).some(
+      (s) => /\bbot:gh\b/.test(blank(s)) && /\bmutation\b[^]*\bdelete[A-Z]\w*/.test(s),
+    ),
+  );
 /**
  * A `pnpm bot:git` command that runs a program in the bot's environment, which holds every /agents value:
  * `--upload-pack`, `--receive-pack`, `--exec`, `clone -u`, `rebase -x`, `bisect run`, `submodule foreach`,
@@ -1337,34 +1420,83 @@ const runsSqlClient = (c) =>
   );
 
 /**
- * The asks that still reach a human when a subagent raises them (ADR 0293, amended by STA-351): decisions only the
- * owner makes, which no rewrite of the command can turn into an allow. Every other ask from a subagent is a deny
- * (`unattended`), because the owner is not watching a subagent's prompts and the agent would sit idle.
+ * The only asks that reach the owner (ADR 0293, owner decision 2026-10-23, STA-400): deletes, deploys and releases,
+ * from the main thread and a subagent alike. Every other command is allowed, except the denies and the few asks the
+ * guard raises because it cannot read the command (a computed name, text piped into a shell, a GraphQL label
+ * mutation by id): those are a deny with `UNATTENDED_HINT` (`unattended`), so the agent rewrites instead of waiting.
  */
 export const HUMAN_ASKS = new Set([
-  "secrets-import-confirm",
-  "tag-push",
+  "infisical-secrets-delete",
   "encore-db-reset",
-  "encore-env",
+  "encore-env-delete",
   "wrangler-deploy",
-  "eas",
+  "wrangler-d1-remote-delete",
+  "eas-deploy",
+  "publish",
+  "rm-delete",
+  "git-clean",
+  "rm-nested-worktree",
+  "discard-nested-worktree",
+  "branch-delete-unpushed",
+  "tag-push",
+  "bot-gh-release-delete",
+  "bot-gh-graphql-delete",
 ]);
-/** What a caller nobody watches does instead of waiting for an answer to an ask. */
+/** What an agent does instead of waiting for an answer to an ask outside `HUMAN_ASKS`. */
 export const UNATTENDED_HINT =
-  "No human answers a subagent's or an unattended run's prompt, so this ask is a deny (ADR 0293). Rewrite the command so the guard can read it: write a loop or probe directly, not through `bash -c`, `sh -c` or `eval`; spell the command name out (no `$cmd …` or `$(…) …`); run commands instead of piping text into a shell. If the step needs the owner, hand it to the lead.";
-/** A decision for a caller nobody watches (a subagent, OpenCode): an ask becomes a deny with `UNATTENDED_HINT`. */
+  "The guard cannot read this command and only deletes and deploys ask the owner, so it is denied (ADR 0293, STA-400). Rewrite the command so the guard can read it: write a loop or probe directly, not through `bash -c`, `sh -c` or `eval`; spell the command name out (no `$cmd …` or `$(…) …`); run commands instead of piping text into a shell. If the step needs the owner, a subagent hands it to the lead and the lead asks the owner in chat.";
+/** An ask outside `HUMAN_ASKS` (or any ask, for OpenCode): a deny with `UNATTENDED_HINT`. */
 export const unattended = (d) =>
   d.decision === "ask" ? { decision: "deny", reason: `${d.reason}\n${UNATTENDED_HINT}` } : d;
 
+/** For an OpenCode executor: `rx` in any prose-free text of `c`, quotes kept (deny-leaning; prose is dropped). */
+const executorRuns = (c, rx) => [...proseFree(c), ...lineTexts(c)].some((t) => rx.test(t));
+/** For an OpenCode executor: `test` (an `atName`) on every runnable text of `executorRuns`, runners kept and dropped. */
+const executorRunsAt = (c, test) =>
+  [...proseFree(c), ...lineTexts(c)]
+    .flatMap((t) => [t, lookThroughRunners(t)])
+    .flatMap(runnable)
+    .some(test);
+/** A CLI name as a runner leaves it: any path, an `@<version>` (`npx wrangler@3 deploy`, `pnpm dlx eas-cli@latest`). */
+const CLI = (name) => String.raw`${name}(?:@${W}+)?\s+(?:[^|;&\n]*\s)?`;
+/**
+ * `wrangler deploy`, `rollback`, `delete` (`kv key delete`, `secret delete`), `preview` and `pages deployment create`,
+ * by any path or version.
+ */
+const WRANGLER_DEPLOY = atName(
+  CLI("wrangler") +
+    String.raw`(?:(?:deploy|rollback|delete|preview)\b|pages\s+deployment\s+create\b)`,
+);
+/** `wrangler d1 execute|migrations apply … --remote`, read with quotes kept: the SQL is a quoted value. */
+const WRANGLER_D1_REMOTE = new RegExp(
+  String.raw`(?:^|[\s;&|(])(?:${W}*\/)?wrangler(?:@${W}+)?\s[^|;&\n]*\bd1\s+(?:execute|migrations\s+apply)\b[^|&\n]*--remote`,
+);
+/**
+ * `eas`/`eas-cli` `submit`, `deploy`, `update` (an over-the-air release), `<x>:delete`, `workflow:run`,
+ * `channel:edit|rollout` (points a channel at a release), the update rollbacks and republish
+ * (`update:republish|rollback|roll-back-to-embedded|revert-update-rollout`), or `--auto-submit*`; `update:list` and
+ * `update:view` stay reads.
+ */
+const EAS_DEPLOY = atName(
+  CLI("eas(?:-cli)?") +
+    String.raw`(?:(?:submit|deploy|update)(?=[\s;&|()<>]|$)|--auto-submit\S*|[\w-]+:delete\b|workflow:run\b|channel:(?:edit|rollout)\b|update:(?:republish|rollback|roll-back-to-embedded|revert-update-rollout)\b)`,
+);
+/**
+ * A publish to a registry: `npm|pnpm|yarn|changeset … publish` with any options before it (`pnpm --silent`,
+ * `-C x`, `--filter=x`, `-r`), by any path or version; runners (`npx`, `mise exec --`, `pnpm exec`) are looked
+ * through by `forms`, which reads `npm` and `pnpm` as runners too, so a bare `publish` left at command position is
+ * one.
+ */
+const PUBLISH = atName(String.raw`(?:${CLI("(?:npm|pnpm|yarn|changeset)")})?publish` + END);
 /**
  * The rules, in order. A rule denies unless it says `decision: "ask"`; any deny wins over any ask. `rx` is a regex
  * or a function of (text, ctx) that returns true, or a string that replaces `why`. `scan: "bare"` rules see the
- * text with quoted strings blanked. An ask whose `id` is in `HUMAN_ASKS` reaches a human from a subagent too.
+ * text with quoted strings blanked. Only an ask whose `id` is in `HUMAN_ASKS` reaches a human (STA-400).
  */
 const RULES = [
   // --- Secrets: never print a value, never create a .env file (ADR 0173, ADR 0257) ------------
   {
-    rx: (c) => runsQuoted(c, /\binfisical\s+(?:-\S+\s+)*export\b/),
+    rx: (c) => infisicalCommands(c).some((x) => x.sub === "export"),
     why: "Secrets guard: `infisical export` decrypts and prints every secret value. Agents never read a value; a secret reaches a process only through the pnpm script that needs it.",
   },
   {
@@ -1376,9 +1508,33 @@ const RULES = [
     why: "Secrets guard: `infisical secrets` with no subcommand prints every secret value. Agents never read a value; `infisical secrets folders get` lists folders, and the owner sets values (ADR 0257).",
   },
   {
-    rx: (c) => infisicalSecrets(c).includes("delete"),
+    rx: (c) =>
+      infisicalSecrets(c).includes("delete") ||
+      infisicalCommands(c).some(
+        (x) =>
+          (x.sub === "dynamic-secrets" || (x.sub === "secrets" && x.rest.includes("folders"))) &&
+          x.rest.includes("delete"),
+      ),
     decision: "ask",
-    why: "`infisical secrets delete` removes a value nobody can restore from git; the owner confirms it.",
+    id: "infisical-secrets-delete",
+    why: "`infisical secrets delete`, `secrets folders delete` and `dynamic-secrets delete` remove what nobody can restore from git; the owner confirms it.",
+  },
+  {
+    // STA-400: a deny, not an ask. The /agents set holds the bot and reviewer App keys (ADR 0230).
+    rx: (c) => infisicalCommands(c).some((x) => x.sub === "run"),
+    why: "Raw `infisical run` hands every /agents value to the program it starts, which could print one (`node -e` on `process.env`) or mint the bot or reviewer token and forge an AI-REVIEW verdict (ADR 0230, ADR 0257). Use the pnpm script that wraps it: `pnpm bot:gh`, `pnpm bot:git`, `pnpm linear`, `pnpm secrets:import`.",
+  },
+  {
+    // STA-400 review: MCP servers launch mcp.sh from `.mcp.yaml`, never through the Bash tool.
+    rx: (c) =>
+      runsQuoted(
+        c,
+        atName(
+          String.raw`(?:(?:bash|sh|zsh|dash|ksh|source|\.)\s+(?:-\S+\s+)*)?(?:[^\s;&|()<>]*\/)?mcp\.sh` +
+            END,
+        ),
+      ),
+    why: "`tools/scripts/mcp.sh` runs its arguments inside `infisical run` with every /agents value, so from the Bash tool it can print one (`mcp.sh echo $X`). MCP servers launch it from `.mcp.yaml`; agents never run it.",
   },
   {
     rx: (c) =>
@@ -1413,17 +1569,6 @@ const RULES = [
         ),
       ),
     why: "Secrets guard: `security find-generic-password`, `find-internet-password`, `dump-keychain` and `export` read the owner's keychain, in any form (`/usr/bin/security`, `timeout`, `pnpm exec`). Agents never read a credential.",
-  },
-  {
-    rx: (c) => runsQuoted(c, /\binfisical\s+(?:-\S+\s+)*run\b/),
-    decision: "ask",
-    why: "Raw `infisical run` hands every /agents value to the process it starts; the owner confirms it. The pnpm scripts that need a token (`pnpm bot:gh`, `pnpm linear`) wrap it themselves.",
-  },
-  {
-    rx: (c) => runs(c, /\bsecrets(?::import|-import(?:\.mjs)?)\b[^|;&\n]*\s--confirm\b/),
-    decision: "ask",
-    id: "secrets-import-confirm",
-    why: "`secrets:import … --confirm` writes a production secret. The confirm token is a process rule; this prompt is the owner's real yes (ADR 0257).",
   },
   {
     // The secrets inbox holds values a human dropped for `pnpm secrets:import` (ADR 0257). No command
@@ -1490,49 +1635,90 @@ const RULES = [
     why: "`encore deploy` ships to a shared environment; no agent runs it. Deploys belong to the release path.",
   },
   {
-    rx: (c) => runsQuoted(c, /\bencore\s+env\s+(set|create|delete)\b/),
+    rx: (c) => runsQuoted(c, /\bencore\s+env\s+delete\b/),
     decision: "ask",
-    id: "encore-env",
-    why: "`encore env set/create/delete` changes a shared environment; the owner confirms it.",
+    id: "encore-env-delete",
+    why: "`encore env delete` removes a shared environment; the owner confirms it.",
   },
   {
-    rx: (c) =>
-      runsQuoted(
-        c,
-        atName(
-          String.raw`wrangler\s+(?:[^|;&\n]*\s)?(?:deploy|rollback|delete|secret)\b|wrangler\b[^|;&\n]*\s--remote\b`,
-        ),
-      ),
+    rx: (c) => runsQuoted(c, WRANGLER_DEPLOY),
     decision: "ask",
     id: "wrangler-deploy",
-    why: "`wrangler deploy`, `rollback`, `delete`, `secret` and `--remote` change Cloudflare with the owner's login; the owner confirms it.",
-  },
-  {
-    rx: (c) => runs(c, atName("eas" + END)),
-    decision: "ask",
-    id: "eas",
-    why: "`eas` builds, submits and updates on the owner's Expo login; the owner confirms it.",
+    why: "`wrangler deploy`, `rollback` and `delete` ship to or remove from Cloudflare with the owner's login; the owner confirms it.",
   },
   {
     rx: (c) =>
-      runs(
-        c,
-        atName(
-          String.raw`(?:npx|pnpx|bunx|pnpm\s+(?:-\S+\s+)*dlx|npm\s+(?:-\S+\s+)*(?:exec|x))` + END,
-        ),
-      ),
+      WRANGLER_D1_REMOTE.test(c) &&
+      /\b(?:DROP|DELETE|TRUNCATE)\b|migrations\s+apply|--file\b/i.test(c),
     decision: "ask",
-    why: "`npx`, `pnpx`, `pnpm dlx` and `npm exec` run unreviewed registry code; the owner confirms it. Use a catalog dependency with `pnpm exec <bin>`.",
+    id: "wrangler-d1-remote-delete",
+    why: "`wrangler d1 execute --remote` with `DROP`, `DELETE` or `TRUNCATE`, or `d1 migrations apply --remote`, or a SQL `--file` the guard does not read, changes the production database; the owner confirms it.",
+  },
+  {
+    rx: (c) => runsQuoted(c, EAS_DEPLOY),
+    decision: "ask",
+    id: "eas-deploy",
+    why: "`eas submit`, `--auto-submit`, `eas deploy`, `eas update` and `eas <x>:delete` ship to the stores or users, or delete, on the owner's Expo login; the owner confirms it.",
+  },
+  {
+    rx: (c) => runsQuoted(c, PUBLISH),
+    decision: "ask",
+    id: "publish",
+    why: "A registry publish (`npm`, `pnpm`, `yarn` or `changeset publish`, through any runner) releases a package version nobody can unpublish cleanly; the owner confirms it.",
+  },
+  // OpenCode executors only (`executor`): the shared rules allow these since STA-400, an unattended executor does not.
+  // `executorRunsAt` reads `eas` at command position (`ls node_modules/.bin/eas` reads it, it does not run it) in every
+  // prose-free text, quoted line and piped script; `executorRuns` reads the rest raw (deny-leaning).
+  {
+    executor: true,
+    // Raw, not at a name: the runner look-through drops `npx` itself (`mise exec -- npx tsc` reads as `tsc`).
+    rx: (c) =>
+      executorRuns(
+        c,
+        /(?:^|[\s;&|(])(?:\S*\/)?(?:npx|pnpx|bunx)(?=[\s;&|)]|$)|\bpnpm\s+(?:-\S+\s+)*dlx(?=\s|$)|\bnpm\s+(?:-\S+\s+)*(?:exec|x)(?=\s|$)/,
+      ),
+    why: "`npx`, `pnpx`, `pnpm dlx` and `npm exec` run unreviewed registry code; executors never run them. Use a catalog dependency with `pnpm exec <bin>`.",
+  },
+  {
+    executor: true,
+    rx: (c) =>
+      executorRunsAt(c, atName(String.raw`eas(?:-cli)?(?:@${W}+)?` + END)) ||
+      executorRuns(
+        c,
+        /\bwrangler(?:@\S*)?\s[^|;&\n]*(?:\bsecret\b|--remote\b)|\bencore\s+env\s+(?:set|create)\b/,
+      ),
+    why: "`eas`, `wrangler secret`, `wrangler --remote` and `encore env set|create` use the owner's login on a shared account; executors never run them, the lead does.",
+  },
+  {
+    executor: true,
+    rx: (c) => executorRuns(c, /\bsecrets(?::import|-import(?:\.mjs)?)\b[^|;&\n]*\s--confirm\b/),
+    why: "`secrets:import … --confirm` writes a production secret; executors never run it (ADR 0257).",
   },
 
   // --- History, worktrees and shared local state ------------------------------------------------
   {
     rx: (c, ctx) => rmPlaces(c, ctx).includes("deny"),
-    why: "`rm -rf` is allowed only strictly inside this session's own checkout or this session's scratchpad directory (`/tmp/claude-<uid>/<project>/<session>/scratchpad`, not the `/tmp/claude-<uid>` root), and inside a nested linked worktree with the owner's yes. Never /, ~, $HOME, a `$` expansion, `*`, `.git`, a worktree itself, a path outside those roots, or a relative path after an unknown `cd`.",
+    why: "A recursive `rm` is allowed only in build output strictly inside this session's own checkout (elsewhere in it the owner confirms it) or this session's scratchpad directory (`/tmp/claude-<uid>/<project>/<session>/scratchpad`, not the `/tmp/claude-<uid>` root), and inside a nested linked worktree with the owner's yes. Never /, ~, $HOME, a `$` expansion, `*`, `.git`, a worktree itself, a path outside those roots, or a relative path after an unknown `cd`.",
+  },
+  {
+    rx: (c, ctx) => rmPlaces(c, ctx).includes("own"),
+    decision: "ask",
+    id: "rm-delete",
+    why: "`rm` or `find -delete` outside the session's scratchpad and build output (`node_modules`, `dist`, `.turbo`, `.stackra`, `coverage`, `.cache`) deletes files; the owner confirms it.",
+  },
+  {
+    rx: (c, ctx) =>
+      scanBases(c, ctx.cwd).some(([t, base]) =>
+        gitCommands(t, base).some((g) => g.sub === "clean" && discards(g)),
+      ),
+    decision: "ask",
+    id: "git-clean",
+    why: "`git clean -f` deletes untracked files git cannot restore; the owner confirms it. `git clean -n` previews.",
   },
   {
     rx: (c, ctx) => rmPlaces(c, ctx).includes("nested"),
     decision: "ask",
+    id: "rm-nested-worktree",
     why: "`rm -rf` inside a linked worktree nested in this checkout: it may be another agent's. The owner confirms it; build output (`node_modules`, `dist`, `.turbo`, `.stackra`, `coverage`, `.cache`) needs no yes. Run from inside your own worktree instead.",
   },
   {
@@ -1562,11 +1748,13 @@ const RULES = [
   {
     rx: (c, ctx) => discardPlaces(c, ctx).includes("nested"),
     decision: "ask",
+    id: "discard-nested-worktree",
     why: "This discards uncommitted work in a linked worktree nested in this checkout, reached by `cd` or `-C`: it may be another agent's. The owner confirms it. Run it from inside your own worktree (the session's working directory) instead.",
   },
   {
     rx: deletesUnpushedBranch,
     decision: "ask",
+    id: "branch-delete-unpushed",
     why: "`git branch -D` of a branch whose commits no remote holds (its upstream is not gone) deletes work git cannot fetch back; the owner confirms it. After a merged PR, `pnpm bot:git -- fetch --prune origin` marks the upstream gone.",
   },
   { rx: stashRefusal, why: "" },
@@ -1578,12 +1766,19 @@ const RULES = [
   {
     rx: botLabelMutation,
     decision: "ask",
-    why: "A GraphQL label mutation takes label ids, so the guard cannot tell whether it writes `owner-approved`; the owner confirms it. Use `pnpm bot:gh -- pr edit <n> --add-label <name>`.",
+    why: "A GraphQL label mutation takes label ids, so the guard cannot tell whether it writes `owner-approved`. Use `pnpm bot:gh -- pr edit <n> --add-label <name>`.",
   },
   {
-    rx: (c) => runs(c, BOT_GH_WRITE),
+    rx: (c) => runs(c, BOT_GH_RELEASE_DELETE),
     decision: "ask",
-    why: "A `pnpm bot:gh` write (`api` with `-X`, `--method`, `-f`, `-F`, `--field`, `--raw-field` or `--input`; `repo edit|delete|rename|archive`; `release create|edit|delete|upload`; `variable`; `secret`) acts with the bot's write access beyond a PR; the owner confirms it.",
+    id: "bot-gh-release-delete",
+    why: "A `pnpm bot:gh` release, delete or deploy (`release create|edit|delete|upload`, `<noun> delete`, `workflow run` of a deploy workflow, `api` with `DELETE` or a `dispatches` path) acts with the bot's write access; the owner confirms it.",
+  },
+  {
+    rx: botGraphqlDelete,
+    decision: "ask",
+    id: "bot-gh-graphql-delete",
+    why: "A GraphQL `delete…` mutation through `pnpm bot:gh` removes data with the bot's write access; the owner confirms it.",
   },
   {
     rx: botGitRunsProgram,
@@ -1592,7 +1787,7 @@ const RULES = [
   {
     rx: computedName,
     decision: "ask",
-    why: "The command name is computed (`$x …`, `$(…) …`, `env -S`), so the guard cannot read what runs; a human confirms it. Write the command name out.",
+    why: "The command name is computed (`$x …`, `$(…) …`, `env -S`), so the guard cannot read what runs. Write the command name out.",
   },
   {
     // STA-214: pack plumbing pushes or fetches without the push-to-main check; no agent needs it.
@@ -1616,11 +1811,6 @@ const RULES = [
             gitConfigLevel(d) === "deny"),
       ),
     why: "git `-c` outside a short display/identity allow-list, any `git config` that is not a read or a write of an allowed key, `--config-env`, and the `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=`, `GIT_ASKPASS=`, `SSH_ASKPASS=`, `GIT_EXEC_PATH=`, `GIT_SSH[_COMMAND]=` and `GIT_PROXY_COMMAND=` prefixes (and a pager other than `cat` or `less`) make git run another command, redefine a remote or alias past the push and credential guards. For an editor, `GIT_EDITOR=true` is already set in .claude/settings.json `env`.",
-  },
-  {
-    rx: (c) => scanTexts(c).some((d) => /\bgit\b/.test(d) && gitConfigLevel(d) === "ask"),
-    decision: "ask",
-    why: "`git config <key> <value>` without `--worktree` writes the repository's config, which every linked worktree shares (`user.name`, `user.email`, `rerere.enabled`); the owner confirms it. Use `git config --worktree <key> <value>`, or `git -c <key>=<value>` for one command.",
   },
   {
     // `man -P <cmd>` and `--pager=<cmd>` run <cmd>; plain `man git-credential` stays allowed.
@@ -1651,7 +1841,7 @@ const RULES = [
     rx: runsOpaque,
     decision: "ask",
     lookThrough: false, // _inbox reads `pnpm exec sh` itself; a script name is not a command
-    why: "A shell runs text the guard cannot read (`curl … | sh`, `cat x | sh`, `cmd > f; sh f`); a human confirms it. Run the commands directly instead.",
+    why: "A shell runs text the guard cannot read (`curl … | sh`, `cat x | sh`, `cmd > f; sh f`). Run the commands directly instead.",
   },
   {
     rx: (c) => runs(c, BARE_GH),
@@ -1810,13 +2000,13 @@ function context(raw, cwd, agentType, scratchpad) {
 /**
  * The tier for a shell command: `{ decision: "allow" | "ask" | "deny", reason }`. Every rule runs on the command
  * and on its runner-free form (`lookThroughRunners`); any deny wins over any ask. Safety net (STA-254): deny rules
- * also run on every substitution body found with quotes ignored. From a subagent (`subagent`: the hook input has an
- * `agent_id`, which the main thread never has, `--agent` sessions included) an ask is a deny (`unattended`) unless
- * every ask it hit is in `HUMAN_ASKS`; the main thread's hook asks stay asks.
+ * also run on every substitution body found with quotes ignored. An ask is a deny (`unattended`) unless every ask
+ * it hit is in `HUMAN_ASKS`, from the main thread and a subagent alike (STA-400; STA-351 did it for subagents).
  * @param {string} raw the command as the agent wrote it
- * @param {{ cwd?: string, agentType?: string, subagent?: boolean, scratchpad?: string }} [options] the shell's
- *   directory, the agent type (`agent_type`, for the reviewer rule), whether a subagent runs it (`agent_id`), and
- *   the session's scratchpad directory (`sessionScratchpad`; none: no scratch `rm -rf`)
+ * @param {{ cwd?: string, agentType?: string, scratchpad?: string, executor?: boolean }} [options] the shell's
+ *   directory, the agent type (`agent_type`, for the reviewer rule), the session's scratchpad directory
+ *   (`sessionScratchpad`; none: no scratch `rm -rf`), and whether an OpenCode executor runs it (the `executor`
+ *   rules: `npx`, `eas`, `wrangler secret|--remote`, `encore env set|create`, `secrets:import --confirm`)
  */
 export function decideBash(raw, options = {}) {
   try {
@@ -1830,7 +2020,7 @@ const UNREADABLE =
   "The guard could not read this command, so it is denied. Split it into plain commands";
 function decide(
   raw,
-  { cwd = process.cwd(), agentType = "", subagent = false, scratchpad = "" } = {},
+  { cwd = process.cwd(), agentType = "", scratchpad = "", executor = false } = {},
 ) {
   clearCaches();
   gitRuns = 0;
@@ -1859,9 +2049,10 @@ function decide(
         ? { decision: "deny", reason: TOO_SLOW }
         : d;
   let asked = null;
-  let rewrite = null; // the first ask a subagent may not raise (not in `HUMAN_ASKS`)
+  let rewrite = null; // the first ask outside `HUMAN_ASKS`: the whole command is a deny
   const all = forms(cmd);
-  for (const rule of RULES)
+  const rules = executor ? RULES : RULES.filter((r) => !r.executor);
+  for (const rule of rules)
     for (const text of rule.lookThrough === false ? [cmd] : all) {
       if (late()) return done(null);
       const why = check(rule, text);
@@ -1872,14 +2063,14 @@ function decide(
   for (const body of rawSubstitutions(cmd)) {
     const texts = forms(body);
     for (const text of texts)
-      for (const rule of RULES) {
+      for (const rule of rules) {
         if (late()) return done(null);
         if (rule.lookThrough === false && text !== body) continue;
         const why = rule.decision === "ask" ? null : check(rule, text);
         if (why) return done({ decision: "deny", reason: why });
       }
   }
-  if (subagent && rewrite) return done(unattended({ decision: "ask", reason: rewrite }));
+  if (rewrite) return done(unattended({ decision: "ask", reason: rewrite }));
   return done(asked ? { decision: "ask", reason: asked } : { decision: "allow", reason: "" });
 }
 

@@ -12,9 +12,9 @@
 import { contrastRatio, STACKRA_THEME } from "@stackra/tokens";
 import contrastReport from "@stackra/tokens/assets/data/stackra/contrast.json";
 import type { ColorRole, ColorToken } from "@stackra/tokens/contracts";
-import { useDesignSystem } from "@stackra/ui/react";
-import type { ReactNode } from "react";
+import * as Ui from "@stackra/ui/react";
 
+import { PageSection } from "#src/components/page-section";
 import { FoundationsRoute } from "#src/routes/foundations/foundations.route";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::foundations.*` keys.
@@ -126,21 +126,9 @@ const RADII: readonly (readonly [string, string])[] = [
 /** A CSS custom property reference. */
 const cssVar = (name: string) => `var(--${name})`;
 
-/** A titled section of the page, labelled by its heading. */
-function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
-  return (
-    <section aria-labelledby={id} className="grid gap-4">
-      <h2 id={id} className="type-h2">
-        {title}
-      </h2>
-      {children}
-    </section>
-  );
-}
-
 /** The token foundations page. */
 export function Foundations() {
-  const { resolvedColorScheme } = useDesignSystem();
+  const { resolvedColorScheme } = Ui.useDesignSystem();
   const dark = resolvedColorScheme === "dark";
   const hexOf = (name: string) => (dark ? TOKENS[name]?.hexDark : TOKENS[name]?.hexLight) ?? "";
 
@@ -185,27 +173,27 @@ export function Foundations() {
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
-        <h1 className="type-h1">{FoundationsRoute.title}</h1>
+        <Ui.Heading level={1}>{FoundationsRoute.title}</Ui.Heading>
         <p className="max-w-prose">
           <bdi>{STRINGS.intro}</bdi>
         </p>
       </header>
 
-      <Section id="colors" title={STRINGS.colors}>
+      <PageSection id="colors" title={STRINGS.colors}>
         <p className="max-w-prose text-muted">
           <bdi>{STRINGS.colorsNote}</bdi>
         </p>
         {(Object.keys(ROLE_GROUPS) as (keyof typeof ROLE_GROUPS)[]).map((group) => (
           <div key={group} className="grid gap-3">
-            <h3 className="type-h3">{STRINGS.groups[group]}</h3>
+            <Ui.Heading level={3}>{STRINGS.groups[group]}</Ui.Heading>
             <ul className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-4">
               {ROLE_GROUPS[group].map(roleCard)}
             </ul>
           </div>
         ))}
-      </Section>
+      </PageSection>
 
-      <Section id="typography" title={STRINGS.typography}>
+      <PageSection id="typography" title={STRINGS.typography}>
         <ul className="grid gap-4">
           {Object.entries(STACKRA_THEME.typography).map(([name, style]) => (
             <li key={name} className="grid gap-1">
@@ -225,9 +213,9 @@ export function Foundations() {
             </li>
           ))}
         </ul>
-      </Section>
+      </PageSection>
 
-      <Section id="spacing" title={STRINGS.spacing}>
+      <PageSection id="spacing" title={STRINGS.spacing}>
         <ul className="grid gap-2">
           {Object.entries(STACKRA_THEME.spacing).map(([name, size]) => (
             <li key={name} className="flex items-center gap-3">
@@ -243,9 +231,9 @@ export function Foundations() {
             </li>
           ))}
         </ul>
-      </Section>
+      </PageSection>
 
-      <Section id="radius" title={STRINGS.radius}>
+      <PageSection id="radius" title={STRINGS.radius}>
         <ul className="flex flex-wrap gap-4">
           {RADII.map(([name, value]) => (
             <li key={name} className="grid justify-items-center gap-2">
@@ -261,9 +249,9 @@ export function Foundations() {
             </li>
           ))}
         </ul>
-      </Section>
+      </PageSection>
 
-      <Section id="shadows" title={STRINGS.shadows}>
+      <PageSection id="shadows" title={STRINGS.shadows}>
         <ul className="flex flex-wrap gap-6">
           {Object.keys(STACKRA_THEME.shadows).map((name) => (
             <li key={name} className="grid justify-items-center gap-2">
@@ -277,9 +265,9 @@ export function Foundations() {
             </li>
           ))}
         </ul>
-      </Section>
+      </PageSection>
 
-      <Section id="motion" title={STRINGS.motion}>
+      <PageSection id="motion" title={STRINGS.motion}>
         <table className="w-fit text-start text-sm">
           <thead>
             <tr>
@@ -310,7 +298,7 @@ export function Foundations() {
             ))}
           </tbody>
         </table>
-      </Section>
+      </PageSection>
     </article>
   );
 }

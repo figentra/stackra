@@ -52,6 +52,52 @@ switcher and is covered by Playwright and axe. `@stackra/brand` is deleted; its 
 - **P-005**: A package scaffolded or validated in `design-system` is accepted, and an unknown category still fails — Validates: FR-006
 - **P-006**: The `./react` provider puts the colour scheme and `dir` on the document, and the `./native` provider applies the same scheme from the shared contract — Validates: FR-007, FR-008, FR-009
 - **P-007**: Every playground route, found by listing the route folders, renders without an axe violation in light, dark, LTR and RTL — Validates: FR-010, FR-011
+- **P-008**: For every Size and TextTone, both Icons hand the drawn component the same pixel size (`ICON_SIZES`) and the same colour role — Validates: FR-012
+- **P-009**: Decorative is the default on both runtimes: an Icon with no label has no accessible name and is hidden — Validates: FR-013
+- **P-010**: Each runtime's Text and Heading props extend their contract (type test) — Validates: FR-017, FR-018, FR-019
+- **P-011**: Props outside the contract reach HeroUI unchanged on both runtimes, and the contract-owned HeroUI props cannot be passed — Validates: FR-018, FR-019
+- **P-012**: Text in Arabic, by `lang` or by the screen's locale, takes the theme's `-ar` style and other text never does — Validates: FR-019, FR-020
+- **P-013**: An Icon is drawn mirrored exactly when it asks for it and the direction is right to left — Validates: FR-014
+- **P-014**: The native provider gives Lucide icons the md size and the theme foreground colour — Validates: FR-015
+- **P-015**: Every Icon and Typography sample of the playground shows what its contract promises (names, mirroring, sizes, computed type, live state) — Validates: FR-016, FR-021
+- **P-016**: A loading Button refuses presses and keeps its accessible name on web and reports busy on native, and an IconButton or CloseButton always has a non-empty accessible name, with every HeroUI prop outside the contract passed through — Validates: FR-022, FR-023, FR-024
+- **P-017**: An internal, same-origin, unmodified Link click navigates through the router provider, and an external link or absolute URL never does, on both runtimes — Validates: FR-025, FR-026
+- **P-018**: Every Button, IconButton, CloseButton and Link sample of the playground shows what its contract promises, listed under its category — Validates: FR-027, FR-028
+- **P-019**: Each runtime's Surface, Card, Separator, Chip and Badge props extend their contract, and the contract's value sets equal HeroUI's on both runtimes (type tests), so a HeroUI change fails to compile — Validates: FR-029, FR-030, FR-031, FR-033, FR-034, FR-035, FR-037, FR-038, FR-039
+- **P-020**: A card title is a heading on both runtimes: web `h<level>` (default `h3`) with HeroUI's look, native `accessibilityRole="header"` with `level` dropped — Validates: FR-030, FR-031
+- **P-021**: Props outside the contract reach HeroUI unchanged on both runtimes for Surface and Card, and HeroUI's surface context still reaches the children on web — Validates: FR-030, FR-031
+- **P-022**: A separator draws its level's theme colour on both runtimes; on web it is a horizontal `hr` or a vertical `role="separator"` with `aria-orientation`, on native it never hands HeroUI Native the contract's `variant` — Validates: FR-030, FR-031
+- **P-023**: With no props, a Chip is the same `secondary`, `default`, `md` chip on both runtimes, and press handlers are refused by the type — Validates: FR-034, FR-035
+- **P-024**: A StatusBadge reads as its text alone: its dot has no name and nothing is a live region, on both runtimes — Validates: FR-034, FR-035
+- **P-025**: Props outside the Chip contract reach HeroUI unchanged on both runtimes — Validates: FR-034, FR-035
+- **P-026**: A badge at each logical corner sits on the reading side of its anchor, right in left-to-right and left in right-to-left, on both runtimes — Validates: FR-038, FR-039
+- **P-027**: A badge without a label is hidden from assistive technology, and with a label assistive technology gets exactly the label and not the visible content — Validates: FR-038, FR-039
+- **P-028**: A badge never takes a press: a press on it reaches the anchored element — Validates: FR-038, FR-039
+- **P-029**: Props outside the Badge contract reach the HeroUI base unchanged on both runtimes — Validates: FR-038, FR-039
+- **P-030**: Every Surface, Card, Separator, Chip, StatusBadge and Badge sample of the playground shows what its contract promises, listed under its category — Validates: FR-032, FR-036, FR-040
+- **P-031**: Without a label an Avatar is hidden from assistive technology and with one it is exactly one image named by it; its fallback is the loaded image, else `fallback`, else the initials of `name`, else the person icon, on both runtimes — Validates: FR-041, FR-042, FR-043, FR-044
+- **P-032**: A Spinner with a label is one named status (web `status`, native busy progressbar), without one it is hidden, and HeroUI's English "Loading" never reaches a user — Validates: FR-042, FR-043
+- **P-033**: A Skeleton shows its children only when not loading, takes its loading state and animation from the enclosing SkeletonGroup unless it sets its own, and a group with a loading label exposes exactly that text while loading — Validates: FR-042, FR-043, FR-045
+- **P-034**: Props outside the Avatar, Spinner, Skeleton and SkeletonGroup contracts reach HeroUI unchanged on both runtimes — Validates: FR-042, FR-043
+- **P-035**: Every Avatar, Spinner and Skeleton sample of the playground shows what its contract promises, listed under its category — Validates: FR-046
+- **P-036**: `IconName` accepts a Lucide name, an alias and a namespaced custom name and nothing else, and `IconComponentProps` names every prop `Icon` hands the component — Validates: FR-047
+- **P-037**: The committed Lucide name list is exactly what the installed `lucide-react` and `lucide-react-native` ship, and no generated file names an icon outside it — Validates: FR-048
+- **P-038**: `findIcon` resolves a registered name or an alias from own properties only, and `isIconName` separates valid names from every other string — Validates: FR-049
+- **P-039**: A registry provider gives its icons their registry, nests with the nearest winning, and a name outside every registry resolves to nothing without throwing — Validates: FR-050
+- **P-040**: The Lucide re-exports and the full registry are opt-in entries that no other entry imports — Validates: FR-051
+- **P-041**: `Icon` draws the icon its name resolves to on both runtimes, nothing for an unregistered name (with one development warning per name), and no component prop — Validates: FR-052
+- **P-042**: An icon slot of Button, IconButton, CloseButton and Chip draws a name through `Icon` and an element as given — Validates: FR-053
+- **P-043**: Only `@stackra/icons` and `@stackra/ui` import a Lucide package, and the playground registers only the icons it draws — Validates: FR-054
+- **P-044**: Every field extends `FieldContractProps`; the playground's router, index and navigation follow its route folders, and a wrong path, an unknown category or a missing page fails with the folder's name; `react-hook-form` is an exact catalog entry and a required peer of `@stackra/ui` — Validates: FR-055, FR-056, FR-057
+- **P-045**: A bound field shows its rule's message and is invalid after a failed submit, clears both once valid, is required and disabled as the form says, and binds a string, a boolean and a choice, on both runtimes — Validates: FR-058, FR-059
+- **P-046**: A FormSection is a group named by its title, tied to its description, and a disabled section disables the fields inside it on web; the native one is a named group with a level-3 heading — Validates: FR-060, FR-061
+- **P-047**: Every FormField and FormSection sample of the playground shows what its contract promises, axe clean in the four combinations — Validates: FR-062
+- **P-048**: A TextField, TextArea and InputGroup name their input by the label, tie the description and the error to it, keep the affixes at the reading start and end, and pass every HeroUI prop outside the contract through, on both runtimes — Validates: FR-063, FR-064, FR-065, FR-066, FR-067, FR-068, FR-069, FR-070, FR-071
+- **P-049**: A SearchField clears from its button, reports busy while loading and submits and clears through its handlers, with every state shown and axe clean — Validates: FR-072, FR-073, FR-074
+- **P-050**: A Select, ComboBox and TagGroup call `onChange` with string keys, filter by label unless the app does, show picked items as removable named tags and refuse change when disabled or read-only, with every sample shown — Validates: FR-075, FR-076, FR-077, FR-078, FR-079, FR-080, FR-081
+- **P-051**: A Checkbox, CheckboxGroup, RadioGroup and Switch keep their own state, show `value` when controlled, tie a group's description and error to the group, and refuse input when disabled or read-only, with every sample shown — Validates: FR-082, FR-083, FR-084, FR-085, FR-086, FR-087, FR-088, FR-089
+- **P-052**: A Label names its control, a Description's id is the one a control names it by, a FieldError follows the field's validity, and a Form hands its validation errors to the fields in it — Validates: FR-090, FR-091, FR-092, FR-093, FR-094
+- **P-053**: The native provider sets the colour scheme React Native's `Appearance` follows, and releases it for `system` — Validates: FR-095
 
 ## Contracts and events
 

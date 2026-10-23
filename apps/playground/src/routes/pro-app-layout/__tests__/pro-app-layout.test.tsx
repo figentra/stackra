@@ -22,7 +22,7 @@ describe("ProAppLayout", () => {
   it("sits at /pro-app-layout in the Pro group, owns its main, and titles the page and the document", () => {
     render(<ProAppLayout />);
     expect(ProAppLayoutRoute.path).toBe("/pro-app-layout");
-    expect(ProAppLayoutRoute.group).toBe("Pro");
+    expect(ProAppLayoutRoute.category).toBe("Pro");
     expect(ProAppLayoutRoute.ownsMain).toBe(true);
     expect(screen.getByRole("heading", { level: 1, name: ProAppLayoutRoute.title })).toBeTruthy();
     expect(document.title).toBe("AppLayout · Stackra Playground");
