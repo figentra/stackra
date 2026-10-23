@@ -419,7 +419,7 @@ function findScriptStrings(c) {
   for (const m of c.matchAll(
     new RegExp(String.raw`\b(?:${SHELL_NAME}\s+-c|eval)\s+(["'])((?:\\.|(?!\1)[^\\])*)\1`, "g"),
   ))
-    out.push(m[2]);
+    out.push(m[1] === '"' ? doubleQuoted(m[2]) : m[2]);
   // A here-string read by a shell, `source` or `.` in the same command; and `mise exec … -c '<cmd>'` (`x`,
   // `--command`, `--command=`, `-c<cmd>`), which runs a command line like `sh -c`, its own `--` ending its options.
   // One pass over the words (STA-330 review: a regex for the here-string was quadratic in `.` words).
@@ -567,6 +567,7 @@ function splitCommands(c, all) {
     words: [],
     dyn: [],
     at: [],
+    raw: [],
     redirects: [],
     dynamic: false,
     op: "",
@@ -575,20 +576,27 @@ function splitCommands(c, all) {
   let lessEnv = false; // LESSOPEN / LESSCLOSE set in this or an earlier command of the line
   let cur = fresh();
   let word = null;
+  let raw = null; // the word with its double-quoted bodies as written, for re-quoting it (`dequoted`)
   let wordAt = 0;
   let wordDyn = false;
   let redirect = null;
   const end = () => {
     if (word === null) return;
-    if (redirect) cur.redirects.push({ op: redirect, target: word, dynamic: wordDyn });
+    if (redirect) cur.redirects.push({ op: redirect, target: word, dynamic: wordDyn, raw });
     else {
       cur.words.push(word);
       cur.dyn.push(wordDyn);
       cur.at.push(wordAt);
+      cur.raw.push(raw);
     }
     word = null;
+    raw = null;
     wordDyn = false;
     redirect = null;
+  };
+  const add = (s, written = s) => {
+    word = (word ?? "") + s;
+    raw = (raw ?? "") + written;
   };
   const push = (op, at) => {
     end();
@@ -608,23 +616,23 @@ function splitCommands(c, all) {
   const dynamicPart = (from, to) => {
     cur.dynamic = true;
     wordDyn = true;
-    word = (word ?? "") + c.slice(from, to + 1);
+    add(c.slice(from, to + 1));
     return to;
   };
   for (let i = 0; i < c.length; i++) {
     const ch = c[i];
     if (word === null) wordAt = i;
-    if (ch === "\\") word = (word ?? "") + (c[++i] ?? "");
+    if (ch === "\\") add(c[++i] ?? "");
     else if (ch === "$" && c[i + 1] === "'" && ansiEnd(c, i + 2) < c.length) {
       // ANSI-C quoting (`$'gh'`, `$'\x67h'`) is a literal word with its escapes decoded (STA-330 review); an
       // unclosed one stays an expansion (deny-leaning).
       const j = ansiEnd(c, i + 2);
-      word = (word ?? "") + ansiC(c.slice(i + 2, j));
+      add(ansiC(c.slice(i + 2, j)));
       i = j;
     } else if (ch === "'") {
       const j = c.indexOf("'", i + 1);
       const stop = j < 0 ? c.length : j;
-      word = (word ?? "") + c.slice(i + 1, stop);
+      add(c.slice(i + 1, stop));
       i = stop;
     } else if (ch === '"') {
       let j = i + 1;
@@ -634,7 +642,7 @@ function splitCommands(c, all) {
         cur.dynamic = true;
         wordDyn = true;
       }
-      word = (word ?? "") + text;
+      add(doubleQuoted(text), text);
       i = j;
     } else if (ch === "`") {
       let j = i + 1;
@@ -644,7 +652,7 @@ function splitCommands(c, all) {
     else if ((ch === "<" || ch === ">") && c[i + 1] === "(") i = dynamicPart(i, closing(i + 1));
     else if (ch === "<" || ch === ">" || (ch === "&" && c[i + 1] === ">")) {
       const fd = word !== null && /^\d+$/.test(word) ? word : null;
-      if (fd !== null) word = null;
+      if (fd !== null) word = raw = null;
       else end();
       const op = /^(?:&>>?|<<<|<<-?|<>|<&|>&|>>|>\||<|>)/.exec(c.slice(i))[0];
       redirect = (fd ?? "") + op;
@@ -655,12 +663,17 @@ function splitCommands(c, all) {
       i += op.length - 1;
       push(op === "|&" ? "|" : op, i + 1);
     } else if (/\s/.test(ch)) end();
-    else word = (word ?? "") + ch;
+    else add(ch);
   }
   push("", c.length);
   return all ? out : out.filter((s) => s.words.length || s.redirects.length);
 }
 
+/**
+ * A double-quoted body as the shell passes it: the backslash before `\`, `"`, `$` and a backtick dropped, so a
+ * line quoted inside a quoted line (`sh -c "sh -c \"rm -rf ~\""`) reads as it runs (STA-330 review round 5).
+ */
+const doubleQuoted = (text) => text.replace(/\\([\\"$`])/g, "$1");
 /** Where the `$'…'` body that starts at `j` closes (`\'` escapes a quote), or `c.length`. */
 function ansiEnd(c, j) {
   while (j < c.length && c[j] !== "'") j += c[j] === "\\" ? 2 : 1;

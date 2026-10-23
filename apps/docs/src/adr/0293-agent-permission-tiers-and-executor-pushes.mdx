@@ -67,7 +67,9 @@ cover what GitHub cannot see.
    `ssh h '…'`, `watch '…'`, `trap '…' EXIT`, `at now <<< '…'`), as are the file names in it, and so is a line quoted
    inside that line, so an unknown wrapper never hides a recursive delete, a discard, a forbidden push, a stash or one
    of those secret, deploy, release and drop commands. The plain-`gh`, network-`git` and `bot:token` rules do not read
-   a quoted line. That reading stops past eight quoting levels without denying. A
+   a quoted line. A double-quoted line loses its `\"`, `\\`, `\$` and escaped backticks as the shell drops them,
+   so `sh -c "sh -c \"rm -rf ~\""` reads as the delete it runs. That reading stops past eight quoting levels, single
+   or double, without denying. A
    decision is bounded, not linear: a command nesting substitutions or script strings deeper than the guard reads,
    needing more git lookups than it runs, or taking longer than two seconds, is denied, because a hook that runs out
    of time fails open. Settings keep the prefix denies for `rm -rf /` and `rm -rf ~`, `$HOME`; a prefix deny of every
@@ -118,8 +120,13 @@ cover what GitHub cannot see.
   fed to a package script that wraps a SQL client (`pnpm <script> <<< 'DROP …'`), a glob that spells a secret name
   with wildcards (`.e?v`, `.en[v]`), plain `gh`, network `git` and `bot:token` in a quoted line
   (`watch 'gh pr merge 1'`, `watch 'git fetch'`, `watch 'pnpm bot:token'`; a push there still meets the push rules),
-  and quoting nested more than eight levels deep. Isolation comes from GitHub's rulesets, a bot without admin rights,
-  the CI reviewer and moving the owner's credentials out of agents' reach.
+  a bare secret file name in a wrapper read only two quoting levels deep (`cat .env` wrapped three times in
+  `watch '…'` is allowed; a line that also holds a guarded command name is read eight deep), a secret path built
+  by a substitution (`cat "$(pwd)/.env"`), and quoting nested more than eight levels deep. One known false deny: a
+  heredoc written to a file is read as a script when a body line starts with `/*`. A search or test-name pattern
+  (`grep`, `rg`, `git grep`, `vitest -t`) and a `jq` option value are no file name; their file operands are still
+  read. Isolation comes from GitHub's rulesets, a bot without admin rights, the CI reviewer and moving the owner's
+  credentials out of agents' reach.
 - Rule 5 of [0230](/adr/0230-reviewer-identity-separate-from-builder) still denies raw read-only network git; a later
   amendment may allow it once no owner credential can answer it.
 

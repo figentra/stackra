@@ -1652,8 +1652,12 @@ const RULES = [
   },
 ];
 
-/** A word re-quoted for the shell: plain words bare, an assignment's value quoted, an expansion double-quoted. */
-function requote(w, dynamic) {
+/**
+ * A word re-quoted for the shell: plain words bare, an assignment's value quoted, an expansion double-quoted. An
+ * expansion keeps its double-quoted text as written (`raw`), so an escaped `\$` or backtick stays escaped.
+ */
+function requote(w, dynamic, raw) {
+  if (dynamic && raw != null) w = raw;
   if (/^[\w./:@%+,~{}!^-]*$/.test(w) && w) return w;
   const eq = /^(\w+=)(.*)$/s.exec(w);
   if (eq) return eq[1] + requote(eq[2], dynamic);
@@ -1670,8 +1674,8 @@ function dequoted(c) {
     .map(
       (s) =>
         [
-          ...s.words.map((w, k) => requote(w, s.dyn[k])),
-          ...s.redirects.map((r) => r.op + requote(r.target, r.dynamic)),
+          ...s.words.map((w, k) => requote(w, s.dyn[k], s.raw[k])),
+          ...s.redirects.map((r) => r.op + requote(r.target, r.dynamic, r.raw)),
         ].join(" ") + (s.op ? ` ${s.op} ` : ""),
     )
     .join("");
@@ -1828,18 +1832,66 @@ const PROGRAM_FLAG = new Map([
   ["python", /^-[A-Za-z]*c$/],
   ["perl", /^-[A-Za-z]*[eE]$/],
 ]);
+/** Options that take values before the program or pattern, and how many (`jq --arg a b`, `grep -A 3`). */
+const JQ_VALUES = {
+  "--arg": 2,
+  "--argjson": 2,
+  "--slurpfile": 2,
+  "--rawfile": 2,
+  "--indent": 1,
+  "-L": 1,
+};
+const SEARCH_VALUES = { "-A": 1, "-B": 1, "-C": 1, "-m": 1 };
+const RG_VALUES = {
+  ...SEARCH_VALUES,
+  "-g": 1,
+  "--glob": 1,
+  "-t": 1,
+  "--type": 1,
+  "-T": 1,
+  "-r": 1,
+};
+const SEARCHES = new Set(["grep", "egrep", "fgrep", "rg", "ag", "ack"]);
+/** A vitest test-name filter: its value is a pattern, never a file (`vitest run -t "reads action.key"`). */
+const TEST_NAME_FLAG = /^(?:-t|--testNamePattern|--test-name-pattern)$/;
+/** The first operand of `words` from `from`: options and their `values` skipped, the word after `--` taken. */
+function firstOperand(words, from, values) {
+  for (let j = from; j < words.length; j++) {
+    if (words[j] === "--") return j + 1;
+    if (values[words[j]]) j += values[words[j]];
+    else if (!words[j].startsWith("-")) return j;
+  }
+  return -1;
+}
 /**
- * `words` without the program a command reads as code, not as file names: the first operand of `jq` and `awk`
- * (none when `-f` names a program file) and the value of a `PROGRAM_FLAG` (STA-330 review).
+ * `words` without the program or pattern a command reads as code or text, not as file names (STA-330 review): the
+ * first operand of `jq` (its option values skipped) and `awk` (none when `-f` names a program file), the pattern of
+ * a search (`grep`, `rg`, `git grep`; the `-e` values, none with `-f`), a vitest `-t` value and the value of a
+ * `PROGRAM_FLAG`. A file operand is kept, so `jq . .env`, `grep x .env` and `grep -f .env x` still name the file.
  */
 function withoutPrograms(words) {
   const i = commandAt(words);
   const name = baseName(words[i] ?? "").replace(/[\d.]+$/, "");
+  const drop = (k) => words.filter((_, j) => j !== k);
   if (name === "jq" || name === "awk" || name === "gawk") {
     if (words.includes("-f") || words.includes("--from-file")) return words;
-    const k = words.findIndex((w, j) => j > i && !w.startsWith("-"));
-    return words.filter((_, j) => j !== k);
+    return drop(firstOperand(words, i + 1, name === "jq" ? JQ_VALUES : {}));
   }
+  const sub = name === "git" ? words.findIndex((w, j) => j > i && !w.startsWith("-")) : -1;
+  if (SEARCHES.has(name) || words[sub] === "grep") {
+    if (words.some((w) => /^(?:-e|--regexp)$/.test(w)))
+      return words.filter((_, j) => !/^(?:-e|--regexp)$/.test(words[j - 1] ?? ""));
+    if (words.some((w) => /^(?:-f|--file)(?:=|$)/.test(w))) return words;
+    return drop(
+      firstOperand(words, sub >= 0 ? sub + 1 : i + 1, name === "rg" ? RG_VALUES : SEARCH_VALUES),
+    );
+  }
+  if (words.some((w) => baseName(w) === "vitest"))
+    return words.filter(
+      (w, j) =>
+        !/^--(?:testNamePattern|test-name-pattern)=/.test(w) &&
+        !TEST_NAME_FLAG.test(words[j - 1] ?? ""),
+    );
   const flag = PROGRAM_FLAG.get(name);
   return flag ? words.filter((_, j) => !(j > i + 1 && flag.test(words[j - 1]))) : words;
 }

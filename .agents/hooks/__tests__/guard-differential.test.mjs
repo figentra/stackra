@@ -70,6 +70,8 @@ function wrong(cases, cwd = wt) {
 
 /** `c` as one single-quoted shell word. */
 const sq = (c) => `'${c.replaceAll("'", `'\\''`)}'`;
+/** `c` as one double-quoted shell word, filled first so no placeholder hides behind an escaped `$`. */
+const dq = (c) => `"${fill(c).replace(/[\\"$`]/g, "\\$&")}"`;
 /** A typical option for a wrapper that takes one (`_inbox.mjs` `WRAPPER_VALUE`). */
 const OPTION = {
   sudo: "sudo -u x",
@@ -80,6 +82,30 @@ const OPTION = {
   stdbuf: "stdbuf -oL",
   exec: "exec -a x",
 };
+/** Wrappers that run one quoted string, quoted with `q`. */
+function quoted(q) {
+  return [
+    ["sh -c", (c) => `sh -c ${q(c)}`],
+    ["bash -c", (c) => `bash -c ${q(c)}`],
+    ["eval", (c) => `eval ${q(c)}`],
+    // one quoted string that another program runs
+    ["watch", (c) => `watch ${q(c)}`],
+    ["watch -n 1", (c) => `watch -n 1 ${q(c)}`],
+    ["script -c", (c) => `script -c ${q(c)} /dev/null`],
+    ["su -c", (c) => `su -c ${q(c)}`],
+    ["ssh", (c) => `ssh host ${q(c)}`],
+    ["trap", (c) => `trap ${q(c)} EXIT`],
+    ["tmux new -d", (c) => `tmux new -d ${q(c)}`],
+    ["at now <<<", (c) => `at now <<< ${q(c)}`],
+    ["parallel", (c) => `parallel ${q(c)} ::: a`],
+    ["flock -c", (c) => `flock /tmp/l -c ${q(c)}`],
+    // one quoted string inside another (STA-330 review round 5)
+    ["ssh (tmux new -d)", (c) => `ssh host ${q(`tmux new -d ${q(c)}`)}`],
+    ["ssh (su -c)", (c) => `ssh host ${q(`su -c ${q(c)}`)}`],
+    ["tmux new -d (watch)", (c) => `tmux new -d ${q(`watch ${q(c)}`)}`],
+    ["sh -c (sh -c)", (c) => `sh -c ${q(`sh -c ${q(c)}`)}`],
+  ];
+}
 /** `[name, wrap, asks]`: `asks` when the wrapper itself is an ask (unreviewed registry code). */
 const WRAPPED = [
   ["bare", (c) => c],
@@ -109,24 +135,9 @@ const WRAPPED = [
   ['"$( )"', (c) => `echo "$(${c})"`],
   ["<( )", (c) => `cat <(${c})`],
   ["backticks", (c) => `echo \`${c}\``],
-  ["sh -c", (c) => `sh -c ${sq(c)}`],
-  ["bash -c", (c) => `bash -c ${sq(c)}`],
-  ["eval", (c) => `eval ${sq(c)}`],
-  // one quoted string that another program runs
-  ["watch", (c) => `watch ${sq(c)}`],
-  ["watch -n 1", (c) => `watch -n 1 ${sq(c)}`],
-  ["script -c", (c) => `script -c ${sq(c)} /dev/null`],
-  ["su -c", (c) => `su -c ${sq(c)}`],
-  ["ssh", (c) => `ssh host ${sq(c)}`],
-  ["trap", (c) => `trap ${sq(c)} EXIT`],
-  ["tmux new -d", (c) => `tmux new -d ${sq(c)}`],
-  ["at now <<<", (c) => `at now <<< ${sq(c)}`],
-  ["parallel", (c) => `parallel ${sq(c)} ::: a`],
-  ["flock -c", (c) => `flock /tmp/l -c ${sq(c)}`],
-  // one quoted string inside another (STA-330 review round 5)
-  ["ssh (tmux new -d)", (c) => `ssh host ${sq(`tmux new -d ${sq(c)}`)}`],
-  ["ssh (su -c)", (c) => `ssh host ${sq(`su -c ${sq(c)}`)}`],
-  ["tmux new -d (watch)", (c) => `tmux new -d ${sq(`watch ${sq(c)}`)}`],
+  ...quoted(sq),
+  // the same in double quotes, whose `\"`, `\\`, `\$` and escaped backtick the shell unescapes (round 6)
+  ...quoted(dq).map(([name, wrap]) => [`${name} (dq)`, wrap]),
   ["ssh \"'…'\"", (c) => `ssh h "${sq(c)}"`],
 ];
 /** Guarded commands and their decision from the session's own worktree. */
@@ -182,19 +193,41 @@ for (const [name, wrap, asks] of WRAPPED)
       [],
     ));
 
-/** `c` wrapped `n` times in one-string wrappers, in turn. */
+/** `c` wrapped `n` times in one-string wrappers, in turn, each quoting with `q`. */
 const ONE_STRING = [
-  (c) => `watch ${sq(c)}`,
-  (c) => `tmux new -d ${sq(c)}`,
-  (c) => `ssh host ${sq(c)}`,
-  (c) => `su -c ${sq(c)}`,
+  (c, q) => `watch ${q(c)}`,
+  (c, q) => `tmux new -d ${q(c)}`,
+  (c, q) => `ssh host ${q(c)}`,
+  (c, q) => `su -c ${q(c)}`,
 ];
-const wrapped = (c, n) => Array.from({ length: n }).reduce((t, _, k) => ONE_STRING[k % 4](t), c);
+const wrapped = (c, n, q = sq) =>
+  Array.from({ length: n }).reduce((t, _, k) => ONE_STRING[k % 4](t, q), c);
 // The docs say a quoted line is read eight levels deep. A secret file name is read in a line that holds a guarded
 // command name, and in a quoted word's own words, so `cat .env` alone counts two levels deep (the rows above).
 test("differential: a guarded command line wrapped eight times decides as it does bare", () =>
   assert.deepEqual(
     wrong(GUARDED.filter(([c]) => !c.startsWith("cat ")).map(([c, want]) => [wrapped(c, 8), want])),
+    [],
+  ));
+test("differential: the same in double quotes, eight times", () =>
+  assert.deepEqual(
+    wrong(
+      GUARDED.filter(([c]) => !c.startsWith("cat ")).map(([c, want]) => [wrapped(c, 8, dq), want]),
+    ),
+    [],
+  ));
+
+test("differential: a command nested in backslash-escaped double quotes denies (round 6)", () =>
+  assert.deepEqual(
+    wrong(
+      [
+        'sh -c "sh -c \\"rm -rf ~\\""',
+        'ssh h "bash -c \\"rm -rf /\\""',
+        'ssh h "tmux new -d \\"rm -rf ~\\""',
+        'watch "watch \\"rm -rf ~\\""',
+        'bash -c "bash -c \\"rm -rf $MAIN\\""',
+      ].map((c) => [c, "deny"]),
+    ),
     [],
   ));
 
@@ -215,6 +248,15 @@ test("differential: a program or a message flag never hides a secret file or a c
         "ssh host \"su -c 'infisical export'\"",
         "tmux new -d \"watch 'infisical export'\"",
         "ssh h \"'infisical export'\"",
+        // a search pattern or a jq option value is no file, but a file beside one still is (round 6)
+        "grep -e x tls.pem",
+        "grep -f .env x",
+        "grep -- -x .env",
+        "rg -g x foo .env",
+        "jq --slurpfile k .env . x.json",
+        "jq --arg a b . .env",
+        "pnpm vitest run -t x .env",
+        'ssh h "cat \\".env\\""',
       ].map((c) => [c, "deny"]),
     ),
     [],
@@ -397,6 +439,12 @@ const ALLOWED = [
   "python3 -c 'print(x.pem)'",
   "perl -ne 'print if /a.key/' list.txt",
   "pnpm bot:gh api repos/figentra/stackra/actions/secrets --jq '.secrets[].name'",
+  // a search or test-name pattern and a jq option value are no file name (STA-330 review round 6)
+  'grep -rn "action.key" packages/',
+  'rg "def.key" src',
+  'pnpm vitest run -t "reads action.key"',
+  "jq --arg a b '.data.key' x.json",
+  "jq --indent 2 '.a.key' x.json",
   'node -e \'console.log(check("rm -rf a[b"), check("encore secret set X"))\'',
   "timeout 600 pnpm verify",
   "turbo run build --filter=@stackra/logger",
