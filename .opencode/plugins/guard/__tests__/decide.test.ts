@@ -931,7 +931,6 @@ test("executors commit locally and push only their own HEAD through bot:git (pha
     "git stash drop stash@{0}",
     "git worktree remove ../x",
     "git reflog expire --all",
-    "git config user.name x", // the shared config: the owner's yes, so a deny here
     "docker compose down -v",
     `rm -rf ${main}/src`,
   ])
@@ -994,7 +993,7 @@ test("round 4: substitutions, secret globs and one-string wrappers decide as the
     "watch 'infisical export'",
     "ssh h 'encore secret set X'",
     "tmux new -d 'wrangler secret put X'",
-    "git config user.name x",
   ])
     assert.equal(kind(c), "deny", c);
+  assert.equal(kind("git config user.name x"), "allow"); // STA-400: categorical asks are allowed
 });

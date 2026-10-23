@@ -4,7 +4,8 @@
 // the same `unattended` the Claude hook applies to every ask outside `HUMAN_ASKS` (STA-400); here the deletes and
 // deploys in `HUMAN_ASKS` are denied too, so they stay with the lead. On top of the shared rules sits the
 // executor layer: what only the lead does (owner-only CLIs, the GitHub bot wrappers beyond the executor's own push,
-// Infisical, local data git cannot restore) and edits outside the worktree.
+// Infisical, local data git cannot restore, and the categorical asks STA-400 allows for Claude: `npx`, `pnpm dlx`,
+// `eas`, `wrangler secret|--remote`, `secrets:import --confirm`) and edits outside the worktree.
 // opencode.jsonc repeats the same tiers as order-sensitive patterns, a second layer.
 // shortcut: executor commands are split on && || ; | and newlines without honouring quotes; nested scripts come
 // from the shared scanShell / scriptStrings; upgrade to a real shell parser if one slips through.
@@ -145,12 +146,30 @@ function denyExecutor(cmd: string, args: string[], exact: boolean): Decision {
     return deny(
       `\`${cmd}\` reaches the network, a shared account or a secret store; executors never run it.`,
     );
+  // The shared rules allow these since STA-400; an unattended executor keeps opencode.jsonc's deny.
+  if (
+    ["npx", "pnpx", "bunx"].includes(cmd) ||
+    (cmd === "pnpm" &&
+      (args.includes("dlx") || OWNER_ONLY_CLI.has(base(args[args.indexOf("exec") + 1] ?? "")))) ||
+    (cmd === "npm" && args.some((a) => a === "exec" || a === "x"))
+  )
+    return deny(
+      `\`${cmd} ${args.slice(0, 2).join(" ")}\` runs registry code or a secret store unattended; executors never run it.`,
+    );
   if (cmd === "pnpm" && args.some((a) => BOT_SCRIPT.test(a)))
     return exact
       ? ALLOW
       : deny(
           "executors reach GitHub only as the whole command `pnpm bot:git -- fetch origin [<ref>]` or `pnpm bot:git -- push [--force-with-lease] origin HEAD`, with nothing before or after it; `pnpm bot:gh`, `bot:review`, `bot:token`, `pr:merge` and `linear` are the lead's.",
         );
+  if (
+    cmd === "eas" ||
+    (cmd === "wrangler" && args.some((a) => a === "secret" || a === "--remote")) ||
+    (cmd === "pnpm" && args.some((a) => /^secrets:import$/.test(a)) && args.includes("--confirm"))
+  )
+    return deny(
+      `\`${cmd} ${args[0] ?? ""}\` uses the owner's login or writes a secret; the lead runs it.`,
+    );
   if (cmd === "encore" && ["deploy", "env", "secret"].includes(args[0] ?? ""))
     return deny(
       `\`encore ${args[0]}\` touches a shared environment or its secrets; the owner runs it.`,

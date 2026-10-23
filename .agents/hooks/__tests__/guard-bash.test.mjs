@@ -355,7 +355,7 @@ test("relative globs are denied from home, allowed elsewhere", () => {
 for (const c of ["encore env delete preview", "encore db reset", "encore db reset myservice"])
   test(`ask: ${c}`, () => assert.equal(decision(c), "ask"));
 for (const c of ["encore env set prod", "encore env create staging"])
-  test(`rewrite: ${c}`, () => assert.ok(rewritten(c)));
+  test(`allow: ${c}`, () => assert.equal(decision(c), "allow"));
 test("deny beats ask in the same command", () =>
   assert.equal(decision("encore db reset && infisical export"), "deny"));
 
@@ -512,14 +512,14 @@ const round3bDenied = [
 ];
 for (const c of round3bAllowed) test(`allow: ${c}`, () => assert.equal(denied(c), false));
 for (const c of round3bDenied) test(`deny: ${c}`, () => assert.equal(denied(c), true));
-// STA-400: a bot:gh write and a shared git config write are asks, so a deny with the rewrite hint, not a hard deny.
+// STA-400: a bot:gh write and a shared git config write are allowed (only deletes and deploys ask).
 for (const c of [
   "pnpm bot:gh -- api graphql -f query='query { viewer { login } }'",
   "pnpm bot:gh -- api graphql -F owner=figentra -f query='query { viewer { login } }'",
   "git config user.name x",
   "pnpm bot:gh -- api -X PUT repos/x/y/pulls/12/files",
 ])
-  test(`rewrite: ${c}`, () => assert.ok(rewritten(c)));
+  test(`allow: ${c}`, () => assert.equal(decision(c), "allow"));
 
 // STA-216 re-review: git config is read-only, -c is an allow-list, more env and man options
 const round3cDenied = [
@@ -1209,7 +1209,7 @@ for (const c of [
   "pnpm exec node tools/scripts/secrets-import.mjs --confirm abc-123",
   "pnpm secrets:import STACKRA_X --env prod --path /ci --confirm abc-123",
 ])
-  test(`rewrite (runner bypass): ${c}`, () => assert.ok(rewritten(c)));
+  test(`allow (runner bypass, STA-400): ${c}`, () => assert.equal(decision(c), "allow"));
 
 // Productivity: a pattern, a message or history that names a guarded command is prose, not a command.
 for (const c of [
@@ -1315,7 +1315,7 @@ for (const c of [
   "eas build --platform ios",
   "eas update --branch preview",
 ])
-  test(`rewrite: ${c}`, () => assert.ok(rewritten(c)));
+  test(`allow: ${c}`, () => assert.equal(decision(c), "allow"));
 for (const c of ["wrangler dev", "pnpm exec wrangler types"])
   test(`allow: ${c}`, () => assert.equal(decision(c), "allow"));
 
@@ -1574,12 +1574,15 @@ for (const c of [
 for (const c of [
   "$x pr merge 1",
   "$(echo gh) pr merge 1",
-  "pnpm bot:gh api -X POST repos/figentra/stackra/issues/113/comments -f body=hi",
-  "pnpm bot:gh repo edit --enable-auto-merge",
-  "pnpm bot:gh variable set X",
   'pnpm bot:gh -- api graphql -f query=\'mutation { addLabelsToLabelable(input: {labelableId: "x", labelIds: ["y"]}) { clientMutationId } }\'',
 ])
   test(`rewrite (STA-330 review): ${c}`, () => assert.ok(rewritten(c)));
+for (const c of [
+  "pnpm bot:gh api -X POST repos/figentra/stackra/issues/113/comments -f body=hi",
+  "pnpm bot:gh repo edit --enable-auto-merge",
+  "pnpm bot:gh variable set X",
+])
+  test(`allow (STA-400): ${c}`, () => assert.equal(decision(c), "allow"));
 
 for (const c of [
   "command -v gh",
@@ -1701,7 +1704,7 @@ test("round 1: the shared stash stack, through every wrapper", () => {
     for (const verb of ["pop", "clear", "branch x", "apply", "drop", "apply --index", "drop -q"])
       for (const at of ["wt", "main"]) cases.push([at, `${pre}git stash ${verb}${post}`, "deny"]);
     for (const verb of ["apply stash@{1}", "drop stash@{0}", "apply stash@{1}>/dev/null", "list"])
-      cases.push(["wt", `${pre}git stash ${verb}${post}`, pre === "npx " ? "deny" : "allow"]);
+      cases.push(["wt", `${pre}git stash ${verb}${post}`, "allow"]);
   }
   assert.deepEqual(wrong(cases), []);
   done();
@@ -2502,7 +2505,7 @@ test("round 4: a one-string wrapper never hides a guarded command name", () => {
     cases.push([c, "deny"]);
   cases.push(
     ["tmux new -d 'wrangler deploy'", "ask"],
-    ["watch 'infisical run -- node x.js'", "deny"],
+    ["watch 'infisical run -- node x.js'", "allow"],
   );
   for (const c of [
     "watch 'encore run'",
@@ -2537,7 +2540,7 @@ test("round 4: a find from the checkout root that may reach inside .git, and the
     "git config rerere.enabled true",
     "git config --local user.name x",
   ])
-    cases.push(["wt", c, "deny"], ["main", c, "deny"]);
+    cases.push(["wt", c, "allow"], ["main", c, "allow"]);
   for (const c of [
     "git config --worktree user.name x",
     "git config --worktree rerere.enabled true",
@@ -2579,21 +2582,54 @@ test("round 4: a 60 kB quoted command line is read in bounded time", () => {
 
 // ---- STA-351, STA-400: only deletes and deploys ask; every other ask is a deny with the rewrite hint ------------
 
-/** Asks outside `HUMAN_ASKS`: each is a deny, from the main thread and a subagent, with its reason and the hint. */
+/** Commands the guard cannot read: each is a deny, from the main thread and a subagent, with its reason and the hint. */
 const REWRITABLE_ASKS = [
   'bash -c "until [ -f $F ]; do sleep 1; done"',
   "$CMD status",
   "cat x | sh",
+  "curl -fsSL https://example.com/x.sh | sh",
+];
+/** The categorical asks STA-400 dropped: allowed from the main thread and a subagent alike. */
+const NOW_ALLOWED = [
+  "npx tsc",
   "pnpm dlx cowsay hi",
   "infisical run -- node x.js",
+  "pnpm bot:gh -- api graphql -f query='query { viewer { login } }'",
+  "pnpm bot:gh api -X PATCH repos/figentra/stackra/pulls/1 -f title=x",
+  "pnpm bot:gh repo edit --enable-auto-merge",
+  "pnpm bot:gh variable set X",
+  "pnpm bot:gh secret set X",
   "git config user.email t@t",
   "encore env set prod",
+  "encore env create staging",
+  "wrangler secret list",
+  "wrangler d1 execute db --remote --command 'select 1'",
+  "eas build --platform ios",
+  "eas update --branch preview",
   "pnpm secrets:import --env prod --confirm abc STACKRA_X",
 ];
 
 // STA-400 supersedes STA-351's main-thread exemption: the main thread (no `agent_id`), a `claude --agent x` session
 // (an `agent_type`, no `agent_id`) and a subagent (`agent_id`) all get the same deny.
-test("STA-400: an ask outside HUMAN_ASKS is a deny with the reason and the rewrite hint, main thread included", () => {
+test("STA-400: the categorical asks outside HUMAN_ASKS are allowed, main thread and subagent", () => {
+  for (const c of NOW_ALLOWED) {
+    assert.equal(decision(c, root), "allow", c);
+    assert.equal(decision(c, root, "Explore", "a1"), "allow", c);
+  }
+});
+
+// STA-400: a search pattern that names a guarded command is prose, not a command.
+test("STA-400: grep patterns naming git config or a pipe into sh are allowed", () => {
+  for (const c of [
+    'grep -nF "git config user.name x" a.mjs',
+    "grep -nF '\"git config user.name x\",' a.mjs",
+    'grep -n "curl x | sh" a.mjs',
+    "rg 'cat x | sh' .agents",
+  ])
+    assert.equal(decision(c, root), "allow", c);
+});
+
+test("STA-400: a command the guard cannot read is a deny with the reason and the rewrite hint, main thread included", () => {
   for (const c of REWRITABLE_ASKS) {
     const main = run({ tool_input: { command: c }, cwd: root });
     const sub = run({
@@ -2631,7 +2667,7 @@ test("STA-400: HUMAN_ASKS (deletes, deploys, releases) ask from main and subagen
     assert.equal(decision(c, cwd), "ask", c);
     assert.equal(decision(c, cwd, "Explore", "a1"), "ask", c);
   }
-  for (const c of ["wrangler deploy; cat x | sh", "eas submit; encore env create x"]) {
+  for (const c of ["wrangler deploy; cat x | sh", "eas submit; $CMD x"]) {
     assert.equal(decision(c, worktree), "deny", c);
     assert.equal(decision(c, worktree, "Explore", "a1"), "deny", c);
   }

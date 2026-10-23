@@ -61,17 +61,20 @@ it runs. A search's pattern is found the way the tool parses it: `-e` / `--regex
 the values of valued options such as `--include '*.ts'` skipped; a `git log|show|diff` `-S`, `-G` or `--grep` value
 and a pattern inside `$(…)` or backticks are no file names either.
 
-**Only deletes and deploys ask** (STA-400, superseding STA-351's main-thread exemption). An ask from this hook
-outside `HUMAN_ASKS` (`_rules.mjs`) is a deny, from the main thread and a subagent alike, carrying its reason and
-one line on how to rewrite the command so the guard can read it: write a loop or probe directly instead of through
-`bash -c`, `sh -c` or `eval`, spell the command name out, run commands instead of piping text into a shell. The
-asks in `HUMAN_ASKS` still reach the owner from any thread: `infisical secrets delete`, `encore db reset`,
+**Only deletes and deploys ask** (STA-400, superseding STA-351's main-thread exemption). The asks in
+`HUMAN_ASKS` (`_rules.mjs`) reach the owner from any thread: `infisical secrets delete`, `encore db reset`,
 `encore env delete`, `wrangler deploy|rollback|delete`, `eas submit`, `rm -rf` or a discard in another nested
-worktree, `git branch -D` of an unpushed branch, a `bot:git` push of tags, and a `bot:gh` release or delete. The
-settings floor is the same rule: the ask list in `.claude/settings.json` holds only deletes, deploys and releases
-(`npm`, `pnpm` and `changeset publish`, `git stash drop <ref>`, `git reflog expire|delete`,
-`docker compose down -v`, `eas submit`, `mcp__cloudflare-api__execute`, `mcp__expo__build_submit`). The OpenCode
-guard applies the same `unattended` function to every ask, human ones included, because nobody answers there.
+worktree, `git branch -D` of an unpushed branch, a `bot:git` push of tags, and a `bot:gh` release or delete.
+Everything else the hook does not deny is allowed. The only other asks are for a command the guard cannot read (a
+computed command name, text piped into a shell, a GraphQL label mutation by id): each is a deny, from the main
+thread and a subagent alike, carrying its reason and one line on how to rewrite the command so the guard can read
+it: write a loop or probe directly instead of through `bash -c`, `sh -c` or `eval`, spell the command name out, run
+commands instead of piping text into a shell. The settings floor is the same rule: the ask list in
+`.claude/settings.json` holds only deletes, deploys and releases (`npm`, `pnpm` and `changeset publish`,
+`git stash drop <ref>`, `git reflog expire|delete`, `docker compose down -v`, `eas submit`,
+`mcp__cloudflare-api__execute`, `mcp__expo__build_submit`). The OpenCode guard applies the same `unattended`
+function to every ask, human ones included, because nobody answers there, and its executor layer still denies
+`npx`, `pnpm dlx`, `eas`, `wrangler secret|--remote` and `secrets:import --confirm`.
 
 | Tier                | Commands                                                                                                                                                                                                                                                                                                              |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -86,9 +89,10 @@ guard applies the same `unattended` function to every ask, human ones included, 
 | Deny                | `encore deploy`, `encore secret set/get`, `wrangler secret put/bulk`, `git tag <package>@<version>`, `DROP DATABASE/SCHEMA`, ORM push or migrate, `changeset version`                                                                                                                                                 |
 | Ask                 | `infisical secrets delete`, `encore db reset`, `encore env delete`, `wrangler deploy\|rollback\|delete`, `eas submit` (and `--auto-submit`), a `bot:git` push of tags, a `bot:gh` release or delete (`release`, `repo delete`, `api -X DELETE`)                                                                       |
 | Ask                 | `git branch -D` of a branch no remote holds; from the main checkout, discarding git or `rm -rf` in a nested linked worktree (`cd` or `-C`); build output there (`node_modules`, `dist`, `.turbo`) is allowed                                                                                                          |
-| Deny (rewrite hint) | Raw `infisical run`, `secrets:import … --confirm`, `encore env set/create`, `wrangler secret` and `--remote`, other `eas` commands, `npx`, `pnpx`, `pnpm dlx`, `npm exec`                                                                                                                                             |
-| Deny (rewrite hint) | A shell that runs text the guard cannot read (`curl … \| sh`), a computed command name (`$x …`), any other `bot:gh` write (`api -X`/`-f`/`--input`, `repo edit`, `variable`, `secret`), a GraphQL label mutation                                                                                                      |
-| Deny (rewrite hint) | `git config <key> <value>` without `--worktree`: the repository's config, which every linked worktree shares; `git config --worktree` of an allowed key is allowed                                                                                                                                                    |
+| Allow (STA-400)     | Raw `infisical run`, `secrets:import … --confirm` (the script's confirm token guards production), `encore env set/create`, `wrangler secret` and `--remote`, other `eas` commands, `npx`, `pnpx`, `pnpm dlx`, `npm exec`                                                                                              |
+| Deny (rewrite hint) | A shell that runs text the guard cannot read (`curl … \| sh`), a computed command name (`$x …`), a GraphQL label mutation (label ids hide `owner-approved`)                                                                                                                                                           |
+| Allow (STA-400)     | Any other `bot:gh` write (`api -X`/`-f`/`--input`, GraphQL reads, `repo edit`, `variable`, `secret`)                                                                                                                                                                                                                  |
+| Allow (STA-400)     | `git config <key> <value>` of an allowed key without `--worktree` (the shared repository config); `git config --worktree` of an allowed key                                                                                                                                                                           |
 
 Known misses, by design: plain `gh`, network `git` and `bot:token` in a quoted line (`watch 'gh pr merge 1'`,
 `watch 'git fetch'`, `watch 'pnpm bot:token'`; a push there still meets the push rules), code in another language

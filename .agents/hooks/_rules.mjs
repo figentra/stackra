@@ -1,9 +1,9 @@
 // The agent permission rules (ADR 0293), one module for `guard-bash.mjs`, `guard-paths.mjs` and the OpenCode
 // guard (`.opencode/plugins/guard/decide.ts`), so the two tools never drift. Three tiers: allow, ask (a human
-// confirms; only the deletes and deploys in `HUMAN_ASKS` reach the owner, every other ask is a deny through
-// `unattended`, STA-400; OpenCode denies those too) and deny. Settings deny and ask rules are the floor;
-// these rules add only what a prefix pattern cannot see: runner wrappers (`pnpm exec`, `npx`, `mise exec --`),
-// which checkout a git command targets, `agent_type`, and quoted prose.
+// confirms; only the deletes and deploys in `HUMAN_ASKS` reach the owner, and the asks for a command the guard
+// cannot read are a deny through `unattended`, STA-400; OpenCode denies every ask) and deny. Settings deny and
+// ask rules are the floor; these rules add only what a prefix pattern cannot see: runner wrappers (`pnpm exec`,
+// `npx`, `mise exec --`), which checkout a git command targets, `agent_type`, and quoted prose.
 //
 // Secrets model (ADR 0173, ADR 0257): nobody reads a value. Developer, agent and CI tokens live in Infisical and
 // reach a process through the pnpm script that needs them; there are no `.env` files in this repository.
@@ -105,7 +105,7 @@ const CONFIG_SCOPE_VALUE = new Set(["-f", "--file", "--blob", "--type", "--defau
  * What `git config` words do: "" for a read (past the scope options: a read mode, or one key alone,
  * `git config --global user.name`; no write flag anywhere) or a `--worktree` write of one allowed key; "ask" for a
  * write of one allowed key to the repository's config, which every linked worktree shares
- * (`git config rerere.enabled true`); "deny" for anything else. With linked worktrees git refuses `--worktree`
+ * (`git config rerere.enabled true`; allowed since STA-400, no rule reads "ask"); "deny" for anything else. With linked worktrees git refuses `--worktree`
  * unless `extensions.worktreeConfig` is on, so that write never reaches the shared file.
  */
 function configWrites(words) {
@@ -1248,12 +1248,9 @@ const botLabelMutation = (c) =>
   [dropMessages(c), ...runnable(c)].some((t) =>
     segments(t).some((s) => /\bbot:gh\b/.test(blank(s)) && LABEL_MUTATION.test(s)),
   );
-/** A `pnpm bot:gh` write: `api` with a method or a field (pflag bundles: `-iX`), a repo edit, a release, a variable or secret. */
 /** A `pnpm bot:gh` release or delete: `release create|edit|delete|upload`, `repo delete`, `api -X DELETE`. */
 const BOT_GH_RELEASE_DELETE =
   /\bbot:gh\s+(?:--\s+)?(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:repo\s+delete\b|release\s+(?:create|edit|delete|upload)\b|api\b[^|;&\n]*\s(?:-X\s*|--method(?:=|\s+))(?:DELETE|delete)\b)/;
-const BOT_GH_WRITE =
-  /\bbot:gh\s+(?:--\s+)?(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:api\b[^|;&\n]*\s(?:-(?!-)[a-zA-Z]*[XfF]|--(?:method|field|raw-field|input)\b)|repo\s+(?:edit|delete|rename|archive)\b|release\s+(?:create|edit|delete|upload)\b|(?:variable|secret)\b)/;
 /**
  * A `pnpm bot:git` command that runs a program in the bot's environment, which holds every /agents value:
  * `--upload-pack`, `--receive-pack`, `--exec`, `clone -u`, `rebase -x`, `bisect run`, `submodule foreach`,
@@ -1340,9 +1337,10 @@ const runsSqlClient = (c) =>
   );
 
 /**
- * The only asks that reach the owner (ADR 0293, owner decision 2026-10-23, STA-400): deletes, deploys and releases.
- * They ask from the main thread and from a subagent alike. Every other ask is a deny with `UNATTENDED_HINT`
- * (`unattended`), for the main thread too, so nothing else waits on a prompt.
+ * The only asks that reach the owner (ADR 0293, owner decision 2026-10-23, STA-400): deletes, deploys and releases,
+ * from the main thread and a subagent alike. Every other command is allowed, except the denies and the few asks the
+ * guard raises because it cannot read the command (a computed name, text piped into a shell, a GraphQL label
+ * mutation by id): those are a deny with `UNATTENDED_HINT` (`unattended`), so the agent rewrites instead of waiting.
  */
 export const HUMAN_ASKS = new Set([
   "infisical-secrets-delete",
@@ -1358,7 +1356,7 @@ export const HUMAN_ASKS = new Set([
 ]);
 /** What an agent does instead of waiting for an answer to an ask outside `HUMAN_ASKS`. */
 export const UNATTENDED_HINT =
-  "Only deletes and deploys ask the owner, so this ask is a deny (ADR 0293, STA-400). Rewrite the command so the guard can read it: write a loop or probe directly, not through `bash -c`, `sh -c` or `eval`; spell the command name out (no `$cmd …` or `$(…) …`); run commands instead of piping text into a shell. If the step needs the owner, a subagent hands it to the lead and the lead asks the owner in chat.";
+  "The guard cannot read this command and only deletes and deploys ask the owner, so it is denied (ADR 0293, STA-400). Rewrite the command so the guard can read it: write a loop or probe directly, not through `bash -c`, `sh -c` or `eval`; spell the command name out (no `$cmd …` or `$(…) …`); run commands instead of piping text into a shell. If the step needs the owner, a subagent hands it to the lead and the lead asks the owner in chat.";
 /** An ask outside `HUMAN_ASKS` (or any ask, for OpenCode): a deny with `UNATTENDED_HINT`. */
 export const unattended = (d) =>
   d.decision === "ask" ? { decision: "deny", reason: `${d.reason}\n${UNATTENDED_HINT}` } : d;
@@ -1425,16 +1423,6 @@ const RULES = [
         ),
       ),
     why: "Secrets guard: `security find-generic-password`, `find-internet-password`, `dump-keychain` and `export` read the owner's keychain, in any form (`/usr/bin/security`, `timeout`, `pnpm exec`). Agents never read a credential.",
-  },
-  {
-    rx: (c) => runsQuoted(c, /\binfisical\s+(?:-\S+\s+)*run\b/),
-    decision: "ask",
-    why: "Raw `infisical run` hands every /agents value to the process it starts; the owner confirms it. The pnpm scripts that need a token (`pnpm bot:gh`, `pnpm linear`) wrap it themselves.",
-  },
-  {
-    rx: (c) => runs(c, /\bsecrets(?::import|-import(?:\.mjs)?)\b[^|;&\n]*\s--confirm\b/),
-    decision: "ask",
-    why: "`secrets:import … --confirm` writes a production secret. The confirm token is a process rule, so no agent runs it: the owner does, or approves it on the request page (ADR 0257, STA-187).",
   },
   {
     // The secrets inbox holds values a human dropped for `pnpm secrets:import` (ADR 0257). No command
@@ -1507,47 +1495,16 @@ const RULES = [
     why: "`encore env delete` removes a shared environment; the owner confirms it.",
   },
   {
-    rx: (c) => runsQuoted(c, /\bencore\s+env\s+(set|create)\b/),
-    decision: "ask",
-    why: "`encore env set/create` changes a shared environment; the owner runs it.",
-  },
-  {
     rx: (c) => runsQuoted(c, WRANGLER_DEPLOY),
     decision: "ask",
     id: "wrangler-deploy",
     why: "`wrangler deploy`, `rollback` and `delete` ship to or remove from Cloudflare with the owner's login; the owner confirms it.",
   },
   {
-    // A command that also deploys or deletes is the owner's ask above, not this deny.
-    rx: (c) =>
-      runsQuoted(
-        c,
-        atName(String.raw`wrangler\s+(?:[^|;&\n]*\s)?secret\b|wrangler\b[^|;&\n]*\s--remote\b`),
-      ) && !runsQuoted(c, WRANGLER_DEPLOY),
-    decision: "ask",
-    why: "`wrangler secret` and `--remote` change Cloudflare with the owner's login; the owner runs them.",
-  },
-  {
     rx: (c) => runs(c, EAS_SUBMIT),
     decision: "ask",
     id: "eas-submit",
     why: "`eas submit` (and `--auto-submit`) sends a build to the stores on the owner's Expo login; the owner confirms it.",
-  },
-  {
-    rx: (c) => runs(c, atName("eas" + END)) && !runs(c, EAS_SUBMIT),
-    decision: "ask",
-    why: "`eas` builds and updates on the owner's Expo login; the owner runs it.",
-  },
-  {
-    rx: (c) =>
-      runs(
-        c,
-        atName(
-          String.raw`(?:npx|pnpx|bunx|pnpm\s+(?:-\S+\s+)*dlx|npm\s+(?:-\S+\s+)*(?:exec|x))` + END,
-        ),
-      ),
-    decision: "ask",
-    why: "`npx`, `pnpx`, `pnpm dlx` and `npm exec` run unreviewed registry code; the owner confirms it. Use a catalog dependency with `pnpm exec <bin>`.",
   },
 
   // --- History, worktrees and shared local state ------------------------------------------------
@@ -1615,12 +1572,6 @@ const RULES = [
     why: "A `pnpm bot:gh` release or delete (`release create|edit|delete|upload`, `repo delete`, `api -X DELETE`) publishes or removes with the bot's write access; the owner confirms it.",
   },
   {
-    // A command that also releases or deletes is the owner's ask above, not this deny.
-    rx: (c) => runs(c, BOT_GH_WRITE) && !runs(c, BOT_GH_RELEASE_DELETE),
-    decision: "ask",
-    why: "A `pnpm bot:gh` write (`api` with `-X`, `--method`, `-f`, `-F`, `--field`, `--raw-field` or `--input`; `repo edit|rename|archive`; `variable`; `secret`) acts with the bot's write access beyond a PR; the owner runs it.",
-  },
-  {
     rx: botGitRunsProgram,
     why: "`pnpm bot:git` runs git with every /agents value in its environment, so an option that runs a program (`--upload-pack`, `--receive-pack`, `--exec`, `clone -u`, `rebase -x`, `bisect run`, `submodule foreach`, `difftool`, `mergetool`, `filter-branch`, `grep -O`) is denied. Run local git without the bot; use `pnpm bot:git` for fetch and push only.",
   },
@@ -1651,11 +1602,6 @@ const RULES = [
             gitConfigLevel(d) === "deny"),
       ),
     why: "git `-c` outside a short display/identity allow-list, any `git config` that is not a read or a write of an allowed key, `--config-env`, and the `GIT_CONFIG*`, `HOME=`, `XDG_CONFIG_HOME=`, `GIT_ASKPASS=`, `SSH_ASKPASS=`, `GIT_EXEC_PATH=`, `GIT_SSH[_COMMAND]=` and `GIT_PROXY_COMMAND=` prefixes (and a pager other than `cat` or `less`) make git run another command, redefine a remote or alias past the push and credential guards. For an editor, `GIT_EDITOR=true` is already set in .claude/settings.json `env`.",
-  },
-  {
-    rx: (c) => scanTexts(c).some((d) => /\bgit\b/.test(d) && gitConfigLevel(d) === "ask"),
-    decision: "ask",
-    why: "`git config <key> <value>` without `--worktree` writes the repository's config, which every linked worktree shares (`user.name`, `user.email`, `rerere.enabled`); the owner confirms it. Use `git config --worktree <key> <value>`, or `git -c <key>=<value>` for one command.",
   },
   {
     // `man -P <cmd>` and `--pager=<cmd>` run <cmd>; plain `man git-credential` stays allowed.

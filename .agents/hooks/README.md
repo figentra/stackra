@@ -4,9 +4,9 @@ The agent hooks, written once and wired into Claude Code by `.claude/settings.js
 `pnpm agents:sync` also symlinks each file into `.claude/hooks/`. Node 24 and no dependencies, so a hook runs before
 `pnpm install`. The permission rules live once, in `_rules.mjs` (ADR 0293); the OpenCode plugin,
 `.opencode/plugins/guard`, evaluates the same module and turns every ask into a deny with the shared `unattended`.
-`guard-bash` does the same for the main thread and every subagent, except the deletes and deploys in `HUMAN_ASKS`,
-which still reach the owner (STA-400, superseding STA-351's main-thread exemption); the settings ask rules hold only
-deletes, deploys and releases too.
+In `guard-bash` only the deletes and deploys in `HUMAN_ASKS` ask the owner (STA-400, superseding STA-351's
+main-thread exemption); an ask for a command the guard cannot read is a deny with a rewrite hint from any thread, and
+the rest is allowed. The settings ask rules hold only deletes, deploys and releases too.
 
 | File                    | Event                                             | Does                                                                                                            |
 | ----------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |

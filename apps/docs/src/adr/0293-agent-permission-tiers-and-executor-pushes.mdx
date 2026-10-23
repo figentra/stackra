@@ -46,21 +46,27 @@ description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-351, STA-352, ST
 
 <Note>
   Amended 2026-10-23 (STA-400), superseding the STA-352 middle tier: only a delete, a deploy or a
-  release asks the owner; everything else is allowed or denied (owner decision 2026-10-23). The ask
-  list of `.claude/settings.json` keeps only deletes (Infisical secrets, Wrangler, `git stash drop`,
-  `git reflog expire|delete`, a forced `git worktree remove`, Docker volumes, `encore env delete`,
+  release asks the owner; the rest is allowed (owner decision 2026-10-23). The ask list of
+  `.claude/settings.json` keeps only deletes (Infisical secrets, Wrangler, `git stash drop`, `git
+  reflog expire|delete`, a forced `git worktree remove`, Docker volumes, `encore env delete`,
   `encore db reset`, a `pnpm bot:gh` repo, release or API `DELETE`), deploys and rollbacks
   (`wrangler deploy|rollback`, `eas submit`, `mcp__cloudflare-api__execute`,
   `mcp__expo__build_submit`) and releases (`npm`, `pnpm` and `changeset publish`, a bot push of
-  tags); merges, bot pushes, secret imports, worktree removal and `pnpm new` no longer ask. The
-  guard hook does the same: every hook ask outside `HUMAN_ASKS` is a deny with its reason and the
-  rewrite hint, from the main thread as well as a subagent, so STA-351's main-thread exemption ends.
-  `HUMAN_ASKS` is now `infisical secrets delete`, `encore db reset`, `encore env delete`, `wrangler
-  deploy|rollback|delete`, `eas submit`, `rm -rf` or a discard in another nested worktree, `git
-  branch -D` of an unpushed branch, a bot push of tags, and a `pnpm bot:gh` release or delete;
-  `secrets:import … --confirm` and `encore env set|create` left it. A production secret import is
-  the owner's (the script's confirm token flow is unchanged). No deny rule is loosened. OpenCode
-  still denies every ask, `HUMAN_ASKS` included.
+  tags); merges, bot pushes, secret imports, worktree removal and `pnpm new` no longer ask. In the
+  guard hook, `HUMAN_ASKS` is the same list: `infisical secrets delete`, `encore db reset`, `encore
+  env delete`, `wrangler deploy|rollback|delete`, `eas submit`, `rm -rf` or a discard in another
+  nested worktree, `git branch -D` of an unpushed branch, a bot push of tags, and a `pnpm bot:gh`
+  release or delete. The hook's other categorical asks are gone, so these are allowed: `npx` and
+  `pnpm dlx`, raw `infisical run`, `pnpm bot:gh api` with `-f` or `-X` (GraphQL reads included),
+  `bot:gh repo edit`, `variable` and `secret`, shared `git config` writes, `encore env set|create`,
+  `wrangler secret` and `--remote`, `eas build|update`, and `secrets:import … --confirm` (the
+  script's confirm-token flow still guards a production import). Only an ask the guard raises
+  because it cannot read the command (a computed command name, text piped into a shell, a GraphQL
+  label mutation by id) is a deny with its reason and the rewrite hint, from the main thread as well
+  as a subagent, so STA-351's main-thread exemption ends. No deny rule is loosened. OpenCode still
+  denies every ask, `HUMAN_ASKS` included, and its executor layer keeps `opencode.jsonc`'s denies
+  for `npx`, `pnpm dlx`, `pnpm exec infisical`, `eas`, `wrangler secret|--remote` and
+  `secrets:import --confirm`.
 </Note>
 
 ## Context

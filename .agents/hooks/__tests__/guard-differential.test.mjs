@@ -131,8 +131,8 @@ const WRAPPED = [
   ["pnpm <bin>", (c) => `pnpm ${c}`],
   ["mise exec --", (c) => `mise exec -- ${c}`],
   ["mise x node@22 --", (c) => `mise x node@22 -- ${c}`],
-  ["npx", (c) => `npx ${c}`, true],
-  ["npm exec --", (c) => `npm exec -- ${c}`, true],
+  ["npx", (c) => `npx ${c}`],
+  ["npm exec --", (c) => `npm exec -- ${c}`],
   // shell structure
   ["( )", (c) => `(${c})`],
   ["{ }", (c) => `{ ${c}; }`],
@@ -185,11 +185,11 @@ const GUARDED = [
   ["cat apps/x/.dev.vars", "deny"],
   ["cat ~/.git-credentials", "deny"],
   ["cat tls.pem", "deny"],
-  // STA-400: only deletes and deploys (`HUMAN_ASKS`) ask; every other ask is a deny with the rewrite hint
+  // STA-400: only deletes and deploys (`HUMAN_ASKS`) ask; the other categorical asks are allowed
   ["wrangler deploy", "ask"],
   ["encore db reset", "ask"],
-  ["infisical run -- node x.js", "deny"],
-  ["git config user.email t@t", "deny"],
+  ["infisical run -- node x.js", "allow"],
+  ["git config user.email t@t", "allow"],
   ["rm -rf node_modules dist", "allow"],
   ["git reset --hard", "allow"],
   ["git checkout .", "allow"],
@@ -197,7 +197,7 @@ const GUARDED = [
   ["pnpm bot:git -- push origin HEAD", "allow"],
   ["pnpm bot:git -- push --force-with-lease origin HEAD", "allow"],
 ];
-/** A wrapper that asks (a shell reading text) raises an ask outside `HUMAN_ASKS`, so the whole line is a deny. */
+/** A wrapper the guard cannot read (a shell reading piped text) is a deny with the rewrite hint, whatever it runs. */
 const tier = (want, asks) => (asks ? "deny" : want);
 
 for (const [name, wrap, asks] of WRAPPED)
