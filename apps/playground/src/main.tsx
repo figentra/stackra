@@ -14,15 +14,38 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 
 import { PlaygroundShell } from "#src/components/playground-shell";
+import { Button } from "#src/routes/button/button";
+import { ButtonRoute } from "#src/routes/button/button.route";
+import { CloseButton } from "#src/routes/close-button/close-button";
+import { CloseButtonRoute } from "#src/routes/close-button/close-button.route";
 import { Foundations } from "#src/routes/foundations/foundations";
 import { FoundationsRoute } from "#src/routes/foundations/foundations.route";
 import { Home } from "#src/routes/home/home";
 import { HomeRoute } from "#src/routes/home/home.route";
+import { Icon } from "#src/routes/icon/icon";
+import { IconRoute } from "#src/routes/icon/icon.route";
+import { IconButton } from "#src/routes/icon-button/icon-button";
+import { IconButtonRoute } from "#src/routes/icon-button/icon-button.route";
+import { Link } from "#src/routes/link/link";
+import { LinkRoute } from "#src/routes/link/link.route";
+import { Typography } from "#src/routes/typography/typography";
+import { TypographyRoute } from "#src/routes/typography/typography.route";
 
 // shortcut: authored until stackra gen writes `.stackra/entry/browser.ts` and the route tree (STA-339); then delete
 // this file, and index.html with it (gen writes both).
-/** The component pages, in navigation order; the foundations page comes first. */
-const PAGES = [{ route: FoundationsRoute, element: <Foundations /> }];
+/**
+ * The component pages, in navigation order; the navigation groups them by the category each route class names (see
+ * `PageCategory`), and a page lists under its category in this order. A new component is one line here.
+ */
+const PAGES = [
+  { route: FoundationsRoute, element: <Foundations /> },
+  { route: IconRoute, element: <Icon /> },
+  { route: TypographyRoute, element: <Typography /> },
+  { route: ButtonRoute, element: <Button /> },
+  { route: IconButtonRoute, element: <IconButton /> },
+  { route: CloseButtonRoute, element: <CloseButton /> },
+  { route: LinkRoute, element: <Link /> },
+];
 
 const links = PAGES.map(({ route }) => route);
 

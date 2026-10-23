@@ -6,10 +6,26 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { ButtonVariant } from "#contracts/enums/button-variant.enum";
 export { ColorScheme, type ResolvedColorScheme } from "#contracts/enums/color-scheme.enum";
 export { Direction } from "#contracts/enums/direction.enum";
+export { HeadingLevel } from "#contracts/enums/heading-level.enum";
+export { HeadingType } from "#contracts/enums/heading-type.enum";
+export { LinkUnderline } from "#contracts/enums/link-underline.enum";
 export { Size } from "#contracts/enums/size.enum";
+export { TextAlign } from "#contracts/enums/text-align.enum";
+export { TextTone } from "#contracts/enums/text-tone.enum";
+export { TextType } from "#contracts/enums/text-type.enum";
 export { Tone } from "#contracts/enums/tone.enum";
 export { Variant } from "#contracts/enums/variant.enum";
+export type { ButtonContractProps } from "#contracts/types/button-contract-props.type";
+export type { CloseButtonContractProps } from "#contracts/types/close-button-contract-props.type";
 export type { DesignSystemProviderProps } from "#contracts/types/design-system-provider-props.type";
 export type { DesignSystemState } from "#contracts/types/design-system-state.type";
+export type { HeadingContractProps } from "#contracts/types/heading-contract-props.type";
+export type { IconComponent, IconComponentProps } from "#contracts/types/icon-component.type";
+export type { IconButtonContractProps } from "#contracts/types/icon-button-contract-props.type";
+export type { IconContractProps } from "#contracts/types/icon-contract-props.type";
+export type { LinkContractProps } from "#contracts/types/link-contract-props.type";
+export type { TextContractProps } from "#contracts/types/text-contract-props.type";
+export type { TypographyContractProps } from "#contracts/types/typography-contract-props.type";

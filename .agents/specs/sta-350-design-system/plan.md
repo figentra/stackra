@@ -52,6 +52,14 @@ switcher and is covered by Playwright and axe. `@stackra/brand` is deleted; its 
 - **P-005**: A package scaffolded or validated in `design-system` is accepted, and an unknown category still fails — Validates: FR-006
 - **P-006**: The `./react` provider puts the colour scheme and `dir` on the document, and the `./native` provider applies the same scheme from the shared contract — Validates: FR-007, FR-008, FR-009
 - **P-007**: Every playground route, found by listing the route folders, renders without an axe violation in light, dark, LTR and RTL — Validates: FR-010, FR-011
+- **P-008**: For every Size and TextTone, both Icons hand the drawn component the same pixel size (`ICON_SIZES`) and the same colour role — Validates: FR-012
+- **P-009**: Decorative is the default on both runtimes: an Icon with no label has no accessible name and is hidden — Validates: FR-013
+- **P-010**: Each runtime's Text and Heading props extend their contract (type test) — Validates: FR-017, FR-018, FR-019
+- **P-011**: Props outside the contract reach HeroUI unchanged on both runtimes, and the contract-owned HeroUI props cannot be passed — Validates: FR-018, FR-019
+- **P-012**: Text in Arabic, by `lang` or by the screen's locale, takes the theme's `-ar` style and other text never does — Validates: FR-019, FR-020
+- **P-013**: An Icon is drawn mirrored exactly when it asks for it and the direction is right to left — Validates: FR-014
+- **P-014**: The native provider gives Lucide icons the md size and the theme foreground colour — Validates: FR-015
+- **P-015**: Every Icon and Typography sample of the playground shows what its contract promises (names, mirroring, sizes, computed type, live state) — Validates: FR-016, FR-021
 
 ## Contracts and events
 

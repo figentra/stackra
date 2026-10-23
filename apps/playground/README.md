@@ -21,14 +21,22 @@ language (English, left to right; Arabic, right to left). Both live in the URL, 
 
 ## Pages
 
-| Route          | Page                                                                                                     |
-| -------------- | -------------------------------------------------------------------------------------------------------- |
-| `/`            | the index: what the playground is and a link to every page                                               |
-| `/foundations` | the `stackra` theme: colour roles with their contrast pairs, type scale, spacing, radii, shadows, motion |
+| Route          | Page                                                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `/`            | the index: what the playground is and a link to every page                                                          |
+| `/foundations` | the `stackra` theme: colour roles with their contrast pairs, type scale, spacing, radii, shadows, motion            |
+| `/icon`        | `Icon`: sizes, tones, decorative and labelled use, mirrored and never-mirrored icons, own components, a live sample |
+| `/typography`  | `Text` and `Heading`: every type, level, tone, alignment, truncation and language, a live sample                    |
 
 Add a page as a route folder `src/routes/<name>/` with `<name>.route.ts` (path `/<name>` and title), the page
-`<name>.tsx` and `__tests__/`, then one line in `PAGES` in `src/main.tsx`. Its h1 is its title. The end-to-end suite
-finds the folder by itself.
+`<name>.tsx` and `__tests__/`, then one line in `PAGES` in `src/main.tsx`. Its h1 is its title. The route class also
+names its `category` (`Foundations`, `Actions`, `Typography` or `Navigation`, in `src/enums/page-category.enum.ts`),
+which groups it in the shell's navigation and on the index. The end-to-end suite finds the folder by itself.
+
+Every finished component belongs here, to be checked, tried and tested: each variant, size, tone and state with a
+short caption, and at least one live sample (a pressable button that updates a counter or toggles state). Pages
+import the kit as `import * as Ui from "@stackra/ui/react"`; `@stackra/ui` does not re-export Lucide in wave 1, so
+icons come from `lucide-react` directly.
 
 ## Commands
 
@@ -59,6 +67,11 @@ src/
 ├── components/playground-shell/       the layout: provider, header, switcher, navigation
 ├── routes/home/                       `/`
 ├── routes/foundations/                `/foundations`
+├── routes/icon/                       `/icon`
+├── routes/typography/                 `/typography`
+├── components/page-list/              the pages grouped by category (index page and navigation)
+├── components/page-section/           a named region with a level-2 heading and a note
+├── enums/page-category.enum.ts        the page categories, in navigation order
 ├── types/page-link.type.ts            what a navigation link needs
 └── styles/app.css                     Tailwind, HeroUI, the stackra fonts and theme
 ```

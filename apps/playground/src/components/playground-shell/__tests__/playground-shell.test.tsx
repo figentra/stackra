@@ -2,13 +2,13 @@
  * Stackra file contract:
  * Purpose: proves the playground shell takes the colour scheme and locale from the URL, applies them through the
  *          DesignSystemProvider, writes a switch back to the URL, marks the selected choice beyond its fill, keeps
- *          theme-color in step, declares its UI English, moves focus to the h1 on navigation, and draws its landmarks.
+ *          theme-color in step, declares its UI English, moves focus to the h1 on navigation, groups its navigation by category, and draws its landmarks.
  * Boundary: a memory router in jsdom with a stubbed matchMedia; no network.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0022 (test placement).
  */
 // @covers sta-350:FR-010
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { PlaygroundShell } from "#src/components/playground-shell";
@@ -19,7 +19,9 @@ function renderShell(url: string) {
   const router = createMemoryRouter(
     [
       {
-        element: <PlaygroundShell pages={[{ path: "/a", title: "Page A" }]} />,
+        element: (
+          <PlaygroundShell pages={[{ path: "/a", title: "Page A", category: "Foundations" }]} />
+        ),
         children: [
           { path: "/", element: <h1>Child page</h1> },
           { path: "/a", element: <h1>Page A</h1> },
@@ -102,6 +104,15 @@ describe("PlaygroundShell", () => {
     expect(document.activeElement).toBe(document.body);
     await act(() => router.navigate("/a"));
     expect(document.activeElement).toBe(screen.getByRole("heading", { level: 1, name: "Page A" }));
+  });
+
+  it("groups the navigation by category", () => {
+    renderShell("/");
+    const navigation = within(screen.getByRole("navigation", { name: "Pages" }));
+    expect(
+      within(navigation.getByRole("list", { name: "Foundations" })).getByRole("link").textContent,
+    ).toBe("Page A");
+    expect(navigation.queryByRole("list", { name: "Typography" })).toBeNull();
   });
 
   it("draws the banner, navigation and main landmarks around the page", () => {

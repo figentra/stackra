@@ -28,3 +28,14 @@
 
 - [ ] T011 [US4] Move the logos and brand assets into `apps/docs` and the app icons into `apps/mobile`, switch `apps/mobile` to `@stackra/tokens`, delete `packages/experience/brand` and clear every reference — covers: FR-005, P-004 — route: package — deps: T005
 - [ ] T012 [US4] Package and category READMEs and the roadmap — covers: SC-001 — route: steward-docs — deps: T008, T010, T011
+
+## Phase 6: Wave 1 components (ADR 0303)
+
+- [x] T013 [US2] Icon: contracts, `ICON_SIZES`, the web and native `Icon` and the native provider's `LucideProvider` in `packages/design-system/ui/src` — covers: FR-012, FR-013, FR-014, FR-015, P-008, P-009, P-013, P-014 — route: frontend — deps: T007, T008
+- [x] T014 [US2] Text and Heading: contracts, core pieces, and the web and native components in `packages/design-system/ui/src` — covers: FR-017, FR-018, FR-019, P-010, P-011, P-012 — route: frontend — deps: T013, T015
+- [x] T015 [US1] The `h4` to `h6` styles and the type scale in both renderers, `defineTheme` and the committed CSS in `packages/design-system/tokens` — covers: FR-020 — route: package — deps: T005
+- [x] T016 [US3] The `/icon` and `/typography` routes, the page categories, the shell navigation and the index page in `apps/playground/src` — covers: FR-016, FR-021, P-015 — route: frontend — deps: T013, T014
+- [x] T017 [US3] The icon and typography e2e suites in `apps/playground/e2e/__tests__` — covers: SC-004, P-015 — route: tests — deps: T016
+- [x] T018 [US2] Button, IconButton and CloseButton: contracts, `omitUndefined`, and the web and native components in `packages/design-system/ui/src` — covers: FR-022, FR-023, FR-024 — route: frontend — deps: T013
+- [x] T019 [US2] Link and both `RouterProvider`s: contracts, and the web and native components in `packages/design-system/ui/src` — covers: FR-025, FR-026 — route: frontend — deps: T013, T014, T018
+- [x] T020 [US3] The `/button`, `/icon-button`, `/close-button` and `/link` routes, the shell and index on `@stackra/ui` `Link` and `RouterProvider` in `apps/playground/src` — covers: FR-027, FR-028 — route: frontend — deps: T016, T018, T019

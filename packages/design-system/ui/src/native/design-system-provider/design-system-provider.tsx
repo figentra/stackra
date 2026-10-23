@@ -2,21 +2,24 @@
  * Stackra file contract:
  * Purpose: the native `DesignSystemProvider` on HeroUI Native and Uniwind: switches the Uniwind theme
  *          (`Uniwind.setTheme`, which follows the system for `system`), scopes the subtree's layout direction with
- *          Uniwind's `LayoutDirection`, and tells `HeroUINativeProvider` the direction through `config.isRTL`.
+ *          Uniwind's `LayoutDirection`, and tells `HeroUINativeProvider` the direction through `config.isRTL`. It also
+ *          gives Lucide icons the `md` size and the theme's foreground colour, which native hosts override.
  * Boundary: applies the scheme and direction to this subtree. App-wide native RTL (navigation, system views) follows
  *          React Native's I18nManager, which changes only through `I18nManager.forceRTL` and an app restart; the
  *          provider never forces it. The app wraps it in GestureHandlerRootView and SafeAreaProvider, as HeroUI
  *          Native requires.
  * Runtime: react-native
- * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI Native on native); ADR 0060 (RTL).
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 3); ADR 0165 (UI contract, HeroUI Native on native); ADR 0060 (RTL).
  */
-import { HeroUINativeProvider } from "heroui-native";
+import { HeroUINativeProvider, useThemeColor } from "heroui-native";
+import { LucideProvider } from "lucide-react-native";
 import { useLayoutEffect, useMemo, useState } from "react";
 import { LayoutDirection, Uniwind, useUniwind } from "uniwind";
 
 import type { ColorScheme } from "#contracts/enums/color-scheme.enum";
 import type { DesignSystemProviderProps } from "#contracts/types/design-system-provider-props.type";
 import type { DesignSystemState } from "#contracts/types/design-system-state.type";
+import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
 import { directionOf } from "#core/functions/direction-of.function";
 
 import { DesignSystemContext } from "./design-system-context";
@@ -80,11 +83,17 @@ export function DesignSystemProvider({
     ],
   );
   const config = useMemo(() => ({ isRTL: isRtl }), [isRtl]);
+  // Native has no `currentColor` cascade: without this default a bare icon would draw black in dark mode.
+  const foreground = useThemeColor("foreground");
 
   return (
     <DesignSystemContext value={state}>
       <LayoutDirection rtl={isRtl}>
-        <HeroUINativeProvider config={config}>{children}</HeroUINativeProvider>
+        <HeroUINativeProvider config={config}>
+          <LucideProvider size={ICON_SIZES.md} color={foreground}>
+            {children}
+          </LucideProvider>
+        </HeroUINativeProvider>
       </LayoutDirection>
     </DesignSystemContext>
   );

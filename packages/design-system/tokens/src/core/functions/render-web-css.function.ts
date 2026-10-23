@@ -2,13 +2,15 @@
  * Stackra file contract:
  * Purpose: renders a theme to the CSS custom properties HeroUI v3 reads on the web. Mode-independent tokens go on
  *          `:root`; the colour roles, palette and shadows go on `:root, [data-theme="light"]` and
- *          `.dark, [data-theme="dark"]`, the selectors HeroUI's theming docs prescribe for theme colours.
+ *          `.dark, [data-theme="dark"]`, the selectors HeroUI's theming docs prescribe for theme colours. A
+ *          `@layer components` block restyles HeroUI's Typography classes in the theme's type scale.
  * Boundary: a pure function from a Theme to a string; it validates nothing (`defineTheme` does) and writes no file.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0165 (HeroUI v3 on the web).
  */
 import { ColorRole } from "#contracts/enums/color-role.enum";
 import type { Theme } from "#contracts/types/theme.type";
+import { HEROUI_TYPOGRAPHY_TOKENS } from "#core/constants/heroui-typography-tokens.constant";
 
 const SHADOWS = ["surface", "overlay", "field"] as const;
 const FONT_FAMILIES = ["sans", "mono", "arabic"] as const;
@@ -17,8 +19,52 @@ const block = (selector: string, lines: readonly string[]) =>
   `${selector} {\n${lines.join("\n")}\n}`;
 
 /**
- * The web stylesheet of `theme`, to load after `@import "@heroui/styles"` and outside any cascade layer, so it
- * overrides HeroUI's defaults. Durations drop to 0ms under `prefers-reduced-motion`, and `:lang(ar)` documents take
+ * HeroUI's weight modifiers, stated again after the types: the `font` shorthand of a type resets `font-weight`, and
+ * HeroUI's own modifier rules sit before ours in the same layer, so without these `weight="bold"` would lose.
+ */
+const WEIGHT_MODIFIERS = [
+  ["normal", 400],
+  ["medium", 500],
+  ["semibold", 600],
+  ["bold", 700],
+] as const;
+
+/** A rule indented one level, for use inside the `@layer components` block. */
+const inRule = (selector: string, lines: readonly string[]) =>
+  `  ${selector} {\n${lines.join("\n")}\n  }`;
+
+/**
+ * The `@layer components` block that draws HeroUI's Typography classes in the theme's type scale (HeroUI's own
+ * customisation route). It stays inside the layer, because an unlayered rule would beat a caller's utilities. The
+ * Arabic rule uses `:where(:lang(...))`, which keeps it at one class of specificity: it wins over the Latin rule by
+ * order, and the weight modifiers below still win over both.
+ */
+function typographyLayer(theme: Theme): string {
+  const rules = HEROUI_TYPOGRAPHY_TOKENS.filter(({ token }) => token in theme.typography).flatMap(
+    ({ type, token }) => [
+      inRule(`.typography--${type}`, [
+        `    font: var(--${token});`,
+        `    letter-spacing: var(--${token}-letter-spacing);`,
+      ]),
+      ...(`${token}-ar` in theme.typography
+        ? [
+            inRule(`.typography--${type}:where(:lang(ar))`, [
+              `    font: var(--${token}-ar);`,
+              `    letter-spacing: var(--${token}-ar-letter-spacing);`,
+            ]),
+          ]
+        : []),
+    ],
+  );
+  const weights = WEIGHT_MODIFIERS.map(([name, weight]) =>
+    inRule(`.typography--weight-${name}`, [`    font-weight: ${weight};`]),
+  );
+  return `@layer components {\n${[...rules, ...weights].join("\n")}\n}`;
+}
+
+/**
+ * The web stylesheet of `theme`, to load after `@import "@heroui/styles"` and outside any cascade layer (bar the
+ * typography block, which is in `components` on purpose), so it overrides HeroUI's defaults. Durations drop to 0ms under `prefers-reduced-motion`, and `:lang(ar)` documents take
  * the Arabic font stack.
  */
 export function renderWebCss(theme: Theme): string {
@@ -55,5 +101,6 @@ export function renderWebCss(theme: Theme): string {
       .map(([name]) => `    --duration-${name}: 0ms;`)
       .join("\n")}\n  }\n}`,
     block(":root:lang(ar)", ["  font-family: var(--font-arabic);"]),
+    typographyLayer(theme),
   ].join("\n\n")}\n`;
 }

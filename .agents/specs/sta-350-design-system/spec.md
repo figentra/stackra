@@ -129,15 +129,71 @@ moved assets exist in `apps/docs` and `apps/mobile`.
 - **FR-011**: The playground SHALL have a Playwright and axe end-to-end test over every route in light, dark, LTR and
   RTL.
 
+Wave 1 of the components (ADR 0303; Linear STA-353 to STA-357). Icon, then Text and Heading; Button and Link follow in
+their own requirements. The ids continue this list; the wave-1 design briefs numbered each group from 001.
+
+- **FR-012**: `@stackra/ui` SHALL export `IconContractProps`, `IconComponent` and `IconComponentProps` from
+  `./contracts`, `ICON_SIZES` from `.`, and an `Icon` from `./react` (lucide-react) and `./native`
+  (lucide-react-native) that draws any Lucide icon component, or any component with the same props, at `sm` 16, `md`
+  20 or `lg` 24 px and in the colour role of a text tone.
+- **FR-013**: An `Icon` without a label SHALL be hidden from assistive technology on both runtimes; with a label it
+  SHALL be exposed as an image named by the label (web `role="img"` and `aria-label`; native `accessible`,
+  `role="img"` and `accessibilityLabel`).
+- **FR-014**: An `Icon` with `isMirroredInRtl` SHALL be drawn mirrored when the direction is right-to-left and
+  unmirrored otherwise; an icon without it is never mirrored.
+- **FR-015**: Icon slots of `@stackra/ui` components SHALL accept any React element; the native
+  `DesignSystemProvider` SHALL give Lucide icons the `md` size and the theme foreground by default, which a native host
+  overrides through `LucideProvider`.
+- **FR-016**: The playground SHALL have an icon route showing every size, tone, decorative and labelled use, the
+  mirrored and never-mirrored directional icons, an app-supplied icon component and a live sample, with e2e checks for
+  names, mirroring and 3:1 non-text contrast in light, dark, LTR and RTL.
+- **FR-017**: `@stackra/ui/contracts` SHALL export `TextType`, `HeadingType`, `HeadingLevel`, `TextTone`, `TextAlign`,
+  `TypographyContractProps`, `TextContractProps` and `HeadingContractProps`.
+- **FR-018**: `@stackra/ui/react` SHALL export `Text` and `Heading` on HeroUI v3 Typography implementing the
+  contracts; `Heading` renders `h<level>`.
+- **FR-019**: `@stackra/ui/native` SHALL export `Text` and `Heading` on HeroUI Native Typography implementing the same
+  contracts.
+- **FR-020**: The `stackra` theme SHALL define `h4` to `h6` and their `-ar` twins (ADR 0303 decision 9), and the
+  `@stackra/tokens` web and native stylesheets SHALL draw HeroUI's Typography types in the theme's type scale, with
+  the `-ar` styles for Arabic text.
+- **FR-021**: The playground SHALL have a typography route showing every Text type, Heading level and type, tone,
+  alignment, truncation and language case, and a live sample, in light, dark, LTR and RTL, and it SHALL group its
+  pages by category in the navigation and on the index.
+- **FR-022**: `@stackra/ui/contracts` SHALL export `ButtonVariant`, `ButtonContractProps`, `IconButtonContractProps`
+  and `CloseButtonContractProps`, and `@stackra/ui/react` SHALL export `Button`, `IconButton` and `CloseButton` on
+  HeroUI v3 implementing them: `variant`, `size`, `isDisabled`, `isLoading`, `isFullWidth`, `startIcon`, `endIcon`,
+  `label` and `onPress`, with every other HeroUI prop passed through and HeroUI's own names for the renamed concepts
+  refused by the type.
+- **FR-023**: `@stackra/ui/native` SHALL export `Button`, `IconButton` and `CloseButton` on HeroUI Native implementing
+  the same contracts, with HeroUI Native's press feedback (`feedbackVariant`, `animation`, `background`) passed
+  through.
+- **FR-024**: A loading `Button` SHALL refuse presses, keep focus on web under an unchanged accessible name with a
+  hidden spinner, and report `busy` with a spinner in the label colour on native; `IconButton` and `CloseButton`
+  SHALL always have a non-empty accessible name, and the type SHALL refuse a missing `label`.
+- **FR-025**: `@stackra/ui/contracts` SHALL export `LinkUnderline` and `LinkContractProps`, and `./react` (HeroUI v3
+  `Link`) and `./native` (HeroUI Native `LinkButton`) SHALL export a `Link` that maps `tone`, `underline` (default
+  `always`), `isExternal`, `label` and `isDisabled`, passing every other HeroUI prop through.
+- **FR-026**: `Link` SHALL be router-free: on web an internal, same-origin, unmodified click SHALL navigate through
+  React Aria's `RouterProvider`, which `./react` re-exports; on native an app path SHALL navigate through the
+  `./native` `RouterProvider`, and an absolute URL or an external link SHALL open in the system browser.
+- **FR-027**: The playground SHALL have `/button`, `/icon-button` and `/close-button` routes showing every variant,
+  size and state with an interactive example each, listed under the Actions category, in light, dark, LTR and RTL.
+- **FR-028**: The playground SHALL have a `/link` route showing every tone, underline, external, disabled, press-only
+  and icon-only link, inline in text and standalone, listed under the Navigation category, and its shell and index
+  SHALL use the `@stackra/ui` `Link` and `RouterProvider`.
+
 ## Success Criteria
 
 - **SC-001**: `pnpm verify` is green with the change — verified by: CI (Quality Gate)
 - **SC-002**: The e2e run over every playground route reports no axe violation in the four combinations — verified by: e2e
 - **SC-003**: The structure page and the retired package list match the tree — verified by: unit
+- **SC-004**: axe reports nothing on `/typography` in light, dark, LTR and RTL, and the computed sizes, line heights
+  and letter spacings of every Text type and heading style equal the theme's — verified by: e2e
 
 ## Out of scope
 
-- Any component beyond the token foundations page (the owner describes them one at a time after this pull request).
+- Any component beyond the token foundations page and the wave-1 components above (the owner describes them one at a
+  time; Button and Link are the rest of wave 1).
 - The `icons` package of the category.
 - A shared component implementation across web and native (ADR 0227 keeps it deferred).
 - Converting existing apps to the v3 shape (STA-344).

@@ -37,7 +37,7 @@ const withFont = (sans: string): unknown => ({
   fontFamily: { ...STACKRA_THEME.fontFamily, sans },
 });
 
-// @covers sta-350:FR-001
+// @covers sta-350:FR-001 sta-350:FR-020
 describe("defineTheme", () => {
   it("returns a complete theme unchanged", () => {
     expect(defineTheme(STACKRA_THEME)).toBe(STACKRA_THEME);
@@ -191,5 +191,40 @@ describe("defineTheme", () => {
       "acme",
     ]);
     expect(error.message).toBe('Theme "acme" is invalid: a is empty; b is missing');
+  });
+
+  it("refuses a type style the native renderer cannot turn into px", () => {
+    const style = {
+      weight: 400,
+      size: "1rem",
+      lineHeight: "1.5rem",
+      family: "sans",
+      letterSpacing: "1rem",
+    };
+    expect(problemsOf({ ...STACKRA_THEME, typography: { body: style } })).toEqual([
+      "typography.body.size is not a px length, which the native type scale needs",
+      "typography.body.lineHeight is not a unitless number or a px length, which the native type scale needs",
+      "typography.body.letterSpacing is not zero, an em or a px length, which the native type scale needs",
+    ]);
+  });
+
+  it("accepts the forms the native renderer can compute", () => {
+    const style = {
+      weight: 400,
+      size: "16px",
+      lineHeight: "24px",
+      family: "sans",
+      letterSpacing: "0",
+    };
+    expect(
+      problemsOf({
+        ...STACKRA_THEME,
+        typography: {
+          a: style,
+          b: { ...style, lineHeight: "1.4", letterSpacing: "-0.01em" },
+          c: { ...style, letterSpacing: "0.5px" },
+        },
+      }),
+    ).toEqual([]);
   });
 });
