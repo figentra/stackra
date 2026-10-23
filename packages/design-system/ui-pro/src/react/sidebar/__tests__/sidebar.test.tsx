@@ -189,6 +189,20 @@ describe("Sidebar (web)", () => {
     expect(screen.getByText("Links")).toBeTruthy();
   });
 
+  it("drops HeroUI Pro's off-screen sheet fill with a rule scoped to the sidebar sheet", () => {
+    stubBrowserApis(true);
+    render(
+      <Sidebar.Provider>
+        <OpenSheet />
+        <Sidebar.Mobile label="Site navigation">x</Sidebar.Mobile>
+      </Sidebar.Provider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+    const rule = screen.getByRole("dialog").querySelector("style")?.textContent;
+    expect(rule).toContain(".sidebar__mobile-sheet[data-sheet-drawer]");
+    expect(rule).toContain("::after{content:none}");
+  });
+
   it("types the accessible name as label", () => {
     expectTypeOf<SidebarProps>().toHaveProperty("label");
     expectTypeOf<SidebarMobileProps>().toHaveProperty("label");

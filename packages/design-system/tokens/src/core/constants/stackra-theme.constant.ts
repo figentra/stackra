@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: the stackra theme, the default theme of the Stackra Design System. Its oklch values come unchanged from
  *          the approved Stackra brand kit 0.1.0, which @stackra/brand vendored until it was retired; the kit's token
- *          reports sit in assets/data/stackra/ and the tests hold the values to them. Each hex is derived from its
- *          oklch value (`oklchToHex`), never typed, so the two cannot disagree.
+ *          reports sit in assets/data/stackra/ and the tests hold the values to them. One documented deviation: light
+ *          `muted` is 0.49, not the kit's 0.5 (owner decision 2026-10-23). Each hex is derived from its oklch value
+ *          (`oklchToHex`), never typed, so the two cannot disagree.
  * Boundary: data only. Stackra has no accent colour: every accent role is a neutral (ink on paper, paper on ink).
  *          Steel colours the wordmark and the st tile only, never a UI role; graphite carries the accent states and,
  *          as an alias, the dark `segment` role.
@@ -28,7 +29,7 @@ const INK = color("oklch(0.158 0.005 248)", "oklch(0.158 0.005 248)");
 const PAPER = color("oklch(0.972 0.004 122)", "oklch(0.972 0.004 122)");
 const FOREGROUND = color("oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)");
 const INVERSE = color("oklch(0.972 0.004 122)", "oklch(0.158 0.005 248)");
-const MUTED = color("oklch(0.5 0.01 250)", "oklch(0.72 0.008 250)");
+const MUTED = color("oklch(0.49 0.01 250)", "oklch(0.72 0.008 250)");
 const ON_STATUS = color("oklch(1 0 0)", "oklch(0.158 0.005 248)");
 
 /** The stackra theme: neutral accents, Geist and IBM Plex Sans Arabic, a 4px spacing step and a 0.25rem radius. */
