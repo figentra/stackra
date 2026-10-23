@@ -9,7 +9,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import * as UiPro from "@stackra/ui-pro/react";
-import { useState } from "react";
+import { type ComponentProps, useState } from "react";
 
 import { ProDropZoneRoute } from "#src/routes/pro-drop-zone/pro-drop-zone.route";
 
@@ -50,7 +50,10 @@ const SAMPLES: readonly ListedFile[] = [
   { id: "sample-c", name: "export.csv", size: 61_440, status: "failed", progress: 0 },
 ];
 
-const FORMAT_COLORS: Readonly<Record<string, string>> = {
+/** The colours HeroUI Pro's file format icon takes. */
+type FormatColor = NonNullable<ComponentProps<typeof UiPro.DropZone.FileFormatIcon>["color"]>;
+
+const FORMAT_COLORS: Readonly<Record<string, FormatColor>> = {
   csv: "green",
   pdf: "red",
   png: "green",

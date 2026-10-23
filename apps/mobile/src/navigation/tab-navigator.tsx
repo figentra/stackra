@@ -10,12 +10,20 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useDesignSystem } from "@stackra/ui/native";
 import { useThemeColor } from "heroui-native";
 
-import { DESIGN_SYSTEM_COMPONENTS } from "../screens/design-system-components";
-import { DesignSystemScreen } from "../screens/design-system-screen";
 import { HomeScreen } from "../screens/home-screen";
 import { SettingsScreen } from "../screens/settings-screen";
 import { detailHeader, largeTitleHeader } from "./header-options";
 import type { HomeStackParamList, SettingsStackParamList, TabParamList } from "./types";
+
+// Release builds leave the review area out of the bundle: Metro folds `__DEV__` to false and drops these requires,
+// where static imports would bundle and evaluate all its screens and their native libraries at start-up.
+/* oxlint-disable typescript/no-require-imports -- the requires are what lets the release build drop the area */
+const DESIGN_SYSTEM_COMPONENTS: typeof import("../screens/design-system-components").DESIGN_SYSTEM_COMPONENTS =
+  __DEV__ ? require("../screens/design-system-components").DESIGN_SYSTEM_COMPONENTS : [];
+const DesignSystemScreen:
+  | typeof import("../screens/design-system-screen").DesignSystemScreen
+  | undefined = __DEV__ ? require("../screens/design-system-screen").DesignSystemScreen : undefined;
+/* oxlint-enable typescript/no-require-imports */
 
 const Tabs = createNativeBottomTabNavigator<TabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -35,7 +43,7 @@ function SettingsTab() {
     <SettingsStack.Navigator screenOptions={largeTitleHeader}>
       <SettingsStack.Screen name="Settings" component={SettingsScreen} />
       {/* Development builds only, like the Settings row that opens it. */}
-      {__DEV__ ? (
+      {DesignSystemScreen ? (
         <>
           <SettingsStack.Screen
             name="DesignSystem"

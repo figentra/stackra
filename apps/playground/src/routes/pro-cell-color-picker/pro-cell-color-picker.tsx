@@ -102,7 +102,7 @@ export function ProCellColorPicker() {
         <h2 id="disabled-heading" className="type-h2">
           {STRINGS.disabled}
         </h2>
-        <UiPro.CellColorPicker defaultValue="#F59E0B" isDisabled>
+        <UiPro.CellColorPicker defaultValue="#F59E0B">
           <Trigger label={STRINGS.border} isDisabled />
           <Controls />
         </UiPro.CellColorPicker>

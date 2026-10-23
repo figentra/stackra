@@ -62,7 +62,7 @@ export function FormSectionScreen() {
       </Section>
 
       <Section title={STRINGS.live.title} description={STRINGS.live.description}>
-        <Form className="gap-6">
+        <Form style={{ gap: 24 }}>
           <FormSection title={STRINGS.live.profile} description={STRINGS.live.profileHint}>
             <TextField label={STRINGS.live.displayName} />
           </FormSection>

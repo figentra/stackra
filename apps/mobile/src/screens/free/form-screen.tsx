@@ -85,7 +85,7 @@ function LiveForm() {
   };
 
   return (
-    <Form className="gap-4">
+    <Form style={{ gap: 16 }}>
       <TextField
         label={STRINGS.live.email}
         description={STRINGS.live.emailHint}
