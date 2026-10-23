@@ -70,7 +70,7 @@ Linear issues: [STA-405] `@stackra/icons` and name-based icons, [STA-354] Icon.
 - [x] T032 [US2] `Icon` by name and the name-or-element icon slots of Button, IconButton, CloseButton and Chip in `packages/design-system/ui/src` — covers: FR-052, FR-053, P-041, P-042 — route: frontend — deps: T031
 - [x] T033 [US3] The playground registers only the icons it draws and imports no Lucide package in `apps/playground/src` — covers: FR-054, P-043 — route: frontend — deps: T032
 
-## Phase 10: Wave 3 components (ADR 0305)
+## Phase 10: Wave 3 components (ADR 0311)
 
 Linear sub-issues, all in this one pull request: [STA-364] the field contract and playground discovery, [STA-365] FormField and FormSection, [STA-366] TextField, TextArea and InputGroup, [STA-367] SearchField, Select, ComboBox and TagGroup, [STA-368] Checkbox, CheckboxGroup, RadioGroup and Switch, [STA-369] Label, Description, FieldError and Form.
 
