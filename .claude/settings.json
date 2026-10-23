@@ -136,7 +136,12 @@
       "Bash(eas channel:edit*)",
       "Bash(wrangler preview*)",
       "Bash(wrangler d1 *--file*)",
-      "Bash(wrangler pages deployment create*)"
+      "Bash(wrangler pages deployment create*)",
+      "Bash(eas update:republish*)",
+      "Bash(eas update:rollback*)",
+      "Bash(eas update:roll-back-to-embedded*)",
+      "Bash(eas update:revert-update-rollout*)",
+      "Bash(eas channel:rollout*)"
     ],
     "deny": [
       "Read(//**/.env)",
@@ -246,8 +251,7 @@
       "Bash(infisical *secrets get*)",
       "Bash(infisical *secrets set*)",
       "Bash(infisical * secrets)",
-      "Bash(infisical *run *)",
-      "Bash(* infisical *run *)"
+      "Bash(infisical *run *)"
     ]
   },
   "enableAllProjectMcpServers": true,

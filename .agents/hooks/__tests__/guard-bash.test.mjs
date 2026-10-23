@@ -2949,7 +2949,6 @@ test("STA-400 review 2: settings deny the infisical secret reads and run, whatev
     "Bash(infisical *secrets set*)",
     "Bash(infisical * secrets)",
     "Bash(infisical *run *)",
-    "Bash(* infisical *run *)",
   ])
     assert.ok(p.deny.includes(rule), rule);
   for (const rule of [
@@ -2978,6 +2977,70 @@ test("STA-400 review 2: settings deny the infisical secret reads and run, whatev
         .some((r) => glob(r).test(c)),
       c,
     );
+});
+
+// ---- STA-400 review round 3 (AI-REVIEW FAIL at ffdab0d) ------------------------------------------------------
+
+/** A settings glob (`Bash(<pattern>)`, `*` any run of characters) as an anchored regex, the way Claude Code matches it. */
+const settingsGlob = (rule) =>
+  new RegExp(
+    `^${rule
+      .slice(5, -1)
+      .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+      .replaceAll("*", ".*")}$`,
+  );
+
+test("STA-400 review 3: no settings deny matches prose that mentions infisical and run", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const { permissions: p } = JSON.parse(
+    await readFile(join(root, ".claude", "settings.json"), "utf8"),
+  );
+  assert.ok(!p.deny.includes("Bash(* infisical *run *)"));
+  const denies = p.deny.filter((r) => r.startsWith("Bash("));
+  for (const c of [
+    'echo "wrap infisical and run tests"',
+    "git commit -m 'docs: the scripts wrap infisical and run tests'",
+    'pnpm bot:gh -- pr create --title "x" --body "pnpm scripts wrap infisical and run the tool"',
+    'pnpm linear comment STA-400 "raw infisical run is denied"',
+  ])
+    assert.ok(!denies.some((r) => settingsGlob(r).test(c)), c);
+  // the start-anchored deny still holds when the hook fails open
+  assert.ok(denies.some((r) => settingsGlob(r).test("infisical run -- node x.js")));
+});
+
+test("STA-400 review 3: EAS rollbacks, republish and channel rollout ask; update:list and view stay reads", async () => {
+  for (const c of [
+    "eas update:republish --group x",
+    "eas update:rollback",
+    "eas update:roll-back-to-embedded",
+    "eas update:revert-update-rollout",
+    "eas channel:rollout production",
+    "npx eas-cli@latest update:rollback",
+    "pnpm exec eas channel:rollout production",
+  ])
+    assert.equal(decision(c, root), "ask", c);
+  for (const c of [
+    "eas update:list",
+    "eas update:view x",
+    "eas channel:list",
+    "eas channel:view production",
+  ])
+    assert.equal(decision(c, root), "allow", c);
+  const { readFile } = await import("node:fs/promises");
+  const { permissions: p } = JSON.parse(
+    await readFile(join(root, ".claude", "settings.json"), "utf8"),
+  );
+  for (const rule of [
+    "Bash(eas update:republish*)",
+    "Bash(eas update:rollback*)",
+    "Bash(eas update:roll-back-to-embedded*)",
+    "Bash(eas update:revert-update-rollout*)",
+    "Bash(eas channel:rollout*)",
+  ])
+    assert.ok(p.ask.includes(rule), rule);
+  const asks = p.ask.filter((r) => r.startsWith("Bash("));
+  for (const c of ["eas update:list", "eas update:view x"])
+    assert.ok(!asks.some((r) => settingsGlob(r).test(c)), c);
 });
 
 test("STA-351: unattended turns only an ask into a deny (shared with the OpenCode guard)", () => {

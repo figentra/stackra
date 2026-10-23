@@ -66,15 +66,18 @@ and a pattern inside `$(…)` or backticks are no file names either.
 build output, `find -delete`, `git clean -f`, `infisical secrets|folders|dynamic-secrets delete`, `encore db reset`,
 `encore env delete`, `wrangler deploy|rollback|delete|preview`, `wrangler pages deployment create`,
 `wrangler d1 --remote` with `DROP`/`DELETE`, `migrations apply` or an unread `--file`,
-`eas submit|deploy|update|workflow:run|channel:edit|<x>:delete` and `--auto-submit*`, a registry publish, `git branch -D`
+`eas submit|deploy|update|workflow:run|channel:edit|channel:rollout|<x>:delete`, the update rollbacks and
+republish, and `--auto-submit*`, a registry publish, `git branch -D`
 of an unpushed branch, a `bot:git` push of tags, and a `bot:gh` release, `<noun> delete`, `DELETE` method, GraphQL
 `delete…` mutation, deploy `workflow run` or `dispatches` call. These rules read through every runner and version
 (`npx wrangler@3 deploy`, `pnpm dlx eas-cli submit`, `mise exec -- npm publish`, `pnpm --silent publish`). Everything
 else the hook does not deny is allowed, except raw `infisical run`, which is a deny that names the wrapping pnpm
 scripts (`pnpm bot:gh`, `bot:git`, `linear`, `secrets:import`): the program it starts gets every /agents value,
 the bot and reviewer App keys included. An `infisical` command is read past its global options and their values
-(`--domain <url>`, `--log-level`), by any path, `@infisical/cli`, `npx` or `pnpm dlx`, and the settings deny
-`infisical *secrets get|set*`, `infisical * secrets` and `infisical *run *` in case the hook fails open.
+(`--domain <url>`, `--log-level`), by any path, `@infisical/cli`, `npx` or `pnpm dlx`. In case the hook fails
+open, the settings add four denies to the floor: `Bash(infisical *secrets get*)`, `Bash(infisical *secrets set*)`,
+`Bash(infisical * secrets)` and `Bash(infisical *run *)`; each is anchored at the start, so prose that mentions
+`infisical` is never denied.
 `tools/scripts/mcp.sh` is denied from the Bash tool (it runs its arguments under `infisical run`; MCP servers launch
 it from `.mcp.yaml`). The only other asks are for a command the guard cannot
 read (a computed command name, text piped into a shell, a GraphQL label mutation by id): each is a deny, from the
@@ -111,7 +114,8 @@ passed inline (`node -e`, `python -c`, `ruby -e`, `perl -e`), SQL fed to a packa
 (`pnpm <script> <<< 'DROP …'`), a glob that spells a secret name with wildcards (`.e?v`), a bare secret file name
 in a wrapper read only two quoting levels deep (`cat .env` wrapped three times in `watch '…'` is allowed; a line
 that also holds a guarded command name is read eight deep), a secret path built by a substitution
-(`cat "$(pwd)/.env"`), and quoting nested more than eight levels deep. One known false deny: a heredoc written to a
+(`cat "$(pwd)/.env"`), quoting nested more than eight levels deep, and a copy of `tools/scripts/mcp.sh` run
+under another name (only `mcp.sh` itself is denied from the Bash tool). One known false deny: a heredoc written to a
 file is read as a script when a body line starts with `/*`. The guard is an accident guard; GitHub's rulesets
 and the bot's permissions are the boundary.
 

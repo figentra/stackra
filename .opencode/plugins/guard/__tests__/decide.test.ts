@@ -867,6 +867,18 @@ test("an ask denies with the shared unattended hint, human asks included", () =>
   }
 });
 
+// STA-400 review 3: a read that names the binary runs nothing.
+test("STA-400 review 3: an executor may read the eas binary's path; running it is denied", () => {
+  for (const c of ["ls node_modules/.bin/eas", "cat node_modules/.bin/eas", "grep -rn eas docs"])
+    assert.equal(kind(c), "allow", c);
+  for (const c of [
+    "node_modules/.bin/eas build",
+    "mise exec -- eas build",
+    "./node_modules/.bin/npx tsc",
+  ])
+    assert.equal(kind(c), "deny", c);
+});
+
 test("STA-400 review: an executor keeps its denies for wrapped forms", () => {
   for (const c of [
     "env infisical run -- node x.js",

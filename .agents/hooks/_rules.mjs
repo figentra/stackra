@@ -1451,6 +1451,12 @@ export const unattended = (d) =>
 
 /** For an OpenCode executor: `rx` in any prose-free text of `c`, quotes kept (deny-leaning; prose is dropped). */
 const executorRuns = (c, rx) => [...proseFree(c), ...lineTexts(c)].some((t) => rx.test(t));
+/** For an OpenCode executor: `test` (an `atName`) on every runnable text of `executorRuns`, runners kept and dropped. */
+const executorRunsAt = (c, test) =>
+  [...proseFree(c), ...lineTexts(c)]
+    .flatMap((t) => [t, lookThroughRunners(t)])
+    .flatMap(runnable)
+    .some(test);
 /** A CLI name as a runner leaves it: any path, an `@<version>` (`npx wrangler@3 deploy`, `pnpm dlx eas-cli@latest`). */
 const CLI = (name) => String.raw`${name}(?:@${W}+)?\s+(?:[^|;&\n]*\s)?`;
 /**
@@ -1467,11 +1473,13 @@ const WRANGLER_D1_REMOTE = new RegExp(
 );
 /**
  * `eas`/`eas-cli` `submit`, `deploy`, `update` (an over-the-air release), `<x>:delete`, `workflow:run`,
- * `channel:edit` (points a channel at a release), or `--auto-submit*`.
+ * `channel:edit|rollout` (points a channel at a release), the update rollbacks and republish
+ * (`update:republish|rollback|roll-back-to-embedded|revert-update-rollout`), or `--auto-submit*`; `update:list` and
+ * `update:view` stay reads.
  */
 const EAS_DEPLOY = atName(
   CLI("eas(?:-cli)?") +
-    String.raw`(?:(?:submit|deploy|update)(?=[\s;&|()<>]|$)|--auto-submit\S*|[\w-]+:delete\b|workflow:run\b|channel:edit\b)`,
+    String.raw`(?:(?:submit|deploy|update)(?=[\s;&|()<>]|$)|--auto-submit\S*|[\w-]+:delete\b|workflow:run\b|channel:(?:edit|rollout)\b|update:(?:republish|rollback|roll-back-to-embedded|revert-update-rollout)\b)`,
 );
 /**
  * A publish to a registry: `npm|pnpm|yarn|changeset … publish` with any options before it (`pnpm --silent`,
@@ -1659,9 +1667,11 @@ const RULES = [
     why: "A registry publish (`npm`, `pnpm`, `yarn` or `changeset publish`, through any runner) releases a package version nobody can unpublish cleanly; the owner confirms it.",
   },
   // OpenCode executors only (`executor`): the shared rules allow these since STA-400, an unattended executor does not.
-  // Deny-leaning (`executorRuns`): every prose-free text, quoted lines and piped scripts included, is read raw.
+  // `executorRunsAt` reads `eas` at command position (`ls node_modules/.bin/eas` reads it, it does not run it) in every
+  // prose-free text, quoted line and piped script; `executorRuns` reads the rest raw (deny-leaning).
   {
     executor: true,
+    // Raw, not at a name: the runner look-through drops `npx` itself (`mise exec -- npx tsc` reads as `tsc`).
     rx: (c) =>
       executorRuns(
         c,
@@ -1672,9 +1682,10 @@ const RULES = [
   {
     executor: true,
     rx: (c) =>
+      executorRunsAt(c, atName(String.raw`eas(?:-cli)?(?:@${W}+)?` + END)) ||
       executorRuns(
         c,
-        /(?:^|[\s;&|(])(?:\S*\/)?eas(?:-cli)?(?:@\S*)?(?=[\s;&|)]|$)|\bwrangler(?:@\S*)?\s[^|;&\n]*(?:\bsecret\b|--remote\b)|\bencore\s+env\s+(?:set|create)\b/,
+        /\bwrangler(?:@\S*)?\s[^|;&\n]*(?:\bsecret\b|--remote\b)|\bencore\s+env\s+(?:set|create)\b/,
       ),
     why: "`eas`, `wrangler secret`, `wrangler --remote` and `encore env set|create` use the owner's login on a shared account; executors never run them, the lead does.",
   },
