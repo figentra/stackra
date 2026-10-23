@@ -9,9 +9,11 @@ import { createNativeBottomTabNavigator } from "@bottom-tabs/react-navigation";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useThemeColor } from "heroui-native";
 
+import { DESIGN_SYSTEM_COMPONENTS } from "../screens/design-system-components";
+import { DesignSystemScreen } from "../screens/design-system-screen";
 import { HomeScreen } from "../screens/home-screen";
 import { SettingsScreen } from "../screens/settings-screen";
-import { largeTitleHeader } from "./header-options";
+import { detailHeader, largeTitleHeader } from "./header-options";
 import type { HomeStackParamList, SettingsStackParamList, TabParamList } from "./types";
 
 const Tabs = createNativeBottomTabNavigator<TabParamList>();
@@ -31,6 +33,19 @@ function SettingsTab() {
   return (
     <SettingsStack.Navigator screenOptions={largeTitleHeader}>
       <SettingsStack.Screen name="Settings" component={SettingsScreen} />
+      <SettingsStack.Screen
+        name="DesignSystem"
+        component={DesignSystemScreen}
+        options={{ ...detailHeader, title: "Design system" }}
+      />
+      {DESIGN_SYSTEM_COMPONENTS.map(({ route, title, screen }) => (
+        <SettingsStack.Screen
+          key={route}
+          name={route}
+          component={screen}
+          options={{ ...detailHeader, title }}
+        />
+      ))}
     </SettingsStack.Navigator>
   );
 }

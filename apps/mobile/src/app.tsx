@@ -1,17 +1,19 @@
 /**
  * Stackra file contract:
- * Purpose: the root component: gesture handling, the HeroUI provider and the navigation container, with the
- *          theme bridged from the Stackra brand colours.
+ * Purpose: the root component: gesture handling, safe-area insets, the Stackra design system provider (HeroUI
+ *          Native, colour scheme and direction) and the navigation container, with the theme bridged from the
+ *          Stackra brand colours.
  * Boundary: composes the providers and the navigator; owns no screen and no data.
  * Runtime: react-native
  * Governing contract: ADR 0007 (documentation).
  */
 import { DarkTheme, DefaultTheme, NavigationContainer } from "@react-navigation/native";
+import { DesignSystemProvider, useDesignSystem } from "@stackra/ui/native";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { HeroUINativeProvider, useThemeColor } from "heroui-native";
-import { useColorScheme } from "react-native";
+import { useThemeColor } from "heroui-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { linking } from "./navigation/linking";
 import { RootNavigator } from "./navigation/root-navigator";
@@ -19,7 +21,8 @@ import { RootNavigator } from "./navigation/root-navigator";
 void SplashScreen.preventAutoHideAsync();
 
 function Navigation() {
-  const dark = useColorScheme() === "dark";
+  // The scheme on screen, `system` already resolved: the picker on the design-system screen changes it at runtime.
+  const dark = useDesignSystem().resolvedColorScheme === "dark";
   const [background, foreground, accent, border] = useThemeColor([
     "background",
     "foreground",
@@ -49,13 +52,15 @@ function Navigation() {
   );
 }
 
-/** The app's root: gesture handling, then the HeroUI provider, then the navigation container. */
+/** The app's root: gestures, safe-area insets, the design system provider, then the navigation container. */
 export function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <HeroUINativeProvider>
-        <Navigation />
-      </HeroUINativeProvider>
+      <SafeAreaProvider>
+        <DesignSystemProvider>
+          <Navigation />
+        </DesignSystemProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

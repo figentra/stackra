@@ -48,6 +48,7 @@ records it.
 - **P-001**: A non-app member other than `@stackra/ui-pro` that depends on HeroUI Pro or on `@stackra/ui-pro` fails `pnpm validate`, and so does `@stackra/ui-pro` without `"private": true` or with a `publishConfig` — Validates: FR-001
 - **P-002**: Every contract prop reaches HeroUI Pro under its HeroUI name, an unknown prop passes through, and a left-out prop stays absent — Validates: FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012
 - **P-003**: Every playground route, Pro routes included, renders without an axe violation in light, dark, LTR and RTL — Validates: FR-013
+- **P-005**: The mobile review area renders each native Pro component with one React instance in the bundle, in light, dark, LTR and RTL — Validates: FR-015
 - **P-004**: The gate fails at a named step when the Infisical identity is missing, and the release build never builds `@stackra/ui-pro` — Validates: FR-014
 
 ## Contracts and events

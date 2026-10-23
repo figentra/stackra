@@ -18,7 +18,20 @@ export const linking: LinkingOptions<RootStackParamList> = {
       Tabs: {
         screens: {
           HomeTab: { screens: { Home: "" } },
-          SettingsTab: { screens: { Settings: "settings" } },
+          SettingsTab: {
+            // A deep link into a design-system page keeps Settings underneath it, so back works.
+            initialRouteName: "Settings",
+            screens: {
+              Settings: "settings",
+              DesignSystem: "design-system",
+              ProProgressButton: "design-system/pro/progress-button",
+              ProSlideButton: "design-system/pro/slide-button",
+              ProSwipeableRow: "design-system/pro/swipeable-row",
+              ProCalendar: "design-system/pro/calendar",
+              ProDatePicker: "design-system/pro/date-picker",
+              ProNumberField: "design-system/pro/number-field",
+            },
+          },
         },
       },
       Item: "items/:id",

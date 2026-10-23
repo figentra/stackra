@@ -17,4 +17,5 @@
 ## Phase 3: Playground and gate
 
 - [x] T007 [US3] Pro routes, the "Pro" navigation group and one e2e file per web component in `apps/playground` — covers: FR-013, P-003, SC-002 — route: frontend — deps: T005
-- [ ] T008 [US1] Barrels, README, AGENTS and a full `pnpm verify` plus the playground e2e in `packages/design-system/ui-pro` — covers: SC-001 — route: package — deps: T003, T006, T007
+- [ ] T009 [US3] The design-system review area, its native Pro screens, the provider and Metro singletons, and deep links in `apps/mobile` — covers: FR-015, P-005 — route: mobile — deps: T006
+- [ ] T008 [US1] Barrels, README, AGENTS and a full `pnpm verify` plus the playground e2e in `packages/design-system/ui-pro` — covers: SC-001 — route: package — deps: T003, T006, T007, T009

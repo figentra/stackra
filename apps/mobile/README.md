@@ -16,17 +16,34 @@ HeroUI Native + Uniwind for UI, and iOS 26 Liquid Glass from native components.
 ```text
 src/
 ├── main.ts                    registerRootComponent(App)
-├── app.tsx                    providers: gestures → HeroUI Native → NavigationContainer (theme + linking)
-├── global.css                 Tailwind + Uniwind + HeroUI Native styles
+├── app.tsx                    providers: gestures → safe area → DesignSystemProvider (HeroUI Native, scheme,
+│                              direction) → NavigationContainer (theme + linking)
+├── global.css                 Tailwind + Uniwind + HeroUI Native and HeroUI Native Pro styles
 ├── navigation/
-│   ├── types.ts               every route + params (RootStackParamList, TabParamList, …)
-│   ├── linking.ts             deep links: stackra://items/<id> → Item
+│   ├── types.ts               every route + params (RootStackParamList, TabParamList, SettingsStackParamList, …)
+│   ├── linking.ts             deep links: stackra://items/<id> → Item, stackra://design-system[/pro/<name>]
 │   ├── header-options.ts      transparent native-stack headers (Liquid Glass) + large titles
 │   ├── root-navigator.tsx     native stack: Tabs, Item (dynamic)
-│   └── tab-navigator.tsx      native tab bar (UITabBarController) with one stack per tab
+│   └── tab-navigator.tsx      native tab bar (UITabBarController) with one stack per tab; the Settings stack
+│                              also holds the design-system review pages
 ├── screens/                   one file per screen
-└── components/ui/             Screen (scroll container), Glass (GlassView with fallback)
+│   ├── design-system-screen.tsx        index of the review area: scheme + direction switchers, grouped list
+│   ├── design-system-components.ts     the one list (group, title, route, screen) the index and stack read
+│   └── pro/<name>-screen.tsx           one review page per @stackra/ui-pro/native component
+└── components/ui/             Screen (scroll container), Glass (GlassView with fallback), Section, ChoiceGroup,
+                               CalendarParts
 ```
+
+## Design-system review area
+
+Settings → Design system (`stackra://design-system`) is the mobile twin of `apps/playground`: switch the colour
+scheme (Light, Dark, System) and the direction (English LTR, العربية RTL), then open a component page
+(`stackra://design-system/pro/<name>`). To add a component, add its route to `SettingsStackParamList`, its page under
+`src/screens/`, and one row to `DESIGN_SYSTEM_COMPONENTS`; the index and the Settings stack read that list.
+
+`metro.config.js` reads `@stackra/ui` and `@stackra/ui-pro` as source (the `@stackra/source` condition), resolves the
+packages' `#` imports, and pins `react`, `react-native`, HeroUI Native and the other native singletons to this app's
+copy, because the workspace packages have their own `node_modules` with the web catalog's React.
 
 ## Adding a screen
 

@@ -20,7 +20,7 @@ decisions: ADR 0165 decision 5 (free packages never depend on Pro), ADR 0197 (He
 
 ## Impact
 
-- **Apps touched**: `apps/playground` (a "Pro" navigation group with one route per web component), `apps/docs` (ADR
+- **Apps touched**: `apps/mobile` (a design-system review area with the native Pro screens), `apps/playground` (a "Pro" navigation group with one route per web component), `apps/docs` (ADR
   0304, the ADR 0197 amendment note, the setup runbook)
 - **Services touched**: none
 - **Packages touched**: `packages/design-system/ui-pro` (new, `@stackra/ui-pro`, private)
@@ -54,7 +54,8 @@ decisions: ADR 0165 decision 5 (free packages never depend on Pro), ADR 0197 (He
 3. Pro `Command` is wrapped as `ActionPalette`; first components are DataGrid, ActionPalette, Sidebar and AppLayout,
    Kanban, KPI and TrendChip on web, and ProgressButton, SlideButton, SwipeableRow, Calendar and DatePicker, and
    NumberField on native.
-4. CI installs HeroUI Pro with a token from Infisical `/ci` over OIDC (lead's recommendation, applied: the name is
+4. The native components get a review area in `apps/mobile` (owner, 2026-10-23, in this pull request).
+5. CI installs HeroUI Pro with a token from Infisical `/ci` over OIDC (lead's recommendation, applied: the name is
    `HEROUI_AUTH_TOKEN`, the only variable HeroUI's postinstall reads).
 
 ## User Scenarios & Testing
@@ -102,6 +103,8 @@ axe e2e in light, dark, LTR and RTL.
 - **FR-012**: `@stackra/ui-pro/native` SHALL provide `NumberField` over HeroUI Native Pro's.
 - **FR-013**: `apps/playground` SHALL show each web Pro component on its own route under a "Pro" navigation group,
   with a Playwright and axe e2e file per component.
+- **FR-015**: `apps/mobile` SHALL have a design-system review area (`stackra://design-system`, entered from Settings)
+  with a colour scheme and direction switcher and one screen per native Pro component.
 - **FR-014**: The Quality Gate SHALL install HeroUI Pro with `HEROUI_AUTH_TOKEN` read from Infisical `/ci` over GitHub
   OIDC, and the release build SHALL build only the published packages.
 
@@ -113,8 +116,8 @@ axe e2e in light, dark, LTR and RTL.
 ## Out of scope
 
 - Other HeroUI Pro components (charts beyond KPI, AI, forms); each is added when an app needs it.
-- Native components in the playground (it is a web app); they are covered by unit tests; a mobile Pro screen
-  waits until a real screen needs HeroUI Native Pro.
+- Native components in the playground (it is a web app); they are shown in the mobile app's design-system
+  review area instead.
 - Caching `node_modules` in CI to save HeroUI CDN downloads (a follow-up).
 - Converting the console or Figentra OS to use the package.
 

@@ -29,7 +29,7 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
 
 1. **A private package.** `@stackra/ui-pro` lives at `packages/design-system/ui-pro`. It sets `"private": true` and has no
    `publishConfig`, so it is never published.
-2. **Only our own apps import it.** The consumers are the console, the docs, the playground and Figentra OS.
+2. **Only our own apps import it.** The consumers are the console, the docs, the playground, the mobile app and Figentra OS.
 3. **Never in a free package.** `@stackra/ui` and every free or published package never import `@stackra/ui-pro`,
    `@heroui-pro/react` or `heroui-native-pro`. This restates [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs)
    decision 5 and [0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps) decision 2. Pro stays an end-product dependency of our
@@ -45,8 +45,9 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
    - Web (`./react`): DataGrid, ActionPalette, Sidebar and AppLayout, Kanban, KPI and TrendChip. Each one gets a playground route
      under a "Pro" navigation group, with Playwright and axe end-to-end tests ([0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground)).
    - Native (`./native`): ProgressButton, SlideButton, SwipeableRow, Calendar and DatePicker, NumberField. Each one gets unit tests
-     against recording stand-ins. There is no native review surface yet, so HeroUI Native Pro stays out of
-     `apps/mobile` until a real screen needs it.
+     against recording stand-ins and a screen in the mobile app's design-system review area (`stackra://design-system`),
+     the native twin of the playground. The owner asked for it on 2026-10-23; it amends the waves decision O33 (no
+     native review surface yet). The free `@stackra/ui` native components join that area when waves 1 to 3 merge.
 7. **Pins and install path.** Checked against the HeroUI Pro docs and the published packages on 2026-10-23.
    - Web: `@heroui-pro/react` 1.0.0-beta.10 in `catalog:frontend`, with `recharts` 3.10.1 for KPI.
    - Native: `heroui-native-pro` 1.0.0-beta.11 in `catalog:mobile`, with `@internationalized/date` 3.12.4 and
