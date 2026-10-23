@@ -10,7 +10,7 @@ import { Button, Typography } from "heroui-native";
 import { View } from "react-native";
 
 /** One choice of a {@link ChoiceGroup}. */
-export interface Choice<Value extends string> {
+interface Choice<Value extends string> {
   /** The value passed to `onChange` when this choice is picked. */
   value: Value;
   /** The text on the button, in the language it names. */

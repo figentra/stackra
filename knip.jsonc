@@ -12,7 +12,26 @@
       // Run by lefthook's pre-commit hook, which knip does not read.
       // @changesets/config: .changeset/config.json reads its schema from pnpm's hidden hoist
       // (a transitive of @changesets/cli) so VS Code needs no download; it is never imported.
-      "ignoreDependencies": ["oxfmt", "@changesets/config"],
+      // The rest are the HeroUI Pro peers that `packageExtensions` in pnpm-workspace.yaml restores on the Pro shells
+      // (ADR 0304); knip reads them as the root's own dependencies.
+      "ignoreDependencies": [
+        "oxfmt",
+        "@changesets/config",
+        "@heroui/react",
+        "@heroui/styles",
+        "@react-aria/utils",
+        "heroui-native",
+        "motion",
+        "react",
+        "react-aria",
+        "react-aria-components",
+        "react-dom",
+        "react-resizable-panels",
+        "react-stately",
+        "tailwind-merge",
+        "tailwind-variants",
+        "tailwindcss",
+      ],
       // Developer-machine CLIs the root scripts shell out to (pinned outside pnpm).
       "ignoreBinaries": ["opencode", "infisical", "specify"],
     },
