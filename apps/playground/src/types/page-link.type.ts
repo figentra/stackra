@@ -15,4 +15,6 @@ export interface PageLink {
   readonly title: string;
   /** The navigation group the page sits under, such as `Pro`; a page without one is listed first. */
   readonly group?: string;
+  /** Whether the page draws its own `main` landmark (the Pro AppLayout does); the shell then adds none, so a page has one. */
+  readonly ownsMain?: boolean;
 }

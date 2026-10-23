@@ -34,7 +34,8 @@ decisions: ADR 0165 decision 5 (free packages never depend on Pro), ADR 0197 (He
 - **ADR needed**: yes, ADR 0304 (written by `docs-adr-steward` in this pull request), amending ADR 0197 decision 4
 - **New dependencies**: owner-approved 2026-10-23: `@heroui-pro/react` 1.0.0-beta.10 and `recharts` 3.10.1 in
   `catalog:frontend`; `heroui-native-pro` 1.0.0-beta.11, `@internationalized/date` 3.12.4 and
-  `@internationalized/number` 3.6.9 in `catalog:mobile`; `allowBuilds` for the two Pro postinstalls
+  `@internationalized/number` 3.6.9 in `catalog:mobile`; `allowBuilds` for the two Pro postinstalls; lead-added as required HeroUI Pro peers: `motion` 12.43.0 and `react-resizable-panels` 4.14.5 in
+  `catalog:frontend`, and `packageExtensions` restoring the Pro shells' peers
 - **Deploy modes**: none; a private library and a dev-only app
 - **Licence tier**: our wrapper code is MIT like the repository; HeroUI Pro stays under its own licence, is never
   committed or bundled, and reaches only our own apps (ADR 0113 context, ADR 0197)
@@ -112,7 +113,8 @@ axe e2e in light, dark, LTR and RTL.
 ## Out of scope
 
 - Other HeroUI Pro components (charts beyond KPI, AI, forms); each is added when an app needs it.
-- Native components in the playground (it is a web app); they are covered by unit tests.
+- Native components in the playground (it is a web app); they are covered by unit tests; a mobile Pro screen
+  waits until a real screen needs HeroUI Native Pro.
 - Caching `node_modules` in CI to save HeroUI CDN downloads (a follow-up).
 - Converting the console or Figentra OS to use the package.
 

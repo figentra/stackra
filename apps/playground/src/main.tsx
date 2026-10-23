@@ -18,11 +18,34 @@ import { Foundations } from "#src/routes/foundations/foundations";
 import { FoundationsRoute } from "#src/routes/foundations/foundations.route";
 import { Home } from "#src/routes/home/home";
 import { HomeRoute } from "#src/routes/home/home.route";
+import { ProActionPalette } from "#src/routes/pro-action-palette/pro-action-palette";
+import { ProActionPaletteRoute } from "#src/routes/pro-action-palette/pro-action-palette.route";
+import { ProAppLayout } from "#src/routes/pro-app-layout/pro-app-layout";
+import { ProAppLayoutRoute } from "#src/routes/pro-app-layout/pro-app-layout.route";
+import { ProDataGrid } from "#src/routes/pro-data-grid/pro-data-grid";
+import { ProDataGridRoute } from "#src/routes/pro-data-grid/pro-data-grid.route";
+import { ProKanban } from "#src/routes/pro-kanban/pro-kanban";
+import { ProKanbanRoute } from "#src/routes/pro-kanban/pro-kanban.route";
+import { ProKpi } from "#src/routes/pro-kpi/pro-kpi";
+import { ProKpiRoute } from "#src/routes/pro-kpi/pro-kpi.route";
+import { ProSidebar } from "#src/routes/pro-sidebar/pro-sidebar";
+import { ProSidebarRoute } from "#src/routes/pro-sidebar/pro-sidebar.route";
+import { ProTrendChip } from "#src/routes/pro-trend-chip/pro-trend-chip";
+import { ProTrendChipRoute } from "#src/routes/pro-trend-chip/pro-trend-chip.route";
 
 // shortcut: authored until stackra gen writes `.stackra/entry/browser.ts` and the route tree (STA-339); then delete
 // this file, and index.html with it (gen writes both).
-/** The component pages, in navigation order; the foundations page comes first. */
-const PAGES = [{ route: FoundationsRoute, element: <Foundations /> }];
+/** The component pages, in navigation order: the foundations page first, then the Pro group the shell lists last. */
+const PAGES = [
+  { route: FoundationsRoute, element: <Foundations /> },
+  { route: ProDataGridRoute, element: <ProDataGrid /> },
+  { route: ProActionPaletteRoute, element: <ProActionPalette /> },
+  { route: ProSidebarRoute, element: <ProSidebar /> },
+  { route: ProAppLayoutRoute, element: <ProAppLayout /> },
+  { route: ProKanbanRoute, element: <ProKanban /> },
+  { route: ProKpiRoute, element: <ProKpi /> },
+  { route: ProTrendChipRoute, element: <ProTrendChip /> },
+];
 
 const links = PAGES.map(({ route }) => route);
 

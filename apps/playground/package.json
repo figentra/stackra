@@ -32,13 +32,18 @@
     "clean": "rm -rf dist coverage .turbo test-results playwright-report"
   },
   "dependencies": {
+    "@heroui-pro/react": "catalog:frontend",
     "@heroui/react": "catalog:frontend",
     "@heroui/styles": "catalog:frontend",
     "@stackra/tokens": "workspace:*",
     "@stackra/ui": "workspace:*",
+    "@stackra/ui-pro": "workspace:*",
+    "motion": "catalog:frontend",
     "react": "catalog:frontend",
     "react-dom": "catalog:frontend",
-    "react-router": "catalog:frontend"
+    "react-resizable-panels": "catalog:frontend",
+    "react-router": "catalog:frontend",
+    "recharts": "catalog:frontend"
   },
   "devDependencies": {
     "@axe-core/playwright": "catalog:e2e",

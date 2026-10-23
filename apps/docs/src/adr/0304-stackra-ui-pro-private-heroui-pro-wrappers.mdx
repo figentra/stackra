@@ -44,12 +44,18 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
 6. **The first components.**
    - Web (`./react`): DataGrid, ActionPalette, Sidebar and AppLayout, Kanban, KPI and TrendChip. Each one gets a playground route
      under a "Pro" navigation group, with Playwright and axe end-to-end tests ([0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground)).
-   - Native (`./native`): ProgressButton, SlideButton, SwipeableRow, Calendar and DatePicker, NumberField. Each one gets unit tests,
-     because the playground is a web app.
+   - Native (`./native`): ProgressButton, SlideButton, SwipeableRow, Calendar and DatePicker, NumberField. Each one gets unit tests
+     against recording stand-ins. There is no native review surface yet, so HeroUI Native Pro stays out of
+     `apps/mobile` until a real screen needs it.
 7. **Pins and install path.** Checked against the HeroUI Pro docs and the published packages on 2026-10-23.
    - Web: `@heroui-pro/react` 1.0.0-beta.10 in `catalog:frontend`, with `recharts` 3.10.1 for KPI.
    - Native: `heroui-native-pro` 1.0.0-beta.11 in `catalog:mobile`, with `@internationalized/date` 3.12.4 and
      `@internationalized/number` 3.6.9.
+   - `motion` 12.43.0 and `react-resizable-panels` 4.14.5 join `catalog:frontend`: they are required peers of
+     `@heroui-pro/react` (Sheet, Sidebar, Kanban, AppLayout).
+   - The npm shells declare no peers, because the real `package.json` arrives with the download. `packageExtensions` in
+     `pnpm-workspace.yaml` copies the downloaded peers onto both packages, so pnpm links one React (and one React Aria)
+     for Pro and our code. The copy is updated with each Pro bump.
    - Both come from the public npm registry. Both are listed in `allowBuilds` in `pnpm-workspace.yaml`, so their `postinstall` runs.
      There is no private registry and no `.npmrc` auth.
    - Locally, the postinstall uses the developer's `heroui-pro login` session, which lasts 180 days.

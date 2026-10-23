@@ -587,6 +587,9 @@ importers:
 
   apps/playground:
     dependencies:
+      '@heroui-pro/react':
+        specifier: catalog:frontend
+        version: 1.0.0-beta.10(16588710601890be57269f5e3c4c44d4)
       '@heroui/react':
         specifier: catalog:frontend
         version: 3.2.6(@internationalized/date@3.12.4)(@react-aria/ssr@3.10.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@react-aria/utils@3.34.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@react-spectrum/provider@3.11.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-aria-components@1.22.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-aria@3.53.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(tailwind-merge@3.7.0)(tailwindcss@4.3.3)
@@ -599,15 +602,27 @@ importers:
       '@stackra/ui':
         specifier: workspace:*
         version: link:../../packages/design-system/ui
+      '@stackra/ui-pro':
+        specifier: workspace:*
+        version: link:../../packages/design-system/ui-pro
+      motion:
+        specifier: catalog:frontend
+        version: 12.43.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react:
         specifier: catalog:frontend
         version: 19.3.0
       react-dom:
         specifier: catalog:frontend
         version: 19.3.0(react@19.3.0)
+      react-resizable-panels:
+        specifier: catalog:frontend
+        version: 4.14.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react-router:
         specifier: catalog:frontend
         version: 7.18.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      recharts:
+        specifier: catalog:frontend
+        version: 3.10.1(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react-is@19.3.1)(react@19.3.0)(redux@5.0.1)
     devDependencies:
       '@axe-core/playwright':
         specifier: catalog:e2e

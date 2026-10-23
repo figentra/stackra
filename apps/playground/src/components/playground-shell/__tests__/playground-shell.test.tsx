@@ -24,12 +24,14 @@ function renderShell(url: string) {
             pages={[
               { path: "/a", title: "Page A" },
               { path: "/b", title: "Page B", group: "Pro" },
+              { path: "/c", title: "Page C", group: "Pro", ownsMain: true },
             ]}
           />
         ),
         children: [
           { path: "/", element: <h1>Child page</h1> },
           { path: "/a", element: <h1>Page A</h1> },
+          { path: "/c", element: <h1>Page C</h1> },
         ],
       },
     ],
@@ -66,9 +68,9 @@ describe("PlaygroundShell", () => {
   it("lists grouped pages after the others, under their group's label", () => {
     renderShell("/");
     const pro = screen.getByRole("list", { name: "Pro" });
-    expect(pro.textContent).toBe("Page B");
+    expect(pro.textContent).toBe("Page BPage C");
     const lists = screen.getByRole("navigation", { name: "Pages" }).querySelectorAll("ul");
-    expect([...lists].map((list) => list.textContent)).toEqual(["Page A", "Page B"]);
+    expect([...lists].map((list) => list.textContent)).toEqual(["Page A", "Page BPage C"]);
   });
 
   it("falls back to the system scheme and English for unknown values", () => {
@@ -125,5 +127,11 @@ describe("PlaygroundShell", () => {
     expect(screen.getByRole("navigation", { name: "Pages" })).toBeTruthy();
     expect(screen.getByRole("toolbar", { name: "Display settings" })).toBeTruthy();
     expect(screen.getByRole("main").textContent).toBe("Child page");
+  });
+
+  it("adds no main landmark for a page that draws its own, keeping the skip target", () => {
+    renderShell("/c");
+    expect(screen.queryByRole("main")).toBeNull();
+    expect(document.getElementById("main")?.textContent).toBe("Page C");
   });
 });

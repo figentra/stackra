@@ -52,6 +52,29 @@ describe("Kpi (web)", () => {
     expect(card.textContent).toContain("1,200");
   });
 
+  it("gives the title's dt and the value's dd a dl parent that is neither announced nor laid out", () => {
+    render(
+      <Kpi>
+        <Kpi.Header data-testid="header">
+          <Kpi.Title>Revenue</Kpi.Title>
+        </Kpi.Header>
+        <Kpi.Content data-testid="content">
+          <Kpi.Value value={1200} />
+        </Kpi.Content>
+      </Kpi>,
+    );
+    const title = screen.getByText("Revenue");
+    expect(title.tagName).toBe("DT");
+    const value = screen.getByTestId("content").querySelector("dd");
+    for (const item of [title, value]) {
+      const list = item?.parentElement;
+      expect(list?.tagName).toBe("DL");
+      expect(list?.getAttribute("role")).toBe("none");
+      expect(list?.classList.contains("contents")).toBe(true);
+    }
+    expect(screen.getByTestId("header").dataset["slot"]).toBe("kpi-header");
+  });
+
   it("maps tone to HeroUI Pro's status on the icon, and keeps HeroUI Pro's default without one", () => {
     const { rerender } = render(
       <Kpi.Icon tone="danger" data-testid="icon">
@@ -88,16 +111,7 @@ describe("Kpi (web)", () => {
   });
 
   it("carries HeroUI Pro's own parts", () => {
-    for (const part of [
-      "Header",
-      "Content",
-      "Title",
-      "Value",
-      "Trend",
-      "Chart",
-      "Separator",
-      "Footer",
-    ] as const) {
+    for (const part of ["Title", "Value", "Trend", "Chart", "Separator", "Footer"] as const) {
       expect(Kpi[part]).toBe(HeroKpi[part]);
     }
   });

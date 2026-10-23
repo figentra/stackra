@@ -6,20 +6,30 @@ Stackra Design System Pro components for Stackra's own apps only: the @stackra/u
 
 ## Entry points
 
-| Import                      | Holds                                                                             | Exports today                         |
-| --------------------------- | --------------------------------------------------------------------------------- | ------------------------------------- |
-| `@stackra/ui-pro`           | `src/config/`: the config classes a host subclasses; `src/core/`: isomorphic code | `src/config/ui-pro.config.ts`         |
-| `@stackra/ui-pro/node`      | `src/node/`: the root module and the module groups                                | `src/node/ui-pro.module.ts`           |
-| `@stackra/ui-pro/contracts` | `src/contracts/`: the leaf (`ports/`, `enums/`, `types/`)                         | not yet: exported with its first file |
-| `@stackra/ui-pro/testing`   | `src/testing/`: `fakes/` and `matchers/`                                          | not yet: exported with its first file |
-| `@stackra/ui-pro/assets/*`  | `assets/`: static files (`public/`, `lang/`, …) at the package root (ADR 0234)    | the folder                            |
+Private and never published (ADR 0304): only Stackra's own apps import it. `@stackra/ui` and every free package never do;
+`pnpm validate` refuses it.
 
-`./react` and `./native` (renderers in `react/<name>/` and `native/<name>/`) are added with `--entries react,native`
-when the package is created, or by hand with their first file. `exports` point at source through the
-`@stackra/source` condition; `tsdown` builds `dist/` for publishing (ADR 0025).
+| Import                      | Holds                                                                                      |
+| --------------------------- | ------------------------------------------------------------------------------------------ |
+| `@stackra/ui-pro`           | `src/config/ui-pro.config.ts`: `UiProConfig`                                               |
+| `@stackra/ui-pro/contracts` | the props contracts (`<Name>ContractProps`) on `@stackra/ui/contracts`' `Size` and `Tone`  |
+| `@stackra/ui-pro/react`     | DataGrid, ActionPalette (HeroUI Pro `Command`), Sidebar, AppLayout, Kanban, Kpi, TrendChip |
+| `@stackra/ui-pro/native`    | ProgressButton, SlideButton, SwipeableRow, Calendar, DatePicker, NumberField               |
+| `@stackra/ui-pro/node`      | `src/node/ui-pro.module.ts`: the root module                                               |
+| `@stackra/ui-pro/assets/*`  | static files at the package root (ADR 0234)                                                |
 
-**Entry barrels are generated, never authored** (ADR 0294 decision 15). Until `stackra gen` writes them (STA-339),
-each export names its entry's one public file directly, as the table shows.
+Each component is a thin wrapper: the `@stackra/ui` vocabulary (`size`, `tone`, `isDisabled`, `label`, `onPress`) maps
+onto HeroUI Pro's names, every other prop passes through, and the compound parts are HeroUI Pro's own. The web
+components are on the playground's "Pro" routes.
+
+## Using it in an app
+
+- Web: `@heroui-pro/react` with its peers (`motion`, `react-resizable-panels`, `recharts` for Kpi), and the styles in
+  this order: `@import "tailwindcss"; @import "@heroui/styles"; @import "@heroui-pro/react/css";`.
+- Native: `heroui-native-pro` (with `@internationalized/date` for Calendar and DatePicker) inside `@stackra/ui`'s
+  `DesignSystemProvider`, plus `@import "heroui-native-pro/styles";` and a `@source` line for its `lib` folder.
+- Install: a `heroui-pro login` session locally; `HEROUI_AUTH_TOKEN` from Infisical `/ci` in CI. Without it the HeroUI
+  Pro packages are empty shells.
 
 ## Structure
 
