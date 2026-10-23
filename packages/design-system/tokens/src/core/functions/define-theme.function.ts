@@ -41,6 +41,11 @@ const GRAMMAR = {
   ),
 } as const;
 type Grammar = keyof typeof GRAMMAR;
+// The forms of a type style the native renderer can turn into px: sizes in px, line heights unitless or px, letter
+// spacing zero, em or px.
+const PX = new RegExp(`^${NUMBER}px$`);
+const UNITLESS_OR_PX = new RegExp(`^${NUMBER}(px)?$`);
+const EM_OR_PX = new RegExp(`^${NUMBER}(px|em)?$`);
 const FONT_FAMILIES = ["sans", "mono", "arabic"] as const;
 const SHADOWS = ["surface", "overlay", "field"] as const;
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -99,6 +104,21 @@ export function defineTheme(theme: Theme): Theme {
     value(`${path}.size`, style.size, "length");
     value(`${path}.lineHeight`, style.lineHeight, "length");
     value(`${path}.letterSpacing`, style.letterSpacing, "length");
+    // The native renderer computes absolute px (React Native takes no `em`, `rem` or unitless line height), so the
+    // forms it can compute are the only ones a type style may use.
+    for (const [field, form, said] of [
+      ["size", PX, "a px length"],
+      ["lineHeight", UNITLESS_OR_PX, "a unitless number or a px length"],
+      ["letterSpacing", EM_OR_PX, "zero, an em or a px length"],
+    ] as const) {
+      const candidate = style[field];
+      if (
+        typeof candidate === "string" &&
+        GRAMMAR.length.test(candidate.trim()) &&
+        !form.test(candidate.trim())
+      )
+        problems.push(`${path}.${field} is not ${said}, which the native type scale needs`);
+    }
     if (!(FONT_FAMILIES as readonly string[]).includes(style.family))
       problems.push(`${path}.family is not one of ${FONT_FAMILIES.join(", ")}`);
   }

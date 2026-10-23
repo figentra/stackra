@@ -24,7 +24,7 @@ Design System". Source decisions: ADR 0165 (web client stack, UI contract, form 
   `apps/docs` (ADR 0302, the logo and brand assets moved in, the regenerated `standards/structure.mdx`)
 - **Services touched**: none
 - **Packages touched**: `packages/design-system/tokens` (new, `@stackra/tokens`), `packages/design-system/ui` (new,
-  `@stackra/ui`), `packages/experience/brand` (deleted, `@stackra/brand` retired), `packages/tooling/oxlint` (its boundary fixtures
+  `@stackra/ui`), `packages/design-system/icons` (new, `@stackra/icons`), `packages/experience/brand` (deleted, `@stackra/brand` retired), `packages/tooling/oxlint` (its boundary fixtures
   import `@stackra/tokens` instead of the retired brand package), `packages/tooling/typescript` (the `vite` preset also
   typechecks an app's `e2e/` folder)
 - **Public contract change**: `@stackra/brand` is removed; `@stackra/tokens` (the token schema, the `stackra` theme and
@@ -129,16 +129,290 @@ moved assets exist in `apps/docs` and `apps/mobile`.
 - **FR-011**: The playground SHALL have a Playwright and axe end-to-end test over every route in light, dark, LTR and
   RTL.
 
+Wave 1 of the components (ADR 0303; Linear STA-353 to STA-357). Icon, then Text and Heading; Button and Link follow in
+their own requirements. The ids continue this list; the wave-1 design briefs numbered each group from 001.
+
+- **FR-012**: `@stackra/ui` SHALL export `IconContractProps`, `IconComponent` and `IconComponentProps` from
+  `./contracts`, `ICON_SIZES` from `.`, and an `Icon` from `./react` (lucide-react) and `./native`
+  (lucide-react-native) that draws any Lucide icon component, or any component with the same props, at `sm` 16, `md`
+  20 or `lg` 24 px and in the colour role of a text tone.
+- **FR-013**: An `Icon` without a label SHALL be hidden from assistive technology on both runtimes; with a label it
+  SHALL be exposed as an image named by the label (web `role="img"` and `aria-label`; native `accessible`,
+  `role="img"` and `accessibilityLabel`).
+- **FR-014**: An `Icon` with `isMirroredInRtl` SHALL be drawn mirrored when the direction is right-to-left and
+  unmirrored otherwise; an icon without it is never mirrored.
+- **FR-015**: Icon slots of `@stackra/ui` components SHALL accept any React element; the native
+  `DesignSystemProvider` SHALL give Lucide icons the `md` size and the theme foreground by default, which a native host
+  overrides through `LucideProvider`.
+- **FR-016**: The playground SHALL have an icon route showing every size, tone, decorative and labelled use, the
+  mirrored and never-mirrored directional icons, an app-supplied icon component and a live sample, with e2e checks for
+  names, mirroring and 3:1 non-text contrast in light, dark, LTR and RTL.
+- **FR-017**: `@stackra/ui/contracts` SHALL export `TextType`, `HeadingType`, `HeadingLevel`, `TextTone`, `TextAlign`,
+  `TypographyContractProps`, `TextContractProps` and `HeadingContractProps`.
+- **FR-018**: `@stackra/ui/react` SHALL export `Text` and `Heading` on HeroUI v3 Typography implementing the
+  contracts; `Heading` renders `h<level>`.
+- **FR-019**: `@stackra/ui/native` SHALL export `Text` and `Heading` on HeroUI Native Typography implementing the same
+  contracts.
+- **FR-020**: The `stackra` theme SHALL define `h4` to `h6` and their `-ar` twins (ADR 0303 decision 9), and the
+  `@stackra/tokens` web and native stylesheets SHALL draw HeroUI's Typography types in the theme's type scale, with
+  the `-ar` styles for Arabic text.
+- **FR-021**: The playground SHALL have a typography route showing every Text type, Heading level and type, tone,
+  alignment, truncation and language case, and a live sample, in light, dark, LTR and RTL, and it SHALL group its
+  pages by category in the navigation and on the index.
+- **FR-022**: `@stackra/ui/contracts` SHALL export `ButtonVariant`, `ButtonContractProps`, `IconButtonContractProps`
+  and `CloseButtonContractProps`, and `@stackra/ui/react` SHALL export `Button`, `IconButton` and `CloseButton` on
+  HeroUI v3 implementing them: `variant`, `size`, `isDisabled`, `isLoading`, `isFullWidth`, `startIcon`, `endIcon`,
+  `label` and `onPress`, with every other HeroUI prop passed through and HeroUI's own names for the renamed concepts
+  refused by the type.
+- **FR-023**: `@stackra/ui/native` SHALL export `Button`, `IconButton` and `CloseButton` on HeroUI Native implementing
+  the same contracts, with HeroUI Native's press feedback (`feedbackVariant`, `animation`, `background`) passed
+  through.
+- **FR-024**: A loading `Button` SHALL refuse presses, keep focus on web under an unchanged accessible name with a
+  hidden spinner, and report `busy` with a spinner in the label colour on native; `IconButton` and `CloseButton`
+  SHALL always have a non-empty accessible name, and the type SHALL refuse a missing `label`.
+- **FR-025**: `@stackra/ui/contracts` SHALL export `LinkUnderline` and `LinkContractProps`, and `./react` (HeroUI v3
+  `Link`) and `./native` (HeroUI Native `LinkButton`) SHALL export a `Link` that maps `tone`, `underline` (default
+  `always`), `isExternal`, `label` and `isDisabled`, passing every other HeroUI prop through.
+- **FR-026**: `Link` SHALL be router-free: on web an internal, same-origin, unmodified click SHALL navigate through
+  React Aria's `RouterProvider`, which `./react` re-exports; on native an app path SHALL navigate through the
+  `./native` `RouterProvider`, and an absolute URL or an external link SHALL open in the system browser.
+- **FR-027**: The playground SHALL have `/button`, `/icon-button` and `/close-button` routes showing every variant,
+  size and state with an interactive example each, listed under the Actions category, in light, dark, LTR and RTL.
+- **FR-028**: The playground SHALL have a `/link` route showing every tone, underline, external, disabled, press-only
+  and icon-only link, inline in text and standalone, listed under the Navigation category, and its shell and index
+  SHALL use the `@stackra/ui` `Link` and `RouterProvider`.
+
+Wave 2 of the components (ADR 0304; Linear STA-358 to STA-360), part 1: Surface, Card and Separator, Chip and
+StatusBadge, and Badge. The ids continue this list.
+
+- **FR-029**: `@stackra/ui/contracts` SHALL export `SurfaceVariant`, `SeparatorVariant`, `Orientation`,
+  `SurfaceContractProps`, `CardContractProps`, `CardTitleContractProps` and `SeparatorContractProps`.
+- **FR-030**: `@stackra/ui/react` SHALL export `Surface`, `Card` (with `Header`, `Title`, `Description`, `Content` and
+  `Footer`) and `Separator` on HeroUI v3 implementing the contracts, with every other HeroUI prop passed through.
+- **FR-031**: `@stackra/ui/native` SHALL export the same three on HeroUI Native with the same part names (`Card.Content`
+  is HeroUI Native's `Card.Body`), the native `Separator` drawing its level with the theme colour.
+- **FR-032**: The playground SHALL have `/surface`, `/card` and `/separator` routes showing every level, part,
+  orientation and title level with an interactive example each, listed under the Surfaces category, in light, dark,
+  LTR and RTL, with an e2e file each.
+- **FR-033**: `@stackra/ui/contracts` SHALL export `ChipVariant`, `ChipContractProps` and `StatusBadgeContractProps`.
+- **FR-034**: `@stackra/ui/react` SHALL export `Chip` on HeroUI v3 Chip and `StatusBadge` built on it, implementing the
+  contracts; a chip is display only and takes no press handler.
+- **FR-035**: `@stackra/ui/native` SHALL export `Chip` on HeroUI Native Chip and `StatusBadge` built on it,
+  implementing the same contracts.
+- **FR-036**: The playground SHALL have `/chip` and `/status-badge` routes showing every variant, tone and size, icons
+  and every status tone with an interactive example each, listed under the Status category, in light, dark, LTR and
+  RTL, with an e2e file each.
+- **FR-037**: `@stackra/ui/contracts` SHALL export `BadgeVariant`, `BadgePlacement`, `BadgeContractProps` and
+  `BadgeAnchorContractProps`.
+- **FR-038**: `@stackra/ui/react` SHALL export `Badge` with `Badge.Anchor` on HeroUI v3's Badge implementing the
+  contracts, its logical `placement` mapped to HeroUI's physical corner by the text direction.
+- **FR-039**: `@stackra/ui/native` SHALL export `Badge` with `Badge.Anchor` implementing the same contracts in the
+  documented adapted form: a HeroUI Native Chip at the web Badge's sizes, absolutely placed with React Native's logical
+  sides in a relative View.
+- **FR-040**: The playground SHALL have a `/badge` route showing every variant, tone, size, corner, a dot, text, number
+  and icon content, and a badge on a pressable control, listed under the Status category, in light, dark, LTR and RTL,
+  with an e2e file.
+
+Wave 2 of the components, part 2 (ADR 0304; Linear STA-361, STA-363, STA-362): Avatar, Spinner, and Skeleton with
+SkeletonGroup. The ids continue this list.
+
+- **FR-041**: `@stackra/ui/contracts` SHALL export `AvatarVariant`, `AvatarShape`, `AvatarContractProps`,
+  `SpinnerContractProps`, `SkeletonAnimation`, `SkeletonContractProps` and `SkeletonGroupContractProps`, and
+  `@stackra/ui` SHALL export `initialsOf`.
+- **FR-042**: `@stackra/ui/react` SHALL export `Avatar` and `Spinner` on HeroUI v3, `Skeleton` on HeroUI v3 and
+  `SkeletonGroup` in its documented adapted form (HeroUI's single shimmer plus a context), implementing the contracts,
+  with every other HeroUI prop passed through.
+- **FR-043**: `@stackra/ui/native` SHALL export `Avatar`, `Spinner`, `Skeleton` and `SkeletonGroup` on HeroUI Native
+  implementing the same contracts, the motion config (`animation`) passing through.
+- **FR-044**: `initialsOf` SHALL return the first letter of the first and last words, upper-cased in the locale, one
+  letter for an Arabic-script name and an empty string for a blank name.
+- **FR-045**: The `@stackra/tokens` web stylesheet SHALL stop every skeleton animation under `prefers-reduced-motion:
+reduce` and run the skeleton sweep from the inline-start side in right-to-left documents.
+- **FR-046**: The playground SHALL have `/avatar`, `/spinner` and `/skeleton` routes showing every size, tone,
+  variant, shape, animation, fallback, name and state with an interactive example each, listed under the Status
+  category, in light, dark, LTR and RTL, with an e2e file each.
+
+The icon model (ADR 0303 decision 10; Linear STA-405, branch `figentra/sta-353-wave-1-components`): the `@stackra/icons`
+package and the name-based `Icon`. The ids continue this list.
+
+- **FR-047**: `@stackra/icons/contracts` SHALL export `IconName`, a string type that is a Lucide name from the pinned
+  set (`LucideIconName`), a Stackra alias (`IconAlias`) or a namespaced custom name (`CustomIconName`, the template
+  type `${string}::${string}`), and SHALL export `IconComponent`, `IconComponentProps` and `IconRegistry`; `IconComponentProps` SHALL name every
+  prop `Icon` hands a component (size, colour, stroke width, class, style, and the web and native accessibility props),
+  so a custom component can be written to spread them.
+- **FR-048**: The `LucideIconName` list SHALL be generated by `scripts/generate-icons.mjs` from the installed
+  `lucide-react` and `lucide-react-native` packages and committed, and a unit test SHALL fail when it differs from
+  the names those packages ship, or when a generated registry or re-export file names an icon that is not in it.
+- **FR-049**: `@stackra/icons` SHALL export `defineIconRegistry`, `findIcon`, `isIconName` and `ICON_ALIAS_TARGETS`:
+  `findIcon` SHALL return the registry's component for a name, or for the Lucide name an alias resolves to, reading
+  own properties only; `isIconName` SHALL be true for a Lucide name, an alias and a well-formed custom name and false
+  for anything else; every alias SHALL resolve to a Lucide name and SHALL not itself be one.
+- **FR-050**: `@stackra/icons/react` and `@stackra/icons/native` SHALL each export `IconRegistryProvider` and `useIcon`:
+  a provider gives the icons below it their registry, providers nest and merge with the nearest winning, and a name
+  outside every registry resolves to nothing without throwing.
+- **FR-051**: `@stackra/icons/react/lucide-icons` and `@stackra/icons/native/lucide-icons` SHALL re-export every
+  Lucide component by its own name, and `@stackra/icons/react/lucide-registry` and
+  `@stackra/icons/native/lucide-registry` SHALL hold the full name-to-component registry as an explicit opt-in that
+  no other entry imports, so the full set is bundled only by an app that asks for it.
+- **FR-052**: `Icon` in `@stackra/ui/react` and `@stackra/ui/native` SHALL take `name: IconName` and no component
+  prop, resolve it through the registry of `@stackra/icons` for its platform, and draw nothing for a name that has
+  no registered component, warning once per name in development.
+- **FR-053**: The icon slots `icon`, `startIcon` and `endIcon` of Button, IconButton, CloseButton and Chip SHALL
+  accept an `IconName`, drawn through `Icon`, or an element, drawn as given.
+- **FR-054**: No file outside `@stackra/icons` and `@stackra/ui` SHALL import `lucide-react` or `lucide-react-native`,
+  and the playground SHALL register only the icons it draws.
+
+Wave 3 foundation (ADR 0303; Linear STA-364 to STA-369): the field contract, playground discovery and the form-state
+dependency the inputs and forms build on. The ids continue this list; the wave 3 components take FR-058 onwards.
+
+- **FR-055**: `@stackra/ui/contracts` SHALL export `FieldContractProps<TValue>`, the props shared by every field:
+  `label`, `description`, `errorMessage`, `isRequired`, `isInvalid`, `isDisabled`, `isReadOnly`, `value`,
+  `defaultValue`, `onChange(value)` and `name`, so TextField, TextArea, SearchField, the number input, Select,
+  ComboBox and the Checkbox, RadioGroup and Switch family extend one type — verified by: typecheck
+- **FR-056**: The playground SHALL build its router, its index page and its shell navigation from the route folders
+  alone: every `routes/<name>/<name>.route.ts` that names a category is paired with `routes/<name>/<name>.tsx`,
+  listed under that category in the category order and then by title, and a wrong path, an unknown category or a
+  missing page SHALL fail the build of the page list with the folder's name; the index route, which names no
+  category, SHALL stay unlisted — verified by: unit
+- **FR-057**: `react-hook-form` SHALL be in `catalogs.frontend` at an exact version at least 14 days old, and
+  `@stackra/ui` SHALL declare it as a required peer and a dev dependency, because `./react` and `./native` both
+  export `FormField`, which imports it — verified by: pnpm validate
+- **FR-058**: `FormField` in `@stackra/ui/react` and `@stackra/ui/native` SHALL wrap react-hook-form's `Controller`
+  (`control`, `name`, `rules`, `defaultValue`, `disabled`, `shouldUnregister`) and call `render` with a
+  `FormFieldBinding<TValue>` typed to the field's path: `name`, `value`, `onChange`, `onBlur`, `isInvalid`,
+  `errorMessage`, `isRequired` and `isDisabled`, a slice of `FieldContractProps` that every field accepts; the Zod
+  resolver is not part of it — verified by: unit, typecheck
+- **FR-059**: A bound field SHALL show its rule's message under it after a failed submit and mark itself invalid,
+  clear both once its value is valid, be required when its `required` rule is (`true`, a message or an object whose
+  `value` is true), be disabled when the form disables it, mark itself touched on blur, and bind a string, a boolean
+  and a choice; on web the form sets `validationBehavior="aria"` so the browser does not block the submit — verified
+  by: unit, e2e
+- **FR-060**: `FormSection` in `@stackra/ui/react` SHALL be a HeroUI `Fieldset` named by its required `title` as
+  its `legend`, tie an optional `description` to the group with `aria-describedby`, hold its fields in the fieldset's
+  field group, and pass `disabled`, `className`, `id` and every other fieldset prop through, a disabled section
+  disabling the fields inside it — verified by: unit, e2e
+- **FR-061**: `FormSection` in `@stackra/ui/native` SHALL be the documented adapted form on free parts, a `View` with
+  the `group` role named by a string `title`, holding a level-3 `Heading` in the `h5` style, an optional `Description`
+  and the fields, with `View` props passed through — verified by: unit
+- **FR-062**: The playground SHALL have a `/form-field` and a `/form-section` route under Forms, each with one `h1` and
+  a per-route title, showing the states and one live example: a react-hook-form form with failed and valid submits,
+  a simulated server rejection and reset, and a form whose switch disables a section — verified by: unit
+- **FR-063**: `TextField` in `@stackra/ui/contracts` SHALL extend `FieldContractProps<string>` with `type`
+  (`TextFieldType`: text, email, password, tel, url), `placeholder`, `variant` (`TextFieldVariant`: primary the
+  default, secondary) and `isFullWidth` (default true); a description is read with the input, an error message shows
+  only while the field is invalid, and `fullWidth` and `children` are refused — verified by: unit, typecheck
+- **FR-064**: `TextField` in `@stackra/ui/react` SHALL wrap HeroUI's `TextField` with its label, input, description
+  and error message, name the input by its label, keep its own text when uncontrolled, report each change as a string,
+  submit under its `name`, and pass unknown props and the caller's class to the root; the `/text-field` playground
+  route SHALL show every state with axe clean in the four theme and direction combinations — verified by: unit, e2e
+- **FR-065**: `TextField` in `@stackra/ui/native` SHALL draw the label, the input, the description and the error in
+  that order on HeroUI Native, hide the description while invalid as web does, mask a password and ask for the email
+  and phone keyboards, and keep `name` off the input — verified by: unit
+- **FR-066**: `TextArea` in `@stackra/ui/contracts` SHALL be the `TextField` contract without `type` and with `rows`,
+  the number of lines shown — verified by: unit, typecheck
+- **FR-067**: `TextArea` in `@stackra/ui/react` SHALL be a HeroUI text area named by its label with its description
+  tied to it, keep Enter for a new line, and the `/text-area` playground route SHALL show every state with axe clean
+  in the four combinations — verified by: unit, e2e
+- **FR-068**: `TextArea` in `@stackra/ui/native` SHALL be a multi-line HeroUI Native input with the label,
+  description and error of `TextField` — verified by: unit
+- **FR-069**: `InputGroup` in `@stackra/ui/contracts` SHALL extend the `TextField` contract with a `prefix` and a
+  `suffix`, each a string or an element — verified by: unit, typecheck
+- **FR-070**: `InputGroup` in `@stackra/ui/react` SHALL draw the prefix, the input and the suffix in that order
+  inside one HeroUI group that takes the invalid and disabled states, focus the input when a text affix is pressed,
+  and sit the affixes at the reading sides in LTR and RTL — verified by: unit, e2e
+- **FR-071**: `InputGroup` in `@stackra/ui/native` SHALL draw the same parts on HeroUI Native, the affixes at the
+  reading sides — verified by: unit
+- **FR-072**: `SearchField` in `@stackra/ui/contracts` SHALL extend `FieldContractProps<string>` with `placeholder`,
+  `variant`, `isFullWidth`, `isLoading`, `clearLabel` (default "Clear search"), `onClear` and `onSubmit` —
+  verified by: unit, typecheck
+- **FR-073**: `SearchField` SHALL, on web (HeroUI `SearchField`) and on native (HeroUI Native `SearchField`, held
+  uncontrolled by the wrapper), report each change with the new text, clear through a button named by `clearLabel`
+  and call `onClear`, call `onSubmit` on Enter, and show a busy state while loading — verified by: unit
+- **FR-074**: The `/search-field` playground route SHALL show every state with a live filtered list and axe clean in
+  the four combinations, a keyboard-only flow and the search icon at the reading start — verified by: e2e
+- **FR-075**: `Select` in `@stackra/ui/contracts` SHALL extend `FieldContractProps<string | null>` with `items`
+  (`SelectItem`: id, label, description, isDisabled), `placeholder` and `isFullWidth`, and pass unknown HeroUI props
+  through, on web and native — verified by: unit, typecheck
+- **FR-076**: `Select` SHALL call `onChange` with the key as a string, or null for nothing, and a read-only `Select`
+  SHALL show its value and never open — verified by: unit
+- **FR-077**: `ComboBox` in `@stackra/ui/contracts` SHALL take `items`, `placeholder`, `isFullWidth`, `inputValue` and
+  `onInputChange`, `isServerFiltered`, `isLoading` with `loadingLabel`, `onLoadMore` and `emptyMessage`, with
+  `selectionMode` single (value a string or null) or multiple (value a readonly string list), on web and native —
+  verified by: unit, typecheck
+- **FR-078**: `ComboBox` SHALL filter by the label of each item unless `isServerFiltered` is set, and SHALL show
+  `emptyMessage` when nothing matches — verified by: unit
+- **FR-079**: `ComboBox` in multiple mode SHALL show the picked items as removable tags with an accessible name on
+  web, and the adapted form on free HeroUI Native parts that the native file header documents — verified by: unit
+- **FR-080**: `TagGroup` SHALL take `items` (`TagItem`), `selectionMode` none, single or multiple, `size`, `variant`
+  (`TagVariant`: default, surface), `emptyMessage`, and `onRemove` together with `removeLabel` as one required pair,
+  on web and native — verified by: unit, typecheck
+- **FR-081**: The `/select`, `/combo-box` and `/tag-group` playground routes (category Selection) SHALL show every
+  variant, size and state with one interactive example and a single `h1`, with axe clean in the four combinations
+  and the keyboard and accessible names checked — verified by: unit, e2e
+- **FR-082**: `Checkbox`, `CheckboxGroup`, `RadioGroup` and `Switch` SHALL extend `FieldContractProps`, `Checkbox`
+  and `Switch` over a boolean mapped to HeroUI's `isSelected`, `CheckboxGroup` over a readonly list of keys and
+  `RadioGroup` over one key, each option of a group being a `ChoiceOption` (value, label, description, isDisabled)
+  — verified by: unit, typecheck
+- **FR-083**: Each of the four SHALL keep its own state when given `defaultValue`, show `value` when controlled and
+  report each change with the new state or key list — verified by: unit
+- **FR-084**: `CheckboxGroup` SHALL be a group named by its label with one checkbox per option in order, on web as
+  HeroUI's `CheckboxGroup` and on native as a `role="group"` `View` of native checkboxes on free parts, which the
+  native file header documents — verified by: unit
+- **FR-085**: `RadioGroup` SHALL be a radio group with one radio per option in order, vertical by default and
+  horizontal on request, each option's description read with that option — verified by: unit
+- **FR-086**: A group's description and error message SHALL be tied to the group for assistive technology, the
+  error showing only while invalid, and a required field SHALL be marked in its label and for assistive
+  technology — verified by: unit
+- **FR-087**: A disabled field SHALL refuse input, a read-only one SHALL keep focus and refuse change, an option
+  disabled on its own SHALL leave the others usable, and a field SHALL submit under its `name` in a form —
+  verified by: unit
+- **FR-088**: The native `Checkbox` and `Switch` SHALL be the adapted form on `ControlField`, with documented
+  adaptations for the mixed state, read-only and `name` — verified by: unit
+- **FR-089**: The `/checkbox`, `/checkbox-group`, `/radio-group` and `/switch` playground routes SHALL show every
+  state, with axe clean in the four combinations, a Space-key toggle, the control at the reading start and a checked
+  control 3:1 from the page — verified by: e2e
+- **FR-090**: `Label` in `@stackra/ui/react` and `@stackra/ui/native` SHALL name the control it is tied to, draw the
+  required marker and take the invalid and disabled states only when given them — verified by: unit
+- **FR-091**: `Description` SHALL render help text with HeroUI's class and keep the id a control names it by in
+  `aria-describedby` — verified by: unit
+- **FR-092**: `FieldError` SHALL show its message while `isInvalid` is true, follow the field around it when
+  `isInvalid` is left out, tie the message to that field, and let a caller's `isInvalid` win — verified by: unit
+- **FR-093**: `Form` SHALL be a form element on web that hands `validationErrors` to the fields in it and, with
+  `isSubmitOnModEnter`, submits on Cmd or Ctrl plus Enter while Enter alone does not submit from a single-line input
+  and Enter during text composition is ignored; on native it SHALL be the adapted form, a `View` — verified by: unit
+- **FR-094**: The `/form` playground route SHALL show the parts together, with axe clean in the four combinations,
+  focus moved to a refused field with its error read out, and the keyboard rules of `Form` — verified by: unit, e2e
+
+- **FR-095**: The native `DesignSystemProvider` SHALL set React Native's `Appearance` to the colour scheme (`unspecified`
+  for `system`) so native chrome follows it and give the device's style back on unmount, and SHALL lay its subtree out
+  in a `flex: 1` View whose Yoga `direction` is the resolved direction, because Uniwind's `LayoutDirection` is
+  `display: contents` and never reaches the layout — verified by: unit, device check on `apps/mobile`
+
 ## Success Criteria
 
 - **SC-001**: `pnpm verify` is green with the change — verified by: CI (Quality Gate)
 - **SC-002**: The e2e run over every playground route reports no axe violation in the four combinations — verified by: e2e
 - **SC-003**: The structure page and the retired package list match the tree — verified by: unit
+- **SC-004**: axe reports nothing on `/typography` in light, dark, LTR and RTL, and the computed sizes, line heights
+  and letter spacings of every Text type and heading style equal the theme's — verified by: e2e
+- **SC-005**: axe reports nothing on `/surface`, `/card`, `/separator`, `/chip`, `/status-badge` and `/badge` in light,
+  dark, LTR and RTL, and their computed checks hold (surface colours and card shadow, rule sizes, chip text 4.5:1, icon
+  sizes, badge corners by direction, dots 3:1, presses reaching the anchor) — verified by: e2e
+- **SC-006**: axe reports nothing on `/avatar`, `/spinner` and `/skeleton` in light, dark, LTR and RTL, every avatar
+  initials sample reaches 4.5:1 and every spinner tone 3:1, and under reduced motion no spinner or skeleton animates —
+  verified by: e2e
+- **SC-007**: axe reports nothing on `/form-field` and `/form-section` in light, dark, LTR and RTL, also with every
+  message showing and with a section disabled, a failed submit shows each message linked to its field and in a
+  polite status line, the keyboard fills and submits the form, and a disabled section leaves the tab order —
+  verified by: e2e
 
 ## Out of scope
 
-- Any component beyond the token foundations page (the owner describes them one at a time after this pull request).
-- The `icons` package of the category.
+- Any component beyond the token foundations page and the wave-1 components above (the owner describes them one at a
+  time; Button and Link are the rest of wave 1).
+- Gen emitting a registry of only the used icon names, and the unknown-name gen error (the registries accept one
+  today by hand).
+- Custom icons built from SVG files under `assets/icons/` (they join a registry as components until gen converts them).
 - A shared component implementation across web and native (ADR 0227 keeps it deferred).
 - Converting existing apps to the v3 shape (STA-344).
 

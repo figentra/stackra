@@ -1,0 +1,91 @@
+/**
+ * Stackra file contract:
+ * Purpose: the native `Switch` on HeroUI Native's ControlField and Switch: maps the shared field contract (`value` to
+ *          `isSelected`, `onChange` with the new state, `defaultValue` held in state because HeroUI Native's field is
+ *          controlled only) and draws the label, description and error message with the switch at the row's end in one
+ *          pressable row; every other ControlField prop passes through.
+ * Boundary: no styling of its own beyond the row's layout. Documented adaptations, where HeroUI Native has no
+ *          equivalent: `isReadOnly` refuses the press (React Native has no read-only state to announce); `name` is
+ *          accepted for a form adapter but native has no form to submit. The row is the one accessible `switch` and
+ *          the inner control is hidden from VoiceOver and TalkBack, so it is not read twice.
+ * Runtime: react-native
+ * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0303 (decision 7); ADR 0055
+ *          (forms); owner decision 6 of STA-350 (thin wrappers).
+ */
+import { ControlField, Description, FieldError, Label } from "heroui-native";
+import { useState, type ComponentPropsWithRef } from "react";
+import { View } from "react-native";
+
+import type { SwitchContractProps } from "#contracts/types/switch-contract-props.type";
+import { omitUndefined } from "#core/functions/omit-undefined.function";
+
+/**
+ * Props of the native Switch: the shared contract plus HeroUI Native's ControlField props (a pressable row), passed
+ * through unchanged. HeroUI Native's `isSelected`, `onSelectedChange` and `children` are refused: the contract names
+ * each of them once.
+ */
+export type SwitchProps = SwitchContractProps &
+  Omit<
+    ComponentPropsWithRef<typeof ControlField>,
+    keyof SwitchContractProps | "isSelected" | "onSelectedChange" | "children"
+  >;
+
+/**
+ * A toggle for a setting that takes effect at once, in a row that is pressable end to end. `label` names it;
+ * `description` and `errorMessage` sit under the label and are read out with it.
+ */
+export function Switch({
+  label,
+  description,
+  errorMessage,
+  value,
+  defaultValue = false,
+  onChange,
+  isRequired,
+  isInvalid,
+  isDisabled,
+  isReadOnly,
+  name,
+  className,
+  accessibilityState,
+  ...rest
+}: SwitchProps) {
+  const [held, setHeld] = useState(defaultValue);
+  const isSelected = value ?? held;
+  // The name only keys a web form's submission and a form adapter's binding; there is nothing to submit on native.
+  void name;
+  const change = (next: boolean) => {
+    if (isReadOnly) return;
+    setHeld(next);
+    onChange?.(next);
+  };
+  return (
+    <ControlField
+      {...rest}
+      {...omitUndefined({ isRequired, isInvalid, isDisabled })}
+      role="switch"
+      accessibilityState={{
+        ...accessibilityState,
+        checked: isSelected,
+        disabled: isDisabled === true,
+      }}
+      isSelected={isSelected}
+      onSelectedChange={change}
+      className={["flex-col items-start gap-1", className].filter(Boolean).join(" ")}
+    >
+      <View className="w-full flex-row items-center gap-3">
+        <View className="flex-1">
+          {label ? <Label>{label}</Label> : null}
+          {description ? <Description>{description}</Description> : null}
+        </View>
+        <ControlField.Indicator
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          // The row takes every press, so the switch and the row always agree on what the next state is.
+          pointerEvents="none"
+        />
+      </View>
+      {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
+    </ControlField>
+  );
+}

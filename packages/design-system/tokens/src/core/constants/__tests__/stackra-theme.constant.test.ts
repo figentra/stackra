@@ -31,10 +31,26 @@ const contrast = (one: string, two: string) => contrastRatio(oklchToHex(one), ok
 // The kit labels the modes "base" and "dark".
 const modeOf = (theme: string): Mode => (theme === "dark" ? "dark" : "light");
 
-// @covers sta-350:FR-002
+// @covers sta-350:FR-002 sta-350:FR-020
 describe("STACKRA_THEME", () => {
   it("is named stackra", () => {
     expect(STACKRA_THEME.name).toBe("stackra");
+  });
+
+  it("defines h4 to h6 and their Arabic twins (ADR 0303 decision 9)", () => {
+    const { typography } = STACKRA_THEME;
+    const pick = (name: string) => {
+      const style = typography[name];
+      return style && [style.size, style.lineHeight, style.weight, style.letterSpacing];
+    };
+    expect(pick("h4")).toEqual(["18px", "1.4", 600, "-0.01em"]);
+    expect(pick("h5")).toEqual(["16px", "1.5", 600, "0em"]);
+    expect(pick("h6")).toEqual(["14px", "1.5", 600, "0em"]);
+    // One pixel and 0.2 of line height above the Latin style, in the Arabic family.
+    expect(pick("h4-ar")).toEqual(["19px", "1.6", 600, "0em"]);
+    expect(pick("h5-ar")).toEqual(["17px", "1.7", 600, "0em"]);
+    expect(pick("h6-ar")).toEqual(["15px", "1.7", 600, "0em"]);
+    expect(typography["h4-ar"]?.family).toBe("arabic");
   });
 
   it("carries the kit's resolved colours unchanged", () => {

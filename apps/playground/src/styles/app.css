@@ -3,6 +3,10 @@
 @import "@stackra/tokens/fonts/fonts.css";
 @import "@stackra/tokens/themes/stackra/web.css";
 
+/* Tailwind does not scan workspace packages: @stackra/ui's components carry their utility classes (`text-danger`, ...)
+   in their own source, so the app points the scanner at it. */
+@source "../../node_modules/@stackra/ui/src";
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* The theme's text faces: Geist for Latin, IBM Plex Sans Arabic when the document is Arabic. */
@@ -12,35 +16,4 @@ body {
 
 :root:lang(ar) body {
   font-family: var(--font-arabic);
-}
-
-/* Headings in the theme's type scale (`--h1` is a `font` shorthand); an Arabic document takes the `-ar` styles. */
-.type-h1 {
-  font: var(--h1);
-  letter-spacing: var(--h1-letter-spacing);
-}
-
-.type-h2 {
-  font: var(--h2);
-  letter-spacing: var(--h2-letter-spacing);
-}
-
-.type-h3 {
-  font: var(--h3);
-  letter-spacing: var(--h3-letter-spacing);
-}
-
-:root:lang(ar) .type-h1 {
-  font: var(--h1-ar);
-  letter-spacing: var(--h1-ar-letter-spacing);
-}
-
-:root:lang(ar) .type-h2 {
-  font: var(--h2-ar);
-  letter-spacing: var(--h2-ar-letter-spacing);
-}
-
-:root:lang(ar) .type-h3 {
-  font: var(--h3-ar);
-  letter-spacing: var(--h3-ar-letter-spacing);
 }

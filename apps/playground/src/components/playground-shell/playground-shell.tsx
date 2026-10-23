@@ -3,20 +3,28 @@
  * Purpose: the playground shell: the layout route that reads the colour scheme and locale from the URL search
  *          params (`?scheme=light|dark|system&locale=en|ar`, so every combination deep-links), wraps the pages in
  *          the @stackra/ui DesignSystemProvider, and draws the header with the display switcher, the page navigation
- *          and the outlet. The UI is English (`lang="en"`) while `<html>` carries the chosen locale and direction,
+ *          (grouped by category) and the outlet. The UI is English (`lang="en"`) while `<html>` carries the chosen locale and direction,
  *          so the layout mirrors as the locale's would. On a client-side route change it moves focus to the new
  *          page's h1, and it keeps the browser's theme-color in step with the scheme on screen.
  * Boundary: layout and the switcher only; the pages come from the route folders.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0165 (web client stack); ADR 0060 (light, dark, RTL).
  */
-import { Link, RouterProvider, ToggleButton, ToggleButtonGroup, Toolbar } from "@heroui/react";
 import { STACKRA_THEME } from "@stackra/tokens";
 import { ColorScheme } from "@stackra/ui/contracts";
-import { DesignSystemProvider, useDesignSystem } from "@stackra/ui/react";
+import {
+  DesignSystemProvider,
+  Link,
+  RouterProvider,
+  ToggleButton,
+  ToggleButtonGroup,
+  Toolbar,
+  useDesignSystem,
+} from "@stackra/ui/react";
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { Outlet, useHref, useLocation, useNavigate, useSearchParams } from "react-router";
 
+import { PageList } from "#src/components/page-list";
 import type { PageLink } from "#src/types/page-link.type";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::shell.*` keys.
@@ -162,20 +170,14 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
             {STRINGS.skip}
           </a>
           <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border p-4">
-            <Link href={`/${search}`} className="text-lg font-semibold">
+            <Link href={`/${search}`} underline="hover" className="text-lg font-semibold">
               {STRINGS.title}
             </Link>
             <DisplaySettings />
           </header>
           <div className="grid md:grid-cols-[14rem_1fr]">
             <nav aria-label={STRINGS.pages} className="border-border p-4 md:border-e">
-              <ul className="grid gap-2">
-                {pages.map((page) => (
-                  <li key={page.path}>
-                    <Link href={`${page.path}${search}`}>{page.title}</Link>
-                  </li>
-                ))}
-              </ul>
+              <PageList pages={pages} search={search} />
             </nav>
             <main ref={main} id="main" tabIndex={-1} className="min-w-0 p-6">
               <Outlet />

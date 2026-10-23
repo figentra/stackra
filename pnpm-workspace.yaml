@@ -72,6 +72,10 @@ catalogs:
     jsdom: 30.1.0
     # Code-based routing for the console and every Vite app (no file routing anywhere).
     react-router: 7.18.4
+    # Icons for @stackra/ui/react's Icon (ADR 0303 decision 3, owner-approved 2026-10-23); ISC licence.
+    lucide-react: 1.54.0
+    # Form state for @stackra/ui FormField (ADR 0055, accepted by ADR 0303); newest release at least 14 days old.
+    react-hook-form: 7.89.0
   # Expo SDK 57 app (apps/mobile). Pins match academorix/apps/mobile; react stays on 19.2.3 because
   # react-native 0.86 renders with that exact renderer version. Bump with `expo install --check`.
   mobile:
@@ -104,6 +108,8 @@ catalogs:
     react-native-svg: 15.15.4
     "@gorhom/bottom-sheet": 5.2.14
     heroui-native: 1.0.10
+    # Icons for @stackra/ui/native's Icon (ADR 0303 decision 3, owner-approved 2026-10-23); ISC licence.
+    lucide-react-native: 1.54.0
     uniwind: 1.12.1
     tailwind-merge: 3.7.0
     tailwind-variants: 3.3.1
