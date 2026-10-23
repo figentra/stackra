@@ -92,7 +92,7 @@ export function DemoNavigation({ current, onNavigate }: DemoNavigationProps) {
                 isCurrent={current === item.id}
                 {...(item.children ? {} : { onAction: () => onNavigate(item.id) })}
               >
-                <UiPro.Sidebar.MenuIcon>
+                <UiPro.Sidebar.MenuIcon label={item.label}>
                   <DemoIcon name={item.icon} />
                 </UiPro.Sidebar.MenuIcon>
                 <UiPro.Sidebar.MenuLabel>
@@ -132,7 +132,7 @@ export function DemoNavigation({ current, onNavigate }: DemoNavigationProps) {
             isCurrent={current === SETTINGS.id}
             onAction={() => onNavigate(SETTINGS.id)}
           >
-            <UiPro.Sidebar.MenuIcon>
+            <UiPro.Sidebar.MenuIcon label={SETTINGS.label}>
               <DemoIcon name={SETTINGS.icon} />
             </UiPro.Sidebar.MenuIcon>
             <UiPro.Sidebar.MenuLabel>{SETTINGS.label}</UiPro.Sidebar.MenuLabel>

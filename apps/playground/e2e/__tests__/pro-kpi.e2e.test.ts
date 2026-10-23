@@ -67,7 +67,7 @@ test("keeps every dt and dd inside a dl", async ({ page }) => {
   const stray = await page.evaluate(
     () =>
       [...document.querySelectorAll("dt, dd")].filter(
-        (term) => term.parentElement?.parentElement?.tagName !== "DL",
+        (term) => term.parentElement?.tagName !== "DL",
       ).length,
   );
   expect(stray).toBe(0);

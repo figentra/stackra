@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decision 5); ADR 0182 (test tiers); ADR 0022 (test placement).
  */
 // @covers sta-403:FR-013
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { expectNoAxeFindings, SCHEMES, visit } from "../support/pro-page";
 
@@ -19,6 +19,8 @@ const grid = (page: Page) => page.getByRole("grid", { name: "Invoices" });
 const customers = (page: Page) => grid(page).getByRole("rowheader");
 const row = (page: Page, customer: string) =>
   grid(page).getByRole("row").filter({ hasText: customer });
+// HeroUI Pro hides the real input (1px, clipped) under its drawn box, so a pointer reaches the box, as a user's does.
+const box = (within: Locator) => within.locator('[data-slot="checkbox-control"]');
 
 test("a header press sorts the grid, and the next press reverses it", async ({ page }) => {
   await visit(page, PATH, "light");
@@ -52,13 +54,11 @@ test("rows select, and the count follows", async ({ page }) => {
   const status = page.getByRole("status");
   await expect(status).toHaveText("0 of 6 selected");
 
-  await row(page, "Grace Hopper").getByRole("checkbox").click();
+  await box(row(page, "Grace Hopper")).click();
   await expect(row(page, "Grace Hopper")).toHaveAttribute("aria-selected", "true");
   await expect(status).toHaveText("1 of 6 selected");
 
-  await grid(page)
-    .getByRole("checkbox", { name: /select all/i })
-    .click();
+  await box(grid(page).getByRole("columnheader").first()).click();
   await expect(status).toHaveText("6 of 6 selected");
 });
 
@@ -68,7 +68,7 @@ for (const scheme of SCHEMES)
     await grid(page)
       .getByRole("columnheader", { name: /Amount/ })
       .click();
-    await row(page, "Ada Lovelace").getByRole("checkbox").click();
+    await box(row(page, "Ada Lovelace")).click();
     await expect(page.getByRole("status")).toHaveText("1 of 6 selected");
     await expectNoAxeFindings(page);
   });

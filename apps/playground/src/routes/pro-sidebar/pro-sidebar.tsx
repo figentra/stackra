@@ -21,6 +21,7 @@ const STRINGS = {
   intro:
     "A sidebar that collapses to icons. Use the toggle in the content column, the rail on the sidebar's edge, or Ctrl or Cmd and B; choose an item to move the current page.",
   sidebar: "Primary navigation",
+  mobile: "Navigation",
   toggle: "Collapse or expand the sidebar",
   current: (label: string) => `Current page: ${label}`,
   content: "Content",
@@ -45,7 +46,7 @@ export function ProSidebar() {
             <DemoNavigation current={current} onNavigate={setCurrent} />
             <UiPro.Sidebar.Rail />
           </UiPro.Sidebar>
-          <UiPro.Sidebar.Mobile>
+          <UiPro.Sidebar.Mobile label={STRINGS.mobile}>
             <DemoNavigation current={current} onNavigate={setCurrent} />
           </UiPro.Sidebar.Mobile>
           <div className="flex min-w-0 flex-1 flex-col">

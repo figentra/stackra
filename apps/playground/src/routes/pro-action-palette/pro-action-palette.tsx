@@ -4,7 +4,9 @@
  *          Cmd with K, with three groups of actions, a search field that filters them, an empty state, and a line
  *          that says which action ran last.
  * Boundary: presentation and local state only. HeroUI Pro's palette has no shortcut of its own (its docs show the key
- *          as a hint on the button), so the page binds Ctrl or Cmd with K to opening it.
+ *          as a hint on the button), so the page binds Ctrl or Cmd with K to opening it. The container is `lg`: HeroUI
+ *          Pro caps `md` at 356px, where the six actions scroll, and axe flags a scroll region without focusable
+ *          content (the palette's items take virtual focus from the search field).
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0304 (decision 6); ADR 0060 (light, dark, RTL); STA-403 FR-013.
  */
@@ -21,6 +23,8 @@ const STRINGS = {
   intro:
     "A searchable list of actions in a dialog. Open it with the button or with Ctrl or Cmd and K, type to filter, press Enter or choose an action, and Escape closes it.",
   open: "Open action palette",
+  // Words, not the Command symbol: axe cannot measure the contrast of a glyph that is not text.
+  shortcut: "Ctrl K",
   dialog: "Action palette",
   search: "Search actions",
   placeholder: "Type an action or search",
@@ -91,11 +95,14 @@ export function ProActionPalette() {
         </p>
       </header>
       <div>
-        <Button variant="outline" onPress={() => setOpen(true)}>
+        <Button
+          variant="outline"
+          aria-keyshortcuts="Control+K Meta+K"
+          onPress={() => setOpen(true)}
+        >
           {STRINGS.open}
           <Kbd>
-            <Kbd.Abbr keyValue="command" />
-            <Kbd.Content>K</Kbd.Content>
+            <Kbd.Content>{STRINGS.shortcut}</Kbd.Content>
           </Kbd>
         </Button>
       </div>
@@ -104,7 +111,7 @@ export function ProActionPalette() {
       </p>
       <UiPro.ActionPalette>
         <UiPro.ActionPalette.Backdrop isOpen={isOpen} onOpenChange={setOpen}>
-          <UiPro.ActionPalette.Container size="md">
+          <UiPro.ActionPalette.Container size="lg">
             <UiPro.ActionPalette.Dialog label={STRINGS.dialog}>
               <UiPro.ActionPalette.InputGroup label={STRINGS.search}>
                 <UiPro.ActionPalette.InputGroup.Prefix>

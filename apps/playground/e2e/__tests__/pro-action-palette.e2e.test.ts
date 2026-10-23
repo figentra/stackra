@@ -21,6 +21,16 @@ const dialog = (page: Page) => page.getByRole("dialog", { name: "Action palette"
 const search = (page: Page) => dialog(page).getByRole("searchbox", { name: "Search actions" });
 const items = (page: Page) => dialog(page).getByRole("menuitem");
 
+// Focus the button as a keyboard user does. A bare `focus()` leaves React Aria in its "virtual" modality (a screen reader's
+// focus), where the palette waits for the active element to hold still before it focuses the search, and the first
+// Ctrl with K from a focused element never reaches it.
+async function focusTriggerByKeyboard(page: Page) {
+  await trigger(page).focus();
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Tab");
+  await expect(trigger(page)).toBeFocused();
+}
+
 test("opens from its button, focuses the search, and filters as you type", async ({ page }) => {
   await visit(page, PATH, "light");
   await expect(dialog(page)).toBeHidden();
@@ -49,7 +59,7 @@ test("closes on Escape and returns focus to the button", async ({ page }) => {
 
 test("opens from Ctrl with K, and Escape returns focus to where it was", async ({ page }) => {
   await visit(page, PATH, "light");
-  await trigger(page).focus();
+  await focusTriggerByKeyboard(page);
   await page.keyboard.press("Control+k");
   await expect(dialog(page)).toBeVisible();
   await expect(search(page)).toBeFocused();
@@ -72,7 +82,7 @@ test("runs an action from a press: the palette closes and the action is reported
 
 test("runs an action from the keyboard", async ({ page }) => {
   await visit(page, PATH, "light");
-  await trigger(page).focus();
+  await focusTriggerByKeyboard(page);
   await page.keyboard.press("Control+k");
   await search(page).pressSequentially("preferences");
   await expect(items(page)).toHaveText(["Open preferences"]);

@@ -3,7 +3,7 @@
  * Purpose: the web `Sidebar` compound on HeroUI Pro's Sidebar: the root, `label` for its accessible name, and every
  *          part a consumer builds the documented examples from (Provider, Header, Content, Footer, Group, Menu,
  *          MenuItem, Submenu, Pages, Mobile, Rail, Trigger and the rest), with the `useSidebar` and `useSidebarPages`
- *          hooks.
+ *          hooks. `Mobile` and `MenuIcon` take a `label` for the names HeroUI Pro leaves out.
  * Boundary: no styling or behaviour of its own; the look needs `@heroui-pro/react/css`, and the root needs a
  *          `Sidebar.Provider` (or an `AppLayout`) above it. Imports the `sidebar` subpath.
  * Runtime: browser
@@ -16,6 +16,8 @@ import {
 
 import type { SidebarContractProps } from "#contracts/types/sidebar-contract-props.type";
 import { SidebarMenu } from "#react/sidebar/sidebar-menu";
+import { SidebarMenuIcon } from "#react/sidebar/sidebar-menu-icon";
+import { SidebarMobile } from "#react/sidebar/sidebar-mobile";
 import { SidebarRail } from "#react/sidebar/sidebar-rail";
 import { SidebarTrigger } from "#react/sidebar/sidebar-trigger";
 
@@ -52,8 +54,8 @@ interface SidebarParts {
   readonly MenuItem: typeof HeroSidebar.MenuItem;
   /** Wraps an item's content so it can hold a submenu. */
   readonly MenuItemContent: typeof HeroSidebar.MenuItemContent;
-  /** The icon of an item. */
-  readonly MenuIcon: typeof HeroSidebar.MenuIcon;
+  /** The icon of an item, named by `label` while the sidebar shows icons only. */
+  readonly MenuIcon: typeof SidebarMenuIcon;
   /** The label of an item. */
   readonly MenuLabel: typeof HeroSidebar.MenuLabel;
   /** A badge at the end of an item. */
@@ -72,8 +74,8 @@ interface SidebarParts {
   readonly Tooltip: typeof HeroSidebar.Tooltip;
   /** A divider between sections. */
   readonly Separator: typeof HeroSidebar.Separator;
-  /** The sheet that replaces the sidebar on a narrow viewport. */
-  readonly Mobile: typeof HeroSidebar.Mobile;
+  /** The sheet that replaces the sidebar on a narrow viewport, named by `label`. */
+  readonly Mobile: typeof SidebarMobile;
   /** A switcher between sibling pages inside the sidebar. */
   readonly Pages: typeof HeroSidebar.Pages;
   /** One page of `Pages`, identified by its `value`. */
@@ -102,7 +104,7 @@ export const Sidebar: typeof SidebarRoot & SidebarParts = Object.assign(SidebarR
   MenuHeader: HeroSidebar.MenuHeader,
   MenuItem: HeroSidebar.MenuItem,
   MenuItemContent: HeroSidebar.MenuItemContent,
-  MenuIcon: HeroSidebar.MenuIcon,
+  MenuIcon: SidebarMenuIcon,
   MenuLabel: HeroSidebar.MenuLabel,
   MenuChip: HeroSidebar.MenuChip,
   MenuActions: HeroSidebar.MenuActions,
@@ -112,7 +114,7 @@ export const Sidebar: typeof SidebarRoot & SidebarParts = Object.assign(SidebarR
   Submenu: HeroSidebar.Submenu,
   Tooltip: HeroSidebar.Tooltip,
   Separator: HeroSidebar.Separator,
-  Mobile: HeroSidebar.Mobile,
+  Mobile: SidebarMobile,
   Pages: HeroSidebar.Pages,
   Page: HeroSidebar.Page,
   Rail: SidebarRail,
