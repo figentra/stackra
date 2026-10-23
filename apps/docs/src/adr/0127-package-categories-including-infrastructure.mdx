@@ -1,7 +1,45 @@
 ---
 title: "0127 — Package categories, including infrastructure and commerce"
-description: "Accepted, amended by 0282, 0286, 0294, 0302 · 2026-10-20"
+description: "Accepted, amended by 0282, 0286, 0294, 0302 · 2026-10-20 · amended 2026-10-24 (STA-348)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-348), for the programming model v3.1 build-out, as
+  [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) amended the
+  developer row. The placement table of the 2026-10-21 amendment changes as follows.
+
+- **Placed:** `state` in the `state` category (`packages/state/state`; the name stays, as
+  `experience/experience` did), which answers open question 1; `clients` in `application`;
+  `runway` in `developer`; `access-log` in `security`.
+- **Folded:** `ir` and `source` into `gen` (the committed `stackra.manifest.json` is the IR, and
+  gen reads source through the TypeScript API behind one adapter); `console` into `cli` (a
+  "Command" is a CLI command only, 0294 decision 23).
+- **Gone:** `connections`, folded into `integrations` by
+  [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks);
+  `schema` into `validation`; `network` and `pwa` into `platform`; `router` into `navigation`.
+- **The changed rows now read:** foundation: support, container, config, logger, events,
+  transport, query, i18n, contracts, validation, errors. state: state, settings, feature-flags,
+  theming, coordinator. application: actions, ai, clients, registry. security: entitlements,
+  licensing, identity, iam, tenancy, consent, csp, access-log. experience: experience,
+  navigation, panel, shortcuts, platform, peripherals, builder, collaboration. developer: cli,
+  gen, coding-standard, vite-plugin, devtools-kit, testing, runway, skills, mcp, renderers. The
+  other rows stand.
+- **Entries:** a package exposes only the six standard entries (`.`, `./contracts`, `./node`,
+  `./react`, `./native`, `./testing`) plus runtime-target entries such as `./server` and `./sw`.
+  Every other extra entry folds into one of these. Entries that an accepted ADR already names as
+  an exception keep it. One symbol is exported from one entry only (0294 decision 15).
+- **Kind bases and helpers:** `Port` and `Enum` live in `@stackra/contracts`; `Module` and
+  `Service` in `@stackra/container`; the four `define*` functions of `stackra.config.ts` and
+  `MigrationRunner` in `@stackra/contracts`. The kind helper in `@stackra/container` is
+  `createKind`, because `define` is reserved for those four functions
+  ([0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) rule 3).
+- **Tone:** there is one `Tone`, in `@stackra/contracts`, with the five values of
+  [0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 7 (`default`, `accent`,
+  `success`, `warning`, `danger`); `@stackra/ui/contracts` uses it.
+- **Money:** the money codecs (`money()`, `currencyCode()`) ship from `@stackra/money`, not from
+  `@stackra/validation`.
+
+</Note>
 
 <Note>
   Amended by [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground), as 0282 amended
