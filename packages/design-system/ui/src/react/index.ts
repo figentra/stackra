@@ -17,3 +17,5 @@ export { Link, type LinkProps } from "#react/link/link";
 // The one router seam of the web kit: React Aria's own provider, re-exported so apps import UI only from here.
 export { RouterProvider } from "react-aria-components";
 export { Text, type TextProps } from "#react/text/text";
+// Web-only HeroUI components with nothing to unify with native, so they keep HeroUI's own API (ADR 0303 decision 6).
+export { ToggleButton, ToggleButtonGroup, Toolbar } from "@heroui/react";

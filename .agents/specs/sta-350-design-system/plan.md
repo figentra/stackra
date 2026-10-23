@@ -60,6 +60,9 @@ switcher and is covered by Playwright and axe. `@stackra/brand` is deleted; its 
 - **P-013**: An Icon is drawn mirrored exactly when it asks for it and the direction is right to left — Validates: FR-014
 - **P-014**: The native provider gives Lucide icons the md size and the theme foreground colour — Validates: FR-015
 - **P-015**: Every Icon and Typography sample of the playground shows what its contract promises (names, mirroring, sizes, computed type, live state) — Validates: FR-016, FR-021
+- **P-016**: A loading Button refuses presses and keeps its accessible name on web and reports busy on native, and an IconButton or CloseButton always has a non-empty accessible name, with every HeroUI prop outside the contract passed through — Validates: FR-022, FR-023, FR-024
+- **P-017**: An internal, same-origin, unmodified Link click navigates through the router provider, and an external link or absolute URL never does, on both runtimes — Validates: FR-025, FR-026
+- **P-018**: Every Button, IconButton, CloseButton and Link sample of the playground shows what its contract promises, listed under its category — Validates: FR-027, FR-028
 
 ## Contracts and events
 

@@ -27,9 +27,11 @@ export type ButtonProps = ButtonContractProps &
 
 /**
  * A button on HeroUI v3. While `isLoading` the press is refused and focus stays on the button; the spinner replaces
- * the start icon and is hidden from assistive technology, so the accessible name stays the label (React Aria
- * announces the pending state itself).
+ * the start icon and is hidden from assistive technology, so the accessible name stays the label and the pending
+ * state is exposed only as `aria-disabled`.
  */
+// shortcut: no spoken "loading" state (WCAG 4.1.3), owner decision O12 keeps the name unchanged; a `loadingLabel`
+// prop arrives with @stackra/i18n, when the announcement can be translated.
 export function Button({
   variant,
   size,

@@ -147,6 +147,7 @@
     "react": ">=19.2.0",
     "react-aria-components": "^1.22.1",
     "react-native": ">=0.86.0",
+    "react-native-svg": "^15.15.4",
     "uniwind": "^1.12.1"
   },
   "peerDependenciesMeta": {
@@ -166,6 +167,9 @@
       "optional": true
     },
     "react-native": {
+      "optional": true
+    },
+    "react-native-svg": {
       "optional": true
     },
     "uniwind": {

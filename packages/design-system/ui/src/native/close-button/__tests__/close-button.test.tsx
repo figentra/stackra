@@ -9,7 +9,7 @@
  *          placement).
  */
 // @vitest-environment jsdom
-// @covers sta-350:FR-023 sta-350:FR-024
+// @covers sta-350:FR-023 sta-350:FR-024 sta-350:P-016
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 

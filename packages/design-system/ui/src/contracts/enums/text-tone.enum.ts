@@ -9,7 +9,9 @@
 
 /**
  * The text tones. `default` and `muted` are HeroUI Typography's `color` values on both runtimes; the others are the
- * theme's colour utilities. Each passes WCAG AA as text on `background` and `surface` in the stackra theme.
+ * theme's colour utilities. Each passes WCAG AA as text on `background` and `surface` only in the stackra theme. On
+ * `surface-secondary` and `surface-tertiary` some fall short (light `warning` is 4.26:1 on tertiary, dark `danger` is
+ * 4.19:1), so pick the tone for the surface it sits on.
  */
 // shortcut: a frozen tuple until @stackra/contracts ships Enum.of (ADR 0128); the tones carry no labels.
 export const TextTone = Object.freeze([

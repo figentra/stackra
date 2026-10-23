@@ -10,10 +10,17 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0165 (web client stack); ADR 0060 (light, dark, RTL).
  */
-import { ToggleButton, ToggleButtonGroup, Toolbar } from "@heroui/react";
 import { STACKRA_THEME } from "@stackra/tokens";
 import { ColorScheme } from "@stackra/ui/contracts";
-import { DesignSystemProvider, Link, RouterProvider, useDesignSystem } from "@stackra/ui/react";
+import {
+  DesignSystemProvider,
+  Link,
+  RouterProvider,
+  ToggleButton,
+  ToggleButtonGroup,
+  Toolbar,
+  useDesignSystem,
+} from "@stackra/ui/react";
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { Outlet, useHref, useLocation, useNavigate, useSearchParams } from "react-router";
 

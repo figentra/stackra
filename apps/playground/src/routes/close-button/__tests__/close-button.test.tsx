@@ -5,7 +5,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0303 (decision 7); ADR 0022 (test placement).
  */
-// @covers sta-350:FR-027
+// @covers sta-350:FR-027 sta-350:P-018
 import { DesignSystemProvider } from "@stackra/ui/react";
 import { act, render, screen, within } from "@testing-library/react";
 

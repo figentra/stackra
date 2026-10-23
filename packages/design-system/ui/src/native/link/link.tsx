@@ -90,7 +90,14 @@ export function Link({
       <LinkButton.Label className={underline === "always" ? `${toneClass} underline` : toneClass}>
         {children}
       </LinkButton.Label>
-      {isExternal ? <Icon as={ExternalLink} size="sm" isMirroredInRtl /> : null}
+      {isExternal ? (
+        <Icon
+          as={ExternalLink}
+          size="sm"
+          tone={tone === "default" ? undefined : tone}
+          isMirroredInRtl
+        />
+      ) : null}
     </LinkButton>
   );
 }
