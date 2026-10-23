@@ -91,7 +91,9 @@ test("Escape closes the list and keeps focus in the field", async ({ page }) => 
 test("several choices are tags that can be removed and added to", async ({ page }) => {
   await open(page, "light", "en");
   const modes = page.getByRole("region", { name: "One or several" });
-  const tags = modes.getByRole("grid", { name: "Several countries" }).locator('[data-slot="tag"]');
+  // CSS, not `getByRole`: while the list is open React Aria hides the rest of the page from the accessibility tree, and
+  // after a pick in several-choice mode the list may still be open, so a role query would find no grid at all.
+  const tags = modes.locator('[role="grid"][aria-label="Several countries"] [data-slot="tag"]');
   await expect(tags).toHaveCount(3);
 
   await modes.getByRole("button", { name: /Remove.*Egypt/ }).click();
