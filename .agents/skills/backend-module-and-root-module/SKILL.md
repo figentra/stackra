@@ -23,7 +23,7 @@ services/commerce/                      # or packages/<category>/<name>/
 ├── runway.yaml                         # what the member requires (ADR 0296)
 ├── assets/{lang,ai,data,public}/
 └── src/
-    ├── commerce.module.ts              # the root module; key `commerce` from the package name
+    ├── commerce.module.ts              # the root module; key `commerce` from the folder name
     ├── config/commerce.config.ts       # class CommerceConfig extends Config
     ├── contracts/index.ts              # type-only public surface
     └── modules/
@@ -31,7 +31,8 @@ services/commerce/                      # or packages/<category>/<name>/
             ├── orders.module.ts        # OrdersModule extends Module({ exports: [OrderService] })
             ├── orders.settings.ts      # one settings group per module
             ├── models/  actions/  queries/  schemas/  enums/  errors/  events/  listeners/
-            ├── workflows/  access/  services/  drivers/  extensions/  resources/<model>/
+            ├── workflows/  access/  services/  drivers/  extensions/  integrations/  connections/
+            ├── resources/<model>/
             ├── database/{migrations,factories,seeders}/  ai/  functions/  constants/  types/
             └── __tests__/orders.module.int.test.ts
 ```
@@ -58,8 +59,8 @@ export class CommerceModule extends Module({ imports: [OrdersModule, CatalogueMo
 
 - **No `providers` list.** Gen finds every binding in the module's group folders by its base class and prints them, with
   their lifetimes, in `.stackra/gen/wiring.ts` (ADR 0263 as amended).
-- **Keys are derived and locked.** The module key is the folder name; the member key is the package name without its
-  scope. `stackra.manifest.json` locks them; a rename needs `@Renamed(old)`.
+- **Keys are derived and locked.** The module key is the folder name; the member key is the member's folder name
+  (`commerce` for `services/commerce`). `stackra.manifest.json` locks them; a rename needs `@Renamed(old)`.
 - **`wrap`** (`Module({ wrap: [MapProvider] })`) is the one escape hatch for a React provider, on an app's root module
   only.
 - **Siblings** import only another module's exported classes and public groups (`module-boundary` rule).

@@ -1,7 +1,18 @@
 ---
 title: "0225 — Realtime drivers, co-editing and the Commentable trait"
-description: "Accepted, amended by 0270, 0294 · 2026-10-20"
+description: "Accepted, amended by 0270, 0294 · 2026-10-20 · amended 2026-10-23 (STA-349)"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-349), with the amendment of the same date on
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): the `broadcast`
+  option of the note below becomes `broadcast: { permission, audience }`. `permission` is still
+  required and works as that note says. `audience` is `"principal"` or `"tenant"` and defaults to
+  `"principal"`. With `"principal"`, an event about one user reaches only that user's sessions that
+  hold the permission, as before the programming model v3, so no tenant-wide signal reveals
+  activity about one person. With `"tenant"`, it reaches every session of the tenant that holds the
+  permission.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the

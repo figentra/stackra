@@ -1,7 +1,18 @@
 ---
 title: "0296 — Runway v3: member requires and root topology groups"
-description: "Accepted · 2026-10-22"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349)"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-349): a member runway may also hold a top-level `health` section, the
+  thresholds the member's health checks hold it to. Examples are readiness (migrations applied, a
+  timeout) and liveness (event-loop lag) for a service, or the health path and its expected answer
+  for an app. These are what the member needs, so they belong in the member file of decision 1, as
+  `requires` does. The other decisions are unchanged.
+
+Enforcement of this note: planned — STA-339 (the version 3 member schemas accept `health`).
+
+</Note>
 
 <Note>
   Supersedes in part [0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml)

@@ -12,9 +12,9 @@ A service is `services/<name>`, `@figentra/service-<name>`, tag `tier:service`. 
 `src/config/`; gen writes the runtime entry to `.stackra/entry/server.ts`, and nobody writes `main.ts`. A feature module
 is `src/modules/<key>/<key>.module.ts` with the module groups of ADR 0294 decision 13: `models/`, `actions/`, `queries/`,
 `schemas/`, `enums/`, `errors/`, `events/`, `listeners/`, `workflows/`, `access/`, `services/`, `drivers/`,
-`extensions/`, `resources/<model>/`, `database/{migrations,factories,seeders}/`, `ai/`, `functions/`, `constants/` and
-`types/`, each appearing with its first file. There is no `controllers/`, `dtos/`, `repositories/`, `guards/`, `links/`,
-`permissions/`, `states/`, `hooks/` or `presentation/` folder.
+`extensions/`, `integrations/`, `connections/`, `resources/<model>/`, `database/{migrations,factories,seeders}/`, `ai/`,
+`functions/`, `constants/` and `types/`, each appearing with its first file. There is no `controllers/`, `dtos/`,
+`repositories/`, `guards/`, `links/`, `permissions/`, `states/`, `hooks/` or `presentation/` folder.
 
 Today's services (`example`, `health`) predate v3: each still has an authored `src/main.ts` and a `stackra.module` field
 in `package.json`, which `checkService` accepts beside the v3 shape `pnpm new service` writes. Keep them until the

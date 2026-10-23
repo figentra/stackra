@@ -23,7 +23,7 @@ config → lib → app
 3. **No cross-service imports** - Services don't import from other services (use events or the generated client)
 4. **Packages import from own layer or below** - Never from apps/services
 5. **Inside a package, entries point one way** - `src/contracts/` is a leaf; `core` imports `contracts`; `node`, `react` and `native` import `core`; `testing` imports them all. No symbol is exported from two entries (ADR 0294 decision 15, ADR 0117 as amended)
-6. **Sibling modules import only public groups** - a module reaches a sibling only through its exported classes, `schemas/`, `enums/`, `events/`, `errors/` and `access/*.permissions.ts`, and through `models/` only from `models/` and `database/`, for relations (ADR 0294 decision 24). Imports use `#modules/<key>/<group>/...` (ADR 0233 as amended)
+6. **Sibling modules import only public groups** - a module reaches a sibling only through its exported classes, `schemas/`, `enums/`, `events/`, `errors/`, `access/*.permissions.ts` and `extensions/*.extension-point.ts`, and through `models/` only from `models/` and `database/`, for relations (ADR 0294 decision 24). Imports use `#modules/<key>/<group>/...` (ADR 0233 as amended)
 
 ## Forbidden Patterns
 

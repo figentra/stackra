@@ -1,7 +1,19 @@
 ---
 title: "0300 — Five published tooling presets, and spell checking that the gate enforces"
-description: "Accepted · 2026-10-22"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349)"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-349): two names under decision 2 are fixed. The vitest preset's
+  configuration for the preset packages' own tests is `toolingPreset`, like its other `<role>Preset`
+  names, and the commitlint preset exports a named `commitlintPreset` instead of a default export.
+  The other decisions are unchanged.
+
+Enforcement of this note: planned — STA-343 (the export check under Enforcement below). Today the
+vitest preset exports `stackraVitest`, `stackraVitestReact` and `stackraVitestDecorators`, and the
+commitlint preset has a default export.
+
+</Note>
 
 ## Context
 
