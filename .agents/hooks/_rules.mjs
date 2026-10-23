@@ -296,6 +296,18 @@ const lineTexts = (c) => cached(lineCache, c, () => proseFree(c).flatMap((t) => 
  */
 const scanTextCache = memoTable();
 const scanTexts = (c) => cached(scanTextCache, c, () => [...proseFree(c), ...lineTexts(c)]);
+/** SQL clients: their quoted, piped and heredoc text is read for a drop (`runsSqlClient`). */
+const SQL_CLIENTS = new Set([
+  "psql",
+  "pgcli",
+  "usql",
+  "mysql",
+  "mariadb",
+  "mycli",
+  "sqlite3",
+  "litecli",
+  "duckdb",
+]);
 /** Commands whose operands are text, patterns or programs in another language, never shell commands. */
 const TEXT_COMMANDS = new Set([
   "echo",
@@ -320,10 +332,12 @@ function readerCommand(words) {
 }
 /**
  * A word that holds a guarded command name as a command word: `rm`, `find`, `git` (`bot:git` too) and the names
- * the secret, deploy and release rules read (STA-330 review).
+ * the secret, deploy and release rules read. After a quote too, so a line quoted inside a line is found and read in
+ * turn (`ssh h "tmux new -d 'rm -rf ~'"`), and SQL clients for the drop rule (STA-330 review).
  */
-const LINE_WORD =
-  /(?:^|[\s;&|(`:])(?:[^\s;&|()<>`]*\/)?(?:rm|find|git|infisical|encore|wrangler|changeset|drizzle-kit|mikro-orm|security)(?=[\s:])/;
+const LINE_WORD = new RegExp(
+  String.raw`(?:^|[\s;&|(\x60:'"])(?:[^\s;&|()<>\x60]*\/)?(?:rm|find|git|infisical|encore|wrangler|changeset|drizzle-kit|mikro-orm|security|${[...SQL_CLIENTS].join("|")})(?=[\s:])`,
+);
 /**
  * `w` without its `$(…)`, `<(…)`, `>(…)` and backtick bodies (`scanShell` reads those as their own texts). A paren
  * that is quoted or escaped never opens or closes one (`$(git log --format="%an (%ae)")`, `$(find . \( … \))`).
@@ -347,9 +361,9 @@ let lineDepth = 0;
  * Command lines passed as one quoted word or here-string to a wrapper the guard does not know (`tmux new -d '…'`,
  * `watch '…'`, `ssh h '…'`, `su -c '…'`, `trap '…' EXIT`, `at now <<< '…'`, a crontab line): a word with a space
  * that holds a guarded command name (`LINE_WORD`) outside its substitutions, in a command that is not prose or a
- * search (`readerCommand`), its own messages dropped. A line is read again for the lines inside it, never when it
- * is the text being read, and only up to `MAX_SCRIPTS` deep: past that it is not read, and this heuristic never
- * denies by itself (STA-330 review). The delete, discard, push and stash rules read them, and the rules for the
+ * search (`readerCommand`), and not a program (`withoutPrograms`), its own messages dropped. A line is read again
+ * for the lines inside it, never when it is the text being read, and only up to `MAX_SCRIPTS` deep: past that it is
+ * not read, and this heuristic never denies by itself (STA-330 review). The delete, discard, push and stash rules read them, and the rules for the
  * guarded names (`runsQuoted`); other rules keep quoted text as prose.
  */
 function commandLines(t) {
@@ -360,7 +374,7 @@ function commandLines(t) {
     for (const s of simpleCommands(t)) {
       if (readerCommand(s.words)) continue;
       const strings = s.redirects.filter((r) => r.op === "<<<").map((r) => r.target);
-      for (const w of [...s.words, ...strings]) {
+      for (const w of [...withoutPrograms(s.words), ...strings]) {
         if (!/\s/.test(w)) continue;
         const plain = outsideSubstitutions(w);
         if (!/\s/.test(plain) || !LINE_WORD.test(plain)) continue;
@@ -460,10 +474,13 @@ function splitSegments(c) {
 }
 const unquote = (w) => w.replace(/^['"]+|['"]+$/g, "");
 /**
- * Prose is not a command: blank the quoted `-m` / `--message` / `--title` / `--body` value and the text of
- * `pnpm linear comment <KEY> "…"` (STA-216), so a PR body or a comment may mention `pr merge` or `push origin main`.
+ * Prose is not a command: blank the quoted `-m` / `--message` / `--title` / `--body` / `--description` value and the
+ * text of `pnpm linear comment <KEY> "…"` (STA-216), so a PR body or a comment may mention `pr merge` or
+ * `push origin main`. A short-flag cluster ending in `m` (`commit -am`, `-sm`) is `-m`, unless it holds `c`: the
+ * value of `sh -cm` is a command (STA-330 review).
  */
-const PROSE_BEFORE = /(?:\s(?:-m|--message|--title|--body)(?:\s+|=)|\blinear\s+comment\s+\S+\s+)$/;
+const PROSE_BEFORE =
+  /(?:\s(?:-[abd-zA-Z]*m|--message|--title|--body|--description)(?:\s+|=)|\blinear\s+comment\s+\S+\s+)$/;
 const messageCache = memoTable();
 const dropMessages = (c) =>
   cached(messageCache, c, () => {
@@ -1260,17 +1277,6 @@ const listsProcessEnv = (c) =>
   );
 
 const DROP_DB = /\bDROP\s+(?:DATABASE|SCHEMA)\b/i;
-const SQL_CLIENTS = new Set([
-  "psql",
-  "pgcli",
-  "usql",
-  "mysql",
-  "mariadb",
-  "mycli",
-  "sqlite3",
-  "litecli",
-  "duckdb",
-]);
 /**
  * A SQL client runs: a word (or the first word of a quoted command line or here-string, `ssh h 'psql …'`,
  * `at now <<< 'psql …'`) named like one, wherever it stands (`docker exec pg psql`, `kubectl exec … -- mysql`), or
@@ -1381,20 +1387,18 @@ const RULES = [
     // argument is checked whole (`cat "$HOME/.npmrc"`), so a grep pattern `"no .env files"` is no path; only
     // message values (`-m`, `--title`, `--body`, a `linear comment`) and heredoc bodies are prose (STA-330 review).
     // A command line in one quoted word names files by its own words (`watch 'cat .env'`), outside prose and
-    // search commands. `.env.example` and `*.example` are templates.
+    // search commands. A program (`jq '.data.key'`, `node -e '…'`, `awk '…'`) names none (`withoutPrograms`), and
+    // only a path-shaped word is a path (`namesSecret`). `.env.example` and `*.example` are templates.
     rx: (c) => {
       const words = proseFree(c).flatMap((t) =>
         simpleCommands(t).flatMap((s) => {
-          const all = [...s.words, ...s.redirects.map((r) => r.target)];
+          const all = [...withoutPrograms(s.words), ...s.redirects.map((r) => r.target)];
           return readerCommand(s.words) ? all : [...all, ...all.flatMap((w) => w.split(/\s+/))];
         }),
       );
-      const hit = [
-        ...new Set([
-          ...runnable(c).flatMap((t) => t.split(/[\s=<>()|;&\x60'"]+/)),
-          ...words.flatMap((w) => [w, ...w.split("=").slice(1)]),
-        ]),
-      ].find(namesSecret);
+      const hit = [...new Set(words.flatMap((w) => [w, ...w.split("=").slice(1)]))].find(
+        namesSecret,
+      );
       return hit
         ? `Secrets guard: \`${hit}\` holds secret values; a command never reads, copies, writes or prints it, and never creates a .env file. Secrets come from Infisical (ADR 0173); application secrets use Encore secret().`
         : false;
@@ -1805,17 +1809,39 @@ const HOME_SECRET =
 /**
  * True when a command word names a secret file (`isSecretPath`), after brace expansion, or is a glob whose literal
  * text names one (`.env*`, `*.pem`, `*.secrets*`, `~/.ssh/id_*`). What a wildcard could match never counts, so
- * `*.json` and `.*` name no secret (STA-330 review); a glob that spells a name with wildcards (`.e?v`) is a
- * deliberate workaround the accident guard does not read.
+ * `*.json` and `.*` name no secret (STA-330 review); a glob that spells a name with wildcards (`.e?v`, `.en[v]`) is
+ * a deliberate workaround the accident guard does not read. Only a path-shaped word counts: one with a space, quote,
+ * paren, `=`, `<`, `>` or bracket is program text (`console.log(a.key`, `x=>x.key`, `.actions[].key`).
  */
 function namesSecret(w) {
   for (const b of braces(w) ?? [w]) {
-    if (isSecretPath(b)) return true;
     const p = unquote(b);
-    if (/[*?[]/.test(p) && p.split(/\*|\?|\[[^\]]*\]?/).some((lit) => lit && isSecretPath(lit)))
-      return true;
+    if (/[\s'"()=<>[\]]/.test(p)) continue;
+    if (isSecretPath(p)) return true;
+    if (/[*?]/.test(p) && p.split(/[*?]/).some((lit) => lit && isSecretPath(lit))) return true;
   }
   return false;
+}
+/** Commands whose program is a flag's value: `node -e|-p|-pe`, `python -c`, `perl -e|-ne|-E`. */
+const PROGRAM_FLAG = new Map([
+  ["node", /^(?:-[ep]+|--eval|--print)$/],
+  ["python", /^-[A-Za-z]*c$/],
+  ["perl", /^-[A-Za-z]*[eE]$/],
+]);
+/**
+ * `words` without the program a command reads as code, not as file names: the first operand of `jq` and `awk`
+ * (none when `-f` names a program file) and the value of a `PROGRAM_FLAG` (STA-330 review).
+ */
+function withoutPrograms(words) {
+  const i = commandAt(words);
+  const name = baseName(words[i] ?? "").replace(/[\d.]+$/, "");
+  if (name === "jq" || name === "awk" || name === "gawk") {
+    if (words.includes("-f") || words.includes("--from-file")) return words;
+    const k = words.findIndex((w, j) => j > i && !w.startsWith("-"));
+    return words.filter((_, j) => j !== k);
+  }
+  const flag = PROGRAM_FLAG.get(name);
+  return flag ? words.filter((_, j) => !(j > i + 1 && flag.test(words[j - 1]))) : words;
 }
 
 /** True when `p` names a file that holds secret values (ADR 0173). */

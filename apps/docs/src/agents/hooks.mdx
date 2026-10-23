@@ -33,20 +33,21 @@ The rules live in `.agents/hooks/_rules.mjs` and follow the tiers of [0293](/adr
 Settings deny and ask rules in `.claude/settings.json` are the floor in every mode; the hook adds what a prefix rule
 cannot see. Every rule runs on the command, its runner-free form and its dequoted form, so `pnpm gh`,
 `pnpm exec infisical run`, `npx …`, `mise exec -- …`, `timeout 5 gh`, `then gh` and `"gh"` are judged like the
-command they wrap. Prose is not a command: quoted text, heredoc bodies and `-m` / `--title` / `--body` /
-`linear comment` values are blanked, while `$(…)`, backticks, `sh -c` and `eval` bodies are checked. Arguments are
-read as the shell passes them: quotes removed, redirections (`2>&1`, `>log`, `<<<x`) and a closing `)` or `}` are
-not operands, and a quoted argument such as `"$HOME/.npmrc"` is still a path. `cd` is followed in order: a subshell's
+command they wrap. Prose is not a command: quoted text, heredoc bodies and `-m` (`-am` too) / `--title` / `--body`
+/ `--description` / `linear comment` values are blanked, while `$(…)`, backticks, `sh -c` and `eval` bodies are
+checked. Arguments are read as the shell passes them: quotes removed, redirections (`2>&1`, `>log`, `<<<x`) and a
+closing `)` or `}` are not operands, and a quoted argument such as `"$HOME/.npmrc"` is still a path. `cd` is followed in order: a subshell's
 `cd` ends at its `)`, and after a `cd` that may fail (`cd x; …`, `cd x || …`) both directories count. Every word
 named `rm` or `find` is read as a command, so a wrapper the guard does not know (`setsid`, `flock f`, `op run --`)
 never hides a recursive delete. A command line passed as one quoted word or here-string (`mise exec -c '…'`,
 `tmux new -d '…'`, `watch '…'`, `ssh h '…'`, `trap '…' EXIT`, `at now <<< '…'`) is read as commands too:
 `mise exec -c` by every rule, and any such word that holds a guarded command name (`rm`, `find`, `git`, `infisical`,
-`encore`, `wrangler`, `changeset`, `drizzle-kit`, `mikro-orm`, `security`) by the delete, discard, push, stash,
-secret, deploy and release rules; the file names in it count for the secret-file rule. That reading stops past eight
-quoting levels without denying. A `$(…)` or `<(…)` body is read as its own command, never as nesting. Once a SQL
-client runs (`psql`, `mysql`, `sqlite3`, `encore db shell`, behind `docker exec` too), its quoted, piped and
-heredoc text is read for `DROP DATABASE` / `SCHEMA`. A decision is bounded: a command nesting substitutions more
+`encore`, `wrangler`, `changeset`, `drizzle-kit`, `mikro-orm`, `security`, a SQL client) by the delete, discard,
+push, stash, secret, deploy, release and drop rules, a line quoted inside it too (`ssh h "tmux new -d '…'"`); the
+file names in it count for the secret-file rule, and a program (`jq '.data.key'`, `node -e '…'`, `awk '…'`) names no
+file. That reading stops past eight quoting levels without denying. A `$(…)` or `<(…)` body is read as its own
+command, never as nesting. Once a SQL client runs (`psql`, `mysql`, `sqlite3`, `encore db shell`, behind
+`docker exec` too), its quoted, piped and heredoc text is read for `DROP DATABASE` / `SCHEMA`. A decision is bounded: a command nesting substitutions more
 than 16 deep or script strings more than 8 deep, needing more than 48 git lookups, or taking more than two seconds,
 is denied, because the hook fails open when its five seconds run out or it throws; a command that breaks the
 reader is denied for the same reason. A git lookup in a directory that does not exist is skipped, and a path
@@ -69,9 +70,10 @@ longer than 4096 characters is denied unread.
 | Ask  | `git config <key> <value>` without `--worktree`: the repository's config, which every linked worktree shares; `git config --worktree` of an allowed key is allowed                                                                                |
 | Ask  | From the main checkout, discarding git or `rm -rf` in a nested linked worktree (`cd` or `-C`); build output there (`node_modules`, `dist`, `.turbo`) is allowed                                                                                   |
 
-Known misses, by design: code in another language passed inline (`node -e`, `python -c`, `ruby -e`, `perl -e`), SQL fed
-to a package script that wraps a SQL client (`pnpm <script> <<< 'DROP …'`), a glob that spells a secret name with
-wildcards (`.e?v`), and quoting nested more than eight levels deep. The guard is an accident guard; GitHub's rulesets
+Known misses, by design: plain `gh`, network `git` and `bot:token` in a quoted line (`watch 'gh pr merge 1'`,
+`watch 'git fetch'`, `watch 'pnpm bot:token'`; a push there still meets the push rules), code in another language
+passed inline (`node -e`, `python -c`, `ruby -e`, `perl -e`), SQL fed to a package script that wraps a SQL client
+(`pnpm <script> <<< 'DROP …'`), a glob that spells a secret name with wildcards (`.e?v`), and quoting nested more than eight levels deep. The guard is an accident guard; GitHub's rulesets
 and the bot's permissions are the boundary.
 
 ### `guard-paths`

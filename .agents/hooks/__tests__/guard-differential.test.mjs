@@ -123,6 +123,11 @@ const WRAPPED = [
   ["at now <<<", (c) => `at now <<< ${sq(c)}`],
   ["parallel", (c) => `parallel ${sq(c)} ::: a`],
   ["flock -c", (c) => `flock /tmp/l -c ${sq(c)}`],
+  // one quoted string inside another (STA-330 review round 5)
+  ["ssh (tmux new -d)", (c) => `ssh host ${sq(`tmux new -d ${sq(c)}`)}`],
+  ["ssh (su -c)", (c) => `ssh host ${sq(`su -c ${sq(c)}`)}`],
+  ["tmux new -d (watch)", (c) => `tmux new -d ${sq(`watch ${sq(c)}`)}`],
+  ["ssh \"'…'\"", (c) => `ssh h "${sq(c)}"`],
 ];
 /** Guarded commands and their decision from the session's own worktree. */
 const GUARDED = [
@@ -176,6 +181,44 @@ for (const [name, wrap, asks] of WRAPPED)
       wrong(GUARDED.map(([c, want]) => [wrap(c), strictest(want, asks ? "ask" : "allow")])),
       [],
     ));
+
+/** `c` wrapped `n` times in one-string wrappers, in turn. */
+const ONE_STRING = [
+  (c) => `watch ${sq(c)}`,
+  (c) => `tmux new -d ${sq(c)}`,
+  (c) => `ssh host ${sq(c)}`,
+  (c) => `su -c ${sq(c)}`,
+];
+const wrapped = (c, n) => Array.from({ length: n }).reduce((t, _, k) => ONE_STRING[k % 4](t), c);
+// The docs say a quoted line is read eight levels deep. A secret file name is read in a line that holds a guarded
+// command name, and in a quoted word's own words, so `cat .env` alone counts two levels deep (the rows above).
+test("differential: a guarded command line wrapped eight times decides as it does bare", () =>
+  assert.deepEqual(
+    wrong(GUARDED.filter(([c]) => !c.startsWith("cat ")).map(([c, want]) => [wrapped(c, 8), want])),
+    [],
+  ));
+
+test("differential: a program or a message flag never hides a secret file or a command beside it", () =>
+  assert.deepEqual(
+    wrong(
+      [
+        "awk '{print}' .env",
+        "jq . .env",
+        "jq -f prog.jq .env",
+        "jq --rawfile k .env . x.json",
+        "node -e 'x' .env",
+        "python3 -c 'x' tls.pem",
+        "perl -ne 'print' ~/.git-credentials",
+        "sh -cm 'git stash pop'",
+        "bash -cm 'rm -rf ~'",
+        "ssh host \"tmux new -d 'rm -rf ~'\"",
+        "ssh host \"su -c 'infisical export'\"",
+        "tmux new -d \"watch 'infisical export'\"",
+        "ssh h \"'infisical export'\"",
+      ].map((c) => [c, "deny"]),
+    ),
+    [],
+  ));
 
 test("differential: the matrix covers every wrapper _inbox.mjs knows", () => {
   for (const w of WRAPPERS)
@@ -303,6 +346,10 @@ const ALLOWED = [
   "pnpm linear review STA-330 https://github.com/figentra/stackra/pull/113",
   "pnpm linear mine",
   'pnpm linear create --title "guard: x" --labels agent',
+  'pnpm linear create --title x --description "never git stash pop or infisical export"',
+  'git commit -am "docs: never git stash pop"',
+  'git commit -sm "docs: never git stash pop"',
+  'git commit -nm "docs: never rm -rf ~"',
   "pnpm pr:merge 113",
   // the repository's scripts and tools
   "pnpm verify",
@@ -340,6 +387,17 @@ const ALLOWED = [
   "node --test .agents/hooks/__tests__/guard-bash.test.mjs",
   "node tools/scripts/validate-repository.mjs",
   'node -e "console.log(process.version)"',
+  // program text is no file name (STA-330 review round 5)
+  "node -e 'for (const a of m.actions) console.log(a.key ?? a.name)'",
+  "node -e 'console.log(m.actions.find(x=>x.key===\"a\"))'",
+  "node -pe 'require(\"./package.json\").version'",
+  "jq -r '.actions[].key' .stackra/app-manifest.json",
+  "jq '.data.key' x.json",
+  "jq -r .key x.json",
+  "python3 -c 'print(x.pem)'",
+  "perl -ne 'print if /a.key/' list.txt",
+  "pnpm bot:gh api repos/figentra/stackra/actions/secrets --jq '.secrets[].name'",
+  'node -e \'console.log(check("rm -rf a[b"), check("encore secret set X"))\'',
   "timeout 600 pnpm verify",
   "turbo run build --filter=@stackra/logger",
   "encore run",
