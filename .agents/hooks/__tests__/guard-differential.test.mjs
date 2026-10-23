@@ -58,11 +58,11 @@ const fill = (c) =>
 decideBash("git status", { cwd: wt }); // warm the module before anything is timed
 
 /** Every case `[command, want]` that decides otherwise or too slowly, as readable lines. */
-function wrong(cases, cwd = wt, subagent = false) {
+function wrong(cases, cwd = wt) {
   const out = [];
   for (const [c, want] of cases) {
     const [t, git] = [performance.now(), gitMs];
-    const { decision, reason } = decideBash(fill(c), { cwd, subagent, scratchpad });
+    const { decision, reason } = decideBash(fill(c), { cwd, scratchpad });
     const ms = performance.now() - t - (gitMs - git);
     if (decision !== want) out.push(`${decision} (want ${want}) ${c}  [${reason.slice(0, 60)}]`);
     if (ms >= LIMIT_MS) out.push(`${ms.toFixed(0)} ms (limit ${LIMIT_MS}) ${c}`);
@@ -185,10 +185,11 @@ const GUARDED = [
   ["cat apps/x/.dev.vars", "deny"],
   ["cat ~/.git-credentials", "deny"],
   ["cat tls.pem", "deny"],
+  // STA-400: only deletes and deploys (`HUMAN_ASKS`) ask; every other ask is a deny with the rewrite hint
   ["wrangler deploy", "ask"],
-  ["infisical run -- node x.js", "ask"],
   ["encore db reset", "ask"],
-  ["git config user.email t@t", "ask"],
+  ["infisical run -- node x.js", "deny"],
+  ["git config user.email t@t", "deny"],
   ["rm -rf node_modules dist", "allow"],
   ["git reset --hard", "allow"],
   ["git checkout .", "allow"],
@@ -196,41 +197,12 @@ const GUARDED = [
   ["pnpm bot:git -- push origin HEAD", "allow"],
   ["pnpm bot:git -- push --force-with-lease origin HEAD", "allow"],
 ];
-const strictest = (a, b) =>
-  a === "deny" || b === "deny" ? "deny" : a === "ask" || b === "ask" ? "ask" : "allow";
+/** A wrapper that asks (a shell reading text) raises an ask outside `HUMAN_ASKS`, so the whole line is a deny. */
+const tier = (want, asks) => (asks ? "deny" : want);
 
 for (const [name, wrap, asks] of WRAPPED)
   test(`differential: ${name} x every guarded command`, () =>
-    assert.deepEqual(
-      wrong(GUARDED.map(([c, want]) => [wrap(c), strictest(want, asks ? "ask" : "allow")])),
-      [],
-    ));
-
-/** Guarded commands whose ask reaches a human from a subagent too (`HUMAN_ASKS`); every other ask is a deny. */
-const HUMAN = new Set(["wrangler deploy", "encore db reset"]);
-const SUBAGENT_WRAPPERS = new Set([
-  "bare",
-  "sh -c",
-  "ssh",
-  "pnpm exec",
-  "npx",
-  "$( )",
-  "echo | sh",
-]);
-test("differential: from a subagent, every ask outside HUMAN_ASKS is a deny (STA-351)", () =>
-  assert.deepEqual(
-    WRAPPED.filter(([name]) => SUBAGENT_WRAPPERS.has(name)).flatMap(([, wrap, asks]) =>
-      wrong(
-        GUARDED.map(([c, want]) => {
-          const tier = strictest(want, asks ? "ask" : "allow");
-          return [wrap(c), tier === "ask" && !(HUMAN.has(c) && !asks) ? "deny" : tier];
-        }),
-        wt,
-        true,
-      ),
-    ),
-    [],
-  ));
+    assert.deepEqual(wrong(GUARDED.map(([c, want]) => [wrap(c), tier(want, asks)])), []));
 
 /** `c` wrapped `n` times in one-string wrappers, in turn, each quoting with `q`. */
 const ONE_STRING = [

@@ -1,7 +1,8 @@
 // Decision functions for the Stackra OpenCode guard plugin (index.ts), covered by node:test.
 // The permission tiers live in .agents/hooks/_rules.mjs, shared with the Claude hooks (ADR 0293), so the two tools
 // never drift. OpenCode runs unattended (ADR 0066) and `--auto` approves any ask, so an ask is a deny here, through
-// the same `unattended` the Claude hook applies to a subagent's asks (STA-351). On top of the shared rules sits the
+// the same `unattended` the Claude hook applies to every ask outside `HUMAN_ASKS` (STA-400); here the deletes and
+// deploys in `HUMAN_ASKS` are denied too, so they stay with the lead. On top of the shared rules sits the
 // executor layer: what only the lead does (owner-only CLIs, the GitHub bot wrappers beyond the executor's own push,
 // Infisical, local data git cannot restore) and edits outside the worktree.
 // opencode.jsonc repeats the same tiers as order-sensitive patterns, a second layer.

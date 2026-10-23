@@ -1,6 +1,6 @@
 ---
 title: "0293 — Agent permissions: allow, ask and deny tiers, one rule module, executors push their own branch"
-description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-351, STA-352)"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-351, STA-352, STA-400)"
 ---
 
 <Note>
@@ -39,8 +39,28 @@ description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-351, STA-352)"
   `pnpm run` and `--filter` spellings of those scripts. This amends decision 1's Allow list, which
   named a bot push of `HEAD` and `pnpm pr:merge`. OpenCode executors read `opencode.jsonc`, not
   these settings: they still commit and push their own feature branch (never main) under the guard,
-  and the merge still asks. The settings also carry the bot commit identity (`GIT_AUTHOR_*`,
-  `GIT_COMMITTER_*`) and `enableAllProjectMcpServers`.
+  and the OpenCode guard denies `pnpm pr:merge`, so merges stay with the lead. The settings also
+  carry the bot commit identity (`GIT_AUTHOR_*`, `GIT_COMMITTER_*`) and
+  `enableAllProjectMcpServers`.
+</Note>
+
+<Note>
+  Amended 2026-10-23 (STA-400), superseding the STA-352 middle tier: only a delete, a deploy or a
+  release asks the owner; everything else is allowed or denied (owner decision 2026-10-23). The ask
+  list of `.claude/settings.json` keeps only deletes (Infisical secrets, Wrangler, `git stash drop`,
+  `git reflog expire|delete`, a forced `git worktree remove`, Docker volumes, `encore env delete`,
+  `encore db reset`, a `pnpm bot:gh` repo, release or API `DELETE`), deploys and rollbacks
+  (`wrangler deploy|rollback`, `eas submit`, `mcp__cloudflare-api__execute`,
+  `mcp__expo__build_submit`) and releases (`npm`, `pnpm` and `changeset publish`, a bot push of
+  tags); merges, bot pushes, secret imports, worktree removal and `pnpm new` no longer ask. The
+  guard hook does the same: every hook ask outside `HUMAN_ASKS` is a deny with its reason and the
+  rewrite hint, from the main thread as well as a subagent, so STA-351's main-thread exemption ends.
+  `HUMAN_ASKS` is now `infisical secrets delete`, `encore db reset`, `encore env delete`, `wrangler
+  deploy|rollback|delete`, `eas submit`, `rm -rf` or a discard in another nested worktree, `git
+  branch -D` of an unpushed branch, a bot push of tags, and a `pnpm bot:gh` release or delete;
+  `secrets:import … --confirm` and `encore env set|create` left it. A production secret import is
+  the owner's (the script's confirm token flow is unchanged). No deny rule is loosened. OpenCode
+  still denies every ask, `HUMAN_ASKS` included.
 </Note>
 
 ## Context

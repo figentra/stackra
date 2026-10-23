@@ -1,7 +1,7 @@
 // The agent permission rules (ADR 0293), one module for `guard-bash.mjs`, `guard-paths.mjs` and the OpenCode
 // guard (`.opencode/plugins/guard/decide.ts`), so the two tools never drift. Three tiers: allow, ask (a human
-// confirms; OpenCode and a Claude subagent run unattended, so `unattended` maps it to deny, except a subagent's
-// `HUMAN_ASKS`) and deny. Settings deny and ask rules are the floor;
+// confirms; only the deletes and deploys in `HUMAN_ASKS` reach the owner, every other ask is a deny through
+// `unattended`, STA-400; OpenCode denies those too) and deny. Settings deny and ask rules are the floor;
 // these rules add only what a prefix pattern cannot see: runner wrappers (`pnpm exec`, `npx`, `mise exec --`),
 // which checkout a git command targets, `agent_type`, and quoted prose.
 //
@@ -1249,6 +1249,9 @@ const botLabelMutation = (c) =>
     segments(t).some((s) => /\bbot:gh\b/.test(blank(s)) && LABEL_MUTATION.test(s)),
   );
 /** A `pnpm bot:gh` write: `api` with a method or a field (pflag bundles: `-iX`), a repo edit, a release, a variable or secret. */
+/** A `pnpm bot:gh` release or delete: `release create|edit|delete|upload`, `repo delete`, `api -X DELETE`. */
+const BOT_GH_RELEASE_DELETE =
+  /\bbot:gh\s+(?:--\s+)?(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:repo\s+delete\b|release\s+(?:create|edit|delete|upload)\b|api\b[^|;&\n]*\s(?:-X\s*|--method(?:=|\s+))(?:DELETE|delete)\b)/;
 const BOT_GH_WRITE =
   /\bbot:gh\s+(?:--\s+)?(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:api\b[^|;&\n]*\s(?:-(?!-)[a-zA-Z]*[XfF]|--(?:method|field|raw-field|input)\b)|repo\s+(?:edit|delete|rename|archive)\b|release\s+(?:create|edit|delete|upload)\b|(?:variable|secret)\b)/;
 /**
@@ -1337,29 +1340,37 @@ const runsSqlClient = (c) =>
   );
 
 /**
- * The asks that still reach a human when a subagent raises them (ADR 0293, amended by STA-351): decisions only the
- * owner makes, which no rewrite of the command can turn into an allow. Every other ask from a subagent is a deny
- * (`unattended`), because the owner is not watching a subagent's prompts and the agent would sit idle.
+ * The only asks that reach the owner (ADR 0293, owner decision 2026-10-23, STA-400): deletes, deploys and releases.
+ * They ask from the main thread and from a subagent alike. Every other ask is a deny with `UNATTENDED_HINT`
+ * (`unattended`), for the main thread too, so nothing else waits on a prompt.
  */
 export const HUMAN_ASKS = new Set([
-  "secrets-import-confirm",
-  "tag-push",
+  "infisical-secrets-delete",
   "encore-db-reset",
-  "encore-env",
+  "encore-env-delete",
   "wrangler-deploy",
-  "eas",
+  "eas-submit",
+  "rm-nested-worktree",
+  "discard-nested-worktree",
+  "branch-delete-unpushed",
+  "tag-push",
+  "bot-gh-release-delete",
 ]);
-/** What a caller nobody watches does instead of waiting for an answer to an ask. */
+/** What an agent does instead of waiting for an answer to an ask outside `HUMAN_ASKS`. */
 export const UNATTENDED_HINT =
-  "No human answers a subagent's or an unattended run's prompt, so this ask is a deny (ADR 0293). Rewrite the command so the guard can read it: write a loop or probe directly, not through `bash -c`, `sh -c` or `eval`; spell the command name out (no `$cmd …` or `$(…) …`); run commands instead of piping text into a shell. If the step needs the owner, hand it to the lead.";
-/** A decision for a caller nobody watches (a subagent, OpenCode): an ask becomes a deny with `UNATTENDED_HINT`. */
+  "Only deletes and deploys ask the owner, so this ask is a deny (ADR 0293, STA-400). Rewrite the command so the guard can read it: write a loop or probe directly, not through `bash -c`, `sh -c` or `eval`; spell the command name out (no `$cmd …` or `$(…) …`); run commands instead of piping text into a shell. If the step needs the owner, a subagent hands it to the lead and the lead asks the owner in chat.";
+/** An ask outside `HUMAN_ASKS` (or any ask, for OpenCode): a deny with `UNATTENDED_HINT`. */
 export const unattended = (d) =>
   d.decision === "ask" ? { decision: "deny", reason: `${d.reason}\n${UNATTENDED_HINT}` } : d;
 
+/** `wrangler deploy`, `rollback` or `delete`, by any path to the binary. */
+const WRANGLER_DEPLOY = atName(String.raw`wrangler\s+(?:[^|;&\n]*\s)?(?:deploy|rollback|delete)\b`);
+/** `eas submit`, or a build with `--auto-submit`. */
+const EAS_SUBMIT = atName(String.raw`eas\s+(?:[^|;&\n]*\s)?(?:submit|--auto-submit)` + END);
 /**
  * The rules, in order. A rule denies unless it says `decision: "ask"`; any deny wins over any ask. `rx` is a regex
  * or a function of (text, ctx) that returns true, or a string that replaces `why`. `scan: "bare"` rules see the
- * text with quoted strings blanked. An ask whose `id` is in `HUMAN_ASKS` reaches a human from a subagent too.
+ * text with quoted strings blanked. Only an ask whose `id` is in `HUMAN_ASKS` reaches a human (STA-400).
  */
 const RULES = [
   // --- Secrets: never print a value, never create a .env file (ADR 0173, ADR 0257) ------------
@@ -1378,6 +1389,7 @@ const RULES = [
   {
     rx: (c) => infisicalSecrets(c).includes("delete"),
     decision: "ask",
+    id: "infisical-secrets-delete",
     why: "`infisical secrets delete` removes a value nobody can restore from git; the owner confirms it.",
   },
   {
@@ -1422,8 +1434,7 @@ const RULES = [
   {
     rx: (c) => runs(c, /\bsecrets(?::import|-import(?:\.mjs)?)\b[^|;&\n]*\s--confirm\b/),
     decision: "ask",
-    id: "secrets-import-confirm",
-    why: "`secrets:import … --confirm` writes a production secret. The confirm token is a process rule; this prompt is the owner's real yes (ADR 0257).",
+    why: "`secrets:import … --confirm` writes a production secret. The confirm token is a process rule, so no agent runs it: the owner does, or approves it on the request page (ADR 0257, STA-187).",
   },
   {
     // The secrets inbox holds values a human dropped for `pnpm secrets:import` (ADR 0257). No command
@@ -1490,28 +1501,42 @@ const RULES = [
     why: "`encore deploy` ships to a shared environment; no agent runs it. Deploys belong to the release path.",
   },
   {
-    rx: (c) => runsQuoted(c, /\bencore\s+env\s+(set|create|delete)\b/),
+    rx: (c) => runsQuoted(c, /\bencore\s+env\s+delete\b/),
     decision: "ask",
-    id: "encore-env",
-    why: "`encore env set/create/delete` changes a shared environment; the owner confirms it.",
+    id: "encore-env-delete",
+    why: "`encore env delete` removes a shared environment; the owner confirms it.",
   },
   {
+    rx: (c) => runsQuoted(c, /\bencore\s+env\s+(set|create)\b/),
+    decision: "ask",
+    why: "`encore env set/create` changes a shared environment; the owner runs it.",
+  },
+  {
+    rx: (c) => runsQuoted(c, WRANGLER_DEPLOY),
+    decision: "ask",
+    id: "wrangler-deploy",
+    why: "`wrangler deploy`, `rollback` and `delete` ship to or remove from Cloudflare with the owner's login; the owner confirms it.",
+  },
+  {
+    // A command that also deploys or deletes is the owner's ask above, not this deny.
     rx: (c) =>
       runsQuoted(
         c,
-        atName(
-          String.raw`wrangler\s+(?:[^|;&\n]*\s)?(?:deploy|rollback|delete|secret)\b|wrangler\b[^|;&\n]*\s--remote\b`,
-        ),
-      ),
+        atName(String.raw`wrangler\s+(?:[^|;&\n]*\s)?secret\b|wrangler\b[^|;&\n]*\s--remote\b`),
+      ) && !runsQuoted(c, WRANGLER_DEPLOY),
     decision: "ask",
-    id: "wrangler-deploy",
-    why: "`wrangler deploy`, `rollback`, `delete`, `secret` and `--remote` change Cloudflare with the owner's login; the owner confirms it.",
+    why: "`wrangler secret` and `--remote` change Cloudflare with the owner's login; the owner runs them.",
   },
   {
-    rx: (c) => runs(c, atName("eas" + END)),
+    rx: (c) => runs(c, EAS_SUBMIT),
     decision: "ask",
-    id: "eas",
-    why: "`eas` builds, submits and updates on the owner's Expo login; the owner confirms it.",
+    id: "eas-submit",
+    why: "`eas submit` (and `--auto-submit`) sends a build to the stores on the owner's Expo login; the owner confirms it.",
+  },
+  {
+    rx: (c) => runs(c, atName("eas" + END)) && !runs(c, EAS_SUBMIT),
+    decision: "ask",
+    why: "`eas` builds and updates on the owner's Expo login; the owner runs it.",
   },
   {
     rx: (c) =>
@@ -1533,6 +1558,7 @@ const RULES = [
   {
     rx: (c, ctx) => rmPlaces(c, ctx).includes("nested"),
     decision: "ask",
+    id: "rm-nested-worktree",
     why: "`rm -rf` inside a linked worktree nested in this checkout: it may be another agent's. The owner confirms it; build output (`node_modules`, `dist`, `.turbo`, `.stackra`, `coverage`, `.cache`) needs no yes. Run from inside your own worktree instead.",
   },
   {
@@ -1562,11 +1588,13 @@ const RULES = [
   {
     rx: (c, ctx) => discardPlaces(c, ctx).includes("nested"),
     decision: "ask",
+    id: "discard-nested-worktree",
     why: "This discards uncommitted work in a linked worktree nested in this checkout, reached by `cd` or `-C`: it may be another agent's. The owner confirms it. Run it from inside your own worktree (the session's working directory) instead.",
   },
   {
     rx: deletesUnpushedBranch,
     decision: "ask",
+    id: "branch-delete-unpushed",
     why: "`git branch -D` of a branch whose commits no remote holds (its upstream is not gone) deletes work git cannot fetch back; the owner confirms it. After a merged PR, `pnpm bot:git -- fetch --prune origin` marks the upstream gone.",
   },
   { rx: stashRefusal, why: "" },
@@ -1581,9 +1609,16 @@ const RULES = [
     why: "A GraphQL label mutation takes label ids, so the guard cannot tell whether it writes `owner-approved`; the owner confirms it. Use `pnpm bot:gh -- pr edit <n> --add-label <name>`.",
   },
   {
-    rx: (c) => runs(c, BOT_GH_WRITE),
+    rx: (c) => runs(c, BOT_GH_RELEASE_DELETE),
     decision: "ask",
-    why: "A `pnpm bot:gh` write (`api` with `-X`, `--method`, `-f`, `-F`, `--field`, `--raw-field` or `--input`; `repo edit|delete|rename|archive`; `release create|edit|delete|upload`; `variable`; `secret`) acts with the bot's write access beyond a PR; the owner confirms it.",
+    id: "bot-gh-release-delete",
+    why: "A `pnpm bot:gh` release or delete (`release create|edit|delete|upload`, `repo delete`, `api -X DELETE`) publishes or removes with the bot's write access; the owner confirms it.",
+  },
+  {
+    // A command that also releases or deletes is the owner's ask above, not this deny.
+    rx: (c) => runs(c, BOT_GH_WRITE) && !runs(c, BOT_GH_RELEASE_DELETE),
+    decision: "ask",
+    why: "A `pnpm bot:gh` write (`api` with `-X`, `--method`, `-f`, `-F`, `--field`, `--raw-field` or `--input`; `repo edit|rename|archive`; `variable`; `secret`) acts with the bot's write access beyond a PR; the owner runs it.",
   },
   {
     rx: botGitRunsProgram,
@@ -1810,13 +1845,12 @@ function context(raw, cwd, agentType, scratchpad) {
 /**
  * The tier for a shell command: `{ decision: "allow" | "ask" | "deny", reason }`. Every rule runs on the command
  * and on its runner-free form (`lookThroughRunners`); any deny wins over any ask. Safety net (STA-254): deny rules
- * also run on every substitution body found with quotes ignored. From a subagent (`subagent`: the hook input has an
- * `agent_id`, which the main thread never has, `--agent` sessions included) an ask is a deny (`unattended`) unless
- * every ask it hit is in `HUMAN_ASKS`; the main thread's hook asks stay asks.
+ * also run on every substitution body found with quotes ignored. An ask is a deny (`unattended`) unless every ask
+ * it hit is in `HUMAN_ASKS`, from the main thread and a subagent alike (STA-400; STA-351 did it for subagents).
  * @param {string} raw the command as the agent wrote it
- * @param {{ cwd?: string, agentType?: string, subagent?: boolean, scratchpad?: string }} [options] the shell's
- *   directory, the agent type (`agent_type`, for the reviewer rule), whether a subagent runs it (`agent_id`), and
- *   the session's scratchpad directory (`sessionScratchpad`; none: no scratch `rm -rf`)
+ * @param {{ cwd?: string, agentType?: string, scratchpad?: string }} [options] the shell's directory, the agent
+ *   type (`agent_type`, for the reviewer rule), and the session's scratchpad directory (`sessionScratchpad`; none:
+ *   no scratch `rm -rf`)
  */
 export function decideBash(raw, options = {}) {
   try {
@@ -1828,10 +1862,7 @@ export function decideBash(raw, options = {}) {
 }
 const UNREADABLE =
   "The guard could not read this command, so it is denied. Split it into plain commands";
-function decide(
-  raw,
-  { cwd = process.cwd(), agentType = "", subagent = false, scratchpad = "" } = {},
-) {
+function decide(raw, { cwd = process.cwd(), agentType = "", scratchpad = "" } = {}) {
   clearCaches();
   gitRuns = 0;
   gitLate = false;
@@ -1859,7 +1890,7 @@ function decide(
         ? { decision: "deny", reason: TOO_SLOW }
         : d;
   let asked = null;
-  let rewrite = null; // the first ask a subagent may not raise (not in `HUMAN_ASKS`)
+  let rewrite = null; // the first ask outside `HUMAN_ASKS`: the whole command is a deny
   const all = forms(cmd);
   for (const rule of RULES)
     for (const text of rule.lookThrough === false ? [cmd] : all) {
@@ -1879,7 +1910,7 @@ function decide(
         if (why) return done({ decision: "deny", reason: why });
       }
   }
-  if (subagent && rewrite) return done(unattended({ decision: "ask", reason: rewrite }));
+  if (rewrite) return done(unattended({ decision: "ask", reason: rewrite }));
   return done(asked ? { decision: "ask", reason: asked } : { decision: "allow", reason: "" });
 }
 
