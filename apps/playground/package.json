@@ -39,6 +39,7 @@
     "@stackra/ui": "workspace:*",
     "react": "catalog:frontend",
     "react-dom": "catalog:frontend",
+    "react-hook-form": "catalog:frontend",
     "react-router": "catalog:frontend"
   },
   "devDependencies": {

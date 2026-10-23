@@ -594,6 +594,9 @@ importers:
       react-dom:
         specifier: catalog:frontend
         version: 19.3.0(react@19.3.0)
+      react-hook-form:
+        specifier: catalog:frontend
+        version: 7.89.0(@types/react@19.3.0)(react@19.3.0)
       react-router:
         specifier: catalog:frontend
         version: 7.18.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)

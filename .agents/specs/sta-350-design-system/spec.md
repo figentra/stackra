@@ -277,6 +277,111 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
 - **FR-057**: `react-hook-form` SHALL be in `catalogs.frontend` at an exact version at least 14 days old, and
   `@stackra/ui` SHALL declare it as an optional peer and a dev dependency, so only an app that uses `FormField`
   installs it — verified by: pnpm validate
+- **FR-058**: `FormField` in `@stackra/ui/react` and `@stackra/ui/native` SHALL wrap react-hook-form's `Controller`
+  (`control`, `name`, `rules`, `defaultValue`, `disabled`, `shouldUnregister`) and call `render` with a
+  `FormFieldBinding<TValue>` typed to the field's path: `name`, `value`, `onChange`, `onBlur`, `isInvalid`,
+  `errorMessage`, `isRequired` and `isDisabled`, a slice of `FieldContractProps` that every field accepts; the Zod
+  resolver is not part of it — verified by: unit, typecheck
+- **FR-059**: A bound field SHALL show its rule's message under it after a failed submit and mark itself invalid,
+  clear both once its value is valid, be required when its `required` rule is (`true`, a message or an object whose
+  `value` is true), be disabled when the form disables it, mark itself touched on blur, and bind a string, a boolean
+  and a choice; on web the form sets `validationBehavior="aria"` so the browser does not block the submit — verified
+  by: unit, e2e
+- **FR-060**: `FormSection` in `@stackra/ui/react` SHALL be a HeroUI `Fieldset` named by its required `title` as
+  its `legend`, tie an optional `description` to the group with `aria-describedby`, hold its fields in the fieldset's
+  field group, and pass `disabled`, `className`, `id` and every other fieldset prop through, a disabled section
+  disabling the fields inside it — verified by: unit, e2e
+- **FR-061**: `FormSection` in `@stackra/ui/native` SHALL be the documented adapted form on free parts, a `View` with
+  the `group` role named by a string `title`, holding a level-3 `Heading` in the `h5` style, an optional `Description`
+  and the fields, with `View` props passed through — verified by: unit
+- **FR-062**: The playground SHALL have a `/form-field` and a `/form-section` route under Forms, each with one `h1` and
+  a per-route title, showing the states and one live example: a react-hook-form form with failed and valid submits,
+  a simulated server rejection and reset, and a form whose switch disables a section — verified by: unit
+- **FR-063**: `TextField` in `@stackra/ui/contracts` SHALL extend `FieldContractProps<string>` with `type`
+  (`TextFieldType`: text, email, password, tel, url), `placeholder`, `variant` (`TextFieldVariant`: primary the
+  default, secondary) and `isFullWidth` (default true); a description is read with the input, an error message shows
+  only while the field is invalid, and `fullWidth` and `children` are refused — verified by: unit, typecheck
+- **FR-064**: `TextField` in `@stackra/ui/react` SHALL wrap HeroUI's `TextField` with its label, input, description
+  and error message, name the input by its label, keep its own text when uncontrolled, report each change as a string,
+  submit under its `name`, and pass unknown props and the caller's class to the root; the `/text-field` playground
+  route SHALL show every state with axe clean in the four theme and direction combinations — verified by: unit, e2e
+- **FR-065**: `TextField` in `@stackra/ui/native` SHALL draw the label, the input, the description and the error in
+  that order on HeroUI Native, hide the description while invalid as web does, mask a password and ask for the email
+  and phone keyboards, and keep `name` off the input — verified by: unit
+- **FR-066**: `TextArea` in `@stackra/ui/contracts` SHALL be the `TextField` contract without `type` and with `rows`,
+  the number of lines shown — verified by: unit, typecheck
+- **FR-067**: `TextArea` in `@stackra/ui/react` SHALL be a HeroUI text area named by its label with its description
+  tied to it, keep Enter for a new line, and the `/text-area` playground route SHALL show every state with axe clean
+  in the four combinations — verified by: unit, e2e
+- **FR-068**: `TextArea` in `@stackra/ui/native` SHALL be a multi-line HeroUI Native input with the label,
+  description and error of `TextField` — verified by: unit
+- **FR-069**: `InputGroup` in `@stackra/ui/contracts` SHALL extend the `TextField` contract with a `prefix` and a
+  `suffix`, each a string or an element — verified by: unit, typecheck
+- **FR-070**: `InputGroup` in `@stackra/ui/react` SHALL draw the prefix, the input and the suffix in that order
+  inside one HeroUI group that takes the invalid and disabled states, focus the input when a text affix is pressed,
+  and sit the affixes at the reading sides in LTR and RTL — verified by: unit, e2e
+- **FR-071**: `InputGroup` in `@stackra/ui/native` SHALL draw the same parts on HeroUI Native, the affixes at the
+  reading sides — verified by: unit
+- **FR-072**: `SearchField` in `@stackra/ui/contracts` SHALL extend `FieldContractProps<string>` with `placeholder`,
+  `variant`, `isFullWidth`, `isLoading`, `clearLabel` (default "Clear search"), `onClear` and `onSubmit` —
+  verified by: unit, typecheck
+- **FR-073**: `SearchField` SHALL, on web (HeroUI `SearchField`) and on native (HeroUI Native `SearchField`, held
+  uncontrolled by the wrapper), report each change with the new text, clear through a button named by `clearLabel`
+  and call `onClear`, call `onSubmit` on Enter, and show a busy state while loading — verified by: unit
+- **FR-074**: The `/search-field` playground route SHALL show every state with a live filtered list and axe clean in
+  the four combinations, a keyboard-only flow and the search icon at the reading start — verified by: e2e
+- **FR-075**: `Select` in `@stackra/ui/contracts` SHALL extend `FieldContractProps<string | null>` with `items`
+  (`SelectItem`: id, label, description, isDisabled), `placeholder` and `isFullWidth`, and pass unknown HeroUI props
+  through, on web and native — verified by: unit, typecheck
+- **FR-076**: `Select` SHALL call `onChange` with the key as a string, or null for nothing, and a read-only `Select`
+  SHALL show its value and never open — verified by: unit
+- **FR-077**: `ComboBox` in `@stackra/ui/contracts` SHALL take `items`, `placeholder`, `isFullWidth`, `inputValue` and
+  `onInputChange`, `isServerFiltered`, `isLoading` with `loadingLabel`, `onLoadMore` and `emptyMessage`, with
+  `selectionMode` single (value a string or null) or multiple (value a readonly string list), on web and native —
+  verified by: unit, typecheck
+- **FR-078**: `ComboBox` SHALL filter by the label of each item unless `isServerFiltered` is set, and SHALL show
+  `emptyMessage` when nothing matches — verified by: unit
+- **FR-079**: `ComboBox` in multiple mode SHALL show the picked items as removable tags with an accessible name on
+  web, and the adapted form on free HeroUI Native parts that the native file header documents — verified by: unit
+- **FR-080**: `TagGroup` SHALL take `items` (`TagItem`), `selectionMode` none, single or multiple, `size`, `variant`
+  (`TagVariant`: default, surface), `emptyMessage`, and `onRemove` together with `removeLabel` as one required pair,
+  on web and native — verified by: unit, typecheck
+- **FR-081**: The `/select`, `/combo-box` and `/tag-group` playground routes (category Selection) SHALL show every
+  variant, size and state with one interactive example and a single `h1`, with axe clean in the four combinations
+  and the keyboard and accessible names checked — verified by: unit, e2e
+- **FR-082**: `Checkbox`, `CheckboxGroup`, `RadioGroup` and `Switch` SHALL extend `FieldContractProps`, `Checkbox`
+  and `Switch` over a boolean mapped to HeroUI's `isSelected`, `CheckboxGroup` over a readonly list of keys and
+  `RadioGroup` over one key, each option of a group being a `ChoiceOption` (value, label, description, isDisabled)
+  — verified by: unit, typecheck
+- **FR-083**: Each of the four SHALL keep its own state when given `defaultValue`, show `value` when controlled and
+  report each change with the new state or key list — verified by: unit
+- **FR-084**: `CheckboxGroup` SHALL be a group named by its label with one checkbox per option in order, on web as
+  HeroUI's `CheckboxGroup` and on native as a `role="group"` `View` of native checkboxes on free parts, which the
+  native file header documents — verified by: unit
+- **FR-085**: `RadioGroup` SHALL be a radio group with one radio per option in order, vertical by default and
+  horizontal on request, each option's description read with that option — verified by: unit
+- **FR-086**: A group's description and error message SHALL be tied to the group for assistive technology, the
+  error showing only while invalid, and a required field SHALL be marked in its label and for assistive
+  technology — verified by: unit
+- **FR-087**: A disabled field SHALL refuse input, a read-only one SHALL keep focus and refuse change, an option
+  disabled on its own SHALL leave the others usable, and a field SHALL submit under its `name` in a form —
+  verified by: unit
+- **FR-088**: The native `Checkbox` and `Switch` SHALL be the adapted form on `ControlField`, with documented
+  adaptations for the mixed state, read-only and `name` — verified by: unit
+- **FR-089**: The `/checkbox`, `/checkbox-group`, `/radio-group` and `/switch` playground routes SHALL show every
+  state, with axe clean in the four combinations, a Space-key toggle, the control at the reading start and a checked
+  control 3:1 from the page — verified by: e2e
+- **FR-090**: `Label` in `@stackra/ui/react` and `@stackra/ui/native` SHALL name the control it is tied to, draw the
+  required marker and take the invalid and disabled states only when given them — verified by: unit
+- **FR-091**: `Description` SHALL render help text with HeroUI's class and keep the id a control names it by in
+  `aria-describedby` — verified by: unit
+- **FR-092**: `FieldError` SHALL show its message while `isInvalid` is true, follow the field around it when
+  `isInvalid` is left out, tie the message to that field, and let a caller's `isInvalid` win — verified by: unit
+- **FR-093**: `Form` SHALL be a form element on web that hands `validationErrors` to the fields in it and, with
+  `isSubmitOnModEnter`, submits on Cmd or Ctrl plus Enter while Enter alone does not submit from a single-line input
+  and Enter during text composition is ignored; on native it SHALL be the adapted form, a `View` — verified by: unit
+- **FR-094**: The `/form` playground route SHALL show the parts together, with axe clean in the four combinations,
+  focus moved to a refused field with its error read out, and the keyboard rules of `Form` — verified by: unit, e2e
 
 ## Success Criteria
 
@@ -290,6 +395,10 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
   sizes, badge corners by direction, dots 3:1, presses reaching the anchor) — verified by: e2e
 - **SC-006**: axe reports nothing on `/avatar`, `/spinner` and `/skeleton` in light, dark, LTR and RTL, every avatar
   initials sample reaches 4.5:1 and every spinner tone 3:1, and under reduced motion no spinner or skeleton animates —
+  verified by: e2e
+- **SC-007**: axe reports nothing on `/form-field` and `/form-section` in light, dark, LTR and RTL, also with every
+  message showing and with a section disabled, a failed submit shows each message linked to its field and in a
+  polite status line, the keyboard fills and submits the form, and a disabled section leaves the tab order —
   verified by: e2e
 
 ## Out of scope
