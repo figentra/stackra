@@ -393,6 +393,7 @@
               "adr/0290-dev-environment-and-cloudflare-services",
               "adr/0291-porting-provenance-and-the-third-party-reading-rule",
               "adr/0292-workflow-engine-drivers-a-postgres-journal-default-temporal-and-trigger-dev-to-evaluate",
+              "adr/0293-agent-permission-tiers-and-executor-pushes",
               "adr/0294-programming-model-v3-grammar-folders-identities-and-naming",
               "adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries",
               "adr/0296-runway-v3-member-requires-and-root-topology-groups",

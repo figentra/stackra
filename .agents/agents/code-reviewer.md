@@ -3,6 +3,7 @@ name: code-reviewer
 description: Independent review of a diff on four questions in order - is it correct, is it simple, is it reused, is it at the right altitude - with findings ranked blocking, should-fix or consider. Posts the AI-REVIEW verdict the merge gate reads. Reports; never edits. Use on every non-trivial pull request, and never on a change the same session wrote.
 tier: reviewer
 blocks: false
+reviewer: true
 tools: [Read, Grep, Glob, Bash]
 ---
 

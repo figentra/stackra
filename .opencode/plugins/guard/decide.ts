@@ -1,20 +1,24 @@
-// Pure decision functions for the Stackra OpenCode guard plugin (index.ts). No I/O, so node:test can cover them.
-// Ported from the Academorix guard; mirrors .agents/hooks/guard-bash.mjs + guard-paths.mjs for the secret rules.
-// The executor rules (owner-only CLIs, git history, releases) live here rather than only in opencode.jsonc,
-// whose permission list is order-sensitive; the jsonc denies stay as a second layer.
-// shortcut: commands are split on && || ; | and newlines without honouring quotes; nested scripts come from the
-// shared scanShell / scriptStrings / shellInputs; upgrade to a real shell parser if one slips through.
+// Decision functions for the Stackra OpenCode guard plugin (index.ts), covered by node:test.
+// The permission tiers live in .agents/hooks/_rules.mjs, shared with the Claude hooks (ADR 0293), so the two tools
+// never drift. OpenCode runs unattended (ADR 0066) and `--auto` approves any ask, so an ask is a deny here. On top
+// of the shared rules sits the executor layer: what only the lead does (owner-only CLIs, the GitHub bot wrappers
+// beyond the executor's own push, Infisical, local data git cannot restore) and edits outside the worktree.
+// opencode.jsonc repeats the same tiers as order-sensitive patterns, a second layer.
+// shortcut: executor commands are split on && || ; | and newlines without honouring quotes; nested scripts come
+// from the shared scanShell / scriptStrings; upgrade to a real shell parser if one slips through.
 import { resolve, sep } from "node:path";
-// The inbox matcher is shared with the Claude hooks (one matcher, ADR 0257): paths, globs rooted at home, recursive reads.
 import {
-  commandReachesInbox,
   rawSubstitutions,
-  reachesInbox,
   scanShell,
   scriptStrings,
-  runsOpaque,
   stripHeredocs,
 } from "../../../.agents/hooks/_inbox.mjs";
+import {
+  decideBash,
+  decideRead,
+  decideWrite,
+  isSecretPath,
+} from "../../../.agents/hooks/_rules.mjs";
 
 export type Decision = { kind: "allow" } | { kind: "deny"; reason: string };
 
@@ -29,43 +33,28 @@ export interface GuardContext {
 
 const ALLOW: Decision = { kind: "allow" };
 const deny = (reason: string): Decision => ({ kind: "deny", reason: `stackra-guard: ${reason}` });
+/** A shared tier as an OpenCode decision: ask is deny, because nobody is there to answer. */
+const tier = (d: { decision: string; reason: string }): Decision =>
+  d.decision === "allow" ? ALLOW : deny(d.reason);
 
-// Heredoc bodies are file content, not commands (the shared stripHeredocs, as in guard-bash.mjs).
+// Heredoc bodies are file content, not commands (the shared stripHeredocs).
 export { stripHeredocs };
 
 // ---- paths -------------------------------------------------------------------------------------------
-const SECRET_FILE = [
-  /(^|\/)\.env(\.[^/]*)?$/,
-  /(^|\/)[^/]*\.secrets[^/]*$/,
-  /(^|\/)\.ci-env$/,
-  /(^|\/)\.sentryclirc$/,
-  /(^|\/)\.infisical([^/]*$|\/)/,
-];
-// Committed, value-free files: the env template and Infisical's project config.
-const SECRET_OK = /(^|\/)(\.env\.example|\.infisical\.(yaml|json))$/;
 
-export function isSecretPath(p: string): boolean {
-  const s = p.trim().replace(/^['"]+|['"]+$/g, "");
-  return !SECRET_OK.test(s) && SECRET_FILE.some((r) => r.test(s));
-}
-
-/** read / edit tool paths. */
+/** read, glob and grep tool paths: the secrets inbox (ADR 0257) and secret files. */
 export function decidePath(path: string, cwd?: string): Decision {
-  // The secrets inbox (ADR 0257): only `pnpm secrets:import` touches it, and it never prints a value.
-  return isSecretPath(path) || reachesInbox(path, { cwd })
-    ? deny(
-        `${path} holds secret values and is never read or written by an agent. Names only; values are set by a human (Infisical).`,
-      )
-    : ALLOW;
+  return tier(decideRead(path, { cwd }));
 }
 
 /**
- * edit tool: refuse outside the session's worktree root (an absolute path into the main checkout included) and
- * in the main checkout itself; delegated work belongs in a worktree (`pnpm delegate`).
+ * edit tool: the shared write rules (secret, generated and tool-owned files), then refuse outside the session's
+ * worktree root (an absolute path into the main checkout included) and in the main checkout itself; delegated work
+ * belongs in a worktree (`pnpm delegate`).
  */
 export function decideEdit(path: string, ctx: GuardContext): Decision {
-  const secret = decidePath(path, ctx.root);
-  if (secret.kind === "deny") return secret;
+  const shared = tier(decideWrite(path, { cwd: ctx.root }));
+  if (shared.kind === "deny") return shared;
   const root = resolve(ctx.root);
   if (!resolve(root, path).startsWith(root + sep))
     return deny(`${path} is outside this session's worktree (${root}). Edit only files inside it.`);
@@ -76,7 +65,7 @@ export function decideEdit(path: string, ctx: GuardContext): Decision {
     : ALLOW;
 }
 
-// ---- shell parsing -----------------------------------------------------------------------------------
+// ---- shell: the executor layer ----------------------------------------------------------------------
 const tokens = (s: string): string[] => s.split(/[\s=<>()'"`]+/).filter(Boolean);
 const words = (s: string): string[] =>
   (s.match(/'[^']*'|"[^"]*"|\S+/g) ?? []).map((w) => w.replace(/^(['"])(.*)\1$/, "$2"));
@@ -103,76 +92,22 @@ const subcommands = (cmd: string): string[] =>
 
 /** Global options whose value is the next word (`--git-dir=x` carries its value and is skipped as a flag). */
 const GIT_VALUE_OPTS = new Set(["-C", "-c", "--git-dir", "--work-tree", "--namespace"]);
-/** The only `-c` keys an agent may set: display and identity, none runs a command or redirects a remote (STA-216). */
-const ALLOWED_C =
-  /^(?:color\.ui|color\.diff|color\.status|color\.branch|core\.quotepath|core\.abbrev|core\.precomposeunicode|user\.name|user\.email|advice\.detachedhead|diff\.renames|diff\.algorithm|diff\.context|diff\.noprefix|log\.abbrevcommit|log\.decorate|log\.date|merge\.ff|merge\.conflictstyle|pull\.rebase|pull\.ff|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.short|status\.branch|status\.showuntrackedfiles)$/i;
-const CONFIG_READ = new Set([
-  "--get",
-  "--get-all",
-  "--get-regexp",
-  "--get-urlmatch",
-  "--list",
-  "-l",
-  "get",
-  "list",
-]);
-const CONFIG_WRITE = new Set([
-  "--add",
-  "--replace-all",
-  "--unset",
-  "--unset-all",
-  "-e",
-  "--edit",
-  "--rename-section",
-  "--remove-section",
-  "set",
-  "unset",
-  "edit",
-]);
-/** `git config` arguments that are not a plain read: the first option reads, and no write flag follows. */
-function configWrites(args: string[]): boolean {
-  const hash = args.findIndex((a) => a.startsWith("#"));
-  const [first, ...rest] = hash < 0 ? args : args.slice(0, hash);
-  const reads =
-    CONFIG_READ.has(first) ||
-    (["--show-origin", "--show-scope"].includes(first) && rest.some((w) => CONFIG_READ.has(w)));
-  return !reads || rest.some((w) => CONFIG_WRITE.has(w));
-}
-/** `-c` outside the allow-list, `--config-env`, or a `git config` that is not a read (STA-216). */
-const gitAliasConfig = (args: string[]): boolean => {
-  let sub = -1;
-  for (let i = 0; i < args.length && sub < 0; i++) {
-    if (GIT_VALUE_OPTS.has(args[i])) i++;
-    else if (!args[i].startsWith("-")) sub = i;
-  }
-  return (
-    args.some(
-      (a, i) =>
-        /^--config-env\b/.test(a) ||
-        (a === "-c" && !ALLOWED_C.test((args[i + 1] ?? "").split("=")[0])) ||
-        /^-c./.test(a),
-    ) ||
-    (args[sub] === "config" && configWrites(args.slice(sub + 1)))
-  );
-};
-/** Env prefixes that swap git's config files or the pager (STA-216). */
-const CONFIG_ENV =
-  /(?:^|\s)(?:GIT_EDITOR|GIT_SEQUENCE_EDITOR)=(?!(?:true|:|cat)(?:\s|$))|(?:^|\s)(?:GIT_CONFIG[A-Z_0-9]*|HOME|XDG_CONFIG_HOME|MANPAGER|PAGER|GIT_PAGER|GIT_ASKPASS|SSH_ASKPASS|GIT_EXEC_PATH|GIT_SSH(?:_COMMAND)?|GIT_PROXY_COMMAND|GIT_EXTERNAL_DIFF|GIT_TEMPLATE_DIR)=/;
-
-/** git's subcommand, skipping global options (`-C dir`, `-c k=v`, `--git-dir=…`). */
-function gitSubcommand(args: string[]): string {
+/** git's subcommand and its arguments, skipping global options (`-C dir`, `-c k=v`, `--git-dir=…`). */
+function gitSubcommand(args: string[]): [string, string[]] {
   for (let i = 0; i < args.length; i++) {
     if (GIT_VALUE_OPTS.has(args[i])) i++;
-    else if (!args[i].startsWith("-")) return args[i];
+    else if (!args[i].startsWith("-")) return [args[i], args.slice(i + 1)];
   }
-  return "";
+  return ["", []];
 }
 
-const OWNER_ONLY_CLI = new Set(["gh", "wrangler", "curl", "wget"]);
-// Network git too (STA-208): on a private repo a fetch falls back to the owner's credential helper.
-// STA-214: pack plumbing (bypasses the push checks) and `credential` (answers with the owner's token) too.
+/** CLIs that reach the network, a shared account or the keychain; executors never run them. */
+const OWNER_ONLY_CLI = new Set(["gh", "curl", "wget", "infisical", "security"]);
+// Network git (STA-208): on a private repo a fetch falls back to the owner's credential helper. STA-214: pack
+// plumbing (bypasses the push checks) and `credential` (answers with the owner's token). The shared rules deny
+// these too; this is the executor's second layer.
 const GIT_OWNER_ONLY = new Set(
-  "push commit merge rebase tag worktree fetch pull clone ls-remote submodule subtree send-pack receive-pack fetch-pack upload-pack credential".split(
+  "push fetch pull clone ls-remote submodule subtree send-pack receive-pack fetch-pack upload-pack credential".split(
     " ",
   ),
 );
@@ -181,112 +116,89 @@ const networkGit = (g: string, args: string[]): boolean =>
   g.startsWith("credential-") ||
   (g === "remote" && args.some((a) => ["update", "show", "prune"].includes(a))) ||
   (g === "archive" && args.some((a) => a.startsWith("--remote")));
-/** The GitHub bot wrappers (STA-208): the lead reaches GitHub as the bot; executors not at all. */
-const BOT_SCRIPT = /^(?:bot:(?:gh|git|review|token)|pr:merge)$/;
+/** Local data git cannot restore (Claude's ask tier): branch -D, stash drop, worktree remove|prune, reflog expiry. */
+const losesLocalData = (g: string, rest: string[]): boolean =>
+  (g === "branch" && rest.some((a) => /^-[a-zA-Z]*D/.test(a))) ||
+  (g === "stash" && rest[0] === "drop") ||
+  (g === "worktree" && ["remove", "prune"].includes(rest[0] ?? "")) ||
+  (g === "reflog" && ["expire", "delete"].includes(rest[0] ?? ""));
+/** The GitHub and Linear wrappers run under the full /agents set (STA-208): the lead's, except the executor push. */
+const BOT_SCRIPT = /^(?:bot:\S+|pr:merge|linear|spec:linear)$/;
+/**
+ * Phase 2 (ADR 0293, amending ADR 0066): an executor fetches origin (one ref at most), and pushes its own HEAD to its
+ * feature branch, through `pnpm bot:git`; the shared rules keep that push off main and off every other branch, and
+ * deny the options that run a program in the bot's environment. The whole command must be one of these forms: a
+ * prefix (`NODE_OPTIONS=`, `PATH=`, `env`, `export …;`, `cd x &&`, `source f;`) would run the executor's own code
+ * with every /agents value (STA-330 review).
+ */
+const EXECUTOR_BOT_GIT =
+  /^pnpm bot:git (?:-- )?(?:fetch origin(?: [\w./-]+)?|push (?:--force-with-lease )?origin HEAD)$/;
 
-/** Executors run unattended: anything that leaves the worktree, ships, or rewrites history is the lead's. */
-function denyExecutor(sub: string, cmd: string, args: string[]): Decision {
+/** Executors run unattended: anything that leaves the worktree, ships, or destroys local data is the lead's. */
+function denyExecutor(cmd: string, args: string[], exact: boolean): Decision {
   if (OWNER_ONLY_CLI.has(cmd) || cmd.startsWith("git-credential"))
-    return deny(`\`${cmd}\` reaches the network or a shared account; executors never run it.`);
-  if (/\bbot:token\b/.test(sub) || (cmd === "pnpm" && args.some((a) => BOT_SCRIPT.test(a))))
     return deny(
-      "the GitHub bot wrappers (`pnpm bot:*`, `pnpm pr:merge`) are the lead's; executors leave changes in the worktree.",
+      `\`${cmd}\` reaches the network, a shared account or a secret store; executors never run it.`,
     );
-  if (
-    cmd === "infisical" &&
-    args[0] === "secrets" &&
-    !(args[1] === "get" && args.includes("--silent"))
-  )
-    return deny(
-      "`infisical secrets` is the owner's; only `infisical secrets get NAME --silent` is allowed.",
-    );
+  if (cmd === "pnpm" && args.some((a) => BOT_SCRIPT.test(a)))
+    return exact
+      ? ALLOW
+      : deny(
+          "executors reach GitHub only as the whole command `pnpm bot:git -- fetch origin [<ref>]` or `pnpm bot:git -- push [--force-with-lease] origin HEAD`, with nothing before or after it; `pnpm bot:gh`, `bot:review`, `bot:token`, `pr:merge` and `linear` are the lead's.",
+        );
   if (cmd === "encore" && ["deploy", "env", "secret"].includes(args[0] ?? ""))
     return deny(
       `\`encore ${args[0]}\` touches a shared environment or its secrets; the owner runs it.`,
     );
-  if (/^git-(?:send|receive|fetch|upload)-pack$/.test(cmd))
-    return deny(
-      `\`${cmd}\` is pack plumbing that bypasses the git checks; executors never run it.`,
-    );
+  if (
+    cmd === "docker" &&
+    args.includes("down") &&
+    args.some((a) => a === "-v" || a === "--volumes")
+  )
+    return deny("`docker compose down -v` deletes volumes git cannot restore; the lead runs it.");
   if (cmd === "git") {
-    if (gitAliasConfig(args) || CONFIG_ENV.test(sub))
+    const [g, rest] = gitSubcommand(args);
+    const localSubmodule = g === "submodule" && ["status", "summary"].includes(rest[0] ?? "");
+    if ((GIT_OWNER_ONLY.has(g) && !localSubmodule) || networkGit(g, args))
+      return deny(`\`git ${g}\` reaches a remote; executors push only through \`pnpm bot:git\`.`);
+    if (losesLocalData(g, rest))
       return deny(
-        "git `-c` / `config` for alias, include, core.fsmonitor|sshCommand|pager|editor|hooksPath and credential keys, `--config-env`, and the GIT_CONFIG*, HOME, XDG_CONFIG_HOME and pager env prefixes make git run other commands past the guard.",
-      );
-    const g = gitSubcommand(args);
-    const readOnly = g === "worktree" && args.includes("list");
-    if (
-      (GIT_OWNER_ONLY.has(g) && !readOnly) ||
-      networkGit(g, args) ||
-      (g === "branch" && args.includes("-D"))
-    )
-      return deny(
-        `\`git ${g}\` is the lead's job; executors leave changes uncommitted in the worktree.`,
+        `\`git ${g} ${rest[0] ?? ""}\` deletes local data git cannot restore; the lead runs it.`,
       );
   }
-  if (/\bchangeset[: ]version\b/.test(sub))
-    return deny("`changeset version` runs only in the Release workflow; add a changeset instead.");
   return ALLOW;
 }
 
-function denySub(sub: string): Decision {
+function denySub(sub: string, exact: boolean): Decision {
   const ws = head(words(sub));
   const cmd = base(ws[0] ?? "");
   const args = ws.slice(1);
 
-  const executor = denyExecutor(sub, cmd, args);
+  const executor = denyExecutor(cmd, args, exact);
   if (executor.kind === "deny") return executor;
 
   for (const t of tokens(sub))
     if (isSecretPath(t)) return deny(`${t} holds secret values; never read, copy or print it.`);
-
-  if (
-    cmd === "printenv" ||
-    (cmd === "env" && args.length === 0) ||
-    (cmd === "export" && args[0] === "-p")
-  )
+  if (cmd === "export" && args[0] === "-p")
     return deny(
       "printing the environment leaks injected tokens. Echo the one variable you need (never a secret's value).",
     );
-  if (
-    (cmd === "man" &&
-      args.some((a) =>
-        /^-[a-zA-Z]*[PHBTC]\b|^--(?:pager|html|browser|troff|ditroff|config-file)/.test(a),
-      )) ||
-    /(?:^|\s)(?:MANPAGER|PAGER)=/.test(sub)
-  )
-    return deny("`man -P`, `--pager` and the PAGER env run an arbitrary command as the pager.");
-  if (cmd === "infisical" && args[0] === "export")
-    return deny("`infisical export` dumps secret values. Humans only.");
   for (const t of tokens(sub))
     if (/(^|\/)\d+-infisical-(setup|config)\.sh$/.test(t))
       return deny(
         `${base(t)} configures the vault with real credentials; owner-run only. Never run, trace (sh -x) or source it.`,
       );
-
-  if (cmd === "git" && args.includes("clean"))
-    return deny("`git clean` silently deletes untracked files. Remove specific paths instead.");
-  if (cmd === "rm" && args.some((a) => /^-[a-zA-Z]*(rf|fr)[a-zA-Z]*$/.test(a)))
-    return deny(
-      "`rm -rf` is never the tool here. Delete specific paths without -f so a wrong path fails loudly.",
-    );
   return ALLOW;
 }
 
-/** `cwd` is the shell's directory, so a relative glob run from home is caught; unknown, relative tokens pass. */
+/** `cwd` is the shell's directory: the own-worktree, push and rm rules resolve against it. */
 export function decideShell(raw: string, cwd?: string): Decision {
+  const shared = tier(decideBash(raw, { cwd: cwd ?? process.cwd() }));
+  if (shared.kind === "deny") return shared;
+  const exact = EXECUTOR_BOT_GIT.test(raw.trim());
   const cmd = stripHeredocs(raw);
-  if (commandReachesInbox(cmd, { cwd }))
-    return deny(
-      "~/Secrets-inbox/ (and the import confirm key) are never read, listed, copied or moved. Use `pnpm secrets:import --list` for names and `pnpm secrets:import [--dry-run] [NAME]` to import; it never prints a value.",
-    );
-  // STA-291: a shell reading a pipe, a substitution or a file written earlier from text the guard cannot read.
-  if (runsOpaque(cmd))
-    return deny(
-      'a shell runs text the guard cannot read (`curl … | sh`, `cat x | sh`, `eval "$x"`, `cmd > f; sh f`). Run the commands directly.',
-    );
-  // Safety net (STA-254): substitution bodies found with quotes ignored can only add denies.
-  // `literal` splits a case pattern from its command (`a) cmd`, `(a) cmd`).
+  // Substitution bodies found with quotes ignored can only add denies (STA-254); `literal` splits a case pattern
+  // from its command (`a) cmd`, `(a) cmd`).
   for (const text of [
     cmd,
     scanShell(cmd).literal,
@@ -294,7 +206,7 @@ export function decideShell(raw: string, cwd?: string): Decision {
     ...rawSubstitutions(cmd).flatMap((b) => [b, ...nested(b)]),
   ])
     for (const s of subcommands(text)) {
-      const d = denySub(s);
+      const d = denySub(s, exact);
       if (d.kind === "deny") return d;
     }
   return ALLOW;
@@ -302,7 +214,8 @@ export function decideShell(raw: string, cwd?: string): Decision {
 
 /**
  * Commands the shell also runs: `$(…)` and backtick bodies (inside double quotes too; single quotes stay literal)
- * and `sh -c` / `eval` strings (STA-208 review H2), at any depth via the shared `scanShell` (STA-254), plus function, alias and piped script bodies (STA-291).
+ * and `sh -c` / `eval` strings, at any depth via the shared `scanShell` (STA-254), plus function, alias and piped
+ * script bodies (STA-291).
  */
 function nested(cmd: string): string[] {
   const out = scanShell(cmd).bodies.flatMap((b) => [b, ...nested(b)]);

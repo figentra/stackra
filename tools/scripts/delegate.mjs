@@ -80,7 +80,8 @@ export function names(type, brief, issue) {
 
 export const RULES = [
   "Rules for this run:",
-  "- Never run git add, commit, push, checkout, reset or stash: the lead reviews and commits.",
+  "- Commit on your delegate branch (conventional commits, `Refs: STA-n` for the issue in the branch name) and push it with `pnpm bot:git -- push origin HEAD` (ADR 0293).",
+  "- Never stash, push another branch, open the PR or post AI-REVIEW: the lead reviews and opens the PR.",
   "- Stay inside the files the brief names; list anything else you noticed instead of fixing it.",
   "- Never read, print or write a secret value (.env*, Infisical, tokens).",
   "- Finish with a summary: files changed, commands run and their results, anything unverified.",

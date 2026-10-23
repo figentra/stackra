@@ -64,7 +64,8 @@ test("delegation refuses to start without a Linear issue", () => {
 
 test("prompt carries the rules; --auto only when asked", () => {
   const p = buildPrompt("do it");
-  assert.match(p, /Never run git add, commit/);
+  assert.match(p, /push it with `pnpm bot:git -- push origin HEAD`/);
+  assert.match(p, /Never stash, push another branch/);
   assert.match(p, /Finish with a summary/);
   const base = { agent: "build", title: "t", prompt: p };
   assert.ok(!opencodeArgs({ ...base, auto: false }).includes("--auto"));

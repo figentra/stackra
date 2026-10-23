@@ -7,7 +7,8 @@
  *   only identity whose `AI-REVIEW:` verdict pr-merge accepts. It may only read a PR and comment or review on it.
  * git: author and committer are the bot; pushes go over https with `gh auth git-credential` as the only credential
  *   helper, and ssh remotes are rewritten to https for this one command. Everything is `-c`, so nothing is written
- *   to .git/config and the token never appears in argv.
+ *   to .git/config and the token never appears in argv. No hook runs (`core.hooksPath=/dev/null`): the CI gate runs
+ *   the checks a hook would, and a hook is repository code that would see every /agents value.
  * Secrets: the token lives only in the child's environment; never printed.
  */
 import { spawnSync } from "node:child_process";
@@ -32,6 +33,9 @@ export const gitBotArgs = () => [
   "url.https://github.com/.insteadOf=git@github.com:",
   "-c",
   "url.https://github.com/.insteadOf=ssh://git@github.com/",
+  // A hook (lefthook's pre-push runs the worktree's lefthook.yml) would run repo code with every /agents value.
+  "-c",
+  "core.hooksPath=/dev/null",
 ];
 
 const CAPTURE_MIB = 256; // as pr-merge: a lockfile diff passes 1 MiB
@@ -117,8 +121,9 @@ function normalizeWord(w) {
 }
 
 /**
- * Merges outside `pnpm pr:merge` (STA-214, ADR 0119): `gh pr merge`, `gh api …/pulls/<n>/merge` with any method, and
- * the GraphQL merge mutations. pr-merge.mjs runs gh itself after its checks, so it never comes through here.
+ * Merges outside `pnpm pr:merge` (STA-214, ADR 0119): `gh pr merge`, `gh api …/pulls/<n>/merge` with any method,
+ * `gh api repos/<o>/<r>/merges`, and the GraphQL merge, enqueue, commit-on-branch and ref mutations (ADR 0293).
+ * pr-merge.mjs runs gh itself after its checks, so it never comes through here.
  */
 export function mergesPr(args) {
   const [group, verb] = words("gh", args);
@@ -161,7 +166,7 @@ export function configWrites(args) {
   return !reads || rest.some((w) => CONFIG_WRITE.has(w));
 }
 const MERGE =
-  /\bpulls\/\d+\/merge\b|\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest)\b/i;
+  /\bpulls\/\d+\/merge\b|\brepos\/[^/\s]+\/[^/\s]+\/merges\b|\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest|mergeBranch|createCommitOnBranch|updateRefs?|deleteRef)\b/i;
 
 /**
  * Why a command is refused regardless of tool (STA-216), or null. git: `-c alias.*` / `-c include*` / `--config-env`
@@ -187,11 +192,34 @@ export function unsafeArgs(tool, args) {
       ? "`-c` outside the display/identity allow-list, any `git config` that is not a read, and `--config-env` bypass the guards"
       : null;
   }
-  const [group] = words("gh", args);
+  const [group, verb] = words("gh", args);
   if (group === "alias") return "`gh alias` rewrites the owner's gh config";
+  if (writesOwnerLabel(group, verb, args))
+    return "`owner-approved` records the owner's own decision; an agent never adds it (ADR 0230 rule 4)";
   if (group === "api" && args.includes("graphql") && args.some((a) => /=@|^@|^--input\b/.test(a)))
     return "GraphQL from a file cannot be checked for a merge mutation; inline the query";
   return null;
+}
+
+/**
+ * A label write (`pr|issue create|edit`, `label create|edit|clone`, an `api` call on labels) that names
+ * `owner-approved` outside a title, body or description. Here the arguments are the real ones, after the shell
+ * expanded them, so no spelling hides the label (STA-330 review).
+ */
+function writesOwnerLabel(group, verb, args) {
+  const edits =
+    (["pr", "issue"].includes(group) && ["create", "edit"].includes(verb)) ||
+    (group === "label" && ["create", "edit", "clone"].includes(verb)) ||
+    (group === "api" && args.some((a) => /(?:^|\/)labels\b|\blabels(?:\[\])?=|Label/.test(a)));
+  return (
+    edits &&
+    args.some(
+      (a, i) =>
+        /owner-approv/i.test(a) &&
+        !/^(?:-t|--title|-b|--body|-d|--description)$/.test(args[i - 1] ?? "") &&
+        !/^--(?:title|body|description)=/.test(a),
+    )
+  );
 }
 
 /** The non-flag words: git's `-c`/`-C`/`--git-dir`/`--work-tree`/`--namespace` and gh's `-R`/`--repo` values skipped. */

@@ -92,8 +92,10 @@ hold fewer permissions than the builder app.
   App identity check, the author and committer exclusion, the full head SHA and base ref, edited and sticky-FAIL
   verdicts, and the owner's approving review with the `owner-approval` token.
 - `tools/scripts/bot-gh.mjs` (`reviewerAllows`): the reviewer's command allowlist, reading bundled short flags letter by letter and refusing `--edit-last` and `--delete-last`.
-- `.agents/hooks/guard-bash.mjs`: denies agent commands that write `owner-approval` or `owner-approved`, or post
-  `AI-REVIEW:` through `gh` or `pnpm bot:gh`. For rule 5 it denies plain `gh`, network `git` outside `pnpm bot:git`
+- `.agents/hooks/guard-bash.mjs` (rules in `.agents/hooks/_rules.mjs` since [0293](/adr/0293-agent-permission-tiers-and-executor-pushes),
+  shared with the OpenCode guard): denies agent commands that add the `owner-approved` label or submit an approving
+  review whose body ends in `owner-approval` (titles and bodies that only mention them are prose), post `AI-REVIEW:`
+  through `gh` or `pnpm bot:gh`, or run `pnpm bot:review` from an agent type without `reviewer: true`. For rule 5 it denies plain `gh`, network `git` outside `pnpm bot:git`
   (push, fetch, pull, clone, ls-remote, submodule, subtree, remote update/show/prune, archive `--remote`),
   `pnpm bot:token`, `$GH_TOKEN`, `bot:gh -- auth`, `git credential` and `git credential-<helper>` (bare or through
   `bot:git`), pack plumbing (`send-pack`, `receive-pack`, `fetch-pack`, `upload-pack`), a bot push to `main` read in
@@ -113,7 +115,8 @@ hold fewer permissions than the builder app.
   and file-sourced `gh api graphql`.
 - `.opencode/plugins/guard/decide.ts`: executors run no `gh`, none of those network `git` commands, no pack
   plumbing, no `git credential` or `git-credential-*`, no `git-*-pack` binary, no `git -c alias.*` / `--config-env`, and no
-  `pnpm bot:*` or `pr:merge`, with the same substitution bodies checked. The subcommand is read past spaced
+  `pnpm bot:*` or `pr:merge` beyond `pnpm bot:git -- fetch` and a push of `HEAD` (0293), with the same substitution
+  bodies checked. The subcommand is read past spaced
   `--git-dir`, `--work-tree`, `--namespace`, `-C` and `-c` values.
 - Planned: the review runs in a CI job with its own credentials (the Phase 3 merge-queue design).
 

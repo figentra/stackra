@@ -1,6 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
+import { chmodSync, existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { BOT_EMAIL, gitBotArgs, leaksToken, mergesPr, reviewerAllows } from "../bot-gh.mjs";
 import { fakeGh } from "./__fixtures__/fake-gh.mjs";
 
@@ -17,6 +20,12 @@ test("STA-214: credential helpers leak too; merges go only through pnpm pr:merge
     ["api", "graphql", "-f", "query=mutation { mergePullRequest(input: {}) { clientMutationId } }"],
     ["api", "graphql", "-f", "query=mutation { enablePullRequestAutoMerge(input: {}) { x } }"],
     ["api", "graphql", "-f", "query=mutation { enqueuePullRequest(input: {}) { x } }"],
+    // ADR 0293: branch merges, commits on a branch and ref moves skip pr:merge too
+    ["api", "-X", "POST", "repos/figentra/stackra/merges", "-f", "base=main", "-f", "head=x"],
+    ["api", "graphql", "-f", "query=mutation { mergeBranch(input: {}) { clientMutationId } }"],
+    ["api", "graphql", "-f", "query=mutation { createCommitOnBranch(input: {}) { x } }"],
+    ["api", "graphql", "-f", "query=mutation { updateRefs(input: {}) { x } }"],
+    ["api", "graphql", "-f", "query=mutation { deleteRef(input: {}) { x } }"],
   ])
     assert.equal(mergesPr(args), true, args.join(" "));
   for (const args of [
@@ -90,6 +99,20 @@ test("git runs as the bot with a token-free, non-persisted credential setup", ()
   assert.ok(!args.some((arg) => /ghs_|x-access-token/.test(arg)));
 });
 
+test("STA-330 review: bot git never runs the repository's hooks, which would see every /agents value", () => {
+  const repo = mkdtempSync(join(tmpdir(), "bot-git-hooks-"));
+  const git = (...a) => spawnSync("git", a, { cwd: repo, encoding: "utf8" });
+  git("init", "-q");
+  const marker = join(repo, "hook-ran");
+  // lefthook installs here; a worktree's lefthook.yml decides what it runs, so an agent can edit it
+  writeFileSync(join(repo, ".git", "hooks", "pre-commit"), `#!/bin/sh\ntouch '${marker}'\n`);
+  chmodSync(join(repo, ".git", "hooks", "pre-commit"), 0o755);
+  const r = git(...gitBotArgs(), "commit", "-q", "--allow-empty", "-m", "x");
+  assert.equal(r.status, 0, r.stderr);
+  assert.ok(!existsSync(marker), "the pre-commit hook ran as the bot");
+  rmSync(repo, { recursive: true, force: true });
+});
+
 test("STA-216: aliases, file-sourced GraphQL and encoded merge paths are refused", async () => {
   const { unsafeArgs } = await import("../bot-gh.mjs");
   for (const [tool, args] of [
@@ -98,6 +121,12 @@ test("STA-216: aliases, file-sourced GraphQL and encoded merge paths are refused
     ["git", ["-c", "include.path=/tmp/x", "status"]],
     ["git", ["--config-env=alias.x=V", "x"]],
     ["gh", ["alias", "set", "x", "pr merge"]],
+    // STA-330 review: the real arguments, after the shell expanded `$(printf owner-approved)` or "a, b"
+    ["gh", ["pr", "edit", "113", "--add-label", "design, owner-approved"]],
+    ["gh", ["-R", "figentra/stackra", "pr", "create", "-l", "design", "-l", "OWNER-APPROVED"]],
+    ["gh", ["issue", "edit", "4", "--add-label=owner-approved"]],
+    ["gh", ["label", "edit", "design", "--name", "owner-approved"]],
+    ["gh", ["api", "repos/x/y/issues/4/labels", "-f", "labels[]=owner-approved"]],
     ["gh", ["api", "graphql", "-F", "query=@q.graphql"]],
     ["gh", ["api", "-X", "POST", "graphql", "--input", "q.json"]],
     ["gh", ["api", "graphql", "-f", "query=@q.graphql"]],
@@ -107,6 +136,9 @@ test("STA-216: aliases, file-sourced GraphQL and encoded merge paths are refused
     ["git", ["-c", "user.name=x", "status"]],
     ["gh", ["api", "graphql", "-f", "query=query { viewer { login } }"]],
     ["gh", ["pr", "create", "--body", "alias set"]],
+    ["gh", ["pr", "create", "--title", "the owner-approved label", "--body", "owner-approved"]],
+    ["gh", ["pr", "list", "--label", "owner-approved"]],
+    ["gh", ["api", "repos/x/y/issues/4/comments", "-f", "body=the owner-approved label"]],
   ])
     assert.equal(unsafeArgs(tool, args), null, `${tool} ${args.join(" ")}`);
   for (const path of [

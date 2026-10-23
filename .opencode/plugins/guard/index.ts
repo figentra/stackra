@@ -1,6 +1,7 @@
 // Stackra guard plugin (OpenCode v2 plugin API: https://opencode.ai/v2/docs/build/plugins).
-// Denies secret reads/writes and owner-only commands, and refuses edits in the main checkout (worktree-only).
-// The rules live in decide.ts (unit-tested: node --test .opencode/plugins/guard/__tests__/decide.test.ts).
+// Applies the permission tiers shared with the Claude hooks (.agents/hooks/_rules.mjs, ADR 0293) with ask as deny,
+// denies the lead-only commands, and refuses edits in the main checkout (worktree-only).
+// The decisions live in decide.ts (unit-tested: node --test .opencode/plugins/guard/__tests__/decide.test.ts).
 // Plain { id, setup } export: V2 reads the default export's id and setup(), so no @opencode/plugin install.
 import { spawnSync } from "node:child_process";
 import { realpathSync } from "node:fs";
@@ -70,7 +71,7 @@ export default {
             ? decideShell(r, root)
             : e.action === "edit"
               ? decideEdit(r, ctxFor(root))
-              : e.action === "read"
+              : ["read", "glob", "grep"].includes(e.action)
                 ? decidePath(r, root)
                 : { kind: "allow" as const };
         if (d.kind === "deny") {

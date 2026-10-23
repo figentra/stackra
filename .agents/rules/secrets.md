@@ -42,15 +42,14 @@ All other secrets through Infisical:
 
 **Local development:**
 
-```bash
-infisical run -- pnpm dev
-infisical run -- encore run
-```
+A token reaches a process only through the pnpm script that needs it (`pnpm bot:gh`, `pnpm linear`, `pnpm bot:git`),
+which wraps `infisical run` itself. Raw `infisical run` hands every `/agents` value to the process it starts, so an
+agent's raw `infisical run` asks the owner (ADR 0293). A new flow that needs a token gets its own pnpm script.
 
 **CI/CD:**
 
 A CI job logs in to Infisical by GitHub OIDC for one step and reads `/ci` only (ADR 0009 D2); no token is a repository
-secret. Workers deploy from CI with a Cloudflare token read from Infisical `/ci` over GitHub OIDC (ADR 0284, ADR 0289). The Encore deploy stays denied: `encore deploy` is blocked by `guard-bash` until the deploy spike STA-136 (DP2) settles the Encore path.
+secret. Workers deploy from CI with a Cloudflare token read from Infisical `/ci` over GitHub OIDC (ADR 0284, ADR 0289). The Encore deploy stays denied: `encore deploy` is blocked by `guard-bash` and settings until the deploy spike STA-136 (DP2) settles the Encore path.
 
 **MCP servers:**
 Token-based MCP servers launch through the `tools/scripts/mcp.sh` vault wrapper (reads from `/agents`). This is a
@@ -99,8 +98,11 @@ file holding just that value; there is no `--value` flag.
 
 ### Blocked by Hooks
 
-- `guard-bash.mjs`: Blocks `infisical export`, `infisical secrets get` without `--silent`, a bare `infisical secrets`
-  (lists values) and `infisical run -- env|printenv`
+- `guard-bash.mjs` (rules in `.agents/hooks/_rules.mjs`, shared with the OpenCode guard, ADR 0293): blocks
+  `infisical export`, `infisical secrets get` in every form (`--silent` still prints the value), `infisical secrets set`,
+  a bare `infisical secrets` (lists values), `infisical run -- env|printenv`, `env`/`printenv`, process-environment
+  listings (`ps -E`, `ps eww`, `launchctl procinfo`) and running `bot-token.mjs`, also behind `pnpm exec`, `npx` and
+  `mise exec --`. Raw `infisical run`, `infisical secrets delete` and `secrets:import … --confirm` ask the owner.
 - `guard-bash.mjs` (matcher `.agents/hooks/_inbox.mjs`, shared with the OpenCode guard): blocks any command in which
   a word, after unquoting, names `Secrets-inbox` (any case) or the import confirm key. Two kinds of word are exempt: a
   grep/rg/ag pattern, and a `--title`/`--body`/`--message`/`-m` value with no `$(` or backtick. Program text
@@ -109,8 +111,10 @@ file holding just that value; there is no `--value` flag.
   `/Users/<you>`, or relative while the shell's cwd is home, following `cd`), could match the inbox; and a recursive
   read (`grep -r`, `rg`, `find`, `du`, `cp -a/-r`, `tar`, `rsync`, `zip`) of home or above, including no path operand
   from home. `pnpm secrets:import` never needs to do any of these.
-- `guard-paths.mjs`: Blocks writes to `.env`, `.env.*`, `.dev.vars`, `.ci-env` and `.sentryclirc`, and every
+- `guard-paths.mjs`: Blocks writes to `.env`, `.env.*`, `.dev.vars`, `.ci-env` and `.sentryclirc`, reads of secret
+  files (`.env*` except `.env.example`, `.dev.vars`, `*.pem`, `*.key`, `.secrets.local.*`), and every
   Read/Grep/Glob/Write/Edit under `~/Secrets-inbox/`
+- `.claude/settings.json` and `opencode.jsonc`: the same denies as prefix rules, the floor in every mode
 - `.gitleaks.toml`: Scans for accidental secret commits
 
 ## Enforcement
@@ -130,7 +134,7 @@ Each article below is bound to a check:
 2. Create workspace: `infisical init`
 3. `.infisical.yaml` is tracked (workspace id and domain, no secret)
 4. Add secrets to `/agents` folder
-5. Run commands with `infisical run -- <command>`
+5. Run the pnpm script that wraps the command (`pnpm bot:gh`, `pnpm linear`); the owner runs raw `infisical run`
 
 ## See Also
 

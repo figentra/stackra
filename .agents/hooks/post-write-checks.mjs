@@ -4,6 +4,7 @@
 // or any other failure is swallowed via failOpen; the write already happened.
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
+import { resolve, sep } from "node:path";
 import { readStdin, context, failOpen } from "./_io.mjs";
 
 async function main() {
@@ -12,6 +13,8 @@ async function main() {
   const file = String(input.tool_input?.file_path ?? "");
   const oxfmt = `${root}/node_modules/.bin/oxfmt`;
 
+  // A file outside the repository (the scratchpad, another checkout) is not this repo's to format.
+  if (file && !resolve(root, file).startsWith(resolve(root) + sep)) return;
   if (
     file &&
     existsSync(file) &&
