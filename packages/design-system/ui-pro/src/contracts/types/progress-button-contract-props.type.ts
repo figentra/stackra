@@ -5,7 +5,7 @@
  *          own and passes through unchanged. Its colour-scheme `variant` is the shared `tone`.
  * Boundary: types only; native only.
  * Runtime: isomorphic
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-008.
+ * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-008.
  */
 import type { Tone } from "@stackra/ui/contracts";
 

@@ -4,7 +4,7 @@
  *          accessible name of a column's card list.
  * Boundary: types only; web only. Every other prop is HeroUI Pro's own and passes through unchanged.
  * Runtime: isomorphic
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-006.
+ * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-006.
  */
 import type { Size } from "@stackra/ui/contracts";
 

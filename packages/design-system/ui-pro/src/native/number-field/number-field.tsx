@@ -6,7 +6,7 @@
  * Boundary: no behaviour or styling of its own. The compound exposes the four parts of HeroUI Native Pro, its own
  *          components; `Label`, `Description` and `FieldError` come from `heroui-native`.
  * Runtime: react-native
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-012.
+ * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-012.
  */
 import { NumberField as HeroNumberField } from "heroui-native-pro/number-field";
 import type { ComponentPropsWithRef, ReactElement } from "react";

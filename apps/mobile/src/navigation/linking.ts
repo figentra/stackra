@@ -19,13 +19,18 @@ const SETTINGS_TAB_LINKS: PathConfig<SettingsStackParamList> = {
   initialRouteName: "Settings",
   screens: {
     Settings: "settings",
-    DesignSystem: "design-system",
-    ProProgressButton: "design-system/pro/progress-button",
-    ProSlideButton: "design-system/pro/slide-button",
-    ProSwipeableRow: "design-system/pro/swipeable-row",
-    ProCalendar: "design-system/pro/calendar",
-    ProDatePicker: "design-system/pro/date-picker",
-    ProNumberField: "design-system/pro/number-field",
+    // The review area's links exist only where its screens do: development builds.
+    ...(__DEV__
+      ? {
+          DesignSystem: "design-system",
+          ProProgressButton: "design-system/pro/progress-button",
+          ProSlideButton: "design-system/pro/slide-button",
+          ProSwipeableRow: "design-system/pro/swipeable-row",
+          ProCalendar: "design-system/pro/calendar",
+          ProDatePicker: "design-system/pro/date-picker",
+          ProNumberField: "design-system/pro/number-field",
+        }
+      : {}),
   },
 };
 

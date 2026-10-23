@@ -36,7 +36,8 @@ jobs:
       id-token: write # ADR 0310: GitHub OIDC token, exchanged with Infisical for the two licence tokens only
     env:
       # Non-secret id of the Infisical machine identity that may read HEROUI_AUTH_TOKEN and UNIWIND_AUTH_TOKEN in /ci
-      # (ADR 0310 decisions 9 and 11).
+      # (ADR 0310 decisions 9 and 11). It trusts the pull_request, main-push and merge-queue (gh-readonly-queue/main/*)
+      # OIDC subjects, one per event this job runs on.
       INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
 
     steps:

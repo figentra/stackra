@@ -5,7 +5,7 @@
  *          HeroUI Pro's own parts, and types the accessible name as `label`.
  * Boundary: jsdom with real HeroUI Pro and React Aria; the theme CSS is not loaded, so classes are checked, not looks.
  * Runtime: browser
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); ADR 0022 (test placement).
+ * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-403:FR-004

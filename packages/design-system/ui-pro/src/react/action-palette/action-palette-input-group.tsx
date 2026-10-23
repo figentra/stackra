@@ -4,7 +4,7 @@
  *          `aria-label`, and carries HeroUI Pro's Prefix, Input, ClearButton and Suffix parts.
  * Boundary: no behaviour of its own; every other prop and the four parts are HeroUI Pro's.
  * Runtime: browser
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-004.
+ * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-004.
  */
 import {
   Command as HeroCommand,

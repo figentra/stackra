@@ -3,7 +3,7 @@
  * Purpose: `ActionPalette.Dialog` on HeroUI Pro's `Command.Dialog`: maps the contract's `label` to `aria-label`.
  * Boundary: no behaviour of its own; filtering, input value and the dialog props are HeroUI Pro's, passed through.
  * Runtime: browser
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-004.
+ * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-004.
  */
 import {
   Command as HeroCommand,

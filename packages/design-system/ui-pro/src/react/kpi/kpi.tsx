@@ -9,7 +9,7 @@
  *          `recharts`, an optional peer. The compound exposes the documented parts: HeroUI Pro's `KPI.Root` is left
  *          out. Imports the `kpi` subpath, the only way to reach it.
  * Runtime: browser
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); ADR 0231 (acronyms cased as words); STA-403 FR-007.
+ * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); ADR 0231 (acronyms cased as words); STA-403 FR-007.
  */
 import { KPI as HeroKpi, type KPIRootProps as HeroKpiRootProps } from "@heroui-pro/react/kpi";
 import type { ComponentProps } from "react";

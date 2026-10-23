@@ -6,7 +6,7 @@
  *          `useKanbanCardPlaceholder` hooks that drive drag and drop.
  * Boundary: no styling or behaviour of its own; the look needs `@heroui-pro/react/css`. Imports the `kanban` subpath.
  * Runtime: browser
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-006.
+ * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-006.
  */
 import {
   Kanban as HeroKanban,
