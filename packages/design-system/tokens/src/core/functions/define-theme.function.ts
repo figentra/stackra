@@ -1,8 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: validates a theme before it is used or rendered: every colour role, font stack, shadow and radius is
- *          present and non-empty, hex values are hex, token names are kebab-case and no value can break out of a
- *          CSS declaration. A product's own theme goes through it, as the stackra theme does.
+ *          present and non-empty, hex values are hex, token names are kebab-case, no two tokens render the same CSS
+ *          custom property, and every value matches the grammar of its kind (colour, length, font stack, shadow,
+ *          duration, easing). The grammars are allow-lists, so no value can escape its CSS declaration. A product's
+ *          own theme goes through it, as the stackra theme does.
  * Boundary: checks and returns the theme unchanged; renders nothing.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0232 (typed errors).
@@ -13,8 +15,27 @@ import { InvalidThemeError } from "#core/errors/invalid-theme.error";
 
 const TOKEN_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const HEX = /^#([0-9a-f]{6}|[0-9a-f]{8})$/i;
-// A value is written into a CSS declaration as is; these characters would end it or open a block.
-const UNSAFE = /[;{}\n\r]|\/\*/;
+
+// Values are written into CSS declarations as is, so each kind is an allow-list: no quote, backslash, angle bracket,
+// semicolon, brace or comment can appear unless its grammar admits it, and parentheses only as whole functions.
+const NUMBER = String.raw`-?(\d+\.?\d*|\.\d+)`;
+const VAR = String.raw`var\(--[a-z0-9-]+\)`;
+const COLOR_SOURCE = String.raw`(#[0-9a-f]{3,8}|(oklch|oklab|rgb|hsl)\(\s*${NUMBER}%?(\s+${NUMBER}%?){2}(\s*\/\s*${NUMBER}%?)?\s*\)|${VAR}|transparent|currentcolor|white|black)`;
+const LENGTH_SOURCE = String.raw`(${NUMBER}(px|rem|em|%)?|${VAR})`;
+const FAMILY = String.raw`("[\w .-]+"|'[\w .-]+'|[a-z][\w-]*( [a-z][\w-]*)*)`;
+const SHADOW_PART = String.raw`(${LENGTH_SOURCE}|${COLOR_SOURCE}|inset)`;
+const SHADOW_LAYER = String.raw`${SHADOW_PART}(\s+${SHADOW_PART})*`;
+const GRAMMAR = {
+  color: new RegExp(`^${COLOR_SOURCE}$`, "i"),
+  length: new RegExp(`^${LENGTH_SOURCE}$`, "i"),
+  fontStack: new RegExp(String.raw`^${FAMILY}(\s*,\s*${FAMILY})*$`, "i"),
+  shadow: new RegExp(String.raw`^(none|${SHADOW_LAYER}(\s*,\s*${SHADOW_LAYER})*)$`, "i"),
+  duration: new RegExp(`^${NUMBER}(ms|s)$`),
+  easing: new RegExp(
+    String.raw`^(linear|ease|ease-in|ease-out|ease-in-out|step-start|step-end|(cubic-bezier|steps|linear)\(\s*[-\w.% ]+(\s*,\s*[-\w.% ]+)*\s*\))$`,
+  ),
+} as const;
+type Grammar = keyof typeof GRAMMAR;
 const FONT_FAMILIES = ["sans", "mono", "arabic"] as const;
 const SHADOWS = ["surface", "overlay", "field"] as const;
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -26,15 +47,15 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  */
 export function defineTheme(theme: Theme): Theme {
   const problems: string[] = [];
-  const value = (path: string, candidate: unknown) => {
+  const value = (path: string, candidate: unknown, grammar: Grammar) => {
     if (typeof candidate !== "string" || candidate.trim() === "") problems.push(`${path} is empty`);
-    else if (UNSAFE.test(candidate))
-      problems.push(`${path} holds ";", "{", "}", "/*" or a line break`);
+    else if (!GRAMMAR[grammar].test(candidate.trim()))
+      problems.push(`${path} is not a CSS ${grammar}`);
   };
   const color = (path: string, token: ColorToken | undefined) => {
     if (!isRecord(token)) return void problems.push(`${path} is missing`);
-    value(`${path}.light`, token.light);
-    value(`${path}.dark`, token.dark);
+    value(`${path}.light`, token.light, "color");
+    value(`${path}.dark`, token.dark, "color");
     for (const hex of ["hexLight", "hexDark"] as const)
       if (!HEX.test(String(token[hex])))
         problems.push(`${path}.${hex} is not #RRGGBB or #RRGGBBAA`);
@@ -54,15 +75,14 @@ export function defineTheme(theme: Theme): Theme {
     problems.push("name is not a kebab-case token name");
 
   for (const role of ColorRole) color(`colors.${role}`, theme.colors?.[role]);
-  for (const key of names("palette", theme.palette)) {
-    if ((ColorRole as readonly string[]).includes(key))
-      problems.push(`palette.${key} repeats a colour role`);
-    color(`palette.${key}`, theme.palette[key]);
-  }
+  const paletteKeys = names("palette", theme.palette);
+  for (const key of paletteKeys) color(`palette.${key}`, theme.palette[key]);
 
-  for (const family of FONT_FAMILIES) value(`fontFamily.${family}`, theme.fontFamily?.[family]);
+  for (const family of FONT_FAMILIES)
+    value(`fontFamily.${family}`, theme.fontFamily?.[family], "fontStack");
 
-  for (const key of names("typography", theme.typography)) {
+  const typographyKeys = names("typography", theme.typography);
+  for (const key of typographyKeys) {
     const style = theme.typography[key];
     const path = `typography.${key}`;
     if (!isRecord(style)) {
@@ -71,29 +91,49 @@ export function defineTheme(theme: Theme): Theme {
     }
     if (!Number.isInteger(style.weight) || style.weight < 100 || style.weight > 900)
       problems.push(`${path}.weight is not 100 to 900`);
-    value(`${path}.size`, style.size);
-    value(`${path}.lineHeight`, style.lineHeight);
-    value(`${path}.letterSpacing`, style.letterSpacing);
+    value(`${path}.size`, style.size, "length");
+    value(`${path}.lineHeight`, style.lineHeight, "length");
+    value(`${path}.letterSpacing`, style.letterSpacing, "length");
     if (!(FONT_FAMILIES as readonly string[]).includes(style.family))
       problems.push(`${path}.family is not one of ${FONT_FAMILIES.join(", ")}`);
   }
 
-  for (const key of names("spacing", theme.spacing)) value(`spacing.${key}`, theme.spacing[key]);
+  const spacingKeys = names("spacing", theme.spacing);
+  for (const key of spacingKeys) value(`spacing.${key}`, theme.spacing[key], "length");
 
-  value("radius.base", theme.radius?.base);
-  value("radius.field", theme.radius?.field);
-  for (const key of names("radius.steps", theme.radius?.steps))
-    value(`radius.steps.${key}`, theme.radius.steps[key]);
+  value("radius.base", theme.radius?.base, "length");
+  value("radius.field", theme.radius?.field, "length");
+  const stepKeys = names("radius.steps", theme.radius?.steps);
+  for (const key of stepKeys) value(`radius.steps.${key}`, theme.radius.steps[key], "length");
 
   for (const shadow of SHADOWS) {
-    value(`shadows.${shadow}.light`, theme.shadows?.[shadow]?.light);
-    value(`shadows.${shadow}.dark`, theme.shadows?.[shadow]?.dark);
+    value(`shadows.${shadow}.light`, theme.shadows?.[shadow]?.light, "shadow");
+    value(`shadows.${shadow}.dark`, theme.shadows?.[shadow]?.dark, "shadow");
   }
 
-  for (const key of names("motion", theme.motion)) {
-    value(`motion.${key}.duration`, theme.motion[key]?.duration);
-    value(`motion.${key}.easing`, theme.motion[key]?.easing);
+  const motionKeys = names("motion", theme.motion);
+  for (const key of motionKeys) {
+    value(`motion.${key}.duration`, theme.motion[key]?.duration, "duration");
+    value(`motion.${key}.easing`, theme.motion[key]?.easing, "easing");
   }
+
+  // Every custom property the web renderer writes, as renderWebCss names them; two tokens must not write one.
+  const rendered = [
+    ...ColorRole,
+    ...paletteKeys,
+    ...SHADOWS.map((shadow) => `${shadow}-shadow`),
+    ...FONT_FAMILIES.map((family) => `font-${family}`),
+    ...typographyKeys.flatMap((key) => [key, `${key}-letter-spacing`]),
+    ...spacingKeys.map((key) => `space-${key}`),
+    "radius",
+    "field-radius",
+    ...stepKeys.map((key) => `radius-${key}`),
+    ...motionKeys.flatMap((key) => [`duration-${key}`, `ease-${key}`]),
+  ];
+  const seen = new Set<string>();
+  for (const name of rendered)
+    if (seen.has(name)) problems.push(`--${name} is written by two tokens`);
+    else seen.add(name);
 
   if (problems.length > 0)
     throw new InvalidThemeError(typeof theme.name === "string" ? theme.name : "", problems);

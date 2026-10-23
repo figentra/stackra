@@ -44,8 +44,11 @@ import { DesignSystemProvider } from "@stackra/ui/native";
 
 - **Web** puts `.dark` / `.light` and `data-theme` on `<html>` (HeroUI v3's switch), follows `prefers-color-scheme`
   while the scheme is `system`, sets `lang` and `dir`, and wraps the app in React Aria's `I18nProvider`
-  (`react-aria-components`, the version HeroUI 3.2.6 uses), which HeroUI components read.
-- **Native** calls `Uniwind.setTheme` (Uniwind follows the system for `system`), reads the resolved theme back with
+  (`react-aria-components`, the version HeroUI 3.2.6 uses), which HeroUI components read. React Aria takes its
+  direction from the locale alone, so when `direction` contradicts the locale it is given the locale with a script of
+  that direction (`ar` read left to right is `ar-Latn`), and arrow keys follow the document's `dir`.
+- **Native** calls `Uniwind.setTheme` in a layout effect, before the first frame is shown (Uniwind follows the system
+  for `system`), reads the resolved theme back with
   `useUniwind`, scopes the layout direction with Uniwind's `LayoutDirection` and passes `config.isRTL` to
   `HeroUINativeProvider`. App-wide native RTL (navigation, system views) follows React Native's `I18nManager`, which
   changes only through `I18nManager.forceRTL` and an app restart; the provider never forces it.
@@ -60,7 +63,7 @@ import { DesignSystemProvider } from "@stackra/ui/native";
 | `@stackra/ui/native`    | `DesignSystemProvider`, `useDesignSystem` on HeroUI Native and Uniwind                                  | `src/native/index.ts` (stand-in)      |
 | `@stackra/ui/node`      | `UiModule`, the root module                                                                             | `src/node/ui.module.ts`               |
 | `@stackra/ui/testing`   | `src/testing/`: `fakes/` and `matchers/`                                                                | not yet: exported with its first file |
-| `@stackra/ui/assets/*`  | `assets/`: static files (`public/`, `lang/`, …) at the package root (ADR 0234)                          | the folder                            |
+| `@stackra/ui/assets/*`  | `assets/`: static files (`public/`, `lang/`, …) at the package root (ADR 0234)                          | not yet: exported with its first file |
 
 The stand-in barrels are replaced when `stackra gen` writes the entry barrels (STA-339). `exports` point at source
 through the `@stackra/source` condition; `tsdown` builds `dist/` for publishing (ADR 0025).

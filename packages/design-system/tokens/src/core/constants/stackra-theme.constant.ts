@@ -1,29 +1,35 @@
 /**
  * Stackra file contract:
- * Purpose: the stackra theme, the default theme of the Stackra Design System. Its values come unchanged from the
- *          approved Stackra brand kit 0.1.0, which @stackra/brand vendored until it was retired; the kit's token
- *          reports sit in assets/data/stackra/ and the tests hold the values to them.
- * Boundary: data only. Stackra has no accent colour: every accent role is a neutral (ink on paper, paper on ink);
- *          steel colours the wordmark and the st tile only, never a UI role.
+ * Purpose: the stackra theme, the default theme of the Stackra Design System. Its oklch values come unchanged from
+ *          the approved Stackra brand kit 0.1.0, which @stackra/brand vendored until it was retired; the kit's token
+ *          reports sit in assets/data/stackra/ and the tests hold the values to them. Each hex is derived from its
+ *          oklch value (`oklchToHex`), never typed, so the two cannot disagree.
+ * Boundary: data only. Stackra has no accent colour: every accent role is a neutral (ink on paper, paper on ink).
+ *          Steel colours the wordmark and the st tile only, never a UI role; graphite carries the accent states and,
+ *          as an alias, the dark `segment` role.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0024 (the brand assets stay all rights reserved).
  */
 import type { ColorToken } from "#contracts/types/theme.type";
 import { defineTheme } from "#core/functions/define-theme.function";
+import { oklchToHex } from "#core/functions/oklch-to-hex.function";
 
-const color = (light: string, dark: string, hexLight: string, hexDark: string): ColorToken => ({
+const color = (light: string, dark: string): ColorToken => ({
   light,
   dark,
-  hexLight,
-  hexDark,
+  hexLight: oklchToHex(light),
+  hexDark: oklchToHex(dark),
 });
 
-const INK = color("oklch(0.158 0.005 248)", "oklch(0.158 0.005 248)", "#0B0D0F", "#0B0D0F");
-const PAPER = color("oklch(0.972 0.004 122)", "oklch(0.972 0.004 122)", "#F5F6F3", "#F5F6F3");
-const FOREGROUND = color("oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)", "#0B0D0F", "#F5F6F3");
-const INVERSE = color("oklch(0.972 0.004 122)", "oklch(0.158 0.005 248)", "#F5F6F3", "#0B0D0F");
-const MUTED = color("oklch(0.5 0.01 250)", "oklch(0.72 0.008 250)", "#5F6469", "#A1A5A9");
-const ON_STATUS = color("oklch(1 0 0)", "oklch(0.158 0.005 248)", "#FFFFFF", "#0B0D0F");
+const WHITE = "oklch(1 0 0)";
+const GRAPHITE_700 = "oklch(0.38 0.009 248)";
+
+const INK = color("oklch(0.158 0.005 248)", "oklch(0.158 0.005 248)");
+const PAPER = color("oklch(0.972 0.004 122)", "oklch(0.972 0.004 122)");
+const FOREGROUND = color("oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)");
+const INVERSE = color("oklch(0.972 0.004 122)", "oklch(0.158 0.005 248)");
+const MUTED = color("oklch(0.5 0.01 250)", "oklch(0.72 0.008 250)");
+const ON_STATUS = color("oklch(1 0 0)", "oklch(0.158 0.005 248)");
 
 /** The stackra theme: neutral accents, Geist and IBM Plex Sans Arabic, a 4px spacing step and a 0.25rem radius. */
 export const STACKRA_THEME = defineTheme({
@@ -31,82 +37,62 @@ export const STACKRA_THEME = defineTheme({
   colors: {
     background: INVERSE,
     foreground: FOREGROUND,
-    surface: color("oklch(1 0 0)", "oklch(0.195 0.006 250)", "#FFFFFF", "#25282B"),
+    surface: color("oklch(1 0 0)", "oklch(0.195 0.006 250)"),
     "surface-foreground": FOREGROUND,
-    "surface-secondary": color(
-      "oklch(0.955 0.004 110)",
-      "oklch(0.235 0.007 250)",
-      "#F1F1ED",
-      "#2F3236",
-    ),
+    "surface-secondary": color("oklch(0.955 0.004 110)", "oklch(0.235 0.007 250)"),
     "surface-secondary-foreground": FOREGROUND,
-    "surface-tertiary": color(
-      "oklch(0.935 0.004 110)",
-      "oklch(0.285 0.007 250)",
-      "#E8E8E4",
-      "#3B3E42",
-    ),
+    "surface-tertiary": color("oklch(0.935 0.004 110)", "oklch(0.285 0.007 250)"),
     "surface-tertiary-foreground": FOREGROUND,
-    overlay: color("oklch(1 0 0)", "oklch(0.215 0.006 250)", "#FFFFFF", "#2B2E32"),
+    overlay: color("oklch(1 0 0)", "oklch(0.215 0.006 250)"),
     "overlay-foreground": FOREGROUND,
     muted: MUTED,
-    default: color("oklch(0.935 0.004 110)", "oklch(0.285 0.007 250)", "#E8E8E4", "#3B3E42"),
+    default: color("oklch(0.935 0.004 110)", "oklch(0.285 0.007 250)"),
     "default-foreground": FOREGROUND,
     accent: FOREGROUND,
     "accent-foreground": INVERSE,
-    success: color("oklch(0.5 0.13 135)", "oklch(0.72 0.15 135)", "#1F7A3A", "#4CAF6D"),
+    success: color("oklch(0.5 0.13 135)", "oklch(0.72 0.15 135)"),
     "success-foreground": ON_STATUS,
-    warning: color("oklch(0.55 0.15 47)", "oklch(0.72 0.17 47)", "#B45309", "#E8970C"),
+    warning: color("oklch(0.55 0.15 47)", "oklch(0.72 0.17 47)"),
     "warning-foreground": ON_STATUS,
-    danger: color("oklch(0.45 0.17 24)", "oklch(0.66 0.2 22)", "#991B1B", "#EF4444"),
+    danger: color("oklch(0.45 0.17 24)", "oklch(0.66 0.2 22)"),
     "danger-foreground": ON_STATUS,
-    "field-background": color("oklch(1 0 0)", "oklch(0.235 0.007 250)", "#FFFFFF", "#2F3236"),
+    "field-background": color("oklch(1 0 0)", "oklch(0.235 0.007 250)"),
     "field-foreground": FOREGROUND,
     "field-placeholder": MUTED,
-    "field-border": color("oklch(0.6 0.008 250)", "oklch(0.56 0.008 250)", "#7D8185", "#717579"),
-    // The kit predates HeroUI's segment role: white in light, as HeroUI's default; graphite-700 in dark, so the
-    // selected segment stands above the `default` track as HeroUI's dark segment does.
-    segment: color("oklch(1 0 0)", "oklch(0.38 0.009 248)", "#FFFFFF", "#3F4347"),
+    "field-border": color("oklch(0.6 0.008 250)", "oklch(0.56 0.008 250)"),
+    // The kit predates HeroUI's segment role, so it aliases two kit colours: white in light, as HeroUI's default, and
+    // graphite-700 in dark, so the selected segment stands above the `default` track as HeroUI's dark segment does.
+    segment: color(WHITE, GRAPHITE_700),
     "segment-foreground": FOREGROUND,
-    border: color("oklch(0.885 0.005 110)", "oklch(0.35 0.008 250)", "#DFDFDA", "#4A4D52"),
-    separator: color("oklch(0.92 0.004 110)", "oklch(0.27 0.007 250)", "#E4E4E0", "#3F4246"),
+    border: color("oklch(0.885 0.005 110)", "oklch(0.35 0.008 250)"),
+    separator: color("oklch(0.92 0.004 110)", "oklch(0.27 0.007 250)"),
     focus: FOREGROUND,
     link: FOREGROUND,
-    backdrop: color(
-      "oklch(0.158 0.005 248 / 0.4)",
-      "oklch(0.08 0.004 248 / 0.6)",
-      "#0B0D0F66",
-      "#0B0D0F99",
-    ),
+    backdrop: color("oklch(0.158 0.005 248 / 0.4)", "oklch(0.08 0.004 248 / 0.6)"),
   },
   palette: {
-    amber: color("oklch(0.83 0.15 82)", "oklch(0.83 0.15 82)", "#F8BD40", "#F8BD40"),
+    amber: color("oklch(0.83 0.15 82)", "oklch(0.83 0.15 82)"),
     ink: INK,
     paper: PAPER,
-    white: color("oklch(1 0 0)", "oklch(1 0 0)", "#FFFFFF", "#FFFFFF"),
-    steel: color("oklch(0.931 0.012 248)", "oklch(0.931 0.012 248)", "#E2E9F0", "#E2E9F0"),
-    "steel-deep": color("oklch(0.24 0.015 248.4)", "oklch(0.24 0.015 248.4)", "#1A2026", "#1A2026"),
-    "stk-tile": color("oklch(1 0 89.9)", "oklch(0.234 0.007 258.4)", "#FFFFFF", "#1C1E21"),
-    "stk-tile-line": color(
-      "oklch(0.839 0.007 124.5)",
-      "oklch(0.35 0.009 248.1)",
-      "#C9CBC6",
-      "#373B3F",
-    ),
-    "stk-ink": color("oklch(0.24 0.015 248.4)", "oklch(0.931 0.012 248)", "#1A2026", "#E2E9F0"),
-    "graphite-100": color("oklch(0.925 0.006 248)", "oklch(0.925 0.006 248)", "#E3E7EA", "#E3E7EA"),
-    "graphite-200": color("oklch(0.87 0.007 248)", "oklch(0.87 0.007 248)", "#D1D5D9", "#D1D5D9"),
-    "graphite-300": color("oklch(0.8 0.008 248)", "oklch(0.8 0.008 248)", "#BABEC3", "#BABEC3"),
-    "graphite-700": color("oklch(0.38 0.009 248)", "oklch(0.38 0.009 248)", "#3F4347", "#3F4347"),
-    "graphite-800": color("oklch(0.3 0.009 248)", "oklch(0.3 0.009 248)", "#2A2E32", "#2A2E32"),
-    "graphite-900": color("oklch(0.265 0.008 248)", "oklch(0.265 0.008 248)", "#222629", "#222629"),
-    "accent-hover": color("oklch(0.3 0.009 248)", "oklch(0.87 0.007 248)", "#2A2E32", "#D1D5D9"),
-    "accent-pressed": color("oklch(0.38 0.009 248)", "oklch(0.8 0.008 248)", "#3F4347", "#BABEC3"),
-    "accent-soft": color("oklch(0.925 0.006 248)", "oklch(0.265 0.008 248)", "#E3E7EA", "#222629"),
+    white: color(WHITE, WHITE),
+    steel: color("oklch(0.931 0.012 248)", "oklch(0.931 0.012 248)"),
+    "steel-deep": color("oklch(0.24 0.015 248.4)", "oklch(0.24 0.015 248.4)"),
+    "stk-tile": color("oklch(1 0 89.9)", "oklch(0.234 0.007 258.4)"),
+    "stk-tile-line": color("oklch(0.839 0.007 124.5)", "oklch(0.35 0.009 248.1)"),
+    "stk-ink": color("oklch(0.24 0.015 248.4)", "oklch(0.931 0.012 248)"),
+    "graphite-100": color("oklch(0.925 0.006 248)", "oklch(0.925 0.006 248)"),
+    "graphite-200": color("oklch(0.87 0.007 248)", "oklch(0.87 0.007 248)"),
+    "graphite-300": color("oklch(0.8 0.008 248)", "oklch(0.8 0.008 248)"),
+    "graphite-700": color(GRAPHITE_700, GRAPHITE_700),
+    "graphite-800": color("oklch(0.3 0.009 248)", "oklch(0.3 0.009 248)"),
+    "graphite-900": color("oklch(0.265 0.008 248)", "oklch(0.265 0.008 248)"),
+    "accent-hover": color("oklch(0.3 0.009 248)", "oklch(0.87 0.007 248)"),
+    "accent-pressed": color("oklch(0.38 0.009 248)", "oklch(0.8 0.008 248)"),
+    "accent-soft": color("oklch(0.925 0.006 248)", "oklch(0.265 0.008 248)"),
     "accent-soft-foreground": FOREGROUND,
     signal: FOREGROUND,
     "signal-foreground": INVERSE,
-    cursor: color("oklch(0.47 0.095 75)", "oklch(0.83 0.15 82)", "#79520A", "#F8BD40"),
+    cursor: color("oklch(0.47 0.095 75)", "oklch(0.83 0.15 82)"),
   },
   fontFamily: {
     sans: '"Geist", ui-sans-serif, system-ui, sans-serif',

@@ -3,7 +3,8 @@
  * Purpose: the web `DesignSystemProvider` on HeroUI v3: puts the resolved colour scheme on the document element the
  *          way HeroUI v3 themes switch (`.dark` / `.light` and `data-theme`), follows `prefers-color-scheme` while the
  *          scheme is `system`, sets `lang` and `dir`, and wraps the app in React Aria's I18nProvider, which HeroUI v3
- *          components read their locale and direction from.
+ *          components read their locale and direction from. React Aria derives the direction from the locale alone,
+ *          so when `direction` overrides the locale's own, it is given the locale with a script of that direction.
  * Boundary: applies the scheme and direction; the theme's CSS is imported by the app (`@stackra/tokens/themes/*`).
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0060 (light, dark, RTL).
@@ -12,6 +13,7 @@ import { I18nProvider } from "react-aria-components";
 import { useLayoutEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import type { ColorScheme } from "#contracts/enums/color-scheme.enum";
+import type { Direction } from "#contracts/enums/direction.enum";
 import type { DesignSystemProviderProps } from "#contracts/types/design-system-provider-props.type";
 import type { DesignSystemState } from "#contracts/types/design-system-state.type";
 import { directionOf } from "#core/functions/direction-of.function";
@@ -27,6 +29,20 @@ const subscribeToSystemScheme = (onChange: () => void) => {
 };
 
 const isSystemDark = () => matchMedia(DARK_QUERY).matches;
+
+/**
+ * The locale React Aria is given: `locale` itself, or, when `direction` contradicts it, `locale` with a script of
+ * that direction (`ar` read left to right is `ar-Latn`, `en` read right to left is `en-Arab`), so arrow keys and
+ * placement follow the document's `dir`. Formatting keeps the language and region.
+ */
+const ariaLocaleOf = (locale: string, direction: Direction) => {
+  if (directionOf(locale) === direction) return locale;
+  try {
+    return new Intl.Locale(locale, { script: direction === "rtl" ? "Arab" : "Latn" }).toString();
+  } catch {
+    return direction === "rtl" ? "ar" : "en";
+  }
+};
 
 /**
  * Applies the Stackra Design System to a web app: colour scheme, locale and direction. Wrap the app once, inside
@@ -52,14 +68,26 @@ export function DesignSystemProvider({
     currentColorScheme === "system" ? (systemDark ? "dark" : "light") : currentColorScheme;
   const currentDirection = direction ?? directionOf(currentLocale);
 
-  // Layout effect: the attributes land before paint, so a switch never flashes the old scheme.
+  // Layout effect: the attributes land before paint, so a switch never flashes the old scheme. The cleanup puts back
+  // what the document had, so an unmounted provider leaves <html> as it found it.
   useLayoutEffect(() => {
     const root = document.documentElement;
+    const had = { dark: root.classList.contains("dark"), light: root.classList.contains("light") };
+    const attributes = ["data-theme", "lang", "dir"].map(
+      (name) => [name, root.getAttribute(name)] as const,
+    );
     root.classList.toggle("dark", resolvedColorScheme === "dark");
     root.classList.toggle("light", resolvedColorScheme === "light");
     root.dataset["theme"] = resolvedColorScheme;
     root.lang = currentLocale;
     root.dir = currentDirection;
+    return () => {
+      root.classList.toggle("dark", had.dark);
+      root.classList.toggle("light", had.light);
+      for (const [name, value] of attributes)
+        if (value === null) root.removeAttribute(name);
+        else root.setAttribute(name, value);
+    };
   }, [resolvedColorScheme, currentLocale, currentDirection]);
 
   const state = useMemo<DesignSystemState>(
@@ -91,7 +119,7 @@ export function DesignSystemProvider({
 
   return (
     <DesignSystemContext value={state}>
-      <I18nProvider locale={currentLocale}>{children}</I18nProvider>
+      <I18nProvider locale={ariaLocaleOf(currentLocale, currentDirection)}>{children}</I18nProvider>
     </DesignSystemContext>
   );
 }

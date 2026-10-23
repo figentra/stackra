@@ -1,9 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: the playground's end-to-end and accessibility gate: every route, found by listing `src/routes/`, opened in
- *          light and dark and in left-to-right (en) and right-to-left (ar) through the URL, must render its h1, carry
- *          the scheme and direction on <html>, and pass axe (WCAG 2.0 to 2.2, A and AA) with no violation. A new
- *          route folder is covered without editing this file.
+ *          light and dark and in left-to-right (en) and right-to-left (ar) through the URL, must render its h1, title
+ *          the document after it, carry the scheme and direction on <html>, and pass axe (WCAG 2.0 to 2.2, A and AA,
+ *          and best practices) with no violation and nothing left incomplete. The switcher's selected choice must
+ *          stand 3:1 from the others in both schemes and work from the keyboard in right-to-left, and the `system`
+ *          scheme must follow the system preference live. A new route folder is covered without editing this file.
  * Boundary: the production build under `vite preview`; Chromium only.
  * Runtime: node
  * Governing contract: ADR 0302 (decision 5); ADR 0182 (test tiers); ADR 0022 (test placement).
@@ -12,7 +14,8 @@
 import { readdirSync } from "node:fs";
 
 import { AxeBuilder } from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
+import { contrastRatio } from "@stackra/tokens";
 
 /** Each route folder's path: `/` for `home`, `/<folder>` for the others (the route classes follow this). */
 const ROUTES = readdirSync(new URL("../../src/routes", import.meta.url), { withFileTypes: true })
@@ -25,7 +28,18 @@ const LOCALES = [
   { locale: "ar", dir: "rtl" },
 ] as const;
 
-const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
+const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
+
+/** The background an element paints, as `#rrggbb`: drawn on a canvas, so any CSS colour form (oklch too) reads. */
+const paintedBackground = (locator: Locator) =>
+  locator.evaluate((element) => {
+    const context = document.createElement("canvas").getContext("2d");
+    if (!context) throw new Error("no 2d canvas");
+    context.fillStyle = getComputedStyle(element).backgroundColor;
+    context.fillRect(0, 0, 1, 1);
+    const [red = 0, green = 0, blue = 0] = context.getImageData(0, 0, 1, 1).data;
+    return `#${[red, green, blue].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+  });
 
 test("the route list is not empty", () => {
   expect(ROUTES).toContain("/foundations");
@@ -38,22 +52,85 @@ for (const path of ROUTES)
         await page.emulateMedia({ colorScheme: scheme });
         await page.goto(`${path}?scheme=${scheme}&locale=${locale}`);
 
-        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+        const heading = page.getByRole("heading", { level: 1 });
+        await expect(heading).toBeVisible();
+        await expect(page).toHaveTitle(new RegExp(`^${await heading.textContent()}`));
         const html = page.locator("html");
         await expect(html).toHaveAttribute("data-theme", scheme);
         await expect(html).toHaveClass(new RegExp(`\\b${scheme}\\b`));
         await expect(html).toHaveAttribute("dir", dir);
         await expect(html).toHaveAttribute("lang", locale);
 
-        const { violations } = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
-        const found = violations.map(
-          (v) =>
-            `${v.id} (${v.impact}): ${v.nodes
-              .map((n) => `${n.target.join(" ")} ${n.failureSummary ?? ""}`)
-              .join(" | ")}`,
-        );
-        expect(found, "axe violations").toEqual([]);
+        const { violations, incomplete } = await new AxeBuilder({ page })
+          .withTags(AXE_TAGS)
+          .analyze();
+        const report = (results: typeof violations) =>
+          results.map(
+            (v) =>
+              `${v.id} (${v.impact}): ${v.nodes
+                .map((n) => `${n.target.join(" ")} ${n.failureSummary ?? ""}`)
+                .join(" | ")}`,
+          );
+        expect(report(violations), "axe violations").toEqual([]);
+        expect(report(incomplete), "axe checks left for review").toEqual([]);
       });
+
+for (const scheme of SCHEMES)
+  test(`the system scheme follows the system's ${scheme} preference, live`, async ({ page }) => {
+    const other = scheme === "dark" ? "light" : "dark";
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto("/foundations?scheme=system&locale=en");
+    const html = page.locator("html");
+    await expect(page.getByRole("radio", { name: "System" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    await expect(html).toHaveAttribute("data-theme", scheme);
+    await expect(html).toHaveClass(new RegExp(`\\b${scheme}\\b`));
+    await page.emulateMedia({ colorScheme: other });
+    await expect(html).toHaveAttribute("data-theme", other);
+    await expect(html).not.toHaveClass(new RegExp(`\\b${scheme}\\b`));
+  });
+
+for (const scheme of SCHEMES)
+  test(`the selected switcher choice stands 3:1 or more from the others in ${scheme}`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
+    await page.goto(`/?scheme=${scheme}&locale=en`);
+    const selected = page.getByRole("radio", { name: scheme === "dark" ? "Dark" : "Light" });
+    await expect(selected).toHaveAttribute("aria-checked", "true");
+    for (const name of ["System", scheme === "dark" ? "Light" : "Dark"]) {
+      const unselected = page.getByRole("radio", { name });
+      await expect(unselected).toHaveAttribute("aria-checked", "false");
+      const ratio = contrastRatio(
+        await paintedBackground(selected),
+        await paintedBackground(unselected),
+      );
+      expect(ratio, `${scheme}: selected against ${name}`).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+test("the switcher works from the keyboard in right-to-left: arrows follow the direction, Space picks", async ({
+  page,
+}) => {
+  await page.goto("/foundations?scheme=light&locale=ar");
+  const light = page.getByRole("radio", { name: "Light" });
+  const dark = page.getByRole("radio", { name: "Dark" });
+  // Mirrored: the next choice sits to the left, and ArrowLeft moves to it.
+  expect((await dark.boundingBox())?.x).toBeLessThan((await light.boundingBox())?.x ?? 0);
+  await light.focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(dark).toBeFocused();
+  await expect(dark).toHaveAttribute("aria-checked", "false");
+  await page.keyboard.press("Space");
+  await expect(dark).toHaveAttribute("aria-checked", "true");
+  await expect(light).toHaveAttribute("aria-checked", "false");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page).toHaveURL(/scheme=dark/);
+  await page.keyboard.press("ArrowRight");
+  await expect(light).toBeFocused();
+});
 
 test("the switcher writes the scheme and direction to the URL and the document", async ({
   page,
@@ -65,4 +142,18 @@ test("the switcher writes the scheme and direction to the URL and the document",
   await expect(page).toHaveURL(/locale=ar/);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  await expect(page.locator('meta[name="theme-color"]').first()).toHaveAttribute(
+    "content",
+    "#0B0D0F",
+  );
+});
+
+test("a client-side navigation titles the document and moves focus to the new h1", async ({
+  page,
+}) => {
+  await page.goto("/?scheme=light&locale=en");
+  await page.getByRole("navigation", { name: "Pages" }).getByRole("link").first().click();
+  await expect(page).toHaveURL(/\/foundations\?/);
+  await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
+  await expect(page).toHaveTitle("Foundations · Stackra Playground");
 });

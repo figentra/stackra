@@ -16,6 +16,10 @@
           t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         document.documentElement.classList.add(t);
         document.documentElement.dataset.theme = t;
+        // The browser chrome in the background colour of that scheme (the shell keeps it in step afterwards).
+        document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) {
+          m.content = t === "dark" ? "#0B0D0F" : "#F5F6F3";
+        });
         if (q.get("locale") === "ar") {
           document.documentElement.lang = "ar";
           document.documentElement.dir = "rtl";

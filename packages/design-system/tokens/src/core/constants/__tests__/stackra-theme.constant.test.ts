@@ -2,8 +2,10 @@
  * Stackra file contract:
  * Purpose: proves the stackra theme carries the approved brand kit unchanged: its colours equal the kit's resolved
  *          tokens, every pairing the kit's contrast report holds to a WCAG minimum still meets it, the accent family
- *          stays achromatic, and the fonts moved with the theme beside their OFL licences.
- * Boundary: reads the kit reports and fonts in assets/; computes contrast from the oklch values.
+ *          stays achromatic, every hex is the sRGB of its oklch, and the fonts moved with the theme beside their OFL
+ *          licences.
+ * Boundary: reads the kit reports and fonts in assets/; computes contrast from the oklch values through sRGB, which
+ *          is how the kit's contrast report was computed (it matches to 0.005).
  * Runtime: node
  * Governing contract: ADR 0302; ADR 0024 (fonts keep the SIL OFL); ADR 0022 (test placement).
  */
@@ -11,6 +13,8 @@ import { existsSync, readFileSync } from "node:fs";
 
 import type { ColorToken } from "#contracts/types/theme.type";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
+import { contrastRatio } from "#core/functions/contrast-ratio.function";
+import { oklchToHex } from "#core/functions/oklch-to-hex.function";
 
 const assets = new URL("../../../../assets/", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, assets), "utf8");
@@ -21,28 +25,8 @@ const tokenOf = (name: string): ColorToken | undefined =>
   (STACKRA_THEME.colors as Readonly<Record<string, ColorToken>>)[name] ??
   STACKRA_THEME.palette[name];
 
-const clip = (channel: number) => Math.min(1, Math.max(0, channel));
-
-/** WCAG 2 relative luminance of an `oklch(L C H)` colour, through OKLab and linear sRGB (clipped to the gamut). */
-const luminance = (oklch: string): number => {
-  const [lightness, chroma, hue] = (oklch.match(/oklch\(([\d.]+) ([\d.]+) ([\d.]+)/) ?? [])
-    .slice(1)
-    .map(Number) as [number, number, number];
-  const a = chroma * Math.cos((hue * Math.PI) / 180);
-  const b = chroma * Math.sin((hue * Math.PI) / 180);
-  const l = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
-  const m = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
-  const s = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3;
-  const red = clip(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s);
-  const green = clip(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s);
-  const blue = clip(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s);
-  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
-};
-
-const contrast = (one: string, two: string) => {
-  const [high, low] = [luminance(one), luminance(two)].sort((x, y) => y - x) as [number, number];
-  return (high + 0.05) / (low + 0.05);
-};
+/** The WCAG ratio of two oklch colours as a browser paints them: through their 8-bit sRGB. */
+const contrast = (one: string, two: string) => contrastRatio(oklchToHex(one), oklchToHex(two));
 
 // The kit labels the modes "base" and "dark".
 const modeOf = (theme: string): Mode => (theme === "dark" ? "dark" : "light");
@@ -71,6 +55,20 @@ describe("STACKRA_THEME", () => {
       });
   });
 
+  it("derives every hex from its oklch value", () => {
+    for (const [name, token] of Object.entries({
+      ...STACKRA_THEME.colors,
+      ...STACKRA_THEME.palette,
+    }))
+      expect([token.hexLight, token.hexDark], name).toEqual([
+        oklchToHex(token.light),
+        oklchToHex(token.dark),
+      ]);
+    // Values the kit's resolved report once disagreed with, as Chromium paints them.
+    expect(STACKRA_THEME.colors.surface.hexDark).toBe("#131518");
+    expect(STACKRA_THEME.colors.success.hexLight).toBe("#40731A");
+  });
+
   it("meets every WCAG minimum in the kit's contrast report", () => {
     const rows = kit<
       {
@@ -90,7 +88,7 @@ describe("STACKRA_THEME", () => {
       );
       const pair = `${row.theme} ${row.foreground} on ${row.background}`;
       expect(ratio, pair).toBeGreaterThanOrEqual(row.minimum ?? 0);
-      expect(Math.abs(ratio - row.ratio), pair).toBeLessThan(0.1);
+      expect(Math.abs(ratio - row.ratio), pair).toBeLessThan(0.01);
     }
   });
 

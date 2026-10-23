@@ -9,6 +9,8 @@
 export { TokensConfig } from "#config/tokens.config";
 export { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 export { InvalidThemeError } from "#core/errors/invalid-theme.error";
+export { contrastRatio } from "#core/functions/contrast-ratio.function";
 export { defineTheme } from "#core/functions/define-theme.function";
+export { oklchToHex } from "#core/functions/oklch-to-hex.function";
 export { renderNativeCss } from "#core/functions/render-native-css.function";
 export { renderWebCss } from "#core/functions/render-web-css.function";

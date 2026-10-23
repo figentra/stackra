@@ -10,7 +10,7 @@
 // @vitest-environment jsdom
 // @covers sta-350:FR-009 sta-350:P-006
 import { act, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import { DesignSystemProvider, useDesignSystem } from "#native/index";
 
@@ -73,6 +73,22 @@ describe("DesignSystemProvider (native)", () => {
     expect(screen.getByTestId("layout").dataset["rtl"]).toBe("false");
     expect(screen.getByTestId("heroui").dataset["rtl"]).toBe("false");
     expect(screen.getByTestId("state").textContent).toBe("system light en ltr");
+  });
+
+  it("hands Uniwind the scheme before any child's effect runs, so the first paint is in it", () => {
+    const seenByChild: unknown[][] = [];
+    function Child() {
+      useEffect(() => {
+        seenByChild.push(...uniwind.setTheme.mock.calls);
+      }, []);
+      return null;
+    }
+    render(
+      <DesignSystemProvider colorScheme="dark">
+        <Child />
+      </DesignSystemProvider>,
+    );
+    expect(seenByChild).toEqual([["dark"]]);
   });
 
   it("reads the resolved scheme from Uniwind and derives right to left from the locale", () => {

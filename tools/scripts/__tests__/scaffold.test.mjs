@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 
 import { stripJsonc } from "../jsonc.mjs";
-import { parseEntries, scaffold } from "../scaffold.mjs";
+import { BINARY_RE, parseEntries, scaffold } from "../scaffold.mjs";
 import { CATEGORY_NAMES, ENTRY_NAMES, MODULE_GROUPS, OPTIONAL_ENTRY_NAMES } from "../structure.mjs";
 import { check, checkExports, checkService, checkYamlFlowMaps } from "../validate-repository.mjs";
 
@@ -71,7 +71,8 @@ test("app templates take their theme from @stackra/tokens and ship their own cop
     const sub = `./${ref.slice("@stackra/tokens/".length)}`;
     const [key, target] = wildcards.find(([k]) => sub.startsWith(k.slice(0, -1))) ?? [];
     assert.ok(key, `no @stackra/tokens export for ${ref}`);
-    const file = join(TOKENS, target.replace("*", sub.slice(key.length - 1)));
+    // Node substitutes every `*` in an export target, not only the first.
+    const file = join(TOKENS, target.replaceAll("*", sub.slice(key.length - 1)));
     assert.ok(existsSync(file), `tokens file missing: ${ref}`);
   };
   const refs = (text) => [...text.matchAll(/@stackra\/tokens\/[^"'\s)]+/g)].map((m) => m[0]);
@@ -377,4 +378,24 @@ test("rejections", () => {
   bad({ kind: "service", name: "dup" }, /already exists/);
   // The 13 categories (settlement Q3.2, ADR 0302 adds design-system); tooling is a separate tier, not a category.
   assert.equal(CATEGORY_NAMES.length, 13);
+});
+
+test("copies images, fonts and documents byte for byte, and fills every other template file", () => {
+  for (const file of [
+    "a.png",
+    "a.jpg",
+    "a.JPEG",
+    "a.gif",
+    "a.webp",
+    "a.avif",
+    "a.ico",
+    "a.woff",
+    "a.woff2",
+    "a.ttf",
+    "a.otf",
+    "a.pdf",
+  ])
+    assert.ok(BINARY_RE.test(file), file);
+  for (const file of ["a.svg", "a.ts", "a.json", "a.css", "pdf.md"])
+    assert.ok(!BINARY_RE.test(file), file);
 });

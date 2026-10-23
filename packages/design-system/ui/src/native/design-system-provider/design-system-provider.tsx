@@ -11,7 +11,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI Native on native); ADR 0060 (RTL).
  */
 import { HeroUINativeProvider } from "heroui-native";
-import { useEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { LayoutDirection, Uniwind, useUniwind } from "uniwind";
 
 import type { ColorScheme } from "#contracts/enums/color-scheme.enum";
@@ -43,7 +43,10 @@ export function DesignSystemProvider({
   const currentDirection = direction ?? directionOf(currentLocale);
   const isRtl = currentDirection === "rtl";
 
-  useEffect(() => {
+  // Layout effect: on the New Architecture (the only one Expo 57 runs) it runs before the frame is shown, and the
+  // re-render Uniwind's listeners ask for lands in the same frame, so the first paint is already in the scheme.
+  // Not during render: setTheme notifies every useUniwind subscriber, which would update other components mid-render.
+  useLayoutEffect(() => {
     Uniwind.setTheme(currentColorScheme);
   }, [currentColorScheme]);
 

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: proves the token schema is enforced: a complete theme passes unchanged, and a missing role, an empty
- *          value, a bad hex, a non-kebab name, a palette entry that repeats a role or a value that would break the
- *          CSS each fail with InvalidThemeError naming the token.
+ *          value, a bad hex, a non-kebab name, two tokens that write one CSS property, or a value outside its kind's
+ *          grammar (each CSS injection attempt among them) fail with InvalidThemeError naming the token.
  * Boundary: calls defineTheme on in-memory themes only.
  * Runtime: node
  * Governing contract: ADR 0302; ADR 0022 (test placement).
@@ -55,16 +55,91 @@ describe("defineTheme", () => {
       }),
     ).toEqual([
       "name is not a kebab-case token name",
-      "palette.accent repeats a colour role",
       "spacing.Large is not a kebab-case token name",
+      "--accent is written by two tokens",
+    ]);
+  });
+
+  it("refuses keys that would write a property another token writes", () => {
+    expect(
+      problemsOf({
+        ...STACKRA_THEME,
+        palette: { radius: STACKRA_THEME.colors.accent, "space-1": STACKRA_THEME.colors.accent },
+        typography: {
+          ...STACKRA_THEME.typography,
+          "surface-shadow": STACKRA_THEME.typography["body"],
+        },
+        motion: { ...STACKRA_THEME.motion, "1": { duration: "1ms", easing: "ease" } },
+        spacing: { ...STACKRA_THEME.spacing },
+        radius: {
+          ...STACKRA_THEME.radius,
+          steps: { ...STACKRA_THEME.radius.steps, "letter-spacing": "1px" },
+        },
+      }),
+    ).toEqual([
+      "--surface-shadow is written by two tokens",
+      "--space-1 is written by two tokens",
+      "--radius is written by two tokens",
     ]);
   });
 
   it("refuses a value that would end its CSS declaration or open a block", () => {
     const motion = { fast: { duration: "1ms; } body { color: red", easing: "ease" } };
     expect(problemsOf({ ...STACKRA_THEME, motion })).toEqual([
-      'motion.fast.duration holds ";", "{", "}", "/*" or a line break',
+      "motion.fast.duration is not a CSS duration",
     ]);
+  });
+
+  it.each([
+    "oklch(1 0 0)\\", // a trailing backslash escapes the renderer's semicolon
+    "oklch(1 0 0",
+    'oklch(1 0 0)"',
+    "oklch(1 0 0)'",
+    "oklch(1 0 0)</style><script>alert(1)</script>",
+    "oklch(1 0 0) < 2",
+    "oklch(1 0 0); color: red",
+    "oklch(1 0 0) } * {",
+    "oklch(1 0 0) /* x */",
+    "url(https://example.com/x)",
+    "expression(alert(1))",
+  ])("refuses %j in every kind of value", (attack) => {
+    const color = { light: attack, dark: attack, hexLight: "#FFFFFF", hexDark: "#FFFFFF" };
+    expect(
+      problemsOf({
+        ...STACKRA_THEME,
+        colors: { ...STACKRA_THEME.colors, accent: color },
+        fontFamily: { ...STACKRA_THEME.fontFamily, sans: `"Geist", ${attack}` },
+        spacing: { "1": attack },
+        radius: { ...STACKRA_THEME.radius, base: attack },
+        shadows: { ...STACKRA_THEME.shadows, field: { light: `0px 1px ${attack}`, dark: attack } },
+        motion: { fast: { duration: attack, easing: attack } },
+      }),
+    ).toEqual([
+      "colors.accent.light is not a CSS color",
+      "colors.accent.dark is not a CSS color",
+      "fontFamily.sans is not a CSS fontStack",
+      "spacing.1 is not a CSS length",
+      "radius.base is not a CSS length",
+      "shadows.field.light is not a CSS shadow",
+      "shadows.field.dark is not a CSS shadow",
+      "motion.fast.duration is not a CSS duration",
+      "motion.fast.easing is not a CSS easing",
+    ]);
+  });
+
+  it("accepts the CSS forms themes are written in", () => {
+    expect(
+      problemsOf({
+        ...STACKRA_THEME,
+        fontFamily: { ...STACKRA_THEME.fontFamily, sans: "'Inter Var', Segoe UI, sans-serif" },
+        spacing: { "1": "0.25rem", "2": "8px", "3": "var(--space-2)" },
+        shadows: {
+          ...STACKRA_THEME.shadows,
+          field: { light: "none", dark: "inset 0 1px 0 0 #000000AA" },
+        },
+        motion: { fast: { duration: "0.2s", easing: "cubic-bezier(0.2, 0, 0, 1)" } },
+      }),
+    ).toEqual([]);
   });
 
   it("checks a text style's weight and font stack", () => {

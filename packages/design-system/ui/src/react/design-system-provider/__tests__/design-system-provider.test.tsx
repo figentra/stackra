@@ -97,13 +97,33 @@ describe("DesignSystemProvider (web)", () => {
     expect(screen.getByTestId("aria").textContent).toBe("ar-EG rtl");
   });
 
-  it("lets a given direction win over the locale", () => {
-    render(
-      <DesignSystemProvider locale="ar" direction="ltr">
+  it("lets a given direction win over the locale, in the document and in React Aria", () => {
+    const { unmount } = render(
+      <DesignSystemProvider locale="ar-EG" direction="ltr">
         <Probe />
       </DesignSystemProvider>,
     );
     expect(root.dir).toBe("ltr");
+    expect(root.lang).toBe("ar-EG");
+    expect(screen.getByTestId("aria").textContent).toBe("ar-Latn-EG ltr");
+    unmount();
+
+    render(
+      <DesignSystemProvider locale="en" direction="rtl">
+        <Probe />
+      </DesignSystemProvider>,
+    );
+    expect(root.dir).toBe("rtl");
+    expect(screen.getByTestId("aria").textContent).toBe("en-Arab rtl");
+  });
+
+  it("hands React Aria the locale unchanged when the direction agrees with it", () => {
+    render(
+      <DesignSystemProvider locale="ar" direction="rtl">
+        <Probe />
+      </DesignSystemProvider>,
+    );
+    expect(screen.getByTestId("aria").textContent).toBe("ar rtl");
   });
 
   it("follows the system scheme while the scheme is system", () => {
@@ -147,6 +167,31 @@ describe("DesignSystemProvider (web)", () => {
     );
     act(() => screen.getByRole("button", { name: "dark" }).click());
     expect(root.dataset["theme"]).toBe("light");
+  });
+
+  it("leaves <html> as it found it when it unmounts", () => {
+    root.classList.add("light");
+    root.dataset["theme"] = "light";
+    root.lang = "en";
+    root.removeAttribute("dir");
+    const { unmount } = render(
+      <DesignSystemProvider colorScheme="dark" locale="ar">
+        <Probe />
+      </DesignSystemProvider>,
+    );
+    expect([root.className, root.dataset["theme"], root.lang, root.dir]).toEqual([
+      "dark",
+      "dark",
+      "ar",
+      "rtl",
+    ]);
+    unmount();
+    expect([root.className, root.dataset["theme"], root.lang, root.hasAttribute("dir")]).toEqual([
+      "light",
+      "light",
+      "en",
+      false,
+    ]);
   });
 
   it("refuses useDesignSystem outside a provider", () => {

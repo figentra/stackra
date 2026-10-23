@@ -21,6 +21,7 @@ describe("HomeRoute", () => {
     );
     render(<RouterProvider router={router} />);
     expect(screen.getByRole("heading", { level: 1, name: HomeRoute.title })).toBeTruthy();
+    expect(document.title).toBe(HomeRoute.title);
     expect(screen.getByRole("link", { name: "Page A" }).getAttribute("href")).toBe(
       "/a?scheme=dark&locale=ar",
     );
