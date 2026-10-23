@@ -1,0 +1,60 @@
+---
+title: "0309 — Icons: declarations name an IconName, and @stackra/icons resolves it per platform"
+description: "Accepted · 2026-10-23"
+---
+
+<Note>
+  Amends [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs) (the UI
+  contract, where icons are named by the declarations and drawn by the platform). It builds on the
+  design-system category of [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground),
+  which holds `@stackra/icons` beside `@stackra/tokens` and `@stackra/ui`. The page 0165 carries a
+  note in this change (STA-414).
+</Note>
+
+## Context
+
+Navigation entries, KPI tiles, banners and buttons all show an icon. The v3 proposals and the template
+imported an icon component into each declaration (`import { Icons } from "@stackra/ui/icons"`, then
+`icon: Icons.Receipt`). That ties every declaration to one icon library and one renderer, and it puts a
+component import into a file that is otherwise data. A declaration is read by gen, by the manifest and by
+the web and native clients, and none of them needs a component to do so.
+
+## Decision
+
+1. A declaration references an icon only by its `IconName`, a string. No declaration imports an icon
+   component. Examples are `navigation: { group, icon: "receipt", order: 20 }` and
+   `d.kpi("revenue").icon("banknote")`.
+2. `IconName` is a string union. It is generated from Lucide 1.54.0, which is pinned, and it adds the Stackra
+   aliases. It is exported from `@stackra/icons/contracts`.
+3. `@stackra/ui` resolves a name to a drawing on each platform: `lucide-react` on the web and
+   `lucide-react-native` on native. The map from names to drawings is the only place that knows the library.
+   Swapping the library changes that map in `@stackra/icons` and nothing else.
+4. Gen validates every icon name used in a declaration against `IconName`, and emits a registry of the names that
+   the build uses. A bundle holds the drawings of the used names only.
+5. A member's own icons, in its `assets/icons/` folder, join the set under the namespace form
+   `<namespace>::<name>`, for example `billing::invoice`. They follow the asset rules of ADR 0234, and an override
+   of one replaces the file whole (ADR 0306 rule 4).
+6. The package is `@stackra/icons` in the design-system category (ADR 0302). It has a `contracts` entry, which holds
+   the name union, and a platform entry per renderer.
+
+## Consequences
+
+- A declaration is data that every target reads the same way. A reviewer sees the name and nothing else.
+- A name that does not exist fails at gen, so a typo does not render an empty square.
+- The icon library can change in one file, and the bundle size follows the names used.
+- The `Icons.*` form in the earlier proposals and the template is not used. The template is converted in the
+  template pass (STA-344).
+
+## Enforcement
+
+- planned — gen validation of icon names against `IconName`, and the used-names registry. The work item is not yet
+  open in Linear.
+- planned — the `@stackra/icons` package, which is not built yet (ADR 0302 places it, and its work item follows
+  the design-system build).
+
+## Supersedes and sources
+
+Supersedes: none. The icon component import of the earlier proposals and of the template is not a recorded
+decision, so nothing is superseded; it is replaced in the template by the rule above.
+
+Origin: the v3.1 design review of 2026-10-23, where the icon model was approved, restated in this ADR's own words.

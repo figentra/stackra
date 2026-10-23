@@ -1,7 +1,29 @@
 ---
 title: "0159 — Migrations: gen-ordered SQL, migrations shipped in packages, and safety rules"
-description: "Accepted, amended by 0294 · 2026-10-20"
+description: "Accepted, amended by 0294, 0305 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by
+  [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components), with the v3.1
+  migration rules. A migration is a frozen snapshot: it imports only `@stackra/database` and
+  `#stackra/migrations`, and it names tables and columns with literals, so a model change does not
+  rewrite history. Authors write `up()` only. Gen derives an inverse for every step and stores it
+  beside the compiled SQL. Rollback runs on dev, preview and test databases only, through `stackra
+  db rollback`; production stays forward-only. Decision 4 (forward fix only) and the rejected
+  alternative of rolling back data apply to production only.
+
+A raw SQL step takes `schema.sql(x, { inverse })`. `inverse: false` marks an irreversible step, and a missing `inverse` is a gen error.
+
+Order is the number within a module, plus `after:` across members and the edges that macros imply;
+a released prefix does not move, and there is no `before`. Gen locks each compiled step with a
+SHA-256 hash in `stackra.manifest.json`. Operations belong to classes (Additive, Online, Contract
+and Banned), and gen enforces the class of each step. Stackra's column conventions are a `Macro`
+kind in `database/macros/`, named after its partner. Decision 2 (Encore's runner applies the SQL)
+stands until the spike on single-statement concurrent index builds decides whether one Stackra
+runner runs everywhere. Decision 3 applies: concurrent index builds sit in their own step.
+
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the

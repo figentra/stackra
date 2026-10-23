@@ -28,7 +28,7 @@ stackra/
 │   ├── foundation/         # Contracts, validation, errors
 │   ├── infrastructure/     # Pulumi-based infra-* packages
 │   ├── runtime/            # Outbox, queue, scheduler, workflow, realtime, locking, cache
-│   ├── security/           # Identity, IAM, tenancy, connections, entitlements, licensing
+│   ├── security/           # Identity, IAM, tenancy, entitlements, licensing
 │   └── state/              # Settings, feature flags, theming
 ├── services/               # tier:service
 │   ├── example/            # Reference service (plain TypeScript)
@@ -71,8 +71,7 @@ new code in the v3 shape where the member already allows it.
 - Authors `package.json`, `tsconfig.json`, `turbo.jsonc`, `stackra.config.ts` (one `defineApp`, `defineService`,
   `definePackage` or `defineWorker` call, static data only), `runway.yaml` when it needs runtime resources (ADR 0296),
   `src/**` and `assets/**`
-- One root module, `src/<key>.module.ts` (`src/node/<key>.module.ts` in a package); the key is derived from the package
-  name
+- The root module is optional. `src/<key>.module.ts` (`src/node/<key>.module.ts` in a package) is written only when it states something gen cannot derive; a member with none is one module keyed by its folder name (ADR 0305, ADR 0294 2026-10-23 item 14)
 - Exempt from `stackra.config.ts` and the root module: the docs app (`apps/docs`, Mintlify, no TypeScript runtime) and
   the `tier:config` presets in `packages/tooling/` (tool configuration, no module); the planned `member-root` check
   (STA-339) skips them
@@ -94,18 +93,20 @@ new code in the v3 shape where the member already allows it.
 - Independent workspace members; feature modules in `src/modules/<key>/`, each with the module groups of ADR 0294
   decision 13 (`models/`, `actions/`, `queries/`, `schemas/`, `enums/`, `errors/`, `events/`, `listeners/`,
   `workflows/`, `access/`, `services/`, `drivers/`, `extensions/`, `integrations/`, `connections/`, `resources/<model>/`,
-  `database/{migrations,factories,seeders}/`, `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its
+  `database/{migrations,factories,seeders,macros}/`, `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its
   first file; `database/` is per module, its migrations numbered per module, and each module's tables live in its own
   Postgres schema
 - Config classes in `src/config/`; the public type surface in `src/contracts/`
+- A migration is a frozen snapshot: it imports only `@stackra/database` and `#stackra/migrations`, and its tables and columns are literals (ADR 0159, v3.1 note)
 
 ### Apps (<name>)
 
 - Console: Vite web app; Docs: Mintlify documentation site; Mobile: Expo React Native app
-- App groups (ADR 0294 decision 14): `src/<key>.module.ts`, `src/app.error.tsx`, `config/`, `routes/<name>/`,
+- App groups (ADR 0294 decision 14, ADR 0305): `src/<key>.module.ts` (optional), `config/`, `routes/<name>/`,
   `components/<name>/`, `blocks/<name>/`, `panels/`, `menus/`, `shortcuts/`, `documents/`, `stores/`, `flags/`,
-  `analytics/`, `bridges/`, `hooks/` (two or more importers), `overrides/<owner>/`, `schemas/`, `errors/`, `enums/`,
+  `analytics/`, `bridges/`, `hooks/` (two or more importers), `schemas/`, `errors/`, `enums/`,
   `types/`, `styles/`
+- Overrides of any package or service live in one tree, `src/overrides/<owner>/`, which mirrors the owner's paths (ADR 0306)
 - Docs (`apps/docs`) is the exception: Mintlify pages, `docs.json` and `assets/` in `src/`
 
 ### Workers (<name>)
@@ -126,6 +127,7 @@ new code in the v3 shape where the member already allows it.
 - No root `tests/` - tests live beside code
 - No `src/` in workspace root
 - No packages directly in `packages/` - must have category folder
+- No `assets/overrides/` folders and no `.override.tsx` files: overrides live in `src/overrides/<owner>/` (ADR 0306)
 - Tooling presets live in `packages/tooling/<name>/src/` (one flat layer); no `packages/tooling/<name>/src/lib/`. There are
   exactly five: typescript, oxlint, vitest, tsdown and commitlint (ADR 0300)
 - Folders named after a retired kind: `links/`, `permissions/`, `guards/`, `hooks/` (inside a module), `states/`,
@@ -145,4 +147,5 @@ new code in the v3 shape where the member already allows it.
 - ADR-0004: Package archetypes and layers
 - ADR-0003: Tier dependency direction
 - ADR-0294, ADR-0295, ADR-0296: programming model v3, build and entry, runway v3
+- ADR-0305, ADR-0306: programming model v3.1 and the overrides tree
 - Standards: members (required files per tier)

@@ -1,7 +1,23 @@
 ---
 title: "0297 — Web runtime on Workers: prerender with a fixed site, cache data not HTML, locale paths without redirects, and Worker forwarding"
-description: "Accepted · 2026-10-22"
+description: "Accepted, amended by 0305 · 2026-10-22"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by
+  [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) (its Template
+  and runtime conventions section): the offline page of an app is a React route built from HeroUI
+  through `@stackra/ui`; Pro components where the member holds a HeroUI Pro licence (ADR 0197 as
+  amended). Gen prerenders it once for each locale, under the prerender rule of decision 2. The
+  Worker serves it like any other page, and the HTML is not cached (decision 3). On the cache: a
+  query declares its cache as the `cache:` option of the Query (rule 31 of
+  [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components)), not as a
+  cache profile passed at the call site. The key of decision 3 (query, input, site, locale, market
+  and version) is the key of the web runtime's cache for a public read, selected by `cache.per:
+  CacheScope.Site` (rule 31 of
+  [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components)), and the
+  per-principal default of rule 31 governs the other cached reads. Decisions 1, 2, 4, 5 and 6 stand.
+</Note>
 
 <Note>
   Amends [0237](/adr/0237-generated-api-gateway-in-four-layers) with decision 6: the web Worker

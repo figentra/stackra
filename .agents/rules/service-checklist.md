@@ -8,11 +8,11 @@ manual: false
 
 # Service checklist
 
-A service is `services/<name>`, `@figentra/service-<name>`, tag `tier:service`. In the programming model v3 (ADR 0294, 0295) it authors `stackra.config.ts` (`defineService`), one root module `src/<key>.module.ts` and its config classes in
-`src/config/`; gen writes the runtime entry to `.stackra/entry/server.ts`, and nobody writes `main.ts`. A feature module
-is `src/modules/<key>/<key>.module.ts` with the module groups of ADR 0294 decision 13: `models/`, `actions/`, `queries/`,
+A service is `services/<name>`, `@figentra/service-<name>`, tag `tier:service`. In the programming model v3 (ADR 0294, 0295) it authors `stackra.config.ts` (`defineService`) and its config classes in
+`src/config/`; gen writes the runtime entry to `.stackra/entry/server.ts`, and nobody writes `main.ts`. A root module, `src/<key>.module.ts`, is written only when it states something gen cannot derive (ADR 0305 rule 15). A feature module
+is the folder `src/modules/<key>/`, with a module file only where it states something gen cannot derive, and it holds the module groups of ADR 0294 decision 13: `models/`, `actions/`, `queries/`,
 `schemas/`, `enums/`, `errors/`, `events/`, `listeners/`, `workflows/`, `access/`, `services/`, `drivers/`,
-`extensions/`, `integrations/`, `connections/`, `resources/<model>/`, `database/{migrations,factories,seeders}/`, `ai/`,
+`extensions/`, `integrations/`, `connections/`, `resources/<model>/`, `database/{migrations,factories,seeders,macros}/`, `ai/`,
 `functions/`, `constants/` and `types/`, each appearing with its first file. There is no `controllers/`, `dtos/`,
 `repositories/`, `guards/`, `links/`, `permissions/`, `states/`, `hooks/` or `presentation/` folder.
 
@@ -30,8 +30,8 @@ codemod (STA-344) converts the members. Eight non-negotiables:
 5. **Idempotency on every write** (`http-conventions`, ADR 0136). Endpoints come from action keys by convention.
 6. **Required files:** `README.md`, `AGENTS.md` with a `## PII` table (even if "none"), `CHANGELOG.md` (no `LICENSE`: services are UNLICENSED, ADR 0195),
    `isolation.test.ts` once a scoped table exists.
-7. **Secrets:** declared by name only, as a `@Secret("STRIPE_SECRET_KEY")` field of a config class, and listed in the member's
-   `runway.yaml` `secrets` (ADR 0146 as amended, 0296). The production value comes from Infisical through runway (ADR 0173).
+7. **Secrets:** declared by name only, as a `@Secret("STRIPE_SECRET_KEY")` field of the schema of a `Config({ schema, env })` class, and listed in the member's
+   `runway.yaml` `secrets` (ADR 0146 as amended, 0296). The production value comes from Infisical through runway (ADR 0173). The schema is never sent to a wire surface (ADR 0305 rule 34).
    Tests need none.
 8. **Definition of done:** code, `pnpm verify` green, the service's own tests green, docs current, reviewer sign-off. `pnpm verify` never
    starts a service, so a typecheck is not proof it runs.

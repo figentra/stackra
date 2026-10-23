@@ -1,7 +1,15 @@
 ---
 title: "0271 — Saved views"
-description: "Accepted · 2026-10-21"
+description: "Accepted, amended by 0307 · 2026-10-21"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by
+  [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards). Personal and
+  tenant-shared views follow rule 9: a view stores only declared keys, `.renamed()` migrates them,
+  and sharing is held by the `panel.view.share` permission. Role copies in decision 3 are not part
+  of rule 9 and are not restated here. Decisions 1 and 2 are not changed.
+</Note>
 
 ## Context
 

@@ -1,7 +1,11 @@
 ---
 title: "0128 — Code conventions: enums, classes, components and kind folders"
-description: "Accepted, amended by 0268, 0294 · 2026-10-20"
+description: "Accepted, amended by 0268, 0294, 0305 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components). The companion rule of decision 2 is replaced: `XProps` is no longer exported from the component file. Props live in `<name>.props.ts`, one declaration per file (rules 10 to 12). The line that says there are no class components is reversed: a component may be a class, `class X extends Component<P>`, which gen compiles to a function component (rules 37 to 41). Decisions 1, 3 and 4 stand. Decision 5 was withdrawn when this page was written and is not restated here.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): decision 1 (an enum is
