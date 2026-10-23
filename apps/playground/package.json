@@ -1,0 +1,63 @@
+{
+  "name": "@figentra/playground",
+  "version": "0.0.1",
+  "private": true,
+  "description": "The Stackra Design System playground: every @stackra/ui component on its own route, in light and dark and in left-to-right and right-to-left, checked by Playwright and axe.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "imports": {
+    "#src/*": [
+      "./src/*",
+      "./src/*.ts",
+      "./src/*.tsx",
+      "./src/*/index.ts"
+    ],
+    "#stackra/*": [
+      "./.stackra/gen/*",
+      "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
+      "./.stackra/gen/*/index.ts"
+    ]
+  },
+  "scripts": {
+    "dev": "vite --port 3710 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --port 3710 --strictPort",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "clean": "rm -rf dist coverage .turbo test-results playwright-report"
+  },
+  "dependencies": {
+    "@heroui/react": "catalog:frontend",
+    "@heroui/styles": "catalog:frontend",
+    "@stackra/tokens": "workspace:*",
+    "@stackra/ui": "workspace:*",
+    "react": "catalog:frontend",
+    "react-dom": "catalog:frontend",
+    "react-router": "catalog:frontend"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "catalog:e2e",
+    "@playwright/test": "catalog:e2e",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@tailwindcss/vite": "catalog:frontend",
+    "@testing-library/dom": "catalog:frontend",
+    "@testing-library/react": "catalog:frontend",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:frontend",
+    "@types/react-dom": "catalog:frontend",
+    "@vitejs/plugin-react": "catalog:frontend",
+    "jsdom": "catalog:frontend",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tailwindcss": "catalog:frontend",
+    "typescript": "catalog:build",
+    "vite": "catalog:frontend",
+    "vitest": "catalog:quality"
+  }
+}

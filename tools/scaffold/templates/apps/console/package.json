@@ -31,7 +31,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
-    "@stackra/brand": "workspace:*",
+    "@stackra/tokens": "workspace:*",
     "@heroui/react": "catalog:frontend",
     "@heroui/styles": "catalog:frontend",
     "react": "catalog:frontend",

@@ -55,6 +55,8 @@ export const KIND_NAMES = Object.keys(KINDS);
 const NAME_RE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 // Spaces tolerated: oxfmt rewrites `{{TITLE}}` inside JSX text to `{{ TITLE }}`.
 const TOKEN_RE = /\{\{\s*(NAME|PASCAL|TITLE|DESCRIPTION|PORT|CATEGORY|ENTRIES)\s*\}\}/g;
+/** Template files copied byte for byte: images, fonts and documents hold no tokens and a text round trip corrupts them. */
+export const BINARY_RE = /\.(png|jpe?g|gif|webp|avif|ico|woff2?|ttf|otf|pdf)$/i;
 const pascal = (n) => n.replace(/(^|-)([a-z0-9])/g, (_, __, c) => c.toUpperCase());
 const titleCase = (n) =>
   n.replace(/(^|-)([a-z0-9])/g, (_, s, c) => (s ? " " : "") + c.toUpperCase());
@@ -198,7 +200,9 @@ export function scaffold({
       if (dryRun) continue;
       const target = join(dest, out);
       mkdirSync(dirname(target), { recursive: true });
-      writeFileSync(target, fill(readFileSync(src, "utf8"), /\.jsonc?$/.test(out)));
+      // Images and fonts hold no tokens and would be corrupted by a text round trip.
+      if (BINARY_RE.test(out)) copyFileSync(src, target);
+      else writeFileSync(target, fill(readFileSync(src, "utf8"), /\.jsonc?$/.test(out)));
     }
   const licensed = kind === "package" || kind === "tooling";
   if (licensed) files.push("LICENSE");

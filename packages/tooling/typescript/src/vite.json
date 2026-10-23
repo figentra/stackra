@@ -1,5 +1,5 @@
 // Stackra file contract:
-// Purpose: Vite + React 19 SPAs (apps/console).
+// Purpose: Vite + React 19 SPAs (apps/console, apps/playground). `e2e/` holds the app's Playwright suites (ADR 0022 d3).
 // Owner: release-operations · Secrets: forbidden
 {
   "display": "@stackra/typescript-config — vite app",
@@ -7,6 +7,7 @@
   "compilerOptions": { "types": ["vite/client", "node", "vitest/globals"] },
   "include": [
     "${configDir}/src",
+    "${configDir}/e2e",
     "${configDir}/vite.config.ts",
     "${configDir}/vitest.config.ts",
     "${configDir}/playwright.config.ts"

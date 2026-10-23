@@ -48,7 +48,7 @@ import { OrderPricingService } from "#modules/orders/services/order-pricing.serv
 
 ```typescript
 // ✅ App importing from package
-import { tokens } from "@stackra/brand";
+import { STACKRA_THEME } from "@stackra/tokens";
 
 // ✅ Service importing from package
 import { logger } from "@stackra/logger";

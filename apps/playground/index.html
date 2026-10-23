@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stackra Playground</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#F5F6F3" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0B0D0F" media="(prefers-color-scheme: dark)" />
+    <script>
+      // Before paint: the scheme and direction from ?scheme= and ?locale=, as DesignSystemProvider will set them.
+      try {
+        var q = new URLSearchParams(location.search);
+        var t = q.get("scheme");
+        if (t !== "light" && t !== "dark")
+          t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.classList.add(t);
+        document.documentElement.dataset.theme = t;
+        // The browser chrome in the background colour of that scheme (the shell keeps it in step afterwards).
+        document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) {
+          m.content = t === "dark" ? "#0B0D0F" : "#F5F6F3";
+        });
+        if (q.get("locale") === "ar") {
+          document.documentElement.lang = "ar";
+          document.documentElement.dir = "rtl";
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body class="bg-background text-foreground">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

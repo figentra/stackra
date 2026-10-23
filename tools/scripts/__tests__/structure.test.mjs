@@ -38,11 +38,11 @@ const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const SCRIPTS = join(ROOT, "tools/scripts");
 const tmp = () => mkdtempSync(join(tmpdir(), "structure-"));
 
-test("the category list is the 12 categories, and every category folder on disk is one of them", () => {
+test("the category list is the 13 categories, and every category folder on disk is one of them", () => {
   const onDisk = readdirSync(join(ROOT, "packages"), { withFileTypes: true })
     .filter((d) => d.isDirectory() && d.name !== "tooling")
     .map((d) => d.name);
-  assert.equal(CATEGORY_NAMES.length, 12);
+  assert.equal(CATEGORY_NAMES.length, 13);
   for (const name of onDisk) assert.ok(CATEGORY_NAMES.includes(name), name);
 });
 
@@ -109,6 +109,7 @@ test("scaffold writes every category to packages/<category>/<name> on disk", () 
 
 test("categoryOf reads packages/<category>/<name> and packages/tooling/<name>", () => {
   assert.equal(categoryOf("packages/cross-cutting/brand"), "cross-cutting");
+  assert.equal(categoryOf("packages/design-system/tokens"), "design-system");
   assert.equal(categoryOf("packages/tooling/oxlint"), "tooling");
   assert.equal(categoryOf("packages/nope/x"), null);
   assert.equal(categoryOf("apps/console"), null);

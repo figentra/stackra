@@ -1,0 +1,119 @@
+/**
+ * Stackra file contract:
+ * Purpose: proves the stackra theme carries the approved brand kit unchanged: its colours equal the kit's resolved
+ *          tokens, every pairing the kit's contrast report holds to a WCAG minimum still meets it, the accent family
+ *          stays achromatic, every hex is the sRGB of its oklch, and the fonts moved with the theme beside their OFL
+ *          licences.
+ * Boundary: reads the kit reports and fonts in assets/; computes contrast from the oklch values through sRGB, which
+ *          is how the kit's contrast report was computed (it matches to 0.005).
+ * Runtime: node
+ * Governing contract: ADR 0302; ADR 0024 (fonts keep the SIL OFL); ADR 0022 (test placement).
+ */
+import { existsSync, readFileSync } from "node:fs";
+
+import type { ColorToken } from "#contracts/types/theme.type";
+import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
+import { contrastRatio } from "#core/functions/contrast-ratio.function";
+import { oklchToHex } from "#core/functions/oklch-to-hex.function";
+
+const assets = new URL("../../../../assets/", import.meta.url);
+const read = (path: string) => readFileSync(new URL(path, assets), "utf8");
+const kit = <T>(name: string) => JSON.parse(read(`data/stackra/${name}.json`)) as T;
+type Mode = "light" | "dark";
+
+const tokenOf = (name: string): ColorToken | undefined =>
+  (STACKRA_THEME.colors as Readonly<Record<string, ColorToken>>)[name] ??
+  STACKRA_THEME.palette[name];
+
+/** The WCAG ratio of two oklch colours as a browser paints them: through their 8-bit sRGB. */
+const contrast = (one: string, two: string) => contrastRatio(oklchToHex(one), oklchToHex(two));
+
+// The kit labels the modes "base" and "dark".
+const modeOf = (theme: string): Mode => (theme === "dark" ? "dark" : "light");
+
+// @covers sta-350:FR-002
+describe("STACKRA_THEME", () => {
+  it("is named stackra", () => {
+    expect(STACKRA_THEME.name).toBe("stackra");
+  });
+
+  it("carries the kit's resolved colours unchanged", () => {
+    const resolved = kit<{
+      tokens: {
+        name: string;
+        light: { value: string; hex: string };
+        dark: { value: string; hex: string };
+      }[];
+    }>("resolved").tokens;
+    expect(resolved.length).toBeGreaterThan(20);
+    for (const token of resolved)
+      expect(tokenOf(token.name), token.name).toEqual({
+        light: token.light.value,
+        dark: token.dark.value,
+        hexLight: token.light.hex,
+        hexDark: token.dark.hex,
+      });
+  });
+
+  it("derives every hex from its oklch value", () => {
+    for (const [name, token] of Object.entries({
+      ...STACKRA_THEME.colors,
+      ...STACKRA_THEME.palette,
+    }))
+      expect([token.hexLight, token.hexDark], name).toEqual([
+        oklchToHex(token.light),
+        oklchToHex(token.dark),
+      ]);
+    // Values the kit's resolved report once disagreed with, as Chromium paints them.
+    expect(STACKRA_THEME.colors.surface.hexDark).toBe("#131518");
+    expect(STACKRA_THEME.colors.success.hexLight).toBe("#40731A");
+  });
+
+  it("meets every WCAG minimum in the kit's contrast report", () => {
+    const rows = kit<
+      {
+        foreground: string;
+        background: string;
+        theme: string;
+        minimum: number | null;
+        ratio: number;
+      }[]
+    >("contrast").filter((row) => row.minimum !== null);
+    expect(rows.length).toBeGreaterThan(80);
+    for (const row of rows) {
+      const mode = modeOf(row.theme);
+      const ratio = contrast(
+        tokenOf(row.foreground)?.[mode] ?? "",
+        tokenOf(row.background)?.[mode] ?? "",
+      );
+      const pair = `${row.theme} ${row.foreground} on ${row.background}`;
+      expect(ratio, pair).toBeGreaterThanOrEqual(row.minimum ?? 0);
+      expect(Math.abs(ratio - row.ratio), pair).toBeLessThan(0.01);
+    }
+  });
+
+  it("keeps the accent family achromatic (oklch chroma below 0.02), as the kit's separation report records", () => {
+    const rows = kit<{ neutrality: { theme: string; name: string; hex: string }[] }>(
+      "separation",
+    ).neutrality;
+    expect(rows.length).toBeGreaterThan(10);
+    for (const row of rows) {
+      const mode = modeOf(row.theme);
+      const token = tokenOf(row.name);
+      const chroma = Number(token?.[mode].match(/oklch\([\d.]+ ([\d.]+)/)?.[1]);
+      expect(chroma, row.name).toBeLessThan(0.02);
+      expect(mode === "dark" ? token?.hexDark : token?.hexLight, row.name).toBe(row.hex);
+    }
+  });
+
+  // @covers sta-350:FR-005
+  it("ships its fonts: every @font-face file exists beside its OFL licence", () => {
+    const css = read("public/fonts/fonts.css");
+    const files = [...css.matchAll(/url\("\.\/([^"]+)"\)/g)].map((match) => match[1]);
+    expect(files).toHaveLength(10);
+    for (const file of [...files, "OFL-Geist.txt", "OFL-IBMPlexSansArabic.txt"])
+      expect(existsSync(new URL(`public/fonts/${file}`, assets)), file).toBe(true);
+    for (const family of ["Geist", "Geist Mono", "IBM Plex Sans Arabic"])
+      expect(css).toContain(`font-family: "${family}";`);
+  });
+});

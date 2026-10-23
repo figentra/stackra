@@ -50,7 +50,7 @@ export const CATEGORIES = Object.freeze([
   { name: "commerce", reason: "money, ledger and pricing primitives", adr: "0127" },
   {
     name: "cross-cutting",
-    reason: "brand and concerns that span layers (settlement Q3.1)",
+    reason: "concerns that span layers (settlement Q3.1)",
     adr: "0127",
   },
   {
@@ -58,10 +58,15 @@ export const CATEGORIES = Object.freeze([
     reason: "model, database, content, media, search, assets, filesystem, storage",
     adr: "0127",
   },
+  {
+    name: "design-system",
+    reason: "the Stackra Design System: tokens, ui and icons",
+    adr: "0302",
+  },
   { name: "developer", reason: "CLI, gen, coding standard and the Vite plugin", adr: "0127" },
   {
     name: "experience",
-    reason: "UI, experience, navigation, console, panel, builder and collaboration",
+    reason: "experience, navigation, console, panel, builder and collaboration",
     adr: "0127, 0270",
   },
   { name: "infrastructure", reason: "Pulumi-based packages named `infra-<name>`", adr: "0127" },

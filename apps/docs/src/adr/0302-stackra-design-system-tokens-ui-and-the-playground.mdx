@@ -1,0 +1,120 @@
+---
+title: "0302 — The Stackra Design System: a design-system category, @stackra/tokens, @stackra/ui and the playground"
+description: "Accepted · 2026-10-23"
+---
+
+<Note>
+  Amends [0127](/adr/0127-package-categories-including-infrastructure) (a `design-system` category;
+  `ui` leaves the experience row and `brand` leaves the cross-cutting row),
+  [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs) (where `@stackra/ui`
+  lives and how its entries are split), [0024](/adr/0024-mit-license-with-exclusions) (where the
+  brand `NOTICE` and the font licences sit), [0084](/adr/0084-figentra-os-package-port-plan) (the
+  theming and brand rows) and [0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule)
+  (decisions 8 and 9: where the Stackra kit and the token engine go). Each amended page carries a
+  note.
+</Note>
+
+## Context
+
+The design tokens live in `@stackra/brand` (`packages/experience/brand`), together with Stackra's own logos, marks, illustrations,
+favicons, app icons and email templates. [0127](/adr/0127-package-categories-including-infrastructure) moves that package to
+`cross-cutting` and keeps `ui` in `experience`, beside the packages that consume it. That mixes three things: a framework token
+schema that any product themes, the Stackra marks that are all rights reserved ([0024](/adr/0024-mit-license-with-exclusions)
+decision 2), and the component layer that [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs) defines as one
+contract with an implementation per runtime. A framework user cannot bring their own brand without inheriting ours. Components
+also need one place where each one is reviewed with real props, in both colour schemes and both text directions, while Storybook is
+rejected ([0128](/adr/0128-code-conventions-enums-classes-components-and-kind-folders), [0227](/adr/0227-rejected-and-deferred-technologies-refreshed)).
+The owner decided the split on 2026-10-23 in the lead session, recorded in STA-350.
+
+## Decision
+
+1. **A `design-system` package category.** `packages/design-system/` holds flat packages, as every category does: `tokens`
+   (`@stackra/tokens`), `ui` (`@stackra/ui`) and later `icons` (`@stackra/icons`). Together they are the Stackra Design System.
+   This amends the category table of [0127](/adr/0127-package-categories-including-infrastructure) as
+   [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) did: `experience` keeps experience, navigation,
+   console, panel, builder and collaboration (and the other packages its amendment table lists), and loses `ui`; `cross-cutting`
+   no longer holds `brand`.
+2. **`@stackra/tokens` is the token schema and the default theme.**
+   - The schema covers colour roles for light and dark, typography, spacing, radius, shadow, motion and fonts.
+   - The default theme is named `stackra`.
+   - A theme renders to CSS variables for the web (HeroUI v3) and to the Uniwind theme for native (HeroUI Native).
+   - The generated CSS is committed, and a test checks that it equals the generator's output.
+   - A framework user brings their own brand as a theme, through `defineTheme`.
+3. **`@stackra/ui` is one API, under [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs).**
+   - The shared props, variants and types live in `src/contracts`.
+   - `./react` implements each component on HeroUI v3 for the web; `./native` implements it on HeroUI Native with Uniwind.
+   - The contract is shared and the component code is not. The not-built-yet row "a shared React component library across web
+     and native" stays Deferred ([0227](/adr/0227-rejected-and-deferred-technologies-refreshed)).
+   - The HeroUI form adapters live here (decision 2 of 0165).
+   - Free packages never depend on HeroUI Pro (decision 5 of 0165).
+4. **`@stackra/brand` is retired.** `packages/experience/brand` is removed.
+   - Its colour, type and motion tokens become the `stackra` theme in `@stackra/tokens`.
+   - The theme's fonts (Geist, Geist Mono and IBM Plex Sans Arabic, under the SIL Open Font License) move with it, with their
+     OFL texts beside the files ([0024](/adr/0024-mit-license-with-exclusions) decision 3).
+   - Stackra's logos, marks, illustrations, patterns, icons, favicons and email templates move to our own docs and apps:
+     `apps/docs/src/assets/brand/`, with its all-rights-reserved `NOTICE` ([0024](/adr/0024-mit-license-with-exclusions)
+     decision 2). App icons move to `apps/mobile`.
+5. **`apps/playground` is the component review surface.** `@figentra/playground`, `tier:app`, is a Vite and React Router app on
+   HeroUI v3.
+   - It has one route folder per component. Each renders every real component with real props and states, in light and dark and
+     in left-to-right and right-to-left.
+   - Playwright with axe runs against it, in the app's end-to-end tier ([0182](/adr/0182-testing-strategy-v2-tiers-coverage-infrastructure-and-policies),
+     [0183](/adr/0183-quality-budgets-with-numbers) TS16). The packages come from a new `e2e` catalog, approved by the owner:
+     `@playwright/test` and `@axe-core/playwright`.
+   - It is not Storybook, which stays rejected ([0128](/adr/0128-code-conventions-enums-classes-components-and-kind-folders),
+     [0227](/adr/0227-rejected-and-deferred-technologies-refreshed)). There are no `*.stories.*` files, no story format, no addon
+     ecosystem and no separate component catalogue build. Its pages are ordinary app routes that import the real public entries of
+     `@stackra/ui`, and the end-to-end and axe tier is the gate.
+
+## Consequences
+
+- A framework user themes Stackra by writing a theme, and ships none of our marks. Our marks stay all rights reserved, in our
+  own apps and docs, not in a published MIT package.
+- Every component exists once as a contract and twice as an implementation. A component that one runtime lacks is built there,
+  as 0112 X9 already requires.
+- `tools/scripts/structure.mjs` (`CATEGORIES`), the scaffold, `AGENTS.md`, `.agents/rules/workspace-layout.md`, the packages guide
+  and the roadmap list the `design-system` category, drop `ui` from experience and drop `brand` from cross-cutting. Every member
+  that imports `@stackra/brand` moves to `@stackra/tokens`, or to the assets in its own app.
+- A component change is reviewed in the playground, in four views (two schemes, two directions). The playground is one more app
+  to keep building, and its axe run is one more gate.
+- `pnpm-workspace.yaml` gains an `e2e` catalog. The owner approved it; the edit is the owner's file ([concurrent sessions](/agents/concurrent-sessions)).
+- The Figentra runtime `BrandService` that [0084](/adr/0084-figentra-os-package-port-plan) planned to merge into the brand
+  package is not placed by this ADR. Its home is decided when it is ported.
+
+## Enforcement
+
+- `tools/scripts/structure.mjs` `CATEGORIES` lists `design-system`, and `tools/scripts/scaffold.mjs` accepts
+  `pnpm new package <name> --category design-system` through `CATEGORY_NAMES`.
+- `FORBIDDEN_FILES` in `tools/scripts/structure.mjs` refuses `*.stories.*` anywhere, the playground included, through
+  `checkTestPlacement` in `tools/scripts/validate-repository.mjs`.
+- planned — `tools/scripts/validate-repository.mjs` rejects a `packages/<category>` folder that is not in `CATEGORIES`
+  (0127 Enforcement). Nothing checks package categories in the validator today.
+- planned — the test in `@stackra/tokens` that the committed CSS and Uniwind theme equal the generator's output.
+- planned — the playground's Playwright suite with axe, in `apps/playground`'s end-to-end `__tests__/` folders, failing on critical
+  or serious findings in each component route, in both schemes and both directions.
+- planned — the `@stackra/ui` parity test of [0112](/adr/0112-experience-packages-and-renderer-kit): every `./react` component has
+  a `./native` export of the same contract.
+- planned — a check that `apps/docs/src/assets/brand/NOTICE` exists (replaces the brand-package check of 0024).
+
+## Alternatives
+
+- **Keep `@stackra/brand` as its own package.** Not chosen: it ties the framework's token schema to Stackra's all-rights-reserved
+  marks, so a user cannot theme without shipping them.
+- **Keep `ui` in `experience`.** Not chosen: the tokens and the components are one design system and change together; the
+  experience packages consume `ui` and stay where they are.
+- **A shared web and native component implementation.** Deferred, per the row in
+  [0227](/adr/0227-rejected-and-deferred-technologies-refreshed). Only the contract is shared.
+- **Storybook for component review.** Rejected ([0128](/adr/0128-code-conventions-enums-classes-components-and-kind-folders),
+  [0227](/adr/0227-rejected-and-deferred-technologies-refreshed)). The playground is an ordinary app instead.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0127](/adr/0127-package-categories-including-infrastructure) (the category table),
+[0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs) (decisions 1 and 2),
+[0024](/adr/0024-mit-license-with-exclusions) (decisions 2 and 3, and the Enforcement path),
+[0084](/adr/0084-figentra-os-package-port-plan) (the theming and brand rows) and
+[0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule) (decisions 8 and 9). Related:
+[0060](/adr/0060-i18n-logical-css-light-and-dark) (light and dark, logical CSS),
+[0112](/adr/0112-experience-packages-and-renderer-kit) (X9, `@stackra/ui` parity),
+[0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps) and [0022](/adr/0022-tests-live-in-tests-folders).
+Sources: owner decisions in the lead session, 2026-10-23, recorded in Linear STA-350.

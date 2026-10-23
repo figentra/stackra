@@ -1,0 +1,71 @@
+/* @stackra/tokens — @font-face for the stackra theme faces (from the kit's css/kit.css). Fonts: SIL OFL, see OFL-*.txt. */
+@font-face {
+  font-family: "Geist";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("./Geist-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist";
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url("./Geist-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("./Geist-SemiBold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist";
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("./Geist-Bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("./GeistMono-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url("./GeistMono-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("./IBMPlexSansArabic-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url("./IBMPlexSansArabic-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("./IBMPlexSansArabic-SemiBold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("./IBMPlexSansArabic-Bold.woff2") format("woff2");
+}

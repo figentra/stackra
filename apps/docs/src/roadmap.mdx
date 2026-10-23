@@ -260,20 +260,20 @@ W7.1 depends only on the kernel, so a client agent can start it while the server
 | `foundation/query`     | Figentra OS, port + adapt | 0079, 0059 | state, transport | free | full | STA-119 | cursor-first, no router dependency, optimistic updates and the persisted offline mutation queue with idempotency keys |
 | `foundation/network`   | Figentra OS, port + adapt | 0079       | state            | free | full | STA-120 | rebuilt on @stackra/state                                                                                             |
 | `state/coordinator`    | Figentra OS, port + adapt | 0079       | state, events    | free | full | STA-121 | leader election and locks only, on the events BroadcastChannel sink, with tests                                       |
-| `cross-cutting/brand`  | Figentra OS, port + adapt | 0084       | none             | free | full | STA-122 | Stackra tokens and assets plus the runtime BrandService; category settled (C31)                                       |
-| `state/theming`        | Figentra OS, as-is        | 0084       | brand            | free | lite | STA-123 | ported; tokens from @stackra/brand; per-tenant white-label is Pro                                                     |
+| `design-system/tokens` | Figentra OS, port + adapt | 0084, 0302 | none             | free | full | STA-122 | Stackra tokens as the stackra theme plus the runtime BrandService; brand assets in the docs app (ADR 0302)            |
+| `state/theming`        | Figentra OS, as-is        | 0084       | tokens           | free | lite | STA-123 | ported; tokens from @stackra/tokens; per-tenant white-label is Pro                                                    |
 | `cross-cutting/seo`    | Figentra OS, port + adapt | 0084       | none             | free | full | STA-124 | tests added and the React Router 7 head integration                                                                   |
 | `developer/vite`       | Figentra OS, port + adapt | 0084       | none             | free | full | STA-125 | ported under the DX10 name                                                                                            |
 
 #### W7.2 · Router, navigation, ui parity, kbd and pwa (STA-70)
 
-| Package                 | Source                    | ADRs       | Depends on     | Tier | Lane | Issue   | Done when                                                                          |
-| ----------------------- | ------------------------- | ---------- | -------------- | ---- | ---- | ------- | ---------------------------------------------------------------------------------- |
-| `foundation/router`     | Figentra OS, port + adapt | 0053       | container      | free | full | STA-126 | compiled tree and diagnostics kept; RR7 code-based and React Navigation adapters   |
-| `experience/navigation` | Figentra OS, port + adapt | 0083, 0081 | router, iam    | free | full | STA-127 | local and remote menus, breadcrumbs, tabs as data, gate-filtered                   |
-| `experience/ui`         | Fresh                     | 0112, 0056 | brand, theming | free | full | STA-128 | one component contract: HeroUI on web, HeroUI Native on native, parity table green |
-| `experience/kbd`        | Figentra OS, port + adapt | 0084       | container      | free | full | STA-129 | Reflect.defineMetadata replaced by the WeakMap store                               |
-| `experience/pwa`        | Figentra OS, port + adapt | 0084       | container      | free | full | STA-130 | Reflect.defineMetadata replaced by the WeakMap store                               |
+| Package                 | Source                    | ADRs       | Depends on      | Tier | Lane | Issue   | Done when                                                                          |
+| ----------------------- | ------------------------- | ---------- | --------------- | ---- | ---- | ------- | ---------------------------------------------------------------------------------- |
+| `foundation/router`     | Figentra OS, port + adapt | 0053       | container       | free | full | STA-126 | compiled tree and diagnostics kept; RR7 code-based and React Navigation adapters   |
+| `experience/navigation` | Figentra OS, port + adapt | 0083, 0081 | router, iam     | free | full | STA-127 | local and remote menus, breadcrumbs, tabs as data, gate-filtered                   |
+| `design-system/ui`      | Fresh                     | 0112, 0056 | tokens, theming | free | full | STA-128 | one component contract: HeroUI on web, HeroUI Native on native, parity table green |
+| `experience/kbd`        | Figentra OS, port + adapt | 0084       | container       | free | full | STA-129 | Reflect.defineMetadata replaced by the WeakMap store                               |
+| `experience/pwa`        | Figentra OS, port + adapt | 0084       | container       | free | full | STA-130 | Reflect.defineMetadata replaced by the WeakMap store                               |
 
 #### W7.3 · Experience runtime, content and forms (STA-71)
 

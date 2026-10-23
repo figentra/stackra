@@ -71,6 +71,7 @@ test("names follow placement: packages @stackra, apps @figentra, services @figen
   assert.equal(named("services/health", "@figentra/service-health").length, 0);
   assert.equal(named("packages/tooling/vitest", "@stackra/vitest-config").length, 0);
   assert.equal(named("packages/data/search", "@stackra/search").length, 0);
+  assert.equal(named("packages/design-system/tokens", "@stackra/tokens").length, 0);
   assert.equal(named("services/health", "@stackra/service-health").length, 1);
   assert.equal(named("apps/docs", "@stackra/docs").length, 1);
   assert.equal(named("packages/data/search", "@figentra/search").length, 1);
@@ -81,6 +82,7 @@ test("tiers follow the directory", () => {
   assert.equal(tierFor("workers/static"), "tier:app");
   assert.equal(tierFor("packages/tooling/vitest"), "tier:config");
   assert.equal(tierFor("packages/data/search"), "tier:lib");
+  assert.equal(tierFor("packages/design-system/ui"), "tier:lib");
   assert.equal(tierFor(""), null);
 });
 

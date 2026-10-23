@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="packages/experience/brand/assets/public/logos/stackra-endorsed-en-dark.svg" />
-    <img src="packages/experience/brand/assets/public/logos/stackra-endorsed-en-light.svg" alt="stackra, by figentra" height="48" />
+    <source media="(prefers-color-scheme: dark)" srcset="apps/docs/src/assets/brand/logos/stackra-endorsed-en-dark.svg" />
+    <img src="apps/docs/src/assets/brand/logos/stackra-endorsed-en-light.svg" alt="stackra, by figentra" height="48" />
   </picture>
 </p>
 

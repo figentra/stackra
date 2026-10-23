@@ -32,7 +32,7 @@
     "clean": "rm -rf dist .expo ios android .turbo"
   },
   "dependencies": {
-    "@stackra/brand": "workspace:*",
+    "@stackra/tokens": "workspace:*",
     "@bottom-tabs/react-navigation": "catalog:mobile",
     "@gorhom/bottom-sheet": "catalog:mobile",
     "@react-navigation/native": "catalog:mobile",

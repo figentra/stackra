@@ -64,6 +64,9 @@ catalogs:
     "@tailwindcss/vite": 4.3.3
     "@heroui/react": 3.2.6
     "@heroui/styles": 3.2.6
+    # React Aria's I18nProvider for @stackra/ui/react (ADR 0302, owner-approved 2026-10-23); pinned to the version
+    # @heroui/react 3.2.6 resolves its react-aria-components peer to, so both share one React Aria instance.
+    react-aria-components: 1.22.1
     "@testing-library/react": 16.3.3
     "@testing-library/dom": 10.4.2
     jsdom: 30.1.0
@@ -122,6 +125,10 @@ catalogs:
     # Overrides only (see `overrides`): mint's connectivity probe, on fetch instead of got.
     is-online: 12.0.2
     public-ip: 8.0.0
+  # The playground's Playwright + axe tier (ADR 0302).
+  e2e:
+    "@playwright/test": 1.64.1
+    "@axe-core/playwright": 4.14.0
 
 # STA-169: `mint validate` (the docs build) first probes connectivity with is-online 10, which races three
 # got 12 requests (via public-ip 5) under a 5 s timeout and cancels the losers. A got retry that fires after the

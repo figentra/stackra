@@ -1,6 +1,6 @@
 # Stackra file contract:
 # Purpose: the Quality Gate, the one required check on every pull request to main, every merge-queue
-#          group commit (merge_group, ADR 0166 CI3) and every push to main (install, Linear key check, format, lint, typecheck, test, build, validate, boundaries,
+#          group commit (merge_group, ADR 0166 CI3) and every push to main (install, Linear key check, format, lint, typecheck, test, build, playground e2e, validate, boundaries,
 #          knip, secrets scan, agent sync). Branch protection requires the `Quality Gate` job by name;
 #          never rename it. `deploy-staging` is a placeholder that deploys nothing.
 # Owner: release-operations
@@ -78,6 +78,14 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # ADR 0302: the playground's Playwright + axe tier, every route in light, dark, LTR and RTL. Not part of
+      # `pnpm verify`; the browser comes from Playwright's own download, pinned by catalog:e2e.
+      - name: Playwright browser
+        run: pnpm --filter @figentra/playground exec playwright install --with-deps chromium
+
+      - name: Playground e2e
+        run: pnpm --filter @figentra/playground test:e2e
 
       # spec-gate: a ready-for-review PR needs its own spec (the branch key's folder), when changed, at Tasked or later; other changed specs get the stage check, and a change to another spec's Status line needs a commit with `Refs:` naming that spec's key; STACKRA_BRANCH feeds the lane check (check-pr owns the branch name).
       - name: Validate repository

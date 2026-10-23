@@ -1,0 +1,46 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+@import "@stackra/tokens/fonts/fonts.css";
+@import "@stackra/tokens/themes/stackra/web.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* The theme's text faces: Geist for Latin, IBM Plex Sans Arabic when the document is Arabic. */
+body {
+  font-family: var(--font-sans);
+}
+
+:root:lang(ar) body {
+  font-family: var(--font-arabic);
+}
+
+/* Headings in the theme's type scale (`--h1` is a `font` shorthand); an Arabic document takes the `-ar` styles. */
+.type-h1 {
+  font: var(--h1);
+  letter-spacing: var(--h1-letter-spacing);
+}
+
+.type-h2 {
+  font: var(--h2);
+  letter-spacing: var(--h2-letter-spacing);
+}
+
+.type-h3 {
+  font: var(--h3);
+  letter-spacing: var(--h3-letter-spacing);
+}
+
+:root:lang(ar) .type-h1 {
+  font: var(--h1-ar);
+  letter-spacing: var(--h1-ar-letter-spacing);
+}
+
+:root:lang(ar) .type-h2 {
+  font: var(--h2-ar);
+  letter-spacing: var(--h2-ar-letter-spacing);
+}
+
+:root:lang(ar) .type-h3 {
+  font: var(--h3-ar);
+  letter-spacing: var(--h3-ar-letter-spacing);
+}

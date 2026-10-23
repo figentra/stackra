@@ -25,8 +25,11 @@
     "packages/*/api-client/src/generated/**",
     // scaffold templates hold {{TOKENS}}, so they are not valid TS; the generator formats what it renders
     "tools/scaffold/templates/**",
-    // vendored brand-kit output, re-copied byte-for-byte from the kit (packages/experience/brand/README.md)
-    "packages/experience/brand/assets/**",
+    // @stackra/tokens: theme CSS its tests compare byte-for-byte with the renderers, and brand-kit files vendored
+    // byte-for-byte (packages/design-system/tokens/README.md)
+    "packages/design-system/tokens/assets/**",
+    // Stackra brand-kit assets, moved byte-for-byte from @stackra/brand (ADR 0302); all rights reserved
+    "apps/docs/src/assets/brand/**",
     // installed skills are upstream content
     ".agents/skills/**",
     // fenced upstream Encore skills, read only by compiler-engineer (ADR 0258)
