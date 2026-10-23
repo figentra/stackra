@@ -59,7 +59,8 @@ convention; no hook enforces it.
 
 In Infisical `/agents` (local):
 
-- `HEROUI_PERSONAL_TOKEN` - HeroUI Pro MCP servers (installs use a `heroui-pro login` session, ADR 0310)
+- `HEROUI_PERSONAL_TOKEN` - HeroUI Pro MCP servers (installs here use a `heroui-pro login` session, ADR 0310); also read by the
+  stackra-template console's CI over GitHub OIDC (ADR 0197 as amended)
 - `GITHUB_PERSONAL_ACCESS_TOKEN` - GitHub MCP
 - `STRIPE_SECRET_KEY` - Stripe MCP (optional)
 - `CONTEXT7_API_KEY` - Context7 MCP

@@ -62,10 +62,13 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
    - Locally, the postinstall uses the developer's `heroui-pro login` session, which lasts 180 days.
    - In CI, it uses `HEROUI_AUTH_TOKEN`, HeroUI's CI/CD token. A step of the Quality Gate reads that one name from Infisical `/ci`
      (environment `prod`) over GitHub OIDC. The step exports only `HEROUI_AUTH_TOKEN`, and it runs before `pnpm install`.
-8. **The token names.** `HEROUI_PERSONAL_TOKEN` stays in Infisical `/agents`, and only the HeroUI MCP servers use it. Our apps
+8. **The token names.** `HEROUI_PERSONAL_TOKEN` stays in Infisical `/agents`, and in this repository only the HeroUI MCP servers use it. Our apps
    install with the `heroui-pro login` session locally and with `HEROUI_AUTH_TOKEN` in CI. CI uses the CI/CD token because
    HeroUI's postinstall reads only that variable, and HeroUI tells pipelines to use the CI/CD token. This amends
    [0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps) decision 4, which said that our apps and CI keep `HEROUI_PERSONAL_TOKEN`.
+   One exception sits outside this repository: the public stackra-template console uses HeroUI Pro directly
+   (`@heroui-pro/react`, and `heroui-native-pro` where its native app uses it, not `@stackra/ui-pro`) with Figentra's
+   `HEROUI_PERSONAL_TOKEN`, which the template's CI reads from Infisical over GitHub OIDC (ADR 0197 as amended).
 9. **The CI permission (change risk R3, [0099](/adr/0099-risk-scale-l0-to-l4)).** The Quality Gate job gains `id-token: write`, and
    only the Infisical step uses it. The Infisical machine identity for that step is named by the repository variable
    `INFISICAL_GATE_IDENTITY_ID`, which is not a secret. The identity is allowed to read only `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` (decision 11). Until the owner
