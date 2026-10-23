@@ -89,3 +89,12 @@ Linear sub-issues, all in this one pull request: [STA-364] the field contract an
 Linear issues: [STA-370] Modal and Drawer, [STA-371] AlertDialog and useConfirmation, [STA-372] Menu and ActionMenu, [STA-373] Popover and Tooltip, [STA-374] Toast and Alert, [STA-375] LeaveConfirmation, [STA-404] ProgressBar and ProgressCircle.
 
 - [x] T043 [US2] The shared overlay, placement and feedback contracts, `FEEDBACK_BY_TONE`, `reactAriaPlacementOf` and `physicalSideOf` in `packages/design-system/ui/src`, with ADR 0312 — covers: FR-096, FR-097, P-054, P-055 — route: frontend — deps: T034
+
+## Phase 12: Wave 4 components (ADR 0312)
+
+- [x] T044 [US2] Modal and Drawer: contracts, the web and native components, and the `/modal` and `/drawer` routes with e2e files — covers: FR-098, FR-099, FR-100, FR-101, P-056 — route: frontend — deps: T043
+- [x] T045 [US2] AlertDialog, `useConfirmation` with `ConfirmationProvider`, and LeaveConfirmation, with their three routes and e2e files — covers: FR-102, FR-103, FR-104, FR-105, P-057 — route: frontend — deps: T043
+- [x] T046 [US2] Menu and ActionMenu: contracts, the web and native components, and the `/menu` and `/action-menu` routes with e2e files — covers: FR-106, FR-107, FR-108, FR-109, P-058 — route: frontend — deps: T043
+- [x] T047 [US2] Popover and Tooltip, with their routes and e2e files — covers: FR-110, FR-111, P-059 — route: frontend — deps: T043
+- [x] T048 [US2] Toast and Alert, `liveRegionOf` and the feedback icon, with the `/toast` and `/alert` routes and e2e files — covers: FR-112, FR-113, FR-114, FR-115, FR-116, P-060 — route: frontend — deps: T043
+- [x] T049 [US2] ProgressBar and ProgressCircle: contracts, `progressStateOf`, the web and native components, and their routes with e2e files — covers: FR-117, FR-118, FR-119, FR-120, P-061 — route: frontend — deps: T043

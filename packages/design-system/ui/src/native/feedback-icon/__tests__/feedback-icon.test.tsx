@@ -1,0 +1,76 @@
+/**
+ * Stackra file contract:
+ * Purpose: proves the native FeedbackIcon draws each tone's own icon at the small size in the tone's theme colour with
+ *          nothing registered by the app, an element as given, and a caller's named icon through the app's registry.
+ * Boundary: React Native does not render in vitest: heroui-native is replaced by a recording stand-in, the Lucide icons
+ *           by markers, and the package's own registry by a marker, so the real Icon resolves a name through the
+ *           registries and draws the marker with the size and colour it would hand the real icon.
+ * Runtime: node
+ * Governing contract: ADR 0303 (decision 10); ADR 0312 (decision 3); ADR 0022 (test placement).
+ */
+// @vitest-environment jsdom
+// @covers sta-350:FR-114
+import { defineIconRegistry } from "@stackra/icons";
+import { IconRegistryProvider } from "@stackra/icons/native";
+import { render, screen } from "@testing-library/react";
+
+import { Tone } from "#contracts/enums/tone.enum";
+import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
+import { FEEDBACK_BY_TONE } from "#core/constants/feedback-by-tone.constant";
+import { FeedbackIcon } from "#native/feedback-icon/feedback-icon";
+
+vi.mock("heroui-native", () => ({
+  useIsRTL: () => false,
+  useThemeColor: (role: string) => `color:${role}`,
+}));
+
+vi.mock("#native/icon/ui-icons.constant", () => ({ UI_ICONS: {} }));
+
+/** A drawn icon: records the name it stands for and the props it is handed, as the real Svg would receive them. */
+const marker = (name: string) => (props: object) => (
+  <output data-testid="icon" data-name={name} data-props={JSON.stringify(props)} />
+);
+
+vi.mock("@stackra/icons/native/lucide-icons", async () => {
+  const { createElement } = await import("react");
+  const drawn = (name: string) => (props: object) =>
+    createElement("output", {
+      "data-testid": "icon",
+      "data-name": name,
+      "data-props": JSON.stringify(props),
+    });
+  return {
+    CircleAlert: drawn("circle-alert"),
+    CircleCheck: drawn("circle-check"),
+    Info: drawn("info"),
+    TriangleAlert: drawn("triangle-alert"),
+  };
+});
+
+const propsOf = (): Record<string, unknown> =>
+  JSON.parse(screen.getByTestId("icon").dataset["props"] ?? "{}");
+
+describe("FeedbackIcon (native)", () => {
+  it.each(Tone)("draws the %s tone's icon, small and in the tone's colour", (tone) => {
+    render(<FeedbackIcon tone={tone} />);
+    expect(screen.getByTestId("icon").dataset["name"]).toBe(FEEDBACK_BY_TONE[tone].icon);
+    expect(propsOf()["size"]).toBe(ICON_SIZES.sm);
+    expect(propsOf()["color"]).toBe(`color:${tone === "default" ? "foreground" : tone}`);
+  });
+
+  it("draws an element as given", () => {
+    render(<FeedbackIcon tone="success" icon={<i data-testid="mine" />} />);
+    expect(screen.getByTestId("mine")).toBeTruthy();
+    expect(screen.queryByTestId("icon")).toBeNull();
+  });
+
+  it("draws a named icon from the app's registry", () => {
+    render(
+      <IconRegistryProvider registry={defineIconRegistry({ "loyalty::star": marker("star") })}>
+        <FeedbackIcon tone="warning" icon="loyalty::star" />
+      </IconRegistryProvider>,
+    );
+    expect(screen.getByTestId("icon").dataset["name"]).toBe("star");
+    expect(propsOf()["color"]).toBe("color:warning");
+  });
+});

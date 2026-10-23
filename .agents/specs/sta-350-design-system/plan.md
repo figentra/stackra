@@ -100,6 +100,12 @@ switcher and is covered by Playwright and axe. `@stackra/brand` is deleted; its 
 - **P-053**: The native provider sets the colour scheme React Native's `Appearance` follows, and releases it for `system` — Validates: FR-095
 - **P-054**: A side and an alignment give React Aria a placement it accepts and HeroUI Native a physical side that follows the reading direction — Validates: FR-097
 - **P-055**: Every tone has a default icon, and only warning and danger are announced at once — Validates: FR-096
+- **P-056**: A Modal and a Drawer open from a trigger or by state, are named by their title, dismiss by Escape and a press outside unless told not to, and return focus on close, with every size and placement shown — Validates: FR-098, FR-099, FR-100, FR-101
+- **P-057**: An AlertDialog asks one decision with focus on the safe button, useConfirmation answers it with a promise, and LeaveConfirmation asks before unsaved work is lost — Validates: FR-102, FR-103, FR-104, FR-105
+- **P-058**: A Menu and an ActionMenu list grouped actions, scope selection to a section, call the action's handler and name their trigger — Validates: FR-106, FR-107, FR-108, FR-109
+- **P-059**: A Popover places its content by side and alignment and closes as told, and a Tooltip describes the element and never names it — Validates: FR-110, FR-111
+- **P-060**: An Alert and a toast announce by tone, show the tone's icon and offer their actions, with every tone shown — Validates: FR-112, FR-113, FR-114, FR-115, FR-116
+- **P-061**: A ProgressBar and a ProgressCircle are named, determinate or indeterminate by their value, and still under reduced motion — Validates: FR-117, FR-118, FR-119, FR-120
 
 ## Contracts and events
 

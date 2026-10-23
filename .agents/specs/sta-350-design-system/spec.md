@@ -399,6 +399,82 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
   `physicalSideOf` SHALL turn a logical side into HeroUI Native's `left` or `right` by text direction, leaving `top`
   and `bottom` alone — verified by: unit, typecheck
 
+- **FR-098**: `@stackra/ui/contracts` SHALL hold `ModalContractProps` (`size` of `sm`, `md`, `lg` or `full`, and `position`
+  of `auto`, `top`, `center` or `bottom`), `DrawerContractProps` (`placement`, a `Placement` side) and
+  `OverlayTitleContractProps` (`level`), each on the shared overlay props with `trigger`, `label` and `children`, and
+  every `Close` part SHALL take the `CloseButton` contract, whose `label` is required — verified by: unit, typecheck
+- **FR-099**: On web, `Modal` and `Drawer` SHALL be one root with `Header`, `Title`, `Body`, `Footer` and `Close` parts
+  on HeroUI v3, open from a `trigger` or by `isOpen` and `onOpenChange`, named by the `Title` (placed in the outline
+  by `level`), dismissed by Escape and a press outside unless `isKeyboardDismissDisabled` or `isDismissable` turns it
+  off, with the Drawer's `start` and `end` placements mapped to the physical edge HeroUI lays out, so they mirror in
+  right-to-left once — verified by: unit
+- **FR-100**: On native, `Modal` SHALL be the HeroUI Native Dialog and `Drawer` the adapted form on its BottomSheet (a
+  phone has no side panel, so `placement` is `bottom`), with the same parts and props, string children wrapped in
+  `Text`, `isDismissable` mapped to a press outside and the swipe, and the Android back button swallowed only with
+  `isKeyboardDismissDisabled` — verified by: unit, device check on `apps/mobile`
+- **FR-101**: The `/modal` and `/drawer` playground routes SHALL show every size, position and placement, a controlled
+  example and the open state reported, and focus SHALL return to the trigger on close — verified by: unit, e2e
+- **FR-102**: `AlertDialog` SHALL ask one decision as an `alertdialog` named by its title and described by its
+  description, with the tone's icon, a confirm and a cancel button, `onConfirm` and `onCancel`, `isConfirmDisabled`,
+  focus starting on cancel, `isDismissable` false by default, and Escape or the Android back button cancelling unless
+  `isKeyboardDismissDisabled` is set, on web (HeroUI AlertDialog) and on native (the adapted form on Dialog) —
+  verified by: unit
+- **FR-103**: `useConfirmation()` SHALL return `confirm(options): Promise<boolean>` backed by the one `AlertDialog` a
+  `ConfirmationProvider` renders, resolving true on confirm and false on cancel, Escape or a newer question, and a
+  question with `confirmationText` SHALL keep confirm disabled until that text is typed — verified by: unit
+- **FR-104**: `LeaveConfirmation` SHALL guard unsaved work: while `when` is true the browser asks before the tab closes
+  or reloads, and `confirmLeave()` on its `ref` asks the question through an `AlertDialog`, resolving true at once
+  while `when` is false, true on discard and false on stay, with no router import — verified by: unit
+- **FR-105**: The `/alert-dialog`, `/use-confirmation` and `/leave-confirmation` playground routes SHALL show each
+  tone, the answer as it happens and the keyboard path, with the tone icons registered for them by the playground
+  `ToneIcons` provider, and axe SHALL report nothing — verified by: unit, e2e
+- **FR-106**: `@stackra/ui/contracts` SHALL hold `MenuContractProps` (`sections`, `selectionMode`, `value`,
+  `defaultValue`, `onChange`, `onAction`, on the open state and placement props), `MenuSection`, `MenuItem` (a submenu one
+  level deep) and `MenuLeafItem`, and `ActionMenuContractProps` (`label`, `icon`, `variant`, `size`, `isDisabled`),
+  and `mergeSectionSelection` SHALL keep one choice per section in single mode and any number in multiple mode over
+  one flat list of keys — verified by: unit, typecheck
+- **FR-107**: `Menu` SHALL show its sections with a divider between them, each action with its icon, label, second
+  line, danger tone and disabled reason, and web also its shortcut hint, open from its one trigger child, call
+  `onAction` and `onPress`, scope selection to a section, and open a submenu on the arrow keys on web — verified by:
+  unit
+- **FR-108**: `ActionMenu` SHALL be an `IconButton` named by its required `label` that opens a `Menu`, at the reading end
+  by default, without letting a choice reach the row around the button — verified by: unit
+- **FR-109**: The `/menu` and `/action-menu` playground routes SHALL show grouped, selectable, danger, disabled and
+  submenu examples, and each choice SHALL be reported — verified by: unit, e2e
+- **FR-110**: `Popover` SHALL open its content from its trigger with an optional `title` and arrow, place it by
+  `placement` and `align` (a physical side by reading direction on native), close on Escape on web and on a press
+  outside unless `isDismissable` is false, and name the dialog by `aria-label` or `title` — verified by: unit, e2e
+- **FR-111**: `Tooltip` SHALL describe the element it wraps and never name it, on web showing on hover and keyboard
+  focus only, hiding on Escape and staying while the pointer is over it, and on native being the adapted form that
+  speaks the text as the element's accessibility hint — verified by: unit, e2e
+- **FR-112**: `Alert` and `toast()` SHALL take a `tone`, a title or message, an optional description and an icon
+  (the tone's own, the caller's, or `false`), and SHALL announce by tone: `alert` and assertive for warning and
+  danger, `status` and polite for the rest, set by the component and never by the caller — verified by: unit
+- **FR-113**: On web, `Alert` SHALL be HeroUI v3's Alert with a wrapping row for `actions`, and `toast()` SHALL show a
+  message on HeroUI v3's queue through a mounted `ToastProvider`, with `success`, `warning`, `danger` and `info`,
+  `close(id)` and `clear()`, an action that runs and then closes the toast, a timeout (0 keeps it) and a named
+  dismiss button — verified by: unit
+- **FR-114**: On native, `Alert` SHALL be an adapted form on views, and `toast()` the same call through HeroUI
+  Native's toast manager and a mounted `ToastProvider`, with a persistent toast for a timeout of 0 and a named
+  dismiss button beside the swipe — verified by: unit
+- **FR-115**: `liveRegionOf` SHALL turn a tone into its live-region role and `aria-live` value, `alert` and `assertive`
+  for warning and danger, `status` and `polite` for the others — verified by: unit
+- **FR-116**: The `/alert` and `/toast` playground routes SHALL show every tone, with and without a description,
+  actions and icon, and axe SHALL report nothing — verified by: unit, e2e
+- **FR-117**: `@stackra/ui/contracts` SHALL hold `ProgressContractProps` (`value`, `minValue`, `maxValue`, `size`,
+  `tone`, a required `label`, `valueLabel`), `ProgressBarContractProps` and `ProgressCircleContractProps`, a missing
+  `value` meaning indeterminate, and `progressStateOf` SHALL hold a value inside its range and give the fill, the
+  text in the reader's locale and the accessibility value, all unknown while the value is — verified by: unit,
+  typecheck
+- **FR-118**: On web, `ProgressBar` and `ProgressCircle` SHALL be HeroUI v3's, named by `label`, determinate or
+  indeterminate by `value`, showing the label and value text when asked — verified by: unit
+- **FR-119**: On native, `ProgressBar` and `ProgressCircle` SHALL be the adapted forms (views, and `react-native-svg`,
+  with `react-native-reanimated`), one `progressbar` with its range and text, busy while indeterminate, starting
+  from the inline start, and still under reduced motion — verified by: unit, device check on `apps/mobile`
+- **FR-120**: The `/progress-bar` and `/progress-circle` playground routes SHALL show determinate, indeterminate,
+  every tone and size, and an advance-and-reset example that announces its completion, and axe SHALL report
+  nothing — verified by: unit, e2e
+
 ## Success Criteria
 
 - **SC-001**: `pnpm verify` is green with the change — verified by: CI (Quality Gate)
@@ -416,6 +492,12 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
   message showing and with a section disabled, a failed submit shows each message linked to its field and in a
   polite status line, the keyboard fills and submits the form, and a disabled section leaves the tab order —
   verified by: e2e
+- **SC-008**: axe reports nothing on `/modal` and `/drawer`, closed and with a dialog open, in light, dark, LTR and
+  RTL, and focus returns to the trigger on close — verified by: e2e
+- **SC-009**: axe reports nothing on `/menu` and `/action-menu`, closed and with a menu open, in light, dark, LTR and
+  RTL — verified by: e2e
+- **SC-010**: axe reports nothing on `/toast` and `/alert` in light, dark, LTR and RTL, with a toast showing, and a
+  toast announces by its tone — verified by: e2e
 
 ## Out of scope
 
@@ -441,3 +523,4 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
 - 2026-10-23 · Planned → Tasked · Claude (spec-writer)
 - 2026-10-23 · Tasked → Implementing · Claude (spec-writer) · setup pull request under way
 - 2026-10-23 · Implementing · Claude (frontend-builder) · wave 4 foundation: FR-096, FR-097 (ADR 0312)
+- 2026-10-24 · Implementing · Claude (frontend-builder) · wave 4 components: FR-098 to FR-120, SC-008 to SC-010
