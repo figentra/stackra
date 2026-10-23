@@ -34,6 +34,104 @@ export type SettingsStackParamList = {
   ProDatePicker: undefined;
   /** The NumberField page; deep link `stackra://design-system/pro/number-field`. */
   ProNumberField: undefined;
+  /** The Agenda page; deep link `stackra://design-system/pro/agenda`. */
+  ProAgenda: undefined;
+  /** The AreaChart page; deep link `stackra://design-system/pro/area-chart`. */
+  ProAreaChart: undefined;
+  /** The Autocomplete page; deep link `stackra://design-system/pro/autocomplete`. */
+  ProAutocomplete: undefined;
+  /** The Badge page; deep link `stackra://design-system/pro/badge`. */
+  ProBadge: undefined;
+  /** The BarChart page; deep link `stackra://design-system/pro/bar-chart`. */
+  ProBarChart: undefined;
+  /** The Carousel page; deep link `stackra://design-system/pro/carousel`. */
+  ProCarousel: undefined;
+  /** The ChartCrosshair page; deep link `stackra://design-system/pro/chart-crosshair`. */
+  ProChartCrosshair: undefined;
+  /** The ChartIndicator page; deep link `stackra://design-system/pro/chart-indicator`. */
+  ProChartIndicator: undefined;
+  /** The ChartTooltip page; deep link `stackra://design-system/pro/chart-tooltip`. */
+  ProChartTooltip: undefined;
+  /** The ComboBox page; deep link `stackra://design-system/pro/combo-box`. */
+  ProComboBox: undefined;
+  /** The ComposedChart page; deep link `stackra://design-system/pro/composed-chart`. */
+  ProComposedChart: undefined;
+  /** The DateField page; deep link `stackra://design-system/pro/date-field`. */
+  ProDateField: undefined;
+  /** The DateRangePicker page; deep link `stackra://design-system/pro/date-range-picker`. */
+  ProDateRangePicker: undefined;
+  /** The DateTimePicker page; deep link `stackra://design-system/pro/date-time-picker`. */
+  ProDateTimePicker: undefined;
+  /** The EmptyState page; deep link `stackra://design-system/pro/empty-state`. */
+  ProEmptyState: undefined;
+  /** The FlipCard page; deep link `stackra://design-system/pro/flip-card`. */
+  ProFlipCard: undefined;
+  /** The FloatingActionButton page; deep link `stackra://design-system/pro/floating-action-button`. */
+  ProFloatingActionButton: undefined;
+  /** The LineChart page; deep link `stackra://design-system/pro/line-chart`. */
+  ProLineChart: undefined;
+  /** The MorphButton page; deep link `stackra://design-system/pro/morph-button`. */
+  ProMorphButton: undefined;
+  /** The MorphTabs page; deep link `stackra://design-system/pro/morph-tabs`. */
+  ProMorphTabs: undefined;
+  /** The NumberPad page; deep link `stackra://design-system/pro/number-pad`. */
+  ProNumberPad: undefined;
+  /** The NumberStepper page; deep link `stackra://design-system/pro/number-stepper`. */
+  ProNumberStepper: undefined;
+  /** The NumberValue page; deep link `stackra://design-system/pro/number-value`. */
+  ProNumberValue: undefined;
+  /** The PhoneNumberField page; deep link `stackra://design-system/pro/phone-number-field`. */
+  ProPhoneNumberField: undefined;
+  /** The PieChart page; deep link `stackra://design-system/pro/pie-chart`. */
+  ProPieChart: undefined;
+  /** The ProgressBar page; deep link `stackra://design-system/pro/progress-bar`. */
+  ProProgressBar: undefined;
+  /** The ProgressCircle page; deep link `stackra://design-system/pro/progress-circle`. */
+  ProProgressCircle: undefined;
+  /** The RadarChart page; deep link `stackra://design-system/pro/radar-chart`. */
+  ProRadarChart: undefined;
+  /** The RadialChart page; deep link `stackra://design-system/pro/radial-chart`. */
+  ProRadialChart: undefined;
+  /** The RadioButtonGroup page; deep link `stackra://design-system/pro/radio-button-group`. */
+  ProRadioButtonGroup: undefined;
+  /** The RangeCalendar page; deep link `stackra://design-system/pro/range-calendar`. */
+  ProRangeCalendar: undefined;
+  /** The Rating page; deep link `stackra://design-system/pro/rating`. */
+  ProRating: undefined;
+  /** The Segment page; deep link `stackra://design-system/pro/segment`. */
+  ProSegment: undefined;
+  /** The SocialAuthButton page; deep link `stackra://design-system/pro/social-auth-button`. */
+  ProSocialAuthButton: undefined;
+  /** The SplitView page; deep link `stackra://design-system/pro/split-view`. */
+  ProSplitView: undefined;
+  /** The StackedMeter page; deep link `stackra://design-system/pro/stacked-meter`. */
+  ProStackedMeter: undefined;
+  /** The Stepper page; deep link `stackra://design-system/pro/stepper`. */
+  ProStepper: undefined;
+  /** The SwipeableTabs page; deep link `stackra://design-system/pro/swipeable-tabs`. */
+  ProSwipeableTabs: undefined;
+  /** The Table page; deep link `stackra://design-system/pro/table`. */
+  ProTable: undefined;
+  /** The Timeline page; deep link `stackra://design-system/pro/timeline`. */
+  ProTimeline: undefined;
+  /** The TimePicker page; deep link `stackra://design-system/pro/time-picker`. */
+  ProTimePicker: undefined;
+  /** The ToggleButton page; deep link `stackra://design-system/pro/toggle-button`. */
+  ProToggleButton: undefined;
+  /** The ToggleButtonGroup page; deep link `stackra://design-system/pro/toggle-button-group`. */
+  ProToggleButtonGroup: undefined;
+  /** The TrendChip page; deep link `stackra://design-system/pro/trend-chip`. */
+  ProTrendChip: undefined;
+  /** The WheelDateTimePicker page; deep link `stackra://design-system/pro/wheel-date-time-picker`. */
+  ProWheelDateTimePicker: undefined;
+  /** The WheelPicker page; deep link `stackra://design-system/pro/wheel-picker`. */
+  ProWheelPicker: undefined;
+  /** The WheelPickerGroup page; deep link `stackra://design-system/pro/wheel-picker-group`. */
+  ProWheelPickerGroup: undefined;
+  /** The WheelTimePicker page; deep link `stackra://design-system/pro/wheel-time-picker`. */
+  ProWheelTimePicker: undefined;
+  /** The Widget page; deep link `stackra://design-system/pro/widget`. */
+  ProWidget: undefined;
 };
 
 /** The routes that show one design-system component: every Settings route except the settings and the index. */

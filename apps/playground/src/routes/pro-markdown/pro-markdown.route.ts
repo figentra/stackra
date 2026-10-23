@@ -1,0 +1,23 @@
+/**
+ * Stackra file contract:
+ * Purpose: the Markdown route of @figentra/playground: its path, title and navigation group. The page it renders is
+ *          `pro-markdown.tsx` beside it (ADR 0294 decision 14).
+ * Boundary: route declaration only; no data loading.
+ * Runtime: browser
+ * Governing contract: ADR 0294 (decisions 14 and 16, rule R7); ADR 0302 (decision 5); ADR 0310 (decision 12).
+ */
+
+/** The `@stackra/ui-pro` Markdown page, at `/pro-markdown`. */
+// shortcut: a plain class until the Route kind base ships with gen (STA-339); then
+// `export class ProMarkdownRoute extends Route({ path: "/pro-markdown" }) {}`.
+// oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
+export class ProMarkdownRoute {
+  /** The URL path of the route: `/` and the folder name, which the e2e suite relies on. */
+  static readonly path = "/pro-markdown";
+
+  /** The page title, the component's name. */
+  static readonly title = "Markdown";
+
+  /** The navigation group of the `@stackra/ui-pro` pages. */
+  static readonly group = "Pro";
+}

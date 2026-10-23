@@ -91,6 +91,17 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
       `uniwind-pro` in `allowBuilds`, a `uniwind-pro` login locally, `UNIWIND_AUTH_TOKEN` (the CI/CD licence) in CI from
       Infisical `/ci` and as an EAS secret. The CI/CD licence allows 1,000 downloads a month.
 
+12. **Every HeroUI Pro component is wrapped (owner, 2026-10-23, STA-416).** The first thirteen grow to all 121: 66 on web
+    and 55 on native, the charts, AI, forms, navigation, overlays, data display, buttons and date and time sets. A
+    component that a free `@stackra/ui` wave will also wrap keeps its own Pro wrapper, and its props follow the free
+    contract once that contract exists.
+    - Pro's optional peers are pinned so no component is skipped: tiptap, `maplibre-gl`, the markdown set, `shiki`,
+      `@number-flow/react` and embla in `catalog:frontend`; Skia, `victory-native`, `libphonenumber-js`,
+      `react-native-pager-view` and `react-native-reanimated-dnd` in `catalog:mobile`.
+    - A component with nothing in the vocabulary to map (most charts, Markdown, Timeline, Table) keeps HeroUI Pro's API
+      as it is (decision 6); HeroUI Pro's `FloatingToc` and `Fab` are `FloatingTableOfContents` and
+      `FloatingActionButton`, because identifiers take no abbreviations ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming)).
+
 ## Consequences
 
 - Pro is in beta. The pins are exact, and each bump is reviewed like any catalog change.

@@ -16,7 +16,7 @@ import { ListGroup } from "heroui-native";
 import { ChoiceGroup } from "../components/ui/choice-group";
 import { Screen } from "../components/ui/screen";
 import { Section } from "../components/ui/section";
-import type { SettingsStackParamList } from "../navigation/types";
+import type { DesignSystemComponentRoute, SettingsStackParamList } from "../navigation/types";
 import { DESIGN_SYSTEM_COMPONENTS, type DesignSystemGroup } from "./design-system-components";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
@@ -56,6 +56,9 @@ export function DesignSystemScreen({
   navigation,
 }: NativeStackScreenProps<SettingsStackParamList, "DesignSystem">) {
   const { colorScheme, setColorScheme, locale, setLocale } = useDesignSystem();
+  // Every component route takes no params, but navigate's per-route overloads cannot take a union of 55 route names,
+  // so the call is typed as what it is: open one of these routes with no params.
+  const openPage = navigation.navigate as (route: DesignSystemComponentRoute) => void;
 
   return (
     <Screen>
@@ -79,7 +82,7 @@ export function DesignSystemScreen({
           <ListGroup>
             {DESIGN_SYSTEM_COMPONENTS.filter((component) => component.group === group).map(
               ({ title, route }) => (
-                <ListGroup.Item key={route} onPress={() => navigation.navigate(route)}>
+                <ListGroup.Item key={route} onPress={() => openPage(route)}>
                   <ListGroup.ItemContent>
                     <ListGroup.ItemTitle>{title}</ListGroup.ItemTitle>
                   </ListGroup.ItemContent>
