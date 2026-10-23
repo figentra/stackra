@@ -2856,6 +2856,8 @@ test("STA-400 review: settings ask before deletes and allow the CLIs without rm 
     "Bash(eas update*)",
     "Bash(infisical secrets folders delete*)",
     "mcp__expo__appstore_delete_review_response",
+    "mcp__expo__workflow_run", // can deploy
+    "mcp__encore-cloud__db_query", // can delete production data
   ])
     assert.ok(p.ask.includes(rule), rule);
   for (const rule of ["Bash(wrangler *)", "Bash(eas *)", "Bash(encore *)", "Bash(infisical *)"])

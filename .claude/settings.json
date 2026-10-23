@@ -129,7 +129,9 @@
       "Bash(infisical secrets folders delete*)",
       "Bash(infisical dynamic-secrets delete*)",
       "mcp__expo__appstore_delete_review_response",
-      "mcp__expo__playstore_delete*"
+      "mcp__expo__playstore_delete*",
+      "mcp__expo__workflow_run",
+      "mcp__encore-cloud__db_query"
     ],
     "deny": [
       "Read(//**/.env)",
