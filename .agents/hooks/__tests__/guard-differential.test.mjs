@@ -45,20 +45,24 @@ mkdirSync(join(wt, "dist"));
 mkdirSync(join(wt, "packages", "a", "node_modules"), { recursive: true });
 after(() => rmSync(main, { recursive: true, force: true }));
 
+/** The scratch root and the session's scratchpad in it (it need not exist): the only scratch place for `rm -rf`. */
+const scratchRoot = `/tmp/claude-${process.getuid?.() ?? 0}`;
+const scratchpad = `${scratchRoot}/stackra-guard-differential/session/scratchpad`;
 const fill = (c) =>
   c
     .replaceAll("$MAIN", main)
     .replaceAll("$WT", wt)
     .replaceAll("$OTHER", other)
-    .replaceAll("$SCRATCH", `/tmp/claude-${process.getuid?.() ?? 0}`);
+    .replaceAll("$SCRATCH_ROOT", scratchRoot)
+    .replaceAll("$SCRATCH", scratchpad);
 decideBash("git status", { cwd: wt }); // warm the module before anything is timed
 
 /** Every case `[command, want]` that decides otherwise or too slowly, as readable lines. */
-function wrong(cases, cwd = wt) {
+function wrong(cases, cwd = wt, agentType = "") {
   const out = [];
   for (const [c, want] of cases) {
     const [t, git] = [performance.now(), gitMs];
-    const { decision, reason } = decideBash(fill(c), { cwd });
+    const { decision, reason } = decideBash(fill(c), { cwd, agentType, scratchpad });
     const ms = performance.now() - t - (gitMs - git);
     if (decision !== want) out.push(`${decision} (want ${want}) ${c}  [${reason.slice(0, 60)}]`);
     if (ms >= LIMIT_MS) out.push(`${ms.toFixed(0)} ms (limit ${LIMIT_MS}) ${c}`);
@@ -104,6 +108,11 @@ function quoted(q) {
     ["ssh (su -c)", (c) => `ssh host ${q(`su -c ${q(c)}`)}`],
     ["tmux new -d (watch)", (c) => `tmux new -d ${q(`watch ${q(c)}`)}`],
     ["sh -c (sh -c)", (c) => `sh -c ${q(`sh -c ${q(c)}`)}`],
+    // single-quoted text piped into a shell inside a quoted line (STA-351)
+    ["ssh (echo | sh)", (c) => `ssh host ${q(`echo ${sq(c)} | sh`)}`],
+    ["watch (echo | zsh)", (c) => `watch ${q(`echo ${sq(c)} | zsh`)}`],
+    ["tmux new -d (printf | bash)", (c) => `tmux new -d ${q(`printf '%s\\n' ${sq(c)} | bash`)}`],
+    ["node x.mjs (echo | bash)", (c) => `node x.mjs ${q(`echo ${sq(c)} | bash`)}`],
   ];
 }
 /** `[name, wrap, asks]`: `asks` when the wrapper itself is an ask (unreviewed registry code). */
@@ -139,6 +148,8 @@ const WRAPPED = [
   // the same in double quotes, whose `\"`, `\\`, `\$` and escaped backtick the shell unescapes (round 6)
   ...quoted(dq).map(([name, wrap]) => [`${name} (dq)`, wrap]),
   ["ssh \"'…'\"", (c) => `ssh h "${sq(c)}"`],
+  ["echo | sh", (c) => `echo ${sq(c)} | sh`],
+  ["printf | bash", (c) => `printf '%s\\n' ${sq(c)} | bash`],
 ];
 /** Guarded commands and their decision from the session's own worktree. */
 const GUARDED = [
@@ -148,6 +159,8 @@ const GUARDED = [
   ["rm -rf .git", "deny"],
   ["rm -rf $MAIN", "deny"],
   ["rm -rf $OTHER/src", "deny"],
+  ["rm -rf $SCRATCH_ROOT/x", "deny"],
+  ["rm -rf $SCRATCH/..", "deny"],
   ["find . -path './.git/*' -delete", "deny"],
   ["git -C $MAIN reset --hard", "deny"],
   ["git -C $MAIN checkout .", "deny"],
@@ -192,6 +205,32 @@ for (const [name, wrap, asks] of WRAPPED)
       wrong(GUARDED.map(([c, want]) => [wrap(c), strictest(want, asks ? "ask" : "allow")])),
       [],
     ));
+
+/** Guarded commands whose ask reaches a human from a subagent too (`HUMAN_ASKS`); every other ask is a deny. */
+const HUMAN = new Set(["wrangler deploy", "encore db reset"]);
+const SUBAGENT_WRAPPERS = new Set([
+  "bare",
+  "sh -c",
+  "ssh",
+  "pnpm exec",
+  "npx",
+  "$( )",
+  "echo | sh",
+]);
+test("differential: from a subagent, every ask outside HUMAN_ASKS is a deny (STA-351)", () =>
+  assert.deepEqual(
+    WRAPPED.filter(([name]) => SUBAGENT_WRAPPERS.has(name)).flatMap(([, wrap, asks]) =>
+      wrong(
+        GUARDED.map(([c, want]) => {
+          const tier = strictest(want, asks ? "ask" : "allow");
+          return [wrap(c), tier === "ask" && !(HUMAN.has(c) && !asks) ? "deny" : tier];
+        }),
+        wt,
+        "Explore",
+      ),
+    ),
+    [],
+  ));
 
 /** `c` wrapped `n` times in one-string wrappers, in turn, each quoting with `q`. */
 const ONE_STRING = [

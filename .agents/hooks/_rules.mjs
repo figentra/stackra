@@ -1,6 +1,7 @@
 // The agent permission rules (ADR 0293), one module for `guard-bash.mjs`, `guard-paths.mjs` and the OpenCode
 // guard (`.opencode/plugins/guard/decide.ts`), so the two tools never drift. Three tiers: allow, ask (a human
-// confirms; OpenCode runs unattended and maps it to deny) and deny. Settings deny and ask rules are the floor;
+// confirms; OpenCode and a Claude subagent run unattended, so `unattended` maps it to deny, except a subagent's
+// `HUMAN_ASKS`) and deny. Settings deny and ask rules are the floor;
 // these rules add only what a prefix pattern cannot see: runner wrappers (`pnpm exec`, `npx`, `mise exec --`),
 // which checkout a git command targets, `agent_type`, and quoted prose.
 //
@@ -287,9 +288,16 @@ function nesting(f) {
 }
 /** The command with prose dropped, and every nested command in full. */
 const proseFree = (c) => [dropMessages(c), ...nestedRaw(c).map(dropMessages)];
-/** Every command line passed as one quoted word in `c` or a nested command (`commandLines`). Memoised. */
+/**
+ * Every command line passed as one quoted word in `c` or a nested command (`commandLines`), and what each line runs
+ * in turn (`nestedRaw`): its substitutions and script strings, so `ssh h 'echo "rm -rf ~" | sh'` reads `rm -rf ~`
+ * (STA-351). Memoised.
+ */
 const lineCache = memoTable();
-const lineTexts = (c) => cached(lineCache, c, () => proseFree(c).flatMap((t) => commandLines(t)));
+const lineTexts = (c) =>
+  cached(lineCache, c, () =>
+    proseFree(c).flatMap((t) => commandLines(t).flatMap((l) => [l, ...nestedRaw(l)])),
+  );
 /**
  * Texts a rule that needs the quoted values scans: the command with prose dropped, every nested command in full,
  * and every command line passed as one quoted word (`commandLines`). Memoised.
@@ -712,8 +720,27 @@ const longFlag = (f, name) => f.length >= 3 && name.startsWith(f.split("=")[0]);
 const isRecursiveForce = (flags) =>
   flags.some((f) => /^-[a-zA-Z]*[rR]/.test(f) || longFlag(f, "--recursive")) &&
   flags.some((f) => /^-[a-zA-Z]*f/.test(f) || longFlag(f, "--force"));
-/** The scratchpad root Claude Code gives a session: `/tmp/claude-<uid>` through its symlinks. */
-const scratchRoot = () => realDir(`/tmp/claude-${process.getuid?.() ?? 0}`);
+/**
+ * The scratchpad directory Claude Code gives the session `ids` name (the hook input's `session_id`, then
+ * `CLAUDE_CODE_SESSION_ID`): `/tmp/claude-<uid>/<project>/<session id>/scratchpad`, the first that exists; "" when
+ * none does. Only this directory is a scratch place for `rm -rf`: the root and other projects' or sessions' trees
+ * are not (STA-351).
+ */
+export function sessionScratchpad(...ids) {
+  const root = `/tmp/claude-${process.getuid?.() ?? 0}`;
+  let projects = [];
+  try {
+    projects = readdirSync(root);
+  } catch {
+    return "";
+  }
+  for (const id of ids.filter((x) => /^[\w-]+$/.test(x ?? "")))
+    for (const p of projects) {
+      const dir = join(root, p, id, "scratchpad");
+      if (existsSync(dir)) return dir;
+    }
+  return "";
+}
 const FIND_EXEC = new Set(["-exec", "-execdir", "-ok", "-okdir"]);
 const FIND_NAMES = /^-i?(?:name|path|wholename|regex)$/;
 /** `.git` and paths inside it that git always or usually holds: a find that may select one reaches the history. */
@@ -904,7 +931,7 @@ function rmPlace(t, dir, ctx, under = null) {
   for (const w of braces(t) ?? [null]) {
     const found = w === null ? null : expandGlob(dir ?? "/", w);
     if (found === null) return "deny";
-    paths.push(...found);
+    paths.push(...(found.length ? found : [w])); // an unmatched glob stays literal, as in bash
   }
   const places = paths.map((p) => landing(physical(dir ?? "/", p), ctx, under));
   return places.includes("deny") ? "deny" : places.includes("nested") ? "nested" : "ok";
@@ -913,7 +940,7 @@ function rmPlace(t, dir, ctx, under = null) {
 function landing(real, ctx, under) {
   const own = ctx.own();
   const inside = (r) => r && (real.startsWith(r + sep) || (under && real === r));
-  if (![own.root, scratchRoot()].some(inside)) return "deny";
+  if (![own.root, ctx.scratch()].some(inside)) return "deny";
   // A find from the checkout root reaches its `.git` (a linked worktree's `.git` file links it).
   if (under?.git && real === own.root) return "deny";
   // `.git` holds the history and every linked worktree's admin directory (a worktree's `.git` file links it).
@@ -1297,9 +1324,29 @@ const runsSqlClient = (c) =>
   );
 
 /**
+ * The asks that still reach a human when a subagent raises them (ADR 0293, amended by STA-351): decisions only the
+ * owner makes, which no rewrite of the command can turn into an allow. Every other ask from a subagent is a deny
+ * (`unattended`), because the owner is not watching a subagent's prompts and the agent would sit idle.
+ */
+export const HUMAN_ASKS = new Set([
+  "secrets-import-confirm",
+  "tag-push",
+  "encore-db-reset",
+  "encore-env",
+  "wrangler-deploy",
+  "eas",
+]);
+/** What a caller nobody watches does instead of waiting for an answer to an ask. */
+export const UNATTENDED_HINT =
+  "No human answers a subagent's or an unattended run's prompt, so this ask is a deny (ADR 0293). Rewrite the command so the guard can read it: write a loop or probe directly, not through `bash -c`, `sh -c` or `eval`; spell the command name out (no `$cmd …` or `$(…) …`); run commands instead of piping text into a shell. If the step needs the owner, hand it to the lead.";
+/** A decision for a caller nobody watches (a subagent, OpenCode): an ask becomes a deny with `UNATTENDED_HINT`. */
+export const unattended = (d) =>
+  d.decision === "ask" ? { decision: "deny", reason: `${d.reason}\n${UNATTENDED_HINT}` } : d;
+
+/**
  * The rules, in order. A rule denies unless it says `decision: "ask"`; any deny wins over any ask. `rx` is a regex
  * or a function of (text, ctx) that returns true, or a string that replaces `why`. `scan: "bare"` rules see the
- * text with quoted strings blanked.
+ * text with quoted strings blanked. An ask whose `id` is in `HUMAN_ASKS` reaches a human from a subagent too.
  */
 const RULES = [
   // --- Secrets: never print a value, never create a .env file (ADR 0173, ADR 0257) ------------
@@ -1362,6 +1409,7 @@ const RULES = [
   {
     rx: (c) => runs(c, /\bsecrets(?::import|-import(?:\.mjs)?)\b[^|;&\n]*\s--confirm\b/),
     decision: "ask",
+    id: "secrets-import-confirm",
     why: "`secrets:import … --confirm` writes a production secret. The confirm token is a process rule; this prompt is the owner's real yes (ADR 0257).",
   },
   {
@@ -1393,7 +1441,9 @@ const RULES = [
       const words = proseFree(c).flatMap((t) =>
         simpleCommands(t).flatMap((s) => {
           const all = [...withoutPrograms(s.words), ...s.redirects.map((r) => r.target)];
-          return readerCommand(s.words) ? all : [...all, ...all.flatMap((w) => w.split(/\s+/))];
+          // A substitution is read as its own text (`x=$(grep -rn "a.key" src)`), never split here (STA-351).
+          const split = all.flatMap((w) => outsideSubstitutions(w).split(/\s+/));
+          return readerCommand(s.words) ? all : [...all, ...split];
         }),
       );
       const hit = [...new Set(words.flatMap((w) => [w, ...w.split("=").slice(1)]))].find(
@@ -1419,6 +1469,7 @@ const RULES = [
   {
     rx: (c) => runsQuoted(c, /\bencore\s+db\s+reset\b/),
     decision: "ask",
+    id: "encore-db-reset",
     why: "`encore db reset` destroys the local database and re-migrates; the owner confirms it.",
   },
   {
@@ -1428,6 +1479,7 @@ const RULES = [
   {
     rx: (c) => runsQuoted(c, /\bencore\s+env\s+(set|create|delete)\b/),
     decision: "ask",
+    id: "encore-env",
     why: "`encore env set/create/delete` changes a shared environment; the owner confirms it.",
   },
   {
@@ -1439,11 +1491,13 @@ const RULES = [
         ),
       ),
     decision: "ask",
+    id: "wrangler-deploy",
     why: "`wrangler deploy`, `rollback`, `delete`, `secret` and `--remote` change Cloudflare with the owner's login; the owner confirms it.",
   },
   {
     rx: (c) => runs(c, atName("eas" + END)),
     decision: "ask",
+    id: "eas",
     why: "`eas` builds, submits and updates on the owner's Expo login; the owner confirms it.",
   },
   {
@@ -1461,7 +1515,7 @@ const RULES = [
   // --- History, worktrees and shared local state ------------------------------------------------
   {
     rx: (c, ctx) => rmPlaces(c, ctx).includes("deny"),
-    why: "`rm -rf` is allowed only strictly inside this session's own checkout or the scratchpad (`/tmp/claude-<uid>/`), and inside a nested linked worktree with the owner's yes. Never /, ~, $HOME, a `$` expansion, `*`, `.git`, a worktree itself, a path outside those roots, or a relative path after an unknown `cd`.",
+    why: "`rm -rf` is allowed only strictly inside this session's own checkout or this session's scratchpad directory (`/tmp/claude-<uid>/<project>/<session>/scratchpad`, not the `/tmp/claude-<uid>` root), and inside a nested linked worktree with the owner's yes. Never /, ~, $HOME, a `$` expansion, `*`, `.git`, a worktree itself, a path outside those roots, or a relative path after an unknown `cd`.",
   },
   {
     rx: (c, ctx) => rmPlaces(c, ctx).includes("nested"),
@@ -1485,6 +1539,7 @@ const RULES = [
         ),
       ),
     decision: "ask",
+    id: "tag-push",
     why: "A bot push of tags (`--tags`, `--follow-tags`, `refs/tags/*`, `<package>@x`) publishes a release marker no ruleset protects; the owner confirms it.",
   },
   {
@@ -1716,24 +1771,35 @@ function substitutionDepth(c) {
 
 /**
  * The evaluation context: the command as written (`raw`, heredoc bodies included), the shell's directory, the
- * subagent type, the session's own checkout (lazy) and a memo.
+ * subagent type, the session's scratchpad (resolved, lazy), the session's own checkout (lazy) and a memo.
  */
-function context(raw, cwd, agentType) {
-  let own;
+function context(raw, cwd, agentType, scratchpad) {
+  let checkout;
   const cache = new Map();
   const memo = (key, f) => {
     if (!cache.has(key)) cache.set(key, f());
     return cache.get(key);
   };
-  return { raw, cwd, agentType, memo, own: () => (own ??= ownCheckout(cwd)) };
+  let scratch;
+  const own = () => (checkout ??= ownCheckout(cwd));
+  return {
+    raw,
+    cwd,
+    agentType,
+    memo,
+    own,
+    scratch: () => (scratch ??= scratchpad && realDir(scratchpad)),
+  };
 }
 
 /**
  * The tier for a shell command: `{ decision: "allow" | "ask" | "deny", reason }`. Every rule runs on the command
  * and on its runner-free form (`lookThroughRunners`); any deny wins over any ask. Safety net (STA-254): deny rules
- * also run on every substitution body found with quotes ignored.
+ * also run on every substitution body found with quotes ignored. From a subagent (`agentType` set) an ask is a deny
+ * (`unattended`) unless every ask it hit is in `HUMAN_ASKS`; the main session keeps its asks.
  * @param {string} raw the command as the agent wrote it
- * @param {{ cwd?: string, agentType?: string }} [options] the shell's directory and the subagent type (`agent_type`)
+ * @param {{ cwd?: string, agentType?: string, scratchpad?: string }} [options] the shell's directory, the subagent
+ *   type (`agent_type`) and the session's scratchpad directory (`sessionScratchpad`; none: no scratch `rm -rf`)
  */
 export function decideBash(raw, options = {}) {
   try {
@@ -1745,14 +1811,14 @@ export function decideBash(raw, options = {}) {
 }
 const UNREADABLE =
   "The guard could not read this command, so it is denied. Split it into plain commands";
-function decide(raw, { cwd = process.cwd(), agentType = "" } = {}) {
+function decide(raw, { cwd = process.cwd(), agentType = "", scratchpad = "" } = {}) {
   clearCaches();
   gitRuns = 0;
   gitLate = false;
   deadline = performance.now() + DEADLINE_MS;
   if (substitutionDepth(raw) > MAX_DEPTH) return { decision: "deny", reason: TOO_DEEP };
   const cmd = stripHeredocs(raw);
-  const ctx = context(raw, cwd, agentType);
+  const ctx = context(raw, cwd, agentType, scratchpad);
   tooDeep = false;
   for (const text of forms(cmd)) {
     runnable(text);
@@ -1773,6 +1839,7 @@ function decide(raw, { cwd = process.cwd(), agentType = "" } = {}) {
         ? { decision: "deny", reason: TOO_SLOW }
         : d;
   let asked = null;
+  let rewrite = null; // the first ask a subagent may not raise (not in `HUMAN_ASKS`)
   const all = forms(cmd);
   for (const rule of RULES)
     for (const text of rule.lookThrough === false ? [cmd] : all) {
@@ -1780,6 +1847,7 @@ function decide(raw, { cwd = process.cwd(), agentType = "" } = {}) {
       const why = check(rule, text);
       if (why && rule.decision !== "ask") return done({ decision: "deny", reason: why });
       if (why) asked ??= why;
+      if (why && !HUMAN_ASKS.has(rule.id)) rewrite ??= why;
     }
   for (const body of rawSubstitutions(cmd)) {
     const texts = forms(body);
@@ -1791,6 +1859,7 @@ function decide(raw, { cwd = process.cwd(), agentType = "" } = {}) {
         if (why) return done({ decision: "deny", reason: why });
       }
   }
+  if (agentType && rewrite) return done(unattended({ decision: "ask", reason: rewrite }));
   return done(asked ? { decision: "ask", reason: asked } : { decision: "allow", reason: "" });
 }
 
@@ -1841,17 +1910,56 @@ const JQ_VALUES = {
   "--indent": 1,
   "-L": 1,
 };
-const SEARCH_VALUES = { "-A": 1, "-B": 1, "-C": 1, "-m": 1 };
-const RG_VALUES = {
-  ...SEARCH_VALUES,
-  "-g": 1,
-  "--glob": 1,
-  "-t": 1,
-  "--type": 1,
-  "-T": 1,
-  "-r": 1,
-};
+/**
+ * Short options of a search that take a value, besides `-e` (a pattern) and `-f` (a pattern file): the value is the
+ * rest of the cluster (`-A3`) or the next word. Only known ones: a missed value shifts the pattern onto a file.
+ */
+const SEARCH_SHORT = { grep: "ABCDdm", rg: "ABCEMTdgjmrt", other: "ABCm" };
+/** Long options of a search whose value may be the next word (`--include '*.ts'`); `=` joins it otherwise. */
+const SEARCH_LONG = new Set(
+  "include exclude exclude-dir exclude-from context after-context before-context max-count label binary-files devices directories group-separator glob iglob type type-not replace max-depth max-columns threads encoding type-add ignore-file pre pre-glob sort sortr max-filesize path-separator".split(
+    " ",
+  ),
+);
 const SEARCHES = new Set(["grep", "egrep", "fgrep", "rg", "ag", "ack"]);
+/**
+ * The indexes of a search's pattern words from `from` (STA-351): every `-e` / `--regexp` value, attached
+ * (`-ex`, `-e=x`, `-nex`, `--regexp=x`) or the next word, or else the first operand, other options' values
+ * skipped. With `-f` / `--file` (clustered too: `-nf .env`) the pattern comes from that file, which stays a word.
+ */
+function patternIndexes(words, from, short) {
+  const out = [];
+  const operands = [];
+  let given = false;
+  for (let j = from; j < words.length; j++) {
+    const w = words[j];
+    if (w === "--") {
+      for (let k = j + 1; k < words.length; k++) operands.push(k);
+      break;
+    }
+    const long = /^--([^=]+)(=?)/.exec(w);
+    if (long) {
+      const joined = long[2] === "=";
+      if (long[1] === "regexp" || long[1] === "file") given = true;
+      if (long[1] === "regexp") out.push(joined ? j : j + 1);
+      if (!joined && (long[1] === "regexp" || long[1] === "file" || SEARCH_LONG.has(long[1]))) j++;
+    } else if (/^-./.test(w)) {
+      for (let k = 1; k < w.length; k++) {
+        if (!(w[k] === "e" || w[k] === "f" || short.includes(w[k]))) continue;
+        const attached = k < w.length - 1;
+        if (w[k] === "e" || w[k] === "f") given = true;
+        if (w[k] === "e") out.push(attached ? j : j + 1);
+        if (!attached) j++;
+        break;
+      }
+    } else operands.push(j);
+  }
+  if (!given && operands.length) out.push(operands[0]);
+  return out;
+}
+/** git options whose value is a search pattern, never a file: `log -S…`, `-G…`, `--grep=…` (STA-351). */
+const GIT_PATTERN = /^(?:-[SG]|--grep)$/;
+const GIT_PATTERN_JOINED = /^(?:-[SG].|--grep=)/;
 /** A vitest test-name filter: its value is a pattern, never a file (`vitest run -t "reads action.key"`). */
 const TEST_NAME_FLAG = /^(?:-t|--testNamePattern|--test-name-pattern)$/;
 /** The first operand of `words` from `from`: options and their `values` skipped, the word after `--` taken. */
@@ -1866,8 +1974,9 @@ function firstOperand(words, from, values) {
 /**
  * `words` without the program or pattern a command reads as code or text, not as file names (STA-330 review): the
  * first operand of `jq` (its option values skipped) and `awk` (none when `-f` names a program file), the pattern of
- * a search (`grep`, `rg`, `git grep`; the `-e` values, none with `-f`), a vitest `-t` value and the value of a
- * `PROGRAM_FLAG`. A file operand is kept, so `jq . .env`, `grep x .env` and `grep -f .env x` still name the file.
+ * a search (`grep`, `rg`, `git grep`: `patternIndexes`), the `-S` / `-G` / `--grep` values of `git log|show|diff`,
+ * a vitest `-t` value and the value of a `PROGRAM_FLAG`. A file operand is kept, so `jq . .env`, `grep x .env` and
+ * `grep -f .env x` still name the file.
  */
 function withoutPrograms(words) {
   const i = commandAt(words);
@@ -1879,13 +1988,14 @@ function withoutPrograms(words) {
   }
   const sub = name === "git" ? words.findIndex((w, j) => j > i && !w.startsWith("-")) : -1;
   if (SEARCHES.has(name) || words[sub] === "grep") {
-    if (words.some((w) => /^(?:-e|--regexp)$/.test(w)))
-      return words.filter((_, j) => !/^(?:-e|--regexp)$/.test(words[j - 1] ?? ""));
-    if (words.some((w) => /^(?:-f|--file)(?:=|$)/.test(w))) return words;
-    return drop(
-      firstOperand(words, sub >= 0 ? sub + 1 : i + 1, name === "rg" ? RG_VALUES : SEARCH_VALUES),
-    );
+    const tool = name === "rg" ? "rg" : /^[ef]?grep$/.test(name) ? "grep" : "other";
+    const pattern = new Set(patternIndexes(words, sub >= 0 ? sub + 1 : i + 1, SEARCH_SHORT[tool]));
+    return words.filter((_, j) => !pattern.has(j));
   }
+  if (["log", "show", "diff"].includes(words[sub]))
+    return words.filter(
+      (w, j) => !(j > sub && (GIT_PATTERN_JOINED.test(w) || GIT_PATTERN.test(words[j - 1]))),
+    );
   if (words.some((w) => baseName(w) === "vitest"))
     return words.filter(
       (w, j) =>

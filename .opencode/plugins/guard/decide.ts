@@ -1,8 +1,9 @@
 // Decision functions for the Stackra OpenCode guard plugin (index.ts), covered by node:test.
 // The permission tiers live in .agents/hooks/_rules.mjs, shared with the Claude hooks (ADR 0293), so the two tools
-// never drift. OpenCode runs unattended (ADR 0066) and `--auto` approves any ask, so an ask is a deny here. On top
-// of the shared rules sits the executor layer: what only the lead does (owner-only CLIs, the GitHub bot wrappers
-// beyond the executor's own push, Infisical, local data git cannot restore) and edits outside the worktree.
+// never drift. OpenCode runs unattended (ADR 0066) and `--auto` approves any ask, so an ask is a deny here, through
+// the same `unattended` the Claude hook applies to a subagent's asks (STA-351). On top of the shared rules sits the
+// executor layer: what only the lead does (owner-only CLIs, the GitHub bot wrappers beyond the executor's own push,
+// Infisical, local data git cannot restore) and edits outside the worktree.
 // opencode.jsonc repeats the same tiers as order-sensitive patterns, a second layer.
 // shortcut: executor commands are split on && || ; | and newlines without honouring quotes; nested scripts come
 // from the shared scanShell / scriptStrings; upgrade to a real shell parser if one slips through.
@@ -18,6 +19,7 @@ import {
   decideRead,
   decideWrite,
   isSecretPath,
+  unattended,
 } from "../../../.agents/hooks/_rules.mjs";
 
 export type Decision = { kind: "allow" } | { kind: "deny"; reason: string };
@@ -33,9 +35,11 @@ export interface GuardContext {
 
 const ALLOW: Decision = { kind: "allow" };
 const deny = (reason: string): Decision => ({ kind: "deny", reason: `stackra-guard: ${reason}` });
-/** A shared tier as an OpenCode decision: ask is deny, because nobody is there to answer. */
-const tier = (d: { decision: string; reason: string }): Decision =>
-  d.decision === "allow" ? ALLOW : deny(d.reason);
+/** A shared tier as an OpenCode decision: ask is deny (`unattended`, with its rewrite hint), as nobody answers. */
+const tier = (d: { decision: string; reason: string }): Decision => {
+  const u = unattended(d);
+  return u.decision === "allow" ? ALLOW : deny(u.reason);
+};
 
 // Heredoc bodies are file content, not commands (the shared stripHeredocs).
 export { stripHeredocs };

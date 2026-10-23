@@ -10,13 +10,13 @@ A hook either **denies** a tool call with a reason the agent sees, or **adds con
 
 ## What runs today
 
-| Hook                    | Event and matcher                                    | Effect                                                                                                   |
-| ----------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `session-context.mjs`   | `SessionStart`                                       | Restates the invariants that must survive compaction, plus the branch and up to 15 lines of `git status` |
-| `guard-bash.mjs`        | `PreToolUse`, `Bash`                                 | Reports the permission tier of a command (deny, ask, or allow) from `_rules.mjs`                         |
-| `guard-paths.mjs`       | `PreToolUse`, `Write\|Edit\|MultiEdit\|NotebookEdit` | Refuses writes to generated, vendored or secret paths                                                    |
-| `guard-paths.mjs`       | `PreToolUse`, `Read\|Grep\|Glob`                     | Refuses the secrets inbox and secret files                                                               |
-| `post-write-checks.mjs` | `PostToolUse`, `Write\|Edit\|MultiEdit`              | Reports (never fixes, never blocks) a written file in the repository that oxfmt would reformat           |
+| Hook                    | Event and matcher                                    | Effect                                                                                                       |
+| ----------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `session-context.mjs`   | `SessionStart`                                       | Restates the invariants that must survive compaction, plus the branch and up to 15 lines of `git status`     |
+| `guard-bash.mjs`        | `PreToolUse`, `Bash`                                 | Reports the permission tier of a command (deny, ask, or allow) from `_rules.mjs`; a subagent's ask is a deny |
+| `guard-paths.mjs`       | `PreToolUse`, `Write\|Edit\|MultiEdit\|NotebookEdit` | Refuses writes to generated, vendored or secret paths                                                        |
+| `guard-paths.mjs`       | `PreToolUse`, `Read\|Grep\|Glob`                     | Refuses the secrets inbox and secret files                                                                   |
+| `post-write-checks.mjs` | `PostToolUse`, `Write\|Edit\|MultiEdit`              | Reports (never fixes, never blocks) a written file in the repository that oxfmt would reformat               |
 
 `_io.mjs` holds the shared stdin and output helpers, `_inbox.mjs` the shell scanner and the inbox matcher, and
 `_rules.mjs` the permission tiers that `guard-bash`, `guard-paths` and the OpenCode guard all evaluate
@@ -55,22 +55,37 @@ is denied, because the hook fails open when its five seconds run out or it throw
 reader is denied for the same reason. A git lookup in a directory that does not exist is skipped, and a path
 longer than 4096 characters is denied unread.
 
-| Tier | Commands                                                                                                                                                                                                                                          |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Deny | `infisical export`, `infisical secrets get` (every form) and `set`, a bare `infisical secrets`, `infisical run -- env\|printenv`, `infisical user get token`, `login --plain`                                                                     |
-| Deny | `env`, `printenv`, `export -p`, `declare -x`, bare `set`, `ps -E`, `ps eww`, `security find-generic-password` and other keychain reads, `$…_TOKEN` / `$…_API_KEY`                                                                                 |
-| Deny | Any command naming a secret file (`.env*`, `.dev.vars`, `*.pem`, `*.key`, `~/.git-credentials`, `~/.config/gh/`), quoted or by a glob's literal text (not `*.json`), the secrets inbox, `bot:token`, `git credential`                             |
-| Deny | Plain `gh`, network `git`, pack plumbing; `bot:git` options that run a program (`--upload-pack`, `--receive-pack`, `--exec`, `clone -u`, `rebase -x`, `submodule foreach`)                                                                        |
-| Deny | A push to main; `--force` without a lease, `-f`, `--delete`, `--mirror`, `--prune`, `+refspec`, `:branch`; a `bot:git` push of anything but `HEAD` or the current branch                                                                          |
-| Deny | `reset --hard`, `checkout`/`restore .`, `checkout -f`, `switch --discard-changes`, `clean -f` and `worktree remove --force` in the main checkout or another agent's worktree                                                                      |
-| Deny | `rm -rf` outside the session's own checkout and the scratchpad, of a worktree itself or of `.git`; a `find … -delete` from a checkout root that may select a file in `.git`; `git stash pop`, `clear`, `branch`, and `apply`/`drop` without a ref |
-| Deny | `bot:review` from an agent type without `reviewer: true`, any merge or ref move outside `pnpm pr:merge`, the owner's label (any spelling, or a computed label value) or approving review, an `AI-REVIEW:` body via `gh`                           |
-| Deny | `encore deploy`, `encore secret set/get`, `wrangler secret put/bulk`, `git tag <package>@<version>`, `DROP DATABASE/SCHEMA`, ORM push or migrate, `changeset version`                                                                             |
-| Ask  | Raw `infisical run`, `infisical secrets delete`, `secrets:import … --confirm`, `encore db reset`, `encore env set/create/delete`, `wrangler deploy` and `--remote`, `eas`                                                                         |
-| Ask  | `npx`, `pnpx`, `pnpm dlx`, `npm exec`, a `bot:git` push of tags, and a shell that runs text the guard cannot read (`curl … \| sh`) or a computed command name (`$x …`)                                                                            |
-| Ask  | A `bot:gh` write (`api -X`/`-f`/`--input`, `repo edit`, `release`, `variable`, `secret`), a GraphQL label mutation, `git branch -D` of a branch no remote holds                                                                                   |
-| Ask  | `git config <key> <value>` without `--worktree`: the repository's config, which every linked worktree shares; `git config --worktree` of an allowed key is allowed                                                                                |
-| Ask  | From the main checkout, discarding git or `rm -rf` in a nested linked worktree (`cd` or `-C`); build output there (`node_modules`, `dist`, `.turbo`) is allowed                                                                                   |
+Text echoed or printed into a shell inside a quoted line (`ssh h 'echo "rm -rf ~" | sh'`) is read as the commands
+it runs. A search's pattern is found the way the tool parses it: `-e` / `--regexp` values attached or not (`-ex`,
+`-e=x`, `-nex`), a pattern file from `-f` / `--file` (clustered too: `-nf .env`, which still names the file), and
+the values of valued options such as `--include '*.ts'` skipped; a `git log|show|diff` `-S`, `-G` or `--grep` value
+and a pattern inside `$(…)` or backticks are no file names either.
+
+**Subagents do not prompt** (STA-351). The owner does not watch a subagent's prompts, so when the hook input names a
+subagent (`agent_type` is set), an ask is a deny carrying its reason and one line on how to rewrite the command so
+the guard can read it: write a loop or probe directly instead of through `bash -c`, `sh -c` or `eval`, spell the
+command name out, run commands instead of piping text into a shell. The asks in `HUMAN_ASKS` (`_rules.mjs`) still
+reach a human from a subagent: `secrets:import … --confirm`, a `bot:git` push of tags, `encore db reset`,
+`encore env set/create/delete`, `wrangler deploy` and `--remote`, and `eas`. The main session keeps every ask. The
+OpenCode guard applies the same `unattended` function to every ask, human ones included, because nobody answers
+there.
+
+| Tier | Commands                                                                                                                                                                                                                                                                                                              |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deny | `infisical export`, `infisical secrets get` (every form) and `set`, a bare `infisical secrets`, `infisical run -- env\|printenv`, `infisical user get token`, `login --plain`                                                                                                                                         |
+| Deny | `env`, `printenv`, `export -p`, `declare -x`, bare `set`, `ps -E`, `ps eww`, `security find-generic-password` and other keychain reads, `$…_TOKEN` / `$…_API_KEY`                                                                                                                                                     |
+| Deny | Any command naming a secret file (`.env*`, `.dev.vars`, `*.pem`, `*.key`, `~/.git-credentials`, `~/.config/gh/`), quoted or by a glob's literal text (not `*.json`), the secrets inbox, `bot:token`, `git credential`                                                                                                 |
+| Deny | Plain `gh`, network `git`, pack plumbing; `bot:git` options that run a program (`--upload-pack`, `--receive-pack`, `--exec`, `clone -u`, `rebase -x`, `submodule foreach`)                                                                                                                                            |
+| Deny | A push to main; `--force` without a lease, `-f`, `--delete`, `--mirror`, `--prune`, `+refspec`, `:branch`; a `bot:git` push of anything but `HEAD` or the current branch                                                                                                                                              |
+| Deny | `reset --hard`, `checkout`/`restore .`, `checkout -f`, `switch --discard-changes`, `clean -f` and `worktree remove --force` in the main checkout or another agent's worktree                                                                                                                                          |
+| Deny | `rm -rf` outside the session's own checkout and its own scratchpad directory (from `session_id`; not the `/tmp/claude-<uid>` root), of a worktree itself or of `.git`; a `find … -delete` from a checkout root that may select a file in `.git`; `git stash pop`, `clear`, `branch`, and `apply`/`drop` without a ref |
+| Deny | `bot:review` from an agent type without `reviewer: true`, any merge or ref move outside `pnpm pr:merge`, the owner's label (any spelling, or a computed label value) or approving review, an `AI-REVIEW:` body via `gh`                                                                                               |
+| Deny | `encore deploy`, `encore secret set/get`, `wrangler secret put/bulk`, `git tag <package>@<version>`, `DROP DATABASE/SCHEMA`, ORM push or migrate, `changeset version`                                                                                                                                                 |
+| Ask  | Raw `infisical run`, `infisical secrets delete`, `secrets:import … --confirm`, `encore db reset`, `encore env set/create/delete`, `wrangler deploy` and `--remote`, `eas`                                                                                                                                             |
+| Ask  | `npx`, `pnpx`, `pnpm dlx`, `npm exec`, a `bot:git` push of tags, and a shell that runs text the guard cannot read (`curl … \| sh`) or a computed command name (`$x …`)                                                                                                                                                |
+| Ask  | A `bot:gh` write (`api -X`/`-f`/`--input`, `repo edit`, `release`, `variable`, `secret`), a GraphQL label mutation, `git branch -D` of a branch no remote holds                                                                                                                                                       |
+| Ask  | `git config <key> <value>` without `--worktree`: the repository's config, which every linked worktree shares; `git config --worktree` of an allowed key is allowed                                                                                                                                                    |
+| Ask  | From the main checkout, discarding git or `rm -rf` in a nested linked worktree (`cd` or `-C`); build output there (`node_modules`, `dist`, `.turbo`) is allowed                                                                                                                                                       |
 
 Known misses, by design: plain `gh`, network `git` and `bot:token` in a quoted line (`watch 'gh pr merge 1'`,
 `watch 'git fetch'`, `watch 'pnpm bot:token'`; a push there still meets the push rules), code in another language

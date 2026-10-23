@@ -5,23 +5,31 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { decideBash } from "../_rules.mjs";
+import {
+  HUMAN_ASKS,
+  UNATTENDED_HINT,
+  decideBash,
+  sessionScratchpad,
+  unattended,
+} from "../_rules.mjs";
 
 const hook = new URL("../guard-bash.mjs", import.meta.url).pathname;
-/** The hook's permissionDecision ("deny", "ask"), or "allow" when it prints nothing. */
-const decision = (command, cwd, agentType) => {
+/** The hook's output for a payload; the session id comes only from the payload, never this process's env. */
+const run = (payload) => {
+  const env = { ...process.env };
+  delete env.CLAUDE_CODE_SESSION_ID;
   const r = spawnSync("node", [hook], {
-    input: JSON.stringify({
-      tool_name: "Bash",
-      tool_input: { command },
-      cwd,
-      agent_type: agentType,
-    }),
+    input: JSON.stringify({ tool_name: "Bash", ...payload }),
     encoding: "utf8",
+    env,
   });
   assert.equal(r.status, 0);
-  return r.stdout ? JSON.parse(r.stdout).hookSpecificOutput.permissionDecision : "allow";
+  return r.stdout ? JSON.parse(r.stdout).hookSpecificOutput : { permissionDecision: "allow" };
 };
+/** The hook's permissionDecision ("deny", "ask"), or "allow" when it prints nothing. */
+const decision = (command, cwd, agentType, sessionId) =>
+  run({ tool_input: { command }, cwd, agent_type: agentType, session_id: sessionId })
+    .permissionDecision;
 const denied = (command) => decision(command) === "deny";
 const root = spawnSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).stdout.trim();
 
@@ -1368,11 +1376,7 @@ test("rm -rf: own checkout (never a nested worktree), the scratchpad, cd followe
     'cd /tmp && echo "$(rm -rf build)"',
   ])
     assert.equal(decision(c, main), "deny", c);
-  for (const c of [
-    "rm -rf node_modules",
-    "cd .claude && rm -rf cache",
-    `rm -rf /tmp/claude-${process.getuid?.() ?? 0}/guard-bash-test`,
-  ])
+  for (const c of ["rm -rf node_modules", "cd .claude && rm -rf cache"])
     assert.equal(decision(c, main), "allow", c);
   assert.equal(decision("rm -rf dist", worktree), "allow");
   assert.equal(decision(`rm -rf ${main}/src`, worktree), "deny");
@@ -1604,7 +1608,7 @@ function sessionRepo() {
   symlinkSync(homedir(), join(worktree, "lnk"));
   symlinkSync("/", join(worktree, "up"));
   const places = { main, wt: worktree, other, home: homedir() };
-  const scratch = `/tmp/claude-${process.getuid?.() ?? 0}`;
+  const scratch = mkdtempSync(join(tmpdir(), "guard-scratch-"));
   const fill = (c) =>
     c
       .replaceAll("$MAIN", main)
@@ -1615,11 +1619,21 @@ function sessionRepo() {
   const wrong = (cases) =>
     cases
       .map(([at, c, want, agentType]) => {
-        const got = decideBash(fill(c), { cwd: places[at], agentType }).decision;
+        const got = decideBash(fill(c), {
+          cwd: places[at],
+          agentType,
+          scratchpad: scratch,
+        }).decision;
         return got === want ? null : `${got} (want ${want}) [${at}] ${c}`;
       })
       .filter(Boolean);
-  return { wrong, done };
+  return {
+    wrong,
+    done: () => {
+      done();
+      rmSync(scratch, { recursive: true, force: true });
+    },
+  };
 }
 
 test("round 1: a trailing `)`, an attached redirection or a group never hides a git argument", () => {
@@ -1794,6 +1808,10 @@ test("round 1: rm -rf through cd chains, .., symlinks, home, globs, --, split fl
     "rm -rf />/dev/null",
     "git -C $MAIN rm -rf .",
     "rm -rf $OTHER/src",
+    // STA-351: only the session's own scratchpad, never its parent, the scratch root or another tree under it
+    "rm -rf $SCRATCH/..",
+    `rm -rf /tmp/claude-${process.getuid?.() ?? 0}/*`,
+    `rm -rf /tmp/claude-${process.getuid?.() ?? 0}/-Users-x-other/0000/scratchpad/y`,
   ])
     cases.push(["wt", c, "deny"]);
   // from home: a `cd` that may fail, a backgrounded `cd` and a subshell's `cd` leave home possible
@@ -2533,5 +2551,144 @@ test("round 4: a 60 kB quoted command line is read in bounded time", () => {
     const ms = performance.now() - t;
     assert.doesNotMatch(reason, /could not read|nests/, JSON.stringify(unit));
     assert.ok(ms < 1500, `${JSON.stringify(unit)} took ${ms.toFixed(0)} ms`);
+  }
+});
+
+// ---- STA-351: subagent asks, round 6 review gaps ------------------------------------------------------------
+
+/** Asks a subagent may not raise: each is a deny there, with its reason and the rewrite hint. */
+const REWRITABLE_ASKS = [
+  'bash -c "until [ -f $F ]; do sleep 1; done"',
+  "$CMD status",
+  "cat x | sh",
+  "pnpm dlx cowsay hi",
+  "infisical run -- node x.js",
+  "git config user.email t@t",
+];
+
+// The main session (no `agent_type`, or an empty one) keeps its asks.
+test("STA-351: from a subagent an ask is a deny with the reason and the rewrite hint", () => {
+  for (const c of REWRITABLE_ASKS) {
+    const main = run({ tool_input: { command: c }, cwd: root });
+    const sub = run({ tool_input: { command: c }, cwd: root, agent_type: "Explore" });
+    assert.equal(main.permissionDecision, "ask", c);
+    assert.equal(decision(c, root, ""), "ask", c);
+    assert.equal(sub.permissionDecision, "deny", c);
+    const why = main.permissionDecisionReason.split("\n")[0];
+    assert.ok(sub.permissionDecisionReason.startsWith(`${why}\n${UNATTENDED_HINT}`), c);
+  }
+  assert.match(UNATTENDED_HINT, /bash -c.*sh -c.*eval/);
+});
+
+test("STA-351: HUMAN_ASKS still ask from a subagent; mixed with another ask, a subagent is denied", () => {
+  const { worktree, done } = repoWithWorktree();
+  const human = {
+    "secrets-import-confirm": "pnpm secrets:import --env prod --confirm abc STACKRA_X",
+    "tag-push": "pnpm bot:git -- push --follow-tags origin HEAD",
+    "encore-db-reset": "encore db reset identity",
+    "encore-env": "encore env create staging",
+    "wrangler-deploy": "wrangler deploy",
+    eas: "eas build --platform ios",
+  };
+  assert.deepEqual([...HUMAN_ASKS].sort(), Object.keys(human).sort());
+  for (const c of Object.values(human)) {
+    assert.equal(decision(c, worktree), "ask", c);
+    assert.equal(decision(c, worktree, "Explore"), "ask", c);
+  }
+  assert.equal(decision("eas build; cat x | sh", worktree), "ask");
+  assert.equal(decision("eas build; cat x | sh", worktree, "Explore"), "deny");
+  done();
+});
+
+test("STA-351: unattended turns only an ask into a deny (shared with the OpenCode guard)", () => {
+  assert.deepEqual(unattended({ decision: "ask", reason: "r" }), {
+    decision: "deny",
+    reason: `r\n${UNATTENDED_HINT}`,
+  });
+  for (const d of [
+    { decision: "allow", reason: "" },
+    { decision: "deny", reason: "r" },
+  ])
+    assert.deepEqual(unattended(d), d);
+});
+
+test("STA-351 round 6: attached or clustered -e / -f and --regexp= / --file= never hide a file", () => {
+  for (const c of [
+    "grep -ex .env",
+    "grep -e=x .env",
+    "grep -nex .env",
+    "grep --regexp=. .env",
+    "grep --regexp . .env",
+    "grep -nf .env x",
+    "grep -rf .env x",
+    "grep --file=.env x",
+    "grep --file .env x",
+    "git grep -ex .env",
+    "git grep -nf .env x",
+    "rg -ex .env",
+    "rg -nf .env x",
+  ])
+    assert.equal(decideBash(c, { cwd: root }).decision, "deny", c);
+  for (const c of ["grep -e .env x", "grep -nie .env.local src", "grep --regexp=.env x"])
+    assert.equal(decideBash(c, { cwd: root }).decision, "allow", c);
+});
+
+test("STA-351 round 6: echo|printf piped into a shell inside a wrapper's line is a command", () => {
+  for (const c of [
+    `ssh h 'echo "rm -rf ~" | sh'`,
+    `watch 'echo "rm -rf ~" | sh'`,
+    `tmux new -d 'echo "rm -rf ~" | bash'`,
+    `node x.mjs 'echo "rm -rf ~" | sh'`,
+    `ssh h 'printf "%s" "rm -rf ~" | zsh'`,
+    `ssh h 'echo "git push origin main" | sh'`,
+  ])
+    assert.equal(decideBash(c, { cwd: root }).decision, "deny", c);
+  assert.equal(decideBash(`ssh h 'echo "rm -rf ~"'`, { cwd: root }).decision, "allow");
+});
+
+test("STA-351 round 6: patterns in substitutions, git log values and valued search options are no files", () => {
+  for (const c of [
+    'x=$(grep -rn "action.key" src)',
+    'x=`grep -rn "action.key" src`',
+    'echo "$(grep -rn action.key src)"',
+    'git log -S"action.key" --oneline',
+    "git log -G'foo.key' --oneline",
+    "git log -S action.key",
+    'git log --grep="fix .env guard"',
+    "git log --grep action.key",
+    "git show -Gaction.key HEAD",
+    "grep -rn --include '*.ts' action.key src",
+    "grep -rn --exclude '*.md' action.key src",
+    "grep -rn --exclude-dir node_modules action.key src",
+    "rg -g '*.ts' action.key src",
+  ])
+    assert.equal(decideBash(c, { cwd: root }).decision, "allow", c);
+  for (const c of ["x=$(cat .env)", "git log -p -- .env", "grep -r KEY --include=.env ."])
+    assert.equal(decideBash(c, { cwd: root }).decision, "deny", c);
+});
+
+test("STA-351 round 6: rm -rf reaches only this session's scratchpad, from the hook's session_id", () => {
+  const uid = process.getuid?.() ?? 0;
+  const project = `/tmp/claude-${uid}/stackra-guard-test-${process.pid}`;
+  const id = "00000000-0000-4000-8000-000000000351";
+  const pad = join(project, id, "scratchpad");
+  mkdirSync(pad, { recursive: true });
+  try {
+    assert.equal(sessionScratchpad(undefined, id), pad);
+    assert.equal(sessionScratchpad("no-such-session"), "");
+    assert.equal(sessionScratchpad("../x", ""), "");
+    assert.equal(decision(`rm -rf ${pad}/x`, root, "", id), "allow");
+    assert.equal(decision(`rm -rf ${pad}/x`, root, "Explore", id), "allow");
+    assert.equal(decision(`rm -rf ${pad}/x`, root), "deny"); // no session id, no scratchpad
+    for (const c of [
+      `rm -rf /tmp/claude-${uid}/*`,
+      `rm -rf /tmp/claude-${uid}/x`,
+      `rm -rf ${project}/other-session/scratchpad/x`,
+      `rm -rf ${pad}/..`,
+      `rm -rf ${pad}`,
+    ])
+      assert.equal(decision(c, root, "", id), "deny", c);
+  } finally {
+    rmSync(project, { recursive: true, force: true });
   }
 });
