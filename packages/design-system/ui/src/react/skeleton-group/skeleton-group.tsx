@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decision 3, decision 5: adapted form); ADR 0165; ADR 0304; WCAG 2.2 SC 4.1.3.
  */
 import { cn } from "@heroui/react";
-import { useMemo, type ComponentPropsWithRef } from "react";
+import { useEffect, useMemo, useRef, type ComponentPropsWithRef } from "react";
 
 import type { SkeletonGroupContractProps } from "#contracts/types/skeleton-group-contract-props.type";
 import { SkeletonGroupContext } from "#react/skeleton-group/skeleton-group-context";
@@ -20,8 +20,9 @@ export type SkeletonGroupProps = SkeletonGroupContractProps &
 
 /**
  * A region of Skeletons that load together, with one shared state and one sweep. With a `loadingLabel` it names the
- * region to screen readers while it loads; the status element exists from the first render, so its text change is
- * announced.
+ * region to screen readers while it loads. The status element is rendered empty and filled after mount, because most
+ * screen readers announce a live region only when its text changes, not when it is inserted already full. Ending the
+ * load empties the element silently: a completion announcement needs its own text, which the contract does not carry.
  */
 export function SkeletonGroup({
   isLoading = true,
@@ -32,6 +33,12 @@ export function SkeletonGroup({
   ...rest
 }: SkeletonGroupProps) {
   const value = useMemo(() => ({ isLoading, animationType }), [isLoading, animationType]);
+  const statusRef = useRef<HTMLSpanElement>(null);
+  const text = isLoading ? (loadingLabel ?? "") : "";
+  // The text is written to the DOM, not rendered, so the span reaches the page empty and React never owns its child.
+  useEffect(() => {
+    if (statusRef.current) statusRef.current.textContent = text;
+  }, [text]);
   const isSweeping = isLoading && animationType === "shimmer";
   return (
     <SkeletonGroupContext value={value}>
@@ -40,9 +47,7 @@ export function SkeletonGroup({
         className={cn(isSweeping && "skeleton--shimmer relative overflow-hidden", className) ?? ""}
       >
         {loadingLabel === undefined ? null : (
-          <span role="status" className="sr-only">
-            {isLoading ? loadingLabel : ""}
-          </span>
+          <span ref={statusRef} role="status" className="sr-only" />
         )}
         {children}
       </div>

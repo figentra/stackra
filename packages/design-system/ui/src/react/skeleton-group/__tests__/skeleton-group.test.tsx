@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: proves the web SkeletonGroup draws HeroUI's single shimmer only while it loads and shimmers, names the
- *          loading region through one status element that exists from the first render and empties when loading
+ *          loading region through one status element that is filled after mount and empties when loading
  *          ends, leaves its bones silent, passes unknown props and the ref through, and refuses `variant`.
  * Boundary: jsdom with real HeroUI; the theme CSS is not loaded, so classes are checked, not looks.
  * Runtime: browser
@@ -10,6 +10,7 @@
 // @vitest-environment jsdom
 // @covers sta-350:FR-041 sta-350:FR-042 sta-350:P-033 sta-350:P-034
 import { render, screen } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 import { createRef } from "react";
 
 import type { SkeletonGroupContractProps } from "#contracts/types/skeleton-group-contract-props.type";
@@ -47,6 +48,12 @@ describe("SkeletonGroup (web)", () => {
     rerender(<SkeletonGroup loadingLabel="Loading orders" isLoading={false} />);
     expect(screen.getByRole("status")).toBe(status);
     expect(status.textContent).toBe("");
+  });
+
+  it("inserts the status empty, so the later text is a change a screen reader announces", () => {
+    expect(renderToString(<SkeletonGroup loadingLabel="Loading orders" />)).not.toContain(
+      "Loading orders",
+    );
   });
 
   it("has no status without a label, and its bones are silent", () => {

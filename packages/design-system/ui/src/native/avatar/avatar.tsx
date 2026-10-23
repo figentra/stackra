@@ -77,9 +77,10 @@ export function Avatar({
   // The colour HeroUI gives its own fallback text; a nested Lucide provider replaces every field, so both are set.
   const color = useThemeColor(`${tone}-soft-foreground` satisfies ThemeColor);
   const initials = name ? initialsOf(name, locale) : "";
-  // Initials stay a bare string: HeroUI Native draws a string child as text, and a bare string inside a provider
-  // would reach a View, which React Native refuses.
-  const isInitials = fallback === undefined && initials !== "";
+  // A string or number stays bare, whether it is the caller's fallback or the initials: HeroUI Native draws a bare
+  // string child as text, and one wrapped in a provider would reach a View, which React Native refuses.
+  const isText = typeof fallback === "string" || typeof fallback === "number";
+  const text = isText ? fallback : fallback === undefined && initials !== "" ? initials : undefined;
   const content = fallback ?? <Icon as={UserRound} size={size ?? "md"} />;
   const isSquare = shape === "square";
   const accessibility = label
@@ -97,8 +98,8 @@ export function Avatar({
       {src ? <HeroAvatar.Image source={{ uri: src }} /> : null}
       {/* The fallback's own container is fully round, so it takes the square class too. */}
       <HeroAvatar.Fallback {...(isSquare ? { className: AVATAR_SQUARE_CLASS_NAME } : {})}>
-        {isInitials ? (
-          initials
+        {text !== undefined ? (
+          text
         ) : (
           <LucideProvider size={ICON_SIZES[size ?? "md"]} color={color}>
             {content}

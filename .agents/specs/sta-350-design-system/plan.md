@@ -75,7 +75,7 @@ switcher and is covered by Playwright and axe. `@stackra/brand` is deleted; its 
 - **P-028**: A badge never takes a press: a press on it reaches the anchored element — Validates: FR-038, FR-039
 - **P-029**: Props outside the Badge contract reach the HeroUI base unchanged on both runtimes — Validates: FR-038, FR-039
 - **P-030**: Every Surface, Card, Separator, Chip, StatusBadge and Badge sample of the playground shows what its contract promises, listed under its category — Validates: FR-032, FR-036, FR-040
-- **P-031**: Without a label an Avatar is hidden from assistive technology and with one it is exactly one image named by it; its fallback is the loaded image, else `fallback`, else the initials of `name`, else the person icon, on both runtimes — Validates: FR-042, FR-043, FR-044
+- **P-031**: Without a label an Avatar is hidden from assistive technology and with one it is exactly one image named by it; its fallback is the loaded image, else `fallback`, else the initials of `name`, else the person icon, on both runtimes — Validates: FR-041, FR-042, FR-043, FR-044
 - **P-032**: A Spinner with a label is one named status (web `status`, native busy progressbar), without one it is hidden, and HeroUI's English "Loading" never reaches a user — Validates: FR-042, FR-043
 - **P-033**: A Skeleton shows its children only when not loading, takes its loading state and animation from the enclosing SkeletonGroup unless it sets its own, and a group with a loading label exposes exactly that text while loading — Validates: FR-042, FR-043, FR-045
 - **P-034**: Props outside the Avatar, Spinner, Skeleton and SkeletonGroup contracts reach HeroUI unchanged on both runtimes — Validates: FR-042, FR-043

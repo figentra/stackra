@@ -106,7 +106,8 @@ export function renderWebCss(theme: Theme): string {
     block(':root,\n[data-theme="light"]', colours("light")),
     block('.dark,\n[data-theme="dark"]', colours("dark")),
     // Unlayered, so the sweep beats HeroUI's `components` animation; `reverse` plays the keyframe backwards, which
-    // brings the light in from the inline-end side, the way HeroUI Native sweeps in a right-to-left layout.
+    // starts the light on the inline-start side (HeroUI's start is the physical left, so in a right-to-left layout it
+    // is the right), the way HeroUI Native sweeps in a right-to-left layout.
     block(".skeleton--shimmer:dir(rtl)::after,\n.skeleton--shimmer:dir(rtl)::before", [
       "  animation-direction: reverse;",
     ]),

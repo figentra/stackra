@@ -119,6 +119,15 @@ describe("Avatar (native)", () => {
     expect(queryByTestId("image")).toBeNull();
   });
 
+  it("draws a string or number fallback bare, never inside the provider", () => {
+    const { getByTestId, rerender } = render(<Avatar name="Ada Lovelace" fallback="?" />);
+    expect(getByTestId("fallback").textContent).toBe("?");
+    expect(getByTestId("fallback").querySelector('[data-testid="provider"]')).toBeNull();
+    rerender(<Avatar fallback={7} />);
+    expect(getByTestId("fallback").textContent).toBe("7");
+    expect(getByTestId("fallback").querySelector('[data-testid="provider"]')).toBeNull();
+  });
+
   it("falls back from the node to the initials to the person icon", () => {
     const { getByTestId, rerender } = render(
       <Avatar name="Ada Lovelace" fallback={<b data-testid="mine" />} />,
