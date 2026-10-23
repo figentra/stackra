@@ -24,7 +24,9 @@ Design System". Source decisions: ADR 0165 (web client stack, UI contract, form 
   `apps/docs` (ADR 0302, the logo and brand assets moved in, the regenerated `standards/structure.mdx`)
 - **Services touched**: none
 - **Packages touched**: `packages/design-system/tokens` (new, `@stackra/tokens`), `packages/design-system/ui` (new,
-  `@stackra/ui`), `packages/experience/brand` (deleted, `@stackra/brand` retired)
+  `@stackra/ui`), `packages/experience/brand` (deleted, `@stackra/brand` retired), `packages/tooling/oxlint` (its boundary fixtures
+  import `@stackra/tokens` instead of the retired brand package), `packages/tooling/typescript` (the `vite` preset also
+  typechecks an app's `e2e/` folder)
 - **Public contract change**: `@stackra/brand` is removed; `@stackra/tokens` (the token schema, the `stackra` theme and
   the two renderers) and `@stackra/ui` (shared contracts, `./react` and `./native` providers) are added. The
   `design-system` category joins the structure data, the validator and `pnpm new`
@@ -35,7 +37,8 @@ Design System". Source decisions: ADR 0165 (web client stack, UI contract, form 
 - **ADR needed**: yes, ADR 0302 (written by `docs-adr-steward` in this pull request; records the five owner decisions
   below); the amendment notes it adds to ADR 0165 and the brand records go in the same pull request
 - **New dependencies**: a new `e2e` catalog (`@playwright/test` 1.64.1, `@axe-core/playwright` 4.14.0), approved by the
-  owner on 2026-10-23; `react-aria-components` in `catalog:frontend` only if `@heroui/react` lacks `I18nProvider`
+  owner on 2026-10-23; `react-aria-components` 1.22.1 in `catalog:frontend` (the version `@heroui/react` 3.2.6 resolves
+  its peer to), approved by the owner on 2026-10-23 for `@stackra/ui/react`'s `I18nProvider`
 - **Deploy modes**: none; two libraries and a dev-only app, the same for SaaS, on-prem and air-gapped
 - **Licence tier**: the two packages are MIT; the brand assets stay under the ADR 0024 NOTICE in their new homes
 - **UI surfaces**: `apps/playground` (the component workbench, not shipped to users)
@@ -141,8 +144,9 @@ moved assets exist in `apps/docs` and `apps/mobile`.
 
 ## Assumptions
 
-- `@heroui/react` v3 exposes an `I18nProvider`; if it does not, `react-aria-components` joins `catalog:frontend`, the
-  owner having approved that single case.
+- `@heroui/react` 3.2.6 re-exports React Aria's `I18nProvider`, but the owner chose on 2026-10-23 to import it from
+  `react-aria-components` directly, pinned to the version HeroUI resolves, so pnpm links one React Aria instance for
+  both.
 
 ## Status history
 

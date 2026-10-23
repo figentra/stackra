@@ -1,0 +1,15 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+@import "@stackra/tokens/fonts/fonts.css";
+@import "@stackra/tokens/themes/stackra/web.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* The theme's text faces: Geist for Latin, IBM Plex Sans Arabic when the document is Arabic. */
+body {
+  font-family: var(--font-sans);
+}
+
+:root:lang(ar) body {
+  font-family: var(--font-arabic);
+}

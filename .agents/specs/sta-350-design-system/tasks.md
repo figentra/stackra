@@ -15,14 +15,14 @@
 
 ## Phase 3: UI
 
-- [ ] T006 [US2] `@stackra/ui` contracts in `packages/design-system/ui/src/contracts` — covers: FR-007 — route: frontend — deps: T004
-- [ ] T007 [US2] `@stackra/ui/react` provider on HeroUI v3 (theme, direction, locale; the `e2e` and `react-aria-components` catalog entries only as the spec allows) in `pnpm-workspace.yaml` and `packages/design-system/ui/src/react` — covers: FR-008, P-006 — route: frontend — deps: T005, T006
-- [ ] T008 [US2] `@stackra/ui/native` provider on HeroUI Native and Uniwind in `packages/design-system/ui/src/native` — covers: FR-009, P-006 — route: frontend — deps: T005, T006
+- [x] T006 [US2] @stackra/ui contracts in `packages/design-system/ui/src/contracts` — covers: FR-007 — route: frontend — deps: T004
+- [x] T007 [US2] @stackra/ui/react provider on HeroUI v3 (theme, direction, locale; the e2e and react-aria-components catalog entries only as the spec allows) in `pnpm-workspace.yaml` and `packages/design-system/ui/src/react` — covers: FR-008, P-006 — route: frontend — deps: T005, T006
+- [x] T008 [US2] @stackra/ui/native provider on HeroUI Native and Uniwind in `packages/design-system/ui/src/native` — covers: FR-009, P-006 — route: frontend — deps: T005, T006
 
 ## Phase 4: Playground and e2e
 
-- [ ] T009 [US3] `apps/playground` with the switcher and the token foundations route in `apps/playground/src/routes` — covers: FR-010 — route: frontend — deps: T007
-- [ ] T010 [US3] Playwright and axe e2e over every route in light, dark, LTR and RTL in `apps/playground/src/__tests__` — covers: FR-011, P-007, SC-002 — route: tests — deps: T009
+- [x] T009 [US3] `apps/playground` with the switcher and the token foundations route in `apps/playground/src/routes` — covers: FR-010 — route: frontend — deps: T007
+- [x] T010 [US3] Playwright and axe e2e over every route in light, dark, LTR and RTL in `apps/playground/e2e/__tests__` — covers: FR-011, P-007, SC-002 — route: tests — deps: T009
 
 ## Phase 5: Retire brand
 

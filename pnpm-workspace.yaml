@@ -64,6 +64,9 @@ catalogs:
     "@tailwindcss/vite": 4.3.3
     "@heroui/react": 3.2.6
     "@heroui/styles": 3.2.6
+    # React Aria's I18nProvider for @stackra/ui/react (ADR 0302, owner-approved 2026-10-23); pinned to the version
+    # @heroui/react 3.2.6 resolves its react-aria-components peer to, so both share one React Aria instance.
+    react-aria-components: 1.22.1
     "@testing-library/react": 16.3.3
     "@testing-library/dom": 10.4.2
     jsdom: 30.1.0

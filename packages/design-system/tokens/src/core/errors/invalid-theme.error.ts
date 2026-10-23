@@ -17,13 +17,17 @@ export class InvalidThemeError extends Error {
   /** The error category: the theme is input that failed its rules. */
   readonly category = "validation";
 
-  constructor(
-    /** The theme's name as given, or an empty string when it had none. */
-    readonly themeName: string,
-    /** One line per problem, each naming the token path. */
-    readonly problems: readonly string[],
-  ) {
+  /** The theme's name as given, or an empty string when it had none. */
+  readonly themeName: string;
+
+  /** One line per problem, each naming the token path. */
+  readonly problems: readonly string[];
+
+  // Plain fields, not parameter properties: apps typecheck this source under the vite preset's erasableSyntaxOnly.
+  constructor(themeName: string, problems: readonly string[]) {
     super(`Theme "${themeName}" is invalid: ${problems.join("; ")}`);
     this.name = "InvalidThemeError";
+    this.themeName = themeName;
+    this.problems = problems;
   }
 }

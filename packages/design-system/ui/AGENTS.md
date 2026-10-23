@@ -32,6 +32,18 @@ extending the kind's base class. The group table is the docs page `standards/str
   file.
 - Never write `main.ts`, a `providers` list or `imports` on a non-root module.
 
+## This package
+
+- A component is a contract in `src/contracts/` (its props type, built on `Size`, `Tone`, `Variant`) plus one
+  implementation in `src/react/<name>/` on HeroUI v3 and one in `src/native/<name>/` on HeroUI Native, each with
+  `__tests__/`. The code is not shared between them (ADR 0302 decision 3, ADR 0227). Add it to the stand-in barrels
+  `src/contracts/index.ts`, `src/react/index.ts` and `src/native/index.ts`, and give it a route in `apps/playground`.
+- Verify every HeroUI, HeroUI Native and Uniwind API against the installed package or the HeroUI MCP before using it;
+  never guess a compound structure. Free code never imports HeroUI Pro (ADR 0165, 0197).
+- `react/` never imports `native/` and the other way round; both import `contracts/` and `core/`.
+- React Native does not render in vitest: native tests replace `heroui-native` and `uniwind` with recording stand-ins
+  and check what reaches them. Provider tests run in jsdom through a `@vitest-environment jsdom` comment.
+
 ## Rules that fail the build
 
 - `contracts/` imports nothing else from the package; core imports contracts; node, react and native import core;

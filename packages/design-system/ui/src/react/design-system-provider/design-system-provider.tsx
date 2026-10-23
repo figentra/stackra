@@ -1,0 +1,97 @@
+/**
+ * Stackra file contract:
+ * Purpose: the web `DesignSystemProvider` on HeroUI v3: puts the resolved colour scheme on the document element the
+ *          way HeroUI v3 themes switch (`.dark` / `.light` and `data-theme`), follows `prefers-color-scheme` while the
+ *          scheme is `system`, sets `lang` and `dir`, and wraps the app in React Aria's I18nProvider, which HeroUI v3
+ *          components read their locale and direction from.
+ * Boundary: applies the scheme and direction; the theme's CSS is imported by the app (`@stackra/tokens/themes/*`).
+ * Runtime: browser
+ * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0060 (light, dark, RTL).
+ */
+import { I18nProvider } from "react-aria-components";
+import { useLayoutEffect, useMemo, useState, useSyncExternalStore } from "react";
+
+import type { ColorScheme } from "#contracts/enums/color-scheme.enum";
+import type { DesignSystemProviderProps } from "#contracts/types/design-system-provider-props.type";
+import type { DesignSystemState } from "#contracts/types/design-system-state.type";
+import { directionOf } from "#core/functions/direction-of.function";
+
+import { DesignSystemContext } from "./design-system-context";
+
+const DARK_QUERY = "(prefers-color-scheme: dark)";
+
+const subscribeToSystemScheme = (onChange: () => void) => {
+  const query = matchMedia(DARK_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+};
+
+const isSystemDark = () => matchMedia(DARK_QUERY).matches;
+
+/**
+ * Applies the Stackra Design System to a web app: colour scheme, locale and direction. Wrap the app once, inside
+ * the router; read the state with `useDesignSystem()`.
+ */
+export function DesignSystemProvider({
+  children,
+  colorScheme,
+  defaultColorScheme = "system",
+  onColorSchemeChange,
+  locale,
+  defaultLocale = "en",
+  onLocaleChange,
+  direction,
+  theme = "stackra",
+}: DesignSystemProviderProps) {
+  const [ownColorScheme, setOwnColorScheme] = useState<ColorScheme>(defaultColorScheme);
+  const [ownLocale, setOwnLocale] = useState(defaultLocale);
+  const currentColorScheme = colorScheme ?? ownColorScheme;
+  const currentLocale = locale ?? ownLocale;
+  const systemDark = useSyncExternalStore(subscribeToSystemScheme, isSystemDark, () => false);
+  const resolvedColorScheme =
+    currentColorScheme === "system" ? (systemDark ? "dark" : "light") : currentColorScheme;
+  const currentDirection = direction ?? directionOf(currentLocale);
+
+  // Layout effect: the attributes land before paint, so a switch never flashes the old scheme.
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("dark", resolvedColorScheme === "dark");
+    root.classList.toggle("light", resolvedColorScheme === "light");
+    root.dataset["theme"] = resolvedColorScheme;
+    root.lang = currentLocale;
+    root.dir = currentDirection;
+  }, [resolvedColorScheme, currentLocale, currentDirection]);
+
+  const state = useMemo<DesignSystemState>(
+    () => ({
+      colorScheme: currentColorScheme,
+      resolvedColorScheme,
+      locale: currentLocale,
+      direction: currentDirection,
+      theme,
+      setColorScheme: (next) => {
+        setOwnColorScheme(next);
+        onColorSchemeChange?.(next);
+      },
+      setLocale: (next) => {
+        setOwnLocale(next);
+        onLocaleChange?.(next);
+      },
+    }),
+    [
+      currentColorScheme,
+      resolvedColorScheme,
+      currentLocale,
+      currentDirection,
+      theme,
+      onColorSchemeChange,
+      onLocaleChange,
+    ],
+  );
+
+  return (
+    <DesignSystemContext value={state}>
+      <I18nProvider locale={currentLocale}>{children}</I18nProvider>
+    </DesignSystemContext>
+  );
+}
