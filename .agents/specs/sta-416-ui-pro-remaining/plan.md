@@ -31,7 +31,7 @@ a mobile review screen (native). The optional Pro peers are pinned so nothing is
 | Versions and catalogs                 | PASS   | owner-approved exact pins                                                    |
 | Deploy modes (ADR 0076)               | N/A    | a private library and dev-only apps                                          |
 | Licence tier (ADR 0077)               | PASS   | HeroUI Pro never committed or bundled; peers MIT, Apache-2.0, BSD-3-Clause   |
-| Docs and ADRs                         | PASS   | ADR 0304 decision 12, README and AGENTS                                      |
+| Docs and ADRs                         | PASS   | ADR 0310 decision 12, README and AGENTS                                      |
 
 ## Deploy modes
 
@@ -65,11 +65,11 @@ and date and time. A `frontend-builder` adds the playground routes and a `mobile
 
 ## ADRs
 
-ADR 0304 decision 12 (same branch as ADR 0304, not merged yet). ADR 0165, 0197, 0302 and 0303 apply.
+ADR 0310 decision 12 (same branch as ADR 0310, not merged yet). ADR 0165, 0197, 0302 and 0303 apply.
 
 ## Docs
 
-ADR 0304, the package README and AGENTS.
+ADR 0310, the package README and AGENTS.
 
 ## Project structure
 

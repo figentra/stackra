@@ -21,15 +21,15 @@ as a second pull request stacked on STA-403's, with props kept local until a fre
 ## Impact
 
 - **Apps touched**: `apps/playground` (one Pro route per new web component), `apps/mobile` (one review screen per new
-  native component), `apps/docs` (ADR 0304 decision 12)
+  native component), `apps/docs` (ADR 0310 decision 12)
 - **Services touched**: none
 - **Packages touched**: `packages/design-system/ui-pro`
-- **Public contract change**: none published; `@stackra/ui-pro` stays private (ADR 0304 decision 1)
+- **Public contract change**: none published; `@stackra/ui-pro` stays private (ADR 0310 decision 1)
 - **Cross-service events**: none
 - **Tenancy and data**: none
 - **Security and privacy**: none; no CI change beyond STA-403's
 - **Secrets**: none new
-- **ADR needed**: no new ADR; ADR 0304 gains decision 12 in this pull request (it is not merged yet)
+- **ADR needed**: no new ADR; ADR 0310 gains decision 12 in this pull request (it is not merged yet)
 - **New dependencies**: owner-approved 2026-10-23: the optional peers of `@heroui-pro/react` in `catalog:frontend`
   (eight `@tiptap/*` 3.32.0, `maplibre-gl` 6.14.0, `marked` 18.1.1, `react-markdown` 10.1.0, `remark-breaks` 4.0.0,
   `remark-gfm` 4.0.1, `streamdown` 2.7.0, `shiki` 4.5.0, `@number-flow/react` 0.6.2, `embla-carousel` and
@@ -40,7 +40,7 @@ as a second pull request stacked on STA-403's, with props kept local until a fre
 - **Licence tier**: our wrapper code is MIT; the new peers are MIT, Apache-2.0 (`streamdown`) and BSD-3-Clause
   (`maplibre-gl`); HeroUI Pro stays under its own licence and is never committed or bundled
 - **UI surfaces**: `apps/playground`, `apps/mobile` (neither shipped to users)
-- **Docs to update**: ADR 0304, the package README and AGENTS
+- **Docs to update**: ADR 0310, the package README and AGENTS
 - **Lane**: lite (recorded reason: the owner decided the scope and the dependencies on 2026-10-23; the shape is STA-403's)
 - **Change risk**: R1 (library code and dev-only apps; new catalog pins)
 

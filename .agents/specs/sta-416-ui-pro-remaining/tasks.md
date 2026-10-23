@@ -21,4 +21,4 @@
 
 - [ ] T010 [US2] Playground routes for the new web components in `apps/playground` — covers: FR-012, P-002, SC-002 — route: frontend — deps: T003, T004, T005, T006, T007, T008
 - [ ] T011 [US2] Mobile review screens for the new native components in `apps/mobile` — covers: FR-013, P-003 — route: mobile — deps: T003, T005, T006, T007, T009
-- [ ] T012 [US1] Barrels, README, AGENTS, ADR 0304 decision 12 and a full `pnpm verify` plus the playground e2e in `packages/design-system/ui-pro` — covers: SC-001 — route: package — deps: T010, T011
+- [ ] T012 [US1] Barrels, README, AGENTS, ADR 0310 decision 12 and a full `pnpm verify` plus the playground e2e in `packages/design-system/ui-pro` — covers: SC-001 — route: package — deps: T010, T011
