@@ -182,6 +182,56 @@ their own requirements. The ids continue this list; the wave-1 design briefs num
   and icon-only link, inline in text and standalone, listed under the Navigation category, and its shell and index
   SHALL use the `@stackra/ui` `Link` and `RouterProvider`.
 
+Wave 2 of the components (ADR 0304; Linear STA-358 to STA-360), part 1: Surface, Card and Separator, Chip and
+StatusBadge, and Badge. The ids continue this list.
+
+- **FR-029**: `@stackra/ui/contracts` SHALL export `SurfaceVariant`, `SeparatorVariant`, `Orientation`,
+  `SurfaceContractProps`, `CardContractProps`, `CardTitleContractProps` and `SeparatorContractProps`.
+- **FR-030**: `@stackra/ui/react` SHALL export `Surface`, `Card` (with `Header`, `Title`, `Description`, `Content` and
+  `Footer`) and `Separator` on HeroUI v3 implementing the contracts, with every other HeroUI prop passed through.
+- **FR-031**: `@stackra/ui/native` SHALL export the same three on HeroUI Native with the same part names (`Card.Content`
+  is HeroUI Native's `Card.Body`), the native `Separator` drawing its level with the theme colour.
+- **FR-032**: The playground SHALL have `/surface`, `/card` and `/separator` routes showing every level, part,
+  orientation and title level with an interactive example each, listed under the Surfaces category, in light, dark,
+  LTR and RTL, with an e2e file each.
+- **FR-033**: `@stackra/ui/contracts` SHALL export `ChipVariant`, `ChipContractProps` and `StatusBadgeContractProps`.
+- **FR-034**: `@stackra/ui/react` SHALL export `Chip` on HeroUI v3 Chip and `StatusBadge` built on it, implementing the
+  contracts; a chip is display only and takes no press handler.
+- **FR-035**: `@stackra/ui/native` SHALL export `Chip` on HeroUI Native Chip and `StatusBadge` built on it,
+  implementing the same contracts.
+- **FR-036**: The playground SHALL have `/chip` and `/status-badge` routes showing every variant, tone and size, icons
+  and every status tone with an interactive example each, listed under the Status category, in light, dark, LTR and
+  RTL, with an e2e file each.
+- **FR-037**: `@stackra/ui/contracts` SHALL export `BadgeVariant`, `BadgePlacement`, `BadgeContractProps` and
+  `BadgeAnchorContractProps`.
+- **FR-038**: `@stackra/ui/react` SHALL export `Badge` with `Badge.Anchor` on HeroUI v3's Badge implementing the
+  contracts, its logical `placement` mapped to HeroUI's physical corner by the text direction.
+- **FR-039**: `@stackra/ui/native` SHALL export `Badge` with `Badge.Anchor` implementing the same contracts in the
+  documented adapted form: a HeroUI Native Chip at the web Badge's sizes, absolutely placed with React Native's logical
+  sides in a relative View.
+- **FR-040**: The playground SHALL have a `/badge` route showing every variant, tone, size, corner, a dot, text, number
+  and icon content, and a badge on a pressable control, listed under the Status category, in light, dark, LTR and RTL,
+  with an e2e file.
+
+Wave 2 of the components, part 2 (ADR 0304; Linear STA-361, STA-363, STA-362): Avatar, Spinner, and Skeleton with
+SkeletonGroup. The ids continue this list.
+
+- **FR-041**: `@stackra/ui/contracts` SHALL export `AvatarVariant`, `AvatarShape`, `AvatarContractProps`,
+  `SpinnerContractProps`, `SkeletonAnimation`, `SkeletonContractProps` and `SkeletonGroupContractProps`, and
+  `@stackra/ui` SHALL export `initialsOf`.
+- **FR-042**: `@stackra/ui/react` SHALL export `Avatar` and `Spinner` on HeroUI v3, `Skeleton` on HeroUI v3 and
+  `SkeletonGroup` in its documented adapted form (HeroUI's single shimmer plus a context), implementing the contracts,
+  with every other HeroUI prop passed through.
+- **FR-043**: `@stackra/ui/native` SHALL export `Avatar`, `Spinner`, `Skeleton` and `SkeletonGroup` on HeroUI Native
+  implementing the same contracts, the motion config (`animation`) passing through.
+- **FR-044**: `initialsOf` SHALL return the first letter of the first and last words, upper-cased in the locale, one
+  letter for an Arabic-script name and an empty string for a blank name.
+- **FR-045**: The `@stackra/tokens` web stylesheet SHALL stop every skeleton animation under `prefers-reduced-motion:
+reduce` and run the skeleton sweep from the inline-start side in right-to-left documents.
+- **FR-046**: The playground SHALL have `/avatar`, `/spinner` and `/skeleton` routes showing every size, tone,
+  variant, shape, animation, fallback, name and state with an interactive example each, listed under the Status
+  category, in light, dark, LTR and RTL, with an e2e file each.
+
 ## Success Criteria
 
 - **SC-001**: `pnpm verify` is green with the change — verified by: CI (Quality Gate)
@@ -189,6 +239,12 @@ their own requirements. The ids continue this list; the wave-1 design briefs num
 - **SC-003**: The structure page and the retired package list match the tree — verified by: unit
 - **SC-004**: axe reports nothing on `/typography` in light, dark, LTR and RTL, and the computed sizes, line heights
   and letter spacings of every Text type and heading style equal the theme's — verified by: e2e
+- **SC-005**: axe reports nothing on `/surface`, `/card`, `/separator`, `/chip`, `/status-badge` and `/badge` in light,
+  dark, LTR and RTL, and their computed checks hold (surface colours and card shadow, rule sizes, chip text 4.5:1, icon
+  sizes, badge corners by direction, dots 3:1, presses reaching the anchor) — verified by: e2e
+- **SC-006**: axe reports nothing on `/avatar`, `/spinner` and `/skeleton` in light, dark, LTR and RTL, every avatar
+  initials sample reaches 4.5:1 and every spinner tone 3:1, and under reduced motion no spinner or skeleton animates —
+  verified by: e2e
 
 ## Out of scope
 

@@ -53,9 +53,28 @@ describe("renderWebCss", () => {
 
   it("stops motion under prefers-reduced-motion and sets the Arabic stack for lang(ar)", () => {
     expect(css).toContain(
-      "@media (prefers-reduced-motion: reduce) {\n  :root {\n    --duration-fast: 0ms;\n    --duration-base: 0ms;\n    --duration-blink: 0ms;\n  }\n}",
+      "@media (prefers-reduced-motion: reduce) {\n  :root {\n    --duration-fast: 0ms;\n    --duration-base: 0ms;\n    --duration-blink: 0ms;\n  }\n",
     );
     expect(css).toContain(":root:lang(ar) {\n  font-family: var(--font-arabic);\n}");
+  });
+
+  it("sweeps a skeleton from the inline-start side and stops every skeleton animation under reduced motion", () => {
+    // @covers sta-350:FR-045
+    const rtl = css.split(
+      ".skeleton--shimmer:dir(rtl)::after,\n.skeleton--shimmer:dir(rtl)::before {\n",
+    )[1];
+    expect(rtl?.startsWith("  animation-direction: reverse;\n}")).toBe(true);
+    // Unlayered: the rule sits before the `components` layer, so it beats HeroUI's animation.
+    expect(css.indexOf(".skeleton--shimmer:dir(rtl)")).toBeLessThan(
+      css.indexOf("@layer components"),
+    );
+    expect(css.match(/@media \(prefers-reduced-motion/g)).toHaveLength(1);
+    const motion =
+      css.split("@media (prefers-reduced-motion: reduce) {")[1]?.split("\n}\n")[0] ?? "";
+    expect(motion).toContain("--duration-fast: 0ms;");
+    expect(motion).toContain(
+      "  .skeleton--shimmer::after,\n  .skeleton--shimmer::before,\n  .skeleton--pulse {\n    animation: none;\n  }",
+    );
   });
 
   it("draws HeroUI's Typography classes in the theme's scale inside one components layer", () => {

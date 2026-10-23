@@ -1,0 +1,110 @@
+/**
+ * Stackra file contract:
+ * Purpose: the native `Avatar` on HeroUI Native's Avatar: the same contract as the web one, with the fallback icon in
+ *          the tone's soft foreground through `LucideProvider`, the accessible name through the `accessibility*` props
+ *          (never HeroUI's English "Avatar"), and the square class on the root and the fallback. Every other HeroUI
+ *          Native root prop passes through, `animation` and `background` included.
+ * Boundary: no styling of its own beyond the square class; the look is HeroUI Native's, themed by `@stackra/tokens`.
+ * Runtime: react-native
+ * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0303 (decision 7); ADR 0304;
+ *          owner decision 6 of STA-350 (thin wrappers).
+ */
+import {
+  Avatar as HeroAvatar,
+  cn,
+  useThemeColor,
+  type AvatarRootProps,
+  type ThemeColor,
+} from "heroui-native";
+import { LucideProvider, UserRound } from "lucide-react-native";
+
+import type { AvatarContractProps } from "#contracts/types/avatar-contract-props.type";
+import { AVATAR_SQUARE_CLASS_NAME } from "#core/constants/avatar-square-class-name.constant";
+import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
+import { initialsOf } from "#core/functions/initials-of.function";
+import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { useDesignSystem } from "#native/design-system-provider/use-design-system";
+import { Icon } from "#native/icon/icon";
+
+/**
+ * Props of the native Avatar: the shared contract plus HeroUI Native's own avatar root props, passed through
+ * unchanged. HeroUI's `color` is the contract's `tone`, the wrapper builds the children, and `label` owns the
+ * accessible name, so `alt` and the raw accessibility props are refused.
+ */
+export type AvatarProps = AvatarContractProps &
+  Omit<
+    AvatarRootProps,
+    | keyof AvatarContractProps
+    | "color"
+    | "children"
+    | "alt"
+    | "accessible"
+    | "role"
+    | "accessibilityRole"
+    | "accessibilityLabel"
+    | "aria-label"
+    | "aria-hidden"
+    | "accessibilityElementsHidden"
+    | "importantForAccessibility"
+  >;
+
+/** The props of a decorative avatar: hidden from VoiceOver and TalkBack alike, with no name for HeroUI to invent. */
+const HIDDEN = Object.freeze({
+  accessible: false,
+  accessibilityElementsHidden: true,
+  importantForAccessibility: "no-hide-descendants",
+  alt: "",
+} as const);
+
+/**
+ * A person's or organisation's picture, or the initials of its name when there is none. The picture is hidden from
+ * assistive technology unless it has a `label`, because the name usually sits beside it in text. While an image
+ * loads, HeroUI Native shows only the background, not the fallback.
+ */
+export function Avatar({
+  name,
+  src,
+  label,
+  size,
+  tone = "default",
+  variant,
+  shape,
+  fallback,
+  className,
+  ...rest
+}: AvatarProps) {
+  const { locale } = useDesignSystem();
+  // The colour HeroUI gives its own fallback text; a nested Lucide provider replaces every field, so both are set.
+  const color = useThemeColor(`${tone}-soft-foreground` satisfies ThemeColor);
+  const initials = name ? initialsOf(name, locale) : "";
+  // Initials stay a bare string: HeroUI Native draws a string child as text, and a bare string inside a provider
+  // would reach a View, which React Native refuses.
+  const isInitials = fallback === undefined && initials !== "";
+  const content = fallback ?? <Icon as={UserRound} size={size ?? "md"} />;
+  const isSquare = shape === "square";
+  const accessibility = label
+    ? { accessible: true, role: "img" as const, accessibilityLabel: label, alt: label }
+    : HIDDEN;
+
+  return (
+    <HeroAvatar
+      {...rest}
+      {...accessibility}
+      {...omitUndefined({ size, variant })}
+      color={tone}
+      className={cn(isSquare && AVATAR_SQUARE_CLASS_NAME, className) ?? ""}
+    >
+      {src ? <HeroAvatar.Image source={{ uri: src }} /> : null}
+      {/* The fallback's own container is fully round, so it takes the square class too. */}
+      <HeroAvatar.Fallback {...(isSquare ? { className: AVATAR_SQUARE_CLASS_NAME } : {})}>
+        {isInitials ? (
+          initials
+        ) : (
+          <LucideProvider size={ICON_SIZES[size ?? "md"]} color={color}>
+            {content}
+          </LucideProvider>
+        )}
+      </HeroAvatar.Fallback>
+    </HeroAvatar>
+  );
+}

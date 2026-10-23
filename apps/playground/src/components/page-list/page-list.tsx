@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: the playground's page list: the pages grouped under their category (Foundations, Actions, Typography,
- *          Navigation), in category order and then in the order given, each a link that keeps the URL's search
- *          params so the scheme and direction carry over. The index page and the shell's navigation both draw it.
+ * Purpose: the playground's page list: the pages grouped under their category (see `PageCategory`), in category
+ *          order and then in the order given, each a link that keeps the URL's search params so the scheme and
+ *          direction carry over. The index page and the shell's navigation both draw it.
  * Boundary: layout and links only; a category with no page is left out. The category name is a heading when the
  *          caller gives a level (the index page), else the label of its list (the navigation, which has no outline).
  * Runtime: browser

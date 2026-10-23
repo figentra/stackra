@@ -7,7 +7,7 @@ programming model v3 (ADR 0294, 0295).
 
 Every component exists once as a contract (`src/contracts`) and twice as an implementation: `./react` on HeroUI v3,
 `./native` on HeroUI Native with Uniwind. The contract is shared; the component code is not (ADR 0165, ADR 0227).
-Today the package holds the shared types, the two providers and the first components (`Icon`, `Text`, `Heading`, `Button`, `IconButton`, `CloseButton`, `Link`);
+Today the package holds the shared types, the two providers and the first components (`Icon`, `Text`, `Heading`, `Button`, `IconButton`, `CloseButton`, `Link`, `Surface`, `Card`, `Separator`, `Chip`, `StatusBadge`, `Badge`, `Avatar`, `Spinner`, `Skeleton`, `SkeletonGroup`);
 the rest of the catalogue follows one at a time (ADR 0303).
 
 ## Wrap the app
@@ -56,15 +56,15 @@ import { DesignSystemProvider } from "@stackra/ui/native";
 
 ## Entry points
 
-| Import                  | Holds                                                                                                                                                                                                                                                                                                           | Exports today                         |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `@stackra/ui`           | `src/config/` and `src/core/`: `UiConfig`, `directionOf`, `ICON_SIZES`                                                                                                                                                                                                                                          | `src/core/index.ts` (stand-in)        |
-| `@stackra/ui/contracts` | `Size`, `Tone`, `Variant`, `ColorScheme`, `Direction`, `DesignSystemProviderProps`, `DesignSystemState`, `TextTone`, `TextType`, `TextAlign`, `HeadingType`, `HeadingLevel`, `IconComponent`, `IconComponentProps`, `IconContractProps`, `TypographyContractProps`, `TextContractProps`, `HeadingContractProps` | `src/contracts/index.ts` (stand-in)   |
-| `@stackra/ui/react`     | `DesignSystemProvider`, `useDesignSystem`, `Icon`, `Text`, `Heading` (and their `*Props`) on HeroUI v3                                                                                                                                                                                                          | `src/react/index.ts` (stand-in)       |
-| `@stackra/ui/native`    | `DesignSystemProvider`, `useDesignSystem`, `Icon`, `Text`, `Heading` (and their `*Props`) on HeroUI Native and Uniwind                                                                                                                                                                                          | `src/native/index.ts` (stand-in)      |
-| `@stackra/ui/node`      | `UiModule`, the root module                                                                                                                                                                                                                                                                                     | `src/node/ui.module.ts`               |
-| `@stackra/ui/testing`   | `src/testing/`: `fakes/` and `matchers/`                                                                                                                                                                                                                                                                        | not yet: exported with its first file |
-| `@stackra/ui/assets/*`  | `assets/`: static files (`public/`, `lang/`, …) at the package root (ADR 0234)                                                                                                                                                                                                                                  | not yet: exported with its first file |
+| Import                  | Holds                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Exports today                         |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `@stackra/ui`           | `src/config/` and `src/core/`: `UiConfig`, `directionOf`, `ICON_SIZES`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `src/core/index.ts` (stand-in)        |
+| `@stackra/ui/contracts` | `Size`, `Tone`, `Variant`, `ColorScheme`, `Direction`, `DesignSystemProviderProps`, `DesignSystemState`, `TextTone`, `TextType`, `TextAlign`, `HeadingType`, `HeadingLevel`, `IconComponent`, `IconComponentProps`, `IconContractProps`, `TypographyContractProps`, `TextContractProps`, `HeadingContractProps`, `SurfaceVariant`, `SeparatorVariant`, `Orientation`, `ChipVariant`, `BadgeVariant`, `BadgePlacement`, `AvatarVariant`, `AvatarShape`, `SkeletonAnimation` and the `Surface`, `Card`, `CardTitle`, `Separator`, `Chip`, `StatusBadge`, `Badge`, `BadgeAnchor`, `Avatar`, `Spinner`, `Skeleton` and `SkeletonGroup` contract props | `src/contracts/index.ts` (stand-in)   |
+| `@stackra/ui/react`     | `DesignSystemProvider`, `useDesignSystem`, `Icon`, `Text`, `Heading`, `Surface`, `Card`, `Separator`, `Chip`, `StatusBadge`, `Badge`, `Avatar`, `Spinner`, `Skeleton`, `SkeletonGroup` (and their `*Props`) on HeroUI v3                                                                                                                                                                                                                                                                                                                                                                                                                          | `src/react/index.ts` (stand-in)       |
+| `@stackra/ui/native`    | `DesignSystemProvider`, `useDesignSystem`, `Icon`, `Text`, `Heading`, `Surface`, `Card`, `Separator`, `Chip`, `StatusBadge`, `Badge`, `Avatar`, `Spinner`, `Skeleton`, `SkeletonGroup` (and their `*Props`) on HeroUI Native and Uniwind                                                                                                                                                                                                                                                                                                                                                                                                          | `src/native/index.ts` (stand-in)      |
+| `@stackra/ui/node`      | `UiModule`, the root module                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `src/node/ui.module.ts`               |
+| `@stackra/ui/testing`   | `src/testing/`: `fakes/` and `matchers/`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | not yet: exported with its first file |
+| `@stackra/ui/assets/*`  | `assets/`: static files (`public/`, `lang/`, …) at the package root (ADR 0234)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | not yet: exported with its first file |
 
 The stand-in barrels are replaced when `stackra gen` writes the entry barrels (STA-339). `exports` point at source
 through the `@stackra/source` condition; `tsdown` builds `dist/` for publishing (ADR 0025).
@@ -180,6 +180,114 @@ own, so the native form is the documented adaptation on that free part).
 browser's. On native, `@stackra/ui/native` ships its own `RouterProvider` with `navigate(href)` only, which
 `@stackra/navigation` binds to React Navigation; without one an app path opens in the system browser. A link inside
 running native text belongs to `Text` later.
+
+## Surfaces
+
+`Surface`, `Card` and `Separator` are thin wrappers over HeroUI's own (`Surface`, `Card` and `Separator` on web and on
+native). Every HeroUI prop the contract does not name passes through; the look is HeroUI's, themed by the tokens.
+
+| Component    | Prop          | Does                                                                                       | HeroUI v3 (web)                | HeroUI Native                          |
+| ------------ | ------------- | ------------------------------------------------------------------------------------------ | ------------------------------ | -------------------------------------- |
+| `Surface`    | `variant`     | `default` (the default), `secondary`, `tertiary`, `transparent`: the theme's surface level | `variant`                      | `variant`                              |
+| `Card`       | `variant`     | the same four levels; `transparent` drops the background and shadow                        | `variant`                      | `variant`                              |
+| `Card`       | parts         | `Card.Header`, `Card.Title`, `Card.Description`, `Card.Content`, `Card.Footer`             | the same, `Card.Root` left out | `Card.Content` is `Card.Body`          |
+| `Card.Title` | `level`       | the heading level in the outline, 1 to 6, default 3; the look stays the card title's       | `h<level>` through `render`    | `accessibilityRole="header"`, no level |
+| `Separator`  | `orientation` | `horizontal` (the default) or `vertical`                                                   | `orientation`                  | `orientation`                          |
+| `Separator`  | `variant`     | the colour level for the surface it sits on: `default`, `secondary`, `tertiary`            | `variant`                      | painted with `useThemeColor`           |
+
+- **Looks differ by runtime, on purpose.** HeroUI's web surface paints colour only (add padding and radius with
+  `className`); HeroUI Native's is a padded, rounded, ringed box. A chrome-free native surface is
+  `className="p-0 rounded-none shadow-none"` at the call site.
+- **A card is a container.** It takes no press; put a link or a button inside. Name it for assistive technology with
+  `role="article"` and `aria-labelledby` pointing at its title (web), or `accessibilityLabel` (native). A native footer
+  is a column: add `className="flex-row"` for a row of actions.
+- **A separator does not read its level from the surface around it**; pass `variant`. On native, HeroUI Native's own
+  `thin` and `thick` are gone from the type: `thickness` stays, and `thickness={6}` is its `thick`. A web rule is an
+  `hr` or a vertical `role="separator"`; native rules are not announced. For a purely decorative web rule use
+  `render={(props) => <hr {...props} aria-hidden="true" />}`.
+
+## Chip and StatusBadge
+
+`Chip` is a compact, non-interactive label: HeroUI's `Chip` on both runtimes. It is display only (no press, no
+`isDisabled`, no remove button); use a tag group for selectable or removable tags and a `Button` for an action.
+`StatusBadge` has no HeroUI component, so it is the documented adapted form on `Chip`: a neutral chip with a 6 px dot.
+
+| Prop                   | On   | Does                                                                                                    | HeroUI v3 (web) | HeroUI Native                   |
+| ---------------------- | ---- | ------------------------------------------------------------------------------------------------------- | --------------- | ------------------------------- |
+| `variant`              | Chip | `primary`, `secondary` (the default), `tertiary`, `soft`                                                | `variant`       | `variant` (default `primary`)   |
+| `tone`                 | both | `default` (the default), `accent`, `success`, `warning`, `danger`; the dot's colour only on StatusBadge | `color`         | `color` (default `accent`)      |
+| `size`                 | both | `sm`, `md` (the default), `lg`                                                                          | `size`          | `size`                          |
+| `startIcon`, `endIcon` | Chip | any element, drawn in the text's size                                                                   | children        | children, in a `LucideProvider` |
+
+Both runtimes draw the same chip with no props (`secondary`, `default`, `md`): HeroUI Native's own defaults are
+overridden. A string or number child is the label. A status badge reads as its text alone and is never a live region:
+a screen that changes a status while the user is watching announces it with a toast.
+
+## Badge
+
+`Badge` is a count or dot pinned to a corner of another element, as `<Badge.Anchor>` holding the element and then the
+`Badge`. HeroUI v3's `Badge` on web; HeroUI Native has none, so the native form is the documented adaptation on its
+`Chip`, drawn at the web badge's sizes and pinned with React Native's logical `start` and `end` sides.
+
+| Prop        | Does                                                                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------------------- |
+| `children`  | the text, number or icon, already formatted (`99+`); left out, the badge is a dot                             |
+| `tone`      | `default` (the default), `accent`, `success`, `warning`, `danger`                                             |
+| `variant`   | `primary` (the default), `secondary`, `soft`                                                                  |
+| `size`      | `sm`, `md` (the default), `lg`                                                                                |
+| `placement` | `top-end` (the default), `top-start`, `bottom-end`, `bottom-start`: by reading direction, never by side       |
+| `label`     | what assistive technology says; left out, the badge is hidden from it (name the count on the control instead) |
+
+A badge never takes a press: it overlaps its anchor, so presses reach the anchor. It is never a live region.
+
+## Avatar
+
+`Avatar` draws an image, else your `fallback`, else the initials of `name`, else a person icon (Lucide `UserRound`).
+HeroUI v3 and HeroUI Native both have one, so each wrapper is thin; `initialsOf(name, locale)` is exported from `.`
+for anything else that draws initials (an Arabic-script name gives one letter, because two would join).
+
+| Prop       | Does                                                                                                   |
+| ---------- | ------------------------------------------------------------------------------------------------------ |
+| `name`     | the name its initials come from                                                                        |
+| `src`      | the image URL; the fallback shows when it is missing or fails to load                                  |
+| `label`    | the accessible name; left out, the avatar is hidden from assistive technology (the name is nearby)     |
+| `size`     | `sm`, `md` (the default), `lg`: each runtime keeps HeroUI's pixels (web 32, 40, 48; native 40, 48, 64) |
+| `tone`     | `default` (the default, not HeroUI Native's `accent`), `accent`, `success`, `warning`, `danger`        |
+| `variant`  | `default` (a neutral disc) or `soft` (the tone's soft colour)                                          |
+| `shape`    | `circle` (the default) or `square` for organisations: one `rounded-lg` class                           |
+| `fallback` | an element drawn instead of the initials, sized and coloured like them                                 |
+
+While an image loads, web shows the fallback and native shows only the background (HeroUI's own behaviour).
+
+## Spinner
+
+`Spinner` is an indeterminate wait at 16, 24 or 32 px on both runtimes (HeroUI web's `xl` is left out). Render it
+while something loads and remove it after; there is no `isLoading`.
+
+| Prop    | Does                                                                                                              |
+| ------- | ----------------------------------------------------------------------------------------------------------------- |
+| `size`  | `sm`, `md` (the default), `lg`                                                                                    |
+| `tone`  | `accent` (the default, HeroUI's), `default` (the foreground colour), `muted`, `success`, `warning`, `danger`      |
+| `label` | the spoken name, one status (web `status`, native busy `progressbar`); left out, it is hidden from screen readers |
+
+HeroUI web's English "Loading" never reaches a user. Speed is a web `className` animation utility; native has none.
+
+## Skeleton and SkeletonGroup
+
+`Skeleton` is a placeholder whose shape and size are its `className` (`h-4 w-3/4 rounded-md` draws the same bone on both
+runtimes). It shows while `isLoading` (default `true`) and renders its `children` once false. Inside a `SkeletonGroup`
+it takes the group's `isLoading` and `animationType` unless it sets its own. HeroUI v3 has no group, so the web one is the
+documented adapted form: HeroUI's single-shimmer class plus a context, one sweep over every bone.
+
+| Prop            | On                   | Does                                                                                       |
+| --------------- | -------------------- | ------------------------------------------------------------------------------------------ |
+| `isLoading`     | both                 | the placeholder until false                                                                |
+| `animationType` | both                 | `shimmer` (the default), `pulse`, `none` (native's `variant`, which is emphasis elsewhere) |
+| `loadingLabel`  | `SkeletonGroup` only | the spoken text of the loading region (web `status`, native one busy progressbar)          |
+
+A lone bone is an empty box and is never read; name the region with the group. On native, HeroUI hands every group
+prop but `className` and `style` to each Skeleton, and a Skeleton refuses `onLayout` (HeroUI measures the shimmer with
+its own). The web theme stops the sweep and the pulse under reduced motion and sweeps from the inline-start side.
 
 ## Tasks
 

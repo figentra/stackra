@@ -14,8 +14,16 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 
 import { PlaygroundShell } from "#src/components/playground-shell";
+import { Avatar } from "#src/routes/avatar/avatar";
+import { AvatarRoute } from "#src/routes/avatar/avatar.route";
+import { Badge } from "#src/routes/badge/badge";
+import { BadgeRoute } from "#src/routes/badge/badge.route";
 import { Button } from "#src/routes/button/button";
 import { ButtonRoute } from "#src/routes/button/button.route";
+import { Card } from "#src/routes/card/card";
+import { CardRoute } from "#src/routes/card/card.route";
+import { Chip } from "#src/routes/chip/chip";
+import { ChipRoute } from "#src/routes/chip/chip.route";
 import { CloseButton } from "#src/routes/close-button/close-button";
 import { CloseButtonRoute } from "#src/routes/close-button/close-button.route";
 import { Foundations } from "#src/routes/foundations/foundations";
@@ -28,6 +36,16 @@ import { IconButton } from "#src/routes/icon-button/icon-button";
 import { IconButtonRoute } from "#src/routes/icon-button/icon-button.route";
 import { Link } from "#src/routes/link/link";
 import { LinkRoute } from "#src/routes/link/link.route";
+import { Separator } from "#src/routes/separator/separator";
+import { SeparatorRoute } from "#src/routes/separator/separator.route";
+import { Skeleton } from "#src/routes/skeleton/skeleton";
+import { SkeletonRoute } from "#src/routes/skeleton/skeleton.route";
+import { Spinner } from "#src/routes/spinner/spinner";
+import { SpinnerRoute } from "#src/routes/spinner/spinner.route";
+import { StatusBadge } from "#src/routes/status-badge/status-badge";
+import { StatusBadgeRoute } from "#src/routes/status-badge/status-badge.route";
+import { Surface } from "#src/routes/surface/surface";
+import { SurfaceRoute } from "#src/routes/surface/surface.route";
 import { Typography } from "#src/routes/typography/typography";
 import { TypographyRoute } from "#src/routes/typography/typography.route";
 
@@ -45,6 +63,15 @@ const PAGES = [
   { route: IconButtonRoute, element: <IconButton /> },
   { route: CloseButtonRoute, element: <CloseButton /> },
   { route: LinkRoute, element: <Link /> },
+  { route: SurfaceRoute, element: <Surface /> },
+  { route: CardRoute, element: <Card /> },
+  { route: SeparatorRoute, element: <Separator /> },
+  { route: ChipRoute, element: <Chip /> },
+  { route: StatusBadgeRoute, element: <StatusBadge /> },
+  { route: BadgeRoute, element: <Badge /> },
+  { route: AvatarRoute, element: <Avatar /> },
+  { route: SpinnerRoute, element: <Spinner /> },
+  { route: SkeletonRoute, element: <Skeleton /> },
 ];
 
 const links = PAGES.map(({ route }) => route);

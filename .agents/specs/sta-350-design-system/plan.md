@@ -63,6 +63,23 @@ switcher and is covered by Playwright and axe. `@stackra/brand` is deleted; its 
 - **P-016**: A loading Button refuses presses and keeps its accessible name on web and reports busy on native, and an IconButton or CloseButton always has a non-empty accessible name, with every HeroUI prop outside the contract passed through — Validates: FR-022, FR-023, FR-024
 - **P-017**: An internal, same-origin, unmodified Link click navigates through the router provider, and an external link or absolute URL never does, on both runtimes — Validates: FR-025, FR-026
 - **P-018**: Every Button, IconButton, CloseButton and Link sample of the playground shows what its contract promises, listed under its category — Validates: FR-027, FR-028
+- **P-019**: Each runtime's Surface, Card, Separator, Chip and Badge props extend their contract, and the contract's value sets equal HeroUI's on both runtimes (type tests), so a HeroUI change fails to compile — Validates: FR-029, FR-030, FR-031, FR-033, FR-034, FR-035, FR-037, FR-038, FR-039
+- **P-020**: A card title is a heading on both runtimes: web `h<level>` (default `h3`) with HeroUI's look, native `accessibilityRole="header"` with `level` dropped — Validates: FR-030, FR-031
+- **P-021**: Props outside the contract reach HeroUI unchanged on both runtimes for Surface and Card, and HeroUI's surface context still reaches the children on web — Validates: FR-030, FR-031
+- **P-022**: A separator draws its level's theme colour on both runtimes; on web it is a horizontal `hr` or a vertical `role="separator"` with `aria-orientation`, on native it never hands HeroUI Native the contract's `variant` — Validates: FR-030, FR-031
+- **P-023**: With no props, a Chip is the same `secondary`, `default`, `md` chip on both runtimes, and press handlers are refused by the type — Validates: FR-034, FR-035
+- **P-024**: A StatusBadge reads as its text alone: its dot has no name and nothing is a live region, on both runtimes — Validates: FR-034, FR-035
+- **P-025**: Props outside the Chip contract reach HeroUI unchanged on both runtimes — Validates: FR-034, FR-035
+- **P-026**: A badge at each logical corner sits on the reading side of its anchor, right in left-to-right and left in right-to-left, on both runtimes — Validates: FR-038, FR-039
+- **P-027**: A badge without a label is hidden from assistive technology, and with a label assistive technology gets exactly the label and not the visible content — Validates: FR-038, FR-039
+- **P-028**: A badge never takes a press: a press on it reaches the anchored element — Validates: FR-038, FR-039
+- **P-029**: Props outside the Badge contract reach the HeroUI base unchanged on both runtimes — Validates: FR-038, FR-039
+- **P-030**: Every Surface, Card, Separator, Chip, StatusBadge and Badge sample of the playground shows what its contract promises, listed under its category — Validates: FR-032, FR-036, FR-040
+- **P-031**: Without a label an Avatar is hidden from assistive technology and with one it is exactly one image named by it; its fallback is the loaded image, else `fallback`, else the initials of `name`, else the person icon, on both runtimes — Validates: FR-042, FR-043, FR-044
+- **P-032**: A Spinner with a label is one named status (web `status`, native busy progressbar), without one it is hidden, and HeroUI's English "Loading" never reaches a user — Validates: FR-042, FR-043
+- **P-033**: A Skeleton shows its children only when not loading, takes its loading state and animation from the enclosing SkeletonGroup unless it sets its own, and a group with a loading label exposes exactly that text while loading — Validates: FR-042, FR-043, FR-045
+- **P-034**: Props outside the Avatar, Spinner, Skeleton and SkeletonGroup contracts reach HeroUI unchanged on both runtimes — Validates: FR-042, FR-043
+- **P-035**: Every Avatar, Spinner and Skeleton sample of the playground shows what its contract promises, listed under its category — Validates: FR-046
 
 ## Contracts and events
 

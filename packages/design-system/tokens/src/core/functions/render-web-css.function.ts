@@ -3,7 +3,8 @@
  * Purpose: renders a theme to the CSS custom properties HeroUI v3 reads on the web. Mode-independent tokens go on
  *          `:root`; the colour roles, palette and shadows go on `:root, [data-theme="light"]` and
  *          `.dark, [data-theme="dark"]`, the selectors HeroUI's theming docs prescribe for theme colours. A
- *          `@layer components` block restyles HeroUI's Typography classes in the theme's type scale.
+ *          `@layer components` block restyles HeroUI's Typography classes in the theme's type scale. HeroUI's
+ *          skeleton motion follows the reading direction and stops under reduced motion.
  * Boundary: a pure function from a Theme to a string; it validates nothing (`defineTheme` does) and writes no file.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0165 (HeroUI v3 on the web).
@@ -62,6 +63,13 @@ function typographyLayer(theme: Theme): string {
   return `@layer components {\n${[...rules, ...weights].join("\n")}\n}`;
 }
 
+/** The selectors of every skeleton animation, which HeroUI v3 never stops under reduced motion. */
+const SKELETON_MOTION = [
+  ".skeleton--shimmer::after",
+  ".skeleton--shimmer::before",
+  ".skeleton--pulse",
+].join(",\n  ");
+
 /**
  * The web stylesheet of `theme`, to load after `@import "@heroui/styles"` and outside any cascade layer (bar the
  * typography block, which is in `components` on purpose), so it overrides HeroUI's defaults. Durations drop to 0ms under `prefers-reduced-motion`, and `:lang(ar)` documents take
@@ -97,9 +105,14 @@ export function renderWebCss(theme: Theme): string {
     ]),
     block(':root,\n[data-theme="light"]', colours("light")),
     block('.dark,\n[data-theme="dark"]', colours("dark")),
+    // Unlayered, so the sweep beats HeroUI's `components` animation; `reverse` plays the keyframe backwards, which
+    // brings the light in from the inline-end side, the way HeroUI Native sweeps in a right-to-left layout.
+    block(".skeleton--shimmer:dir(rtl)::after,\n.skeleton--shimmer:dir(rtl)::before", [
+      "  animation-direction: reverse;",
+    ]),
     `@media (prefers-reduced-motion: reduce) {\n  :root {\n${motion
       .map(([name]) => `    --duration-${name}: 0ms;`)
-      .join("\n")}\n  }\n}`,
+      .join("\n")}\n  }\n  ${SKELETON_MOTION} {\n    animation: none;\n  }\n}`,
     block(":root:lang(ar)", ["  font-family: var(--font-arabic);"]),
     typographyLayer(theme),
   ].join("\n\n")}\n`;

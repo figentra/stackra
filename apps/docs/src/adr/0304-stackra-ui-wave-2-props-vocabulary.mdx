@@ -1,0 +1,84 @@
+---
+title: "0304 — @stackra/ui wave 2: the props vocabulary, spec ids, class merging and role colours"
+description: "Accepted · 2026-10-23"
+---
+
+<Note>
+  Amends [0303](/adr/0303-stackra-ui-component-catalogue-decisions) (decision 7, the props
+  vocabulary). 0303 carries a note; its body is unchanged.
+</Note>
+
+## Context
+
+[0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 7 gave every wave 1 component one props
+vocabulary: a concept has one prop name across the kit, and the runtime's own name for it is left out of the wrapper's
+type. Wave 2 adds Surface, Card, Separator, Chip, StatusBadge and Badge (Avatar, Spinner and Skeleton follow), and the
+design cross-check found that they need new words and three rules that the vocabulary table cannot hold: how spec
+identifiers are numbered when several specs run side by side, how a wrapper merges a class of its own with the
+caller's, and how a role colour reaches a graphic that has no class. An Accepted ADR's body changes only for typos and
+Enforcement, so the additions are recorded here.
+
+## Decision
+
+1. **The wave 2 vocabulary.** Decision 7 of 0303 stands; wave 2 adds or extends these rows:
+
+   | Concept           | Prop                   | Type                                                                             | Used by                                                                                                                      | Runtime name left out of the type                                                              |
+   | ----------------- | ---------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+   | Emphasis or level | `variant`              | `SurfaceVariant`, `SeparatorVariant`, `ChipVariant`, `BadgeVariant`              | Surface and Card, Separator (colour per surface level), Chip, Badge                                                          | native Separator `variant` (thickness)                                                         |
+   | Size              | `size`                 | `Size`                                                                           | adds Chip, StatusBadge, Badge                                                                                                | none                                                                                           |
+   | Colour role       | `tone`                 | `Tone`                                                                           | adds Chip, StatusBadge (the dot only), Badge                                                                                 | `color`                                                                                        |
+   | Axis              | `orientation`          | `Orientation` (`horizontal`, `vertical`)                                         | Separator; later Tabs, Toolbar, Slider, RadioGroup                                                                           | none                                                                                           |
+   | Outline level     | `level`                | `HeadingLevel`                                                                   | Card.Title (default 3; Heading's stays required)                                                                             | web `render` on the title                                                                      |
+   | Corner            | `placement`            | `BadgePlacement` (logical: `top-end`, `top-start`, `bottom-end`, `bottom-start`) | Badge                                                                                                                        | HeroUI's physical `top-right` and so on                                                        |
+   | Accessible name   | `label`                | string, optional; hidden from assistive technology without it                    | adds Badge                                                                                                                   | `aria-label`, `aria-hidden`, `accessibilityLabel`, `accessible`                                |
+   | No name, no press | none                   | display components                                                               | Chip, StatusBadge, Surface, Card (named through pass-through `role` and `aria-labelledby`), Badge (presses reach the anchor) | web `onClick` (Chip), native `onPress`, `onLongPress`, `onPressIn`, `onPressOut` (Chip, Badge) |
+   | Icon slots        | `startIcon`, `endIcon` | `ReactNode`                                                                      | adds Chip                                                                                                                    | none                                                                                           |
+   | Compound parts    | `<Name>.<Part>`        | components                                                                       | Card: Header, Title, Description, Content, Footer; Badge: Anchor                                                             | web `Card.Root`, native `Card.Body`                                                            |
+
+   Later wave 2 components (Avatar's `shape`, `name`, `src` and `fallback`, Spinner, Skeleton's `animationType`,
+   `isLoading` and `loadingLabel`) add their rows to this table when they land, with the PR that adds the component.
+
+2. **Spec ids run on.** Where several specs of one feature are written side by side, their `FR-`, `P-` and `SC-` ids
+   continue one numbering, so a bare id is unique across them and every id is used once. Each test names its spec with
+   the `sta-<n>:` prefix of `@covers`. Wave 1 numbered each spec from 001; wave 2 and later do not.
+3. **One class merger.** A wrapper that adds a class of its own merges it with the caller's through HeroUI's `cn`
+   (`@heroui/react` on web, `heroui-native` on native), with the caller's class last, so a conflicting caller utility
+   wins. The wrapper never concatenates class strings by hand.
+4. **A role colour on a graphic is an inline `var(--<role>)`.** A status dot, an icon or a spinner that must draw a
+   theme role takes it as an inline style on web (`color` or `backgroundColor` set to the theme's CSS variable) and
+   `useThemeColor` on native, never a utility class. It needs no `@source` line, a test can read it in jsdom, and it
+   follows the theme.
+
+## Consequences
+
+- The props of Surface, Card, Separator, Chip, StatusBadge and Badge read the same on web and native, and the word
+  `orientation`, the logical `placement` and the compound-part names are shared by every later component that needs
+  them.
+- A logical `placement` keeps a badge on the reading-end corner in Arabic, which HeroUI's physical corners do not.
+- Chip and StatusBadge are display only: interaction is a tag group or a button, so no chip takes a press handler.
+- The spec for a feature that spans several components stays in one place, and a test id is never ambiguous.
+- Native Separator loses HeroUI Native's `thin` and `thick` variants from its type; `thickness` stays.
+
+## Enforcement
+
+- planned — the `@stackra/ui` type tests of each component assert that the runtime props extend the contract and refuse
+  the raw HeroUI names this vocabulary replaces; wave 2's tests already do (`color`, `onClick`, `onPress`, HeroUI's
+  physical `placement`, native Separator's `thin` and `thick`).
+- `tools/scripts/spec-trace.mjs` (run by `pnpm validate`) refuses a spec id that no test covers with an `@covers` tag, so a dropped id is
+  visible.
+- planned — a lint rule against hand-joined class strings in `@stackra/ui` wrappers.
+- Until these exist, review (`architecture-guardian`) checks this page.
+
+## Alternatives
+
+- **Rows added to 0303's body.** Not chosen: an Accepted ADR's body changes only for typos and Enforcement.
+- **A shared `Placement` enum for badges and overlays.** Not chosen: React Aria's overlay placements (`"top start"`)
+  mean a side of the trigger, not a corner of an anchor.
+- **Physical `placement` with a note that it does not flip.** Not chosen: every Arabic screen would need its own
+  mapping.
+- **Per-spec numbering from 001.** Not chosen for wave 2: six specs in one wave collided on every bare id.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 7. Owner answers of
+2026-10-23 on the wave 2 design cross-check (STA-358 to STA-363).

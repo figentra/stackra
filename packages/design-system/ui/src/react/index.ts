@@ -6,7 +6,12 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { Avatar, type AvatarProps } from "#react/avatar/avatar";
+export { Badge, type BadgeAnchorProps, type BadgeProps } from "#react/badge/badge";
 export { Button, type ButtonProps } from "#react/button/button";
+export { Card, type CardProps } from "#react/card/card";
+export type { CardTitleProps } from "#react/card/card-title";
+export { Chip, type ChipProps } from "#react/chip/chip";
 export { CloseButton, type CloseButtonProps } from "#react/close-button/close-button";
 export { DesignSystemProvider } from "#react/design-system-provider/design-system-provider";
 export { useDesignSystem } from "#react/design-system-provider/use-design-system";
@@ -16,6 +21,12 @@ export { Icon, type IconProps } from "#react/icon/icon";
 export { Link, type LinkProps } from "#react/link/link";
 // The one router seam of the web kit: React Aria's own provider, re-exported so apps import UI only from here.
 export { RouterProvider } from "react-aria-components";
+export { Separator, type SeparatorProps } from "#react/separator/separator";
+export { SkeletonGroup, type SkeletonGroupProps } from "#react/skeleton-group/skeleton-group";
+export { Skeleton, type SkeletonProps } from "#react/skeleton/skeleton";
+export { Spinner, type SpinnerProps } from "#react/spinner/spinner";
+export { StatusBadge, type StatusBadgeProps } from "#react/status-badge/status-badge";
+export { Surface, type SurfaceProps } from "#react/surface/surface";
 export { Text, type TextProps } from "#react/text/text";
 // Web-only HeroUI components with nothing to unify with native, so they keep HeroUI's own API (ADR 0303 decision 6).
 export { ToggleButton, ToggleButtonGroup, Toolbar } from "@heroui/react";

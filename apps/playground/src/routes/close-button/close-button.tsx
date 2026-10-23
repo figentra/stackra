@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the page of the close-button route: the default CloseButton, one with an icon of its own, a disabled one,
- *          and one inside a sample card whose dismissal hides the card and a Button restores it, all from
+ *          and one inside a `Card` whose dismissal hides the card and a Button restores it, all from
  *          `@stackra/ui/react` with real props.
  * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. Icons come from `lucide-react`
  *          directly, because @stackra/ui does not re-export Lucide in wave 1 (ADR 0303 decision 3).
@@ -68,15 +68,19 @@ export function CloseButton() {
       <PageSection id="close-button-use" title={STRINGS.card} note={STRINGS.cardNote}>
         <div className="grid max-w-sm gap-3">
           {isShown ? (
-            <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-surface p-4">
-              <div className="grid gap-1">
-                <Ui.Heading level={3}>{STRINGS.noticeTitle}</Ui.Heading>
-                <Ui.Text type="small" tone="muted">
+            <Ui.Card>
+              <Ui.CloseButton
+                label={STRINGS.dismiss}
+                className="absolute end-3 top-3"
+                onPress={() => setIsShown(false)}
+              />
+              <Ui.Card.Header>
+                <Ui.Card.Title>{STRINGS.noticeTitle}</Ui.Card.Title>
+                <Ui.Card.Description>
                   <bdi>{STRINGS.noticeBody}</bdi>
-                </Ui.Text>
-              </div>
-              <Ui.CloseButton label={STRINGS.dismiss} onPress={() => setIsShown(false)} />
-            </div>
+                </Ui.Card.Description>
+              </Ui.Card.Header>
+            </Ui.Card>
           ) : (
             <>
               <Ui.Text role="status" tone="muted">

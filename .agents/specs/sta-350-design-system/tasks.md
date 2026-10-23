@@ -41,3 +41,23 @@ Linear sub-issues, all in this one pull request: [STA-353] ADR 0303 and the shar
 - [x] T018 [US2] Button, IconButton and CloseButton: contracts, `omitUndefined`, and the web and native components in `packages/design-system/ui/src` — covers: FR-022, FR-023, FR-024, P-016 — route: frontend — deps: T013
 - [x] T019 [US2] Link and both `RouterProvider`s: contracts, and the web and native components in `packages/design-system/ui/src` — covers: FR-025, FR-026, P-017 — route: frontend — deps: T013, T014, T018
 - [x] T020 [US3] The button, icon-button, close-button and link routes, the shell and index on the `Link` and `RouterProvider` of the UI package in `apps/playground/src` — covers: FR-027, FR-028, P-018 — route: frontend — deps: T016, T018, T019
+
+## Phase 7: Wave 2 components, part 1 (ADR 0304)
+
+Linear sub-issues, all in this one pull request: [STA-358] Surface, Card and Separator (with ADR 0304), [STA-359] Chip and StatusBadge, [STA-360] Badge.
+
+- [x] T021 [US2] Surface, Card and Separator: contracts, and the web and native components in `packages/design-system/ui/src`, with ADR 0304 — covers: FR-029, FR-030, FR-031, P-019, P-020, P-021, P-022 — route: frontend — deps: T018
+- [x] T022 [US3] The surface, card and separator routes, the Surfaces category and the close-button sample on `Card` in `apps/playground/src`, with their e2e files — covers: FR-032, P-030, SC-005 — route: frontend — deps: T021
+- [x] T023 [US2] Chip and StatusBadge: contracts, `STATUS_DOT_ROLE`, and the web and native components in `packages/design-system/ui/src` — covers: FR-033, FR-034, FR-035, P-019, P-023, P-024, P-025 — route: frontend — deps: T013, T018
+- [x] T024 [US3] The chip and status-badge routes and the Status category in `apps/playground/src`, with their e2e files — covers: FR-036, P-030, SC-005 — route: frontend — deps: T023
+- [x] T025 [US2] Badge with `Badge.Anchor`: contracts, `physicalPlacementOf`, and the web and native components in `packages/design-system/ui/src` — covers: FR-037, FR-038, FR-039, P-019, P-026, P-027, P-028, P-029 — route: frontend — deps: T013, T018, T023
+- [x] T026 [US3] The badge route in `apps/playground/src`, with its e2e file — covers: FR-040, P-030, SC-005 — route: frontend — deps: T025
+
+## Phase 8: Wave 2 components, part 2 (ADR 0304)
+
+Linear sub-issues, all in this one pull request: [STA-361] Avatar, [STA-363] Spinner, [STA-362] Skeleton.
+
+- [x] T027 [US2] Avatar: contracts, `initialsOf`, `AVATAR_SQUARE_CLASS_NAME`, and the web and native components in `packages/design-system/ui/src` — covers: FR-041, FR-042, FR-043, FR-044, P-031, P-034 — route: frontend — deps: T013, T018
+- [x] T028 [US2] Spinner: contract and the web and native components in `packages/design-system/ui/src` — covers: FR-041, FR-042, FR-043, P-032, P-034 — route: frontend — deps: T013
+- [x] T029 [US2] Skeleton and SkeletonGroup: contracts, the web and native components, and the reduced-motion and right-to-left skeleton rules of `@stackra/tokens` — covers: FR-041, FR-042, FR-043, FR-045, P-033, P-034 — route: frontend — deps: T013
+- [x] T030 [US3] The avatar, spinner and skeleton routes in `apps/playground/src`, with their e2e files — covers: FR-046, P-035, SC-006 — route: frontend — deps: T027, T028, T029
