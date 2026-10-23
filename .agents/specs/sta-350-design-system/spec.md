@@ -262,6 +262,22 @@ package and the name-based `Icon`. The ids continue this list.
 - **FR-054**: No file outside `@stackra/icons` and `@stackra/ui` SHALL import `lucide-react` or `lucide-react-native`,
   and the playground SHALL register only the icons it draws.
 
+Wave 3 foundation (ADR 0303; Linear STA-364 to STA-369): the field contract, playground discovery and the form-state
+dependency the inputs and forms build on. The ids continue this list; the wave 3 components take FR-058 onwards.
+
+- **FR-055**: `@stackra/ui/contracts` SHALL export `FieldContractProps<TValue>`, the props shared by every field:
+  `label`, `description`, `errorMessage`, `isRequired`, `isInvalid`, `isDisabled`, `isReadOnly`, `value`,
+  `defaultValue`, `onChange(value)` and `name`, so TextField, TextArea, SearchField, the number input, Select,
+  ComboBox and the Checkbox, RadioGroup and Switch family extend one type — verified by: typecheck
+- **FR-056**: The playground SHALL build its router, its index page and its shell navigation from the route folders
+  alone: every `routes/<name>/<name>.route.ts` that names a category is paired with `routes/<name>/<name>.tsx`,
+  listed under that category in the category order and then by title, and a wrong path, an unknown category or a
+  missing page SHALL fail the build of the page list with the folder's name; the index route, which names no
+  category, SHALL stay unlisted — verified by: unit
+- **FR-057**: `react-hook-form` SHALL be in `catalogs.frontend` at an exact version at least 14 days old, and
+  `@stackra/ui` SHALL declare it as an optional peer and a dev dependency, so only an app that uses `FormField`
+  installs it — verified by: pnpm validate
+
 ## Success Criteria
 
 - **SC-001**: `pnpm verify` is green with the change — verified by: CI (Quality Gate)

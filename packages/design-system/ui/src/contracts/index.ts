@@ -37,6 +37,7 @@ export type { ChipContractProps } from "#contracts/types/chip-contract-props.typ
 export type { CloseButtonContractProps } from "#contracts/types/close-button-contract-props.type";
 export type { DesignSystemProviderProps } from "#contracts/types/design-system-provider-props.type";
 export type { DesignSystemState } from "#contracts/types/design-system-state.type";
+export type { FieldContractProps } from "#contracts/types/field-contract-props.type";
 export type { HeadingContractProps } from "#contracts/types/heading-contract-props.type";
 export type { IconButtonContractProps } from "#contracts/types/icon-button-contract-props.type";
 export type { IconContractProps } from "#contracts/types/icon-contract-props.type";
