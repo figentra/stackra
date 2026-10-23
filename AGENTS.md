@@ -565,6 +565,7 @@ In Infisical `/ci` (CI/CD):
 
 - `TURBO_TOKEN` - Turborepo remote cache
 - `HEROUI_AUTH_TOKEN` - HeroUI Pro CI/CD token for the Quality Gate install (ADR 0304)
+- `UNIWIND_AUTH_TOKEN` - Uniwind Pro CI/CD licence for the Quality Gate install (ADR 0304)
 - `CLOUDFLARE_API_TOKEN` - Cloudflare Worker deploys from CI (ADR 0284, ADR 0289)
 - `ENCORE_API_KEY` - Encore deployment, once a deploy path exists (DP2)
 - `SENTRY_AUTH_TOKEN` - Sentry releases (optional)

@@ -12,8 +12,8 @@ import { Button, Typography } from "heroui-native";
 import { useState } from "react";
 import { View } from "react-native";
 
-import { Screen } from "../../components/ui/screen";
-import { Section } from "../../components/ui/section";
+import { Screen } from "#src/components/ui/screen";
+import { Section } from "#src/components/ui/section";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {

@@ -11,8 +11,8 @@ import { NumberField } from "@stackra/ui-pro/native";
 import { Description, FieldError, Label, Typography } from "heroui-native";
 import { useState } from "react";
 
-import { Screen } from "../../components/ui/screen";
-import { Section } from "../../components/ui/section";
+import { Screen } from "#src/components/ui/screen";
+import { Section } from "#src/components/ui/section";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {

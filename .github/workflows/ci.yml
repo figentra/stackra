@@ -4,8 +4,9 @@
 #          knip, secrets scan, agent sync). Branch protection requires the `Quality Gate` job by name;
 #          never rename it. `deploy-staging` is a placeholder that deploys nothing.
 # Owner: release-operations
-# Secrets: HEROUI_AUTH_TOKEN (HeroUI's CI/CD token) from Infisical /ci (env prod) through GitHub OIDC, for the
-#          install step only: the HeroUI Pro postinstall downloads the licensed build with it (ADR 0304). No repository
+# Secrets: HEROUI_AUTH_TOKEN and UNIWIND_AUTH_TOKEN (the HeroUI and Uniwind CI/CD licence tokens) from Infisical /ci
+#          (env prod) through GitHub OIDC, for the install step only: the HeroUI Pro and Uniwind Pro postinstalls
+#          download the licensed builds with them (ADR 0304). No repository
 #          secret; the Infisical identity id is the non-secret repository variable INFISICAL_GATE_IDENTITY_ID.
 name: CI
 
@@ -32,9 +33,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # ADR 0304: GitHub OIDC token, exchanged with Infisical for HEROUI_AUTH_TOKEN only
+      id-token: write # ADR 0304: GitHub OIDC token, exchanged with Infisical for the two licence tokens only
     env:
-      # Non-secret id of the Infisical machine identity that may read HEROUI_AUTH_TOKEN in /ci (ADR 0304 decision 8).
+      # Non-secret id of the Infisical machine identity that may read HEROUI_AUTH_TOKEN and UNIWIND_AUTH_TOKEN in /ci
+      # (ADR 0304 decisions 9 and 11).
       INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
 
     steps:
@@ -52,13 +54,13 @@ jobs:
         with:
           install_args: node pnpm gitleaks shfmt
 
-      # Without the HeroUI Pro build, @stackra/ui-pro and the playground cannot typecheck or build; stop here with the
-      # reason instead of failing later on missing types.
-      - name: HeroUI Pro prerequisites
+      # Without the licensed builds, @stackra/ui-pro, the playground and the mobile app cannot typecheck or build; stop
+      # here with the reason instead of failing later on missing types.
+      - name: Licensed UI prerequisites
         if: env.INFISICAL_IDENTITY_ID == ''
         run: >-
           echo "::error title=HeroUI Pro token unavailable::Repository variable INFISICAL_GATE_IDENTITY_ID is not set.
-          The install needs HEROUI_AUTH_TOKEN from Infisical /ci (ADR 0304)." && exit 1
+          The install needs HEROUI_AUTH_TOKEN and UNIWIND_AUTH_TOKEN from Infisical /ci (ADR 0304)." && exit 1
 
       # Exchanges this job's OIDC token for Infisical access and exports only HEROUI_AUTH_TOKEN into the environment of
       # later steps; the HeroUI Pro postinstall reads it. The secret-name filter keeps every other /ci value out.
@@ -72,6 +74,19 @@ jobs:
           env-slug: prod
           secret-path: /ci
           secret-name: HEROUI_AUTH_TOKEN
+          export-type: env
+
+      # The same exchange for Uniwind Pro's CI/CD licence token (ADR 0304 decision 11); one name per step.
+      - name: Uniwind Pro token (Infisical OIDC)
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: https://eu.infisical.com # .infisical.yaml: Infisical Cloud EU
+          project-id: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
+          env-slug: prod
+          secret-path: /ci
+          secret-name: UNIWIND_AUTH_TOKEN
           export-type: env
 
       - name: Install dependencies

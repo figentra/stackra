@@ -68,12 +68,23 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
    [0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps) decision 4, which said that our apps and CI keep `HEROUI_PERSONAL_TOKEN`.
 9. **The CI permission (change risk R3, [0099](/adr/0099-risk-scale-l0-to-l4)).** The Quality Gate job gains `id-token: write`, and
    only the Infisical step uses it. The Infisical machine identity for that step is named by the repository variable
-   `INFISICAL_GATE_IDENTITY_ID`, which is not a secret. The identity is allowed to read only `HEROUI_AUTH_TOKEN`. Until the owner
+   `INFISICAL_GATE_IDENTITY_ID`, which is not a secret. The identity is allowed to read only `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` (decision 11). Until the owner
    sets both, the gate fails at a named step that says what is missing. Without the Pro build, the Pro package cannot typecheck or
    build.
 10. **The download budget.** Each uncached CI install counts against HeroUI's daily CDN download limit for the CI/CD token. The limit
     is 1,000 on an individual licence. Caching `node_modules` and the pnpm store, keyed by the lockfile, avoids repeat downloads.
     That cache is a follow-up.
+
+11. **Uniwind Pro in our own apps (owner, 2026-10-23).** Uniwind is chosen per app, not per component: Uniwind Pro is
+    API-identical and installs under the `uniwind` name (`"uniwind": "catalog:uniwind-pro"`, the catalog holding
+    `npm:uniwind-pro@1.9.0`), so every `uniwind` import in the app runs on the Pro engine, the workspace packages' included.
+    - `apps/mobile` runs Uniwind Pro 1.9.0 (React Native 0.83 to 0.88, Expo SDK 55 to 58), with its native peer
+      `react-native-nitro-modules` 0.37.1. Figentra OS may follow.
+    - Free packages (`@stackra/ui`) and `@stackra/ui-pro` keep a peer on free `uniwind` and use only the shared API, so a
+      framework user runs them on free, MIT Uniwind.
+    - The install path is HeroUI Pro's: a shell whose postinstall downloads the licensed build, `uniwind` and
+      `uniwind-pro` in `allowBuilds`, a `uniwind-pro` login locally, `UNIWIND_AUTH_TOKEN` (the CI/CD licence) in CI from
+      Infisical `/ci` and as an EAS secret. The CI/CD licence allows 1,000 downloads a month.
 
 ## Consequences
 
@@ -82,7 +93,7 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
 - Every CI install depends on HeroUI's CDN and on the `/ci` token. A CDN outage or an expired token blocks the install, so the
   gate cannot run.
 - A developer runs `heroui-pro login` once, and renews it every 180 days. That is a chore for each developer.
-- The owner adds `HEROUI_AUTH_TOKEN` to Infisical `/ci`, and sets the `INFISICAL_GATE_IDENTITY_ID` repository variable.
+- The owner adds `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` to Infisical `/ci`, and sets the `INFISICAL_GATE_IDENTITY_ID` repository variable.
 - Lifting the private rule needs a new ADR, after the OEM answer (STA-41). The open question in 0197 stays open until then.
 
 ## Enforcement
@@ -92,8 +103,8 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
   app or `@stackra/ui-pro` that depends on `@heroui-pro/react` or `heroui-native-pro`, any non-app member that depends on
   `@stackra/ui-pro`, and `@stackra/ui-pro` itself without `"private": true` or with a `publishConfig`.
 - gitleaks (the pre-commit hook and the CI scan) keeps the token out of git, as [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets) requires.
-- The Quality Gate (`.github/workflows/ci.yml`) stops at its `HeroUI Pro prerequisites` step when `INFISICAL_GATE_IDENTITY_ID` is
-  unset, and its `HeroUI Pro token (Infisical OIDC)` step exports only `HEROUI_AUTH_TOKEN` (decision 9). The release workflow
+- The Quality Gate (`.github/workflows/ci.yml`) stops at its `Licensed UI prerequisites` step when `INFISICAL_GATE_IDENTITY_ID` is
+  unset, and its `HeroUI Pro token (Infisical OIDC)` and `Uniwind Pro token (Infisical OIDC)` steps export only `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` (decisions 9 and 11). The release workflow
   builds only the packages, never `@stackra/ui-pro` (`.github/workflows/release.yml`, `Build`).
 - Decision 10 (the download budget) has no check. It is a comment, and it stays one until the cache lands.
 

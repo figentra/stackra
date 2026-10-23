@@ -29,13 +29,14 @@ decisions: ADR 0165 decision 5 (free packages never depend on Pro), ADR 0197 (He
 - **Cross-service events**: none
 - **Tenancy and data**: none
 - **Security and privacy**: the Quality Gate job gains `id-token: write` for one Infisical step (change risk R3)
-- **Secrets**: `HEROUI_AUTH_TOKEN` (HeroUI's CI/CD token) is read from Infisical `/ci` in CI; the owner sets the value
+- **Secrets**: `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` (the HeroUI and Uniwind CI/CD tokens) are read from Infisical `/ci` in CI; the owner sets the value
   and the `INFISICAL_GATE_IDENTITY_ID` repository variable. No value is read, printed or stored by this change
 - **ADR needed**: yes, ADR 0304 (written by `docs-adr-steward` in this pull request), amending ADR 0197 decision 4
 - **New dependencies**: owner-approved 2026-10-23: `@heroui-pro/react` 1.0.0-beta.10 and `recharts` 3.10.1 in
   `catalog:frontend`; `heroui-native-pro` 1.0.0-beta.11, `@internationalized/date` 3.12.4 and
   `@internationalized/number` 3.6.9 in `catalog:mobile`; `allowBuilds` for the two Pro postinstalls; lead-added as required HeroUI Pro peers: `motion` 12.43.0 and `react-resizable-panels` 4.14.5 in
-  `catalog:frontend`, and `packageExtensions` restoring the Pro shells' peers
+  `catalog:frontend`, and `packageExtensions` restoring the Pro shells' peers; owner-approved 2026-10-23: Uniwind Pro 1.9.0 for our own apps in a new `catalog:uniwind-pro`
+  (`uniwind: npm:uniwind-pro@1.9.0`) with `react-native-nitro-modules` 0.37.1 in `catalog:mobile`
 - **Deploy modes**: none; a private library and a dev-only app
 - **Licence tier**: our wrapper code is MIT like the repository; HeroUI Pro stays under its own licence, is never
   committed or bundled, and reaches only our own apps (ADR 0113 context, ADR 0197)
@@ -55,7 +56,8 @@ decisions: ADR 0165 decision 5 (free packages never depend on Pro), ADR 0197 (He
    Kanban, KPI and TrendChip on web, and ProgressButton, SlideButton, SwipeableRow, Calendar and DatePicker, and
    NumberField on native.
 4. The native components get a review area in `apps/mobile` (owner, 2026-10-23, in this pull request).
-5. CI installs HeroUI Pro with a token from Infisical `/ci` over OIDC (lead's recommendation, applied: the name is
+5. `apps/mobile` runs Uniwind Pro; free packages keep free `uniwind` (owner, 2026-10-23, ADR 0304 decision 11).
+6. CI installs HeroUI Pro with a token from Infisical `/ci` over OIDC (lead's recommendation, applied: the name is
    `HEROUI_AUTH_TOKEN`, the only variable HeroUI's postinstall reads).
 
 ## User Scenarios & Testing

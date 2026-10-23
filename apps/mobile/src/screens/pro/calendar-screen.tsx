@@ -13,9 +13,9 @@ import { Calendar } from "@stackra/ui-pro/native";
 import { Typography } from "heroui-native";
 import { useState } from "react";
 
-import { CalendarParts } from "../../components/ui/calendar-parts";
-import { Screen } from "../../components/ui/screen";
-import { Section } from "../../components/ui/section";
+import { CalendarParts } from "#src/components/ui/calendar-parts";
+import { Screen } from "#src/components/ui/screen";
+import { Section } from "#src/components/ui/section";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {

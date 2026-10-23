@@ -118,12 +118,20 @@ catalogs:
     heroui-native-pro: 1.0.0-beta.11
     "@internationalized/date": 3.12.4
     "@internationalized/number": 3.6.9
+    # Required native peer of Uniwind Pro 1.9.0 (>= 0.37.1), for the apps that run it (catalog:uniwind-pro).
+    react-native-nitro-modules: 0.37.1
     uniwind: 1.12.1
     tailwind-merge: 3.7.0
     tailwind-variants: 3.3.1
     # The Expo CLI loads `typescript` as a JS API, which TypeScript 7 (native) does not ship yet.
     typescript: 6.0.3
     "@types/react": 19.2.18
+  # Uniwind Pro (ADR 0304 decision 11): our own apps install it under the `uniwind` name, so every `uniwind` import in
+  # the app, the workspace packages' included, runs on the Pro engine; free packages keep their free `uniwind` peer.
+  # A shell like HeroUI Pro: its postinstall downloads the licensed build (a `uniwind-pro` login locally,
+  # UNIWIND_AUTH_TOKEN in CI). 1.9.0 supports React Native 0.83-0.88 and Expo SDK 55-58.
+  uniwind-pro:
+    uniwind: npm:uniwind-pro@1.9.0
   # Electron desktop apps (tools/scaffold/templates/apps/desktop, MR7). No member uses it until one is scaffolded;
   # electron's postinstall downloads the binary, so the first desktop app also adds `electron: true` to allowBuilds.
   desktop:
@@ -281,6 +289,9 @@ allowBuilds:
   # OS-keychain binding of the heroui-pro CLI (pulled in by the two above); it ships prebuilt binaries, so the
   # postinstall reads a `heroui-pro login` session without building it.
   "@zowe/secrets-for-zowe-sdk": false
+  # Uniwind Pro, installed under the `uniwind` alias: both names, as Uniwind's docs say for pnpm.
+  uniwind: true
+  uniwind-pro: true
 
 minimumReleaseAgeExclude:
   - "@turbo/darwin-64@2.11.7"
