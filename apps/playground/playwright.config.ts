@@ -10,7 +10,7 @@
  */
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = Number(process.env["STACKRA_PLAYGROUND_PORT"] ?? 3710);
+const PORT = Number(process.env["STACKRA_PLAYGROUND_PORT"] || 3710);
 const isCi = Boolean(process.env["CI"]);
 
 export default defineConfig({

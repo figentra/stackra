@@ -90,6 +90,19 @@ describe("defineTheme", () => {
     ]);
   });
 
+  it("refuses a long malformed shadow in linear time", () => {
+    const light = `${Array.from({ length: 60 }, () => "11").join(" ")} x`;
+    const shadows = {
+      ...STACKRA_THEME.shadows,
+      surface: { ...STACKRA_THEME.shadows.surface, light },
+    };
+    const started = performance.now();
+    expect(problemsOf({ ...STACKRA_THEME, shadows })).toEqual([
+      "shadows.surface.light is not a CSS shadow",
+    ]);
+    expect(performance.now() - started).toBeLessThan(100);
+  });
+
   it.each([
     "oklch(1 0 0)\\", // a trailing backslash escapes the renderer's semicolon
     "oklch(1 0 0",

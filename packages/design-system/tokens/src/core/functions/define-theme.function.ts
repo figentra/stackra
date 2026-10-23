@@ -18,7 +18,8 @@ const HEX = /^#([0-9a-f]{6}|[0-9a-f]{8})$/i;
 
 // Values are written into CSS declarations as is, so each kind is an allow-list: no quote, backslash, angle bracket,
 // semicolon, brace or comment can appear unless its grammar admits it, and parentheses only as whole functions.
-const NUMBER = String.raw`-?(\d+\.?\d*|\.\d+)`;
+// One way to read each digit run: an ambiguous split here backtracks exponentially across shadow parts.
+const NUMBER = String.raw`-?(\d+(\.\d*)?|\.\d+)`;
 const VAR = String.raw`var\(--[a-z0-9-]+\)`;
 const COLOR_SOURCE = String.raw`(#[0-9a-f]{3,8}|(oklch|oklab|rgb|hsl)\(\s*${NUMBER}%?(\s+${NUMBER}%?){2}(\s*\/\s*${NUMBER}%?)?\s*\)|${VAR}|transparent|currentcolor|white|black)`;
 const LENGTH_SOURCE = String.raw`(${NUMBER}(px|rem|em|%)?|${VAR})`;
