@@ -12,6 +12,8 @@ import { DesignSystemProvider, useDesignSystem } from "@stackra/ui/native";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useThemeColor } from "heroui-native";
+import { useLayoutEffect } from "react";
+import { Appearance } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -22,7 +24,14 @@ void SplashScreen.preventAutoHideAsync();
 
 function Navigation() {
   // The scheme on screen, `system` already resolved: the picker on the design-system screen changes it at runtime.
-  const dark = useDesignSystem().resolvedColorScheme === "dark";
+  const { colorScheme, resolvedColorScheme } = useDesignSystem();
+  const dark = resolvedColorScheme === "dark";
+  // Native chrome (headers, tab bar, Liquid Glass, system sheets) follows UIKit's interface style, not the theme, so
+  // the app's own choice overrides it; `system` hands it back to the device.
+  // shortcut: lives in the app until @stackra/ui's native DesignSystemProvider applies it itself; then delete it here.
+  useLayoutEffect(() => {
+    Appearance.setColorScheme(colorScheme === "system" ? "unspecified" : colorScheme);
+  }, [colorScheme]);
   const [background, foreground, accent, border] = useThemeColor([
     "background",
     "foreground",
@@ -46,7 +55,8 @@ function Navigation() {
         },
       }}
     >
-      <StatusBar />
+      {/* Follows the in-app scheme, not only the device's, so the switcher keeps the status bar readable. */}
+      <StatusBar style={dark ? "light" : "dark"} />
       <RootNavigator />
     </NavigationContainer>
   );

@@ -54,7 +54,8 @@ export function SlideButtonScreen() {
           tone="success"
           autoReset
           autoResetDelay={2500}
-          onCompleteChange={setIsSent}
+          onComplete={() => setIsSent(true)}
+          onReset={() => setIsSent(false)}
         >
           <SlideButton.UnderlayContent>
             <SlideButton.Label>{STRINGS.transfer.prompt}</SlideButton.Label>

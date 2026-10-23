@@ -23,7 +23,9 @@ decisions: ADR 0165 decision 5 (free packages never depend on Pro), ADR 0197 (He
 - **Apps touched**: `apps/mobile` (a design-system review area with the native Pro screens), `apps/playground` (a "Pro" navigation group with one route per web component), `apps/docs` (ADR
   0304, the ADR 0197 amendment note, the setup runbook)
 - **Services touched**: none
-- **Packages touched**: `packages/design-system/ui-pro` (new, `@stackra/ui-pro`, private)
+- **Packages touched**: `packages/design-system/ui-pro` (new, `@stackra/ui-pro`, private), `packages/design-system/tokens` (the
+  stackra theme's light `--muted` goes from oklch 0.5 to 0.49 so muted text keeps 4.5:1 on tinted surfaces; owner,
+  2026-10-23)
 - **Public contract change**: none published; `@stackra/ui-pro` is private and never published. Its `./contracts`,
   `./react` and `./native` entries are for our own apps only
 - **Cross-service events**: none
