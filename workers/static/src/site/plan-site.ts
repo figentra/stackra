@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: plan every file of the schemas site from the working-tree schemas and the tagged releases: the moving
- *          paths, the immutable exact-version trees, the per-major aliases, `/index.json` and `/_headers`.
+ *          paths, the immutable exact-version trees, the per-major aliases, `/schemas/index.json`, the landing and
+ *          404 page and `/_headers`.
  * Boundary: pure; reads and writes nothing, so the whole URL layout is unit-tested here.
  * Runtime: node
  * Governing contract: ADR 0284 (hosted static files, decisions 2 to 4).
@@ -18,6 +19,7 @@ import type {
 import { compareVersions } from "./compare-versions";
 import { parseSchema } from "./parse-schema";
 import { renderHeaders } from "./render-headers";
+import { renderPage } from "./render-page";
 
 /**
  * Serialise a schema for one published path, with `$id` rewritten to that path's own URL. JSON Schema resolves
@@ -39,8 +41,9 @@ function publish(schema: ParsedSchema, path: string): string {
  * | `/schemas/v1/runway/app.json`     | newest `schemas@1.x.y` release  | revalidate (moving) |
  * | `/schemas/1.4.0/runway/app.json`  | the `schemas@1.4.0` tag         | one year, immutable |
  *
- * plus `/schemas/index.json` (every latest schema and every release) and `/_headers` (see render-headers.ts), which
- * Cloudflare only reads at the root of the assets folder.
+ * plus `/schemas/index.json` (every latest schema and every release), `/index.html` and `/404.html` (the one page
+ * for people, see render-page.ts) and `/_headers` (see render-headers.ts), which Cloudflare only reads at the root of
+ * the assets folder.
  *
  * @param latest - the schemas in the working tree; empty before STA-305 lands, which still yields a valid site.
  * @param releases - every tagged release, in any order.
@@ -87,6 +90,10 @@ export function planSite(
     `${SCHEMAS_PATH}/index.json`,
     `${JSON.stringify({ host: STATIC_HOST, schemas: index, releases: releaseVersions }, null, 2)}\n`,
   );
+  // One page for people: `/` serves index.html, and wrangler.jsonc's `404-page` serves 404.html for any unknown path.
+  const page = renderPage();
+  add("/index.html", page);
+  add("/404.html", page);
   add("/_headers", renderHeaders(releaseVersions));
   return [...files].map(([path, body]) => ({ path, body }));
 }

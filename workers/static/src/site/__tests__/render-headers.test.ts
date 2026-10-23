@@ -1,19 +1,20 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of the generated `_headers` file: CORS on every path, Cache-Control only on exact versions,
- *          and the Cloudflare rule cap.
+ * Purpose: unit tests of the generated `_headers` file: CORS on every path, Cache-Control only on the landing page
+ *          and exact versions, and the Cloudflare rule cap.
  * Boundary: pure.
  * Runtime: node
  * Governing contract: ADR 0284 (hosted static files, decision 4); ADR 0022 (test placement).
  */
-// @covers sta-322:FR-002 sta-322:P-002
+// @covers sta-322:FR-002 sta-322:P-002 sta-401:FR-002 sta-401:P-002
 import { renderHeaders } from "#src/site/render-headers";
 
 describe("renderHeaders", () => {
-  it("sends CORS for every path and no Cache-Control on moving paths", () => {
+  it("sends CORS for every path and Cache-Control only on the landing page when there are no releases", () => {
     const text = renderHeaders([]);
     expect(text).toContain("/*\n  Access-Control-Allow-Origin: *\n");
-    expect(text).not.toContain("Cache-Control");
+    expect(text).toContain("\n/\n  Cache-Control: public, max-age=300\n");
+    expect(text.match(/Cache-Control/g)).toHaveLength(1);
   });
 
   it("gives each release tree its own immutable rule", () => {
@@ -26,6 +27,6 @@ describe("renderHeaders", () => {
   it("refuses more rules than Cloudflare allows", () => {
     const versions = Array.from({ length: 100 }, (_, i) => `0.0.${i}`);
     expect(() => renderHeaders(versions)).toThrow(/Cloudflare allows 100/);
-    expect(() => renderHeaders(versions.slice(1))).not.toThrow();
+    expect(() => renderHeaders(versions.slice(2))).not.toThrow();
   });
 });

@@ -14,8 +14,10 @@
   "assets": {
     // Written by `pnpm build` (src/main.ts) from tools/schemas and every schemas@<version> tag.
     "directory": "./dist/site",
-    // An unknown path is a plain 404, never index.json or an HTML page.
-    "not_found_handling": "none",
+    // An unknown path returns status 404 with the generated 404.html, the branded "nothing to see here" page.
+    "not_found_handling": "404-page",
+    // The default, stated: `/` serves index.html, and /index.html redirects to `/`.
+    "html_handling": "auto-trailing-slash",
   },
   // A Custom Domain: Cloudflare creates the DNS record and issues the certificate for the two-level hostname itself,
   // so no Advanced Certificate Manager is needed. The zone figentra.com is on the same account.
