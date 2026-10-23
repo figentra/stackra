@@ -1,7 +1,11 @@
 ---
 title: "0108 — Scoped settings: each service owns its values; the registry owns the schema"
-description: "Accepted, amended by 0213, 0294 · 2026-10-19"
+description: "Accepted, amended by 0213, 0294, 0307 · 2026-10-19"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards): the `@Settings` class decorator of decision 1 is replaced by a `Settings({ scopes, navigation })` class in `<module>.settings.ts`, and each field carries `@Setting({ scopes, lockable, approval, client })`. The scopes are Platform, Product, Tenant, Node and User. There is no Market scope. Sections are nested schema fields, one level deep. A credential is a `ConnectionRef<C>`, and gen fails on a secret inside a settings tree, so `@ConnectionRef` is replaced. Renames use `@Renamed`, and a type change goes through the settings migrator, as decision 11 requires. Personal data is marked `@Classified`, and decision 6 reads that way. Decision 1 keeps its rule that each service owns its values, and decisions 2 to 5, 7 to 9, and 11 to 13 stand in substance: the scope chain still applies, and the Pro scope tree stays. Decision 10 was already changed by 0213.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the

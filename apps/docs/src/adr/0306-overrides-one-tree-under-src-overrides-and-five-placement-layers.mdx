@@ -1,0 +1,98 @@
+---
+title: "0306 — Overrides: one tree under src/overrides, shadows by path, and five placement layers"
+description: "Accepted · 2026-10-23"
+---
+
+<Note>
+  Amends [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (decision 14, the
+  `overrides/<owner>/` folder that held `.override.tsx` files, and the Override row of decision 23) and
+  [0234](/adr/0234-module-assets-and-storage) (decision 9, which placed overrides in `assets/overrides/`).
+  The rest of 0294 and 0234 stands.
+</Note>
+
+## Context
+
+A member changes code or assets that it does not own in several ways: it restyles a package's screen, renames
+a package's text, moves a dashboard widget, or swaps a placement. Today those changes sit in different places:
+`assets/overrides/` folders for files, `<name>.override.tsx` files for renderers, and `Widget.place` declarations
+beside the host. A reviewer has to search each place on every package upgrade. The v3 model also gives a
+module's override a class name that carries the host's prefix, which hides the base class.
+
+This ADR puts every such change in one tree, makes a shadow the file at the same path, and states the order
+in which placements replace one another. The naming of an override class follows ADR 0305 (rule 1).
+
+## Decision
+
+**One tree.**
+
+1. Everything that changes code or assets the member does not own lives in one tree, `src/overrides/<owner>/`,
+   which mirrors the owner's own paths. The `<owner>` is the package name with its scope, for example
+   `@acme/loyalty-kit`, or `<service>/<module>` for a consumed service module. The rest of the path is the
+   owner's path from its root.
+2. A file in the tree shadows the file at the same path in the owner. No keyword and no `.override.tsx` suffix
+   are used. A component shadow is `src/overrides/@acme/loyalty-kit/src/react/points-balance/points-balance.tsx`,
+   for example.
+3. The scattered `assets/overrides/` folders are retired. Their files move into the tree at their owner's path.
+   The `.override.tsx` suffix of ADR 0294 decision 14 is retired with them.
+4. Language files merge key by key over the owner's file, so a shadow of `orders.json` changes only the keys it
+   names. Images and icons replace the owner's file whole.
+5. A `.tsx` shadow exports the same name as the file it shadows, with the same Props type (ADR 0305 rule 12).
+6. A declaration shadow extends its base class under the `Base<Name>` alias (ADR 0305 rule 1), and may change only
+   what its kind allows. A placement shadow of a widget is the example: it carries the placement fields, not the
+   query.
+
+Overrides of an Action, a Query, a Model or a Resource are declaration shadows. They sit in the tree at the owner's path, and they extend their base under the `Base<Name>` alias (rules 2 and 6). A behaviour swap is a driver (rule 9), and a configuration override is a subclass in `src/config/` (rule 10).
+
+**Five layers.** A placement, for example a widget's slot and order, is set in one of five layers. For a
+given item, a higher layer's placements replace the whole set of the lower layer's, and never merge with them.
+
+| Layer | Where                                                                   | May change                                                            |
+| ----- | ----------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 1     | the owner's own file (the widget file: `slot`, `order`, `size`)         | everything the owner declares                                         |
+| 2     | a host module: `Widget.place(Base, …)` in the host's `resources/` group | slot, order, size and params                                          |
+| 3     | the app's `src/overrides/<owner>/`                                      | the same as layer 2; `slot: null` removes the item                    |
+| 4     | the tenant's copy of a layout (data)                                    | dashboard position, size and presence; resource slots: hide and order |
+| 5     | the user's overlay (data)                                               | the same, within what the tenant's copy leaves unlocked               |
+
+7. Layers 1 to 3 are code, and gen checks them. Layers 4 and 5 are data, validated when they are saved and again
+   when they are read (ADR 0307). A key that no longer exists is dropped on read, and a size the display does not
+   allow is clamped.
+8. A placement never changes a query or a display. Those belong to the owner.
+
+**Behaviour and configuration.**
+
+9. A behaviour swap stays a driver that replaces a port (`@Replaces(Port)`). It is not an override in the tree.
+10. Configuration stays in `src/config/`. Configuring a package is not overriding it. A config override is a
+    subclass in `src/config/` of the package's config class, under the `Base<Name>` alias (ADR 0305 rule 1).
+
+**Gen errors and warnings.**
+
+11. Gen fails with `override_target_missing` when a shadow's owner file does not exist, `override_shape_mismatch`
+    when a shadow does not match its owner's exports or Props, and `override_duplicate` when two shadows name the
+    same target in one member.
+12. When a package upgrade moves or removes a shadowed file, gen lists every shadow whose target changed, with the
+    code `override_target_changed`. It is a warning that the review reads. It does not fail the build.
+
+## Consequences
+
+- A reviewer checks one folder on each upgrade. The shadows and their targets are visible in the tree.
+- A shadow is typed and checked against its owner, so a renamed export fails at gen and not at run time.
+- The placement layers have a fixed order, so the question "why does this tile sit here" has one answer.
+- Hosts that wrote `assets/overrides/` or `.override.tsx` files move them into the tree. The template does this in
+  the conversion pass (STA-344).
+- Gen must read the tree and report on it, which is planned work (STA-339).
+
+## Enforcement
+
+- planned — STA-339: the overrides tree resolver and its gen errors (`override_target_missing`,
+  `override_shape_mismatch`, `override_duplicate`, and the warning `override_target_changed`).
+- planned — STA-340: the Props and export match for a `.tsx` shadow, and the `Base<Name>` alias check of
+  ADR 0305 rule 1.
+- The layer order (rule 7) is enforced by gen once the widget placement checks of ADR 0307 land.
+
+## Supersedes and sources
+
+Supersedes: none as a whole. Decision 14 of ADR 0294 is amended for the overrides folder, and decision 9 of ADR
+0234 is superseded in part by rules 1 to 3 of this ADR. The notes on both pages say so.
+
+Origin: the v3.1 design review of 2026-10-23, restated in this ADR's own words.

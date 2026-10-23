@@ -1,7 +1,26 @@
 ---
 title: "0197 — HeroUI Pro is used only in our own apps until an OEM agreement exists"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended 2026-10-23 (STA-406) · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406): an owner decision of 2026-10-23, recorded in this note. The owner
+  has approved one exception to decisions 1 and 4. The public `stackra-template` console installs
+  HeroUI Pro directly, as `@heroui-pro/react`, and as `heroui-native-pro` where a native target uses
+  it. The exception is for the template only. The template uses Figentra's own HeroUI licence, for
+  Figentra's own use of it. The licence token is `HEROUI_PERSONAL_TOKEN` from Infisical. Locally it
+  is read from `/agents` through the pnpm script that wraps the install, and in the template's CI it
+  is read through the template's OIDC path to Infisical. It is never a file in a repository and
+  never a repository secret. No Pro source is committed. `@stackra/ui-pro`, Stackra's own wrapper
+  package, stays private to Stackra's own apps and is never published. A third party who copies the
+  template must bring their own HeroUI Pro licence, or remove the Pro components. The template's
+  README states this requirement. Decision 3 (the bring-your-own-key option is suspended) concerns
+  Stackra product tenants, not template consumers, and it stands for them. The Consequences of this
+  page hold for every app except the template console under this exception. Revival trigger for
+  ending the exception: the template is published for third parties in a form that installs HeroUI
+  Pro without that party's own licence. At that point the console returns to free components only,
+  as decision 1 says. Decisions 2 and 3 stand.
+</Note>
 
 <Note>
   Supersedes [0113](/adr/0113-heroui-pro-distribution). Closes gap C14 and contradiction C-22.

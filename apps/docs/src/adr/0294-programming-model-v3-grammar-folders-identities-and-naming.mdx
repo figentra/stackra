@@ -1,7 +1,11 @@
 ---
 title: "0294 — Programming model v3: grammar, group folders, derived identities and naming"
-description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349)"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349, STA-406)"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components), [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers), [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) and [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks). Rule R2's companion list (`<Name>Input`, `<Name>Output`, `<Name>Props` and `<Name>Data`) is retired, because each of those is its own file (ADR 0305 rules 10 to 12), and R8's companion types go with it. Rule R3 says a kind with no options is written bare, and a kind base never takes a `define` prefix. Rule R7 is reversed: a component may be a class, `class X extends Component<P>`, which gen compiles to a function component (ADR 0305 rules 37 to 41). Rule R11 is restated: a partner is named by a type argument, and a stem sibling is found by name. Rule R12 is restated: the root module is optional. In decision 13, `database/macros/` holds `<name>.macro.ts` files, and the sentence about modules in dependency order is corrected: migrations are ordered by number, `after:` and macro edges. In decision 14, overrides live in `src/overrides/<owner>/` (ADR 0306), and the root error boundary is owned by `@stackra/navigation`, so `app.error.tsx` leaves the app groups (ADR 0305 rule 35). In decision 16, the Resource, Widget, Document, Settings, Flag, Integration, Connection and WebhookEvent rows change as ADR 0305, 0307 and 0308 state, `Macro` is added, and the event bases come from `@stackra/events`. In decision 19, `@Env` is retired in favour of `Config({ schema, env })` (ADR 0305 rule 34). In decision 20, the migration id is `<module>.<NNNN>_<snake(stem)>`. In decision 23, the dictionary gains `Interceptor` for the whole-call wrapper and `before` and `after` for the slot verbs. The `Extension(Point, { order })` form of decision 16 is superseded by rule 25 of [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components), which writes one class per slot. The other decisions stand. Items 1 and 4 of the 2026-10-23 amendment are changed as marked on those items.
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-349): converting the template found gaps, which the amendment at the end
@@ -533,14 +537,14 @@ wrongly. Each item names the decision or rule it changes. Everything else stands
 
 **Decision.**
 
-1. **Integration and Connection are kinds (decisions 13 and 16).** An integration is `extends Integration({ provider })`
+1. **Integration and Connection are kinds (decisions 13 and 16).** _Superseded in part by ADR 0305 (rule 5) and ADR 0308 (rule 2): a connection is `extends Connection<SomeIntegration>`, with the subject as a type argument._ An integration is `extends Integration({ provider })`
    in `integrations/`, and a connection is `extends Connection(SomeIntegration, { ... })` in `connections/`. Both
    groups join the module groups of decision 13, holding `.integration.ts` and `.connection.ts`.
 2. **`@Secret` names its secret (R6, decision 19).** A secret field is always `@Secret("NAME")`, on a config class and
    on a connection alike. A bare `@Secret` fails gen with `secret_name_missing`.
 3. **`@Classified` is a field decorator (R6).** `@Classified(DataClassification.X)` joins the serializers (`@Hidden`,
    `@Visible`) as the privacy and serialisation category: it records the class of data a field holds.
-4. **The app groups gain `schemas/` and `errors/` (decision 14).** They hold `.schema.ts` and `.error.ts` in an app as
+4. **The app groups gain `schemas/` and `errors/` (decision 14).** _The root error boundary part is superseded by ADR 0305 (rule 35): `app.error.tsx` leaves the root, and `@stackra/navigation` owns the boundary. The `schemas/` and `errors/` groups stand._ They hold `.schema.ts` and `.error.ts` in an app as
    in a module. The `.error.tsx` error boundaries stay at the root and in route folders.
 5. **A kind without options is written bare (R3, decision 16).** `extends Prompt` is the form when a prompt sets no
    options. Where a kind's options are optional, its kind table row allows both forms, as the Module and Listener

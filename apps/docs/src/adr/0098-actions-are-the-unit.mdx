@@ -1,7 +1,16 @@
 ---
 title: "0098 — Actions are the unit of behaviour, in @stackra/actions, with one pipeline and a typed actor"
-description: "Accepted, amended by 0136, 0137, 0139, 0155, 0211, 0264, 0294 · 2026-10-19"
+description: "Accepted, amended by 0136, 0137, 0139, 0155, 0211, 0264, 0294, 0305 · 2026-10-19"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by
+  [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components). The `ux`
+  option of ADR 0139 is retired (rule 29). The surfaces that decision 2 describes are typed options
+  with defaults from the key and the actors (rule 28): `endpoint`, `tool`, `job` and `intent`.
+  Intent phrases are in the lang files, not in strings in the code. A cached read is a Query's
+  `cache:` option (rule 31), so an action never caches. Decisions 1, 3, 4, 5, 6 and 7 stand.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the

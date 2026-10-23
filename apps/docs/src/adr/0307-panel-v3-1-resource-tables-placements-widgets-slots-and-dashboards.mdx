@@ -1,0 +1,169 @@
+---
+title: "0307 — Panel v3.1: resource tables as server contracts, placements by input, metric widgets, typed slots, dashboards and settings"
+description: "Accepted · 2026-10-23"
+---
+
+<Note>
+  Amends [0108](/adr/0108-scoped-settings) and [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions)
+  (the settings surface: sections, the Product and Node scopes, per-field scopes, approval, client exposure,
+  `rules`, and `ConnectionRef<C>` in place of `@ConnectionRef`), and
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (the Resource, Widget, Document,
+  Settings and Flag rows of decision 16, and the slot formula of decision 20). The panel's other decisions in
+  ADR 0164, 0110, 0270, 0271 and 0279 are changed by this ADR as described below; each of those pages carries a note in this change (STA-414).
+</Note>
+
+## Context
+
+A resource page is a list, a record view and a form, and a dashboard is a set of tiles. Three things are wrong with
+the current shape. A table's columns are checked against the model, while the list query returns a view, so a
+column can pass gen and render nothing. Sort and filter have no server contract, so a sort on an unindexed field
+is accepted. A key performance indicator is three loose field names with no previous period and no target, and
+the query's cache repeats the refresh list. This ADR fixes the resource, widget and settings surfaces on the
+server contract, so that the REST, MCP and panel readers see the same numbers. The panel's data comes from the
+query (ADR 0305 rule 31), and the panel only presents it.
+
+## Decision
+
+**Resources: the table is a server contract (R-1 to R-8).**
+
+1. A table's keys are wire paths: `Path<Row>`, where `Row` is the item type of the list query's output. Gen records each resource's row in a `ListRows` map (`RowOf<M>`), because TypeScript cannot infer the row from the list query once the model is written. Where the row is the model, `Resource<Order>({ ... })` is enough. Where the row differs from the model, the explicit form `Resource<Order, OrderView>({ ... })` names the row too. Until gen writes the map, keys are checked against the model, and a list query that returns another row is a compile error. The
+   infolist and relation keys come from the get output, and form keys come from the create or update input.
+   Dotted paths are typed, for example `"totals.totalMinor"`.
+2. Gen compiles each resource table into a closed `TableInput` for its list query. Sort is an enum of the sortable
+   keys, filter is a typed object of the declared filters, and search exists only when the model is
+   `@Searchable`. `CrudService.table(input, { where })` applies it, so no raw field name reaches SQL. A sortable or
+   filterable key needs an index (`@Index` or `@Searchable.filters`). A list query is bound to at most one resource
+   table.
+3. Every button runs an Action class. A placed action's default places follow its input:
+
+   | Input of the action                         | Default places                                        |
+   | ------------------------------------------- | ----------------------------------------------------- |
+   | has the record id only                      | Row, View header, Edit header                         |
+   | has the record id and other required fields | the same, and the button opens a modal form           |
+   | has `selection: Selection<"ord">`           | Bulk bar (and View header, as a one-record selection) |
+   | has neither                                 | List header                                           |
+
+   `.in(...)` narrows the places. `.bulk()` adds the Bulk bar to a record action, and fans out with the policy per
+   record. Derived operations place themselves: create in the List header and the empty state, update as Edit on
+   the row and View, delete on the row overflow, the View header and the Bulk bar.
+
+4. A placed action's permission is its key's permission (`order.cancel` becomes `orders.order.cancel`). The
+   module's `Permissions` class must have that verb. Pages follow their operations: List and navigation need the
+   list query's permission, and View the get query's. Export needs the `export` verb, and import the `import` verb
+   with each row's action permission. The client hides a button the actor may not use, from one batched abilities
+   read per page (the ids and the row-placed actions). The run still decides on every call, and a bulk run groups
+   its refusals by code through `Decision.deny(code)`.
+5. Builders are pure. Gen runs each builder method once at gen time and records the tree in `stackra.manifest.json`
+   under `ui.resources`. A builder that reads anything but its argument fails gen (`builder_impure`). Conditions are a
+   closed set (`field`, `record`, `page`, `can`, `all`, `any`, `not`), built through a typed callback, so no
+   executable code reaches the web or native client.
+6. Every name, such as a section, a view, a column or an empty state, has a derived label key
+   `<module>::resources.<model>.<part>.<name>`. No name takes a label option. `stackra gen --fix-lang` adds missing
+   keys.
+7. The members of a resource are `override` methods that return builders: `table`, `views`, `form`, `infolist`,
+   `relations` and `actions`. `bulkActions` and `toasts` are retired into `actions`. The action `ux` option is retired
+   (ADR 0305 rule 29).
+8. Builder calls inside a member are not declarations, so they are not counted by ADR 0305's one-declaration rule.
+
+**Resource behaviour.**
+
+9. Saved views are panel-owned and tenant-scoped. A personal view belongs to one user, and a tenant-shared view is
+   created by a holder of `panel.view.share`. A view stores only declared keys, and `.renamed()` migrates stored
+   views. The URL carries the view, the filters, the sort and the page size, but never free-text search.
+10. Import is a placement over an Action, `a.import({ mode, match })`. Every row goes through the full action
+    pipeline, and failed rows are written to a file the user can download. Export excludes `@Classified` fields above
+    Internal, unless the column opts in under an L2 verb. Export is queued, offers CSV and XLSX, and its link is
+    valid for 24 hours and access-logged.
+11. Forms take conditional fields from union branches, a `T | null` object as a switch, and a closed set of `.when()`
+    conditions for UX-only logic. Relation managers are a builder, `r.table(Query, columns)`, over same-module data.
+    The discriminant is spelled `scope!: typeof RefundScope.Full`.
+12. Counts are estimated by default (`Count.Estimated`), and a filtered count is shown capped as "10,000+". A
+    navigation badge names a view. Bulk selection is capped at 10,000 records; up to 100 records run inline, and more
+    run as a job.
+13. Not in v3.1: grouping, summaries, reordering and custom column renderers. The need for one of them is met by a
+    widget in a slot. Reopening one needs a resource that cannot express its need that way, and the owner decides.
+
+**Widgets, metrics and slots (U1 to U7).**
+
+14. A widget is `Widget<Query>({ slot, size, order, params, ranges, range, refreshOn, refreshEvery, roles })`. Its
+    `display(d: Display<OutputOf<Query>>)` method is abstract, so every path is checked by TypeScript and by gen.
+    `roles` affects presentation only. A widget never changes what the query returns.
+15. A key performance indicator binds to a field of the query output typed as a metric class: `MoneyMetric`,
+    `CountMetric`, `NumberMetric`, `PercentMetric` or `DurationMetric`. The type carries the value, the previous
+    period, the series and the target, so format, unit, currency, trend, sparkline and target come from the type.
+    The display adds only what the type cannot know: the direction that is better, threshold tones, the icon and a
+    drill-down.
+16. The query computes the current and previous values, the buckets, the ratios and the targets through
+    `CrudService.metrics()`, in one statement. The panel presents them and computes nothing. Money KPIs are in the
+    tenant's reporting currency, from checkout-time snapshots, and never mix currencies. The metric shapes live in
+    the core entry of `@stackra/panel`.
+17. `refreshOn` is derived from the query's `cache.invalidateOn`. A widget writes its own `refreshOn` only for an
+    uncached query, and an explicit event that the query does not invalidate on fails gen (`refresh_without_invalidation`).
+18. The slots are typed places, not hooks. Each slot has a place type that limits its displays and sizes:
+    - `Slots.Dashboard.Header` is a Band (Kpi, KpiGroup and Progress, one row);
+    - `Slots.Dashboard.Main` is a Grid of 12 columns, with sizes Small 3, Medium 6, Large 9 and Full 12;
+    - `Slots.<Module>.<Model>.List.Header` and `.View.Header` are Bands;
+    - `.List.Footer` and `.View.Footer` are Grids;
+    - `.View.Aside` and `.Edit.Aside` are Asides, whose width the aside sets;
+    - `.View.Tabs` holds Tabs, one per widget, labelled with the widget title;
+    - `Slots.Shell.Banner` holds Banners, at most two shown, full width above the page;
+    - `Slots.Shell.Checklist` holds Checks, in the checklist launcher.
+
+    The home dashboard has a Header and a Main. Its Footer slot is dropped, because the grid order and size express it.
+    `Bind.record(path)` is allowed only in a View slot, and `Bind.tableFilter()` only in a List slot.
+
+19. Placements replace each other by layer (ADR 0306 rules 7 to 8). Layers 4 and 5, the tenant and user copies, are data. The experience service validates them when they are saved and again when they are read.
+
+20. A dashboard is a Document of kind Dashboard. It places widget classes only, and each tile has a key, a permission, a refresh rule and a library entry. Inline query blocks stay in Page documents. A dashboard has one range picker, with the ranges `TimeRange.Today`, `TimeRange.Last7Days` and `TimeRange.ThisMonth`, and its filters are the range and the scope node. A personal arrangement is an overlay on the base, not a copy.
+
+21. A banner and a checklist item are widgets with the display kinds Banner and Check, placed in the shell slots. A resource does not list its widgets, documents or settings, because each of those has its own owner and permission. Quick create is opt-in per resource.
+
+**Settings (U6, and the surface of ADR 0108 and ADR 0213).**
+
+22. One `<module>.settings.ts` file declares a settings class, `extends Settings({ scopes, navigation })`. A field
+    typed as a schema is a section, and sections nest one level deep (`settings_too_deep`). Each field carries
+    `@Setting({ scopes, lockable, approval, client })`, which narrows the scopes for that field. The scopes are
+    Platform, Product, Tenant, Node and User. There is no Market scope, because a Market is a pricing entity
+    (ADR 0244). `rules(r)` is a closed set.
+23. A setting is never a secret. A credential is a `ConnectionRef<C>` (ADR 0308), and gen fails with
+    `secret_in_settings` on a secret or a credential-shaped field in a settings tree. Client exposure is opt-in with
+    `client: true`. Renames are made with `@Renamed`, and a type change is made through the settings migrator.
+24. A setting is read with `SettingsReader#get(OrdersSettings)`. Gen generates the settings page from the classes,
+    with a Features section derived from the flags.
+25. A feature flag keeps the kind name `Flag` (`.flag.ts`, in `@stackra/feature-flags`). Its row gains `scopes`,
+    which default to Platform and Tenant. A flag is not an entitlement (ADR 0213 decision 7).
+
+**Gen errors (for the enforcement list below).** Gen fails on the codes of the resource and the widget contracts: the
+column, filter, sort, search and view checks, the form, relation and bind checks, the action permission checks, the
+bulk and selection checks, the export and import permission checks, the widget display and metric checks, the
+drill checks, the slot and placement checks, the dashboard checks, and the settings checks.
+
+## Consequences
+
+- A table column that does not exist in the list output fails at gen, not at render, and a sort on an unindexed key
+  fails before it ships.
+- Permissions are derived from keys, so a missing verb is a gen error, and not a button that appears for nobody.
+- Dashboards and settings become data that the panel reads. A tenant can rearrange tiles without a code change.
+- The template's current table and bulk declarations, and its inline dashboard query blocks, convert in the
+  template pass (STA-344), and the skill that teaches them is rewritten by the lead (STA-345).
+- The panel package grows: metric shapes, time ranges, `Display`, the drill and bind sources, and the slot place
+  types all live in `@stackra/panel`. The count and the metrics method live in `@stackra/database`.
+
+## Enforcement
+
+- planned — STA-340: the resource and widget gen checks listed in the Decision (`column_key_unknown`,
+  `sort_not_indexed`, `filter_not_indexed`, `list_query_shared`, `table_row_mismatch`, `action_permission_missing`,
+  `builder_impure`, `widget_display_type_mismatch`, `metric_path_not_metric`, `refresh_without_invalidation`,
+  `slot_unknown`, `placement_duplicate`, `dashboard_block_not_widget`, `settings_too_deep`, `secret_in_settings`, and the
+  rest of their families).
+- planned — STA-339: the slot table and the generated `#stackra/slots` module, and the layer-4 and layer-5 validation
+  in the experience service.
+- planned — the panel's batched abilities read and the `Decision.deny(code)` grouping, which are part of the panel build.
+
+## Supersedes and sources
+
+Supersedes: none as a whole. The Resource, Widget, Document, Settings and Flag rows of ADR 0294 decision 16 are
+amended, and ADR 0108 and ADR 0213 are amended for the settings surface. The notes on those pages say so. ADR 0164,
+0110, 0270, 0271 and 0279 are changed in the places named above. Each of those pages carries a note in this change (STA-414).
+
+Origin: the v3.1 design review of 2026-10-23, restated in this ADR's own words.

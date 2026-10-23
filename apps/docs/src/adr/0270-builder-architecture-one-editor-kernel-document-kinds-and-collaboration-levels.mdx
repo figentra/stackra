@@ -1,7 +1,19 @@
 ---
 title: "0270 — Builder architecture: one editor kernel, document kinds and collaboration levels"
-description: "Accepted, amended by 0294 · 2026-10-21"
+description: "Accepted, amended by 0294, 0305, 0307 · 2026-10-21"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by
+  [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) and
+  [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards). The
+  palette's blocks follow the Props rule (rule 12 of
+  [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components)), and a block's
+  decorator takes the kind form of rule 2. A dashboard is a Document of the Dashboard kind that
+  places widget classes only (rule 20 of
+  [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards)). Decisions 1
+  and 2 stand, and the editor kernel of decision 4 stands unchanged.
+</Note>
 
 <Note>
   Amends [0112](/adr/0112-experience-packages-and-renderer-kit) (X5 editor wording, X14 build
