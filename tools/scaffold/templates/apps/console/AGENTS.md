@@ -10,8 +10,10 @@
   the code in `__tests__/`.
 - A route is `routes/<name>/<name>.route.ts` (its path) plus its page `<name>.tsx`; React Router 7 data routers, no
   file routing.
-- Screens are panel resources declared in modules (`@Resource`, `@Page`, `@Widget`) and drawn by the panel
-  renderer. A hand-written page is the escape hatch, not the default.
+- Screens are panel resources declared in modules as classes (ADR 0294 decisions 16 and 23): a model's admin
+  surface `extends Resource(Model, { navigation, operations, area })`, a widget is a query bound to a display kind
+  (`extends Widget({ slot, query, display })`), and a tenant-editable page is a `Document`. Kinds are base classes,
+  never decorators. The panel renderer draws them; a hand-written route page is the escape hatch, not the default.
 - UI comes from HeroUI v3 (`@stackra/ui` once it exists); styles are Tailwind v4 utilities. No other component
   library, no Storybook.
 - A component is a folder `x/{x.tsx, index.ts, __tests__/x.test.tsx}`; `XProps` is exported from `x.tsx`.

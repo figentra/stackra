@@ -66,16 +66,16 @@ The direction rule is a law: see [Boundaries](/constitution/boundaries) and [ADR
 
 ## Kinds
 
-| Tier           | Kinds                                                                                                                    |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `tier:app`     | `app:console`, `app:mobile`, `app:desktop`, `app:docs`                                                                   |
-| `tier:lib`     | `package`, entries-first (see [Packages](/standards/packages), ADR 0126)                                                 |
-| `tier:config`  | `tooling`                                                                                                                |
-| `tier:service` | `service`: `services/<name>`, entry `src/main.ts`, root module in `stackra.module` (see [Services](/standards/services)) |
+| Tier           | Kinds                                                                                                                                                                                                                      |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tier:app`     | `app:console`, `app:mobile`, `app:desktop`, `app:docs`                                                                                                                                                                     |
+| `tier:lib`     | `package`, entries-first (see [Packages](/standards/packages), ADR 0126)                                                                                                                                                   |
+| `tier:config`  | `tooling`                                                                                                                                                                                                                  |
+| `tier:service` | `service`: `services/<name>`, `stackra.config.ts` and the root module `src/<name>.module.ts` from `pnpm new`; today's services keep `src/main.ts` and `stackra.module` until STA-344 (see [Services](/standards/services)) |
 
 ## Scaffolding
 
-`pnpm new <kind> <name> [--category <c>] [--entries <list>|none] [--description "<text>"] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the target repo's `LICENSE` (packages and tooling only), and formats the result. Then run `pnpm install` and `pnpm verify`.
+`pnpm new <kind> <name> --description "<one sentence>" [--category <c>] [--entries react,native|none] [--data] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the target repo's `LICENSE` (packages and tooling only), and formats the result. Then run `pnpm install` and `pnpm verify`.
 
 | Kind          | Template                     | Lands in                                             |
 | ------------- | ---------------------------- | ---------------------------------------------------- |
@@ -89,12 +89,13 @@ The direction rule is a law: see [Boundaries](/constitution/boundaries) and [ADR
 
 ```bash
 pnpm new service billing --description "Billing."
-pnpm new package retry --category foundation --entries contracts,testing
-pnpm new app:console admin --title "Admin"
-pnpm new service billing --repo ../figentra-os --dry-run
+pnpm new package retry --category foundation --description "Retries with backoff."
+pnpm new package ledger --category commerce --description "Double-entry ledger." --data
+pnpm new app:console admin --title "Admin" --description "The admin console."
+pnpm new service billing --description "Billing." --repo ../figentra-os --dry-run
 ```
 
-Shapes: [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates). Flags and tokens: [Scaffolding](/guides/scaffolding).
+`--description` is required: the sentence becomes the `package.json` description and opens `README.md` and `AGENTS.md`. Members come out in the programming model v3 shape ([ADR 0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) rule R12). Shapes: [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates). Flags and tokens: [Scaffolding](/guides/scaffolding).
 
 ## What enforces this
 

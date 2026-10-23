@@ -208,7 +208,11 @@ export const APP_GROUPS = groups(
       ["route", "layout", "error", "fallback", "server"],
       "a route or layout class, its page `<name>.tsx`, `use-<name>.ts` and `__tests__/`",
     ],
-    ["blocks/<name>", ["block"], "`<name>.block.ts`, its renderer `<name>.tsx` and `__tests__/`"],
+    [
+      "blocks/<name>",
+      ["block", "native"],
+      "`<name>.block.ts`, its renderer `<name>.tsx`, an optional native renderer `<name>.native.tsx` and `__tests__/`",
+    ],
     [
       "components/<name>",
       [],
@@ -225,14 +229,15 @@ export const APP_GROUPS = groups(
 );
 
 /**
- * The folders of a package's `src/` (ADR 0294 decision 15). `entry` is the subpath the folder feeds, or null for a
- * folder no entry exports. Dependencies run one way: core imports contracts; node, react and native import core;
- * testing imports them all. Which entry exports `config/` is not settled (ADR 0177 amendment).
+ * The folders of a package's `src/` (ADR 0294 decision 15) and the subpath each feeds. Dependencies run one way: core
+ * imports contracts; node, react and native import core; testing imports them all. `.` exports `config/` beside
+ * `core/`, so a host can subclass a package's config class (ADR 0294 decision 19; the STA-347 decision on the question
+ * the ADR 0177 amendment left open).
  */
 export const PACKAGE_FOLDERS = Object.freeze(
   [
     ["contracts", "./contracts", "the leaf: `ports/`, `enums/` and `types/`"],
-    ["config", null, "the config classes"],
+    ["config", ".", "the config classes, which a host subclasses to override"],
     ["core", ".", "isomorphic code: services, drivers, errors, functions, schemas and blocks"],
     ["node", "./node", "the module folder: `<key>.module.ts` and the module groups"],
     ["react/<name>", "./react", "web renderers"],
@@ -241,28 +246,43 @@ export const PACKAGE_FOLDERS = Object.freeze(
   ].map(([folder, entry, reason]) => ({ folder, entry, reason, adr: "0294 d15" })),
 );
 
+/** A package that ships decorators registers them through an Explorer in the entry that exports them (ADR 0294 d15). */
+export const EXPLORER = Object.freeze({
+  file: "src/<entry>/<pkg>.explorer.ts",
+  suffix: "explorer",
+  reason: "only in a package that ships decorators, which it registers",
+  adr: "0294 d15",
+});
+
 /**
  * What every member authors at its root (ADR 0294 rule R12, ADR 0295 decisions 1 and 7): `stackra.config.ts` and one
- * root module; never `src/main.ts` or an entry barrel. The docs app and the `tier:config` presets are exempt.
+ * root module; never `src/main.ts` or an entry barrel. The docs app and the `tier:config` presets are exempt: `dir`
+ * is the member directory, or with a trailing slash the prefix of the directories, that an exemption covers.
  */
 export const MEMBER_ROOT = Object.freeze({
   config: "stackra.config.ts",
   rootModule: "src/<name>.module.ts",
   packageRootModule: "src/node/<name>.module.ts",
-  exempt: Object.freeze(["the docs app (Mintlify)", "the `tier:config` presets"]),
+  exempt: Object.freeze([
+    Object.freeze({ dir: "apps/docs", label: "the Mintlify docs app" }),
+    Object.freeze({ dir: `packages/${TOOLING.name}/`, label: "the `tier:config` presets" }),
+  ]),
   reason: "one member shape; gen writes the entries, the tool configs and the barrels",
   adr: "0294 R12, 0295",
 });
 
 /**
  * The root module a member authors, from its directory: `src/node/<name>.module.ts` in a package,
- * `src/<name>.module.ts` elsewhere; null for a `tier:config` preset, which holds no module.
+ * `src/<name>.module.ts` elsewhere; null for a member MEMBER_ROOT exempts (the docs app, a `tier:config` preset).
  * @param {string} dir - repository-relative, forward slashes
  * @returns {string | null}
  */
 export function rootModuleOf(dir) {
   const name = dir.split("/").at(-1);
-  if (dir.startsWith(`packages/${TOOLING.name}/`)) return null;
+  const exempt = MEMBER_ROOT.exempt.some((e) =>
+    e.dir.endsWith("/") ? dir.startsWith(e.dir) : dir === e.dir,
+  );
+  if (exempt) return null;
   const pattern = dir.startsWith("packages/")
     ? MEMBER_ROOT.packageRootModule
     : MEMBER_ROOT.rootModule;
@@ -691,7 +711,7 @@ export function renderStructureDoc() {
     "",
     "## Member root (programming model v3)",
     "",
-    `Every member authors ${code(MEMBER_ROOT.config)} and one root module, ${code(MEMBER_ROOT.rootModule)} (${code(MEMBER_ROOT.packageRootModule)} in a package), and never ${code("src/main.ts")} or an entry barrel (ADR ${MEMBER_ROOT.adr}). Exempt: ${MEMBER_ROOT.exempt.join(" and ")}.`,
+    `Every member authors ${code(MEMBER_ROOT.config)} and one root module, ${code(MEMBER_ROOT.rootModule)} (${code(MEMBER_ROOT.packageRootModule)} in a package), and never ${code("src/main.ts")} or an entry barrel (ADR ${MEMBER_ROOT.adr}). Exempt: ${MEMBER_ROOT.exempt.map((e) => `${e.label} (${code(e.dir)})`).join(" and ")}.`,
     "",
     "## Module groups (programming model v3)",
     "",
@@ -709,11 +729,13 @@ export function renderStructureDoc() {
       ["Folder", "Entry", "Holds", "Source"],
       PACKAGE_FOLDERS.map((f) => [
         code(`src/${f.folder}/`),
-        f.entry ? code(f.entry) : "not settled (ADR 0177 amendment)",
+        code(f.entry),
         f.reason,
         `ADR ${f.adr}`,
       ]),
     ),
+    "",
+    `Explorer: ${code(EXPLORER.file)} (${code(`.${EXPLORER.suffix}`)}), ${EXPLORER.reason} (ADR ${EXPLORER.adr}).`,
     "",
     "## Kind folders (pre-v3)",
     "",

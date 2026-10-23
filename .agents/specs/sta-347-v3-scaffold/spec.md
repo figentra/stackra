@@ -27,13 +27,14 @@ ADR 0300 (presets) and the v3 rules and skills in `.agents`.
 - **Services touched**: none (the v2 members `services/example` and `services/health` are converted under STA-344)
 - **Packages touched**: none (the templates and scripts live in `tools/`)
 - **Public contract change**: the `pnpm new` output; `--entries` takes only `react,native` (`devtools` is gone, as ADR
-  0294 decision 23 lists six entries) and the new `--data` flag adds a package's database folders
+  0294 decision 23 lists six entries), the new `--data` flag adds a package's database folders, and `--description` is
+  required (no placeholder, so no TODO in generated output)
 - **Cross-service events**: none
 - **Tenancy and data**: none
 - **Security and privacy**: none; the service template's `runway.yaml` holds secret names only, as ADR 0296 requires
 - **Secrets**: none
-- **ADR needed**: no; implements ADR 0294, 0295 and 0296 as accepted. One question the ADRs leave open is recorded for
-  the owner below (which entry exports a package's config classes, ADR 0177 amendment)
+- **ADR needed**: no; implements ADR 0294, 0295 and 0296 as accepted. The one question the ADRs leave open (which entry
+  exports a package's config classes, ADR 0177 amendment) was decided by the lead in review round 1, below
 - **New dependencies**: none
 - **Deploy modes**: none; repository tooling only, the same for SaaS, on-prem and air-gapped
 - **Licence tier**: not distributed (repository tooling); scaffolded packages keep MIT and apps and services UNLICENSED
@@ -50,9 +51,11 @@ ADR 0300 (presets) and the v3 rules and skills in `.agents`.
 
 - **No authored entry barrels** (ADR 0294 decision 15, rule R12). Until gen writes them (STA-339), a package's
   `exports` key names its entry's one public file directly, as `@stackra/brand`'s `./tokens` already does: `.` is
-  `src/core/constants/package-name.constant.ts` and `./node` is the root module. An entry folder with no file yet
-  (`contracts/`, `testing/`, `react/`, `native/`) holds a README and has no export (ADR 0126: entries only with real
-  code). The template marks this in the package README (an "Exports today" column), in `AGENTS.md` and in the
+  the config class `src/config/<name>.config.ts` and `./node` is the root module. An entry folder with no file yet
+  (`core/`, `contracts/`, `testing/`, `react/`, `native/`) holds a README and has no export of its own (ADR 0126:
+  entries only with real code).
+- **Static files** (ADR 0177 and ADR 0234, amendments of 2026-10-21): a package gets `assets/public/` and
+  `assets/lang/` at its root, listed in `files` and exported as `./assets/*`. The template marks this in the package README (an "Exports today" column), in `AGENTS.md` and in the
   tsdown config header; an entry that gets a second public file before gen ships adds a stand-in `src/<entry>/index.ts`
   whose header `Purpose:` starts with `Stand-in barrel:`, so STA-339 can find and replace every one.
 - **No `stackra.manifest.json` placeholder.** Gen writes the manifest on its first run; a hand-written placeholder would
@@ -69,12 +72,14 @@ ADR 0300 (presets) and the v3 rules and skills in `.agents`.
   field decorators and constructor parameter properties (ADR 0005, rule R6).
 - **Root module tests are unit tests** until `createTestingModule` ships; then they become `.int.test.ts`.
 
-## Open question for the owner
+## Decided in review round 1
 
 - **Which entry exports a package's config classes?** ADR 0294 decision 15 places them in `src/config/`, and the ADR
-  0177 amendment says the entry is not settled. The template exports none, so a host cannot subclass a package's config
-  yet. Recommendation: export `src/config/` from `.` (core), since config classes are isomorphic and a host imports
-  them beside the package's core types.
+  0177 amendment says the entry is not settled. Decision (the lead, 2026-10-23, following the builder's
+  recommendation): `.` (core) exports them, so a host can subclass a package's config class, as the config override
+  form of ADR 0294 decision 19 needs. `PACKAGE_FOLDERS` in `structure.mjs` records `config/` under `.`, and the
+  template's `.` export names the config class (its one public file until gen writes the barrel). The template's
+  placeholder core constant is dropped, so `.` keeps one public file and no stand-in barrel is scaffolded.
 
 ## User Scenarios & Testing
 
@@ -111,12 +116,15 @@ classes, and that only the marked stand-ins sit beside the root module in `src/`
 - **EC-01**: `--entries contracts,node` (always-present entries) is accepted and ignored; `--entries devtools` fails.
 - **EC-02**: `--data` with a kind other than `package` fails.
 - **EC-03**: A service with neither `src/main.ts` nor the v3 files gets the v3 findings, which name the v2 way out.
+- **EC-04**: `pnpm new` without `--description` (or with a blank one) fails with a message that says what the sentence
+  is for; no kind writes a placeholder.
 
 ## Requirements
 
-- **FR-001**: `pnpm new package` SHALL write `stackra.config.ts`, a Config class in `src/config/`, `src/contracts/`,
-  `src/core/`, the root module `src/node/<name>.module.ts` and `src/testing/`, each test in `__tests__/`, a
-  `package.json` whose `exports` name existing files with `files` and `sideEffects: false`, `LICENSE`, `README.md`,
+- **FR-001**: `pnpm new package` SHALL write `stackra.config.ts`, `assets/public/` and `assets/lang/`, a Config class in
+  `src/config/` exported from `.`, `src/contracts/`, `src/core/`, the root module `src/node/<name>.module.ts` and
+  `src/testing/`, each test in `__tests__/`, a `package.json` whose `exports` name existing files (and `./assets/*`)
+  with `files` and `sideEffects: false`, `LICENSE`, `README.md`,
   `AGENTS.md`, `CHANGELOG.md`, the decorators presets and the `tier:lib` tag, and SHALL write no `main.ts`, entry barrel
   or `stackra.manifest.json`.
 - **FR-002**: `pnpm new service` SHALL write `stackra.config.ts`, the root module `src/<name>.module.ts`, a Config class,
@@ -161,3 +169,5 @@ classes, and that only the marked stand-ins sit beside the root module in `src/`
 - 2026-10-23 · Clarified → Planned · Claude (builder)
 - 2026-10-23 · Planned → Tasked · Claude (builder)
 - 2026-10-23 · Tasked → Implementing · Claude (builder)
+- 2026-10-23 · Implementing (review round 1) · Claude (builder) · reviewer should-fixes 1-5 fixed; config entry decided
+  by the lead

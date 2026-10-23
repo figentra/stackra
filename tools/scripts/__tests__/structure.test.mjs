@@ -12,6 +12,7 @@ import {
   CATEGORIES,
   ENTRIES,
   CATEGORY_NAMES,
+  EXPLORER,
   ENTRY_NAMES,
   KIND_FOLDERS,
   MEMBER_ROOT,
@@ -56,6 +57,7 @@ test("every category and entry carries a reason and an ADR", () => {
     ...APP_GROUPS,
     ...PACKAGE_FOLDERS,
     MEMBER_ROOT,
+    EXPLORER,
   ])
     assert.ok(row.reason?.length > 0 && row.adr, JSON.stringify(row));
 });
@@ -68,6 +70,7 @@ test("scaffold accepts exactly the structure categories and writes them under pa
       root: tmp(),
       category,
       entries: [],
+      description: "Sample.",
       dryRun: true,
     });
     assert.equal(rel, `packages/${category}/sample`);
@@ -75,7 +78,14 @@ test("scaffold accepts exactly the structure categories and writes them under pa
   }
   assert.throws(
     () =>
-      scaffold({ kind: "package", name: "sample", root: tmp(), category: "tooling", dryRun: true }),
+      scaffold({
+        kind: "package",
+        name: "sample",
+        root: tmp(),
+        category: "tooling",
+        description: "Sample.",
+        dryRun: true,
+      }),
     /--category/,
   );
 });
@@ -83,7 +93,14 @@ test("scaffold accepts exactly the structure categories and writes them under pa
 test("scaffold writes every category to packages/<category>/<name> on disk", () => {
   for (const category of CATEGORY_NAMES) {
     const root = tmp();
-    const { rel } = scaffold({ kind: "package", name: "sample", root, category, format: false });
+    const { rel } = scaffold({
+      kind: "package",
+      name: "sample",
+      root,
+      category,
+      description: "Sample.",
+      format: false,
+    });
     assert.equal(rel, `packages/${category}/sample`);
     assert.ok(existsSync(join(root, rel, "package.json")), rel);
     assert.equal(categoryOf(rel), category);
@@ -107,16 +124,22 @@ test("entries parse in exports order and reject unknown names", () => {
 test("v3 entries are the six of ADR 0294 decision 23; only react and native are optional", () => {
   assert.deepEqual(ENTRY_NAMES, ["contracts", "node", "react", "native", "testing"]);
   assert.deepEqual(OPTIONAL_ENTRY_NAMES, ["react", "native"]);
-  for (const { entry } of PACKAGE_FOLDERS.filter((f) => f.entry && f.entry !== "."))
+  for (const { entry } of PACKAGE_FOLDERS.filter((f) => f.entry !== "."))
     assert.ok(ENTRY_NAMES.includes(entry.slice(2)), entry);
+  // A host subclasses a package's config class, so `.` exports config/ beside core/ (ADR 0294 d19, STA-347).
+  const entryOf = (folder) => PACKAGE_FOLDERS.find((f) => f.folder === folder).entry;
+  assert.equal(entryOf("config"), ".");
+  assert.equal(entryOf("core"), ".");
 });
 
 // @covers sta-347:FR-006 sta-347:P-005
-test("rootModuleOf places the root module by tier; tooling presets have none", () => {
+test("rootModuleOf places the root module by tier; the docs app and tooling presets have none (R12)", () => {
   assert.equal(rootModuleOf("packages/data/billing-core"), "src/node/billing-core.module.ts");
   assert.equal(rootModuleOf("services/notes"), "src/notes.module.ts");
   assert.equal(rootModuleOf("apps/admin"), "src/admin.module.ts");
   assert.equal(rootModuleOf("packages/tooling/oxlint"), null);
+  assert.equal(rootModuleOf("apps/docs"), null);
+  assert.equal(rootModuleOf("apps/docs-site"), "src/docs-site.module.ts");
   assert.equal(MEMBER_ROOT.config, "stackra.config.ts");
 });
 
@@ -132,6 +155,8 @@ test("every v3 suffix has one home per tier, except .change in modules and .erro
   assert.deepEqual(groupsFor("change"), { module: ["schemas", "events"], app: [] });
   assert.deepEqual(groupsFor("migration").module, ["database/migrations"]);
   assert.deepEqual(groupsFor("route"), { module: [], app: ["routes/<name>"] });
+  assert.deepEqual(groupsFor("native"), { module: [], app: ["blocks/<name>"] });
+  assert.equal(EXPLORER.suffix, "explorer");
   assert.deepEqual(groupsFor("nope"), { module: [], app: [] });
 });
 

@@ -36,6 +36,6 @@ names `commerce` and `infrastructure`, which have no folder yet. A package that 
   ([ADR 0025](../apps/docs/src/adr/0025-packages-publish-to-private-registry.mdx)). `pnpm validate` checks all of it.
 - A consumer-visible change carries a changeset (`pnpm changeset`).
 - Never a product name or literal in a package ([ADR 0023](../apps/docs/src/adr/0023-stackra-is-a-framework.mdx)).
-- Create one with `pnpm new package <name> --category <category>`.
+- Create one with `pnpm new package <name> --category <category> --description "<one sentence>"`.
 
 Guides: [package categories](../apps/docs/src/guides/packages.mdx), [packages standard](../apps/docs/src/standards/packages.mdx).

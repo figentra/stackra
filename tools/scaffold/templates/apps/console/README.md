@@ -3,9 +3,10 @@
 {{DESCRIPTION}}
 
 A console: Vite + React 19 + React Router 7 (code-based routes) + HeroUI v3 (Tailwind CSS v4). Screens are
-Filament-style panel resources: modules declare `@Resource`, `@Page` and `@Widget`, `stackra gen` and the registry
-publish them, and a generic panel renderer draws them inside the panel shell. The app talks to services over HTTP
-only, through the generated client.
+Filament-style panel resources that modules declare as classes: `extends Resource(Model, { ... })` for a model's admin
+surface, a widget as a query bound to a display kind (`extends Widget({ slot, query, display })`) and a `Document`
+for a tenant-editable page (ADR 0294). `stackra gen` and the registry publish them, and a generic panel renderer draws
+them inside the panel shell. The app talks to services over HTTP only, through the generated client.
 
 Dev and preview use port {{PORT}} (http://localhost:{{PORT}}).
 

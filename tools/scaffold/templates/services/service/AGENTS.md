@@ -23,8 +23,9 @@ holds no Encore file and no `encore.dev` import.
 - No Encore file or import (`encore.service.ts`, `encore.dev`, `~encore/*`); no Next.js, NestJS or Express.
 - Never import another service; use its generated client, its events or its `./contracts` entry.
 - Versions are `catalog:<name>` or `workspace:*` only; `tsconfig.json` extends one `@stackra/typescript-config` preset.
-- A kind is its base class (`extends Action({ key })`), never a decorator; classes are the only tokens, so no
-  `@Injectable`, `@Inject` or string token. No `enum` keyword, no `#private` fields, no `app()`/`config()`/`logger()`.
+- A kind is its base class (`extends Action({ key })`), never a decorator. Classes are the only tokens: a constructor
+  parameter names its token by its type, with no injection decorator or string token (ADR 0294 decision 17). No `enum`
+  keyword, no `#private` fields, no `app()`/`config()`/`logger()`.
 - `runway.yaml` holds names only, never a secret value, and no root key (`member`, `deployable`, `isolate`, `group`,
   `cpu`, `memory`, `instances`); a `dedicated` resource has a `reason`.
 - Tests are `<subject>.test.ts` in `__tests__/`; integration, contract, e2e and load tests carry the `.int`,

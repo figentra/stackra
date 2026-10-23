@@ -10,7 +10,7 @@
 
 ## Phase 2: Package and service templates
 
-- [x] T004 [US1] Package template in `tools/scaffold/templates/packages/package`, optional entries in `tools/scaffold/templates/packages/entries` and database folders in `tools/scaffold/templates/packages/data`; exports, imports and `--data` in `tools/scripts/scaffold.mjs` — covers: FR-001, FR-003, P-001, P-002, EC-01, EC-02 — route: spec-task — deps: T001
+- [x] T004 [US1] Package template in `tools/scaffold/templates/packages/package`, optional entries in `tools/scaffold/templates/packages/entries` and database folders in `tools/scaffold/templates/packages/data`; exports, imports and `--data` in `tools/scripts/scaffold.mjs` — covers: FR-001, FR-003, P-001, P-002, EC-01, EC-02, EC-04 — route: spec-task — deps: T001
 - [x] T005 [US2] Service template in `tools/scaffold/templates/services/service` — covers: FR-002, P-001 — route: spec-task — deps: T002
 
 ## Phase 3: App templates

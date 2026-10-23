@@ -19,6 +19,6 @@ packages, not products ([ADR 0075](docs/src/adr/0075-stackra-ships-packages-fige
 - Tests sit in `src/**/__tests__/`; an app's e2e tests live in the app.
 - The mobile app uses code-based navigation; expo-router is rejected
   ([ADR 0061](docs/src/adr/0061-mobile-keeps-react-navigation-and-native-tabs.mdx)).
-- Add an app with `pnpm new app:<console|mobile|desktop|docs> <name>`.
+- Add an app with `pnpm new app:<console|mobile|desktop|docs> <name> --description "<one sentence>"`.
 
 Standards: [apps](docs/src/standards/apps.mdx).

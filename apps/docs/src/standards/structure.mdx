@@ -44,7 +44,7 @@ Exception: `@stackra/testing` alone also has `e2e` and `contract` (ADR 0269 d6).
 
 ## Member root (programming model v3)
 
-Every member authors `stackra.config.ts` and one root module, `src/<name>.module.ts` (`src/node/<name>.module.ts` in a package), and never `src/main.ts` or an entry barrel (ADR 0294 R12, 0295). Exempt: the docs app (Mintlify) and the `tier:config` presets.
+Every member authors `stackra.config.ts` and one root module, `src/<name>.module.ts` (`src/node/<name>.module.ts` in a package), and never `src/main.ts` or an entry barrel (ADR 0294 R12, 0295). Exempt: the Mintlify docs app (`apps/docs`) and the `tier:config` presets (`packages/tooling/`).
 
 ## Module groups (programming model v3)
 
@@ -78,39 +78,41 @@ A module is `src/modules/<key>/` in a service and `src/node/` in a package. Each
 
 ## App groups (programming model v3)
 
-| Group                | Suffixes                                              | Holds                                                                            | Source       |
-| -------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------- | ------------ |
-| (root)               | `.module`, `.error`                                   | `<key>.module.ts` and `app.error.tsx`, the root error boundary                   | ADR 0294 d14 |
-| `config/`            | `.config`                                             | config classes, including `desktop.config.ts` and `chrome.config.ts`             | ADR 0294 d14 |
-| `panels/`            | `.panel`                                              | app areas                                                                        | ADR 0294 d14 |
-| `menus/`             | `.menu`                                               | navigation data                                                                  | ADR 0294 d14 |
-| `shortcuts/`         | `.shortcut`                                           | palette and key entries                                                          | ADR 0294 d14 |
-| `documents/`         | `.document`                                           | document kinds                                                                   | ADR 0294 d14 |
-| `stores/`            | `.store`                                              | client state classes                                                             | ADR 0294 d14 |
-| `flags/`             | `.flag`                                               | release switches                                                                 | ADR 0294 d14 |
-| `analytics/`         | `.analytics-event`                                    | analytics events                                                                 | ADR 0294 d14 |
-| `bridges/`           | `.bridge`                                             | desktop bridges                                                                  | ADR 0294 d14 |
-| `routes/<name>/`     | `.route`, `.layout`, `.error`, `.fallback`, `.server` | a route or layout class, its page `<name>.tsx`, `use-<name>.ts` and `__tests__/` | ADR 0294 d14 |
-| `blocks/<name>/`     | `.block`                                              | `<name>.block.ts`, its renderer `<name>.tsx` and `__tests__/`                    | ADR 0294 d14 |
-| `components/<name>/` | none                                                  | `<name>.tsx`, `index.ts` (the component and its Props) and `__tests__/`          | ADR 0294 d14 |
-| `hooks/`             | none                                                  | `use-<name>.ts` with two or more importers                                       | ADR 0294 d14 |
-| `overrides/<owner>/` | `.override`                                           | block and widget overrides                                                       | ADR 0294 d14 |
-| `providers/<name>/`  | none                                                  | only for the `Module({ wrap })` escape hatch                                     | ADR 0294 d14 |
-| `enums/`             | `.enum`                                               | `Enum.of` enums                                                                  | ADR 0294 d14 |
-| `types/`             | `.type`                                               | shared types                                                                     | ADR 0294 d14 |
-| `styles/`            | none                                                  | stylesheets (`.css`)                                                             | ADR 0294 d14 |
+| Group                | Suffixes                                              | Holds                                                                                                          | Source       |
+| -------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------ |
+| (root)               | `.module`, `.error`                                   | `<key>.module.ts` and `app.error.tsx`, the root error boundary                                                 | ADR 0294 d14 |
+| `config/`            | `.config`                                             | config classes, including `desktop.config.ts` and `chrome.config.ts`                                           | ADR 0294 d14 |
+| `panels/`            | `.panel`                                              | app areas                                                                                                      | ADR 0294 d14 |
+| `menus/`             | `.menu`                                               | navigation data                                                                                                | ADR 0294 d14 |
+| `shortcuts/`         | `.shortcut`                                           | palette and key entries                                                                                        | ADR 0294 d14 |
+| `documents/`         | `.document`                                           | document kinds                                                                                                 | ADR 0294 d14 |
+| `stores/`            | `.store`                                              | client state classes                                                                                           | ADR 0294 d14 |
+| `flags/`             | `.flag`                                               | release switches                                                                                               | ADR 0294 d14 |
+| `analytics/`         | `.analytics-event`                                    | analytics events                                                                                               | ADR 0294 d14 |
+| `bridges/`           | `.bridge`                                             | desktop bridges                                                                                                | ADR 0294 d14 |
+| `routes/<name>/`     | `.route`, `.layout`, `.error`, `.fallback`, `.server` | a route or layout class, its page `<name>.tsx`, `use-<name>.ts` and `__tests__/`                               | ADR 0294 d14 |
+| `blocks/<name>/`     | `.block`, `.native`                                   | `<name>.block.ts`, its renderer `<name>.tsx`, an optional native renderer `<name>.native.tsx` and `__tests__/` | ADR 0294 d14 |
+| `components/<name>/` | none                                                  | `<name>.tsx`, `index.ts` (the component and its Props) and `__tests__/`                                        | ADR 0294 d14 |
+| `hooks/`             | none                                                  | `use-<name>.ts` with two or more importers                                                                     | ADR 0294 d14 |
+| `overrides/<owner>/` | `.override`                                           | block and widget overrides                                                                                     | ADR 0294 d14 |
+| `providers/<name>/`  | none                                                  | only for the `Module({ wrap })` escape hatch                                                                   | ADR 0294 d14 |
+| `enums/`             | `.enum`                                               | `Enum.of` enums                                                                                                | ADR 0294 d14 |
+| `types/`             | `.type`                                               | shared types                                                                                                   | ADR 0294 d14 |
+| `styles/`            | none                                                  | stylesheets (`.css`)                                                                                           | ADR 0294 d14 |
 
 ## Package folders (programming model v3)
 
-| Folder               | Entry                            | Holds                                                                     | Source       |
-| -------------------- | -------------------------------- | ------------------------------------------------------------------------- | ------------ |
-| `src/contracts/`     | `./contracts`                    | the leaf: `ports/`, `enums/` and `types/`                                 | ADR 0294 d15 |
-| `src/config/`        | not settled (ADR 0177 amendment) | the config classes                                                        | ADR 0294 d15 |
-| `src/core/`          | `.`                              | isomorphic code: services, drivers, errors, functions, schemas and blocks | ADR 0294 d15 |
-| `src/node/`          | `./node`                         | the module folder: `<key>.module.ts` and the module groups                | ADR 0294 d15 |
-| `src/react/<name>/`  | `./react`                        | web renderers                                                             | ADR 0294 d15 |
-| `src/native/<name>/` | `./native`                       | native renderers                                                          | ADR 0294 d15 |
-| `src/testing/`       | `./testing`                      | `fakes/` and `matchers/`                                                  | ADR 0294 d15 |
+| Folder               | Entry         | Holds                                                                     | Source       |
+| -------------------- | ------------- | ------------------------------------------------------------------------- | ------------ |
+| `src/contracts/`     | `./contracts` | the leaf: `ports/`, `enums/` and `types/`                                 | ADR 0294 d15 |
+| `src/config/`        | `.`           | the config classes, which a host subclasses to override                   | ADR 0294 d15 |
+| `src/core/`          | `.`           | isomorphic code: services, drivers, errors, functions, schemas and blocks | ADR 0294 d15 |
+| `src/node/`          | `./node`      | the module folder: `<key>.module.ts` and the module groups                | ADR 0294 d15 |
+| `src/react/<name>/`  | `./react`     | web renderers                                                             | ADR 0294 d15 |
+| `src/native/<name>/` | `./native`    | native renderers                                                          | ADR 0294 d15 |
+| `src/testing/`       | `./testing`   | `fakes/` and `matchers/`                                                  | ADR 0294 d15 |
+
+Explorer: `src/<entry>/<pkg>.explorer.ts` (`.explorer`), only in a package that ships decorators, which it registers (ADR 0294 d15).
 
 ## Kind folders (pre-v3)
 

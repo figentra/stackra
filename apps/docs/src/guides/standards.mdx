@@ -31,7 +31,7 @@ The PII table is always present. A member that handles no personal data says "No
 
 ## Scaffolding
 
-`pnpm new <kind> <name> [--category <c>] [--entries <list>|none] [--description "<text>"] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the target repo's `LICENSE`, and formats the result. Then run `pnpm install` and `pnpm verify`.
+`pnpm new <kind> <name> --description "<one sentence>" [--category <c>] [--entries react,native|none] [--data] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the target repo's `LICENSE`, and formats the result. Then run `pnpm install` and `pnpm verify`.
 
 | Kind          | Template                     | Lands in                                             |
 | ------------- | ---------------------------- | ---------------------------------------------------- |
@@ -45,9 +45,10 @@ The PII table is always present. A member that handles no personal data says "No
 
 ```bash
 pnpm new service billing --description "Billing."
-pnpm new package retry --category foundation --entries contracts,testing
-pnpm new app:console admin --title "Admin"
-pnpm new service billing --repo ../figentra-os --dry-run
+pnpm new package retry --category foundation --description "Retries with backoff."
+pnpm new package ledger --category commerce --description "Double-entry ledger." --data
+pnpm new app:console admin --title "Admin" --description "The admin console."
+pnpm new service billing --description "Billing." --repo ../figentra-os --dry-run
 ```
 
-Shapes: [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates). Flags and tokens: [Scaffolding](/guides/scaffolding).
+`--description` is required: the sentence becomes the `package.json` description and opens `README.md` and `AGENTS.md`. Members come out in the programming model v3 shape ([ADR 0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) rule R12). Shapes: [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates). Flags and tokens: [Scaffolding](/guides/scaffolding).

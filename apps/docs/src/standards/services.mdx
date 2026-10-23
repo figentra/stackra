@@ -4,30 +4,39 @@ description: "The eight things a complete service must have, and what is checked
 icon: "server"
 ---
 
-A service is a `tier:service` [member](/standards/members) at `services/<name>`, named `@figentra/service-<name>`, with its entry at `src/main.ts`. Services are independent workspace members. Service source holds no Encore files: Encore is the **generated** runtime target, emitted by `stackra gen` into `.stackra/encore/` ([0091](/adr/0091-generated-encore-app-in-stackra-folder), [0124](/adr/0124-encore-is-the-generated-runtime-target)). The generator is not built yet, so the Encore-specific rules below ("when Encore lands") describe the target, not today's code.
+A service is a `tier:service` [member](/standards/members) at `services/<name>`, named `@figentra/service-<name>`. In the programming model v3 shape that `pnpm new service` writes, it authors `stackra.config.ts` and one root module, `src/<name>.module.ts`, and gen writes its runtime entry into `.stackra/entry/` ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) rule R12, [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries)). Today's services, `services/example` and `services/health`, still use the v2 shape, an authored `src/main.ts` with the root module named in `package.json` `stackra.module`, until STA-344 converts them. Services are independent workspace members. Service source holds no Encore files: Encore is the **generated** runtime target, emitted by `stackra gen` into `.stackra/encore/` ([0091](/adr/0091-generated-encore-app-in-stackra-folder), [0124](/adr/0124-encore-is-the-generated-runtime-target)). The generator is not built yet, so the Encore-specific rules below ("when Encore lands") describe the target, not today's code.
 
 ## Layout
 
-`pnpm new service <name>` renders it ([0126](/adr/0126-member-shapes-and-scaffold-templates)):
+`pnpm new service <name> --description "<one sentence>"` renders the v3 shape
+([0126](/adr/0126-member-shapes-and-scaffold-templates), as amended by
+[0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming),
+[0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries) and
+[0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)):
 
 ```text
 services/<name>/
-  package.json        "stackra": { "module": "./src/<name>.module.ts" } (0090), ./contracts export
+  package.json        no "stackra" field, no dev or start script
+  stackra.config.ts   the member definition: static data (0295)
+  runway.yaml         runway v3: requires, secrets (names only), environments (0296)
   turbo.jsonc  tsconfig.json  tsdown.config.ts  vitest.config.ts
-  README.md  AGENTS.md (with ## PII)  CHANGELOG.md  LICENSE
-  config/<name>.config.ts         deploy-time defaults (CF1)
+  README.md  AGENTS.md (with ## PII)  CHANGELOG.md
   src/
-    main.ts                       entry: bootstraps the root module
     <name>.module.ts              root module; feature modules join its imports
-    modules/<feature>/            kind folders: models/ actions/ queries/ services/ events/ listeners/
-                                  workflows/ policies/ permissions/ settings/ contracts/ resources/
-    contracts/index.ts            types other members may import
+    config/<name>.config.ts       the Config class: deploy-time defaults
+    contracts/                    types other members may import
+    modules/<key>/                module groups: models/ actions/ queries/ events/ listeners/ workflows/
+                                  access/ services/ resources/<model>/ database/ …
     __tests__/<name>.module.test.ts
 ```
 
-There are no `api.ts`, `db.ts` or `encore.service.ts` files: endpoints, topics, crons and databases are declared with
-decorators in the modules and `stackra gen` emits the Encore primitives into `.stackra/encore/`. A new service is a
-skeleton with no feature module; `src/modules/README.md` lists the kind folders.
+The v2 shape that today's services keep until STA-344 has an authored `src/main.ts` that bootstraps the root module,
+names the root module in `package.json` (`"stackra": { "module": "./src/<name>.module.ts" }`,
+[0090](/adr/0090-codegen-discovery-by-root-module)) and uses kind folders instead of the module groups.
+
+There are no `api.ts`, `db.ts` or `encore.service.ts` files: endpoints, topics, crons and databases are declared in the
+modules and `stackra gen` emits the Encore primitives into `.stackra/encore/`. A new service is a skeleton with no
+feature module; `src/modules/README.md` lists the module groups.
 
 ## The eight non-negotiables
 
@@ -88,18 +97,18 @@ skeleton with no feature module; `src/modules/README.md` lists the kind folders.
 
 1. `pnpm new service <name> --description "<one sentence>"` (or `--repo <path>` for another monorepo).
 2. Fill `README.md`, `AGENTS.md` and its `## PII` table.
-3. Add a feature module under `src/modules/<feature>/` and import it from the root module, kind folders only as files appear.
+3. Add a feature module under `src/modules/<key>/` and import it from the root module, group folders only as files appear.
 4. Run `pnpm install` then `pnpm verify`.
 
 ## What enforces this
 
-| Rule                                                                          | Check                                                    | Status  |
-| ----------------------------------------------------------------------------- | -------------------------------------------------------- | ------- |
-| Member files, PII heading, `tier:service` tag, catalog versions               | `validate-repository.mjs`                                | Yes     |
-| A package or app never imports a service                                      | `turbo boundaries`, oxlint `boundaries.jsonc`            | Yes     |
-| A service's `internal/`, `entities/` and `db` are private                     | oxlint `boundaries.jsonc` (`services/**` rule)           | Yes     |
-| `src/main.ts`, `stackra.module` names an existing root module, no Encore file | `validate-repository.mjs` (`checkService`)               | Yes     |
-| One `api()` per operation, `auth: true` default                               | planned: lint rule when Encore lands                     | No      |
-| Generated client has not drifted                                              | planned: `gen:client:check` in `pnpm verify`             | No      |
-| Tenant isolation (RLS audit, `isolation.test.ts`)                             | planned: from the first tenant-owned table               | No      |
-| Application secrets declared, never valued                                    | [Secrets](/constitution/secrets) checks (partly planned) | Partial |
+| Rule                                                                                                                                  | Check                                                     | Status  |
+| ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ------- |
+| Member files, PII heading, `tier:service` tag, catalog versions                                                                       | `validate-repository.mjs`                                 | Yes     |
+| A package or app never imports a service                                                                                              | `turbo boundaries`, oxlint `boundaries.jsonc`             | Yes     |
+| A service's `internal/`, `entities/` and `db` are private                                                                             | oxlint `boundaries.jsonc` (`services/**` rule)            | Yes     |
+| v3: `stackra.config.ts` and the root module exist; v2 (until STA-344): `src/main.ts` and an existing `stackra.module`; no Encore file | `validate-repository.mjs` (`checkService`, `isV2Service`) | Yes     |
+| One `api()` per operation, `auth: true` default                                                                                       | planned: lint rule when Encore lands                      | No      |
+| Generated client has not drifted                                                                                                      | planned: `gen:client:check` in `pnpm verify`              | No      |
+| Tenant isolation (RLS audit, `isolation.test.ts`)                                                                                     | planned: from the first tenant-owned table                | No      |
+| Application secrets declared, never valued                                                                                            | [Secrets](/constitution/secrets) checks (partly planned)  | Partial |

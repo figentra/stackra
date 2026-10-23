@@ -6,16 +6,17 @@
 
 ## Entry points
 
-| Import                     | Holds                                                      | Exports today                                |
-| -------------------------- | ---------------------------------------------------------- | -------------------------------------------- |
-| `@stackra/{{NAME}}`        | `src/core/`: isomorphic services, drivers, errors, schemas | `src/core/constants/package-name.constant.ts` |
-| `@stackra/{{NAME}}/node`   | `src/node/`: the root module and the module groups         | `src/node/{{NAME}}.module.ts`                 |
-| `@stackra/{{NAME}}/contracts` | `src/contracts/`: the leaf (`ports/`, `enums/`, `types/`) | not yet: exported with its first file        |
-| `@stackra/{{NAME}}/testing` | `src/testing/`: `fakes/` and `matchers/`                  | not yet: exported with its first file        |
+| Import                        | Holds                                                                                | Exports today                           |
+| ----------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------- |
+| `@stackra/{{NAME}}`           | `src/config/`: the config classes a host subclasses; `src/core/`: isomorphic code     | `src/config/{{NAME}}.config.ts`         |
+| `@stackra/{{NAME}}/node`      | `src/node/`: the root module and the module groups                                   | `src/node/{{NAME}}.module.ts`           |
+| `@stackra/{{NAME}}/contracts` | `src/contracts/`: the leaf (`ports/`, `enums/`, `types/`)                            | not yet: exported with its first file   |
+| `@stackra/{{NAME}}/testing`   | `src/testing/`: `fakes/` and `matchers/`                                             | not yet: exported with its first file   |
+| `@stackra/{{NAME}}/assets/*`  | `assets/`: static files (`public/`, `lang/`, …) at the package root (ADR 0234)       | the folder                              |
 
-`./react` and `./native` (renderers in `react/<name>/` and `native/<name>/`) are added with
-`pnpm new package <name> --entries react,native`, or by hand with their first file. `exports` point at source through
-the `@stackra/source` condition; `tsdown` builds `dist/` for publishing (ADR 0025).
+`./react` and `./native` (renderers in `react/<name>/` and `native/<name>/`) are added with `--entries react,native`
+when the package is created, or by hand with their first file. `exports` point at source through the
+`@stackra/source` condition; `tsdown` builds `dist/` for publishing (ADR 0025).
 
 **Entry barrels are generated, never authored** (ADR 0294 decision 15). Until `stackra gen` writes them (STA-339),
 each export names its entry's one public file directly, as the table shows.
@@ -24,10 +25,11 @@ each export names its entry's one public file directly, as the table shows.
 
 ```text
 stackra.config.ts          the member definition: static data (ADR 0295)
+assets/                    static files: public/, lang/ (templates/, stubs/, data/ with their first file)
 src/
 ├── config/{{NAME}}.config.ts   {{PASCAL}}Config, the deploy-time configuration
 ├── contracts/             the leaf: ports/, enums/, types/
-├── core/                  isomorphic code; constants/package-name.constant.ts
+├── core/                  isomorphic code: services, drivers, errors, functions, schemas, blocks
 ├── node/                  the module: {{NAME}}.module.ts and its groups (models/, actions/, queries/, …)
 └── testing/               fakes/ and matchers/ for consumers' tests
 ```

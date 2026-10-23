@@ -104,9 +104,10 @@ const exportOf = (out, src) => ({
 /**
  * The exports of a new package: `[subpath, build name, source]`. No barrel is authored (ADR 0294 decision 15), so each
  * export names its entry's one public file until gen writes the barrels (STA-339); entries with no file yet have none.
+ * `.` names the config class, which a host subclasses (ADR 0294 decision 19); `core/` has no file yet.
  */
 const packageExports = (dir) => [
-  [".", "index", "src/core/constants/package-name.constant.ts"],
+  [".", "index", `src/config/${dir.split("/").at(-1)}.config.ts`],
   ["./node", "node", rootModuleOf(dir)],
 ];
 
@@ -134,7 +135,7 @@ export function scaffold({
   category,
   entries = [],
   data = false,
-  description = "TODO: one sentence.",
+  description,
   title,
   port,
   dryRun = false,
@@ -153,6 +154,10 @@ export function scaffold({
   if (data && !spec.data) throw new Error(`--data applies to package only, not ${kind}`);
   if (spec.category && !CATEGORY_NAMES.includes(category))
     throw new Error(`--category is required, one of: ${CATEGORY_NAMES.join(", ")}`);
+  if (!description?.trim())
+    throw new Error(
+      '--description is required: one sentence, for example --description "Retries with backoff." It becomes the package.json description and opens README.md and AGENTS.md',
+    );
   if (!existsSync(root) || !statSync(root).isDirectory())
     throw new Error(`--repo ${root} is not a directory`);
   const picked = kind === "package" ? parseEntries(entries) : [];
@@ -201,9 +206,11 @@ export function scaffold({
     if (kind === "package") {
       const file = join(dest, "package.json");
       const pkg = JSON.parse(readFileSync(file, "utf8"));
-      pkg.exports = Object.fromEntries(
-        exported.map(([key, out, src]) => [key, exportOf(out, src)]),
-      );
+      pkg.exports = {
+        ...Object.fromEntries(exported.map(([key, out, src]) => [key, exportOf(out, src)])),
+        // Static files at the package root (ADR 0177 and ADR 0234, amendments of 2026-10-21).
+        "./assets/*": "./assets/*",
+      };
       pkg.imports = packageImports(picked);
       writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
     }
@@ -246,7 +253,7 @@ async function main() {
     } = parseArgs(process.argv.slice(2));
     if (!kind || !name || extra.length)
       throw new Error(
-        `usage: pnpm new <kind> <name> [--category <c>] [--entries ${OPTIONAL_ENTRY_NAMES.join(",")}|none] [--data] [--description "<text>"] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]\nkinds: ${KIND_NAMES.join(", ")}`,
+        `usage: pnpm new <kind> <name> --description "<one sentence>" [--category <c>] [--entries ${OPTIONAL_ENTRY_NAMES.join(",")}|none] [--data] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]\nkinds: ${KIND_NAMES.join(", ")}`,
       );
     // The only prompt: optional package entries, asked on a terminal when --entries is absent.
     if (kind === "package" && opts.entries === undefined && process.stdin.isTTY) {

@@ -8,6 +8,18 @@ description: "Accepted, amended by 0234, 0249, 0259, 0264, 0269, 0281, 0294, 029
 </Note>
 
 <Note>
+  Amended 2026-10-23 (STA-347): `pnpm new` now writes the v3 shape of
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) and
+  [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries) for every kind
+  except `app:docs` and `tooling`, and `checkService` accepts it beside the v2 shape through
+  `isV2Service`: a v3 service has `stackra.config.ts` and `src/<key>.module.ts`, a v2 service has
+  `src/main.ts` and a `stackra.module` that exists. The note above that `checkService` still
+  requires `src/main.ts`, and the `checkService` line under Enforcement, describe the v2 shape,
+  which today's members (`services/example`, `services/health`) keep until STA-344. The decisions
+  stand as amended above.
+</Note>
+
+<Note>
   Amended by [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron): one app member builds
   web, PWA and desktop targets.
 </Note>
