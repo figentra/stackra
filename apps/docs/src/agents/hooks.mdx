@@ -64,21 +64,27 @@ and a pattern inside `$(…)` or backticks are no file names either.
 **Only deletes and deploys ask** (STA-400, superseding STA-351's main-thread exemption). The asks in
 `HUMAN_ASKS` (`_rules.mjs`) reach the owner from any thread: `rm` in any form outside the session's scratchpad and
 build output, `find -delete`, `git clean -f`, `infisical secrets|folders|dynamic-secrets delete`, `encore db reset`,
-`encore env delete`, `wrangler deploy|rollback|delete`, `wrangler d1 --remote` with `DROP`/`DELETE` or
-`migrations apply`, `eas submit|deploy|update|<x>:delete` and `--auto-submit*`, a registry publish, `git branch -D`
+`encore env delete`, `wrangler deploy|rollback|delete|preview`, `wrangler pages deployment create`,
+`wrangler d1 --remote` with `DROP`/`DELETE`, `migrations apply` or an unread `--file`,
+`eas submit|deploy|update|workflow:run|channel:edit|<x>:delete` and `--auto-submit*`, a registry publish, `git branch -D`
 of an unpushed branch, a `bot:git` push of tags, and a `bot:gh` release, `<noun> delete`, `DELETE` method, GraphQL
 `delete…` mutation, deploy `workflow run` or `dispatches` call. These rules read through every runner and version
 (`npx wrangler@3 deploy`, `pnpm dlx eas-cli submit`, `mise exec -- npm publish`, `pnpm --silent publish`). Everything
 else the hook does not deny is allowed, except raw `infisical run`, which is a deny that names the wrapping pnpm
-scripts (`pnpm bot:gh`, `bot:git`, `linear`, `secrets:import`, `tools/scripts/mcp.sh`): the program it starts gets
-every /agents value, the bot and reviewer App keys included. The only other asks are for a command the guard cannot
+scripts (`pnpm bot:gh`, `bot:git`, `linear`, `secrets:import`): the program it starts gets every /agents value,
+the bot and reviewer App keys included. An `infisical` command is read past its global options and their values
+(`--domain <url>`, `--log-level`), by any path, `@infisical/cli`, `npx` or `pnpm dlx`, and the settings deny
+`infisical *secrets get|set*`, `infisical * secrets` and `infisical *run *` in case the hook fails open.
+`tools/scripts/mcp.sh` is denied from the Bash tool (it runs its arguments under `infisical run`; MCP servers launch
+it from `.mcp.yaml`). The only other asks are for a command the guard cannot
 read (a computed command name, text piped into a shell, a GraphQL label mutation by id): each is a deny, from the
 main thread and a subagent alike, carrying its reason and one line on how to rewrite the command so the guard can
 read it. The settings floor is the same rule: the ask list in `.claude/settings.json` holds only deletes, deploys and
 releases, and its allow list has `pnpm`, `git`, `node`, `npx`, `mise`, `infisical`, `encore`, `wrangler` and `eas`.
 The OpenCode guard applies the same `unattended` function to every ask, human ones included, and passes `executor`,
 so the shared executor rules deny `npx`, `pnpm dlx`, `eas`, `wrangler secret|--remote`, `encore env set|create` and
-`secrets:import --confirm` under every wrapper.
+`secrets:import --confirm` under the wrappers the shared rules read (`env`, `timeout`, `mise exec --`, `pnpm exec`,
+`xargs`, a path before the name).
 
 | Tier                | Commands                                                                                                                                                                                                                                                                                                                                                                                                            |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

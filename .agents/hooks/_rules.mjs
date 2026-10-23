@@ -507,13 +507,52 @@ const dropMessages = (c) =>
 /** The `infisical secrets` subcommand a runnable segment uses: "get", "set", "delete", "folders", or "" (bare). */
 const INFISICAL_SUBCOMMANDS = new Set(["get", "set", "delete", "folders", "generate-example-env"]);
 function infisicalSecrets(c) {
-  const verbs = [];
-  for (const t of [c, ...lineTexts(c)].flatMap(runnable))
-    for (const seg of segments(t)) {
-      const m = seg.match(/\binfisical\s+(?:-\S+\s+)*secrets\b(.*)$/);
-      if (m) verbs.push(m[1].split(/\s+/).find((w) => INFISICAL_SUBCOMMANDS.has(unquote(w))) ?? "");
-    }
-  return verbs;
+  return infisicalCommands(c)
+    .filter((x) => x.sub === "secrets")
+    .map((x) => x.rest.find((w) => INFISICAL_SUBCOMMANDS.has(w)) ?? "");
+}
+/** Infisical global options whose value is the next word (`--domain https://…`, `--log-level debug`). */
+const INFISICAL_VALUED = new Set(
+  "--domain --log-level --token --projectId --project-id --env --path --config --type --tags --format --output --output-file --file".split(
+    " ",
+  ),
+);
+/** Infisical commands: the first of these after `infisical` and its options is its subcommand. */
+const INFISICAL_COMMANDS = new Set(
+  "run secrets export login init user token scan vault bootstrap dynamic-secrets ssh agent gateway reset kms pki service-token folders help completion update".split(
+    " ",
+  ),
+);
+/**
+ * Every `infisical` command in `c` as `{ sub, rest }`: any path, `@infisical/cli`, a version, through runners and
+ * quoted lines. Global options and their values are skipped, and a word that is no known command is read as an
+ * unknown option's value, so `infisical --domain <url> secrets get X` is `secrets` (STA-400 review). Deny-leaning,
+ * like the token rule: any word named `infisical` starts one.
+ */
+const INFISICAL_NAME = /(?:^|\/)(?:infisical|@infisical\/cli)(?:@[^/]*)?$/;
+const infisicalCache = memoTable();
+function infisicalCommands(c) {
+  return cached(infisicalCache, c, () => readInfisical(c));
+}
+function readInfisical(c) {
+  const out = [];
+  const texts = [c, lookThroughRunners(c)];
+  for (const l of lineTexts(c)) texts.push(l, lookThroughRunners(l));
+  for (const t of texts.flatMap(runnable))
+    for (const s of simpleCommands(t))
+      s.words.forEach((w, k) => {
+        if (!INFISICAL_NAME.test(unquote(w))) return;
+        let j = k + 1;
+        for (; j < s.words.length; j++) {
+          const x = unquote(s.words[j]);
+          if (INFISICAL_NAME.test(x)) break; // the next one reads on from here: linear, not quadratic
+          if (INFISICAL_VALUED.has(x)) j++;
+          else if (!x.startsWith("-") && INFISICAL_COMMANDS.has(x)) break;
+        }
+        if (j < s.words.length && !INFISICAL_NAME.test(unquote(s.words[j])))
+          out.push({ sub: unquote(s.words[j]), rest: s.words.slice(j + 1).map(unquote) });
+      });
+  return out;
 }
 
 /** The branch a push refspec writes to: `+src:refs/heads/dst` (or `heads/dst`) → `dst`. */
@@ -1414,16 +1453,25 @@ export const unattended = (d) =>
 const executorRuns = (c, rx) => [...proseFree(c), ...lineTexts(c)].some((t) => rx.test(t));
 /** A CLI name as a runner leaves it: any path, an `@<version>` (`npx wrangler@3 deploy`, `pnpm dlx eas-cli@latest`). */
 const CLI = (name) => String.raw`${name}(?:@${W}+)?\s+(?:[^|;&\n]*\s)?`;
-/** `wrangler deploy`, `rollback` or `delete` (`kv key delete`, `secret delete`), by any path or version. */
-const WRANGLER_DEPLOY = atName(CLI("wrangler") + String.raw`(?:deploy|rollback|delete)\b`);
+/**
+ * `wrangler deploy`, `rollback`, `delete` (`kv key delete`, `secret delete`), `preview` and `pages deployment create`,
+ * by any path or version.
+ */
+const WRANGLER_DEPLOY = atName(
+  CLI("wrangler") +
+    String.raw`(?:(?:deploy|rollback|delete|preview)\b|pages\s+deployment\s+create\b)`,
+);
 /** `wrangler d1 execute|migrations apply … --remote`, read with quotes kept: the SQL is a quoted value. */
 const WRANGLER_D1_REMOTE = new RegExp(
   String.raw`(?:^|[\s;&|(])(?:${W}*\/)?wrangler(?:@${W}+)?\s[^|;&\n]*\bd1\s+(?:execute|migrations\s+apply)\b[^|&\n]*--remote`,
 );
-/** `eas`/`eas-cli` `submit`, `deploy`, `update` (an over-the-air release), `<x>:delete`, or `--auto-submit*`. */
+/**
+ * `eas`/`eas-cli` `submit`, `deploy`, `update` (an over-the-air release), `<x>:delete`, `workflow:run`,
+ * `channel:edit` (points a channel at a release), or `--auto-submit*`.
+ */
 const EAS_DEPLOY = atName(
   CLI("eas(?:-cli)?") +
-    String.raw`(?:(?:submit|deploy|update)(?=[\s;&|()<>]|$)|--auto-submit\S*|[\w-]+:delete\b)`,
+    String.raw`(?:(?:submit|deploy|update)(?=[\s;&|()<>]|$)|--auto-submit\S*|[\w-]+:delete\b|workflow:run\b|channel:edit\b)`,
 );
 /**
  * A publish to a registry: `npm|pnpm|yarn|changeset … publish` with any options before it (`pnpm --silent`,
@@ -1440,7 +1488,7 @@ const PUBLISH = atName(String.raw`(?:${CLI("(?:npm|pnpm|yarn|changeset)")})?publ
 const RULES = [
   // --- Secrets: never print a value, never create a .env file (ADR 0173, ADR 0257) ------------
   {
-    rx: (c) => runsQuoted(c, /\binfisical\s+(?:-\S+\s+)*export\b/),
+    rx: (c) => infisicalCommands(c).some((x) => x.sub === "export"),
     why: "Secrets guard: `infisical export` decrypts and prints every secret value. Agents never read a value; a secret reaches a process only through the pnpm script that needs it.",
   },
   {
@@ -1454,9 +1502,10 @@ const RULES = [
   {
     rx: (c) =>
       infisicalSecrets(c).includes("delete") ||
-      runsQuoted(
-        c,
-        /\binfisical\s+(?:-\S+\s+)*(?:secrets\s+(?:-\S+\s+)*folders|dynamic-secrets)\s+(?:-\S+\s+)*delete\b/,
+      infisicalCommands(c).some(
+        (x) =>
+          (x.sub === "dynamic-secrets" || (x.sub === "secrets" && x.rest.includes("folders"))) &&
+          x.rest.includes("delete"),
       ),
     decision: "ask",
     id: "infisical-secrets-delete",
@@ -1464,8 +1513,20 @@ const RULES = [
   },
   {
     // STA-400: a deny, not an ask. The /agents set holds the bot and reviewer App keys (ADR 0230).
-    rx: (c) => runsQuoted(c, /\binfisical\s+(?:-\S+\s+)*run\b/),
-    why: "Raw `infisical run` hands every /agents value to the program it starts, which could print one (`node -e` on `process.env`) or mint the bot or reviewer token and forge an AI-REVIEW verdict (ADR 0230, ADR 0257). Use the pnpm script that wraps it: `pnpm bot:gh`, `pnpm bot:git`, `pnpm linear`, `pnpm secrets:import`, `tools/scripts/mcp.sh`.",
+    rx: (c) => infisicalCommands(c).some((x) => x.sub === "run"),
+    why: "Raw `infisical run` hands every /agents value to the program it starts, which could print one (`node -e` on `process.env`) or mint the bot or reviewer token and forge an AI-REVIEW verdict (ADR 0230, ADR 0257). Use the pnpm script that wraps it: `pnpm bot:gh`, `pnpm bot:git`, `pnpm linear`, `pnpm secrets:import`.",
+  },
+  {
+    // STA-400 review: MCP servers launch mcp.sh from `.mcp.yaml`, never through the Bash tool.
+    rx: (c) =>
+      runsQuoted(
+        c,
+        atName(
+          String.raw`(?:(?:bash|sh|zsh|dash|ksh|source|\.)\s+(?:-\S+\s+)*)?(?:[^\s;&|()<>]*\/)?mcp\.sh` +
+            END,
+        ),
+      ),
+    why: "`tools/scripts/mcp.sh` runs its arguments inside `infisical run` with every /agents value, so from the Bash tool it can print one (`mcp.sh echo $X`). MCP servers launch it from `.mcp.yaml`; agents never run it.",
   },
   {
     rx: (c) =>
@@ -1579,10 +1640,11 @@ const RULES = [
   },
   {
     rx: (c) =>
-      WRANGLER_D1_REMOTE.test(c) && /\b(?:DROP|DELETE|TRUNCATE)\b|migrations\s+apply/i.test(c),
+      WRANGLER_D1_REMOTE.test(c) &&
+      /\b(?:DROP|DELETE|TRUNCATE)\b|migrations\s+apply|--file\b/i.test(c),
     decision: "ask",
     id: "wrangler-d1-remote-delete",
-    why: "`wrangler d1 execute --remote` with `DROP`, `DELETE` or `TRUNCATE`, or `d1 migrations apply --remote`, changes the production database; the owner confirms it.",
+    why: "`wrangler d1 execute --remote` with `DROP`, `DELETE` or `TRUNCATE`, or `d1 migrations apply --remote`, or a SQL `--file` the guard does not read, changes the production database; the owner confirms it.",
   },
   {
     rx: (c) => runsQuoted(c, EAS_DEPLOY),
@@ -1603,7 +1665,7 @@ const RULES = [
     rx: (c) =>
       executorRuns(
         c,
-        /(?:^|[^\w./-])(?:npx|pnpx|bunx)\s|\bpnpm\s+(?:-\S+\s+)*dlx\s|\bnpm\s+(?:-\S+\s+)*(?:exec|x)\s/,
+        /(?:^|[\s;&|(])(?:\S*\/)?(?:npx|pnpx|bunx)(?=[\s;&|)]|$)|\bpnpm\s+(?:-\S+\s+)*dlx(?=\s|$)|\bnpm\s+(?:-\S+\s+)*(?:exec|x)(?=\s|$)/,
       ),
     why: "`npx`, `pnpx`, `pnpm dlx` and `npm exec` run unreviewed registry code; executors never run them. Use a catalog dependency with `pnpm exec <bin>`.",
   },
@@ -1612,7 +1674,7 @@ const RULES = [
     rx: (c) =>
       executorRuns(
         c,
-        /(?:^|[^\w./-])eas(?:-cli)?(?:@\S*)?\s|\bwrangler(?:@\S*)?\s[^|;&\n]*(?:\bsecret\b|--remote\b)|\bencore\s+env\s+(?:set|create)\b/,
+        /(?:^|[\s;&|(])(?:\S*\/)?eas(?:-cli)?(?:@\S*)?(?=[\s;&|)]|$)|\bwrangler(?:@\S*)?\s[^|;&\n]*(?:\bsecret\b|--remote\b)|\bencore\s+env\s+(?:set|create)\b/,
       ),
     why: "`eas`, `wrangler secret`, `wrangler --remote` and `encore env set|create` use the owner's login on a shared account; executors never run them, the lead does.",
   },

@@ -52,7 +52,8 @@ description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-351, STA-352, ST
   `git stash drop`, `git reflog expire|delete`, a forced `git worktree remove`, Docker volumes,
   `encore env delete`, `encore db reset`, `eas <x>:delete`, a `pnpm bot:gh` repo, release, variable, secret or
   API `DELETE`, the App Store and Play Store review deletes), deploys and rollbacks (`wrangler deploy|rollback`,
-  `eas submit|deploy|update`, `--auto-submit`, a deploy `workflow run` or `dispatches` call,
+  `eas submit|deploy|update|workflow:run|channel:edit`, `--auto-submit`, `wrangler preview`,
+  `wrangler pages deployment create`, `wrangler d1 … --file`, a deploy `workflow run` or `dispatches` call,
   `mcp__cloudflare-api__execute`, `mcp__expo__build_submit`) and releases (`npm`, `pnpm` and `changeset
   publish`, a bot push of tags); merges, bot pushes, secret imports, worktree removal and `pnpm new` no longer
   ask. Its allow list has `pnpm`, `git`, `node`, `npx`, `mise`, `infisical`, `encore`, `wrangler` and `eas` (the
@@ -61,8 +62,9 @@ description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-351, STA-352, ST
   `mise exec -- npm publish`, `pnpm --silent publish`, a line quoted for `ssh`): an `rm` in any form outside the
   session's scratchpad and build output (a recursive one that reaches home, root, `.git` or another checkout is
   still a deny), `find -delete`, `git clean -f`, the Infisical deletes, `encore db reset`, `encore env delete`,
-  `wrangler deploy|rollback|delete`, `wrangler d1 --remote` with `DROP`, `DELETE` or `TRUNCATE` or
-  `migrations apply`, `eas submit|deploy|update|<x>:delete` and `--auto-submit*`, a registry publish, `rm -rf` or
+  `wrangler deploy|rollback|delete|preview`, `wrangler pages deployment create`, `wrangler d1 --remote` with
+  `DROP`, `DELETE` or `TRUNCATE`, `migrations apply` or an unread `--file`,
+  `eas submit|deploy|update|workflow:run|channel:edit|<x>:delete` and `--auto-submit*`, a registry publish, `rm -rf` or
   a discard in another nested worktree, `git branch -D` of an unpushed branch, a bot push of tags, and a
   `pnpm bot:gh` release, `<noun> delete`, `DELETE` method (any spelling), GraphQL `delete…` mutation, deploy
   `workflow run` or `dispatches` call. The hook's other categorical asks are gone, so these are allowed: `npx` and
@@ -72,14 +74,20 @@ description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-351, STA-352, ST
   (STA-187): the confirm token is printed to the same caller, a process rule only (ADR 0257). Raw `infisical run`
   is a deny, not an ask: the program it starts gets every /agents value, so one line (`node -e` on `process.env`)
   prints a secret, or mints the bot or reviewer token and forges an AI-REVIEW verdict (ADR 0230). The reason
-  names the pnpm scripts that wrap it (`pnpm bot:gh`, `bot:git`, `linear`, `secrets:import`,
-  `tools/scripts/mcp.sh`), which stay allowed. Only an ask the guard raises because it cannot read the command (a
+  names the pnpm scripts that wrap it (`pnpm bot:gh`, `bot:git`, `linear`, `secrets:import`), which stay
+  allowed. The hook reads an `infisical` command past its global options and their values (`--domain <url>`,
+  `--log-level`), by any path, `@infisical/cli`, `npx` or `pnpm dlx`, so `secrets get|set`, a bare `secrets`,
+  `export` and `run` keep their denies in every spelling; `.claude/settings.json` also denies
+  `infisical *secrets get|set*`, `infisical * secrets` and `infisical *run *`, which hold if the hook fails open.
+  `tools/scripts/mcp.sh` is denied from the Bash tool: it runs its arguments under `infisical run`, and MCP servers
+  launch it from `.mcp.yaml`. Only an ask the guard raises because it cannot read the command (a
   computed command name, text piped into a shell, a GraphQL label mutation by id) is a deny with its reason and the
   rewrite hint, from the main thread as well as a subagent, so STA-351's main-thread exemption ends. No deny rule
   is loosened. OpenCode still denies every ask, `HUMAN_ASKS` included, and passes `executor` to the shared rules,
   which deny `npx`, `pnpm dlx`, `eas`, `wrangler secret|--remote`, `encore env set|create` and
-  `secrets:import --confirm` (the import script run by `node` too) under every wrapper (`env`, `timeout`,
-  `mise exec --`, `pnpm exec`, `xargs`).
+  `secrets:import --confirm` (the import script run by `node` too) under the wrappers the shared rules read
+  (`env`, `timeout`, `mise exec --`, `pnpm exec`, `xargs`, a path before the name). A wrapper the shared rules
+  do not know can still hide one; opencode.jsonc's prefix patterns are the second layer.
 </Note>
 
 ## Context

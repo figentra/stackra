@@ -6,7 +6,7 @@
 // executor layer: what only the lead does (owner-only CLIs, the GitHub bot wrappers beyond the executor's own push,
 // Infisical, local data git cannot restore) and edits outside the worktree. The categorical asks STA-400 allows for
 // Claude (`npx`, `pnpm dlx`, `eas`, `wrangler secret|--remote`, `secrets:import --confirm`) stay denied here through
-// the shared `executor` rules, so every wrapper the shared rules read through is covered.
+// the shared `executor` rules, so each wrapper the shared rules read through is covered.
 // opencode.jsonc repeats the same tiers as order-sensitive patterns, a second layer.
 // shortcut: executor commands are split on && || ; | and newlines without honouring quotes; nested scripts come
 // from the shared scanShell / scriptStrings; upgrade to a real shell parser if one slips through.

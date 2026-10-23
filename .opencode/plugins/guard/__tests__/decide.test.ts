@@ -887,6 +887,12 @@ test("STA-400 review: an executor keeps its denies for wrapped forms", () => {
     "nice npx tsc",
     "xargs npx tsc",
     "env encore env set prod",
+    // STA-400 review 2: a path before the name, and a runner with nothing after it
+    "./node_modules/.bin/eas build --platform ios",
+    "/usr/local/bin/eas build",
+    "echo tsc | xargs npx",
+    "xargs -n1 npx",
+    "infisical --domain https://eu.infisical.com run -- node x.js",
   ])
     assert.equal(kind(c), "deny", c);
 });

@@ -51,7 +51,6 @@ const allowed = [
   "cat apps/x/eas.json",
   "grep -n env file",
   "env FOO=1 node x.js",
-  "bash tools/scripts/mcp.sh",
   "cat .env.example",
   "cp .env.example .env.local.example",
   "encore run",
@@ -2822,7 +2821,7 @@ test("STA-400 review: raw infisical run is a deny that names the wrapping pnpm s
     assert.match(out.permissionDecisionReason, /pnpm bot:gh/, c);
     assert.ok(!out.permissionDecisionReason.includes(UNATTENDED_HINT), c);
   }
-  for (const c of ["pnpm bot:gh -- pr view 1", "pnpm linear mine", "bash tools/scripts/mcp.sh"])
+  for (const c of ["pnpm bot:gh -- pr view 1", "pnpm linear mine"])
     assert.equal(decision(c, root), "allow", c);
 });
 
@@ -2841,7 +2840,6 @@ test("STA-400 review: settings ask before deletes and allow the CLIs without rm 
   );
   for (const rule of [
     "Bash(rm *)",
-    "Bash(* rm -*r*)",
     "Bash(find * -delete*)",
     "Bash(find * -exec rm*)",
     "Bash(git clean -f*)",
@@ -2853,7 +2851,7 @@ test("STA-400 review: settings ask before deletes and allow the CLIs without rm 
     "Bash(pnpm *bot:gh *dispatches*)",
     "Bash(eas *:delete*)",
     "Bash(eas deploy*)",
-    "Bash(eas update*)",
+    "Bash(eas update *)",
     "Bash(infisical secrets folders delete*)",
     "mcp__expo__appstore_delete_review_response",
     "mcp__expo__workflow_run", // can deploy
@@ -2864,6 +2862,122 @@ test("STA-400 review: settings ask before deletes and allow the CLIs without rm 
     assert.ok(p.allow.includes(rule), rule);
   for (const rule of ["Bash(rm *)", "Bash(gh *)"]) assert.ok(!p.allow.includes(rule), rule);
   assert.ok(p.deny.includes("Bash(gh *)"));
+});
+
+// ---- STA-400 second review (AI-REVIEW FAIL at 6f64c5f): each case decided otherwise there ---------------------
+
+test("STA-400 review 2: a valued infisical option never hides secrets, run or export", () => {
+  const D = "--domain https://eu.infisical.com";
+  for (const c of [
+    `infisical ${D} secrets get GITHUB_PERSONAL_ACCESS_TOKEN --plain`,
+    `infisical ${D} secrets`,
+    `infisical ${D} secrets set A=b`,
+    `infisical ${D} export`,
+    `infisical ${D} run -- node -e 'console.log(process.env.X)'`,
+    "infisical --log-level debug run -- node x.js",
+    "mise exec -- infisical --log-level debug run -- node x.js",
+    `mise exec -- infisical ${D} secrets get FOO`,
+    `env infisical ${D} secrets get FOO --plain`,
+    `pnpm exec infisical ${D} secrets get FOO`,
+    `ssh h 'infisical ${D} secrets get FOO'`,
+    "npx @infisical/cli run -- node x.js",
+    "npx @infisical/cli@0.31.0 run -- node x.js",
+    "pnpm dlx @infisical/cli run -- node x.js",
+    "npx infisical run -- node x.js",
+    "./node_modules/.bin/infisical run -- node x.js",
+  ])
+    assert.equal(decision(c, root), "deny", c);
+  for (const c of [
+    "infisical secrets folders get",
+    `infisical ${D} secrets folders get --env=dev`,
+    "infisical --version",
+    "grep -rn infisical docs",
+  ])
+    assert.equal(decision(c, root), "allow", c);
+  assert.equal(decision(`infisical ${D} secrets folders delete x`, root), "ask");
+});
+
+test("STA-400 review 2: mcp.sh never runs from the Bash tool; the hint no longer names it", () => {
+  for (const c of [
+    "./tools/scripts/mcp.sh echo '$STACKRA_BOT_PRIVATE_KEY'",
+    "bash tools/scripts/mcp.sh printenv",
+    "sh tools/scripts/mcp.sh x",
+    "mise exec -- ./tools/scripts/mcp.sh env",
+    "env A=1 tools/scripts/mcp.sh x",
+    `${root}/tools/scripts/mcp.sh x`,
+  ])
+    assert.equal(decision(c, root), "deny", c);
+  for (const c of [
+    "cat tools/scripts/mcp.sh",
+    "shfmt -d tools/scripts/mcp.sh",
+    "git diff tools/scripts/mcp.sh",
+    "rg infisical tools/scripts/mcp.sh",
+  ])
+    assert.equal(decision(c, root), "allow", c);
+  const why = run({ tool_input: { command: "infisical run -- node x.js" }, cwd: root });
+  assert.doesNotMatch(why.permissionDecisionReason, /mcp\.sh/);
+});
+
+test("STA-400 review 2: the remaining deploys ask", () => {
+  for (const c of [
+    "eas workflow:run deploy.yml",
+    "pnpm exec eas workflow:run deploy.yml",
+    "eas channel:edit production --branch x",
+    "wrangler d1 execute db --remote --file schema.sql",
+    "wrangler preview",
+    "npx wrangler@latest pages deployment create dist",
+    "mise exec -- wrangler pages deploy dist",
+  ])
+    assert.equal(decision(c, root), "ask", c);
+  for (const c of [
+    "wrangler deployments list",
+    "wrangler pages deployment list",
+    "eas update:list",
+    "eas channel:list",
+    "wrangler d1 execute db --local --file schema.sql",
+  ])
+    assert.equal(decision(c, root), "allow", c);
+});
+
+test("STA-400 review 2: settings deny the infisical secret reads and run, whatever the hook does", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const { permissions: p } = JSON.parse(
+    await readFile(join(root, ".claude", "settings.json"), "utf8"),
+  );
+  for (const rule of [
+    "Bash(infisical *secrets get*)",
+    "Bash(infisical *secrets set*)",
+    "Bash(infisical * secrets)",
+    "Bash(infisical *run *)",
+    "Bash(* infisical *run *)",
+  ])
+    assert.ok(p.deny.includes(rule), rule);
+  for (const rule of [
+    "Bash(eas workflow:run*)",
+    "Bash(eas channel:edit*)",
+    "Bash(wrangler preview*)",
+    "Bash(wrangler d1 *--file*)",
+    "Bash(wrangler pages deployment create*)",
+  ])
+    assert.ok(p.ask.includes(rule), rule);
+  // globs that false-ask on prose or a list command are gone
+  for (const rule of ["Bash(* rm -*r*)", "Bash(eas update*)"])
+    assert.ok(!p.ask.includes(rule), rule);
+  // `infisical secrets folders get` matches no infisical deny glob (shape: prefix, then `*`-separated literals)
+  const glob = (g) =>
+    new RegExp(
+      `^${g
+        .slice(5, -1)
+        .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+        .replaceAll("*", ".*")}$`,
+    );
+  for (const c of ["infisical secrets folders get", "infisical secrets folders get --env=dev"])
+    assert.ok(
+      !p.deny
+        .filter((r) => r.startsWith("Bash(") && r.includes("infisical"))
+        .some((r) => glob(r).test(c)),
+      c,
+    );
 });
 
 test("STA-351: unattended turns only an ask into a deny (shared with the OpenCode guard)", () => {

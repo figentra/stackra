@@ -112,7 +112,6 @@
       "Bash(* exec eas submit*)",
       "Bash(pnpm *bot:gh *api *DELETE*)",
       "Bash(rm *)",
-      "Bash(* rm -*r*)",
       "Bash(find * -delete*)",
       "Bash(find * -exec rm*)",
       "Bash(git clean -f*)",
@@ -124,14 +123,20 @@
       "Bash(pnpm *bot:gh *dispatches*)",
       "Bash(eas *:delete*)",
       "Bash(eas deploy*)",
-      "Bash(eas update*)",
+      "Bash(eas update)",
+      "Bash(eas update *)",
       "Bash(eas build *--auto-submit*)",
       "Bash(infisical secrets folders delete*)",
       "Bash(infisical dynamic-secrets delete*)",
       "mcp__expo__appstore_delete_review_response",
       "mcp__expo__playstore_delete*",
       "mcp__expo__workflow_run",
-      "mcp__encore-cloud__db_query"
+      "mcp__encore-cloud__db_query",
+      "Bash(eas workflow:run*)",
+      "Bash(eas channel:edit*)",
+      "Bash(wrangler preview*)",
+      "Bash(wrangler d1 *--file*)",
+      "Bash(wrangler pages deployment create*)"
     ],
     "deny": [
       "Read(//**/.env)",
@@ -237,7 +242,12 @@
       "mcp__linear__retire_*",
       "mcp__linear__restore_*",
       "mcp__linear__mark_*",
-      "mcp__linear__prepare_*"
+      "mcp__linear__prepare_*",
+      "Bash(infisical *secrets get*)",
+      "Bash(infisical *secrets set*)",
+      "Bash(infisical * secrets)",
+      "Bash(infisical *run *)",
+      "Bash(* infisical *run *)"
     ]
   },
   "enableAllProjectMcpServers": true,
