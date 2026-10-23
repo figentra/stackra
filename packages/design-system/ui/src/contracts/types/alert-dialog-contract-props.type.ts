@@ -28,7 +28,7 @@ export interface AlertDialogContractProps extends OverlayContractProps, Feedback
   readonly children?: ReactNode;
   /** The label of the button that agrees, in the app's language, for example "Delete project". */
   readonly confirmLabel: string;
-  /** The label of the button that refuses, in the app's language, for example "Keep project". It takes focus first. */
+  /** The label of the button that refuses, in the app's language, for example "Keep project". On web it takes focus first; on native it comes first in reading order. */
   readonly cancelLabel: string;
   /** True to refuse the confirming press until the decision is ready, as when the user must still type a name. */
   readonly isConfirmDisabled?: boolean | undefined;

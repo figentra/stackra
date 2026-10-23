@@ -7,8 +7,8 @@
  *          tab closes. All from `@stackra/ui/react` with real props.
  * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. The page owns no router: leaving
  *           is simulated by a status line, which is the seam an app's navigation code fills (React Router's
- *           `useBlocker`, bound later in `@stackra/navigation`). The tone icon comes from `ToneIcons` (ADR 0303
- *           decision 10).
+ *           `useBlocker`, bound later in `@stackra/navigation`). The tone icon comes from the kit's own registry
+ *           (ADR 0303 decision 10).
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0312; WCAG 2.2 SC 2.5.8, 3.3.4 and
  *          4.1.2.
@@ -18,7 +18,6 @@ import * as Ui from "@stackra/ui/react";
 import { useRef, useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
-import { ToneIcons } from "#src/components/tone-icons";
 import { LeaveConfirmationRoute } from "#src/routes/leave-confirmation/leave-confirmation.route";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::leave-confirmation.*` keys.
@@ -68,57 +67,55 @@ export function LeaveConfirmation() {
   };
 
   return (
-    <ToneIcons>
-      <article className="grid gap-10">
-        <title>{STRINGS.documentTitle}</title>
-        <header className="grid gap-2">
-          <Ui.Heading level={1}>{LeaveConfirmationRoute.title}</Ui.Heading>
-          <Ui.Text className="max-w-prose">
-            <bdi>{STRINGS.intro}</bdi>
+    <article className="grid gap-10">
+      <title>{STRINGS.documentTitle}</title>
+      <header className="grid gap-2">
+        <Ui.Heading level={1}>{LeaveConfirmationRoute.title}</Ui.Heading>
+        <Ui.Text className="max-w-prose">
+          <bdi>{STRINGS.intro}</bdi>
+        </Ui.Text>
+      </header>
+
+      <PageSection id="leave-confirmation-draft" title={STRINGS.draft} note={STRINGS.draftNote}>
+        <div className="grid max-w-sm gap-4">
+          <Ui.TextField
+            label={STRINGS.noteLabel}
+            placeholder={STRINGS.notePlaceholder}
+            value={note}
+            onChange={setNote}
+          />
+          <ul className={ROW}>
+            <li>
+              <Ui.Button onPress={() => setSaved(note)} isDisabled={!isDirty}>
+                {STRINGS.save}
+              </Ui.Button>
+            </li>
+            <li>
+              <Ui.Button variant="secondary" onPress={() => void tryToLeave()}>
+                {STRINGS.leave}
+              </Ui.Button>
+            </li>
+          </ul>
+          <Ui.Text tone="muted">
+            <bdi>{isDirty ? STRINGS.dirty : STRINGS.clean}</bdi>
           </Ui.Text>
-        </header>
+        </div>
+      </PageSection>
 
-        <PageSection id="leave-confirmation-draft" title={STRINGS.draft} note={STRINGS.draftNote}>
-          <div className="grid max-w-sm gap-4">
-            <Ui.TextField
-              label={STRINGS.noteLabel}
-              placeholder={STRINGS.notePlaceholder}
-              value={note}
-              onChange={setNote}
-            />
-            <ul className={ROW}>
-              <li>
-                <Ui.Button onPress={() => setSaved(note)} isDisabled={!isDirty}>
-                  {STRINGS.save}
-                </Ui.Button>
-              </li>
-              <li>
-                <Ui.Button variant="secondary" onPress={() => void tryToLeave()}>
-                  {STRINGS.leave}
-                </Ui.Button>
-              </li>
-            </ul>
-            <Ui.Text tone="muted">
-              <bdi>{isDirty ? STRINGS.dirty : STRINGS.clean}</bdi>
-            </Ui.Text>
-          </div>
-        </PageSection>
+      <PageSection id="leave-confirmation-answer" title={STRINGS.answer}>
+        <Ui.Text role="status">
+          <bdi>{answer}</bdi>
+        </Ui.Text>
+      </PageSection>
 
-        <PageSection id="leave-confirmation-answer" title={STRINGS.answer}>
-          <Ui.Text role="status">
-            <bdi>{answer}</bdi>
-          </Ui.Text>
-        </PageSection>
-
-        <Ui.LeaveConfirmation
-          ref={leave}
-          when={isDirty}
-          title={STRINGS.title}
-          description={STRINGS.description}
-          stayLabel={STRINGS.stay}
-          discardLabel={STRINGS.discard}
-        />
-      </article>
-    </ToneIcons>
+      <Ui.LeaveConfirmation
+        ref={leave}
+        when={isDirty}
+        title={STRINGS.title}
+        description={STRINGS.description}
+        stayLabel={STRINGS.stay}
+        discardLabel={STRINGS.discard}
+      />
+    </article>
   );
 }

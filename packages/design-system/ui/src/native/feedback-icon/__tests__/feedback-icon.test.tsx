@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: proves the native FeedbackIcon draws each tone's own icon at the small size in the tone's theme colour with
- *          nothing registered by the app, an element as given, and a caller's named icon through the app's registry.
+ *          nothing registered by the app (the package's own registry holds them), an element as given, and a caller's named icon through the app's registry.
  * Boundary: React Native does not render in vitest: heroui-native is replaced by a recording stand-in, the Lucide icons
- *           by markers, and the package's own registry by a marker, so the real Icon resolves a name through the
- *           registries and draws the marker with the size and colour it would hand the real icon.
+ *           by markers so the real Icon resolves a name through the
+ *           registries, the package's own included, and draws the marker with the size and colour it would hand the real icon.
  * Runtime: node
  * Governing contract: ADR 0303 (decision 10); ADR 0312 (decision 3); ADR 0022 (test placement).
  */
@@ -24,8 +24,6 @@ vi.mock("heroui-native", () => ({
   useThemeColor: (role: string) => `color:${role}`,
 }));
 
-vi.mock("#native/icon/ui-icons.constant", () => ({ UI_ICONS: {} }));
-
 /** A drawn icon: records the name it stands for and the props it is handed, as the real Svg would receive them. */
 const marker = (name: string) => (props: object) => (
   <output data-testid="icon" data-name={name} data-props={JSON.stringify(props)} />
@@ -42,8 +40,11 @@ vi.mock("@stackra/icons/native/lucide-icons", async () => {
   return {
     CircleAlert: drawn("circle-alert"),
     CircleCheck: drawn("circle-check"),
+    Ellipsis: drawn("ellipsis"),
+    ExternalLink: drawn("external-link"),
     Info: drawn("info"),
     TriangleAlert: drawn("triangle-alert"),
+    UserRound: drawn("user-round"),
   };
 });
 

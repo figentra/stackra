@@ -12,7 +12,9 @@
  *           button instead, which refuses the question unless it is set, as Escape does on web. Focus does not move to
  *           the cancel button, because native has no focus ring to start on; a screen reader lands on the title and
  *           the cancel button comes first among the buttons. A string child is wrapped in Text, as a native `View`
- *           cannot hold bare text. The confirm button is `danger` for the `danger` tone and `primary` otherwise. The
+ *           cannot hold bare text. The portal asks iOS VoiceOver to stay inside the
+ *           question (`unstable_accessibilityContainerViewIsModal`, which HeroUI Native marks unstable), as Modal and
+ *           Drawer do. The confirm button is `danger` for the `danger` tone and `primary` otherwise. The
  *           tone's icon is drawn by name; the kit registers the four tone icons itself, and an app's own icon of the
  *           same name wins.
  * Runtime: react-native
@@ -107,7 +109,7 @@ export function AlertDialog({
         if (!next && !isKeyboardDismissDisabled) cancel();
       }}
     >
-      <Dialog.Portal>
+      <Dialog.Portal unstable_accessibilityContainerViewIsModal>
         <Dialog.Overlay isCloseOnPress={false} {...(isDismissable ? { onPress: cancel } : {})} />
         <Dialog.Content
           role="alertdialog"

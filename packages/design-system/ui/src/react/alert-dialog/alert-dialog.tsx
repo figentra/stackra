@@ -12,7 +12,8 @@
  *           safe button (cancel) and a keyboard user always has a way out (WCAG 2.2 SC 2.1.2). Focus starts on the
  *           cancel button, the least destructive choice, and returns to what opened the dialog when it closes (React
  *           Aria restores it). The dialog has no trigger: open it from state, from `useConfirmation()`, or from
- *           `defaultOpen`. A tone's colour never stands alone: the title and the button labels carry the meaning.
+ *           `defaultOpen`. The title is a level-2 heading, as in Modal, because React Aria's
+ *           default of 3 would skip a level under a page's `h1`. A tone's colour never stands alone: the title and the button labels carry the meaning.
  *           The confirm button is `danger` for the `danger` tone and `primary` otherwise. The tone's icon is drawn by
  *           name; the kit registers the four tone icons itself, and an app's own icon of the same name wins.
  * Runtime: browser
@@ -97,7 +98,7 @@ export function AlertDialog({
                   <SlotIcon icon={drawn} />
                 </HeroAlertDialog.Icon>
               )}
-              <HeroAlertDialog.Heading>{title}</HeroAlertDialog.Heading>
+              <HeroAlertDialog.Heading level={2}>{title}</HeroAlertDialog.Heading>
             </HeroAlertDialog.Header>
             <HeroAlertDialog.Body>
               {description == null ? null : <div id={descriptionId}>{description}</div>}

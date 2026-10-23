@@ -25,9 +25,9 @@ export interface ToastAction {
 export interface ToastContractProps extends FeedbackContractProps {
   /** A second line under the message. */
   readonly description?: string | undefined;
-  /** One action beside the message. A toast with an action should stay long enough to reach it: see `timeout`. */
+  /** One action beside the message. A toast with an action stays 8000 ms by default, so the action can be reached. */
   readonly action?: ToastAction | undefined;
-  /** How long the toast stays, in milliseconds. 0 keeps it until it is dismissed. Defaults to 4000. */
+  /** How long the toast stays, in milliseconds. 0 keeps it until it is dismissed. Defaults to 4000, or 8000 when the toast has an action. */
   readonly timeout?: number | undefined;
   /** Called when the toast closes, whether it timed out, was dismissed or was closed from code. */
   readonly onClose?: (() => void) | undefined;

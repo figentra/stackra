@@ -32,7 +32,7 @@ describe("Popover (web)", () => {
     press(screen.getByRole("button", { name: "Filters" }));
     const dialog = screen.getByRole("dialog", { name: "Filter orders" });
     expect(dialog.textContent).toContain("Choose a status.");
-    expect(screen.getByRole("heading", { name: "Filter orders" })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 2, name: "Filter orders" })).toBeTruthy();
   });
 
   it("is named by aria-label when there is no title", () => {

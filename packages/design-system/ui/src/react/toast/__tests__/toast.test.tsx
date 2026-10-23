@@ -182,6 +182,19 @@ describe("toast (web)", () => {
     expect(screen.getByText("Staying")).toBeTruthy();
   });
 
+  it("keeps a toast with an action longer by default, and honours the caller's own timeout", () => {
+    render(<ToastProvider dismissLabel="Dismiss notification" />);
+    act(() => {
+      toast("Deleted", { action: { label: "Undo", onPress: vi.fn() } });
+      toast("Quick", { timeout: 1000, action: { label: "Redo", onPress: vi.fn() } });
+    });
+    act(() => vi.advanceTimersByTime(5000));
+    expect(screen.queryByText("Quick")).toBeNull();
+    expect(screen.getByText("Deleted")).toBeTruthy();
+    act(() => vi.advanceTimersByTime(4000));
+    expect(screen.queryByText("Deleted")).toBeNull();
+  });
+
   it("closes one toast by id and every toast with clear", () => {
     render(<ToastProvider dismissLabel="Dismiss notification" />);
     let first = "";

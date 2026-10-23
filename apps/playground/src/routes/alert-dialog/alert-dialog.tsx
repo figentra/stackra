@@ -4,8 +4,8 @@
  *          an icon of its own and none, the two dismissal switches (a press outside, and Escape), each opened from a
  *          button and answered in a status line, all from `@stackra/ui/react` with real props.
  * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. One dialog per sample, each
- *           controlled by the page's single `open` state, so only one is ever open. The tone icons come from
- *           `ToneIcons`, and the custom icon from the shell's registry (ADR 0303 decision 10).
+ *           controlled by the page's single `open` state, so only one is ever open. The tone icons come from the kit's own
+ *           registry, and the custom icon from the shell's registry (ADR 0303 decision 10).
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decisions 3 and 7); ADR 0312; WAI-ARIA `alertdialog`;
  *          WCAG 2.2 SC 2.1.2, 2.5.8 and 4.1.2.
@@ -14,7 +14,6 @@ import * as Ui from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
-import { ToneIcons } from "#src/components/tone-icons";
 import { AlertDialogRoute } from "#src/routes/alert-dialog/alert-dialog.route";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::alert-dialog.*` keys.
@@ -164,53 +163,51 @@ export function AlertDialog() {
   );
 
   return (
-    <ToneIcons>
-      <article className="grid gap-10">
-        <title>{STRINGS.documentTitle}</title>
-        <header className="grid gap-2">
-          <Ui.Heading level={1}>{AlertDialogRoute.title}</Ui.Heading>
-          <Ui.Text className="max-w-prose">
-            <bdi>{STRINGS.intro}</bdi>
-          </Ui.Text>
-        </header>
+    <article className="grid gap-10">
+      <title>{STRINGS.documentTitle}</title>
+      <header className="grid gap-2">
+        <Ui.Heading level={1}>{AlertDialogRoute.title}</Ui.Heading>
+        <Ui.Text className="max-w-prose">
+          <bdi>{STRINGS.intro}</bdi>
+        </Ui.Text>
+      </header>
 
-        <PageSection id="alert-dialog-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
-          {buttons("tones")}
-        </PageSection>
-        <PageSection id="alert-dialog-icons" title={STRINGS.icons} note={STRINGS.iconsNote}>
-          {buttons("icons")}
-        </PageSection>
-        <PageSection
-          id="alert-dialog-dismissal"
-          title={STRINGS.dismissal}
-          note={STRINGS.dismissalNote}
-        >
-          {buttons("dismissal")}
-        </PageSection>
+      <PageSection id="alert-dialog-tones" title={STRINGS.tones} note={STRINGS.tonesNote}>
+        {buttons("tones")}
+      </PageSection>
+      <PageSection id="alert-dialog-icons" title={STRINGS.icons} note={STRINGS.iconsNote}>
+        {buttons("icons")}
+      </PageSection>
+      <PageSection
+        id="alert-dialog-dismissal"
+        title={STRINGS.dismissal}
+        note={STRINGS.dismissalNote}
+      >
+        {buttons("dismissal")}
+      </PageSection>
 
-        <PageSection id="alert-dialog-answer" title={STRINGS.answer}>
-          <Ui.Text role="status">
-            <bdi>{answer}</bdi>
-          </Ui.Text>
-        </PageSection>
+      <PageSection id="alert-dialog-answer" title={STRINGS.answer}>
+        <Ui.Text role="status">
+          <bdi>{answer}</bdi>
+        </Ui.Text>
+      </PageSection>
 
-        {SAMPLES.map((sample) => (
-          <Ui.AlertDialog
-            key={sample.id}
-            {...sample.props}
-            isOpen={open === sample.id}
-            onOpenChange={(isOpen) => {
-              if (!isOpen) setOpen((current) => (current === sample.id ? null : current));
-            }}
-            title={sample.title}
-            description={sample.description}
-            confirmLabel={sample.confirm}
-            cancelLabel={sample.cancel}
-            onConfirm={() => setAnswer(STRINGS.confirmed(sample.trigger))}
-            onCancel={() => setAnswer(STRINGS.cancelled(sample.trigger))}
-          />
-        ))}
-      </article>
-    </ToneIcons>
+      {SAMPLES.map((sample) => (
+        <Ui.AlertDialog
+          key={sample.id}
+          {...sample.props}
+          isOpen={open === sample.id}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setOpen((current) => (current === sample.id ? null : current));
+          }}
+          title={sample.title}
+          description={sample.description}
+          confirmLabel={sample.confirm}
+          cancelLabel={sample.cancel}
+          onConfirm={() => setAnswer(STRINGS.confirmed(sample.trigger))}
+          onCancel={() => setAnswer(STRINGS.cancelled(sample.trigger))}
+        />
+      ))}
+    </article>
   );
 }

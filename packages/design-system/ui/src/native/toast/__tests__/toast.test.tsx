@@ -97,6 +97,17 @@ describe("toast (native)", () => {
     expect(lastShown()["onHide"]).toBe(onClose);
   });
 
+  it("lengthens the default duration of a toast with an action, unless the caller sets one", () => {
+    render(<ToastProvider dismissLabel="Dismiss" />);
+    const action = { label: "Undo", onPress: vi.fn() };
+    toast("Deleted", { action });
+    expect(lastShown()["duration"]).toBe(8000);
+    toast("Deleted", { action, timeout: 1000 });
+    expect(lastShown()["duration"]).toBe(1000);
+    toast("Deleted", { action, timeout: 0 });
+    expect(lastShown()["duration"]).toBe("persistent");
+  });
+
   it("renders a toast item with the message, the options and the provider's dismiss label", () => {
     render(<ToastProvider dismissLabel="إغلاق الإشعار" />);
     const action = { label: "Undo", onPress: vi.fn() };

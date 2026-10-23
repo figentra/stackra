@@ -61,6 +61,8 @@ describe("AlertDialog (web)", () => {
     const describedBy = found.getAttribute("aria-describedby");
     expect(describedBy).toBeTruthy();
     expect(document.getElementById(describedBy ?? "")?.textContent).toBe("This cannot be undone.");
+    // Level 2, so a page's `h1` is not followed by a skipped level.
+    expect(screen.getByRole("heading", { level: 2, name: "Delete project?" })).toBeTruthy();
   });
 
   it("draws nothing while closed and opens from defaultOpen", () => {

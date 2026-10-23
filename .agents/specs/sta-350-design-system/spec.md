@@ -416,7 +416,8 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
   example and the open state reported, and focus SHALL return to the trigger on close — verified by: unit, e2e
 - **FR-102**: `AlertDialog` SHALL ask one decision as an `alertdialog` named by its title and described by its
   description, with the tone's icon, a confirm and a cancel button, `onConfirm` and `onCancel`, `isConfirmDisabled`,
-  focus starting on cancel, `isDismissable` false by default, and Escape or the Android back button cancelling unless
+  focus starting on cancel on web (on native cancel comes first in reading order, as native moves no focus),
+  `isDismissable` false by default, and Escape or the Android back button cancelling unless
   `isKeyboardDismissDisabled` is set, on web (HeroUI AlertDialog) and on native (the adapted form on Dialog) —
   verified by: unit
 - **FR-103**: `useConfirmation()` SHALL return `confirm(options): Promise<boolean>` backed by the one `AlertDialog` a
@@ -426,8 +427,8 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
   or reloads, and `confirmLeave()` on its `ref` asks the question through an `AlertDialog`, resolving true at once
   while `when` is false, true on discard and false on stay, with no router import — verified by: unit
 - **FR-105**: The `/alert-dialog`, `/use-confirmation` and `/leave-confirmation` playground routes SHALL show each
-  tone, the answer as it happens and the keyboard path, with the tone icons registered for them by the playground
-  `ToneIcons` provider, and axe SHALL report nothing — verified by: unit, e2e
+  tone, the answer as it happens and the keyboard path, with the tone icons drawn from the kit's own registry, and axe
+  SHALL report nothing — verified by: unit, e2e
 - **FR-106**: `@stackra/ui/contracts` SHALL hold `MenuContractProps` (`sections`, `selectionMode`, `value`,
   `defaultValue`, `onChange`, `onAction`, on the open state and placement props), `MenuSection`, `MenuItem` (a submenu one
   level deep) and `MenuLeafItem`, and `ActionMenuContractProps` (`label`, `icon`, `variant`, `size`, `isDisabled`),

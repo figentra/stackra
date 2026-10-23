@@ -24,6 +24,7 @@ import { AlertDialog, type AlertDialogProps } from "#native/alert-dialog/alert-d
 /** The props the stand-ins were last handed, by part. */
 const received = vi.hoisted(() => ({
   root: {} as Record<string, unknown>,
+  portal: {} as Record<string, unknown>,
   overlay: {} as Record<string, unknown>,
   content: {} as Record<string, unknown>,
   views: [] as Record<string, unknown>[],
@@ -59,8 +60,10 @@ vi.mock("heroui-native", async () => {
       return props["isOpen"] ? createElement("div", null, props["children"] as ReactNode) : null;
     },
     {
-      Portal: (props: Record<string, unknown>) =>
-        createElement("div", null, props["children"] as ReactNode),
+      Portal: (props: Record<string, unknown>) => {
+        received.portal = props;
+        return createElement("div", null, props["children"] as ReactNode);
+      },
       Overlay: (props: Record<string, unknown>) => {
         received.overlay = props;
         return null;
@@ -135,6 +138,7 @@ const lastButton = (label: string) =>
 describe("AlertDialog (native)", () => {
   beforeEach(() => {
     received.root = {};
+    received.portal = {};
     received.overlay = {};
     received.content = {};
     received.views = [];
@@ -153,6 +157,8 @@ describe("AlertDialog (native)", () => {
   it("is announced as an alertdialog, with the title and the description", () => {
     render(ui());
     expect(received.content).toMatchObject({ role: "alertdialog" });
+    // iOS VoiceOver must not reach the page behind a question, as in Modal and Drawer.
+    expect(received.portal["unstable_accessibilityContainerViewIsModal"]).toBe(true);
     expect(screen.getByRole("heading", { name: "Delete project?" })).toBeTruthy();
     expect(screen.getByText("This cannot be undone.")).toBeTruthy();
   });

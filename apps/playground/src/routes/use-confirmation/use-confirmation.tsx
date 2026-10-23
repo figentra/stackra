@@ -5,8 +5,8 @@
  *          the answer in a status line and a counter that only the confirmed deletion moves, all from
  *          `@stackra/ui/react` with real props.
  * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. The page mounts its own
- *           `ConfirmationProvider`; an app mounts it once, near its root. The tone icons come from `ToneIcons`
- *           (ADR 0303 decision 10).
+ *           `ConfirmationProvider`; an app mounts it once, near its root. The tone icons come from the kit's own
+ *           registry (ADR 0303 decision 10).
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0312; WCAG 2.2 SC 2.5.8, 3.3.4 and
  *          4.1.2.
@@ -15,7 +15,6 @@ import * as Ui from "@stackra/ui/react";
 import { useState } from "react";
 
 import { PageSection } from "#src/components/page-section";
-import { ToneIcons } from "#src/components/tone-icons";
 import { UseConfirmationRoute } from "#src/routes/use-confirmation/use-confirmation.route";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::use-confirmation.*` keys.
@@ -126,19 +125,17 @@ function Questions() {
 /** The useConfirmation page. */
 export function UseConfirmation() {
   return (
-    <ToneIcons>
-      <Ui.ConfirmationProvider>
-        <article className="grid gap-10">
-          <title>{STRINGS.documentTitle}</title>
-          <header className="grid gap-2">
-            <Ui.Heading level={1}>{UseConfirmationRoute.title}</Ui.Heading>
-            <Ui.Text className="max-w-prose">
-              <bdi>{STRINGS.intro}</bdi>
-            </Ui.Text>
-          </header>
-          <Questions />
-        </article>
-      </Ui.ConfirmationProvider>
-    </ToneIcons>
+    <Ui.ConfirmationProvider>
+      <article className="grid gap-10">
+        <title>{STRINGS.documentTitle}</title>
+        <header className="grid gap-2">
+          <Ui.Heading level={1}>{UseConfirmationRoute.title}</Ui.Heading>
+          <Ui.Text className="max-w-prose">
+            <bdi>{STRINGS.intro}</bdi>
+          </Ui.Text>
+        </header>
+        <Questions />
+      </article>
+    </Ui.ConfirmationProvider>
   );
 }

@@ -56,9 +56,6 @@ const TONE_MESSAGES = {
 /** The row that lays buttons out in a wrapping row. */
 const ROW = "flex flex-wrap items-center gap-4";
 
-/** How long a toast with an action stays: longer than the default so the action can be reached (WCAG 2.2.1). */
-const ACTION_TIMEOUT = 8000;
-
 /** The Toast page. */
 export function Toast() {
   const [isTop, setIsTop] = useState(false);
@@ -108,7 +105,6 @@ export function Toast() {
             variant="secondary"
             onPress={() =>
               Ui.toast("Order deleted", {
-                timeout: ACTION_TIMEOUT,
                 action: {
                   label: "Undo",
                   onPress: () => Ui.toast.success("Order restored"),
