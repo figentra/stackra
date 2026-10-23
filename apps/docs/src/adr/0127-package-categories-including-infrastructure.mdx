@@ -48,6 +48,14 @@ description: "Accepted, amended by 0282, 0286, 0294, 0302 · 2026-10-20 · amend
   `MigrationRunner` in `@stackra/contracts`. The kind helper in `@stackra/container` is
   `createKind`, because `define` is reserved for those four functions
   ([0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) rule 3).
+- **App runtime:** `@stackra/app` stays in `runtime`, where the 2026-10-21 table placed it. It
+  holds the per-target app runtime, `createApp` for each runtime target
+  ([0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries) decision 8),
+  and the app contexts. `Module` and `Service` live in `@stackra/container` and the `define*`
+  functions in `@stackra/contracts`, not in `@stackra/app`.
+- **Forms:** the form entries of `@stackra/ui` fold into `@stackra/ui/react` and
+  `@stackra/ui/native`, so coded forms (the 0270 note above) use those entries; there is no
+  `@stackra/ui/form`.
 - **Tone:** there is one `Tone`, in `@stackra/contracts`, with the five values of
   [0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 7 (`default`, `accent`,
   `success`, `warning`, `danger`); `@stackra/ui/contracts` uses it.
