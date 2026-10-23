@@ -188,15 +188,49 @@ const GUARDED = [
   // STA-400: only deletes and deploys (`HUMAN_ASKS`) ask; the other categorical asks are allowed
   ["wrangler deploy", "ask"],
   ["encore db reset", "ask"],
-  ["infisical run -- node x.js", "allow"],
+  ["infisical run -- node x.js", "deny"],
   ["git config user.email t@t", "allow"],
   ["rm -rf node_modules dist", "allow"],
   ["git reset --hard", "allow"],
   ["git checkout .", "allow"],
-  ["git clean -fd", "allow"],
+  ["git clean -fd", "ask"],
+  ["rm -f a.txt", "ask"],
+  ["rm -r src", "ask"],
+  ["find . -name '*.tsbuildinfo' -delete", "ask"],
+  ["wrangler@3.1.0 deploy", "ask"],
+  ["eas-cli@latest submit", "ask"],
+  ["npm publish", "ask"],
   ["pnpm bot:git -- push origin HEAD", "allow"],
   ["pnpm bot:git -- push --force-with-lease origin HEAD", "allow"],
 ];
+/**
+ * OpenCode executors (`executor`): the categorical asks STA-400 allows for Claude stay denied under every wrapper the
+ * shared rules read through (STA-400 review: `env`, `timeout`, `mise exec --`, `pnpm exec`, `xargs`, node on the
+ * import script).
+ */
+const EXECUTOR_DENIED = [
+  "npx tsc",
+  "pnpm dlx some-tool",
+  "eas build --platform ios",
+  "wrangler secret list",
+  "wrangler d1 execute db --remote --command x",
+  "encore env set prod",
+  "infisical run -- node x.js",
+  "node tools/scripts/secrets-import.mjs X --env prod --confirm abc",
+  "pnpm secrets:import X --env prod --confirm abc",
+];
+test("differential: an OpenCode executor is denied the categorical asks under every wrapper", () => {
+  const out = [];
+  for (const [name, wrap] of WRAPPED)
+    for (const c of EXECUTOR_DENIED) {
+      const { decision } = decideBash(fill(wrap(c)), { cwd: wt, scratchpad, executor: true });
+      if (decision !== "deny") out.push(`${decision} ${name}: ${c}`);
+    }
+  for (const c of ["xargs npx tsc", "find . -name x | xargs npx tsc"])
+    if (decideBash(c, { cwd: wt, executor: true }).decision !== "deny") out.push(`allow ${c}`);
+  assert.deepEqual(out, []);
+});
+
 /** A wrapper the guard cannot read (a shell reading piped text) is a deny with the rewrite hint, whatever it runs. */
 const tier = (want, asks) => (asks ? "deny" : want);
 
@@ -359,7 +393,6 @@ const ALLOWED = [
   "git reset --hard",
   "git reset --hard origin/main",
   "git clean -n",
-  "git clean -fd",
   "git checkout .",
   "git stash",
   "git stash push -m wip",
@@ -483,9 +516,7 @@ const ALLOWED = [
   'rg -n "DROP DATABASE" apps/docs',
   "rg --files -g '*.json'",
   "find . -name '*.ts' -not -path './node_modules/*'",
-  "find . -name '*.tsbuildinfo' -delete",
   "find dist -delete",
-  "find . -name node_modules -prune -exec rm -rf {} +",
   "sed -n '1,80p' .agents/hooks/_rules.mjs",
   "awk '/^worktree/ {print $2}' list.txt",
   "diff -u a.txt b.txt",
@@ -502,7 +533,6 @@ const ALLOWED = [
   "rm -rf packages/a/node_modules",
   "rm -rf $SCRATCH/x",
   "rm -rf $SCRATCH",
-  "rm -f a.txt",
   // prose, output and quoted lines that run nothing guarded
   'echo "rm -rf / is denied; so is git stash pop"',
   "printf '%s\\n' \"git push origin main\"",

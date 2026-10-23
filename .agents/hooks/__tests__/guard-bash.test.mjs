@@ -1204,8 +1204,9 @@ for (const c of [
   "pnpm exec git fetch origin",
 ])
   test(`deny (runner bypass): ${c}`, () => assert.equal(decision(c), "deny"));
+test("deny (runner bypass, STA-400 review): pnpm exec infisical run -- pnpm build", () =>
+  assert.equal(decision("pnpm exec infisical run -- pnpm build"), "deny"));
 for (const c of [
-  "pnpm exec infisical run -- pnpm build",
   "pnpm exec node tools/scripts/secrets-import.mjs --confirm abc-123",
   "pnpm secrets:import STACKRA_X --env prod --path /ci --confirm abc-123",
 ])
@@ -1305,15 +1306,14 @@ for (const c of [
   "eas build --platform ios --auto-submit",
 ])
   test(`ask: ${c}`, () => assert.equal(decision(c), "ask"));
+for (const c of ["infisical run -- pnpm test", "infisical run --env=staging -- pnpm build"])
+  test(`deny (STA-400 review): ${c}`, () => assert.equal(decision(c), "deny"));
 for (const c of [
-  "infisical run -- pnpm test",
-  "infisical run --env=staging -- pnpm build",
   "npx tsc",
   "pnpx create-x",
   "pnpm dlx some-tool",
   "wrangler d1 execute db --remote --command 'select 1'",
   "eas build --platform ios",
-  "eas update --branch preview",
 ])
   test(`allow: ${c}`, () => assert.equal(decision(c), "allow"));
 for (const c of ["wrangler dev", "pnpm exec wrangler types"])
@@ -1351,7 +1351,12 @@ test("destructive git runs only in the session's own linked worktree", () => {
     "git clean -xdf",
   ];
   for (const c of discarding) {
-    assert.equal(decision(c, worktree), "allow", `own worktree: ${c}`);
+    // STA-400: `git clean -f` deletes untracked files, so it asks even in the own worktree
+    assert.equal(
+      decision(c, worktree),
+      c.includes("clean") ? "ask" : "allow",
+      `own worktree: ${c}`,
+    );
     assert.equal(decision(c, main), "deny", `main checkout: ${c}`);
     assert.equal(decision(`git -C ${main} ${c.slice(4)}`, worktree), "deny", `-C main: ${c}`);
     assert.equal(decision(`cd ${main} && ${c}`, worktree), "deny", `cd main: ${c}`);
@@ -1393,8 +1398,8 @@ test("rm -rf: own checkout (never a nested worktree), the scratchpad, cd followe
     'cd /tmp && echo "$(rm -rf build)"',
   ])
     assert.equal(decision(c, main), "deny", c);
-  for (const c of ["rm -rf node_modules", "cd .claude && rm -rf cache"])
-    assert.equal(decision(c, main), "allow", c);
+  assert.equal(decision("rm -rf node_modules", main), "allow");
+  assert.equal(decision("cd .claude && rm -rf cache", main), "ask"); // STA-400: not build output
   assert.equal(decision("rm -rf dist", worktree), "allow");
   assert.equal(decision(`rm -rf ${main}/src`, worktree), "deny");
   // STA-330 review: from the main checkout, build output in a nested worktree goes; anything else there asks
@@ -1726,7 +1731,12 @@ test("round 1: discarding work runs only in the own worktree, however the checko
     "clean -f",
     "reset --hard 2>&1",
   ];
-  for (const d of discarding) cases.push(["wt", `git ${d}`, "allow"], ["main", `git ${d}`, "deny"]);
+  // STA-400: `git clean -f` asks in the own worktree (a delete)
+  for (const d of discarding)
+    cases.push(
+      ["wt", `git ${d}`, d.startsWith("clean") ? "ask" : "allow"],
+      ["main", `git ${d}`, "deny"],
+    );
   // every way to reach another checkout, for two of them (each case runs git)
   for (const d of ["reset --hard", "clean -fd"]) {
     for (const reach of [
@@ -1754,7 +1764,7 @@ test("round 1: discarding work runs only in the own worktree, however the checko
       ["main", `(cd $WT && git ${d})`, "ask"],
       ["main", `(cd $WT) && git ${d}`, "deny"],
       ["main", `cd $WT/none; git ${d}`, "deny"],
-      ["wt", `(cd $MAIN); git ${d}`, "allow"],
+      ["wt", `(cd $MAIN); git ${d}`, d.startsWith("clean") ? "ask" : "allow"],
     );
   }
   for (const f of ["--force", "-f"])
@@ -1772,20 +1782,24 @@ test("round 1: rm -rf through cd chains, .., symlinks, home, globs, --, split fl
   const cases = [];
   for (const c of [
     "rm -rf dist",
-    "rm -rf dist/../src",
     "rm -rf ./dist/",
-    "rm -rf lnk",
-    "rm -rf -- -x",
-    "rm -rf {dist,build}",
     "rm -rf d*",
-    "rm -- -rf /",
     "find dist -delete",
     "find dist -name '*.map' -exec rm -f {} \\;",
-    "(cd /tmp) && rm -rf x",
-    "cd $SCRATCH/none; rm -rf x",
     "(cd $SCRATCH && rm -rf x)",
   ])
     cases.push(["wt", c, "allow"]);
+  // STA-400: a delete in the own checkout outside build output, or a plain rm anywhere, asks
+  for (const c of [
+    "rm -rf dist/../src",
+    "rm -rf lnk",
+    "rm -rf -- -x",
+    "rm -rf {dist,build}",
+    "rm -- -rf /",
+    "(cd /tmp) && rm -rf x",
+    "cd $SCRATCH/none; rm -rf x",
+  ])
+    cases.push(["wt", c, "ask"]);
   for (const c of [
     "cd .. && rm -rf a",
     "rm -rf ../x",
@@ -2188,7 +2202,7 @@ test("round 2: `rm -rf .git` and anything under it is refused, from any checkout
   for (const at of ["main", "wt"])
     for (const c of ["rm -rf .git", "rm -rf ./.git/", "rm -rf .git/objects", "rm -fr .gi?"])
       cases.push([at, c, "deny"]);
-  cases.push(["main", "rm -rf $MAIN/.git", "deny"], ["wt", "rm -rf .github-cache", "allow"]);
+  cases.push(["main", "rm -rf $MAIN/.git", "deny"], ["wt", "rm -rf .github-cache", "ask"]);
   assert.deepEqual(wrong(cases), []);
   done();
 });
@@ -2216,7 +2230,7 @@ test("round 2: decisions stay linear in blank lines, separators, path depth and 
     ["20,000 blank lines", "\n".repeat(20_000) + "gh pr merge 1", "deny"],
     ["20,000 `x;`", "x;".repeat(20_000) + "gh pr merge 1", "deny"],
     ["20,000 `ls\\n`", "ls\n".repeat(20_000), "allow"],
-    ["a 1000-segment path", "rm -rf " + "a/".repeat(1000), "allow"],
+    ["a 1000-segment path", "rm -rf " + "a/".repeat(1000), "ask"], // STA-400: not build output
     ["40 rm words", "rm ".repeat(40) + "-rf dist", "deny"],
   ]) {
     const { got, ms } = timed(c);
@@ -2297,8 +2311,12 @@ test("round 3: a command line in one quoted word or here-string never hides rm -
     "tmux new -d 'git stash pop'",
   ])
     cases.push(["wt", c, "deny"]);
-  for (const c of ["tmux new -d 'git reset --hard'", "watch 'git clean -fd'"])
-    cases.push(["main", c, "deny"], ["wt", c, "allow"]);
+  cases.push(
+    ["main", "tmux new -d 'git reset --hard'", "deny"],
+    ["wt", "tmux new -d 'git reset --hard'", "allow"],
+    ["main", "watch 'git clean -fd'", "deny"],
+    ["wt", "watch 'git clean -fd'", "ask"], // STA-400: a delete
+  );
   for (const c of [
     "mise exec -c 'rm -rf dist'",
     "mise exec -c 'pnpm test'",
@@ -2332,13 +2350,14 @@ test("round 3: a find from the checkout root that may select .git is refused", (
     "git rm -rf .",
   ])
     cases.push(["wt", c, "deny"]);
+  cases.push(["wt", "find dist -delete", "allow"]);
+  // STA-400: a find from outside build output deletes in the own checkout, so it asks
   for (const c of [
     "find . -name node_modules -prune -exec rm -rf {} +",
     "find . -name '*.tsbuildinfo' -delete",
     "find . -path './dist/*' -delete",
-    "find dist -delete",
   ])
-    cases.push(["wt", c, "allow"]);
+    cases.push(["wt", c, "ask"]);
   assert.deepEqual(wrong(cases), []);
   done();
 });
@@ -2505,7 +2524,7 @@ test("round 4: a one-string wrapper never hides a guarded command name", () => {
     cases.push([c, "deny"]);
   cases.push(
     ["tmux new -d 'wrangler deploy'", "ask"],
-    ["watch 'infisical run -- node x.js'", "allow"],
+    ["watch 'infisical run -- node x.js'", "deny"],
   );
   for (const c of [
     "watch 'encore run'",
@@ -2533,7 +2552,7 @@ test("round 4: a find from the checkout root that may reach inside .git, and the
   ])
     cases.push(["main", c, "deny"], ["wt", c, "deny"]);
   for (const c of ["find . -name '*.tsbuildinfo' -delete", "find . -path './dist/*' -delete"])
-    cases.push(["wt", c, "allow"]);
+    cases.push(["wt", c, "ask"]); // STA-400
   for (const c of [
     "git config user.name x",
     "git config user.email x@y",
@@ -2557,7 +2576,7 @@ test("round 4: a wildcard with a literal tail never matches .git in a linked wor
   for (const c of ["rm -rf */node_modules", "rm -rf **/node_modules", "rm -rf */dist"])
     assert.equal(decideBash(c, { cwd: worktree }).decision, "allow", c);
   // a linked worktree's `.git` is a file: `*/*` reaches nothing in it, `.g*/x` names it
-  assert.equal(decideBash("rm -rf */*", { cwd: worktree }).decision, "allow");
+  assert.equal(decideBash("rm -rf */*", { cwd: worktree }).decision, "ask"); // STA-400: packages/a
   assert.equal(decideBash("rm -rf .g*/x", { cwd: worktree }).decision, "deny");
   done();
 });
@@ -2593,7 +2612,6 @@ const REWRITABLE_ASKS = [
 const NOW_ALLOWED = [
   "npx tsc",
   "pnpm dlx cowsay hi",
-  "infisical run -- node x.js",
   "pnpm bot:gh -- api graphql -f query='query { viewer { login } }'",
   "pnpm bot:gh api -X PATCH repos/figentra/stackra/pulls/1 -f title=x",
   "pnpm bot:gh repo edit --enable-auto-merge",
@@ -2605,8 +2623,9 @@ const NOW_ALLOWED = [
   "wrangler secret list",
   "wrangler d1 execute db --remote --command 'select 1'",
   "eas build --platform ios",
-  "eas update --branch preview",
   "pnpm secrets:import --env prod --confirm abc STACKRA_X",
+  "pnpm linear comment STA-1 x",
+  "pnpm bot:gh -- pr view 1",
 ];
 
 // STA-400 supersedes STA-351's main-thread exemption: the main thread (no `agent_id`), a `claude --agent x` session
@@ -2655,12 +2674,23 @@ test("STA-400: HUMAN_ASKS (deletes, deploys, releases) ask from main and subagen
     "encore-db-reset": ["encore db reset identity", worktree],
     "encore-env-delete": ["encore env delete preview", worktree],
     "wrangler-deploy": ["wrangler deploy", worktree],
-    "eas-submit": ["eas submit --platform ios", worktree],
+    "wrangler-d1-remote-delete": [
+      "wrangler d1 execute db --remote --command 'DROP TABLE x'",
+      worktree,
+    ],
+    "eas-deploy": ["eas submit --platform ios", worktree],
+    publish: ["npm publish", worktree],
+    "rm-delete": ["rm -rf src", worktree],
+    "git-clean": ["git clean -fd", worktree],
     "rm-nested-worktree": [`rm -rf ${worktree}/src`, main],
     "discard-nested-worktree": [`git -C ${worktree} reset --hard`, main],
     "branch-delete-unpushed": ["git branch -D feature/x", main],
     "tag-push": ["pnpm bot:git -- push --follow-tags origin HEAD", worktree],
     "bot-gh-release-delete": ["pnpm bot:gh -- release delete v1 --yes", worktree],
+    "bot-gh-graphql-delete": [
+      "pnpm bot:gh -- api graphql -f query='mutation { deleteIssue(input: {issueId: \"x\"}) { clientMutationId } }'",
+      worktree,
+    ],
   };
   assert.deepEqual([...HUMAN_ASKS].sort(), Object.keys(human).sort());
   for (const [c, cwd] of Object.values(human)) {
@@ -2672,6 +2702,166 @@ test("STA-400: HUMAN_ASKS (deletes, deploys, releases) ask from main and subagen
     assert.equal(decision(c, worktree, "Explore", "a1"), "deny", c);
   }
   done();
+});
+
+// ---- STA-400 review (AI-REVIEW FAIL at 58cba93): each case decided otherwise there ----------------------------
+
+test("STA-400 review: rm in any form outside the scratchpad and build output asks; the old denies stay", () => {
+  const { main, worktree, done } = repoWithWorktree();
+  for (const c of [
+    "rm ~/.zshrc",
+    "rm -f /etc/hosts",
+    "rm a.txt",
+    "rm -r src",
+    "rm -R src",
+    "rm --recursive src",
+    "sudo rm a.txt",
+    "xargs rm < list.txt",
+    "find . -name '*.tsbuildinfo' -delete",
+    "find . -name x -exec rm {} +",
+    "git clean -fd",
+    "git clean -f",
+    "git clean -xdf",
+  ])
+    assert.equal(decision(c, worktree), "ask", c);
+  for (const c of [
+    "rm -r ~/Documents",
+    "rm -R /Users/x/Documents",
+    "rm --recursive ~/Documents",
+    "rm -r ../../",
+    `rm -r ${main}`,
+    "rm -r .git",
+    "rm -rf /",
+  ])
+    assert.equal(decision(c, worktree), "deny", c);
+  for (const c of [
+    "rm -rf dist",
+    "rm -r node_modules",
+    "rm dist/x.js",
+    "find dist -delete",
+    "git clean -n",
+  ])
+    assert.equal(decision(c, worktree), "allow", c);
+  for (const c of ["grep -rn rm src", "echo rm a.txt", "git rm --cached a.txt"])
+    assert.equal(decision(c, worktree), "allow", c);
+  done();
+});
+
+test("STA-400 review: deploy and release asks see through every runner and version", () => {
+  for (const c of [
+    "npx wrangler@latest deploy",
+    "npx wrangler@3.1.0 delete",
+    "npx wrangler@3 rollback",
+    "pnpm dlx wrangler@latest deploy",
+    "npx eas-cli@latest submit",
+    "pnpm dlx eas-cli submit",
+    "npx eas-cli build --auto-submit",
+    "eas build --auto-submit-with-profile=production",
+    "npx changeset publish",
+    "npx npm publish",
+    "mise exec -- npm publish",
+    "mise exec -- pnpm publish",
+    "pnpm exec npm publish",
+    "pnpm --silent publish",
+    "pnpm -C packages/x publish",
+    "pnpm --dir packages/x publish",
+    "pnpm --filter=x publish",
+    "pnpm -r publish",
+    "env CI=1 npm publish",
+    "ssh host 'npx wrangler@3 deploy'",
+  ])
+    assert.equal(decision(c, root), "ask", c);
+  for (const c of ["pnpm add publish-utils", "npx wrangler@3 dev", "eas build --platform ios"])
+    assert.equal(decision(c, root), "allow", c);
+});
+
+test("STA-400 review: the other deletes and deploys ask too", () => {
+  for (const c of [
+    "pnpm bot:gh variable delete X",
+    "pnpm bot:gh secret delete X",
+    "pnpm bot:gh -- issue delete 4 --yes",
+    "pnpm bot:gh -- label delete bug --yes",
+    "pnpm bot:gh -- api -X=DELETE repos/figentra/stackra/git/refs/tags/x",
+    "pnpm bot:gh -- api -vX DELETE repos/figentra/stackra/issues/comments/1",
+    "pnpm bot:gh -- api -iX DELETE repos/figentra/stackra/issues/comments/1",
+    "pnpm bot:gh -- api --method=DELETE repos/figentra/stackra/issues/comments/1",
+    "pnpm bot:gh -- workflow run deploy-static.yml",
+    "pnpm bot:gh -- api -X POST repos/figentra/stackra/actions/workflows/deploy-static.yml/dispatches -f ref=main",
+    "pnpm bot:gh -- api graphql -f query='mutation { deleteIssue(input: {issueId: \"x\"}) { clientMutationId } }'",
+    "pnpm exec wrangler d1 execute db --remote --command 'DROP TABLE x'",
+    "wrangler d1 execute db --remote --command 'DELETE FROM x'",
+    "wrangler d1 migrations apply db --remote",
+    "eas env:delete",
+    "pnpm exec eas update:delete x",
+    "npx eas-cli channel:delete x",
+    "eas deploy",
+    "eas update --branch production",
+    "infisical secrets folders delete x",
+    "infisical dynamic-secrets delete x",
+  ])
+    assert.equal(decision(c, root), "ask", c);
+  for (const c of [
+    "pnpm bot:gh -- workflow run ci.yml",
+    "pnpm bot:gh -- workflow list",
+    "wrangler d1 execute db --remote --command 'select 1'",
+    "eas update:list",
+    "infisical secrets folders get",
+  ])
+    assert.equal(decision(c, root), "allow", c);
+});
+
+test("STA-400 review: raw infisical run is a deny that names the wrapping pnpm scripts", () => {
+  for (const c of [
+    'infisical run --env=dev -- node -e "console.log(process.env.X)"',
+    "env infisical run -- node x.js",
+    "timeout 5 infisical run -- node x.js",
+    "mise exec -- infisical run -- node x.js",
+  ]) {
+    const out = run({ tool_input: { command: c }, cwd: root });
+    assert.equal(out.permissionDecision, "deny", c);
+    assert.match(out.permissionDecisionReason, /pnpm bot:gh/, c);
+    assert.ok(!out.permissionDecisionReason.includes(UNATTENDED_HINT), c);
+  }
+  for (const c of ["pnpm bot:gh -- pr view 1", "pnpm linear mine", "bash tools/scripts/mcp.sh"])
+    assert.equal(decision(c, root), "allow", c);
+});
+
+test("STA-400 review: no remaining reason says a human confirms an unreadable command", () => {
+  for (const c of ["$CMD x", "cat x | sh"])
+    assert.doesNotMatch(
+      run({ tool_input: { command: c }, cwd: root }).permissionDecisionReason,
+      /a human confirms/,
+    );
+});
+
+test("STA-400 review: settings ask before deletes and allow the CLIs without rm or gh", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const { permissions: p } = JSON.parse(
+    await readFile(join(root, ".claude", "settings.json"), "utf8"),
+  );
+  for (const rule of [
+    "Bash(rm *)",
+    "Bash(* rm -*r*)",
+    "Bash(find * -delete*)",
+    "Bash(find * -exec rm*)",
+    "Bash(git clean -f*)",
+    "Bash(git branch -D*)",
+    "Bash(git branch --delete --force*)",
+    "Bash(pnpm *bot:gh *variable delete*)",
+    "Bash(pnpm *bot:gh *secret delete*)",
+    "Bash(pnpm *bot:gh *workflow run*deploy*)",
+    "Bash(pnpm *bot:gh *dispatches*)",
+    "Bash(eas *:delete*)",
+    "Bash(eas deploy*)",
+    "Bash(eas update*)",
+    "Bash(infisical secrets folders delete*)",
+    "mcp__expo__appstore_delete_review_response",
+  ])
+    assert.ok(p.ask.includes(rule), rule);
+  for (const rule of ["Bash(wrangler *)", "Bash(eas *)", "Bash(encore *)", "Bash(infisical *)"])
+    assert.ok(p.allow.includes(rule), rule);
+  for (const rule of ["Bash(rm *)", "Bash(gh *)"]) assert.ok(!p.allow.includes(rule), rule);
+  assert.ok(p.deny.includes("Bash(gh *)"));
 });
 
 test("STA-351: unattended turns only an ask into a deny (shared with the OpenCode guard)", () => {
