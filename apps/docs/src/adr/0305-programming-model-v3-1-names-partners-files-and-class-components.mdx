@@ -1,0 +1,242 @@
+---
+title: "0305 — Programming model v3.1: one name per concept, partners by type argument, one declaration per file, class components"
+description: "Accepted · 2026-10-23"
+---
+
+<Note>
+  Amends [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (rules R2, R3,
+  R6, R7, R8, R11 and R12; decisions 13, 14, 16, 19, 20 and 23; items 1 and 4 of its 2026-10-23
+  amendment), [0265](/adr/0265-hook-points-transform-and-verify) (decision 1 names and decision 3
+  implementers) and [0146](/adr/0146-package-configuration-typescript-layers-and-secret-references)
+  (decisions 1 and 5). Each amended page carries a note that says what changed and which of its
+  decisions stand.
+</Note>
+
+## Context
+
+The v3 template conversion showed that the programming model still offered two or three ways to do one
+thing. A partner class was passed as a value (`Policy(OrderPermissions)`), a host override carried the host
+name in front of the base name (`ConsoleAnalyticsConfig`), a file held an action and its input and output
+together, and a root module that only declared an empty class was required in every member. Components were
+required to be functions. Those forms make gen, lint and a reader each guess which rule applies. This ADR
+settles one form for each case and records the one change of direction that the review asked for: class
+components are adopted now, and gen compiles them.
+
+The naming, partner, file and module rules here are the v3 grammar of ADR 0294 with its gaps closed. The
+override tree is ADR 0306, the panel and its tables are ADR 0307, integrations are ADR 0308 and icons are
+ADR 0309. The migration rules are a note on ADR 0159.
+
+## Decision
+
+**Names and kinds (N1 to N3).**
+
+1. An override keeps the plain name of what it overrides. The base class is imported under the alias
+   `Base<Name>`, so `AnalyticsConfig` in a host extends `BaseAnalyticsConfig` from the package. Gen fails a
+   second override of the same base in one member (`override_duplicate`) and two classes that derive the same
+   key (`identity_collision`). There is no last-one-wins rule.
+2. A kind with no options is written bare (`extends Schema`, `extends Signal`). A kind with options is called
+   (`extends Refusal({ kind })`, `extends Action({ key })`). A kind whose options are all optional allows both
+   forms, and its kind row says so.
+3. A kind base is named `PascalCase(kind)`. Kind factories take no `define` prefix: the call already returns a
+   class, so `Driver(...)` is the form and `defineDriver(...)` is not. The word `define` is reserved for the four
+   functions of `stackra.config.ts`: `defineApp`, `defineService`, `definePackage` and `defineWorker`.
+4. Kind base names are reserved (ADR 0294, 2026-10-23 item 11). A model may not take the name of a kind base.
+
+**Partners (P1 to P6).** A declaration names the class it is typed against as a type argument. The form is
+the same for every kind.
+
+5. The subject is the type argument: `Policy<Order>`, `Resource<Order>({ ... })`, `Factory<Order>`,
+   `CrudService<Order>`, `StateMachine<Order>({ field })`, `Facts<Order>`, `Widget<OrderKpisQuery>({ ... })`,
+   `Connection<ResendIntegration>`, `Extension<OrderExtensionPoint["adjustTotals"]>({ order })`, `Change<Subject>({ from, sunset })`
+   and `Projection<Source>({ ... })`. Where a resource's list row differs from its model, the form is `Resource<Order, OrderView>({ ... })` (rule 1 of [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards)). This replaces the value form of each of those kinds, and it reverses the
+   `Connection(SomeIntegration, ...)` form of ADR 0294's 2026-10-23 item 1.
+6. A sibling of the same stem is found by name. `OrderPolicy` reads `OrderPermissions`, and `ResendConnection`
+   reads `ResendIntegration`. The type argument must name that class, or gen fails with `partner_mismatch`. The same code covers a binding whose type argument is of the wrong kind for its base, such as a `WebhookEvent` argument that is not an Integration (ADR 0308 rule 15).
+7. When the stem differs, the sibling is an option: `Policy<Order>({ permissions: SalesPermissions })`.
+8. A value argument stays only where the new class inherits members from it: `Driver(MailTransport)`, so that
+   TypeScript enforces the port's abstract members; `Widget.place(BaseWidget, { ... })`; and every override, which
+   extends its base.
+9. Class references inside options stay, because they list collaborators and not the subject (`operations`,
+   `preconditions`, `refreshOn`, `startOn`, `actions`). Relation decorators keep their thunks (ADR 0294 R11).
+   `Model.with(...traits)` is unchanged: traits are mixins, not partners.
+
+**One declaration per file (S1 to S4).**
+
+10. Every file exports exactly one declaration. An enum's `const` and its same-named `type` count as one. An
+    interface counts as one, and so does a type alias on its own.
+11. Input and Output schemas leave the action, query and prompt files for `schemas/`. The files are
+    `schemas/<name>-input.schema.ts` and `schemas/<name>-output.schema.ts`, also when only one file uses them. A
+    union input is two schema files and a base. The companion rule of ADR 0294 (R2's list of companions and R8's
+    companion types) is retired for these kinds.
+12. A component's Props are `components/<name>/<name>.props.ts` (`blocks/<name>/<name>.props.ts` for a block),
+    exporting `<Name>Props`. The component's `index.ts` re-exports the component and its Props. A notification's
+    `Data` follows the same rule.
+13. Gen fails with `two_declarations_in_file`, and lint carries a `one-declaration-per-file` rule.
+14. Shapes stay type-first classes with field decorators, compiled to Zod (ADR 0294 R4). Shape inheritance
+    (ADR 0294 2026-10-23 item 13) is unchanged.
+
+**Modules (M1 to M4).**
+
+15. A module is a folder. `<key>.module.ts` is written only when it states something gen cannot derive: an
+    `exports` list, root `imports` that narrow or add to the derived set, or a `wrap`. An empty module file fails
+    lint (`empty_module`). This reverses the always-present root module of ADR 0294 R12.
+16. With no root module, a member is one module keyed by its folder name. It imports every workspace or
+    `@stackra/*` dependency that ships a module. A package with no root module gets a generated `<Key>Module`
+    in its `node` entry, so a host imports `LoyaltyKitModule` as it would any other.
+17. A consumed module is imported as a named class from its service's client subpath:
+    `import { OrdersModule } from "#stackra/clients/commerce"`. The generated class is `<Module>Module`. The
+    per-service subpath keeps two services' modules apart. The `Commerce.modules.Orders` namespace walk is retired.
+18. There is no authored `index.ts` beside a root module. Gen writes the entries (ADR 0295).
+
+**Events (E1 to E3).** The base of an event is its delivery, and the base is the type.
+
+19. `@stackra/events` exports the four concrete bases: `DomainEvent` (in process, inside one transaction and
+    one module), `IntegrationEvent` (outbox, cross-service, MCP-visible, optional broadcast, versioned as
+    `.v<n>`), `WebhookEvent<I>` (inbound, verified and routed by its Integration, ADR 0308) and `AnalyticsEvent`
+    (client product analytics through the consent queue, ADR 0298). `Event` is the abstract shared base. Writing
+    `extends Event` fails gen with `event_base_abstract`.
+20. `AnalyticsEvent` moves from `@stackra/analytics` to `@stackra/events`. `@stackra/analytics` keeps delivery,
+    consent gating and the pre-consent queue. `@stackra/events` imports nothing from analytics or webhooks; they
+    import it.
+21. A domain event reaches another service only through a listener that records an integration event through
+    the outbox. It is never sent directly.
+
+**Extensions (X1 to X4).** An extension point is the seam that a module owns and publishes. It is part of that
+module's contract, as an event is. An extension is one class in another module that plugs into one slot of a
+point. The slot verbs follow Magento's words.
+
+22. A point is `extensions/<name>.extension-point.ts`, and an extension is `extensions/<name>.extension.ts`. A
+    sibling module may import a point (ADR 0294 2026-10-23 item 8).
+23. A point has two slot kinds. `ExtensionPoint.before<Args>()` runs before the owner's step, in ascending `order`,
+    and may refuse by throwing a Refusal or return replacement arguments of the same type. `ExtensionPoint.after<Value, Args>()`
+    runs after the owner computed a value, in ascending `order`, and each one sees the previous result.
+24. Wrapping an action call is an interceptor. `extends Interceptor` with `intercept(ctx, next)` runs around one
+    action call, between idempotency and `handle`. A point has no `around` slot. ADR 0265 decision 1 stands on
+    method-level around, and an interceptor is the printed, whole-call form of it.
+25. Each extension implements one slot, and it is one class per slot: `class RedeemPointsExtension extends Extension<OrderExtensionPoint["adjustTotals"]>({ order: 200 })`, with one `handle` method. A method named after the slot is not used, because TypeScript refuses every correct method of that shape (TS2425): members that a generic base takes from a mapped type are properties. The owner calls the point explicitly, so the call is greppable, and gen prints every chain in the manifest.
+26. Every action keeps the implicit `before` and `after` of ADR 0265 decision 2: the input is transformed after
+    validation, and the output before it is returned.
+27. The words keep one meaning (ADR 0294 decision 23). The pair is extension point and extension, and the
+    dictionary entry says that the point is the seam and the extension is one implementer. Magento's `plugin`
+    is not used, because the word already means a tool plugin.
+
+**Action surfaces (A7).** Each way an action reaches a caller is one typed option. Its default comes from the key
+and the actors, and gen locks the derived name in the manifest.
+
+28. `endpoint` is on when the actors include a user or an agent, and `endpoint: false` removes it. Its route is
+    the key-derived route of ADR 0294 decision 21. `tool` is on for queries (ADR 0155) and off for actions. Its
+    MCP name is derived, for example `orders_order_create`, and its risk and approval come from the permission
+    level. `job` is off by default. Its name is the key, and its queue is typed (`Queues.*`). `intent` is off by
+    default. Its phrases are per locale in `<module>::actions.<name>.intents`, so the phrases live in lang files
+    and not in code.
+29. The `ux` option is retired (ADR 0137 and ADR 0098 name it). Placement and confirmation are derived by the
+    resource that places the action (ADR 0307).
+30. Gen checks each combination: `endpoint_method_mismatch` (a PUT is required for an idempotent transition),
+    `tool_without_agent_actor`, `job_without_system_actor`, `cron_input_invalid` (a cron's input is checked against
+    the action's input schema) and `intent_phrases_missing`.
+
+**Caching (C1 to C4).** There is one rule for each case.
+
+31. A cached read is the query's `cache:` option. It declares a time to live and the events that invalidate it,
+    for example `cache: { ttl: "5m", invalidateOn: [OrderPaid, OrderRefunded] }`. A cache key is per principal by
+    default, and `cache.per: CacheScope.Tenant` is an explicit opt-in. The public key of decision 3 of ADR 0297 (query, input, site, locale, market and version) is `cache.per: CacheScope.Site`. Its key is not per principal, so a Site-scoped query must not read the caller: gen fails with `site_cache_reads_caller` when a Site-scoped query reads the actor, a principal or a tenant from its context or its input. Tenant-wide keys need the
+    `expectTenantCacheSafe` test helper.
+32. A cached value inside a service, driver or listener is the injected `Cache` port, with an explicit key built by
+    `CacheKey.of(Model, ...)` and an explicit lifetime. The port scopes keys to the tenant and single-flights a key.
+33. There is no `@Cached` method facet and no `ctx.cache`. The class is the token, so no module import is needed to
+    reach the port.
+
+**Configuration (3.3 of the design record, ADR 0146).**
+
+34. A configuration is `class X extends Config({ schema, env })`. The class is the token and the key is derived
+    from it. `schema` is the shape class, in `schemas/`, with its fields, types and defaults. `env` maps a field to
+    its environment variable, for example `env: { driver: "STACKRA_ANALYTICS_DRIVER" }`. This retires the `@Env`
+    decorator of ADR 0294 R6 and decision 19. A secret stays a field decorator, `@Secret("NAME")`, because a
+    connection has no options map and the secret name is the address of the value. The field sits on the schema class, because the schema declares every field of a configuration and the Config class holds only overrides, so `@Secret` is written on a field of the schema class. Duplicate keys and a double
+    override fail gen. The older `defineConfig` form of ADR 0146 is retired with the `define` rule above. A schema bound to a Config is never emitted to a wire surface: not to `stackra.manifest.json`, not to `openapi.json`, not to the generated clients, and not as a request or response type. Gen fails with `secret_on_wire` when an Input, an Output, an event or a view references a schema that has an `@Secret` field.
+
+**Error boundary.**
+
+35. `@stackra/navigation` owns the root error boundary. Gen wires it into the app, its UI comes from `@stackra/ui`,
+    and it reports through the reporter port of the error package. Apps ship no root boundary. A route adds
+    `<name>.error.tsx` only to customise its own failure view. The root `app.error.tsx` and
+    `components/error-boundary` are removed from the app groups (ADR 0294 2026-10-23 item 4 is superseded in part).
+
+**Identities and the manifest.**
+
+36. `stackra.manifest.json` stays a committed JSON file at the member root. `.stackra/` is fully ignored.
+    `stackra.lock.yaml` stays the version lock. This ADR adds no manifest entries of its own. The panel and integration rules add `ui.resources` and the `ListRows` map (ADR 0307 rules 1 and 5), and the migration and integration entries are in ADR 0159 and ADR 0308.
+
+**Class components (adopted now).** This decision reverses ADR 0294 R7, which says that function kinds are never
+classes, and the earlier decision that components are functions only.
+
+37. A component is written as `class X extends Component<P>`, with `Component` imported from `#stackra/ui`. Its
+    props type is `<Name>Props` in its own `<name>.props.ts` file (rule 12).
+38. Gen compiles the class into a function component. The mapping is:
+    - a field becomes state, and its initialiser runs once;
+    - a field that starts with `use` and holds a hook call becomes a hook;
+    - a method becomes a function on the component, which keeps the method's own name;
+    - `mount()` and `unmount()` become one effect with an empty dependency list, and they read the latest state
+      through an effect-event;
+    - `render()` becomes the body of the function component.
+39. A function component stays valid. Nothing that is written as a function is changed by this rule.
+40. The productised compiler is a gen work item. It starts now, alongside the foundation packages and gen. Its
+    exit gates are: lint findings mapped back to the class line, the TypeScript gaps closed (`Parameters<typeof X>`
+    and refs), and a run on Metro and a device. The spike that proved the mapping (a single Babel plugin with
+    eight checks, React Compiler with no bailout, Fast Refresh keeping state, DevTools names mapped to the class
+    line) ran React Native only on react-native-web. The device run is the gap.
+41. The cost is accepted and recorded. Hooks lint runs on the compiled output (`stackra lint`). TypeScript sees a
+    class while the runtime is a function, so three views must stay consistent. Babel stays in the toolchain. A
+    snapshot read surprises class authors: after `this.count++`, `this.count` still holds the old value until the
+    next render. Every change to React hooks is ongoing cost.
+
+**Kind bases (STA-409).** The partner spike ran on TypeScript 6.0.3 and 7.0.2. Each rule below is a fact that gen or the kind packages depend on.
+
+42. Gen reads a partner binding from source, from the class's heritage clause, through one adapter over the TypeScript compiler API. It never reads a binding from a `.d.ts` file, because a declaration erases the binding of a called form (ADR 0294 decision 25).
+43. Every kind base class is exported. A called form whose base is not exported fails declaration emit with TS4094 under TypeScript 7.
+44. Leaving out the type argument is a compile error. A bare form of a kind that needs a partner, and a called form without one, both fail with a readable hint.
+45. Rules 42 to 44 hold on both TypeScript 6.0.3 and 7.0.2.
+46. A member typed from the partner is an abstract method on the generic base class, never a member of a mapped or intersected type, because TypeScript then treats it as a property and refuses a method that overrides it (TS2425).
+
+## Template and runtime conventions
+
+These conventions are used by the template and the apps. They are decided here, in an ADR body, and not only in the notes of the older pages.
+
+1. **Lang files.** A catalogue is `assets/lang/<locale>/<namespace>.json`, one file for each namespace (for example `console`, `shortcuts`, `manifest`, `pages` and `documents`). A regional overlay, such as `ar-SA` or `en-US`, holds only the keys that differ, and it falls back to its base language (`ar` or `en`). Folder names use BCP 47 case, and URL prefixes stay lowercase (ADR 0297). This amends ADR 0080 and ADR 0234.
+2. **Offline page.** The offline page of an app is a React route, `routes/offline/`, built from HeroUI through `@stackra/ui` and the app's hooks; Pro components where the member holds a HeroUI Pro licence (ADR 0197 as amended). Gen prerenders it once for each locale. The generated `offline.html` and `offline.css` are not used. This amends ADR 0249 and ADR 0297.
+3. **Electron entitlements.** Gen writes the macOS entitlements from the device capabilities that the app declares (camera, microphone, USB, Bluetooth and serial). Each capability has a reason, taken from the lang files, so no entitlements file is kept by hand. This amends ADR 0249.
+4. **Migration ids.** A migration's id is `<module>.<NNNN>_<snake(stem)>`, where `NNNN` is its number within the module and `stem` is the file's stem, for example `loyalty_kit.0001_create_loyalty_tables`. Gen locks the id in `stackra.manifest.json`. This amends ADR 0159 and ADR 0294 decision 20.
+
+## Consequences
+
+- One form exists for each binding, naming and file rule, so a reader and gen agree without a table.
+- The template and every package convert to the type-argument and one-declaration forms in one pass (STA-344),
+  not piecemeal.
+- A class component is authored now, but it does not run until the gen compiler ships. The template therefore
+  carries components that are not yet executable. The owner accepted that order. Until the compiler ships, a
+  reviewer must not treat a class component as tested.
+- Root modules become optional, so a member has fewer files, and a reader must read the folder to see its module.
+- The `ux` option, the value form of partners and the `@Env` decorator are removed from new code. Existing code
+  keeps them until STA-344 converts it.
+
+## Enforcement
+
+- planned — STA-338: `base-matches-suffix`, and the validator's `kind-path` check of the group tables (rules 1 to 3
+  and 10 to 14).
+- planned — STA-339: `member-root` (rule 15 to 18), with the `entries` check.
+- planned — STA-340: `site_cache_reads_caller` (rule 31), so that a public cache key never depends on the caller.
+- planned — STA-340: `secret_on_wire` (rule 34), so that no schema with a secret reaches a wire surface.
+- planned — STA-340: the webhook checks of ADR 0308 rules 15 to 17, which are `partner_mismatch` (a `WebhookEvent` argument that is not an Integration) and `integration_placeholder_unknown` (a webhook secret placeholder that names no field).
+- planned — STA-340: `two_declarations_in_file`, `partner_mismatch`, `override_duplicate`, `identity_collision`,
+  `empty_module`, `event_base_abstract`, the action surface checks, `secret_name_missing` (ADR 0294 2026-10-23
+  item 2), and the `one-declaration-per-file` lint rule.
+- planned — STA-348: the kind base signatures, with the partner parameter defaulting to `never` behind a readable hint, exported bases and abstract partner members (rules 42 to 46).
+- planned — the gen class-component compiler and its lint mapping. The work item is not yet open in Linear, so no
+  check exists today.
+
+## Supersedes and sources
+
+Supersedes: none as a whole. The rules listed above amend the pages named in the note at the top of this page.
+Every page that this ADR changes carries a note in the same change (STA-414): 0090, 0098, 0107, 0110, 0128, 0137, 0164, 0165, 0218, 0224, 0245, 0270, 0271, 0279 and 0295, and the notes of ADR 0159, 0108, 0213, 0294, 0234, 0080, 0249, 0297, 0146 and 0265. The skills and standards pages that still carry older forms are tracked in STA-415. Until they are updated, this ADR governs where they disagree.
+
+Origin: the v3.1 design review of 2026-10-23, restated here in this ADR's own words.

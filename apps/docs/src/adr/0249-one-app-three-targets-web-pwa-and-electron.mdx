@@ -1,7 +1,20 @@
 ---
 title: "0249 — One app, three targets: web, PWA and Electron desktop from one member"
-description: "Accepted, amended by 0294, 0295 · 2026-10-20"
+description: "Accepted, amended by 0294, 0295, 0305 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by
+  [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) (its Template
+  and runtime conventions section): the offline page is a React route in the app, `routes/offline/`,
+  built from HeroUI through `@stackra/ui` and on the app's hooks; Pro components where the member
+  holds a HeroUI Pro licence (ADR 0197 as amended). Gen prerenders it once for each locale, and the
+  generated `offline.html` and `offline.css` are no longer used. Electron's macOS entitlements are
+  written by gen from the device capabilities that the app declares (camera, microphone, USB,
+  Bluetooth and serial), each with a reason taken from the language files, so no entitlements file
+  is kept by hand. The app's root error boundary is owned by `@stackra/navigation` (ADR 0305 rule
+  35). Decisions 1 to 5 stand.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) and

@@ -1,7 +1,17 @@
 ---
 title: "0165 — The web client stack restated: the @stackra/ui contract, form adapters, no Next.js"
-description: "Accepted, amended by 0268, 0294, 0301, 0302 · 2026-10-20"
+description: "Accepted, amended by 0268, 0294, 0301, 0302, 0309 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by
+  [0309](/adr/0309-icons-declarations-name-an-icon-and-the-platform-resolves-it). A declaration
+  references an icon only by its `IconName`, a string, and no declaration imports an icon component.
+  `@stackra/icons` resolves the name per platform, and `@stackra/ui` draws it (rules 1 to 3).
+  Decisions 1 to 5 stand, including the rejection of Next.js in decision 3. Decision 6 (Pro only in
+  Stackra's own apps) is amended for the public template console by the owner decision of 2026-10-23
+  recorded on [0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps).
+</Note>
 
 <Note>
   Amended by [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground): `@stackra/ui`

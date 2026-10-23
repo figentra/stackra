@@ -1,7 +1,11 @@
 ---
 title: "0224 — @stackra/webhooks"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0308 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks). A provider's webhook is a `WebhookEvent<I>({ type })` on its Integration. The Integration declares verification and routing once, and each connection's webhook URL is `/webhooks/<module>/<name>/:connectionId` (rules 15 and 16). Rotation keeps two secrets valid for 24 hours (rule 17), which is the dual-secret rotation of decision 2 with its window stated. Decision 4 says one inbound gateway verifies provider webhooks; rule 15 of [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks) moves that verification to the Integration. The gateway's routing and retention stand. Decision 5 is not restated by [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks).
+</Note>
 
 ## Context
 

@@ -1,7 +1,11 @@
 ---
 title: "0218 — Integrations: the connector SDK and connections per chain level"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0308 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks). The connections package is `@stackra/integrations`, and a connection binds its integration by name with `Connection<I>` (rules 1 and 2). The store is a port with a `local` and a `hosted` driver, and the integrations service hosts the hosted driver, as decision 4 says (rule 12). Activepieces pieces are out of scope for v3.1, and their fields are reserved only (rule 21), so decision 1's adapter is not built in v3.1. Decisions 2, 3 and 5 stand in substance.
+</Note>
 
 <Note>Amends [0107](/adr/0107-connections-store-and-three-key-homes).</Note>
 

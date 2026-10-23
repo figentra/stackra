@@ -1,7 +1,11 @@
 ---
 title: "0110 — The experience service is server-driven UI at level L2: trees of registered coded components, no code over the wire"
-description: "Accepted, amended by 0139, 0154, 0164, 0294 · 2026-10-19"
+description: "Accepted, amended by 0139, 0154, 0164, 0294, 0306, 0307 · 2026-10-19"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) and [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers). Dashboard and widget placements are typed: a widget is `Widget<Query>`, slots are typed places, and the layers that a tenant and a user write are data validated on save and on read (rules 14 to 19 of [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards)). The placement layers and the app's overrides are set by [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers). Decisions 1 to 6 stand: a document still holds only data that references registered code.
+</Note>
 
 <Note>
   Amended by [0164](/adr/0164-console-panels-are-resources-rendered-by-the-panel-package): panels

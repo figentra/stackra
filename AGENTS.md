@@ -155,7 +155,7 @@ the contract they will implement, not code that runs today; the package docs win
 | Risk           | From its permission, L0 to L4       | From its permission, L0 or L1 only      |
 | HTTP method    | `POST`, `PUT`, `PATCH` or `DELETE`  | `GET`                                   |
 | MCP tool       | Only with `tool: true`              | Yes, under the caller's own permissions |
-| Cache          | Never                               | May take a cache profile (ADR 0297)     |
+| Cache          | Never                               | May take a `cache` option (ADR 0305)    |
 | Preconditions  | `preconditions: [...]`              | None                                    |
 
 #### Endpoints
@@ -163,8 +163,8 @@ the contract they will implement, not code that runs today; the package docs win
 An action or query is exposed over HTTP by convention: gen derives the route from its key, so nothing is declared per
 action (ADR 0294 decision 21, ADR 0217 as amended). Input and output are the parameter and return types of `handle`.
 A raw endpoint that is not an action (`/api/auth/*`, streaming) is a class that extends `Controller({ path })`, in
-the module's `raw/` group; the `@Controller` decorator is retired (ADR 0294). An inbound webhook is a `WebhookEvent`
-class.
+the module's `raw/` group; the `@Controller` decorator is retired (ADR 0294). An inbound webhook is a `WebhookEvent<Integration>({ type })`
+class (ADR 0308).
 
 | Key                                    | Route                       |
 | -------------------------------------- | --------------------------- |
@@ -181,10 +181,16 @@ class.
 neither a user nor an agent gets no public endpoint.
 
 ```typescript
-// src/modules/orders/actions/cancel-order.action.ts — orders.order.cancel@1, PUT /orders/:orderId/cancel
+// src/modules/orders/schemas/cancel-order-input.schema.ts — the input, one declaration per file (ADR 0305)
 export class CancelOrderInput extends Schema {
   orderId!: PublicId<"ord">;
 }
+```
+
+```typescript
+// src/modules/orders/actions/cancel-order.action.ts — orders.order.cancel@1, PUT /orders/:orderId/cancel
+import type { CancelOrderInput } from "#modules/orders/schemas/cancel-order-input.schema";
+import type { CancelOrderOutput } from "#modules/orders/schemas/cancel-order-output.schema";
 
 export class CancelOrderAction extends Action({
   key: "order.cancel",
@@ -232,7 +238,7 @@ The permission is derived from the key, and record rules run through `ctx.author
 
 ##### Always typed
 
-Input and output are `Schema` classes whose TypeScript types are the rules (ADR 0095 as amended by 0294). A `number`
+Input and output are `Schema` classes whose TypeScript types are the rules (ADR 0095 as amended by 0294). Each Input and Output is its own file in `schemas/` (ADR 0305). A `number`
 carries `@Int` or `@Num`; constraints are `@Str`, `@Int`, `@Num` and `@List`. Gen compiles each class to one Zod schema
 in `#stackra/schemas`; authors write no Zod except through the `@Field(zod)` escape hatch with a `// reason:` comment.
 
@@ -270,7 +276,7 @@ handler. The pipeline order is tenancy, permission, precondition, entitlement, f
 **Versioned events, not endpoints.**
 
 - Endpoints are immutable (no `/v1`, `/v2`)
-- An integration event writes its `name` once; gen derives `<module-key>.<name>.v<n>` (`identity.user.created.v1`, ADR 0141 as amended). A breaking change sets `version: n` and adds a `Change` class beside the event
+- An integration event writes its `name` once; gen derives `<module-key>.<name>.v<n>` (`identity.user.created.v1`, ADR 0141 as amended). A breaking change sets `version: n` and adds a `Change<Subject>({ ... })` class beside the event (ADR 0305)
 - New endpoint → new path
 - API versions are dates: the `Stackra-Version` header, pinned per API key or OAuth app, through the dormant `@stackra/versioning` package. Paths stay unversioned (`/adr/0118-api-versioning-dormant-package`)
 
@@ -389,14 +395,14 @@ import { OrderPermissions } from "#modules/orders/access/order.permissions";
 
 Services communicate through the generated Encore app (ADRs 0091 and 0124):
 
-- **Integration events** - a class that extends `IntegrationEvent({ name })`; the author writes `name` once and gen derives the wire name `<module-key>.<name>.v<n>` (`identity.user.created.v1`). A consumer is a `Listener` whose `handle(event: E)` parameter type is the producer's event (ADR 0078, 0141 and 0264 as amended by 0294)
-- **Typed client calls and events** - `stackra gen` generates one typed client per service from its committed `stackra.manifest.json`, injected through the constructor from `#stackra/clients`: `client.x.y(input)` to call and `client.x.y.queue(input)` for a queued call (ADR 0260, 0261 as amended by 0294)
-- **Read models** - a consumer's copy of another service's data is a class that extends `Projection(Source, { ... })` in the module's `models/` group, fed by that service's integration events (ADR 0163, 0260 and 0294)
+- **Integration events** - a class that extends `IntegrationEvent({ name })` from `@stackra/events` (ADR 0305); the author writes `name` once and gen derives the wire name `<module-key>.<name>.v<n>` (`identity.user.created.v1`). A consumer is a `Listener` whose `handle(event: E)` parameter type is the producer's event (ADR 0078, 0141 and 0264 as amended by 0294)
+- **Typed client calls and events** - `stackra gen` generates one typed client per service from its committed `stackra.manifest.json`, injected through the constructor from `#stackra/clients`: `client.x.y(input)` to call and `client.x.y.queue(input)` for a queued call (ADR 0260, 0261 as amended by 0294). A consumed module is imported by name from its service's client subpath, `import { OrdersModule } from "#stackra/clients/commerce"`, and never as a namespace walk such as `Commerce.modules.Orders` (ADR 0305)
+- **Read models** - a consumer's copy of another service's data is a class that extends `Projection<Source>({ ... })` in the module's `models/` group, fed by that service's integration events (ADR 0163, 0260 and 0294)
 - Transport is a driver behind the port (ADR 0142). Never direct imports of another service's source, tables or `Topic`
 - A Stackra package that needs service data defines a port (an abstract class) in `src/contracts/ports/`; the service implements it (ADR 0260)
 - Feature modules live in one of three homes: the service (default), a figentra-os `@figentra/*` package used by two or more OS consumers, or a `@stackra/*` package with no Figentra rules. The module layout is the same in all three (ADR 0259 as amended by 0294)
 
-Classes are the only DI tokens, and configuration is a `Config` class (ADR 0145 and 0146 as amended by 0294). Names and casing follow ADR 0231 and 0294.
+Classes are the only DI tokens, and configuration is a `Config` class declared as `Config({ schema, env })` (ADR 0145 and 0146 as amended by 0294 and ADR 0305). Names and casing follow ADR 0231 and 0294.
 
 Today's code: the v3 shapes above are the target. No framework package ships yet, the example service still has an
 authored `src/main.ts`, and older pages still name `app-manifest.json`; the conversion is STA-344.
@@ -413,6 +419,7 @@ authored `src/main.ts`, and older pages still name `app-manifest.json`; the conv
 - ADR-0003: Tier dependency direction
 - ADR-0004: Package archetypes and layers
 - ADR-0294: Programming model v3 (groups, entries, sibling imports)
+- ADR-0305: Programming model v3.1 (partners, one declaration per file, optional root modules, events, extensions)
 - ADR-0141 (event names), ADR-0142 (transport drivers), ADR-0145 (tokens are classes), ADR-0231 (naming and casing standard)
 - Constitution: boundaries (placement test)
 
@@ -421,13 +428,15 @@ authored `src/main.ts`, and older pages still name `app-manifest.json`; the conv
 ### Naming and casing
 
 Every name follows ADR 0231 (`/adr/0231-naming-and-casing-standard`) as amended by the programming model v3, ADR 0294
-(`/adr/0294-programming-model-v3-grammar-folders-identities-and-naming`). The summary is below. A name that no row covers
+(`/adr/0294-programming-model-v3-grammar-folders-identities-and-naming`), as amended by v3.1, ADR 0305
+(`/adr/0305-programming-model-v3-1-names-partners-files-and-class-components`). The summary is below. A name that no row covers
 needs an ADR before use. v3 is the target: no member in this repository has been converted yet (STA-344), so existing
 code may still show the older forms; write new code in the v3 form.
 
 - **Code style**: whole words; acronyms cased as words (`userId`, `ApiClient`, `loadHttpUrl`); no `I` prefix; abbreviations only `id`, `url`, `api`, `db`, `i18n`, `ui` (so `kbd` is refused: the package is `@stackra/shortcuts`); booleans `is`, `has`, `can`; handlers `on` or `handle`; React hooks `use`; module-level constants SCREAMING_SNAKE.
-- **Files**: kebab-case `<name>.<kind>.ts(x)` in the kind's one home group (ADR 0294 decisions 1 and 13 to 15). **Packages**: `@stackra/<kebab>`; services `@figentra/service-<kebab>`.
-- **Class names**: one primary export per file, named `PascalCase(stem) + PascalCase(kind)`: `cancel-order.action.ts` exports `CancelOrderAction`. Noun kinds (model, schema, enum, event, signal, analytics event, type) take no suffix; error classes end in `Error`. Companions in the same file: `<Name>Input` and `<Name>Output` (action, query, prompt), `<Name>Props` (component), `<Name>Data` (notification).
+- **Files**: kebab-case `<name>.<kind>.ts(x)` in the kind's one home group (ADR 0294 decisions 1 and 13 to 15). Input and Output schemas live in `schemas/`, and a component's Props in `<name>.props.ts` (ADR 0305). **Packages**: `@stackra/<kebab>`; services `@figentra/service-<kebab>`.
+- **Class names**: one declaration per file, named `PascalCase(stem) + PascalCase(kind)`: `cancel-order.action.ts` exports `CancelOrderAction`. Noun kinds (model, schema, enum, event, signal, analytics event, type) take no suffix; error classes end in `Error`. No companions: `<Name>Input` and `<Name>Output` (action, query, prompt), `<Name>Props` (component) and `<Name>Data` (notification) each live in their own file (ADR 0305).
+- **Overrides and kind bases** (ADR 0305, 0306): an override keeps the plain name of what it overrides and imports its base as `Base<Name>`. A kind base is named `PascalCase(kind)`, and a kind factory takes no `define` prefix (`Driver(...)`, not `defineDriver(...)`). `define*` is reserved for the four `stackra.config.ts` functions.
 - **Identities are derived, not typed** (ADR 0294 decision 20): module key from the folder, member key from the member folder name, permission `<module>.<model>.<verb>` from a `<Model>Permissions` static, error code from the class name. Written once: an action or query `key` (`order.cancel`, which becomes `orders.order.cancel@1`), an event `name` (`order.paid`, which becomes `orders.order.paid.v1`), a route `path`. `stackra.manifest.json` locks each one; a change needs `@Renamed(old)`.
 - **Public ids**: `<prefix>_<26 characters>`, typed `PublicId<"ord">`; only a seeder's `static ids` spells one out. **Branches**: `figentra/sta-<n>-<slug>`.
 - **Wire identifiers keep dots**: action keys `orders.order.cancel@1`, permissions `orders.order.cancel`, events `orders.order.paid.v1`.
@@ -436,8 +445,9 @@ code may still show the older forms; write new code in the v3 form.
 - **Database**: snake_case plural tables in the module's Postgres schema (`orders.order_lines`); `idx_`, `fk_` and `ck_` names for indexes, foreign keys and check constraints.
 - **Environment variables and secrets**: SCREAMING_SNAKE. Public values use `VITE_`, `EXPO_PUBLIC_` or `RENDERER_VITE_` and never hold a secret. Server values use `STACKRA_`, `FIGENTRA_` or `MAIN_VITE_`. Secrets are `<PROVIDER>_<PURPOSE>`. Tool-reserved prefixes are `ENCORE_`, `TURBO_`, `NODE_`, `CI`, `GITHUB_`, `INFISICAL_`, `EAS_`.
 - **Namespace lookups** (i18n keys, assets, templates, stubs) use `<module>::<path>`, for example `orders::actions.order.cancel.confirm` and `flags::public/images/eg.svg`.
+- **Locales**: folders and overlays use BCP 47 case (`assets/lang/ar-SA/`, `en-US`), and the catalogue layout is set by ADR 0305; URL prefixes stay lowercase (`/ar-sa/`, ADR 0297).
 - **DI**: classes are the only tokens. A constructor parameter names its dependency by its type; a port is an abstract class; a named instance is the type `Named<Port, "x">`. `defineToken`, string tokens, `@Inject` and `@Injectable` are retired (ADR 0145, 0263 as amended by 0294).
-- **One meaning per word** (ADR 0294 decision 23): Precondition, never Guard or Gate; extension point and extension, never a backend hook; Hook means a React `use*` function only; Provider means a React context component only (DI registrations are bindings); Command means a CLI command only; Lifetime, never scope, for DI. Banned identifiers: `*Guard`, `*Gate`, `*HookPoint`.
+- **One meaning per word** (ADR 0294 decision 23): Precondition, never Guard or Gate; extension point and extension, never a backend hook; an extension point's slots are `before` and `after`, and an `Interceptor` wraps one action call (ADR 0305); Hook means a React `use*` function only; Provider means a React context component only (DI registrations are bindings); Command means a CLI command only; Lifetime, never scope, for DI. Banned identifiers: `*Guard`, `*Gate`, `*HookPoint`.
 - **The decorator test**: if the folder, the suffix, the base class, a field type, a method name or a derived name already says it, write no decorator. Only field, method (`@Step`, `@Transition`) and class-facet decorators exist; there are no kind decorators.
 
 Enforcement: planned — STA-338 (`base-matches-suffix` and the validator's `kind-path` check), STA-340 (the decorator-registry checks, the `names` validator row for abbreviations and banned identifiers, the gen checks `kind_class_name` and `identity_changed`), and oxlint `unicorn/filename-case` and the house rules of ADR 0129. Nothing here is checked yet.
@@ -699,7 +709,7 @@ stackra/
 │   ├── foundation/         # Contracts, validation, errors
 │   ├── infrastructure/     # Pulumi-based infra-* packages
 │   ├── runtime/            # Outbox, queue, scheduler, workflow, realtime, locking, cache
-│   ├── security/           # Identity, IAM, tenancy, connections, entitlements, licensing
+│   ├── security/           # Identity, IAM, tenancy, entitlements, licensing
 │   └── state/              # Settings, feature flags, theming
 ├── services/               # tier:service
 │   ├── example/            # Reference service (plain TypeScript)
@@ -742,8 +752,7 @@ new code in the v3 shape where the member already allows it.
 - Authors `package.json`, `tsconfig.json`, `turbo.jsonc`, `stackra.config.ts` (one `defineApp`, `defineService`,
   `definePackage` or `defineWorker` call, static data only), `runway.yaml` when it needs runtime resources (ADR 0296),
   `src/**` and `assets/**`
-- One root module, `src/<key>.module.ts` (`src/node/<key>.module.ts` in a package); the key is derived from the package
-  name
+- The root module is optional. `src/<key>.module.ts` (`src/node/<key>.module.ts` in a package) is written only when it states something gen cannot derive; a member with none is one module keyed by its folder name (ADR 0305, ADR 0294 2026-10-23 item 14)
 - Exempt from `stackra.config.ts` and the root module: the docs app (`apps/docs`, Mintlify, no TypeScript runtime) and
   the `tier:config` presets in `packages/tooling/` (tool configuration, no module); the planned `member-root` check
   (STA-339) skips them
@@ -765,18 +774,20 @@ new code in the v3 shape where the member already allows it.
 - Independent workspace members; feature modules in `src/modules/<key>/`, each with the module groups of ADR 0294
   decision 13 (`models/`, `actions/`, `queries/`, `schemas/`, `enums/`, `errors/`, `events/`, `listeners/`,
   `workflows/`, `access/`, `services/`, `drivers/`, `extensions/`, `integrations/`, `connections/`, `resources/<model>/`,
-  `database/{migrations,factories,seeders}/`, `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its
+  `database/{migrations,factories,seeders,macros}/`, `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its
   first file; `database/` is per module, its migrations numbered per module, and each module's tables live in its own
   Postgres schema
 - Config classes in `src/config/`; the public type surface in `src/contracts/`
+- A migration is a frozen snapshot: it imports only `@stackra/database` and `#stackra/migrations`, and its tables and columns are literals (ADR 0159, v3.1 note)
 
 ##### Apps (<name>)
 
 - Console: Vite web app; Docs: Mintlify documentation site; Mobile: Expo React Native app
-- App groups (ADR 0294 decision 14): `src/<key>.module.ts`, `src/app.error.tsx`, `config/`, `routes/<name>/`,
+- App groups (ADR 0294 decision 14, ADR 0305): `src/<key>.module.ts` (optional), `config/`, `routes/<name>/`,
   `components/<name>/`, `blocks/<name>/`, `panels/`, `menus/`, `shortcuts/`, `documents/`, `stores/`, `flags/`,
-  `analytics/`, `bridges/`, `hooks/` (two or more importers), `overrides/<owner>/`, `schemas/`, `errors/`, `enums/`,
+  `analytics/`, `bridges/`, `hooks/` (two or more importers), `schemas/`, `errors/`, `enums/`,
   `types/`, `styles/`
+- Overrides of any package or service live in one tree, `src/overrides/<owner>/`, which mirrors the owner's paths (ADR 0306)
 - Docs (`apps/docs`) is the exception: Mintlify pages, `docs.json` and `assets/` in `src/`
 
 ##### Workers (<name>)
@@ -797,6 +808,7 @@ new code in the v3 shape where the member already allows it.
 - No root `tests/` - tests live beside code
 - No `src/` in workspace root
 - No packages directly in `packages/` - must have category folder
+- No `assets/overrides/` folders and no `.override.tsx` files: overrides live in `src/overrides/<owner>/` (ADR 0306)
 - Tooling presets live in `packages/tooling/<name>/src/` (one flat layer); no `packages/tooling/<name>/src/lib/`. There are
   exactly five: typescript, oxlint, vitest, tsdown and commitlint (ADR 0300)
 - Folders named after a retired kind: `links/`, `permissions/`, `guards/`, `hooks/` (inside a module), `states/`,
@@ -816,6 +828,7 @@ new code in the v3 shape where the member already allows it.
 - ADR-0004: Package archetypes and layers
 - ADR-0003: Tier dependency direction
 - ADR-0294, ADR-0295, ADR-0296: programming model v3, build and entry, runway v3
+- ADR-0305, ADR-0306: programming model v3.1 and the overrides tree
 - Standards: members (required files per tier)
 
 ### Read before touching matching files

@@ -1,7 +1,18 @@
 ---
 title: "0213 — Settings v2: the full cascade, flags as a settings kind, YAML packs and revisions"
-description: "Accepted, amended by 0270, 0294 · 2026-10-20"
+description: "Accepted, amended by 0270, 0294, 0307 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by
+  [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards): the scope
+  that decision 2 calls IAM scope nodes is named Node, and the cascade adds the Product scope as a
+  level of its own. The `Flag` kind of decision 3 keeps its name and its `.flag.ts` file, in
+  `@stackra/feature-flags`. Its row gains `scopes`, which default to Platform and Tenant. Revisions
+  and approval of decision 5 are set per field with `@Setting({approval})`. Decision 7 is restated:
+  a flag is not an entitlement. The settings page derives a Features section from the flags.
+  Decisions 1, 4, 6 and 8 stand.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
