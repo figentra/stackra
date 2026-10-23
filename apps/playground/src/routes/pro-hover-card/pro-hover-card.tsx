@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import { Button, Link } from "@heroui/react";
+import * as Ui from "@stackra/ui/react";
 import * as UiPro from "@stackra/ui-pro/react";
 
 import { ProHoverCardRoute } from "#src/routes/pro-hover-card/pro-hover-card.route";
@@ -55,7 +55,7 @@ export function ProHoverCard() {
           <bdi>{STRINGS.before}</bdi>
           <UiPro.HoverCard>
             <UiPro.HoverCard.Trigger>
-              <Link href="#profile">{STRINGS.handle}</Link>
+              <Ui.Link href="#profile">{STRINGS.handle}</Ui.Link>
             </UiPro.HoverCard.Trigger>
             <UiPro.HoverCard.Content label={STRINGS.profile}>
               <div className="grid max-w-xs gap-2">
@@ -89,7 +89,7 @@ export function ProHoverCard() {
         <div>
           <UiPro.HoverCard openDelay={600} closeDelay={200}>
             <UiPro.HoverCard.Trigger>
-              <Button variant="secondary">{STRINGS.open}</Button>
+              <Ui.Button variant="secondary">{STRINGS.open}</Ui.Button>
             </UiPro.HoverCard.Trigger>
             <UiPro.HoverCard.Content label={STRINGS.notes}>
               <p className="max-w-xs text-sm">

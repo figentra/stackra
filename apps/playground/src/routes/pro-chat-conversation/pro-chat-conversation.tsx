@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import { Button } from "@heroui/react";
+import * as Ui from "@stackra/ui/react";
 import * as UiPro from "@stackra/ui-pro/react";
 import { useState } from "react";
 
@@ -82,9 +82,9 @@ export function ProChatConversation() {
           {STRINGS.conversation}
         </h2>
         <div>
-          <Button variant="secondary" onPress={add}>
+          <Ui.Button variant="secondary" onPress={add}>
             {STRINGS.add}
-          </Button>
+          </Ui.Button>
         </div>
         <div className="flex h-80 flex-col overflow-hidden rounded-2xl border border-border">
           <UiPro.ChatConversation className="flex-1" aria-label={STRINGS.viewport}>

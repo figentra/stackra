@@ -10,7 +10,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import { Button } from "@heroui/react";
+import * as Ui from "@stackra/ui/react";
 import * as UiPro from "@stackra/ui-pro/react";
 import { useState } from "react";
 
@@ -130,9 +130,9 @@ export function ProMap() {
         </h2>
         <div className="flex flex-wrap gap-2">
           {STOPS.map((stop) => (
-            <Button key={stop.id} variant="secondary" onPress={() => setChosen(stop)}>
+            <Ui.Button key={stop.id} variant="secondary" onPress={() => setChosen(stop)}>
               {STRINGS.choose(stop.name)}
-            </Button>
+            </Ui.Button>
           ))}
         </div>
         <p role="status">

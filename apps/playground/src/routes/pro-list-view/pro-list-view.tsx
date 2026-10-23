@@ -7,7 +7,8 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import { Button, type Selection } from "@heroui/react";
+import type { Selection } from "@heroui/react";
+import * as Ui from "@stackra/ui/react";
 import * as UiPro from "@stackra/ui-pro/react";
 import { useState } from "react";
 
@@ -80,14 +81,14 @@ export function ProListView() {
                 </div>
               </UiPro.ListView.ItemContent>
               <UiPro.ListView.ItemAction>
-                <Button
+                <Ui.Button
                   size="sm"
                   variant="ghost"
-                  aria-label={STRINGS.more(file.name)}
+                  label={STRINGS.more(file.name)}
                   onPress={() => setAction(file.name)}
                 >
                   {STRINGS.moreLabel}
-                </Button>
+                </Ui.Button>
               </UiPro.ListView.ItemAction>
             </UiPro.ListView.Item>
           )}

@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import { Button, Chip, Switch } from "@heroui/react";
+import * as Ui from "@stackra/ui/react";
 import * as UiPro from "@stackra/ui-pro/react";
 import { useState } from "react";
 
@@ -63,14 +63,7 @@ export function ProItemCard() {
             <UiPro.ItemCard.Description>{STRINGS.notificationsText}</UiPro.ItemCard.Description>
           </UiPro.ItemCard.Content>
           <UiPro.ItemCard.Action>
-            <Switch isSelected={isOn} onChange={setOn}>
-              <Switch.Content>
-                <Switch.Control>
-                  <Switch.Thumb />
-                </Switch.Control>
-                <span className="sr-only">{STRINGS.notificationsSwitch}</span>
-              </Switch.Content>
-            </Switch>
+            <Ui.Switch value={isOn} onChange={setOn} aria-label={STRINGS.notificationsSwitch} />
           </UiPro.ItemCard.Action>
         </UiPro.ItemCard>
         <p role="status">
@@ -91,9 +84,9 @@ export function ProItemCard() {
               <UiPro.ItemCard.Description>{STRINGS.laptopText}</UiPro.ItemCard.Description>
             </UiPro.ItemCard.Content>
             <UiPro.ItemCard.Action>
-              <Chip color="success" size="sm" variant="soft">
+              <Ui.Chip tone="success" size="sm" variant="soft">
                 {STRINGS.active}
-              </Chip>
+              </Ui.Chip>
             </UiPro.ItemCard.Action>
           </UiPro.ItemCard>
           <UiPro.ItemCard>
@@ -110,14 +103,14 @@ export function ProItemCard() {
                   <bdi>{STRINGS.revoked}</bdi>
                 </span>
               ) : (
-                <Button
+                <Ui.Button
                   size="sm"
                   variant="outline"
-                  aria-label={STRINGS.revokeTablet}
+                  label={STRINGS.revokeTablet}
                   onPress={() => setRevoked(true)}
                 >
                   {STRINGS.revoke}
-                </Button>
+                </Ui.Button>
               )}
             </UiPro.ItemCard.Action>
           </UiPro.ItemCard>

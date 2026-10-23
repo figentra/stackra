@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import { Description, Label } from "@heroui/react";
+import * as Ui from "@stackra/ui/react";
 import * as UiPro from "@stackra/ui-pro/react";
 import { useState } from "react";
 
@@ -52,8 +52,8 @@ function Items({
     <UiPro.CheckboxButtonGroup.Item key={item.value} value={item.value}>
       <UiPro.CheckboxButtonGroup.Indicator />
       <UiPro.CheckboxButtonGroup.ItemContent>
-        <Label>{item.title}</Label>
-        <Description>{item.description}</Description>
+        <Ui.Label>{item.title}</Ui.Label>
+        <Ui.Description>{item.description}</Ui.Description>
       </UiPro.CheckboxButtonGroup.ItemContent>
     </UiPro.CheckboxButtonGroup.Item>
   ));
@@ -83,8 +83,8 @@ export function ProCheckboxButtonGroup() {
           value={chosen}
           onChange={setChosen}
         >
-          <Label>{STRINGS.addons}</Label>
-          <Description>{STRINGS.addonsHint}</Description>
+          <Ui.Label>{STRINGS.addons}</Ui.Label>
+          <Ui.Description>{STRINGS.addonsHint}</Ui.Description>
           <Items items={ADDONS} />
         </UiPro.CheckboxButtonGroup>
         <p role="status" className="text-sm">
@@ -103,7 +103,7 @@ export function ProCheckboxButtonGroup() {
           name="features"
           variant="secondary"
         >
-          <Label className="col-span-full">{STRINGS.features}</Label>
+          <Ui.Label className="col-span-full">{STRINGS.features}</Ui.Label>
           <Items items={FEATURES} />
         </UiPro.CheckboxButtonGroup>
       </section>
@@ -118,8 +118,8 @@ export function ProCheckboxButtonGroup() {
           name="locked-features"
           variant="secondary"
         >
-          <Label>{STRINGS.disabledFeatures}</Label>
-          <Description>{STRINGS.disabledHint}</Description>
+          <Ui.Label>{STRINGS.disabledFeatures}</Ui.Label>
+          <Ui.Description>{STRINGS.disabledHint}</Ui.Description>
           <Items items={FEATURES} />
         </UiPro.CheckboxButtonGroup>
       </section>

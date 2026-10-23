@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import { Button } from "@heroui/react";
+import * as Ui from "@stackra/ui/react";
 import * as UiPro from "@stackra/ui-pro/react";
 import { useState } from "react";
 
@@ -67,12 +67,12 @@ export function ProStepper() {
           <bdi>{STRINGS.position(step + 1, STEPS.length, STEPS[step] ?? "")}</bdi>
         </p>
         <div className="flex gap-2">
-          <Button variant="secondary" isDisabled={step === 0} onPress={() => setStep(step - 1)}>
+          <Ui.Button variant="secondary" isDisabled={step === 0} onPress={() => setStep(step - 1)}>
             {STRINGS.back}
-          </Button>
-          <Button isDisabled={step === STEPS.length - 1} onPress={() => setStep(step + 1)}>
+          </Ui.Button>
+          <Ui.Button isDisabled={step === STEPS.length - 1} onPress={() => setStep(step + 1)}>
             {STRINGS.next}
-          </Button>
+          </Ui.Button>
         </div>
       </section>
       <section aria-labelledby="tracking-heading" className="grid gap-3">

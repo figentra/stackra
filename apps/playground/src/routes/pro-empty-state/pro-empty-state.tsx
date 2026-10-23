@@ -6,7 +6,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import { Button } from "@heroui/react";
+import * as Ui from "@stackra/ui/react";
 import * as UiPro from "@stackra/ui-pro/react";
 import { useState } from "react";
 
@@ -57,10 +57,10 @@ export function ProEmptyState() {
               <UiPro.EmptyState.Description>{STRINGS.description}</UiPro.EmptyState.Description>
             </UiPro.EmptyState.Header>
             <UiPro.EmptyState.Content className="flex-row gap-2">
-              <Button onPress={() => setLast(STRINGS.create)}>{STRINGS.create}</Button>
-              <Button variant="outline" onPress={() => setLast(STRINGS.import)}>
+              <Ui.Button onPress={() => setLast(STRINGS.create)}>{STRINGS.create}</Ui.Button>
+              <Ui.Button variant="outline" onPress={() => setLast(STRINGS.import)}>
                 {STRINGS.import}
-              </Button>
+              </Ui.Button>
             </UiPro.EmptyState.Content>
           </UiPro.EmptyState>
         </div>

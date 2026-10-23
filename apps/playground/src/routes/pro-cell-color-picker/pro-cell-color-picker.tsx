@@ -7,7 +7,8 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import { ColorArea, ColorSlider, Label, parseColor } from "@heroui/react";
+import { ColorArea, ColorSlider, parseColor } from "@heroui/react";
+import * as Ui from "@stackra/ui/react";
 import * as UiPro from "@stackra/ui-pro/react";
 import { useState } from "react";
 
@@ -43,7 +44,7 @@ function Controls() {
         <ColorArea.Thumb />
       </ColorArea>
       <ColorSlider aria-label={STRINGS.hue} channel="hue" className="gap-1 px-1" colorSpace="hsb">
-        <Label>{STRINGS.hue}</Label>
+        <Ui.Label>{STRINGS.hue}</Ui.Label>
         <ColorSlider.Output className="text-muted" />
         <ColorSlider.Track>
           <ColorSlider.Thumb />

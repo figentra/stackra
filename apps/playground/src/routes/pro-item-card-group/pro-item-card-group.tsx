@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import { Button, Separator } from "@heroui/react";
+import * as Ui from "@stackra/ui/react";
 import * as UiPro from "@stackra/ui-pro/react";
 import { Fragment, useState } from "react";
 
@@ -53,14 +53,14 @@ export function ProItemCardGroup() {
         <UiPro.ItemCard.Description>{integration.text}</UiPro.ItemCard.Description>
       </UiPro.ItemCard.Content>
       <UiPro.ItemCard.Action>
-        <Button
+        <Ui.Button
           size="sm"
           variant="outline"
-          aria-label={STRINGS.manage(integration.name)}
+          label={STRINGS.manage(integration.name)}
           onPress={() => setLast(integration.name)}
         >
           {STRINGS.button}
-        </Button>
+        </Ui.Button>
       </UiPro.ItemCard.Action>
     </UiPro.ItemCard>
   );
@@ -85,7 +85,7 @@ export function ProItemCardGroup() {
           </UiPro.ItemCardGroup.Header>
           {INTEGRATIONS.map((integration, index) => (
             <Fragment key={integration.id}>
-              {index > 0 ? <Separator /> : null}
+              {index > 0 ? <Ui.Separator /> : null}
               {card(integration)}
             </Fragment>
           ))}
