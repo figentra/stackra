@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the ActionBar page sits at /pro-action-bar in the Pro group, titles the page and the document, keeps
+ * Purpose: proves the ActionBar page sits at /pro-action-bar in the Pro category, titles the page and the document, keeps
  *          the bar closed until a file is chosen, then shows it with the count and its named actions, reports the
  *          action that ran, and closes it when the selection is cleared.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
@@ -19,10 +19,10 @@ describe("ProActionBar", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-action-bar in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-action-bar in the Pro category, and titles the page and the document", () => {
     render(<ProActionBar />);
     expect(ProActionBarRoute.path).toBe("/pro-action-bar");
-    expect(ProActionBarRoute.group).toBe("Pro");
+    expect(ProActionBarRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProActionBarRoute.title })).toBeTruthy();
     expect(document.title).toBe("ActionBar · Stackra Playground");
   });

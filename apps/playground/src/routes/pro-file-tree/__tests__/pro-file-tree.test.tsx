@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the FileTree page sits at /pro-file-tree in the Pro group, titles the page and the document, draws
+ * Purpose: proves the FileTree page sits at /pro-file-tree in the Pro category, titles the page and the document, draws
  *          two named trees, shows the first tree's expanded folders, and reports the file chosen.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
@@ -18,10 +18,10 @@ describe("ProFileTree", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-file-tree in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-file-tree in the Pro category, and titles the page and the document", () => {
     render(<ProFileTree />);
     expect(ProFileTreeRoute.path).toBe("/pro-file-tree");
-    expect(ProFileTreeRoute.group).toBe("Pro");
+    expect(ProFileTreeRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProFileTreeRoute.title })).toBeTruthy();
     expect(document.title).toBe("FileTree · Stackra Playground");
   });

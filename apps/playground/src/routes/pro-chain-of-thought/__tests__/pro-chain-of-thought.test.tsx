@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the ChainOfThought page sits at /pro-chain-of-thought in the Pro group, titles the page and the document, and draws a collapsed trace behind a trigger button and an open streaming trace with its step.
+ * Purpose: proves the ChainOfThought page sits at /pro-chain-of-thought in the Pro category, titles the page and the document, and draws a collapsed trace behind a trigger button and an open streaming trace with its step.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProChainOfThought", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-chain-of-thought in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-chain-of-thought in the Pro category, and titles the page and the document", () => {
     render(<ProChainOfThought />);
     expect(ProChainOfThoughtRoute.path).toBe("/pro-chain-of-thought");
-    expect(ProChainOfThoughtRoute.group).toBe("Pro");
+    expect(ProChainOfThoughtRoute.category).toBe("Pro");
     expect(
       screen.getByRole("heading", { level: 1, name: ProChainOfThoughtRoute.title }),
     ).toBeTruthy();

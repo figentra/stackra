@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the Stepper page sits at /pro-stepper in the Pro group, titles the page and the document, names its
+ * Purpose: proves the Stepper page sits at /pro-stepper in the Pro category, titles the page and the document, names its
  *          two step lists, draws the four checkout steps, and moves the step, and the line that reports it, from the
  *          Next button.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
@@ -19,10 +19,10 @@ describe("ProStepper", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-stepper in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-stepper in the Pro category, and titles the page and the document", () => {
     render(<ProStepper />);
     expect(ProStepperRoute.path).toBe("/pro-stepper");
-    expect(ProStepperRoute.group).toBe("Pro");
+    expect(ProStepperRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProStepperRoute.title })).toBeTruthy();
     expect(document.title).toBe("Stepper · Stackra Playground");
   });

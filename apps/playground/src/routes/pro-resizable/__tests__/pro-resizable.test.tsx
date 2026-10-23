@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the Resizable page sits at /pro-resizable in the Pro group, titles the page and the document, draws
+ * Purpose: proves the Resizable page sits at /pro-resizable in the Pro category, titles the page and the document, draws
  *          its two groups of panels, and names each separator.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither. jsdom does no layout, so dragging a handle is checked in the browser.
@@ -18,10 +18,10 @@ describe("ProResizable", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-resizable in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-resizable in the Pro category, and titles the page and the document", () => {
     render(<ProResizable />);
     expect(ProResizableRoute.path).toBe("/pro-resizable");
-    expect(ProResizableRoute.group).toBe("Pro");
+    expect(ProResizableRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProResizableRoute.title })).toBeTruthy();
     expect(document.title).toBe("Resizable · Stackra Playground");
   });

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the AreaChart page sits at /pro-area-chart in the Pro group, titles the page and the document, and draws a single and a stacked chart, each under a heading and named for screen readers, with a legend that names each stacked series.
+ * Purpose: proves the AreaChart page sits at /pro-area-chart in the Pro category, titles the page and the document, and draws a single and a stacked chart, each under a heading and named for screen readers, with a legend that names each stacked series.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProAreaChart", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-area-chart in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-area-chart in the Pro category, and titles the page and the document", () => {
     render(<ProAreaChart />);
     expect(ProAreaChartRoute.path).toBe("/pro-area-chart");
-    expect(ProAreaChartRoute.group).toBe("Pro");
+    expect(ProAreaChartRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProAreaChartRoute.title })).toBeTruthy();
     expect(document.title).toBe("AreaChart · Stackra Playground");
   });

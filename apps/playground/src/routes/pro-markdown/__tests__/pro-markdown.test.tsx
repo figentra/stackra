@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the Markdown page sits at /pro-markdown in the Pro group, titles the page and the document, and renders a document with its blocks and a streaming reply cut off part-way.
+ * Purpose: proves the Markdown page sits at /pro-markdown in the Pro category, titles the page and the document, and renders a document with its blocks and a streaming reply cut off part-way.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProMarkdown", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-markdown in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-markdown in the Pro category, and titles the page and the document", () => {
     render(<ProMarkdown />);
     expect(ProMarkdownRoute.path).toBe("/pro-markdown");
-    expect(ProMarkdownRoute.group).toBe("Pro");
+    expect(ProMarkdownRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProMarkdownRoute.title })).toBeTruthy();
     expect(document.title).toBe("Markdown · Stackra Playground");
   });

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the FloatingTableOfContents page sits at /pro-floating-table-of-contents in the Pro group, titles
+ * Purpose: proves the FloatingTableOfContents page sits at /pro-floating-table-of-contents in the Pro category, titles
  *          the page and the document, draws the article's four sections beside a named trigger, and, once the trigger
  *          is pressed, lists the four sections and moves the current one to the section chosen.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
@@ -22,10 +22,10 @@ describe("ProFloatingTableOfContents", () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-floating-table-of-contents in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-floating-table-of-contents in the Pro category, and titles the page and the document", () => {
     render(<ProFloatingTableOfContents />);
     expect(ProFloatingTableOfContentsRoute.path).toBe("/pro-floating-table-of-contents");
-    expect(ProFloatingTableOfContentsRoute.group).toBe("Pro");
+    expect(ProFloatingTableOfContentsRoute.category).toBe("Pro");
     expect(
       screen.getByRole("heading", { level: 1, name: ProFloatingTableOfContentsRoute.title }),
     ).toBeTruthy();

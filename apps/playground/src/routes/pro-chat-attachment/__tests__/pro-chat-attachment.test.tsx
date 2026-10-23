@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the ChatAttachment page sits at /pro-chat-attachment in the Pro group, titles the page and the document, and draws a chip with a named remove button for each file, and a composer with a named attach button.
+ * Purpose: proves the ChatAttachment page sits at /pro-chat-attachment in the Pro category, titles the page and the document, and draws a chip with a named remove button for each file, and a composer with a named attach button.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProChatAttachment", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-chat-attachment in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-chat-attachment in the Pro category, and titles the page and the document", () => {
     render(<ProChatAttachment />);
     expect(ProChatAttachmentRoute.path).toBe("/pro-chat-attachment");
-    expect(ProChatAttachmentRoute.group).toBe("Pro");
+    expect(ProChatAttachmentRoute.category).toBe("Pro");
     expect(
       screen.getByRole("heading", { level: 1, name: ProChatAttachmentRoute.title }),
     ).toBeTruthy();

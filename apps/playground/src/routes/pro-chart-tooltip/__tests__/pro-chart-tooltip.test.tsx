@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the ChartTooltip page sits at /pro-chart-tooltip in the Pro group, titles the page and the document, and draws the card on its own, with its header and one row per series, and a chart that shows it.
+ * Purpose: proves the ChartTooltip page sits at /pro-chart-tooltip in the Pro category, titles the page and the document, and draws the card on its own, with its header and one row per series, and a chart that shows it.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProChartTooltip", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-chart-tooltip in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-chart-tooltip in the Pro category, and titles the page and the document", () => {
     render(<ProChartTooltip />);
     expect(ProChartTooltipRoute.path).toBe("/pro-chart-tooltip");
-    expect(ProChartTooltipRoute.group).toBe("Pro");
+    expect(ProChartTooltipRoute.category).toBe("Pro");
     expect(
       screen.getByRole("heading", { level: 1, name: ProChartTooltipRoute.title }),
     ).toBeTruthy();

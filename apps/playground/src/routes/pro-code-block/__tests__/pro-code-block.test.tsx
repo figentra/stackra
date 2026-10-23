@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the CodeBlock page sits at /pro-code-block in the Pro group, titles the page and the document, and draws a block for TypeScript and for JSON, each with its language and a named copy button.
+ * Purpose: proves the CodeBlock page sits at /pro-code-block in the Pro category, titles the page and the document, and draws a block for TypeScript and for JSON, each with its language and a named copy button.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProCodeBlock", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-code-block in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-code-block in the Pro category, and titles the page and the document", () => {
     render(<ProCodeBlock />);
     expect(ProCodeBlockRoute.path).toBe("/pro-code-block");
-    expect(ProCodeBlockRoute.group).toBe("Pro");
+    expect(ProCodeBlockRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProCodeBlockRoute.title })).toBeTruthy();
     expect(document.title).toBe("CodeBlock · Stackra Playground");
   });

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the PromptSuggestion page sits at /pro-prompt-suggestion in the Pro group, titles the page and the document, and draws a list of suggestions as buttons and a group of cards, and announces the suggestion chosen.
+ * Purpose: proves the PromptSuggestion page sits at /pro-prompt-suggestion in the Pro category, titles the page and the document, and draws a list of suggestions as buttons and a group of cards, and announces the suggestion chosen.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProPromptSuggestion", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-prompt-suggestion in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-prompt-suggestion in the Pro category, and titles the page and the document", () => {
     render(<ProPromptSuggestion />);
     expect(ProPromptSuggestionRoute.path).toBe("/pro-prompt-suggestion");
-    expect(ProPromptSuggestionRoute.group).toBe("Pro");
+    expect(ProPromptSuggestionRoute.category).toBe("Pro");
     expect(
       screen.getByRole("heading", { level: 1, name: ProPromptSuggestionRoute.title }),
     ).toBeTruthy();

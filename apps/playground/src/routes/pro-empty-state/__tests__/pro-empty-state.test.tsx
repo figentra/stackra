@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the EmptyState page sits at /pro-empty-state in the Pro group, titles the page and the document,
+ * Purpose: proves the EmptyState page sits at /pro-empty-state in the Pro category, titles the page and the document,
  *          draws both empty states with their titles and descriptions, and reports the action pressed.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
@@ -18,10 +18,10 @@ describe("ProEmptyState", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-empty-state in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-empty-state in the Pro category, and titles the page and the document", () => {
     render(<ProEmptyState />);
     expect(ProEmptyStateRoute.path).toBe("/pro-empty-state");
-    expect(ProEmptyStateRoute.group).toBe("Pro");
+    expect(ProEmptyStateRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProEmptyStateRoute.title })).toBeTruthy();
     expect(document.title).toBe("EmptyState · Stackra Playground");
   });

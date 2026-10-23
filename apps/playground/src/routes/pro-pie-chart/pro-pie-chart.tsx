@@ -23,20 +23,18 @@ const STRINGS = {
   donutLabel: "Donut chart of visits by source: Organic, Direct, Referral and Social",
 } as const;
 
-const COLORS = ["var(--chart-4)", "var(--chart-3)", "var(--chart-2)", "var(--chart-1)"];
-
 const BROWSERS = [
-  { name: "Chrome", value: 62 },
-  { name: "Safari", value: 19 },
-  { name: "Firefox", value: 10 },
-  { name: "Edge", value: 9 },
+  { name: "Chrome", color: "var(--chart-4)", value: 62 },
+  { name: "Safari", color: "var(--chart-3)", value: 19 },
+  { name: "Firefox", color: "var(--chart-2)", value: 10 },
+  { name: "Edge", color: "var(--chart-1)", value: 9 },
 ];
 
 const SOURCES = [
-  { name: "Organic", value: 4500 },
-  { name: "Direct", value: 3200 },
-  { name: "Referral", value: 2100 },
-  { name: "Social", value: 1400 },
+  { name: "Organic", color: "var(--chart-4)", value: 4500 },
+  { name: "Direct", color: "var(--chart-3)", value: 3200 },
+  { name: "Referral", color: "var(--chart-2)", value: 2100 },
+  { name: "Social", color: "var(--chart-1)", value: 1400 },
 ];
 
 /** The legend of a chart: a swatch, the name and the value of each slice. */
@@ -44,17 +42,17 @@ function Legend({
   slices,
   suffix = "",
 }: {
-  slices: readonly { name: string; value: number }[];
+  slices: readonly { name: string; color: string; value: number }[];
   suffix?: string;
 }) {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm">
-      {slices.map((slice, index) => (
+      {slices.map((slice) => (
         <li key={slice.name} className="flex items-center gap-1.5">
           <span
             aria-hidden="true"
             className="size-3 rounded-full"
-            style={{ backgroundColor: COLORS[index % COLORS.length] }}
+            style={{ backgroundColor: slice.color }}
           />
           <bdi>
             {slice.name} ({slice.value.toLocaleString("en-US")}
@@ -91,8 +89,8 @@ export function ProPieChart() {
               nameKey="name"
               outerRadius={90}
             >
-              {BROWSERS.map((slice, index) => (
-                <UiPro.PieChart.Cell key={slice.name} fill={COLORS[index % COLORS.length]} />
+              {BROWSERS.map((slice) => (
+                <UiPro.PieChart.Cell key={slice.name} fill={slice.color} />
               ))}
             </UiPro.PieChart.Pie>
             <UiPro.PieChart.Tooltip content={<UiPro.PieChart.TooltipContent />} />
@@ -115,8 +113,8 @@ export function ProPieChart() {
               paddingAngle={-20}
               strokeWidth={0}
             >
-              {SOURCES.map((slice, index) => (
-                <UiPro.PieChart.Cell key={slice.name} fill={COLORS[index % COLORS.length]} />
+              {SOURCES.map((slice) => (
+                <UiPro.PieChart.Cell key={slice.name} fill={slice.color} />
               ))}
             </UiPro.PieChart.Pie>
             <UiPro.PieChart.Tooltip content={<UiPro.PieChart.TooltipContent />} />

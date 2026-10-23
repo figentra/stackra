@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the ChatLoader page sits at /pro-chat-loader in the Pro group, titles the page and the document, and draws three named status indicators and a skeleton.
+ * Purpose: proves the ChatLoader page sits at /pro-chat-loader in the Pro category, titles the page and the document, and draws three named status indicators and a skeleton.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProChatLoader", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-chat-loader in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-chat-loader in the Pro category, and titles the page and the document", () => {
     render(<ProChatLoader />);
     expect(ProChatLoaderRoute.path).toBe("/pro-chat-loader");
-    expect(ProChatLoaderRoute.group).toBe("Pro");
+    expect(ProChatLoaderRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProChatLoaderRoute.title })).toBeTruthy();
     expect(document.title).toBe("ChatLoader · Stackra Playground");
   });

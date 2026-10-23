@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the TextShimmer page sits at /pro-text-shimmer in the Pro group, titles the page and the document, and draws each label as real text.
+ * Purpose: proves the TextShimmer page sits at /pro-text-shimmer in the Pro category, titles the page and the document, and draws each label as real text.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProTextShimmer", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-text-shimmer in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-text-shimmer in the Pro category, and titles the page and the document", () => {
     render(<ProTextShimmer />);
     expect(ProTextShimmerRoute.path).toBe("/pro-text-shimmer");
-    expect(ProTextShimmerRoute.group).toBe("Pro");
+    expect(ProTextShimmerRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProTextShimmerRoute.title })).toBeTruthy();
     expect(document.title).toBe("TextShimmer · Stackra Playground");
   });

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the RadarChart page sits at /pro-radar-chart in the Pro group, titles the page and the document, and draws a single and a two-series chart, each under a heading and named for screen readers, with a legend that names each team.
+ * Purpose: proves the RadarChart page sits at /pro-radar-chart in the Pro category, titles the page and the document, and draws a single and a two-series chart, each under a heading and named for screen readers, with a legend that names each team.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProRadarChart", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-radar-chart in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-radar-chart in the Pro category, and titles the page and the document", () => {
     render(<ProRadarChart />);
     expect(ProRadarChartRoute.path).toBe("/pro-radar-chart");
-    expect(ProRadarChartRoute.group).toBe("Pro");
+    expect(ProRadarChartRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProRadarChartRoute.title })).toBeTruthy();
     expect(document.title).toBe("RadarChart · Stackra Playground");
   });

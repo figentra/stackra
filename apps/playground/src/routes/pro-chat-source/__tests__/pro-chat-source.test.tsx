@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the ChatSource page sits at /pro-chat-source in the Pro group, titles the page and the document, and draws a web source as a link, a document source, and a collapsed list of sources behind a trigger.
+ * Purpose: proves the ChatSource page sits at /pro-chat-source in the Pro category, titles the page and the document, and draws a web source as a link, a document source, and a collapsed list of sources behind a trigger.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProChatSource", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-chat-source in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-chat-source in the Pro category, and titles the page and the document", () => {
     render(<ProChatSource />);
     expect(ProChatSourceRoute.path).toBe("/pro-chat-source");
-    expect(ProChatSourceRoute.group).toBe("Pro");
+    expect(ProChatSourceRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProChatSourceRoute.title })).toBeTruthy();
     expect(document.title).toBe("ChatSource · Stackra Playground");
   });

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the RadialChart page sits at /pro-radial-chart in the Pro group, titles the page and the document, and draws rings and a gauge, each under a heading and named for screen readers, with the figures written beside the chart.
+ * Purpose: proves the RadialChart page sits at /pro-radial-chart in the Pro category, titles the page and the document, and draws rings and a gauge, each under a heading and named for screen readers, with the figures written beside the chart.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProRadialChart", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-radial-chart in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-radial-chart in the Pro category, and titles the page and the document", () => {
     render(<ProRadialChart />);
     expect(ProRadialChartRoute.path).toBe("/pro-radial-chart");
-    expect(ProRadialChartRoute.group).toBe("Pro");
+    expect(ProRadialChartRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProRadialChartRoute.title })).toBeTruthy();
     expect(document.title).toBe("RadialChart · Stackra Playground");
   });

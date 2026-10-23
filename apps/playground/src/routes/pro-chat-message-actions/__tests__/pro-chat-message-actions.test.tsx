@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the ChatMessageActions page sits at /pro-chat-message-actions in the Pro group, titles the page and the document, and draws the full and the minimal row of actions, each named.
+ * Purpose: proves the ChatMessageActions page sits at /pro-chat-message-actions in the Pro category, titles the page and the document, and draws the full and the minimal row of actions, each named.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProChatMessageActions", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-chat-message-actions in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-chat-message-actions in the Pro category, and titles the page and the document", () => {
     render(<ProChatMessageActions />);
     expect(ProChatMessageActionsRoute.path).toBe("/pro-chat-message-actions");
-    expect(ProChatMessageActionsRoute.group).toBe("Pro");
+    expect(ProChatMessageActionsRoute.category).toBe("Pro");
     expect(
       screen.getByRole("heading", { level: 1, name: ProChatMessageActionsRoute.title }),
     ).toBeTruthy();

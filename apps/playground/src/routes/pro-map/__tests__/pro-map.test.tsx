@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the Map page sits at /pro-map in the Pro group, titles the page and the document, hands the map its
+ * Purpose: proves the Map page sits at /pro-map in the Pro category, titles the page and the document, hands the map its
  *          name and a tile-free style, and lets the buttons choose the stop that is reported.
  * Boundary: HeroUI Pro's map is replaced by a stand-in that records the props it receives and draws its children,
  *          because MapLibre needs WebGL, which jsdom lacks. The real map is drawn in the browser.
@@ -56,10 +56,10 @@ describe("ProMap", () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-map in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-map in the Pro category, and titles the page and the document", () => {
     render(<ProMap />);
     expect(ProMapRoute.path).toBe("/pro-map");
-    expect(ProMapRoute.group).toBe("Pro");
+    expect(ProMapRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProMapRoute.title })).toBeTruthy();
     expect(document.title).toBe("Map · Stackra Playground");
   });

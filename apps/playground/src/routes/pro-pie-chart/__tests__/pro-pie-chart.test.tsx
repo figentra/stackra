@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the PieChart page sits at /pro-pie-chart in the Pro group, titles the page and the document, and draws a pie and a donut, each under a heading and named for screen readers, with a legend that names each slice and its value.
+ * Purpose: proves the PieChart page sits at /pro-pie-chart in the Pro category, titles the page and the document, and draws a pie and a donut, each under a heading and named for screen readers, with a legend that names each slice and its value.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProPieChart", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-pie-chart in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-pie-chart in the Pro category, and titles the page and the document", () => {
     render(<ProPieChart />);
     expect(ProPieChartRoute.path).toBe("/pro-pie-chart");
-    expect(ProPieChartRoute.group).toBe("Pro");
+    expect(ProPieChartRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProPieChartRoute.title })).toBeTruthy();
     expect(document.title).toBe("PieChart · Stackra Playground");
   });

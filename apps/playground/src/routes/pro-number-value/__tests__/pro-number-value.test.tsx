@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the NumberValue page sits at /pro-number-value in the Pro group, titles the page and the document,
+ * Purpose: proves the NumberValue page sits at /pro-number-value in the Pro category, titles the page and the document,
  *          formats the amount in four currencies and four compact figures, and keeps every `dt` and `dd` inside a
  *          `dl`.
  * Boundary: jsdom with real HeroUI Pro; `matchMedia` and `ResizeObserver` are stubbed because jsdom has neither.
@@ -18,10 +18,10 @@ describe("ProNumberValue", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-number-value in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-number-value in the Pro category, and titles the page and the document", () => {
     render(<ProNumberValue />);
     expect(ProNumberValueRoute.path).toBe("/pro-number-value");
-    expect(ProNumberValueRoute.group).toBe("Pro");
+    expect(ProNumberValueRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProNumberValueRoute.title })).toBeTruthy();
     expect(document.title).toBe("NumberValue · Stackra Playground");
   });

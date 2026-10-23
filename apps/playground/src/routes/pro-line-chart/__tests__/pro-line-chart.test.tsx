@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the LineChart page sits at /pro-line-chart in the Pro group, titles the page and the document, and draws two charts, each under a heading and named for screen readers, with a legend that names each series.
+ * Purpose: proves the LineChart page sits at /pro-line-chart in the Pro category, titles the page and the document, and draws two charts, each under a heading and named for screen readers, with a legend that names each series.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProLineChart", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-line-chart in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-line-chart in the Pro category, and titles the page and the document", () => {
     render(<ProLineChart />);
     expect(ProLineChartRoute.path).toBe("/pro-line-chart");
-    expect(ProLineChartRoute.group).toBe("Pro");
+    expect(ProLineChartRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProLineChartRoute.title })).toBeTruthy();
     expect(document.title).toBe("LineChart · Stackra Playground");
   });

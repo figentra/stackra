@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the Sheet page sits at /pro-sheet in the Pro group, titles the page and the document, keeps both
+ * Purpose: proves the Sheet page sits at /pro-sheet in the Pro category, titles the page and the document, keeps both
  *          sheets closed until their buttons are pressed, opens the bottom sheet as a dialog named by its heading, and
  *          reports the answer when the sheet is confirmed.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
@@ -19,10 +19,10 @@ describe("ProSheet", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-sheet in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-sheet in the Pro category, and titles the page and the document", () => {
     render(<ProSheet />);
     expect(ProSheetRoute.path).toBe("/pro-sheet");
-    expect(ProSheetRoute.group).toBe("Pro");
+    expect(ProSheetRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProSheetRoute.title })).toBeTruthy();
     expect(document.title).toBe("Sheet · Stackra Playground");
   });

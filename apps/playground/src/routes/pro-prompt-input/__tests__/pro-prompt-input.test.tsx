@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the PromptInput page sits at /pro-prompt-input in the Pro group, titles the page and the document, and draws a composer with named controls that sends into a list, and one that is waiting for a reply.
+ * Purpose: proves the PromptInput page sits at /pro-prompt-input in the Pro category, titles the page and the document, and draws a composer with named controls that sends into a list, and one that is waiting for a reply.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProPromptInput", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-prompt-input in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-prompt-input in the Pro category, and titles the page and the document", () => {
     render(<ProPromptInput />);
     expect(ProPromptInputRoute.path).toBe("/pro-prompt-input");
-    expect(ProPromptInputRoute.group).toBe("Pro");
+    expect(ProPromptInputRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProPromptInputRoute.title })).toBeTruthy();
     expect(document.title).toBe("PromptInput · Stackra Playground");
   });

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the Widget page sits at /pro-widget in the Pro group, titles the page and the document, draws two
+ * Purpose: proves the Widget page sits at /pro-widget in the Pro category, titles the page and the document, draws two
  *          widgets with their titles, and gives the first its legend, its three values in text and its footer.
  * Boundary: jsdom with real HeroUI Pro; `matchMedia` and `ResizeObserver` are stubbed because jsdom has neither.
  * Runtime: browser
@@ -17,10 +17,10 @@ describe("ProWidget", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-widget in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-widget in the Pro category, and titles the page and the document", () => {
     render(<ProWidget />);
     expect(ProWidgetRoute.path).toBe("/pro-widget");
-    expect(ProWidgetRoute.group).toBe("Pro");
+    expect(ProWidgetRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProWidgetRoute.title })).toBeTruthy();
     expect(document.title).toBe("Widget · Stackra Playground");
   });

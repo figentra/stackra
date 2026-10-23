@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the HoloCard page sits at /pro-holo-card in the Pro group, titles the page and the document, draws
+ * Purpose: proves the HoloCard page sits at /pro-holo-card in the Pro category, titles the page and the document, draws
  *          two cards that carry the holder's name as text, and gives only the interactive one a glare layer.
  * Boundary: jsdom with real HeroUI Pro; `matchMedia` and `ResizeObserver` are stubbed because jsdom has neither. The
  *          tilt follows the pointer on a laid-out card, so it is checked in the browser.
@@ -18,10 +18,10 @@ describe("ProHoloCard", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-holo-card in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-holo-card in the Pro category, and titles the page and the document", () => {
     render(<ProHoloCard />);
     expect(ProHoloCardRoute.path).toBe("/pro-holo-card");
-    expect(ProHoloCardRoute.group).toBe("Pro");
+    expect(ProHoloCardRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProHoloCardRoute.title })).toBeTruthy();
     expect(document.title).toBe("HoloCard · Stackra Playground");
   });

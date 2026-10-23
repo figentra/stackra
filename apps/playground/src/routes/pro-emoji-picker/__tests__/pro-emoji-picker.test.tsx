@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the EmojiPicker page sits at /pro-emoji-picker in the Pro group, titles the page and the document,
+ * Purpose: proves the EmojiPicker page sits at /pro-emoji-picker in the Pro category, titles the page and the document,
  *          shows the chosen emoji on a named button, keeps the grid closed until the button is pressed, and opens a
  *          grid of emoji.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
@@ -20,10 +20,10 @@ describe("ProEmojiPicker", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-emoji-picker in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-emoji-picker in the Pro category, and titles the page and the document", () => {
     render(<ProEmojiPicker />);
     expect(ProEmojiPickerRoute.path).toBe("/pro-emoji-picker");
-    expect(ProEmojiPickerRoute.group).toBe("Pro");
+    expect(ProEmojiPickerRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProEmojiPickerRoute.title })).toBeTruthy();
     expect(document.title).toBe("EmojiPicker · Stackra Playground");
   });

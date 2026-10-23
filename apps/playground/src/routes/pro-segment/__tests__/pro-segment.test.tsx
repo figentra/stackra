@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the Segment page sits at /pro-segment in the Pro group, titles the page and the document, draws the
+ * Purpose: proves the Segment page sits at /pro-segment in the Pro category, titles the page and the document, draws the
  *          two named controls with their choices, and moves the selection, and the line that reports it, when a
  *          segment is pressed.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
@@ -23,10 +23,10 @@ describe("ProSegment", () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-segment in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-segment in the Pro category, and titles the page and the document", () => {
     render(<ProSegment />);
     expect(ProSegmentRoute.path).toBe("/pro-segment");
-    expect(ProSegmentRoute.group).toBe("Pro");
+    expect(ProSegmentRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProSegmentRoute.title })).toBeTruthy();
     expect(document.title).toBe("Segment · Stackra Playground");
   });

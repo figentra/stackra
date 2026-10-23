@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the HoverCard page sits at /pro-hover-card in the Pro group, titles the page and the document, draws
+ * Purpose: proves the HoverCard page sits at /pro-hover-card in the Pro category, titles the page and the document, draws
  *          its two triggers with the cards closed, and opens the profile card, a dialog named by its label, when the
  *          link takes focus.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
@@ -19,10 +19,10 @@ describe("ProHoverCard", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-hover-card in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-hover-card in the Pro category, and titles the page and the document", () => {
     render(<ProHoverCard />);
     expect(ProHoverCardRoute.path).toBe("/pro-hover-card");
-    expect(ProHoverCardRoute.group).toBe("Pro");
+    expect(ProHoverCardRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProHoverCardRoute.title })).toBeTruthy();
     expect(document.title).toBe("HoverCard · Stackra Playground");
   });

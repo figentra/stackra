@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the Agenda page sits at /pro-agenda in the Pro group, titles the page and the document, draws the
+ * Purpose: proves the Agenda page sits at /pro-agenda in the Pro category, titles the page and the document, draws the
  *          calendar's navigation buttons and the week view's time grid, switches to the month view, and reports no
  *          events created.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
@@ -24,10 +24,10 @@ describe("ProAgenda", () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-agenda in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-agenda in the Pro category, and titles the page and the document", () => {
     render(<ProAgenda />);
     expect(ProAgendaRoute.path).toBe("/pro-agenda");
-    expect(ProAgendaRoute.group).toBe("Pro");
+    expect(ProAgendaRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProAgendaRoute.title })).toBeTruthy();
     expect(document.title).toBe("Agenda · Stackra Playground");
   });

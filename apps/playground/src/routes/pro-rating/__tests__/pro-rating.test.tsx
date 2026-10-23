@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the Rating page sits at /pro-rating in the Pro group, titles the page and the document, draws the
+ * Purpose: proves the Rating page sits at /pro-rating in the Pro category, titles the page and the document, draws the
  *          named rating input with its five stars and the read-only average, and reports the rating chosen.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
@@ -18,10 +18,10 @@ describe("ProRating", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-rating in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-rating in the Pro category, and titles the page and the document", () => {
     render(<ProRating />);
     expect(ProRatingRoute.path).toBe("/pro-rating");
-    expect(ProRatingRoute.group).toBe("Pro");
+    expect(ProRatingRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProRatingRoute.title })).toBeTruthy();
     expect(document.title).toBe("Rating · Stackra Playground");
   });

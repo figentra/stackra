@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the ItemCard page sits at /pro-item-card in the Pro group, titles the page and the document, draws
+ * Purpose: proves the ItemCard page sits at /pro-item-card in the Pro category, titles the page and the document, draws
  *          three cards with their titles, turns the named switch off and says so, and revokes the tablet.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
@@ -18,10 +18,10 @@ describe("ProItemCard", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-item-card in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-item-card in the Pro category, and titles the page and the document", () => {
     render(<ProItemCard />);
     expect(ProItemCardRoute.path).toBe("/pro-item-card");
-    expect(ProItemCardRoute.group).toBe("Pro");
+    expect(ProItemCardRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProItemCardRoute.title })).toBeTruthy();
     expect(document.title).toBe("ItemCard · Stackra Playground");
   });

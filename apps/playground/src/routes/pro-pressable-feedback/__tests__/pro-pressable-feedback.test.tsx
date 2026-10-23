@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the PressableFeedback page sits at /pro-pressable-feedback in the Pro group, titles the page and the
+ * Purpose: proves the PressableFeedback page sits at /pro-pressable-feedback in the Pro category, titles the page and the
  *          document, draws three buttons named by their text, counts the presses of the ripple tile in text, and
  *          leaves the disabled tile disabled.
  * Boundary: jsdom with real HeroUI Pro; `matchMedia` and `ResizeObserver` are stubbed because jsdom has neither. The
@@ -24,10 +24,10 @@ describe("ProPressableFeedback", () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-pressable-feedback in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-pressable-feedback in the Pro category, and titles the page and the document", () => {
     render(<ProPressableFeedback />);
     expect(ProPressableFeedbackRoute.path).toBe("/pro-pressable-feedback");
-    expect(ProPressableFeedbackRoute.group).toBe("Pro");
+    expect(ProPressableFeedbackRoute.category).toBe("Pro");
     expect(
       screen.getByRole("heading", { level: 1, name: ProPressableFeedbackRoute.title }),
     ).toBeTruthy();

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the ItemCardGroup page sits at /pro-item-card-group in the Pro group, titles the page and the
+ * Purpose: proves the ItemCardGroup page sits at /pro-item-card-group in the Pro category, titles the page and the
  *          document, draws the titled list and the grid with three cards each, and reports the card pressed.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
@@ -18,10 +18,10 @@ describe("ProItemCardGroup", () => {
   beforeEach(stubBrowserApis);
   afterEach(() => vi.unstubAllGlobals());
 
-  it("sits at /pro-item-card-group in the Pro group, and titles the page and the document", () => {
+  it("sits at /pro-item-card-group in the Pro category, and titles the page and the document", () => {
     render(<ProItemCardGroup />);
     expect(ProItemCardGroupRoute.path).toBe("/pro-item-card-group");
-    expect(ProItemCardGroupRoute.group).toBe("Pro");
+    expect(ProItemCardGroupRoute.category).toBe("Pro");
     expect(
       screen.getByRole("heading", { level: 1, name: ProItemCardGroupRoute.title }),
     ).toBeTruthy();
