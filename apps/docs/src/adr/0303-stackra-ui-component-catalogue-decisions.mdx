@@ -1,0 +1,177 @@
+---
+title: "0303 — @stackra/ui component catalogue: router, React Aria, icons, forms, parity, wrapping and one props vocabulary"
+description: "Accepted · 2026-10-23"
+---
+
+<Note>
+  Amended by [0304](/adr/0304-stackra-ui-wave-2-props-vocabulary) and
+  [0311](/adr/0311-stackra-ui-wave-3-fields-props-vocabulary): the wave 2 and wave 3 additions to
+  decision 7, the props vocabulary. This page's body is unchanged.
+</Note>
+
+<Note>
+  Amends [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) (decision 3; decision
+  2 through decision 9 of this ADR) and changes the status of
+  [0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters) from Proposed to Accepted. Each
+  amended page carries a note.
+</Note>
+
+## Context
+
+[0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) makes `@stackra/ui` one contract with a HeroUI v3
+implementation for the web and a HeroUI Native implementation for native, but leaves open what the first components may build on.
+Before Phase 2 of STA-350 adds components, seven questions needed an answer: where router-aware UI lives, whether React Aria and
+`@internationalized/date` are used directly, which icon set the components use, whether the form stack of
+[0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters) is in force, what web and native must match, how thinly the
+components wrap HeroUI, and what the props of every component are called. HeroUI Pro ships some of the missing pieces (a DropZone among them), but free packages never depend on it
+([0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs) decision 5, [0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps)).
+The owner answered the first six on 2026-10-23, in reply to the component catalogue review recorded in STA-350. The seventh,
+the props vocabulary, came out of the wave-1 design cross-check (Icon, Button, Link, Text and Heading: STA-354 to STA-357). The
+owner accepted it on 2026-10-23, and on the same day answered the link underline and heading scale questions that the cross-check
+raised. This page records the answers.
+
+## Decision
+
+1. **`@stackra/ui` is router-free.** Router-aware UI (route overlays, table state held in the URL, breadcrumbs built from routes)
+   lives in `@stackra/navigation`. No `@stackra/ui` entry imports `react-router` or another router.
+2. **React Aria is used directly, at HeroUI's versions.**
+   - `react-aria-components` sits in `catalog:frontend`, pinned to the exact version that the catalogued `@heroui/react` resolves
+     for it, so HeroUI and `@stackra/ui` share one React Aria instance.
+   - `@internationalized/date` joins `catalog:frontend`, with the same pin, when its first component (DateField) imports it.
+   - A HeroUI bump moves these pins in the same change.
+   - Our `DropZone` is built on React Aria's `DropZone` and `FileTrigger`. HeroUI Pro's DropZone is not used in `@stackra/ui`.
+3. **Icons are Lucide.**
+   - The components use one icon set: Lucide (ISC licence, official packages for web and native).
+   - An icon slot accepts an icon name or any React element, so an app may pass its own SVG without a change to the component
+     (decision 10 sets the name model).
+   - `@stackra/ui` draws them from wave 1: its `Icon` renders `lucide-react` on the web and `lucide-react-native` on
+     native, both optional peers of `@stackra/ui` and pinned in `catalog:frontend` and `catalog:mobile`.
+   - `@stackra/icons` holds the Lucide maps for both platforms (decision 10), so `@stackra/ui` resolves a name through it.
+4. **Forms follow [0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters), now Accepted.** Form state is react-hook-form,
+   validation is Zod and the HeroUI field adapters live in `@stackra/ui` ([0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs)
+   decision 2). `react-hook-form` joins `catalog:frontend` with `FormField`, not in wave 1.
+5. **Parity.**
+   - Every component has the same contract on web and native.
+   - Native may render an adapted form of a component (a sheet for a popover, for example) when its documentation page names the
+     adaptation.
+   - A component that exists only on the web is listed in a `webOnly` allow-list. The list starts empty, and an entry needs an
+     ADR or an owner decision cited beside it.
+6. **Thin contract wrappers.**
+   - Apps import UI only from `@stackra/ui`, never `@heroui/react` or `heroui-native` directly.
+   - A primitive is a thin wrapper over free HeroUI v3 on the web and HeroUI Native on native: one props API, unknown props pass
+     through to HeroUI, and no second styling layer.
+   - A component that exists on one platform only and has nothing to unify keeps HeroUI's own API, re-exported.
+   - HeroUI Pro is imported directly, and only in Stackra's own apps ([0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps)).
+   - The first components are `Icon`, `Text` and `Heading`, `Button` (with `IconButton` and `CloseButton`) and `Link`
+     (wave 1).
+7. **One props vocabulary.** A concept has one prop name across the kit, and the runtime's own name for it is left out of the
+   wrapper's type:
+
+   | Concept           | Prop                                                          | Type                                                         | Used by                                                              | Runtime name left out of the type               |
+   | ----------------- | ------------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------- | ----------------------------------------------- |
+   | Emphasis          | `variant`                                                     | `ButtonVariant`                                              | Button, IconButton                                                   | none (same 7 on both)                           |
+   | Size              | `size`                                                        | `Size`                                                       | Icon, Button, IconButton                                             | none; Link and Text have none (Text has `type`) |
+   | Colour role       | `tone`                                                        | `Tone`, or `TextTone` (adds `muted`) for Text, Heading, Icon | Icon, Link, Text, Heading                                            | `color` (Text)                                  |
+   | Disabled          | `isDisabled`                                                  | boolean                                                      | Button, IconButton, CloseButton, Link                                | native `disabled`                               |
+   | Loading           | `isLoading`                                                   | boolean                                                      | Button, IconButton                                                   | web `isPending`                                 |
+   | Other states      | `isFullWidth`, `isExternal`, `isTruncated`, `isMirroredInRtl` | boolean                                                      | Button, Link, Text and Heading, Icon                                 | `fullWidth`, `truncate`                         |
+   | Accessible name   | `label`                                                       | string                                                       | Button (override), IconButton and CloseButton (required), Icon, Link | `aria-label`, `accessibilityLabel`              |
+   | Spoken state text | `<state>Label`                                                | string                                                       | Link `externalLabel`; later Button `loadingLabel`                    | none                                            |
+   | Icon slots        | `icon`, `startIcon`, `endIcon`                                | `IconSlot` (an `IconName` or an element)                     | IconButton, CloseButton, Button, Chip                                | `isIconOnly` (only through IconButton)          |
+   | Icon name         | `name`                                                        | `IconName`                                                   | Icon                                                                 | Lucide `color`, `width`, `height`               |
+   | Press             | `onPress`                                                     | `() => void`                                                 | Button, IconButton, CloseButton, Link                                | none (the event still arrives)                  |
+   | Contract type     | `<Name>ContractProps`                                         | contracts                                                    | all                                                                  | runtime file exports `<Name>Props`              |
+
+8. **Link underline.** A link's underline is explicit, and a hover alone never carries it in running text.
+   - `underline` is `always` by default and inside running text. It is `hover` only for a standalone link, one that does not sit
+     inside a sentence or paragraph.
+   - On native, where nothing hovers, `hover` means no underline, and no colour changes on hover.
+   - The `stackra` link colour stays the text colour. A hover-only underline on that colour fails WCAG 1.4.1 (use of colour) in
+     running text, so the underline carries the link. A distinct link hue is a brand decision and is not made here.
+9. **The `stackra` type scale covers `h4` to `h6`.** The theme stops at `h3`, so an `h4` falls back to HeroUI's 20 px, the size of
+   our `h3`. The theme gains these styles, each written as size in px / line height / weight / letter spacing:
+   - `h4`: 18 / 1.4 / 600 / -0.01em
+   - `h5`: 16 / 1.5 / 600 / 0
+   - `h6`: 14 / 1.5 / 600 / 0
+   - Each has an Arabic twin (`-ar`), applied to Arabic text only, at +1 px and +0.2 line height.
+10. **Icons are drawn by name.** Owner, 2026-10-23.
+    - A declaration (a resource, menu, widget, setting, action or document, and backend code) names an icon by `IconName`, a
+      plain string in the manifest and on the wire. It never imports a component.
+    - `@stackra/icons` is the one home of the model. Its `./contracts` entry exports `IconName`: a Lucide name from the pinned
+      set (kebab-case, generated from `lucide-react` and committed, with a test that fails when it drifts), a Stackra alias
+      (`orders` resolves to `shopping-cart`), or a namespaced custom name (`loyalty::points-badge`, the template type
+      `${string}::${string}`).
+    - Resolution is per platform in `@stackra/icons`: `./react` maps a name to a `lucide-react` component and `./native` to a
+      `lucide-react-native` one. A registry is fed in, through `defineIconRegistry` and an `IconRegistryProvider`; gen will later
+      emit a registry of only the names used, and turn an unknown name into a gen error. The full Lucide map is an explicit
+      opt-in entry (`./react/lucide-registry`, `./native/lucide-registry`), because it is an estimated 180 KB gzipped on web (an estimate, not a
+      measurement) and would use most of the entry budget of [0183](/adr/0183-quality-budgets-with-numbers); the playground registers only
+      the icons it draws. The review measured the playground entry at 237.66 KB gzipped with the icons tree-shaken (no unused
+      Lucide name in the output). The pre-icons baseline is still to be recorded, so how much of it is HeroUI is not yet known.
+      Custom and brand icons (SVGs under a package's or app's `assets/icons/`) join under their namespace and draw through the
+      same `Icon`.
+    - `Icon` takes `name: IconName`, not a component. The icon slots of Button, IconButton, CloseButton and Chip take an
+      `IconName`, drawn through `Icon`, or an element, drawn as given. A name no registry holds draws nothing.
+    - Nothing outside `@stackra/icons` and `@stackra/ui` imports a Lucide package. Swapping the library changes only the maps in
+      `@stackra/icons`.
+    - Data-driven icons (a category icon a tenant picks) store an `IconName` string, checked with the exported `isIconName` guard.
+
+## Consequences
+
+- `@stackra/ui` stays usable in any React app, whatever its router; `@stackra/navigation` owns the router coupling.
+- A HeroUI bump is one reviewed change that moves three pins together. A mismatch would load two React Aria copies and break
+  context such as `I18nProvider`.
+- We maintain our own `DropZone` and the form adapters against HeroUI and React Aria changes.
+- Swapping the icon set is cheap for an app and costs nothing in the components. Lucide becomes a peer of
+  `@stackra/ui` now, not when `@stackra/icons` starts.
+- Every native adaptation is documented, so a reviewer can tell an adaptation from a parity gap.
+- Wrappers stay small: a HeroUI prop works through `@stackra/ui` without being redeclared. The cost is that a HeroUI prop
+  rename can reach our users unless the contract pins it.
+- `pnpm-workspace.yaml` gains `lucide-react` (`catalog:frontend`) and `lucide-react-native` (`catalog:mobile`) in
+  wave 1, and `@internationalized/date` and `react-hook-form` (`catalog:frontend`) with the first component that
+  imports them (DateField, FormField). The file is the owner's ([concurrent sessions](/agents/concurrent-sessions)).
+- A declaration carries an icon as a string, so the manifest, the wire and the backend need no component import, and swapping the
+  library touches one package.
+- Every later component brief starts from the vocabulary of decision 7, so web and native, and one component and the
+  next, read alike.
+- The link underline and the heading sizes are checked in a browser, by the playground's end-to-end tests, so a HeroUI class
+  rename or a theme change is caught by a test rather than by a reviewer's eye.
+
+## Enforcement
+
+- `tools/scripts/validate-repository.mjs` (catalog references, `catalogMode: strict`) refuses a version outside the catalog.
+- planned — `packages/tooling/oxlint/src/boundaries.jsonc`: no router import in `@stackra/ui`; no `@heroui/react`,
+  `@heroui/styles` or `heroui-native` import in an app; no `@heroui-pro/*` import in a `@stackra/*` package.
+- planned — a test in `@stackra/ui` that the catalogued `react-aria-components` and `@internationalized/date` equal the versions
+  `@heroui/react` resolves.
+- planned — the `@stackra/ui` parity test of [0112](/adr/0112-experience-packages-and-renderer-kit) and
+  [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground), reading the `webOnly` allow-list.
+- planned — the `@stackra/ui` type tests of each component assert that the runtime props extend the contract and
+  refuse the raw HeroUI names decision 7 replaces (`isPending`, `fullWidth`, `aria-label`, `accessibilityLabel`).
+- planned — `apps/playground/e2e/__tests__/link.e2e.test.ts`: a link in running text shows its underline at rest, and a `hover`
+  link shows none until it is hovered on web.
+- planned — `apps/playground/e2e/__tests__/typography.e2e.test.ts`: the computed size, line height, weight and letter spacing of
+  every heading level and Arabic twin equal the `stackra` theme's values, which decision 9 sets.
+- Until these exist, review (`architecture-guardian`) checks this page.
+
+## Alternatives
+
+- **Router-aware components in `@stackra/ui`.** Not chosen: it ties every user of the kit to one router.
+- **HeroUI Pro's DropZone.** Not allowed in a free package ([0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs)
+  decision 5). Pro's is built on the same React Aria parts.
+- **`tone` everywhere, danger included.** Not chosen for buttons: HeroUI has danger as two button variants and no
+  other button colour, so a button `tone` would accept values neither runtime draws.
+- **Lucide and Heroicons both in the components.** Not chosen: two sets in the components double the surface, and Heroicons has
+  no official native package. Apps may still pass Heroicons through the icon props.
+- **Our own props and a styling layer over HeroUI.** Not chosen: it duplicates HeroUI's API and theming, which
+  [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) already drives from `@stackra/tokens`.
+- **A distinct link hue in place of the underline.** Not chosen now: it is a brand decision, and the owner did not ask for it.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) (decision 3; decision 2 through
+decision 9 of this ADR). Accepts: [0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters) (status Proposed to Accepted).
+Related: [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs), [0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps),
+[0112](/adr/0112-experience-packages-and-renderer-kit) and [0227](/adr/0227-rejected-and-deferred-technologies-refreshed).
+Sources: owner decisions in the lead session, 2026-10-23, recorded in Linear STA-350 and STA-353; the wave-1 design
+cross-check of 2026-10-23 (STA-354 to STA-357).

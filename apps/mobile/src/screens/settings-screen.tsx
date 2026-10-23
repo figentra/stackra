@@ -18,21 +18,26 @@ const STRINGS = {
   designSystemDescription: "Review every component in light, dark and right-to-left",
 } as const;
 
-/** The Settings tab: the design-system row, and a card with the app version, or `dev` without one in the Expo config. */
+/** The Settings tab: the design-system row (development builds only), and a card with the app version, or `dev` without one in the Expo config. */
 export function SettingsScreen({
   navigation,
 }: NativeStackScreenProps<SettingsStackParamList, "Settings">) {
   return (
     <Screen>
-      <ListGroup>
-        <ListGroup.Item onPress={() => navigation.navigate("DesignSystem")}>
-          <ListGroup.ItemContent>
-            <ListGroup.ItemTitle>{STRINGS.designSystem}</ListGroup.ItemTitle>
-            <ListGroup.ItemDescription>{STRINGS.designSystemDescription}</ListGroup.ItemDescription>
-          </ListGroup.ItemContent>
-          <ListGroup.ItemSuffix />
-        </ListGroup.Item>
-      </ListGroup>
+      {/* The design-system review area is a development surface: release builds leave it out. */}
+      {__DEV__ ? (
+        <ListGroup>
+          <ListGroup.Item onPress={() => navigation.navigate("DesignSystem")}>
+            <ListGroup.ItemContent>
+              <ListGroup.ItemTitle>{STRINGS.designSystem}</ListGroup.ItemTitle>
+              <ListGroup.ItemDescription>
+                {STRINGS.designSystemDescription}
+              </ListGroup.ItemDescription>
+            </ListGroup.ItemContent>
+            <ListGroup.ItemSuffix />
+          </ListGroup.Item>
+        </ListGroup>
+      ) : null}
       <Card>
         <Card.Body>
           <Card.Title>Version</Card.Title>

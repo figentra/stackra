@@ -1,7 +1,17 @@
 ---
 title: "0295 — Build and entry: stackra.config.ts, generated tool configs and entries"
-description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-347, STA-349)"
+description: "Accepted, amended by 0305 · 2026-10-22 · amended 2026-10-23 (STA-347, STA-349)"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by
+  [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components). The root
+  module is optional (rule 15), so the entry of decision 7 passes the member's module graph, and a
+  root module is written only where it states something gen cannot derive. `stackra.config.ts` and
+  the `define*` call of decision 1 are unchanged. The app's error boundary is owned by
+  `@stackra/navigation` (rule 35), so the root `app.error.tsx` leaves the app. Configuration follows
+  rule 34 in place of the `@Env` form. The other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-349), with the amendment of the same date on

@@ -33,19 +33,24 @@ function SettingsTab() {
   return (
     <SettingsStack.Navigator screenOptions={largeTitleHeader}>
       <SettingsStack.Screen name="Settings" component={SettingsScreen} />
-      <SettingsStack.Screen
-        name="DesignSystem"
-        component={DesignSystemScreen}
-        options={{ ...detailHeader, title: "Design system" }}
-      />
-      {DESIGN_SYSTEM_COMPONENTS.map(({ route, title, screen }) => (
-        <SettingsStack.Screen
-          key={route}
-          name={route}
-          component={screen}
-          options={{ ...detailHeader, title }}
-        />
-      ))}
+      {/* Development builds only, like the Settings row that opens it. */}
+      {__DEV__ ? (
+        <>
+          <SettingsStack.Screen
+            name="DesignSystem"
+            component={DesignSystemScreen}
+            options={{ ...detailHeader, title: "Design system" }}
+          />
+          {DESIGN_SYSTEM_COMPONENTS.map(({ route, title, screen }) => (
+            <SettingsStack.Screen
+              key={route}
+              name={route}
+              component={screen}
+              options={{ ...detailHeader, title }}
+            />
+          ))}
+        </>
+      ) : null}
     </SettingsStack.Navigator>
   );
 }

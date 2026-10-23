@@ -4,7 +4,7 @@
  *          icon and progress bar, and the accessible name of its actions button.
  * Boundary: types only; web only. Every other prop is HeroUI Pro's own and passes through unchanged.
  * Runtime: isomorphic
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-007.
+ * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-007.
  */
 import type { Tone } from "@stackra/ui/contracts";
 import type { ReactNode } from "react";

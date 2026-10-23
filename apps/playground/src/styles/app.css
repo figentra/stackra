@@ -4,6 +4,10 @@
 @import "@stackra/tokens/fonts/fonts.css";
 @import "@stackra/tokens/themes/stackra/web.css";
 
+/* Tailwind does not scan workspace packages: @stackra/ui's components carry their utility classes (`text-danger`, ...)
+   in their own source, so the app points the scanner at it. */
+@source "../../node_modules/@stackra/ui/src";
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* The theme's text faces: Geist for Latin, IBM Plex Sans Arabic when the document is Arabic. */

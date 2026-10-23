@@ -102,6 +102,10 @@ catalogs:
     "@number-flow/react": 0.6.2
     embla-carousel: 8.6.0
     embla-carousel-react: 8.6.0
+    # Icons for @stackra/ui/react's Icon (ADR 0303 decision 3, owner-approved 2026-10-23); ISC licence.
+    lucide-react: 1.54.0
+    # Form state for @stackra/ui FormField (ADR 0055, accepted by ADR 0303); newest release at least 14 days old.
+    react-hook-form: 7.89.0
   # Expo SDK 57 app (apps/mobile). Pins match academorix/apps/mobile; react stays on 19.2.3 because
   # react-native 0.86 renders with that exact renderer version. Bump with `expo install --check`.
   mobile:
@@ -149,6 +153,8 @@ catalogs:
     react-native-reanimated-dnd: 2.0.0
     # Required native peer of Uniwind Pro 1.9.0 (>= 0.37.1), for the apps that run it (catalog:uniwind-pro).
     react-native-nitro-modules: 0.37.1
+    # Icons for @stackra/ui/native's Icon (ADR 0303 decision 3, owner-approved 2026-10-23); ISC licence.
+    lucide-react-native: 1.54.0
     uniwind: 1.12.1
     tailwind-merge: 3.7.0
     tailwind-variants: 3.3.1

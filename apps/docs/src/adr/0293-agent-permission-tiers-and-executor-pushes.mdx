@@ -1,6 +1,6 @@
 ---
 title: "0293 — Agent permissions: allow, ask and deny tiers, one rule module, executors push their own branch"
-description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-351, STA-352)"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-351, STA-352, STA-400)"
 ---
 
 <Note>
@@ -39,8 +39,60 @@ description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-351, STA-352)"
   `pnpm run` and `--filter` spellings of those scripts. This amends decision 1's Allow list, which
   named a bot push of `HEAD` and `pnpm pr:merge`. OpenCode executors read `opencode.jsonc`, not
   these settings: they still commit and push their own feature branch (never main) under the guard,
-  and the merge still asks. The settings also carry the bot commit identity (`GIT_AUTHOR_*`,
-  `GIT_COMMITTER_*`) and `enableAllProjectMcpServers`.
+  and the OpenCode guard denies `pnpm pr:merge`, so merges stay with the lead. The settings also
+  carry the bot commit identity (`GIT_AUTHOR_*`, `GIT_COMMITTER_*`) and
+  `enableAllProjectMcpServers`.
+</Note>
+
+<Note>
+  Amended 2026-10-23 (STA-400), superseding the STA-352 middle tier: only a delete, a deploy or a
+  release asks the owner; the rest is allowed (owner decision 2026-10-23). The ask list of
+  `.claude/settings.json` keeps only deletes (`rm`, a recursive `rm` anywhere in the line, `find -delete`,
+  `find -exec rm`, `git clean -f`, `git branch -D`, Infisical secrets, folders and dynamic secrets, Wrangler,
+  `git stash drop`, `git reflog expire|delete`, a forced `git worktree remove`, Docker volumes,
+  `encore env delete`, `encore db reset`, `eas <x>:delete`, a `pnpm bot:gh` repo, release, variable, secret or
+  API `DELETE`, the App Store and Play Store review deletes), deploys and rollbacks (`wrangler deploy|rollback`,
+  `eas submit|deploy|update|workflow:run|channel:edit|channel:rollout`, the EAS update rollbacks and
+  republish, `--auto-submit`, `wrangler preview`,
+  `wrangler pages deployment create`, `wrangler d1 … --file`, a deploy `workflow run` or `dispatches` call,
+  `mcp__cloudflare-api__execute`, `mcp__expo__build_submit`) and releases (`npm`, `pnpm` and `changeset
+  publish`, a bot push of tags); merges, bot pushes, secret imports, worktree removal and `pnpm new` no longer
+  ask. Its allow list has `pnpm`, `git`, `node`, `npx`, `mise`, `infisical`, `encore`, `wrangler` and `eas` (the
+  narrow entries they cover are gone; `rm` and raw `gh` are not allowed). In the guard hook, `HUMAN_ASKS` is the
+  same list, read through every runner and version (`npx wrangler@3 deploy`, `pnpm dlx eas-cli submit`,
+  `mise exec -- npm publish`, `pnpm --silent publish`, a line quoted for `ssh`): an `rm` in any form outside the
+  session's scratchpad and build output (a recursive one that reaches home, root, `.git` or another checkout is
+  still a deny), `find -delete`, `git clean -f`, the Infisical deletes, `encore db reset`, `encore env delete`,
+  `wrangler deploy|rollback|delete|preview`, `wrangler pages deployment create`, `wrangler d1 --remote` with
+  `DROP`, `DELETE` or `TRUNCATE`, `migrations apply` or an unread `--file`,
+  `eas submit|deploy|update|workflow:run|channel:edit|channel:rollout|<x>:delete`, the update rollbacks and
+  republish (`update:republish|rollback|roll-back-to-embedded|revert-update-rollout`) and `--auto-submit*`, a
+  registry publish, `rm -rf` or
+  a discard in another nested worktree, `git branch -D` of an unpushed branch, a bot push of tags, and a
+  `pnpm bot:gh` release, `<noun> delete`, `DELETE` method (any spelling), GraphQL `delete…` mutation, deploy
+  `workflow run` or `dispatches` call. The hook's other categorical asks are gone, so these are allowed: `npx` and
+  `pnpm dlx`, `pnpm bot:gh api` with `-f` or `-X` (GraphQL reads included), `bot:gh repo edit`, `variable set` and
+  `secret set`, shared `git config` writes, `encore env set|create`, `wrangler secret list` and `--remote` reads,
+  `eas build`, and `secrets:import … --confirm`. That last one has no enforced yes until the request page
+  (STA-187): the confirm token is printed to the same caller, a process rule only (ADR 0257). Raw `infisical run`
+  is a deny, not an ask: the program it starts gets every /agents value, so one line (`node -e` on `process.env`)
+  prints a secret, or mints the bot or reviewer token and forges an AI-REVIEW verdict (ADR 0230). The reason
+  names the pnpm scripts that wrap it (`pnpm bot:gh`, `bot:git`, `linear`, `secrets:import`), which stay
+  allowed. The hook reads an `infisical` command past its global options and their values (`--domain <url>`,
+  `--log-level`), by any path, `@infisical/cli`, `npx` or `pnpm dlx`, so `secrets get|set`, a bare `secrets`,
+  `export` and `run` keep their denies in every spelling; `.claude/settings.json` adds four start-anchored
+  denies that hold if the hook fails open: `Bash(infisical *secrets get*)`, `Bash(infisical *secrets set*)`,
+  `Bash(infisical * secrets)` and `Bash(infisical *run *)` (an unanchored `* infisical *run *` was dropped: it
+  denied prose).
+  `tools/scripts/mcp.sh` is denied from the Bash tool: it runs its arguments under `infisical run`, and MCP servers
+  launch it from `.mcp.yaml`. Only an ask the guard raises because it cannot read the command (a
+  computed command name, text piped into a shell, a GraphQL label mutation by id) is a deny with its reason and the
+  rewrite hint, from the main thread as well as a subagent, so STA-351's main-thread exemption ends. No deny rule
+  is loosened. OpenCode still denies every ask, `HUMAN_ASKS` included, and passes `executor` to the shared rules,
+  which deny `npx`, `pnpm dlx`, `eas`, `wrangler secret|--remote`, `encore env set|create` and
+  `secrets:import --confirm` (the import script run by `node` too) under the wrappers the shared rules read
+  (`env`, `timeout`, `mise exec --`, `pnpm exec`, `xargs`, a path before the name). A wrapper the shared rules
+  do not know can still hide one; opencode.jsonc's prefix patterns are the second layer.
 </Note>
 
 ## Context

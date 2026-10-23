@@ -29,6 +29,13 @@ default; a product brings its own brand as its own theme.
 @import "@stackra/tokens/themes/stackra/native.css";
 ```
 
+Both files also draw HeroUI's Typography in the theme's type scale. The web file does it in one `@layer components`
+block that restyles `.typography--h1` to `.typography--body-xs` from the `h1` to `h6`, `body`, `small` and `caption`
+tokens (with `:where(:lang(ar))` twins from the `-ar` tokens, and the weight modifiers restated after them). The native
+file writes `.text__root--type-*` in absolute px for HeroUI Native's text, and one `.type-<token>-ar` class per Arabic
+twin for `@stackra/ui`'s native Text to add. `defineTheme` therefore wants each type style's `size` in px, its
+`lineHeight` unitless or in px, and its `letterSpacing` zero, in `em` or in px.
+
 The web file switches modes the HeroUI way: light on `:root` and `[data-theme="light"]`, dark on `.dark` and
 `[data-theme="dark"]`. The native file defines the same variables in Uniwind's `@variant light` and `@variant dark`;
 switch with `Uniwind.setTheme`. Expo cannot load woff2, so native text uses the system face until TTF builds of the
@@ -109,7 +116,7 @@ to white in light and graphite-700 in dark.
 
 One documented deviation from the kit: the light `--muted` (and so `--field-placeholder`) is `oklch(0.49 0.01 250)`, not the
 kit's `oklch(0.5 0.01 250)`, so muted text keeps 4.5:1 on tinted surfaces such as soft chips (owner decision 2026-10-23,
-ADR 0310). The kit's resolved and contrast reports carry the new value and ratios, recomputed with `oklchToHex` and
+STA-403). The kit's resolved and contrast reports carry the new value and ratios, recomputed with `oklchToHex` and
 `contrastRatio`.
 
 The logos, marks, icons and other brand assets moved to the docs app (`apps/docs/src/assets/brand/`), all rights

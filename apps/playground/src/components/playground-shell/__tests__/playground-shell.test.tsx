@@ -2,13 +2,14 @@
  * Stackra file contract:
  * Purpose: proves the playground shell takes the colour scheme and locale from the URL, applies them through the
  *          DesignSystemProvider, writes a switch back to the URL, marks the selected choice beyond its fill, keeps
- *          theme-color in step, declares its UI English, moves focus to the h1 on navigation, and draws its landmarks.
+ *          theme-color in step, declares its UI English, moves focus to the h1 on navigation, groups its navigation by category with the Pro pages
+ *          last, and draws its landmarks, leaving out `main` for a page that draws its own.
  * Boundary: a memory router in jsdom with a stubbed matchMedia; no network.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0022 (test placement).
  */
 // @covers sta-350:FR-010
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { PlaygroundShell } from "#src/components/playground-shell";
@@ -22,9 +23,9 @@ function renderShell(url: string) {
         element: (
           <PlaygroundShell
             pages={[
-              { path: "/a", title: "Page A" },
-              { path: "/b", title: "Page B", group: "Pro" },
-              { path: "/c", title: "Page C", group: "Pro", ownsMain: true },
+              { path: "/a", title: "Page A", category: "Foundations" },
+              { path: "/b", title: "Page B", category: "Pro" },
+              { path: "/c", title: "Page C", category: "Pro", ownsMain: true },
             ]}
           />
         ),
@@ -63,14 +64,6 @@ describe("PlaygroundShell", () => {
     expect(screen.getByRole("link", { name: "Page A" }).getAttribute("href")).toBe(
       "/a?scheme=dark&locale=ar",
     );
-  });
-
-  it("lists grouped pages after the others, under their group's label", () => {
-    renderShell("/");
-    const pro = screen.getByRole("list", { name: "Pro" });
-    expect(pro.textContent).toBe("Page BPage C");
-    const lists = screen.getByRole("navigation", { name: "Pages" }).querySelectorAll("ul");
-    expect([...lists].map((list) => list.textContent)).toEqual(["Page A", "Page BPage C"]);
   });
 
   it("falls back to the system scheme and English for unknown values", () => {
@@ -119,6 +112,25 @@ describe("PlaygroundShell", () => {
     expect(document.activeElement).toBe(document.body);
     await act(() => router.navigate("/a"));
     expect(document.activeElement).toBe(screen.getByRole("heading", { level: 1, name: "Page A" }));
+  });
+
+  it("groups the navigation by category", () => {
+    renderShell("/");
+    const navigation = within(screen.getByRole("navigation", { name: "Pages" }));
+    expect(
+      within(navigation.getByRole("list", { name: "Foundations" })).getByRole("link").textContent,
+    ).toBe("Page A");
+    expect(navigation.queryByRole("list", { name: "Typography" })).toBeNull();
+  });
+
+  it("lists the Pro pages last, under their category", () => {
+    renderShell("/");
+    const lists = screen.getByRole("navigation", { name: "Pages" }).querySelectorAll("ul");
+    expect([...lists].map((list) => list.getAttribute("aria-label"))).toEqual([
+      "Foundations",
+      "Pro",
+    ]);
+    expect(screen.getByRole("list", { name: "Pro" }).textContent).toBe("Page BPage C");
   });
 
   it("draws the banner, navigation and main landmarks around the page", () => {

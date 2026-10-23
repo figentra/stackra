@@ -5,7 +5,7 @@
  *          own and passes through unchanged; its `value` is a plain `number`.
  * Boundary: types only; native only.
  * Runtime: isomorphic
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-012.
+ * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-012.
  */
 
 /** Props of the native `NumberField` that the Stackra vocabulary names. */

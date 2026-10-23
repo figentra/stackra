@@ -1,0 +1,133 @@
+---
+title: "0308 — Integrations v3.1: the Integration describes the provider, the Connection holds one credential set, and webhooks route through the Integration"
+description: "Accepted · 2026-10-23"
+---
+
+<Note>
+  Amends [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (the
+  Integration, Connection and WebhookEvent rows of decision 16, and item 1 of its 2026-10-23
+  amendment, which this ADR supersedes in part). The earlier decisions on connections and the store
+  host in ADR 0107, 0218 and 0224 are changed by this ADR; each of those pages carries a note in
+  this change (STA-414).
+</Note>
+
+## Context
+
+A provider integration, such as an email service or a calendar, needs a description of how it authenticates, where
+its endpoints are, how its tokens refresh, how it limits its calls, how its webhooks are verified, and what a
+tenant must enter. Today `Integration({ provider, category })` declares none of that, so each provider repeats the
+same code. A connection is the stored credential set that one tenant or user holds, and it needs its own rules for
+secrets, refresh and disconnect. This ADR splits the two, names the six authentication types, fixes where the
+tokens live, and routes every provider webhook through the Integration that verifies it.
+
+## Decision
+
+**The two kinds (I1, I2).**
+
+1. The Integration describes the provider. It is static, one per listing, and the same for every tenant. It is
+   declared as `extends Integration({ provider, category, levels, auth, ... })` in `integrations/`. Its platform
+   values are `@Secret` fields.
+2. The Connection is the shape of one stored credential set, which a tenant or a user supplies or grants. It is
+   declared as `extends Connection<XIntegration>` in `connections/`, and it binds `XIntegration` by name (ADR 0305
+   rule 6). It has at most one connection class per integration. Its tenant or user values are plain and
+   `@Secret` fields. It has a `check()` method and optional `subscribe()` and `unsubscribe()` methods.
+3. `@Secret` takes its home from its class. On an Integration, or on a field of a Config's schema class (ADR 0305 rule 34), it is a platform secret, held in
+   Infisical and synced by runway (ADR 0173). On a Connection it is a tenant secret, held in the connection store
+   and encrypted under the tenant's data key, with the additional data bound to the tenant, the connection and the
+   field name (ADR 0188). A secret name is required (`secret_name_missing`). Renaming a secret needs
+   `@Renamed("OLD_NAME")`, because the name is the address of stored ciphertext.
+4. A `{field}` placeholder in an `auth` or URL option resolves on the Connection first, then on the Integration. A
+   tenant can therefore bring its own key or its own OAuth app over a platform default, with no second mechanism.
+   Gen fails on a placeholder that names no field (`integration_placeholder_unknown`).
+5. The word scope means an OAuth scope only inside `auth`, because that is the provider's term. ADR 0294 decision 17
+   reserves the word for settings and IAM. A connection's placement is its `levels`.
+
+**Authentication (I3).** An Integration declares one `auth` option, a discriminated union over exactly six types.
+
+6. The six types are `AuthType.OAuth2Code` (authorization code with PKCE), `AuthType.OAuth2ClientCredentials`,
+   `AuthType.ApiKey`, `AuthType.Basic`, `AuthType.Jwt` and `AuthType.None`. Each type's options are typed for that
+   type. An OAuth type declares its authorize, token, refresh and revoke endpoints, its client identifier and its
+   scopes, and a `refresh` policy with a buffer and a keep-alive. A public client has no client secret.
+7. Refresh is single-flight per connection. It runs lazily when a token is needed, and in the background when a
+   keep-alive is set. Disconnect calls the provider's revocation endpoint when one is declared. Without one, the
+   tokens are destroyed and nothing is sent to the provider.
+8. A new authentication type is added only with a provider that needs it, and as a new member of the union. A
+   `custom` hook is not allowed. A provider outside the six is a driver that signs its own requests with `@Secret`
+   fields and the managed client's fetch.
+
+**Levels, several connections and fallback (I4).**
+
+9. An Integration declares its `levels`, for example `[ConnectionLevel.Tenant]`, in declared order. A lookup walks
+   only those levels, in that order. A per-user calendar declares only the user level, so it never acts with an
+   organisation's credentials.
+10. `multiple` is false by default. When it is true, `find` throws `connection_ambiguous` if more than one connection
+    exists, and the caller uses `byId` or `list`.
+11. A bring-your-own OAuth app is allowed, behind an entitlement. The connection then declares both its client
+    identifier and its client secret, or neither (gen fails on one without the other). The override is the placeholder
+    rule of rule 4.
+
+**The store host and the managed client (I5).**
+
+12. `ConnectionStore` is a port with two drivers. The `local` driver runs in process, for the template and for
+    development. The `hosted` driver calls the integrations service through its typed client, and in that case the
+    refresh tokens and the client secrets live only in that service. The `@stackra/connections` package is folded
+    into `@stackra/integrations`, so one package holds the kind and the store.
+13. `connection.api` is a public read-only member. Its safety comes from what the managed client enforces: the
+    authentication, the egress allowlist, the rate limits and the retries. The Integration declares the rate limits
+    and the retry policy (for example the idempotency header), and the client applies them.
+14. `check()` is the only test of a connection. It proves the credentials work and returns the account identity, which
+    webhooks route by. A declarative test request is not used. A scheduled health check calls the same method.
+
+**Webhooks (I6).**
+
+15. Every provider webhook, including a platform webhook, goes through an Integration as `WebhookEvent<I>({ type })`.
+    The Integration declares how the webhook is verified and routed, once. The event class names only the provider's
+    event type. A platform-only webhook is an Integration with no Connection. This retires the path form,
+    `WebhookEvent({ path, scheme, secret })`, which ADR 0294 decision 16 defines.
+16. A connection's webhook URL is `/webhooks/<module>/<name>/:connectionId`. A listener receives the event in that
+    connection's tenant context, with `ctx.connection` set.
+17. A secret that `subscribe()` returns is written into the field that the webhook's secret placeholder names. The
+    console's paste-by-hand path and the API path then end in the same state. Rotation keeps two secrets valid for 24
+    hours.
+
+**Disconnect, audit and derived data (I7).**
+
+18. Disconnect revokes at the provider, unsubscribes, destroys the ciphertext and keeps a tombstone. Each step emits a
+    lifecycle integration event, `integrations.connection.*.v1`, which the audit service consumes.
+19. Gen derives the keys, labels, scope explainers, field labels, the logo, the permissions, the webhook path, the
+    egress allowlist and a fingerprint of the scopes, and locks them in the manifest. A change to the required scopes
+    marks the live connections for re-consent.
+
+**Security and listing (I8).**
+
+20. Refresh tokens and client secrets never leave the store host. A secret never appears in a job, an event, a log, a
+    trace, an error body or the browser.
+21. The pricing tier of a listing is a reference to an Entitlement (`listing.entitlement`), so the plan system is the
+    single source of plans. A key's last four characters are not shown on any screen. Third-party publishers and the
+    Activepieces piece format are out of scope, and their fields are reserved only.
+
+## Consequences
+
+- A provider is a description plus a connection class, and the common work (refresh, rate limits, webhooks,
+  revocation) is written once in the client and the store.
+- A tenant that brings its own app or key does so through the same placeholder rule as the platform default.
+- The store host must exist before a hosted deployment. Until the integrations service runs, only the `local` driver
+  is available, and it is for development and the template.
+- Webhook verification and routing move from each webhook to its Integration, so a new event type is one small class.
+
+## Enforcement
+
+- planned — STA-339: the Integration and Connection groups in the validator, and the `entries` of `@stackra/integrations`.
+- planned — STA-340: `secret_name_missing`, `partner_mismatch` (the name binding of rule 2), `integration_placeholder_unknown`,
+  the both-or-neither check for a bring-your-own app, `connection_ambiguous`, and the webhook checks that ADR 0305 names.
+- planned — the managed client and the `hosted` driver of `ConnectionStore`. Until they ship, no integration can use a
+  connection in production.
+
+## Supersedes and sources
+
+Supersedes: none as a whole. Item 1 of ADR 0294's 2026-10-23 amendment (the `Connection(SomeIntegration, ...)` form)
+is superseded in part by rule 2 of this ADR. Item 2 (the secret name) stands, and rule 3 restates it. The
+Integration, Connection and WebhookEvent rows of decision 16 are amended by the note on ADR 0294. ADR 0107 (the three key homes and the package name), ADR 0218 (the store host) and ADR 0224 (webhooks) are
+changed by rules 12 and 15 above. Each of those pages carries a note in this change (STA-414).
+
+Origin: the v3.1 integrations design review of 2026-10-23, restated in this ADR's own words.

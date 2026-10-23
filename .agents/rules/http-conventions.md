@@ -22,7 +22,7 @@ the contract they will implement, not code that runs today; the package docs win
 | Risk           | From its permission, L0 to L4       | From its permission, L0 or L1 only      |
 | HTTP method    | `POST`, `PUT`, `PATCH` or `DELETE`  | `GET`                                   |
 | MCP tool       | Only with `tool: true`              | Yes, under the caller's own permissions |
-| Cache          | Never                               | May take a cache profile (ADR 0297)     |
+| Cache          | Never                               | May take a `cache` option (ADR 0305)    |
 | Preconditions  | `preconditions: [...]`              | None                                    |
 
 ## Endpoints
@@ -30,8 +30,8 @@ the contract they will implement, not code that runs today; the package docs win
 An action or query is exposed over HTTP by convention: gen derives the route from its key, so nothing is declared per
 action (ADR 0294 decision 21, ADR 0217 as amended). Input and output are the parameter and return types of `handle`.
 A raw endpoint that is not an action (`/api/auth/*`, streaming) is a class that extends `Controller({ path })`, in
-the module's `raw/` group; the `@Controller` decorator is retired (ADR 0294). An inbound webhook is a `WebhookEvent`
-class.
+the module's `raw/` group; the `@Controller` decorator is retired (ADR 0294). An inbound webhook is a `WebhookEvent<Integration>({ type })`
+class (ADR 0308).
 
 | Key                                    | Route                       |
 | -------------------------------------- | --------------------------- |
@@ -48,10 +48,16 @@ class.
 neither a user nor an agent gets no public endpoint.
 
 ```typescript
-// src/modules/orders/actions/cancel-order.action.ts — orders.order.cancel@1, PUT /orders/:orderId/cancel
+// src/modules/orders/schemas/cancel-order-input.schema.ts — the input, one declaration per file (ADR 0305)
 export class CancelOrderInput extends Schema {
   orderId!: PublicId<"ord">;
 }
+```
+
+```typescript
+// src/modules/orders/actions/cancel-order.action.ts — orders.order.cancel@1, PUT /orders/:orderId/cancel
+import type { CancelOrderInput } from "#modules/orders/schemas/cancel-order-input.schema";
+import type { CancelOrderOutput } from "#modules/orders/schemas/cancel-order-output.schema";
 
 export class CancelOrderAction extends Action({
   key: "order.cancel",
@@ -99,7 +105,7 @@ The permission is derived from the key, and record rules run through `ctx.author
 
 ### Always typed
 
-Input and output are `Schema` classes whose TypeScript types are the rules (ADR 0095 as amended by 0294). A `number`
+Input and output are `Schema` classes whose TypeScript types are the rules (ADR 0095 as amended by 0294). Each Input and Output is its own file in `schemas/` (ADR 0305). A `number`
 carries `@Int` or `@Num`; constraints are `@Str`, `@Int`, `@Num` and `@List`. Gen compiles each class to one Zod schema
 in `#stackra/schemas`; authors write no Zod except through the `@Field(zod)` escape hatch with a `// reason:` comment.
 
@@ -137,7 +143,7 @@ handler. The pipeline order is tenancy, permission, precondition, entitlement, f
 **Versioned events, not endpoints.**
 
 - Endpoints are immutable (no `/v1`, `/v2`)
-- An integration event writes its `name` once; gen derives `<module-key>.<name>.v<n>` (`identity.user.created.v1`, ADR 0141 as amended). A breaking change sets `version: n` and adds a `Change` class beside the event
+- An integration event writes its `name` once; gen derives `<module-key>.<name>.v<n>` (`identity.user.created.v1`, ADR 0141 as amended). A breaking change sets `version: n` and adds a `Change<Subject>({ ... })` class beside the event (ADR 0305)
 - New endpoint → new path
 - API versions are dates: the `Stackra-Version` header, pinned per API key or OAuth app, through the dormant `@stackra/versioning` package. Paths stay unversioned (`/adr/0118-api-versioning-dormant-package`)
 

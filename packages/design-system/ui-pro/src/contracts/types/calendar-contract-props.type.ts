@@ -5,7 +5,7 @@
  *          and passes through unchanged; the `value`, `minValue` and `maxValue` stay `@internationalized/date` types.
  * Boundary: types only; native only.
  * Runtime: isomorphic
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-011.
+ * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-011.
  */
 
 /** Props of the native `Calendar` that the Stackra vocabulary names. */

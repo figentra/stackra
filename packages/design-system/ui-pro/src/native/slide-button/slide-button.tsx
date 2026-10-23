@@ -6,7 +6,7 @@
  * Boundary: no behaviour or styling of its own; HeroUI Native Pro has no loading state, so there is no `isLoading`.
  *          The compound exposes the six parts of HeroUI Native Pro, its own components.
  * Runtime: react-native
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-009.
+ * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-009.
  */
 import { SlideButton as HeroSlideButton } from "heroui-native-pro/slide-button";
 import type { ComponentPropsWithRef, ReactElement } from "react";

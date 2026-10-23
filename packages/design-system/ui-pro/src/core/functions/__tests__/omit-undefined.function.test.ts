@@ -4,7 +4,7 @@
  *          falsy ones included, untouched.
  * Boundary: unit; pure function.
  * Runtime: node
- * Governing contract: ADR 0310 (decision 3); ADR 0022 (test placement).
+ * Governing contract: ADR 0310 (decision 4); ADR 0022 (test placement).
  */
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 

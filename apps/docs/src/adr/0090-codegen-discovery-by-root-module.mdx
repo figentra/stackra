@@ -1,7 +1,16 @@
 ---
 title: "0090 — Codegen discovers decorators through each member's root module"
-description: "Accepted, amended by 0144, 0268, 0294 · 2026-10-19"
+description: "Accepted, amended by 0144, 0268, 0294, 0305 · 2026-10-19"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by
+  [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components). Decision 1 is
+  restated: the root module is optional (rule 15), and a member with none is one module keyed by its
+  folder. Gen finds kinds by their base classes, as ADR 0294 records, so a module file is read only
+  where it states something. Decisions 2 to 4 stand, and the validation pass of decision 4 applies
+  to the same kinds.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): gen finds kinds by reading their base classes (for example `extends Action({ key })`), so it no longer imports the root module to discover them, and decision 2 is replaced. A root module is found at its path, `src/<key>.module.ts` (or `src/node/<key>.module.ts` in a package), so the `stackra.module` field of decision 1 is not needed to find it. A handler's input and output are the types of its `handle` signature, so decision 3 reads those signatures. Decision 4 stands.

@@ -7,7 +7,7 @@
  *          components; `Label`, `Description` and `FieldError` come from `heroui-native`, and the calendar's own
  *          parts from `Calendar`. The `value` is HeroUI's `DatePickerOption` (an ISO date string and a label).
  * Runtime: react-native
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-011.
+ * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-011.
  */
 import { DatePicker as HeroDatePicker } from "heroui-native-pro/date-picker";
 import type { ComponentPropsWithRef, ReactElement } from "react";

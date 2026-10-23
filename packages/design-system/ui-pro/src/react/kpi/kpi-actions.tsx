@@ -4,7 +4,7 @@
  *          Pro gives no default for although the button is icon-only.
  * Boundary: no behaviour of its own; the button props and the icon child are HeroUI Pro's, passed through.
  * Runtime: browser
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-007.
+ * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); STA-403 FR-007.
  */
 import { KPI as HeroKpi, type KPIActionsProps as HeroKpiActionsProps } from "@heroui-pro/react/kpi";
 

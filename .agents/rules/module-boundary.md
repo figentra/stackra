@@ -64,14 +64,14 @@ import { OrderPermissions } from "#modules/orders/access/order.permissions";
 
 Services communicate through the generated Encore app (ADRs 0091 and 0124):
 
-- **Integration events** - a class that extends `IntegrationEvent({ name })`; the author writes `name` once and gen derives the wire name `<module-key>.<name>.v<n>` (`identity.user.created.v1`). A consumer is a `Listener` whose `handle(event: E)` parameter type is the producer's event (ADR 0078, 0141 and 0264 as amended by 0294)
-- **Typed client calls and events** - `stackra gen` generates one typed client per service from its committed `stackra.manifest.json`, injected through the constructor from `#stackra/clients`: `client.x.y(input)` to call and `client.x.y.queue(input)` for a queued call (ADR 0260, 0261 as amended by 0294)
-- **Read models** - a consumer's copy of another service's data is a class that extends `Projection(Source, { ... })` in the module's `models/` group, fed by that service's integration events (ADR 0163, 0260 and 0294)
+- **Integration events** - a class that extends `IntegrationEvent({ name })` from `@stackra/events` (ADR 0305); the author writes `name` once and gen derives the wire name `<module-key>.<name>.v<n>` (`identity.user.created.v1`). A consumer is a `Listener` whose `handle(event: E)` parameter type is the producer's event (ADR 0078, 0141 and 0264 as amended by 0294)
+- **Typed client calls and events** - `stackra gen` generates one typed client per service from its committed `stackra.manifest.json`, injected through the constructor from `#stackra/clients`: `client.x.y(input)` to call and `client.x.y.queue(input)` for a queued call (ADR 0260, 0261 as amended by 0294). A consumed module is imported by name from its service's client subpath, `import { OrdersModule } from "#stackra/clients/commerce"`, and never as a namespace walk such as `Commerce.modules.Orders` (ADR 0305)
+- **Read models** - a consumer's copy of another service's data is a class that extends `Projection<Source>({ ... })` in the module's `models/` group, fed by that service's integration events (ADR 0163, 0260 and 0294)
 - Transport is a driver behind the port (ADR 0142). Never direct imports of another service's source, tables or `Topic`
 - A Stackra package that needs service data defines a port (an abstract class) in `src/contracts/ports/`; the service implements it (ADR 0260)
 - Feature modules live in one of three homes: the service (default), a figentra-os `@figentra/*` package used by two or more OS consumers, or a `@stackra/*` package with no Figentra rules. The module layout is the same in all three (ADR 0259 as amended by 0294)
 
-Classes are the only DI tokens, and configuration is a `Config` class (ADR 0145 and 0146 as amended by 0294). Names and casing follow ADR 0231 and 0294.
+Classes are the only DI tokens, and configuration is a `Config` class declared as `Config({ schema, env })` (ADR 0145 and 0146 as amended by 0294 and ADR 0305). Names and casing follow ADR 0231 and 0294.
 
 Today's code: the v3 shapes above are the target. No framework package ships yet, the example service still has an
 authored `src/main.ts`, and older pages still name `app-manifest.json`; the conversion is STA-344.
@@ -88,5 +88,6 @@ authored `src/main.ts`, and older pages still name `app-manifest.json`; the conv
 - ADR-0003: Tier dependency direction
 - ADR-0004: Package archetypes and layers
 - ADR-0294: Programming model v3 (groups, entries, sibling imports)
+- ADR-0305: Programming model v3.1 (partners, one declaration per file, optional root modules, events, extensions)
 - ADR-0141 (event names), ADR-0142 (transport drivers), ADR-0145 (tokens are classes), ADR-0231 (naming and casing standard)
 - Constitution: boundaries (placement test)

@@ -23,7 +23,7 @@ describe("ProTrendChip", () => {
   it("sits at /pro-trend-chip in the Pro group, and titles the page and the document", () => {
     render(<ProTrendChip />);
     expect(ProTrendChipRoute.path).toBe("/pro-trend-chip");
-    expect(ProTrendChipRoute.group).toBe("Pro");
+    expect(ProTrendChipRoute.category).toBe("Pro");
     expect(screen.getByRole("heading", { level: 1, name: ProTrendChipRoute.title })).toBeTruthy();
     expect(document.title).toBe("TrendChip · Stackra Playground");
   });
