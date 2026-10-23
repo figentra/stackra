@@ -29,7 +29,12 @@ const byPath = (files: SiteFile[]): Map<string, string> =>
 describe("planSite", () => {
   it("builds a valid site with no schemas and no releases", () => {
     const files = byPath(planSite([], []));
-    expect([...files.keys()].sort()).toEqual(["/_headers", "/schemas/index.json"]);
+    expect([...files.keys()].sort()).toEqual([
+      "/404.html",
+      "/_headers",
+      "/index.html",
+      "/schemas/index.json",
+    ]);
     expect(JSON.parse(files.get("/schemas/index.json") ?? "")).toEqual({
       host: "static.stackra.figentra.com",
       schemas: [],

@@ -20,21 +20,28 @@ The build reads the JSON Schemas in `tools/schemas/*.schema.json` (STA-305) at t
 | `/schemas/v1/runway/app.json`     | the newest `schemas@1.x.y` release     | Cloudflare default                               |
 | `/schemas/1.4.0/runway/app.json`  | the `schemas@1.4.0` tag, never changes | `public, max-age=31536000, immutable`            |
 | `/schemas/index.json`             | every latest schema and every release  | Cloudflare default                               |
+| `/`                               | the landing page (`index.html`)        | `public, max-age=300`                            |
+| any unknown path                  | the same page (`404.html`), status 404 | Cloudflare default                               |
 
 Every response carries `Access-Control-Allow-Origin: *`. Each published copy has `$id` rewritten to its own URL, so a
 pinned version never resolves references against `latest`. Headers come from a generated `_headers` file, which
-Cloudflare applies to static assets. Until STA-305 lands, the site is just `/schemas/index.json` with empty lists.
+Cloudflare applies to static assets.
+
+People who open the host in a browser get one branded Stackra page ("Nothing to see here", a link to the docs, the
+legal footer): at `/`, and as the 404 body for any unknown path (`not_found_handling: "404-page"`). It lists no
+schema, runs no script and makes no request: the wordmark, colours and type of the stackra theme are inlined
+(`src/site/render-page.ts`).
 
 ## Layout
 
-| Path                  | Holds                                                                              |
-| --------------------- | ---------------------------------------------------------------------------------- |
-| `wrangler.jsonc`      | Worker name, account, pinned compatibility date, assets folder, the custom domain  |
-| `src/main.ts`         | build entry: read, plan, write `dist/site`                                         |
-| `src/site/`           | the builder: readers (working tree, git tags), `planSite`, `renderHeaders`, writer |
-| `src/constants/`      | host, `/schemas` prefix, schemas folder, tag prefix, immutable Cache-Control value |
-| `src/interfaces/`     | the shapes passed between the builder's steps                                      |
-| `src/site/__tests__/` | unit tests: URL layout, `$id` rewrite, validation, `_headers`, release reading     |
+| Path                  | Holds                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------ |
+| `wrangler.jsonc`      | Worker name, account, pinned compatibility date, assets folder, the custom domain                |
+| `src/main.ts`         | build entry: read, plan, write `dist/site`                                                       |
+| `src/site/`           | the builder: readers (working tree, git tags), `planSite`, `renderHeaders`, `renderPage`, writer |
+| `src/constants/`      | host, `/schemas` prefix, schemas folder, tag prefix, Cache-Control values, logo                  |
+| `src/interfaces/`     | the shapes passed between the builder's steps                                                    |
+| `src/site/__tests__/` | unit tests: URL layout, `$id` rewrite, validation, `_headers`, releases, the page                |
 
 ## Commands
 
