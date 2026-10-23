@@ -252,7 +252,14 @@
       "mcp__elevenlabs__*",
       "mcp__sanity__*",
       "mcp__sentry__*",
-      "mcp__figma__*"
+      "mcp__figma__*",
+      "Bash(pnpm pr:merge *)",
+      "Bash(mise exec -- pnpm pr:merge *)",
+      "Bash(pnpm bot:git *push*)",
+      "Bash(mise exec -- pnpm bot:git *push*)",
+      "Bash(pnpm secrets:import *)",
+      "Bash(git worktree remove *)",
+      "Bash(pnpm new *)"
     ],
     "deny": [
       "Read(//**/.env)",
