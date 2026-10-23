@@ -2,20 +2,25 @@
 
 {{DESCRIPTION}}
 
-A plain-TypeScript service member (`tier:service`). `stackra gen` reads its root module and generates the Encore
-app into `.stackra/encore` (ADRs 0090, 0091, 0124).
+A plain-TypeScript service member (`tier:service`) in the programming model v3 shape (ADR 0294, 0295). `stackra gen`
+finds its root module, writes the runtime entry that boots it (`.stackra/entry/server.ts`) and generates the Encore
+app into `.stackra/encore` (ADRs 0091, 0124). Nobody writes `main.ts`.
 
 ## Structure
 
 ```text
-config/{{NAME}}.config.ts         deploy-time defaults (CF1)
+stackra.config.ts                 the member definition: static data (ADR 0295)
+runway.yaml                       what the service needs at runtime (runway v3, ADR 0296)
 src/
-├── main.ts                       process entry: bootstraps the root module
-├── {{NAME}}.module.ts            root module; package.json "stackra.module" points here
-├── modules/                      feature modules, grouped by kind (see modules/README.md)
-├── contracts/index.ts            "./contracts": types other members may import
+├── {{NAME}}.module.ts            the root module; feature modules join its imports
+├── config/{{NAME}}.config.ts     {{PASCAL}}Config, the deploy-time configuration
+├── contracts/                    the public type surface; exported with its first file
+├── modules/                      feature modules, one folder each, with the group folders (modules/README.md)
 └── __tests__/{{NAME}}.module.test.ts
 ```
+
+`stackra gen` writes `stackra.manifest.json` and `openapi.json` here on its first run; they are committed, never
+edited.
 
 ## Tasks
 
@@ -29,4 +34,5 @@ src/
 | `format:check` | `oxfmt --check .`             |
 | `clean`        | `rm -rf dist coverage .turbo` |
 
-Run one with `pnpm turbo run <task> --filter=@figentra/service-{{NAME}}`.
+Run one with `pnpm turbo run <task> --filter=@figentra/service-{{NAME}}`. There is no `dev` or `start` until gen
+writes the entry (STA-339).

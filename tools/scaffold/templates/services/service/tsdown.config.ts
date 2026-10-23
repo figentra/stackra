@@ -1,13 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: build config of @figentra/service-{{NAME}} — `src/main.ts` (the process entry) and the types-only
- *          `./contracts` entry, legacy decorators on (ADR 0005). Built to dist/*.mjs + .d.mts (ADR 0025); the
- *          Encore app `stackra gen` writes to `.stackra/encore` imports the built service (ADR 0091).
- * Owner: the service owner · Secrets: forbidden
+ * Purpose: build config of @figentra/service-{{NAME}}: bundles the root module, legacy decorators on (ADR 0005). Gen
+ *          writes the runtime entry that boots it (`.stackra/entry/server.ts`, ADR 0295), so no `main.ts` exists.
+ * Boundary: build configuration only; a tool config gen will write into `.stackra/` (ADR 0295 decision 5).
+ * Runtime: node
+ * Governing contract: ADR 0025 (build output); ADR 0295 (decisions 5 and 7).
  */
 import { library } from "@stackra/tsdown-config";
 
-export default library(
-  { main: "src/main.ts", contracts: "src/contracts/index.ts" },
-  { decorators: true },
-);
+export default library({ module: "src/{{NAME}}.module.ts" }, { decorators: true });

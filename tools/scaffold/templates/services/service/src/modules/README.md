@@ -1,35 +1,42 @@
 # src/modules
 
-One folder per feature module: `src/modules/<feature>/`, holding a `<feature>.module.ts` that the root module
-(`src/{{NAME}}.module.ts`) imports. A new service has none; this folder stays empty until the first feature.
+One folder per feature module, `src/modules/<key>/`, holding `<key>.module.ts` (a class that extends `Module`, with
+`exports` only); the root module `src/{{NAME}}.module.ts` lists it in `imports`. The module key is the folder name in
+snake_case. A new service has none.
 
-Inside a feature module, code is grouped by **kind**, action-centric (ADR 0126, amending ADR 0040). Create a kind
-folder only when its first file exists.
+Inside a module each kind suffix has one home group, and a group folder appears with its first file (ADR 0294
+decision 13):
 
-| Folder         | Holds                                                                                   |
-| -------------- | --------------------------------------------------------------------------------------- |
-| `models/`      | persisted models (`@Model`, fields, relations)                                          |
-| `actions/`     | one `@Action` class per write use case: `async handle(input, ctx)`, one transaction each |
-| `queries/`     | read use cases; never write                                                             |
-| `services/`    | stateful collaborators the actions inject (not HTTP controllers)                        |
-| `events/`      | versioned events this module emits (`defineEvents`, `<aggregate>.<verb>.v<n>`)          |
-| `listeners/`   | `@OnEvent` handlers                                                                     |
-| `workflows/`   | `@Workflow` / `@Step` multi-step processes                                              |
-| `policies/`    | authorization policies                                                                  |
-| `permissions/` | the permission catalogue (`definePermissions`, `<module>.<resource>.<action>`)          |
-| `settings/`    | `@Setting` definitions (runtime, per scope)                                             |
-| `contracts/`   | types this module exposes to the service's `src/contracts` entry                        |
-| `resources/`   | Filament-style panel resources (`@Resource`, `@Page`, `@Widget`) the console renders    |
+| Group                  | Holds                                                                                     |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| (root)                 | `<key>.module.ts`, `<key>.settings.ts` (one settings group), `README.md`                  |
+| `models/`              | `.model.ts`, `.state-machine.ts`, `.bucket.ts`, `.projection.ts`                          |
+| `actions/`             | `.action.ts`                                                                              |
+| `queries/`             | `.query.ts`                                                                               |
+| `schemas/`             | `.schema.ts` (shared by two or more files), `.change.ts` (dated response changes)         |
+| `enums/`               | `.enum.ts`                                                                                |
+| `errors/`              | `.error.ts`                                                                               |
+| `events/`              | `.event.ts`, `.change.ts` (event versions)                                                |
+| `listeners/`           | `.listener.ts`                                                                            |
+| `workflows/`           | `.workflow.ts`, `.signal.ts`                                                              |
+| `access/`              | `.permissions.ts`, `.policy.ts`, `.role.ts`, `.entitlement.ts`, `.precondition.ts`, `.flag.ts` |
+| `services/`            | `.service.ts`, `.repository.ts` (only for named reads beyond `CrudService`)               |
+| `drivers/`             | `.driver.ts`                                                                              |
+| `extensions/`          | `.extension-point.ts`, `.extension.ts`, `.interceptor.ts`                                 |
+| `raw/`                 | `.controller.ts`: `/api/auth/*` and streams only                                          |
+| `resources/<model>/`   | `.resource.ts`, `.widget.ts`, `.document.ts`, `.notification.ts`, `.mail.tsx`             |
+| `database/migrations/` | `NNNN-<name>.migration.ts`, numbered per module, changing only the module's schema        |
+| `database/factories/`  | `<model>.factory.ts`                                                                      |
+| `database/seeders/`    | `minimal.seeder.ts`, `demo.seeder.ts`, `test.seeder.ts`                                   |
+| `ai/`                  | `.prompt.ts`, `.skill.ts`, `.facts.ts`                                                    |
+| `functions/`           | `.function.ts`                                                                            |
+| `constants/`           | `.constant.ts`                                                                            |
+| `types/`               | `.type.ts`                                                                                |
 
-Once a module has two or more files of one of these, they get their own folder too: `interfaces/`, `types/`,
-`constants/`, `tokens/` (`defineToken<T>()`), `errors/`, `decorators/`.
+A file is `<name>.<kind>.ts`, and its class is `PascalCase(name) + PascalCase(kind)` extending the kind's base class
+(`extends Action({ key })`, `extends CrudService(Order)`); no kind decorator. Gen finds every binding by its base class
+and writes the wiring, so a module lists no providers. A sibling module is imported only through its exported classes
+and public groups, as `#modules/<key>/<group>/…`. Tests sit in `__tests__/<name>.<kind>.test.ts` beside their subject.
 
-The declaration rule: decorators annotate code (classes, methods, fields: `@Action`, `@OnEvent`, `@Setting`);
-`define*` creates values other code references (`defineToken`, `defineConfig`, `definePermissions`,
-`defineEvents`, `defineMeters`, `defineEntitlements`).
-
-Not used: `controllers/`, `dtos/`, `repositories/`, `helpers/`, `utils/`. Tests sit in `__tests__/` beside the
-code they test (`<subject>.test.ts`, or `.int` / `.contract` / `.e2e` / `.load` before `.test` for those tiers).
-
-Every decorator kind is found at bootstrap by its package's Explorer through the container's `DiscoveryService`,
-and by `stackra gen` at build time. Nothing here registers itself by hand.
+No `controllers/`, `dtos/`, `repositories/`, `guards/`, `links/`, `permissions/`, `policies/`, `states/`, `hooks/`,
+`seeds/`, `utils/` or `helpers/` folder.

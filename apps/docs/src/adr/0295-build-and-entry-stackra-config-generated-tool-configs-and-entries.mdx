@@ -16,6 +16,14 @@ description: "Accepted · 2026-10-22"
   rule R12).
 </Note>
 
+<Note>
+  Amended 2026-10-23 (STA-347): the first Enforcement bullet is out of date. `checkService` now
+  accepts both shapes through `isV2Service`: the v3 shape that `pnpm new service` writes
+  (`stackra.config.ts` and `src/<key>.module.ts`, no `src/main.ts`) and the v2 shape (`src/main.ts`
+  and a `stackra.module` that exists), which today's services keep until STA-344. The decisions are
+  unchanged.
+</Note>
+
 ## Context
 
 Today a member declares its build in several hand-written places. A service has an authored `src/main.ts` and names its root module in `package.json`. An app keeps its own Vite, Expo, Metro, Maestro, Wrangler and electron-builder files, and those files repeat facts the member already states, such as its name, its bundle identifier and its targets. A generator cannot rewrite them safely, because people edit them by hand as well.

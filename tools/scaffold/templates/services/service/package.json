@@ -6,22 +6,30 @@
   "license": "UNLICENSED",
   "type": "module",
   "sideEffects": false,
-  "stackra": {
-    "module": "./src/{{NAME}}.module.ts"
-  },
-  "exports": {
-    "./contracts": {
-      "@stackra/source": "./src/contracts/index.ts",
-      "types": "./dist/contracts.d.mts",
-      "default": "./dist/contracts.mjs"
-    }
-  },
   "imports": {
     "#src/*": [
       "./src/*",
       "./src/*.ts",
       "./src/*.tsx",
       "./src/*/index.ts"
+    ],
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts",
+      "./src/config/*.tsx",
+      "./src/config/*/index.ts"
+    ],
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*.tsx",
+      "./src/contracts/*/index.ts"
+    ],
+    "#modules/*": [
+      "./src/modules/*",
+      "./src/modules/*.ts",
+      "./src/modules/*.tsx",
+      "./src/modules/*/index.ts"
     ],
     "#stackra/*": [
       "./.stackra/gen/*",
@@ -31,8 +39,6 @@
     ]
   },
   "scripts": {
-    "dev": "tsdown --watch",
-    "start": "node dist/main.mjs",
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint .",

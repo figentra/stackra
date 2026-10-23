@@ -9,30 +9,36 @@ A package lives at `packages/<category>/<name>` and is published as `@stackra/<n
 ## Shape: entries first
 
 Every library package has one shape ([0126](/adr/0126-member-shapes-and-scaffold-templates), which supersedes the
-archetypes of [0004](/adr/0004-package-archetypes-and-layers)). `pnpm new package <name> --category <c> --entries …`
-renders it. `tooling` presets keep their own shape (below).
+archetypes of [0004](/adr/0004-package-archetypes-and-layers), as amended by
+[0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 15 and
+[0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries)).
+`pnpm new package <name> --category <c> --description "<one sentence>" [--entries react,native] [--data]` renders the
+v3 shape below. `tooling` presets keep their own shape (below).
 
 ```text
-config/<name>.config.ts   publishable deploy-time defaults (CF1), outside src
-resources/                static files (lang/, stubs/, assets/), exported as ./resources/*
+stackra.config.ts                the member definition: static data (0295)
+assets/                          static files (public/, lang/, …), exported as ./assets/* (0177, 0234)
 src/
-  core/        "."           runtime-neutral; imports no host library
-  contracts/   "./contracts" vocabulary only: types, as-const objects, tokens (0117)
-  node/        "./node"      Node-only adapters, drivers, the module, the Explorer
-  react/       "./react"     web React bindings; react is an optional peer
-  native/      "./native"    React Native bindings; react-native is an optional peer
-  testing/     "./testing"   fakes, builders, conformance suites for consumers' tests
-  devtools/    "./devtools"  dev-only devtools, frontend and backend
-  ui/                        internal logic shared by react/ and native/ (not an entry)
+  config/        "."             the config classes; a host subclasses them to override (0294 d19)
+  core/          "."             isomorphic code: services, drivers, errors, functions, schemas, blocks
+  contracts/     "./contracts"   the leaf: ports/, enums/, types/; imports nothing else from the package
+  node/          "./node"        the module: <name>.module.ts and the module groups; database/ with --data
+  react/<name>/  "./react"       web renderers; react is an optional peer (--entries react)
+  native/<name>/ "./native"      native renderers; react-native is an optional peer (--entries native)
+  testing/       "./testing"     fakes/ and matchers/ for consumers' tests
 ```
 
-| Rule                                 | Detail                                                                                                                                                                                                                                                                                                                                       |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Declare only real entries            | A folder, its `exports` key and its `tsdown.config.ts` entry are added together, with the first real code. `core` is always there.                                                                                                                                                                                                           |
-| Entries never import entries         | `react` and `native` share code through the internal `src/ui/`, never through each other.                                                                                                                                                                                                                                                    |
-| Host libraries are optional peers    | A runtime-specific dependency is an optional peer (`peerDependenciesMeta`), so installing the package pulls in no host library.                                                                                                                                                                                                              |
-| Kind folders inside a feature module | `models/`, `actions/`, `queries/`, `services/`, `events/`, `listeners/`, `workflows/`, `policies/`, `permissions/`, `settings/`, `contracts/`, `resources/`; `interfaces/`, `types/`, `constants/`, `tokens/`, `errors/`, `decorators/` once there are two or more files. No `controllers/`, `dtos/`, `repositories/`, `helpers/`, `utils/`. |
-| Decorators ship an Explorer          | A package that defines decorators registers them at bootstrap through the container's `DiscoveryService`.                                                                                                                                                                                                                                    |
+Today's packages still use the v2 shape until STA-344: hand-written `index.ts` barrels per entry, and `config/` or
+`resources/` outside `src/` where they have them.
+
+| Rule                              | Detail                                                                                                                                                                                                                                   |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Declare only real entries         | An entry is exported once its folder holds a file: its `exports` key and its `tsdown.config.ts` entry are added together. A new package exports `.` (the config class), `./node` (the root module) and `./assets/*`.                     |
+| Entry barrels are generated       | Never authored (0294 d15). Until `stackra gen` writes them (STA-339), an export names its entry's one public file; an entry with a second public file gets a stand-in `src/<entry>/index.ts` whose `Purpose:` starts `Stand-in barrel:`. |
+| Dependencies run one way          | Core imports contracts; node, react and native import core; testing imports them all. No symbol is exported from two entries.                                                                                                            |
+| Host libraries are optional peers | A runtime-specific dependency is an optional peer (`peerDependenciesMeta`), so installing the package pulls in no host library.                                                                                                          |
+| Module groups in `src/node/`      | Each kind suffix has one home group (`models/`, `actions/`, `queries/`, `events/`, …), created with its first file; the table is [Structure](/standards/structure). No `controllers/`, `dtos/`, `repositories/`, `helpers/`, `utils/`.   |
+| Decorators ship an Explorer       | A package that ships decorators has `src/<entry>/<pkg>.explorer.ts`, which registers them (0294 d15).                                                                                                                                    |
 
 ### Tooling
 

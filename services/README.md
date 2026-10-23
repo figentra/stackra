@@ -25,6 +25,6 @@ container and action packages land.
 - A service never imports another service: integration events (`@OnEvent`) or typed clients only
   ([module boundary](../.agents/rules/module-boundary.md)).
 - Read [the service checklist](../.agents/rules/service-checklist.md) before touching a file here.
-- Add a service with `pnpm new service <name>`.
+- Add a service with `pnpm new service <name> --description "<one sentence>"`.
 
 Standards: [services](../apps/docs/src/standards/services.mdx).

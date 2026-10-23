@@ -17,6 +17,6 @@ sit at the bottom of the dependency graph ([ADR 0003](../../apps/docs/src/adr/00
   full specifiers. There is no `src/lib/` layer.
 - Every compiler or lint option lives here with its reason; a member's config only extends a preset.
 - Changing a preset changes every member: run `pnpm verify`.
-- Create one with `pnpm new tooling <name>`.
+- Create one with `pnpm new tooling <name> --description "<one sentence>"`.
 
 Guide: [tooling](../../apps/docs/src/guides/tooling.mdx).

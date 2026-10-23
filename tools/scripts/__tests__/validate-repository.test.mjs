@@ -11,6 +11,7 @@ import {
   checkTestPlacement,
   checkYamlFlowMaps,
   isMemberSource,
+  isV2Service,
   isRepoOwnedYaml,
   tierFor,
 } from "../validate-repository.mjs";
@@ -171,16 +172,30 @@ test("checkExports: ADR 0025 dist shape with @stackra/source first; strings are 
   assert.deepEqual(checkExports(undefined), []);
 });
 
-test("services: main entry, stackra.module that exists, no Encore files (ADR 0126)", () => {
+// @covers sta-347:FR-005 sta-347:P-004
+test("transition: a v2 service keeps src/main.ts and an existing stackra.module (until STA-344)", () => {
+  const dir = "services/notes";
   const pkg = { stackra: { module: "./src/notes.module.ts" } };
-  assert.deepEqual(checkService({ pkg, paths: ["src/main.ts", "src/notes.module.ts"] }), []);
-  assert.deepEqual(checkService({ pkg: {}, paths: ["src/encore.service.ts"] }), [
-    "src/main.ts missing",
+  assert.equal(isV2Service(["src/main.ts"]), true);
+  assert.deepEqual(checkService({ dir, pkg, paths: ["src/main.ts", "src/notes.module.ts"] }), []);
+  assert.deepEqual(checkService({ dir, pkg: {}, paths: ["src/main.ts"] }), [
     'package.json has no "stackra": { "module": "./src/<name>.module.ts" } (ADR 0090)',
-    "src/encore.service.ts: services hold no Encore files; stackra gen generates them (ADR 0124)",
   ]);
-  assert.deepEqual(checkService({ pkg, paths: ["src/main.ts"] }), [
+  assert.deepEqual(checkService({ dir, pkg, paths: ["src/main.ts"] }), [
     "package.json stackra.module ./src/notes.module.ts does not exist",
+  ]);
+});
+
+// @covers sta-347:FR-005 sta-347:P-004
+test("transition: a v3 service has stackra.config.ts and src/<dir>.module.ts, no main.ts", () => {
+  const dir = "services/notes";
+  const v3 = ["stackra.config.ts", "src/notes.module.ts", "runway.yaml"];
+  assert.equal(isV2Service(v3), false);
+  assert.deepEqual(checkService({ dir, pkg: {}, paths: v3 }), []);
+  assert.deepEqual(checkService({ dir, pkg: {}, paths: ["src/encore.service.ts"] }), [
+    "stackra.config.ts missing (v3 service shape, ADR 0294 R12; a v2 service keeps src/main.ts until STA-344)",
+    "src/notes.module.ts missing (v3 service shape, ADR 0294 R12; a v2 service keeps src/main.ts until STA-344)",
+    "src/encore.service.ts: services hold no Encore files; stackra gen generates them (ADR 0124)",
   ]);
 });
 

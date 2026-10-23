@@ -17,8 +17,8 @@ is `src/modules/<key>/<key>.module.ts` with the module groups of ADR 0294 decisi
 `permissions/`, `states/`, `hooks/` or `presentation/` folder.
 
 Today's services (`example`, `health`) predate v3: each still has an authored `src/main.ts` and a `stackra.module` field
-in `package.json`, and `checkService` requires both until STA-339 changes the validator. Keep them until the codemod
-(STA-344) converts the members. Eight non-negotiables:
+in `package.json`, which `checkService` accepts beside the v3 shape `pnpm new service` writes. Keep them until the
+codemod (STA-344) converts the members. Eight non-negotiables:
 
 1. **Placement and group folders.** The placement test passes (`module-boundary`). Each file sits in its kind's one home group,
    named `<name>.<kind>.ts`, and declares its kind by its base class. Imports across folders use `#` aliases; a sibling
@@ -36,6 +36,6 @@ in `package.json`, and `checkService` requires both until STA-339 changes the va
 8. **Definition of done:** code, `pnpm verify` green, the service's own tests green, docs current, reviewer sign-off. `pnpm verify` never
    starts a service, so a typecheck is not proof it runs.
 
-Enforcement: `tools/scripts/validate-repository.mjs` (member shape, `checkService` with today's `src/main.ts` and
-`stackra.module` requirement, no Encore files, tier tag); planned — STA-338 (`kind-path`), STA-339 (`member-root`,
+Enforcement: `tools/scripts/validate-repository.mjs` (member shape, `checkService` with its v2 branch for today's
+`src/main.ts` and `stackra.module` until STA-344, no Encore files, tier tag); planned — STA-338 (`kind-path`), STA-339 (`member-root`,
 `runway`) and STA-340 (`module-folder`, `database-folder` and the gen checks). Items 2-5 and 8 are reviewer-checked. Docs: `apps/docs/src/standards/services.mdx`.

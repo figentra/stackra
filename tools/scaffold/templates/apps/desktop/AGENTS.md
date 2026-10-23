@@ -1,6 +1,9 @@
 # AGENTS — @figentra/{{NAME}}
 
-{{DESCRIPTION}} Electron desktop app at `apps/{{NAME}}` (`tier:app`).
+{{DESCRIPTION}} Electron desktop app at `apps/{{NAME}}` (`tier:app`), in the programming model v3 shape
+(ADR 0294, 0295): `stackra.config.ts` and the root module `src/{{NAME}}.module.ts`. `src/main.ts` and
+`src/window-options.ts` are stand-ins for the entry gen writes (STA-339); runtime desktop settings go in
+`src/config/desktop.config.ts` (ADR 0281).
 
 - The renderer never gets Node: `contextIsolation` and `sandbox` stay on, `nodeIntegration` off
   (`src/window-options.ts` and its test).

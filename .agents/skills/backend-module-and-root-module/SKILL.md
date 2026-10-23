@@ -10,8 +10,8 @@ permissions, resources and assets, and a service or app only hosts modules. Ever
 `stackra.config.ts`; gen writes the wiring and the runtime entries (ADR 0294 rule R12, ADR 0295).
 
 This is the v3 target. `@stackra/container` and gen do not ship yet. Today `services/example` and `services/health`
-still have an authored `src/main.ts` and a `stackra.module` field in `package.json`, which `checkService` requires until
-STA-339; the conversion is STA-344. The package docs win once they ship.
+still have an authored `src/main.ts` and a `stackra.module` field in `package.json`, which `checkService` accepts beside
+the v3 shape that `pnpm new` writes; the conversion is STA-344. The package docs win once they ship.
 
 ## Layout (ADR 0294 decisions 13 to 15)
 

@@ -728,9 +728,9 @@ Every member declares exactly one tier in its `turbo.jsonc`:
 
 The programming model v3 (ADR 0294, 0295) is the target shape below. Today's members predate it: the console, mobile
 app, example and health services and the static Worker still have an authored `src/main.ts`, and
-`validate-repository.mjs` (`checkService`) still requires `src/main.ts` and a `stackra.module` field in a service's
-`package.json` until STA-339 changes it. Convert nothing by hand ahead of the codemod (STA-344); write new code in the
-v3 shape where the member already allows it.
+`validate-repository.mjs` (`checkService`) accepts a service in that shape (with a `stackra.module` field) or in the v3
+shape that `pnpm new` writes until STA-344 converts them. Convert nothing by hand ahead of the codemod (STA-344); write
+new code in the v3 shape where the member already allows it.
 
 ##### Every member (ADR 0294 rule R12, ADR 0295)
 

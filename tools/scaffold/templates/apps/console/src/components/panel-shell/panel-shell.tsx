@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: the panel shell — header, navigation and the outlet every panel page renders into (Filament-style
  *          resources, pages and widgets declared by modules).
- * Owner: the app owner · Secrets: forbidden
+ * Boundary: layout only; the pages come from the route folders.
+ * Runtime: browser
+ * Governing contract: ADR 0294 (decision 14); ADR 0165 (web client stack).
  */
 import { Button } from "@heroui/react";
 import { Outlet } from "react-router";
