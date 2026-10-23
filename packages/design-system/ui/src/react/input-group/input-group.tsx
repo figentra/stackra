@@ -60,7 +60,12 @@ export function InputGroup({
     <HeroTextField {...omitUndefined(rest)} variant={variant} fullWidth={isFullWidth}>
       {label == null ? null : <Label>{label}</Label>}
       {/* The text field's full-width rule reaches only inputs, so the group is told too. */}
-      <HeroInputGroup fullWidth={isFullWidth}>
+      {/* `aria-disabled`: a disabled field's text affixes are exempt from contrast, but only a checker that reads it here
+          can tell, because the affixes are not the native control. */}
+      <HeroInputGroup
+        fullWidth={isFullWidth}
+        {...(rest.isDisabled ? { "aria-disabled": true } : {})}
+      >
         {prefix == null ? null : (
           <HeroInputGroup.Prefix {...ownClicks(prefix)}>{prefix}</HeroInputGroup.Prefix>
         )}

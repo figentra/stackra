@@ -60,14 +60,11 @@ describe("renderWebCss", () => {
 
   it("sweeps a skeleton from the inline-start side and stops every skeleton animation under reduced motion", () => {
     // @covers sta-350:FR-045
-    const rtl = css.split(
-      ".skeleton--shimmer:dir(rtl)::after,\n.skeleton--shimmer:dir(rtl)::before {\n",
-    )[1];
+    const shimmer = '.skeleton--shimmer:is(:dir(rtl), [dir="rtl"], [dir="rtl"] *)';
+    const rtl = css.split(`${shimmer}::after,\n${shimmer}::before {\n`)[1];
     expect(rtl?.startsWith("  animation-direction: reverse;\n}")).toBe(true);
     // Unlayered: the rule sits before the `components` layer, so it beats HeroUI's animation.
-    expect(css.indexOf(".skeleton--shimmer:dir(rtl)")).toBeLessThan(
-      css.indexOf("@layer components"),
-    );
+    expect(css.indexOf(shimmer)).toBeLessThan(css.indexOf("@layer components"));
     expect(css.match(/@media \(prefers-reduced-motion/g)).toHaveLength(1);
     const motion =
       css.split("@media (prefers-reduced-motion: reduce) {")[1]?.split("\n}\n")[0] ?? "";

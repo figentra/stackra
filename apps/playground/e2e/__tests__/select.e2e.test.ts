@@ -136,9 +136,11 @@ test("the list is at least as wide as its trigger", async ({ page }) => {
     .getByRole("button", { name: /Order status/ });
   await trigger.click();
   const triggerBox = await trigger.boundingBox();
-  const listBox = await page.getByRole("listbox").boundingBox();
-  if (!triggerBox || !listBox) throw new Error("a box is missing");
-  expect(listBox.width).toBeGreaterThanOrEqual(triggerBox.width - 1);
+  if (!triggerBox) throw new Error("a box is missing");
+  // Polled: the popover scales in as it opens, so its box is narrower than its final width for a moment.
+  await expect
+    .poll(async () => (await page.getByRole("listbox").boundingBox())?.width ?? 0)
+    .toBeGreaterThanOrEqual(triggerBox.width - 1);
 });
 
 for (const locale of LOCALES)

@@ -135,10 +135,11 @@ test("the required group is required, and the invalid group is described until a
 for (const locale of LOCALES)
   test(`the radio sits on the reading-start side of its label in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const radio = page
+    // A `has` locator is queried inside the item, so the group scopes the items and the radio is found by role alone.
+    const item = page
       .getByRole("radiogroup", { name: "Shipping speed" })
-      .getByRole("radio", { name: "Standard" });
-    const item = page.locator('[data-slot="radio"]').filter({ has: radio });
+      .locator('[data-slot="radio"]')
+      .filter({ has: page.getByRole("radio", { name: "Standard" }) });
     const control = await item.locator('[data-slot="radio-control"]').boundingBox();
     const label = await item.locator('[data-slot="label"]').boundingBox();
     if (!control || !label) throw new Error("a box is missing");

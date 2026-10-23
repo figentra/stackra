@@ -91,7 +91,8 @@ test("a labelled avatar is one named image and a list row's is out of the tree",
   await expect(region.getByRole("img")).toHaveCount(1);
   const row = region.getByRole("listitem");
   await expect(row.getByRole("img")).toHaveCount(0);
-  await expect(row).toHaveText("Ada LovelaceAdministrator");
+  // The decorative avatar still holds its initials in the DOM; only the accessibility tree skips them.
+  await expect(row).toHaveText(/^ALAda LovelaceAdministrator$/u);
 });
 
 for (const scheme of SCHEMES)

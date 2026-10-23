@@ -66,12 +66,24 @@ for (const scheme of SCHEMES)
       ).toEqual([]);
     });
 
+/**
+ * Whether an element draws a shadow. Tailwind's `shadow-none` computes to a list of fully transparent layers, never to
+ * `none`, so the layers are read: each starts with its colour in a computed style, and a shadow is drawn when one is
+ * not transparent.
+ */
+const drawsShadow = (element: Element) =>
+  getComputedStyle(element)
+    .boxShadow.split(/,\s(?=rgba?\(|oklch\(|color\(|#)/)
+    .some((layer) => !layer.startsWith("rgba(0, 0, 0, 0)"));
+
 for (const scheme of SCHEMES)
   test(`each level card paints its surface colour, and only a transparent one has no shadow, in ${scheme}`, async ({
     page,
   }) => {
     await open(page, scheme, "en");
-    const cards = page.getByRole("region", { name: "Levels" }).locator('[data-slot="card"]');
+    const cards = page
+      .getByRole("region", { name: "Levels", exact: true })
+      .locator('[data-slot="card"]');
     await expect(cards).toHaveCount(4);
     const levels = ["surface", "surface-secondary", "surface-tertiary"];
     for (const [index, variable] of levels.entries()) {
@@ -79,14 +91,9 @@ for (const scheme of SCHEMES)
         await paintedVariable(page, variable),
       );
       // The theme's surface ring: a shadow is drawn.
-      expect(
-        await cards.nth(index).evaluate((element) => getComputedStyle(element).boxShadow),
-        `${variable} shadow`,
-      ).not.toBe("none");
+      expect(await cards.nth(index).evaluate(drawsShadow), `${variable} shadow`).toBe(true);
     }
-    expect(await cards.nth(3).evaluate((element) => getComputedStyle(element).boxShadow)).toBe(
-      "none",
-    );
+    expect(await cards.nth(3).evaluate(drawsShadow)).toBe(false);
   });
 
 test("the titles sit in the outline at level 3 and 4, and the article is named by its title", async ({

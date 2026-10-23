@@ -117,7 +117,12 @@ test("with the switch on, Enter alone does not send and Control plus Enter does"
 
 test("with the switch off, Enter alone sends", async ({ page }) => {
   await open(page, "light", "en");
-  await page.getByRole("switch", { name: "Submit with Cmd or Ctrl plus Enter" }).uncheck();
+  // Space on the focused switch, as a keyboard user does: HeroUI's hidden input is overlapped by its drawn control,
+  // so a pointer `uncheck()` on the input is refused.
+  const toggle = page.getByRole("switch", { name: "Submit with Cmd or Ctrl plus Enter" });
+  await toggle.focus();
+  await page.keyboard.press("Space");
+  await expect(toggle).not.toBeChecked();
   const email = page.getByRole("textbox", { name: "Email" });
   await email.fill("ada@example.com");
   await email.press("Enter");

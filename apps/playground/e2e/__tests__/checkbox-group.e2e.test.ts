@@ -112,10 +112,11 @@ test("the invalid group is described by its description and message until a day 
 for (const locale of LOCALES)
   test(`each box sits on the reading-start side of its label in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const box = page
+    // A `has` locator is queried inside the item, so the group scopes the items and the box is found by role alone.
+    const item = page
       .getByRole("group", { name: "Notify me by" })
-      .getByRole("checkbox", { name: "Text message" });
-    const item = page.locator('[data-slot="checkbox"]').filter({ has: box });
+      .locator('[data-slot="checkbox"]')
+      .filter({ has: page.getByRole("checkbox", { name: "Text message" }) });
     const control = await item.locator('[data-slot="checkbox-control"]').boundingBox();
     const label = await item.locator('[data-slot="label"]').boundingBox();
     if (!control || !label) throw new Error("a box is missing");

@@ -4,7 +4,7 @@
  *          and icons, and a badge on a pressable control whose presses pass through, all from `@stackra/ui/react`
  *          with real props.
  * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. The anchors are decorative
- *          initials discs, a stand-in for `Ui.Avatar` (STA-361), which has not landed: swap `Disc` for it then.
+ *          plain discs, a stand-in for `Ui.Avatar` (STA-361): swap `Disc` for it when a sample needs a real avatar.
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0304; ADR 0060 (light, dark, RTL).
  */
@@ -20,7 +20,6 @@ const STRINGS = {
   documentTitle: `${BadgeRoute.title} · Stackra Playground`,
   intro:
     "A Badge is a count or dot pinned to a corner of another element. Corners are named by reading direction, so top-end is top right in English and top left in Arabic. A badge is hidden from assistive technology unless it has a label, and it never takes a press.",
-  initials: "AK",
   variants: "Variants and tones",
   variantsNote: "A row per variant, an anchor per tone, each badge labelled for a screen reader.",
   variantLabel: (tone: string, variant: string) => `${tone} ${variant}: 5 new`,
@@ -53,16 +52,12 @@ const ROW = "flex flex-wrap items-center gap-6";
 /** The count the control sample starts at, which its label names. */
 const INITIAL_COUNT = 3;
 
-/** A decorative initials disc standing in for an avatar: a neutral fill the dots are measured against. */
+/**
+ * A plain disc standing in for an avatar: a neutral fill the dots are measured against. It holds no text, because a
+ * badge overlaps the disc's corner and a text there would have an undeterminable background to a contrast check.
+ */
 function Disc() {
-  return (
-    <span
-      aria-hidden="true"
-      className="inline-flex size-10 items-center justify-center rounded-full bg-default text-sm font-medium text-default-foreground"
-    >
-      <bdi>{STRINGS.initials}</bdi>
-    </span>
-  );
+  return <span aria-hidden="true" className="inline-flex size-10 rounded-full bg-default" />;
 }
 
 /** The Badge page. */

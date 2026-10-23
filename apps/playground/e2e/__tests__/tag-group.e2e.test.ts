@@ -69,6 +69,9 @@ test("the live tags move with the arrow keys, select with Space and remove with 
   await page.keyboard.press("Space");
   await expect(live.getByTestId("tag-group-selected")).toHaveText("Selected: open, mine");
 
+  // Delete on a selected tag removes every selected tag, so the second Space clears this one first.
+  await page.keyboard.press("Space");
+  await expect(live.getByTestId("tag-group-selected")).toHaveText("Selected: open");
   await page.keyboard.press("Delete");
   await expect(live.getByRole("row", { name: "Assigned to me" })).toHaveCount(0);
   await expect(live.getByTestId("tag-group-removed")).toHaveText("Removed: mine");

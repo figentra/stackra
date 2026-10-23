@@ -249,7 +249,14 @@ describe("TagGroup (web)", () => {
 
   it("leaves a disabled group out of the submit", () => {
     const { container } = render(
-      <TagGroup items={ITEMS} label="Topics" selectionMode="multiple" value={["news"]} name="t" isDisabled />,
+      <TagGroup
+        items={ITEMS}
+        label="Topics"
+        selectionMode="multiple"
+        value={["news"]}
+        name="t"
+        isDisabled
+      />,
     );
     expect(container.querySelector("input[type=hidden]")).toBeNull();
   });

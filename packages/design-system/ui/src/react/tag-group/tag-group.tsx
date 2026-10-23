@@ -87,7 +87,14 @@ export function TagGroup({
           : {})}
       >
         {label ? (
-          <Label {...omitUndefined({ isRequired, isInvalid, isDisabled })}>{label}</Label>
+          // `aria-disabled` as well as the disabled look: a disabled group's label is exempt from contrast, but only
+          // a checker that reads it on the label itself can tell, because the grid is not a native control.
+          <Label
+            {...omitUndefined({ isRequired, isInvalid, isDisabled })}
+            {...(isDisabled ? { "aria-disabled": true } : {})}
+          >
+            {label}
+          </Label>
         ) : null}
         <HeroTagGroup.List
           items={items}

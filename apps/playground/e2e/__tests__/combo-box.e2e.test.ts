@@ -118,7 +118,9 @@ test("a field with a no-match message says so, and a list without one stays clos
   const plain = states.getByRole("combobox", { name: /Required/ });
   await plain.focus();
   await page.keyboard.type("zzz");
-  await expect(page.getByRole("listbox")).toBeHidden();
+  // A count, not `toBeHidden`: the first field's list may still be leaving while the second is read, and a locator
+  // that resolves to two elements is an error to `toBeHidden`, where a count simply retries.
+  await expect(page.getByRole("listbox")).toHaveCount(0);
 });
 
 test("a disabled field cannot be focused, and a read-only one cannot be typed in", async ({
@@ -150,12 +152,17 @@ test("the live field is busy while the server answers, loads more at the end and
   await expect(page.getByRole("status", { name: "Loading countries" })).toBeHidden();
 
   await input.fill("");
-  await expect(live.getByTestId("combo-box-shown")).toHaveText("Showing 8 of 24 countries.");
-  // The end of the list is what asks for more: scroll the popover to its bottom, if it overflows.
-  await page.locator('[data-slot="combo-box-popover"]').evaluate((popover) => {
-    popover.scrollTop = popover.scrollHeight;
-  });
-  await expect(live.getByTestId("combo-box-shown")).not.toHaveText("Showing 8 of 24 countries.");
+  // The end of the list is what asks for more, and a page of eight does not fill the popover, so the next page comes
+  // at once and the first one is never settled; scroll to the bottom on every poll for a taller list.
+  const shown = live.getByTestId("combo-box-shown");
+  await expect
+    .poll(async () => {
+      await page.locator('[data-slot="combo-box-popover"]').evaluate((popover) => {
+        popover.scrollTop = popover.scrollHeight;
+      });
+      return shown.textContent();
+    })
+    .toBe("Showing 24 of 24 countries.");
 
   await page.getByRole("option", { name: "Austria" }).click();
   await expect(live.getByTestId("combo-box-chosen")).toHaveText("Chosen key: at");

@@ -141,8 +141,10 @@ describe("Avatar (web)", () => {
     const { container, rerender } = render(<Avatar name="Ada Lovelace" className="mine" />);
     expect(container.querySelector(".avatar__fallback--default")).toBeTruthy();
     expect(rootOf(container)?.classList.contains("rounded-lg")).toBe(false);
+    expect(rootOf(container)?.classList.contains("rounded-full")).toBe(true);
     rerender(<Avatar name="Acme" shape="square" className="mine" />);
     expect(rootOf(container)?.classList.contains("rounded-lg")).toBe(true);
+    expect(rootOf(container)?.classList.contains("rounded-full")).toBe(false);
     expect(rootOf(container)?.classList.contains("mine")).toBe(true);
   });
 

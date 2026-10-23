@@ -41,6 +41,15 @@ const paintedBackground = (locator: Locator) =>
     return `#${[red, green, blue].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
   });
 
+/**
+ * The incomplete axe results a route's own suite measures instead, by route: a rule id and the markup its nodes carry.
+ * A translucent badge straddles its anchor's corner, so the background under its count is part disc and part page and
+ * axe leaves a one-character count for review; `badge.e2e.test.ts` measures every badge label against both.
+ */
+const MEASURED_INSTEAD: Readonly<Record<string, { rule: string; markup: string }>> = {
+  "/badge": { rule: "color-contrast", markup: 'data-slot="badge-label"' },
+};
+
 test("the route list is not empty", () => {
   expect(ROUTES).toContain("/foundations");
 });
@@ -64,6 +73,15 @@ for (const path of ROUTES)
         const { violations, incomplete } = await new AxeBuilder({ page })
           .withTags(AXE_TAGS)
           .analyze();
+        const measured = MEASURED_INSTEAD[path];
+        const unsettled = incomplete
+          .map((v) => ({
+            ...v,
+            nodes: v.nodes.filter(
+              (n) => !(measured && v.id === measured.rule && n.html.includes(measured.markup)),
+            ),
+          }))
+          .filter((v) => v.nodes.length > 0);
         const report = (results: typeof violations) =>
           results.map(
             (v) =>
@@ -72,7 +90,7 @@ for (const path of ROUTES)
                 .join(" | ")}`,
           );
         expect(report(violations), "axe violations").toEqual([]);
-        expect(report(incomplete), "axe checks left for review").toEqual([]);
+        expect(report(unsettled), "axe checks left for review").toEqual([]);
       });
 
 for (const scheme of SCHEMES)

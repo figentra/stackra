@@ -70,6 +70,9 @@ const SKELETON_MOTION = [
   ".skeleton--pulse",
 ].join(",\n  ");
 
+/** The shimmer skeleton in a right-to-left context: by `:dir()`, or by a `dir="rtl"` on it or on an ancestor. */
+const RTL_SHIMMER = '.skeleton--shimmer:is(:dir(rtl), [dir="rtl"], [dir="rtl"] *)';
+
 /**
  * The web stylesheet of `theme`, to load after `@import "@heroui/styles"` and outside any cascade layer (bar the
  * typography block, which is in `components` on purpose), so it overrides HeroUI's defaults. Durations drop to 0ms under `prefers-reduced-motion`, and `:lang(ar)` documents take
@@ -107,10 +110,10 @@ export function renderWebCss(theme: Theme): string {
     block('.dark,\n[data-theme="dark"]', colours("dark")),
     // Unlayered, so the sweep beats HeroUI's `components` animation; `reverse` plays the keyframe backwards, which
     // starts the light on the inline-start side (HeroUI's start is the physical left, so in a right-to-left layout it
-    // is the right), the way HeroUI Native sweeps in a right-to-left layout.
-    block(".skeleton--shimmer:dir(rtl)::after,\n.skeleton--shimmer:dir(rtl)::before", [
-      "  animation-direction: reverse;",
-    ]),
+    // is the right), the way HeroUI Native sweeps in a right-to-left layout. The `[dir]` alternatives are there
+    // because a build that targets browsers without `:dir()` rewrites it into a `:lang()` list, which misses an
+    // English `lang` island inside a right-to-left page.
+    block(`${RTL_SHIMMER}::after,\n${RTL_SHIMMER}::before`, ["  animation-direction: reverse;"]),
     `@media (prefers-reduced-motion: reduce) {\n  :root {\n${motion
       .map(([name]) => `    --duration-${name}: 0ms;`)
       .join("\n")}\n  }\n  ${SKELETON_MOTION} {\n    animation: none;\n  }\n}`,

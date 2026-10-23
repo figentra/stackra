@@ -83,45 +83,45 @@ export function Select({
     // React Aria's Select has no read-only state: its closed trigger still picks a key from ArrowLeft, ArrowRight and
     // type-ahead. The capture handler stops those keys before they reach it; `contents` keeps the wrapper out of layout.
     <div className="contents" onKeyDownCapture={isReadOnly ? refuseChangingKey : undefined}>
-    <HeroSelect
-      {...rest}
-      {...omitUndefined({
-        placeholder,
-        isRequired,
-        isInvalid,
-        isDisabled,
-        value,
-        defaultValue,
-        name,
-      })}
-      fullWidth={isFullWidth ?? false}
-      // A list that cannot open shows the value and keeps focus, and the hidden select still submits it.
-      {...(isReadOnly ? { isOpen: false } : {})}
-      // `Key` is a string or number in React Aria; the contract's keys are strings, so the number case never arises.
-      onChange={(key) => {
-        if (!isReadOnly) onChange?.(key === null ? null : String(key));
-      }}
-    >
-      {label ? <Label>{label}</Label> : null}
-      <HeroSelect.Trigger>
-        {/* The label alone: the item's own content would repeat its description and check mark in the field. */}
-        <HeroSelect.Value>
-          {({ isPlaceholder, selectedText, defaultChildren }) =>
-            isPlaceholder ? defaultChildren : selectedText
-          }
-        </HeroSelect.Value>
-        <HeroSelect.Indicator />
-      </HeroSelect.Trigger>
-      {description ? <Description>{description}</Description> : null}
-      {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
-      <HeroSelect.Popover>
-        <ListBox>
-          {items.map((item) => (
-            <SelectOption key={item.id} item={item} />
-          ))}
-        </ListBox>
-      </HeroSelect.Popover>
-    </HeroSelect>
+      <HeroSelect
+        {...rest}
+        {...omitUndefined({
+          placeholder,
+          isRequired,
+          isInvalid,
+          isDisabled,
+          value,
+          defaultValue,
+          name,
+        })}
+        fullWidth={isFullWidth ?? false}
+        // A list that cannot open shows the value and keeps focus, and the hidden select still submits it.
+        {...(isReadOnly ? { isOpen: false } : {})}
+        // `Key` is a string or number in React Aria; the contract's keys are strings, so the number case never arises.
+        onChange={(key) => {
+          if (!isReadOnly) onChange?.(key === null ? null : String(key));
+        }}
+      >
+        {label ? <Label>{label}</Label> : null}
+        <HeroSelect.Trigger>
+          {/* The label alone: the item's own content would repeat its description and check mark in the field. */}
+          <HeroSelect.Value>
+            {({ isPlaceholder, selectedText, defaultChildren }) =>
+              isPlaceholder ? defaultChildren : selectedText
+            }
+          </HeroSelect.Value>
+          <HeroSelect.Indicator />
+        </HeroSelect.Trigger>
+        {description ? <Description>{description}</Description> : null}
+        {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
+        <HeroSelect.Popover>
+          <ListBox>
+            {items.map((item) => (
+              <SelectOption key={item.id} item={item} />
+            ))}
+          </ListBox>
+        </HeroSelect.Popover>
+      </HeroSelect>
     </div>
   );
 }

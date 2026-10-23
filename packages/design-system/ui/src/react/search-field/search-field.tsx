@@ -92,7 +92,8 @@ export function SearchField({
           // On the input: React Aria's root forwards no `aria-*`, and the input is what a screen reader is on.
           {...(isLoading ? { "aria-busy": true } : {})}
         />
-        <HeroSearchField.ClearButton aria-label={clearLabel} />
+        {/* `size-6`: HeroUI's `size-5` is 20px, under the 24px minimum target of WCAG 2.2 SC 2.5.8. */}
+        <HeroSearchField.ClearButton aria-label={clearLabel} className="size-6" />
       </HeroSearchField.Group>
       {description ? <Description>{description}</Description> : null}
       {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}

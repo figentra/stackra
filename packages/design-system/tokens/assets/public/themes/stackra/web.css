@@ -196,8 +196,8 @@
   --field-shadow: 0px 1px 0px 0px oklch(0 0 0 / 0.2);
 }
 
-.skeleton--shimmer:dir(rtl)::after,
-.skeleton--shimmer:dir(rtl)::before {
+.skeleton--shimmer:is(:dir(rtl), [dir="rtl"], [dir="rtl"] *)::after,
+.skeleton--shimmer:is(:dir(rtl), [dir="rtl"], [dir="rtl"] *)::before {
   animation-direction: reverse;
 }
 

@@ -61,11 +61,73 @@ for (const scheme of SCHEMES)
         violations.map((finding) => finding.id),
         "axe violations",
       ).toEqual([]);
+      // A translucent badge straddles its anchor's corner, so its count lies partly on the disc and partly on the page:
+      // axe cannot settle that background, and the test below measures every label against both instead.
       expect(
-        incomplete.map((finding) => finding.id),
+        incomplete
+          .filter(
+            (finding) =>
+              finding.id !== "color-contrast" ||
+              finding.nodes.some((node) => !node.html.includes('data-slot="badge-label"')),
+          )
+          .map((finding) => finding.id),
         "axe checks left for review",
       ).toEqual([]);
     });
+
+for (const scheme of SCHEMES)
+  test(`every badge label stands 4.5:1 on the page and on the disc in ${scheme}`, async ({
+    page,
+  }) => {
+    await open(page, scheme, "en");
+    const labels = await page
+      .locator('[data-slot="badge"]:has([data-slot="badge-label"])')
+      .evaluateAll((badges) => {
+        const context = document.createElement("canvas").getContext("2d");
+        if (!context) throw new Error("no 2d canvas");
+        // Each colour painted over the ones before it, so a tint reads as what the eye sees.
+        const painted = (...colours: string[]) => {
+          context.clearRect(0, 0, 1, 1);
+          for (const colour of colours) {
+            context.fillStyle = colour;
+            context.fillRect(0, 0, 1, 1);
+          }
+          const [red = 0, green = 0, blue = 0] = context.getImageData(0, 0, 1, 1).data;
+          return `#${[red, green, blue].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+        };
+        const pageColour = getComputedStyle(document.body).backgroundColor;
+        return badges.map((badge) => {
+          const label = badge.querySelector('[data-slot="badge-label"]');
+          const disc = badge.parentElement?.firstElementChild;
+          if (!label || !disc) throw new Error("a badge has no label or anchor");
+          const own = getComputedStyle(badge).backgroundColor;
+          const text = getComputedStyle(label).color;
+          const discColour = getComputedStyle(disc).backgroundColor;
+          return {
+            name: `${badge.className} "${label.textContent}"`,
+            onPage: [
+              painted("#ffffff", pageColour, text),
+              painted("#ffffff", pageColour, own),
+            ] as const,
+            onDisc: [
+              painted("#ffffff", pageColour, discColour, text),
+              painted("#ffffff", pageColour, discColour, own),
+            ] as const,
+          };
+        });
+      });
+    expect(labels.length).toBeGreaterThan(20);
+    const failures: string[] = [];
+    for (const { name, onPage, onDisc } of labels)
+      for (const [where, [text, background]] of [
+        ["page", onPage],
+        ["disc", onDisc],
+      ] as const) {
+        const ratio = contrastRatio(text, background);
+        if (ratio < 4.5) failures.push(`${name} on the ${where}: ${ratio.toFixed(2)}`);
+      }
+    expect(failures, `badge labels under 4.5:1 in ${scheme}`).toEqual([]);
+  });
 
 for (const locale of LOCALES)
   test(`each corner sits on the reading side of its anchor in ${locale}`, async ({ page }) => {
@@ -108,6 +170,8 @@ test("unlabelled badges are hidden and labelled ones are spoken through their la
 test("a press on a badge reaches the control under it", async ({ page }) => {
   await open(page, "light", "en");
   const control = page.getByRole("region", { name: "On a control" });
+  // The mouse acts on viewport coordinates, so the sample is scrolled into view before its box is read.
+  await control.scrollIntoViewIfNeeded();
   const badge = await centreOf(control.locator('[data-slot="badge"]'));
   await page.mouse.click(badge.x, badge.y);
   await expect(page.getByTestId("press-count")).toHaveText("Pressed 1 time.");

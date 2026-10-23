@@ -26,19 +26,24 @@ const open = async (page: Page, scheme: string, locale: string) => {
 };
 
 /** A computed colour as `#rrggbb`, composited over `base`: drawn on a canvas, so any CSS colour form reads. */
-const paintedOver = (locator: Locator, property: "color" | "backgroundColor", base: string) =>
+const paintedOver = (
+  locator: Locator,
+  property: "color" | "backgroundColor",
+  base: string,
+  pseudo?: string,
+) =>
   locator.evaluate(
-    (element, { name, under }) => {
+    (element, { name, under, part }) => {
       const context = document.createElement("canvas").getContext("2d");
       if (!context) throw new Error("no 2d canvas");
       context.fillStyle = under;
       context.fillRect(0, 0, 1, 1);
-      context.fillStyle = getComputedStyle(element)[name];
+      context.fillStyle = getComputedStyle(element, part)[name];
       context.fillRect(0, 0, 1, 1);
       const [red = 0, green = 0, blue = 0] = context.getImageData(0, 0, 1, 1).data;
       return `#${[red, green, blue].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
     },
-    { name: property, under: base },
+    { name: property, under: base, part: pseudo ?? null },
   );
 
 for (const scheme of SCHEMES)
@@ -137,7 +142,8 @@ for (const scheme of SCHEMES)
       .locator('[data-slot="checkbox"]')
       .filter({ has: page.getByRole("checkbox", { name: "Remember this device" }) })
       .locator('[data-slot="checkbox-control"]');
-    const fill = await paintedOver(control, "backgroundColor", pageBackground);
+    // HeroUI paints the checked fill on the control's `::before`, which scales in over the field background.
+    const fill = await paintedOver(control, "backgroundColor", pageBackground, "::before");
     expect(
       contrastRatio(fill, pageBackground),
       `${fill} on ${pageBackground}`,

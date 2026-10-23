@@ -118,7 +118,11 @@ test("fixing a field clears its message", async ({ page }) => {
   await page.keyboard.type("@example.com");
   await expect(live.getByText("Enter an address such as name@example.com.")).toBeHidden();
   await expect(email).not.toHaveAttribute("aria-invalid", "true");
-  await live.getByRole("checkbox", { name: /I accept the terms/ }).check();
+  // Space on the focused checkbox: HeroUI's hidden input is overlapped by its drawn control, so a pointer `check()` is refused.
+  const terms = live.getByRole("checkbox", { name: /I accept the terms/ });
+  await terms.focus();
+  await page.keyboard.press("Space");
+  await expect(terms).toBeChecked();
   await expect(live.getByText("Accept the terms to continue.")).toBeHidden();
 });
 
@@ -152,7 +156,7 @@ test("the states form shows its required, invalid and disabled fields", async ({
   );
   const disabled = states.getByLabel("Disabled field");
   await expect(disabled).toBeDisabled();
-  await states.getByRole("textbox", { name: "Valid field" }).focus();
+  await states.getByRole("textbox", { name: "Valid field", exact: true }).focus();
   await page.keyboard.press("Shift+Tab");
   await page.keyboard.press("Shift+Tab");
   await expect(disabled).not.toBeFocused();

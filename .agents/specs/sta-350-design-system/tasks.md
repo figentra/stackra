@@ -69,3 +69,17 @@ Linear issues: [STA-405] `@stackra/icons` and name-based icons, [STA-354] Icon.
 - [x] T031 [US2] The icons package: the `IconName` contract and the generated Lucide name list, `defineIconRegistry`, `findIcon`, `isIconName`, the per-platform registry providers and the opt-in Lucide entries in `packages/design-system/icons` — covers: FR-047, FR-048, FR-049, FR-050, FR-051, P-036, P-037, P-038, P-039, P-040 — route: package — deps: T013
 - [x] T032 [US2] `Icon` by name and the name-or-element icon slots of Button, IconButton, CloseButton and Chip in `packages/design-system/ui/src` — covers: FR-052, FR-053, P-041, P-042 — route: frontend — deps: T031
 - [x] T033 [US3] The playground registers only the icons it draws and imports no Lucide package in `apps/playground/src` — covers: FR-054, P-043 — route: frontend — deps: T032
+
+## Phase 10: Wave 3 components (ADR 0305)
+
+Linear sub-issues, all in this one pull request: [STA-364] the field contract and playground discovery, [STA-365] FormField and FormSection, [STA-366] TextField, TextArea and InputGroup, [STA-367] SearchField, Select, ComboBox and TagGroup, [STA-368] Checkbox, CheckboxGroup, RadioGroup and Switch, [STA-369] Label, Description, FieldError and Form.
+
+- [x] T034 [US2] `FieldContractProps`, the playground's route discovery and the `react-hook-form` catalog entry in `packages/design-system/ui/src/contracts`, `apps/playground/src` and `pnpm-workspace.yaml` — covers: FR-055, FR-056, FR-057, P-044 — route: frontend — deps: T016
+- [x] T035 [US2] FormField and FormSection: `bindFormField` and the web and native components in `packages/design-system/ui/src` — covers: FR-058, FR-059, FR-060, FR-061, P-045, P-046 — route: frontend — deps: T034
+- [x] T036 [US3] The form-field and form-section routes and their e2e files in `apps/playground` — covers: FR-062, P-047, SC-007 — route: frontend — deps: T035
+- [x] T037 [US2] TextField, TextArea and InputGroup: contracts and the web and native components in `packages/design-system/ui/src` — covers: FR-063, FR-064, FR-065, FR-066, FR-067, FR-068, FR-069, FR-070, FR-071, P-048 — route: frontend — deps: T034
+- [x] T038 [US2] SearchField: contract, the web and native components, and the search-field route with its e2e file — covers: FR-072, FR-073, FR-074, P-049 — route: frontend — deps: T037
+- [x] T039 [US2] Select, ComboBox and TagGroup: contracts, the web and native components, and their routes with e2e files — covers: FR-075, FR-076, FR-077, FR-078, FR-079, FR-080, FR-081, P-050 — route: frontend — deps: T037
+- [x] T040 [US2] Checkbox, CheckboxGroup, RadioGroup and Switch: contracts, the web and native components, and their routes with e2e files — covers: FR-082, FR-083, FR-084, FR-085, FR-086, FR-087, FR-088, FR-089, P-051 — route: frontend — deps: T034
+- [x] T041 [US2] Label, Description, FieldError and Form, and the form route with its e2e file — covers: FR-090, FR-091, FR-092, FR-093, FR-094, P-052 — route: frontend — deps: T035, T037
+- [x] T042 [US2] The native provider sets React Native's `Appearance` to the colour scheme in `packages/design-system/ui/src/native` — covers: FR-095, P-053 — route: frontend — deps: T008

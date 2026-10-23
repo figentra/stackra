@@ -50,6 +50,7 @@ export function Avatar({
   const initials = name ? initialsOf(name, locale) : "";
   const content =
     fallback ?? (initials === "" ? <Icon name="user-round" size={size ?? "md"} /> : initials);
+  // `rounded-full` is explicit: HeroUI's own `rounded-3xl` is 12px on our small `--radius`, which is a rounded square.
   // The image is `alt=""` because a `role="img"` root already carries the name and its children are presentational.
   const accessibility = label ? { role: "img", "aria-label": label } : { "aria-hidden": true };
 
@@ -59,7 +60,9 @@ export function Avatar({
       {...accessibility}
       {...omitUndefined({ size, variant })}
       color={tone}
-      className={cn(shape === "square" && AVATAR_SQUARE_CLASS_NAME, className) ?? ""}
+      className={
+        cn(shape === "square" ? AVATAR_SQUARE_CLASS_NAME : "rounded-full", className) ?? ""
+      }
     >
       {src ? <HeroAvatar.Image src={src} alt="" /> : null}
       <HeroAvatar.Fallback>

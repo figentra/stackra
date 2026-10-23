@@ -24,6 +24,12 @@ const open = async (page: Page, scheme: string, locale: string) => {
   await expect(page.getByRole("heading", { level: 1, name: "Form section" })).toBeVisible();
 };
 
+/** Turns the billing switch on from the keyboard: HeroUI's hidden input is overlapped by its drawn control, so a pointer click on the input is refused. */
+const disableBilling = async (page: Page) => {
+  await page.getByRole("switch", { name: "Disable the billing section" }).focus();
+  await page.keyboard.press("Space");
+};
+
 for (const scheme of SCHEMES)
   for (const locale of LOCALES)
     test(`axe finds nothing on the form section page in ${scheme}, ${locale}`, async ({ page }) => {
@@ -44,7 +50,7 @@ for (const scheme of SCHEMES)
 for (const scheme of SCHEMES)
   test(`axe finds nothing with the billing section disabled, in ${scheme}`, async ({ page }) => {
     await open(page, scheme, "en");
-    await page.getByRole("switch", { name: "Disable the billing section" }).click();
+    await disableBilling(page);
     const { violations, incomplete } = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
     expect(
       violations.map((finding) => finding.id),
@@ -88,13 +94,14 @@ test("a keyboard user reaches a section's fields in order and toggles the switch
   await expect(toggle).toBeFocused();
   await page.keyboard.press("Space");
   await expect(toggle).toBeChecked();
-  await expect(live.getByRole("group", { name: "Billing" })).toBeDisabled();
+  // `toBeDisabled` knows controls, not a fieldset, so the native `disabled` property is read instead.
+  await expect(live.getByRole("group", { name: "Billing" })).toHaveJSProperty("disabled", true);
 });
 
 test("a disabled section takes every field inside it out of the tab order", async ({ page }) => {
   await open(page, "light", "en");
   const live = page.getByRole("region", { name: "Try it" });
-  await live.getByRole("switch", { name: "Disable the billing section" }).click();
+  await disableBilling(page);
   await expect(live.getByRole("textbox", { name: "Billing address" })).toBeDisabled();
   await expect(live.getByRole("textbox", { name: "VAT number" })).toBeDisabled();
   await live.getByRole("textbox", { name: "Display name" }).focus();

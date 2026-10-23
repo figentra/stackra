@@ -88,6 +88,16 @@ switcher and is covered by Playwright and axe. `@stackra/brand` is deleted; its 
 - **P-041**: `Icon` draws the icon its name resolves to on both runtimes, nothing for an unregistered name (with one development warning per name), and no component prop — Validates: FR-052
 - **P-042**: An icon slot of Button, IconButton, CloseButton and Chip draws a name through `Icon` and an element as given — Validates: FR-053
 - **P-043**: Only `@stackra/icons` and `@stackra/ui` import a Lucide package, and the playground registers only the icons it draws — Validates: FR-054
+- **P-044**: Every field extends `FieldContractProps`; the playground's router, index and navigation follow its route folders, and a wrong path, an unknown category or a missing page fails with the folder's name; `react-hook-form` is an exact catalog entry and a required peer of `@stackra/ui` — Validates: FR-055, FR-056, FR-057
+- **P-045**: A bound field shows its rule's message and is invalid after a failed submit, clears both once valid, is required and disabled as the form says, and binds a string, a boolean and a choice, on both runtimes — Validates: FR-058, FR-059
+- **P-046**: A FormSection is a group named by its title, tied to its description, and a disabled section disables the fields inside it on web; the native one is a named group with a level-3 heading — Validates: FR-060, FR-061
+- **P-047**: Every FormField and FormSection sample of the playground shows what its contract promises, axe clean in the four combinations — Validates: FR-062
+- **P-048**: A TextField, TextArea and InputGroup name their input by the label, tie the description and the error to it, keep the affixes at the reading start and end, and pass every HeroUI prop outside the contract through, on both runtimes — Validates: FR-063, FR-064, FR-065, FR-066, FR-067, FR-068, FR-069, FR-070, FR-071
+- **P-049**: A SearchField clears from its button, reports busy while loading and submits and clears through its handlers, with every state shown and axe clean — Validates: FR-072, FR-073, FR-074
+- **P-050**: A Select, ComboBox and TagGroup call `onChange` with string keys, filter by label unless the app does, show picked items as removable named tags and refuse change when disabled or read-only, with every sample shown — Validates: FR-075, FR-076, FR-077, FR-078, FR-079, FR-080, FR-081
+- **P-051**: A Checkbox, CheckboxGroup, RadioGroup and Switch keep their own state, show `value` when controlled, tie a group's description and error to the group, and refuse input when disabled or read-only, with every sample shown — Validates: FR-082, FR-083, FR-084, FR-085, FR-086, FR-087, FR-088, FR-089
+- **P-052**: A Label names its control, a Description's id is the one a control names it by, a FieldError follows the field's validity, and a Form hands its validation errors to the fields in it — Validates: FR-090, FR-091, FR-092, FR-093, FR-094
+- **P-053**: The native provider sets the colour scheme React Native's `Appearance` follows, and releases it for `system` — Validates: FR-095
 
 ## Contracts and events
 
