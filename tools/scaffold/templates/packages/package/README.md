@@ -2,35 +2,38 @@
 
 {{DESCRIPTION}}
 
-**Tier:** `tier:lib` (`packages/{{CATEGORY}}/{{NAME}}`). Laid out entries-first (ADR 0126).
+**Tier:** `tier:lib` (`packages/{{CATEGORY}}/{{NAME}}`). Laid out in the programming model v3 (ADR 0294, 0295).
 
 ## Entry points
 
-| Import                          | Holds                                           |
-| ------------------------------- | ----------------------------------------------- |
-| `@stackra/{{NAME}}`             | core: runtime-neutral code                      |
-| `@stackra/{{NAME}}/resources/*` | static files (`lang/`, `stubs/`, `assets/`)     |
+| Import                     | Holds                                                      | Exports today                                |
+| -------------------------- | ---------------------------------------------------------- | -------------------------------------------- |
+| `@stackra/{{NAME}}`        | `src/core/`: isomorphic services, drivers, errors, schemas | `src/core/constants/package-name.constant.ts` |
+| `@stackra/{{NAME}}/node`   | `src/node/`: the root module and the module groups         | `src/node/{{NAME}}.module.ts`                 |
+| `@stackra/{{NAME}}/contracts` | `src/contracts/`: the leaf (`ports/`, `enums/`, `types/`) | not yet: exported with its first file        |
+| `@stackra/{{NAME}}/testing` | `src/testing/`: `fakes/` and `matchers/`                  | not yet: exported with its first file        |
 
-Optional entries, each added only with real code: `./contracts`, `./node`, `./react`, `./native`, `./testing`,
-`./devtools`
-(`pnpm new package <name> --entries …` or by hand: folder + `exports` key + `tsdown.config.ts` entry). `exports`
-point at source through the `@stackra/source` condition; `tsdown` builds `dist/` for publishing (ADR 0025).
+`./react` and `./native` (renderers in `react/<name>/` and `native/<name>/`) are added with
+`pnpm new package <name> --entries react,native`, or by hand with their first file. `exports` point at source through
+the `@stackra/source` condition; `tsdown` builds `dist/` for publishing (ADR 0025).
+
+**Entry barrels are generated, never authored** (ADR 0294 decision 15). Until `stackra gen` writes them (STA-339),
+each export names its entry's one public file directly, as the table shows.
 
 ## Structure
 
 ```text
-config/{{NAME}}.config.ts   publishable deploy-time defaults (CF1)
-resources/                  static files, exported as ./resources/*
+stackra.config.ts          the member definition: static data (ADR 0295)
 src/
-├── core/                   "." — index.ts re-exports only
-└── <entry>/                one folder per declared entry
+├── config/{{NAME}}.config.ts   {{PASCAL}}Config, the deploy-time configuration
+├── contracts/             the leaf: ports/, enums/, types/
+├── core/                  isomorphic code; constants/package-name.constant.ts
+├── node/                  the module: {{NAME}}.module.ts and its groups (models/, actions/, queries/, …)
+└── testing/               fakes/ and matchers/ for consumers' tests
 ```
 
-Inside an entry, a feature module groups code by kind, each folder created with its first file: `models/`,
-`actions/`, `queries/`, `services/`, `events/`, `listeners/`, `workflows/`, `policies/`, `permissions/`,
-`settings/`, `contracts/`, `resources/`; and `interfaces/`, `types/`, `constants/`, `tokens/`, `errors/`,
-`decorators/` once there are two or more files of that kind. No `controllers/`, `dtos/`, `repositories/`,
-`helpers/` or `utils/`.
+The module groups, and the one home of every kind suffix, are on the docs page `standards/structure` (`pnpm docs`),
+generated from `tools/scripts/structure.mjs`. A group folder appears with its first file. `stackra gen` writes `stackra.manifest.json` here on its first run.
 
 ## Tasks
 

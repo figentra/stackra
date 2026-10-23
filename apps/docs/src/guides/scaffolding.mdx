@@ -4,36 +4,37 @@ description: "Create a member with pnpm new, what the templates replace, and how
 icon: "blocks"
 ---
 
-Never copy an existing member to start a new one. `pnpm new` picks the right directory, package scope, tier tag and script set, copies the target repo's `LICENSE` (packages and tooling only) and formats the result. The shapes it renders are decided in [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates).
+Never copy an existing member to start a new one. `pnpm new` picks the right directory, package scope, tier tag and script set, copies the target repo's `LICENSE` (packages and tooling only) and formats the result. Members come out in the programming model v3 shape: `stackra.config.ts`, one root module and no authored `main.ts` or entry barrel ([ADR 0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) rule R12, [ADR 0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries)). The kinds are decided in [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates).
 
 ```bash
-pnpm new <kind> <name> [--category <c>] [--entries <list>|none] [--description "<text>"] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]
+pnpm new <kind> <name> [--category <c>] [--entries react,native|none] [--data] [--description "<text>"] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]
 ```
 
 Run it with `--dry-run` first to see what it would write. Then run `pnpm install` and `pnpm verify`.
 
 ## Kinds
 
-| Kind          | Template                                                      | Lands in                     | Pick it for                                                                           |
-| ------------- | ------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------- |
-| `service`     | `templates/services/service`                                  | `services/<name>`            | A backend service: plain TypeScript, root module, no Encore file                      |
-| `package`     | `templates/packages/package` + `templates/packages/entries/*` | `packages/<category>/<name>` | Any library, entries-first                                                            |
-| `tooling`     | `templates/packages/tooling`                                  | `packages/tooling/<name>`    | A shared config preset, data only                                                     |
-| `app:console` | `templates/apps/console`                                      | `apps/<name>`                | A panel app: Vite, React Router 7, HeroUI; port from 3710                             |
-| `app:mobile`  | `templates/apps/mobile`                                       | `apps/<name>`                | iOS and Android: Expo SDK 57, React Navigation, HeroUI Native; no hyphens in the name |
-| `app:desktop` | `templates/apps/desktop`                                      | `apps/<name>`                | An Electron app packaged by electron-builder                                          |
-| `app:docs`    | `templates/apps/docs`                                         | `apps/<name>`                | A Mintlify site; port from 3334                                                       |
+| Kind          | Template                                             | Lands in                     | Pick it for                                                                           |
+| ------------- | ---------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------- |
+| `service`     | `templates/services/service`                         | `services/<name>`            | A backend service: plain TypeScript, root module, runway v3, no Encore file           |
+| `package`     | `templates/packages/package` + `entries/*` + `data/` | `packages/<category>/<name>` | Any library: entry folders and the root module in `src/node/`                         |
+| `tooling`     | `templates/packages/tooling`                         | `packages/tooling/<name>`    | A shared config preset, data only                                                     |
+| `app:console` | `templates/apps/console`                             | `apps/<name>`                | A panel app: Vite, React Router 7, HeroUI; port from 3710                             |
+| `app:mobile`  | `templates/apps/mobile`                              | `apps/<name>`                | iOS and Android: Expo SDK 57, React Navigation, HeroUI Native; no hyphens in the name |
+| `app:desktop` | `templates/apps/desktop`                             | `apps/<name>`                | An Electron app packaged by electron-builder                                          |
+| `app:docs`    | `templates/apps/docs`                                | `apps/<name>`                | A Mintlify site; port from 3334                                                       |
 
-`--category` is required for `package` and must be one of: foundation, application, communication, cross-cutting, data, developer, experience, runtime, security, state. Names are kebab-case. There is no Next.js kind.
+`--category` is required for `package` and must be one of: foundation, application, communication, commerce, cross-cutting, data, developer, experience, infrastructure, runtime, security, state. Names are kebab-case. There is no Next.js kind.
 
 ## Flags
 
-| Flag                                                     | Does                                                                                                                                                                                        |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--entries contracts,node,react,native,testing,devtools` | `package` only: the entries besides core (`.`). `none` for core only. Without the flag, a terminal is asked; a script gets core only.                                                       |
-| `--repo <path>`                                          | Scaffold into another monorepo (for example the private figentra-os). Templates come from this repo; the package `LICENSE` comes from the target, or from this repo if the target has none. |
-| `--description`, `--title`, `--port`                     | Fill the tokens; the port defaults to the next free one in the kind's range.                                                                                                                |
-| `--dry-run`                                              | Print the file list, write nothing.                                                                                                                                                         |
+| Flag                                 | Does                                                                                                                                                                                        |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--entries react,native`             | `package` only: the optional entries. Core, `contracts`, `node` and `testing` always come. Without the flag, a terminal is asked; a script gets none.                                       |
+| `--data`                             | `package` only: the module's `src/node/database/{migrations,factories,seeders}/`, for a package that owns models.                                                                           |
+| `--repo <path>`                      | Scaffold into another monorepo (for example the private figentra-os). Templates come from this repo; the package `LICENSE` comes from the target, or from this repo if the target has none. |
+| `--description`, `--title`, `--port` | Fill the tokens; the port defaults to the next free one in the kind's range.                                                                                                                |
+| `--dry-run`                          | Print the file list, write nothing.                                                                                                                                                         |
 
 Every flag is non-interactive, so agents and CI run `pnpm new` without a prompt.
 
@@ -49,13 +50,28 @@ The scaffold replaces these tokens in file contents **and** path names. Other do
 | `{{DESCRIPTION}}` | the `--description` sentence; becomes `description` in `package.json` and opens the README and AGENTS |
 | `{{PORT}}`        | dev port, the next free one in the kind's range (or `--port`)                                         |
 | `{{CATEGORY}}`    | the `packages/` folder                                                                                |
-| `{{ENTRIES}}`     | the package's tsdown entry map, built from `--entries`                                                |
+| `{{ENTRIES}}`     | the package's tsdown entry map: one public file per exported entry                                    |
 
 `TITLE` and `DESCRIPTION` are JSON-escaped when written into `.json` and `.jsonc` files. Template files hold tokens, so oxfmt and oxlint skip `tools/scaffold/templates/**`; the generator formats what it renders.
 
 ## What you get
 
-Every member gets `package.json`, `turbo.jsonc` with its one tier tag, `README.md`, `AGENTS.md` with a `## PII` table, `CHANGELOG.md` and, for packages and tooling only, the `LICENSE` (apps and services are UNLICENSED, ADR 0195), with code in `src/` and tests in `__tests__/`. A service and a package also get `config/<name>.config.ts`; a package gets `resources/`. Every template with code ships a passing test, because the vitest preset fails an empty suite. After scaffolding:
+Every member gets `package.json`, `turbo.jsonc` with its one tier tag, `README.md`, `AGENTS.md` with a `## PII` table, `CHANGELOG.md` and, for packages and tooling only, the `LICENSE` (apps and services are UNLICENSED, ADR 0195), with code in `src/` and tests in `__tests__/`. Every template with code ships a passing test, because the vitest preset fails an empty suite.
+
+| Kind                  | v3 shape                                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `package`             | `stackra.config.ts`; `src/config/<name>.config.ts` (the Config class); `src/contracts/` (the leaf); `src/core/constants/package-name.constant.ts`; `src/node/<name>.module.ts` (the root module); `src/testing/`; `src/react/` and `src/native/` with `--entries`; `src/node/database/` with `--data`. The decorators presets for TypeScript, tsdown and vitest.             |
+| `service`             | `stackra.config.ts`; `runway.yaml` (runway v3: `requires`, `secrets`, `environments`, no member key, [ADR 0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)); `src/<name>.module.ts`; `src/config/<name>.config.ts`; `src/contracts/`; `src/modules/` with the group folders in its README. No `main.ts`, no `stackra.module`, no `dev` or `start` script. |
+| `app:console`         | `stackra.config.ts`; `src/<name>.module.ts`; `src/routes/home/` (`home.route.ts` and its page `home.tsx`); `src/components/panel-shell/`; `src/styles/app.css`.                                                                                                                                                                                                              |
+| `app:mobile`          | `stackra.config.ts`; `src/<name>.module.ts`; `src/config/chrome.config.ts` (status bar and tab bar); `src/routes/{home,item,settings}/`; `src/components/{screen,glass}/`; `src/styles/global.css`.                                                                                                                                                                          |
+| `app:desktop`         | `stackra.config.ts`; `src/<name>.module.ts`.                                                                                                                                                                                                                                                                                                                                 |
+| `tooling`, `app:docs` | Unchanged: both are exempt from rule R12 (tool configuration and a Mintlify site).                                                                                                                                                                                                                                                                                           |
+
+**Entry barrels are generated, never authored** (ADR 0294 decision 15). Until `stackra gen` writes them (STA-339), a package's `exports` key names its entry's one public file: `.` is `src/core/constants/package-name.constant.ts` and `./node` is the root module. `contracts/` and `testing/` hold a README and are exported with their first file. A package whose entry gets a second public file before gen ships adds a stand-in `src/<entry>/index.ts` whose header `Purpose:` starts with `Stand-in barrel:`.
+
+**Stand-ins until gen.** Nothing generates entries or tool files yet, so what gen will write stays authored and is marked with a `shortcut:` comment: an app's runtime entry (`src/main.ts(x)`), the mobile shell and navigators, and the tool files (`index.html`, Vite, Expo, EAS, Metro, tsdown, vitest, electron-builder). The kind bases do not exist either, so the root module, the Config class and the route classes are plain classes, and `stackra.config.ts` exports plain data, each with the `shortcut:` line that names the base it will extend. No member gets `stackra.manifest.json`: gen writes it on its first run (rule R10).
+
+After scaffolding:
 
 1. Replace the placeholder README and AGENTS text with the member's real purpose and its PII table.
 2. `pnpm install` to link the new member, then `pnpm verify`.
@@ -63,7 +79,7 @@ Every member gets `package.json`, `turbo.jsonc` with its one tier tag, `README.m
 
 ## Changing a template
 
-Edit the template under `tools/scaffold/templates/`, then run `node --test tools/scripts/__tests__/scaffold.test.mjs` (or `pnpm validate`). The test renders every kind into a temporary directory and fails if a token is left in a path or a file, if a rendered `.json` file does not parse, or if the rendered member fails the validator's member, service and exports checks. It also covers package entries, the JSON escaping, the target repo's `LICENSE`, port allocation and `--dry-run`.
+Edit the template under `tools/scaffold/templates/`, then run `node --test tools/scripts/__tests__/scaffold.test.mjs` (or `pnpm validate`). The test renders every kind into a temporary directory and fails if a token is left in a path or a file, if a rendered `.json` file does not parse, or if the rendered member fails the validator's member, service and exports checks. It asserts the v3 tree of every kind (no authored `main.ts` or barrel in packages and services, exports naming existing files, runway v3, route folders), and covers the optional entries, `--data`, the JSON escaping, the target repo's `LICENSE`, port allocation and `--dry-run`.
 
 When you add a kind, add a row to the test's case list and to `tools/scaffold/README.md`.
 
@@ -79,11 +95,12 @@ Moving or renaming a file or folder means rewriting every import and link that p
 
 ## Checks that back this page
 
-| Rule                                                                            | Check                                       | State     |
-| ------------------------------------------------------------------------------- | ------------------------------------------- | --------- |
-| Every template renders with no token left                                       | `tools/scripts/__tests__/scaffold.test.mjs` | Live      |
-| Every rendered member passes the validator's member, service and exports checks | Scaffold test                               | Live      |
-| A service declares `stackra.module` and holds no Encore file                    | `validate-repository.mjs` (`checkService`)  | Live      |
-| Moves are scripted                                                              | Move codemod                                | Not built |
+| Rule                                                                                                                               | Check                                                     | State             |
+| ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ----------------- |
+| Every template renders with no token left                                                                                          | `tools/scripts/__tests__/scaffold.test.mjs`               | Live              |
+| Every rendered member passes the validator's member, service and exports checks                                                    | Scaffold test                                             | Live              |
+| A service holds no Encore file, and is v2 (`src/main.ts`, `stackra.module`) or v3 (`stackra.config.ts`, root module) until STA-344 | `validate-repository.mjs` (`checkService`, `isV2Service`) | Live              |
+| The v3 member root of every member (`member-root`)                                                                                 | `validate-repository.mjs`                                 | Planned (STA-339) |
+| Moves are scripted                                                                                                                 | Move codemod                                              | Not built         |
 
 See also [Structure](/guides/structure), [Packages](/guides/packages) and [Definition of done](/guides/definition-of-done).

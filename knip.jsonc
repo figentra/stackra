@@ -28,7 +28,13 @@
       "project": ["src/**/*.{ts,tsx}"],
     },
     "apps/*": {
+      // gen finds the root module by name (ADR 0294 R12); src/main.* is the stand-in entry until gen writes it; a
+      // component folder's index.ts is its public surface (ADR 0294 decision 14).
+      "entry": ["src/main.{ts,tsx}", "src/*.module.ts", "src/components/*/index.ts"],
       "project": ["src/**/*.{ts,tsx}"],
+      // Read by the CSS @imports in src/styles/ and by app.json, which knip doesn't trace; expo-updates: knip's expo
+      // plugin assumes OTA updates.
+      "ignoreDependencies": ["@stackra/brand", "@heroui/styles", "expo-updates"],
     },
     "apps/mobile": {
       "project": ["src/**/*.{ts,tsx}"],
@@ -40,7 +46,7 @@
       "project": ["src/**/*.ts"],
     },
     "services/*": {
-      // The root module is imported by `stackra gen` through package.json `stackra.module` (ADR 0090).
+      // gen finds the root module by name (ADR 0294 R12); a v2 service still names it in `stackra.module`.
       "entry": ["src/*.module.ts"],
       "project": ["src/**/*.ts"],
     },

@@ -30,22 +30,91 @@ A package lives at `packages/<category>/<name>`. Tooling presets live at `packag
 
 ## Package entries
 
-Core `.` is always present. Other entries are added only with real code (ADR 0126).
+Core `.` is always present. An entry is exported once its folder holds a file, and its barrel is generated, never authored (ADR 0294 decision 15). `pnpm new package` adds the optional entries only with `--entries`.
 
-| Entry       | Holds                                               | Source   |
-| ----------- | --------------------------------------------------- | -------- |
-| `contracts` | vocabulary only: types, as-const objects and tokens | ADR 0117 |
-| `node`      | code that needs Node built-ins                      | ADR 0126 |
-| `react`     | React components and hooks                          | ADR 0126 |
-| `native`    | React Native code                                   | ADR 0126 |
-| `testing`   | test helpers and fakes for consumers                | ADR 0126 |
-| `devtools`  | developer tooling, only with real code              | ADR 0126 |
+| Entry       | Scaffolded | Holds                                                                            | Source       |
+| ----------- | ---------- | -------------------------------------------------------------------------------- | ------------ |
+| `contracts` | always     | the leaf: `ports/`, `enums/` and `types/`; imports nothing else from the package | ADR 0294 d15 |
+| `node`      | always     | the module folder: the root module and the module groups                         | ADR 0294 d15 |
+| `react`     | on request | web renderers in `react/<name>/`                                                 | ADR 0294 d15 |
+| `native`    | on request | native renderers in `native/<name>/`                                             | ADR 0294 d15 |
+| `testing`   | always     | `fakes/` and `matchers/` for consumers' tests                                    | ADR 0294 d15 |
 
 Exception: `@stackra/testing` alone also has `e2e` and `contract` (ADR 0269 d6). No other package does.
 
-## Kind folders
+## Member root (programming model v3)
 
-Code of a module sits in these folders under `src/`. A file's suffix names its kind; the test column is the tier its file needs.
+Every member authors `stackra.config.ts` and one root module, `src/<name>.module.ts` (`src/node/<name>.module.ts` in a package), and never `src/main.ts` or an entry barrel (ADR 0294 R12, 0295). Exempt: the docs app (Mintlify) and the `tier:config` presets.
+
+## Module groups (programming model v3)
+
+A module is `src/modules/<key>/` in a service and `src/node/` in a package. Each kind suffix has one home group; a group folder appears with its first file. The validator's `kind-path` check of these tables is planned (STA-338).
+
+| Group                  | Suffixes                                                                     | Holds                                                   | Source       |
+| ---------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------- | ------------ |
+| (root)                 | `.module`, `.settings`                                                       | the module file, its one settings group and `README.md` | ADR 0294 d13 |
+| `models/`              | `.model`, `.state-machine`, `.bucket`, `.projection`                         | persisted models                                        | ADR 0294 d13 |
+| `actions/`             | `.action`                                                                    | write operations                                        | ADR 0294 d13 |
+| `queries/`             | `.query`                                                                     | read operations                                         | ADR 0294 d13 |
+| `schemas/`             | `.schema`, `.change`                                                         | shapes shared by two files; dated response changes      | ADR 0294 d13 |
+| `enums/`               | `.enum`                                                                      | `Enum.of` enums                                         | ADR 0294 d13 |
+| `errors/`              | `.error`                                                                     | Refusal classes                                         | ADR 0294 d13 |
+| `events/`              | `.event`, `.change`                                                          | events and their versions                               | ADR 0294 d13 |
+| `listeners/`           | `.listener`                                                                  | event handlers                                          | ADR 0294 d13 |
+| `workflows/`           | `.workflow`, `.signal`                                                       | durable runs and the signals they wait for              | ADR 0294 d13 |
+| `access/`              | `.permissions`, `.policy`, `.role`, `.entitlement`, `.precondition`, `.flag` | who may do what, and when                               | ADR 0294 d13 |
+| `services/`            | `.service`, `.repository`                                                    | services; a repository only for named reads             | ADR 0294 d13 |
+| `drivers/`             | `.driver`                                                                    | port implementations                                    | ADR 0294 d13 |
+| `extensions/`          | `.extension-point`, `.extension`, `.interceptor`                             | extension points and wraps                              | ADR 0294 d13 |
+| `raw/`                 | `.controller`                                                                | raw endpoints, in a service only (ADR 0130 decision 3)  | ADR 0294 d13 |
+| `resources/<model>/`   | `.resource`, `.widget`, `.document`, `.notification`, `.mail`                | one model's admin surface                               | ADR 0294 d13 |
+| `database/migrations/` | `.migration`                                                                 | `NNNN-<name>.migration.ts`, numbered per module         | ADR 0294 d13 |
+| `database/factories/`  | `.factory`                                                                   | `<model>.factory.ts`                                    | ADR 0294 d13 |
+| `database/seeders/`    | `.seeder`                                                                    | minimal, demo and test seeders                          | ADR 0294 d13 |
+| `ai/`                  | `.prompt`, `.skill`, `.facts`                                                | prompts, skills and facts                               | ADR 0294 d13 |
+| `functions/`           | `.function`                                                                  | plain functions                                         | ADR 0294 d13 |
+| `constants/`           | `.constant`                                                                  | module-level constants                                  | ADR 0294 d13 |
+| `types/`               | `.type`                                                                      | types two or more files import                          | ADR 0294 d13 |
+
+## App groups (programming model v3)
+
+| Group                | Suffixes                                              | Holds                                                                            | Source       |
+| -------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------- | ------------ |
+| (root)               | `.module`, `.error`                                   | `<key>.module.ts` and `app.error.tsx`, the root error boundary                   | ADR 0294 d14 |
+| `config/`            | `.config`                                             | config classes, including `desktop.config.ts` and `chrome.config.ts`             | ADR 0294 d14 |
+| `panels/`            | `.panel`                                              | app areas                                                                        | ADR 0294 d14 |
+| `menus/`             | `.menu`                                               | navigation data                                                                  | ADR 0294 d14 |
+| `shortcuts/`         | `.shortcut`                                           | palette and key entries                                                          | ADR 0294 d14 |
+| `documents/`         | `.document`                                           | document kinds                                                                   | ADR 0294 d14 |
+| `stores/`            | `.store`                                              | client state classes                                                             | ADR 0294 d14 |
+| `flags/`             | `.flag`                                               | release switches                                                                 | ADR 0294 d14 |
+| `analytics/`         | `.analytics-event`                                    | analytics events                                                                 | ADR 0294 d14 |
+| `bridges/`           | `.bridge`                                             | desktop bridges                                                                  | ADR 0294 d14 |
+| `routes/<name>/`     | `.route`, `.layout`, `.error`, `.fallback`, `.server` | a route or layout class, its page `<name>.tsx`, `use-<name>.ts` and `__tests__/` | ADR 0294 d14 |
+| `blocks/<name>/`     | `.block`                                              | `<name>.block.ts`, its renderer `<name>.tsx` and `__tests__/`                    | ADR 0294 d14 |
+| `components/<name>/` | none                                                  | `<name>.tsx`, `index.ts` (the component and its Props) and `__tests__/`          | ADR 0294 d14 |
+| `hooks/`             | none                                                  | `use-<name>.ts` with two or more importers                                       | ADR 0294 d14 |
+| `overrides/<owner>/` | `.override`                                           | block and widget overrides                                                       | ADR 0294 d14 |
+| `providers/<name>/`  | none                                                  | only for the `Module({ wrap })` escape hatch                                     | ADR 0294 d14 |
+| `enums/`             | `.enum`                                               | `Enum.of` enums                                                                  | ADR 0294 d14 |
+| `types/`             | `.type`                                               | shared types                                                                     | ADR 0294 d14 |
+| `styles/`            | none                                                  | stylesheets (`.css`)                                                             | ADR 0294 d14 |
+
+## Package folders (programming model v3)
+
+| Folder               | Entry                            | Holds                                                                     | Source       |
+| -------------------- | -------------------------------- | ------------------------------------------------------------------------- | ------------ |
+| `src/contracts/`     | `./contracts`                    | the leaf: `ports/`, `enums/` and `types/`                                 | ADR 0294 d15 |
+| `src/config/`        | not settled (ADR 0177 amendment) | the config classes                                                        | ADR 0294 d15 |
+| `src/core/`          | `.`                              | isomorphic code: services, drivers, errors, functions, schemas and blocks | ADR 0294 d15 |
+| `src/node/`          | `./node`                         | the module folder: `<key>.module.ts` and the module groups                | ADR 0294 d15 |
+| `src/react/<name>/`  | `./react`                        | web renderers                                                             | ADR 0294 d15 |
+| `src/native/<name>/` | `./native`                       | native renderers                                                          | ADR 0294 d15 |
+| `src/testing/`       | `./testing`                      | `fakes/` and `matchers/`                                                  | ADR 0294 d15 |
+
+## Kind folders (pre-v3)
+
+The pre-v3 list, still read by `kindOfFile` and the doc-standard migration rule until STA-340 rebuilds them on the tables above. A file's suffix names its kind; the test column is the tier its file needs.
 
 | Folder        | File suffix       | Required test | Holds                                                                                                           | Source       |
 | ------------- | ----------------- | ------------- | --------------------------------------------------------------------------------------------------------------- | ------------ |

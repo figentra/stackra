@@ -1,9 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: proves every window keeps the renderer sandboxed with no Node access.
- * Owner: the app owner · Secrets: forbidden
+ * Boundary: builds options objects only.
+ * Runtime: node
+ * Governing contract: ADR 0251 (Electron hardening); ADR 0022 (test placement).
  */
-import { windowOptions } from "../window-options";
+import { windowOptions } from "#src/window-options";
 
 describe("windowOptions", () => {
   it("locks the renderer down", () => {

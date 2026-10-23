@@ -7,21 +7,28 @@ import { fileURLToPath } from "node:url";
 
 import { parseEntries, scaffold } from "../scaffold.mjs";
 import {
+  APP_GROUPS,
   BANNED_FOLDERS,
   CATEGORIES,
   ENTRIES,
   CATEGORY_NAMES,
   ENTRY_NAMES,
   KIND_FOLDERS,
+  MEMBER_ROOT,
+  MODULE_GROUPS,
+  OPTIONAL_ENTRY_NAMES,
+  PACKAGE_FOLDERS,
   REACT_HOOK,
   ROOT_MODULE,
   TEST_TIERS,
   categoryOf,
   folderForSuffix,
+  groupsFor,
   isBannedFolder,
   kindOfFile,
   renderStructureDoc,
   requiredTestFor,
+  rootModuleOf,
   testFileFor,
 } from "../structure.mjs";
 import { checkTestPlacement } from "../validate-repository.mjs";
@@ -39,7 +46,17 @@ test("the category list is the 12 categories, and every category folder on disk 
 });
 
 test("every category and entry carries a reason and an ADR", () => {
-  for (const row of [...CATEGORIES, ...ENTRIES, ...KIND_FOLDERS, ...BANNED_FOLDERS, ...TEST_TIERS])
+  for (const row of [
+    ...CATEGORIES,
+    ...ENTRIES,
+    ...KIND_FOLDERS,
+    ...BANNED_FOLDERS,
+    ...TEST_TIERS,
+    ...MODULE_GROUPS,
+    ...APP_GROUPS,
+    ...PACKAGE_FOLDERS,
+    MEMBER_ROOT,
+  ])
     assert.ok(row.reason?.length > 0 && row.adr, JSON.stringify(row));
 });
 
@@ -81,9 +98,41 @@ test("categoryOf reads packages/<category>/<name> and packages/tooling/<name>", 
 });
 
 test("entries parse in exports order and reject unknown names", () => {
-  assert.deepEqual(parseEntries(ENTRY_NAMES), ENTRY_NAMES);
-  assert.deepEqual(parseEntries("react,contracts"), ["contracts", "react"]);
+  assert.deepEqual(parseEntries(ENTRY_NAMES), OPTIONAL_ENTRY_NAMES);
+  assert.deepEqual(parseEntries("native,contracts,react"), ["react", "native"]);
   assert.throws(() => parseEntries("web"), /unknown entry/);
+});
+
+// @covers sta-347:FR-006 sta-347:P-005
+test("v3 entries are the six of ADR 0294 decision 23; only react and native are optional", () => {
+  assert.deepEqual(ENTRY_NAMES, ["contracts", "node", "react", "native", "testing"]);
+  assert.deepEqual(OPTIONAL_ENTRY_NAMES, ["react", "native"]);
+  for (const { entry } of PACKAGE_FOLDERS.filter((f) => f.entry && f.entry !== "."))
+    assert.ok(ENTRY_NAMES.includes(entry.slice(2)), entry);
+});
+
+// @covers sta-347:FR-006 sta-347:P-005
+test("rootModuleOf places the root module by tier; tooling presets have none", () => {
+  assert.equal(rootModuleOf("packages/data/billing-core"), "src/node/billing-core.module.ts");
+  assert.equal(rootModuleOf("services/notes"), "src/notes.module.ts");
+  assert.equal(rootModuleOf("apps/admin"), "src/admin.module.ts");
+  assert.equal(rootModuleOf("packages/tooling/oxlint"), null);
+  assert.equal(MEMBER_ROOT.config, "stackra.config.ts");
+});
+
+// @covers sta-347:FR-006 sta-347:P-005
+test("every v3 suffix has one home per tier, except .change in modules and .error in apps (R1)", () => {
+  const twice = (table) => {
+    const seen = table.flatMap((g) => g.suffixes);
+    return [...new Set(seen.filter((s, i) => seen.indexOf(s) !== i))];
+  };
+  assert.deepEqual(twice(MODULE_GROUPS), ["change"]);
+  assert.deepEqual(twice(APP_GROUPS), ["error"]);
+  assert.deepEqual(groupsFor("action"), { module: ["actions"], app: [] });
+  assert.deepEqual(groupsFor("change"), { module: ["schemas", "events"], app: [] });
+  assert.deepEqual(groupsFor("migration").module, ["database/migrations"]);
+  assert.deepEqual(groupsFor("route"), { module: [], app: ["routes/<name>"] });
+  assert.deepEqual(groupsFor("nope"), { module: [], app: [] });
 });
 
 test("scaffold and validator import the lists and declare none of their own", () => {

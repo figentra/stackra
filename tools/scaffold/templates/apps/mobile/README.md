@@ -13,23 +13,26 @@ HeroUI Native + Uniwind for UI, and iOS 26 Liquid Glass from native components.
 
 ## Structure
 
+The programming model v3 shape (ADR 0294 rule R12, decision 14). Files marked stand-in are what gen writes once it
+ships (STA-339); keep them thin.
+
 ```text
+stackra.config.ts              the app definition: targets, area, name, scheme (ADR 0295)
+app.json, eas.json             stand-ins: gen writes the Expo and EAS config from stackra.config.ts
 src/
-├── main.ts                    registerRootComponent(App)
-├── app.tsx                    providers: gestures → HeroUI Native → NavigationContainer (theme + linking)
-├── global.css                 Tailwind + Uniwind + HeroUI Native styles
-├── navigation/
-│   ├── types.ts               every route + params (RootStackParamList, TabParamList, …)
-│   ├── linking.ts             deep links: {{NAME}}://items/<id> → Item
-│   ├── header-options.ts      transparent native-stack headers (Liquid Glass) + large titles
-│   ├── root-navigator.tsx     native stack: Tabs, Item (dynamic)
-│   └── tab-navigator.tsx      native tab bar (UITabBarController) with one stack per tab
-├── screens/                   one file per screen
-└── components/ui/             Screen (scroll container), Glass (GlassView with fallback)
+├── {{NAME}}.module.ts         the root module
+├── main.ts                    stand-in entry: registerRootComponent(App)
+├── app.tsx                    stand-in shell: gestures → HeroUI Native → NavigationContainer (theme + linking)
+├── config/chrome.config.ts    {{PASCAL}}ChromeConfig: status bar and tab bar (ADR 0295 decision 11)
+├── routes/<name>/             <name>.route.ts (path) and <name>.tsx (page): home, item, settings
+├── navigation/                stand-in navigators, linking and param types, built from the routes
+├── components/<name>/         <name>.tsx and index.ts: screen (scroll container), glass (GlassView with fallback)
+└── styles/global.css          Tailwind + Uniwind + HeroUI Native styles
 ```
 
 ## Adding a screen
 
-1. Add it to the right param list in `navigation/types.ts` (params are typed there, once).
-2. Register it in a navigator (`root-navigator.tsx` for full-screen, a tab stack for in-tab).
-3. If it should open from a URL, add its path to `navigation/linking.ts`.
+1. Add `src/routes/<name>/<name>.route.ts` (its path) and `<name>.tsx` (its page).
+2. Add it to the right param list in `navigation/types.ts`, register it in a navigator (`root-navigator.tsx` for
+   full-screen, a tab stack for in-tab) and, if it opens from a URL, add its path to `navigation/linking.ts`. Gen
+   does this step once it ships.

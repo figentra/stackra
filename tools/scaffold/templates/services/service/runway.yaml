@@ -1,0 +1,20 @@
+# Stackra file contract:
+# Purpose: what @figentra/service-{{NAME}} needs at runtime beyond what gen derives from stackra.manifest.json
+#          (runway v3, ADR 0296). The folder names the member, so the file has no `member` key, and it never holds
+#          a root fact (`deployable`, `isolate`, `group`, `cpu`, `memory`, `instances`): the root runway places members.
+# Boundary: names and sizes only; secret values come from Infisical through runway (ADR 0173).
+# Governing contract: ADR 0296 (decision 1); ADR 0227 (allowed engines).
+version: 3
+
+# One entry per resource; a dedicated one carries a one-line reason, for example:
+#   cache:
+#     dedicated: true
+#     engine: valkey
+#     reason: price snapshots need their own eviction policy
+requires: {}
+
+# Names of the secrets the service reads, each also a @Secret("NAME") config field.
+secrets: []
+
+# Per environment: port, database, cache and queue sizes, replicas, and `config` values for the config classes.
+environments: {}

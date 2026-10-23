@@ -4,7 +4,8 @@
  * Purpose: the repository-shape gate run by `pnpm validate` (part of `pnpm verify`). Every workspace member uses
  *          catalog:/workspace: versions only, is named by placement (packages @stackra/<name>, apps @figentra/<dir>, services @figentra/service-<dir>), declares exactly one turbo tier tag matching its
  *          directory, extends a @stackra/typescript-config preset, and depends on no forbidden package.
- *          A service declares its root module (`stackra.module`, ADR 0090) and holds no Encore file (ADR 0126).
+ *          A service holds no Encore file (ADR 0126) and is either v2 (`src/main.ts` and `stackra.module`, ADR 0090)
+ *          or v3 (`stackra.config.ts` and its root module, ADR 0294 R12) until STA-344 (`isV2Service`).
  *          Every test file anywhere in the repository sits directly in a __tests__/ folder (ADR 0022).
  *          Every JSON config is .jsonc unless its reader cannot take one (MUST_STAY_JSON).
  *          Repo-owned YAML has no flow mappings (block style; checkYamlFlowMaps).
@@ -19,7 +20,13 @@ import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { LineCounter, parseDocument, visit } from "yaml";
 import { readJsonc } from "./jsonc.mjs";
-import { FORBIDDEN_FILES, SPEC_PATTERN, TEST_FILE_PATTERN } from "./structure.mjs";
+import {
+  FORBIDDEN_FILES,
+  MEMBER_ROOT,
+  rootModuleOf,
+  SPEC_PATTERN,
+  TEST_FILE_PATTERN,
+} from "./structure.mjs";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -198,18 +205,33 @@ export function checkExports(exports) {
 const ENCORE_FILE = /(^|\/)(encore\.service\.ts|encore\.app)$/;
 
 /**
- * Findings for a service member (ADR 0126): plain TypeScript with a `src/main.ts` entry and a root module named by
- * `package.json` `stackra.module` (ADR 0090), and no Encore file — Encore is generated into .stackra/encore
- * (ADRs 0091, 0124). `paths` are the member's files relative to the member directory.
+ * Transition until STA-344 converts services/example and services/health: a service with an authored `src/main.ts`
+ * is the v2 shape (ADR 0126, root module named by `package.json` `stackra.module`, ADR 0090); one without is the v3
+ * shape that `pnpm new service` writes (ADR 0294 rule R12). STA-344 deletes the v2 branch.
  */
-export function checkService({ pkg, paths }) {
+export const isV2Service = (paths) => paths.includes("src/main.ts");
+
+/**
+ * Findings for a service member: plain TypeScript and no Encore file — Encore is generated into .stackra/encore
+ * (ADRs 0091, 0124). A v2 service names an existing root module in `stackra.module`; a v3 service has
+ * `stackra.config.ts` and `src/<dir>.module.ts` (existence only: the v3 shape checks are STA-338 and STA-340).
+ * `paths` are the member's files relative to the member directory.
+ */
+export function checkService({ dir, pkg, paths }) {
   const out = [];
-  if (!paths.includes("src/main.ts")) out.push("src/main.ts missing");
-  const module = pkg.stackra?.module;
-  if (!module)
-    out.push('package.json has no "stackra": { "module": "./src/<name>.module.ts" } (ADR 0090)');
-  else if (!paths.includes(module.replace(/^\.\//, "")))
-    out.push(`package.json stackra.module ${module} does not exist`);
+  if (isV2Service(paths)) {
+    const module = pkg.stackra?.module;
+    if (!module)
+      out.push('package.json has no "stackra": { "module": "./src/<name>.module.ts" } (ADR 0090)');
+    else if (!paths.includes(module.replace(/^\.\//, "")))
+      out.push(`package.json stackra.module ${module} does not exist`);
+  } else {
+    for (const file of [MEMBER_ROOT.config, rootModuleOf(dir)])
+      if (!paths.includes(file))
+        out.push(
+          `${file} missing (v3 service shape, ADR 0294 R12; a v2 service keeps src/main.ts until STA-344)`,
+        );
+  }
   for (const p of paths.filter((f) => ENCORE_FILE.test(f)))
     out.push(`${p}: services hold no Encore files; stackra gen generates them (ADR 0124)`);
   return out;
@@ -440,6 +462,7 @@ function main() {
       report(
         dir,
         checkService({
+          dir,
           pkg,
           paths: repoFiles
             .filter((p) => p.startsWith(`${dir}/`))

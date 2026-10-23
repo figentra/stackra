@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /**
  * Stackra file contract:
- * Purpose: the one machine-readable source of repository structure: package categories, package entries, kind
- *          folders, banned folders, suffix → folder, suffix → required test, test-tier infixes and documented
- *          exceptions. scaffold.mjs and validate-repository.mjs import it instead of keeping their own lists, and
- *          `--write-docs` renders apps/docs/src/standards/structure.mdx from it.
+ * Purpose: the one machine-readable source of repository structure: package categories, package entries, the
+ *          programming model v3 tables (module groups, app groups, package folders, member root; ADR 0294, 0295),
+ *          the pre-v3 kind folders, banned folders, suffix → folder, suffix → required test, test-tier infixes and
+ *          documented exceptions. scaffold.mjs and validate-repository.mjs import it instead of keeping their own
+ *          lists, and `--write-docs` renders apps/docs/src/standards/structure.mdx from it.
  * Scope: plain data and small lookup functions. It runs no checks; findings stay in validate-repository.mjs.
  * Owner: code-standards-steward · Secrets: forbidden
  */
@@ -88,14 +89,37 @@ export const TOOLING = Object.freeze({
   adr: "0003",
 });
 
-/** Optional package entries besides core `.`, in exports order (ADR 0126). Core is always present. */
+/**
+ * Package entries besides core `.`, in exports order (ADR 0294 decisions 15 and 23). `optional` entries are scaffolded
+ * only on request (`--entries react,native`); the others come with every package. An entry is exported once its folder
+ * holds a file; the barrels are generated, never authored.
+ */
 export const ENTRIES = Object.freeze([
-  { name: "contracts", reason: "vocabulary only: types, as-const objects and tokens", adr: "0117" },
-  { name: "node", reason: "code that needs Node built-ins", adr: "0126" },
-  { name: "react", reason: "React components and hooks", adr: "0126" },
-  { name: "native", reason: "React Native code", adr: "0126" },
-  { name: "testing", reason: "test helpers and fakes for consumers", adr: "0126" },
-  { name: "devtools", reason: "developer tooling, only with real code", adr: "0126" },
+  {
+    name: "contracts",
+    optional: false,
+    reason: "the leaf: `ports/`, `enums/` and `types/`; imports nothing else from the package",
+    adr: "0294 d15",
+  },
+  {
+    name: "node",
+    optional: false,
+    reason: "the module folder: the root module and the module groups",
+    adr: "0294 d15",
+  },
+  { name: "react", optional: true, reason: "web renderers in `react/<name>/`", adr: "0294 d15" },
+  {
+    name: "native",
+    optional: true,
+    reason: "native renderers in `native/<name>/`",
+    adr: "0294 d15",
+  },
+  {
+    name: "testing",
+    optional: false,
+    reason: "`fakes/` and `matchers/` for consumers' tests",
+    adr: "0294 d15",
+  },
 ]);
 
 /** Named exception to ENTRIES: `@stackra/testing` alone also has these two entries, and no other package does (ADR 0269 d6). */
@@ -106,8 +130,160 @@ const TESTING_PACKAGE_ENTRIES = Object.freeze([
 
 /** The entry name list, in exports order. */
 export const ENTRY_NAMES = Object.freeze(ENTRIES.map((e) => e.name));
+/** The entries `--entries` may add; the others come with every package. */
+export const OPTIONAL_ENTRY_NAMES = Object.freeze(
+  ENTRIES.filter((e) => e.optional).map((e) => e.name),
+);
 
-/** @type {readonly KindFolder[]} */
+/**
+ * A v3 group folder (ADR 0294 decisions 13 and 14): the folder under a module or an app's `src/`, and the kind
+ * suffixes whose one home it is (`<name>.<suffix>.ts(x)`). `<name>` in a group is a folder named after its subject.
+ * @typedef {object} Group
+ * @property {string} group - the folder path inside the scope; "" for the scope's root
+ * @property {readonly string[]} suffixes - the kind suffixes it holds; empty for function kinds with no suffix
+ * @property {string} reason - one line, what it holds
+ * @property {string} adr - the ADR decision it comes from
+ */
+
+/** @param {[string, string[], string][]} rows @param {string} adr @returns {readonly Group[]} */
+const groups = (rows, adr) =>
+  Object.freeze(rows.map(([group, suffixes, reason]) => ({ group, suffixes, reason, adr })));
+
+/**
+ * The groups of a module: `src/modules/<key>/` in a service, `src/node/` in a package (ADR 0294 decision 13). A group
+ * folder appears with its first file. `.change.ts` is the one suffix with two homes (rule R1).
+ */
+export const MODULE_GROUPS = groups(
+  [
+    ["", ["module", "settings"], "the module file, its one settings group and `README.md`"],
+    ["models", ["model", "state-machine", "bucket", "projection"], "persisted models"],
+    ["actions", ["action"], "write operations"],
+    ["queries", ["query"], "read operations"],
+    ["schemas", ["schema", "change"], "shapes shared by two files; dated response changes"],
+    ["enums", ["enum"], "`Enum.of` enums"],
+    ["errors", ["error"], "Refusal classes"],
+    ["events", ["event", "change"], "events and their versions"],
+    ["listeners", ["listener"], "event handlers"],
+    ["workflows", ["workflow", "signal"], "durable runs and the signals they wait for"],
+    [
+      "access",
+      ["permissions", "policy", "role", "entitlement", "precondition", "flag"],
+      "who may do what, and when",
+    ],
+    ["services", ["service", "repository"], "services; a repository only for named reads"],
+    ["drivers", ["driver"], "port implementations"],
+    ["extensions", ["extension-point", "extension", "interceptor"], "extension points and wraps"],
+    ["raw", ["controller"], "raw endpoints, in a service only (ADR 0130 decision 3)"],
+    [
+      "resources/<model>",
+      ["resource", "widget", "document", "notification", "mail"],
+      "one model's admin surface",
+    ],
+    ["database/migrations", ["migration"], "`NNNN-<name>.migration.ts`, numbered per module"],
+    ["database/factories", ["factory"], "`<model>.factory.ts`"],
+    ["database/seeders", ["seeder"], "minimal, demo and test seeders"],
+    ["ai", ["prompt", "skill", "facts"], "prompts, skills and facts"],
+    ["functions", ["function"], "plain functions"],
+    ["constants", ["constant"], "module-level constants"],
+    ["types", ["type"], "types two or more files import"],
+  ],
+  "0294 d13",
+);
+
+/** The groups of an app's `src/` (ADR 0294 decision 14). */
+export const APP_GROUPS = groups(
+  [
+    ["", ["module", "error"], "`<key>.module.ts` and `app.error.tsx`, the root error boundary"],
+    ["config", ["config"], "config classes, including `desktop.config.ts` and `chrome.config.ts`"],
+    ["panels", ["panel"], "app areas"],
+    ["menus", ["menu"], "navigation data"],
+    ["shortcuts", ["shortcut"], "palette and key entries"],
+    ["documents", ["document"], "document kinds"],
+    ["stores", ["store"], "client state classes"],
+    ["flags", ["flag"], "release switches"],
+    ["analytics", ["analytics-event"], "analytics events"],
+    ["bridges", ["bridge"], "desktop bridges"],
+    [
+      "routes/<name>",
+      ["route", "layout", "error", "fallback", "server"],
+      "a route or layout class, its page `<name>.tsx`, `use-<name>.ts` and `__tests__/`",
+    ],
+    ["blocks/<name>", ["block"], "`<name>.block.ts`, its renderer `<name>.tsx` and `__tests__/`"],
+    [
+      "components/<name>",
+      [],
+      "`<name>.tsx`, `index.ts` (the component and its Props) and `__tests__/`",
+    ],
+    ["hooks", [], "`use-<name>.ts` with two or more importers"],
+    ["overrides/<owner>", ["override"], "block and widget overrides"],
+    ["providers/<name>", [], "only for the `Module({ wrap })` escape hatch"],
+    ["enums", ["enum"], "`Enum.of` enums"],
+    ["types", ["type"], "shared types"],
+    ["styles", [], "stylesheets (`.css`)"],
+  ],
+  "0294 d14",
+);
+
+/**
+ * The folders of a package's `src/` (ADR 0294 decision 15). `entry` is the subpath the folder feeds, or null for a
+ * folder no entry exports. Dependencies run one way: core imports contracts; node, react and native import core;
+ * testing imports them all. Which entry exports `config/` is not settled (ADR 0177 amendment).
+ */
+export const PACKAGE_FOLDERS = Object.freeze(
+  [
+    ["contracts", "./contracts", "the leaf: `ports/`, `enums/` and `types/`"],
+    ["config", null, "the config classes"],
+    ["core", ".", "isomorphic code: services, drivers, errors, functions, schemas and blocks"],
+    ["node", "./node", "the module folder: `<key>.module.ts` and the module groups"],
+    ["react/<name>", "./react", "web renderers"],
+    ["native/<name>", "./native", "native renderers"],
+    ["testing", "./testing", "`fakes/` and `matchers/`"],
+  ].map(([folder, entry, reason]) => ({ folder, entry, reason, adr: "0294 d15" })),
+);
+
+/**
+ * What every member authors at its root (ADR 0294 rule R12, ADR 0295 decisions 1 and 7): `stackra.config.ts` and one
+ * root module; never `src/main.ts` or an entry barrel. The docs app and the `tier:config` presets are exempt.
+ */
+export const MEMBER_ROOT = Object.freeze({
+  config: "stackra.config.ts",
+  rootModule: "src/<name>.module.ts",
+  packageRootModule: "src/node/<name>.module.ts",
+  exempt: Object.freeze(["the docs app (Mintlify)", "the `tier:config` presets"]),
+  reason: "one member shape; gen writes the entries, the tool configs and the barrels",
+  adr: "0294 R12, 0295",
+});
+
+/**
+ * The root module a member authors, from its directory: `src/node/<name>.module.ts` in a package,
+ * `src/<name>.module.ts` elsewhere; null for a `tier:config` preset, which holds no module.
+ * @param {string} dir - repository-relative, forward slashes
+ * @returns {string | null}
+ */
+export function rootModuleOf(dir) {
+  const name = dir.split("/").at(-1);
+  if (dir.startsWith(`packages/${TOOLING.name}/`)) return null;
+  const pattern = dir.startsWith("packages/")
+    ? MEMBER_ROOT.packageRootModule
+    : MEMBER_ROOT.rootModule;
+  return pattern.replace("<name>", name);
+}
+
+/**
+ * The v3 home groups of a kind suffix, in modules and in apps (empty when no group holds it).
+ * @param {string} suffix - for example `action` or `change`
+ * @returns {{ module: string[], app: string[] }}
+ */
+export function groupsFor(suffix) {
+  const homes = (table) => table.filter((g) => g.suffixes.includes(suffix)).map((g) => g.group);
+  return { module: homes(MODULE_GROUPS), app: homes(APP_GROUPS) };
+}
+
+/**
+ * Pre-v3 kind folders (ADR 0126, 0128, 0130). The v3 tables above replace them; STA-340 rebuilds the checks that
+ * still read this list (doc-standard's migration rule, `kindOfFile`).
+ * @type {readonly KindFolder[]}
+ */
 export const KIND_FOLDERS = Object.freeze(
   [
     [
@@ -453,6 +629,22 @@ function table(headers, rows) {
 }
 
 /**
+ * A group table: the folder, the kind suffixes it holds, what it holds and its source.
+ * @param {readonly Group[]} rows
+ * @returns {string[]}
+ */
+const groupTable = (rows) =>
+  table(
+    ["Group", "Suffixes", "Holds", "Source"],
+    rows.map((g) => [
+      g.group ? code(`${g.group}/`) : "(root)",
+      g.suffixes.map((s) => code(`.${s}`)).join(", ") || "none",
+      g.reason,
+      `ADR ${g.adr}`,
+    ]),
+  );
+
+/**
  * The generated standards page. Every table is rendered from the data above, so the page cannot drift from the
  * lists the scaffold and the validator read.
  * @returns {string}
@@ -483,18 +675,49 @@ export function renderStructureDoc() {
     "",
     "## Package entries",
     "",
-    "Core `.` is always present. Other entries are added only with real code (ADR 0126).",
+    "Core `.` is always present. An entry is exported once its folder holds a file, and its barrel is generated, never authored (ADR 0294 decision 15). `pnpm new package` adds the optional entries only with `--entries`.",
     "",
     ...table(
-      ["Entry", "Holds", "Source"],
-      ENTRIES.map((e) => [code(e.name), e.reason, `ADR ${e.adr}`]),
+      ["Entry", "Scaffolded", "Holds", "Source"],
+      ENTRIES.map((e) => [
+        code(e.name),
+        e.optional ? "on request" : "always",
+        e.reason,
+        `ADR ${e.adr}`,
+      ]),
     ),
     "",
     `Exception: ${code("@stackra/testing")} alone also has ${TESTING_PACKAGE_ENTRIES.map((e) => code(e.name)).join(" and ")} (ADR 0269 d6). No other package does.`,
     "",
-    "## Kind folders",
+    "## Member root (programming model v3)",
     "",
-    "Code of a module sits in these folders under `src/`. A file's suffix names its kind; the test column is the tier its file needs.",
+    `Every member authors ${code(MEMBER_ROOT.config)} and one root module, ${code(MEMBER_ROOT.rootModule)} (${code(MEMBER_ROOT.packageRootModule)} in a package), and never ${code("src/main.ts")} or an entry barrel (ADR ${MEMBER_ROOT.adr}). Exempt: ${MEMBER_ROOT.exempt.join(" and ")}.`,
+    "",
+    "## Module groups (programming model v3)",
+    "",
+    "A module is `src/modules/<key>/` in a service and `src/node/` in a package. Each kind suffix has one home group; a group folder appears with its first file. The validator's `kind-path` check of these tables is planned (STA-338).",
+    "",
+    ...groupTable(MODULE_GROUPS),
+    "",
+    "## App groups (programming model v3)",
+    "",
+    ...groupTable(APP_GROUPS),
+    "",
+    "## Package folders (programming model v3)",
+    "",
+    ...table(
+      ["Folder", "Entry", "Holds", "Source"],
+      PACKAGE_FOLDERS.map((f) => [
+        code(`src/${f.folder}/`),
+        f.entry ? code(f.entry) : "not settled (ADR 0177 amendment)",
+        f.reason,
+        `ADR ${f.adr}`,
+      ]),
+    ),
+    "",
+    "## Kind folders (pre-v3)",
+    "",
+    "The pre-v3 list, still read by `kindOfFile` and the doc-standard migration rule until STA-340 rebuilds them on the tables above. A file's suffix names its kind; the test column is the tier its file needs.",
     "",
     ...table(
       ["Folder", "File suffix", "Required test", "Holds", "Source"],

@@ -5,10 +5,9 @@
   "description": "{{DESCRIPTION}}",
   "license": "MIT",
   "files": [
-    "src",
     "dist",
-    "config",
-    "resources",
+    "src",
+    "stackra.manifest.json",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
@@ -25,28 +24,8 @@
   },
   "type": "module",
   "sideEffects": false,
-  "exports": {
-    ".": {
-      "@stackra/source": "./src/core/index.ts",
-      "types": "./dist/index.d.mts",
-      "default": "./dist/index.mjs"
-    },
-    "./resources/*": "./resources/*"
-  },
-  "imports": {
-    "#src/*": [
-      "./src/*",
-      "./src/*.ts",
-      "./src/*.tsx",
-      "./src/*/index.ts"
-    ],
-    "#stackra/*": [
-      "./.stackra/gen/*",
-      "./.stackra/gen/*.ts",
-      "./.stackra/gen/*.tsx",
-      "./.stackra/gen/*/index.ts"
-    ]
-  },
+  "exports": {},
+  "imports": {},
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit",

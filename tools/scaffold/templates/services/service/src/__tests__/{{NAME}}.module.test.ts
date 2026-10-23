@@ -1,26 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: boots the root module of @figentra/service-{{NAME}} and proves `package.json` `stackra.module` names it
- *          (ADR 0090), so `stackra gen` finds the graph.
- * Owner: the service owner · Secrets: forbidden
+ * Purpose: proves the root module of @figentra/service-{{NAME}} sits where gen looks for it, `src/<name>.module.ts`,
+ *          and hosts no feature module yet.
+ * Boundary: imports the module file; builds no container.
+ * Runtime: node
+ * Governing contract: ADR 0294 (rule R12); ADR 0022 (test placement).
  */
-import { readFileSync } from "node:fs";
+import { {{PASCAL}}Module } from "#src/{{NAME}}.module";
 
-import { {{PASCAL}}Module } from "../{{NAME}}.module";
-
-const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as {
-  stackra: { module: string };
-};
-
+// shortcut: a unit test until @stackra/container ships createTestingModule; then `.int.test.ts` that compiles it.
 describe("{{PASCAL}}Module", () => {
-  it("boots with an empty imports list", () => {
+  it("hosts no feature module yet", () => {
     expect({{PASCAL}}Module.imports).toEqual([]);
-  });
-
-  it("is the module package.json declares", async () => {
-    const declared: Record<string, unknown> = await import(
-      new URL(`../../${pkg.stackra.module}`, import.meta.url).href
-    );
-    expect(declared["{{PASCAL}}Module"]).toBe({{PASCAL}}Module);
   });
 });

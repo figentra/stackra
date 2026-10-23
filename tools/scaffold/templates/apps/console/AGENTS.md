@@ -2,8 +2,14 @@
 
 {{DESCRIPTION}} Console app at `apps/{{NAME}}` (`tier:app`).
 
-- Everything lives in `src/`; the `@/` alias points there. Tests sit beside the code in `__tests__/`.
-- Routes are code-based React Router 7 (`src/routes.tsx`); no file routing.
+- The programming model v3 shape (ADR 0294, 0295): `stackra.config.ts`, the root module `src/{{NAME}}.module.ts`,
+  and the app groups (`routes/<name>/`, `components/<name>/`, `config/`, `styles/`, …), each with its first file.
+- `src/main.tsx` and `index.html` are stand-ins for what gen writes (STA-339); keep them thin. Never add a `main.ts`
+  elsewhere or an entry barrel.
+- Imports that leave a folder use the `#src/*` alias of `package.json`; no `@/` alias (ADR 0233). Tests sit beside
+  the code in `__tests__/`.
+- A route is `routes/<name>/<name>.route.ts` (its path) plus its page `<name>.tsx`; React Router 7 data routers, no
+  file routing.
 - Screens are panel resources declared in modules (`@Resource`, `@Page`, `@Widget`) and drawn by the panel
   renderer. A hand-written page is the escape hatch, not the default.
 - UI comes from HeroUI v3 (`@stackra/ui` once it exists); styles are Tailwind v4 utilities. No other component

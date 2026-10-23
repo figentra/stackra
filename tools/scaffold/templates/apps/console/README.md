@@ -21,14 +21,19 @@ Dev and preview use port {{PORT}} (http://localhost:{{PORT}}).
 
 ## Structure
 
+The programming model v3 shape (ADR 0294 rule R12, decision 14):
+
 ```text
-index.html                         shell; sets the light/dark class before paint
+stackra.config.ts                  the app definition: targets, area, name (ADR 0295)
+index.html                         stand-in until gen writes it; sets the light/dark class before paint
 src/
-├── main.tsx                       mounts the browser router
-├── routes.tsx                     the code-based route table: one panel shell, its pages
-├── styles.css                     Tailwind + HeroUI styles
-└── components/panel-shell/        panel-shell.tsx, index.ts, __tests__/panel-shell.test.tsx
+├── {{NAME}}.module.ts             the root module
+├── main.tsx                       stand-in entry until gen writes .stackra/entry/browser.ts (STA-339)
+├── routes/home/                   home.route.ts (path), home.tsx (page), __tests__/
+├── components/panel-shell/        panel-shell.tsx, index.ts, __tests__/panel-shell.test.tsx
+└── styles/app.css                 Tailwind + HeroUI styles
 ```
 
-A component is a folder `x/{x.tsx, index.ts, __tests__/x.test.tsx}` exporting `XProps`. Run from the root with
-`pnpm --filter @figentra/{{NAME}} dev`.
+A route is a folder `routes/<name>/` with `<name>.route.ts` (or `<name>.layout.ts`) and its page `<name>.tsx`; until
+gen builds the route tree, `main.tsx` lists the routes. A component is a folder `x/{x.tsx, index.ts,
+__tests__/x.test.tsx}` exporting `XProps`. Run from the root with `pnpm --filter @figentra/{{NAME}} dev`.

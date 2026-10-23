@@ -1,6 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: public surface of the panel-shell component folder.
- * Owner: the app owner · Secrets: forbidden
+ * Purpose: public surface of the panel-shell component folder: the component and its Props only.
+ * Boundary: re-exports only.
+ * Runtime: browser
+ * Governing contract: ADR 0294 (decision 14).
  */
 export { PanelShell, type PanelShellProps } from "./panel-shell";

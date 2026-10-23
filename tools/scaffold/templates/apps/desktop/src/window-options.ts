@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: the options every window of @figentra/{{NAME}} opens with. The renderer gets no Node: context
  *          isolation and the sandbox stay on; hardware access goes through the main process (owner decision).
- * Owner: the app owner · Secrets: forbidden
+ * Boundary: builds the options object; opens no window. Part of the stand-in main process (src/main.ts).
+ * Runtime: node
+ * Governing contract: ADR 0251 (Electron hardening); ADR 0058 (desktop is Electron).
  */
 import type { BrowserWindowConstructorOptions } from "electron";
 
