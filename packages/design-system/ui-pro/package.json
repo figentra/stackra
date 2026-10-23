@@ -117,31 +117,54 @@
     "@heroui/styles": "catalog:frontend",
     "@internationalized/date": "catalog:mobile",
     "@internationalized/number": "catalog:mobile",
+    "@number-flow/react": "catalog:frontend",
+    "@shopify/react-native-skia": "catalog:mobile",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
     "@testing-library/dom": "catalog:frontend",
     "@testing-library/react": "catalog:frontend",
+    "@tiptap/core": "catalog:frontend",
+    "@tiptap/extension-link": "catalog:frontend",
+    "@tiptap/extension-underline": "catalog:frontend",
+    "@tiptap/extensions": "catalog:frontend",
+    "@tiptap/pm": "catalog:frontend",
+    "@tiptap/react": "catalog:frontend",
+    "@tiptap/starter-kit": "catalog:frontend",
+    "@tiptap/suggestion": "catalog:frontend",
     "@types/node": "catalog:",
     "@types/react": "catalog:frontend",
     "@types/react-dom": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",
+    "embla-carousel": "catalog:frontend",
+    "embla-carousel-react": "catalog:frontend",
     "heroui-native": "catalog:mobile",
     "heroui-native-pro": "catalog:mobile",
     "jsdom": "catalog:frontend",
+    "libphonenumber-js": "catalog:mobile",
+    "maplibre-gl": "catalog:frontend",
+    "marked": "catalog:frontend",
     "motion": "catalog:frontend",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
     "react": "catalog:frontend",
     "react-aria-components": "catalog:frontend",
     "react-dom": "catalog:frontend",
+    "react-markdown": "catalog:frontend",
     "react-native": "catalog:mobile",
+    "react-native-pager-view": "catalog:mobile",
+    "react-native-reanimated-dnd": "catalog:mobile",
     "react-resizable-panels": "catalog:frontend",
     "recharts": "catalog:frontend",
+    "remark-breaks": "catalog:frontend",
+    "remark-gfm": "catalog:frontend",
+    "shiki": "catalog:frontend",
+    "streamdown": "catalog:frontend",
     "tailwindcss": "catalog:frontend",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "uniwind": "catalog:mobile",
+    "victory-native": "catalog:mobile",
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
@@ -149,14 +172,37 @@
     "@heroui/react": "^3.2.6",
     "@internationalized/date": "^3.12.4",
     "@internationalized/number": "^3.6.9",
+    "@number-flow/react": "^0.6.2",
+    "@shopify/react-native-skia": "^2.6.2",
+    "@tiptap/core": "^3.32.0",
+    "@tiptap/extension-link": "^3.32.0",
+    "@tiptap/extension-underline": "^3.32.0",
+    "@tiptap/extensions": "^3.32.0",
+    "@tiptap/pm": "^3.32.0",
+    "@tiptap/react": "^3.32.0",
+    "@tiptap/starter-kit": "^3.32.0",
+    "@tiptap/suggestion": "^3.32.0",
+    "embla-carousel": "^8.6.0",
+    "embla-carousel-react": "^8.6.0",
     "heroui-native": "^1.0.10",
     "heroui-native-pro": "^1.0.0-beta.11",
+    "libphonenumber-js": "^1.13.15",
+    "maplibre-gl": "^6.14.0",
+    "marked": "^18.1.1",
     "motion": "^12.43.0",
     "react": ">=19.2.0",
+    "react-markdown": "^10.1.0",
     "react-native": ">=0.86.0",
+    "react-native-pager-view": "^8.0.2",
+    "react-native-reanimated-dnd": "^2.0.0",
     "react-resizable-panels": "^4.14.5",
     "recharts": "^3.10.1",
-    "uniwind": "^1.12.1"
+    "remark-breaks": "^4.0.0",
+    "remark-gfm": "^4.0.1",
+    "shiki": "^4.5.0",
+    "streamdown": "^2.7.0",
+    "uniwind": "^1.12.1",
+    "victory-native": "^41.26.0"
   },
   "peerDependenciesMeta": {
     "@heroui-pro/react": {
@@ -171,16 +217,70 @@
     "@internationalized/number": {
       "optional": true
     },
+    "@number-flow/react": {
+      "optional": true
+    },
+    "@shopify/react-native-skia": {
+      "optional": true
+    },
+    "@tiptap/core": {
+      "optional": true
+    },
+    "@tiptap/extension-link": {
+      "optional": true
+    },
+    "@tiptap/extension-underline": {
+      "optional": true
+    },
+    "@tiptap/extensions": {
+      "optional": true
+    },
+    "@tiptap/pm": {
+      "optional": true
+    },
+    "@tiptap/react": {
+      "optional": true
+    },
+    "@tiptap/starter-kit": {
+      "optional": true
+    },
+    "@tiptap/suggestion": {
+      "optional": true
+    },
+    "embla-carousel": {
+      "optional": true
+    },
+    "embla-carousel-react": {
+      "optional": true
+    },
     "heroui-native": {
       "optional": true
     },
     "heroui-native-pro": {
       "optional": true
     },
+    "libphonenumber-js": {
+      "optional": true
+    },
+    "maplibre-gl": {
+      "optional": true
+    },
+    "marked": {
+      "optional": true
+    },
     "motion": {
       "optional": true
     },
+    "react-markdown": {
+      "optional": true
+    },
     "react-native": {
+      "optional": true
+    },
+    "react-native-pager-view": {
+      "optional": true
+    },
+    "react-native-reanimated-dnd": {
       "optional": true
     },
     "react-resizable-panels": {
@@ -189,7 +289,22 @@
     "recharts": {
       "optional": true
     },
+    "remark-breaks": {
+      "optional": true
+    },
+    "remark-gfm": {
+      "optional": true
+    },
+    "shiki": {
+      "optional": true
+    },
+    "streamdown": {
+      "optional": true
+    },
     "uniwind": {
+      "optional": true
+    },
+    "victory-native": {
       "optional": true
     }
   }
