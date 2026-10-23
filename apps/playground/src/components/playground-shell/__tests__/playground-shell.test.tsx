@@ -19,7 +19,14 @@ function renderShell(url: string) {
   const router = createMemoryRouter(
     [
       {
-        element: <PlaygroundShell pages={[{ path: "/a", title: "Page A" }]} />,
+        element: (
+          <PlaygroundShell
+            pages={[
+              { path: "/a", title: "Page A" },
+              { path: "/b", title: "Page B", group: "Pro" },
+            ]}
+          />
+        ),
         children: [
           { path: "/", element: <h1>Child page</h1> },
           { path: "/a", element: <h1>Page A</h1> },
@@ -54,6 +61,14 @@ describe("PlaygroundShell", () => {
     expect(screen.getByRole("link", { name: "Page A" }).getAttribute("href")).toBe(
       "/a?scheme=dark&locale=ar",
     );
+  });
+
+  it("lists grouped pages after the others, under their group's label", () => {
+    renderShell("/");
+    const pro = screen.getByRole("list", { name: "Pro" });
+    expect(pro.textContent).toBe("Page B");
+    const lists = screen.getByRole("navigation", { name: "Pages" }).querySelectorAll("ul");
+    expect([...lists].map((list) => list.textContent)).toEqual(["Page A", "Page B"]);
   });
 
   it("falls back to the system scheme and English for unknown values", () => {

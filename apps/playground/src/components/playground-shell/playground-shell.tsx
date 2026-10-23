@@ -5,10 +5,12 @@
  *          the @stackra/ui DesignSystemProvider, and draws the header with the display switcher, the page navigation
  *          and the outlet. The UI is English (`lang="en"`) while `<html>` carries the chosen locale and direction,
  *          so the layout mirrors as the locale's would. On a client-side route change it moves focus to the new
- *          page's h1, and it keeps the browser's theme-color in step with the scheme on screen.
+ *          page's h1, and it keeps the browser's theme-color in step with the scheme on screen. Pages with a `group`
+ *          (the `@stackra/ui-pro` pages, ADR 0304) are listed after the others under their group's label.
  * Boundary: layout and the switcher only; the pages come from the route folders.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 5); ADR 0165 (web client stack); ADR 0060 (light, dark, RTL).
+ * Governing contract: ADR 0302 (decision 5); ADR 0304 (decision 6); ADR 0165 (web client stack); ADR 0060 (light,
+ *          dark, RTL).
  */
 import { Link, RouterProvider, ToggleButton, ToggleButtonGroup, Toolbar } from "@heroui/react";
 import { STACKRA_THEME } from "@stackra/tokens";
@@ -57,6 +59,13 @@ function Choice({ id, children }: { id: string; children: ReactNode }) {
       )}
     </ToggleButton>
   );
+}
+
+/** The pages split by navigation group, in first-seen order; the ungrouped pages come first, under no label. */
+function byGroup(pages: readonly PageLink[]): readonly [string | undefined, PageLink[]][] {
+  const groups = new Map<string | undefined, PageLink[]>([[undefined, []]]);
+  for (const page of pages) groups.set(page.group, [...(groups.get(page.group) ?? []), page]);
+  return [...groups].filter(([, members]) => members.length > 0);
 }
 
 /** Props of {@link PlaygroundShell}. */
@@ -168,14 +177,26 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
             <DisplaySettings />
           </header>
           <div className="grid md:grid-cols-[14rem_1fr]">
-            <nav aria-label={STRINGS.pages} className="border-border p-4 md:border-e">
-              <ul className="grid gap-2">
-                {pages.map((page) => (
-                  <li key={page.path}>
-                    <Link href={`${page.path}${search}`}>{page.title}</Link>
-                  </li>
-                ))}
-              </ul>
+            <nav aria-label={STRINGS.pages} className="grid gap-4 border-border p-4 md:border-e">
+              {byGroup(pages).map(([group, members]) => {
+                const labelId = group ? `nav-group-${group.toLowerCase()}` : undefined;
+                return (
+                  <div key={group ?? ""} className="grid gap-2">
+                    {group ? (
+                      <p id={labelId} className="text-sm font-semibold text-muted">
+                        {group}
+                      </p>
+                    ) : null}
+                    <ul aria-labelledby={labelId} className="grid gap-2">
+                      {members.map((page) => (
+                        <li key={page.path}>
+                          <Link href={`${page.path}${search}`}>{page.title}</Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
             </nav>
             <main ref={main} id="main" tabIndex={-1} className="min-w-0 p-6">
               <Outlet />

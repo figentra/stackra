@@ -59,7 +59,7 @@ convention; no hook enforces it.
 
 In Infisical `/agents` (local):
 
-- `HEROUI_PERSONAL_TOKEN` - HeroUI Pro license
+- `HEROUI_PERSONAL_TOKEN` - HeroUI Pro MCP servers (installs use a `heroui-pro login` session, ADR 0304)
 - `GITHUB_PERSONAL_ACCESS_TOKEN` - GitHub MCP
 - `STRIPE_SECRET_KEY` - Stripe MCP (optional)
 - `CONTEXT7_API_KEY` - Context7 MCP
@@ -68,6 +68,7 @@ In Infisical `/agents` (local):
 In Infisical `/ci` (CI/CD):
 
 - `TURBO_TOKEN` - Turborepo remote cache
+- `HEROUI_AUTH_TOKEN` - HeroUI Pro CI/CD token for the Quality Gate install (ADR 0304)
 - `CLOUDFLARE_API_TOKEN` - Cloudflare Worker deploys from CI (ADR 0284, ADR 0289)
 - `ENCORE_API_KEY` - Encore deployment, once a deploy path exists (DP2)
 - `SENTRY_AUTH_TOKEN` - Sentry releases (optional)

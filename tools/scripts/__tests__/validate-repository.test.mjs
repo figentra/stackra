@@ -61,6 +61,38 @@ test("dependencies replaced by Accepted ADRs are forbidden", () => {
   }
 });
 
+test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0304)", () => {
+  const pro = (dir, pkg) => check({ ...ok, dir, pkg }).filter((m) => /HeroUI Pro|private/.test(m));
+  const wrapper = { name: "@stackra/ui-pro", private: true };
+  for (const dep of ["@heroui-pro/react", "heroui-native-pro", "@stackra/ui-pro"]) {
+    assert.deepEqual(
+      pro("packages/design-system/ui", {
+        name: "@stackra/ui",
+        devDependencies: { [dep]: "catalog:" },
+      }),
+      [
+        `devDependencies.${dep} is HeroUI Pro: only apps and @stackra/ui-pro may depend on it (ADR 0304)`,
+      ],
+      dep,
+    );
+    assert.deepEqual(
+      pro("apps/playground", { name: "@figentra/playground", dependencies: { [dep]: "catalog:" } }),
+      [],
+    );
+  }
+  const ui = "packages/design-system/ui-pro";
+  assert.deepEqual(
+    pro(ui, { ...wrapper, devDependencies: { "@heroui-pro/react": "catalog:frontend" } }),
+    [],
+  );
+  assert.deepEqual(pro(ui, { name: "@stackra/ui-pro" }), [
+    '@stackra/ui-pro must be "private": true with no publishConfig (ADR 0304)',
+  ]);
+  assert.deepEqual(pro(ui, { ...wrapper, publishConfig: { access: "public" } }), [
+    '@stackra/ui-pro must be "private": true with no publishConfig (ADR 0304)',
+  ]);
+});
+
 const named = (dir, name) =>
   check({ ...ok, dir, pkg: { name } }).filter((m) => /package name/.test(m));
 
@@ -114,6 +146,13 @@ const filesOk = {
 };
 
 test("a complete member has no file findings", () => assert.deepEqual(checkFiles(filesOk), []));
+
+test("the private HeroUI Pro wrapper needs no publishConfig; any other package does (ADR 0304)", () => {
+  const { publishConfig: _, ...unpublished } = filesOk.pkg;
+  const at = (name) => checkFiles({ ...filesOk, pkg: { ...unpublished, name } });
+  assert.deepEqual(at("@stackra/ui-pro"), []);
+  assert.equal(at("@stackra/search").length, 1);
+});
 
 test("missing files, PII, license drift, manifest hygiene", () => {
   const f = checkFiles({

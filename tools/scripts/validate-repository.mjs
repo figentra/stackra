@@ -57,6 +57,15 @@ export const FORBIDDEN_DEPENDENCIES = [
   "@opensearch-project/opensearch", // 0089
 ];
 
+/**
+ * HeroUI Pro and its wrapper package (ADR 0304, ADR 0197): only apps and the private `@stackra/ui-pro` may depend on
+ * them, and only apps on `@stackra/ui-pro`; a free or published package never does (ADR 0165 decision 5).
+ */
+export const PRO_DEPENDENCIES = ["@heroui-pro/react", "heroui-native-pro", "@stackra/ui-pro"];
+
+/** The one package that wraps HeroUI Pro; it stays private and unpublished (ADR 0304 decision 1). */
+const PRO_WRAPPER = "@stackra/ui-pro";
+
 const DEPENDENCY_FIELDS = [
   "dependencies",
   "devDependencies",
@@ -103,6 +112,15 @@ export function check({ dir, pkg, turbo, tsconfig }) {
     for (const [dep, version] of Object.entries(pkg[field] ?? {})) {
       if (FORBIDDEN_DEPENDENCIES.includes(dep))
         out.push(`${field}.${dep} is a forbidden dependency`);
+      const isApp = dir.startsWith("apps/");
+      if (
+        PRO_DEPENDENCIES.includes(dep) &&
+        !isApp &&
+        (pkg.name !== PRO_WRAPPER || dep === PRO_WRAPPER)
+      )
+        out.push(
+          `${field}.${dep} is HeroUI Pro: only apps and ${PRO_WRAPPER} may depend on it (ADR 0304)`,
+        );
       // peerDependencies state a compatible range for consumers; they cannot name a catalog.
       if (field === "peerDependencies") continue;
       if (!version.startsWith("catalog:") && !version.startsWith("workspace:"))
@@ -111,6 +129,9 @@ export function check({ dir, pkg, turbo, tsconfig }) {
         );
     }
   }
+
+  if (pkg.name === PRO_WRAPPER && (pkg.private !== true || pkg.publishConfig))
+    out.push(`${PRO_WRAPPER} must be "private": true with no publishConfig (ADR 0304)`);
 
   const tier = tierFor(dir);
   if (tier === null) return out;
@@ -160,10 +181,12 @@ export function checkFiles({ dir, pkg, files, agents, licenseText, rootLicense }
         'package.json repository must be { type: "git", url: "git+https://github.com/figentra/stackra.git", directory } (ADR 0177)',
       );
     const pc = pkg.publishConfig ?? {};
+    // ADR 0304: the HeroUI Pro wrapper is never published, so it carries no publishConfig (`check` refuses one).
     if (
-      pc.access !== "public" ||
-      pc.provenance !== true ||
-      pc.registry !== "https://registry.npmjs.org/"
+      pkg.name !== PRO_WRAPPER &&
+      (pc.access !== "public" ||
+        pc.provenance !== true ||
+        pc.registry !== "https://registry.npmjs.org/")
     )
       out.push(
         'package.json publishConfig must be { "access": "public", "provenance": true, "registry": "https://registry.npmjs.org/" } (ADR 0177)',

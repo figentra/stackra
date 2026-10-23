@@ -7,6 +7,13 @@ description: "Accepted · 2026-10-20"
   Supersedes [0113](/adr/0113-heroui-pro-distribution). Closes gap C14 and contradiction C-22.
 </Note>
 
+<Note>
+  Amended by [0304](/adr/0304-stackra-ui-pro-private-heroui-pro-wrappers). Decision 4 changes: our
+  apps install HeroUI Pro with a `heroui-pro login` session locally and with `HEROUI_AUTH_TOKEN` in
+  CI. `HEROUI_PERSONAL_TOKEN` is used only by the HeroUI MCP servers. The Enforcement line below is
+  met by the check that 0304 names. Decisions 1 to 3 and the OEM question (STA-41) stand.
+</Note>
+
 ## Context
 
 [0113](/adr/0113-heroui-pro-distribution) (Accepted) let HeroUI Pro reach customers through a mirror bundle and a bring-your-own-key option. The owner's answer OR9 (mem L579, 2026-10-20) suspends that until the OEM request (STA-41) is answered.

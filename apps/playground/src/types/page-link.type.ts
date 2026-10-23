@@ -13,4 +13,6 @@ export interface PageLink {
   readonly path: string;
   /** The page title, which is also its h1. */
   readonly title: string;
+  /** The navigation group the page sits under, such as `Pro`; a page without one is listed first. */
+  readonly group?: string;
 }

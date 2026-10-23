@@ -74,8 +74,10 @@ jobs:
       # (`privatePackages: { version: false, tag: false }`). On the merge run `changeset publish` (pnpm native publish) (after the Build step
       # above, which produces each dist) publishes every package with "private": false to npmjs
       # with provenance and tags it; the action pushes the tags and creates the GitHub releases.
+      # Only what is published: the packages. The private HeroUI Pro wrapper (ADR 0304) and the apps need the HeroUI
+      # Pro build, which this job never downloads; none of them is published.
       - name: Build
-        run: pnpm build
+        run: pnpm turbo run build --filter='./packages/**' --filter='!@stackra/ui-pro'
 
       - name: Publish dry run
         if: inputs.dry_run == true

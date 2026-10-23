@@ -4,7 +4,9 @@
 #          knip, secrets scan, agent sync). Branch protection requires the `Quality Gate` job by name;
 #          never rename it. `deploy-staging` is a placeholder that deploys nothing.
 # Owner: release-operations
-# Secrets: none. contents: read only; no OIDC token, no repository secret.
+# Secrets: HEROUI_AUTH_TOKEN (HeroUI's CI/CD token) from Infisical /ci (env prod) through GitHub OIDC, for the
+#          install step only: the HeroUI Pro postinstall downloads the licensed build with it (ADR 0304). No repository
+#          secret; the Infisical identity id is the non-secret repository variable INFISICAL_GATE_IDENTITY_ID.
 name: CI
 
 on:
@@ -19,7 +21,8 @@ on:
   merge_group:
     types: [checks_requested]
 
-# ADR 0019 D2: least privilege. Nothing in the gate writes to the repository or holds an OIDC token.
+# ADR 0019 D2: least privilege. Nothing in the gate writes to the repository; the gate job alone holds an OIDC token,
+# for the Infisical step (ADR 0304).
 permissions:
   contents: read
 
@@ -29,6 +32,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write # ADR 0304: GitHub OIDC token, exchanged with Infisical for HEROUI_AUTH_TOKEN only
+    env:
+      # Non-secret id of the Infisical machine identity that may read HEROUI_AUTH_TOKEN in /ci (ADR 0304 decision 8).
+      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
 
     steps:
       # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
@@ -44,6 +51,28 @@ jobs:
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
           install_args: node pnpm gitleaks shfmt
+
+      # Without the HeroUI Pro build, @stackra/ui-pro and the playground cannot typecheck or build; stop here with the
+      # reason instead of failing later on missing types.
+      - name: HeroUI Pro prerequisites
+        if: env.INFISICAL_IDENTITY_ID == ''
+        run: >-
+          echo "::error title=HeroUI Pro token unavailable::Repository variable INFISICAL_GATE_IDENTITY_ID is not set.
+          The install needs HEROUI_AUTH_TOKEN from Infisical /ci (ADR 0304)." && exit 1
+
+      # Exchanges this job's OIDC token for Infisical access and exports only HEROUI_AUTH_TOKEN into the environment of
+      # later steps; the HeroUI Pro postinstall reads it. The secret-name filter keeps every other /ci value out.
+      - name: HeroUI Pro token (Infisical OIDC)
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: https://eu.infisical.com # .infisical.yaml: Infisical Cloud EU
+          project-id: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
+          env-slug: prod
+          secret-path: /ci
+          secret-name: HEROUI_AUTH_TOKEN
+          export-type: env
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
