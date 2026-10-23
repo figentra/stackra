@@ -58,11 +58,11 @@ const fill = (c) =>
 decideBash("git status", { cwd: wt }); // warm the module before anything is timed
 
 /** Every case `[command, want]` that decides otherwise or too slowly, as readable lines. */
-function wrong(cases, cwd = wt, subagent = false) {
+function wrong(cases, cwd = wt) {
   const out = [];
   for (const [c, want] of cases) {
     const [t, git] = [performance.now(), gitMs];
-    const { decision, reason } = decideBash(fill(c), { cwd, subagent, scratchpad });
+    const { decision, reason } = decideBash(fill(c), { cwd, scratchpad });
     const ms = performance.now() - t - (gitMs - git);
     if (decision !== want) out.push(`${decision} (want ${want}) ${c}  [${reason.slice(0, 60)}]`);
     if (ms >= LIMIT_MS) out.push(`${ms.toFixed(0)} ms (limit ${LIMIT_MS}) ${c}`);
@@ -131,8 +131,8 @@ const WRAPPED = [
   ["pnpm <bin>", (c) => `pnpm ${c}`],
   ["mise exec --", (c) => `mise exec -- ${c}`],
   ["mise x node@22 --", (c) => `mise x node@22 -- ${c}`],
-  ["npx", (c) => `npx ${c}`, true],
-  ["npm exec --", (c) => `npm exec -- ${c}`, true],
+  ["npx", (c) => `npx ${c}`],
+  ["npm exec --", (c) => `npm exec -- ${c}`],
   // shell structure
   ["( )", (c) => `(${c})`],
   ["{ }", (c) => `{ ${c}; }`],
@@ -185,52 +185,67 @@ const GUARDED = [
   ["cat apps/x/.dev.vars", "deny"],
   ["cat ~/.git-credentials", "deny"],
   ["cat tls.pem", "deny"],
+  // STA-400: only deletes and deploys (`HUMAN_ASKS`) ask; the other categorical asks are allowed
   ["wrangler deploy", "ask"],
-  ["infisical run -- node x.js", "ask"],
   ["encore db reset", "ask"],
-  ["git config user.email t@t", "ask"],
+  ["infisical run -- node x.js", "deny"],
+  ["infisical --domain https://eu.infisical.com secrets get FOO", "deny"],
+  ["infisical --domain https://eu.infisical.com run -- node x.js", "deny"],
+  ["wrangler@3 pages deployment create dist", "ask"],
+  ["eas workflow:run deploy.yml", "ask"],
+  ["eas update:rollback", "ask"],
+  ["eas-cli@latest channel:rollout production", "ask"],
+  ["eas update:list", "allow"],
+  ["git config user.email t@t", "allow"],
   ["rm -rf node_modules dist", "allow"],
   ["git reset --hard", "allow"],
   ["git checkout .", "allow"],
-  ["git clean -fd", "allow"],
+  ["git clean -fd", "ask"],
+  ["rm -f a.txt", "ask"],
+  ["rm -r src", "ask"],
+  ["find . -name '*.tsbuildinfo' -delete", "ask"],
+  ["wrangler@3.1.0 deploy", "ask"],
+  ["eas-cli@latest submit", "ask"],
+  ["npm publish", "ask"],
   ["pnpm bot:git -- push origin HEAD", "allow"],
   ["pnpm bot:git -- push --force-with-lease origin HEAD", "allow"],
 ];
-const strictest = (a, b) =>
-  a === "deny" || b === "deny" ? "deny" : a === "ask" || b === "ask" ? "ask" : "allow";
+/**
+ * OpenCode executors (`executor`): the categorical asks STA-400 allows for Claude stay denied under every wrapper the
+ * shared rules read through (STA-400 review: `env`, `timeout`, `mise exec --`, `pnpm exec`, `xargs`, node on the
+ * import script).
+ */
+const EXECUTOR_DENIED = [
+  "npx tsc",
+  "pnpm dlx some-tool",
+  "eas build --platform ios",
+  "wrangler secret list",
+  "wrangler d1 execute db --remote --command x",
+  "encore env set prod",
+  "infisical run -- node x.js",
+  "infisical --log-level debug run -- node x.js",
+  "./node_modules/.bin/eas build",
+  "node tools/scripts/secrets-import.mjs X --env prod --confirm abc",
+  "pnpm secrets:import X --env prod --confirm abc",
+];
+test("differential: an OpenCode executor is denied the categorical asks under every wrapper", () => {
+  const out = [];
+  for (const [name, wrap] of WRAPPED)
+    for (const c of EXECUTOR_DENIED) {
+      const { decision } = decideBash(fill(wrap(c)), { cwd: wt, scratchpad, executor: true });
+      if (decision !== "deny") out.push(`${decision} ${name}: ${c}`);
+    }
+  for (const c of ["xargs npx tsc", "find . -name x | xargs npx tsc"])
+    if (decideBash(c, { cwd: wt, executor: true }).decision !== "deny") out.push(`allow ${c}`);
+  assert.deepEqual(out, []);
+});
+
+/** A wrapper the guard cannot read (a shell reading piped text) is a deny with the rewrite hint, whatever it runs. */
+const tier = (want, asks) => (asks ? "deny" : want);
 
 for (const [name, wrap, asks] of WRAPPED)
   test(`differential: ${name} x every guarded command`, () =>
-    assert.deepEqual(
-      wrong(GUARDED.map(([c, want]) => [wrap(c), strictest(want, asks ? "ask" : "allow")])),
-      [],
-    ));
-
-/** Guarded commands whose ask reaches a human from a subagent too (`HUMAN_ASKS`); every other ask is a deny. */
-const HUMAN = new Set(["wrangler deploy", "encore db reset"]);
-const SUBAGENT_WRAPPERS = new Set([
-  "bare",
-  "sh -c",
-  "ssh",
-  "pnpm exec",
-  "npx",
-  "$( )",
-  "echo | sh",
-]);
-test("differential: from a subagent, every ask outside HUMAN_ASKS is a deny (STA-351)", () =>
-  assert.deepEqual(
-    WRAPPED.filter(([name]) => SUBAGENT_WRAPPERS.has(name)).flatMap(([, wrap, asks]) =>
-      wrong(
-        GUARDED.map(([c, want]) => {
-          const tier = strictest(want, asks ? "ask" : "allow");
-          return [wrap(c), tier === "ask" && !(HUMAN.has(c) && !asks) ? "deny" : tier];
-        }),
-        wt,
-        true,
-      ),
-    ),
-    [],
-  ));
+    assert.deepEqual(wrong(GUARDED.map(([c, want]) => [wrap(c), tier(want, asks)])), []));
 
 /** `c` wrapped `n` times in one-string wrappers, in turn, each quoting with `q`. */
 const ONE_STRING = [
@@ -387,7 +402,6 @@ const ALLOWED = [
   "git reset --hard",
   "git reset --hard origin/main",
   "git clean -n",
-  "git clean -fd",
   "git checkout .",
   "git stash",
   "git stash push -m wip",
@@ -511,9 +525,7 @@ const ALLOWED = [
   'rg -n "DROP DATABASE" apps/docs',
   "rg --files -g '*.json'",
   "find . -name '*.ts' -not -path './node_modules/*'",
-  "find . -name '*.tsbuildinfo' -delete",
   "find dist -delete",
-  "find . -name node_modules -prune -exec rm -rf {} +",
   "sed -n '1,80p' .agents/hooks/_rules.mjs",
   "awk '/^worktree/ {print $2}' list.txt",
   "diff -u a.txt b.txt",
@@ -530,7 +542,6 @@ const ALLOWED = [
   "rm -rf packages/a/node_modules",
   "rm -rf $SCRATCH/x",
   "rm -rf $SCRATCH",
-  "rm -f a.txt",
   // prose, output and quoted lines that run nothing guarded
   'echo "rm -rf / is denied; so is git stash pop"',
   "printf '%s\\n' \"git push origin main\"",
