@@ -33,9 +33,11 @@ description: "Accepted, amended by 0282, 0286, 0294, 0302 · 2026-10-20 · amend
   - Two named tool-hook subpaths, allowed only because the tool needs a module of a fixed shape:
     `@stackra/gen/metro-transformer` and `@stackra/platform/electron/after-pack`. A new tool-hook
     subpath needs an ADR.
-  - One package-specific exception: `@stackra/testing` also has `./e2e` and `./contract`
-    ([0269](/adr/0269-stackra-testing-package-entries-and-helper-placement) decision 6), for that
-    package only.
+  - Two package-specific exceptions, each for its package only: `@stackra/testing` also has
+    `./e2e` and `./contract` ([0269](/adr/0269-stackra-testing-package-entries-and-helper-placement)
+    decision 6), and `@stackra/icons` also has `./react/lucide-registry` and
+    `./native/lucide-registry` ([0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision
+    10).
 - **Kind bases and helpers:** `Port` and `Enum` live in `@stackra/contracts`; `Module` and
   `Service` in `@stackra/container`; the four `define*` functions of `stackra.config.ts` and
   `MigrationRunner` in `@stackra/contracts`. The kind helper in `@stackra/container` is
