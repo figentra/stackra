@@ -106,6 +106,8 @@ switcher and is covered by Playwright and axe. `@stackra/brand` is deleted; its 
 - **P-059**: A Popover places its content by side and alignment and closes as told, and a Tooltip describes the element and never names it — Validates: FR-110, FR-111
 - **P-060**: An Alert and a toast announce by tone, show the tone's icon and offer their actions, with every tone shown — Validates: FR-112, FR-113, FR-114, FR-115, FR-116
 - **P-061**: A ProgressBar and a ProgressCircle are named, determinate or indeterminate by their value, and still under reduced motion — Validates: FR-117, FR-118, FR-119, FR-120
+- **P-062**: A collection takes items, an empty state and a loading flag, reports its selection as a list of string ids and a sort as a column and a direction — Validates: FR-121
+- **P-063**: A selection becomes ids in the items' order, and a press on a column moves its sort from none to ascending to descending — Validates: FR-122
 
 ## Contracts and events
 

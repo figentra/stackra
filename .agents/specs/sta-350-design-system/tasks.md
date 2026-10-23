@@ -98,3 +98,9 @@ Linear issues: [STA-370] Modal and Drawer, [STA-371] AlertDialog and useConfirma
 - [x] T047 [US2] Popover and Tooltip, with their routes and e2e files — covers: FR-110, FR-111, P-059 — route: frontend — deps: T043
 - [x] T048 [US2] Toast and Alert, `liveRegionOf` and the feedback icon, with the `/toast` and `/alert` routes and e2e files — covers: FR-112, FR-113, FR-114, FR-115, FR-116, P-060 — route: frontend — deps: T043
 - [x] T049 [US2] ProgressBar and ProgressCircle: contracts, `progressStateOf`, the web and native components, and their routes with e2e files — covers: FR-117, FR-118, FR-119, FR-120, P-061 — route: frontend — deps: T043
+
+## Phase 13: Wave 5 foundation (ADR 0313)
+
+Linear issues: [STA-376] Table, [STA-377] List and ListItem, [STA-378] PropertyList, [STA-379] Tabs and Accordion, [STA-380] CursorPagination and Breadcrumbs, [STA-381] EmptyState, ErrorState and PageSkeleton.
+
+- [x] T050 [US2] The shared collection, selection and sort contracts, `keysOfSelection` and `nextSortDescriptor` in `packages/design-system/ui/src`, the Data playground category and ADR 0313 — covers: FR-121, FR-122, P-062, P-063 — route: frontend — deps: T043

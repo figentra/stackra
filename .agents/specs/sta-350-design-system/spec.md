@@ -476,6 +476,15 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
   every tone and size, and an advance-and-reset example that announces its completion, and axe SHALL report
   nothing — verified by: unit, e2e
 
+- **FR-121**: `@stackra/ui/contracts` SHALL hold the props every wave 5 collection shares: `CollectionContractProps`
+  (`items` of a `CollectionItem` with a string `id`, `emptyState`, `isLoading` and `loadingLabel`),
+  `SelectionContractProps` (`selectionMode`, and `selectedKeys`, `defaultSelectedKeys` and `onSelectionChange` as lists
+  of string ids, never a `Set`) and `SortDescriptor` (a column `id` and a `SortDirection`, `ascending` or
+  `descending`), each optional but `items` — verified by: unit, typecheck
+- **FR-122**: `keysOfSelection` SHALL turn a React Aria or HeroUI Native selection into a list of ids (`"all"` becomes
+  every id, a `Set` follows the items' order), and `nextSortDescriptor` SHALL start an unsorted column ascending and
+  flip an ascending one to descending — verified by: unit, typecheck
+
 ## Success Criteria
 
 - **SC-001**: `pnpm verify` is green with the change — verified by: CI (Quality Gate)
@@ -525,3 +534,4 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
 - 2026-10-23 · Tasked → Implementing · Claude (spec-writer) · setup pull request under way
 - 2026-10-23 · Implementing · Claude (frontend-builder) · wave 4 foundation: FR-096, FR-097 (ADR 0312)
 - 2026-10-24 · Implementing · Claude (frontend-builder) · wave 4 components: FR-098 to FR-120, SC-008 to SC-010
+- 2026-10-24 · Implementing · Claude (frontend-builder) · wave 5 foundation: FR-121, FR-122 (ADR 0313)

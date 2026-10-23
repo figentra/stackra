@@ -24,6 +24,7 @@ export { Placement } from "#contracts/enums/placement.enum";
 export { SeparatorVariant } from "#contracts/enums/separator-variant.enum";
 export { Size } from "#contracts/enums/size.enum";
 export { SkeletonAnimation } from "#contracts/enums/skeleton-animation.enum";
+export { SortDirection } from "#contracts/enums/sort-direction.enum";
 export { SurfaceVariant } from "#contracts/enums/surface-variant.enum";
 export { TagVariant } from "#contracts/enums/tag-variant.enum";
 export { TextAlign } from "#contracts/enums/text-align.enum";
@@ -48,6 +49,8 @@ export type { CheckboxGroupContractProps } from "#contracts/types/checkbox-group
 export type { ChipContractProps } from "#contracts/types/chip-contract-props.type";
 export type { ChoiceOption } from "#contracts/types/choice-option.type";
 export type { CloseButtonContractProps } from "#contracts/types/close-button-contract-props.type";
+export type { CollectionContractProps } from "#contracts/types/collection-contract-props.type";
+export type { CollectionItem } from "#contracts/types/collection-item.type";
 export type {
   ComboBoxBaseContractProps,
   ComboBoxContractProps,
@@ -94,9 +97,11 @@ export type { RadioGroupContractProps } from "#contracts/types/radio-group-contr
 export type { SearchFieldContractProps } from "#contracts/types/search-field-contract-props.type";
 export type { SelectContractProps } from "#contracts/types/select-contract-props.type";
 export type { SelectItem } from "#contracts/types/select-item.type";
+export type { SelectionContractProps } from "#contracts/types/selection-contract-props.type";
 export type { SeparatorContractProps } from "#contracts/types/separator-contract-props.type";
 export type { SkeletonContractProps } from "#contracts/types/skeleton-contract-props.type";
 export type { SkeletonGroupContractProps } from "#contracts/types/skeleton-group-contract-props.type";
+export type { SortDescriptor } from "#contracts/types/sort-descriptor.type";
 export type { SpinnerContractProps } from "#contracts/types/spinner-contract-props.type";
 export type { StatusBadgeContractProps } from "#contracts/types/status-badge-contract-props.type";
 export type { SurfaceContractProps } from "#contracts/types/surface-contract-props.type";
