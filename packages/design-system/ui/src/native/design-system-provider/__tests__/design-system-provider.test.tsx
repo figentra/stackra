@@ -11,7 +11,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 3); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
-// @covers sta-350:FR-009 sta-350:FR-015 sta-350:P-006 sta-350:P-014
+// @covers sta-350:FR-009 sta-350:FR-015 sta-350:FR-095 sta-350:P-006 sta-350:P-014
 import { act, render, screen } from "@testing-library/react";
 import { useEffect, type ReactNode } from "react";
 

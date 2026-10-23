@@ -18,6 +18,7 @@ import {
   Select as HeroSelect,
   type SelectRootProps,
 } from "@heroui/react";
+import type { KeyboardEvent } from "react";
 import { Text } from "react-aria-components";
 
 import type { SelectContractProps } from "#contracts/types/select-contract-props.type";
@@ -48,9 +49,18 @@ function SelectOption({ item }: { readonly item: SelectItem }) {
   );
 }
 
+/** Stops the keys that would change a closed Select's value: the arrows and any printable character (type-ahead). */
+function refuseChangingKey(event: KeyboardEvent<HTMLElement>) {
+  const isPrintable = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
+  if (isPrintable || event.key === "ArrowLeft" || event.key === "ArrowRight") {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+}
+
 /**
  * A field that picks one key from a short list. The value is the chosen key, or `null` for nothing; `onChange` is
- * called with the key as a string. A read-only field shows its value but never opens.
+ * called with the key as a string. A read-only field shows its value but never opens or changes, by pointer or keyboard.
  */
 export function Select({
   items,
@@ -70,6 +80,9 @@ export function Select({
   ...rest
 }: SelectProps) {
   return (
+    // React Aria's Select has no read-only state: its closed trigger still picks a key from ArrowLeft, ArrowRight and
+    // type-ahead. The capture handler stops those keys before they reach it; `contents` keeps the wrapper out of layout.
+    <div className="contents" onKeyDownCapture={isReadOnly ? refuseChangingKey : undefined}>
     <HeroSelect
       {...rest}
       {...omitUndefined({
@@ -82,11 +95,12 @@ export function Select({
         name,
       })}
       fullWidth={isFullWidth ?? false}
-      // React Aria's Select has no read-only state: a list that cannot open shows the value and keeps focus, and the
-      // hidden select still submits it.
+      // A list that cannot open shows the value and keeps focus, and the hidden select still submits it.
       {...(isReadOnly ? { isOpen: false } : {})}
       // `Key` is a string or number in React Aria; the contract's keys are strings, so the number case never arises.
-      onChange={(key) => onChange?.(key === null ? null : String(key))}
+      onChange={(key) => {
+        if (!isReadOnly) onChange?.(key === null ? null : String(key));
+      }}
     >
       {label ? <Label>{label}</Label> : null}
       <HeroSelect.Trigger>
@@ -108,5 +122,6 @@ export function Select({
         </ListBox>
       </HeroSelect.Popover>
     </HeroSelect>
+    </div>
   );
 }

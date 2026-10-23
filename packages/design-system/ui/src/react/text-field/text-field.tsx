@@ -48,7 +48,7 @@ export function TextField({
       {label == null ? null : <Label>{label}</Label>}
       <Input {...omitUndefined({ placeholder })} />
       {description == null ? null : <Description>{description}</Description>}
-      {errorMessage == null ? null : <FieldError>{errorMessage}</FieldError>}
+      {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
     </HeroTextField>
   );
 }

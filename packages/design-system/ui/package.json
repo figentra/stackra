@@ -171,9 +171,6 @@
     "react-aria-components": {
       "optional": true
     },
-    "react-hook-form": {
-      "optional": true
-    },
     "react-native": {
       "optional": true
     },

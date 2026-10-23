@@ -162,6 +162,22 @@ describe("ComboBox (web)", () => {
     expect(tags()).toEqual(["ar", "au"]);
   });
 
+  it("names the tag grid by a node label through aria-labelledby", () => {
+    render(
+      <ComboBox
+        items={ITEMS}
+        label={<em>Country</em>}
+        selectionMode="multiple"
+        defaultValue={["ar"]}
+      />,
+    );
+    const grid = screen.getByRole("grid");
+    expect(grid.getAttribute("aria-label")).toBeNull();
+    expect(document.getElementById(grid.getAttribute("aria-labelledby") ?? "")?.textContent).toBe(
+      "Country",
+    );
+  });
+
   it("removes a tag with its remove button, named by React Aria with the tag's text", () => {
     const onChange = vi.fn();
     render(

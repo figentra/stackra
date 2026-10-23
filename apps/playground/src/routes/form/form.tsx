@@ -3,10 +3,10 @@
  * Purpose: the page of the form route: the Label in each state, a Description tied to its field, a FieldError shown and
  *          hidden by `isInvalid`, and one live Form with a text box, a text area and a submit button, whose switch turns
  *          on submitting by Cmd or Ctrl plus Enter, all from `@stackra/ui/react` with real props.
- * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. The controls are plain `input`
- *          and `textarea` elements dressed with HeroUI's own `input` class, standing in until the text field ships, so
- *          the parts' wiring (`htmlFor`, `aria-describedby`, `id`) is the page's own and shows how a plain control is
- *          tied to them. Every disabled label sits beside a disabled control, as the rule for a disabled name requires.
+ * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. The text controls are plain `input`
+ *          and `textarea` elements dressed with HeroUI's own `input` class, on purpose: the parts' wiring (`htmlFor`,
+ *          `aria-describedby`, `id`) is the page's own and shows how a plain control is tied to them, while the switch
+ *          is the design system's own. Every disabled label sits beside a disabled control, as the rule for a disabled name requires.
  * Runtime: browser
  * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0055 (forms); ADR 0060 (light, dark,
  *          RTL); WCAG 2.2 SC 1.3.1, 3.3.1 and 3.3.3.
@@ -219,16 +219,7 @@ export function Form() {
             />
             <Ui.Description id="notes-hint">{STRINGS.notesHint}</Ui.Description>
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={isModEnter}
-              onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                setIsModEnter(event.target.checked)
-              }
-            />
-            <span>{STRINGS.modEnter}</span>
-          </label>
+          <Ui.Switch label={STRINGS.modEnter} value={isModEnter} onChange={setIsModEnter} />
           <div className="flex flex-wrap items-center gap-4">
             <Ui.Button type="submit">{STRINGS.submit}</Ui.Button>
             <Ui.Text tone="muted">

@@ -51,7 +51,8 @@ export function bindFormField<TValue>(
     onChange: field.onChange,
     onBlur: field.onBlur,
     isInvalid: fieldState.invalid,
-    errorMessage: fieldState.error?.message,
+    // `rules: { required: true }` gives an empty message; an empty node would leave the red field with no text to read.
+    errorMessage: fieldState.error?.message || undefined,
     isRequired: typeof required === "object" ? Boolean(required.value) : Boolean(required),
     isDisabled: field.disabled,
   };

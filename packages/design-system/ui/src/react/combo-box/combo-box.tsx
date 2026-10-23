@@ -25,7 +25,7 @@ import {
   ComboBox as HeroComboBox,
   type ComboBoxRootProps,
 } from "@heroui/react";
-import type { ReactNode } from "react";
+import { type ReactNode, useId } from "react";
 import { Text as AriaText, type Key } from "react-aria-components";
 
 import type { ComboBoxContractProps } from "#contracts/types/combo-box-contract-props.type";
@@ -98,6 +98,7 @@ export function ComboBox({
   name,
   ...rest
 }: ComboBoxProps) {
+  const labelId = useId();
   const labelOf = (key: unknown) => items.find((item) => item.id === String(key))?.label ?? "";
   const list = (
     <ListBox
@@ -119,7 +120,7 @@ export function ComboBox({
   );
   const body: ReactNode = (
     <>
-      {label ? <Label>{label}</Label> : null}
+      {label ? <Label id={labelId}>{label}</Label> : null}
       <HeroComboBox.InputGroup>
         <Input {...omitUndefined({ placeholder })} />
         <HeroComboBox.Trigger />
@@ -129,8 +130,11 @@ export function ComboBox({
           {({ state }) =>
             state.selectionManager.selectedKeys.size === 0 ? null : (
               <TagGroup
-                // The group is a grid, which needs a name; a node label has none to give, so `aria-label` stands in.
-                aria-label={typeof label === "string" ? label : (rest["aria-label"] ?? "")}
+                // The group is a grid, which needs a name: a string label or the caller's `aria-label` gives it as
+                // text, and a node label, which has none to give, is pointed at by id.
+                {...(typeof label === "string" || rest["aria-label"] || !label
+                  ? { "aria-label": typeof label === "string" ? label : (rest["aria-label"] ?? "") }
+                  : { "aria-labelledby": labelId })}
                 {...(isDisabled || isReadOnly
                   ? {}
                   : {

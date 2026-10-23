@@ -11,7 +11,7 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-075 sta-350:FR-076
-import { act, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { createRef } from "react";
 
 import type { SelectContractProps } from "#contracts/types/select-contract-props.type";
@@ -122,6 +122,19 @@ describe("Select (web)", () => {
     );
     press(screen.getByRole("button", { name: /Status/ }));
     expect(screen.queryByRole("listbox")).toBeNull();
+    expect(container.querySelector('[data-slot="select-value"]')?.textContent).toBe("Sent");
+  });
+
+  it("refuses the arrow keys and type-ahead while read-only", () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <Select items={ITEMS} label="Status" defaultValue="sent" isReadOnly onChange={onChange} />,
+    );
+    const trigger = screen.getByRole("button", { name: /Status/ });
+    fireEvent.keyDown(trigger, { key: "ArrowLeft" });
+    fireEvent.keyDown(trigger, { key: "ArrowRight" });
+    fireEvent.keyDown(trigger, { key: "D" });
+    expect(onChange).not.toHaveBeenCalled();
     expect(container.querySelector('[data-slot="select-value"]')?.textContent).toBe("Sent");
   });
 

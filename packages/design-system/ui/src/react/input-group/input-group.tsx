@@ -70,7 +70,7 @@ export function InputGroup({
         )}
       </HeroInputGroup>
       {description == null ? null : <Description>{description}</Description>}
-      {errorMessage == null ? null : <FieldError>{errorMessage}</FieldError>}
+      {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
     </HeroTextField>
   );
 }

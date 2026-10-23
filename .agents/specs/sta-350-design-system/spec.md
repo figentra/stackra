@@ -275,8 +275,8 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
   missing page SHALL fail the build of the page list with the folder's name; the index route, which names no
   category, SHALL stay unlisted — verified by: unit
 - **FR-057**: `react-hook-form` SHALL be in `catalogs.frontend` at an exact version at least 14 days old, and
-  `@stackra/ui` SHALL declare it as an optional peer and a dev dependency, so only an app that uses `FormField`
-  installs it — verified by: pnpm validate
+  `@stackra/ui` SHALL declare it as a required peer and a dev dependency, because `./react` and `./native` both
+  export `FormField`, which imports it — verified by: pnpm validate
 - **FR-058**: `FormField` in `@stackra/ui/react` and `@stackra/ui/native` SHALL wrap react-hook-form's `Controller`
   (`control`, `name`, `rules`, `defaultValue`, `disabled`, `shouldUnregister`) and call `render` with a
   `FormFieldBinding<TValue>` typed to the field's path: `name`, `value`, `onChange`, `onBlur`, `isInvalid`,
@@ -382,6 +382,11 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
   and Enter during text composition is ignored; on native it SHALL be the adapted form, a `View` — verified by: unit
 - **FR-094**: The `/form` playground route SHALL show the parts together, with axe clean in the four combinations,
   focus moved to a refused field with its error read out, and the keyboard rules of `Form` — verified by: unit, e2e
+
+- **FR-095**: The native `DesignSystemProvider` SHALL set React Native's `Appearance` to the colour scheme (`unspecified`
+  for `system`) so native chrome follows it and give the device's style back on unmount, and SHALL lay its subtree out
+  in a `flex: 1` View whose Yoga `direction` is the resolved direction, because Uniwind's `LayoutDirection` is
+  `display: contents` and never reaches the layout — verified by: unit, device check on `apps/mobile`
 
 ## Success Criteria
 

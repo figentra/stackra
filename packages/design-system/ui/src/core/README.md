@@ -7,4 +7,4 @@ It imports `contracts/` and nothing host-specific; `node/`, `react/` and `native
 `directionOf`, `ICON_SIZES`, `initialsOf`) until `stackra gen` writes the entry barrels (STA-339).
 
 Internal, not in the barrel (the web and native entries import them by path): `TONE_CLASS_NAME`, `STATUS_DOT_ROLE`
-(the theme role of a status dot per tone) and `physicalPlacementOf` (a logical badge corner to HeroUI's physical one) and `AVATAR_SQUARE_CLASS_NAME` (the one class of a square avatar).
+(the theme role of a status dot per tone) and `physicalPlacementOf` (a logical badge corner to HeroUI's physical one) and `AVATAR_SQUARE_CLASS_NAME` (the one class of a square avatar). `bindFormField` (react-hook-form's `field` and `fieldState` as a `FormFieldBinding`, shared by both `FormField`s).

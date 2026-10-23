@@ -6,7 +6,8 @@
  *          `{ value, label }` option), and passes every other HeroUI Native Select prop through.
  * Boundary: no styling of its own beyond one `self-start` utility that keeps a field from filling its parent unless
  *          `isFullWidth` says so, as on web. HeroUI Native's Select has no read-only state, so a read-only field is one
- *          that never opens. The list opens as a popover by default; `presentation` picks a bottom sheet or a dialog,
+ *          that never opens, and no invalid state, so `isInvalid` reaches the label, the description and the error but
+ *          the trigger is neither drawn nor announced as invalid (the error text carries it). The list opens as a popover by default; `presentation` picks a bottom sheet or a dialog,
  *          and is given to both the root and the content, which HeroUI Native requires to agree. A field without a
  *          visible `label` names itself with `accessibilityLabel`, which passes through.
  * Runtime: react-native

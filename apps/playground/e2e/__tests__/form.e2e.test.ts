@@ -105,7 +105,7 @@ test("with the switch on, Enter alone does not send and Control plus Enter does"
 }) => {
   await open(page, "light", "en");
   await expect(
-    page.getByRole("checkbox", { name: "Submit with Cmd or Ctrl plus Enter" }),
+    page.getByRole("switch", { name: "Submit with Cmd or Ctrl plus Enter" }),
   ).toBeChecked();
   const email = page.getByRole("textbox", { name: "Email" });
   await email.fill("ada@example.com");
@@ -117,7 +117,7 @@ test("with the switch on, Enter alone does not send and Control plus Enter does"
 
 test("with the switch off, Enter alone sends", async ({ page }) => {
   await open(page, "light", "en");
-  await page.getByRole("checkbox", { name: "Submit with Cmd or Ctrl plus Enter" }).uncheck();
+  await page.getByRole("switch", { name: "Submit with Cmd or Ctrl plus Enter" }).uncheck();
   const email = page.getByRole("textbox", { name: "Email" });
   await email.fill("ada@example.com");
   await email.press("Enter");

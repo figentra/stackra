@@ -32,6 +32,12 @@ describe("bindFormField", () => {
     ).toMatchObject({ isInvalid: true, errorMessage: "Enter an email" });
   });
 
+  it("reads an empty message, which `rules: { required: true }` gives, as no message", () => {
+    expect(
+      bindFormField(field, { invalid: true, error: { message: "" } }).errorMessage,
+    ).toBeUndefined();
+  });
+
   it("is required for true, a message and an object whose value is true", () => {
     expect(bindFormField(field, valid, true).isRequired).toBe(true);
     expect(bindFormField(field, valid, "Enter an email").isRequired).toBe(true);

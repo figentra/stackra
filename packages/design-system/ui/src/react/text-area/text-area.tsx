@@ -51,7 +51,7 @@ export function TextArea({
       {label == null ? null : <Label>{label}</Label>}
       <HeroTextArea {...omitUndefined({ placeholder, rows })} />
       {description == null ? null : <Description>{description}</Description>}
-      {errorMessage == null ? null : <FieldError>{errorMessage}</FieldError>}
+      {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
     </HeroTextField>
   );
 }

@@ -54,6 +54,14 @@ vi.mock("heroui-native", async () => {
   };
 });
 
+vi.mock("#native/text/text", async () => {
+  const { createElement } = await import("react");
+  return {
+    Text: (props: Record<string, unknown>) =>
+      createElement("span", { "data-testid": "empty" }, props["children"] as ReactNode),
+  };
+});
+
 const propsOf = (name: string) => received.props[name] ?? {};
 const has = (container: HTMLElement, name: string) =>
   container.querySelector(`[data-testid="${name}"]`) !== null;
@@ -180,6 +188,8 @@ describe("TagGroup (native)", () => {
   it("says what an empty group says, and gives HeroUI nothing to render without a message", () => {
     const { container, rerender } = render(<TagGroup items={[]} emptyMessage="No topics yet" />);
     expect(container.textContent).toContain("No topics yet");
+    // A string must sit in a Text: React Native refuses a bare string inside a View.
+    expect(has(container, "empty")).toBe(true);
     rerender(<TagGroup items={[]} />);
     expect(propsOf("list")).not.toHaveProperty("renderEmptyState");
   });

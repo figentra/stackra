@@ -1,0 +1,72 @@
+---
+title: "0305 — @stackra/ui wave 3: the field props vocabulary"
+description: "Accepted · 2026-10-23"
+---
+
+<Note>
+  Amends [0303](/adr/0303-stackra-ui-component-catalogue-decisions) (decision 7, the props
+  vocabulary), as [0304](/adr/0304-stackra-ui-wave-2-props-vocabulary) did for wave 2. 0303 carries
+  a note; its body is unchanged.
+</Note>
+
+## Context
+
+[0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 7 gave every component one props vocabulary, and
+[0304](/adr/0304-stackra-ui-wave-2-props-vocabulary) extended it for wave 2. Wave 3 adds the fields (TextField,
+TextArea, InputGroup, SearchField, Select, ComboBox, TagGroup, Checkbox, CheckboxGroup, RadioGroup, Switch), the field
+parts (Label, Description, FieldError) and Form, FormField and FormSection. They need words that the table does not
+hold, and one of them, `label`, is used with a wider type than the row of 0303 allows. An Accepted ADR's body changes
+only for typos and Enforcement, so the additions are recorded here.
+
+## Decision
+
+1. **The wave 3 vocabulary.** Decision 7 of 0303 stands; wave 3 adds or extends these rows:
+
+   | Concept            | Prop                                                                                                      | Type                                                                                            | Used by                                                   |
+   | ------------------ | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+   | Visible label      | `label`                                                                                                   | `ReactNode` on a field: the visible label, which is also the field's accessible name            | every field; the 0303 string `label` stays on non-fields  |
+   | Field text         | `description`, `errorMessage`                                                                             | `ReactNode`; the error shows only while `isInvalid`                                             | every field                                               |
+   | Field state        | `isRequired`, `isInvalid`, `isDisabled`, `isReadOnly`                                                     | `boolean`; a read-only field keeps focus and submits, a disabled one does neither               | every field                                               |
+   | Value              | `value`, `defaultValue`, `onChange(value)`, `name`                                                        | the field's value type; `name` is the submit key and the form adapter's key                     | every field                                               |
+   | Short list         | `items`                                                                                                   | `SelectItem[]` (`id`, `label`, `description`, `isDisabled`) or `TagItem[]`; never children      | Select, ComboBox, TagGroup                                |
+   | Choice list        | `options`                                                                                                 | `ChoiceOption[]` (`value`, `label`, `description`, `isDisabled`)                                | RadioGroup, CheckboxGroup                                 |
+   | Adornments         | `prefix`, `suffix`                                                                                        | `ReactNode`, drawn at the reading start and end of the input                                    | InputGroup                                                |
+   | Server filtering   | `isServerFiltered`, `inputValue`, `onInputChange`, `isLoading`, `loadingLabel`, `onLoadMore`              | `boolean`, `string`, `(text) => void`, `boolean`, `string`, `() => void`                        | ComboBox (`isLoading` also SearchField)                   |
+   | Clear              | `clearLabel`, `onClear`, `onSubmit`                                                                       | `string` (the clear button's accessible name), `() => void`, `(value) => void`                  | SearchField                                               |
+   | Removable tags     | `onRemove`, `removeLabel`                                                                                 | `(keys) => void` and `(tagLabel) => string`, given together or not at all                       | TagGroup                                                  |
+   | Empty list         | `emptyMessage`                                                                                            | `ReactNode`, shown when there is nothing to list                                                | ComboBox, TagGroup                                        |
+   | Text rows          | `rows`                                                                                                    | `number`                                                                                        | TextArea                                                  |
+
+   Because a field's `label` is a node, a field without a visible label names itself with the runtime's own name prop
+   (`aria-label` on web, `accessibilityLabel` on native), which passes through.
+
+2. **One binding for a form library.** `FormField` hands its render function a `FormFieldBinding<TValue>` (`name`,
+   `value`, `onChange`, `onBlur`, `isInvalid`, `errorMessage`, `isRequired`, `isDisabled`), built by one pure function
+   in `core/`. An empty validation message reads as no message, so a field never shows an empty error node.
+3. **`react-hook-form` is a required peer of `@stackra/ui`.** Both runtime entries export `FormField`, which imports it.
+
+## Consequences
+
+- A field reads the same on web and native, and a form library binds to any of them with one spread.
+- `label` has two meanings by component kind (a visible node on a field, a string name elsewhere), which this page and
+  the contract's own doc comments state.
+- An app that imports `@stackra/ui/react` or `/native` installs `react-hook-form` even if it never draws a form.
+
+## Enforcement
+
+- Each component's type test asserts that the runtime props extend the contract and refuse the raw HeroUI names this
+  vocabulary replaces.
+- `tools/scripts/spec-trace.mjs` (run by `pnpm validate`) refuses a spec id that no test covers.
+- Until a lint rule exists, review (`architecture-guardian`) checks this page.
+
+## Alternatives
+
+- **A string `label` and a separate `labelNode`.** Not chosen: two props for one concept, and every adapter would have
+  to choose.
+- **`react-hook-form` as an optional peer with `FormField` on its own subpath.** Not chosen: a third entry per runtime
+  for one component, against the one-entry-per-runtime shape of 0303.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 7. Owner answers of
+2026-10-23 on the wave 3 design (STA-364 to STA-369).

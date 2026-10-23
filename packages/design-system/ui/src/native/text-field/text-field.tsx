@@ -100,7 +100,7 @@ export function TextField({
         {...rest}
       />
       {description == null ? null : <Description hideOnInvalid>{description}</Description>}
-      {errorMessage == null ? null : <FieldError>{errorMessage}</FieldError>}
+      {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
     </HeroTextField>
   );
 }

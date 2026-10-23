@@ -20,6 +20,7 @@ import { useState } from "react";
 
 import type { TagGroupContractProps } from "#contracts/types/tag-group-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { Text } from "#native/text/text";
 
 /**
  * Props of the native TagGroup: the shared contract plus HeroUI Native's own tag group props, passed through
@@ -82,7 +83,19 @@ export function TagGroup({
     >
       {label ? <Label>{label}</Label> : null}
       <HeroTagGroup.List
-        {...(emptyMessage === undefined ? {} : { renderEmptyState: () => emptyMessage })}
+        {...(emptyMessage === undefined
+          ? {}
+          : {
+              // HeroUI Native renders the result straight inside a View, where a bare string is a React Native error.
+              renderEmptyState: () =>
+                typeof emptyMessage === "string" ? (
+                  <Text tone="muted" className="p-3 text-sm">
+                    {emptyMessage}
+                  </Text>
+                ) : (
+                  emptyMessage
+                ),
+            })}
       >
         {items.map((item) => (
           <HeroTagGroup.Item key={item.id} id={item.id} isDisabled={item.isDisabled ?? false}>

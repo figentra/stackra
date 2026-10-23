@@ -119,7 +119,7 @@ export function TagGroup({
         ) : null}
       </HeroTagGroup>
       {/* Outside the group: its children are also built once into a hidden tree, which would submit twice. */}
-      {name && selectionMode !== "none"
+      {name && !isDisabled && selectionMode !== "none"
         ? selected.map((key) => <input key={key} type="hidden" name={name} value={key} />)
         : null}
     </>
