@@ -1,6 +1,6 @@
 ---
 title: "0293 — Agent permissions: allow, ask and deny tiers, one rule module, executors push their own branch"
-description: "Accepted · 2026-10-22"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-351, STA-352)"
 ---
 
 <Note>
@@ -27,6 +27,20 @@ description: "Accepted · 2026-10-22"
   directory (the hook input's `scratchpad_dir`, or `/tmp/claude-<uid>/<project>/<session>/scratchpad`
   for the hook's `session_id` or `CLAUDE_CODE_SESSION_ID` and the project's own folder, its real path
   only), no longer the whole `/tmp/claude-<uid>` tree.
+</Note>
+
+<Note>
+  Amended 2026-10-23 (STA-352): the owner chose a middle confirmation tier. `.claude/settings.json`
+  also asks before `pnpm pr:merge`, a `pnpm bot:git` push, `pnpm secrets:import`, `git worktree
+  remove` and `pnpm new`, from every session and agent, so nothing merges, pushes, imports a secret,
+  removes a worktree or scaffolds a member without the owner. Local git on an agent's own branch,
+  `pnpm bot:gh` pull-request work and reads, and `pnpm linear` updates stay allowed. Settings ask
+  rules prompt in bypass mode too; dangerous `rm` stays with the guard hook. The patterns cover the
+  `pnpm run` and `--filter` spellings of those scripts. This amends decision 1's Allow list, which
+  named a bot push of `HEAD` and `pnpm pr:merge`. OpenCode executors read `opencode.jsonc`, not
+  these settings: they still commit and push their own feature branch (never main) under the guard,
+  and the merge still asks. The settings also carry the bot commit identity (`GIT_AUTHOR_*`,
+  `GIT_COMMITTER_*`) and `enableAllProjectMcpServers`.
 </Note>
 
 ## Context
