@@ -83,3 +83,9 @@ Linear sub-issues, all in this one pull request: [STA-364] the field contract an
 - [x] T040 [US2] Checkbox, CheckboxGroup, RadioGroup and Switch: contracts, the web and native components, and their routes with e2e files — covers: FR-082, FR-083, FR-084, FR-085, FR-086, FR-087, FR-088, FR-089, P-051 — route: frontend — deps: T034
 - [x] T041 [US2] Label, Description, FieldError and Form, and the form route with its e2e file — covers: FR-090, FR-091, FR-092, FR-093, FR-094, P-052 — route: frontend — deps: T035, T037
 - [x] T042 [US2] The native provider sets React Native's `Appearance` to the colour scheme in `packages/design-system/ui/src/native` — covers: FR-095, P-053 — route: frontend — deps: T008
+
+## Phase 11: Wave 4 foundation (ADR 0312)
+
+Linear issues: [STA-370] Modal and Drawer, [STA-371] AlertDialog and useConfirmation, [STA-372] Menu and ActionMenu, [STA-373] Popover and Tooltip, [STA-374] Toast and Alert, [STA-375] LeaveConfirmation, [STA-404] ProgressBar and ProgressCircle.
+
+- [x] T043 [US2] The shared overlay, placement and feedback contracts, `FEEDBACK_BY_TONE`, `reactAriaPlacementOf` and `physicalSideOf` in `packages/design-system/ui/src`, with ADR 0312 — covers: FR-096, FR-097, P-054, P-055 — route: frontend — deps: T034

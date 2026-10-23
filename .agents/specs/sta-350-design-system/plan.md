@@ -98,6 +98,8 @@ switcher and is covered by Playwright and axe. `@stackra/brand` is deleted; its 
 - **P-051**: A Checkbox, CheckboxGroup, RadioGroup and Switch keep their own state, show `value` when controlled, tie a group's description and error to the group, and refuse input when disabled or read-only, with every sample shown — Validates: FR-082, FR-083, FR-084, FR-085, FR-086, FR-087, FR-088, FR-089
 - **P-052**: A Label names its control, a Description's id is the one a control names it by, a FieldError follows the field's validity, and a Form hands its validation errors to the fields in it — Validates: FR-090, FR-091, FR-092, FR-093, FR-094
 - **P-053**: The native provider sets the colour scheme React Native's `Appearance` follows, and releases it for `system` — Validates: FR-095
+- **P-054**: A side and an alignment give React Aria a placement it accepts and HeroUI Native a physical side that follows the reading direction — Validates: FR-097
+- **P-055**: Every tone has a default icon, and only warning and danger are announced at once — Validates: FR-096
 
 ## Contracts and events
 

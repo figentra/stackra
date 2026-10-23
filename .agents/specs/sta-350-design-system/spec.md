@@ -388,6 +388,17 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
   in a `flex: 1` View whose Yoga `direction` is the resolved direction, because Uniwind's `LayoutDirection` is
   `display: contents` and never reaches the layout — verified by: unit, device check on `apps/mobile`
 
+- **FR-096**: `@stackra/ui/contracts` SHALL hold the props every wave 4 overlay and message shares, each optional so a
+  component adds only what it needs: `OpenStateContractProps` (`isOpen`, `defaultOpen`, `onOpenChange`),
+  `OverlayContractProps` (the open state plus `isDismissable` and `isKeyboardDismissDisabled`), `PlacementContractProps`
+  (`placement`, a `Placement` side by reading direction, and `align`, a `PlacementAlign`) and `FeedbackContractProps`
+  (`tone`, a `Tone`, and `icon`, an `IconSlot` or `false`), and the internal `FEEDBACK_BY_TONE` SHALL give every tone a
+  default icon and a live-region role, `alert` only for warning and danger — verified by: unit, typecheck
+- **FR-097**: `reactAriaPlacementOf` SHALL turn a side and an alignment into the placement string React Aria accepts
+  (the side alone when centred, and `start` and `end` read as top and bottom on a start or end side), and
+  `physicalSideOf` SHALL turn a logical side into HeroUI Native's `left` or `right` by text direction, leaving `top`
+  and `bottom` alone — verified by: unit, typecheck
+
 ## Success Criteria
 
 - **SC-001**: `pnpm verify` is green with the change — verified by: CI (Quality Gate)
@@ -429,3 +440,4 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
 - 2026-10-23 · Clarified → Planned · Claude (spec-writer)
 - 2026-10-23 · Planned → Tasked · Claude (spec-writer)
 - 2026-10-23 · Tasked → Implementing · Claude (spec-writer) · setup pull request under way
+- 2026-10-23 · Implementing · Claude (frontend-builder) · wave 4 foundation: FR-096, FR-097 (ADR 0312)
