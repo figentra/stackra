@@ -18,13 +18,17 @@ const HEX = /^#([0-9a-f]{6}|[0-9a-f]{8})$/i;
 
 // Values are written into CSS declarations as is, so each kind is an allow-list: no quote, backslash, angle bracket,
 // semicolon, brace or comment can appear unless its grammar admits it, and parentheses only as whole functions.
-// One way to read each digit run: an ambiguous split here backtracks exponentially across shadow parts.
+// Every input must have one reading: two alternatives that match the same text (a digit run split two ways, `var()`
+// as both a length and a colour, a space as part of an argument or of its separator) backtrack exponentially.
 const NUMBER = String.raw`-?(\d+(\.\d*)?|\.\d+)`;
 const VAR = String.raw`var\(--[a-z0-9-]+\)`;
-const COLOR_SOURCE = String.raw`(#[0-9a-f]{3,8}|(oklch|oklab|rgb|hsl)\(\s*${NUMBER}%?(\s+${NUMBER}%?){2}(\s*\/\s*${NUMBER}%?)?\s*\)|${VAR}|transparent|currentcolor|white|black)`;
-const LENGTH_SOURCE = String.raw`(${NUMBER}(px|rem|em|%)?|${VAR})`;
+const COLOR_LITERAL = String.raw`(#[0-9a-f]{3,8}|(oklch|oklab|rgb|hsl)\(\s*${NUMBER}%?(\s+${NUMBER}%?){2}(\s*\/\s*${NUMBER}%?)?\s*\)|transparent|currentcolor|white|black)`;
+const LENGTH_LITERAL = String.raw`${NUMBER}(px|rem|em|%)?`;
+const COLOR_SOURCE = String.raw`(${COLOR_LITERAL}|${VAR})`;
+const LENGTH_SOURCE = String.raw`(${LENGTH_LITERAL}|${VAR})`;
 const FAMILY = String.raw`("[\w .-]+"|'[\w .-]+'|[a-z][\w-]*( [a-z][\w-]*)*)`;
-const SHADOW_PART = String.raw`(${LENGTH_SOURCE}|${COLOR_SOURCE}|inset)`;
+const SHADOW_PART = String.raw`(${LENGTH_LITERAL}|${COLOR_LITERAL}|${VAR}|inset)`;
+const EASING_ARGUMENT = String.raw`[-\w.%]+(\s+[-\w.%]+)*`;
 const SHADOW_LAYER = String.raw`${SHADOW_PART}(\s+${SHADOW_PART})*`;
 const GRAMMAR = {
   color: new RegExp(`^${COLOR_SOURCE}$`, "i"),
@@ -33,7 +37,7 @@ const GRAMMAR = {
   shadow: new RegExp(String.raw`^(none|${SHADOW_LAYER}(\s*,\s*${SHADOW_LAYER})*)$`, "i"),
   duration: new RegExp(`^${NUMBER}(ms|s)$`),
   easing: new RegExp(
-    String.raw`^(linear|ease|ease-in|ease-out|ease-in-out|step-start|step-end|(cubic-bezier|steps|linear)\(\s*[-\w.% ]+(\s*,\s*[-\w.% ]+)*\s*\))$`,
+    String.raw`^(linear|ease|ease-in|ease-out|ease-in-out|step-start|step-end|(cubic-bezier|steps|linear)\(\s*${EASING_ARGUMENT}(\s*,\s*${EASING_ARGUMENT})*\s*\))$`,
   ),
 } as const;
 type Grammar = keyof typeof GRAMMAR;

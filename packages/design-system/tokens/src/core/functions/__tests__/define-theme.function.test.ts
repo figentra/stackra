@@ -22,6 +22,21 @@ const problemsOf = (theme: unknown): readonly string[] => {
   return [];
 };
 
+const repeated = (part: string, separator: string): string =>
+  `${Array.from({ length: 200 }, () => part).join(separator)} !`;
+const withShadow = (light: string): unknown => ({
+  ...STACKRA_THEME,
+  shadows: { ...STACKRA_THEME.shadows, surface: { ...STACKRA_THEME.shadows.surface, light } },
+});
+const withEasing = (easing: string): unknown => ({
+  ...STACKRA_THEME,
+  motion: { fast: { duration: "1ms", easing } },
+});
+const withFont = (sans: string): unknown => ({
+  ...STACKRA_THEME,
+  fontFamily: { ...STACKRA_THEME.fontFamily, sans },
+});
+
 // @covers sta-350:FR-001
 describe("defineTheme", () => {
   it("returns a complete theme unchanged", () => {
@@ -90,17 +105,19 @@ describe("defineTheme", () => {
     ]);
   });
 
-  it("refuses a long malformed shadow in linear time", () => {
-    const light = `${Array.from({ length: 60 }, () => "11").join(" ")} x`;
-    const shadows = {
-      ...STACKRA_THEME.shadows,
-      surface: { ...STACKRA_THEME.shadows.surface, light },
-    };
+  // Each value is long and fails only at its end, the input that makes an ambiguous pattern backtrack exponentially.
+  it.each([
+    ["shadow digit runs", withShadow(repeated("11", " ")), "shadows.surface.light"],
+    ["shadow var() parts", withShadow(repeated("var(--a)", " ")), "shadows.surface.light"],
+    ["shadow layers", withShadow(repeated("1px 1px var(--a)", ", ")), "shadows.surface.light"],
+    ["easing arguments", withEasing(`cubic-bezier(${repeated("a  ", ",")}`), "motion.fast.easing"],
+    ["font stack names", withFont(repeated("a b", " , ")), "fontFamily.sans"],
+  ])("refuses a long malformed value in linear time: %s", (_, theme, path) => {
     const started = performance.now();
-    expect(problemsOf({ ...STACKRA_THEME, shadows })).toEqual([
-      "shadows.surface.light is not a CSS shadow",
-    ]);
+    const problems = problemsOf(theme);
     expect(performance.now() - started).toBeLessThan(100);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(new RegExp(`^${path.replaceAll(".", String.raw`\.`)} `));
   });
 
   it.each([
