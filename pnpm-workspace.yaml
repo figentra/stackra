@@ -122,6 +122,10 @@ catalogs:
     # Overrides only (see `overrides`): mint's connectivity probe, on fetch instead of got.
     is-online: 12.0.2
     public-ip: 8.0.0
+  # The playground's Playwright + axe tier (ADR 0302).
+  e2e:
+    "@playwright/test": 1.64.1
+    "@axe-core/playwright": 4.14.0
 
 # STA-169: `mint validate` (the docs build) first probes connectivity with is-online 10, which races three
 # got 12 requests (via public-ip 5) under a 5 s timeout and cancels the losers. A got retry that fires after the

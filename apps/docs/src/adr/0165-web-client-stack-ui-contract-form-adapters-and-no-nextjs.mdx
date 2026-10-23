@@ -1,7 +1,15 @@
 ---
 title: "0165 — The web client stack restated: the @stackra/ui contract, form adapters, no Next.js"
-description: "Accepted, amended by 0268, 0294, 0301 · 2026-10-20"
+description: "Accepted, amended by 0268, 0294, 0301, 0302 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground): `@stackra/ui`
+  lives in the `design-system` category. Decision 1 is made concrete: the shared props, variants and
+  types are in `src/contracts`, `./react` implements each component on HeroUI v3 and `./native` on
+  HeroUI Native with Uniwind; the component code is not shared. The form adapters of decision 2 live
+  in `@stackra/ui`, and its theme comes from `@stackra/tokens`.
+</Note>
 
 <Note>
   Supersedes [0056](/adr/0056-heroui-v3-pro-on-web-share-everything-but-components). Amends

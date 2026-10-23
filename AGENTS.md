@@ -373,7 +373,7 @@ import { OrderPricingService } from "#modules/orders/services/order-pricing.serv
 
 ```typescript
 // ✅ App importing from package
-import { tokens } from "@stackra/brand";
+import { STACKRA_THEME } from "@stackra/tokens";
 
 // ✅ Service importing from package
 import { logger } from "@stackra/logger";
@@ -687,10 +687,11 @@ stackra/
 │   ├── application/        # Actions, AI, IR, registry
 │   ├── commerce/           # Money, ledger and pricing primitives
 │   ├── communication/      # Webhooks, versioning, integrations, notifications
-│   ├── cross-cutting/      # Brand
+│   ├── cross-cutting/      # Concerns that span layers
 │   ├── data/               # Model, database, content, media, search, state machine, assets, filesystem, storage
+│   ├── design-system/      # Stackra Design System: tokens, ui, icons
 │   ├── developer/          # CLI, gen (the codegen compiler), coding standard, Vite plugin
-│   ├── experience/         # UI, experience, navigation, console, panel, builder, collaboration
+│   ├── experience/         # Experience, navigation, console, panel, builder, collaboration
 │   ├── foundation/         # Contracts, validation, errors
 │   ├── infrastructure/     # Pulumi-based infra-* packages
 │   ├── runtime/            # Outbox, queue, scheduler, workflow, realtime, locking, cache

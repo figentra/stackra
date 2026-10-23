@@ -32,15 +32,15 @@
       // component folder's index.ts is its public surface (ADR 0294 decision 14).
       "entry": ["src/main.{ts,tsx}", "src/*.module.ts", "src/components/*/index.ts"],
       "project": ["src/**/*.{ts,tsx}"],
-      // Read by the CSS @imports in src/styles/ and by app.json, which knip doesn't trace; expo-updates: knip's expo
+      // Read by the CSS @imports in src/styles/, which knip doesn't trace; expo-updates: knip's expo
       // plugin assumes OTA updates.
-      "ignoreDependencies": ["@stackra/brand", "@heroui/styles", "expo-updates"],
+      "ignoreDependencies": ["@stackra/tokens", "@heroui/styles", "expo-updates"],
     },
     "apps/mobile": {
       "project": ["src/**/*.{ts,tsx}"],
       // app.json declares no OTA updates; knip's expo plugin assumes them.
-      // @stackra/brand: read by src/global.css (Uniwind theme) and app.json (icons, splash), which knip doesn't trace.
-      "ignoreDependencies": ["expo-updates", "@stackra/brand"],
+      // @stackra/tokens: read by src/global.css (the Uniwind theme), which knip doesn't trace.
+      "ignoreDependencies": ["expo-updates", "@stackra/tokens"],
     },
     "workers/*": {
       "project": ["src/**/*.ts"],

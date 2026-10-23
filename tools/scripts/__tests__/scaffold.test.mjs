@@ -22,6 +22,7 @@ const cases = [
   ["service", "notes", {}],
   ["package", "billing-core", { category: "data" }],
   ["package", "cache", { category: "runtime", entries: OPTIONAL_ENTRY_NAMES, data: true }],
+  ["package", "tokens", { category: "design-system", entries: OPTIONAL_ENTRY_NAMES }],
   ["tooling", "sample", {}],
   ["app:console", "admin", {}],
   ["app:mobile", "sample", {}],
@@ -58,44 +59,63 @@ for (const [kind, name, extra] of cases)
     if (kind === "package") assert.deepEqual(checkExports(pkg.exports), []);
   });
 
-// @covers sta-173:FR-003 sta-173:P-003
-test("app templates take their brand from @stackra/brand, and every brand path exists", () => {
-  const BRAND = fileURLToPath(new URL("../../../packages/experience/brand/", import.meta.url));
-  const brandFile = (ref) => {
-    const rel = ref.match(/@stackra\/brand\/(assets\/[^"'\s)]+)/)?.[1];
-    assert.ok(rel, `not a brand path: ${ref}`);
-    assert.ok(existsSync(join(BRAND, rel)), `brand file missing: ${rel}`);
+// @covers sta-173:FR-003 sta-173:P-003 sta-350:FR-005
+test("app templates take their theme from @stackra/tokens and ship their own copy of the app icons", () => {
+  const TOKENS = fileURLToPath(new URL("../../../packages/design-system/tokens/", import.meta.url));
+  const BRAND = fileURLToPath(new URL("../../../apps/docs/src/assets/brand/", import.meta.url));
+  const wildcards = Object.entries(
+    JSON.parse(readFileSync(join(TOKENS, "package.json"), "utf8")).exports,
+  ).filter(([key]) => key.endsWith("/*"));
+  // Resolves `@stackra/tokens/<subpath>` through the package's wildcard exports, as Tailwind and Metro do.
+  const tokensFile = (ref) => {
+    const sub = `./${ref.slice("@stackra/tokens/".length)}`;
+    const [key, target] = wildcards.find(([k]) => sub.startsWith(k.slice(0, -1))) ?? [];
+    assert.ok(key, `no @stackra/tokens export for ${ref}`);
+    const file = join(TOKENS, target.replace("*", sub.slice(key.length - 1)));
+    assert.ok(existsSync(file), `tokens file missing: ${ref}`);
   };
-  const refs = (text) => [...text.matchAll(/@stackra\/brand\/assets\/[^"'\s)]+/g)].map((m) => m[0]);
+  const refs = (text) => [...text.matchAll(/@stackra\/tokens\/[^"'\s)]+/g)].map((m) => m[0]);
   const read = (dest, f) => readFileSync(join(dest, f), "utf8");
+  const sameBytes = (dest, f, original) =>
+    assert.ok(readFileSync(join(dest, f)).equals(readFileSync(join(BRAND, original))), f);
 
   const web = render("app:console", "admin").dest;
-  assert.equal(json(web, "package.json").dependencies["@stackra/brand"], "workspace:*");
+  assert.equal(json(web, "package.json").dependencies["@stackra/tokens"], "workspace:*");
   const styles = read(web, "src/styles/app.css");
-  assert.ok(styles.includes("heroui/web.css") && styles.includes("fonts/fonts.css"));
-  refs(styles).forEach(brandFile);
+  assert.deepEqual(refs(styles), [
+    "@stackra/tokens/fonts/fonts.css",
+    "@stackra/tokens/themes/stackra/web.css",
+  ]);
+  refs(styles).forEach(tokensFile);
   assert.ok(existsSync(join(web, "public/favicon.svg")));
 
   const mobile = render("app:mobile", "sample").dest;
-  assert.equal(json(mobile, "package.json").dependencies["@stackra/brand"], "workspace:*");
-  assert.ok(read(mobile, "src/styles/global.css").includes("heroui/native.css"));
-  const app = read(mobile, "app.json");
-  assert.equal(refs(app).length, 4); // icon, adaptive foreground, light and dark splash
-  refs(app).forEach(brandFile);
-  refs(read(mobile, "src/styles/global.css")).forEach(brandFile);
+  assert.equal(json(mobile, "package.json").dependencies["@stackra/tokens"], "workspace:*");
+  const global = read(mobile, "src/styles/global.css");
+  assert.deepEqual(refs(global), ["@stackra/tokens/themes/stackra/native.css"]);
+  refs(global).forEach(tokensFile);
+  const icons = [...read(mobile, "app.json").matchAll(/"\.\/(assets\/[^"]+)"/g)].map((m) => m[1]);
+  assert.equal(icons.length, 4); // icon, adaptive foreground, light and dark splash
+  for (const icon of icons) {
+    const original = icon.includes("st-tile") ? "splash" : "app-icon";
+    sameBytes(mobile, icon, `${original}/${icon.slice("assets/".length)}`);
+  }
 
   const desktop = render("app:desktop", "studio").dest;
-  assert.equal(json(desktop, "package.json").devDependencies["@stackra/brand"], "workspace:*");
+  assert.equal(json(desktop, "package.json").devDependencies["@stackra/tokens"], "workspace:*");
   const builder = read(desktop, "electron-builder.yml");
-  assert.equal(refs(builder).length, 3); // mac, win, linux
-  refs(builder).forEach(brandFile);
+  assert.equal([...builder.matchAll(/icon: assets\/app-icon-1024\.png/g)].length, 3); // mac, win, linux
+  sameBytes(desktop, "assets/app-icon-1024.png", "app-icon/app-icon-light-1024.png");
 
   const docs = render("app:docs", "handbook").dest;
   assert.equal(json(docs, "src/docs.json").colors.primary, "#0B0D0F");
   assert.equal(
     read(docs, "src/assets/logo/light.svg"),
-    readFileSync(join(BRAND, "assets/public/logos/stackra-wordmark-light.svg"), "utf8"),
+    readFileSync(join(BRAND, "logos/stackra-wordmark-light.svg"), "utf8"),
   );
+  for (const dest of [web, mobile, desktop, docs])
+    for (const f of ["package.json", "README.md"])
+      assert.ok(!read(dest, f).includes("@stackra/brand"), f);
 });
 
 /** The v3 member root (ADR 0294 R12): no authored entry, barrel or generated contract in what the scaffold writes. */
@@ -355,6 +375,6 @@ test("rejections", () => {
   bad({ kind: "package", name: "ok", category: "data", description: undefined }, /--description/);
   scaffold({ kind: "service", name: "dup", description: "Dup.", root, format: false });
   bad({ kind: "service", name: "dup" }, /already exists/);
-  // The 12 categories on disk (settlement Q3.2); tooling is a separate tier, not a package category.
-  assert.equal(CATEGORY_NAMES.length, 12);
+  // The 13 categories (settlement Q3.2, ADR 0302 adds design-system); tooling is a separate tier, not a category.
+  assert.equal(CATEGORY_NAMES.length, 13);
 });

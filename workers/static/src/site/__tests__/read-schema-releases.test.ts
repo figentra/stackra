@@ -58,7 +58,7 @@ describe("readSchemaReleases", () => {
 
   it("ignores other tags and rejects a schemas tag that is not x.y.z", () => {
     commit("one");
-    git("tag", "@stackra/brand@1.0.0");
+    git("tag", "@stackra/tokens@1.0.0");
     expect(readSchemaReleases(root)).toEqual([]);
     git("tag", "schemas@1.0.0-rc.1");
     expect(() => readSchemaReleases(root)).toThrow(/must be x\.y\.z/);

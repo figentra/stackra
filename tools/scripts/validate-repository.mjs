@@ -269,17 +269,13 @@ export const MUST_STAY_JSON = [
     "JSON Schema documents: editors and validators fetch them by URL or path as JSON",
   ],
   [
-    /^packages\/experience\/brand\/assets\/tokens\/[\w-]+\.json$/,
-    "brand-kit token output, vendored byte-for-byte; consumers JSON.parse it",
+    /^packages\/design-system\/tokens\/assets\/data\/[\w-]+\/[\w-]+\.json$/,
+    "brand-kit token reports, vendored byte-for-byte; the theme tests JSON.parse them",
   ],
   [/(^|\/)src\/docs\.json$/, "Mintlify parses docs.json with JSON.parse"],
   [/(^|\/)(app|eas)\.json$/, "Expo/EAS: fixed names, rewritten by the expo/eas CLIs"],
   [/^\.specify\//, "spec-kit CLI output, read by its scripts with jq / python json"],
   [/^\.(agents|claude)\/skills\//, "vendored skills: upstream content"],
-  [
-    /^packages\/experience\/brand\/src\/tokens\/tokens\.json$/,
-    "exported token data for non-TS consumers",
-  ],
 ];
 
 /**
@@ -430,9 +426,9 @@ function main() {
     report("", checkImports(p, readFileSync(join(ROOT, p), "utf8")));
   for (const p of repoFiles.filter(isRepoOwnedYaml))
     report("", checkYamlFlowMaps(p, readFileSync(join(ROOT, p), "utf8")));
-  // ADR 0024 decision 2: the brand marks carry their all-rights-reserved NOTICE.
-  if (!existsSync(join(ROOT, "packages/experience/brand/assets/NOTICE")))
-    report("packages/experience/brand", ["assets/NOTICE missing (ADR 0024)"]);
+  // ADR 0024 decision 2: the brand marks carry their all-rights-reserved NOTICE (in the docs app since ADR 0302).
+  if (!existsSync(join(ROOT, "apps/docs/src/assets/brand/NOTICE")))
+    report("apps/docs", ["src/assets/brand/NOTICE missing (ADR 0024)"]);
   for (const { path } of members) {
     const dir = relative(ROOT, path);
     const at = (f) => (existsSync(join(path, f)) ? readJsonc(join(path, f)) : undefined);

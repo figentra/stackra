@@ -44,7 +44,7 @@ async function main() {
     );
   if (has("component", "screen", "page", "button", "design token", "brand"))
     hints.push(
-      "Frontend: brand tokens live in `@stackra/brand` (packages/experience/brand); web uses HeroUI v3, mobile HeroUI Native + Uniwind; share types/state/i18n/tokens across web and native, never components (not-built-yet.md).",
+      "Frontend: theme tokens live in `@stackra/tokens` and components in `@stackra/ui` (packages/design-system, ADR 0302); web uses HeroUI v3, mobile HeroUI Native + Uniwind; `@stackra/ui` shares the component contracts, never one component implementation across web and native (not-built-yet.md).",
     );
   if (has("prisma", "drizzle", "typeorm", "knex", "orm", "migration", "database"))
     hints.push(

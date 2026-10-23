@@ -36,7 +36,7 @@
     "@gorhom/bottom-sheet": "catalog:mobile",
     "@react-navigation/native": "catalog:mobile",
     "@react-navigation/native-stack": "catalog:mobile",
-    "@stackra/brand": "workspace:*",
+    "@stackra/tokens": "workspace:*",
     "expo": "catalog:mobile",
     "expo-blur": "catalog:mobile",
     "expo-constants": "catalog:mobile",

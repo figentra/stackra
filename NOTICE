@@ -1,9 +1,10 @@
 Stackra is MIT-licensed (LICENSE), with these exclusions (ADR 0024):
 
-- Brand assets (logos, marks, social images) are all rights reserved. Each excluded folder carries its own
-  NOTICE: packages/experience/brand/assets/NOTICE and .github/NOTICE.
+- Brand assets (logos, marks, app icons, social images) are all rights reserved. Each excluded folder carries its
+  own NOTICE: apps/docs/src/assets/brand/NOTICE and .github/NOTICE. The copies of the app icons and splash marks in
+  apps/mobile/assets/ and tools/scaffold/templates/apps/*/assets/ fall under apps/docs/src/assets/brand/NOTICE.
 - Fonts keep their own licence: the SIL Open Font License texts beside the files in
-  packages/experience/brand/assets/public/fonts/OFL-*.txt.
+  packages/design-system/tokens/assets/public/fonts/OFL-*.txt.
 - Code from paid licences (HeroUI Pro, Uniwind Pro and similar) is never committed. It is consumed as a dependency
   under its vendor's terms and is not covered by the MIT licence.
 - The Stackra and Figentra names, logos and marks are trademarks of Figentra Technologies L.L.C. See TRADEMARKS.md.

@@ -12,8 +12,9 @@ The `@stackra/*` libraries, the product of this repository
 | [`communication`](communication) | webhooks, notifications, versioning, integrations                    |
 | [`cross-cutting`](cross-cutting) | concerns every layer shares                                          |
 | [`data`](data)                   | model, database, content, media, search                              |
+| [`design-system`](design-system) | the Stackra Design System: tokens, ui, icons (ADR 0302)              |
 | [`developer`](developer)         | CLI, generator, coding standard, Vite plugin                         |
-| [`experience`](experience)       | UI building blocks; holds `@stackra/brand` today                     |
+| [`experience`](experience)       | experience, navigation, console, panel, builder                      |
 | [`runtime`](runtime)             | outbox, queue, scheduler, workflow, realtime, cache                  |
 | [`security`](security)           | connections, entitlements, licensing                                 |
 | [`state`](state)                 | settings, feature flags, theming                                     |

@@ -1,7 +1,17 @@
 ---
 title: "0127 — Package categories, including infrastructure and commerce"
-description: "Accepted, amended by 0282, 0286, 0294 · 2026-10-20"
+description: "Accepted, amended by 0282, 0286, 0294, 0302 · 2026-10-20"
 ---
+
+<Note>
+  Amended by [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground), as 0282 amended
+  the developer row: a new `design-system` category holds `tokens`, `ui` and later `icons`
+  (`@stackra/tokens`, `@stackra/ui`, `@stackra/icons`). The experience row loses `ui`, and the
+  cross-cutting row loses `brand`, which is retired: its tokens become the `stackra` theme in
+  `@stackra/tokens`, and Stackra's marks move to the docs and apps. Decision 3 of the 2026-10-21
+  amendment (brand moves to `cross-cutting`) no longer applies, and the counts of categories below
+  read thirteen where they say twelve.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), whose
@@ -69,12 +79,13 @@ placements were answered question by question. This ADR records the table and th
    - **runtime:** outbox, queue, scheduler, workflow, realtime, locking, cache;
    - **communication:** webhooks, notifications, versioning, integrations (assumed, see 5);
    - **security:** connections, entitlements, licensing;
-   - **experience:** ui, experience, navigation, console, panel;
+   - **experience:** experience, navigation, console, panel (ui moves to design-system [0302]);
    - **developer:** cli, gen, coding-standard, vite-plugin, skills, mcp [0282], renderers [0286];
-   - **cross-cutting:** brand;
+   - **cross-cutting:** brand (retired [0302]);
    - **commerce:** money, ledger and pricing primitives (owner answer, 2026-10-20). The pricing service and its
      building blocks are placed here as primitives; the service itself is an OS item;
-   - **infrastructure:** new. It holds the `@stackra/infra-*` packages defined by 0171.
+   - **infrastructure:** new. It holds the `@stackra/infra-*` packages defined by 0171;
+   - **design-system:** tokens, ui, icons [0302].
 2. `state` stays a category, because existing packages (settings, feature flags, theming) use it and `AGENTS.md` lists it.
    The FW2 table did not name it. The owner should confirm it (open question 1).
 3. The placements the owner set later are fixed: state-machine in data (SM1 placement, mem L405); panel in experience
@@ -120,12 +131,13 @@ member gets a category on 2026-10-21. This amendment records the placement of ea
    | runtime        | outbox, queue, scheduler, workflow, realtime, locking, cache, app, devices [roadmap; devices by owner settlement, 2026-10-21]                                                          |
    | communication  | webhooks, versioning, integrations, mail [0270; the registry places it here]                                                                                                           |
    | security       | connections, entitlements, licensing, identity, iam, tenancy, consent, csp [roadmap]                                                                                                   |
-   | experience     | ui, experience, navigation, console, panel, kbd, pwa, platform [0250], peripherals [0253], builder, collaboration [0270; forms dropped]                                                |
+   | experience     | experience, navigation, console, panel, kbd, pwa, platform [0250], peripherals [0253], builder, collaboration [0270; forms dropped]; ui moved to design-system [0302]                  |
    | developer      | cli, gen, coding-standard, vite-plugin, devtools-kit, testing [roadmap; testing per the build plan's Phase T], skills, mcp [0282], renderers [0286]                                    |
-   | cross-cutting  | brand (moved from experience), analytics, seo [roadmap]                                                                                                                                |
+   | cross-cutting  | analytics, seo [roadmap]; brand retired [0302]                                                                                                                                         |
    | state          | settings, feature-flags, theming, coordinator [roadmap]                                                                                                                                |
    | commerce       | money, ledger, pricing primitives (decision 1 above)                                                                                                                                   |
    | infrastructure | the `@stackra/infra-*` packages (ADR 0171)                                                                                                                                             |
+   | design-system  | tokens, ui, icons [0302]                                                                                                                                                               |
 
 3. **Brand moves to `cross-cutting`.** The package is at `packages/experience/brand` today. The folder move is a separate code change,
    not part of this ADR.

@@ -89,9 +89,9 @@ from the package directory after `pnpm build`:
 `workspace:` and `catalog:` versions, and it fails on provenance outside CI. Then register the trusted publisher above. The
 first version is not provenance-attested; ship a `0.0.x` placeholder.
 
-**Rehearse before any real release.** After registering `@stackra/brand`: run the `Release` workflow with `dry_run` ticked
-(`pnpm -r publish --dry-run`, same job and environment). Then publish a throwaway `0.0.x` of `@stackra/brand` from CI through a
-merged version pull request, and check `npm view @stackra/brand dist.attestations` shows a provenance entry. Only then release
+**Rehearse before any real release.** After registering `@stackra/tokens`: run the `Release` workflow with `dry_run` ticked
+(`pnpm -r publish --dry-run`, same job and environment). Then publish a throwaway `0.0.x` of `@stackra/tokens` from CI through a
+merged version pull request, and check `npm view @stackra/tokens dist.attestations` shows a provenance entry. Only then release
 anything real.
 
 The procedure the job follows:
