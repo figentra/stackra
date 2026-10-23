@@ -22,6 +22,12 @@ import { KpiProgress } from "#react/kpi/kpi-progress";
 /** Props of the web Kpi: the shared contract plus HeroUI Pro's own card props, passed through unchanged. */
 export type KpiProps = KpiContractProps & Omit<HeroKpiRootProps, keyof KpiContractProps>;
 
+/**
+ * A HeroUI Pro workaround: Pro draws the title and value as `dt` and `dd` with no `dl`, which axe refuses (`dlitem`). The
+ * `dl` around each part adds no box and no role. An inline style, not a Tailwind class: apps do not scan this package.
+ */
+const LIST_STYLE = { display: "contents" } as const;
+
 /** The card root: HeroUI Pro's `KPI.Root`, a card that holds the metric. */
 function KpiRoot(props: KpiProps) {
   return <HeroKpi.Root {...props} />;
@@ -31,7 +37,7 @@ function KpiRoot(props: KpiProps) {
 function KpiHeader({ children, ...props }: ComponentProps<typeof HeroKpi.Header>) {
   return (
     <HeroKpi.Header {...props}>
-      <dl role="none" className="contents">
+      <dl role="none" style={LIST_STYLE}>
         {children}
       </dl>
     </HeroKpi.Header>
@@ -42,7 +48,7 @@ function KpiHeader({ children, ...props }: ComponentProps<typeof HeroKpi.Header>
 function KpiContent({ children, ...props }: ComponentProps<typeof HeroKpi.Content>) {
   return (
     <HeroKpi.Content {...props}>
-      <dl role="none" className="contents">
+      <dl role="none" style={LIST_STYLE}>
         {children}
       </dl>
     </HeroKpi.Content>

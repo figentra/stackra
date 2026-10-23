@@ -91,6 +91,16 @@ test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0304)", 
   assert.deepEqual(pro(ui, { ...wrapper, publishConfig: { access: "public" } }), [
     '@stackra/ui-pro must be "private": true with no publishConfig (ADR 0304)',
   ]);
+  const uniwind = (dir) =>
+    check({
+      ...ok,
+      dir,
+      pkg: { name: "x", dependencies: { uniwind: "catalog:uniwind-pro" } },
+    }).filter((m) => m.includes("Uniwind Pro"));
+  assert.deepEqual(uniwind("packages/design-system/ui"), [
+    "dependencies.uniwind is Uniwind Pro: only apps may use catalog:uniwind-pro (ADR 0304)",
+  ]);
+  assert.deepEqual(uniwind("apps/mobile"), []);
 });
 
 const named = (dir, name) =>

@@ -71,6 +71,11 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
    `INFISICAL_GATE_IDENTITY_ID`, which is not a secret. The identity is allowed to read only `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` (decision 11). Until the owner
    sets both, the gate fails at a named step that says what is missing. Without the Pro build, the Pro package cannot typecheck or
    build.
+   The identity trusts the GitHub OIDC subjects `repo:figentra/stackra:pull_request` and
+   `repo:figentra/stackra:ref:refs/heads/main`, so a fork never gets the tokens. The exported tokens stay in the job's
+   environment, so every later gate step can read them, and a branch of this repository that edits `ci.yml` could print them.
+   Accepted: they only download the licensed packages, and anyone who can push a branch is already trusted with the code.
+   The release, SBOM and static deploy jobs never read them: they install without the three members that pull in Pro.
 10. **The download budget.** Each uncached CI install counts against HeroUI's daily CDN download limit for the CI/CD token. The limit
     is 1,000 on an individual licence. Caching `node_modules` and the pnpm store, keyed by the lockfile, avoids repeat downloads.
     That cache is a follow-up.
@@ -101,11 +106,14 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
 - `"private": true` in `packages/design-system/ui-pro/package.json`, with no `publishConfig`.
 - `check` in `tools/scripts/validate-repository.mjs` (`PRO_DEPENDENCIES`, run by `pnpm validate`) fails any member other than an
   app or `@stackra/ui-pro` that depends on `@heroui-pro/react` or `heroui-native-pro`, any non-app member that depends on
-  `@stackra/ui-pro`, and `@stackra/ui-pro` itself without `"private": true` or with a `publishConfig`.
+  `@stackra/ui-pro`, and `@stackra/ui-pro` itself without `"private": true` or with a `publishConfig`. It also
+  fails any non-app member that names `catalog:uniwind-pro` (decision 11).
 - gitleaks (the pre-commit hook and the CI scan) keeps the token out of git, as [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets) requires.
 - The Quality Gate (`.github/workflows/ci.yml`) stops at its `Licensed UI prerequisites` step when `INFISICAL_GATE_IDENTITY_ID` is
   unset, and its `HeroUI Pro token (Infisical OIDC)` and `Uniwind Pro token (Infisical OIDC)` steps export only `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` (decisions 9 and 11). The release workflow
-  builds only the packages, never `@stackra/ui-pro` (`.github/workflows/release.yml`, `Build`).
+  builds only the packages, never `@stackra/ui-pro` (`.github/workflows/release.yml`, `Build`), and its
+  installs and the static deploy's skip `@figentra/mobile`, `@figentra/playground` and `@stackra/ui-pro`, whose postinstalls
+  fail without the tokens.
 - Decision 10 (the download budget) has no check. It is a comment, and it stays one until the cache lands.
 
 ## Alternatives

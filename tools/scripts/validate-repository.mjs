@@ -121,6 +121,10 @@ export function check({ dir, pkg, turbo, tsconfig }) {
         out.push(
           `${field}.${dep} is HeroUI Pro: only apps and ${PRO_WRAPPER} may depend on it (ADR 0304)`,
         );
+      if (version === "catalog:uniwind-pro" && !isApp)
+        out.push(
+          `${field}.${dep} is Uniwind Pro: only apps may use catalog:uniwind-pro (ADR 0304)`,
+        );
       // peerDependencies state a compatible range for consumers; they cannot name a catalog.
       if (field === "peerDependencies") continue;
       if (!version.startsWith("catalog:") && !version.startsWith("workspace:"))

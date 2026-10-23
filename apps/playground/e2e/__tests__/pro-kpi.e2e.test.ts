@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the Kpi page in Chromium: four cards show their title, formatted value and a trend that names its direction,
  *          each trend has the direction's colour role, the storage card has a progress bar at its value, each card has a
- *          named actions button reachable by keyboard, and every `dt` and `dd` sits in a `dl`.
+ *          named actions button reachable by keyboard, and every `dt` and `dd` sits in a `dl` with no box of its own.
  * Boundary: the production build under `vite preview`; Chromium only. The page has no overlay or state to open, so axe
  *          runs on it in all four scheme and direction combinations by `playground.e2e.test.ts`.
  * Runtime: node
@@ -62,13 +62,14 @@ test("gives each card a named actions button that the keyboard reaches", async (
   await expect(actions.nth(1)).toBeFocused();
 });
 
-test("keeps every dt and dd inside a dl", async ({ page }) => {
+test("keeps every dt and dd inside a dl that adds no box to the layout", async ({ page }) => {
   await visit(page, PATH, "light");
-  const stray = await page.evaluate(
-    () =>
-      [...document.querySelectorAll("dt, dd")].filter(
-        (term) => term.parentElement?.tagName !== "DL",
-      ).length,
+  const parents = await page.evaluate(() =>
+    [...document.querySelectorAll("dt, dd")].map((term) => ({
+      tag: term.parentElement?.tagName,
+      display: term.parentElement ? getComputedStyle(term.parentElement).display : null,
+    })),
   );
-  expect(stray).toBe(0);
+  expect(parents.length).toBeGreaterThan(0);
+  for (const parent of parents) expect(parent).toEqual({ tag: "DL", display: "contents" });
 });

@@ -70,7 +70,7 @@ describe("Kpi (web)", () => {
       const list = item?.parentElement;
       expect(list?.tagName).toBe("DL");
       expect(list?.getAttribute("role")).toBe("none");
-      expect(list?.classList.contains("contents")).toBe(true);
+      expect(list?.style.display).toBe("contents");
     }
     expect(screen.getByTestId("header").dataset["slot"]).toBe("kpi-header");
   });
