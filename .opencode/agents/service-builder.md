@@ -41,7 +41,7 @@ it until STA-344 converts them.
    a `Controller` (`extends Controller({ path })` in `raw/`) only for raw endpoints (0098, 0294). No kind decorators.
 2. Queries at L0–L1 become MCP tools automatically; writes opt in with `tool: true`; L3+ needs a named human (0155).
 3. Modules at `src/modules/<key>/` in the group folders of ADR 0294; no `controllers/`, `dtos/`, `repositories/`,
-   `guards/`, `links/` (0130 as amended); keys are derived from folder and package names and locked in
+   `guards/`, `links/` (0130 as amended); keys are derived from folder names and locked in
    `stackra.manifest.json`; one root module at `src/<key>.module.ts` (0294, 0295).
 4. An integration event writes its `name` once and gen derives `<module-key>.<name>.v<n>`, with the shared envelope (0141); cross-service use goes through a
    generated client or an event, never another service's source (0142).

@@ -1,7 +1,18 @@
 ---
 title: "0295 — Build and entry: stackra.config.ts, generated tool configs and entries"
-description: "Accepted · 2026-10-22"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-347, STA-349)"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-349), with the amendment of the same date on
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming). The environment
+  class follows rule R2: `src/config/env.config.ts` exports `<App>EnvConfig`, so the example in
+  decision 2 reads `env: MobileEnvConfig`, not `env: MobileEnv`. Decision 1's member key comes from
+  the member's folder name, not its package name (`commerce` for `services/commerce`). The closed
+  set of menu item verbs in decision 12 covers web and native menus only; Electron's menu roles are
+  set in `desktop.config.ts` ([0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles)).
+  The other decisions are unchanged.
+</Note>
 
 <Note>
   Amends [0010](/adr/0010-services-are-independent-workspace-members),

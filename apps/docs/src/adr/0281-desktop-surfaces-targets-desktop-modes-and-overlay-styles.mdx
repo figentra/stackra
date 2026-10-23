@@ -1,7 +1,20 @@
 ---
 title: "0281 — Desktop surfaces: targets per app, desktop modes and overlay styles"
-description: "Accepted, amended by 0295 · 2026-10-22"
+description: "Accepted, amended by 0295 · 2026-10-22 · amended 2026-10-23 (STA-349)"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-349): Electron's menu roles, the standard menu items that Electron builds
+  from a `role`, are set in `src/config/desktop.config.ts`, beside the desktop mode and overlays of
+  decisions 3 and 4. The closed set of menu item verbs of
+  [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries) decision 12
+  covers web and native menus only, so a menu class never names an Electron role. The other
+  decisions are unchanged.
+
+Enforcement of this note: planned — the `desktop.config.ts` schema in `stackra gen` (the first item
+under Enforcement below).
+
+</Note>
 
 <Note>
   Amended by [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries):

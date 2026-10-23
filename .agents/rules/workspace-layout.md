@@ -92,9 +92,10 @@ new code in the v3 shape where the member already allows it.
 - Backend services in plain TypeScript; `stackra gen` emits the Encore app (ADRs 0091, 0124)
 - Independent workspace members; feature modules in `src/modules/<key>/`, each with the module groups of ADR 0294
   decision 13 (`models/`, `actions/`, `queries/`, `schemas/`, `enums/`, `errors/`, `events/`, `listeners/`,
-  `workflows/`, `access/`, `services/`, `drivers/`, `extensions/`, `resources/<model>/`, `database/{migrations,factories,seeders}/`,
-  `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its first file; `database/` is per module,
-  its migrations numbered per module, and each module's tables live in its own Postgres schema
+  `workflows/`, `access/`, `services/`, `drivers/`, `extensions/`, `integrations/`, `connections/`, `resources/<model>/`,
+  `database/{migrations,factories,seeders}/`, `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its
+  first file; `database/` is per module, its migrations numbered per module, and each module's tables live in its own
+  Postgres schema
 - Config classes in `src/config/`; the public type surface in `src/contracts/`
 
 ### Apps (<name>)
@@ -102,7 +103,8 @@ new code in the v3 shape where the member already allows it.
 - Console: Vite web app; Docs: Mintlify documentation site; Mobile: Expo React Native app
 - App groups (ADR 0294 decision 14): `src/<key>.module.ts`, `src/app.error.tsx`, `config/`, `routes/<name>/`,
   `components/<name>/`, `blocks/<name>/`, `panels/`, `menus/`, `shortcuts/`, `documents/`, `stores/`, `flags/`,
-  `analytics/`, `bridges/`, `hooks/` (two or more importers), `overrides/<owner>/`, `enums/`, `types/`, `styles/`
+  `analytics/`, `bridges/`, `hooks/` (two or more importers), `overrides/<owner>/`, `schemas/`, `errors/`, `enums/`,
+  `types/`, `styles/`
 - Docs (`apps/docs`) is the exception: Mintlify pages, `docs.json` and `assets/` in `src/`
 
 ### Workers (<name>)

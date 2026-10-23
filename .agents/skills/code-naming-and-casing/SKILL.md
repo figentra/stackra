@@ -16,7 +16,7 @@ are planned (STA-338, STA-340), so write new code in this form even where old co
 | Files                                     | `<name>.<kind>.ts(x)`, kebab-case, in the kind's home group    | `actions/cancel-order.action.ts`, `models/order.model.ts` |
 | Class names                               | `PascalCase(stem) + PascalCase(kind)`; noun kinds no suffix    | `CancelOrderAction`, `Order`, `OrderNotPayableError`     |
 | Packages                                  | `@stackra/<kebab>`; services `@figentra/service-<kebab>`       | `@stackra/shortcuts`, `@figentra/service-identity`       |
-| Member and module keys                    | Derived: package name, folder name; snake_case                 | `loyalty_kit`, `orders`                                  |
+| Member and module keys                    | Derived: member folder, module folder; snake_case              | `loyalty_kit`, `orders`                                  |
 | Public ids                                | `<prefix>_<26 characters>`, typed `PublicId<"ord">`            | `ord_01jh4q...`                                          |
 | Action and query keys                     | Write `key`; gen adds `<module>.` and `@<major>`               | `order.cancel` → `orders.order.cancel@1`                 |
 | Permissions                               | Derived from `<Model>Permissions` statics                      | `OrderPermissions.cancel` → `orders.order.cancel`        |

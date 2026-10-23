@@ -1,7 +1,17 @@
 ---
 title: "0294 — Programming model v3: grammar, group folders, derived identities and naming"
-description: "Accepted · 2026-10-22"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349)"
 ---
+
+<Note>
+  Amended 2026-10-23 (STA-349): converting the template found gaps, which the amendment at the end
+  of this page settles. Integration and Connection are kinds with their own module groups; `@Secret`
+  names its secret; `@Classified` is a field decorator; the app groups gain `schemas/` and
+  `errors/`; a kind without options is written bare; `broadcast` takes a permission and an audience;
+  a sibling may import an extension point; `refreshOn` takes integration events only; kind base
+  names are reserved; test helpers are named by kind; a schema may extend a schema; and the member
+  key is the folder name. The other decisions are unchanged.
+</Note>
 
 <Note>
   Amends these pages, each of which carries a note that says what changed and which of its decisions
@@ -510,6 +520,59 @@ Nothing enforces this grammar yet. The folder tables in `tools/scripts/structure
   ([0300](/adr/0300-published-tooling-presets-and-enforced-spell-checking) decision 6).
 - The spikes of STA-335 ran outside this repository; their results are decisions 25 to 28. The conversion of the
   template is STA-337, and the conversion of this repository's members is STA-344.
+- planned — STA-340, for the amendment of 2026-10-23: the gen checks `secret_name_missing` (a `@Secret` with no name)
+  and `refresh_on_domain_event` (a `refreshOn` entry that is a domain event), the sibling-module rule that allows
+  `extensions/*.extension-point.ts`, and the amended groups in `structure.mjs`. Today `MODULE_GROUPS`, `APP_GROUPS`
+  and `PACKAGE_FOLDERS` in `tools/scripts/structure.mjs`, and the structure page they render, hold the tables of
+  2026-10-22 without the amendment's rows. Nothing checks that a model avoids a kind base name.
+
+## Amendment 2026-10-23: gaps found by the template conversion (STA-349)
+
+**Context.** Converting the template to this model (STA-337) found cases that the decisions above leave open or state
+wrongly. Each item names the decision or rule it changes. Everything else stands.
+
+**Decision.**
+
+1. **Integration and Connection are kinds (decisions 13 and 16).** An integration is `extends Integration({ provider })`
+   in `integrations/`, and a connection is `extends Connection(SomeIntegration, { ... })` in `connections/`. Both
+   groups join the module groups of decision 13, holding `.integration.ts` and `.connection.ts`.
+2. **`@Secret` names its secret (R6, decision 19).** A secret field is always `@Secret("NAME")`, on a config class and
+   on a connection alike. A bare `@Secret` fails gen with `secret_name_missing`.
+3. **`@Classified` is a field decorator (R6).** `@Classified(DataClassification.X)` joins the serializers (`@Hidden`,
+   `@Visible`) as the privacy and serialisation category: it records the class of data a field holds.
+4. **The app groups gain `schemas/` and `errors/` (decision 14).** They hold `.schema.ts` and `.error.ts` in an app as
+   in a module. The `.error.tsx` error boundaries stay at the root and in route folders.
+5. **A kind without options is written bare (R3, decision 16).** `extends Prompt` is the form when a prompt sets no
+   options. Where a kind's options are optional, its kind table row allows both forms, as the Module and Listener
+   rows already show; the prompt row reads `extends Prompt` or `extends Prompt({...})`.
+6. **Electron menu roles are desktop config (decision 16).** The closed set of menu item verbs covers web and native
+   menus only. Electron's menu roles are set in `desktop.config.ts`, the surface of
+   [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles).
+7. **Broadcast has an audience (decision 16).** The `broadcast` option of `IntegrationEvent` is
+   `{ permission, audience }`, where `audience` is `"principal"` or `"tenant"` and defaults to `"principal"`. The note
+   of 2026-10-23 on [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait) says what each reaches.
+8. **A sibling may import an extension point (decision 24).** The public groups a sibling module may import gain
+   `extensions/*.extension-point.ts`, so a module can extend a point that its sibling declares.
+9. **Config files follow R2.** `src/config/env.config.ts` exports `<App>EnvConfig`, such as `MobileEnvConfig`. The
+   note of 2026-10-23 on [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries) corrects
+   that record's example.
+10. **`refreshOn` takes integration events only (decision 16).** A widget's `refreshOn` lists integration events. A
+    domain event there fails gen with `refresh_on_domain_event`.
+11. **Kind base names are reserved (R3).** No model takes the name of a kind base, because a noun kind's class has no
+    suffix and would hide the base. A model for a user's stored messages is `InboxMessage`, not `Notification`.
+12. **Test helpers are named by kind (R2, decision 15).** A package's `testing/` holds `<name>.fake.ts`,
+    `<name>.matcher.ts` and `<name>.fixture.ts` files, in place of the `fakes/` and `matchers/` folders of decision 15.
+    A `.factory.ts` file is only the Factory kind, in `database/factories/`
+    ([0269](/adr/0269-stackra-testing-package-entries-and-helper-placement) carries the same note).
+13. **A shape may extend a shape (decision 26).** A schema may extend another schema, and the `PickType`, `OmitType`
+    and `PartialType` helpers derive one shape from another. As with an override (R3), the class then extends a class
+    of its own kind rather than the kind base. Gen compiles the inherited fields as it compiles declared ones.
+14. **The member key is the folder name (decision 20).** The member key is the member's folder name in snake_case:
+    `commerce` for `services/commerce`, `loyalty_kit` for `packages/commerce/loyalty-kit`. It replaces the
+    package-name formula, which would give `service_commerce` for a service. Each module's Postgres schema is still
+    the module key, inside the service's database. The 0294 note on
+    [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders) and decision 1 of 0295, which
+    derive the member key from the package name, read the folder name.
 
 ## Supersedes and sources
 
@@ -533,4 +596,5 @@ The build and entry shape, the runway and the web runtime are in
 [0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups) and
 [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding).
 
-Sources: the programming-model v3 wave of 2026-10-22, Linear STA-334.
+Sources: the programming-model v3 wave of 2026-10-22, Linear STA-334; the amendment of 2026-10-23 from the template
+conversion, Linear STA-349.
