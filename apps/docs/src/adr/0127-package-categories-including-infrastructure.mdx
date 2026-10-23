@@ -24,10 +24,18 @@ description: "Accepted, amended by 0282, 0286, 0294, 0302 · 2026-10-20 · amend
   navigation, panel, shortcuts, platform, peripherals, builder, collaboration. developer: cli,
   gen, coding-standard, vite-plugin, devtools-kit, testing, runway, skills, mcp, renderers. The
   other rows stand.
-- **Entries:** a package exposes only the six standard entries (`.`, `./contracts`, `./node`,
-  `./react`, `./native`, `./testing`) plus runtime-target entries such as `./server` and `./sw`.
-  Every other extra entry folds into one of these. Entries that an accepted ADR already names as
-  an exception keep it. One symbol is exported from one entry only (0294 decision 15).
+- **Entries:** the complete allowed set is below. Every other extra entry folds into one of these,
+  and one symbol is exported from one entry only (0294 decision 15).
+  - The six standard entries: `.`, `./contracts`, `./node`, `./react`, `./native`, `./testing`.
+  - Five runtime-target entries: `./server` (the HTTP server or SSR runtime), `./worker`
+    (Cloudflare Workers), `./sw` (the service worker), `./browser` (browser-only drivers) and
+    `./electron` (the Electron main-process bridge and renderer drivers). There is no `./edge`.
+  - Two named tool-hook subpaths, allowed only because the tool needs a module of a fixed shape:
+    `@stackra/gen/metro-transformer` and `@stackra/platform/electron/after-pack`. A new tool-hook
+    subpath needs an ADR.
+  - One package-specific exception: `@stackra/testing` also has `./e2e` and `./contract`
+    ([0269](/adr/0269-stackra-testing-package-entries-and-helper-placement) decision 6), for that
+    package only.
 - **Kind bases and helpers:** `Port` and `Enum` live in `@stackra/contracts`; `Module` and
   `Service` in `@stackra/container`; the four `define*` functions of `stackra.config.ts` and
   `MigrationRunner` in `@stackra/contracts`. The kind helper in `@stackra/container` is
