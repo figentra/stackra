@@ -35,7 +35,7 @@ const STRINGS = {
     english: "English (LTR)",
     arabic: "العربية (RTL)",
   },
-  groups: { Pro: "Pro" } satisfies Record<DesignSystemGroup, string>,
+  groups: { Free: "Free", Pro: "Pro" } satisfies Record<DesignSystemGroup, string>,
 } as const;
 
 const SCHEMES = ColorScheme.map((scheme) => ({
@@ -56,7 +56,7 @@ export function DesignSystemScreen({
   navigation,
 }: NativeStackScreenProps<SettingsStackParamList, "DesignSystem">) {
   const { colorScheme, setColorScheme, locale, setLocale } = useDesignSystem();
-  // Every component route takes no params, but navigate's per-route overloads cannot take a union of 55 route names,
+  // Every component route takes no params, but navigate's per-route overloads cannot take a union of route names,
   // so the call is typed as what it is: open one of these routes with no params.
   const openPage = navigation.navigate as (route: DesignSystemComponentRoute) => void;
 

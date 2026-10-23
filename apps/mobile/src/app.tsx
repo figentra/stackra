@@ -21,8 +21,9 @@ import { RootNavigator } from "./navigation/root-navigator";
 void SplashScreen.preventAutoHideAsync();
 
 function Navigation() {
-  // The scheme on screen, `system` already resolved: the picker on the design-system screen changes it at runtime.
-  const { resolvedColorScheme } = useDesignSystem();
+  // The scheme on screen, `system` already resolved, and the direction of the locale: the switchers on the
+  // design-system screen change both at runtime.
+  const { resolvedColorScheme, direction } = useDesignSystem();
   const dark = resolvedColorScheme === "dark";
   const [background, foreground, accent, border] = useThemeColor([
     "background",
@@ -33,6 +34,8 @@ function Navigation() {
   const base = dark ? DarkTheme : DefaultTheme;
   return (
     <NavigationContainer
+      // React Navigation mirrors its headers, back buttons and gestures from this, not from I18nManager alone.
+      direction={direction}
       linking={linking}
       onReady={() => void SplashScreen.hideAsync()}
       theme={{

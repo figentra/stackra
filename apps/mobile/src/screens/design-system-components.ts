@@ -3,14 +3,43 @@
  * Purpose: the one list of the components the design-system review area shows: its group, its title, its route and
  *          its screen. The index screen renders the groups from it and the Settings stack registers the routes
  *          from it, so a component is added in one place.
- * Boundary: data only; the screens and the route names live elsewhere. Today the only group is "Pro", every
- *          `@stackra/ui-pro/native` component; the free `@stackra/ui` components join it as their waves merge.
+ * Boundary: data only; the screens and the route names live elsewhere. Two groups: "Free", every
+ *          `@stackra/ui/native` component (screens in `free/`), listed first, then "Pro", every
+ *          `@stackra/ui-pro/native` component (screens in `pro/`).
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-013.
  */
 import type { ReactElement } from "react";
 
 import type { DesignSystemComponentRoute } from "../navigation/types";
+import { AvatarScreen } from "./free/avatar-screen";
+import { BadgeScreen as FreeBadgeScreen } from "./free/badge-screen";
+import { ButtonScreen } from "./free/button-screen";
+import { CardScreen } from "./free/card-screen";
+import { CheckboxScreen } from "./free/checkbox-screen";
+import { CheckboxGroupScreen } from "./free/checkbox-group-screen";
+import { ChipScreen } from "./free/chip-screen";
+import { CloseButtonScreen } from "./free/close-button-screen";
+import { ComboBoxScreen as FreeComboBoxScreen } from "./free/combo-box-screen";
+import { FormScreen } from "./free/form-screen";
+import { FormSectionScreen } from "./free/form-section-screen";
+import { IconScreen } from "./free/icon-screen";
+import { IconButtonScreen } from "./free/icon-button-screen";
+import { InputGroupScreen } from "./free/input-group-screen";
+import { LinkScreen } from "./free/link-screen";
+import { RadioGroupScreen } from "./free/radio-group-screen";
+import { SearchFieldScreen } from "./free/search-field-screen";
+import { SelectScreen } from "./free/select-screen";
+import { SeparatorScreen } from "./free/separator-screen";
+import { SkeletonScreen } from "./free/skeleton-screen";
+import { SpinnerScreen } from "./free/spinner-screen";
+import { StatusBadgeScreen } from "./free/status-badge-screen";
+import { SurfaceScreen } from "./free/surface-screen";
+import { SwitchScreen } from "./free/switch-screen";
+import { TagGroupScreen } from "./free/tag-group-screen";
+import { TextAreaScreen } from "./free/text-area-screen";
+import { TextFieldScreen } from "./free/text-field-screen";
+import { TypographyScreen } from "./free/typography-screen";
 import { CalendarScreen } from "./pro/calendar-screen";
 import { DatePickerScreen } from "./pro/date-picker-screen";
 import { NumberFieldScreen } from "./pro/number-field-screen";
@@ -67,8 +96,8 @@ import { WheelPickerGroupScreen } from "./pro/wheel-picker-group-screen";
 import { WheelTimePickerScreen } from "./pro/wheel-time-picker-screen";
 import { WidgetScreen } from "./pro/widget-screen";
 
-/** The groups the index lists, in the order they appear: add `"Free"` or a wave's name here when it merges. */
-export type DesignSystemGroup = "Pro";
+/** The groups the index lists, in the order they appear: the free `@stackra/ui` components, then the Pro ones. */
+export type DesignSystemGroup = "Free" | "Pro";
 
 /** One component of the review area. */
 export interface DesignSystemComponent {
@@ -84,6 +113,39 @@ export interface DesignSystemComponent {
 
 /** The components of the review area, in list order; the index groups them by `group`. */
 export const DESIGN_SYSTEM_COMPONENTS: readonly DesignSystemComponent[] = [
+  { group: "Free", title: "Avatar", route: "FreeAvatar", screen: AvatarScreen },
+  { group: "Free", title: "Badge", route: "FreeBadge", screen: FreeBadgeScreen },
+  { group: "Free", title: "Button", route: "FreeButton", screen: ButtonScreen },
+  { group: "Free", title: "Card", route: "FreeCard", screen: CardScreen },
+  { group: "Free", title: "Checkbox", route: "FreeCheckbox", screen: CheckboxScreen },
+  {
+    group: "Free",
+    title: "CheckboxGroup",
+    route: "FreeCheckboxGroup",
+    screen: CheckboxGroupScreen,
+  },
+  { group: "Free", title: "Chip", route: "FreeChip", screen: ChipScreen },
+  { group: "Free", title: "CloseButton", route: "FreeCloseButton", screen: CloseButtonScreen },
+  { group: "Free", title: "ComboBox", route: "FreeComboBox", screen: FreeComboBoxScreen },
+  { group: "Free", title: "Form", route: "FreeForm", screen: FormScreen },
+  { group: "Free", title: "FormSection", route: "FreeFormSection", screen: FormSectionScreen },
+  { group: "Free", title: "Icon", route: "FreeIcon", screen: IconScreen },
+  { group: "Free", title: "IconButton", route: "FreeIconButton", screen: IconButtonScreen },
+  { group: "Free", title: "InputGroup", route: "FreeInputGroup", screen: InputGroupScreen },
+  { group: "Free", title: "Link", route: "FreeLink", screen: LinkScreen },
+  { group: "Free", title: "RadioGroup", route: "FreeRadioGroup", screen: RadioGroupScreen },
+  { group: "Free", title: "SearchField", route: "FreeSearchField", screen: SearchFieldScreen },
+  { group: "Free", title: "Select", route: "FreeSelect", screen: SelectScreen },
+  { group: "Free", title: "Separator", route: "FreeSeparator", screen: SeparatorScreen },
+  { group: "Free", title: "Skeleton", route: "FreeSkeleton", screen: SkeletonScreen },
+  { group: "Free", title: "Spinner", route: "FreeSpinner", screen: SpinnerScreen },
+  { group: "Free", title: "StatusBadge", route: "FreeStatusBadge", screen: StatusBadgeScreen },
+  { group: "Free", title: "Surface", route: "FreeSurface", screen: SurfaceScreen },
+  { group: "Free", title: "Switch", route: "FreeSwitch", screen: SwitchScreen },
+  { group: "Free", title: "TagGroup", route: "FreeTagGroup", screen: TagGroupScreen },
+  { group: "Free", title: "TextArea", route: "FreeTextArea", screen: TextAreaScreen },
+  { group: "Free", title: "TextField", route: "FreeTextField", screen: TextFieldScreen },
+  { group: "Free", title: "Typography", route: "FreeTypography", screen: TypographyScreen },
   {
     group: "Pro",
     title: "ProgressButton",

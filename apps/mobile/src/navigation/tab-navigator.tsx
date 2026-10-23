@@ -7,6 +7,7 @@
  */
 import { createNativeBottomTabNavigator } from "@bottom-tabs/react-navigation";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useDesignSystem } from "@stackra/ui/native";
 import { useThemeColor } from "heroui-native";
 
 import { DESIGN_SYSTEM_COMPONENTS } from "../screens/design-system-components";
@@ -58,8 +59,10 @@ function SettingsTab() {
 /** System tab bar (UITabBarController): Liquid Glass on iOS 26, Material on Android. */
 export function TabNavigator() {
   const [accent] = useThemeColor(["accent"]);
+  // The in-app locale's direction, not the device's (`locale`, the default), so the switcher mirrors the tab bar.
+  const { direction } = useDesignSystem();
   return (
-    <Tabs.Navigator tabBarActiveTintColor={accent} sidebarAdaptable>
+    <Tabs.Navigator tabBarActiveTintColor={accent} sidebarAdaptable layoutDirection={direction}>
       <Tabs.Screen
         name="HomeTab"
         component={HomeTab}

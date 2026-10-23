@@ -22,6 +22,62 @@ export type SettingsStackParamList = {
   Settings: undefined;
   /** The design-system index, with the display switchers; deep link `stackra://design-system`. */
   DesignSystem: undefined;
+  /** The free Avatar page; deep link `stackra://design-system/free/avatar`. */
+  FreeAvatar: undefined;
+  /** The free Badge page; deep link `stackra://design-system/free/badge`. */
+  FreeBadge: undefined;
+  /** The free Button page; deep link `stackra://design-system/free/button`. */
+  FreeButton: undefined;
+  /** The free Card page; deep link `stackra://design-system/free/card`. */
+  FreeCard: undefined;
+  /** The free Checkbox page; deep link `stackra://design-system/free/checkbox`. */
+  FreeCheckbox: undefined;
+  /** The free CheckboxGroup page; deep link `stackra://design-system/free/checkbox-group`. */
+  FreeCheckboxGroup: undefined;
+  /** The free Chip page; deep link `stackra://design-system/free/chip`. */
+  FreeChip: undefined;
+  /** The free CloseButton page; deep link `stackra://design-system/free/close-button`. */
+  FreeCloseButton: undefined;
+  /** The free ComboBox page; deep link `stackra://design-system/free/combo-box`. */
+  FreeComboBox: undefined;
+  /** The free Form page; deep link `stackra://design-system/free/form`. */
+  FreeForm: undefined;
+  /** The free FormSection page; deep link `stackra://design-system/free/form-section`. */
+  FreeFormSection: undefined;
+  /** The free Icon page; deep link `stackra://design-system/free/icon`. */
+  FreeIcon: undefined;
+  /** The free IconButton page; deep link `stackra://design-system/free/icon-button`. */
+  FreeIconButton: undefined;
+  /** The free InputGroup page; deep link `stackra://design-system/free/input-group`. */
+  FreeInputGroup: undefined;
+  /** The free Link page; deep link `stackra://design-system/free/link`. */
+  FreeLink: undefined;
+  /** The free RadioGroup page; deep link `stackra://design-system/free/radio-group`. */
+  FreeRadioGroup: undefined;
+  /** The free SearchField page; deep link `stackra://design-system/free/search-field`. */
+  FreeSearchField: undefined;
+  /** The free Select page; deep link `stackra://design-system/free/select`. */
+  FreeSelect: undefined;
+  /** The free Separator page; deep link `stackra://design-system/free/separator`. */
+  FreeSeparator: undefined;
+  /** The free Skeleton page; deep link `stackra://design-system/free/skeleton`. */
+  FreeSkeleton: undefined;
+  /** The free Spinner page; deep link `stackra://design-system/free/spinner`. */
+  FreeSpinner: undefined;
+  /** The free StatusBadge page; deep link `stackra://design-system/free/status-badge`. */
+  FreeStatusBadge: undefined;
+  /** The free Surface page; deep link `stackra://design-system/free/surface`. */
+  FreeSurface: undefined;
+  /** The free Switch page; deep link `stackra://design-system/free/switch`. */
+  FreeSwitch: undefined;
+  /** The free TagGroup page; deep link `stackra://design-system/free/tag-group`. */
+  FreeTagGroup: undefined;
+  /** The free TextArea page; deep link `stackra://design-system/free/text-area`. */
+  FreeTextArea: undefined;
+  /** The free TextField page; deep link `stackra://design-system/free/text-field`. */
+  FreeTextField: undefined;
+  /** The free Typography page; deep link `stackra://design-system/free/typography`. */
+  FreeTypography: undefined;
   /** The ProgressButton page; deep link `stackra://design-system/pro/progress-button`. */
   ProProgressButton: undefined;
   /** The SlideButton page; deep link `stackra://design-system/pro/slide-button`. */
