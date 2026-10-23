@@ -6,7 +6,7 @@
  * Boundary: presentation and navigation calls; the groups and rows come from `design-system-components.ts`, the
  *          state from the design system provider.
  * Runtime: react-native
- * Governing contract: ADR 0304 (decision 6); ADR 0302 (decision 5); ADR 0060 (light, dark, RTL); STA-403 FR-013.
+ * Governing contract: ADR 0310 (decision 6); ADR 0302 (decision 5); ADR 0060 (light, dark, RTL); STA-403 FR-013.
  */
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ColorScheme } from "@stackra/ui/contracts";

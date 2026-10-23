@@ -6,7 +6,7 @@
 # Owner: release-operations
 # Secrets: HEROUI_AUTH_TOKEN and UNIWIND_AUTH_TOKEN (the HeroUI and Uniwind CI/CD licence tokens) from Infisical /ci
 #          (env prod) through GitHub OIDC, for the install step only: the HeroUI Pro and Uniwind Pro postinstalls
-#          download the licensed builds with them (ADR 0304). No repository
+#          download the licensed builds with them (ADR 0310). No repository
 #          secret; the Infisical identity id is the non-secret repository variable INFISICAL_GATE_IDENTITY_ID.
 name: CI
 
@@ -23,7 +23,7 @@ on:
     types: [checks_requested]
 
 # ADR 0019 D2: least privilege. Nothing in the gate writes to the repository; the gate job alone holds an OIDC token,
-# for the Infisical step (ADR 0304).
+# for the Infisical step (ADR 0310).
 permissions:
   contents: read
 
@@ -33,10 +33,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # ADR 0304: GitHub OIDC token, exchanged with Infisical for the two licence tokens only
+      id-token: write # ADR 0310: GitHub OIDC token, exchanged with Infisical for the two licence tokens only
     env:
       # Non-secret id of the Infisical machine identity that may read HEROUI_AUTH_TOKEN and UNIWIND_AUTH_TOKEN in /ci
-      # (ADR 0304 decisions 9 and 11).
+      # (ADR 0310 decisions 9 and 11).
       INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
 
     steps:
@@ -60,7 +60,7 @@ jobs:
         if: env.INFISICAL_IDENTITY_ID == ''
         run: >-
           echo "::error title=HeroUI Pro token unavailable::Repository variable INFISICAL_GATE_IDENTITY_ID is not set.
-          The install needs HEROUI_AUTH_TOKEN and UNIWIND_AUTH_TOKEN from Infisical /ci (ADR 0304)." && exit 1
+          The install needs HEROUI_AUTH_TOKEN and UNIWIND_AUTH_TOKEN from Infisical /ci (ADR 0310)." && exit 1
 
       # Exchanges this job's OIDC token for Infisical access and exports only HEROUI_AUTH_TOKEN into the environment of
       # later steps; the HeroUI Pro postinstall reads it. The secret-name filter keeps every other /ci value out.
@@ -76,7 +76,7 @@ jobs:
           secret-name: HEROUI_AUTH_TOKEN
           export-type: env
 
-      # The same exchange for Uniwind Pro's CI/CD licence token (ADR 0304 decision 11); one name per step.
+      # The same exchange for Uniwind Pro's CI/CD licence token (ADR 0310 decision 11); one name per step.
       - name: Uniwind Pro token (Infisical OIDC)
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
         with:

@@ -5,7 +5,7 @@
  * Boundary: no styling or behaviour of its own; the look needs `@heroui-pro/react/css`. Imports the `data-grid`
  *          subpath so the other Pro components stay out of the bundle.
  * Runtime: browser
- * Governing contract: ADR 0304 (decision 3); ADR 0303 (decision 7); owner decision 6 of STA-350 (thin wrappers);
+ * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); owner decision 6 of STA-350 (thin wrappers);
  *          STA-403 FR-003.
  */
 import {

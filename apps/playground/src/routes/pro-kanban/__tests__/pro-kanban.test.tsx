@@ -5,7 +5,7 @@
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither. Dragging is HeroUI Pro's and is checked by the e2e suite.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 5); ADR 0304 (decision 6); ADR 0022 (test placement).
+ * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0022 (test placement).
  */
 // @covers sta-403:FR-013
 import { fireEvent, render, screen, within } from "@testing-library/react";

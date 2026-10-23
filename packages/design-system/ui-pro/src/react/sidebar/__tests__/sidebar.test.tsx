@@ -7,7 +7,7 @@
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither and the sidebar reads the mobile breakpoint and its scroll box through them; the theme CSS is not loaded.
  * Runtime: browser
- * Governing contract: ADR 0304 (decision 3); ADR 0303 (decision 7); ADR 0022 (test placement).
+ * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-403:FR-005

@@ -6,7 +6,7 @@
 
 A private package, `@stackra/ui-pro`, wraps HeroUI Pro on web and HeroUI Native Pro on native with the `@stackra/ui`
 props vocabulary. The validator keeps Pro out of every free package. The playground gets a "Pro" group. CI reads
-HeroUI's CI/CD token from Infisical over OIDC for the install, and the release build skips the private package. ADR 0304
+HeroUI's CI/CD token from Infisical over OIDC for the install, and the release build skips the private package. ADR 0310
 records it.
 
 ## Technical Context
@@ -33,7 +33,7 @@ records it.
 | Versions and catalogs                 | PASS   | owner-approved catalog lines, exact pins                                             |
 | Deploy modes (ADR 0076)               | N/A    | a private library and a dev-only app                                                 |
 | Licence tier (ADR 0077)               | PASS   | HeroUI Pro never committed or bundled; only our own apps (ADR 0197)                  |
-| Docs and ADRs                         | PASS   | ADR 0304, the ADR 0197 note, the setup runbook, README and AGENTS                    |
+| Docs and ADRs                         | PASS   | ADR 0310, the ADR 0197 note, the setup runbook, README and AGENTS                    |
 
 ## Deploy modes
 
@@ -63,15 +63,15 @@ None.
 
 R3 (CI permission). The lead writes the package scaffold, catalogs, validator check, CI wiring and spec;
 `package-builder` writes the web and native wrappers in parallel (separate folders); `frontend-builder` the playground
-routes and e2e; `docs-adr-steward` ADR 0304. A separate `code-reviewer` posts the AI-REVIEW; the owner merges.
+routes and e2e; `docs-adr-steward` ADR 0310. A separate `code-reviewer` posts the AI-REVIEW; the owner merges.
 
 ## ADRs
 
-ADR 0304 (new, same pull request), amending ADR 0197 decision 4. ADR 0165, 0197, 0294, 0302 and 0303 apply.
+ADR 0310 (new, same pull request), amending ADR 0197 decision 4. ADR 0165, 0197, 0294, 0302 and 0303 apply.
 
 ## Docs
 
-ADR 0304, the ADR 0197 note, `apps/docs/src/runbooks/setup.mdx`, the package README and AGENTS.
+ADR 0310, the ADR 0197 note, `apps/docs/src/runbooks/setup.mdx`, the package README and AGENTS.
 
 ## Project structure
 

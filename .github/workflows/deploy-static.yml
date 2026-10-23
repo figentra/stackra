@@ -68,7 +68,7 @@ jobs:
         with:
           install_args: node pnpm
 
-      # The licensed Pro postinstalls (ADR 0304) fail without their CI tokens, which only the Quality Gate reads, so
+      # The licensed Pro postinstalls (ADR 0310) fail without their CI tokens, which only the Quality Gate reads, so
       # this job skips the three members that pull them in; none of them is published or deployed here.
       - name: Install dependencies
         run: >-

@@ -6,7 +6,7 @@
  *          display switcher chose.
  * Boundary: presentation and local demo state only; the picker is @stackra/ui-pro's, nothing here is styled by hand.
  * Runtime: react-native
- * Governing contract: ADR 0304 (decision 6); STA-403 FR-011.
+ * Governing contract: ADR 0310 (decision 6); STA-403 FR-011.
  */
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useDesignSystem } from "@stackra/ui/native";

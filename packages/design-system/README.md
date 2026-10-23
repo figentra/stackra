@@ -8,7 +8,7 @@ package, `packages/design-system/<name>`, named `@stackra/<name>`
 and its HeroUI Native / Uniwind CSS, and the theme's fonts. [`ui`](ui) (`@stackra/ui`): the component API, contracts
 shared, HeroUI v3 on web and HeroUI Native with Uniwind on native. [`ui-pro`](ui-pro) (`@stackra/ui-pro`, private,
 never published): the same props vocabulary over HeroUI Pro and HeroUI Native Pro, for Stackra's own apps only
-([ADR 0304](../../apps/docs/src/adr/0304-stackra-ui-pro-private-heroui-pro-wrappers.mdx)).
+([ADR 0310](../../apps/docs/src/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers.mdx)).
 
 **Planned here:** icons. A product brings its own brand as a theme for `@stackra/tokens`; Stackra's own logos and brand
 assets live in the docs app (`apps/docs/src/assets/brand/`).

@@ -4,7 +4,7 @@
  *          slide-to-confirm with its status, one slider for each `tone`, and the disabled state.
  * Boundary: presentation and local demo state only; the slider is @stackra/ui-pro's, nothing here is styled by hand.
  * Runtime: react-native
- * Governing contract: ADR 0304 (decision 6); STA-403 FR-009.
+ * Governing contract: ADR 0310 (decision 6); STA-403 FR-009.
  */
 import { SlideButton } from "@stackra/ui-pro/native";
 import { Typography } from "heroui-native";

@@ -6,11 +6,11 @@
  *          and the outlet. The UI is English (`lang="en"`) while `<html>` carries the chosen locale and direction,
  *          so the layout mirrors as the locale's would. On a client-side route change it moves focus to the new
  *          page's h1, and it keeps the browser's theme-color in step with the scheme on screen. Pages with a `group`
- *          (the `@stackra/ui-pro` pages, ADR 0304) are listed after the others under their group's label. A page that
+ *          (the `@stackra/ui-pro` pages, ADR 0310) are listed after the others under their group's label. A page that
  *          draws its own `main` (`ownsMain`) is hosted in a plain element, since a page has one `main` landmark.
  * Boundary: layout and the switcher only; the pages come from the route folders.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 5); ADR 0304 (decision 6); ADR 0165 (web client stack); ADR 0060 (light,
+ * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0165 (web client stack); ADR 0060 (light,
  *          dark, RTL).
  */
 import { Link, RouterProvider, ToggleButton, ToggleButtonGroup, Toolbar } from "@heroui/react";

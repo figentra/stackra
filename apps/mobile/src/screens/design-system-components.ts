@@ -6,7 +6,7 @@
  * Boundary: data only; the screens and the route names live elsewhere. Today the only group is "Pro", the six
  *          `@stackra/ui-pro/native` components; the free `@stackra/ui` components join it as their waves merge.
  * Runtime: react-native
- * Governing contract: ADR 0304 (decision 6); STA-403 FR-013.
+ * Governing contract: ADR 0310 (decision 6); STA-403 FR-013.
  */
 import type { ReactElement } from "react";
 

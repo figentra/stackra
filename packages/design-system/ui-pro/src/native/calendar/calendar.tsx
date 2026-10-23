@@ -6,7 +6,7 @@
  * Boundary: no behaviour or styling of its own. The compound exposes the eighteen parts of HeroUI Native Pro, its
  *          own components. HeroUI Native Pro's `useCalendar` hook stays in `heroui-native-pro/calendar`.
  * Runtime: react-native
- * Governing contract: ADR 0304 (decision 3); ADR 0303 (decision 7); STA-403 FR-011.
+ * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-011.
  */
 import { Calendar as HeroCalendar } from "heroui-native-pro/calendar";
 import type { ComponentPropsWithRef, ReactElement } from "react";

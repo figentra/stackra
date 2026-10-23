@@ -4,7 +4,7 @@
  *          filled and announced as selected, so the state does not rest on colour alone.
  * Boundary: one presentational, controlled component; it holds no state of its own.
  * Runtime: react-native
- * Governing contract: ADR 0304 (decision 6); STA-403 FR-013.
+ * Governing contract: ADR 0310 (decision 6); STA-403 FR-013.
  */
 import { Button, Typography } from "heroui-native";
 import { View } from "react-native";

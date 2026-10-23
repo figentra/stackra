@@ -6,7 +6,7 @@
  * Boundary: React Native does not render in vitest, so the heroui-native-pro subpath is replaced by a recording
  *          stand-in that renders plain DOM; what reaches HeroUI Native Pro is checked, not its rendering.
  * Runtime: node
- * Governing contract: ADR 0304 (decision 3); ADR 0303 (decision 7); ADR 0022 (test placement).
+ * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-403:FR-010

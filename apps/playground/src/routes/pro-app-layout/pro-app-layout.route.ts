@@ -4,7 +4,7 @@
  *          own `main` landmark. The page it renders is `pro-app-layout.tsx` beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
- * Governing contract: ADR 0294 (decisions 14 and 16, rule R7); ADR 0302 (decision 5); ADR 0304 (decision 6).
+ * Governing contract: ADR 0294 (decisions 14 and 16, rule R7); ADR 0302 (decision 5); ADR 0310 (decision 6).
  */
 
 /** The `@stackra/ui-pro` AppLayout page, at `/pro-app-layout`. */

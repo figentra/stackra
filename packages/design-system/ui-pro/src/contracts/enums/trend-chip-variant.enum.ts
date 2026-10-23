@@ -3,7 +3,7 @@
  * Purpose: the emphasis variants of a `TrendChip`, the four HeroUI Pro's trend chip draws.
  * Boundary: the values only; the look is HeroUI Pro's.
  * Runtime: isomorphic
- * Governing contract: ADR 0304 (decision 3); ADR 0303 (decision 7); STA-403 FR-007.
+ * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-007.
  */
 
 /** The trend chip variants. Verified against `@heroui-pro/react` 1.0.0-beta.10 (`TrendChipRootProps`). */

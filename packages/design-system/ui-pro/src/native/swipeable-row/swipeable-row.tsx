@@ -7,7 +7,7 @@
  * Boundary: no behaviour or styling of its own. The compound exposes four parts of HeroUI Native Pro as its own
  *          components, and `Action` as a thin wrapper over its `Action`. HeroUI Native Pro's own `useSwipeableRow` hook stays in `heroui-native-pro/swipeable-row`.
  * Runtime: react-native
- * Governing contract: ADR 0304 (decision 3); ADR 0303 (decision 7); STA-403 FR-010.
+ * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-010.
  */
 import { SwipeableRow as HeroSwipeableRow } from "heroui-native-pro/swipeable-row";
 import type { ComponentPropsWithRef, ReactElement } from "react";

@@ -6,7 +6,7 @@
  * Boundary: presentation only. The direction word is visually hidden text in the chip's suffix. Values are isolated
  *          left to right (`<bdi>`) so a right-to-left page keeps their signs readable.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 5); ADR 0304 (decision 6); ADR 0060 (light, dark, RTL); STA-403 FR-013.
+ * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0060 (light, dark, RTL); STA-403 FR-013.
  */
 import { Size } from "@stackra/ui/contracts";
 import { TrendChipVariant } from "@stackra/ui-pro/contracts";

@@ -14,14 +14,14 @@
 
 **Analyze**: — <!-- lite lane: /speckit.analyze not run -->
 
-**Input**: Owner decisions of 2026-10-23 for `@stackra/ui-pro`, recorded in ADR 0304 in the same pull request. Source
+**Input**: Owner decisions of 2026-10-23 for `@stackra/ui-pro`, recorded in ADR 0310 in the same pull request. Source
 decisions: ADR 0165 decision 5 (free packages never depend on Pro), ADR 0197 (HeroUI Pro only in our own apps), ADR 0302
 (the Stackra Design System), ADR 0303 decision 7 (the props vocabulary, on the open waves 1 to 3 branch).
 
 ## Impact
 
 - **Apps touched**: `apps/mobile` (a design-system review area with the native Pro screens), `apps/playground` (a "Pro" navigation group with one route per web component), `apps/docs` (ADR
-  0304, the ADR 0197 amendment note, the setup runbook)
+  0310, the ADR 0197 amendment note, the setup runbook)
 - **Services touched**: none
 - **Packages touched**: `packages/design-system/ui-pro` (new, `@stackra/ui-pro`, private), `packages/design-system/tokens` (the
   stackra theme's light `--muted` goes from oklch 0.5 to 0.49 so muted text keeps 4.5:1 on tinted surfaces; owner,
@@ -33,7 +33,7 @@ decisions: ADR 0165 decision 5 (free packages never depend on Pro), ADR 0197 (He
 - **Security and privacy**: the Quality Gate job gains `id-token: write` for one Infisical step (change risk R3)
 - **Secrets**: `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` (the HeroUI and Uniwind CI/CD tokens) are read from Infisical `/ci` in CI; the owner sets the value
   and the `INFISICAL_GATE_IDENTITY_ID` repository variable. No value is read, printed or stored by this change
-- **ADR needed**: yes, ADR 0304 (written by `docs-adr-steward` in this pull request), amending ADR 0197 decision 4
+- **ADR needed**: yes, ADR 0310 (written by `docs-adr-steward` in this pull request), amending ADR 0197 decision 4
 - **New dependencies**: owner-approved 2026-10-23: `@heroui-pro/react` 1.0.0-beta.10 and `recharts` 3.10.1 in
   `catalog:frontend`; `heroui-native-pro` 1.0.0-beta.11, `@internationalized/date` 3.12.4 and
   `@internationalized/number` 3.6.9 in `catalog:mobile`; `allowBuilds` for the two Pro postinstalls; lead-added as required HeroUI Pro peers: `motion` 12.43.0 and `react-resizable-panels` 4.14.5 in
@@ -43,8 +43,8 @@ decisions: ADR 0165 decision 5 (free packages never depend on Pro), ADR 0197 (He
 - **Licence tier**: our wrapper code is MIT like the repository; HeroUI Pro stays under its own licence, is never
   committed or bundled, and reaches only our own apps (ADR 0113 context, ADR 0197)
 - **UI surfaces**: `apps/playground` (not shipped to users)
-- **Docs to update**: ADR 0304, the ADR 0197 note, the setup runbook's `/ci` row, the package README and AGENTS
-- **Lane**: lite (recorded reason: every decision was taken by the owner on 2026-10-23 and is recorded in ADR 0304 in
+- **Docs to update**: ADR 0310, the ADR 0197 note, the setup runbook's `/ci` row, the package README and AGENTS
+- **Lane**: lite (recorded reason: every decision was taken by the owner on 2026-10-23 and is recorded in ADR 0310 in
   the same pull request)
 - **Change risk**: R3 (a CI permission: the Quality Gate gains `id-token: write`)
 
@@ -58,7 +58,7 @@ decisions: ADR 0165 decision 5 (free packages never depend on Pro), ADR 0197 (He
    Kanban, KPI and TrendChip on web, and ProgressButton, SlideButton, SwipeableRow, Calendar and DatePicker, and
    NumberField on native.
 4. The native components get a review area in `apps/mobile` (owner, 2026-10-23, in this pull request).
-5. `apps/mobile` runs Uniwind Pro; free packages keep free `uniwind` (owner, 2026-10-23, ADR 0304 decision 11).
+5. `apps/mobile` runs Uniwind Pro; free packages keep free `uniwind` (owner, 2026-10-23, ADR 0310 decision 11).
 6. CI installs HeroUI Pro with a token from Infisical `/ci` over OIDC (lead's recommendation, applied: the name is
    `HEROUI_AUTH_TOKEN`, the only variable HeroUI's postinstall reads).
 
@@ -135,7 +135,7 @@ axe e2e in light, dark, LTR and RTL.
 
 - 2026-10-23 · — → Draft · Claude (lead) · from the owner decisions of 2026-10-23 (lite lane, lead's reason)
 - 2026-10-23 · Draft → Clarified · Claude (lead) · no open questions: the owner decided, the token name is the lead's
-  recommendation recorded in ADR 0304
+  recommendation recorded in ADR 0310
 - 2026-10-23 · Clarified → Planned · Claude (lead)
 - 2026-10-23 · Planned → Tasked · Claude (lead)
 - 2026-10-23 · Tasked → Implementing · Claude (lead) · builders under way

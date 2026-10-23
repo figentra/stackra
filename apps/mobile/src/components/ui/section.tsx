@@ -4,7 +4,7 @@
  *          the design-system review area sections its states the same way.
  * Boundary: one presentational component; no state, no data and no navigation.
  * Runtime: react-native
- * Governing contract: ADR 0304 (decision 6); STA-403 FR-013.
+ * Governing contract: ADR 0310 (decision 6); STA-403 FR-013.
  */
 import { Typography } from "heroui-native";
 import type { ReactNode } from "react";

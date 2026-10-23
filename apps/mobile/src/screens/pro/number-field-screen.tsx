@@ -5,7 +5,7 @@
  *          formats, the invalid state with its message, and the disabled state.
  * Boundary: presentation and local demo state only; the field is @stackra/ui-pro's, nothing here is styled by hand.
  * Runtime: react-native
- * Governing contract: ADR 0304 (decision 6); STA-403 FR-012.
+ * Governing contract: ADR 0310 (decision 6); STA-403 FR-012.
  */
 import { NumberField } from "@stackra/ui-pro/native";
 import { Description, FieldError, Label, Typography } from "heroui-native";

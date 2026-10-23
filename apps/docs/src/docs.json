@@ -403,7 +403,7 @@
               "adr/0300-published-tooling-presets-and-enforced-spell-checking",
               "adr/0301-stackra-seo-package",
               "adr/0302-stackra-design-system-tokens-ui-and-the-playground",
-              "adr/0304-stackra-ui-pro-private-heroui-pro-wrappers"
+              "adr/0310-stackra-ui-pro-private-heroui-pro-wrappers"
             ]
           }
         ]

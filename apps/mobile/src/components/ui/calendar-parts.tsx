@@ -6,7 +6,7 @@
  * Boundary: one presentational component; it must sit inside a `Calendar` or a `DatePicker.Calendar`, which own
  *          the value, the range and the locale.
  * Runtime: react-native
- * Governing contract: ADR 0304 (decision 6); STA-403 FR-011.
+ * Governing contract: ADR 0310 (decision 6); STA-403 FR-011.
  */
 import { Calendar } from "@stackra/ui-pro/native";
 

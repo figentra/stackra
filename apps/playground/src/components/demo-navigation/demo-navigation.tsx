@@ -6,7 +6,7 @@
  * Boundary: presentation and local state only; items carry no `href`, since the shell's router would rewrite the
  *          address and drop the scheme and locale the playground keeps in it.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 5); ADR 0304 (decision 6); STA-403 FR-013, FR-005.
+ * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); STA-403 FR-013, FR-005.
  */
 import * as UiPro from "@stackra/ui-pro/react";
 

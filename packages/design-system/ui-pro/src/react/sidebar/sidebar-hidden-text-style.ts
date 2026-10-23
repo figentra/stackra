@@ -4,7 +4,7 @@
  *          `Sidebar.Mobile` and `Sidebar.MenuIcon` add where HeroUI Pro gives its element none.
  * Boundary: a style object only; it is inline so it needs no Tailwind scan of this package.
  * Runtime: browser
- * Governing contract: ADR 0304 (decision 3); STA-403 FR-005.
+ * Governing contract: ADR 0310 (decision 3); STA-403 FR-005.
  */
 import type { CSSProperties } from "react";
 

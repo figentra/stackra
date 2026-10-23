@@ -4,7 +4,7 @@
  *          playground needs no icon package; decorative, so hidden from assistive technology.
  * Boundary: presentation only; the name of the thing an icon sits beside always comes from its text.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 5); ADR 0304 (decision 6); STA-403 FR-013.
+ * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); STA-403 FR-013.
  */
 
 /** The path of each icon, drawn in a 16 by 16 box with a 1.5 stroke. */

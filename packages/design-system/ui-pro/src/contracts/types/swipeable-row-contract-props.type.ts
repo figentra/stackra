@@ -6,7 +6,7 @@
  *          unchanged, the row's layout `variant` (`standalone` or `inline`) and the imperative ref included.
  * Boundary: types only; native only.
  * Runtime: isomorphic
- * Governing contract: ADR 0304 (decision 3); ADR 0303 (decision 7); STA-403 FR-010.
+ * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-010.
  */
 import type { Tone } from "@stackra/ui/contracts";
 

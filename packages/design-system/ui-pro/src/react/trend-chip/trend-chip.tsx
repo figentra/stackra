@@ -6,7 +6,7 @@
  * Boundary: no styling or behaviour of its own; the look needs `@heroui-pro/react/css`. The compound exposes the
  *          documented parts: HeroUI Pro's `TrendChip.Root` is left out. Imports the `trend-chip` subpath.
  * Runtime: browser
- * Governing contract: ADR 0304 (decision 3); ADR 0303 (decision 7); STA-403 FR-007.
+ * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-007.
  */
 import {
   TrendChip as HeroTrendChip,

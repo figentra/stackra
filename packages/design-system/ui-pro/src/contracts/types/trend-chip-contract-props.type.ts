@@ -3,7 +3,7 @@
  * Purpose: the props the web `TrendChip` takes from the shared vocabulary: its size and its emphasis variant.
  * Boundary: types only; web only. The trend direction and every other prop are HeroUI Pro's own and pass through.
  * Runtime: isomorphic
- * Governing contract: ADR 0304 (decision 3); ADR 0303 (decision 7); STA-403 FR-007.
+ * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-007.
  */
 import type { Size } from "@stackra/ui/contracts";
 

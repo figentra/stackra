@@ -32,7 +32,7 @@ extending the kind's base class. The group table is the docs page `standards/str
   file.
 - Never write `main.ts`, a `providers` list or `imports` on a non-root module.
 
-## This package (ADR 0304)
+## This package (ADR 0310)
 
 - **Private, never published.** `"private": true` and no `publishConfig`; `pnpm validate` refuses either change and any
   non-app member that depends on this package, `@heroui-pro/react` or `heroui-native-pro`. Only our own apps import it

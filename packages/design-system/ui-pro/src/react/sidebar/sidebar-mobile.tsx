@@ -7,7 +7,7 @@
  *          draws an opaque off-screen `::after` that axe cannot compute contrast behind, and `Sidebar.Mobile` gives
  *          no way to class the sheet content, so a `<style>` rendered with the sheet drops it.
  * Runtime: browser
- * Governing contract: ADR 0304 (decision 3); ADR 0303 (decision 7); STA-403 FR-005.
+ * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-005.
  */
 import { Sheet } from "@heroui-pro/react/sheet";
 import {

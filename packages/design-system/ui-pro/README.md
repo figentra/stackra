@@ -6,7 +6,7 @@ Stackra Design System Pro components for Stackra's own apps only: the @stackra/u
 
 ## Entry points
 
-Private and never published (ADR 0304): only Stackra's own apps import it. `@stackra/ui` and every free package never do;
+Private and never published (ADR 0310): only Stackra's own apps import it. `@stackra/ui` and every free package never do;
 `pnpm validate` refuses it.
 
 | Import                      | Holds                                                                                      |

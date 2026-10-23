@@ -6,7 +6,7 @@
  *          the trigger has no name (axe `aria-command-name`). Expanded, or in the mobile sheet, nothing is added, as
  *          the label is then drawn beside the icon. Everything else is HeroUI Pro's, passed through.
  * Runtime: browser
- * Governing contract: ADR 0304 (decision 3); ADR 0303 (decision 7); STA-403 FR-005.
+ * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-005.
  */
 import {
   Sidebar as HeroSidebar,

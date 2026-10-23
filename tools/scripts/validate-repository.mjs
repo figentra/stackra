@@ -58,12 +58,12 @@ export const FORBIDDEN_DEPENDENCIES = [
 ];
 
 /**
- * HeroUI Pro and its wrapper package (ADR 0304, ADR 0197): only apps and the private `@stackra/ui-pro` may depend on
+ * HeroUI Pro and its wrapper package (ADR 0310, ADR 0197): only apps and the private `@stackra/ui-pro` may depend on
  * them, and only apps on `@stackra/ui-pro`; a free or published package never does (ADR 0165 decision 5).
  */
 export const PRO_DEPENDENCIES = ["@heroui-pro/react", "heroui-native-pro", "@stackra/ui-pro"];
 
-/** The one package that wraps HeroUI Pro; it stays private and unpublished (ADR 0304 decision 1). */
+/** The one package that wraps HeroUI Pro; it stays private and unpublished (ADR 0310 decision 1). */
 const PRO_WRAPPER = "@stackra/ui-pro";
 
 const DEPENDENCY_FIELDS = [
@@ -119,11 +119,11 @@ export function check({ dir, pkg, turbo, tsconfig }) {
         (pkg.name !== PRO_WRAPPER || dep === PRO_WRAPPER)
       )
         out.push(
-          `${field}.${dep} is HeroUI Pro: only apps and ${PRO_WRAPPER} may depend on it (ADR 0304)`,
+          `${field}.${dep} is HeroUI Pro: only apps and ${PRO_WRAPPER} may depend on it (ADR 0310)`,
         );
       if (version === "catalog:uniwind-pro" && !isApp)
         out.push(
-          `${field}.${dep} is Uniwind Pro: only apps may use catalog:uniwind-pro (ADR 0304)`,
+          `${field}.${dep} is Uniwind Pro: only apps may use catalog:uniwind-pro (ADR 0310)`,
         );
       // peerDependencies state a compatible range for consumers; they cannot name a catalog.
       if (field === "peerDependencies") continue;
@@ -135,7 +135,7 @@ export function check({ dir, pkg, turbo, tsconfig }) {
   }
 
   if (pkg.name === PRO_WRAPPER && (pkg.private !== true || pkg.publishConfig))
-    out.push(`${PRO_WRAPPER} must be "private": true with no publishConfig (ADR 0304)`);
+    out.push(`${PRO_WRAPPER} must be "private": true with no publishConfig (ADR 0310)`);
 
   const tier = tierFor(dir);
   if (tier === null) return out;
@@ -185,7 +185,7 @@ export function checkFiles({ dir, pkg, files, agents, licenseText, rootLicense }
         'package.json repository must be { type: "git", url: "git+https://github.com/figentra/stackra.git", directory } (ADR 0177)',
       );
     const pc = pkg.publishConfig ?? {};
-    // ADR 0304: the HeroUI Pro wrapper is never published, so it carries no publishConfig (`check` refuses one).
+    // ADR 0310: the HeroUI Pro wrapper is never published, so it carries no publishConfig (`check` refuses one).
     if (
       pkg.name !== PRO_WRAPPER &&
       (pc.access !== "public" ||

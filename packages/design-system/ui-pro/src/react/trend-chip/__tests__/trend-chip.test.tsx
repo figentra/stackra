@@ -4,7 +4,7 @@
  *          they are left out, draws the trend, passes unknown props through, and carries HeroUI Pro's parts.
  * Boundary: jsdom with real HeroUI Pro; the theme CSS is not loaded, so classes are checked, not looks.
  * Runtime: browser
- * Governing contract: ADR 0304 (decision 3); ADR 0303 (decision 7); ADR 0022 (test placement).
+ * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-403:FR-007

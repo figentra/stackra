@@ -5,7 +5,7 @@
  *          and the disabled state.
  * Boundary: presentation and local demo state only; the row is @stackra/ui-pro's, nothing here is styled by hand.
  * Runtime: react-native
- * Governing contract: ADR 0304 (decision 6); STA-403 FR-010.
+ * Governing contract: ADR 0310 (decision 6); STA-403 FR-010.
  */
 import { SwipeableRow } from "@stackra/ui-pro/native";
 import { Button, Separator, Typography } from "heroui-native";

@@ -5,7 +5,7 @@
  *          `exactOptionalPropertyTypes`, and which would override a HeroUI Pro default at runtime).
  * Boundary: pure; a shallow copy, nothing else is changed.
  * Runtime: isomorphic
- * Governing contract: ADR 0304 (decision 3: unknown props pass through, typed); ADR 0303 (decision 7).
+ * Governing contract: ADR 0310 (decision 3: unknown props pass through, typed); ADR 0303 (decision 7).
  */
 
 /** The props with `undefined` taken out of each value's type, the keys staying optional. */

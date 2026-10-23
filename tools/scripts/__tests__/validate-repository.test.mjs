@@ -61,7 +61,7 @@ test("dependencies replaced by Accepted ADRs are forbidden", () => {
   }
 });
 
-test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0304)", () => {
+test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0310)", () => {
   const pro = (dir, pkg) => check({ ...ok, dir, pkg }).filter((m) => /HeroUI Pro|private/.test(m));
   const wrapper = { name: "@stackra/ui-pro", private: true };
   for (const dep of ["@heroui-pro/react", "heroui-native-pro", "@stackra/ui-pro"]) {
@@ -71,7 +71,7 @@ test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0304)", 
         devDependencies: { [dep]: "catalog:" },
       }),
       [
-        `devDependencies.${dep} is HeroUI Pro: only apps and @stackra/ui-pro may depend on it (ADR 0304)`,
+        `devDependencies.${dep} is HeroUI Pro: only apps and @stackra/ui-pro may depend on it (ADR 0310)`,
       ],
       dep,
     );
@@ -86,10 +86,10 @@ test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0304)", 
     [],
   );
   assert.deepEqual(pro(ui, { name: "@stackra/ui-pro" }), [
-    '@stackra/ui-pro must be "private": true with no publishConfig (ADR 0304)',
+    '@stackra/ui-pro must be "private": true with no publishConfig (ADR 0310)',
   ]);
   assert.deepEqual(pro(ui, { ...wrapper, publishConfig: { access: "public" } }), [
-    '@stackra/ui-pro must be "private": true with no publishConfig (ADR 0304)',
+    '@stackra/ui-pro must be "private": true with no publishConfig (ADR 0310)',
   ]);
   const uniwind = (dir) =>
     check({
@@ -98,7 +98,7 @@ test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0304)", 
       pkg: { name: "x", dependencies: { uniwind: "catalog:uniwind-pro" } },
     }).filter((m) => m.includes("Uniwind Pro"));
   assert.deepEqual(uniwind("packages/design-system/ui"), [
-    "dependencies.uniwind is Uniwind Pro: only apps may use catalog:uniwind-pro (ADR 0304)",
+    "dependencies.uniwind is Uniwind Pro: only apps may use catalog:uniwind-pro (ADR 0310)",
   ]);
   assert.deepEqual(uniwind("apps/mobile"), []);
 });
@@ -157,7 +157,7 @@ const filesOk = {
 
 test("a complete member has no file findings", () => assert.deepEqual(checkFiles(filesOk), []));
 
-test("the private HeroUI Pro wrapper needs no publishConfig; any other package does (ADR 0304)", () => {
+test("the private HeroUI Pro wrapper needs no publishConfig; any other package does (ADR 0310)", () => {
   const { publishConfig: _, ...unpublished } = filesOk.pkg;
   const at = (name) => checkFiles({ ...filesOk, pkg: { ...unpublished, name } });
   assert.deepEqual(at("@stackra/ui-pro"), []);

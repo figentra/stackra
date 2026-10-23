@@ -7,7 +7,7 @@
  * Boundary: no styling or behaviour of its own; the look needs `@heroui-pro/react/css`, and the root needs a
  *          `Sidebar.Provider` (or an `AppLayout`) above it. Imports the `sidebar` subpath.
  * Runtime: browser
- * Governing contract: ADR 0304 (decision 3); ADR 0303 (decision 7); STA-403 FR-005.
+ * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-005.
  */
 import {
   Sidebar as HeroSidebar,

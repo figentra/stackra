@@ -72,7 +72,7 @@ catalogs:
     jsdom: 30.1.0
     # Code-based routing for the console and every Vite app (no file routing anywhere).
     react-router: 7.18.4
-    # HeroUI Pro for web (ADR 0304): only @stackra/ui-pro (private) and our own apps depend on it, never a free or
+    # HeroUI Pro for web (ADR 0310): only @stackra/ui-pro (private) and our own apps depend on it, never a free or
     # published package (ADR 0165 decision 5, ADR 0197). The npm package is a shell; its postinstall downloads the
     # licensed code from HeroUI's CDN with a CLI login (local) or HEROUI_AUTH_TOKEN (CI). recharts is its optional
     # peer for the charts and KPI.
@@ -113,7 +113,7 @@ catalogs:
     react-native-svg: 15.15.4
     "@gorhom/bottom-sheet": 5.2.14
     heroui-native: 1.0.10
-    # HeroUI Native Pro (ADR 0304): same rule and install path as @heroui-pro/react. The two @internationalized
+    # HeroUI Native Pro (ADR 0310): same rule and install path as @heroui-pro/react. The two @internationalized
     # packages are its optional peers for the date and number components, pinned to what @heroui/react resolves.
     heroui-native-pro: 1.0.0-beta.11
     "@internationalized/date": 3.12.4
@@ -126,7 +126,7 @@ catalogs:
     # The Expo CLI loads `typescript` as a JS API, which TypeScript 7 (native) does not ship yet.
     typescript: 6.0.3
     "@types/react": 19.2.18
-  # Uniwind Pro (ADR 0304 decision 11): our own apps install it under the `uniwind` name, so every `uniwind` import in
+  # Uniwind Pro (ADR 0310 decision 11): our own apps install it under the `uniwind` name, so every `uniwind` import in
   # the app, the workspace packages' included, runs on the Pro engine; free packages keep their free `uniwind` peer.
   # A shell like HeroUI Pro: its postinstall downloads the licensed build (a `uniwind-pro` login locally,
   # UNIWIND_AUTH_TOKEN in CI). 1.9.0 supports React Native 0.83-0.88 and Expo SDK 55-58.
@@ -162,7 +162,7 @@ overrides:
   "@mintlify/previewing>is-online": "catalog:docs"
   "is-online>public-ip": "catalog:docs"
 
-# ADR 0304: the HeroUI Pro packages on npm are shells whose real package.json arrives with the postinstall download,
+# ADR 0310: the HeroUI Pro packages on npm are shells whose real package.json arrives with the postinstall download,
 # so pnpm never sees their peers and links none: a Pro module then resolves the hoisted React of another catalog
 # ("Invalid hook call"). These are the peers of the downloaded 1.0.0-beta.10 / 1.0.0-beta.11 package.json, copied
 # verbatim; update them with each Pro bump.
@@ -282,7 +282,7 @@ allowBuilds:
   # Cloudflare's Workers runtime, pulled in by wrangler (workers/static): its postinstall checks the platform binary that
   # `wrangler dev` runs. `wrangler deploy` does not need it, but a skipped check leaves `pnpm dev` broken.
   workerd: true
-  # HeroUI Pro (ADR 0304): the postinstall downloads the licensed build from HeroUI's CDN (a CLI login locally,
+  # HeroUI Pro (ADR 0310): the postinstall downloads the licensed build from HeroUI's CDN (a CLI login locally,
   # HEROUI_AUTH_TOKEN in CI); without it the package is an empty shell.
   "@heroui-pro/react": true
   heroui-native-pro: true

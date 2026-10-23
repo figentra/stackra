@@ -4,7 +4,7 @@
  *          sidebar landmark, its menus, its toggle button, its rail, its mobile sheet and its icon-only items.
  * Boundary: types only; web only. Every other prop is HeroUI Pro's own and passes through unchanged.
  * Runtime: isomorphic
- * Governing contract: ADR 0304 (decision 3); ADR 0303 (decision 7); STA-403 FR-005.
+ * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-403 FR-005.
  */
 
 /** Props of the `Sidebar` root that the Stackra vocabulary names. */

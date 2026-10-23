@@ -4,7 +4,7 @@
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 15); ADR 0304 (decision 4); the STA-347 stand-in barrel decision.
+ * Governing contract: ADR 0294 (decision 15); ADR 0310 (decision 4); the STA-347 stand-in barrel decision.
  */
 export { TrendChipVariant } from "#contracts/enums/trend-chip-variant.enum";
 export type {

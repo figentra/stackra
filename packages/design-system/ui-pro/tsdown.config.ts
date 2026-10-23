@@ -6,7 +6,7 @@
  *          Uniwind, React Native) stay external, so no HeroUI Pro code is ever bundled into `dist/`.
  * Boundary: build configuration only; a tool config gen will write into `.stackra/` (ADR 0295 decision 5).
  * Runtime: node
- * Governing contract: ADR 0025 (build output); ADR 0005 (legacy decorators); ADR 0304 (private package).
+ * Governing contract: ADR 0025 (build output); ADR 0005 (legacy decorators); ADR 0310 (private package).
  */
 import { library } from "@stackra/tsdown-config";
 

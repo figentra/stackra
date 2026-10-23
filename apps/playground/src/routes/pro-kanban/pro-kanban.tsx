@@ -6,7 +6,7 @@
  * Boundary: presentation and local state only. The buttons are the page's non-dragging way to move a card (WCAG 2.2,
  *          2.5.7); HeroUI Pro's board has none of its own.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 5); ADR 0304 (decision 6); ADR 0060 (light, dark, RTL); STA-403 FR-013.
+ * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0060 (light, dark, RTL); STA-403 FR-013.
  */
 import { Button } from "@heroui/react";
 import * as UiPro from "@stackra/ui-pro/react";
