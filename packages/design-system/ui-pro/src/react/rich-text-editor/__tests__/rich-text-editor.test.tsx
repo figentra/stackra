@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: proves the web RichTextEditor names its toolbar, its toggle, action and command buttons and its link trigger
  *          (one button, inside no other) from `label` (keeping HeroUI Pro's defaults without it), draws the editor
- *          with the value, placeholder and disabled state HeroUI Pro takes, passes unknown props through, carries
- *          HeroUI Pro's own parts and hooks, and refuses its `aria-label`.
+ *          with the value, placeholder and disabled state HeroUI Pro takes (a disabled one marked `aria-disabled`),
+ *          passes unknown props through, carries HeroUI Pro's own parts and hooks, and refuses its `aria-label`.
  * Boundary: jsdom with real HeroUI Pro and a real Tiptap editor; the theme CSS is not loaded, so classes are checked,
  *          not looks. ProseMirror measures text with `Range.getClientRects` and `getBoundingClientRect`, which jsdom
  *          lacks, so both are stubbed to empty geometry.
@@ -127,7 +127,17 @@ describe("RichTextEditor (web)", () => {
   it("passes unknown props through to HeroUI Pro's root", () => {
     render(<Editor />);
     expect(screen.getByTestId("root")).toBeTruthy();
+    expect(screen.getByTestId("root").hasAttribute("aria-disabled")).toBe(false);
     expect(document.querySelector('[contenteditable="true"]')).toBeTruthy();
+  });
+
+  it("marks a disabled editor aria-disabled on its root", () => {
+    render(
+      <RichTextEditor data-testid="root" isDisabled>
+        <RichTextEditor.Content />
+      </RichTextEditor>,
+    );
+    expect(screen.getByTestId("root").getAttribute("aria-disabled")).toBe("true");
   });
 
   it("carries HeroUI Pro's own parts, hooks and filter", () => {

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: proves the web Agenda takes the `useAgenda` state on its root, draws the heading at the level asked for (not
- *          HeroUI Pro's fixed h1) and a timed event, passes unknown props through, and carries HeroUI Pro's other parts
- *          and `useAgenda` hook.
+ * Purpose: proves the web Agenda takes the `useAgenda` state on its root, draws the heading at the level asked for, an
+ *          h2 by default (not HeroUI Pro's fixed h1), and a timed event, passes unknown props through, and carries
+ *          HeroUI Pro's other parts and `useAgenda` hook.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `ResizeObserver` is stubbed and scrolling is not exercised
  *          because jsdom has no layout engine, so drag, resize and the current-time line are not checked.
  * Runtime: browser
@@ -54,6 +54,18 @@ function Example() {
   );
 }
 
+/** A header with the heading alone, at its default level. */
+function DefaultHeading() {
+  const agenda = useAgenda({ events: [], defaultDate: new CalendarDate(2026, 10, 23) });
+  return (
+    <Agenda {...agenda}>
+      <Agenda.Header>
+        <Agenda.Heading />
+      </Agenda.Header>
+    </Agenda>
+  );
+}
+
 describe("Agenda (web)", () => {
   beforeEach(() => {
     vi.stubGlobal(
@@ -74,6 +86,12 @@ describe("Agenda (web)", () => {
     expect(screen.getByRole("heading", { level: 3 })).toBe(screen.getByTestId("heading"));
     expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
     expect(screen.getByText("Standup")).toBeTruthy();
+  });
+
+  it("draws the heading as an h2 when no level is given", () => {
+    render(<DefaultHeading />);
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toContain("2026");
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
   });
 
   it("carries HeroUI Pro's own parts and hook", () => {
