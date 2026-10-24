@@ -8,7 +8,7 @@
  * Governing contract: ADR 0320 (the Theme Studio); ADR 0022 (test placement).
  */
 import { DesignSystemProvider, RouterProvider as AriaRouterProvider } from "@stackra/ui/react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { ThemeStudio } from "#src/routes/theme-studio/theme-studio";
@@ -37,6 +37,7 @@ function renderStudio(url = ThemeStudioRoute.path) {
 const preview = () =>
   screen.getByRole("region", { name: "Preview" }).querySelector<HTMLElement>("[data-theme]") ??
   document.body;
+const history = () => within(screen.getByRole("toolbar", { name: "History" }));
 const code = () => screen.getByRole("region", { name: /the export/ }).textContent ?? "";
 
 describe("ThemeStudio", () => {
@@ -72,11 +73,11 @@ describe("ThemeStudio", () => {
       });
     });
     expect(router.state.location.search).toBe("?scheme=dark&radius=10");
-    act(() => screen.getByRole("button", { name: "Undo" }).click());
+    act(() => history().getByRole("button", { name: "Undo" }).click());
     expect(router.state.location.search).toBe("?scheme=dark");
-    act(() => screen.getByRole("button", { name: "Redo" }).click());
+    act(() => history().getByRole("button", { name: "Redo" }).click());
     expect(router.state.location.search).toBe("?scheme=dark&radius=10");
-    act(() => screen.getByRole("button", { name: "Reset" }).click());
+    act(() => history().getByRole("button", { name: "Reset" }).click());
     expect(router.state.location.search).toBe("?scheme=dark");
   });
 

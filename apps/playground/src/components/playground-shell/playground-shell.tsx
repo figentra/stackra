@@ -63,6 +63,7 @@ const STRINGS = {
     home: "Go to the index",
     components: "Browse every component",
     componentsDetail: "The gallery, by category",
+    studioDetail: "Derive, preview and export a theme",
   },
 } as const;
 
@@ -217,6 +218,14 @@ function ShellPalette({
       icon: "sparkles",
       keywords: "home index landing",
       run: () => void navigate(`/${props.search}`),
+    },
+    {
+      id: "go-studio",
+      label: STRINGS.studio,
+      detail: STRINGS.actions.studioDetail,
+      icon: "palette",
+      keywords: "theme builder customise customize export tokens",
+      run: () => void navigate(`/theme-studio${props.search}`),
     },
     {
       id: "go-components",
