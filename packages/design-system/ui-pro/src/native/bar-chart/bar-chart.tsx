@@ -21,6 +21,7 @@ const ANIMATED = { animate: CHART_SERIES_ANIMATE };
 // shortcut: `BarGroupItem` keeps HeroUI's still default, because `BarGroup` reads its items' props without rendering
 // them; give each item `animate`, or clone the items in a `BarGroup` copy if grouped bars become common.
 export const BarChart: typeof HeroBarChart = Object.assign(
+  // A copy of the root, so adding the parts below never changes HeroUI Native Pro's own BarChart.
   withDefaults(HeroBarChart, {}),
   HeroBarChart,
   {

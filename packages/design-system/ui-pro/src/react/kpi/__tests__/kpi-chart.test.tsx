@@ -32,7 +32,7 @@ describe("Kpi.Chart (web)", () => {
     expect(received.props["areaProps"]).toEqual({
       isAnimationActive: "auto",
       animationDuration: 400,
-      animationEasing: "cubic-bezier(0.22, 1, 0.36, 1)",
+      animationEasing: "cubic-bezier(0.22,1,0.36,1)",
     });
     expect(received.props["data"]).toBe(DATA);
   });

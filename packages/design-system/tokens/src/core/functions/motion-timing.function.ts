@@ -27,16 +27,18 @@ const NAMED: Readonly<Record<string, MotionTiming["bezier"]>> = {
  * @param theme - the theme, such as `STACKRA_THEME`
  * @param name - the step, such as `reveal`
  * @returns the duration in milliseconds and the easing's control points (none for a stepped easing)
- * @throws RangeError when the theme has no such step, or its duration or easing is not a form `defineTheme` accepts
+ * @throws RangeError when the theme has no such step, its duration is negative or not a CSS duration, or its easing is a
+ *         `linear(...)` point list or not a CSS easing
  */
 export function motionTiming(theme: Theme, name: string): MotionTiming {
   const step = theme.motion[name];
   if (!step) throw new RangeError(`The theme ${theme.name} has no motion step ${name}`);
-  const duration = /^(\d+(?:\.\d+)?)(ms|s)$/.exec(step.duration);
-  if (!duration) throw new RangeError(`Not a CSS duration: ${step.duration}`);
+  // `defineTheme`'s number forms (`5`, `5.`, `.5`, `0.5`), without its sign: a negative duration cannot play.
+  const duration = /^(\d+(?:\.\d*)?|\.\d+)(ms|s)$/.exec(step.duration);
+  if (!duration) throw new RangeError(`Not a CSS duration an animation can play: ${step.duration}`);
   const durationMs = Number(duration[1]) * (duration[2] === "s" ? 1000 : 1);
   const easing = step.easing.trim();
-  if (easing in NAMED) return { durationMs, bezier: NAMED[easing] };
+  if (Object.hasOwn(NAMED, easing)) return { durationMs, bezier: NAMED[easing] };
   if (/^(steps\(.*\)|step-start|step-end)$/.test(easing)) return { durationMs, bezier: undefined };
   const curve = /^cubic-bezier\(([^)]*)\)$/.exec(easing);
   const points = curve?.[1]?.split(",").map((point) => Number(point.trim()));

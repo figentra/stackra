@@ -42,5 +42,6 @@ describe("withDefaults", () => {
     const copy = withDefaults(Series, { animate: ANIMATE });
     expect(copy).not.toBe(Series);
     expect(copy.displayName).toBe("HeroUINative.Series");
+    expect(Object.keys(Series)).toEqual(["displayName"]);
   });
 });

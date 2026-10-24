@@ -20,6 +20,7 @@ const ANIMATED = { animate: CHART_SERIES_ANIMATE };
 
 /** The area chart: HeroUI Native Pro's own AreaChart, with every prop and part it has, its series animating to new data. */
 export const AreaChart: typeof HeroAreaChart = Object.assign(
+  // A copy of the root, so adding the parts below never changes HeroUI Native Pro's own AreaChart.
   withDefaults(HeroAreaChart, {}),
   HeroAreaChart,
   {

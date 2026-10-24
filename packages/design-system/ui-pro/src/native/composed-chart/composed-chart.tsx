@@ -21,6 +21,7 @@ const ANIMATED = { animate: CHART_SERIES_ANIMATE };
 
 /** The composed chart: HeroUI Native Pro's own ComposedChart, with every prop and part it has, its series animating to new data. */
 export const ComposedChart: typeof HeroComposedChart = Object.assign(
+  // A copy of the root, so adding the parts below never changes HeroUI Native Pro's own ComposedChart.
   withDefaults(HeroComposedChart, {}),
   HeroComposedChart,
   {

@@ -17,6 +17,7 @@ import { withDefaults } from "#native/chart-series/with-defaults.function";
 
 /** The line chart: HeroUI Native Pro's own LineChart, with every prop and part it has, its line animating to new data. */
 export const LineChart: typeof HeroLineChart = Object.assign(
+  // A copy of the root, so adding the part below never changes HeroUI Native Pro's own LineChart.
   withDefaults(HeroLineChart, {}),
   HeroLineChart,
   {
