@@ -5,7 +5,8 @@
  *          platform's own modal, so this draws a title, a close button, the body and a footer in it; for `sheet` and
  *          `drawer` the screen is a transparent modal and this opens `@stackra/ui`'s `Drawer` (HeroUI Native's inset
  *          bottom sheet) over it, open for as long as the screen is. Closing (the close button, a swipe, a press on
- *          the scrim, `useRouteOverlay().close()`) pops the screen.
+ *          the scrim, `useRouteOverlay().close()`) pops the screen, or, when a cold-start deep link opened the overlay
+ *          with nothing under it, replaces it with its stack's first screen.
  * Boundary: glue over React Navigation and `@stackra/ui`; no styling beyond the layout of the modal's header. The
  *           iOS swipe-down of a `modal` or `full-screen` overlay follows `isDismissable` (`gestureEnabled`); the
  *           Android back button is not blocked, because the system owns it: unsaved work is guarded by
@@ -52,7 +53,12 @@ export function RouteOverlay({
   const isPanel = presentation === "sheet" || presentation === "drawer";
 
   const close = useCallback(() => {
-    if (navigation.canGoBack()) navigation.goBack();
+    if (navigation.canGoBack()) return navigation.goBack();
+    // A cold-start deep link lands on the overlay with nothing under it: replace it with the stack's first screen,
+    // the native form of the web overlay's leave to its parent route.
+    const { routeNames, routes, index } = navigation.getState();
+    const first = routeNames[0];
+    if (first !== undefined && first !== routes[index]?.name) navigation.replace(first);
   }, [navigation]);
   const complete = useCallback(
     (to?: string) => {
