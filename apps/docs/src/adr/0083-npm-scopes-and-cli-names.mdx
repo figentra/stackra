@@ -1,7 +1,18 @@
 ---
 title: "0083 — npm scopes: @stackra for packages, @figentra for this repository's apps and services; @stackra/console is the CLI framework"
-description: "Accepted · 2026-10-20"
+description: "Accepted · 2026-10-20 · amended 2026-10-24 (STA-445)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-445, STA-446): the product console and mobile app of Figentra OS live in
+  the `figentra/os` repository as `apps/console` (`@figentra/console`) and `apps/mobile`
+  (`@figentra/mobile`), per [0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services)
+  decision 2 and [0200](/adr/0200-stackra-and-figentra-os-horizontal-services-private-os-repo)
+  decision 2. This repository's `apps/console` and `apps/mobile` are reference apps that prove
+  `@stackra/panel` and `@stackra/navigation`; STA-446 renames them `@figentra/reference-console` and
+  `@figentra/reference-mobile`, so the boundary shows in the name. Decision 2 is read with those
+  names, and the two scopes are unchanged.
+</Note>
 
 ## Context
 
