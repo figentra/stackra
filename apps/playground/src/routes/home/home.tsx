@@ -22,6 +22,8 @@ import type { ShellContext } from "#src/types/shell-context.type";
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::home.*` keys.
 const STRINGS = {
   eyebrow: "Playground",
+  brand: "Stackra",
+  product: "Design System",
   intro:
     "Every component, live, in light and dark and in English and Arabic. Built on HeroUI and drawn in the Stackra tokens; the view you pick stays in the address, so a link opens the same one.",
   browse: "Browse components",
@@ -64,48 +66,49 @@ export function Home({ pages }: HomeProps) {
   return (
     <article className="grid gap-16 pb-8">
       <title>{HomeRoute.title}</title>
-      <div className="grid items-center gap-8 pt-8 sm:pt-14 lg:grid-cols-[minmax(0,1fr)_26rem]">
-        <header className="grid max-w-3xl gap-6">
-          <Ui.Chip variant="soft" size="sm" startIcon="sparkles" className="justify-self-start">
-            {STRINGS.eyebrow}
-          </Ui.Chip>
-          <Ui.Heading level={1} className="[font:var(--display)] tracking-[-0.035em] text-balance">
-            {HomeRoute.title}
-          </Ui.Heading>
-          {/* <bdi>: an English sentence keeps its full stop at its end inside a right-to-left page. */}
-          <p className="max-w-2xl text-lg text-muted text-pretty">
-            <bdi>{STRINGS.intro}</bdi>
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Ui.Link
-              href={`#components`}
-              underline="hover"
-              className="inline-flex min-h-10 items-center gap-2 rounded-full bg-accent px-5 font-medium text-accent-foreground! hover:bg-accent-hover hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-            >
-              {STRINGS.browse}
-              <Ui.Icon name="arrow-right" size="sm" isMirroredInRtl />
-            </Ui.Link>
-            {shell ? (
-              <Ui.Button
-                variant="outline"
-                startIcon="search"
-                onPress={shell.openPalette}
-                className="glass rounded-full"
-              >
-                {STRINGS.search}
-              </Ui.Button>
-            ) : null}
-          </div>
-          <ul className="flex flex-wrap gap-2 text-sm">
-            {stats.map((stat) => (
-              <li key={stat} className="glass rounded-full px-3 py-1">
-                <bdi>{stat}</bdi>
-              </li>
-            ))}
-          </ul>
-        </header>
+      <header className="grid justify-items-center gap-6 pt-4 text-center sm:pt-8">
         <HeroArt />
-      </div>
+        <Ui.Chip variant="soft" size="sm" startIcon="sparkles">
+          {STRINGS.eyebrow}
+        </Ui.Chip>
+        {/* The stage above draws the name as the wordmark, so the heading shows the rest of it; its text, which
+            titles the document, is the whole name. */}
+        <Ui.Heading level={1} className="[font:var(--display)] tracking-[-0.035em] text-balance">
+          <span className="sr-only">{STRINGS.brand} </span>
+          {STRINGS.product}
+        </Ui.Heading>
+        {/* <bdi>: an English sentence keeps its full stop at its end inside a right-to-left page. */}
+        <p className="max-w-2xl text-lg text-muted text-pretty">
+          <bdi>{STRINGS.intro}</bdi>
+        </p>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Ui.Link
+            href={`#components`}
+            underline="hover"
+            className="inline-flex min-h-10 items-center gap-2 rounded-full bg-accent px-5 font-medium text-accent-foreground! hover:bg-accent-hover hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          >
+            {STRINGS.browse}
+            <Ui.Icon name="arrow-right" size="sm" isMirroredInRtl />
+          </Ui.Link>
+          {shell ? (
+            <Ui.Button
+              variant="outline"
+              startIcon="search"
+              onPress={shell.openPalette}
+              className="glass rounded-full"
+            >
+              {STRINGS.search}
+            </Ui.Button>
+          ) : null}
+        </div>
+        <ul className="flex flex-wrap justify-center gap-2 text-sm">
+          {stats.map((stat) => (
+            <li key={stat} className="glass rounded-full px-3 py-1">
+              <bdi>{stat}</bdi>
+            </li>
+          ))}
+        </ul>
+      </header>
 
       <section aria-labelledby="home-showcase" className="grid gap-4">
         <div className="grid gap-1">

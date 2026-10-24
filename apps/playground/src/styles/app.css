@@ -44,6 +44,8 @@ html {
   --ambient-b: color-mix(in oklch, var(--amber) 8%, transparent);
   --ambient-c: color-mix(in oklch, var(--white) 70%, transparent);
   --ambient-dot: color-mix(in oklch, var(--foreground) 6%, transparent);
+  --tile-fill: color-mix(in oklch, var(--surface) 50%, transparent);
+  --tile-blur: blur(10px) saturate(180%);
   --glow-a: color-mix(in oklch, var(--amber) 45%, transparent);
   --glow-b: color-mix(in oklch, var(--graphite-300) 70%, transparent);
 }
@@ -60,6 +62,7 @@ html {
   --ambient-b: color-mix(in oklch, var(--amber) 9%, transparent);
   --ambient-c: color-mix(in oklch, var(--graphite-800) 80%, transparent);
   --ambient-dot: color-mix(in oklch, var(--foreground) 6%, transparent);
+  --tile-fill: color-mix(in oklch, var(--surface-tertiary) 55%, transparent);
   --glow-a: color-mix(in oklch, var(--amber) 22%, transparent);
   --glow-b: color-mix(in oklch, var(--graphite-700) 80%, transparent);
 }
@@ -148,6 +151,38 @@ html {
   mask-image: radial-gradient(closest-side at 72% 60%, black, transparent);
 }
 
+/* The brand's grid pattern behind the hero stage: hairlines on a 48px step that fade out from the middle. */
+.hero-grid {
+  background-color: var(--separator);
+  mask-image:
+    radial-gradient(closest-side, black, transparent),
+    repeating-linear-gradient(to right, black 0 1px, transparent 1px 48px),
+    repeating-linear-gradient(to bottom, black 0 1px, transparent 1px 48px);
+  mask-composite: intersect, add;
+}
+
+/* The hero's tiles settle in once, staggered: a short rise and the material arriving, then they hold still. */
+.hero-tile {
+  background-color: var(--tile-fill);
+  -webkit-backdrop-filter: var(--tile-blur);
+  backdrop-filter: var(--tile-blur);
+  animation: tile-in 600ms var(--ease-fast) var(--tile-delay, 0ms) both;
+}
+
+@keyframes tile-in {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+    scale: 0.92;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-tile {
+    animation: none;
+  }
+}
+
 /* The command palette's dimming scrim: modal, so it dims and blurs the page behind it. */
 .command-palette::backdrop {
   background: var(--backdrop);
@@ -204,6 +239,8 @@ html {
     --glass-fill: var(--surface);
     --glass-fill-strong: var(--surface);
     --glass-blur: none;
+    --tile-fill: var(--surface);
+    --tile-blur: none;
   }
 
   .ambient > :nth-child(4) {
@@ -232,5 +269,6 @@ html {
   .dark {
     --glass-fill: var(--surface);
     --glass-fill-strong: var(--surface);
+    --tile-fill: var(--surface);
   }
 }
