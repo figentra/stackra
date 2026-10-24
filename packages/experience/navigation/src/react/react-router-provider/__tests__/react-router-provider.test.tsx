@@ -47,7 +47,8 @@ describe("ReactRouterProvider", () => {
   it("navigates an internal link on the client through the router", async () => {
     const router = build();
     act(() => screen.getByRole("link", { name: "Orders" }).click());
-    await waitFor(() => expect(router.state.location.pathname).toBe("/orders"));
+    // A data router keeps the basename in its location.
+    await waitFor(() => expect(router.state.location.pathname).toBe("/app/orders"));
     expect(screen.getByRole("heading", { name: "Orders list" })).toBeTruthy();
   });
 
@@ -56,6 +57,6 @@ describe("ReactRouterProvider", () => {
     const link = screen.getByRole("link", { name: /Docs/ });
     expect(link.getAttribute("target")).toBe("_blank");
     expect(link.getAttribute("href")).toBe("https://example.com/docs");
-    expect(router.state.location.pathname).toBe("/");
+    expect(router.state.location.pathname).toBe("/app");
   });
 });

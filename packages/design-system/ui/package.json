@@ -116,7 +116,6 @@
     "@stackra/icons": "workspace:*"
   },
   "devDependencies": {
-    "@expo/ui": "catalog:mobile",
     "@heroui/react": "catalog:frontend",
     "@internationalized/date": "catalog:frontend",
     "@internationalized/number": "catalog:mobile",

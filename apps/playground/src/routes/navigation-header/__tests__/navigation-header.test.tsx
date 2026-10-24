@@ -58,7 +58,9 @@ describe("Navigation header page", () => {
     const headers = document.querySelectorAll("#navigation-header-parts ~ ul > li header");
     expect(headers).toHaveLength(6);
     for (const header of headers) expect(header.querySelector("h3")).toBeTruthy();
-    expect(screen.queryByRole("banner")).toBeNull();
+    // DOM Testing Library calls every header a banner; HTML-AAM makes one inside these sectioning elements none.
+    for (const header of document.querySelectorAll("header"))
+      expect(header.closest("article, aside, main, nav, section")).not.toBeNull();
   });
 
   it("draws the back button, the back link and the slots where each sample says", () => {
