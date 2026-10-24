@@ -16,6 +16,7 @@ Private and never published (ADR 0310): only Stackra's own apps import it. `@sta
 | `@stackra/ui-pro/react`     | every HeroUI Pro web component (66): charts, AI, forms, navigation, overlays, layout, data display and feedback; Pro `Command` is ActionPalette, `FloatingToc` is FloatingTableOfContents |
 | `@stackra/ui-pro/native`    | every HeroUI Native Pro component (55): charts, buttons, data display, date and time, forms and navigation; Pro `Fab` is FloatingActionButton                                             |
 | `@stackra/ui-pro/node`      | `src/node/ui-pro.module.ts`: the root module                                                                                                                                              |
+| `@stackra/ui-pro/css`       | `assets/public/css/ui-pro.css`: the fixes over HeroUI Pro's styles (contrast, the shimmer, Arabic lines), on theme variables only                                                         |
 | `@stackra/ui-pro/assets/*`  | static files at the package root (ADR 0234)                                                                                                                                               |
 
 Each component is a thin wrapper: the `@stackra/ui` vocabulary (`size`, `tone`, `isDisabled`, `label`, `onPress`) maps
@@ -26,7 +27,8 @@ component with nothing in the vocabulary to map (most charts, Markdown, Timeline
 ## Using it in an app
 
 - Web: `@heroui-pro/react` with its peers (`motion`, `react-resizable-panels`, `recharts` for Kpi), and the styles in
-  this order: `@import "tailwindcss"; @import "@heroui/styles"; @import "@heroui-pro/react/css";`.
+  this order: `@import "tailwindcss"; @import "@heroui/styles"; @import "@heroui-pro/react/css"; @import
+"@stackra/ui-pro/css";`, the last outside any `@layer` so it wins over HeroUI Pro's layered rules.
 - Native: `heroui-native-pro` (with `@internationalized/date` for Calendar and DatePicker) inside `@stackra/ui`'s
   `DesignSystemProvider`, plus `@import "heroui-native-pro/styles";` and a `@source` line for its `lib` folder.
 - Install: a `heroui-pro login` session locally; `HEROUI_AUTH_TOKEN` from Infisical `/ci` in CI. Without it the HeroUI

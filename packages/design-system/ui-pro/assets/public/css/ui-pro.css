@@ -1,0 +1,122 @@
+/*
+ * Stackra file contract:
+ * Purpose: `@stackra/ui-pro/css`, the fixes Stackra's apps lay over HeroUI Pro's own stylesheet so its components meet
+ *          WCAG 2.2 AA in light, dark, LTR and RTL: text colours that hold 4.5:1, a shimmer and an Arabic line that stay
+ *          readable, and file badges on the theme's status colours.
+ * Boundary: CSS only, and only over HeroUI Pro's BEM classes. Every colour is a theme variable (`--danger`, `--muted`,
+ *          ...), never a palette value, so a product theme from `@stackra/tokens` reaches these fixes too. Import it
+ *          after `@heroui-pro/react/css` and outside any `@layer`: HeroUI Pro's rules sit in layers, so unlayered rules
+ *          win whatever their weight. `heroui-pro-css-variables.test.ts` checks every variable read here and every class
+ *          named here against the installed HeroUI Pro.
+ * Runtime: browser
+ * Governing contract: ADR 0310 (decisions 3 and 12); ADR 0060 (light, dark, RTL); STA-458.
+ */
+
+/* HeroUI Pro paints white text on the danger fill (today's date, the current time); the theme's danger-foreground is
+   the text colour that holds 4.5:1 on danger. */
+.agenda__day-header-date[data-today="true"],
+.agenda__month-cell-date[data-today="true"],
+.agenda__current-time-label {
+  color: var(--danger-foreground);
+}
+
+/* IBM Plex Sans Arabic's glyphs are taller than the 1em line HeroUI Pro gives these pills, so in Arabic they take a
+   normal line and the fill covers the whole text. */
+:root:lang(ar) .agenda__day-header-date[data-today="true"],
+:root:lang(ar) .agenda__month-cell-date[data-today="true"],
+:root:lang(ar) .agenda__current-time-label {
+  line-height: normal;
+}
+
+/* HeroUI Pro's TextShimmer dims its text to 45% of its colour (under 4.5:1) and sweeps a text-shaped copy over it,
+   which also hides the background from a contrast check. Here the copy is hidden and the sweep is a mask on the text
+   itself: a full-strength band moving over text at 75%, which holds 4.5:1 for the theme's foreground in both schemes.
+   A shimmer drawn in a weaker colour than the foreground needs that colour to hold 4.5:1 at 75% too. The mask colours
+   are opacity only, not colours on screen. */
+.text-shimmer__highlight {
+  display: none;
+}
+
+.text-shimmer__text {
+  color: currentColor;
+  mask-image: linear-gradient(
+    90deg,
+    rgb(0 0 0 / 0.75) calc(50% - var(--spread)),
+    #000 50%,
+    rgb(0 0 0 / 0.75) calc(50% + var(--spread))
+  );
+  mask-size: 300% 100%;
+  animation: stackra-text-shimmer 2.5s linear infinite;
+}
+
+@keyframes stackra-text-shimmer {
+  from {
+    mask-position: 100% 0;
+  }
+
+  to {
+    mask-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .text-shimmer__text {
+    animation: none;
+    mask-image: none;
+  }
+}
+
+/* HeroUI Pro draws a source's fallback letter in the colour of its own disc (`--muted` on `--muted`), so it cannot be
+   seen; the background colour holds 4.5:1 on the muted disc, as muted does on the background. */
+.chat-source__icon-fallback {
+  color: var(--background);
+}
+
+/* The letter is the first of a web address, so it keeps the Latin face in an Arabic document: IBM Plex Sans Arabic's
+   taller glyph box would spill past the 14 px disc. */
+:root:lang(ar) .chat-source__icon-fallback {
+  font-family: var(--font-sans);
+}
+
+/* HeroUI Pro fades an upcoming step's description to 60% of the muted colour (2.5:1); the step's state is already in
+   its indicator and title, so the description keeps the muted colour, which holds 4.5:1. */
+[data-status="inactive"] .stepper__description {
+  opacity: 1;
+}
+
+/* HeroUI Pro's file format badges draw 8 px white text on Tailwind's 500 shades (2.2:1 on green). Each badge takes the
+   theme's status colour of its hue and that colour's foreground, the pairs the theme holds to 4.5:1; blue and purple,
+   which have no status role, take the accent, and gray the default fill. */
+.drop-zone__file-format-icon-badge[data-color="red"] {
+  background-color: var(--danger);
+  color: var(--danger-foreground);
+}
+
+.drop-zone__file-format-icon-badge[data-color="green"] {
+  background-color: var(--success);
+  color: var(--success-foreground);
+}
+
+.drop-zone__file-format-icon-badge[data-color="orange"] {
+  background-color: var(--warning);
+  color: var(--warning-foreground);
+}
+
+.drop-zone__file-format-icon-badge[data-color="blue"],
+.drop-zone__file-format-icon-badge[data-color="purple"] {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.drop-zone__file-format-icon-badge[data-color="gray"] {
+  background-color: var(--default);
+  color: var(--default-foreground);
+}
+
+/* Shiki's GitHub light theme, which HeroUI Pro's code blocks use (in Markdown too), has token colours under 4.5:1 on
+   the surface behind code (keywords are 4:1); in the light scheme each token keeps its hue and chroma at a lightness
+   of at most 50%, which holds 4.5:1 on a light surface. The dark scheme keeps HeroUI Pro's rule, whose dark theme
+   holds already. */
+:root:not(.dark) .code-block__code .shiki span {
+  color: oklch(from var(--shiki-light, var(--surface-secondary-foreground)) min(l, 0.5) c h);
+}
