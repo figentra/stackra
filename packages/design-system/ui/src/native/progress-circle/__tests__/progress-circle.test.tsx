@@ -109,7 +109,7 @@ vi.mock("#native/design-system-provider/use-design-system", () => ({
 }));
 
 const rootProps = () =>
-  state.views.toReversed().find((props) => props["accessibilityRole"] === "progressbar") ?? {};
+  state.views.filter((props) => props["accessibilityRole"] === "progressbar").at(-1) ?? {};
 const styleOf = (props: Record<string, unknown> = {}) =>
   props["style"] as Record<string, unknown>[] | Record<string, unknown>;
 /** The track circle has a colour and no animated props; the fill arc has both. */

@@ -238,7 +238,9 @@ describe("Table (web)", () => {
   it("keeps the rows and adds a loading row after them while a reload runs", () => {
     render(<Table {...baseProps} isLoading />);
     expect(screen.getByRole("rowheader", { name: "Ada" })).toBeTruthy();
-    expect(screen.getByText("Loading")).toBeTruthy();
+    // The loading row's label, and the one live status that says it aloud.
+    expect(screen.getAllByText("Loading")).toHaveLength(2);
+    expect(screen.getByRole("status").textContent).toBe("Loading");
   });
 
   it("adds the load-more sentinel only while more pages exist and a handler is given", () => {

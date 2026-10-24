@@ -18,6 +18,9 @@ import { CursorPagination } from "#native/cursor-pagination/cursor-pagination";
 
 const received = vi.hoisted(() => ({ buttons: [] as Record<string, unknown>[] }));
 
+/** The real Button draws an icon element beside its label; a name is the registry's to draw, not this stand-in's. */
+const drawn = (icon: unknown) => (typeof icon === "string" ? null : (icon as ReactNode));
+
 vi.mock("react-native", () => ({
   View: ({
     children,
@@ -61,7 +64,9 @@ vi.mock("#native/button/button", () => ({
         disabled={props["isDisabled"] === true || props["isLoading"] === true}
         onClick={() => (props["onPress"] as (() => void) | undefined)?.()}
       >
+        {drawn(props["startIcon"])}
         {props.children}
+        {drawn(props["endIcon"])}
       </button>
     );
   },

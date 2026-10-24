@@ -63,7 +63,8 @@ vi.mock("react-native-reanimated", async () => {
         ref.current = {
           get: () => box.value,
           set: (next) => {
-            box.value = next;
+            // An animation has not run yet, so the value a worklet reads stays where it was until a number is set.
+            if (typeof next === "number") box.value = next;
             box.sets.push(next);
           },
         };
@@ -102,7 +103,7 @@ vi.mock("#native/text/text", async () => {
 
 /** The last props handed to the view that matches. */
 const lastView = (matches: (props: Record<string, unknown>) => boolean) =>
-  state.views.toReversed().find(matches) ?? {};
+  state.views.filter(matches).at(-1) ?? {};
 const rootProps = () => lastView((props) => props["accessibilityRole"] === "progressbar");
 const trackProps = () => lastView((props) => typeof props["onLayout"] === "function");
 const styleOf = (props: Record<string, unknown>) => props["style"] as Record<string, unknown>;

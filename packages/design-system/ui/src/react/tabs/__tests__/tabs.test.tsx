@@ -37,7 +37,30 @@ const key = (element: HTMLElement, pressed: string) => {
   fireEvent.keyDown(element, { key: pressed });
 };
 
+/** Watches nothing: jsdom has no layout, and the tab list's scroll shadow only needs the observer to exist. */
+class ResizeObserverStandIn {
+  observe() {}
+
+  unobserve() {}
+
+  disconnect() {}
+}
+
 describe("Tabs (web)", () => {
+  beforeEach(() => {
+    vi.stubGlobal("ResizeObserver", ResizeObserverStandIn);
+    // jsdom has no Web Animations; the selected-tab indicator asks the element for its running ones.
+    Object.defineProperty(Element.prototype, "getAnimations", {
+      value: () => [],
+      configurable: true,
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    Reflect.deleteProperty(Element.prototype, "getAnimations");
+  });
+
   it("is a tab list named by its label, with one tab per item in order", () => {
     render(<Tabs items={ITEMS} label="Order sections" />);
     expect(screen.getByRole("tablist", { name: "Order sections" })).toBeTruthy();
@@ -120,6 +143,8 @@ describe("Tabs (web)", () => {
     const onSelectionChange = vi.fn();
     render(<Tabs items={ITEMS} label="Order sections" onSelectionChange={onSelectionChange} />);
     expect(tab("Details").getAttribute("aria-disabled")).toBe("true");
+    // React Aria reports the first usable tab it selects on its own; only what the press adds is asked about.
+    onSelectionChange.mockClear();
     press(tab("Details"));
     expect(onSelectionChange).not.toHaveBeenCalled();
     expect(selected()).toEqual(["Items"]);
@@ -140,7 +165,9 @@ describe("Tabs (web)", () => {
       expect(each.getAttribute("aria-disabled")).toBe("true");
     }
     press(tab("Notes"));
-    key(tab("Items"), "ArrowRight");
+    // A disabled tab takes no focus, so no key can reach the list from it.
+    act(() => tab("Items").focus());
+    expect(document.activeElement).not.toBe(tab("Items"));
     expect(onSelectionChange).not.toHaveBeenCalled();
     expect(selected()).toEqual(["Items"]);
   });

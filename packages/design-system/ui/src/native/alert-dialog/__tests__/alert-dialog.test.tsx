@@ -133,7 +133,7 @@ const swipeable = (props: Partial<AlertDialogProps>) => {
 const iconNames = () =>
   screen.queryAllByTestId("slot-icon").map((node) => node.getAttribute("data-name"));
 const lastButton = (label: string) =>
-  received.buttons.findLast((props) => props["children"] === label);
+  received.buttons.filter((props) => props["children"] === label).at(-1);
 
 describe("AlertDialog (native)", () => {
   beforeEach(() => {

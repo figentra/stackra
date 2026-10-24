@@ -91,9 +91,10 @@ describe("Accordion page", () => {
     const states = section("States");
     const buttons = states.getAllByRole("button");
     expect(buttons.filter((button) => button.hasAttribute("disabled"))).toHaveLength(4);
-    expect(
-      states.getByRole("button", { name: "Can I return an order?" }).hasAttribute("disabled"),
-    ).toBe(true);
+    // The refused section and the same section of the disabled accordion, both refused.
+    const returns = states.getAllByRole("button", { name: "Can I return an order?" });
+    expect(returns).toHaveLength(2);
+    expect(returns.every((button) => button.hasAttribute("disabled"))).toBe(true);
   });
 
   it("draws the link in a section when it is opened", () => {

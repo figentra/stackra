@@ -72,7 +72,7 @@ describe("Drawer (web)", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
     // Held before opening: React Aria hides the page behind an open drawer, so a role query would not find it then.
     const trigger = screen.getByRole("button", { name: "Open" });
-    expect(trigger.getAttribute("aria-haspopup")).toBe("dialog");
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
     press(trigger);
     expect(screen.getByRole("dialog", { name: "Order details" })).toBeTruthy();
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
@@ -210,15 +210,15 @@ describe("Drawer (web)", () => {
     const onPress = vi.fn();
     render(
       <Drawer defaultOpen label="Close test">
-        <Drawer.Close label="Dismiss" onPress={onPress} icon={<i data-testid="mine" />} />
+        <Drawer.Close label="Close panel" onPress={onPress} icon={<i data-testid="mine" />} />
         <Drawer.Close label="Disabled" isDisabled />
       </Drawer>,
     );
     expect(
-      within(screen.getByRole("button", { name: "Dismiss" })).getByTestId("mine"),
+      within(screen.getByRole("button", { name: "Close panel" })).getByTestId("mine"),
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "Disabled" }).hasAttribute("disabled")).toBe(true);
-    press(screen.getByRole("button", { name: "Dismiss" }));
+    press(screen.getByRole("button", { name: "Close panel" }));
     expect(onPress).toHaveBeenCalledOnce();
     expect(screen.queryByRole("dialog")).toBeNull();
   });

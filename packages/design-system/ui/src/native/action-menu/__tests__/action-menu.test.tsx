@@ -127,11 +127,13 @@ describe("ActionMenu (native)", () => {
     void (<ActionMenu sections={SECTIONS} />);
     // @ts-expect-error a menu needs its actions
     void (<ActionMenu label="More" />);
-    // @ts-expect-error the button is the component's own
     void (
-      <ActionMenu label="More" sections={SECTIONS}>
-        x
-      </ActionMenu>
+      (
+        // @ts-expect-error the button is the component's own
+        <ActionMenu label="More" sections={SECTIONS}>
+          x
+        </ActionMenu>
+      )
     );
     // @ts-expect-error an action menu keeps no selection
     void (<ActionMenu label="More" sections={SECTIONS} selectionMode="single" />);

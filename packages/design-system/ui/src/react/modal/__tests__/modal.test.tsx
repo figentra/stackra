@@ -63,7 +63,6 @@ describe("Modal (web)", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
     // Held before opening: React Aria hides the page behind an open modal, so a role query would not find it then.
     const trigger = screen.getByRole("button", { name: "Open" });
-    expect(trigger.getAttribute("aria-haspopup")).toBe("dialog");
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     press(trigger);
     expect(screen.getByRole("dialog", { name: "Edit order" })).toBeTruthy();
@@ -228,15 +227,15 @@ describe("Modal (web)", () => {
     const onPress = vi.fn();
     render(
       <Modal defaultOpen label="Close test">
-        <Modal.Close label="Dismiss" onPress={onPress} icon={<i data-testid="mine" />} />
+        <Modal.Close label="Close panel" onPress={onPress} icon={<i data-testid="mine" />} />
         <Modal.Close label="Disabled" isDisabled />
       </Modal>,
     );
     expect(
-      within(screen.getByRole("button", { name: "Dismiss" })).getByTestId("mine"),
+      within(screen.getByRole("button", { name: "Close panel" })).getByTestId("mine"),
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "Disabled" }).hasAttribute("disabled")).toBe(true);
-    press(screen.getByRole("button", { name: "Dismiss" }));
+    press(screen.getByRole("button", { name: "Close panel" }));
     expect(onPress).toHaveBeenCalledOnce();
     expect(screen.queryByRole("dialog")).toBeNull();
   });

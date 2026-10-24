@@ -55,9 +55,7 @@ describe("Popover (web)", () => {
     const button = screen.getByRole("button", { name: "Filters" });
     expect(button.getAttribute("aria-expanded")).toBe("false");
     press(button);
-    expect(document.querySelector('[aria-haspopup="dialog"]')?.getAttribute("aria-expanded")).toBe(
-      "true",
-    );
+    expect(button.getAttribute("aria-expanded")).toBe("true");
   });
 
   it("draws the arrow only when asked", () => {

@@ -56,6 +56,18 @@ const renderMenu = (props: Partial<MenuProps> = {}) =>
   );
 
 describe("Menu (web)", () => {
+  beforeEach(() => {
+    // jsdom has no layout, and the menu scrolls the focused item into view on a timer, which would throw late.
+    Object.defineProperty(Element.prototype, "scrollTo", {
+      value: () => undefined,
+      configurable: true,
+    });
+  });
+
+  afterEach(() => {
+    Reflect.deleteProperty(Element.prototype, "scrollTo");
+  });
+
   it("opens from its trigger and is named by it", () => {
     renderMenu();
     expect(screen.queryByRole("menu")).toBeNull();
@@ -263,7 +275,7 @@ describe("Menu (web)", () => {
 
     const onOpenChange = vi.fn();
     renderMenu({ isOpen: true, onOpenChange });
-    press(screen.getByRole("button", { name: "Open" }));
+    fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
     expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
     // Controlled: the app did not close it, so it stays open.
     expect(screen.getByRole("menu")).toBeTruthy();
