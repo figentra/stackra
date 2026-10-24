@@ -23,7 +23,7 @@ the helpers every kind package builds on (`createKind`, `registerKind`, `kindOf`
 
 - **Apps touched**: none (the template's apps consume `./react`, STA-344)
 - **Services touched**: none
-- **Packages touched**: `packages/foundation/container` (new member)
+- **Packages touched**: `packages/foundation/container` (new member); `packages/tooling/oxlint` (`boundaries.jsonc` allows the container's imports)
 - **Cross-service events**: none
 - **Tenancy and data**: none (the container holds instances; it stores and logs no data)
 - **Secrets**: none
@@ -36,7 +36,6 @@ the helpers every kind package builds on (`createKind`, `registerKind`, `kindOf`
 - **Docs to update**: `packages/foundation/container/README.md`, `packages/foundation/container/AGENTS.md`; ADR 0120, 0127, 0227, 0263, 0269, 0294, 0305 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R3 (every member boots through it: a wrong resolution or a missed driver is a boot or runtime defect)
-- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
 
 ## Clarifications
 
