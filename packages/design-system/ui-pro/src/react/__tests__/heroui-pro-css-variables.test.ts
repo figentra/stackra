@@ -12,6 +12,7 @@
  * Runtime: node
  * Governing contract: ADR 0310 (decisions 3 and 12); STA-458.
  */
+// @covers sta-458:FR-001 sta-458:FR-002 sta-458:P-001 sta-458:P-002
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 
