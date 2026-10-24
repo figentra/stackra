@@ -97,12 +97,21 @@ describe("CursorPagination (native)", () => {
     expect(button("Next").disabled).toBe(true);
   });
 
-  it("refuses both presses while a page loads, with the spinner on next only", () => {
+  it("refuses both presses while a page loads, with the spinner on next when no press started the load", () => {
     render(<CursorPagination hasMore hasPrevious isLoading />);
     expect(button("Previous").disabled).toBe(true);
     expect(button("Previous").dataset["loading"]).toBe("false");
     expect(button("Next").disabled).toBe(true);
     expect(button("Next").dataset["loading"]).toBe("true");
+  });
+
+  it("puts the spinner on the button that was pressed and disables the other", () => {
+    const { rerender } = render(<CursorPagination hasMore hasPrevious />);
+    fireEvent.click(button("Previous"));
+    rerender(<CursorPagination hasMore hasPrevious isLoading />);
+    expect(button("Previous").dataset["loading"]).toBe("true");
+    expect(button("Next").dataset["loading"]).toBe("false");
+    expect(button("Next").disabled).toBe(true);
   });
 
   it("hands the size to every button", () => {

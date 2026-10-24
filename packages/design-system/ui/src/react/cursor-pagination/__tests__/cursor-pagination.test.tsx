@@ -70,6 +70,27 @@ describe("CursorPagination (web)", () => {
     expect(onPrevious).not.toHaveBeenCalled();
   });
 
+  it("shows the spinner on the button that was pressed and disables the other", () => {
+    const { rerender } = render(<CursorPagination hasMore hasPrevious />);
+    press(button("Previous"));
+    rerender(<CursorPagination hasMore hasPrevious isLoading />);
+    expect(button("Previous").hasAttribute("data-pending")).toBe(true);
+    expect(button("Next").hasAttribute("data-pending")).toBe(false);
+    expect(button("Next").disabled).toBe(true);
+    rerender(<CursorPagination hasMore hasPrevious />);
+    press(button("Next"));
+    rerender(<CursorPagination hasMore hasPrevious isLoading />);
+    expect(button("Next").hasAttribute("data-pending")).toBe(true);
+    expect(button("Previous").hasAttribute("data-pending")).toBe(false);
+    expect(button("Previous").disabled).toBe(true);
+  });
+
+  it("keeps the load-more button, disabled, once the last page has arrived", () => {
+    const { rerender } = render(<CursorPagination mode="load-more" hasMore />);
+    rerender(<CursorPagination mode="load-more" hasMore={false} />);
+    expect(button("Load more").disabled).toBe(true);
+  });
+
   it("shows a count, never a total, as a polite status", () => {
     const { rerender } = render(<CursorPagination hasMore count={20} />);
     expect(screen.getByRole("status").textContent).toBe("Showing 20 items");

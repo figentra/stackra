@@ -158,6 +158,7 @@ export function ErrorState() {
               title={KIND_COPY.unexpected.title}
               description={KIND_COPY.unexpected.description}
               error={FAILURE}
+              isMessageShown
             />
           </Sample>
           <Sample caption="A retry and a further action">
@@ -203,6 +204,7 @@ export function ErrorState() {
               title={KIND_COPY.unexpected.title}
               description={KIND_COPY.unexpected.description}
               error={FAILURE}
+              isMessageShown
               retry={{ label: STRINGS.retry, onPress: retry }}
             />
           ) : phase === "loading" ? (

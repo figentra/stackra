@@ -130,10 +130,21 @@ describe("ErrorState (native)", () => {
     ]);
   });
 
-  it("keeps the stack out of production, and shows the message still", () => {
+  it("hides the message in production, where it may be an internal", () => {
     vi.stubEnv("NODE_ENV", "production");
-    render(<ErrorState title="Failed" error={new Error("Order service")} />);
-    expect(received.texts.map((text) => text["children"])).toEqual(["Order service"]);
+    render(<ErrorState title="Failed" error={new Error("db: pool exhausted")} />);
+    expect(received.texts).toEqual([]);
+  });
+
+  it("shows the message in production when the app marks it as safe, never the stack", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    render(<ErrorState title="Failed" error={new Error("Order is not payable")} isMessageShown />);
+    expect(received.texts.map((text) => text["children"])).toEqual(["Order is not payable"]);
+  });
+
+  it("hides the message outside production when the app says so", () => {
+    render(<ErrorState title="Failed" error={new Error("x")} isMessageShown={false} />);
+    expect(received.texts).toEqual([]);
   });
 
   it("shows no details for a value with no message", () => {

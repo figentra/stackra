@@ -10,7 +10,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (decision 4); ADR 0060 (right-to-left);
  *          WCAG 2.2 SC 4.1.3.
  */
-import type { ComponentPropsWithoutRef } from "react";
+import { useState, type ComponentPropsWithoutRef } from "react";
 
 import type { CursorPaginationContractProps } from "#contracts/types/cursor-pagination-contract-props.type";
 import { Button } from "#react/button/button";
@@ -38,8 +38,8 @@ export type CursorPaginationProps = CursorPaginationContractProps &
 
 /**
  * Previous and next buttons, or one load-more button, for a list that arrives in cursor pages. The next button is
- * disabled when the server has no `hasMore`, the previous one when the app has no earlier page, and both while a page
- * loads, so a double press never fetches twice.
+ * disabled when the server has no `hasMore`, the previous one when the app has no earlier page. While a page loads
+ * the button that was pressed shows the spinner and the other is disabled, so a double press never fetches twice.
  */
 export function CursorPagination({
   hasMore,
@@ -59,8 +59,17 @@ export function CursorPagination({
   ...rest
 }: CursorPaginationProps) {
   const isPager = mode === "pager";
-  // A load-more form with nothing more to load and no count has nothing to draw: an empty landmark is noise.
-  if (!isPager && !hasMore && count === undefined) return null;
+  // The button that was pressed shows the spinner, the other waits disabled; a load that no press started (an app's own
+  // end-reached call) is the next page.
+  const [pressed, setPressed] = useState<"previous" | "next">("next");
+  const isPreviousLoading = isLoading && pressed === "previous";
+  const isNextLoading = isLoading && pressed === "next";
+  // The load-more button stays mounted, disabled, once the last page has arrived: if it unmounted while it had focus,
+  // focus would fall to the page's body (WCAG 2.4.3).
+  const [hadMore, setHadMore] = useState(hasMore);
+  if (hasMore && !hadMore) setHadMore(true);
+  // A load-more form that never had anything to load and no count has nothing to draw: an empty landmark is noise.
+  if (!isPager && !hadMore && count === undefined) return null;
 
   return (
     <nav
@@ -82,8 +91,12 @@ export function CursorPagination({
             <Button
               size={size}
               variant="secondary"
-              isDisabled={!hasPrevious || isLoading}
-              onPress={onPrevious}
+              isDisabled={!hasPrevious || isNextLoading}
+              isLoading={isPreviousLoading}
+              onPress={() => {
+                setPressed("previous");
+                onPrevious?.();
+              }}
               startIcon={<Icon name="chevron-left" isMirroredInRtl />}
             >
               {previousLabel}
@@ -91,18 +104,22 @@ export function CursorPagination({
             <Button
               size={size}
               variant="secondary"
-              isDisabled={!hasMore}
-              isLoading={isLoading}
-              onPress={onNext}
+              isDisabled={!hasMore || isPreviousLoading}
+              isLoading={isNextLoading}
+              onPress={() => {
+                setPressed("next");
+                onNext?.();
+              }}
               endIcon={<Icon name="chevron-right" isMirroredInRtl />}
             >
               {nextLabel}
             </Button>
           </>
-        ) : hasMore ? (
+        ) : hadMore ? (
           <Button
             size={size}
             variant="secondary"
+            isDisabled={!hasMore}
             isLoading={isLoading}
             onPress={onNext}
             startIcon="chevron-down"

@@ -8,7 +8,7 @@
  *           string or number value is wrapped in Text, any other node is drawn as given. There is no clipboard module
  *           in the free dependencies, so the list copies nothing itself: `onCopy` is where the app writes the
  *           clipboard (for example with `expo-clipboard`), which is why a row has no copy button without it; the list
- *           then announces `copiedLabel` through the screen reader. `columns` is accepted and unread (ADR 0313 decision
+ *           then announces `copiedLabel` ("Copied" by default) through the screen reader. `columns` is accepted and unread (ADR 0313 decision
  *           7): a phone shows one column.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0165 (HeroUI Native on native); ADR 0303 (decision
@@ -27,6 +27,9 @@ import { Text } from "#native/text/text";
 export type PropertyListProps<TItem extends PropertyListItem = PropertyListItem> =
   PropertyListContractProps<TItem> & Omit<ViewProps, keyof PropertyListContractProps | "children">;
 
+// shortcut: English until @stackra/i18n ships; then the key `ui::property-list.copied`.
+const STRINGS = { copied: "Copied" } as const;
+
 /** True for a value with nothing to show: missing, empty or `false`; `0` is a value. */
 const isEmpty = (value: ReactNode) => value == null || value === "" || value === false;
 
@@ -35,7 +38,7 @@ export function PropertyList<TItem extends PropertyListItem = PropertyListItem>(
   items,
   columns: _columns,
   emptyValue = "–",
-  copiedLabel,
+  copiedLabel = STRINGS.copied,
   onCopy,
   className,
   ...rest
@@ -67,8 +70,7 @@ export function PropertyList<TItem extends PropertyListItem = PropertyListItem>(
                   size="sm"
                   onPress={() => {
                     onCopy(item, text);
-                    if (copiedLabel !== undefined)
-                      AccessibilityInfo.announceForAccessibility(copiedLabel);
+                    AccessibilityInfo.announceForAccessibility(copiedLabel);
                   }}
                 />
               )}

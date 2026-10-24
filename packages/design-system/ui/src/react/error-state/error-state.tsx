@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the web `ErrorState`: the page a route's error file shows: an icon for the `kind` of failure
  *          (unauthenticated, forbidden, not found, unexpected), a title, a description, the error's message as
- *          details, a retry button and further `actions`.
+ *          details (outside production, or in production when `isMessageShown` says it is safe), a retry button and further `actions`.
  * Boundary: HeroUI v3 has no error-state component, so this is the documented adapted form on free parts, laid out by
  *           the shared internal `StateLayout`. No copy of its own. The page is a live region (`alert`, assertive), so
  *           a failure that replaces content is read out at once; one already on the page at load is not, which is
@@ -30,16 +30,19 @@ export type ErrorStateProps = ErrorStateContractProps &
     keyof ErrorStateContractProps | "defaultIcon" | "children" | "role" | "aria-live"
   >;
 
-/** A failure, named by its kind, with the error's message, a retry and further actions, announced at once. */
+/** A failure, named by its kind, with the error's message (outside production, or when `isMessageShown`), a retry and further actions, announced at once. */
 export function ErrorState({
   kind = "unexpected",
   error,
+  isMessageShown,
   retry,
   actions,
   headingLevel = 1,
   ...rest
 }: ErrorStateProps) {
-  const details = errorDetailsOf(error);
+  const isProduction = process.env.NODE_ENV === "production";
+  // A server or driver message is an internal, so in production it is shown only when the app marks it as safe.
+  const details = (isMessageShown ?? !isProduction) ? errorDetailsOf(error) : undefined;
   return (
     <StateLayout
       {...rest}
@@ -64,7 +67,7 @@ export function ErrorState({
           <Text type="small" className="break-words">
             {details.message}
           </Text>
-          {details.stack === undefined || process.env.NODE_ENV === "production" ? null : (
+          {details.stack === undefined || isProduction ? null : (
             <pre dir="ltr" className="mt-2 text-xs break-words whitespace-pre-wrap">
               {details.stack}
             </pre>

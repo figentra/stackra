@@ -11,6 +11,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (decisions 4 and 7); ADR 0060
  *          (right-to-left).
  */
+import { useState } from "react";
 import type { ViewProps } from "react-native";
 import { View } from "react-native";
 
@@ -37,8 +38,8 @@ export type CursorPaginationProps = CursorPaginationContractProps &
 
 /**
  * Previous and next buttons, or one load-more button, for a list that arrives in cursor pages. The next button is
- * disabled when the server has no `hasMore`, the previous one when the app has no earlier page, and both while a page
- * loads, so a double press never fetches twice.
+ * disabled when the server has no `hasMore`, the previous one when the app has no earlier page. While a page loads
+ * the button that was pressed shows the spinner and the other is disabled, so a double press never fetches twice.
  */
 export function CursorPagination({
   hasMore,
@@ -58,6 +59,11 @@ export function CursorPagination({
   ...rest
 }: CursorPaginationProps) {
   const isPager = mode === "pager";
+  // The button that was pressed shows the spinner, the other waits disabled; a load that no press started (an app's own
+  // end-reached call) is the next page.
+  const [pressed, setPressed] = useState<"previous" | "next">("next");
+  const isPreviousLoading = isLoading && pressed === "previous";
+  const isNextLoading = isLoading && pressed === "next";
   // A load-more form with nothing more to load and no count has nothing to draw.
   if (!isPager && !hasMore && count === undefined) return null;
 
@@ -81,8 +87,12 @@ export function CursorPagination({
             <Button
               variant="secondary"
               size={size}
-              isDisabled={!hasPrevious || isLoading}
-              onPress={onPrevious}
+              isDisabled={!hasPrevious || isNextLoading}
+              isLoading={isPreviousLoading}
+              onPress={() => {
+                setPressed("previous");
+                onPrevious?.();
+              }}
               startIcon={<Icon name="chevron-left" isMirroredInRtl />}
             >
               {previousLabel}
@@ -90,9 +100,12 @@ export function CursorPagination({
             <Button
               variant="secondary"
               size={size}
-              isDisabled={!hasMore}
-              isLoading={isLoading}
-              onPress={onNext}
+              isDisabled={!hasMore || isPreviousLoading}
+              isLoading={isNextLoading}
+              onPress={() => {
+                setPressed("next");
+                onNext?.();
+              }}
               endIcon={<Icon name="chevron-right" isMirroredInRtl />}
             >
               {nextLabel}

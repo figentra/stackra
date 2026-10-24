@@ -82,7 +82,14 @@ body changes only for typos and Enforcement, so the additions are recorded here.
    - ErrorState takes `retry` as one object (`label` and `onPress`) so a retry never lacks its label, and EmptyState
      and ErrorState take `title` as a required node, since the design system carries no copy.
    - PropertyList copies only when a row has a `copyLabel`; native has no clipboard in the free dependencies, so the app
-     writes it in `onCopy`.
+     writes it in `onCopy`, and a native row draws its copy button only when the list has an `onCopy` as well as the
+     row a `copyLabel`. A copy is always announced: `copiedLabel` defaults to an English word until i18n ships.
+   - Amended 2026-10-24, after the wave 5 review: ErrorState takes `isMessageShown`, which defaults to true outside
+     production and false in production, because a thrown server or driver message is an internal; an app whose error
+     text is written for the user sets it. CursorPagination shows the spinner on the button that was pressed, and the
+     web load-more button stays mounted, disabled, after the last page so focus is not lost. The native Breadcrumbs mark
+     the current step selected and speak it with the trail's name. The icons these components draw (`copy`, `check`,
+     `chevron-down`, and on native `arrow-up` and `arrow-down`) are in the `UI_ICONS` registry of each runtime.
 
 ## Consequences
 

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the native `ErrorState`: the screen a route's error file shows: an icon for the `kind` of failure
  *          (unauthenticated, forbidden, not found, unexpected), a title, a description, the error's message as
- *          details, a retry button and further `actions`.
+ *          details (outside production, or in production when `isMessageShown` says it is safe), a retry button and further `actions`.
  * Boundary: the adapted form on free HeroUI Native parts, laid out by the shared internal `StateLayout`. No copy of
  *           its own. The screen is a live region (`alert`, assertive), so a failure that replaces content is read out
  *           at once. The stack is shown outside production only. The message and the stack are wrapped in `Text`; the
@@ -32,16 +32,19 @@ export type ErrorStateProps = ErrorStateContractProps &
     keyof ErrorStateContractProps | "defaultIcon" | "children" | "role" | "aria-live"
   >;
 
-/** A failure, named by its kind, with the error's message, a retry and further actions, announced at once. */
+/** A failure, named by its kind, with the error's message (outside production, or when `isMessageShown`), a retry and further actions, announced at once. */
 export function ErrorState({
   kind = "unexpected",
   error,
+  isMessageShown,
   retry,
   actions,
   headingLevel = 1,
   ...rest
 }: ErrorStateProps) {
-  const details = errorDetailsOf(error);
+  const isProduction = process.env.NODE_ENV === "production";
+  // A server or driver message is an internal, so in production it is shown only when the app marks it as safe.
+  const details = (isMessageShown ?? !isProduction) ? errorDetailsOf(error) : undefined;
   return (
     <StateLayout
       {...rest}
@@ -60,7 +63,7 @@ export function ErrorState({
       {details === undefined ? null : (
         <View className="w-full rounded-lg border border-separator p-3">
           <Text type="small">{details.message}</Text>
-          {details.stack === undefined || process.env.NODE_ENV === "production" ? null : (
+          {details.stack === undefined || isProduction ? null : (
             <Text type="caption" className="mt-2" selectable>
               {details.stack}
             </Text>

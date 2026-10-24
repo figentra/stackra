@@ -54,8 +54,18 @@ vi.mock("#native/link/link", () => ({
   ),
 }));
 vi.mock("#native/text/text", () => ({
-  Text: ({ children, tone }: Record<string, unknown> & { children?: ReactNode }) => (
-    <span data-testid="text" data-tone={String(tone)}>
+  Text: ({
+    children,
+    tone,
+    accessibilityState,
+    accessibilityLabel,
+  }: Record<string, unknown> & { children?: ReactNode }) => (
+    <span
+      data-testid="text"
+      data-tone={String(tone)}
+      data-selected={String((accessibilityState as { selected?: boolean } | undefined)?.selected)}
+      aria-label={accessibilityLabel as string | undefined}
+    >
       {children}
     </span>
   ),
@@ -85,6 +95,26 @@ describe("Breadcrumbs (native)", () => {
     const text = screen.getByTestId("text");
     expect(text.textContent).toBe("Order 1042");
     expect(text.dataset["tone"]).toBe("default");
+  });
+
+  it("marks the last step selected and speaks it with the trail's name", () => {
+    render(<Breadcrumbs items={TRAIL} label="Trail" />);
+    const text = screen.getByTestId("text");
+    expect(text.dataset["selected"]).toBe("true");
+    expect(text.getAttribute("aria-label")).toBe("Trail: Order 1042");
+  });
+
+  it("leaves a step that is not the current page unmarked", () => {
+    render(
+      <Breadcrumbs
+        items={[
+          { id: "a", label: "Group" },
+          { id: "b", label: "Here" },
+        ]}
+      />,
+    );
+    const [group] = screen.getAllByTestId("text");
+    expect(group?.dataset["selected"]).toBe("undefined");
   });
 
   it("draws the last step as text even when it has an href", () => {

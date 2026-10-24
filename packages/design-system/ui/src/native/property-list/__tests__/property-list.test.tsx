@@ -152,10 +152,10 @@ describe("PropertyList (native)", () => {
     expect(received.announce).toHaveBeenCalledExactlyOnceWith("Copied");
   });
 
-  it("announces nothing without a copied label", () => {
+  it("announces a default copied word without a copied label", () => {
     render(<PropertyList items={ITEMS} onCopy={vi.fn()} />);
     pressCopy();
-    expect(received.announce).not.toHaveBeenCalled();
+    expect(received.announce).toHaveBeenCalledExactlyOnceWith("Copied");
   });
 
   it("reads no columns, merges the caller's class and passes View props through", () => {

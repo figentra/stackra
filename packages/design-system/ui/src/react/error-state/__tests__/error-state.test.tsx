@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: proves the web ErrorState announces itself at once (an alert, assertive, never a role from the caller),
- *          titles itself with a level-1 heading by default, draws the icon of its kind, shows the error's message and,
- *          outside production only, its stack, offers a retry button that runs what it was given, puts further
+ *          titles itself with a level-1 heading by default, draws the icon of its kind, shows the error's message outside
+ *          production (in production only when `isMessageShown`) and, outside production only, its stack, offers a retry button that runs what it was given, puts further
  *          actions after it, passes unknown props through, and that the type requires a title and refuses `role` and
  *          `variant`.
  * Boundary: jsdom with real HeroUI and the real icon registry; the theme CSS is not loaded, so classes and attributes
@@ -70,12 +70,27 @@ describe("ErrorState (web)", () => {
     expect(stack?.getAttribute("dir")).toBe("ltr");
   });
 
-  it("keeps the stack out of production, and shows the message still", () => {
+  it("hides the message in production, where it may be an internal", () => {
     vi.stubEnv("NODE_ENV", "production");
-    const { container } = render(<ErrorState title="Failed" error={new Error("Order service")} />);
+    const { container } = render(<ErrorState title="Failed" error={new Error("db: pool exhausted")} />);
+    expect(container.querySelector('[data-slot="error-state-details"]')).toBeNull();
+  });
+
+  it("shows the message in production when the app marks it as safe, never the stack", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const { container } = render(
+      <ErrorState title="Failed" error={new Error("Order is not payable")} isMessageShown />,
+    );
     const details = container.querySelector('[data-slot="error-state-details"]');
-    expect(details?.textContent).toBe("Order service");
+    expect(details?.textContent).toBe("Order is not payable");
     expect(details?.querySelector("pre")).toBeNull();
+  });
+
+  it("hides the message outside production when the app says so", () => {
+    const { container } = render(
+      <ErrorState title="Failed" error={new Error("x")} isMessageShown={false} />,
+    );
+    expect(container.querySelector('[data-slot="error-state-details"]')).toBeNull();
   });
 
   it("shows no details for a value with no message", () => {

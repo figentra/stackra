@@ -133,9 +133,12 @@ describe("PropertyList (web)", () => {
       expect(screen.getByRole("status").textContent).toBe("");
     });
 
-    it("draws no live region without a copied label", () => {
+    it("says a default copied word without a copied label, so a copy is never silent", async () => {
       render(<PropertyList items={ITEMS} />);
-      expect(screen.queryByRole("status")).toBeNull();
+      expect(screen.getByRole("status").textContent).toBe("");
+      fireEvent.click(screen.getByRole("button", { name: "Copy order id" }));
+      await act(() => vi.advanceTimersByTimeAsync(0));
+      expect(screen.getByRole("status").textContent).toBe("Copied");
     });
 
     it("copies the copy value, not the shown value, when there is one", async () => {

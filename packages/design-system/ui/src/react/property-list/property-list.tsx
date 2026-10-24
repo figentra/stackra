@@ -3,7 +3,8 @@
  * Purpose: the web `PropertyList`: the label and value rows of a detail page as a description list (`dl`, with a `dt`
  *          and a `dd` for each row), in one or two columns, an empty value shown as the list's `emptyValue`, and a copy
  *          button on a row that has a `copyLabel` and text to copy. The list writes the clipboard itself, then draws the
- *          button's icon as a check for two seconds and, with a `copiedLabel`, says it once in a polite live region.
+ *          button's icon as a check for two seconds and says the `copiedLabel` ("Copied" by default) once in a polite
+ *          live region, so a copy is never silent (WCAG 4.1.3).
  * Boundary: built on the free Text and IconButton of this package, so it adds no styling layer: the classes are layout
  *           only (a grid and a gap), logical so right-to-left mirrors. HeroUI v3 has no description list, so this is the
  *           adapted form on free parts. A clipboard write that the browser refuses (no permission, an insecure page)
@@ -35,6 +36,9 @@ export type PropertyListProps<TItem extends PropertyListItem = PropertyListItem>
   PropertyListContractProps<TItem> &
     Omit<ComponentPropsWithoutRef<"dl">, keyof PropertyListContractProps | "children">;
 
+// shortcut: English until @stackra/i18n ships; then the key `ui::property-list.copied`.
+const STRINGS = { copied: "Copied" } as const;
+
 /** The grid of each column count; two columns stack into one below the small breakpoint. */
 const COLUMNS_CLASS_NAME = Object.freeze({
   1: "grid grid-cols-1 gap-4",
@@ -58,7 +62,7 @@ export function PropertyList<TItem extends PropertyListItem = PropertyListItem>(
   items,
   columns = 1,
   emptyValue = "–",
-  copiedLabel,
+  copiedLabel = STRINGS.copied,
   onCopy,
   className,
   ...rest
@@ -118,11 +122,9 @@ export function PropertyList<TItem extends PropertyListItem = PropertyListItem>(
           );
         })}
       </dl>
-      {copiedLabel === undefined ? null : (
-        <span role="status" className="sr-only">
-          {copiedId === undefined ? "" : copiedLabel}
-        </span>
-      )}
+      <span role="status" className="sr-only">
+        {copiedId === undefined ? "" : copiedLabel}
+      </span>
     </>
   );
 }
