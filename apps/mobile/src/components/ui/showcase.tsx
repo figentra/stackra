@@ -26,8 +26,6 @@ import {
 import { Fragment, useState, type ReactNode } from "react";
 import { View } from "react-native";
 
-import { Glass } from "./glass";
-
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
   invite: {
@@ -61,13 +59,9 @@ const DEPLOYS: readonly { name: string; version: string; status: string; tone: T
   { name: "Sara Kim", version: "v2.13.9", status: "Failed", tone: "danger" },
 ];
 
-/** One scene: a transparent card on a glass layer, so the card keeps its parts and the glass is the surface. */
+/** One scene: a solid card, since content never sits on glass (the owner's decision, 2026-10-24). */
 function Scene({ children }: { children: ReactNode }) {
-  return (
-    <Glass padding={0}>
-      <Card variant="transparent">{children}</Card>
-    </Glass>
-  );
+  return <Card>{children}</Card>;
 }
 
 /** The three composed scenes, stacked. */

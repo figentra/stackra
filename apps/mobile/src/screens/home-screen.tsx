@@ -7,9 +7,7 @@
  */
 import { useNavigation } from "@react-navigation/native";
 import { Button, Card } from "heroui-native";
-import { Text } from "react-native";
 
-import { Glass } from "../components/ui/glass";
 import { Screen } from "../components/ui/screen";
 
 const ITEMS = ["1", "2", "3"];
@@ -19,12 +17,15 @@ export function HomeScreen() {
   const navigation = useNavigation();
   return (
     <Screen>
-      <Glass>
-        <Text className="text-lg font-semibold text-foreground">Welcome to Stackra</Text>
-        <Text className="mt-1 text-muted">
-          Expo SDK 57 · React Navigation · HeroUI Native · Liquid Glass
-        </Text>
-      </Glass>
+      {/* Content sits on a solid card: glass is for controls and navigation (the owner's decision, 2026-10-24). */}
+      <Card>
+        <Card.Body>
+          <Card.Title>Welcome to Stackra</Card.Title>
+          <Card.Description>
+            Expo SDK 57 · React Navigation · HeroUI Native · Liquid Glass
+          </Card.Description>
+        </Card.Body>
+      </Card>
       <Card>
         <Card.Body className="gap-3">
           <Card.Title>Items</Card.Title>

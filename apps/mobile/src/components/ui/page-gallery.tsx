@@ -10,7 +10,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0320 (glass and the showcase stage); ADR 0310 (decision 6); the catalogue taxonomy.
  */
-import { Chip, Heading, Icon, Text } from "@stackra/ui/native";
+import { Chip, Heading, Icon, Surface, Text } from "@stackra/ui/native";
 import { useThemeColor } from "heroui-native";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
@@ -21,7 +21,6 @@ import type { DesignSystemComponentRoute } from "#src/navigation/types";
 import type { PageLink } from "#src/types/page-link.type";
 import { BrandGlyph, type BrandGlyphName } from "./brand-glyph";
 import { ChoiceGroup } from "./choice-group";
-import { Glass } from "./glass";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
@@ -102,7 +101,7 @@ export function PageGallery({ pages, onOpen }: PageGalleryProps) {
         if (inCategory.length === 0) return null;
         const note = CATEGORY_NOTES[category];
         return (
-          <Glass key={category} padding={16} style={{ gap: 12 }}>
+          <Surface key={category} className="gap-3 rounded-3xl p-4">
             <View className="gap-1 px-2 pt-1">
               <View className="flex-row items-center gap-4">
                 <View className="size-10 items-center justify-center rounded-xl bg-accent">
@@ -153,7 +152,7 @@ export function PageGallery({ pages, onOpen }: PageGalleryProps) {
                 </Pressable>
               ))}
             </View>
-          </Glass>
+          </Surface>
         );
       })}
     </View>

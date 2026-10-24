@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the landing of the design-system review area, the native twin of the web playground's index: on the
  *          ambient field, a hero (the stage, an eyebrow, the product name, an intro, its numbers, and the ways in:
- *          Browse scrolls to the gallery, Search focuses the header search), then "In use", three live scenes on glass,
+ *          Browse scrolls to the gallery, Search focuses the header search), then "In use", three live scenes on cards,
  *          then "Components", the gallery of every page by category with its All / Free / Pro filter. Typing in the
  *          header search (the web's command palette) swaps the landing for the matching pages, grouped the same way.
  *          The display switcher is the header button every page of the area shares.
@@ -15,15 +15,15 @@ import {
   useAnimatedHeaderHeight,
   type NativeStackScreenProps,
 } from "@react-navigation/native-stack";
-import { Button, Chip, Heading, Text } from "@stackra/ui/native";
+import { Button, Chip, Heading, Surface, Text } from "@stackra/ui/native";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Platform, View, type ScrollView } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
 import type { SearchBarCommands } from "react-native-screens";
 
-import { Glass } from "../components/ui/glass";
 import { HeroArt } from "../components/ui/hero-art";
 import { PageGallery } from "../components/ui/page-gallery";
+import { ReviewIcons } from "../components/ui/review-icons";
 import { Screen } from "../components/ui/screen";
 import { Showcase } from "../components/ui/showcase";
 import type { DesignSystemComponentRoute, HomeStackParamList } from "../navigation/types";
@@ -83,7 +83,18 @@ function SectionHeading({ title, note }: { title: string; note: string }) {
 }
 
 /** The review area's landing: hero, showcase and gallery, or the search results while a query is typed. */
-export function DesignSystemScreen({
+export function DesignSystemScreen(
+  props: NativeStackScreenProps<HomeStackParamList, "DesignSystem">,
+) {
+  return (
+    <ReviewIcons>
+      <DesignSystemLanding {...props} />
+    </ReviewIcons>
+  );
+}
+
+/** The landing itself, inside the area's icons. */
+function DesignSystemLanding({
   navigation,
 }: NativeStackScreenProps<HomeStackParamList, "DesignSystem">) {
   const [query, setQuery] = useState("");
@@ -167,15 +178,9 @@ export function DesignSystemScreen({
         </View>
         <View className="flex-row flex-wrap justify-center gap-2">
           {STATS.map((stat) => (
-            <Glass
-              key={stat}
-              radius={999}
-              padding={0}
-              isInteractive={false}
-              style={{ paddingHorizontal: 12, paddingVertical: 4 }}
-            >
+            <Surface key={stat} className="rounded-full px-3 py-1">
               <Text type="small">{stat}</Text>
-            </Glass>
+            </Surface>
           ))}
         </View>
       </View>

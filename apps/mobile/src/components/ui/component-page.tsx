@@ -17,6 +17,7 @@ import type { DesignSystemComponentRoute, HomeStackParamList } from "#src/naviga
 import type { PageLink } from "#src/types/page-link.type";
 import { CategoryStrip } from "./category-strip";
 import { PagePager } from "./page-pager";
+import { ReviewIcons } from "./review-icons";
 import { ScreenChrome } from "./screen";
 
 /** Props of {@link ComponentPage}. */
@@ -47,5 +48,9 @@ export function ComponentPage({ pages, route, children }: ComponentPageProps) {
     ),
     bottom: <PagePager pages={pages} current={current} onOpen={open} />,
   };
-  return <ScreenChrome value={chrome}>{children}</ScreenChrome>;
+  return (
+    <ReviewIcons>
+      <ScreenChrome value={chrome}>{children}</ScreenChrome>
+    </ReviewIcons>
+  );
 }

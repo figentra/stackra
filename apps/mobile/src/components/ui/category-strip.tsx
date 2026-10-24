@@ -8,14 +8,13 @@
  * Runtime: react-native
  * Governing contract: ADR 0320 (glass and the showcase stage); WCAG 2.2 SC 2.4.8, 1.4.1.
  */
-import { Icon, Text } from "@stackra/ui/native";
+import { Icon, Surface, Text } from "@stackra/ui/native";
 import { useThemeColor } from "heroui-native";
 import { useRef } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
 import type { DesignSystemComponentRoute } from "#src/navigation/types";
 import type { PageLink } from "#src/types/page-link.type";
-import { Glass } from "./glass";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = { all: "All components" } as const;
@@ -42,7 +41,7 @@ export function CategoryStrip({ pages, current, onOpen, onOpenAll }: CategoryStr
   const accentForeground = useThemeColor("accent-foreground");
 
   return (
-    <Glass radius={16} padding={6}>
+    <Surface className="rounded-2xl p-1.5">
       <ScrollView
         ref={strip}
         horizontal
@@ -89,6 +88,6 @@ export function CategoryStrip({ pages, current, onOpen, onOpenAll }: CategoryStr
           );
         })}
       </ScrollView>
-    </Glass>
+    </Surface>
   );
 }
