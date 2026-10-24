@@ -10,7 +10,7 @@
 - Runtime: the `Database` port (`em`, `transaction`, `withScope`, `close`, static `current()`) and
   `PostgresDatabaseDriver` (MikroORM 7 on Postgres, `StackraNamingStrategy`, `inferDefaultValues: false`, no global
   context). `em()` returns the transaction's or request's entity manager, else a fork; `withScope` runs
-  `set_config('app.<level>_id', id, true)` in the transaction. `DatabaseUnitOfWorkDriver` implements the actions
+  `set_config` of `app.scope_id`, `app.scope_path` and `app.scope_paths` in the transaction. `DatabaseUnitOfWorkDriver` implements the actions
   `UnitOfWork`.
 - `CrudService<M>` extends container's `Service`; its model comes from `registerModelPartners` (gen reads the type
   argument). `table` uses `findByCursor` with the sort key then the primary key; `metrics` returns a `MetricsReader`
@@ -54,7 +54,7 @@
 - **P-003**: a `CrudService` subclass reads and writes through `Database.current().em()` with its registered model, and an unregistered one is named in a `TypeError` — Validates: FR-003
 - **P-004**: for every migration whose blueprint omits a column's nullability or comment, `compileMigration` throws, and every index on an existing table compiles to a single-statement non-transactional step — Validates: FR-004
 - **P-005**: every index the compiler or the naming strategy names starts with `idx_`, every foreign key with `fk_`, every check with `ck_` — Validates: FR-005
-- **P-006**: `withScope` and `rowLevelSecurity` derive the same setting `app.<level>_id`, and no source file names a scope level — Validates: FR-006
+- **P-006**: `withScope` and `rowLevelSecurity` share the settings `app.scope_id`, `app.scope_path` and `app.scope_paths`, and no source file names a scope level — Validates: FR-006
 - **P-007**: only `src/testing/` imports `@faker-js/faker` and `@testcontainers/postgresql` — Validates: FR-007
 
 ## Deploy modes

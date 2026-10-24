@@ -56,6 +56,7 @@ export type { MigrationOptions } from "#core/types/migration-options.type";
 export type { OperationActionOptions } from "#core/types/operation-action-options.type";
 export type { OperationQueryOptions } from "#core/types/operation-query-options.type";
 export type { Repository } from "#core/types/repository.type";
+export type { RowLevelSecurityOptions } from "#core/types/row-level-security-options.type";
 export type { SchemaBuilder } from "#core/types/schema-builder.type";
 export type { Table } from "#core/types/table.type";
 export type { TableIndex } from "#core/types/table-index.type";

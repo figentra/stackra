@@ -9,10 +9,10 @@ strategy, the unit of work and scope sessions, and the `Factory` and `usePostgre
 
 ## Entry points
 
-| Import                      | Holds                      | Exports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| --------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/database`         | `src/core/`: node runtime  | `CrudService`, `Repository` (t), `repositoryOf`, `GraphQuery`, `Aggregate`, `MixedCurrencyError`, `Migration`, `MigrationId` (t), `Macro`, `Seeder`, `Blueprint` (t), `SchemaBuilder` (t), `ColumnGroup` (t), `Extension`, `compileMigration`, `table`, `sql`, `operationAction`, `operationQuery`, `Database`, `PostgresDatabaseDriver`, `DatabaseUnitOfWorkDriver`, `StackraNamingStrategy`, `registerEntities`, `registerModelPartners`, `EntitySchema`, `OptionalProps`, `UniqueViolation` |
-| `@stackra/database/testing` | `src/testing/`: tests only | `Factory`, `Faker` (t), `usePostgres`, `DATABASE_TESTING_PLUGIN` (adds `.seed(...)` and `app.transaction(...)` to the testing module)                                                                                                                                                                                                                                                                                                                                                          |
+| Import                      | Holds                      | Exports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/database`         | `src/core/`: node runtime  | `CrudService`, `Repository` (t), `repositoryOf`, `GraphQuery`, `Aggregate`, `MixedCurrencyError`, `Migration`, `MigrationId` (t), `Macro`, `Seeder`, `Blueprint` (t), `SchemaBuilder` (t), `ColumnGroup` (t), `RowLevelSecurityOptions` (t), `Extension`, `compileMigration`, `table`, `sql`, `operationAction`, `operationQuery`, `Database`, `PostgresDatabaseDriver`, `DatabaseUnitOfWorkDriver`, `StackraNamingStrategy`, `registerEntities`, `registerModelPartners`, `EntitySchema`, `OptionalProps`, `UniqueViolation` |
+| `@stackra/database/testing` | `src/testing/`: tests only | `Factory`, `Faker` (t), `usePostgres`, `DATABASE_TESTING_PLUGIN` (adds `.seed(...)` and `app.transaction(...)` to the testing module)                                                                                                                                                                                                                                                                                                                                                                                         |
 
 Entry barrels are generated, never authored (ADR 0294 decision 15); until `stackra gen` writes them (STA-339),
 `src/core/index.ts` and `src/testing/index.ts` are stand-in barrels.
@@ -75,13 +75,37 @@ export class CreateOrdersMigration extends Migration {
 It refuses a column without explicit nullability or a comment, a NOT NULL column added without a default, an index on
 an existing table that is not `concurrently()` (which compiles to its own non-transactional step), a concurrent index on
 a new table, an extension outside ADR 0160's five, and a raw `schema.sql` without its `inverse`. A package's `Macro`
-merges into `Blueprint` (gen writes the type) and is installed by name; `t.rowLevelSecurity(level)` writes the
-enable, force and equality policy a scope-owning package's macro needs (ADR 0239).
+merges into `Blueprint` (gen writes the type) and is installed by name.
 
 ## Scope isolation
 
-`Database.withScope(scopeRef, work)` runs work in a transaction whose setting `app.<level>_id` holds the scope's id,
-which every compiled policy compares with; a contracts `ScopeRef` names the level, so this package names none.
+Isolation stays in the database: row-level security, never an application WHERE filter (ADR 0327 d9,
+`.agents/rules/tenancy.md`). A scope is a contracts `ScopeRef`, a node's `scp_` id and `ltree` path; levels are
+deployment data, so this package names none (ADR 0327 d2, d5).
+
+```ts
+schema.createExtension(Extension.Ltree);
+schema.create("documents", (t: Blueprint) => {
+  t.hasPublicId("doc");
+  t.scopeId().notNull().comment("The scope node the document belongs to."); // varchar(33), indexed
+  t.scopePath().notNull().comment("The node's path, denormalised."); // ltree, GiST index
+  t.rowLevelSecurity("scope_path", { setting: "app.scope_paths", match: "ancestor" });
+});
+
+await database.withScope({ id: principal.scopeId, path: principal.scopePath }, () => work());
+await database.withScope(principal.grantedScopes, () => work()); // several granted scopes
+```
+
+- `t.rowLevelSecurity(column, { setting, match })` writes ENABLE, FORCE and the generated policy
+  `pol_<table>_<column>`. `equals` compares the column with `current_setting(setting, true)` (`@stackra/tenancy` uses
+  it for its isolation column, ADR 0239); `ancestor` matches an `ltree` column at or below any of the setting's
+  `|`-separated paths, through the GiST index. An unset or `''` setting matches no row, so a pooled connection that
+  ran an earlier scope sees nothing. A blueprint takes one policy: Postgres ORs permissive policies.
+- `Database.withScope(scope | scopes, work)` sets, for the transaction, `app.scope_id` and `app.scope_path` when one
+  scope is given and `app.scope_paths` (every granted path joined by `|`) always; no granted scope means no rows. A
+  path that is not an `ltree` path is refused.
+- `t.scopeId()` and `t.scopePath()` are the scope-tree columns `@stackra/scope` and `@stackra/tenancy` build on;
+  tenancy's `belongsToTenant` stays in tenancy.
 
 ## Testing
 

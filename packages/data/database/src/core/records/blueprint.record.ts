@@ -1,17 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: `BlueprintRecord`, the runtime side of `Blueprint` for one table: records columns, indexes, the primary
- *          key and scope policies, installs the member's macros under their names, and compiles to SQL statements.
+ *          key and row-level-security policies, installs the member's macros under their names, and compiles to SQL
+ *          statements.
  * Boundary: internal. It enforces the migration safety rules it can see in one table: every column states its
  *           nullability and has a comment; a column added to an existing table is nullable, defaulted or generated;
  *           an index on an existing table is built concurrently in its own step, and one on a table being created
  *           builds in the transaction; no primary key is added to an existing table.
  * Runtime: node
- * Governing contract: ADR 0159 (decision 3; as amended by ADR 0305); ADR 0239 (equality policy); ADR 0231 (names);
- *                     ADR 0135 (public ids); ADR 0294 (decision 28: links).
+ * Governing contract: ADR 0159 (decision 3; as amended by ADR 0305); ADR 0239 (equality policy); ADR 0327 (decisions
+ *                     3 and 9: scope-tree columns, isolation in the database); `.agents/rules/tenancy.md`; ADR 0231
+ *                     (names); ADR 0135 (public ids); ADR 0294 (decision 28: links).
  */
+import { constraintName } from "#core/functions/constraint-name.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
-import { scopeSetting } from "#core/functions/scope-setting.function";
 import { sqlLiteral } from "#core/functions/sql-literal.function";
 import { ColumnRecord } from "#core/records/column.record";
 import { ColumnGroupRecord } from "#core/records/column-group.record";
@@ -21,6 +23,7 @@ import type { ColumnDefinition } from "#core/types/column-definition.type";
 import type { CompiledStatement } from "#core/types/compiled-statement.type";
 import type { CompiledStep } from "#core/types/compiled-step.type";
 import type { MacroClass } from "#core/types/macro-class.type";
+import type { RowLevelSecurityOptions } from "#core/types/row-level-security-options.type";
 
 /** A public id column: a 6-letter prefix, `_` and 26 characters fit. */
 const PUBLIC_ID = "varchar(33)";
@@ -30,6 +33,18 @@ const PREFIX = /^[a-z]{2,6}$/;
 
 /** The longest `varchar` Postgres takes. */
 const MAX_VARCHAR = 10_485_760;
+
+/** A custom setting: `<prefix>.<name>`, snake_case. */
+const SETTING = /^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/;
+
+/** The ways a policy matches its column with the setting. */
+const MATCHES: readonly RowLevelSecurityOptions["match"][] = ["equals", "ancestor"];
+
+/** A declared row-level-security policy. */
+interface PolicySeed {
+  readonly column: string;
+  readonly options: RowLevelSecurityOptions;
+}
 
 /**
  * One recorded table. It does not `implements Blueprint`: a member's macros merge into that interface (gen's
@@ -48,8 +63,8 @@ export class BlueprintRecord {
   /** The indexes, in the order they were written. */
   private readonly indexes: TableIndexRecord[] = [];
 
-  /** The scope levels with a row-level-security policy. */
-  private readonly scopes: string[] = [];
+  /** The column and options of the row-level-security policy, when one was declared. */
+  private policy: PolicySeed | undefined = undefined;
 
   /** The composite primary key, when one was declared. */
   private primaryKey: readonly string[] | undefined = undefined;
@@ -263,16 +278,37 @@ export class BlueprintRecord {
     return new ColumnGroupRecord(records);
   }
 
+  /** See `Blueprint.scopeId`. */
+  scopeId(): ColumnDefinition {
+    return this.link("scope_id");
+  }
+
+  /** See `Blueprint.scopePath`. */
+  scopePath(): ColumnDefinition {
+    const column = this.add(new ColumnRecord("scope_path", "ltree"));
+    const index = this.index([column.name]).using("gist");
+    if (!this.creating) index.concurrently();
+    return column;
+  }
+
   /**
    * See `Blueprint.rowLevelSecurity`.
    *
-   * @throws TypeError for a level that is not snake_case or a level given twice.
+   * @throws TypeError for a column that is not snake_case, a setting that is not `<prefix>.<name>`, an unknown match,
+   *         or a second policy.
    */
-  rowLevelSecurity(level: string): void {
-    scopeSetting(level);
-    if (this.scopes.includes(level))
-      throw new TypeError(`${this.table} already has the ${level} policy`);
-    this.scopes.push(level);
+  rowLevelSecurity(column: string, options: RowLevelSecurityOptions): void {
+    quoteIdentifier(column);
+    if (!SETTING.test(options.setting))
+      throw new TypeError(`"${options.setting}" is not a custom setting: <prefix>.<name>`);
+    if (!MATCHES.includes(options.match))
+      throw new TypeError(`"${options.match}" is not a policy match (${MATCHES.join(", ")})`);
+    // Postgres ORs permissive policies, so a second one would widen what the first lets a session see.
+    if (this.policy !== undefined)
+      throw new TypeError(
+        `${this.table} already has the ${this.policy.column} policy; a table takes one, as Postgres ORs them`,
+      );
+    this.policy = { column, options };
   }
 
   /**
@@ -338,7 +374,8 @@ export class BlueprintRecord {
         );
       add(index.sql(this.table, qualified, false));
     }
-    for (const level of this.scopes) for (const sql of this.policySql(qualified, level)) add(sql);
+    if (this.policy !== undefined)
+      for (const sql of this.policySql(qualified, this.policy)) add(sql);
     return { statements, online: [] };
   }
 
@@ -386,9 +423,9 @@ export class BlueprintRecord {
         );
       onlineIndex(index);
     }
-    for (const level of this.scopes) {
-      const [enable, force, policy] = this.policySql(qualified, level);
-      const name = quoteIdentifier(this.policyName(level));
+    if (this.policy !== undefined) {
+      const [enable, force, policy] = this.policySql(qualified, this.policy);
+      const name = quoteIdentifier(constraintName("pol", this.table, [this.policy.column]));
       statements.push(
         { sql: enable, inverse: [`alter table ${qualified} disable row level security`] },
         { sql: force, inverse: [`alter table ${qualified} no force row level security`] },
@@ -398,29 +435,36 @@ export class BlueprintRecord {
     return { statements, online };
   }
 
-  /** The policy name of `level`. */
-  private policyName(level: string): string {
-    return ["pol", this.table, `${level}_id`].join("_");
-  }
-
   /**
-   * Enable, force and the equality policy of `level`, which compares `<level>_id` with the transaction's setting.
+   * Enable, force and the policy on the column `name`: equal to the transaction's setting, or an `ltree` column at or
+   * below one of the setting's `|`-separated paths.
    *
-   * @throws TypeError when the blueprint has no `<level>_id` column.
+   * @throws TypeError when the blueprint has no such column, or an ancestor match is on a column that is not `ltree`.
    */
-  private policySql(qualified: string, level: string): readonly [string, string, string] {
-    const column = this.columns.find((known) => known.name === `${level}_id`);
+  private policySql(
+    qualified: string,
+    { column: name, options }: PolicySeed,
+  ): readonly [string, string, string] {
+    const column = this.columns.find((known) => known.name === name);
     if (column === undefined)
       throw new TypeError(
-        `rowLevelSecurity("${level}") needs the ${level}_id column in the same ${this.table} blueprint`,
+        `rowLevelSecurity("${name}") needs the ${name} column in the same ${this.table} blueprint`,
       );
-    const name = quoteIdentifier(this.policyName(level));
+    if (options.match === "ancestor" && column.type !== "ltree")
+      throw new TypeError(`${this.table}.${name} is not ltree, so it takes no ancestor match`);
+    const setting = `current_setting(${sqlLiteral(options.setting)}, true)`;
     // A setting set earlier in the session reads as '' once its transaction ends, so '' counts as unset (no rows).
-    const check = `${quoteIdentifier(column.name)} = nullif(current_setting(${sqlLiteral(scopeSetting(level))}, true), '')::${column.type}`;
+    // `?` over an lquery array (`<path>.*` is the path and every descendant) is GiST-indexable where `<@ any(...)`
+    // seq-scans, and a policy cannot OR-expand a list of unknown length; '' or unset gives an empty array (no rows).
+    const check =
+      options.match === "equals"
+        ? `${quoteIdentifier(name)} = nullif(${setting}, '')::${column.type}`
+        : `${quoteIdentifier(name)} ? array(select (granted || '.*')::lquery from unnest(string_to_array(${setting}, '|')) as granted)`;
+    const policy = quoteIdentifier(constraintName("pol", this.table, [name]));
     return [
       `alter table ${qualified} enable row level security`,
       `alter table ${qualified} force row level security`,
-      `create policy ${name} on ${qualified} using (${check}) with check (${check})`,
+      `create policy ${policy} on ${qualified} using (${check}) with check (${check})`,
     ];
   }
 }

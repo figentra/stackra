@@ -5,9 +5,11 @@
  *          row-level isolation), and closes.
  * Boundary: the ORM itself is MikroORM, which only this package imports (ADR 0097). `Database.current()` is the
  *           connected driver for code that cannot inject it; everything else injects `Database`. A scope is a
- *           contracts `ScopeRef`, so this package names no scope level.
+ *           contracts `ScopeRef`, a node's id and `ltree` path; levels are deployment data, so none is named here.
+ *           Isolation stays in the database: nothing adds a WHERE filter to queries.
  * Runtime: node
- * Governing contract: ADR 0014; ADR 0097 (decision 2); ADR 0238; ADR 0239; `.agents/rules/tenancy.md` (two layers).
+ * Governing contract: ADR 0014; ADR 0097 (decision 2); ADR 0238; ADR 0239; ADR 0327 (decisions 2, 3, 5, 8 and 9);
+ *                     `.agents/rules/tenancy.md` (two layers).
  */
 import type { EntityManager } from "@mikro-orm/postgresql";
 import { Port } from "@stackra/contracts";
@@ -45,8 +47,12 @@ export abstract class Database extends Port {
   abstract transaction<T>(work: () => Promise<T>, options?: TransactionOptions): Promise<T>;
 
   /**
-   * Runs `work` in a transaction whose setting `app.<level>_id` holds each scope's id, which the row-level-security
-   * policy of every scoped table compares with. Inside a running transaction the setting lasts until it ends.
+   * Runs `work` in a transaction with the scope settings the generated row-level-security policies read: for one
+   * scope `app.scope_id` and `app.scope_path`, and for one or several granted scopes `app.scope_paths`, their paths
+   * joined by `|`. A setting with nothing to hold is `''`, which matches no row, so no granted scope sees nothing.
+   * Inside a running transaction the settings last until it ends.
+   *
+   * @throws TypeError for a scope path that is not an `ltree` path.
    */
   abstract withScope<T>(scopes: ScopeRef | readonly ScopeRef[], work: () => Promise<T>): Promise<T>;
 

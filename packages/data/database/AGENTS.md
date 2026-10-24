@@ -27,8 +27,12 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
   `OptionalProps`, `UniqueViolation`) instead of letting them import the ORM.
 - `Blueprint` is an interface so macros merge into it; never `implements Blueprint` on a class (a consumer's merged
   macros would break the typecheck of this package's source).
-- No scope level names here: scope hooks take the contracts `ScopeRef`; the scope column macros live in the package
-  that owns the level.
+- No scope levels here: levels are deployment data (ADR 0327 d2). Scope hooks take the contracts `ScopeRef` (an id
+  and an `ltree` path); `withScope` writes `app.scope_id`, `app.scope_path` and `app.scope_paths`, and
+  `rowLevelSecurity(column, { setting, match })` generates the policy that reads one of them. Isolation stays in the
+  database: never add an application WHERE filter (ADR 0327 d9, `.agents/rules/tenancy.md`).
+- `t.scopeId()` and `t.scopePath()` are the only scope columns built in; tenancy's `belongsToTenant` and any other
+  isolation macro live in their owning package.
 - Migration rules the compiler enforces (explicit nullability and comments, expand-only adds, online indexes, approved
   extensions, stated raw inverses) change only with ADR 0159 or 0160.
 - Raw SQL only through `sql` and the `$raw` filter, or in a subclass method with a `// raw-sql:` reason (ADR 0160).

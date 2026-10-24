@@ -7,7 +7,8 @@
  *           inference is off; the global entity manager is never used for work (each call gets the context's or a
  *           fork). `connect` makes it `Database.current()` until `close`.
  * Runtime: node
- * Governing contract: ADR 0014; ADR 0097; ADR 0238; ADR 0239; ADR 0136 (decision 2); the STA-335 entity-schema spike.
+ * Governing contract: ADR 0014; ADR 0097; ADR 0238; ADR 0239; ADR 0327 (decisions 3 and 5); ADR 0136 (decision 2); the
+ *                     STA-335 entity-schema spike.
  */
 import { RequestContext, TransactionContext, TransactionPropagation } from "@mikro-orm/core";
 import { MikroORM } from "@mikro-orm/postgresql";
@@ -17,7 +18,7 @@ import type { ScopeRef } from "@stackra/contracts";
 
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constant";
-import { scopeSetting } from "#core/functions/scope-setting.function";
+import { scopeSettings } from "#core/functions/scope-settings.function";
 import { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 import { Database } from "#core/ports/database.port";
 import type { DatabaseOptions } from "#core/types/database-options.type";
@@ -80,16 +81,16 @@ export class PostgresDatabaseDriver extends Driver(Database) {
   /**
    * See `Database.withScope`.
    *
-   * @throws TypeError for a scope level that is not snake_case.
+   * @throws TypeError for a scope path that is not an `ltree` path.
    */
   withScope<T>(scopes: ScopeRef | readonly ScopeRef[], work: () => Promise<T>): Promise<T> {
-    const list: readonly ScopeRef[] = "level" in scopes ? [scopes] : scopes;
-    const settings = list.map((scope) => [scopeSetting(scope.level), scope.id] as const);
+    const settings = scopeSettings(scopes);
     return this.transaction(async () => {
-      const em = this.em();
       // raw-sql: set_config is how a transaction carries the scope the row-level-security policies compare with
-      for (const [setting, id] of settings)
-        await em.execute("select set_config(?, ?, true)", [setting, id]);
+      await this.em().execute(
+        `select ${settings.map(() => "set_config(?, ?, true)").join(", ")}`,
+        settings.flat(),
+      );
       return work();
     });
   }

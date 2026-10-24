@@ -27,8 +27,8 @@ strategy (`idx_`, `fk_`, `ck_`), the generated-read helpers (`operationAction`, 
   type the scope hooks take
 - **Cross-service events**: none
 - **Tenancy and data**: no tables of its own. It provides both isolation layers as hooks: `Database.withScope(ScopeRef,
-work)` sets `app.<level>_id` for the transaction, and the blueprint's `rowLevelSecurity(level)` compiles enable,
-  force and the equality policy (ADR 0239). The scope-owning package's macro supplies the column and the level
+work)` sets `app.scope_id`, `app.scope_path` and `app.scope_paths` for the transaction, and the blueprint's `rowLevelSecurity(column, { setting, match })` compiles enable,
+  force and the equality policy (ADR 0239). The scope-owning package's macro supplies the column and the setting
 - **Secrets**: the connection string is handed to `PostgresDatabaseDriver.connect` by the runtime; never read or logged
   here
 - **ADR needed**: no; open naming item for the policy prefix below
@@ -81,8 +81,8 @@ The package follows the v3.1 package row and the owner decisions of 2026-10-24 (
 
 ### User Story 3 - Scope isolation hooks (Priority: P1)
 
-A scope-owning package's macro writes `t.uuid("<level>_id")` and `t.rowLevelSecurity(level)`; at run time it calls
-`database.withScope({ level, id }, work)`.
+A scope-owning package's macro writes its scope column and `t.rowLevelSecurity(column, { setting, match })`; at run time it calls
+`database.withScope({ id, path }, work)`.
 
 **Independent Test**: `src/core/drivers/__tests__/postgres-database.driver.int.test.ts` (Testcontainers): an
 unprivileged role sees only the rows of the scope set for its transaction, and none without one.

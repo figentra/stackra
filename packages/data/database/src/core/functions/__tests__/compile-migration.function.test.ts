@@ -2,12 +2,14 @@
  * Stackra file contract:
  * Purpose: unit tests of `compileMigration`: the SQL and inverses of the template's migration shapes (create with
  *          trait, money, enum, link and foreign-key columns; expand steps; online indexes; raw statements with `after`),
- *          macros installed by name, the row-level-security policy of a scope level, generated columns, and every
- *          safety refusal (missing nullability or comment, NOT NULL without a default, non-concurrent index on an
- *          existing table, concurrent index on a new one, unapproved extension, raw statement without an inverse).
+ *          macros installed by name, the generated equality and ancestor row-level-security policies, the scope-tree
+ *          columns with their GiST index, generated columns, and every safety refusal (missing nullability or comment,
+ *          NOT NULL without a default, non-concurrent index on an existing table, concurrent index on a new one,
+ *          unapproved extension, raw statement without an inverse, a policy the table cannot take).
  * Boundary: test only; pure compilation, no database.
  * Runtime: node (vitest)
- * Governing contract: ADR 0159 (as amended); ADR 0160; ADR 0239; ADR 0231; ADR 0022; ADR 0269.
+ * Governing contract: ADR 0159 (as amended); ADR 0160; ADR 0239; ADR 0327 (decisions 3 and 9);
+ *                     `.agents/rules/tenancy.md`; ADR 0231; ADR 0022; ADR 0269.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -20,11 +22,11 @@ import type { ColumnGroup } from "#core/types/column-group.type";
 import type { MigrationId } from "#core/types/migration-id.type";
 import type { SchemaBuilder } from "#core/types/schema-builder.type";
 
-/** A scope column with its policy, the way a scope-owning package's macro writes one. */
+/** An id column with its equality policy, the way an isolation package's macro writes one. */
 class BelongsToWorkspaceMacro extends Macro {
   apply(t: Blueprint): ColumnGroup {
     const group = t.group(t.uuid("workspace_id").notNull().comment("The owning workspace."));
-    t.rowLevelSecurity("workspace");
+    t.rowLevelSecurity("workspace_id", { setting: "app.workspace_id", match: "equals" });
     return group;
   }
 }
@@ -235,7 +237,7 @@ describe(compileMigration, () => {
       up(schema: SchemaBuilder): void {
         schema.table("messages", (t: Blueprint) => {
           t.uuid("workspace_id").nullable().comment("The owning workspace.");
-          t.rowLevelSecurity("workspace");
+          t.rowLevelSecurity("workspace_id", { setting: "app.workspace_id", match: "equals" });
         });
       }
     }
@@ -246,6 +248,97 @@ describe(compileMigration, () => {
       'alter table "messages"."messages" disable row level security',
       'alter table "messages"."messages" drop column if exists "workspace_id"',
     ]);
+  });
+
+  it("writes the scope-tree columns, their indexes and the ancestor policy on a new table", () => {
+    class CreateDocumentsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.createExtension(Extension.Ltree);
+        schema.create("documents", (t: Blueprint) => {
+          t.hasPublicId("doc");
+          t.scopeId().notNull().comment("The scope node the document belongs to.");
+          t.scopePath().notNull().comment("The node's path, denormalised.");
+          t.rowLevelSecurity("scope_path", { setting: "app.scope_paths", match: "ancestor" });
+        });
+      }
+    }
+    const [step] = compileMigration(CreateDocumentsMigration, { schema: "documents" }).steps;
+    expect(step?.sql[1]).toContain('"scope_id" varchar(33) not null');
+    expect(step?.sql[1]).toContain('"scope_path" ltree not null');
+    expect(step?.sql).toContain(
+      'create index "idx_documents_scope_id" on "documents"."documents" ("scope_id")',
+    );
+    expect(step?.sql).toContain(
+      'create index "idx_documents_scope_path" on "documents"."documents" using gist ("scope_path")',
+    );
+    const check = `"scope_path" ? array(select (granted || '.*')::lquery from unnest(string_to_array(current_setting('app.scope_paths', true), '|')) as granted)`;
+    expect(step?.sql).toContain(
+      `create policy "pol_documents_scope_path" on "documents"."documents" using (${check}) with check (${check})`,
+    );
+  });
+
+  it("adds the scope path to an existing table with its GiST index as an online step", () => {
+    class ScopeDocumentsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("documents", (t: Blueprint) => {
+          t.scopePath().nullable().comment("The node's path, denormalised.");
+          t.rowLevelSecurity("scope_path", { setting: "app.scope_path", match: "ancestor" });
+        });
+      }
+    }
+    const steps = compileMigration(ScopeDocumentsMigration, { schema: "documents" }).steps;
+    expect(steps[0]?.sql).toContain(
+      'alter table "documents"."documents" add column "scope_path" ltree null',
+    );
+    expect(steps[0]?.inverse).toContain(
+      'drop policy if exists "pol_documents_scope_path" on "documents"."documents"',
+    );
+    expect(steps[1]).toEqual({
+      sql: [
+        'create index concurrently "idx_documents_scope_path" on "documents"."documents" using gist ("scope_path")',
+      ],
+      transactional: false,
+      inverse: ['drop index concurrently if exists "documents"."idx_documents_scope_path"'],
+    });
+  });
+
+  it.each([
+    [
+      "an ancestor match on a column that is not ltree",
+      (t: Blueprint) => {
+        t.uuid("owner_id").notNull().comment("The owner.");
+        t.rowLevelSecurity("owner_id", { setting: "app.owner_id", match: "ancestor" });
+      },
+      /is not ltree/,
+    ],
+    [
+      "a policy on a column the blueprint lacks",
+      (t: Blueprint) =>
+        t.rowLevelSecurity("scope_path", { setting: "app.scope_path", match: "ancestor" }),
+      /needs the scope_path column/,
+    ],
+    [
+      "a setting without its prefix",
+      (t: Blueprint) => t.rowLevelSecurity("scope_id", { setting: "scope_id", match: "equals" }),
+      /not a custom setting/,
+    ],
+    [
+      "a second policy",
+      (t: Blueprint) => {
+        t.scopeId().notNull().comment("The scope node.");
+        t.scopePath().notNull().comment("The node's path.");
+        t.rowLevelSecurity("scope_id", { setting: "app.scope_id", match: "equals" });
+        t.rowLevelSecurity("scope_path", { setting: "app.scope_paths", match: "ancestor" });
+      },
+      /a table takes one/,
+    ],
+  ])("refuses %s", (_name, define, message) => {
+    class BadMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("documents", define);
+      }
+    }
+    expect(() => compileMigration(BadMigration, { schema: "documents" })).toThrow(message);
   });
 
   it.each([
