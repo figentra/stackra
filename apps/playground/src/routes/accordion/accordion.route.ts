@@ -20,5 +20,5 @@ export class AccordionRoute {
   static readonly title = "Accordion";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Data";
+  static readonly category: PageCategory = "Data display";
 }

@@ -39,10 +39,10 @@ describe("ProgressBar page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /progress-bar under Feedback", () => {
+  it("titles the page and the document, and sits at /progress-bar under Feedback and status", () => {
     renderPage();
     expect(ProgressBarRoute.path).toBe("/progress-bar");
-    expect(ProgressBarRoute.category).toBe("Feedback");
+    expect(ProgressBarRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Progress bar" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Progress bar · Stackra Playground");

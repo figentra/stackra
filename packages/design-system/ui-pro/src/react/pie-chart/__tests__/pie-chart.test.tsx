@@ -1,0 +1,90 @@
+/**
+ * Stackra file contract:
+ * Purpose: proves the web PieChart hands HeroUI Pro's root the accessible name (`label` as `aria-label`), leaves it out
+ *          when the caller did, passes every other prop through, carries HeroUI Pro's own parts, and refuses
+ *          `aria-label`.
+ * Boundary: recharts measures its box, which jsdom has none of, so the `@heroui-pro/react/pie-chart` subpath is replaced by a recording
+ *          stand-in that renders plain DOM; what reaches HeroUI Pro is checked, not its drawing.
+ * Runtime: browser
+ * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); ADR 0022 (test placement).
+ */
+// @vitest-environment jsdom
+// @covers sta-416:FR-001
+import { PieChart as HeroPieChart } from "@heroui-pro/react/pie-chart";
+import { render } from "@testing-library/react";
+import type { ReactNode } from "react";
+
+import type { PieChartContractProps } from "#contracts/types/pie-chart-contract-props.type";
+import { PieChart, type PieChartProps } from "#react/pie-chart/pie-chart";
+
+/** The props the root stand-in was last handed, as the real component would receive them. */
+const received = vi.hoisted(() => ({ props: {} as Record<string, unknown> }));
+
+vi.mock("@heroui-pro/react/pie-chart", async () => {
+  const { createElement } = await import("react");
+  const root = (props: Record<string, unknown>) => {
+    received.props = props;
+    return createElement("div", null, props["children"] as ReactNode);
+  };
+  return {
+    PieChart: Object.assign(root, {
+      Root: root,
+      Cell: () => null,
+      Label: () => null,
+      Pie: () => null,
+      Tooltip: () => null,
+      TooltipContent: () => null,
+    }),
+  };
+});
+
+describe("PieChart (web)", () => {
+  beforeEach(() => {
+    received.props = {};
+  });
+
+  it("maps label to aria-label on HeroUI Pro's root", () => {
+    render(
+      <PieChart label="Revenue by month">
+        <span />
+      </PieChart>,
+    );
+    expect(received.props).toMatchObject({ "aria-label": "Revenue by month" });
+    expect(received.props).not.toHaveProperty("label");
+  });
+
+  it("leaves aria-label out when the caller left out label", () => {
+    render(
+      <PieChart>
+        <span />
+      </PieChart>,
+    );
+    expect(received.props).not.toHaveProperty("aria-label");
+  });
+
+  it("passes every other prop through unchanged", () => {
+    render(
+      <PieChart height={200} width="50%" className="extra" data-testid="found">
+        <span />
+      </PieChart>,
+    );
+    expect(received.props).toMatchObject({
+      height: 200,
+      width: "50%",
+      className: "extra",
+      "data-testid": "found",
+    });
+  });
+
+  it.each(["Cell", "Label", "Pie", "Tooltip", "TooltipContent"] as const)(
+    "carries HeroUI Pro's own %s",
+    (name) => {
+      expect(PieChart[name]).toBe(HeroPieChart[name]);
+    },
+  );
+
+  it("extends its contract and refuses the name the contract owns", () => {
+    expectTypeOf<PieChartProps>().toExtend<PieChartContractProps>();
+    expectTypeOf<PieChartProps>().not.toHaveProperty("aria-label");
+  });
+});

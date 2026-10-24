@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: proves page discovery pairs each categorised route with its page by folder, orders the pages by category
- *          and then title, skips the index route, refuses a wrong path, an unknown category and a missing page, and
+ * Purpose: proves page discovery pairs each categorised route with its page by folder, orders the pages by category,
+ *          then Free before Pro, then title, skips the index route, refuses a wrong path, an unknown category and a missing page, and
  *          that the real route folders yield every category the existing pages use.
  * Boundary: plain module records for the rules; the real `import.meta.glob` result for the last case; jsdom, no network.
  * Runtime: browser
@@ -11,7 +11,11 @@
 // HeroUI Pro's Sheet reads matchMedia as its module loads, and the real route folders include the Pro pages.
 import "#src/__tests__/stub-browser-apis";
 
-import { discoverPages, PLAYGROUND_PAGES } from "#src/components/playground-pages";
+import { discoverPages, PLAYGROUND_PAGES, tierOf } from "#src/components/playground-pages";
+
+/** The real catalogue's link to `path`. */
+const linkAt = (path: string) =>
+  PLAYGROUND_PAGES.find(({ route: link }) => link.path === path)?.route;
 
 /** A route module with the statics a route class carries. */
 const route = (path: string, title: string, category?: string) => ({
@@ -31,18 +35,30 @@ describe("discoverPages", () => {
       {
         "../../routes/zeta/zeta.route.ts": route("/zeta", "Zeta", "Actions"),
         "../../routes/alpha/alpha.route.ts": route("/alpha", "Alpha", "Actions"),
-        "../../routes/field/field.route.ts": route("/field", "Field", "Inputs"),
+        "../../routes/field/field.route.ts": route("/field", "Field", "Inputs and forms"),
+        "../../routes/pro-aaa/pro-aaa.route.ts": route("/pro-aaa", "Aaa", "Actions"),
         "../../routes/base/base.route.ts": route("/base", "Base", "Foundations"),
       },
       {
         "../../routes/zeta/zeta.tsx": page(),
         "../../routes/alpha/alpha.tsx": page(),
         "../../routes/field/field.tsx": page(),
+        "../../routes/pro-aaa/pro-aaa.tsx": page(),
         "../../routes/base/base.tsx": page(),
       },
     );
-    expect(pages.map(({ route: { title } }) => title)).toEqual(["Base", "Alpha", "Zeta", "Field"]);
-    expect(pages[0]?.route).toEqual({ path: "/base", title: "Base", category: "Foundations" });
+    expect(pages.map(({ route: { title } }) => title)).toEqual([
+      "Base",
+      "Alpha",
+      "Zeta",
+      "Aaa",
+      "Field",
+    ]);
+    expect(pages[0]?.route).toEqual({
+      path: "/base",
+      title: "Base",
+      category: "Foundations",
+    });
     expect(pages[0]?.element.type).toBeTypeOf("function");
   });
 
@@ -93,12 +109,18 @@ describe("PLAYGROUND_PAGES", () => {
       "Actions",
     );
     expect(PLAYGROUND_PAGES[0]?.route.category).toBe("Foundations");
-    expect(PLAYGROUND_PAGES.at(-1)?.route.category).toBe("Pro");
+    expect(PLAYGROUND_PAGES.at(-1)?.route.category).toBe("AI");
+  });
+
+  it("lists the Free pages before the Pro pages inside a category", () => {
+    const actions = PLAYGROUND_PAGES.filter(({ route: link }) => link.category === "Actions");
+    const tiers = actions.map(({ route: link }) => tierOf(link.path) === "Pro");
+    expect(tiers).toContain(true);
+    expect(tiers).toEqual([...tiers].sort((a, b) => Number(a) - Number(b)));
   });
 
   it("carries ownsMain for the page that draws its own main, and leaves it out elsewhere", () => {
-    const find = (path: string) => PLAYGROUND_PAGES.find(({ route }) => route.path === path)?.route;
-    expect(find("/pro-app-layout")?.ownsMain).toBe(true);
-    expect(find("/button")).not.toHaveProperty("ownsMain");
+    expect(linkAt("/pro-app-layout")?.ownsMain).toBe(true);
+    expect(linkAt("/button")).not.toHaveProperty("ownsMain");
   });
 });

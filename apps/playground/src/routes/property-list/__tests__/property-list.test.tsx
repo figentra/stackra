@@ -50,10 +50,10 @@ describe("Property list page", () => {
     Reflect.deleteProperty(navigator, "clipboard");
   });
 
-  it("titles the page and the document, and sits at /property-list under Data", () => {
+  it("titles the page and the document, and sits at /property-list under Data display", () => {
     renderPage();
     expect(PropertyListRoute.path).toBe("/property-list");
-    expect(PropertyListRoute.category).toBe("Data");
+    expect(PropertyListRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Property list" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Property list · Stackra Playground");

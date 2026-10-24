@@ -10,7 +10,8 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0060 (light, dark, RTL); STA-403 FR-013.
  */
-import { Button, Kbd } from "@heroui/react";
+import { Kbd } from "@heroui/react";
+import * as Ui from "@stackra/ui/react";
 import * as UiPro from "@stackra/ui-pro/react";
 import { useEffect, useState } from "react";
 
@@ -95,7 +96,7 @@ export function ProActionPalette() {
         </p>
       </header>
       <div>
-        <Button
+        <Ui.Button
           variant="outline"
           aria-keyshortcuts="Control+K Meta+K"
           onPress={() => setOpen(true)}
@@ -104,7 +105,7 @@ export function ProActionPalette() {
           <Kbd>
             <Kbd.Content>{STRINGS.shortcut}</Kbd.Content>
           </Kbd>
-        </Button>
+        </Ui.Button>
       </div>
       <p role="status" className="text-muted">
         <bdi>{lastAction ? STRINGS.last(lastAction) : STRINGS.none}</bdi>

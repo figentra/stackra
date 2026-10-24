@@ -52,10 +52,10 @@ describe("Table page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /table under Data", () => {
+  it("titles the page and the document, and sits at /table under Data display", () => {
     renderPage();
     expect(TableRoute.path).toBe("/table");
-    expect(TableRoute.category).toBe("Data");
+    expect(TableRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Table" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Table · Stackra Playground");

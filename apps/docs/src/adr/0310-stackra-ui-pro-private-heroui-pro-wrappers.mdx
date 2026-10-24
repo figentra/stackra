@@ -76,10 +76,12 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
    `INFISICAL_GATE_IDENTITY_ID`, which is not a secret. The identity is allowed to read only `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` (decision 11). Until the owner
    sets both, the gate fails at a named step that says what is missing. Without the Pro build, the Pro package cannot typecheck or
    build.
-   The identity trusts three GitHub OIDC subjects, one per event the gate runs on: `repo:figentra/stackra:pull_request`,
-   `repo:figentra/stackra:ref:refs/heads/main` (pushes to main) and
-   `repo:figentra/stackra:ref:refs/heads/gh-readonly-queue/main/*` (the merge queue, which main's ruleset requires;
-   without it no pull request can merge). A fork never gets the tokens. The exported tokens stay in the job's
+   The identity trusts three GitHub OIDC subjects, one per event the gate runs on, in the immutable form, because the
+   repository uses GitHub's immutable subject claims (owner and repository ids beside their names, so a renamed or
+   recreated repository never matches): `repo:figentra@314302700/stackra@1425140001:pull_request`,
+   `repo:figentra@314302700/stackra@1425140001:ref:refs/heads/main` (pushes to main) and
+   `repo:figentra@314302700/stackra@1425140001:ref:refs/heads/gh-readonly-queue/main/*` (the merge queue, which main's
+   ruleset requires; without it no pull request can merge). A fork never gets the tokens. The exported tokens stay in the job's
    environment, so every later gate step can read them, and a branch of this repository that edits `ci.yml` could print them.
    Accepted: they only download the licensed packages, and anyone who can push a branch is already trusted with the code.
    The release, SBOM and static deploy jobs never read them: they install without the three members that pull in Pro.
@@ -97,6 +99,17 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
     - The install path is HeroUI Pro's: a shell whose postinstall downloads the licensed build, `uniwind` and
       `uniwind-pro` in `allowBuilds`, a `uniwind-pro` login locally, `UNIWIND_AUTH_TOKEN` (the CI/CD licence) in CI from
       Infisical `/ci` and as an EAS secret. The CI/CD licence allows 1,000 downloads a month.
+
+12. **Every HeroUI Pro component is wrapped (owner, 2026-10-23, STA-416).** The first thirteen grow to all 121: 66 on web
+    and 55 on native, the charts, AI, forms, navigation, overlays, data display, buttons and date and time sets. A
+    component that a free `@stackra/ui` wave will also wrap keeps its own Pro wrapper, and its props follow the free
+    contract once that contract exists.
+    - Pro's optional peers are pinned so no component is skipped: tiptap, `maplibre-gl`, the markdown set, `shiki`,
+      `@number-flow/react` and embla in `catalog:frontend`; Skia, `victory-native`, `libphonenumber-js`,
+      `react-native-pager-view` and `react-native-reanimated-dnd` in `catalog:mobile`.
+    - A component with nothing in the vocabulary to map (most charts, Markdown, Timeline, Table) keeps HeroUI Pro's API
+      as it is (decision 6); HeroUI Pro's `FloatingToc` and `Fab` are `FloatingTableOfContents` and
+      `FloatingActionButton`, because identifiers take no abbreviations ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming)).
 
 ## Consequences
 

@@ -1,13 +1,38 @@
 /**
  * Stackra file contract:
  * Purpose: the root component: gesture handling, safe-area insets, the Stackra design system provider (HeroUI
- *          Native, colour scheme and direction) and the navigation container, with the theme bridged from the
- *          Stackra brand colours.
+ *          Native, colour scheme and direction), the icon registry and the navigation container, with the theme
+ *          bridged from the Stackra brand colours.
  * Boundary: composes the providers and the navigator; owns no screen and no data.
  * Runtime: react-native
  * Governing contract: ADR 0007 (documentation).
  */
 import { DarkTheme, DefaultTheme, NavigationContainer } from "@react-navigation/native";
+import { defineIconRegistry } from "@stackra/icons";
+import { IconRegistryProvider } from "@stackra/icons/native";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bell,
+  Check,
+  ChevronRight,
+  CircleCheck,
+  CircleX,
+  Download,
+  Heart,
+  LayoutGrid,
+  Moon,
+  Play,
+  Plus,
+  Search,
+  SendHorizontal,
+  Settings,
+  Sparkles,
+  Star,
+  Sun,
+  Trash,
+  Undo2,
+} from "@stackra/icons/native/lucide-icons";
 import { DesignSystemProvider, useDesignSystem } from "@stackra/ui/native";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -20,9 +45,36 @@ import { RootNavigator } from "./navigation/root-navigator";
 
 void SplashScreen.preventAutoHideAsync();
 
+// shortcut: written by hand, only the icons the screens draw, until gen emits it from the names used (STA-339).
+/** The icons the app draws by name, on top of the few `@stackra/ui` draws itself. */
+const APP_ICONS = defineIconRegistry({
+  "arrow-left": ArrowLeft,
+  "arrow-right": ArrowRight,
+  bell: Bell,
+  check: Check,
+  "chevron-right": ChevronRight,
+  "circle-check": CircleCheck,
+  "circle-x": CircleX,
+  download: Download,
+  heart: Heart,
+  "layout-grid": LayoutGrid,
+  moon: Moon,
+  play: Play,
+  plus: Plus,
+  search: Search,
+  "send-horizontal": SendHorizontal,
+  settings: Settings,
+  sparkles: Sparkles,
+  star: Star,
+  sun: Sun,
+  trash: Trash,
+  "undo-2": Undo2,
+});
+
 function Navigation() {
-  // The scheme on screen, `system` already resolved: the picker on the design-system screen changes it at runtime.
-  const { resolvedColorScheme } = useDesignSystem();
+  // The scheme on screen, `system` already resolved, and the direction of the locale: the switchers on the
+  // design-system screen change both at runtime.
+  const { resolvedColorScheme, direction } = useDesignSystem();
   const dark = resolvedColorScheme === "dark";
   const [background, foreground, accent, border] = useThemeColor([
     "background",
@@ -33,6 +85,8 @@ function Navigation() {
   const base = dark ? DarkTheme : DefaultTheme;
   return (
     <NavigationContainer
+      // React Navigation mirrors its headers, back buttons and gestures from this, not from I18nManager alone.
+      direction={direction}
       linking={linking}
       onReady={() => void SplashScreen.hideAsync()}
       theme={{
@@ -54,13 +108,15 @@ function Navigation() {
   );
 }
 
-/** The app's root: gestures, safe-area insets, the design system provider, then the navigation container. */
+/** The app's root: gestures, safe-area insets, the design system provider, the icons, then the navigation. */
 export function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <DesignSystemProvider>
-          <Navigation />
+          <IconRegistryProvider registry={APP_ICONS}>
+            <Navigation />
+          </IconRegistryProvider>
         </DesignSystemProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

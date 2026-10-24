@@ -38,10 +38,10 @@ describe("Alert page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /alert under Feedback", () => {
+  it("titles the page and the document, and sits at /alert under Feedback and status", () => {
     renderPage();
     expect(AlertRoute.path).toBe("/alert");
-    expect(AlertRoute.category).toBe("Feedback");
+    expect(AlertRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Alert" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Alert · Stackra Playground");

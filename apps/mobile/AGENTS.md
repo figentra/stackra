@@ -4,13 +4,13 @@ Expo SDK 57 app at `apps/mobile` (`tier:app`). Code lives in `src/`; the entry i
 
 ## Where code goes
 
-| You are writing…      | It goes in…                                                                                  |
-| --------------------- | -------------------------------------------------------------------------------------------- |
-| A screen              | `src/screens/<name>-screen.tsx`                                                              |
-| A design-system page  | `src/screens/pro/<name>-screen.tsx`, plus a row in `src/screens/design-system-components.ts` |
-| A route or its params | `src/navigation/types.ts`, then a navigator in `src/navigation/`                             |
-| A deep-link path      | `src/navigation/linking.ts`                                                                  |
-| A shared UI primitive | `src/components/ui/`                                                                         |
+| You are writing…      | It goes in…                                                                                                                          |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| A screen              | `src/screens/<name>-screen.tsx`                                                                                                      |
+| A design-system page  | `src/screens/free/` or `src/screens/pro/<name>-screen.tsx`, plus a row (category, tier) in `src/screens/design-system-components.ts` |
+| A route or its params | `src/navigation/types.ts`, then a navigator in `src/navigation/`                                                                     |
+| A deep-link path      | `src/navigation/linking.ts`                                                                                                          |
+| A shared UI primitive | `src/components/ui/`                                                                                                                 |
 
 ## Rules that fail the build
 

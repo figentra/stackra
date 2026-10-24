@@ -44,7 +44,7 @@ describe("Text field page", () => {
   it("titles the page and the document, and sits at /text-field under Inputs", () => {
     renderPage();
     expect(TextFieldRoute.path).toBe("/text-field");
-    expect(TextFieldRoute.category).toBe("Inputs");
+    expect(TextFieldRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: "Text field" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Text field · Stackra Playground");

@@ -7,8 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-008.
  */
+import { Button, Text } from "@stackra/ui/native";
 import { ProgressButton } from "@stackra/ui-pro/native";
-import { Button, Typography } from "heroui-native";
 import { useState } from "react";
 import { View } from "react-native";
 
@@ -74,9 +74,9 @@ export function ProgressButtonScreen() {
           </ProgressButton.Overlay>
         </ProgressButton>
         <View className="flex-row items-center justify-between gap-3">
-          <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+          <Text type="small" tone="muted" accessibilityLiveRegion="polite">
             {isConfirmed ? STRINGS.confirm.doneStatus : STRINGS.confirm.idleStatus}
-          </Typography.Paragraph>
+          </Text>
           {isConfirmed ? (
             <Button size="sm" variant="secondary" onPress={() => setIsConfirmed(false)}>
               {STRINGS.confirm.reset}

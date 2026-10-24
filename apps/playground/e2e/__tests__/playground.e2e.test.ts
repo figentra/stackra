@@ -44,10 +44,13 @@ const paintedBackground = (locator: Locator) =>
 /**
  * The incomplete axe results a route's own suite measures instead, by route: a rule id and the markup its nodes carry.
  * A translucent badge straddles its anchor's corner, so the background under its count is part disc and part page and
- * axe leaves a one-character count for review; `badge.e2e.test.ts` measures every badge label against both.
+ * axe leaves a one-character count for review; `badge.e2e.test.ts` measures every badge label against both. A map
+ * marker's label is drawn over MapLibre's canvas, whose colour axe cannot read; `pro-map.e2e.test.ts` measures every
+ * label against the one colour the page paints the map with.
  */
 const MEASURED_INSTEAD: Readonly<Record<string, { rule: string; markup: string }>> = {
   "/badge": { rule: "color-contrast", markup: 'data-slot="badge-label"' },
+  "/pro-map": { rule: "color-contrast", markup: 'data-slot="map-marker-label"' },
 };
 
 test("the route list is not empty", () => {

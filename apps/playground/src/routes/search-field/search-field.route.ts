@@ -20,5 +20,5 @@ export class SearchFieldRoute {
   static readonly title = "Search field";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Inputs";
+  static readonly category: PageCategory = "Inputs and forms";
 }

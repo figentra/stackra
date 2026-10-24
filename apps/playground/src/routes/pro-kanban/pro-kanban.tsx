@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0060 (light, dark, RTL); STA-403 FR-013.
  */
-import { Button } from "@heroui/react";
+import * as Ui from "@stackra/ui/react";
 import * as UiPro from "@stackra/ui-pro/react";
 import { useState } from "react";
 
@@ -85,14 +85,14 @@ function BoardColumn({
               <span className="font-semibold text-foreground">{task.title}</span>
               <span className="text-sm text-muted">{task.owner}</span>
               {next ? (
-                <Button
+                <Ui.Button
                   size="sm"
                   variant="tertiary"
-                  aria-label={`${STRINGS.moveTo(next.title)}: ${task.title}`}
+                  label={`${STRINGS.moveTo(next.title)}: ${task.title}`}
                   onPress={() => onMove(task, next.id)}
                 >
                   {STRINGS.moveTo(next.title)}
-                </Button>
+                </Ui.Button>
               ) : null}
             </UiPro.Kanban.Card>
           )}

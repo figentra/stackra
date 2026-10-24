@@ -20,5 +20,5 @@ export class BadgeRoute {
   static readonly title = "Badge";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Status";
+  static readonly category: PageCategory = "Data display";
 }

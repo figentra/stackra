@@ -3,7 +3,7 @@
  * Purpose: the playground shell: the layout route that reads the colour scheme and locale from the URL search
  *          params (`?scheme=light|dark|system&locale=en|ar`, so every combination deep-links), wraps the pages in
  *          the @stackra/ui DesignSystemProvider, and draws the header with the display switcher, the page navigation
- *          (grouped by category) and the outlet. The UI is English (`lang="en"`) while `<html>` carries the chosen locale and direction,
+ *          (grouped by category, with an All / Free / Pro filter kept in the `tier` search param) and the outlet. The UI is English (`lang="en"`) while `<html>` carries the chosen locale and direction,
  *          so the layout mirrors as the locale's would. On a client-side route change it moves focus to the new
  *          page's h1, and it keeps the browser's theme-color in step with the scheme on screen. A page that draws its own
  *          `main` (`ownsMain`, the Pro AppLayout) is hosted in a plain element, since a page has one `main` landmark.
@@ -27,6 +27,12 @@ import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { Outlet, useHref, useLocation, useNavigate, useSearchParams } from "react-router";
 
 import { PageList } from "#src/components/page-list";
+import {
+  matchesTier,
+  TIER_FILTERS,
+  tierOf,
+  type TierFilter,
+} from "#src/components/playground-pages/page-tier";
 import type { PageLink } from "#src/types/page-link.type";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::shell.*` keys.
@@ -38,6 +44,8 @@ const STRINGS = {
   colorScheme: "Colour scheme",
   language: "Language and direction",
   scheme: { light: "Light", dark: "Dark", system: "System" },
+  tierFilter: "Show pages by tier",
+  tier: { all: "All", free: "Free", pro: "Pro" },
 } as const;
 
 /** The locales the switcher offers: one left-to-right, one right-to-left; each name in its own language. */
@@ -129,20 +137,58 @@ function DisplaySettings() {
   );
 }
 
+/** The All / Free / Pro filter of the navigation, a single-selection ToggleButtonGroup like the display switcher. */
+function TierSwitch({
+  value,
+  onChange,
+}: {
+  value: TierFilter;
+  onChange: (tier: TierFilter) => void;
+}) {
+  return (
+    <ToggleButtonGroup
+      aria-label={STRINGS.tierFilter}
+      size="sm"
+      selectionMode="single"
+      disallowEmptySelection
+      selectedKeys={[value]}
+      onSelectionChange={(keys) => {
+        const picked = TIER_FILTERS.find((tier) => keys.has(tier));
+        if (picked) onChange(picked);
+      }}
+    >
+      {TIER_FILTERS.map((tier) => (
+        <Choice key={tier} id={tier}>
+          {STRINGS.tier[tier]}
+        </Choice>
+      ))}
+    </ToggleButtonGroup>
+  );
+}
+
 /** Layout route of the playground: provider, header, navigation and the current page. */
 export function PlaygroundShell({ pages }: PlaygroundShellProps) {
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
   const [params, setParams] = useSearchParams();
-  const setParam = (key: string, value: string) =>
-    setParams(
-      (previous) => {
-        const next = new URLSearchParams(previous);
-        next.set(key, value);
-        return next;
-      },
-      { replace: true },
-    );
+  // React Router hands a functional update the params of the last render, so choices made before the next render (a
+  // scheme, then a locale) would keep only the last; each write starts from the one before it instead. The ref takes
+  // the URL's params only when something else changed them (a link, the back button), not on the echo of a write of
+  // its own still on its way.
+  const latest = useRef(params);
+  const written = useRef(new Set<string>());
+  useEffect(() => {
+    const search = params.toString();
+    if (search === latest.current.toString()) written.current.clear();
+    else if (!written.current.has(search)) latest.current = params;
+  }, [params]);
+  const setParam = (key: string, value: string) => {
+    const next = new URLSearchParams(latest.current);
+    next.set(key, value);
+    latest.current = next;
+    written.current.add(next.toString());
+    setParams(next, { replace: true });
+  };
 
   // A client-side navigation announces nothing, so focus moves to the new page's h1; the first load keeps the
   // browser's own focus.
@@ -156,6 +202,8 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
     (heading ?? main.current)?.focus();
   }, [pathname]);
 
+  const tier = TIER_FILTERS.find((value) => value === params.get("tier")) ?? "all";
+  const listed = pages.filter((page) => matchesTier(tierOf(page.path), tier));
   const ownsMain = pages.some((page) => page.path === pathname && page.ownsMain);
   const outlet = <Outlet />;
 
@@ -181,8 +229,12 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
             <DisplaySettings />
           </header>
           <div className="grid md:grid-cols-[14rem_1fr]">
-            <nav aria-label={STRINGS.pages} className="border-border p-4 md:border-e">
-              <PageList pages={pages} search={search} />
+            <nav
+              aria-label={STRINGS.pages}
+              className="grid content-start gap-4 border-border p-4 md:border-e"
+            >
+              <TierSwitch value={tier} onChange={(next) => setParam("tier", next)} />
+              <PageList pages={listed} search={search} />
             </nav>
             {ownsMain ? (
               <div ref={main} id="main" tabIndex={-1} className="min-w-0 p-6">
