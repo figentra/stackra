@@ -127,7 +127,6 @@
     "@types/react": "catalog:frontend",
     "@types/react-dom": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",
-    "expo-blur": "catalog:mobile",
     "expo-glass-effect": "catalog:mobile",
     "heroui-native": "catalog:mobile",
     "jsdom": "catalog:frontend",
@@ -148,7 +147,6 @@
   },
   "peerDependencies": {
     "@heroui/react": "^3.2.6",
-    "expo-blur": "^57.0.3",
     "expo-glass-effect": "^57.0.4",
     "heroui-native": "^1.0.10",
     "lucide-react": "^1.54.0",
@@ -162,9 +160,6 @@
   },
   "peerDependenciesMeta": {
     "@heroui/react": {
-      "optional": true
-    },
-    "expo-blur": {
       "optional": true
     },
     "expo-glass-effect": {

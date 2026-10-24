@@ -2,13 +2,12 @@
 
 The `./native` entry of @stackra/ui (ADR 0294 decision 15): React Native renderers, one folder each,
 `native/<name>/<name>.tsx` with its `__tests__/`. It imports `core/`, never `node/` or `react/`. Its optional peers are
-`heroui-native`, `uniwind`, `lucide-react-native` and `react-native`, plus `expo-glass-effect` and `expo-blur` for the
-buttons' glass.
+`heroui-native`, `uniwind`, `lucide-react-native` and `react-native`, plus `expo-glass-effect` for the buttons' glass.
 
-`glass/` holds the native glass of the quiet buttons (ADR 0319): `useGlassMaterial()` picks Liquid Glass where the
-platform runs it, else a blur under the theme's `surface` at the regular fill share, and solid while reduced
-transparency, darker system colours or high text contrast is on; `useGlassButton(variant)` hands HeroUI Native's
-`background` that layer for secondary, tertiary and outline. Button and CloseButton use it, and IconButton follows
+`glass/` holds the native glass of the quiet buttons (ADR 0319): `useGlassMaterial()` picks Liquid Glass on iOS 26
+and later, and solid everywhere else: Android, earlier iOS, until the accessibility settings answer, and while reduced
+transparency or darker system colours is on. There is no blur. `useGlassButton(variant, isDisabled)` hands HeroUI
+Native's `background` a regular `GlassView` for enabled secondary, tertiary and outline buttons. Button and CloseButton use it, and IconButton follows
 through Button.
 
 `./native` names the stand-in barrel `index.ts` (`DesignSystemProvider`, `useDesignSystem`, `Icon`, `Text`,

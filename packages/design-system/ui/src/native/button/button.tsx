@@ -5,7 +5,8 @@
  *          string label into `Button.Label`) and passes every other HeroUI Native prop through unchanged, the press
  *          feedback (`feedbackVariant`, `animation`, `background`) included.
  * Boundary: no styling of its own beyond `w-full` and the glass of the quiet variants (`useGlassButton`: secondary,
- *          tertiary and outline on Liquid Glass or a blur, solid under reduced transparency or more contrast). HeroUI
+ *          tertiary and outline on Liquid Glass on iOS 26 and later, solid elsewhere, while disabled and under
+ *          reduced transparency or more contrast). HeroUI
  *          Native neither sizes nor colours a button's icons, so the content sits in a `LucideProvider` that gives
  *          every Lucide icon the label's size and colour. An icon-only button is built through `IconButton`, so
  *          `isIconOnly` is not a prop here.
@@ -77,7 +78,7 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const labelColor = useThemeColor(LABEL_COLOR[variant]);
-  const glass = useGlassButton(variant);
+  const glass = useGlassButton(variant, isDisabled);
   const isBlocked = isDisabled || isLoading;
   // `disabled` is not on HeroUI Native's props (it owns the pressable's flag through `isDisabled`), but its pressable
   // reads it after its own, so a spread is how a loading button stops pressing without the dimming `isDisabled`

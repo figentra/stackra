@@ -3,7 +3,9 @@
 ---
 
 The native Button's secondary, tertiary and outline variants, the IconButton in those variants and the CloseButton's
-default draw on glass (ADR 0319): Liquid Glass where the platform runs it, else an `expo-blur` view under the theme's
-`surface` at the regular fill share, and HeroUI Native's solid look while reduced transparency, darker system colours or
-high text contrast is on. Primary, ghost and danger stay solid, and a caller's own `background` still wins.
-`expo-glass-effect` and `expo-blur` join the native entry's optional peers.
+default draw on Liquid Glass on iOS 26 and later (ADR 0319): a regular, interactive `GlassView` in the colour scheme.
+Everywhere else they keep HeroUI Native's solid look: Android, earlier iOS, a disabled button, and while reduced
+transparency or darker system colours is on (solid until those settings answer, so glass never flashes). Primary,
+ghost and danger stay solid, and a caller's own `background` still wins. `expo-glass-effect` joins the native entry's
+optional peers. There is no blur fallback, so `expo-blur` is not needed; without it, HeroUI Native's optional blur
+overlay for Dialog and BottomSheet falls back to its default overlay.

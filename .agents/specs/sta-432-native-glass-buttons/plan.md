@@ -44,8 +44,8 @@ follows through Button.
 
 ## Correctness properties
 
-- **P-001**: Only secondary, tertiary and outline get glass: Liquid Glass, else a blur under the regular `surface` fill — Validates: FR-001
-- **P-002**: Any of the three accessibility settings makes every mounted button solid, and back — Validates: FR-002
+- **P-001**: Only secondary, tertiary and outline, enabled, get glass, and only as Liquid Glass; else solid — Validates: FR-001
+- **P-002**: Either iOS setting, or no answer yet, makes every mounted button solid, and back — Validates: FR-002
 
 ## Contracts and events
 
