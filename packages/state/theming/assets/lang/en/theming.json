@@ -1,0 +1,9 @@
+{
+  "enums": {
+    "color_scheme": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    }
+  }
+}

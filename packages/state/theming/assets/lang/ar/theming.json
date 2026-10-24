@@ -1,0 +1,9 @@
+{
+  "enums": {
+    "color_scheme": {
+      "light": "فاتح",
+      "dark": "داكن",
+      "system": "حسب النظام"
+    }
+  }
+}
