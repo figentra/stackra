@@ -264,8 +264,8 @@ test("the hero's jump to the gallery keeps the scheme and the locale", async ({ 
 
 for (const scheme of SCHEMES)
   for (const { locale, dir } of LOCALES)
-    for (const query of ["", "se"])
-      test(`the open command palette passes axe in ${scheme}, ${dir}, ${query ? "with results" : "empty"}`, async ({
+    for (const query of ["", "se", "zzz"])
+      test(`the open command palette passes axe in ${scheme}, ${dir}, ${query ? `searching "${query}"` : "empty"}`, async ({
         page,
       }) => {
         await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
@@ -274,7 +274,11 @@ for (const scheme of SCHEMES)
         const palette = page.getByRole("dialog", { name: "Search components" });
         await expect(palette).toBeVisible();
         if (query) await page.keyboard.type(query);
-        await expect(palette.getByRole("option").first()).toBeVisible();
+        if (query === "zzz") {
+          await expect(palette.getByText(`Nothing matches “${query}”.`)).toBeVisible();
+          await expect(palette.getByRole("listbox")).toHaveCount(0);
+          await expect(palette.getByRole("combobox")).toHaveAttribute("aria-expanded", "false");
+        } else await expect(palette.getByRole("option").first()).toBeVisible();
         const { violations, incomplete } = await new AxeBuilder({ page })
           .include("dialog")
           .withTags(AXE_TAGS)
