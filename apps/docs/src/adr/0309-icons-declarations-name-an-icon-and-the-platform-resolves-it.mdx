@@ -1,6 +1,6 @@
 ---
 title: "0309 — Icons: declarations name an IconName, and @stackra/icons resolves it per platform"
-description: "Accepted · 2026-10-23"
+description: "Accepted, amended by 0322 · 2026-10-23"
 ---
 
 <Note>
@@ -9,6 +9,17 @@ description: "Accepted · 2026-10-23"
   design-system category of [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground),
   which holds `@stackra/icons` beside `@stackra/tokens` and `@stackra/ui`. The page 0165 carries a
   note in this change (STA-414).
+</Note>
+
+<Note>
+  Amended 2026-10-24 by [0322](/adr/0322-generated-constants-instead-of-string-literals): a declaration
+  writes the generated constant, `icon: Icons.House`, where decision 1 has it write the string `"house"`.
+  The `IconName` union of decision 2 stays, as the type behind the constants, and gen still checks each
+  name against it. The `Icons.*` form that this page rejects was an import of an icon component, and that
+  stays rejected: a constant is a value that gen emits. Decisions 3 to 6 stand.
+
+Enforcement of this note: planned — gen emission of the constants and the lint rule of 0322 decision 6.
+
 </Note>
 
 ## Context

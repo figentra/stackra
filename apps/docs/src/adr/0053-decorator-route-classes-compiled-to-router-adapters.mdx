@@ -1,7 +1,16 @@
 ---
 title: "0053 — Routes are classes compiled to router adapters; no file-based routing"
-description: "Accepted · 2026-10-22"
+description: "Accepted, amended by 0324 · 2026-10-22"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-428), by
+  [0324](/adr/0324-error-boundaries-nearest-error-tsx-ancestor-wins). The failure of a route now
+  reaches the nearest `.error.tsx` above it, and the app's root boundary is the
+  `@stackra/navigation` default, or one `.error.tsx` directly under `routes/` (0324 decisions 1 and
+  2). The step to `src/app.error.tsx` that [0232](/adr/0232-stackra-errors-package) names is not
+  used. Decisions 1 to 5 otherwise stand, and the mapping table of decision 5 is unchanged.
+</Note>
 
 <Note>
   Accepted on 2026-10-22 with the React Router 7 mapping (decision 5). Decision 1 is restated in the

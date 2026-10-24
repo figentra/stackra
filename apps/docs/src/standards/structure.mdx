@@ -81,7 +81,7 @@ A module is `src/modules/<key>/` in a service and `src/node/` in a package. Each
 
 | Group                | Suffixes                                              | Holds                                                                                                          | Source       |
 | -------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------ |
-| (root)               | `.module`, `.error`                                   | `<key>.module.ts` and `app.error.tsx`, the root error boundary                                                 | ADR 0294 d14 |
+| (root)               | `.module`                                             | `<key>.module.ts`                                                                                              | ADR 0294 d14 |
 | `config/`            | `.config`                                             | config classes, including `desktop.config.ts` and `chrome.config.ts`                                           | ADR 0294 d14 |
 | `panels/`            | `.panel`                                              | app areas                                                                                                      | ADR 0294 d14 |
 | `menus/`             | `.menu`                                               | navigation data                                                                                                | ADR 0294 d14 |
@@ -92,6 +92,7 @@ A module is `src/modules/<key>/` in a service and `src/node/` in a package. Each
 | `analytics/`         | `.analytics-event`                                    | analytics events                                                                                               | ADR 0294 d14 |
 | `bridges/`           | `.bridge`                                             | desktop bridges                                                                                                | ADR 0294 d14 |
 | `routes/<name>/`     | `.route`, `.layout`, `.error`, `.fallback`, `.server` | a route or layout class, its page `<name>.tsx`, `use-<name>.ts` and `__tests__/`                               | ADR 0294 d14 |
+| `routes/`            | `.error`                                              | `.error.tsx` directly under `routes/`, the default for routes with no nearer boundary                          | ADR 0324     |
 | `blocks/<name>/`     | `.block`, `.native`                                   | `<name>.block.ts`, its renderer `<name>.tsx`, an optional native renderer `<name>.native.tsx` and `__tests__/` | ADR 0294 d14 |
 | `components/<name>/` | none                                                  | `<name>.tsx`, `index.ts` (the component and its Props) and `__tests__/`                                        | ADR 0294 d14 |
 | `hooks/`             | none                                                  | `use-<name>.ts` with two or more importers                                                                     | ADR 0294 d14 |

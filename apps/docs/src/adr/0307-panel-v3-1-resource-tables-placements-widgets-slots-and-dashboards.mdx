@@ -1,7 +1,16 @@
 ---
 title: "0307 — Panel v3.1: resource tables as server contracts, placements by input, metric widgets, typed slots, dashboards and settings"
-description: "Accepted · 2026-10-23"
+description: "Accepted, amended by 0326 · 2026-10-23 · amended 2026-10-24 (STA-428)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-428), by
+  [0326](/adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets). A Widget
+  query may also be placed as a `NativeWidget`, a home-screen widget on iOS (WidgetKit) and Android
+  (Glance). The placement reuses the query and its output. The web slots of rules 18 to 21 are
+  unchanged, and a PWA has no home-screen widget (0326 decisions 13 to 15). An Expo config plugin
+  writes the native code.
+</Note>
 
 <Note>
   Amends [0108](/adr/0108-scoped-settings) and [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions)

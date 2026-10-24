@@ -416,7 +416,13 @@
               "adr/0313-stackra-ui-wave-5-data-primitives-props-vocabulary",
               "adr/0314-postgis-approved-geospatial-field-and-macros",
               "adr/0315-realtime-live-queries-and-streams",
-              "adr/0316-open-core-distribution"
+              "adr/0316-open-core-distribution",
+              "adr/0321-the-trait-inventory-owning-packages-and-schedulable",
+              "adr/0322-generated-constants-instead-of-string-literals",
+              "adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port",
+              "adr/0324-error-boundaries-nearest-error-tsx-ancestor-wins",
+              "adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy",
+              "adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets"
             ]
           }
         ]

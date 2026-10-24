@@ -1,7 +1,16 @@
 ---
 title: "0237 — The API gateway is generated, in four layers, with no gateway service"
-description: "Accepted, amended by 0290, 0297 · 2026-10-20"
+description: "Accepted, amended by 0290, 0297, 0325 · 2026-10-20 · amended 2026-10-24 (STA-428)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-428), by
+  [0325](/adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy) (rule 22): the
+  gateway applies that ADR's header rule. Every API response to a signed-in request, and every API
+  response that sets a cookie, is `private, no-store`, and the gateway sets it, so no app does.
+  Static assets and HTML are not API responses and follow rules 20 and 21 of 0325. The other
+  decisions stand.
+</Note>
 
 <Note>
   Amended by [0290](/adr/0290-dev-environment-and-cloudflare-services) (decisions 6 and 11): layer 1
