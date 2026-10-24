@@ -13,8 +13,8 @@ import { useThemeColor } from "heroui-native";
 import { useRef } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
-import type { DesignSystemComponentRoute } from "../../navigation/types";
-import type { PageLink } from "../../types/page-link.type";
+import type { DesignSystemComponentRoute } from "#src/navigation/types";
+import type { PageLink } from "#src/types/page-link.type";
 import { Glass } from "./glass";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.

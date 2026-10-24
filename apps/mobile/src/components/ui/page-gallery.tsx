@@ -15,10 +15,10 @@ import { useThemeColor } from "heroui-native";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 
-import { ComponentCategory } from "../../enums/component-category.enum";
-import { ComponentTier } from "../../enums/component-tier.enum";
-import type { DesignSystemComponentRoute } from "../../navigation/types";
-import type { PageLink } from "../../types/page-link.type";
+import { ComponentCategory } from "#src/enums/component-category.enum";
+import { ComponentTier } from "#src/enums/component-tier.enum";
+import type { DesignSystemComponentRoute } from "#src/navigation/types";
+import type { PageLink } from "#src/types/page-link.type";
 import { BrandGlyph, type BrandGlyphName } from "./brand-glyph";
 import { ChoiceGroup } from "./choice-group";
 import { Glass } from "./glass";

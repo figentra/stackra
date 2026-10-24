@@ -13,8 +13,8 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { ReactNode } from "react";
 
-import type { DesignSystemComponentRoute, SettingsStackParamList } from "../../navigation/types";
-import type { PageLink } from "../../types/page-link.type";
+import type { DesignSystemComponentRoute, SettingsStackParamList } from "#src/navigation/types";
+import type { PageLink } from "#src/types/page-link.type";
 import { CategoryStrip } from "./category-strip";
 import { PagePager } from "./page-pager";
 import { ScreenChrome } from "./screen";
@@ -25,7 +25,7 @@ export interface ComponentPageProps {
   pages: readonly PageLink[];
   /** The route of the page inside. */
   route: DesignSystemComponentRoute;
-  /** The page. */
+  /** The component page the frame wraps. */
   children: ReactNode;
 }
 

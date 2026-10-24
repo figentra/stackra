@@ -34,8 +34,9 @@ export const MATERIAL_LEVELS: Readonly<
   thick: { fill: { light: 0.9, dark: 0.92 }, blur: 28, saturation: 1.4 },
 };
 
-/** The hairline edge, a share of `foreground`, and the top highlight, a share of white. */
+/** The hairline edge of every material, a share of `foreground`. */
 export const MATERIAL_EDGE: PerScheme = { light: 0.1, dark: 0.12 };
+/** The top highlight of every material, a share of white. */
 export const MATERIAL_HIGHLIGHT: PerScheme = { light: 0.7, dark: 0.09 };
 
 /** How each mode adjusts the levels; `solid` is opaque and is also the reduced-transparency fallback. */
