@@ -24,7 +24,7 @@ Design System". Source decisions: ADR 0165 (web client stack, UI contract, form 
   `apps/docs` (ADR 0302, the logo and brand assets moved in, the regenerated `standards/structure.mdx`)
 - **Services touched**: none
 - **Packages touched**: `packages/design-system/tokens` (new, `@stackra/tokens`), `packages/design-system/ui` (new,
-  `@stackra/ui`), `packages/design-system/icons` (new, `@stackra/icons`), `packages/experience/brand` (deleted, `@stackra/brand` retired), `packages/tooling/oxlint` (its boundary fixtures
+  `@stackra/ui`), `packages/design-system/icons` (new, `@stackra/icons`), `packages/experience/navigation` (new, `@stackra/navigation`, wave 6), `packages/experience/brand` (deleted, `@stackra/brand` retired), `packages/tooling/oxlint` (its boundary fixtures
   import `@stackra/tokens` instead of the retired brand package), `packages/tooling/typescript` (the `vite` preset also
   typechecks an app's `e2e/` folder)
 - **Public contract change**: `@stackra/brand` is removed; `@stackra/tokens` (the token schema, the `stackra` theme and
@@ -555,6 +555,15 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
   child wrapped in `Text` — verified by: unit
 - **FR-151**: The `/empty-state`, `/error-state` and `/page-skeleton` playground routes SHALL show every reason, kind
   and layout, and axe SHALL report nothing — verified by: unit, e2e
+- **FR-152**: `@stackra/ui/contracts` SHALL hold the props every wave 6 shell piece shares: `NavigationItem` (a
+  `CollectionItem` with a required `label`, and `href`, `icon`, `isCurrent`, `badge`, `children`, `isDisabled`,
+  `shortcut` and `onPress`), `LandmarkContractProps` (`label`), `ShellSlotsContractProps` (`startContent`,
+  `endContent`), `TitledContractProps` (a required `title`, `description`, `headingLevel`),
+  `LayoutBreakpointContractProps` (`collapseBelow`) and the `LayoutBreakpoint` enum (`sm`, `md`, `lg`, `xl`) — verified
+  by: unit, typecheck
+- **FR-153**: `@stackra/navigation` (`packages/experience/navigation`) SHALL be a `tier:lib` member that depends on
+  `@stackra/ui` and takes React Router 7 and React Navigation 7 as optional peers, so router UI lives there and
+  `@stackra/ui` imports no router — verified by: validate, boundaries
 
 ## Success Criteria
 
@@ -609,3 +618,5 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
 - 2026-10-24 · Implementing · Claude (frontend-builder) · wave 4 components: FR-098 to FR-120, SC-008 to SC-010
 - 2026-10-24 · Implementing · Claude (frontend-builder) · wave 5 foundation: FR-121, FR-122 (ADR 0313)
 - 2026-10-24 · Implementing · Claude (frontend-builder) · wave 5 components: FR-123 to FR-151, SC-011
+- 2026-10-24 · Implementing · Claude (frontend-builder) · wave 6 foundation: FR-152, FR-153 (ADR 0314); the builders
+  take FR-154 onward

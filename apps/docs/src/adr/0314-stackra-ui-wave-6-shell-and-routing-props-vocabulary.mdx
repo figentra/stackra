@@ -1,0 +1,110 @@
+---
+title: "0314 — @stackra/ui wave 6: the shell and routing props vocabulary, and @stackra/navigation"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0303](/adr/0303-stackra-ui-component-catalogue-decisions) (decision 7, the props
+  vocabulary), as [0304](/adr/0304-stackra-ui-wave-2-props-vocabulary),
+  [0311](/adr/0311-stackra-ui-wave-3-fields-props-vocabulary),
+  [0312](/adr/0312-stackra-ui-wave-4-overlays-and-feedback-props-vocabulary) and
+  [0313](/adr/0313-stackra-ui-wave-5-data-primitives-props-vocabulary) did for waves 2 to 5. 0303
+  carries a note; its body is unchanged.
+</Note>
+
+## Context
+
+[0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 1 keeps `@stackra/ui` router-free and puts the
+router bindings in `@stackra/navigation`, and decision 7 gave every component one props vocabulary. Wave 6 adds the
+frame of an app: AppShell, Sidebar with NavigationList, AppHeader, PageHeader, Section, SingleColumnLayout and
+TwoColumnLayout, the native Screen, TabBar and NavigationHeader, and RouteOverlay, which turns a route into a Modal,
+Sheet, Drawer or full-screen page. These pieces list the same places (a sidebar on the console, a tab bar on the phone),
+name the same landmarks, and offer the same slots at the ends of a bar, but React Navigation, React Router and HeroUI
+each name those things differently, and the shell is the one part of a screen that every other screen sits in. An
+Accepted ADR's body changes only for typos and Enforcement, so the additions are recorded here.
+
+## Decision
+
+1. **The wave 6 vocabulary.** Decision 7 of 0303 stands; wave 6 adds these rows:
+
+   | Concept        | Prop                                                   | Type                                                                                                                               | Used by                                                 | Runtime name left out of the type                              |
+   | -------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------- |
+   | Places         | `items`                                                | `readonly NavigationItem[]` (`id`, `label`, `href`, `icon`, `isCurrent`, `badge`, `children`, `isDisabled`, `shortcut`, `onPress`) | Sidebar, NavigationList, TabBar                         | React Navigation route names and `tabBarBadge`, a router `to`  |
+   | Current place  | `isCurrent`                                            | `boolean` on an item (an ancestor of the current place is current too)                                                             | Sidebar, NavigationList, TabBar                         | `aria-current`, NavLink `isActive`, React Navigation `focused` |
+   | Landmark name  | `label`                                                | `string`                                                                                                                           | Sidebar, NavigationList, AppHeader, PageHeader, Section | `aria-label`, `accessibilityLabel`                             |
+   | Bar slots      | `startContent`, `endContent`                           | `ReactNode`, at the logical start and end of the bar                                                                               | AppHeader, PageHeader, Section                          | `left`, `right`, `headerLeft`, `headerRight`, `Navbar.Content` |
+   | Title block    | `title`, `description`, `headingLevel`                 | `ReactNode` (`title` required), `ReactNode`, `HeadingLevel`                                                                        | PageHeader (level 1), Section (level 2)                 | `heading`, `subtitle`, `headerTitle`                           |
+   | Collapse width | `collapseBelow`                                        | `LayoutBreakpoint` (`sm`, `md`, `lg`, `xl`)                                                                                        | AppShell (default `md`), TwoColumnLayout (default `lg`) | media-query strings, `useWindowDimensions` checks              |
+   | Sidebar width  | `isCollapsed`, `defaultCollapsed`, `onCollapsedChange` | `boolean`, `boolean`, `(isCollapsed: boolean) => void`                                                                             | Sidebar                                                 | `collapsible`, `state="expanded"`                              |
+   | Off-canvas     | `isOpen`, `defaultOpen`, `onOpenChange`                | the open state of 0312, for the drawer a collapsed shell shows                                                                     | AppShell                                                | `isMobileOpen`, `openMobile`                                   |
+   | Page actions   | `actions`                                              | an ordered list of actions: the first is primary, at most three show and the rest go in an ActionMenu                              | PageHeader, Section                                     | `primaryAction` and `secondaryActions` as two props            |
+
+2. **`@stackra/navigation` owns router UI and `@stackra/ui` stays router-free.** `@stackra/navigation`
+   (`packages/experience/navigation`, `tier:lib`) depends on `@stackra/ui` and takes React Router 7 (web) and React
+   Navigation 7 (native) as optional peers, at the versions `pnpm-workspace.yaml` already catalogues for the console and
+   the mobile app. `RouteOverlay` and `useRouteOverlay` live there, in its `./react` and `./native` entries, with a
+   contract in its own `./contracts`. `@stackra/ui` never imports it and never imports a router.
+3. **A component never decides which place is current.** `isCurrent` comes from the app or from `@stackra/navigation`.
+   One pure function, `markCurrentItems(items, pathname)`, lives in `@stackra/ui` core and matches on a whole path
+   segment (`/orders` is current on `/orders/ord_1` and not on `/orders-archive`), so the web and the native shell agree
+   and neither imports a router. A phone tab bar reads the first level only.
+4. **A shell piece never imports another.** AppShell takes `sidebar`, `header` and `children` as nodes, a sidebar's
+   trigger is a node in AppHeader's `startContent`, and PageHeader's status and actions are nodes or `actions`, so the
+   pieces meet in the app's code, as the wave 5 `emptyState` slot does ([0313](/adr/0313-stackra-ui-wave-5-data-primitives-props-vocabulary)
+   decision 5). A piece may build on a component of an earlier wave (PageHeader on Breadcrumbs, StatusBadge and
+   ActionMenu), never on a sibling of its own wave.
+5. **Landmarks.** AppShell draws the one `main` (with the id a skip link jumps to, and a skip link as its first
+   focusable element). Sidebar and NavigationList are a `nav`, AppHeader a `header`, PageHeader a `header` inside
+   `main`, and Section a `section` that is named by its `title`. A page that holds two of a kind gives each a `label`.
+   Titles are real headings: the page's single `h1` is PageHeader's, a Section is `h2` by default.
+6. **Widths are named, not measured.** `collapseBelow` takes a Tailwind breakpoint name, so the web components map it to
+   a static class (`md:` and the like), never a computed string. Native has no width to switch on, so an adapted native
+   form accepts the prop and ignores it, and its page says so.
+7. **Where a runtime has no counterpart the page says so.** `TabBar` has no web form (the web shell uses the Sidebar),
+   and the web `Screen` is a plain `main` with the desktop title-bar insets, `NavigationHeader` a plain header with a
+   back link, a title and `endContent` (it does not import PageHeader, by decision 4). The native Sidebar,
+   AppHeader, PageHeader, Section and the two layouts are adapted forms: an inset list, the navigation header, an
+   in-content header, a card and a single column.
+8. **Native sheets use the inset style.** Every native bottom sheet the shell opens uses HeroUI Native's detached
+   style, as the owner decided on 2026-10-24: its content takes `detached`, a bottom inset of the safe area plus 12,
+   a horizontal margin of 16 and a 32 px corner radius.
+9. **RouteOverlay's presentation is one enum.** `OverlayPresentation` is `modal`, `sheet`, `drawer` or `full-screen`,
+   named like the other wave values. Web renders them with Modal and Drawer, native with the React Navigation stack's
+   `presentation`. It takes `isDismissable` as [0312](/adr/0312-stackra-ui-wave-4-overlays-and-feedback-props-vocabulary)
+   names it, and `false` means no Escape, no backdrop press and no swipe.
+
+## Consequences
+
+- An app declares its navigation once as `NavigationItem[]` and gets a sidebar on the console, a tab bar on the phone and
+  a drawer on a narrow window from the same list.
+- `@stackra/ui` can be installed with no router, and an app picks React Router or React Navigation through
+  `@stackra/navigation`.
+- A page keeps one `h1`, one `main` and a landmark list a screen reader can tell apart.
+- Each wave 6 group can be built alone, because the only contracts they share are the types of this ADR.
+
+## Enforcement
+
+- `packages/design-system/ui/src/contracts/types/__tests__/shell-contract-props.test.ts` proves the shared types.
+- `turbo boundaries` and `packages/tooling/oxlint/src/boundaries.jsonc` keep `@stackra/ui` from importing
+  `@stackra/navigation` or a router; `tools/scripts/validate-repository.mjs` checks the new member's tier tag.
+- Each component's type test asserts that the runtime props extend the contract and refuse the raw names this
+  vocabulary replaces (`aria-label`, `primaryAction`, `headerRight`).
+- `tools/scripts/spec-trace.mjs` (run by `pnpm validate`) refuses a spec id that no test covers.
+- Until a lint rule exists, review (`architecture-guardian`) checks this page.
+
+## Alternatives
+
+- **Router-aware shell components in `@stackra/ui`.** Not chosen: a router peer on the design system would make every
+  consumer of a Button depend on one router, and the native app has a different one.
+- **`isActive` on the item.** Not chosen: `isCurrent` says what `aria-current` says, and an ancestor of the current place
+  is current too, which "active" does not.
+- **Fixed pixel widths for the collapse point.** Not chosen: the theme owns the breakpoints, so a number in a component
+  drifts from it.
+- **`primaryAction` and `secondaryActions`.** Not chosen: one ordered list overflows by itself, and a page with no
+  primary action is just a list with no first entry marked.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 7. The catalogue rows,
+section 3 gaps and section 4 of the component catalogue (wave 6 of its build order), the HeroUI 3.2.6 and HeroUI Native
+1.0.10 component sources, and the React Router 7 and React Navigation 7 documentation.
