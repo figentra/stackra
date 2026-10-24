@@ -27,7 +27,7 @@ describe("ProKanban", () => {
   it("sits at /pro-kanban in the Pro group, and titles the page and the document", () => {
     render(<ProKanban />);
     expect(ProKanbanRoute.path).toBe("/pro-kanban");
-    expect(ProKanbanRoute.category).toBe("Pro");
+    expect(ProKanbanRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProKanbanRoute.title })).toBeTruthy();
     expect(document.title).toBe("Kanban · Stackra Playground");
   });

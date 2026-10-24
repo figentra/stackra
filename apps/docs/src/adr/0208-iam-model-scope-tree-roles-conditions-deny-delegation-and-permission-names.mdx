@@ -1,7 +1,25 @@
 ---
 title: "0208 — The IAM model: scope tree, roles, conditions and deny, delegation and permission names"
-description: "Accepted, amended by 0240, 0242, 0294 · 2026-10-20"
+description: "Accepted, amended by 0240, 0242, 0294, 0327, 0333 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 by [0333](/adr/0333-record-visibility-rules-who-can-see-which-records): a
+  record visibility rule is a condition that the policy decision point evaluates under decision 3,
+  with its audience taken from a scope node
+  ([0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer)), a segment
+  ([0332](/adr/0332-stackra-segments-audiences-defined-by-rules)) or a role (decision 2). Decisions
+  1 to 7 stand unchanged.
+</Note>
+
+<Note>
+  Amended 2026-10-24 by [0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer):
+  the scope tree of decision 1 is held by `@stackra/scope`, not by `@stackra/iam`. IAM consumes the
+  tree, and a grant or a role names a node of it. The levels that decision 1 names (platform,
+  product and tenant) are the defaults of 0327, and a deployment may declare more levels as data.
+  The tree is free code, and its depth is a plan entitlement
+  ([0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan)). Decisions 2 to 7 stand unchanged.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the

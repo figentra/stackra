@@ -11,7 +11,7 @@ description: "Accepted · 2026-10-24"
   [0237](/adr/0237-generated-api-gateway-in-four-layers) (the gateway applies rule 22). It reads
   with [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted),
   [0190](/adr/0190-seed-profiles-and-product-analytics) and
-  [0062](/adr/0062-mobile-release-push-and-crash-reporting), whose decisions stand.
+  [0180](/adr/0180-mobile-apps-and-release-trains), whose decisions stand.
 </Note>
 
 ## Context
@@ -86,7 +86,7 @@ these points in the final structure review of 2026-10-24.
     and the page shows "New version — Reload".
 26. **Critical web release.** A release marked `critical` skips the wait of rule 15 and reloads the web app at once,
     without the prompt.
-27. **Mobile.** Over-the-air updates ([0062](/adr/0062-mobile-release-push-and-crash-reporting), EAS Update) apply on
+27. **Mobile.** Over-the-air updates ([0180](/adr/0180-mobile-apps-and-release-trains), EAS Update) apply on
     the next launch by default.
 28. **Critical mobile release.** A release marked `critical` is checked on launch, and the app reloads when it is
     there.

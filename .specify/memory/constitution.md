@@ -368,7 +368,7 @@ When an authorization system exists, every service resolves permissions the same
 ```text
 effective(principal, tenant, activeScope) =
     grants      live grants for (principal, tenant)      # not expired, not revoked
-    applicable  grants whose scope path contains activeScope  # Pro scope driver; otherwise tenant-wide
+    applicable  grants whose scope path contains activeScope  # the scope tree of 0327 (free code, depth by plan); otherwise tenant-wide
     perms       union of role permissions over applicable
                   limited to entitled features
                   limited to token abilities            # API keys only
@@ -401,14 +401,14 @@ the first table is built right, not retrofitted.
 
 ### Defence in depth: both layers, always
 
-- **Application layer**: Every query against a tenant-owned table runs inside `withTenant(ctx, db => …)` from `@stackra/tenancy` (or the Pro scope driver's `withScope`, below). It opens a transaction and runs `SELECT set_config('app.tenant_id', $1, true)` with the tenant from the authenticated principal, never from request input. A direct query in a handler is a lint failure.
+- **Application layer**: Every query against a tenant-owned table runs inside `withTenant(ctx, db => …)` from `@stackra/tenancy` (or `withScope`, below, when the scope tree is in use). It opens a transaction and runs `SELECT set_config('app.tenant_id', $1, true)` with the tenant from the authenticated principal, never from request input. A direct query in a handler is a lint failure.
 - **Database layer**: Every tenant-owned table has `tenant_id uuid NOT NULL`, `ENABLE ROW LEVEL SECURITY` **and** `FORCE ROW LEVEL SECURITY` (the role that owns the table would otherwise bypass RLS), and a policy on `current_setting('app.tenant_id', true)`. A forgotten filter returns zero rows, never another tenant's data.
 
 Hand-written RLS is not allowed. The scoped-table pattern emits the columns, indexes and policy. The mechanism is decided in [ADR 0014](/adr/0014-data-ownership-and-orm), not here. Migrations that backfill tenant tables use a dedicated bypass clause in the policy. Decide it in the migration template, not on the first backfill.
 
 ### Scope tree (free code)
 
-The scope tree is free code in `@stackra/iam` and `@stackra/tenancy`, with no `@stackra-pro` package ([0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan)). Its depth is a plan entitlement; the numbers are in ADR 0242. When a product uses the tree, a tenant's data is organised in a tree of scopes (for example organisation, branch, team), each with an `ltree` path, and these rules bind. `withScope` also appends the scope-path predicate from the principal's granted paths.
+The scope tree is free code in `@stackra/scope`, which tenancy and IAM consume, with no `@stackra-pro` package ([0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan)). Its depth is a plan entitlement; the numbers are in ADR 0242. When a product uses the tree, a tenant's data is organised in a tree of scopes (by default platform, product and tenant, with child tenants under their parent; an organisation is a parent tenant, shown through an alias), each with an `ltree` path, and these rules bind. `withScope` also appends the scope-path predicate from the principal's granted paths.
 
 | Table kind        | Columns                                                                |
 | ----------------- | ---------------------------------------------------------------------- |
@@ -419,7 +419,7 @@ Use the OR-expansion `(scope_path <@ $1::ltree OR scope_path <@ $2::ltree …)`.
 
 ### Tenant context
 
-Resolved once per request by the single auth handler into the principal ([Security](/constitution/security)). The tenant is the session's active tenant, a token claim, or an API key's bound tenant. It is never taken from body, query string or a client header. With the Pro scope driver, the one client header a handler reads, `X-Scope-Path`, is validated against the granted paths and dropped otherwise.
+Resolved once per request by the single auth handler into the principal ([Security](/constitution/security)). The tenant is the session's active tenant, a token claim, or an API key's bound tenant. It is never taken from body, query string or a client header. When the scope tree is in use, the one client header a handler reads, `X-Scope-Path`, is validated against the granted paths and dropped otherwise.
 
 Cross-tenant access exists only in an explicitly privileged, audited endpoint named by an ADR. Tables that are global by design (a person registry, an auth account store) have no `tenant_id`. They enforce the boundary in code and a migration test pins that.
 

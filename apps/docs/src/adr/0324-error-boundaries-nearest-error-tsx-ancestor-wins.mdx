@@ -8,8 +8,9 @@ description: "Accepted · 2026-10-24"
   after decision 5), [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming)
   (the `(root)` row of the app group table in decision 14) and
   [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) (rule 35, the
-  apps-ship-no-root-boundary sentence). Each amended page carries a note that says what changed and
-  which of its decisions stand.
+  apps-ship-no-root-boundary sentence) and [0232](/adr/0232-stackra-errors-package) (the chain step
+  to `src/app.error.tsx`). Each amended page carries a note that says what changed and which of its
+  decisions stand.
 </Note>
 
 ## Context
@@ -44,8 +45,8 @@ and that the file beside a route is the only place a failure view is declared.
   route that has no nearer boundary, so that file is reviewed like a default.
 - The folder rules of ADR 0053 must allow one `.error.tsx` directly under `routes/`, in addition to route and layout
   folders.
-- ADR 0232 still names `src/app.error.tsx` as a step of the chain. This ADR replaces that step. ADR 0232 is not amended
-  here.
+- ADR 0232 named `src/app.error.tsx` as a step of the chain. This ADR replaces that step, and 0232 carries a note that
+  says so.
 
 ## Enforcement
 
@@ -61,6 +62,6 @@ and that the file beside a route is the only place a failure view is declared.
 
 Supersedes: none. Amends: [0053](/adr/0053-decorator-route-classes-compiled-to-router-adapters) (the boundary chain),
 [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (the `(root)` row of decision 14) and
-[0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) (rule 35). Read with
-[0232](/adr/0232-stackra-errors-package), whose chain step to `src/app.error.tsx` is stale. Sources: the owner's
+[0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) (rule 35) and
+[0232](/adr/0232-stackra-errors-package) (the chain step to `src/app.error.tsx`). Sources: the owner's
 decision in the final structure review of 2026-10-24 (STA-428).

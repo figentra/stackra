@@ -1,0 +1,106 @@
+---
+title: "0327 — @stackra/scope owns the scope tree; tenancy is one consumer"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan) (decision 1, the package that
+  holds the tree) and
+  [0323](/adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port) (the
+  package that owns `ScopeRef`). Adds Notes to
+  [0127](/adr/0127-package-categories-including-infrastructure),
+  [0202](/adr/0202-stackra-pro-is-developer-side-os-capability-is-free-code),
+  [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names),
+  [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) and
+  [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions), whose placement of
+  the tree or of `ScopeRef` changes. Each amended page carries a note that says what changed and
+  which of its decisions stand.
+</Note>
+
+## Context
+
+The scope tree is the hierarchy that settings ([0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions)),
+IAM ([0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names)), feature flags and the
+other configuration consumers resolve against. [0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan) placed the
+tree in `@stackra/iam` and `@stackra/tenancy`, so two packages held one structure, and a consumer that needed only a
+scope depended on tenancy. [0323](/adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port)
+moved the tenant vocabulary out of the other packages. The owner decided in the final structure review of 2026-10-24
+that the tree is one package of its own, and that tenancy is one of its consumers. Tenant isolation is a different
+matter, and it stays where it is.
+
+## Decision
+
+1. **One package.** `@stackra/scope` is a free package in the `security` category. It owns the hierarchical scope tree
+   that settings, IAM, feature flags and the other configuration consumers resolve against. 0240 placed the tree in
+   `@stackra/iam` and `@stackra/tenancy`. It moves to `@stackra/scope`, and neither package holds it. Depth stays a plan
+   entitlement ([0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan), [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial)).
+
+2. **Levels are data.** A deployment declares its levels in order. The defaults are platform, product and tenant. The
+   tenant level is recursive, so child tenants sit under their parent in the tree of [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region).
+   A deployment may declare further levels as data, as [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names)
+   decision 1 allows for levels that a product declares. Adding a level is a change to that data. It needs no code and no migration.
+
+3. **Nodes.** A node has a `scope_id`, typed `PublicId<"scp">`, and a materialised `scope_path` on `ltree` with a GiST
+   index, as [0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan) decision 5 states.
+
+4. **Aliases.** A deployment may give a level a display name of its own. An organisation is a parent tenant
+   ([0243](/adr/0243-organisations-on-the-tenant-tree-consolidated-billing-guardrails-and-standalone-exit)), so it is
+   shown as an alias of the tenant level, for example "organisation", and it is not a level of its own. Each alias is a
+   lang key, so each locale has its own label.
+
+5. **`ScopeRef` is a type.** The `contracts` entry of `@stackra/scope`, imported as `@stackra/scope/contracts`, exports
+   `ScopeRef`, which carries the public id and the path of a node. It is a type and not a port. The port of this package
+   is the resolver of decision 7. [0323](/adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port)
+   names this package as the owner of `ScopeRef`.
+
+6. **Current scope in the action context.** The current scope is part of the action context
+   ([0136](/adr/0136-action-runtime-contract)). A code block may run in a scope other than the current one, for emulation
+   or impersonation. Each such switch is audited.
+
+7. **Resolver chain.** The scope of a request is resolved by a chain, in this order: a request header (`X-Scope-Path`,
+   accepted only when its path is one the caller holds a grant for, and dropped otherwise), a token claim, tenancy, and a
+   root fallback. Each step is a driver behind a resolver port ([0142](/adr/0142-cross-service-transport-through-drivers)).
+   The chain runs in the tenancy step of the action pipeline ([0138](/adr/0138-pipeline-order-is-fixed)).
+
+8. **Tenancy is a consumer.** `@stackra/tenancy` maps each tenant to a scope node, and it contributes the tenant level and
+   its alias. Tenant isolation does not change. Postgres row-level security on `tenant_id`
+   ([0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views)) and `BelongsToTenant` stay in tenancy.
+   Scope is for the configuration hierarchy, and it is not for row isolation.
+
+9. **Not adopted.**
+   - No generic key-value table of values in `@stackra/scope`. Each consumer keeps its own typed table, keyed by
+     `scope_id`. Settings already has one, and [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) rejects a
+     JSONB-for-everything store.
+   - No automatic application-level `WHERE` filter on models with a bypass decorator. Isolation stays in the database,
+     through row-level security.
+
+10. **Entries.** The package has the `contracts`, `core`, `node`, `react` and `native` entries of the v3 layout
+    ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 15). It adds `config` and
+    `testing` where it needs them, as that decision allows, and an entry is exported once its folder holds a file. The
+    `react` entry provides a current-scope hook and a scope switcher.
+
+## Consequences
+
+- Settings, IAM and flags resolve against one tree, and a level added for a deployment needs no code change.
+- Tenancy keeps tenant isolation and gives up the tree, so tenant row isolation reads as it does today.
+- A consumer that stores values per scope writes its own typed table with `scope_id`. The package adds no filter to its rows.
+- A switch into another scope leaves an audit record, so impersonation is never silent.
+- The tenancy rule, the workspace-layout rule and the constitution's tenancy and security pages are updated with this
+  ADR, so no document still places the tree in `@stackra/iam` or `@stackra/tenancy`.
+
+## Enforcement
+
+- planned — tests in `@stackra/scope` for a level added as data with no code change, for the resolver order of decision 7,
+  and for the depth check against the plan entitlement at tree creation ([0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan)).
+- planned — the lint rule of [0323](/adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port)
+  decision 5 refuses a `tenant` identifier declared in `@stackra/scope`, so tenancy's contribution stays in tenancy.
+- No check exists today. The package is not written yet.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan) (decision 1) and
+[0323](/adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port) (the owner of `ScopeRef`).
+Notes added to [0127](/adr/0127-package-categories-including-infrastructure), [0202](/adr/0202-stackra-pro-is-developer-side-os-capability-is-free-code), [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names),
+[0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) and
+[0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions).
+Sources: the owner's final structure review of 2026-10-24, restated in this ADR's own words.

@@ -43,7 +43,7 @@ describe("Input group page", () => {
   it("titles the page and the document, and sits at /input-group under Inputs", () => {
     renderPage();
     expect(InputGroupRoute.path).toBe("/input-group");
-    expect(InputGroupRoute.category).toBe("Inputs");
+    expect(InputGroupRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: "Input group" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Input group · Stackra Playground");

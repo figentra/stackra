@@ -20,5 +20,5 @@ export class SpinnerRoute {
   static readonly title = "Spinner";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Status";
+  static readonly category: PageCategory = "Feedback and status";
 }

@@ -57,10 +57,10 @@ describe("Toast page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /toast under Feedback", () => {
+  it("titles the page and the document, and sits at /toast under Feedback and status", () => {
     renderPage();
     expect(ToastRoute.path).toBe("/toast");
-    expect(ToastRoute.category).toBe("Feedback");
+    expect(ToastRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Toast" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Toast · Stackra Playground");

@@ -14,6 +14,12 @@ description: "Accepted, amended by 0305 and 0326 · 2026-10-22 · amended 2026-1
   Decision 6's `Reason:` and manifest rules apply to both. Decision 12's `AppShortcuts` menu kind is
   retired: app shortcuts come from route declarations, and `stackra.config` orders and caps them
   (0326 decisions 8 to 10). The other decisions stand.
+
+The entry table of decision 8 changes with the section: `@stackra/app/electron` becomes `@stackra/app/desktop`,
+and its class keeps the name `DesktopApp`. Electron stays the implementation, so `@stackra/platform/electron`
+(ADR 0127) and the `electron` catalog entry (ADR 0126) keep their names. ADR 0281 and ADR 0249 name no `electron`
+config key: 0281 already reads `src/config/desktop.config.ts`.
+
 </Note>
 
 <Note>

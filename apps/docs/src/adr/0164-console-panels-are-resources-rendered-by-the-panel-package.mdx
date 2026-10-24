@@ -1,7 +1,15 @@
 ---
 title: "0164 — Console panels are Filament-style resources rendered by @stackra/panel"
-description: "Accepted, amended by 0249, 0294, 0307 · 2026-10-20"
+description: "Accepted, amended by 0249, 0294, 0307 · 2026-10-20 · amended 2026-10-24 (STA-445)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-445, STA-446): the web app of decision 6 is the Figentra OS console,
+  `@figentra/console` in the `figentra/os` repository
+  ([0200](/adr/0200-stackra-and-figentra-os-horizontal-services-private-os-repo) decision 2). This
+  repository's console is the reference app, `@figentra/reference-console` once STA-446 lands
+  ([0083](/adr/0083-npm-scopes-and-cli-names) as amended). The rest of decision 6 stands.
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-406), by [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards). The declarations of decision 1 are classes now: a resource is `Resource<M>({ ... })` and its members are `override` methods, `table`, `views`, `form`, `infolist`, `relations` and `actions` (rule 7). `bulkActions` and `toasts` are retired into `actions`. A table's keys are server contracts (rules 1 and 2), and placement follows the action's input (rule 3). Decisions 2 to 6 stand, and the override of decision 4 follows [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers).

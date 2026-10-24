@@ -1,7 +1,14 @@
 ---
 title: "0213 — Settings v2: the full cascade, flags as a settings kind, YAML packs and revisions"
-description: "Accepted, amended by 0270, 0294, 0307, 0323 · 2026-10-20"
+description: "Accepted, amended by 0270, 0294, 0307, 0323, 0327 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 by [0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer):
+  the `ScopeRef` that the 0323 note below names as a port of `@stackra/contracts` is a type, and it
+  comes from `@stackra/scope/contracts`. The resolver of 0327 is the port. The package that holds
+  the scope tree is `@stackra/scope`. The cascade order of decision 2 is unchanged.
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-406), by

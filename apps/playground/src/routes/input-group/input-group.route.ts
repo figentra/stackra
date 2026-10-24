@@ -20,5 +20,5 @@ export class InputGroupRoute {
   static readonly title = "Input group";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Inputs";
+  static readonly category: PageCategory = "Inputs and forms";
 }
