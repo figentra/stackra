@@ -14,9 +14,13 @@ description: "Accepted · 2026-10-23 · amended 2026-10-24 (STA-445, STA-447)"
   repositories only, and never to npmjs. It keeps its name: it is not for sale, so it does not join
   the `@stackra-pro` scope, and it ships in the Pro form of [0316](/adr/0316-open-core-distribution)
   decision 2 (minified `dist` and `.d.ts`, no source, no source maps, no `@stackra/source`
-  condition). Decisions 3 (never in a free package) and 7 (HeroUI Pro's own token and postinstall
-  check) stand. The validator check of the Enforcement section changes with STA-447: it requires a
-  `publishConfig` that names the restricted registry, and refuses an npmjs `publishConfig` or none.
+  condition). The restricted build keeps `@heroui-pro/react` and `heroui-native-pro` as external
+  peers, never bundled into `dist`: the HeroUI Pro licence covers Figentra's use, not redistribution
+  of its code. Each consuming repository installs those peers with its own HeroUI Pro licence token
+  in CI; `@stackra/ui-pro` carries none. Decisions 3 (never in a free package) and 7 (HeroUI Pro's
+  own token and postinstall check) stand. The validator check of the Enforcement section changes
+  with STA-447: it requires a `publishConfig` that names the restricted registry, and refuses an
+  npmjs `publishConfig` or none.
 </Note>
 
 <Note>
