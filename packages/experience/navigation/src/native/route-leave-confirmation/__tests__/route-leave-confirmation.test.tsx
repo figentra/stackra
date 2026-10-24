@@ -46,7 +46,7 @@ vi.mock("@stackra/ui/native", () => ({
 }));
 
 const ACTION = { type: "GO_BACK" };
-const renderGuard = (when: boolean) =>
+const renderConfirmation = (when: boolean) =>
   render(
     <RouteLeaveConfirmation
       when={when}
@@ -65,7 +65,7 @@ describe("RouteLeaveConfirmation (native)", () => {
   });
 
   it("prevents removal exactly while there is unsaved work, and hands LeaveConfirmation its props", () => {
-    const view = renderGuard(true);
+    const view = renderConfirmation(true);
     expect(stub.prevent).toBe(true);
     expect(stub.props).toMatchObject({ when: true, title: "Discard?", discardLabel: "Discard" });
     view.rerender(
@@ -81,14 +81,14 @@ describe("RouteLeaveConfirmation (native)", () => {
 
   it("replays the held action on Discard", async () => {
     stub.ask.mockResolvedValue(true);
-    renderGuard(true);
+    renderConfirmation(true);
     held();
     await vi.waitFor(() => expect(stub.dispatch).toHaveBeenCalledWith(ACTION));
   });
 
   it("drops the held action on Stay", async () => {
     stub.ask.mockResolvedValue(false);
-    renderGuard(true);
+    renderConfirmation(true);
     held();
     await vi.waitFor(() => expect(stub.ask).toHaveBeenCalledTimes(1));
     await Promise.resolve();
@@ -103,7 +103,7 @@ describe("RouteLeaveConfirmation (native)", () => {
           answer = resolve;
         }),
     );
-    renderGuard(true);
+    renderConfirmation(true);
     held();
     held();
     expect(stub.ask).toHaveBeenCalledTimes(1);
