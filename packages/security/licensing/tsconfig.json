@@ -1,0 +1,6 @@
+// TypeScript project for this member: extends exactly one @stackra/typescript-config preset and sets nothing else
+// (pnpm validate checks the preset). tsc reads tsconfig.json as JSONC, so the name stays .json.
+// `react` for its DOM lib: the Web Crypto (`crypto.subtle`), `atob`, `TextEncoder` and fetch globals the verifier and
+// the online check use come from lib.dom. No decorators and no JSX; the source keeps to erasable syntax.
+// Owner: release-operations · Secrets: forbidden
+{ "extends": "@stackra/typescript-config/react" }
