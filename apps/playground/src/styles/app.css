@@ -50,6 +50,22 @@ body {
   letter-spacing: var(--h3-ar-letter-spacing);
 }
 
+/* HeroUI Pro paints white text on the danger fill (today's date, the current time); the theme's danger-foreground is
+   the text colour that holds 4.5:1 on danger in both schemes. */
+.agenda__day-header-date[data-today="true"],
+.agenda__month-cell-date[data-today="true"],
+.agenda__current-time-label {
+  color: var(--danger-foreground);
+}
+
+/* IBM Plex Sans Arabic's glyphs are taller than the 1em line HeroUI Pro gives these pills, so in Arabic they take a
+   normal line and the fill covers the whole text. */
+:root:lang(ar) .agenda__day-header-date[data-today="true"],
+:root:lang(ar) .agenda__month-cell-date[data-today="true"],
+:root:lang(ar) .agenda__current-time-label {
+  line-height: normal;
+}
+
 /* A frame for the Pro shells (Sidebar, AppLayout): HeroUI Pro sizes them to the viewport (svh, dvh), so inside the
    frame they are sized to it instead. The Pro stylesheet is unlayered, so this wins by selector weight. */
 .demo-frame {

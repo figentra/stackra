@@ -20,5 +20,5 @@ export class TypographyRoute {
   static readonly title = "Typography";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Typography";
+  static readonly category: PageCategory = "Foundations";
 }

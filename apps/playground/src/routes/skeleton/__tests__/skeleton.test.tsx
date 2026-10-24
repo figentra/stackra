@@ -43,7 +43,7 @@ describe("Skeleton page", () => {
   it("titles the page and the document, and sits at /skeleton under Status", () => {
     renderPage();
     expect(SkeletonRoute.path).toBe("/skeleton");
-    expect(SkeletonRoute.category).toBe("Status");
+    expect(SkeletonRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Skeleton" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Skeleton · Stackra Playground");

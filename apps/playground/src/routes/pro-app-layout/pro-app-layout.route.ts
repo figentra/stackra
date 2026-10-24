@@ -20,7 +20,7 @@ export class ProAppLayoutRoute {
   static readonly title = "AppLayout";
 
   /** The category the page is listed under: the `@stackra/ui-pro` pages. */
-  static readonly category: PageCategory = "Pro";
+  static readonly category: PageCategory = "Navigation";
 
   /** AppLayout draws its own `main`, so the shell adds none around this page. */
   static readonly ownsMain = true;

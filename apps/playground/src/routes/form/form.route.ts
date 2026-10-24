@@ -20,5 +20,5 @@ export class FormRoute {
   static readonly title = "Form";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Forms";
+  static readonly category: PageCategory = "Inputs and forms";
 }

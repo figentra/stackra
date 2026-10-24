@@ -41,7 +41,7 @@ describe("Separator page", () => {
   it("titles the page and the document, and sits at /separator under Surfaces", () => {
     renderPage();
     expect(SeparatorRoute.path).toBe("/separator");
-    expect(SeparatorRoute.category).toBe("Surfaces");
+    expect(SeparatorRoute.category).toBe("Layout");
     expect(screen.getByRole("heading", { level: 1, name: "Separator" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Separator · Stackra Playground");

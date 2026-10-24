@@ -42,7 +42,7 @@ describe("Typography page", () => {
   it("titles the page and the document, with exactly one level-1 heading, and sits at /typography", () => {
     renderPage();
     expect(TypographyRoute.path).toBe("/typography");
-    expect(TypographyRoute.category).toBe("Typography");
+    expect(TypographyRoute.category).toBe("Foundations");
     expect(screen.getByRole("heading", { level: 1, name: "Typography" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Typography · Stackra Playground");

@@ -56,6 +56,13 @@
       "ignoreDependencies": ["@stackra/tokens", "@heroui/styles", "expo-updates"],
     },
     "apps/mobile": {
+      // The design-system review area is reached through `__DEV__ ? require(...)` in the tab navigator, which knip
+      // does not trace; these are its entry files.
+      "entry": [
+        "src/components/ui/component-page.tsx",
+        "src/components/ui/display-settings.tsx",
+        "src/screens/design-system-screen.tsx",
+      ],
       "project": ["src/**/*.{ts,tsx}"],
       // app.json declares no OTA updates; knip's expo plugin assumes them.
       // @stackra/tokens: read by src/global.css (the Uniwind theme), which knip doesn't trace.
