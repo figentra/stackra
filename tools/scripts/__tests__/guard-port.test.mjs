@@ -1,8 +1,16 @@
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { portFiles } from "../guard-port.mjs";
@@ -12,7 +20,8 @@ const HOOKS = fileURLToPath(new URL("../../../.agents/hooks/", import.meta.url))
 const S = "/Users/akouta/Projects/stackra";
 const read = (f) => readFileSync(join(HOOKS, f), "utf8");
 
-// A temporary repository: main, and the session's own worktree `a` on feature/x (the cwd).
+// A temporary repository: main, and the session's own worktree `a` on feature/x (the cwd), whose last commit adds
+// the guard (main lacks it); a folder holding a .claude, two patches, a link to the settings and an Encore remote.
 const root = mkdtempSync(join(tmpdir(), "guard-port-"));
 after(() => rmSync(root, { recursive: true, force: true }));
 const main = join(root, "repo");
@@ -22,6 +31,28 @@ Object.assign(env, { GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" });
 spawnSync("git", ["init", "-q", "-b", "main", main]);
 spawnSync("git", ["commit", "-q", "--allow-empty", "-m", "x"], { cwd: main, env });
 spawnSync("git", ["worktree", "add", "-q", "-b", "feature/x", wt], { cwd: main });
+const put = (p, text) => {
+  mkdirSync(join(p, ".."), { recursive: true });
+  writeFileSync(p, text);
+};
+put(join(wt, ".claude/settings.json"), "{}\n");
+put(join(wt, ".agents/hooks/guard-bash.mjs"), "\n");
+spawnSync("git", ["add", "-A"], { cwd: wt });
+spawnSync("git", ["commit", "-q", "-m", "guard"], { cwd: wt, env });
+spawnSync("git", ["remote", "add", "deploy", "https://git.encore.dev/x"], { cwd: wt });
+const diff = (f) =>
+  `diff --git a/${f} b/${f}\n--- a/${f}\n+++ b/${f}\n@@ -1 +1 @@\n-{}\n+{"x":1}\n`;
+const cfgPatch = join(root, "cfg.patch");
+put(cfgPatch, diff(".claude/settings.json"));
+put(join(root, "src.patch"), diff("src/x.ts"));
+put(join(root, "e/.claude/settings.json"), "{}\n");
+symlinkSync(join(wt, ".claude/settings.json"), join(root, "s.json"));
+const HOME = homedir();
+/** The cases whose decision for `rules` (in the worktree) is not the one wanted. */
+const wrongs = (r, cases) =>
+  cases
+    .map(([c, want]) => [c, want, r.decideBash(c, { cwd: wt }).decision])
+    .filter(([, want, got]) => got !== want);
 
 /** Ports the guard for `repo` into a fresh folder; returns the hooks directory. */
 function port(repo) {
@@ -155,6 +186,137 @@ test("guard-port: deploys deny; paid or signed builds ask; stash, signing keys a
     .map(([c, want]) => [c, want, rules.muslin.decideBash(c, { cwd: wt }).decision])
     .filter(([, want, got]) => got !== want);
   assert.deepEqual(wrong, []);
+});
+
+test("guard-port: folders, links, bare redirects, globs, find, tar and git internals reach no config", () => {
+  const cases = [
+    ["mv .claude /tmp/c", "deny"],
+    ["mv .agents x", "deny"],
+    ["rm -rf .agents", "deny"],
+    ["chmod -R 000 .agents", "deny"],
+    ["dd if=/tmp/x of=.claude/settings.json", "deny"],
+    [`cp -R ${root}/e/ .`, "deny"],
+    [`rsync -a ${root}/e/ .`, "deny"],
+    ["rsync -a /tmp/e/ .agents/hooks/", "deny"],
+    [`cp -r .claude ${root}/backup`, "allow"],
+    ["ln .claude/settings.json /tmp/h", "deny"],
+    ["cp -l .claude/settings.json x.json", "deny"],
+    ["ln -s ../x.ts src/y.ts", "allow"],
+    [`echo {} > ${root}/s.json`, "deny"],
+    ["> .agents/hooks/guard-bash.mjs", "deny"],
+    ["cd .agents/hooks && > guard-bash.mjs", "deny"],
+    ["( echo x ) > .claude/settings.json", "deny"],
+    ["echo x > .clau*/settings.json", "deny"],
+    ["cp /tmp/x .agents/hoo?s/guard-bash.mjs", "deny"],
+    ["echo x > $PWD/.claude/settings.json", "deny"],
+    [`echo x > ${wt}/.claude//settings.json`, "deny"],
+    [`echo x > ${wt}/.claude/x/../settings.json`, "deny"],
+    ["echo x > /Users/akouta/Projects/muslin/../stackra/package.json", "deny"],
+    ["find .agents -exec sed -i s/a/b/ {} +", "deny"],
+    ["find .agents/hooks -delete", "deny"],
+    ["find . -exec git push \\;", "deny"],
+    ["find src -name '*.ts' -exec sed -i s/a/b/ {} +", "allow"],
+    ["tar -xf /tmp/x.tar -C .agents", "deny"],
+    ["unzip /tmp/x.zip -d .claude", "deny"],
+    ["tar -xf /tmp/x.tar -C /tmp/out", "allow"],
+    ["sed -i '' s/x/.claude/ src/a.ts", "allow"],
+    ["sed -i '' -e s/a/b/ -E .claude/settings.json", "deny"],
+    ["echo x > .git/config", "deny"],
+    ["echo x >> .git/hooks/pre-commit", "deny"],
+    ["watch 'gh pr list'", "deny"],
+    ["watch -n1 'git push'", "deny"],
+    ["watch 'git status'", "allow"],
+    ["rsync -a --delete /tmp/a/ /tmp/b/", "ask"],
+  ];
+  assert.deepEqual(wrongs(rules.muslin, cases), []);
+});
+
+test("guard-port: git puts no other revision's config in place, by pathspec, tree move or patch", () => {
+  const cases = [
+    ["git checkout HEAD~1 -- .", "deny"],
+    ["git restore -s HEAD~1 .", "deny"],
+    ["git reset --hard HEAD~1", "deny"],
+    ["git checkout main", "deny"],
+    ["git revert HEAD", "deny"],
+    ["git -C .claude rm settings.json", "deny"],
+    ["git rm -r --cached .claude", "deny"],
+    [
+      "git update-index --cacheinfo 100644,e69de29bb2d1d6434b8b29ae775ad8c2e48c5391,.claude/x.json",
+      "allow",
+    ],
+    [
+      "git update-index --cacheinfo 100644,e69de29bb2d1d6434b8b29ae775ad8c2e48c5391,.mcp.json",
+      "deny",
+    ],
+    ["git checkout-index -f .claude/settings.json", "deny"],
+    [`git apply ${cfgPatch}`, "deny"],
+    [`cat ${cfgPatch} | git apply`, "deny"],
+    [`patch -p1 < ${cfgPatch}`, "deny"],
+    ["git apply <<'X'\n--- a/.claude/settings.json\n+++ b/.claude/settings.json\nX", "deny"],
+    [`git apply --check ${cfgPatch}`, "allow"],
+    [`git apply ${root}/src.patch`, "allow"],
+    [`git worktree add ${S}/x`, "deny"],
+    ["git restore src/x.ts", "allow"],
+    ["git add -A", "allow"],
+    ["git commit -m x", "allow"],
+  ];
+  assert.deepEqual(wrongs(rules.muslin, cases), []);
+});
+
+test("guard-port: the Stackra checkout runs only the route; bot calls change nothing there", () => {
+  const gh = `(cd ${S} && pnpm --silent bot:gh --`;
+  const cases = [
+    [`(cd ${S} && pnpm install)`, "deny"],
+    [`pnpm -C ${S} add left-pad`, "deny"],
+    [`(cd ${S} && node tools/scripts/agents-sync.mjs)`, "deny"],
+    [`node ${S}/tools/scripts/guard-port.mjs .agents/hooks muslin`, "deny"],
+    [`(cd ${S} && pnpm --silent linear comment STA-1 x)`, "allow"],
+    [`${gh} pr checkout 5 -R figentra/muslin)`, "deny"],
+    [`${gh} release download v1 -R figentra/muslin)`, "deny"],
+    [`${gh} release download v1 -R figentra/muslin -D /tmp/out)`, "allow"],
+    [`${gh} api -X PATCH repos/figentra/muslin/git/refs/heads/main -f sha=x)`, "deny"],
+    [`${gh} api -XPUT /repos/figentra/muslin/contents/a.md -f message=x)`, "deny"],
+    [`${gh} api repos/figentra/muslin/contents/a.md)`, "allow"],
+    [`(cd ${main} && pnpm --silent bot:git -- -C ${wt} push origin)`, "deny"],
+    [`(cd ${main} && pnpm --silent bot:git -- -C ${wt} push deploy HEAD)`, "deny"],
+    [
+      `(cd ${S} && NODE_OPTIONS=--require=/tmp/x.js pnpm --silent bot:gh -- pr view 5 -R figentra/os)`,
+      "deny",
+    ],
+    [`export PATH=/tmp:$PATH; ${gh} pr view 5 -R figentra/os)`, "deny"],
+    [
+      `LEFTHOOK=0 git commit -m x && (cd ${main} && pnpm --silent bot:git -- -C ${wt} push origin HEAD)`,
+      "allow",
+    ],
+  ];
+  assert.deepEqual(wrongs(rules.muslin, cases), []);
+});
+
+test("guard-port: tool reads and writes are read in every spelling; home secrets in any case", () => {
+  const reads = [
+    [`${HOME}/.config/GH/hosts.yml`, {}, "deny"],
+    [`${HOME}//.config/gh/hosts.yml`, {}, "deny"],
+    [`${HOME}/.config/x/../gh/hosts.yml`, {}, "deny"],
+    [`${HOME}/.config`, { recursive: true }, "deny"],
+    [`${wt}/.env*`, {}, "deny"],
+    [`${wt}/.env.example`, {}, "allow"],
+    [`${wt}/src/x.ts`, {}, "allow"],
+  ];
+  for (const [p, o, want] of reads)
+    assert.equal(rules.muslin.decideRead(p, { cwd: wt, ...o }).decision, want, p);
+  const writes = [
+    `${wt}/.claude//settings.json`,
+    `${wt}/.agents/./hooks/_rules.mjs`,
+    "/Users/akouta/Projects//stackra/package.json",
+    `${wt}/.git`,
+    `${main}/.git/config`,
+    "~/.gitconfig",
+    `${root}/s.json`,
+  ];
+  for (const p of writes) assert.equal(rules.os.decideWrite(p, { cwd: wt }).decision, "deny", p);
+  assert.equal(rules.os.decideWrite(`${wt}/src/x.ts`, { cwd: wt }).decision, "allow");
+  assert.equal(rules.muslin.decideBash("cat ~/.Config/gh/hosts.yml", { cwd: wt }).decision, "deny");
+  assert.equal(rules.muslin.decideBash("ls ~/.config/gh", { cwd: wt }).decision, "deny");
 });
 
 /** The reason the ported guard-bash hook gives for `gh pr create`. */
