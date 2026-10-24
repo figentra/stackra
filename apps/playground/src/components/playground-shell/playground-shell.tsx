@@ -33,7 +33,11 @@ import { Outlet, useHref, useLocation, useNavigate, useSearchParams } from "reac
 
 import { CategoryNav } from "#src/components/category-nav";
 import { Choice } from "#src/components/choice";
-import { CommandPalette } from "#src/components/command-palette";
+import {
+  CommandPalette,
+  type CommandPaletteProps,
+  type PaletteAction,
+} from "#src/components/command-palette";
 import { PagePager } from "#src/components/page-pager";
 import type { PageLink } from "#src/types/page-link.type";
 import type { ShellContext } from "#src/types/shell-context.type";
@@ -51,6 +55,14 @@ const STRINGS = {
   scheme: { light: "Light", dark: "Dark", system: "System" },
   material: "Material",
   materials: { solid: "Solid", frosted: "Frosted", glass: "Glass", liquid: "Liquid" },
+  title: "Stackra Design System",
+  actions: {
+    scheme: (name: string) => `${name} scheme`,
+    material: (name: string) => `${name} material`,
+    home: "Go to the index",
+    components: "Browse every component",
+    componentsDetail: "The gallery, by category",
+  },
 } as const;
 
 /** The icon of each scheme choice; its name is the choice's accessible name. */
@@ -162,6 +174,58 @@ function DisplaySettings({ material, onMaterialChange }: DisplaySettingsProps) {
   );
 }
 
+/** The command palette with the shell's quick actions: the scheme, the language and the places to go. */
+function ShellPalette({
+  onMaterialChange,
+  ...props
+}: Omit<CommandPaletteProps, "actions"> & { onMaterialChange: (material: MaterialMode) => void }) {
+  const { setColorScheme, setLocale } = useDesignSystem();
+  const navigate = useNavigate();
+  const actions: PaletteAction[] = [
+    ...ColorScheme.map((scheme) => ({
+      id: `scheme-${scheme}`,
+      label: STRINGS.actions.scheme(STRINGS.scheme[scheme]),
+      detail: STRINGS.colorScheme,
+      icon: SCHEME_ICONS[scheme],
+      keywords: "theme appearance mode",
+      run: () => setColorScheme(scheme),
+    })),
+    ...LOCALES.map(({ id, name }) => ({
+      id: `locale-${id}`,
+      label: name,
+      detail: STRINGS.language,
+      icon: "languages" as const,
+      keywords: `language direction ${id === "ar" ? "arabic rtl" : "english ltr"}`,
+      run: () => setLocale(id),
+    })),
+    ...MaterialMode.map((mode) => ({
+      id: `material-${mode}`,
+      label: STRINGS.actions.material(STRINGS.materials[mode]),
+      detail: STRINGS.material,
+      icon: MATERIAL_ICONS[mode],
+      keywords: "glass liquid frosted solid material transparency",
+      run: () => onMaterialChange(mode),
+    })),
+    {
+      id: "go-home",
+      label: STRINGS.actions.home,
+      detail: STRINGS.title,
+      icon: "sparkles",
+      keywords: "home index landing",
+      run: () => void navigate(`/${props.search}`),
+    },
+    {
+      id: "go-components",
+      label: STRINGS.actions.components,
+      detail: STRINGS.actions.componentsDetail,
+      icon: "layout-grid",
+      keywords: "gallery all pages",
+      run: () => void navigate(`/${props.search}#components`),
+    },
+  ];
+  return <CommandPalette {...props} actions={actions} />;
+}
+
 /** Layout route of the playground: provider, glass bar, page chrome, the current page and the palette. */
 export function PlaygroundShell({ pages }: PlaygroundShellProps) {
   const navigate = useNavigate();
@@ -216,10 +280,15 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
   // ⌘K or Ctrl+K anywhere, and `/` outside a text field, open the palette.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
+      // A key pressed with nothing focused targets the document, which is not an element.
+      const target = event.target instanceof Element ? event.target : null;
       const isTyping = target?.closest("input, textarea, select, [contenteditable='true']");
       const isCommandK = event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey);
-      if (isCommandK || (event.key === "/" && !isTyping)) {
+      // A sample's own open dialog keeps the keys: the palette never opens over it.
+      const isDialogOpen = document.querySelector(
+        'dialog[open]:not(.command-palette), [role="dialog"][aria-modal="true"], [role="alertdialog"]',
+      );
+      if (!isDialogOpen && (isCommandK || (event.key === "/" && !isTyping))) {
         event.preventDefault();
         openPalette();
       }
@@ -325,11 +394,12 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
             </div>
             {current ? <PagePager pages={pages} current={current} search={search} /> : null}
           </main>
-          <CommandPalette
+          <ShellPalette
             pages={pages}
             search={search}
             isOpen={isPaletteOpen}
             onClose={onPaletteClose}
+            onMaterialChange={(mode) => setParam("material", mode)}
           />
         </div>
       </DesignSystemProvider>

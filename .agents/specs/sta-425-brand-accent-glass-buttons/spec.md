@@ -18,7 +18,7 @@
 
 ## Impact
 
-- **Apps touched**: `apps/docs` (ADR 0319, its index row and navigation; the mail template note)
+- **Apps touched**: `apps/docs` (ADR 0319, its index row and navigation; the mail template note); `apps/playground` (the Button page's axe pass in every material mode)
 - **Services touched**: none
 - **Packages touched**: `packages/design-system/tokens` (the stackra theme's accent family, the web renderer's button rules, the brand record, the regenerated stylesheets)
 - **Workers touched**: none

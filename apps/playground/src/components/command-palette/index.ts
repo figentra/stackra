@@ -5,4 +5,4 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 14).
  */
-export { CommandPalette, type CommandPaletteProps } from "./command-palette";
+export { CommandPalette, type CommandPaletteProps, type PaletteAction } from "./command-palette";

@@ -48,11 +48,12 @@ export interface HomeProps {
 
 /** The landing page: hero, showcase and gallery. */
 export function Home({ pages }: HomeProps) {
-  const { search, hash } = useLocation();
-  // A client-side link to `#components` changes the hash without scrolling, so the page scrolls to it.
+  const { search, hash, key } = useLocation();
+  // A client-side link to `#components` changes the hash without scrolling, so the page scrolls to it, again on a
+  // second press of the same link (a new location key).
   useEffect(() => {
-    if (hash) document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView();
-  }, [hash]);
+    if (hash) document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView?.();
+  }, [hash, key]);
   // Undefined outside the shell (a unit test renders the page alone): the search button is left out then.
   const shell = useOutletContext<ShellContext | undefined>();
   const categories = new Set(pages.map((page) => page.category)).size;
@@ -78,8 +79,7 @@ export function Home({ pages }: HomeProps) {
           align="center"
           className="[font:var(--display)] tracking-[-0.035em] text-balance"
         >
-          <span className="sr-only">{STRINGS.brand} </span>
-          {STRINGS.product}
+          <span className="sr-only">{STRINGS.brand}</span> {STRINGS.product}
         </Ui.Heading>
         {/* <bdi>: an English sentence keeps its full stop at its end inside a right-to-left page. */}
         <p className="max-w-2xl text-lg text-muted text-pretty">
@@ -87,7 +87,7 @@ export function Home({ pages }: HomeProps) {
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           <Ui.Link
-            href={`#components`}
+            href={`/${search}#components`}
             underline="hover"
             className="inline-flex min-h-10 items-center gap-2 rounded-full bg-accent px-5 font-medium text-accent-foreground! hover:bg-accent-hover hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
