@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0022 (test placement).
  */
-// @covers sta-350:FR-056
+// @covers sta-350:FR-056 sta-422:FR-003 sta-422:P-002
 import { discoverPages, PLAYGROUND_PAGES } from "#src/components/playground-pages";
 
 /** A route module with the statics a route class carries. */

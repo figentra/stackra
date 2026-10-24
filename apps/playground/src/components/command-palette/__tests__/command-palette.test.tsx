@@ -1,16 +1,22 @@
 /**
  * Stackra file contract:
- * Purpose: proves the command palette opens as a modal dialog, filters the pages by every typed word (title,
- *          category or tier), announces the count, says so when nothing matches, opens the first match on Enter,
- *          walks the matches with the arrow keys, and reports its own close.
- * Boundary: a memory router in jsdom with a stubbed `<dialog>` (jsdom has no showModal); no network.
+ * Purpose: proves the command palette behaves as a launcher.
+ *          - Empty, it opens as a modal dialog with a combobox over a listbox: recent pages, then the quick actions,
+ *            then every page by category.
+ *          - Typed, it ranks matches by name and says how many there are, or says so when nothing matches.
+ *          - The arrows move the active row without moving focus; Enter opens a page (remembered as recent) or runs
+ *            an action.
+ *          - It reports its own close.
+ * Boundary: a memory router in jsdom with a stubbed `<dialog>` (jsdom has no showModal) and a cleared localStorage;
+ *           no network.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0022 (test placement).
  */
+// @covers sta-422:FR-001
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
-import { CommandPalette } from "#src/components/command-palette";
+import { CommandPalette, type PaletteAction } from "#src/components/command-palette";
 import type { PageLink } from "#src/types/page-link.type";
 
 const PAGES: readonly PageLink[] = [
@@ -30,78 +36,114 @@ function close(this: HTMLDialogElement) {
 }
 
 function renderPalette(onClose = vi.fn()) {
+  const dark = vi.fn();
+  const actions: PaletteAction[] = [
+    { id: "dark", label: "Dark scheme", detail: "Colour scheme", icon: "moon", run: dark },
+  ];
   const router = createMemoryRouter(
     [
       {
         path: "*",
-        element: <CommandPalette pages={PAGES} search="?scheme=dark" isOpen onClose={onClose} />,
+        element: (
+          <CommandPalette
+            pages={PAGES}
+            actions={actions}
+            search="?scheme=dark"
+            isOpen
+            onClose={onClose}
+          />
+        ),
       },
     ],
     { initialEntries: ["/"] },
   );
   render(<RouterProvider router={router} />);
-  return { router, onClose };
+  return { router, onClose, dark };
 }
 
-const type = (text: string) =>
-  fireEvent.change(screen.getByRole("searchbox", { name: "Search components" }), {
-    target: { value: text },
-  });
+const input = () => screen.getByRole("combobox", { name: "Search components" });
+const type = (text: string) => fireEvent.change(input(), { target: { value: text } });
+const press = (key: string) => fireEvent.keyDown(input(), { key });
+const labels = () =>
+  screen.getAllByRole("option").map((option) => option.querySelector(".font-medium")?.textContent);
 
 describe("CommandPalette", () => {
   beforeEach(() => {
     HTMLDialogElement.prototype.showModal = showModal;
     HTMLDialogElement.prototype.close = close;
+    localStorage.clear();
   });
 
-  it("opens as a dialog listing every page, grouped by category", () => {
+  it("opens as a dialog: the actions, then every page by category", () => {
     renderPalette();
-    const dialog = screen.getByRole("dialog", { name: "Search components" });
-    expect((dialog as HTMLDialogElement).open).toBe(true);
-    expect(within(dialog).getAllByRole("link")).toHaveLength(4);
-    expect(within(dialog).getByRole("list", { name: "Actions" })).toBeTruthy();
-    expect(within(dialog).getByRole("status").textContent).toBe("4 matches");
+    const dialog = screen.getByRole("dialog", { name: "Search components" }) as HTMLDialogElement;
+    expect(dialog.open).toBe(true);
+    expect(input().getAttribute("aria-controls")).toBe(screen.getByRole("listbox").id);
+    expect(screen.getByRole("group", { name: "Quick actions" })).toBeTruthy();
+    expect(
+      within(screen.getByRole("group", { name: "Actions" })).getAllByRole("option"),
+    ).toHaveLength(2);
+    expect(labels()).toEqual(["Dark scheme", "Button", "Close button", "Kanban", "Checkbox"]);
+    expect(screen.getByRole("status").textContent).toBe("5 results");
   });
 
-  it("filters by every typed word, across title, category and tier", () => {
+  it("ranks matches by name: the start of the name first, then the start of a word", () => {
     renderPalette();
-    type("close but");
-    expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual(["Close button"]);
-    expect(screen.getByRole("status").textContent).toBe("1 match");
+    type("but");
+    expect(labels()).toEqual(["Button", "Close button"]);
     type("pro");
-    expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual(["KanbanPro"]);
-    type("selection");
-    expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual(["Checkbox"]);
+    expect(labels()).toEqual(["Kanban"]);
+    type("dark");
+    expect(labels()).toEqual(["Dark scheme"]);
+    expect(screen.getByRole("status").textContent).toBe("1 result");
   });
 
   it("says so when nothing matches", () => {
     renderPalette();
     type("zzz");
-    expect(screen.queryAllByRole("link")).toHaveLength(0);
+    expect(screen.queryAllByRole("option")).toHaveLength(0);
     expect(screen.getByText("Nothing matches “zzz”.")).toBeTruthy();
   });
 
-  it("opens the first match on Enter, keeping the search params", async () => {
-    const { router } = renderPalette();
-    type("check");
-    await act(async () => {
-      fireEvent.keyDown(screen.getByRole("searchbox"), { key: "Enter" });
-    });
-    expect(router.state.location.pathname).toBe("/checkbox");
-    expect(router.state.location.search).toBe("?scheme=dark");
+  it("moves the active row with the arrows while focus stays in the field", () => {
+    renderPalette();
+    const options = screen.getAllByRole("option");
+    expect(input().getAttribute("aria-activedescendant")).toBe(options[0]?.id);
+    press("ArrowDown");
+    expect(input().getAttribute("aria-activedescendant")).toBe(options[1]?.id);
+    expect(options[1]?.getAttribute("aria-selected")).toBe("true");
+    press("ArrowUp");
+    press("ArrowUp");
+    expect(input().getAttribute("aria-activedescendant")).toBe(options.at(-1)?.id);
+    expect(document.activeElement).toBe(input());
   });
 
-  it("walks the matches with the arrow keys, wrapping at the ends", () => {
+  it("opens the active page on Enter, keeping the search params, and remembers it", async () => {
+    const { router, onClose } = renderPalette();
+    type("check");
+    await act(async () => press("Enter"));
+    expect(router.state.location.pathname).toBe("/checkbox");
+    expect(router.state.location.search).toBe("?scheme=dark");
+    expect(onClose).toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem("stackra-playground:recent") ?? "[]")).toEqual([
+      "/checkbox",
+    ]);
+  });
+
+  it("runs an action on Enter", () => {
+    const { dark } = renderPalette();
+    type("dark");
+    press("Enter");
+    expect(dark).toHaveBeenCalledTimes(1);
+  });
+
+  it("lists recent pages first, as rows of their own", () => {
+    localStorage.setItem("stackra-playground:recent", JSON.stringify(["/checkbox", "/gone"]));
     renderPalette();
-    const dialog = screen.getByRole("dialog");
-    const links = within(dialog).getAllByRole("link");
-    fireEvent.keyDown(screen.getByRole("searchbox"), { key: "ArrowDown" });
-    expect(document.activeElement).toBe(links[0]);
-    fireEvent.keyDown(dialog, { key: "ArrowDown" });
-    expect(document.activeElement).toBe(links[1]);
-    fireEvent.keyDown(dialog, { key: "ArrowUp" });
-    fireEvent.keyDown(dialog, { key: "ArrowUp" });
-    expect(document.activeElement).toBe(links[3]);
+    expect(
+      within(screen.getByRole("group", { name: "Recent" })).getAllByRole("option"),
+    ).toHaveLength(1);
+    expect(new Set(screen.getAllByRole("option").map((option) => option.id)).size).toBe(6);
   });
 
   it("reports its close (Escape or the scrim) to the caller", () => {

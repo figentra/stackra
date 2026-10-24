@@ -11,8 +11,10 @@
 import { defineIconRegistry } from "@stackra/icons";
 import { IconRegistryProvider } from "@stackra/icons/react";
 import {
+  ArrowDown,
   ArrowLeft,
   ArrowRight,
+  ArrowUp,
   ArrowUpRight,
   Bell,
   Building,
@@ -24,6 +26,7 @@ import {
   Download,
   Droplet,
   Heart,
+  Languages,
   Layers,
   LayoutGrid,
   Monitor,
@@ -46,8 +49,10 @@ import type { ReactNode } from "react";
 
 /** The icons the playground pages draw, by name. */
 const PLAYGROUND_ICONS = defineIconRegistry({
+  "arrow-down": ArrowDown,
   "arrow-left": ArrowLeft,
   "arrow-right": ArrowRight,
+  "arrow-up": ArrowUp,
   "arrow-up-right": ArrowUpRight,
   bell: Bell,
   building: Building,
@@ -59,6 +64,7 @@ const PLAYGROUND_ICONS = defineIconRegistry({
   download: Download,
   droplet: Droplet,
   heart: Heart,
+  languages: Languages,
   layers: Layers,
   "layout-grid": LayoutGrid,
   monitor: Monitor,

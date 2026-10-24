@@ -12,7 +12,7 @@
  * Runtime: node
  * Governing contract: ADR 0302 (decision 5); ADR 0182 (test tiers); ADR 0022 (test placement).
  */
-// @covers sta-350:FR-010 sta-350:FR-011 sta-350:P-007 sta-350:SC-002
+// @covers sta-350:FR-010 sta-350:FR-011 sta-350:P-007 sta-350:SC-002 sta-422:FR-001 sta-422:FR-004 sta-422:P-001 sta-422:P-004 sta-422:SC-001
 import { readdirSync } from "node:fs";
 
 import { AxeBuilder } from "@axe-core/playwright";
@@ -186,9 +186,10 @@ test("the command palette opens from the keyboard, filters, and Enter opens the 
   await page.keyboard.press("ControlOrMeta+k");
   const palette = page.getByRole("dialog", { name: "Search components" });
   await expect(palette).toBeVisible();
-  await expect(palette.getByRole("searchbox")).toBeFocused();
+  await expect(palette.getByRole("combobox")).toBeFocused();
   await page.keyboard.type("check");
-  await expect(palette.getByRole("link", { name: "Checkbox", exact: true })).toBeVisible();
+  await expect(palette.getByRole("option").first()).toContainText("Checkbox");
+  await expect(palette.getByRole("status")).toContainText("result");
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/checkbox\?scheme=light&locale=en$/);
   await expect(palette).toBeHidden();
@@ -253,3 +254,31 @@ for (const material of MaterialMode)
       expect(violations.map((v) => v.id)).toEqual([]);
       expect(incomplete.map((v) => v.id)).toEqual([]);
     });
+
+test("the hero's jump to the gallery keeps the scheme and the locale", async ({ page }) => {
+  await page.goto("/?scheme=dark&locale=ar");
+  await page.getByRole("link", { name: /Browse components/ }).click();
+  await expect(page).toHaveURL(/\?scheme=dark&locale=ar#components$/);
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+});
+
+for (const scheme of SCHEMES)
+  for (const { locale, dir } of LOCALES)
+    for (const query of ["", "se"])
+      test(`the open command palette passes axe in ${scheme}, ${dir}, ${query ? "with results" : "empty"}`, async ({
+        page,
+      }) => {
+        await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
+        await page.goto(`/button?scheme=${scheme}&locale=${locale}`);
+        await page.keyboard.press("ControlOrMeta+k");
+        const palette = page.getByRole("dialog", { name: "Search components" });
+        await expect(palette).toBeVisible();
+        if (query) await page.keyboard.type(query);
+        await expect(palette.getByRole("option").first()).toBeVisible();
+        const { violations, incomplete } = await new AxeBuilder({ page })
+          .include("dialog")
+          .withTags(AXE_TAGS)
+          .analyze();
+        expect(violations.map((v) => v.id)).toEqual([]);
+        expect(incomplete.map((v) => v.id)).toEqual([]);
+      });

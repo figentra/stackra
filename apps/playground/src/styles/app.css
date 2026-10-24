@@ -18,9 +18,10 @@ body {
   font-family: var(--font-arabic);
 }
 
-/* Jumps within a page glide, unless motion is reduced. */
+/* Jumps within a page glide, unless motion is reduced; a target scrolled or focused into view clears the sticky bar. */
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
