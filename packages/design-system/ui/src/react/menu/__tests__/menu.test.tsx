@@ -91,13 +91,13 @@ describe("Menu (web)", () => {
   it("draws an action with its icon, label, second line and shortcut hint", () => {
     renderMenu();
     const menu = open();
-    const rename = within(menu).getByRole("menuitem", { name: "Rename" });
+    const rename = within(menu).getByRole("menuitem", { name: /^Rename/ });
     expect(rename.querySelector('[data-testid="rename-icon"]')).toBeTruthy();
     expect(rename.querySelector("kbd")?.textContent).toBe("⌘R");
-    const duplicate = within(menu).getByRole("menuitem", { name: "Duplicate" });
-    expect(duplicate.getAttribute("aria-describedby")).toContain(
-      within(duplicate).getByText("Make a copy").id,
-    );
+    // The second line is in the name, not a description: it is visible text, and a name must hold what is seen.
+    const duplicate = within(menu).getByRole("menuitem", { name: /^Duplicate.*Make a copy/ });
+    expect(within(duplicate).getByText("Make a copy")).toBeTruthy();
+    expect(duplicate.hasAttribute("aria-describedby")).toBe(false);
   });
 
   it("shows why a disabled action is refused as its second line, and refuses it", () => {
@@ -119,11 +119,9 @@ describe("Menu (web)", () => {
       },
     ];
     renderMenu({ sections, onAction });
-    const archive = within(open()).getByRole("menuitem", { name: "Archive" });
+    const archive = within(open()).getByRole("menuitem", { name: /^Archive.*Paid orders stay/ });
     expect(archive.getAttribute("aria-disabled")).toBe("true");
-    expect(archive.getAttribute("aria-describedby")).toContain(
-      within(archive).getByText("Paid orders stay").id,
-    );
+    expect(within(archive).getByText("Paid orders stay")).toBeTruthy();
     press(archive);
     expect(onPress).not.toHaveBeenCalled();
     expect(onAction).not.toHaveBeenCalled();
@@ -135,12 +133,12 @@ describe("Menu (web)", () => {
     const menu = open();
     expect(
       within(menu)
-        .getByRole("menuitem", { name: "Delete" })
+        .getByRole("menuitem", { name: /^Delete/ })
         .classList.contains("menu-item--danger"),
     ).toBe(true);
     expect(
       within(menu)
-        .getByRole("menuitem", { name: "Rename" })
+        .getByRole("menuitem", { name: /^Rename/ })
         .classList.contains("menu-item--default"),
     ).toBe(true);
   });
@@ -168,7 +166,7 @@ describe("Menu (web)", () => {
       },
     ];
     renderMenu({ sections, onAction: (id) => calls.push(`onAction:${id}`) });
-    press(within(open()).getByRole("menuitem", { name: "Rename" }));
+    press(within(open()).getByRole("menuitem", { name: /^Rename/ }));
     expect(calls).toEqual(["onPress", "onAction:rename"]);
     await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
   });

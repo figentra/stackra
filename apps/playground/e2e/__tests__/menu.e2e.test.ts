@@ -112,12 +112,13 @@ test("an action shows its icon, second line, reason, shortcut hint and danger to
   const rename = menu.getByRole("menuitem", { name: "Rename" });
   await expect(rename.locator("svg")).toBeVisible();
   await expect(rename.locator("kbd")).toHaveText("⌘R");
-  await expect(menu.getByRole("menuitem", { name: "Duplicate" })).toHaveAccessibleDescription(
-    "Make a copy of the order",
+  // The second line is in the name: it is visible text, and a name must hold what is seen (WCAG 2.5.3).
+  await expect(menu.getByRole("menuitem", { name: "Duplicate" })).toHaveAccessibleName(
+    /^Duplicate\s+Make a copy of the order/,
   );
   const archive = menu.getByRole("menuitem", { name: "Archive" });
   await expect(archive).toHaveAttribute("aria-disabled", "true");
-  await expect(archive).toHaveAccessibleDescription("Paid orders cannot be archived");
+  await expect(archive).toHaveAccessibleName(/^Archive\s+Paid orders cannot be archived/);
   await expect(menu.getByRole("menuitem", { name: "Delete" })).toHaveClass(/menu-item--danger/);
   await expect(menu.getByRole("menuitem", { name: "Rename" })).toHaveClass(/menu-item--default/);
 });

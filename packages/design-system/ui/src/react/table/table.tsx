@@ -9,8 +9,10 @@
  *           table never sorts or pages the rows it is given: the sort is controlled and `onLoadMore` only asks. HeroUI
  *           draws no selection column, so a multiple selection adds the documented checkbox column (React Aria names
  *           each box and the select-all one), and a single selection selects the row on press with no column. Empty and
- *           loading are two states: `emptyState` shows only when nothing loads, and `isLoading` shows a spinner row and
- *           says `loadingLabel` once through a status region, not once per row. HeroUI's table has no read-only or
+ *           loading are two states: `emptyState` shows only when nothing loads, and `isLoading` shows a spinner and says
+ *           `loadingLabel` once through a status region, not once per row. With no rows either one stands in for the
+ *           grid, in a group named by `label`, because React Aria draws them as `rowheader` cells (its loader also
+ *           carries `aria-level`), which leave a grid's headers with no data cell to describe. HeroUI's table has no read-only or
  *           disabled state, so the contract has none.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0303 (decision 7); ADR 0313;
@@ -113,107 +115,111 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
   const rowHeaderId = (columns.find((column) => column.isRowHeader) ?? columns[0])?.id;
   const hasEmptyState = emptyState !== undefined && emptyState !== null && emptyState !== false;
   const isPaged = hasMore && onLoadMore !== undefined;
-  // A reload over rows that exist shows its spinner after them; a first load shows it in place of the empty state.
-  const showsLoadMore = isPaged || (isLoading && items.length > 0);
+  const hasRows = items.length > 0;
+  // With rows, a load shows its spinner after them. Without, the grid gives way to the empty state or the spinner,
+  // because React Aria draws those as `rowheader` cells, which leave the headers with no data cell to describe.
+  const standIn: ReactNode = isLoading ? <LoadingContent text={loadingText} /> : emptyState;
+  const isStoodIn = !hasRows && (isLoading || hasEmptyState);
   const headerClass = (column: TableColumn) =>
     [isStickyHeader ? STICKY_CLASS : "", ALIGN_CLASS[column.align ?? "start"]]
       .filter(Boolean)
       .join(" ");
-  const renderEmpty = (): ReactNode =>
-    isLoading ? <LoadingContent text={loadingText} /> : emptyState;
 
   return (
     <HeroTable {...omitUndefined({ ...rest, variant })} aria-busy={isLoading || undefined}>
-      <HeroTable.ScrollContainer {...(isStickyHeader ? { style: { maxHeight } } : {})}>
-        <HeroTable.Content
-          aria-label={label}
-          selectionMode={selectionMode}
-          // A box per row for several; for one, a press on the row selects it, the way a list does.
-          selectionBehavior={isMultiple ? "toggle" : "replace"}
-          // The table always runs controlled by the app or by React Aria; ids are strings, never a `Set`.
-          {...(selectedKeys ? { selectedKeys: new Set(selectedKeys) } : {})}
-          {...(defaultSelectedKeys ? { defaultSelectedKeys: new Set(defaultSelectedKeys) } : {})}
-          onSelectionChange={(keys) =>
-            onSelectionChange?.(
-              keysOfSelection(
-                keys,
-                items.map((item) => item.id),
-              ),
-            )
-          }
-          {...(sortDescriptor ? { sortDescriptor } : {})}
-          onSortChange={(sort) =>
-            onSortChange?.({ column: String(sort.column), direction: sort.direction })
-          }
-        >
-          <HeroTable.Header>
-            {isMultiple ? (
-              <HeroTable.Column className={`w-10 pe-0 ${isStickyHeader ? STICKY_CLASS : ""}`}>
-                {/* The box names itself; the text keeps the header from being an empty one for a checker. */}
-                <span className="sr-only">{STRINGS.selectionColumn}</span>
-                <SelectionCheckbox />
-              </HeroTable.Column>
-            ) : null}
-            <HeroTable.Collection items={columns}>
-              {(column) => (
-                <HeroTable.Column
-                  id={column.id}
-                  isRowHeader={column.id === rowHeaderId}
-                  allowsSorting={column.isSortable === true}
-                  className={headerClass(column)}
-                >
-                  {({ sortDirection }) =>
-                    column.isSortable ? (
-                      <HeroTable.SortableColumnHeader
-                        {...(sortDirection ? { sortDirection } : {})}
-                        className={HEADER_ALIGN_CLASS[column.align ?? "start"]}
-                      >
-                        {column.label}
-                      </HeroTable.SortableColumnHeader>
-                    ) : (
-                      column.label
-                    )
-                  }
-                </HeroTable.Column>
-              )}
-            </HeroTable.Collection>
-          </HeroTable.Header>
-          <HeroTable.Body
-            {...(isLoading || hasEmptyState ? { renderEmptyState: renderEmpty } : {})}
+      {isStoodIn ? (
+        <div role="group" aria-label={label}>
+          {standIn}
+        </div>
+      ) : (
+        <HeroTable.ScrollContainer {...(isStickyHeader ? { style: { maxHeight } } : {})}>
+          <HeroTable.Content
+            aria-label={label}
+            selectionMode={selectionMode}
+            // A box per row for several; for one, a press on the row selects it, the way a list does.
+            selectionBehavior={isMultiple ? "toggle" : "replace"}
+            // The table always runs controlled by the app or by React Aria; ids are strings, never a `Set`.
+            {...(selectedKeys ? { selectedKeys: new Set(selectedKeys) } : {})}
+            {...(defaultSelectedKeys ? { defaultSelectedKeys: new Set(defaultSelectedKeys) } : {})}
+            onSelectionChange={(keys) =>
+              onSelectionChange?.(
+                keysOfSelection(
+                  keys,
+                  items.map((item) => item.id),
+                ),
+              )
+            }
+            {...(sortDescriptor ? { sortDescriptor } : {})}
+            onSortChange={(sort) =>
+              onSortChange?.({ column: String(sort.column), direction: sort.direction })
+            }
           >
-            <HeroTable.Collection items={items} dependencies={[columns, renderCell, isMultiple]}>
-              {(item) => (
-                <HeroTable.Row id={item.id}>
-                  {isMultiple ? (
-                    <HeroTable.Cell className="pe-0">
-                      <SelectionCheckbox />
-                    </HeroTable.Cell>
-                  ) : null}
-                  <HeroTable.Collection items={columns} dependencies={[item, renderCell]}>
-                    {(column) => (
-                      <HeroTable.Cell className={ALIGN_CLASS[column.align ?? "start"]}>
-                        {renderCell ? renderCell(item, column) : cellTextOf(item, column.id)}
+            <HeroTable.Header>
+              {isMultiple ? (
+                <HeroTable.Column className={`w-10 pe-0 ${isStickyHeader ? STICKY_CLASS : ""}`}>
+                  {/* The box names itself; the text keeps the header from being an empty one for a checker. */}
+                  <span className="sr-only">{STRINGS.selectionColumn}</span>
+                  <SelectionCheckbox />
+                </HeroTable.Column>
+              ) : null}
+              <HeroTable.Collection items={columns}>
+                {(column) => (
+                  <HeroTable.Column
+                    id={column.id}
+                    isRowHeader={column.id === rowHeaderId}
+                    allowsSorting={column.isSortable === true}
+                    className={headerClass(column)}
+                  >
+                    {({ sortDirection }) =>
+                      column.isSortable ? (
+                        <HeroTable.SortableColumnHeader
+                          {...(sortDirection ? { sortDirection } : {})}
+                          className={HEADER_ALIGN_CLASS[column.align ?? "start"]}
+                        >
+                          {column.label}
+                        </HeroTable.SortableColumnHeader>
+                      ) : (
+                        column.label
+                      )
+                    }
+                  </HeroTable.Column>
+                )}
+              </HeroTable.Collection>
+            </HeroTable.Header>
+            <HeroTable.Body>
+              <HeroTable.Collection items={items} dependencies={[columns, renderCell, isMultiple]}>
+                {(item) => (
+                  <HeroTable.Row id={item.id}>
+                    {isMultiple ? (
+                      <HeroTable.Cell className="pe-0">
+                        <SelectionCheckbox />
                       </HeroTable.Cell>
-                    )}
-                  </HeroTable.Collection>
-                </HeroTable.Row>
-              )}
-            </HeroTable.Collection>
-            {showsLoadMore ? (
-              <HeroTable.LoadMore
-                isLoading={isLoading}
-                // The sentinel fires as soon as the end is in view, so it is silent while a page is already coming.
-                {...(isPaged && !isLoading ? { onLoadMore } : {})}
-              >
-                <HeroTable.LoadMoreContent>
-                  <Spinner size="sm" />
-                  <span>{loadingText}</span>
-                </HeroTable.LoadMoreContent>
-              </HeroTable.LoadMore>
-            ) : null}
-          </HeroTable.Body>
-        </HeroTable.Content>
-      </HeroTable.ScrollContainer>
+                    ) : null}
+                    <HeroTable.Collection items={columns} dependencies={[item, renderCell]}>
+                      {(column) => (
+                        <HeroTable.Cell className={ALIGN_CLASS[column.align ?? "start"]}>
+                          {renderCell ? renderCell(item, column) : cellTextOf(item, column.id)}
+                        </HeroTable.Cell>
+                      )}
+                    </HeroTable.Collection>
+                  </HeroTable.Row>
+                )}
+              </HeroTable.Collection>
+              {isPaged ? (
+                // Only the sentinel: React Aria's own loading row carries `aria-level`, which a grid refuses.
+                // It fires as soon as the end is in view, so it is silent while a page is already coming.
+                <HeroTable.LoadMore {...(isLoading ? {} : { onLoadMore })} />
+              ) : null}
+            </HeroTable.Body>
+          </HeroTable.Content>
+          {isLoading && hasRows ? (
+            // The words are the live status's below, so this line is for the eye alone.
+            <div aria-hidden="true">
+              <LoadingContent text={loadingText} />
+            </div>
+          ) : null}
+        </HeroTable.ScrollContainer>
+      )}
       {/* One live status, present before it speaks, so "Loading orders" is read once and not once per row. */}
       <div role="status" className="sr-only">
         {isLoading ? loadingText : ""}

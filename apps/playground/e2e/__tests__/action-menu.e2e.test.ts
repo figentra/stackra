@@ -132,7 +132,7 @@ test("the actions show their icon, shortcut hint, danger tone and the reason for
   await expect(menu.getByRole("menuitem", { name: "Delete" })).toHaveClass(/menu-item--danger/);
   const archive = menu.getByRole("menuitem", { name: "Archive" });
   await expect(archive).toHaveAttribute("aria-disabled", "true");
-  await expect(archive).toHaveAccessibleDescription("Paid orders cannot be archived");
+  await expect(archive).toHaveAccessibleName(/^Archive\s+Paid orders cannot be archived/);
   for (const item of await menu.getByRole("menuitem").all()) {
     const box = await boxOf(item);
     expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(24);
