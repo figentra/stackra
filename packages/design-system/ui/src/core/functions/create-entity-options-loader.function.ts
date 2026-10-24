@@ -24,6 +24,11 @@ export interface EntityOptionsState {
   readonly isLoadingMore: boolean;
   /** True when the last answer named a next cursor. */
   readonly hasMore: boolean;
+  /**
+   * True once any request has been answered or has failed. Until then a picker cannot tell "nothing found" from "not
+   * asked yet", so it lets its list open empty and asks.
+   */
+  readonly hasAnswered: boolean;
 }
 
 /** The store `createEntityOptionsLoader` returns. */
@@ -53,6 +58,7 @@ const INITIAL: EntityOptionsState = Object.freeze({
   status: "idle",
   isLoadingMore: false,
   hasMore: false,
+  hasAnswered: false,
 });
 
 /**
@@ -60,7 +66,9 @@ const INITIAL: EntityOptionsState = Object.freeze({
  * @param options - how to read the picker's current `loadOptions` and pause
  * @returns the store; `search` starts it and the picker reads `getState`
  */
-export function createEntityOptionsLoader(options: EntityOptionsLoaderOptions): EntityOptionsLoader {
+export function createEntityOptionsLoader(
+  options: EntityOptionsLoaderOptions,
+): EntityOptionsLoader {
   let state: EntityOptionsState = INITIAL;
   let requested: string | undefined;
   let cursor: string | undefined;
@@ -91,13 +99,20 @@ export function createEntityOptionsLoader(options: EntityOptionsLoaderOptions): 
           status: "idle",
           isLoadingMore: false,
           hasMore: cursor !== undefined,
+          hasAnswered: true,
         });
       },
       () => {
         if (mine !== ticket) return;
         cursor = undefined;
         // What was listed stays, so a failed second page does not empty the list.
-        change({ ...state, status: "error", isLoadingMore: false, hasMore: false });
+        change({
+          ...state,
+          status: "error",
+          isLoadingMore: false,
+          hasMore: false,
+          hasAnswered: true,
+        });
       },
     );
   };

@@ -46,9 +46,10 @@ describe("createEntityOptionsLoader", () => {
 
   it("asks for the first search at once and shows it as loading", () => {
     const { calls, loader } = setup();
+    expect(loader.getState().hasAnswered).toBe(false);
     loader.search("");
     expect(calls.map((call) => call.search)).toEqual([""]);
-    expect(loader.getState().status).toBe("loading");
+    expect(loader.getState()).toMatchObject({ status: "loading", hasAnswered: false });
   });
 
   it("lists the answer and says whether another page follows", async () => {
@@ -56,7 +57,7 @@ describe("createEntityOptionsLoader", () => {
     loader.search("");
     calls[0]?.settle(page(["a", "b"], "c1"));
     await flush();
-    expect(loader.getState()).toMatchObject({ status: "idle", hasMore: true });
+    expect(loader.getState()).toMatchObject({ status: "idle", hasMore: true, hasAnswered: true });
     expect(loader.getState().options.map((option) => option.id)).toEqual(["a", "b"]);
   });
 
