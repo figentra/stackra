@@ -4,8 +4,9 @@
  *          the approved Stackra brand kit 0.1.0, which @stackra/brand vendored until it was retired; the kit's token
  *          reports sit in assets/data/stackra/ and the tests hold the values to them. Each hex is derived from its
  *          oklch value (`oklchToHex`), never typed, so the two cannot disagree.
- * Boundary: data only. Stackra has no accent colour: every accent role is a neutral (ink on paper, paper on ink).
- *          Steel colours the wordmark and the st tile only, never a UI role; graphite carries the accent states and,
+ * Boundary: data only. The accent is the brand's steel blue (ADR 0319): the accent, its hover, pressed and soft
+ *          steps and the focus ring take the wordmark's hue (248) at a chroma a control can carry, with paper or ink on
+ *          it at 4.5:1 or more; the link and the signal stay neutral. Graphite carries the neutral states and,
  *          as an alias, the dark `segment` role.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0024 (the brand assets stay all rights reserved).
@@ -30,8 +31,10 @@ const FOREGROUND = color("oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)");
 const INVERSE = color("oklch(0.972 0.004 122)", "oklch(0.158 0.005 248)");
 const MUTED = color("oklch(0.5 0.01 250)", "oklch(0.72 0.008 250)");
 const ON_STATUS = color("oklch(1 0 0)", "oklch(0.158 0.005 248)");
+// ADR 0319: the brand accent, steel blue on the wordmark's hue. Paper on it is 5.49:1 (light), ink on it 7.88:1 (dark).
+const ACCENT = color("oklch(0.5 0.12 248)", "oklch(0.72 0.11 248)");
 
-/** The stackra theme: neutral accents, Geist and IBM Plex Sans Arabic, a 4px spacing step and a 0.25rem radius. */
+/** The stackra theme: a steel-blue accent, Geist and IBM Plex Sans Arabic, a 4px spacing step and a 0.25rem radius. */
 export const STACKRA_THEME = defineTheme({
   name: "stackra",
   colors: {
@@ -48,7 +51,7 @@ export const STACKRA_THEME = defineTheme({
     muted: MUTED,
     default: color("oklch(0.935 0.004 110)", "oklch(0.285 0.007 250)"),
     "default-foreground": FOREGROUND,
-    accent: FOREGROUND,
+    accent: ACCENT,
     "accent-foreground": INVERSE,
     success: color("oklch(0.5 0.13 135)", "oklch(0.72 0.15 135)"),
     "success-foreground": ON_STATUS,
@@ -66,7 +69,7 @@ export const STACKRA_THEME = defineTheme({
     "segment-foreground": FOREGROUND,
     border: color("oklch(0.885 0.005 110)", "oklch(0.35 0.008 250)"),
     separator: color("oklch(0.92 0.004 110)", "oklch(0.27 0.007 250)"),
-    focus: FOREGROUND,
+    focus: ACCENT,
     link: FOREGROUND,
     backdrop: color("oklch(0.158 0.005 248 / 0.4)", "oklch(0.08 0.004 248 / 0.6)"),
   },
@@ -86,10 +89,10 @@ export const STACKRA_THEME = defineTheme({
     "graphite-700": color(GRAPHITE_700, GRAPHITE_700),
     "graphite-800": color("oklch(0.3 0.009 248)", "oklch(0.3 0.009 248)"),
     "graphite-900": color("oklch(0.265 0.008 248)", "oklch(0.265 0.008 248)"),
-    "accent-hover": color("oklch(0.3 0.009 248)", "oklch(0.87 0.007 248)"),
-    "accent-pressed": color("oklch(0.38 0.009 248)", "oklch(0.8 0.008 248)"),
-    "accent-soft": color("oklch(0.925 0.006 248)", "oklch(0.265 0.008 248)"),
-    "accent-soft-foreground": FOREGROUND,
+    "accent-hover": color("oklch(0.45 0.12 248)", "oklch(0.67 0.11 248)"),
+    "accent-pressed": color("oklch(0.4 0.11 248)", "oklch(0.62 0.11 248)"),
+    "accent-soft": color("oklch(0.94 0.03 248)", "oklch(0.29 0.05 248)"),
+    "accent-soft-foreground": color("oklch(0.42 0.12 248)", "oklch(0.85 0.07 248)"),
     signal: FOREGROUND,
     "signal-foreground": INVERSE,
     cursor: color("oklch(0.47 0.095 75)", "oklch(0.83 0.15 82)"),

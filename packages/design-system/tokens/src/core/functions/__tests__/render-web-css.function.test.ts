@@ -172,4 +172,23 @@ describe("renderWebCss", () => {
       css.indexOf('[data-material="liquid"]'),
     );
   });
+
+  // @covers sta-425:FR-002 sta-425:P-002
+  it("puts the quiet button variants and the close button on the regular glass level, the primary solid (ADR 0319)", () => {
+    expect(layer).toContain(
+      "  .button--secondary,\n  .button--tertiary,\n  .button--outline {\n    --button-bg: var(--material-regular-fill);",
+    );
+    expect(layer).toContain("    backdrop-filter: var(--material-regular-filter);");
+    expect(layer).toContain('  .button--ghost:hover,\n  .button--ghost[data-hovered="true"],');
+    expect(layer).toContain(
+      "  .close-button--default {\n    background-color: var(--material-regular-fill);",
+    );
+    expect(layer).not.toContain(".button--primary");
+    // HeroUI's focus ring is a box-shadow: the glass buttons must not set one.
+    const buttons = layer.slice(layer.indexOf(".button--secondary"));
+    expect(buttons).not.toContain("box-shadow");
+    expect(css).toContain(
+      "  .button--outline,\n  .close-button--default {\n    border-color: CanvasText;",
+    );
+  });
 });

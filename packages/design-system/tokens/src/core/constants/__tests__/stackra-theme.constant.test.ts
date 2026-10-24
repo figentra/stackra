@@ -1,9 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: proves the stackra theme carries the approved brand kit unchanged: its colours equal the kit's resolved
- *          tokens, every pairing the kit's contrast report holds to a WCAG minimum still meets it, the accent family
- *          stays achromatic, every hex is the sRGB of its oklch, and the fonts moved with the theme beside their OFL
- *          licences.
+ * Purpose: proves the stackra theme carries the approved brand kit, as amended by ADR 0319.
+ *          - Its colours equal the kit's resolved tokens, bar the steel-blue accent family ADR 0319 sets.
+ *          - Every pairing the kit's contrast report holds to a WCAG minimum still meets it, the amended ones too.
+ *          - The rest of the accent family (link, signal) stays achromatic, and the amended steps are steel blue.
+ *          - Every hex is the sRGB of its oklch.
+ *          - The fonts moved with the theme beside their OFL licences.
  * Boundary: reads the kit reports and fonts in assets/; computes contrast from the oklch values through sRGB, which
  *          is how the kit's contrast report was computed (it matches to 0.005).
  * Runtime: node
@@ -27,6 +29,16 @@ const tokenOf = (name: string): ColorToken | undefined =>
 
 /** The WCAG ratio of two oklch colours as a browser paints them: through their 8-bit sRGB. */
 const contrast = (one: string, two: string) => contrastRatio(oklchToHex(one), oklchToHex(two));
+
+/** The tokens ADR 0319 moves off the kit's neutral accent onto the brand's steel blue. */
+const STEEL_ACCENT = new Set([
+  "accent",
+  "accent-hover",
+  "accent-pressed",
+  "accent-soft",
+  "accent-soft-foreground",
+  "focus",
+]);
 
 // The kit labels the modes "base" and "dark".
 const modeOf = (theme: string): Mode => (theme === "dark" ? "dark" : "light");
@@ -62,7 +74,7 @@ describe("STACKRA_THEME", () => {
       }[];
     }>("resolved").tokens;
     expect(resolved.length).toBeGreaterThan(20);
-    for (const token of resolved)
+    for (const token of resolved.filter(({ name }) => !STEEL_ACCENT.has(name)))
       expect(tokenOf(token.name), token.name).toEqual({
         light: token.light.value,
         dark: token.dark.value,
@@ -104,22 +116,47 @@ describe("STACKRA_THEME", () => {
       );
       const pair = `${row.theme} ${row.foreground} on ${row.background}`;
       expect(ratio, pair).toBeGreaterThanOrEqual(row.minimum ?? 0);
-      expect(Math.abs(ratio - row.ratio), pair).toBeLessThan(0.01);
+      // An amended token keeps the kit's minimum, not the kit's exact ratio.
+      if (!STEEL_ACCENT.has(row.foreground) && !STEEL_ACCENT.has(row.background))
+        expect(Math.abs(ratio - row.ratio), pair).toBeLessThan(0.01);
     }
   });
 
-  it("keeps the accent family achromatic (oklch chroma below 0.02), as the kit's separation report records", () => {
+  it("keeps the rest of the accent family achromatic (oklch chroma below 0.02), as the kit's separation report records", () => {
     const rows = kit<{ neutrality: { theme: string; name: string; hex: string }[] }>(
       "separation",
     ).neutrality;
     expect(rows.length).toBeGreaterThan(10);
-    for (const row of rows) {
+    for (const row of rows.filter(({ name }) => !STEEL_ACCENT.has(name))) {
       const mode = modeOf(row.theme);
       const token = tokenOf(row.name);
       const chroma = Number(token?.[mode].match(/oklch\([\d.]+ ([\d.]+)/)?.[1]);
       expect(chroma, row.name).toBeLessThan(0.02);
       expect(mode === "dark" ? token?.hexDark : token?.hexLight, row.name).toBe(row.hex);
     }
+  });
+
+  // @covers sta-425:FR-001 sta-425:P-001
+  it("gives the accent the brand's steel blue, with paper or ink on it at 4.5:1 or more (ADR 0319)", () => {
+    for (const name of STEEL_ACCENT) {
+      const token = tokenOf(name);
+      for (const mode of ["light", "dark"] as const) {
+        const [, chroma, hue] =
+          token?.[mode].match(/oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)/)?.slice(1) ?? [];
+        expect(Number(hue), `${name} ${mode}`).toBe(248);
+        expect(Number(chroma), `${name} ${mode}`).toBeGreaterThanOrEqual(0.03);
+      }
+    }
+    const { accent, "accent-foreground": on, background } = STACKRA_THEME.colors;
+    expect(contrastRatio(on.hexLight, accent.hexLight)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(on.hexDark, accent.hexDark)).toBeGreaterThanOrEqual(4.5);
+    // The focus ring stands 3:1 from the page in both modes (WCAG 2.2 SC 1.4.11).
+    expect(
+      contrastRatio(STACKRA_THEME.colors.focus.hexLight, background.hexLight),
+    ).toBeGreaterThanOrEqual(3);
+    expect(
+      contrastRatio(STACKRA_THEME.colors.focus.hexDark, background.hexDark),
+    ).toBeGreaterThanOrEqual(3);
   });
 
   // @covers sta-350:FR-005
