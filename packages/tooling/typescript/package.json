@@ -24,7 +24,12 @@
     "./vite-node": "./src/vite-node.json",
     "./runtime": "./src/runtime.json",
     "./app": "./src/app.json",
-    "./expo": "./src/expo.json"
+    "./expo": "./src/expo.json",
+    "./mobile": "./src/mobile.json",
+    "./service": "./src/service.json",
+    "./tooling": "./src/tooling.json",
+    "./desktop": "./src/desktop.json",
+    "./service-worker": "./src/service-worker.json"
   },
   "scripts": {
     "format": "oxfmt --write .",
