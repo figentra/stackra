@@ -13,6 +13,7 @@ import { createDecorator, DecoratorTarget } from "@stackra/container";
 import { SHAPE_KINDS } from "#core/constants/shape-kinds.constant";
 import type { FieldDecorator } from "#core/types/field-decorator.type";
 import type { StrOptions } from "#core/types/str-options.type";
+import type { TranslatedStrings } from "#core/types/translated-strings.type";
 
 /** The recording decorator; `Str` gives it its options. */
 const STR = createDecorator<StrOptions>({
@@ -36,8 +37,8 @@ const STR = createDecorator<StrOptions>({
 export function Str(
   options: StrOptions & { readonly each: true },
 ): FieldDecorator<readonly string[]>;
-/** The single-value form: `@Str(options)` on a string field. */
-export function Str(options?: StrOptions): FieldDecorator<string>;
+/** The single-value form: `@Str(options)` on a string field, or on a translated field (each locale's string). */
+export function Str(options?: StrOptions): FieldDecorator<string | TranslatedStrings>;
 /** Implementation of both forms: records `options` on the field. */
 export function Str(options: StrOptions = {}): unknown {
   return STR(options);

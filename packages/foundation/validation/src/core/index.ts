@@ -34,6 +34,7 @@ export { CursorInput } from "#core/schemas/cursor-input.schema";
 export { TableInput } from "#core/schemas/table-input.schema";
 export type { Assert } from "#core/types/assert.type";
 export type { FieldDecorator } from "#core/types/field-decorator.type";
+export type { TranslatedStrings } from "#core/types/translated-strings.type";
 export type { Fields } from "#core/types/fields.type";
 export type { Same } from "#core/types/same.type";
 export type { ShapeClass } from "#core/types/shape-class.type";
