@@ -1,0 +1,56 @@
+---
+title: "0315 — Realtime: live queries, typed module streams and action feedback"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Builds on [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait). The transport
+  and the drivers stay as 0225 sets them, and so does the IAM check on every channel but one: the
+  site invalidation channel of decision 4 has no principal, which amends 0225 decision 1 for that
+  channel alone (0225 carries a note). This ADR adds what a query, a module and an action can
+  declare.
+</Note>
+
+## Context
+
+Screens should stay current without a reload. A table, a list or a dashboard should update when its data changes. A fleet map needs positions many times a second. A save should give feedback, and a long job should report its progress. [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait) fixed the transport (WebSocket, with a server-sent-events fallback), the drivers and the IAM check on each channel. It did not say how a query or a module declares that its data is live.
+
+Cached reads already name the events that invalidate them. A query takes `cache: { ttl, invalidateOn }` ([0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components), decision 31; [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding), decision 3), and a widget's refresh is derived from that list ([0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards), decision 17). This ADR reuses the same declaration for live data.
+
+## Decision
+
+1. **Live queries.** A query that declares `cache.invalidateOn` is live, with one exception: a Site-scoped query that is not public (`auth: false`) is cached but not live, because it can have neither a principal channel nor a site channel. Gen wires an invalidation channel for it, keyed by the query's cache scope:
+   - **Tenant and principal channels** apply to every cache scope other than Site. The channel is per tenant and principal.
+   - **Site channel** applies to a Site-scoped query ([0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components), decision 31) that is also public (`auth: false`), on a published site, within the bounds of decision 4. The channel is keyed by site, locale and market, with no principal.
+
+   When an invalidating event fires, the channel tells the client, and `@stackra/query` refetches the query. Tables, lists and dashboards refresh this way, and a widget refreshes through its derived `refreshOn` ([0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards)).
+   - The channel carries the invalidation, not the data. The refetch is an ordinary read of the query, under its permission.
+
+2. **Typed module streams.** For high-rate data, such as fleet positions, a module declares a typed stream: a class that extends `Stream({ name, permission, audience })`, whose payload type is a `Schema`, as every wire shape is. `permission` is the permission a subscriber must hold and `audience` is `"principal"` or `"tenant"`, as an event's `broadcast` takes them ([0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait) as amended on 2026-10-23). Gen derives the channel name `<module-key>.<name>`, and the driver partitions it per tenant and scope node: the tenant comes from the authenticated session, never from the client, so a subscriber in one tenant never receives another tenant's messages. A stream is the one channel that carries a data payload (a progress channel carries progress fields only, decision 3), a deliberate departure from the data-free refresh of 0225's 0294 note: the payload skips the query pipeline, so the stream's permission is the whole check, its fields are classified under [0134](/adr/0134-data-invariants-classification-and-delete-lifecycle), and a stream never carries a field that a record rule would hide. The client subscribes directly, without a refetch cycle. The stream's home group and file suffix join the kind tables of [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 13 when `@stackra/realtime` is built; until then no stream exists in code.
+3. **Action feedback.**
+   - A short action returns a typed result to its caller, and the panel shows it, for example as a toast.
+   - A long action is a job ([0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules)). It reports its progress on a job progress channel until it completes, with the completion notification that [0139](/adr/0139-actions-declare-their-user-experience) requires for long jobs. The progress channel is a principal channel: per tenant and principal, keyed by the job id, under the action's own permission. It carries progress fields only (step, percent, done), never the result, which the caller reads through the job's result query.
+4. **Channels are IAM-authorised, with one bounded exception.** Every tenant and principal channel, every job progress channel and every stream is checked by IAM, as [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait) decision 1 requires. A session that fails the check receives no channel and no refresh, and the payload is never sent to it. The site channel is the one channel with no principal to check, and this ADR amends 0225 decision 1 for it alone. Its bounds:
+   - It exists only for a query that is Site-scoped ([0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) decision 31) and public (`auth: false`), on a published site. The server resolves the site from the signed site host that the Worker forwards ([0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding) decision 6, which gains the site host), never from `Origin` or a client-supplied id. The channel closes when the site is unpublished, the tenant is suspended, or the query stops being Site-scoped or public.
+   - It is read-only for clients; only the server publishes to it.
+   - It carries the query key and the public input of the invalidated entry, and nothing else: no payload, no record id, no event body.
+   - The server publishes only when the re-read public result differs from the cached one, by content hash, and at most once per entry per window. An invalidating event whose public result is unchanged sends nothing, so the channel reveals a change to public data and never the timing of a tenant's private events.
+   - Site channels live in their own driver namespace, apart from tenant and principal channels, and an anonymous driver token subscribes to one site's namespace only, never a wildcard.
+   - Subscriptions are capped per connection (default 32), concurrent connections are capped per IP and site (default 16), idle connections time out (default 60 s), and the publish window of the previous bullet defaults to one second; `@stackra/realtime` config sets the values. The connection endpoint sits in the `public` API area, so the edge limit of [0237](/adr/0237-generated-api-gateway-in-four-layers) layer 1 applies to it.
+
+   A query that is not Site-scoped and public never gets a site channel, and its refetch runs under its own permission.
+
+## Consequences
+
+- A query author adds the `cache.invalidateOn` list that already exists for caching, and the query becomes live. No polling code is written.
+- A live view is only as fresh as the events it invalidates on. A missing invalidating event leaves a stale view until the next read.
+- A live query in a non-Site scope uses a tenant and principal channel, so its refresh is checked against the subscriber's session. A live query in the Site scope uses the site channel, so its refresh does not depend on who is signed in.
+- Streams are a second kind of channel beside invalidation, partitioned per tenant and carrying a classified payload under their own permission. The drivers of [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait) carry both.
+
+## Enforcement
+
+planned — the channel authorisation test named in [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait), extended to the tenant, principal and site invalidation channels and to module streams. The gen check `refresh_without_invalidation` of [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) already fails a widget's explicit refresh on an event that its query does not invalidate on. Also planned: a gen check that refuses a site channel on a query that is not Site-scoped and public; channel tests that an unchanged public result publishes nothing on the site channel, that the site channel accepts no client publish and carries only a query key and public input, that a stream subscription in one tenant receives no other tenant's message, that a site channel closes on unpublish and on tenant suspension, that an anonymous token subscribes to one site's namespace only, that the caps and the idle timeout hold, and that every field of a stream payload carries a classification.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait) (decision 1, for the site channel of decision 4 only) and [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding) (decision 6, the forward carries the site host). Builds on: [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding), [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components), [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards), [0139](/adr/0139-actions-declare-their-user-experience) and [0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules). Sources: owner decision of 2026-10-24 on realtime, live queries and streams.
