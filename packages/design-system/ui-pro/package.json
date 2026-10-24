@@ -1,0 +1,196 @@
+{
+  "name": "@stackra/ui-pro",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stackra Design System Pro components for Stackra's own apps only: the @stackra/ui props vocabulary over HeroUI Pro on web and HeroUI Native Pro on native. Private, never published.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/design-system/ui-pro"
+  },
+  "files": [
+    "dist",
+    "src",
+    "assets",
+    "stackra.manifest.json",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*.tsx",
+      "./src/contracts/*/index.ts"
+    ],
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts",
+      "./src/config/*.tsx",
+      "./src/config/*/index.ts"
+    ],
+    "#core/*": [
+      "./src/core/*",
+      "./src/core/*.ts",
+      "./src/core/*.tsx",
+      "./src/core/*/index.ts"
+    ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*.tsx",
+      "./src/node/*/index.ts"
+    ],
+    "#react/*": [
+      "./src/react/*",
+      "./src/react/*.ts",
+      "./src/react/*.tsx",
+      "./src/react/*/index.ts"
+    ],
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*.tsx",
+      "./src/native/*/index.ts"
+    ],
+    "#testing/*": [
+      "./src/testing/*",
+      "./src/testing/*.ts",
+      "./src/testing/*.tsx",
+      "./src/testing/*/index.ts"
+    ],
+    "#stackra/*": [
+      "./.stackra/gen/*",
+      "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
+      "./.stackra/gen/*/index.ts"
+    ]
+  },
+  "exports": {
+    ".": {
+      "@stackra/source": "./src/config/ui-pro.config.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./contracts": {
+      "@stackra/source": "./src/contracts/index.ts",
+      "types": "./dist/contracts.d.mts",
+      "default": "./dist/contracts.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/ui-pro.module.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
+    },
+    "./react": {
+      "@stackra/source": "./src/react/index.ts",
+      "types": "./dist/react.d.mts",
+      "default": "./dist/react.mjs"
+    },
+    "./native": {
+      "@stackra/source": "./src/native/index.ts",
+      "types": "./dist/native.d.mts",
+      "default": "./dist/native.mjs"
+    },
+    "./assets/*": "./assets/*"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@stackra/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@heroui-pro/react": "catalog:frontend",
+    "@heroui/react": "catalog:frontend",
+    "@heroui/styles": "catalog:frontend",
+    "@internationalized/date": "catalog:mobile",
+    "@internationalized/number": "catalog:mobile",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@testing-library/dom": "catalog:frontend",
+    "@testing-library/react": "catalog:frontend",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:frontend",
+    "@types/react-dom": "catalog:frontend",
+    "@vitest/coverage-v8": "catalog:quality",
+    "heroui-native": "catalog:mobile",
+    "heroui-native-pro": "catalog:mobile",
+    "jsdom": "catalog:frontend",
+    "motion": "catalog:frontend",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "react": "catalog:frontend",
+    "react-aria-components": "catalog:frontend",
+    "react-dom": "catalog:frontend",
+    "react-native": "catalog:mobile",
+    "react-resizable-panels": "catalog:frontend",
+    "recharts": "catalog:frontend",
+    "tailwindcss": "catalog:frontend",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "uniwind": "catalog:mobile",
+    "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "@heroui-pro/react": "^1.0.0-beta.10",
+    "@heroui/react": "^3.2.6",
+    "@internationalized/date": "^3.12.4",
+    "@internationalized/number": "^3.6.9",
+    "heroui-native": "^1.0.10",
+    "heroui-native-pro": "^1.0.0-beta.11",
+    "motion": "^12.43.0",
+    "react": ">=19.2.0",
+    "react-native": ">=0.86.0",
+    "react-resizable-panels": "^4.14.5",
+    "recharts": "^3.10.1",
+    "uniwind": "^1.12.1"
+  },
+  "peerDependenciesMeta": {
+    "@heroui-pro/react": {
+      "optional": true
+    },
+    "@heroui/react": {
+      "optional": true
+    },
+    "@internationalized/date": {
+      "optional": true
+    },
+    "@internationalized/number": {
+      "optional": true
+    },
+    "heroui-native": {
+      "optional": true
+    },
+    "heroui-native-pro": {
+      "optional": true
+    },
+    "motion": {
+      "optional": true
+    },
+    "react-native": {
+      "optional": true
+    },
+    "react-resizable-panels": {
+      "optional": true
+    },
+    "recharts": {
+      "optional": true
+    },
+    "uniwind": {
+      "optional": true
+    }
+  }
+}

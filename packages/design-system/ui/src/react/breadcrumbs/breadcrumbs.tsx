@@ -1,0 +1,68 @@
+/**
+ * Stackra file contract:
+ * Purpose: the web `Breadcrumbs` on HeroUI v3's Breadcrumbs: draws the shared contract's `items` as the trail from the
+ *          root to the current page inside a named navigation landmark, and passes every other HeroUI Breadcrumbs prop
+ *          (the separator included) through.
+ * Boundary: no styling of its own beyond letting the row wrap; the look is HeroUI's, themed by `@stackra/tokens`. HeroUI's item draws its own
+ *          HeroUI `Link`, which is the base of the `@stackra/ui` Link, so an `href` reaches the app's router through
+ *          the same `RouterProvider` seam and the component imports no router. React Aria marks the last item as the
+ *          current page (`aria-current="page"`, not a link), so that item is given no `href` here. React Aria's list
+ *          takes the landmark's name too, so both carry `label`.
+ * Runtime: browser
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313; ADR 0165 (HeroUI v3 on web); owner
+ *          decision 6 of STA-350 (thin wrappers); WCAG 2.2 SC 2.4.8.
+ */
+import { Breadcrumbs as HeroBreadcrumbs, type BreadcrumbsRootProps } from "@heroui/react";
+
+import type { BreadcrumbsContractProps } from "#contracts/types/breadcrumbs-contract-props.type";
+import { omitUndefined } from "#core/functions/omit-undefined.function";
+
+// shortcut: English until @stackra/i18n ships; then the key `ui::breadcrumbs.label`.
+const STRINGS = { label: "Breadcrumbs" } as const;
+
+/**
+ * Props of the web Breadcrumbs: the shared contract plus HeroUI v3's own breadcrumbs props, passed through unchanged.
+ * The app lists the trail as `items`, so the type refuses JSX children, and HeroUI's `aria-label` is the contract's
+ * `label`.
+ */
+export type BreadcrumbsProps = BreadcrumbsContractProps &
+  Omit<
+    BreadcrumbsRootProps,
+    keyof BreadcrumbsContractProps | "children" | "aria-label" | "className"
+  > & {
+    /** Extra classes for the list; a string only, because HeroUI merges it into its own slot class. */
+    readonly className?: string | undefined;
+  };
+
+/**
+ * The trail from the root to the current page. Every step but the last is a link; the last is the current page, drawn
+ * as text and announced as such.
+ */
+export function Breadcrumbs({
+  items,
+  label = STRINGS.label,
+  className,
+  ...rest
+}: BreadcrumbsProps) {
+  return (
+    <nav aria-label={label}>
+      <HeroBreadcrumbs
+        {...rest}
+        aria-label={label}
+        // HeroUI's row does not wrap, so a long trail would scroll sideways in a narrow column (WCAG 1.4.10).
+        className={["flex-wrap", className].filter(Boolean).join(" ")}
+      >
+        {items.map((item, index) => (
+          <HeroBreadcrumbs.Item
+            key={item.id}
+            {...(index === items.length - 1
+              ? {}
+              : omitUndefined({ href: item.href, onPress: item.onPress }))}
+          >
+            {item.label}
+          </HeroBreadcrumbs.Item>
+        ))}
+      </HeroBreadcrumbs>
+    </nav>
+  );
+}

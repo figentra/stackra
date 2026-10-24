@@ -54,12 +54,15 @@ TODO: the authoritative list is whatever `git grep 'secret("'` finds once a serv
 
 ### Infisical
 
-| Path      | Environment              | Names                                                                                                                                                          |
-| --------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/agents` | `dev`                    | `HEROUI_PERSONAL_TOKEN`, `GITHUB_PERSONAL_ACCESS_TOKEN`, `CONTEXT7_API_KEY`, `STRIPE_SECRET_KEY` (restricted test key, optional), `RESEND_API_KEY` (optional)  |
-| `/ci`     | `dev`, `staging`, `prod` | `TURBO_TOKEN`, `EXPO_TOKEN`, `ENCORE_API_KEY`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `NPM_FIGENTRA_TOKEN`, `SENTRY_AUTH_TOKEN`, `HEROUI_AUTH_TOKEN` |
+| Path      | Environment              | Names                                                                                                                                                                                |
+| --------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/agents` | `dev`                    | `HEROUI_PERSONAL_TOKEN`, `GITHUB_PERSONAL_ACCESS_TOKEN`, `CONTEXT7_API_KEY`, `STRIPE_SECRET_KEY` (restricted test key, optional), `RESEND_API_KEY` (optional)                        |
+| `/ci`     | `dev`, `staging`, `prod` | `TURBO_TOKEN`, `EXPO_TOKEN`, `ENCORE_API_KEY`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `NPM_FIGENTRA_TOKEN`, `SENTRY_AUTH_TOKEN`, `HEROUI_AUTH_TOKEN`, `UNIWIND_AUTH_TOKEN` |
 
 TODO: confirm each `/ci` name against the workflow that reads it. CI logs in with OIDC, one machine identity per environment.
+
+The Quality Gate reads `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` from `/ci` in `prod` ([0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers)).
+`HEROUI_PERSONAL_TOKEN` in `/agents` is for the HeroUI MCP servers only.
 
 ### EAS environment variables (mobile)
 

@@ -109,7 +109,10 @@ describe("FormField (native)", () => {
     render(<Harness onSubmit={onSubmit} />);
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await screen.findByText("Enter your email");
-    expect(seen.binding).toMatchObject({ isInvalid: true, errorMessage: "Enter your email" });
+    // The binding the field was handed catches up with the message in the render after it.
+    await waitFor(() =>
+      expect(seen.binding).toMatchObject({ isInvalid: true, errorMessage: "Enter your email" }),
+    );
     expect(onSubmit).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "ada@example.com" } });
     await waitFor(() => expect(screen.queryByText("Enter your email")).toBeNull());

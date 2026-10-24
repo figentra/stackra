@@ -1,0 +1,137 @@
+---
+title: "0310 — @stackra/ui-pro: a private package of HeroUI Pro wrappers for Stackra's own apps"
+description: "Accepted · 2026-10-23"
+---
+
+<Note>
+  Amends [0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps) (decision 4: which token our apps
+  and CI use). Related: [0113](/adr/0113-heroui-pro-distribution) (the licence text),
+  [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs) (decision 5),
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (decision 23, the
+  banned word `Command`), [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) (the
+  `@stackra/ui` contract and the playground) and
+  [0303](/adr/0303-stackra-ui-component-catalogue-decisions) (decision 7, the props vocabulary). The
+  0197 page carries a note.
+</Note>
+
+## Context
+
+[0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps) keeps HeroUI Pro in Stackra's own apps until HeroUI answers the OEM request
+(STA-41). It does not say how the apps use Pro. Our apps need Pro components, and each one should take the same props as the
+matching free component in `@stackra/ui` ([0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground)). The Pro
+components therefore need a thin wrapper. That wrapper cannot live in `@stackra/ui`. The HeroUI Pro licence (heroui.pro/license,
+quoted in [0113](/adr/0113-heroui-pro-distribution)) forbids putting Pro components in a UI library, and `@stackra/ui` is the public
+framework contract. The wrapper needs a home that is never published.
+
+Pro also installs in an unusual way. The public npm packages are shells. Their `postinstall` downloads the licensed build from
+HeroUI's CDN, so CI needs a token for that download. The owner decided the token names on 2026-10-23.
+
+## Decision
+
+1. **A private package.** `@stackra/ui-pro` lives at `packages/design-system/ui-pro`. It sets `"private": true` and has no
+   `publishConfig`, so it is never published.
+2. **Only our own apps import it.** The consumers are the console, the docs, the playground, the mobile app and Figentra OS.
+3. **Never in a free package.** `@stackra/ui` and every free or published package never import `@stackra/ui-pro`,
+   `@heroui-pro/react` or `heroui-native-pro`. This restates [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs)
+   decision 5 and [0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps) decision 2. Pro stays an end-product dependency of our
+   apps.
+4. **The same vocabulary as `@stackra/ui`.** Each Pro wrapper is thin. It takes the props of its `@stackra/ui` component (the
+   vocabulary of ADR 0303, decision 7: `size`, `tone`, `isDisabled`, `isLoading`, `label` and `onPress`). Its contract type is
+   `<Name>ContractProps`. Unknown props pass through to HeroUI Pro.
+   - The contracts live in this package's `src/contracts`. They reuse the contract types of `@stackra/ui` through its
+     `./contracts` entry, and never import its `src/`.
+5. **Names follow the grammar.** HeroUI Pro's `Command` is wrapped as `ActionPalette`, because `Command` means a CLI command only
+   ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 23).
+6. **The first components.**
+   - Web (`./react`): DataGrid, ActionPalette, Sidebar and AppLayout, Kanban, KPI and TrendChip. Each one gets a playground route
+     under a "Pro" navigation group, with Playwright and axe end-to-end tests ([0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground)).
+   - Native (`./native`): ProgressButton, SlideButton, SwipeableRow, Calendar and DatePicker, NumberField. Each one gets unit tests
+     against recording stand-ins and a screen in the mobile app's design-system review area (`stackra://design-system`),
+     the native twin of the playground. The owner asked for it on 2026-10-23; it amends the waves decision O33 (no
+     native review surface yet). The free `@stackra/ui` native components, merged with waves 1 to 3, join that area in a follow-up (STA-416). The area is a development surface: release builds
+     (`__DEV__` false) leave out its Settings row, its screens and its deep links.
+7. **Pins and install path.** Checked against the HeroUI Pro docs and the published packages on 2026-10-23.
+   - Web: `@heroui-pro/react` 1.0.0-beta.10 in `catalog:frontend`, with `recharts` 3.10.1 for KPI.
+   - Native: `heroui-native-pro` 1.0.0-beta.11 in `catalog:mobile`, with `@internationalized/date` 3.12.4 and
+     `@internationalized/number` 3.6.9.
+   - `motion` 12.43.0 and `react-resizable-panels` 4.14.5 join `catalog:frontend`: they are required peers of
+     `@heroui-pro/react` (Sheet, Sidebar, Kanban, AppLayout).
+   - The npm shells declare no peers, because the real `package.json` arrives with the download. `packageExtensions` in
+     `pnpm-workspace.yaml` copies the downloaded peers onto both packages, so pnpm links one React (and one React Aria)
+     for Pro and our code. The copy is updated with each Pro bump.
+   - Both come from the public npm registry. Both are listed in `allowBuilds` in `pnpm-workspace.yaml`, so their `postinstall` runs.
+     There is no private registry and no `.npmrc` auth.
+   - Locally, the postinstall uses the developer's `heroui-pro login` session, which lasts 180 days.
+   - In CI, it uses `HEROUI_AUTH_TOKEN`, HeroUI's CI/CD token. A step of the Quality Gate reads that one name from Infisical `/ci`
+     (environment `prod`) over GitHub OIDC. The step exports only `HEROUI_AUTH_TOKEN`, and it runs before `pnpm install`.
+8. **The token names.** `HEROUI_PERSONAL_TOKEN` stays in Infisical `/agents`, and in this repository only the HeroUI MCP servers use it. Our apps
+   install with the `heroui-pro login` session locally and with `HEROUI_AUTH_TOKEN` in CI. CI uses the CI/CD token because
+   HeroUI's postinstall reads only that variable, and HeroUI tells pipelines to use the CI/CD token. This amends
+   [0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps) decision 4, which said that our apps and CI keep `HEROUI_PERSONAL_TOKEN`.
+   One exception sits outside this repository: the public stackra-template console uses HeroUI Pro directly
+   (`@heroui-pro/react`, and `heroui-native-pro` where its native app uses it, not `@stackra/ui-pro`) with Figentra's
+   `HEROUI_PERSONAL_TOKEN`, which the template's CI reads from Infisical over GitHub OIDC (ADR 0197 as amended).
+9. **The CI permission (change risk R3, [0099](/adr/0099-risk-scale-l0-to-l4)).** The Quality Gate job gains `id-token: write`, and
+   only the Infisical step uses it. The Infisical machine identity for that step is named by the repository variable
+   `INFISICAL_GATE_IDENTITY_ID`, which is not a secret. The identity is allowed to read only `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` (decision 11). Until the owner
+   sets both, the gate fails at a named step that says what is missing. Without the Pro build, the Pro package cannot typecheck or
+   build.
+   The identity trusts three GitHub OIDC subjects, one per event the gate runs on: `repo:figentra/stackra:pull_request`,
+   `repo:figentra/stackra:ref:refs/heads/main` (pushes to main) and
+   `repo:figentra/stackra:ref:refs/heads/gh-readonly-queue/main/*` (the merge queue, which main's ruleset requires;
+   without it no pull request can merge). A fork never gets the tokens. The exported tokens stay in the job's
+   environment, so every later gate step can read them, and a branch of this repository that edits `ci.yml` could print them.
+   Accepted: they only download the licensed packages, and anyone who can push a branch is already trusted with the code.
+   The release, SBOM and static deploy jobs never read them: they install without the three members that pull in Pro.
+10. **The download budget.** Each uncached CI install counts against HeroUI's daily CDN download limit for the CI/CD token. The limit
+    is 1,000 on an individual licence. Caching `node_modules` and the pnpm store, keyed by the lockfile, avoids repeat downloads.
+    That cache is a follow-up.
+
+11. **Uniwind Pro in our own apps (owner, 2026-10-23).** Uniwind is chosen per app, not per component: Uniwind Pro is
+    API-identical and installs under the `uniwind` name (`"uniwind": "catalog:uniwind-pro"`, the catalog holding
+    `npm:uniwind-pro@1.9.0`), so every `uniwind` import in the app runs on the Pro engine, the workspace packages' included.
+    - `apps/mobile` runs Uniwind Pro 1.9.0 (React Native 0.83 to 0.88, Expo SDK 55 to 58), with its native peer
+      `react-native-nitro-modules` 0.37.1. Figentra OS may follow.
+    - Free packages (`@stackra/ui`) and `@stackra/ui-pro` keep a peer on free `uniwind` and use only the shared API, so a
+      framework user runs them on free, MIT Uniwind.
+    - The install path is HeroUI Pro's: a shell whose postinstall downloads the licensed build, `uniwind` and
+      `uniwind-pro` in `allowBuilds`, a `uniwind-pro` login locally, `UNIWIND_AUTH_TOKEN` (the CI/CD licence) in CI from
+      Infisical `/ci` and as an EAS secret. The CI/CD licence allows 1,000 downloads a month.
+
+## Consequences
+
+- Pro is in beta. The pins are exact, and each bump is reviewed like any catalog change.
+- A fork, or a contributor without a HeroUI licence, cannot build `@stackra/ui-pro` or the playground.
+- Every CI install depends on HeroUI's CDN and on the `/ci` token. A CDN outage or an expired token blocks the install, so the
+  gate cannot run.
+- A developer runs `heroui-pro login` once, and renews it every 180 days. That is a chore for each developer.
+- The owner adds `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` to Infisical `/ci`, and sets the `INFISICAL_GATE_IDENTITY_ID` repository variable.
+- Lifting the private rule needs a new ADR, after the OEM answer (STA-41). The open question in 0197 stays open until then.
+
+## Enforcement
+
+- `"private": true` in `packages/design-system/ui-pro/package.json`, with no `publishConfig`.
+- `check` in `tools/scripts/validate-repository.mjs` (`PRO_DEPENDENCIES`, run by `pnpm validate`) fails any member other than an
+  app or `@stackra/ui-pro` that depends on `@heroui-pro/react` or `heroui-native-pro`, any non-app member that depends on
+  `@stackra/ui-pro`, and `@stackra/ui-pro` itself without `"private": true` or with a `publishConfig`. It also
+  fails any non-app member that names `catalog:uniwind-pro` (decision 11).
+- gitleaks (the pre-commit hook and the CI scan) keeps the token out of git, as [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets) requires.
+- The Quality Gate (`.github/workflows/ci.yml`) stops at its `Licensed UI prerequisites` step when `INFISICAL_GATE_IDENTITY_ID` is
+  unset, and its `HeroUI Pro token (Infisical OIDC)` and `Uniwind Pro token (Infisical OIDC)` steps export only `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` (decisions 9 and 11). The release workflow
+  builds only the packages, never `@stackra/ui-pro` (`.github/workflows/release.yml`, `Build`), and its
+  installs and the static deploy's skip `@figentra/mobile`, `@figentra/playground` and `@stackra/ui-pro`, whose postinstalls
+  fail without the tokens.
+- Decision 10 (the download budget) has no check. It is a comment, and it stays one until the cache lands.
+
+## Alternatives
+
+- **Pro wrappers inside `@stackra/ui`.** Rejected: the licence forbids it, and every framework user would receive Pro code
+  (decision 3).
+- **The mirror bundle and the bring-your-own-key path of [0113](/adr/0113-heroui-pro-distribution).** Already superseded by 0197.
+  This ADR does not reopen them.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps) (decision 4). Sources: owner decisions in chat,
+2026-10-23, recorded in Linear STA-403. The HeroUI Pro docs and the published `@heroui-pro/react` and `heroui-native-pro` packages,
+read on 2026-10-23.

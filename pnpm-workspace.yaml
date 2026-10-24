@@ -81,6 +81,15 @@ catalogs:
     jsdom: 30.1.0
     # Code-based routing for the console and every Vite app (no file routing anywhere).
     react-router: 7.18.4
+    # HeroUI Pro for web (ADR 0310): only @stackra/ui-pro (private) and our own apps depend on it, never a free or
+    # published package (ADR 0165 decision 5, ADR 0197). The npm package is a shell; its postinstall downloads the
+    # licensed code from HeroUI's CDN with a CLI login (local) or HEROUI_AUTH_TOKEN (CI). recharts is its optional
+    # peer for the charts and KPI.
+    "@heroui-pro/react": 1.0.0-beta.10
+    recharts: 3.10.1
+    # Required peers of @heroui-pro/react (Sheet, Sidebar, Kanban, AppLayout); 12.x is the major its peer range names.
+    motion: 12.43.0
+    react-resizable-panels: 4.14.5
     # Icons for @stackra/ui/react's Icon (ADR 0303 decision 3, owner-approved 2026-10-23); ISC licence.
     lucide-react: 1.54.0
     # Form state for @stackra/ui FormField (ADR 0055, accepted by ADR 0303); newest release at least 14 days old.
@@ -117,6 +126,13 @@ catalogs:
     react-native-svg: 15.15.4
     "@gorhom/bottom-sheet": 5.2.14
     heroui-native: 1.0.10
+    # HeroUI Native Pro (ADR 0310): same rule and install path as @heroui-pro/react. The two @internationalized
+    # packages are its optional peers for the date and number components, pinned to what @heroui/react resolves.
+    heroui-native-pro: 1.0.0-beta.11
+    "@internationalized/date": 3.12.4
+    "@internationalized/number": 3.6.9
+    # Required native peer of Uniwind Pro 1.9.0 (>= 0.37.1), for the apps that run it (catalog:uniwind-pro).
+    react-native-nitro-modules: 0.37.1
     # Icons for @stackra/ui/native's Icon (ADR 0303 decision 3, owner-approved 2026-10-23); ISC licence.
     lucide-react-native: 1.54.0
     uniwind: 1.12.1
@@ -125,6 +141,12 @@ catalogs:
     # The Expo CLI loads `typescript` as a JS API, which TypeScript 7 (native) does not ship yet.
     typescript: 6.0.3
     "@types/react": 19.2.18
+  # Uniwind Pro (ADR 0310 decision 11): our own apps install it under the `uniwind` name, so every `uniwind` import in
+  # the app, the workspace packages' included, runs on the Pro engine; free packages keep their free `uniwind` peer.
+  # A shell like HeroUI Pro: its postinstall downloads the licensed build (a `uniwind-pro` login locally,
+  # UNIWIND_AUTH_TOKEN in CI). 1.9.0 supports React Native 0.83-0.88 and Expo SDK 55-58.
+  uniwind-pro:
+    uniwind: npm:uniwind-pro@1.9.0
   # Electron desktop apps (tools/scaffold/templates/apps/desktop, MR7). No member uses it until one is scaffolded;
   # electron's postinstall downloads the binary, so the first desktop app also adds `electron: true` to allowBuilds.
   desktop:
@@ -155,6 +177,113 @@ overrides:
   "@mintlify/previewing>is-online": "catalog:docs"
   "is-online>public-ip": "catalog:docs"
 
+# ADR 0310: the HeroUI Pro packages on npm are shells whose real package.json arrives with the postinstall download,
+# so pnpm never sees their peers and links none: a Pro module then resolves the hoisted React of another catalog
+# ("Invalid hook call"). These are the peers of the downloaded 1.0.0-beta.10 / 1.0.0-beta.11 package.json, copied
+# verbatim; update them with each Pro bump.
+packageExtensions:
+  "@heroui-pro/react":
+    peerDependencies:
+      "@heroui/react": ">=3.2.6"
+      "@heroui/styles": ">=3.2.6"
+      "@number-flow/react": ">=0.5.0"
+      "@react-aria/utils": ">=3.34.1"
+      "@tiptap/core": ">=3.23.6"
+      "@tiptap/extension-link": ">=3.23.6"
+      "@tiptap/extension-underline": ">=3.23.6"
+      "@tiptap/extensions": ">=3.23.6"
+      "@tiptap/pm": ">=3.23.6"
+      "@tiptap/react": ">=3.23.6"
+      "@tiptap/starter-kit": ">=3.23.6"
+      "@tiptap/suggestion": ">=3.23.6"
+      embla-carousel: ">=8.6.0"
+      embla-carousel-react: ">=8.6.0"
+      maplibre-gl: ">=6.0.0"
+      marked: ">=18.0.0"
+      motion: ">=12.12.0"
+      react: ">=19.0.0"
+      react-aria: ">=3.52.1"
+      react-aria-components: ">=1.21.1"
+      react-dom: ">=19.0.0"
+      react-markdown: ">=10.1.0"
+      react-resizable-panels: ">=4.10.0"
+      react-stately: ">=3.50.0"
+      recharts: ">=2.0.0"
+      remark-breaks: ">=4.0.0"
+      remark-gfm: ">=4.0.0"
+      shiki: ">=4.0.0"
+      streamdown: ">=2.5.0"
+      tailwind-merge: ">=3.4.0"
+      tailwind-variants: ">=3.3.1"
+      tailwindcss: ">=4.0.0"
+    peerDependenciesMeta:
+      "@tiptap/core":
+        optional: true
+      "@tiptap/extension-link":
+        optional: true
+      "@tiptap/extension-underline":
+        optional: true
+      "@tiptap/extensions":
+        optional: true
+      "@tiptap/pm":
+        optional: true
+      "@tiptap/react":
+        optional: true
+      "@tiptap/starter-kit":
+        optional: true
+      "@tiptap/suggestion":
+        optional: true
+      maplibre-gl:
+        optional: true
+      marked:
+        optional: true
+      react-markdown:
+        optional: true
+      remark-breaks:
+        optional: true
+      remark-gfm:
+        optional: true
+      streamdown:
+        optional: true
+      "@number-flow/react":
+        optional: true
+      embla-carousel:
+        optional: true
+      embla-carousel-react:
+        optional: true
+      recharts:
+        optional: true
+      shiki:
+        optional: true
+  heroui-native-pro:
+    peerDependencies:
+      "@internationalized/date": "^3.12.0"
+      "@internationalized/number": "^3.6.6"
+      "@shopify/react-native-skia": ">=2.0.0"
+      heroui-native: "^1.0.10"
+      libphonenumber-js: "^1.12.10"
+      react-native-pager-view: ">=6.0.0"
+      react-native-reanimated-dnd: ">=2.0.0"
+      react-native-screens: ">=4.0.0"
+      victory-native: "^41.20.2"
+    peerDependenciesMeta:
+      "@internationalized/date":
+        optional: true
+      "@internationalized/number":
+        optional: true
+      "@shopify/react-native-skia":
+        optional: true
+      libphonenumber-js:
+        optional: true
+      react-native-pager-view:
+        optional: true
+      react-native-reanimated-dnd:
+        optional: true
+      react-native-screens:
+        optional: true
+      victory-native:
+        optional: true
+
 # Dependency lifecycle scripts are blocked by default (pnpm supply-chain security). Every entry here was
 # reviewed; a new one must be, too — install fails (ERR_PNPM_IGNORED_BUILDS) until it is.
 allowBuilds:
@@ -168,6 +297,16 @@ allowBuilds:
   # Cloudflare's Workers runtime, pulled in by wrangler (workers/static): its postinstall checks the platform binary that
   # `wrangler dev` runs. `wrangler deploy` does not need it, but a skipped check leaves `pnpm dev` broken.
   workerd: true
+  # HeroUI Pro (ADR 0310): the postinstall downloads the licensed build from HeroUI's CDN (a CLI login locally,
+  # HEROUI_AUTH_TOKEN in CI); without it the package is an empty shell.
+  "@heroui-pro/react": true
+  heroui-native-pro: true
+  # OS-keychain binding of the heroui-pro CLI (pulled in by the two above); it ships prebuilt binaries, so the
+  # postinstall reads a `heroui-pro login` session without building it.
+  "@zowe/secrets-for-zowe-sdk": false
+  # Uniwind Pro, installed under the `uniwind` alias: both names, as Uniwind's docs say for pnpm.
+  uniwind: true
+  uniwind-pro: true
 
 minimumReleaseAgeExclude:
   - "@turbo/darwin-64@2.11.7"

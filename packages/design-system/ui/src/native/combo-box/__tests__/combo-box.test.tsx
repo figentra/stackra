@@ -24,6 +24,10 @@ import { ComboBox, type ComboBoxProps } from "#native/combo-box/combo-box";
 /** The props each stand-in was last handed, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));
 
+vi.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 20, left: 0, right: 0 }),
+}));
+
 vi.mock("heroui-native", async () => {
   const { createElement } = await import("react");
   const record = (name: string) => (props: Record<string, unknown>) => {
@@ -119,6 +123,12 @@ describe("ComboBox (native)", () => {
     render(<ComboBox items={ITEMS} />);
     expect(propsOf("root")["presentation"]).toBe("bottom-sheet");
     expect(propsOf("content")["presentation"]).toBe("bottom-sheet");
+    expect(propsOf("content")).toMatchObject({
+      detached: true,
+      bottomInset: 32,
+      className: "mx-4",
+      backgroundClassName: "rounded-4xl",
+    });
   });
 
   it("hands the Select the option of a key, and none for `null` or no key", () => {
