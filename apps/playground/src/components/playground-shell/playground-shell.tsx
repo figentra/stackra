@@ -171,15 +171,18 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
   const [params, setParams] = useSearchParams();
-  const setParam = (key: string, value: string) =>
-    setParams(
-      (previous) => {
-        const next = new URLSearchParams(previous);
-        next.set(key, value);
-        return next;
-      },
-      { replace: true },
-    );
+  // React Router hands a functional update the params of the last render, so two choices made before the next render
+  // (a scheme, then a locale) would drop the first; each write starts from the one before it instead.
+  const latest = useRef(params);
+  useEffect(() => {
+    latest.current = params;
+  }, [params]);
+  const setParam = (key: string, value: string) => {
+    const next = new URLSearchParams(latest.current);
+    next.set(key, value);
+    latest.current = next;
+    setParams(next, { replace: true });
+  };
 
   // A client-side navigation announces nothing, so focus moves to the new page's h1; the first load keeps the
   // browser's own focus.
