@@ -35,6 +35,7 @@ vi.mock("heroui-native", async () => {
 vi.mock("react-native", async () => {
   const { createElement: h } = await import("react");
   return {
+    AccessibilityInfo: { announceForAccessibility: () => undefined },
     Platform: { OS: "android" },
     View: ({ children }: { readonly children?: ReactNode }) => h("div", null, children),
     Pressable: (props: Record<string, unknown>) =>
@@ -60,8 +61,13 @@ vi.mock("#native/design-system-provider/use-design-system", () => ({
   useDesignSystem: () => ({ locale: "en-US", resolvedColorScheme: "light" }),
 }));
 
-// Android shows its dialog on its own, so the sheet never renders; the stand-in keeps React Native out of the import.
-vi.mock("#native/drawer/drawer", () => ({ Drawer: () => null }));
+// Android shows its dialog on its own, so the iOS dialog, its buttons and the refusal text never render; the
+// stand-ins keep React Native out of the import.
+vi.mock("#native/modal/modal", () => ({
+  Modal: Object.assign(() => null, { Header: null, Title: null, Body: null, Footer: null }),
+}));
+vi.mock("#native/button/button", () => ({ Button: () => null }));
+vi.mock("#native/text/text", () => ({ Text: () => null }));
 
 vi.mock("#native/icon-button/icon-button", async () => {
   const { createElement: h } = await import("react");

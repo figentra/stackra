@@ -3,23 +3,35 @@
  * Purpose: the native `EntityPicker`, the adapted form of ADR 0318 decision 10: a labelled field that opens an inset
  *          sheet with a search field and a list of the records `loadOptions` answers. The first search starts when the
  *          sheet opens, later ones after the user pauses typing, the next page loads when the list reaches its end, and
- *          an answer a later request has replaced is dropped. One record is picked and the sheet closes; several are
- *          toggled in the list and shown under the field as removable tags. The sheet shows a spinner while it waits,
- *          `emptyMessage` when nothing matches, `loadErrorMessage` when the load fails, and a create-new row when
- *          `onCreate` and `createLabel` are given. Every string it is handed is drawn in `Text`.
- * Boundary: built on the native Drawer, SearchField, List, Avatar and TagGroup; no styling of its own beyond the
- *           field's width. The picker holds whole records, so a chosen record keeps its label when a later search no
- *           longer lists it, and a toggle in the list leaves the chosen records the list does not show alone. A rejected
- *           `onCreate` picks nothing; the app reports it (ADR 0139). The avatars are decorative: the label beside them
- *           names the record. `name` binds a form adapter and submits nothing on its own. "Search", "Results" and
- *           "Close" are English defaults until i18n ships.
+ *          an answer a later request has replaced is dropped. One record is picked (pressing the chosen one clears it)
+ *          and the sheet closes; several are toggled in the list and shown under the field as removable tags. The sheet
+ *          shows a spinner while it waits and while the next page loads, `emptyMessage` when nothing matches and
+ *          `loadErrorMessage` when the load fails, both announced, and a create-new row when `onCreate` and
+ *          `createLabel` are given and the typed text names no listed or chosen record. Every string is drawn in
+ *          `Text`.
+ * Boundary: built on the native Drawer, ListItem, Avatar, TagGroup and Spinner and HeroUI Native's SearchField; no
+ *           styling of its own beyond the field's width and the list's bound. The sheet sizes itself to its content,
+ *           so the list is bounded to scroll inside it, keeps taps while the keyboard is up, and the search moves the
+ *           sheet clear of the keyboard (HeroUI Native's sheet-aware handlers). The picker holds whole records, so a
+ *           chosen record keeps its label when a later search no longer lists it. A rejected `onCreate` picks nothing;
+ *           the app reports it (ADR 0139). The avatars are decorative: the label beside them names the record. `name`
+ *           binds a form adapter and submits nothing on its own. "Search" and "Close" are English defaults until i18n
+ *           ships.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0318 (decisions 2 and 10); ADR 0055 (forms);
  *          ADR 0165 (HeroUI Native on native); WCAG 2.2 SC 1.3.1, 4.1.2, 4.1.3.
  */
-import { Description, FieldError, Input, Label, TextField as HeroTextField } from "heroui-native";
-import { useState, type ReactElement, type ReactNode } from "react";
-import { Pressable, View } from "react-native";
+import {
+  Description,
+  FieldError,
+  Input,
+  Label,
+  SearchField as HeroSearchField,
+  TextField as HeroTextField,
+  useBottomSheetAwareHandlers,
+} from "heroui-native";
+import { useEffect, useState, type ReactElement, type ReactNode } from "react";
+import { AccessibilityInfo, FlatList, Pressable, View } from "react-native";
 
 import type { EntityOption } from "#contracts/types/entity-option.type";
 import type { EntityPickerContractProps } from "#contracts/types/entity-picker-contract-props.type";
@@ -29,8 +41,7 @@ import { Drawer } from "#native/drawer/drawer";
 import { useEntityOptions } from "#native/entity-picker/use-entity-options";
 import { Icon } from "#native/icon/icon";
 import { ListItem } from "#native/list/list-item";
-import { List } from "#native/list/list";
-import { SearchField } from "#native/search-field/search-field";
+import { Spinner } from "#native/spinner/spinner";
 import { TagGroup } from "#native/tag-group/tag-group";
 import { Text } from "#native/text/text";
 
@@ -43,11 +54,20 @@ export type EntityPickerProps = EntityPickerContractProps & {
 };
 
 // shortcut: English words until @stackra/i18n ships; then the keys `ui::entity-picker.*`.
-const WORDS = { search: "Search", results: "Results", close: "Close" } as const;
+const WORDS = { search: "Search", close: "Close" } as const;
 
-/** A string or number in `Text`; any other node as given. */
-const inText = (node: ReactNode): ReactNode =>
-  typeof node === "string" || typeof node === "number" ? <Text>{node}</Text> : node;
+/** The list's bound: the sheet sizes itself to its content, so a long list needs a height to scroll inside. */
+const LIST_STYLE = Object.freeze({ maxHeight: 320 });
+
+/** A message in the list: a string or number in `Text`, any other node as given, read out when it appears. */
+const Message = ({ children }: { readonly children: ReactNode }) =>
+  typeof children === "string" || typeof children === "number" ? (
+    <Text tone="muted" className="p-3" accessibilityLiveRegion="polite">
+      {children}
+    </Text>
+  ) : (
+    <View accessibilityLiveRegion="polite">{children}</View>
+  );
 
 /** The decorative picture of a record: its image, its initials, or its icon. */
 const avatarOf = (option: EntityOption): ReactElement | undefined =>
@@ -61,6 +81,33 @@ const avatarOf = (option: EntityOption): ReactElement | undefined =>
     />
   );
 
+/** The sheet's search: HeroUI Native's field, wired to move the sheet clear of the keyboard. */
+function SheetSearch({
+  value,
+  placeholder,
+  onChange,
+}: {
+  readonly value: string;
+  readonly placeholder: string;
+  readonly onChange: (text: string) => void;
+}) {
+  // Called inside the sheet's content, where the handlers reach the sheet.
+  const { onFocus, onBlur } = useBottomSheetAwareHandlers();
+  return (
+    <HeroSearchField value={value} onChange={onChange}>
+      <HeroSearchField.Group>
+        <HeroSearchField.SearchIcon />
+        <HeroSearchField.Input
+          placeholder={placeholder}
+          accessibilityLabel={placeholder}
+          onFocus={onFocus}
+          onBlur={onBlur}
+        />
+      </HeroSearchField.Group>
+    </HeroSearchField>
+  );
+}
+
 /**
  * A field that picks one record, or several, from a searched list. Pair `value` with `onChange` to control it, or give
  * `defaultValue`; `onChange` receives the record (or `null`), or the list of records in multiple mode.
@@ -71,7 +118,7 @@ export function EntityPicker(props: EntityPickerProps): ReactElement {
     description,
     errorMessage,
     placeholder,
-    isFullWidth = true,
+    isFullWidth = false,
     isRequired,
     isInvalid,
     isDisabled,
@@ -107,6 +154,15 @@ export function EntityPicker(props: EntityPickerProps): ReactElement {
           : [];
   const name = accessibilityLabel ?? (typeof label === "string" ? label : undefined);
   const isLocked = Boolean(isDisabled || isReadOnly);
+  const typed = text.trim();
+  const isFailed = options.status === "error";
+  const isEmpty = options.hasAnswered && !isFailed && options.options.length === 0;
+
+  // Screen readers on iOS have no live regions, so the list's failure and empty messages are announced.
+  useEffect(() => {
+    const message = isFailed ? loadErrorMessage : isEmpty ? emptyMessage : undefined;
+    if (isOpen && typeof message === "string") AccessibilityInfo.announceForAccessibility(message);
+  }, [isOpen, isFailed, isEmpty, loadErrorMessage, emptyMessage]);
 
   const commit = (next: readonly EntityOption[]) => {
     if (props.value === undefined) setOwn(next);
@@ -119,43 +175,42 @@ export function EntityPicker(props: EntityPickerProps): ReactElement {
     options.search(text);
   };
 
-  const pick = (option: EntityOption) => {
+  /** One press on a record: single mode picks it (or clears it when chosen) and closes; multiple mode toggles it. */
+  const toggle = (option: EntityOption) => {
+    const isChosen = chosen.some((record) => record.id === option.id);
     if (!isMultiple) {
-      commit([option]);
+      commit(isChosen ? [] : [option]);
       return setOpen(false);
     }
-    commit([...chosen.filter((record) => record.id !== option.id), option]);
-  };
-
-  const select = (keys: readonly string[]) => {
-    const listed = new Map(options.options.map((option) => [option.id, option]));
-    if (!isMultiple) {
-      const option = keys[0] === undefined ? undefined : listed.get(keys[0]);
-      if (option) commit([option]);
-      return setOpen(false);
-    }
-    // The list reports only the records it shows; the chosen ones it does not show stay chosen.
-    const kept = chosen.filter((record) => !listed.has(record.id) || keys.includes(record.id));
-    const keptIds = new Set(kept.map((record) => record.id));
-    const added = keys.flatMap((id) => {
-      const option = listed.get(id);
-      return option && !keptIds.has(id) ? [option] : [];
-    });
-    commit([...kept, ...added]);
+    commit(isChosen ? chosen.filter((record) => record.id !== option.id) : [...chosen, option]);
   };
 
   const create = () => {
-    const typed = text.trim();
+    if (!onCreate) return;
     void Promise.resolve()
-      .then(() => onCreate?.(typed))
+      .then(() => onCreate(typed))
       .then(
         (created) => {
-          if (created) pick(created);
+          if (!created) return;
+          if (!isMultiple) {
+            commit([created]);
+            return setOpen(false);
+          }
+          if (!chosen.some((record) => record.id === created.id)) commit([...chosen, created]);
         },
         // A rejection picks nothing; the app that rejected reports it (ADR 0139).
         () => undefined,
       );
   };
+
+  const known = (candidate: EntityOption) =>
+    candidate.label.toLocaleLowerCase() === typed.toLocaleLowerCase();
+  const canCreate =
+    onCreate !== undefined &&
+    createLabel !== undefined &&
+    typed !== "" &&
+    !chosen.some(known) &&
+    !options.options.some(known);
 
   return (
     <HeroTextField
@@ -169,7 +224,8 @@ export function EntityPicker(props: EntityPickerProps): ReactElement {
         accessibilityRole="button"
         accessibilityLabel={name}
         accessibilityValue={{ text: chosen.map((record) => record.label).join(", ") }}
-        accessibilityState={{ disabled: isLocked, expanded: isOpen }}
+        // Read-only is not disabled: the field still shows and submits its value.
+        accessibilityState={{ disabled: Boolean(isDisabled), expanded: isOpen }}
       >
         <View pointerEvents="none" importantForAccessibility="no-hide-descendants">
           <Input
@@ -194,39 +250,56 @@ export function EntityPicker(props: EntityPickerProps): ReactElement {
           <Drawer.Title>{label ?? name}</Drawer.Title>
         </Drawer.Header>
         <Drawer.Body>
-          <SearchField
-            accessibilityLabel={WORDS.search}
-            {...omitUndefined({ placeholder })}
+          <SheetSearch
             value={text}
+            placeholder={WORDS.search}
             onChange={(next) => {
               setText(next);
               options.search(next);
             }}
           />
-          {onCreate && createLabel && text.trim() !== "" ? (
-            <ListItem title={createLabel(text.trim())} startIcon="plus" onPress={create} />
+          {canCreate ? (
+            <ListItem title={createLabel(typed)} startIcon="plus" onPress={create} />
           ) : null}
-          {options.status === "error" ? (
-            inText(loadErrorMessage)
+          {isFailed ? (
+            <Message>{loadErrorMessage}</Message>
           ) : (
-            <List
-              label={name ?? WORDS.results}
-              items={options.options.map((option) => ({
-                id: option.id,
-                title: option.label,
-                description: option.description,
-                startIcon: avatarOf(option),
-                isDisabled: option.isDisabled,
-                label: option.label,
-              }))}
-              selectionMode={isMultiple ? "multiple" : "single"}
-              selectedKeys={chosen.map((record) => record.id)}
-              onSelectionChange={select}
-              isLoading={options.status === "loading"}
-              {...omitUndefined({ loadingLabel })}
-              emptyState={options.hasAnswered ? inText(emptyMessage) : null}
-              hasMore={options.hasMore}
-              onLoadMore={options.loadMore}
+            <FlatList
+              style={LIST_STYLE}
+              data={options.options}
+              keyExtractor={(option) => option.id}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+              accessibilityRole="list"
+              {...omitUndefined({ accessibilityLabel: name })}
+              onEndReachedThreshold={0.5}
+              {...(options.hasMore && options.status === "idle" && !options.isLoadingMore
+                ? { onEndReached: options.loadMore }
+                : {})}
+              renderItem={({ item }) => {
+                const isChosen = chosen.some((record) => record.id === item.id);
+                return (
+                  <ListItem
+                    title={item.label}
+                    description={item.description}
+                    startIcon={avatarOf(item)}
+                    isDisabled={item.isDisabled}
+                    label={item.label}
+                    endContent={isChosen ? <Icon name="check" tone="accent" /> : undefined}
+                    onPress={() => toggle(item)}
+                    accessibilityRole={isMultiple ? "checkbox" : "radio"}
+                    accessibilityState={{ checked: isChosen, disabled: Boolean(item.isDisabled) }}
+                  />
+                );
+              }}
+              ListEmptyComponent={
+                isEmpty && emptyMessage !== undefined ? <Message>{emptyMessage}</Message> : null
+              }
+              ListFooterComponent={
+                options.status === "loading" || options.isLoadingMore ? (
+                  <Spinner {...omitUndefined({ label: loadingLabel })} />
+                ) : null
+              }
             />
           )}
         </Drawer.Body>

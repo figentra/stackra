@@ -49,12 +49,17 @@ vi.mock("heroui-native", async () => {
           value: props["value"] as string,
           onChange: (event: { target: { value: string } }) =>
             (props["onChangeText"] as (text: string) => void)(event.target.value),
+          onFocus: props["onFocus"] as () => void,
           onBlur: props["onBlur"] as () => void,
         });
       },
     }),
+    useBottomSheetAwareHandlers: () => sheet,
   };
 });
+
+/** The sheet-aware handlers the stand-in hands out, so a test sees them called. */
+const sheet = vi.hoisted(() => ({ onFocus: vi.fn(), onBlur: vi.fn() }));
 
 vi.mock("react-native", () => ({
   Platform: {
@@ -164,11 +169,44 @@ describe("NumberField (native)", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("calls the caller's own blur after it commits", () => {
+  it("calls the sheet's and the caller's own focus and blur handlers", () => {
+    const onFocus = vi.fn();
     const onBlur = vi.fn();
-    render(<NumberField label="Seats" onBlur={onBlur} />);
+    render(<NumberField label="Seats" onFocus={onFocus} onBlur={onBlur} />);
+    fireEvent.focus(input());
     typeAndLeave("2");
-    expect(onBlur).toHaveBeenCalledTimes(1);
+    expect(
+      [sheet.onFocus, onFocus, sheet.onBlur, onBlur].map((spy) => spy.mock.calls.length),
+    ).toEqual([1, 1, 1, 1]);
+  });
+
+  it("reports a typed number inside the bounds before the field is left", () => {
+    const onChange = vi.fn();
+    render(<NumberField label="Seats" value={4} minValue={0} maxValue={20} onChange={onChange} />);
+    fireEvent.change(input(), { target: { value: "12" } });
+    expect(onChange).toHaveBeenLastCalledWith(12);
+    fireEvent.change(input(), { target: { value: "" } });
+    expect(onChange).toHaveBeenLastCalledWith(null);
+  });
+
+  it("waits for the clamp on leaving before it reports a typed number outside the bounds", () => {
+    const onChange = vi.fn();
+    render(<NumberField label="Seats" value={4} maxValue={20} onChange={onChange} />);
+    fireEvent.change(input(), { target: { value: "35" } });
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.blur(input());
+    expect(onChange).toHaveBeenLastCalledWith(20);
+  });
+
+  it("steps from the typed number, not the held one, when a stepper is pressed while typing", () => {
+    const onChange = vi.fn();
+    render(<NumberField label="Seats" value={5} maxValue={12} onChange={onChange} />);
+    fireEvent.change(input(), { target: { value: "11" } });
+    fireEvent.click(increase());
+    expect(onChange).toHaveBeenLastCalledWith(12);
+    expect(input().value).toBe("5");
+    fireEvent.change(input(), { target: { value: "12" } });
+    expect(increase().disabled).toBe(true);
   });
 
   it("steps by step within the bounds, without float drift", () => {

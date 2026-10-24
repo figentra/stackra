@@ -1,33 +1,43 @@
 /**
  * Stackra file contract:
  * Purpose: proves the native EntityPicker opens its sheet on a press and asks for the first page at once, lists the
- *          records with their description and decorative avatar, picks one record and closes, toggles several and
- *          keeps the chosen records the list does not show, removes a tag, searches the typed text after the pause,
- *          shows the loading, empty and failed states (strings in `Text`), offers a create-new row that picks what
- *          `onCreate` returns and nothing when it rejects, stays shut while disabled or read-only, and keeps its own
- *          records when uncontrolled.
- * Boundary: React Native does not render in vitest, so heroui-native, react-native and the native Drawer, SearchField,
- *           List, ListItem, TagGroup, Avatar, Icon and Text are replaced by stand-ins that render plain DOM; the records
- *           store (`createEntityOptionsLoader` through `useEntityOptions`) runs for real.
+ *          records in a bounded list that keeps taps while the keyboard is up, with their description and decorative
+ *          avatar; picks one record and closes, clears it when the chosen one is pressed again; toggles several and
+ *          removes a tag; searches the typed text after the pause; loads the next page at the list's end with a spinner
+ *          while it waits; shows and announces the empty and failed states in `Text`; offers a create-new row only for
+ *          text no record already has, picking what `onCreate` returns and nothing when it rejects; wires the search
+ *          to the sheet's keyboard handlers; stays shut while disabled or read-only, announcing only disabled as
+ *          disabled; and keeps its own records when uncontrolled.
+ * Boundary: React Native does not render in vitest, so heroui-native, react-native (FlatList included) and the native
+ *           Drawer, ListItem, TagGroup, Avatar, Icon, Spinner and Text are replaced by stand-ins that render plain DOM;
+ *           the records store (`createEntityOptionsLoader` through `useEntityOptions`) runs for real.
  * Runtime: node
  * Governing contract: ADR 0302 (decision 3); ADR 0318 (decisions 2 and 10); ADR 0055; ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-200
-import { act, fireEvent, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import type { ReactElement, ReactNode } from "react";
 
 import type { EntityOption } from "#contracts/types/entity-option.type";
 import type { EntityOptionPage } from "#contracts/types/entity-option-page.type";
 import { EntityPicker } from "#native/entity-picker/entity-picker";
 
-const state = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));
+const state = vi.hoisted(() => ({
+  props: {} as Record<string, Record<string, unknown>>,
+  announced: [] as string[],
+  sheet: { onFocus: () => undefined, onBlur: () => undefined },
+}));
 
 vi.mock("heroui-native", async () => {
   const { createElement: h } = await import("react");
   const pass = (name: string) => (props: Record<string, unknown>) => {
     state.props[name] = props;
     return h("div", { "data-testid": name }, props["children"] as ReactNode);
+  };
+  const search = (props: Record<string, unknown>) => {
+    state.props["search"] = props;
+    return h("div", null, props["children"] as ReactNode);
   };
   return {
     TextField: pass("root"),
@@ -42,12 +52,30 @@ vi.mock("heroui-native", async () => {
         readOnly: true,
       });
     },
+    SearchField: Object.assign(search, {
+      Group: ({ children }: { readonly children?: ReactNode }) => h("div", null, children),
+      SearchIcon: () => null,
+      Input: (props: Record<string, unknown>) => {
+        state.props["search-input"] = props;
+        const root = state.props["search"] ?? {};
+        return h("input", {
+          "data-testid": "search",
+          value: root["value"] as string,
+          onChange: (event: { target: { value: string } }) =>
+            (root["onChange"] as (text: string) => void)(event.target.value),
+        });
+      },
+    }),
+    useBottomSheetAwareHandlers: () => state.sheet,
   };
 });
 
 vi.mock("react-native", async () => {
   const { createElement: h } = await import("react");
   return {
+    AccessibilityInfo: {
+      announceForAccessibility: (text: string) => state.announced.push(text),
+    },
     View: ({ children }: { readonly children?: ReactNode }) => h("div", null, children),
     Pressable: (props: Record<string, unknown>) => {
       state.props["field"] = props;
@@ -59,6 +87,22 @@ vi.mock("react-native", async () => {
           onClick: props["onPress"] as () => void,
         },
         props["children"] as ReactNode,
+      );
+    },
+    FlatList: (props: {
+      readonly data: readonly EntityOption[];
+      readonly renderItem: (info: { readonly item: EntityOption }) => ReactElement;
+      readonly ListEmptyComponent?: ReactNode;
+      readonly ListFooterComponent?: ReactNode;
+      readonly onEndReached?: () => void;
+    }) => {
+      state.props["list"] = props as unknown as Record<string, unknown>;
+      return h(
+        "ul",
+        null,
+        props.data.length === 0 ? props.ListEmptyComponent : null,
+        props.data.map((item) => h("li", { key: item.id }, props.renderItem({ item }))),
+        props.ListFooterComponent,
       );
     },
   };
@@ -76,59 +120,18 @@ vi.mock("#native/drawer/drawer", async () => {
   };
 });
 
-vi.mock("#native/search-field/search-field", async () => {
-  const { createElement: h } = await import("react");
-  return {
-    SearchField: (props: { readonly value: string; readonly onChange: (text: string) => void }) =>
-      h("input", {
-        "data-testid": "search",
-        value: props.value,
-        onChange: (event: { target: { value: string } }) => props.onChange(event.target.value),
-      }),
-  };
-});
-
-vi.mock("#native/list/list", async () => {
-  const { createElement: h } = await import("react");
-  return {
-    List: (props: {
-      readonly items: readonly { readonly id: string; readonly title: string }[];
-      readonly selectionMode: "single" | "multiple";
-      readonly selectedKeys: readonly string[];
-      readonly onSelectionChange: (keys: readonly string[]) => void;
-      readonly emptyState?: ReactNode;
-    }) => {
-      state.props["list"] = props as unknown as Record<string, unknown>;
-      const toggle = (id: string) =>
-        props.onSelectionChange(
-          props.selectedKeys.includes(id)
-            ? props.selectedKeys.filter((key) => key !== id)
-            : props.selectionMode === "single"
-              ? [id]
-              : [...props.selectedKeys, id],
-        );
-      return props.items.length === 0
-        ? h("div", { "data-testid": "empty" }, props.emptyState)
-        : h(
-            "ul",
-            null,
-            props.items.map((item) =>
-              h(
-                "li",
-                { key: item.id },
-                h("button", { onClick: () => toggle(item.id) }, item.title),
-              ),
-            ),
-          );
-    },
-  };
-});
-
 vi.mock("#native/list/list-item", async () => {
   const { createElement: h } = await import("react");
   return {
-    ListItem: (props: { readonly title: string; readonly onPress: () => void }) =>
-      h("button", { onClick: props.onPress }, props.title),
+    ListItem: (props: {
+      readonly title: string;
+      readonly onPress: () => void;
+      readonly accessibilityState?: { readonly checked?: boolean };
+      readonly startIcon?: ReactNode;
+    }) => {
+      state.props[`row:${props.title}`] = props as unknown as Record<string, unknown>;
+      return h("button", { onClick: props.onPress }, props.title);
+    },
   };
 });
 
@@ -161,11 +164,23 @@ vi.mock("#native/avatar/avatar", async () => {
 
 vi.mock("#native/icon/icon", () => ({ Icon: () => null }));
 
+vi.mock("#native/spinner/spinner", async () => {
+  const { createElement: h } = await import("react");
+  return {
+    Spinner: (props: { readonly label?: string }) =>
+      h("span", { "data-testid": "spinner", "aria-label": props.label }),
+  };
+});
+
 vi.mock("#native/text/text", async () => {
   const { createElement: h } = await import("react");
   return {
-    Text: ({ children }: { readonly children?: ReactNode }) =>
-      h("span", { "data-testid": "text" }, children),
+    Text: (props: { readonly children?: ReactNode; readonly accessibilityLiveRegion?: string }) =>
+      h(
+        "span",
+        { "data-testid": "message", "data-live": props.accessibilityLiveRegion },
+        props.children,
+      ),
   };
 });
 
@@ -187,45 +202,78 @@ const answering =
 /** Lets the pending answers land. */
 const settle = () =>
   act(async () => {
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
   });
 
 const press = (name: string) => fireEvent.click(screen.getByRole("button", { name }));
+const openSheet = () => fireEvent.click(screen.getByTestId("field"));
+const listProps = () => state.props["list"] ?? {};
 
 describe("EntityPicker (native)", () => {
   beforeEach(() => {
     state.props = {};
+    state.announced = [];
   });
 
-  it("opens its sheet on a press and asks for the first page at once", async () => {
+  it("opens its sheet on a press, asks for the first page at once and lists the records", async () => {
     const loadOptions = vi.fn(answering(ADA, ALAN));
     render(<EntityPicker label="Owner" loadOptions={loadOptions} />);
     expect(screen.queryByTestId("sheet")).toBeNull();
-    fireEvent.click(screen.getByTestId("field"));
+    openSheet();
     expect(loadOptions).toHaveBeenCalledWith("", undefined);
     await settle();
-    expect(screen.getByRole("button", { name: "Ada Lovelace" })).toBeTruthy();
-    const items = (state.props["list"]?.["items"] ?? []) as Record<string, unknown>[];
-    expect(items[0]).toMatchObject({ title: "Ada Lovelace", description: "ada@example.com" });
-    expect(items[1]?.["startIcon"]).toBeUndefined();
+    expect(state.props["row:Ada Lovelace"]).toMatchObject({ description: "ada@example.com" });
+    expect(state.props["row:Ada Lovelace"]?.["startIcon"]).toBeTruthy();
+    expect(state.props["row:Alan Turing"]?.["startIcon"]).toBeUndefined();
   });
 
-  it("picks one record, reports it, shows it in the field and closes", async () => {
+  it("bounds the list so it scrolls inside the sheet, and keeps taps while the keyboard is up", async () => {
+    render(<EntityPicker label="Owner" loadOptions={answering(ADA)} />);
+    openSheet();
+    await settle();
+    expect(listProps()).toMatchObject({
+      style: { maxHeight: 320 },
+      keyboardShouldPersistTaps: "handled",
+      accessibilityRole: "list",
+      accessibilityLabel: "Owner",
+    });
+  });
+
+  it("wires its search to the sheet's keyboard handlers", () => {
+    render(<EntityPicker label="Owner" loadOptions={answering()} />);
+    openSheet();
+    expect(state.props["search-input"]).toMatchObject({
+      onFocus: state.sheet.onFocus,
+      onBlur: state.sheet.onBlur,
+      accessibilityLabel: "Search",
+    });
+  });
+
+  it("picks one record, shows it in the field and closes; the chosen one pressed again clears it", async () => {
     const onChange = vi.fn();
     render(<EntityPicker label="Owner" loadOptions={answering(ADA, ALAN)} onChange={onChange} />);
-    fireEvent.click(screen.getByTestId("field"));
+    openSheet();
     await settle();
+    expect(state.props["row:Alan Turing"]).toMatchObject({
+      accessibilityRole: "radio",
+      accessibilityState: { checked: false },
+    });
     press("Alan Turing");
-    expect(onChange).toHaveBeenCalledWith(ALAN);
+    expect(onChange).toHaveBeenLastCalledWith(ALAN);
     expect(screen.queryByTestId("sheet")).toBeNull();
     expect((screen.getByTestId("input") as HTMLInputElement).value).toBe("Alan Turing");
     expect(state.props["field"]?.["accessibilityValue"]).toEqual({ text: "Alan Turing" });
+    openSheet();
+    await settle();
+    fireEvent.click(
+      within(screen.getByTestId("sheet")).getByRole("button", { name: "Alan Turing" }),
+    );
+    expect(onChange).toHaveBeenLastCalledWith(null);
   });
 
   it("toggles several records and keeps the chosen ones the list does not show", async () => {
     const onChange = vi.fn();
-    render(
+    const { rerender } = render(
       <EntityPicker
         label="Reviewers"
         selectionMode="multiple"
@@ -235,11 +283,24 @@ describe("EntityPicker (native)", () => {
         onChange={onChange}
       />,
     );
-    fireEvent.click(screen.getByTestId("field"));
+    openSheet();
     await settle();
+    expect(state.props["row:Ada Lovelace"]?.["accessibilityRole"]).toBe("checkbox");
     press("Ada Lovelace");
     expect(onChange).toHaveBeenLastCalledWith([GRACE, ADA]);
     expect(screen.getByTestId("sheet")).toBeTruthy();
+    rerender(
+      <EntityPicker
+        label="Reviewers"
+        selectionMode="multiple"
+        removeLabel={(name) => `Remove ${name}`}
+        value={[GRACE, ADA]}
+        loadOptions={answering(ADA, ALAN)}
+        onChange={onChange}
+      />,
+    );
+    press("Ada Lovelace");
+    expect(onChange).toHaveBeenLastCalledWith([GRACE]);
   });
 
   it("removes a record through its tag", () => {
@@ -263,7 +324,7 @@ describe("EntityPicker (native)", () => {
     try {
       const loadOptions = vi.fn(answering(ADA));
       render(<EntityPicker label="Owner" loadOptions={loadOptions} debounceMs={300} />);
-      fireEvent.click(screen.getByTestId("field"));
+      openSheet();
       fireEvent.change(screen.getByTestId("search"), { target: { value: "ad" } });
       expect(loadOptions).toHaveBeenCalledTimes(1);
       await act(async () => {
@@ -275,8 +336,28 @@ describe("EntityPicker (native)", () => {
     }
   });
 
-  it("is busy while it waits, then says that nothing matches, in Text", async () => {
-    let answer: (page: EntityOptionPage) => void = () => {};
+  it("loads the next page at the list's end, with a spinner while it waits", async () => {
+    let answer: ((page: EntityOptionPage) => void) | undefined;
+    const loadOptions = vi.fn((_search: string, cursor?: string) =>
+      cursor === undefined
+        ? Promise.resolve({ items: [ADA], nextCursor: "c2" })
+        : new Promise<EntityOptionPage>((resolve) => (answer = resolve)),
+    );
+    render(<EntityPicker label="Owner" loadingLabel="Loading people" loadOptions={loadOptions} />);
+    openSheet();
+    await settle();
+    act(() => (listProps()["onEndReached"] as () => void)());
+    expect(loadOptions).toHaveBeenLastCalledWith("", "c2");
+    expect(screen.getByTestId("spinner").getAttribute("aria-label")).toBe("Loading people");
+    expect(listProps()["onEndReached"]).toBeUndefined();
+    await act(async () => answer?.({ items: [ALAN] }));
+    expect(screen.queryByTestId("spinner")).toBeNull();
+    expect(state.props["row:Alan Turing"]).toBeTruthy();
+    expect(listProps()["onEndReached"]).toBeUndefined();
+  });
+
+  it("is busy while it waits, then says and announces that nothing matches", async () => {
+    let answer: ((page: EntityOptionPage) => void) | undefined;
     render(
       <EntityPicker
         label="Owner"
@@ -284,15 +365,17 @@ describe("EntityPicker (native)", () => {
         loadOptions={() => new Promise((resolve) => (answer = resolve))}
       />,
     );
-    fireEvent.click(screen.getByTestId("field"));
-    expect(state.props["list"]?.["isLoading"]).toBe(true);
-    await act(async () => answer({ items: [] }));
-    expect(state.props["list"]?.["isLoading"]).toBe(false);
-    expect(screen.getByTestId("empty").textContent).toBe("No people found");
-    expect(screen.getByTestId("text").textContent).toBe("No people found");
+    openSheet();
+    expect(screen.getByTestId("spinner")).toBeTruthy();
+    expect(screen.queryByTestId("message")).toBeNull();
+    await act(async () => answer?.({ items: [] }));
+    expect(screen.queryByTestId("spinner")).toBeNull();
+    expect(screen.getByTestId("message").textContent).toBe("No people found");
+    expect(screen.getByTestId("message").getAttribute("data-live")).toBe("polite");
+    expect(state.announced).toEqual(["No people found"]);
   });
 
-  it("shows the failure message in Text when the load rejects", async () => {
+  it("shows and announces the failure message when the load rejects", async () => {
     render(
       <EntityPicker
         label="Owner"
@@ -300,11 +383,11 @@ describe("EntityPicker (native)", () => {
         loadOptions={() => Promise.reject(new Error("down"))}
       />,
     );
-    fireEvent.click(screen.getByTestId("field"));
+    openSheet();
     await settle();
-    expect(screen.getByTestId("text").textContent).toBe("People could not be loaded");
-    expect(screen.queryByTestId("empty")).toBeNull();
+    expect(screen.getByTestId("message").textContent).toBe("People could not be loaded");
     expect(screen.queryByRole("list")).toBeNull();
+    expect(state.announced).toEqual(["People could not be loaded"]);
   });
 
   it("offers a create-new row for typed text and picks what onCreate returns", async () => {
@@ -319,13 +402,32 @@ describe("EntityPicker (native)", () => {
         onChange={onChange}
       />,
     );
-    fireEvent.click(screen.getByTestId("field"));
+    openSheet();
     expect(screen.queryByRole("button", { name: /^Add/ })).toBeNull();
     fireEvent.change(screen.getByTestId("search"), { target: { value: " Linus " } });
     press('Add "Linus"');
     await settle();
     expect(onCreate).toHaveBeenCalledWith("Linus");
     expect(onChange).toHaveBeenCalledWith({ id: "usr_new", label: "Linus" });
+    expect(screen.queryByTestId("sheet")).toBeNull();
+  });
+
+  it("offers no create-new row for text a listed or chosen record already has", async () => {
+    render(
+      <EntityPicker
+        label="Owner"
+        value={GRACE}
+        loadOptions={answering(ADA)}
+        onCreate={() => undefined}
+        createLabel={(text) => `Add "${text}"`}
+      />,
+    );
+    openSheet();
+    await settle();
+    fireEvent.change(screen.getByTestId("search"), { target: { value: "ada lovelace" } });
+    expect(screen.queryByRole("button", { name: /^Add/ })).toBeNull();
+    fireEvent.change(screen.getByTestId("search"), { target: { value: "GRACE HOPPER" } });
+    expect(screen.queryByRole("button", { name: /^Add/ })).toBeNull();
   });
 
   it("picks nothing when onCreate rejects", async () => {
@@ -339,25 +441,37 @@ describe("EntityPicker (native)", () => {
         onChange={onChange}
       />,
     );
-    fireEvent.click(screen.getByTestId("field"));
+    openSheet();
     fireEvent.change(screen.getByTestId("search"), { target: { value: "Linus" } });
     press('Add "Linus"');
     await settle();
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it.each([{ isDisabled: true }, { isReadOnly: true }])("stays shut while %o", (locked) => {
-    const loadOptions = vi.fn(answering(ADA));
-    render(<EntityPicker label="Owner" loadOptions={loadOptions} {...locked} />);
-    expect(state.props["field"]?.["disabled"]).toBe(true);
-    fireEvent.click(screen.getByTestId("field"));
+  it.each([
+    [{ isDisabled: true }, true],
+    [{ isReadOnly: true }, false],
+  ])("stays shut while %o, announced as disabled: %s", (locked, isAnnouncedDisabled) => {
+    render(<EntityPicker label="Owner" loadOptions={answering(ADA)} {...locked} />);
+    expect(state.props["field"]).toMatchObject({
+      disabled: true,
+      accessibilityState: { disabled: isAnnouncedDisabled },
+    });
+    openSheet();
     expect(screen.queryByTestId("sheet")).toBeNull();
+  });
+
+  it("sizes to its content unless asked to fill the width", () => {
+    const { rerender } = render(<EntityPicker label="Owner" loadOptions={answering()} />);
+    expect(state.props["root"]?.["className"]).toBe("self-start");
+    rerender(<EntityPicker label="Owner" isFullWidth loadOptions={answering()} />);
+    expect(state.props["root"]?.["className"]).toBe("");
   });
 
   it("keeps its own record when uncontrolled", async () => {
     render(<EntityPicker label="Owner" defaultValue={ADA} loadOptions={answering(ADA, ALAN)} />);
     expect((screen.getByTestId("input") as HTMLInputElement).value).toBe("Ada Lovelace");
-    fireEvent.click(screen.getByTestId("field"));
+    openSheet();
     await settle();
     press("Alan Turing");
     expect((screen.getByTestId("input") as HTMLInputElement).value).toBe("Alan Turing");

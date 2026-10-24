@@ -24,6 +24,29 @@ describe("platform date", () => {
     expect(toCalendarDate(new Date(2026, 0, 31, 23, 59)).toString()).toBe("2026-01-31");
   });
 
+  // Node reads `TZ` at each date operation, so each case runs in the zone it names; the days are daylight-saving
+  // changes in those zones, where a midnight conversion would land on the day before.
+  it.each([
+    ["Pacific/Kiritimati", "2026-01-01"],
+    ["Pacific/Pago_Pago", "2026-12-31"],
+    ["America/New_York", "2026-03-08"],
+    ["Europe/London", "2026-03-29"],
+    ["America/Santiago", "2026-04-05"],
+  ])("in %s keeps %s through a round trip", (zone, text) => {
+    const saved = process.env["TZ"];
+    process.env["TZ"] = zone;
+    try {
+      const [year, month, date] = text.split("-").map(Number) as [number, number, number];
+      const platform = toPlatformDate(new CalendarDate(year, month, date));
+      expect(platform.getHours()).toBe(12);
+      expect(toCalendarDate(platform).toString()).toBe(text);
+    } finally {
+      // Assigning `undefined` would store the string "undefined", so an unset zone is deleted.
+      if (saved === undefined) delete process.env["TZ"];
+      else process.env["TZ"] = saved;
+    }
+  });
+
   it.each(["2024-02-29", "2026-12-31", "0042-03-01"])("keeps %s through a round trip", (text) => {
     const [year, month, day] = text.split("-").map(Number) as [number, number, number];
     expect(toCalendarDate(toPlatformDate(new CalendarDate(year, month, day))).toString()).toBe(
