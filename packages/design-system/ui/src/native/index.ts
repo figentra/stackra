@@ -43,6 +43,7 @@ export { Drawer, type DrawerProps } from "#native/drawer/drawer";
 export type { DrawerCloseProps } from "#native/drawer/drawer-close";
 export type { DrawerTitleProps } from "#native/drawer/drawer-title";
 export { EmptyState, type EmptyStateProps } from "#native/empty-state/empty-state";
+export { EntityPicker, type EntityPickerProps } from "#native/entity-picker/entity-picker";
 export { ErrorState, type ErrorStateProps } from "#native/error-state/error-state";
 export { FieldError, type FieldErrorProps } from "#native/field-error/field-error";
 export { FilterBar, type FilterBarProps } from "#native/filter-bar/filter-bar";
