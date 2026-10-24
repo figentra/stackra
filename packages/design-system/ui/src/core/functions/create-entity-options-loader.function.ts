@@ -105,9 +105,11 @@ export function createEntityOptionsLoader(
       () => {
         if (mine !== ticket) return;
         cursor = undefined;
-        // What was listed stays, so a failed second page does not empty the list.
+        // A failed later page keeps what was listed; a failed new search lists nothing, since what is listed answered
+        // a different text.
         change({
           ...state,
+          options: isMore ? state.options : [],
           status: "error",
           isLoadingMore: false,
           hasMore: false,

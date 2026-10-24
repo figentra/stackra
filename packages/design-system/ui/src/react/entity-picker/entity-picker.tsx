@@ -27,7 +27,7 @@ import {
   ComboBox as HeroComboBox,
   type ComboBoxRootProps,
 } from "@heroui/react";
-import { type ReactNode, useId, useState } from "react";
+import { type ReactNode, useId, useRef, useState } from "react";
 import { Text as AriaText, type Key } from "react-aria-components";
 
 import type { EntityOption } from "#contracts/types/entity-option.type";
@@ -147,6 +147,7 @@ export function EntityPicker(props: EntityPickerProps) {
   } = props;
   const isMultiple = selectionMode === "multiple";
   const labelId = useId();
+  const input = useRef<HTMLInputElement>(null);
   const records = useEntityOptions(loadOptions, debounceMs);
 
   // The chosen records, held here only while the app leaves the field uncontrolled.
@@ -187,8 +188,9 @@ export function EntityPicker(props: EntityPickerProps) {
   };
 
   const hasFailed = records.status === "error";
-  // A failed search lists nothing it found, but the chosen record stays so React Aria keeps its label in the input.
-  const found = hasFailed ? [] : records.options;
+  // The loader empties a failed new search and keeps the pages before a failed later one. The chosen record always
+  // stays, so React Aria keeps its label in the input.
+  const found = records.options;
   const listed =
     single && !found.some((option) => option.id === single.id) ? [single, ...found] : found;
   const known = new Map([...chosen, ...records.options].map((option) => [option.id, option]));
@@ -249,7 +251,13 @@ export function EntityPicker(props: EntityPickerProps) {
         {...(isDisabled || isReadOnly
           ? {}
           : {
-              onRemove: (keys: Set<Key>) => commit(chosen.filter((option) => !keys.has(option.id))),
+              onRemove: (keys: Set<Key>) => {
+                const next = chosen.filter((option) => !keys.has(option.id));
+                commit(next);
+                // React Aria moves focus to a neighbouring tag; the last one takes the grid with it, so focus goes
+                // back to the field rather than to the page (WCAG 2.4.3).
+                if (next.length === 0) requestAnimationFrame(() => input.current?.focus());
+              },
             })}
       >
         <TagGroup.List>
@@ -276,7 +284,7 @@ export function EntityPicker(props: EntityPickerProps) {
     <>
       {label ? <Label id={labelId}>{label}</Label> : null}
       <HeroComboBox.InputGroup>
-        <Input {...omitUndefined({ placeholder })} />
+        <Input ref={input} {...omitUndefined({ placeholder })} />
         <HeroComboBox.Trigger />
       </HeroComboBox.InputGroup>
       {/* Inside the value slot, as ComboBox does: it shields the tag grid from the combo box's own list state. */}

@@ -208,6 +208,50 @@ describe("EntityPicker (web)", () => {
     expect(onChange).toHaveBeenLastCalledWith([PEOPLE[1]]);
   });
 
+  it("gives focus back to the field when the last tag is removed", async () => {
+    render(
+      <EntityPicker
+        loadOptions={people()}
+        label="Reviewers"
+        selectionMode="multiple"
+        removeLabel={(name) => `Remove ${name}`}
+        defaultValue={[PEOPLE[0] as EntityOption]}
+      />,
+    );
+    press(screen.getByRole("button", { name: "Remove Ada Lovelace" }));
+    expect(screen.queryByRole("grid")).toBeNull();
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("combobox")));
+  });
+
+  it("keeps the records it listed when a later page fails, and says so beside the list", async () => {
+    let calls = 0;
+    const load = vi.fn((search: string, cursor?: string) => {
+      calls += 1;
+      return calls === 1
+        ? Promise.resolve(answer(search, cursor))
+        : Promise.reject(new Error("offline"));
+    });
+    render(
+      <EntityPicker
+        loadOptions={load}
+        label="Owner"
+        loadErrorMessage="People could not be loaded. Type to try again."
+      />,
+    );
+    openList();
+    await screen.findByRole("option", { name: /Ada Lovelace/ });
+    act(() => {
+      for (const callback of observed) {
+        callback(
+          [{ isIntersecting: true } as IntersectionObserverEntry],
+          {} as IntersectionObserver,
+        );
+      }
+    });
+    expect(await screen.findByText("People could not be loaded. Type to try again.")).toBeTruthy();
+    expect(optionKeys()).toEqual(["ada", "alan"]);
+  });
+
   it("gives no remove button to the tags of a read-only field", () => {
     render(
       <EntityPicker

@@ -47,12 +47,11 @@ export function RadioGroup({
   return (
     <HeroRadioGroup
       {...rest}
-      // An empty value is "nothing chosen", which React Aria spells `null`: given "", it looks for a radio of that value,
-      // finds none and leaves no radio in the tab order.
-      {...(value === "" ? { value: null } : {})}
       {...omitUndefined({
-        value: value === "" ? undefined : value,
-        defaultValue,
+        // An empty value is "nothing chosen", which React Aria spells `null`: given "", it looks for a radio of that
+        // value, finds none and leaves no radio in the tab order. No option may use "" as its own value.
+        value: value === "" ? null : value,
+        defaultValue: defaultValue === "" ? null : defaultValue,
         onChange,
         isRequired,
         isInvalid,

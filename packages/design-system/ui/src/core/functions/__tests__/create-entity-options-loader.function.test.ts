@@ -133,6 +133,18 @@ describe("createEntityOptionsLoader", () => {
     expect(loader.getState().options.map((option) => option.id)).toEqual(["a"]);
   });
 
+  it("lists nothing when a new search fails, since the list on screen answered another text", async () => {
+    const { calls, loader } = setup(0);
+    loader.search("");
+    calls[0]?.settle(page(["a"]));
+    await flush();
+    loader.search("b");
+    await flush();
+    calls[1]?.settle(new Error("offline"));
+    await flush();
+    expect(loader.getState()).toMatchObject({ status: "error", options: [] });
+  });
+
   it("treats a loader that throws before it returns as a rejection", async () => {
     const loader = createEntityOptionsLoader({
       getLoad: () => () => {
