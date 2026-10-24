@@ -7,9 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
-import { useDesignSystem } from "@stackra/ui/native";
+import { Description, FieldError, Label, Text, useDesignSystem } from "@stackra/ui/native";
 import { TimePicker, type TimePickerProps } from "@stackra/ui-pro/native";
-import { Description, FieldError, Label, Typography } from "heroui-native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
@@ -112,9 +111,9 @@ export function TimePickerScreen() {
     <Screen>
       <Section title={STRINGS.popover.title} description={STRINGS.popover.description}>
         <TimeEntry label={STRINGS.popover.label} locale={locale} onValueChange={setPicked} />
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.popover.selected} ${picked?.label ?? STRINGS.popover.none}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.sheet.title} description={STRINGS.sheet.description}>

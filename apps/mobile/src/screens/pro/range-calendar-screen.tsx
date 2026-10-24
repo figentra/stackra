@@ -9,9 +9,8 @@
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { getLocalTimeZone, isWeekend, today } from "@internationalized/date";
-import { useDesignSystem } from "@stackra/ui/native";
+import { Text, useDesignSystem } from "@stackra/ui/native";
 import { RangeCalendar, type RangeCalendarProps } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { useState } from "react";
 
 import { RangeCalendarParts } from "#src/components/ui/range-calendar-parts";
@@ -72,13 +71,13 @@ export function RangeCalendarScreen() {
         >
           <RangeCalendarParts />
         </RangeCalendar>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.selected.value} ${
             range
               ? `${range.start.toString()} ${STRINGS.selected.to} ${range.end.toString()}`
               : STRINGS.selected.none
           }`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.range.title} description={STRINGS.range.description}>

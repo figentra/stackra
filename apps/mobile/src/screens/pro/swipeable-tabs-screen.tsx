@@ -7,8 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Text } from "@stackra/ui/native";
 import { SwipeableTabs } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { useState } from "react";
 import { View } from "react-native";
 
@@ -59,7 +59,7 @@ const MORE_TABS = [
 function Page({ body }: { body: string }) {
   return (
     <View className="flex-1 items-center justify-center p-4">
-      <Typography.Paragraph>{body}</Typography.Paragraph>
+      <Text>{body}</Text>
     </View>
   );
 }
@@ -109,9 +109,9 @@ export function SwipeableTabsScreen() {
           </SwipeableTabs.List>
           <Pages tabs={TABS} />
         </SwipeableTabs>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.controlled.value} ${page}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.secondary.title} description={STRINGS.secondary.description}>

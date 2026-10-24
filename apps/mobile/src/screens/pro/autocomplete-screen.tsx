@@ -7,8 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Description, FieldError, Label, Text } from "@stackra/ui/native";
 import { Autocomplete, type AutocompleteProps } from "@stackra/ui-pro/native";
-import { Description, FieldError, Label, Typography } from "heroui-native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
@@ -111,9 +111,9 @@ export function AutocompleteScreen() {
             <StateContent search={STRINGS.single.search} />
           </Autocomplete.Portal>
         </Autocomplete>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.single.selected} ${single && !Array.isArray(single) ? single.label : STRINGS.single.none}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.multiple.title} description={STRINGS.multiple.description}>
@@ -134,9 +134,9 @@ export function AutocompleteScreen() {
             <StateContent search={STRINGS.single.search} />
           </Autocomplete.Portal>
         </Autocomplete>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.multiple.count} ${multiple.length}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.sheet.title} description={STRINGS.sheet.description}>

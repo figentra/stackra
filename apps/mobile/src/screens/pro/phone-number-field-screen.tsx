@@ -7,8 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Description, FieldError, Label, Text } from "@stackra/ui/native";
 import { PhoneNumberField, type PhoneNumberFieldProps } from "@stackra/ui-pro/native";
-import { Description, FieldError, Label, Typography } from "heroui-native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
@@ -111,12 +111,12 @@ export function PhoneNumberFieldScreen() {
           hint={STRINGS.basic.hint}
           onValueChange={setBasic}
         />
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.basic.country} ${basic?.country.name ?? STRINGS.basic.none}`}
-        </Typography.Paragraph>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        </Text>
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.basic.e164} ${basic?.e164 || STRINGS.basic.none}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.validation.title} description={STRINGS.validation.description}>

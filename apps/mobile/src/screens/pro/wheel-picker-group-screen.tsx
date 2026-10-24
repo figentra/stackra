@@ -7,8 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Text } from "@stackra/ui/native";
 import { WheelPicker, WheelPickerGroup } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
@@ -81,9 +81,9 @@ export function WheelPickerGroupScreen() {
         >
           <CurrencyWheels />
         </WheelPickerGroup>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.controlled.value} ${String(values.amount)} ${String(values.currency)}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.commit.title} description={STRINGS.commit.description}>
@@ -94,13 +94,13 @@ export function WheelPickerGroupScreen() {
         >
           <CurrencyWheels />
         </WheelPickerGroup>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.commit.value} ${
             committed
               ? `${String(committed.amount)} ${String(committed.currency)}`
               : STRINGS.commit.none
           }`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.height.title} description={STRINGS.height.description}>

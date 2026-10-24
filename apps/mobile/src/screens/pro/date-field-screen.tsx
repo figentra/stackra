@@ -8,9 +8,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
-import { useDesignSystem } from "@stackra/ui/native";
+import { Description, FieldError, Label, Text, useDesignSystem } from "@stackra/ui/native";
 import { DateField, type DateFieldProps } from "@stackra/ui-pro/native";
-import { Description, FieldError, Label, Typography } from "heroui-native";
 import { useState } from "react";
 
 import { CalendarParts } from "#src/components/ui/calendar-parts";
@@ -117,9 +116,9 @@ export function DateFieldScreen() {
           inputMode="masked"
           onValueChange={setPicked}
         />
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.masked.selected} ${picked?.label ?? STRINGS.masked.none}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.loose.title} description={STRINGS.loose.description}>

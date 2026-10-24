@@ -47,7 +47,7 @@ export function CloseButtonScreen() {
             <CloseButton label={STRINGS.forms.default} />
           </Sample>
           <Sample caption="icon">
-            <CloseButton label={STRINGS.forms.custom} icon="user-round" />
+            <CloseButton label={STRINGS.forms.custom} icon="circle-x" />
           </Sample>
           <Sample caption="isDisabled">
             <CloseButton label={STRINGS.forms.disabled} isDisabled />

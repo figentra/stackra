@@ -6,7 +6,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-013.
  */
-import { Typography } from "heroui-native";
+import { Heading, Text } from "@stackra/ui/native";
 import type { ReactNode } from "react";
 import { View } from "react-native";
 
@@ -25,13 +25,13 @@ export function Section({ title, description, children }: SectionProps) {
   return (
     <View className="gap-3">
       <View className="gap-1">
-        <Typography.Heading type="h4" accessibilityRole="header">
+        <Heading level={2} type="h4">
           {title}
-        </Typography.Heading>
+        </Heading>
         {description ? (
-          <Typography.Paragraph type="body-sm" color="muted">
+          <Text type="small" tone="muted">
             {description}
-          </Typography.Paragraph>
+          </Text>
         ) : null}
       </View>
       {children}

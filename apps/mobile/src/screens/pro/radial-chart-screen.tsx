@@ -6,8 +6,9 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Text } from "@stackra/ui/native";
 import { RadialChart } from "@stackra/ui-pro/native";
-import { Typography, useThemeColor } from "heroui-native";
+import { useThemeColor } from "heroui-native";
 import { View } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";
@@ -73,9 +74,9 @@ export function RadialChartScreen() {
                 className="size-2.5 rounded-full"
                 style={{ backgroundColor: goal.color }}
               />
-              <Typography.Paragraph type="body-sm" color="muted">
+              <Text type="small" tone="muted">
                 {`${goal.name} ${goal.value}%`}
-              </Typography.Paragraph>
+              </Text>
             </View>
           ))}
         </View>
@@ -120,9 +121,9 @@ export function RadialChartScreen() {
             <RadialChart.Bar background cornerRadius={14} />
           </RadialChart>
         </View>
-        <Typography.Paragraph type="body-sm" color="muted" className="text-center">
+        <Text type="small" tone="muted" className="text-center">
           {STRINGS.gauge.label}
-        </Typography.Paragraph>
+        </Text>
       </Section>
     </Screen>
   );

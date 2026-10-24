@@ -6,8 +6,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Text } from "@stackra/ui/native";
 import { Badge } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { View } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";
@@ -56,9 +56,9 @@ const STRINGS = {
 function Tile({ caption }: { caption: string }) {
   return (
     <View className="size-14 items-center justify-center rounded-xl bg-surface-secondary">
-      <Typography.Paragraph type="body-xs" color="muted">
+      <Text type="caption" tone="muted">
         {caption}
-      </Typography.Paragraph>
+      </Text>
     </View>
   );
 }

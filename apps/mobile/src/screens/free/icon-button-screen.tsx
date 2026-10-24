@@ -25,14 +25,15 @@ const STRINGS = {
     description:
       "One row per size, one button per variant. `label` is required: it is the only name.",
     size: (size: string) => `Size ${size}`,
-    label: (variant: string) => `Profile, ${variant}`,
+    settings: (variant: string) => `Settings, ${variant}`,
+    delete: (variant: string) => `Delete, ${variant}`,
   },
   states: {
     title: "States",
     description:
       "`isDisabled`, and `isLoading`: the icon gives way to a spinner and the size stays.",
-    disabled: "Profile (disabled)",
-    loading: "Profile (loading)",
+    disabled: "Settings (disabled)",
+    loading: "Settings (loading)",
   },
   live: {
     title: "Try it",
@@ -65,8 +66,12 @@ export function IconButtonScreen() {
               {ButtonVariant.map((variant) => (
                 <IconButton
                   key={variant}
-                  icon="user-round"
-                  label={STRINGS.variants.label(variant)}
+                  icon={variant.startsWith("danger") ? "trash" : "settings"}
+                  label={
+                    variant.startsWith("danger")
+                      ? STRINGS.variants.delete(variant)
+                      : STRINGS.variants.settings(variant)
+                  }
                   variant={variant}
                   size={size}
                 />
@@ -79,10 +84,10 @@ export function IconButtonScreen() {
       <Section title={STRINGS.states.title} description={STRINGS.states.description}>
         <View className="flex-row flex-wrap gap-6">
           <Sample caption="isDisabled">
-            <IconButton icon="user-round" label={STRINGS.states.disabled} isDisabled />
+            <IconButton icon="settings" label={STRINGS.states.disabled} isDisabled />
           </Sample>
           <Sample caption="isLoading">
-            <IconButton icon="user-round" label={STRINGS.states.loading} isLoading />
+            <IconButton icon="settings" label={STRINGS.states.loading} isLoading />
           </Sample>
         </View>
       </Section>
@@ -90,7 +95,7 @@ export function IconButtonScreen() {
       <Section title={STRINGS.live.title} description={STRINGS.live.description}>
         <View className="flex-row items-center gap-3">
           <IconButton
-            icon="user-round"
+            icon="plus"
             label={STRINGS.live.count}
             onPress={() => setCount((value) => value + 1)}
           />
@@ -100,7 +105,7 @@ export function IconButtonScreen() {
         </View>
         <View className="flex-row items-center gap-3">
           <IconButton
-            icon="external-link"
+            icon="download"
             label={STRINGS.live.load}
             variant="secondary"
             isLoading={isLoading}

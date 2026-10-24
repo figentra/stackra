@@ -163,7 +163,7 @@ export function BadgeScreen() {
           <Badge.Anchor>
             <Anchor />
             <Badge tone="warning" label={STRINGS.content.icon}>
-              <Icon name="user-round" size="sm" />
+              <Icon name="bell" size="sm" />
             </Badge>
           </Badge.Anchor>
         </View>

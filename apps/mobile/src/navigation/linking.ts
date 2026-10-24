@@ -33,6 +33,7 @@ const SETTINGS_TAB_LINKS: PathConfig<SettingsStackParamList> = {
           FreeCloseButton: "design-system/free/close-button",
           FreeComboBox: "design-system/free/combo-box",
           FreeForm: "design-system/free/form",
+          FreeFormField: "design-system/free/form-field",
           FreeFormSection: "design-system/free/form-section",
           FreeIcon: "design-system/free/icon",
           FreeIconButton: "design-system/free/icon-button",

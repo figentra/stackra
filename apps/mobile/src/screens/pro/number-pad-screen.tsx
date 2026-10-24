@@ -7,8 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Heading, Text } from "@stackra/ui/native";
 import { NumberPad } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
@@ -58,9 +58,9 @@ export function NumberPadScreen() {
   return (
     <Screen>
       <Section title={STRINGS.pin.title} description={STRINGS.pin.description}>
-        <Typography.Heading type="h3" accessibilityLiveRegion="polite">
+        <Heading level={3} accessibilityLiveRegion="polite">
           {`${STRINGS.pin.value} ${pin.padEnd(4, "•")}`}
-        </Typography.Heading>
+        </Heading>
         <NumberPad
           label={STRINGS.pin.name}
           value={pin}
@@ -71,15 +71,15 @@ export function NumberPadScreen() {
           }}
           onComplete={() => setIsComplete(true)}
         />
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {isComplete ? STRINGS.pin.complete : STRINGS.pin.incomplete}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.amount.title} description={STRINGS.amount.description}>
-        <Typography.Heading type="h3" accessibilityLiveRegion="polite">
+        <Heading level={3} accessibilityLiveRegion="polite">
           {`${STRINGS.amount.value} ${amount === "" ? STRINGS.amount.placeholder : amount}`}
-        </Typography.Heading>
+        </Heading>
         <NumberPad
           label={STRINGS.amount.name}
           value={amount}

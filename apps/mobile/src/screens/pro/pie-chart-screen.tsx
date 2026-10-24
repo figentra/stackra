@@ -6,8 +6,9 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Text } from "@stackra/ui/native";
 import { PieChart } from "@stackra/ui-pro/native";
-import { Typography, useThemeColor } from "heroui-native";
+import { useThemeColor } from "heroui-native";
 import { View } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";
@@ -66,9 +67,9 @@ export function PieChartScreen() {
             className="size-2.5 rounded-full"
             style={{ backgroundColor: entry.color }}
           />
-          <Typography.Paragraph type="body-sm" color="muted">
+          <Text type="small" tone="muted">
             {`${entry.name} ${entry.value}%`}
-          </Typography.Paragraph>
+          </Text>
         </View>
       ))}
     </View>

@@ -6,8 +6,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Text } from "@stackra/ui/native";
 import { Table, type TableProps } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { useMemo, useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
@@ -147,7 +147,7 @@ export function TableScreen() {
             </Table.Content>
           </Table.ScrollContainer>
         </Table>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.sorting.sortedBy} ${
             sortDescriptor.column === "tasks" ? STRINGS.columns.tasks : STRINGS.columns.name
           }, ${
@@ -155,7 +155,7 @@ export function TableScreen() {
               ? STRINGS.sorting.descending
               : STRINGS.sorting.ascending
           }`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.selection.title} description={STRINGS.selection.description}>
@@ -184,11 +184,11 @@ export function TableScreen() {
             </Table.Content>
           </Table.ScrollContainer>
         </Table>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.selection.selected} ${
             selectedKeys.length > 0 ? selectedKeys.join(", ") : STRINGS.selection.none
           }`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.empty.title} description={STRINGS.empty.description}>
@@ -201,9 +201,9 @@ export function TableScreen() {
               </Table.Header>
               <Table.Body
                 renderEmptyState={() => (
-                  <Typography.Paragraph type="body-sm" color="muted" className="py-6 text-center">
+                  <Text type="small" tone="muted" className="py-6 text-center">
                     {STRINGS.empty.message}
-                  </Typography.Paragraph>
+                  </Text>
                 )}
               />
             </Table.Content>

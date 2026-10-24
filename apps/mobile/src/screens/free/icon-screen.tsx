@@ -16,9 +16,23 @@ import { Sample } from "#src/components/ui/sample";
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
 
-// shortcut: the mobile app registers no icon set yet (it would need @stackra/icons in its dependencies), so the
-// page draws the two icons @stackra/ui ships itself; register the Lucide set in the app root, then add names here.
-const ICON_NAMES = ["user-round", "external-link"] as const;
+/** The icons each size row draws; every name is registered in the app root. */
+const ICON_NAMES = ["search", "heart", "star"] as const;
+
+/** Icons that point the reading way, with what each one means: they flip in right-to-left. */
+const MIRRORED = [
+  ["Next", "chevron-right"],
+  ["Continue", "arrow-right"],
+  ["Send", "send-horizontal"],
+  ["Undo", "undo-2"],
+] as const;
+
+/** Icons that depict an object or a state: they never flip. */
+const NEVER_MIRRORED = [
+  ["Search", "search"],
+  ["Done", "check"],
+  ["Play", "play"],
+] as const;
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
@@ -43,7 +57,7 @@ const STRINGS = {
   rtl: {
     title: "Right to left",
     description:
-      "Switch the language to Arabic: the icon with `isMirroredInRtl` flips because it points the reading way; the other does not.",
+      "Switch the language to Arabic: the icons that point the reading way flip, the ones that depict an object do not.",
     mirrored: "Mirrored in right-to-left",
     neverMirrored: "Never mirrored",
   },
@@ -89,11 +103,11 @@ export function IconScreen() {
         <View className="flex-row flex-wrap gap-5">
           {TextTone.map((iconTone) => (
             <Sample key={iconTone} caption={iconTone}>
-              <Icon name="user-round" size="lg" tone={iconTone} label={iconTone} />
+              <Icon name="circle-check" size="lg" tone={iconTone} label={iconTone} />
             </Sample>
           ))}
           <Sample caption={STRINGS.tones.inherits}>
-            <Icon name="user-round" size="lg" />
+            <Icon name="circle-check" size="lg" />
           </Sample>
         </View>
       </Section>
@@ -109,23 +123,35 @@ export function IconScreen() {
       </Section>
 
       <Section title={STRINGS.rtl.title} description={STRINGS.rtl.description}>
-        <View className="flex-row flex-wrap gap-8">
-          <Sample caption={STRINGS.rtl.mirrored}>
-            <Icon name="external-link" size="lg" isMirroredInRtl />
-          </Sample>
-          <Sample caption={STRINGS.rtl.neverMirrored}>
-            <Icon name="external-link" size="lg" />
-          </Sample>
+        <Text type="small" tone="muted">
+          {STRINGS.rtl.mirrored}
+        </Text>
+        <View className="flex-row flex-wrap gap-6">
+          {MIRRORED.map(([label, name]) => (
+            <Sample key={name} caption={name}>
+              <Icon name={name} size="lg" label={label} isMirroredInRtl />
+            </Sample>
+          ))}
+        </View>
+        <Text type="small" tone="muted">
+          {STRINGS.rtl.neverMirrored}
+        </Text>
+        <View className="flex-row flex-wrap gap-6">
+          {NEVER_MIRRORED.map(([label, name]) => (
+            <Sample key={name} caption={name}>
+              <Icon name={name} size="lg" label={label} />
+            </Sample>
+          ))}
         </View>
       </Section>
 
       <Section title={STRINGS.passthrough.title} description={STRINGS.passthrough.description}>
         <View className="flex-row flex-wrap gap-8">
           <Sample caption={STRINGS.passthrough.thin}>
-            <Icon name="user-round" size="lg" strokeWidth={1} />
+            <Icon name="search" size="lg" strokeWidth={1} />
           </Sample>
           <Sample caption={STRINGS.passthrough.thick}>
-            <Icon name="user-round" size="lg" strokeWidth={3} />
+            <Icon name="search" size="lg" strokeWidth={3} />
           </Sample>
         </View>
       </Section>
@@ -140,7 +166,7 @@ export function IconScreen() {
           </Button>
         </View>
         <View className="flex-row items-center gap-3">
-          <Icon name="user-round" size={size} tone={tone} />
+          <Icon name="star" size={size} tone={tone} />
           <Text tone="muted" accessibilityLiveRegion="polite">
             {STRINGS.live.state(size, tone)}
           </Text>

@@ -6,8 +6,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Text } from "@stackra/ui/native";
 import { Rating } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { useState } from "react";
 import { View } from "react-native";
 
@@ -60,9 +60,9 @@ export function RatingScreen() {
     <Screen>
       <Section title={STRINGS.controlled.title} description={STRINGS.controlled.description}>
         <Rating label={STRINGS.controlled.label} value={value} onValueChange={setValue} />
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.controlled.status} ${value} ${STRINGS.controlled.of}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.sizes.title} description={STRINGS.sizes.description}>

@@ -7,8 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Button, Text } from "@stackra/ui/native";
 import { Stepper } from "@stackra/ui-pro/native";
-import { Button, Typography } from "heroui-native";
 import { useState } from "react";
 import { View } from "react-native";
 
@@ -86,19 +86,19 @@ export function StepperScreen() {
           <Button
             size="sm"
             variant="outline"
-            accessibilityLabel={STRINGS.vertical.previous}
+            label={STRINGS.vertical.previous}
             isDisabled={step <= 0}
             onPress={() => setStep((current) => Math.max(0, current - 1))}
           >
             {STRINGS.vertical.previous}
           </Button>
-          <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+          <Text type="small" tone="muted" accessibilityLiveRegion="polite">
             {`${STRINGS.vertical.position} ${step + 1} ${STRINGS.vertical.of} ${STEPS.length}`}
-          </Typography.Paragraph>
+          </Text>
           <Button
             size="sm"
             variant="outline"
-            accessibilityLabel={STRINGS.vertical.next}
+            label={STRINGS.vertical.next}
             isDisabled={step >= STEPS.length - 1}
             onPress={() => setStep((current) => Math.min(STEPS.length - 1, current + 1))}
           >

@@ -6,10 +6,10 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Button, Text } from "@stackra/ui/native";
 import { EmptyState } from "@stackra/ui-pro/native";
-import { Button, Typography } from "heroui-native";
 import { useState } from "react";
-import { Text } from "react-native";
+import { Text as NativeText } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
@@ -49,9 +49,9 @@ const STRINGS = {
 /** A bell shape for the media block; decorative, so hidden from screen readers. */
 function Glyph() {
   return (
-    <Text accessible={false} className="text-xl text-muted">
+    <NativeText accessible={false} className="text-xl text-muted">
       ★
-    </Text>
+    </NativeText>
   );
 }
 
@@ -94,9 +94,9 @@ export function EmptyStateScreen() {
             </Button>
           </EmptyState.Content>
         </EmptyState>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {isCleared ? STRINGS.action.cleared : STRINGS.action.waiting}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.bordered.title} description={STRINGS.bordered.description}>

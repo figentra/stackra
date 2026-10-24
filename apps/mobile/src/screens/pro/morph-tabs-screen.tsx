@@ -7,8 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Text } from "@stackra/ui/native";
 import { MorphTabs } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { useState } from "react";
 import { View } from "react-native";
 
@@ -54,7 +54,7 @@ function TabList({ name }: { name: string }) {
       {TABS.map((tab) => (
         <MorphTabs.Trigger key={tab.value} value={tab.value}>
           <MorphTabs.Icon>
-            <Typography>{tab.glyph}</Typography>
+            <Text>{tab.glyph}</Text>
           </MorphTabs.Icon>
           <MorphTabs.Label>{tab.label}</MorphTabs.Label>
         </MorphTabs.Trigger>
@@ -70,7 +70,7 @@ function TabPages() {
       {TABS.map((tab) => (
         <MorphTabs.Content key={tab.value} value={tab.value}>
           <View className="flex-1 items-center justify-center p-4">
-            <Typography.Paragraph>{tab.body}</Typography.Paragraph>
+            <Text>{tab.body}</Text>
           </View>
         </MorphTabs.Content>
       ))}
@@ -96,9 +96,9 @@ export function MorphTabsScreen() {
           <TabList name={STRINGS.controlled.name} />
           <TabPages />
         </MorphTabs>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.controlled.value} ${page}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.bottom.title} description={STRINGS.bottom.description}>

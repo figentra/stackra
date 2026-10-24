@@ -75,17 +75,17 @@ export function ChipScreen() {
 
       <Section title={STRINGS.icons.title} description={STRINGS.icons.description}>
         <View className="flex-row flex-wrap gap-2">
-          <Chip tone="success" startIcon="user-round">
+          <Chip tone="success" startIcon="check">
             {STRINGS.icons.start}
           </Chip>
-          <Chip tone="accent" endIcon={<Icon name="external-link" isMirroredInRtl />}>
+          <Chip tone="accent" endIcon={<Icon name="chevron-right" isMirroredInRtl />}>
             {STRINGS.icons.end}
           </Chip>
           <Chip
             tone="success"
             variant="soft"
-            startIcon="user-round"
-            endIcon={<Icon name="external-link" isMirroredInRtl />}
+            startIcon="check"
+            endIcon={<Icon name="chevron-right" isMirroredInRtl />}
           >
             {STRINGS.icons.both}
           </Chip>

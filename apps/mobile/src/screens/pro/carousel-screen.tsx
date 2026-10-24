@@ -6,8 +6,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Heading, Text } from "@stackra/ui/native";
 import { Carousel } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { View } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";
@@ -48,12 +48,12 @@ function slides() {
       className="aspect-[4/3] justify-end rounded-3xl bg-accent-soft p-5"
     >
       <View className="gap-1">
-        <Typography.Heading type="h4" className="text-accent-soft-foreground">
+        <Heading level={4} className="text-accent-soft-foreground">
           {slide.title}
-        </Typography.Heading>
-        <Typography.Paragraph type="body-sm" className="text-accent-soft-foreground">
+        </Heading>
+        <Text type="small" className="text-accent-soft-foreground">
           {slide.detail}
-        </Typography.Paragraph>
+        </Text>
       </View>
     </Carousel.Item>
   ));

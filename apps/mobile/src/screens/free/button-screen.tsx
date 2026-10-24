@@ -36,12 +36,11 @@ const STRINGS = {
   },
   icons: {
     title: "Icons",
-    // shortcut: the mobile app registers no icon set yet, so the samples use the two icons @stackra/ui draws itself.
     description:
       "`startIcon`, `endIcon` or both. The end icon is mirrored in right-to-left: switch to Arabic.",
-    add: "Add person",
-    open: "Open",
-    both: "Invite",
+    add: "Add",
+    next: "Next",
+    download: "Download",
   },
   fullWidth: {
     title: "Full width",
@@ -108,22 +107,22 @@ export function ButtonScreen() {
       <Section title={STRINGS.icons.title} description={STRINGS.icons.description}>
         <View className="flex-row flex-wrap gap-4">
           <Sample caption="startIcon">
-            <Button variant="secondary" startIcon="user-round">
+            <Button variant="secondary" startIcon="plus">
               {STRINGS.icons.add}
             </Button>
           </Sample>
           <Sample caption="endIcon">
-            <Button variant="secondary" endIcon={<Icon name="external-link" isMirroredInRtl />}>
-              {STRINGS.icons.open}
+            <Button variant="secondary" endIcon={<Icon name="chevron-right" isMirroredInRtl />}>
+              {STRINGS.icons.next}
             </Button>
           </Sample>
           <Sample caption="startIcon + endIcon">
             <Button
               variant="secondary"
-              startIcon="user-round"
-              endIcon={<Icon name="external-link" isMirroredInRtl />}
+              startIcon="download"
+              endIcon={<Icon name="chevron-right" isMirroredInRtl />}
             >
-              {STRINGS.icons.both}
+              {STRINGS.icons.download}
             </Button>
           </Sample>
         </View>

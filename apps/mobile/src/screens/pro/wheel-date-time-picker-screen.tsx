@@ -9,9 +9,8 @@
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { CalendarDateTime, getLocalTimeZone, today } from "@internationalized/date";
-import { useDesignSystem } from "@stackra/ui/native";
+import { Text, useDesignSystem } from "@stackra/ui/native";
 import { WheelDateTimePicker } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
@@ -70,9 +69,9 @@ export function WheelDateTimePickerScreen() {
           value={value}
           onValueChange={setValue}
         />
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.controlled.value} ${value.toString()}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.twentyFour.title} description={STRINGS.twentyFour.description}>
@@ -103,9 +102,9 @@ export function WheelDateTimePickerScreen() {
           locale={locale}
           onValueCommit={setCommitted}
         />
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.commit.value} ${committed?.toString() ?? STRINGS.commit.none}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.disabled.title} description={STRINGS.disabled.description}>

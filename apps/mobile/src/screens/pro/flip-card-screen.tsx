@@ -6,8 +6,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Button, Heading, Text } from "@stackra/ui/native";
 import { FlipCard } from "@stackra/ui-pro/native";
-import { Button, Typography } from "heroui-native";
 import { useState } from "react";
 import { View } from "react-native";
 
@@ -55,10 +55,10 @@ const STRINGS = {
 function Face({ title, detail }: { title: string; detail: string }) {
   return (
     <View className="flex-1 justify-end gap-1 p-6">
-      <Typography.Heading type="h4">{title}</Typography.Heading>
-      <Typography.Paragraph type="body-sm" color="muted">
+      <Heading level={4}>{title}</Heading>
+      <Text type="small" tone="muted">
         {detail}
-      </Typography.Paragraph>
+      </Text>
     </View>
   );
 }
@@ -107,9 +107,9 @@ export function FlipCardScreen() {
           </FlipCard.Back>
         </FlipCard>
         <View className="flex-row items-center justify-between gap-3">
-          <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+          <Text type="small" tone="muted" accessibilityLiveRegion="polite">
             {`${STRINGS.controlled.state} ${isFlipped ? STRINGS.controlled.back : STRINGS.controlled.front}`}
-          </Typography.Paragraph>
+          </Text>
           <Button size="sm" variant="secondary" onPress={() => setIsFlipped((flipped) => !flipped)}>
             {isFlipped ? STRINGS.controlled.hide : STRINGS.controlled.show}
           </Button>

@@ -6,10 +6,10 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Text } from "@stackra/ui/native";
 import { FloatingActionButton } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { type ReactNode, useState } from "react";
-import { Text, View } from "react-native";
+import { Text as NativeText, View } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
@@ -51,7 +51,7 @@ const STRINGS = {
 
 /** The plus sign on the trigger; the button's own accessible name is the `label` prop. */
 function PlusGlyph() {
-  return <Text className="text-2xl text-accent-foreground">+</Text>;
+  return <NativeText className="text-2xl text-accent-foreground">+</NativeText>;
 }
 
 /** A framed area the demo button sits in, so each button floats over its own box instead of the whole page. */
@@ -84,9 +84,9 @@ export function FloatingActionButtonScreen() {
             </FloatingActionButton.Portal>
           </FloatingActionButton>
         </Stage>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.basic.last} ${lastAction}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.manual.title} description={STRINGS.manual.description}>
@@ -133,9 +133,9 @@ export function FloatingActionButtonScreen() {
             </FloatingActionButton.Portal>
           </FloatingActionButton>
         </Stage>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.controlled.state} ${isOpen ? STRINGS.controlled.open : STRINGS.controlled.closed}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.disabled.title} description={STRINGS.disabled.description}>

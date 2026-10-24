@@ -7,8 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Text } from "@stackra/ui/native";
 import { NumberStepper } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
@@ -70,9 +70,9 @@ export function NumberStepperScreen() {
           <NumberStepper.Value />
           <NumberStepper.IncrementButton accessibilityLabel={STRINGS.increase} />
         </NumberStepper>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.controlled.value} ${quantity}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.step.title} description={STRINGS.step.description}>
@@ -117,9 +117,9 @@ export function NumberStepperScreen() {
             </>
           )}
         </NumberStepper>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.boundary.note} ${isRemoveAsked ? STRINGS.boundary.yes : STRINGS.boundary.no}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.disabled.title} description={STRINGS.disabled.description}>

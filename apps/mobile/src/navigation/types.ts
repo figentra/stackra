@@ -42,6 +42,8 @@ export type SettingsStackParamList = {
   FreeComboBox: undefined;
   /** The free Form page; deep link `stackra://design-system/free/form`. */
   FreeForm: undefined;
+  /** The free FormField page; deep link `stackra://design-system/free/form-field`. */
+  FreeFormField: undefined;
   /** The free FormSection page; deep link `stackra://design-system/free/form-section`. */
   FreeFormSection: undefined;
   /** The free Icon page; deep link `stackra://design-system/free/icon`. */

@@ -6,13 +6,14 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Text } from "@stackra/ui/native";
 import {
   ChartCrosshair,
   ChartIndicator,
   ChartTooltip,
   ComposedChart,
 } from "@stackra/ui-pro/native";
-import { Typography, useThemeColor } from "heroui-native";
+import { useThemeColor } from "heroui-native";
 import { useChartTooltipAnchor } from "heroui-native-pro/chart-tooltip";
 import { useState } from "react";
 import { type ChartBounds, useChartPressState } from "victory-native";
@@ -121,9 +122,9 @@ export function ChartTooltipScreen() {
           </ComposedChart>
           <SalesTooltip placement={placement} />
         </ChartTooltip.Anchor>
-        <Typography.Paragraph type="body-sm" color="muted">
+        <Text type="small" tone="muted">
           {STRINGS.tooltip.hint}
-        </Typography.Paragraph>
+        </Text>
       </Section>
     </Screen>
   );

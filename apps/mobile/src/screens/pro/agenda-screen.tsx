@@ -16,9 +16,8 @@ import {
   type CalendarDate,
   type CalendarDateTime,
 } from "@internationalized/date";
-import { useDesignSystem } from "@stackra/ui/native";
+import { Text, useDesignSystem } from "@stackra/ui/native";
 import { Agenda, useAgenda } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { useCallback, useState } from "react";
 import { View } from "react-native";
 
@@ -127,9 +126,9 @@ export function AgendaScreen() {
           value={view}
           onChange={setView}
         />
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.views.visible} ${agenda.heading}`}
-        </Typography.Paragraph>
+        </Text>
         <View className="h-150">
           <Agenda {...agenda} />
         </View>

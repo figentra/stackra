@@ -22,6 +22,7 @@ import { ChipScreen } from "./free/chip-screen";
 import { CloseButtonScreen } from "./free/close-button-screen";
 import { ComboBoxScreen as FreeComboBoxScreen } from "./free/combo-box-screen";
 import { FormScreen } from "./free/form-screen";
+import { FormFieldScreen } from "./free/form-field-screen";
 import { FormSectionScreen } from "./free/form-section-screen";
 import { IconScreen } from "./free/icon-screen";
 import { IconButtonScreen } from "./free/icon-button-screen";
@@ -128,6 +129,7 @@ export const DESIGN_SYSTEM_COMPONENTS: readonly DesignSystemComponent[] = [
   { group: "Free", title: "CloseButton", route: "FreeCloseButton", screen: CloseButtonScreen },
   { group: "Free", title: "ComboBox", route: "FreeComboBox", screen: FreeComboBoxScreen },
   { group: "Free", title: "Form", route: "FreeForm", screen: FormScreen },
+  { group: "Free", title: "FormField", route: "FreeFormField", screen: FormFieldScreen },
   { group: "Free", title: "FormSection", route: "FreeFormSection", screen: FormSectionScreen },
   { group: "Free", title: "Icon", route: "FreeIcon", screen: IconScreen },
   { group: "Free", title: "IconButton", route: "FreeIconButton", screen: IconButtonScreen },

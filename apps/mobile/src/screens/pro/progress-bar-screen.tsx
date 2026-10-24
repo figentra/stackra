@@ -6,8 +6,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Button } from "@stackra/ui/native";
 import { ProgressBar } from "@stackra/ui-pro/native";
-import { Button } from "heroui-native";
 import { useState } from "react";
 import { View } from "react-native";
 

@@ -6,8 +6,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Button } from "@stackra/ui/native";
 import { LineChart } from "@stackra/ui-pro/native";
-import { Button } from "heroui-native";
 import { useState } from "react";
 import { View } from "react-native";
 
@@ -125,7 +125,7 @@ export function LineChartScreen() {
         <Button
           size="sm"
           variant="secondary"
-          accessibilityLabel={STRINGS.drawOn.replay}
+          label={STRINGS.drawOn.replay}
           onPress={() => setReplayCount((count) => count + 1)}
         >
           {STRINGS.drawOn.replay}

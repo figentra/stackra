@@ -9,9 +9,8 @@
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-011.
  */
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { useDesignSystem } from "@stackra/ui/native";
+import { Description, FieldError, Label, Text, useDesignSystem } from "@stackra/ui/native";
 import { DatePicker, type DatePickerProps } from "@stackra/ui-pro/native";
-import { Description, FieldError, Label, Typography } from "heroui-native";
 import { useState } from "react";
 
 import { CalendarParts } from "#src/components/ui/calendar-parts";
@@ -118,9 +117,9 @@ export function DatePickerScreen() {
     <Screen>
       <Section title={STRINGS.popover.title} description={STRINGS.popover.description}>
         <DateField label={STRINGS.popover.label} locale={locale} onValueChange={setPicked} />
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.popover.selected} ${picked?.label ?? STRINGS.popover.none}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.sheet.title} description={STRINGS.sheet.description}>

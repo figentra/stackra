@@ -7,8 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Description, FieldError, Label, Text } from "@stackra/ui/native";
 import { ComboBox, type ComboBoxProps } from "@stackra/ui-pro/native";
-import { Description, FieldError, Label, Typography } from "heroui-native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
@@ -127,9 +127,9 @@ export function ComboBoxScreen() {
           <AnimalInput placeholder={STRINGS.single.placeholder} label={STRINGS.single.label} />
           <AnimalPortal />
         </ComboBox>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.single.selected} ${single && !Array.isArray(single) ? single.label : STRINGS.single.none}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.multiple.title} description={STRINGS.multiple.description}>

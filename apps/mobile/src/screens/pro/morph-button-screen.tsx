@@ -6,10 +6,10 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Button, Text } from "@stackra/ui/native";
 import { MorphButton } from "@stackra/ui-pro/native";
-import { Button, Typography } from "heroui-native";
 import { type ReactNode, useState } from "react";
-import { Text, View } from "react-native";
+import { Text as NativeText, View } from "react-native";
 
 import { ChoiceGroup } from "#src/components/ui/choice-group";
 import { Screen } from "#src/components/ui/screen";
@@ -72,7 +72,7 @@ type Direction = "top" | "bottom" | "start" | "end";
 /** Text on the morphing surface: the primary variant is inverted, the secondary uses the normal foreground. */
 function Label({ variant, children }: { variant: Variant; children: ReactNode }) {
   return (
-    <Text
+    <NativeText
       className={
         variant === "primary"
           ? "text-sm font-medium text-background"
@@ -80,7 +80,7 @@ function Label({ variant, children }: { variant: Variant; children: ReactNode })
       }
     >
       {children}
-    </Text>
+    </NativeText>
   );
 }
 
@@ -156,9 +156,9 @@ export function MorphButtonScreen() {
             </MorphButton.ExpandedContent>
           </MorphButton>
         </Stage>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.controlled.state} ${isOpen ? STRINGS.controlled.open : STRINGS.controlled.closed}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.disabled.title} description={STRINGS.disabled.description}>

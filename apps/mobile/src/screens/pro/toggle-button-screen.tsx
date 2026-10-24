@@ -6,10 +6,10 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Text } from "@stackra/ui/native";
 import { ToggleButton } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { Text as NativeText, View } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
@@ -69,9 +69,9 @@ export function ToggleButtonScreen() {
               {isLiked ? STRINGS.controlled.on : STRINGS.controlled.label}
             </ToggleButton.Label>
           </ToggleButton>
-          <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+          <Text type="small" tone="muted" accessibilityLiveRegion="polite">
             {`${STRINGS.controlled.status} ${isLiked ? STRINGS.controlled.selected : STRINGS.controlled.unselected}`}
-          </Typography.Paragraph>
+          </Text>
         </View>
       </Section>
 
@@ -98,7 +98,7 @@ export function ToggleButtonScreen() {
       <Section title={STRINGS.iconOnly.title} description={STRINGS.iconOnly.description}>
         <View className="flex-row gap-3">
           <ToggleButton label={STRINGS.iconOnly.label} isIconOnly>
-            <Text className="text-lg text-foreground">★</Text>
+            <NativeText className="text-lg text-foreground">★</NativeText>
           </ToggleButton>
         </View>
       </Section>

@@ -7,8 +7,9 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
+import { Description, Label, Text } from "@stackra/ui/native";
 import { RadioButtonGroup } from "@stackra/ui-pro/native";
-import { Description, Label, Radio, Typography } from "heroui-native";
+import { Radio } from "heroui-native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
@@ -78,9 +79,9 @@ export function RadioButtonGroupScreen() {
             </RadioButtonGroup.ItemContent>
           </RadioButtonGroup.Item>
         </RadioButtonGroup>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.cards.value} ${period}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.list.title} description={STRINGS.list.description}>
