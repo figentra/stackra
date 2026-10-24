@@ -13,7 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { ReactNode } from "react";
 
-import type { DesignSystemComponentRoute, SettingsStackParamList } from "#src/navigation/types";
+import type { DesignSystemComponentRoute, HomeStackParamList } from "#src/navigation/types";
 import type { PageLink } from "#src/types/page-link.type";
 import { CategoryStrip } from "./category-strip";
 import { PagePager } from "./page-pager";
@@ -31,7 +31,7 @@ export interface ComponentPageProps {
 
 /** A design-system page with its category strip and pager. */
 export function ComponentPage({ pages, route, children }: ComponentPageProps) {
-  const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const current = pages.find((page) => page.route === route);
   if (!current) return children;
   // Every page route takes no params, but replace's per-route overloads cannot take a union of route names.

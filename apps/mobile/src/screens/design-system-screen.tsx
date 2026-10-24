@@ -26,7 +26,7 @@ import { HeroArt } from "../components/ui/hero-art";
 import { PageGallery } from "../components/ui/page-gallery";
 import { Screen } from "../components/ui/screen";
 import { Showcase } from "../components/ui/showcase";
-import type { DesignSystemComponentRoute, SettingsStackParamList } from "../navigation/types";
+import type { DesignSystemComponentRoute, HomeStackParamList } from "../navigation/types";
 import type { PageLink } from "../types/page-link.type";
 import { DESIGN_SYSTEM_COMPONENTS } from "./design-system-components";
 
@@ -85,7 +85,7 @@ function SectionHeading({ title, note }: { title: string; note: string }) {
 /** The review area's landing: hero, showcase and gallery, or the search results while a query is typed. */
 export function DesignSystemScreen({
   navigation,
-}: NativeStackScreenProps<SettingsStackParamList, "DesignSystem">) {
+}: NativeStackScreenProps<HomeStackParamList, "DesignSystem">) {
   const [query, setQuery] = useState("");
   const scroll = useRef<ScrollView>(null);
   const search = useRef<SearchBarCommands>(null);

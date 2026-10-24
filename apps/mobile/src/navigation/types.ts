@@ -14,13 +14,7 @@ import type { NavigatorScreenParams } from "@react-navigation/native";
 export type HomeStackParamList = {
   /** The Home screen; takes no params. */
   Home: undefined;
-};
-
-/** The routes of the Settings tab's stack and their params. */
-export type SettingsStackParamList = {
-  /** The Settings screen; takes no params. */
-  Settings: undefined;
-  /** The design-system index, with the display switchers; deep link `stackra://design-system`. */
+  /** The design-system landing, the Home tab's root in development builds; deep link `stackra://design-system`. */
   DesignSystem: undefined;
   /** The free Avatar page; deep link `stackra://design-system/free/avatar`. */
   FreeAvatar: undefined;
@@ -192,11 +186,14 @@ export type SettingsStackParamList = {
   ProWidget: undefined;
 };
 
-/** The routes that show one design-system component: every Settings route except the settings and the index. */
-export type DesignSystemComponentRoute = Exclude<
-  keyof SettingsStackParamList,
-  "Settings" | "DesignSystem"
->;
+/** The routes of the Settings tab's stack and their params. */
+export type SettingsStackParamList = {
+  /** The Settings screen, the app's settings; takes no params. */
+  Settings: undefined;
+};
+
+/** The routes that show one design-system component: every Home route except the home and the landing. */
+export type DesignSystemComponentRoute = Exclude<keyof HomeStackParamList, "Home" | "DesignSystem">;
 
 /** The tab routes; each tab holds the stack of its own screens. */
 export type TabParamList = {

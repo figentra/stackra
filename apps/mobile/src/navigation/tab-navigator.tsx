@@ -38,20 +38,11 @@ const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 function HomeTab() {
   return (
     <HomeStack.Navigator screenOptions={largeTitleHeader}>
-      <HomeStack.Screen name="Home" component={HomeScreen} />
-    </HomeStack.Navigator>
-  );
-}
-
-function SettingsTab() {
-  return (
-    <SettingsStack.Navigator screenOptions={largeTitleHeader}>
-      <SettingsStack.Screen name="Settings" component={SettingsScreen} />
-      {/* Development builds only, like the Settings row that opens it. */}
+      {/* Development builds: the design-system landing is the tab's root; release builds show the Home screen. */}
       {/* Each page is framed by its category strip and pager; the display switcher sits in every header. */}
       {DesignSystemScreen && ComponentPage && DisplaySettings ? (
         <>
-          <SettingsStack.Screen
+          <HomeStack.Screen
             name="DesignSystem"
             component={DesignSystemScreen}
             options={{
@@ -61,7 +52,7 @@ function SettingsTab() {
             }}
           />
           {DESIGN_SYSTEM_COMPONENTS.map(({ route, title, screen }) => (
-            <SettingsStack.Screen
+            <HomeStack.Screen
               key={route}
               name={route}
               component={screen}
@@ -74,7 +65,17 @@ function SettingsTab() {
             />
           ))}
         </>
-      ) : null}
+      ) : (
+        <HomeStack.Screen name="Home" component={HomeScreen} />
+      )}
+    </HomeStack.Navigator>
+  );
+}
+
+function SettingsTab() {
+  return (
+    <SettingsStack.Navigator screenOptions={largeTitleHeader}>
+      <SettingsStack.Screen name="Settings" component={SettingsScreen} />
     </SettingsStack.Navigator>
   );
 }

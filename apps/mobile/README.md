@@ -25,7 +25,7 @@ src/
 │   ├── linking.ts             deep links: stackra://items/<id> → Item, stackra://design-system[/free|pro/<name>]
 │   ├── header-options.ts      transparent native-stack headers (Liquid Glass) + large titles
 │   ├── root-navigator.tsx     native stack: Tabs, Item (dynamic)
-│   └── tab-navigator.tsx      native tab bar (UITabBarController) with one stack per tab; the Settings stack
+│   └── tab-navigator.tsx      native tab bar (UITabBarController) with one stack per tab; the Home stack
 │                              also holds the design-system review pages
 ├── enums/                     ComponentCategory (the catalogue order), ComponentTier (Free, Pro)
 ├── screens/                   one file per screen
@@ -39,10 +39,10 @@ src/
 
 ## Design-system review area
 
-Settings → Design system (`stackra://design-system`) is the mobile twin of `apps/playground`: switch the colour
+The Home tab (`stackra://design-system`; development builds only, release builds show the Home screen) is the mobile twin of `apps/playground`: switch the colour
 scheme (Light, Dark, System) and the direction (English LTR, العربية RTL), then open a component page
-(`stackra://design-system/free/<name>` or `stackra://design-system/pro/<name>`). To add a component, add its route to `SettingsStackParamList`, its page under
-`src/screens/`, and one row to `DESIGN_SYSTEM_COMPONENTS` with its category and tier; the index and the Settings stack read that list.
+(`stackra://design-system/free/<name>` or `stackra://design-system/pro/<name>`). To add a component, add its route to `HomeStackParamList`, its page under
+`src/screens/`, and one row to `DESIGN_SYSTEM_COMPONENTS` with its category and tier; the landing and the Home stack read that list.
 The index lists one section per category (Foundations to AI, empty ones hidden), Free rows before Pro rows, each
 alphabetical, with a "Pro" badge on Pro rows and an All / Free / Pro filter above. Bottom sheets use HeroUI's inset
 style through `useInsetSheet()`.
