@@ -1,23 +1,28 @@
 /**
  * Stackra file contract:
- * Purpose: `ScopeRef`, a reference to one scope a call acts inside: its level and its id. Packages that isolate data
- *          by scope (the database's session settings, settings scope levels) take it instead of naming a level.
- * Boundary: a type only. The levels are data the owning package contributes (@stackra/tenancy contributes its own), so
- *           no other package spells a level name. The id is the authenticated principal's scope, never request input.
+ * Purpose: `ScopeRef`, a reference to one node of the scope tree a call acts inside: the node's public id and its
+ *          materialised path. Packages that isolate data by scope (the database's session settings, settings scope
+ *          levels, entitlement grants) take it instead of naming a tenant or a level (ADR 0323, 0327).
+ * Boundary: a type only. Levels are deployment data (ADR 0327 d2), so a ref carries no level; the path is the node's
+ *           `ltree` path, which makes ancestor matching (`scope_path <@ path`) possible without a lookup. The id is the
+ *           authenticated principal's scope, never request input. Moves to `@stackra/scope/contracts` once that
+ *           package exists (ADR 0327 d5); the owner may keep it here as the leaf instead.
  * Runtime: isomorphic
- * Governing contract: ADR 0239 (row-level security on equality); ADR 0231 (snake_case codes).
+ * Governing contract: ADR 0327 (decisions 3 and 5); ADR 0323 (every other package speaks of a scope through ScopeRef).
  */
+import type { PublicId } from "#core/types/public-id.type";
 
 /**
- * One scope: `{ level: "workspace", id }` sets the database setting `app.workspace_id` for the transaction.
+ * One scope node: `{ id: "scp_…", path: "platform.acme.shop_eu" }`. `withScope(ref, work)` sets the database
+ * settings `app.scope_id` and `app.scope_path` for the transaction.
  *
  * @example
- * await database.withScope({ level: "workspace", id: principal.workspaceId }, () => work());
+ * await database.withScope({ id: principal.scopeId, path: principal.scopePath }, () => work());
  */
 export interface ScopeRef {
-  /** The level's code, snake_case, contributed by the package that owns the level. */
-  readonly level: string;
+  /** The node's public id. */
+  readonly id: PublicId<"scp">;
 
-  /** The scope's id at that level. */
-  readonly id: string;
+  /** The node's materialised `ltree` path, root first, labels separated by dots. */
+  readonly path: string;
 }
