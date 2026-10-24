@@ -39,6 +39,7 @@ const HOME_TAB_LINKS: PathConfig<HomeStackParamList> = {
         FreeInputGroup: "design-system/free/input-group",
         FreeLink: "design-system/free/link",
         FreeRadioGroup: "design-system/free/radio-group",
+        FreeReveal: "design-system/free/reveal",
         FreeSearchField: "design-system/free/search-field",
         FreeSelect: "design-system/free/select",
         FreeSeparator: "design-system/free/separator",

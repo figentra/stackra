@@ -33,6 +33,7 @@ import { IconButtonScreen } from "./free/icon-button-screen";
 import { InputGroupScreen } from "./free/input-group-screen";
 import { LinkScreen } from "./free/link-screen";
 import { RadioGroupScreen } from "./free/radio-group-screen";
+import { RevealScreen } from "./free/reveal-screen";
 import { SearchFieldScreen } from "./free/search-field-screen";
 import { SelectScreen } from "./free/select-screen";
 import { SeparatorScreen } from "./free/separator-screen";
@@ -111,6 +112,13 @@ export interface DesignSystemComponent extends PageLink {
 const COMPONENTS: readonly DesignSystemComponent[] = [
   // Free
   { category: "Foundations", tier: "Free", title: "Icon", route: "FreeIcon", screen: IconScreen },
+  {
+    category: "Foundations",
+    tier: "Free",
+    title: "Reveal",
+    route: "FreeReveal",
+    screen: RevealScreen,
+  },
   {
     category: "Foundations",
     tier: "Free",
