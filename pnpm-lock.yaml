@@ -842,6 +842,9 @@ importers:
       '@internationalized/date':
         specifier: catalog:frontend
         version: 3.12.4
+      '@internationalized/number':
+        specifier: catalog:mobile
+        version: 3.6.9
       '@stackra/tsdown-config':
         specifier: workspace:*
         version: link:../../tooling/tsdown
