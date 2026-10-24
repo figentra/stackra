@@ -30,8 +30,9 @@ rename change one generated name, while the value stays the string that the plat
      member, in the form `<namespace>::<name>` (0309 decision 5). The constant of `house` is `Icons.House`.
    - **Keys.** A typed key object for each of columns, routes, resources and permissions.
 2. **Declarations use the constants.** `icon: Icons.House`, and never `icon: "house"`.
-3. **No hand-written layer.** A module does not get a constants file of its own. The constants are generated,
-   and a module keeps using its model, enum and event classes ([0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components)).
+3. **Gen output, never a hand-written file.** The generated constants are gen output and no author writes them. A
+   module's own `constants/` group ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming)) is
+   unchanged, and a module keeps using its model, enum and event classes ([0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components)).
 4. **Migrations are unchanged.** A migration is a literal snapshot ([0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules)),
    so its table and column names stay strings.
 5. **The name union stays.** `IconName` is the type that the icon constants are built on, and gen still checks each

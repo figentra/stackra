@@ -43,15 +43,15 @@ covered by any ADR. The owner decided these points in the final structure review
 5. **`desktop` replaces `electron`.** The `electron` section of `defineApp`, in ADR 0295 decision 2, is renamed
    `desktop`. Electron stays the implementation ([0058](/adr/0058-desktop-is-electron),
    [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron)). This ADR changes the section's name and not its
-   role.
+   role. The Electron code hatch of ADR 0295 decision 6, `electron.extend.ts`, is renamed `desktop.extend.ts` with it.
 
 **The PWA section.**
 
 6. **PWA options are the `pwa` section.** The PWA options are the `pwa` section of `stackra.config.ts`, a section that
    ADR 0295 decision 2 already lists.
-7. **`pwa.config.ts` is a hatch for caching only.** A separate `pwa.config.ts` remains only as an escape hatch for
-   runtime caching rules. It is a code hatch, so it joins the closed set of ADR 0295 decision 6 and carries that
-   decision's `Reason:` header and manifest entry.
+7. **`pwa.extend.ts` is a hatch for caching only.** The PWA runtime-caching hatch is `pwa.extend.ts`, which follows the
+   `<tool>.extend.ts` pattern of ADR 0295 decision 6. It holds runtime caching rules and nothing else. It joins that
+   decision's closed set and carries its `Reason:` header and manifest entry.
 
 **Derived app shortcuts.**
 
@@ -100,7 +100,7 @@ covered by any ADR. The owner decided these points in the final structure review
 - planned — STA-339, the bundle identifier check of ADR 0295 applies to the bundle identifiers in `identity`.
 - planned — gen check: a route's `appShortcut` has an icon and a `labelKey` that resolves in each shipped locale. No
   work item yet.
-- planned — the `pwa.config.ts` hatch check of ADR 0295 decision 6 (a `Reason:` header and a manifest entry) applies to
+- planned — the `pwa.extend.ts` hatch check of ADR 0295 decision 6 (a `Reason:` header and a manifest entry) applies to
   it, as STA-339 plans for every hatch.
 - planned — a test that the Expo config plugin's Swift and Kotlin output compiles for iOS and Android. No work item
   yet.
