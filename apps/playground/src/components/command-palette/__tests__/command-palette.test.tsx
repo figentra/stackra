@@ -103,6 +103,10 @@ describe("CommandPalette", () => {
     type("zzz");
     expect(screen.queryAllByRole("option")).toHaveLength(0);
     expect(screen.getByText("Nothing matches “zzz”.")).toBeTruthy();
+    // No empty listbox: the field says the list is closed and points at nothing.
+    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(input().getAttribute("aria-expanded")).toBe("false");
+    expect(input().getAttribute("aria-controls")).toBeNull();
   });
 
   it("moves the active row with the arrows while focus stays in the field", () => {
