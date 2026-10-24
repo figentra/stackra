@@ -273,6 +273,10 @@ export const MUST_STAY_JSON = [
     "brand-kit token reports, vendored byte-for-byte; the theme tests JSON.parse them",
   ],
   [/(^|\/)src\/docs\.json$/, "Mintlify parses docs.json with JSON.parse"],
+  [
+    /(^|\/)([\w-]+\.)?stackra\.manifest\.json$/,
+    "stackra gen writes the committed manifest as strict JSON (ADR 0294 R10); test fixtures copy it",
+  ],
   [/(^|\/)(app|eas)\.json$/, "Expo/EAS: fixed names, rewritten by the expo/eas CLIs"],
   [/^\.specify\//, "spec-kit CLI output, read by its scripts with jq / python json"],
   [/^\.(agents|claude)\/skills\//, "vendored skills: upstream content"],

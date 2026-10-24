@@ -1,0 +1,41 @@
+/**
+ * Stackra file contract:
+ * Purpose: unit and type tests of `DataClassification`: an `Enum.of` whose codes, order and case names are the contract (ADR 0134).
+ * Boundary: test only; imports the subject through its `#core` alias and the runner through @stackra/testing.
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 16).
+ */
+import { describe, expect, it } from "@stackra/testing";
+
+import { Enum } from "#core/bases/enum.base";
+import { DataClassification } from "#core/enums/data-classification.enum";
+
+describe("DataClassification", () => {
+  it("holds exactly these codes, in this order", () => {
+    expect(Enum.values(DataClassification)).toEqual([
+      "personal",
+      "financial",
+      "health",
+      "pseudonymous",
+    ]);
+  });
+
+  it("is a frozen Enum.of value whose case names are the PascalCase of the codes", () => {
+    expect(Object.isFrozen(DataClassification)).toBe(true);
+    // the type also names the type-only `~enum` map, which is never an own key at runtime
+    for (const [caseName, code] of Object.entries(DataClassification) as [string, string][])
+      expect(caseName.toLowerCase()).toBe(code.replaceAll("_", "").toLowerCase());
+  });
+
+  it("writes every code in snake_case", () => {
+    for (const code of Enum.values(DataClassification))
+      expect(code).toMatch(/^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/);
+  });
+
+  it("has a type of the same name that refuses other strings", () => {
+    const code: DataClassification = DataClassification.Pseudonymous;
+    // @ts-expect-error -- not a code of DataClassification
+    const wrong: DataClassification = "not_a_code";
+    expect([code, wrong]).toEqual([DataClassification.Pseudonymous, "not_a_code"]);
+  });
+});
