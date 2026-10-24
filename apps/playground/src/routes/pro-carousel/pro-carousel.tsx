@@ -20,6 +20,8 @@ const STRINGS = {
   slides: "Release highlights",
   carousel: "Highlights carousel",
   slide: (index: number, total: number) => `Slide ${index} of ${total}`,
+  dots: "Slides",
+  goTo: (index: number) => `Go to slide ${index}`,
 } as const;
 
 const SLIDES = [
@@ -29,6 +31,26 @@ const SLIDES = [
   { id: "rtl", title: "Right to left", text: "Logical properties throughout." },
   { id: "dark", title: "Dark mode", text: "Every token has a dark value." },
 ] as const;
+
+/**
+ * One pagination dot. HeroUI Pro's own dots are plain buttons in a `tablist`, which must hold tabs, and 8 px targets,
+ * so the page draws each as a 24 px button around the 8 px dot, marks the slide on screen with `aria-current`, and
+ * makes the row a plain group.
+ */
+function SlideDot({ index, isSelected }: { index: number; isSelected: boolean }) {
+  const { scrollTo } = UiPro.useCarousel();
+  return (
+    <button
+      type="button"
+      aria-label={STRINGS.goTo(index + 1)}
+      aria-current={isSelected ? "true" : undefined}
+      className="grid size-6 place-items-center rounded-full outline-focus focus-visible:outline-2"
+      onClick={() => scrollTo(index)}
+    >
+      <span className="carousel__dot block" data-selected={isSelected || undefined} />
+    </button>
+  );
+}
 
 /** The Carousel page. */
 export function ProCarousel() {
@@ -66,7 +88,11 @@ export function ProCarousel() {
             </UiPro.Carousel.Content>
             <UiPro.Carousel.Previous />
             <UiPro.Carousel.Next />
-            <UiPro.Carousel.Dots />
+            <UiPro.Carousel.Dots
+              role="group"
+              aria-label={STRINGS.dots}
+              renderDot={(dot) => <SlideDot {...dot} />}
+            />
           </UiPro.Carousel>
         </div>
       </section>

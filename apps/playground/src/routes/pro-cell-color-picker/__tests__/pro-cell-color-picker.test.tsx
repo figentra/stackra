@@ -31,9 +31,9 @@ describe("ProCellColorPicker", () => {
 
   it("draws three named triggers, and disables the last", () => {
     render(<ProCellColorPicker />);
-    expect(screen.getByRole("button", { name: "Accent" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Highlight" })).toBeTruthy();
-    expect((screen.getByRole("button", { name: "Border" }) as HTMLButtonElement).disabled).toBe(
+    expect(screen.getByRole("button", { name: /^Accent #3B82F6/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Highlight #10B981/ })).toBeTruthy();
+    expect((screen.getByRole("button", { name: /^Border #F59E0B/ }) as HTMLButtonElement).disabled).toBe(
       true,
     );
   });

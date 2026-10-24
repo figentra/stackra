@@ -20,9 +20,15 @@ const STRINGS = {
   intro:
     "A calendar with day, week and month views. Switch the view or move through time with the buttons; in the day and week views, drag across the time grid to create an event, then drag it to move it or its edge to resize it.",
   calendar: "Calendar",
+  hours: "Hours",
   newEvent: "New event",
   count: (count: number) => (count === 1 ? "1 event created" : `${count} events created`),
 } as const;
+
+// axe cannot work out the colour behind the selected view while HeroUI Pro's sliding indicator sits under it, so the
+// page hides the indicator and paints the selected item itself, as the Segment page does.
+const VIEW_SELECTOR =
+  "[&_[data-slot=segment-indicator]]:hidden [&_[data-slot=segment-item][data-selected=true]]:bg-(--segment)";
 
 /** The Agenda page. */
 export function ProAgenda() {
@@ -63,8 +69,9 @@ export function ProAgenda() {
         <div className="h-[36rem] w-full">
           <UiPro.Agenda {...agenda}>
             <UiPro.Agenda.Header>
-              <UiPro.Agenda.Heading />
-              <UiPro.Agenda.ViewSelector />
+              {/* HeroUI Pro draws the period as an h1; under the page's h1 and the h2 above, it is level 3. */}
+              <UiPro.Agenda.Heading aria-level={3} />
+              <UiPro.Agenda.ViewSelector className={VIEW_SELECTOR} />
               <UiPro.Agenda.Navigation>
                 <UiPro.Agenda.NavButton slot="previous" />
                 <UiPro.Agenda.TodayButton />
@@ -120,7 +127,8 @@ export function ProAgenda() {
                       />
                     ))}
                   </UiPro.Agenda.AllDaySection>
-                  <UiPro.Agenda.TimeGrid>
+                  {/* The grid scrolls, so it takes focus to scroll from the keyboard, and a name for it. */}
+                  <UiPro.Agenda.TimeGrid tabIndex={0} role="group" aria-label={STRINGS.hours}>
                     <UiPro.Agenda.CurrentTimeIndicator />
                     {agenda.visibleDays.map((day) => (
                       <UiPro.Agenda.DayColumn key={day.toString()} date={day}>
