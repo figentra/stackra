@@ -1,7 +1,16 @@
 ---
 title: "0255 — PWA: vite-plugin-pwa, service worker scope and push strategy per platform"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0325 · 2026-10-20 · amended 2026-10-24 (STA-428)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-428), by
+  [0325](/adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy). The service
+  worker's update and navigation policy is added: `skipWaiting` and `clientsClaim` are on,
+  navigations are network-first, the worker checks its host, a kill-switch `sw.js` can retire an
+  installed worker, and an end-to-end test deploys twice (0325 rules 15 to 19). Decision 4, the
+  offline shell, stands.
+</Note>
 
 <Note>
   Amends the PWA port plan of [0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters) (E3 in the

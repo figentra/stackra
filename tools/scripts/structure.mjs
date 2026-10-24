@@ -150,9 +150,20 @@ export const OPTIONAL_ENTRY_NAMES = Object.freeze(
  * @property {string} adr - the ADR decision it comes from
  */
 
-/** @param {[string, string[], string][]} rows @param {string} adr @returns {readonly Group[]} */
+/**
+ * @param {[string, string[], string, string?][]} rows - a row names its own ADR only when it differs from the table's
+ * @param {string} adr
+ * @returns {readonly Group[]}
+ */
 const groups = (rows, adr) =>
-  Object.freeze(rows.map(([group, suffixes, reason]) => ({ group, suffixes, reason, adr })));
+  Object.freeze(
+    rows.map(([group, suffixes, reason, rowAdr]) => ({
+      group,
+      suffixes,
+      reason,
+      adr: rowAdr ?? adr,
+    })),
+  );
 
 /**
  * The groups of a module: `src/modules/<key>/` in a service, `src/node/` in a package (ADR 0294 decision 13). A group
@@ -198,7 +209,7 @@ export const MODULE_GROUPS = groups(
 /** The groups of an app's `src/` (ADR 0294 decision 14). */
 export const APP_GROUPS = groups(
   [
-    ["", ["module", "error"], "`<key>.module.ts` and `app.error.tsx`, the root error boundary"],
+    ["", ["module"], "`<key>.module.ts`"],
     ["config", ["config"], "config classes, including `desktop.config.ts` and `chrome.config.ts`"],
     ["panels", ["panel"], "app areas"],
     ["menus", ["menu"], "navigation data"],
@@ -212,6 +223,12 @@ export const APP_GROUPS = groups(
       "routes/<name>",
       ["route", "layout", "error", "fallback", "server"],
       "a route or layout class, its page `<name>.tsx`, `use-<name>.ts` and `__tests__/`",
+    ],
+    [
+      "routes",
+      ["error"],
+      "`.error.tsx` directly under `routes/`, the default for routes with no nearer boundary",
+      "0324",
     ],
     [
       "blocks/<name>",
