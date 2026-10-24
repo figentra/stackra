@@ -1,0 +1,133 @@
+---
+title: "0348 — Integration surfaces: assistant hosts, chat apps, messaging flows and wallet passes"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits) (decision 1: the
+  hosts the one declaration reaches),
+  [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free) (decision 4: the gateway serves
+  user-interface resources) and
+  [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks) (rule 15:
+  one named raw endpoint beside the webhook rule), each by a Note. It is the ADR that
+  [0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix) decision 5
+  promises, and it answers the wallet question of
+  [0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver).
+</Note>
+
+## Context
+
+[0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix) decision 5 keeps assistant hosts,
+chat apps, messaging mini-apps and wallet passes out of the target table: none is an installable artifact of an app
+member with a runtime row. They are still surfaces users meet. Every action and query is already an MCP tool
+([0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free),
+[0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits)), and assistant hosts now render a tool's own
+user interface from a resource the server names. Law firms live in Microsoft 365 and Slack. A loyalty card or a receipt
+is most useful as a pass in the customer's wallet, which the retail edition and the commerce product both asked for on
+2026-10-24. The platform research of the same day proposed these as targets; its critique moved them here, because a
+service must not import app code ([0003](/adr/0003-tier-dependency-direction)) and because every provider event belongs
+to an Integration ([0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks) rule 15).
+
+## Decision
+
+1. **An integration surface is a server-side projection of a member's actions and queries onto a host the platform
+   does not build.** It has no runtime row and is never a `Target`. Each surface is an Integration of its provider
+   (0308): a static description, generated manifests, inbound events as `WebhookEvent<I>({ type })`, and outbound calls
+   through the integration's connection. A surface exposes only the actions and queries that are already tools
+   (`tool: true` or an L0 or L1 query, 0155 decision 1), filtered by IAM and entitlements for the caller, as the MCP
+   gateway already does.
+
+2. **Assistant hosts.** The MCP gateway of 0155 decision 4 stays the one entry for Claude, ChatGPT, Microsoft 365
+   Copilot, VS Code and voice assistants that speak MCP. A query or action that opts into a rendered interface names a
+   `ui://<module>/<name>` resource in its tool descriptor, with its content-security policy and permissions; the
+   resource is a single-file bundle built by the app member or a package, published as an asset
+   ([0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker)) and served by the gateway, never built in
+   the AI service. The gateway publishes protected-resource metadata that names the identity provider
+   ([0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)) as the authorization
+   server, and each host's directory review is an owner step in the store checklist of
+   [0325](/adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy) rule 9.
+
+3. **Chat apps.** A Slack app and a Microsoft Teams app are Integrations whose manifests gen writes from the opted-in
+   tools (commands, shortcuts and an agent entry pointing at the MCP gateway; OAuth scopes and request URLs; the Teams
+   package with its icons and valid domains). Their events, interactivity and signature checks go through
+   `WebhookEvent<I>`, as rule 15 says; the signing and client secret names (`SLACK_SIGNING_SECRET`,
+   `SLACK_CLIENT_SECRET`, `MICROSOFT_TEAMS_CLIENT_SECRET`) live in Infisical and never in git. Teams tabs onto web
+   routes come later, because the host's own sign-in collides with ours (0206).
+
+4. **Messaging surfaces.** A Telegram mini app is the web target inside the messenger's web view, launched from a bot:
+   a theme bridge onto the token variables, the host's back and main buttons bound to the router, and a server-side
+   check of the launch data (its signature with the bot token `TELEGRAM_BOT_TOKEN`, and its freshness) that maps the
+   user to an Actor linked to an identity of ours; nothing trusts the client. A WhatsApp flow is a flow document compiled
+   from an action's Input schema, with the provider's events and signature through `WebhookEvent<I>`, and one raw
+   endpoint for the provider's synchronous encrypted data exchange, because that exchange answers inside the request
+   with a payload it encrypts for the provider; the endpoint is a `Controller` in the module's `raw/` group with the
+   reason in its header, and it is the one named exception to rule 15 (`META_APP_SECRET`, `META_FLOWS_PRIVATE_KEY`).
+
+5. **Wallet passes.** A pass (a loyalty card, a receipt, a membership, a ticket) is generated on the server from a
+   `Schema` by the module that owns the record: loyalty cards by the commerce product's loyalty module, receipt passes
+   by OS invoicing (the tax documents of the [0244](/adr/0244-markets-owned-by-pricing) Note), memberships and tickets
+   by the product that sells them. Apple Wallet and Google Wallet are integration providers in `@stackra/integrations`;
+   a module declares a pass kind as a class that extends `Pass({ key })` in its `integrations/` group, whose template is
+   its Schema. The Apple pass bundle is signed with the pass-type certificate and key, the Google pass object with the
+   issuer's key; the names (`APPLE_WALLET_PASS_CERTIFICATE`, `APPLE_WALLET_PASS_KEY`, `GOOGLE_WALLET_ISSUER_KEY`) live in
+   Infisical, and no value is ever in git or a log. A pass updates when its source record changes, through the module's
+   integration events and the providers' update paths, and the pass web service endpoints (registration, update,
+   unregistration) are `WebhookEvent<I>` and queries of the owning module. A pass shows what a lock screen may show, as
+   [0345](/adr/0345-native-code-generation-and-the-native-shared-layer) decision 2 says of snapshots.
+
+6. **Edge and limits.** Every inbound surface endpoint sits in an API area the edge limits
+   ([0237](/adr/0237-generated-api-gateway-in-four-layers) layer 1), verifies the provider's signature before it parses a
+   body, and runs the action pipeline for anything it triggers, so permission, idempotency and approval still apply
+   (an assistant acting for a user is audited as an agent, 0155 decision 4).
+
+7. **Tiers.** MCP host rendering, the Slack and Teams apps and wallet passes are tier next, each triggered by a product
+   need already named (the legal product's firms; the commerce product's loyalty cards and receipts). The Telegram mini
+   app and WhatsApp flows are tier later, triggered by a market launch that names the channel (and, for WhatsApp, the
+   provider's business verification). Each surface is one Integration listing; none adds a package of its own.
+
+## Consequences
+
+- One declaration (an action or query that is a tool) reaches REST, the MCP gateway, assistant hosts with their own
+  interface, chat apps and messaging flows, with no per-host code beyond the Integration.
+- A pass is a projection of a record the module already owns, so its data rules, classes and visibility apply unchanged,
+  and the pass is as current as the module's events.
+- The one raw endpoint of decision 4 is the only place a provider's synchronous payload is answered outside the webhook
+  kind, and it says why in its header.
+- Each surface brings an owner step (a host directory review, a Slack or Teams listing, a pass-type registration) and
+  secret names to register before it ships.
+
+## Enforcement
+
+- planned — gen (STA-340): a surface that exposes an action or query that is not a tool fails; a `ui://` resource that
+  is not a published asset fails; a raw `Controller` for a provider other than the named data exchange fails under 0308
+  rule 15.
+- planned — a conformance test in `@stackra/integrations` per surface: an unsigned or stale inbound request is refused
+  before parsing; a pass generated from a fixture validates against the provider's format; a secret name resolves and
+  no value appears in output.
+- planned — the store checklist generator lists each surface's owner steps (0325 rule 9).
+
+## Alternatives
+
+- **Surfaces as `Target` codes.** Not chosen ([0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix)
+  decision 5): no runtime row, no app artifact.
+- **Building the `ui://` bundles in the AI service.** Not chosen: a service importing app code breaks
+  [0003](/adr/0003-tier-dependency-direction); the member or a package builds, the gateway serves.
+- **Raw endpoints for every provider event.** Not chosen: rule 15 of 0308 stands; only the synchronous encrypted
+  exchange needs one.
+- **A pass as a native surface of the mobile app.** Not chosen: a pass needs no app, shows on phones and watches of both
+  platforms, and is generated where the record lives.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Note: [0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits),
+[0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free) and
+[0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks). Builds on
+[0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix),
+[0345](/adr/0345-native-code-generation-and-the-native-shared-layer),
+[0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral),
+[0237](/adr/0237-generated-api-gateway-in-four-layers),
+[0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker),
+[0325](/adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy),
+[0244](/adr/0244-markets-owned-by-pricing) and [0003](/adr/0003-tier-dependency-direction). Sources: the platform
+research of 2026-10-24 and its critique, the retail edition's and the commerce product's wallet-pass needs of the same
+day, restated in this ADR's own words; provider facts as of 2026-10-24.

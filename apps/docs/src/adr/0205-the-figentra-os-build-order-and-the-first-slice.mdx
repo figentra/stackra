@@ -1,7 +1,22 @@
 ---
 title: "0205 — The Figentra OS build order and the first slice"
-description: "Accepted · 2026-10-20 · amended 2026-10-24 (STA-456)"
+description: "Accepted · 2026-10-20 · amended 2026-10-24 (STA-456) · amended 2026-10-24 (STA-474)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-474), owner decision on the commerce product's question: in the build
+  order of decision 1, pricing (with its pure evaluation package, which
+  [0337](/adr/0337-client-rule-code-a-module-ships-pure-rules-that-run-on-the-till-and-on-the-server)
+  defines) and the payments-ledger core (balances, gift cards, store credit, cash and manual
+  tenders) move to right after the OS core (identity, tenancy, access, audit, settings and
+  entitlements), ahead of search, registry, experience and the developer platform; invoicing moves
+  to right after notifications and files, because it renders, archives and sends documents and needs
+  the gapless sequences of
+  [0342](/adr/0342-gapless-sequences-allocated-at-commit-per-tenant-and-series); provider tenders
+  (integrated terminals, wallets, buy-now-pay-later) come with webhooks and integrations, and a
+  product that needs them earlier asks the owner. The commerce product's release, the retail
+  edition's pilot and the legal product's launch need these steps. The first slice is unchanged.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-456), from the legal product's plan: three steps of the build order of

@@ -1,7 +1,17 @@
 ---
 title: "0308 — Integrations v3.1: the Integration describes the provider, the Connection holds one credential set, and webhooks route through the Integration"
-description: "Accepted · 2026-10-23"
+description: "Accepted, amended by 0348 · 2026-10-23"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-474) by
+  [0348](/adr/0348-integration-surfaces-assistant-hosts-chat-apps-messaging-flows-and-wallet-passes):
+  rule 15 gains one named exception, the synchronous encrypted data exchange of a WhatsApp flow,
+  which answers inside the request and is a `Controller` in the module's `raw/` group with its
+  reason in the header; every other provider event, the chat apps' and the wallet providers'
+  included, stays a `WebhookEvent<I>`. Apple Wallet and Google Wallet join the providers, with a
+  `Pass({ key })` kind in a module's `integrations/` group. The other rules stand.
+</Note>
 
 <Note>
   Amends [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (the
