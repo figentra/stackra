@@ -7,6 +7,7 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { ColorRole } from "#contracts/enums/color-role.enum";
+export type { MotionTiming } from "#contracts/types/motion-timing.type";
 export type {
   ColorToken,
   FontFamilies,
