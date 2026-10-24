@@ -1,0 +1,9 @@
+{
+  "enums": {
+    "consent_category": {
+      "necessary": "ضرورية",
+      "analytics": "تحليلات المنتج",
+      "crash_replay": "تسجيلات الأعطال"
+    }
+  }
+}

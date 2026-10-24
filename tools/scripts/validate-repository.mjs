@@ -284,6 +284,10 @@ export const MUST_STAY_JSON = [
   [/(^|\/)(app|eas)\.json$/, "Expo/EAS: fixed names, rewritten by the expo/eas CLIs"],
   [/^\.specify\//, "spec-kit CLI output, read by its scripts with jq / python json"],
   [/^\.(agents|claude)\/skills\//, "vendored skills: upstream content"],
+  [
+    /(^|\/)assets\/lang\/[\w-]+\/[\w-]+\.json$/,
+    "lang catalogues are assets/lang/<locale>/<namespace>.json by ADR 0305 (rule 1); @stackra/i18n reads JSON",
+  ],
 ];
 
 /**
