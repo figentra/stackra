@@ -64,7 +64,7 @@ export interface PaletteAction {
   readonly icon: IconName;
   /** Other words it is found by. */
   readonly keywords?: string;
-  /** Does it. */
+  /** Carries the action out; the palette closes after it. */
   readonly run: () => void;
 }
 
