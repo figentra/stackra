@@ -28,6 +28,7 @@ const STRINGS = {
     "Every component, live, in light and dark and in English and Arabic. Built on HeroUI and drawn in the Stackra tokens; the view you pick stays in the address, so a link opens the same one.",
   browse: "Browse components",
   search: "Search",
+  studio: "Theme Studio",
   stats: {
     pages: (count: number) => `${count} pages`,
     categories: (count: number) => `${count} categories`,
@@ -93,6 +94,14 @@ export function Home({ pages }: HomeProps) {
           >
             {STRINGS.browse}
             <Ui.Icon name="arrow-right" size="sm" isMirroredInRtl />
+          </Ui.Link>
+          <Ui.Link
+            href={`/theme-studio${search}`}
+            underline="hover"
+            className="material inline-flex min-h-10 items-center gap-2 rounded-full px-5 font-medium hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          >
+            <Ui.Icon name="palette" size="sm" />
+            {STRINGS.studio}
           </Ui.Link>
           {shell ? (
             <Ui.Button

@@ -44,6 +44,7 @@ const STRINGS = {
   product: "Playground",
   skip: "Skip to content",
   search: "Search components",
+  studio: "Theme Studio",
   settings: "Display settings",
   showSettings: "Scheme and language",
   colorScheme: "Colour scheme",
@@ -285,6 +286,14 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
                 {SHORTCUT}
               </kbd>
             </Button>
+            <Link
+              href={`/theme-studio${search}`}
+              underline="hover"
+              className="flex min-h-9 items-center gap-1.5 rounded-xl px-2 text-sm hover:bg-default hover:no-underline"
+            >
+              <Icon name="palette" size="sm" />
+              <span className="max-lg:sr-only">{STRINGS.studio}</span>
+            </Link>
             <IconButton
               icon="settings"
               label={STRINGS.showSettings}

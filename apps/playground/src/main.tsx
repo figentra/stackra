@@ -19,6 +19,8 @@ import { PlaygroundShell } from "#src/components/playground-shell";
 import { PLAYGROUND_PAGES } from "#src/components/playground-pages";
 import { Home } from "#src/routes/home/home";
 import { HomeRoute } from "#src/routes/home/home.route";
+import { ThemeStudio } from "#src/routes/theme-studio/theme-studio";
+import { ThemeStudioRoute } from "#src/routes/theme-studio/theme-studio.route";
 
 // shortcut: authored until stackra gen writes `.stackra/entry/browser.ts` and the route tree (STA-339); then delete
 // this file, and index.html with it (gen writes both).
@@ -29,6 +31,7 @@ const router = createBrowserRouter([
     element: <PlaygroundShell pages={links} />,
     children: [
       { path: HomeRoute.path, element: <Home pages={links} /> },
+      { path: ThemeStudioRoute.path, element: <ThemeStudio /> },
       ...PLAYGROUND_PAGES.map(({ route, element }) => ({ path: route.path, element })),
     ],
   },
