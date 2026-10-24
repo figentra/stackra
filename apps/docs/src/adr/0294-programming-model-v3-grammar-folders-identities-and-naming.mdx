@@ -1,7 +1,22 @@
 ---
 title: "0294 — Programming model v3: grammar, group folders, derived identities and naming"
-description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349, STA-406)"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349, STA-406) and 2026-10-24 (STA-428)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-428), by
+  [0324](/adr/0324-error-boundaries-nearest-error-tsx-ancestor-wins). The `(root)` row of the app
+  group table in decision 14 no longer holds `app.error.tsx`. An app has no root error file by
+  default, and one `.error.tsx` directly under `routes/` replaces the `@stackra/navigation` default
+  when an app writes it (0324 decision 5). The other decisions and rows stand.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-428), by [0330](/adr/0330-shortcut-chords-on-a-tanstack-hotkeys-driver).
+  The `keys` option of the `Shortcut` kind takes a key sequence (a chord), such as `mod+e mod+e`, as
+  well as a single key. Gen fails on a chord that conflicts with another binding or that shadows a
+  single-key binding. The kinds table of this ADR otherwise stands.
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-406), by [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components), [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers), [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) and [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks). Rule R2's companion list (`<Name>Input`, `<Name>Output`, `<Name>Props` and `<Name>Data`) is retired, because each of those is its own file (ADR 0305 rules 10 to 12), and R8's companion types go with it. Rule R3 says a kind with no options is written bare, and a kind base never takes a `define` prefix. Rule R7 is reversed: a component may be a class, `class X extends Component<P>`, which gen compiles to a function component (ADR 0305 rules 37 to 41). Rule R11 is restated: a partner is named by a type argument, and a stem sibling is found by name. Rule R12 is restated: the root module is optional. In decision 13, `database/macros/` holds `<name>.macro.ts` files, and the sentence about modules in dependency order is corrected: migrations are ordered by number, `after:` and macro edges. In decision 14, overrides live in `src/overrides/<owner>/` (ADR 0306), and the root error boundary is owned by `@stackra/navigation`, so `app.error.tsx` leaves the app groups (ADR 0305 rule 35). In decision 16, the Resource, Widget, Document, Settings, Flag, Integration, Connection and WebhookEvent rows change as ADR 0305, 0307 and 0308 state, `Macro` is added, and the event bases come from `@stackra/events`. In decision 19, `@Env` is retired in favour of `Config({ schema, env })` (ADR 0305 rule 34). In decision 20, the migration id is `<module>.<NNNN>_<snake(stem)>`. In decision 23, the dictionary gains `Interceptor` for the whole-call wrapper and `before` and `after` for the slot verbs. The `Extension(Point, { order })` form of decision 16 is superseded by rule 25 of [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components), which writes one class per slot. The other decisions stand. Items 1 and 4 of the 2026-10-23 amendment are changed as marked on those items.

@@ -96,7 +96,7 @@ CREATE INDEX CONCURRENTLY idx_orders_tenant_id_due_at ON orders.orders (tenant_i
 
 Only in a module service method of `@stackra/database`, parameterised, typed by a `Schema` class, under the RLS
 session, with a `// raw-sql:` comment giving the reason. Actions contain no SQL. Approved extensions: pgvector, pg_trgm, ltree, citext,
-pgcrypto; PostGIS is not approved.
+pgcrypto and PostGIS (0160, 0314).
 
 ## Databases (ADR 0238)
 

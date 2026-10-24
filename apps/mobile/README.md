@@ -17,29 +17,35 @@ HeroUI Native + Uniwind for UI, and iOS 26 Liquid Glass from native components.
 src/
 ├── main.ts                    registerRootComponent(App)
 ├── app.tsx                    providers: gestures → safe area → DesignSystemProvider (HeroUI Native, scheme,
-│                              direction) → NavigationContainer (theme + linking)
+│                              direction) → NavigationContainer (theme, linking,
+│                              direction)
 ├── global.css                 Tailwind + Uniwind + HeroUI Native and HeroUI Native Pro styles
 ├── navigation/
 │   ├── types.ts               every route + params (RootStackParamList, TabParamList, SettingsStackParamList, …)
-│   ├── linking.ts             deep links: stackra://items/<id> → Item, stackra://design-system[/pro/<name>]
+│   ├── linking.ts             deep links: stackra://items/<id> → Item, stackra://design-system[/free|pro/<name>]
 │   ├── header-options.ts      transparent native-stack headers (Liquid Glass) + large titles
 │   ├── root-navigator.tsx     native stack: Tabs, Item (dynamic)
-│   └── tab-navigator.tsx      native tab bar (UITabBarController) with one stack per tab; the Settings stack
+│   └── tab-navigator.tsx      native tab bar (UITabBarController) with one stack per tab; the Home stack
 │                              also holds the design-system review pages
+├── enums/                     ComponentCategory (the catalogue order), ComponentTier (Free, Pro)
 ├── screens/                   one file per screen
-│   ├── design-system-screen.tsx        index of the review area: scheme + direction switchers, grouped list
-│   ├── design-system-components.ts     the one list (group, title, route, screen) the index and stack read
-│   └── pro/<name>-screen.tsx           one review page per @stackra/ui-pro/native component
-└── components/ui/             Screen (scroll container), Glass (GlassView with fallback), Section, ChoiceGroup,
-                               CalendarParts
+│   ├── design-system-screen.tsx        index of the review area: scheme + direction switchers, All/Free/Pro filter, list by category
+│   ├── design-system-components.ts     the one list (category, tier, title, route, screen) the index and stack read
+│   ├── free/<name>-screen.tsx          one review page per @stackra/ui/native component (tier Free)
+│   └── pro/<name>-screen.tsx           one review page per @stackra/ui-pro/native component (tier Pro, badged)
+└── components/ui/             Screen (scroll container), Glass (GlassView with fallback), Section, Sample, ChoiceGroup,
+                               CalendarParts, useInsetSheet (HeroUI inset bottom-sheet props)
 ```
 
 ## Design-system review area
 
-Settings → Design system (`stackra://design-system`) is the mobile twin of `apps/playground`: switch the colour
+The Home tab (`stackra://design-system`; development builds only, release builds show the Home screen) is the mobile twin of `apps/playground`: switch the colour
 scheme (Light, Dark, System) and the direction (English LTR, العربية RTL), then open a component page
-(`stackra://design-system/pro/<name>`). To add a component, add its route to `SettingsStackParamList`, its page under
-`src/screens/`, and one row to `DESIGN_SYSTEM_COMPONENTS`; the index and the Settings stack read that list.
+(`stackra://design-system/free/<name>` or `stackra://design-system/pro/<name>`). To add a component, add its route to `HomeStackParamList`, its page under
+`src/screens/`, and one row to `DESIGN_SYSTEM_COMPONENTS` with its category and tier; the landing and the Home stack read that list.
+The index lists one section per category (Foundations to AI, empty ones hidden), Free rows before Pro rows, each
+alphabetical, with a "Pro" badge on Pro rows and an All / Free / Pro filter above. Bottom sheets use HeroUI's inset
+style through `useInsetSheet()`.
 
 `metro.config.js` reads `@stackra/ui` and `@stackra/ui-pro` as source (the `@stackra/source` condition), resolves the
 packages' `#` imports, and pins `react`, `react-native`, HeroUI Native and the other native singletons to this app's

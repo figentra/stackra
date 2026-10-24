@@ -1,0 +1,223 @@
+---
+title: "0334 — Final structure review round-up: the decided rules that no other ADR records"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends, by Notes, [0007](/adr/0007-source-documentation-standard),
+  [0095](/adr/0095-zod-inside-field-decorators),
+  [0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules),
+  [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions),
+  [0237](/adr/0237-generated-api-gateway-in-four-layers),
+  [0238](/adr/0238-database-and-connection-model),
+  [0250](/adr/0250-stackra-platform-capability-ports-drivers-and-gate),
+  [0262](/adr/0262-module-catalogue-and-module-generator),
+  [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc),
+  [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding),
+  [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) and
+  [0326](/adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets). Each of
+  those pages carries a note that names the rule here that touches it.
+</Note>
+
+## Context
+
+The owner's final structure review of 2026-10-24 produced a long list of decisions. Most of them are recorded in the
+ADRs of that wave, [0314](/adr/0314-postgis-approved-geospatial-field-and-macros) to
+[0316](/adr/0316-open-core-distribution) and [0321](/adr/0321-the-trait-inventory-owning-packages-and-schedulable) to
+[0333](/adr/0333-record-visibility-rules-who-can-see-which-records). A sweep of every decided item against the ADR
+index then found the rules below, each decided and each recorded nowhere. They are small and they span many pages, so
+one round-up records them, and a note on each touched page points here. Two items are process decisions rather than
+code rules; they are kept here so that the review has one complete record.
+
+The review also asked whether the framework covers the enterprise capabilities of Magento 2. The sweep confirmed an
+anchor for each framework-side capability, and this page records the map so that the next reader need not repeat it:
+
+| Capability                                                                                                                                        | Where it is decided                                                                                                                                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Content staging: scheduled changes with preview and rollback                                                                                      | [0321](/adr/0321-the-trait-inventory-owning-packages-and-schedulable) decision 6 (`Schedulable`, owned by `@stackra/content`), applied by the tenant schedules of [0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules) decision 5 |
+| Customer segments                                                                                                                                 | [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer) and [0332](/adr/0332-stackra-segments-audiences-defined-by-rules)                                                                                                                         |
+| Catalog permissions, generalised to any record                                                                                                    | [0333](/adr/0333-record-visibility-rules-who-can-see-which-records)                                                                                                                                                                                                    |
+| Admin action log                                                                                                                                  | [0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention) decision 1 (every action and every `@Auditable` change)                                                                                                                                          |
+| Bulk actions and asynchronous jobs                                                                                                                | [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) (the Bulk bar, inline up to 100 records and a job beyond) and [0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules)                           |
+| Page builder                                                                                                                                      | [0110](/adr/0110-experience-is-the-sdui-service-at-l2) and [0114](/adr/0114-page-builder-for-every-page)                                                                                                                                                               |
+| Custom attributes                                                                                                                                 | [0116](/adr/0116-content-types-and-custom-fields) (`HasCustomFields`)                                                                                                                                                                                                  |
+| Elasticsearch                                                                                                                                     | [0221](/adr/0221-search-postgres-hybrid-elasticsuite-parity-arabic-and-operations)                                                                                                                                                                                     |
+| The traits `HasOwner`, `HasTree`, `Effective`, `HasLocation`, `Taggable` and `HasMetadata`                                                        | [0321](/adr/0321-the-trait-inventory-owning-packages-and-schedulable)                                                                                                                                                                                                  |
+| The commerce features (related-product rules, reward points, gift cards, store credit, returns, the B2B set, visual merchandising, private sales) | Not framework packages: Figentra Commerce and its editions, rule 22 below                                                                                                                                                                                              |
+
+## Decision
+
+### Data layer
+
+1. **Every column carries a comment and an explicit nullability.** Gen writes a Postgres `COMMENT` on every column from
+   the docblock of its model field, and every column says whether it is nullable. Gen fails on a field with no docblock
+   and on a column whose nullability is not stated. Column groups are the existing traits and macros; there is no
+   separate "column set" kind.
+
+2. **Migration order is checked against foreign keys.** Order is the number within a module and `after: [...]` across
+   members, as [0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules) says. Gen fails when a migration adds a
+   foreign key to a table that no earlier migration, in order, has created.
+
+3. **An extension is a migration step.** A migration enables a Postgres extension through the built-in
+   `schema.createExtension(name)` step, and only for the approved extensions of
+   [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions) as amended by
+   [0314](/adr/0314-postgis-approved-geospatial-field-and-macros). Gen refuses any other name. A raw `schema.sql` is
+   not the way to enable one.
+
+4. **There are no patch kinds.** A schema change is a migration. A data change is a seeder or a backfill job. DML in a
+   migration stays banned ([0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules)).
+
+5. **Validation messages come from lang keys; computed values are getters or generated columns.** Field validation
+   reuses the field types and the constraint decorators of [0095](/adr/0095-zod-inside-field-decorators). A message is
+   the lang key `<module>::validation.<field>.<rule>`, never a string in the decorator. A value computed and not stored
+   is a getter on the model. A value computed and stored is a Postgres generated column, declared in the migration
+   ([0014](/adr/0014-data-ownership-and-orm) decision 6). There is no `@Computed`
+   ([0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events)).
+
+6. **The module is the finest database split unit.** Each module's tables live in the module's own Postgres schema
+   ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming)), and no query joins across modules
+   (relations between modules are `Link<T>`). Runway topology may therefore move one module to its own logical
+   database with no code change, and MikroORM then holds one connection per module. No single table is ever split
+   out on its own. One logical database per service ([0238](/adr/0238-database-and-connection-model)) stays the
+   default.
+
+### Runtime and gateway
+
+7. **The API host answers JSON only.** The root of the API host is a small index document. An unknown route returns the
+   error envelope of [0140](/adr/0140-error-envelope-and-error-kinds) with `not_found`, never HTML. A web host renders a
+   React 404 route, and the static host keeps its branded 404 page
+   ([0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker)).
+
+8. **Local Encore tools reach agents through `stackra mcp`.** `stackra mcp` proxies the local Encore MCP tools, with
+   the app id taken from runway, so a project's `.mcp.yaml` has no separate `encore` entry. The `encore-cloud` server
+   stays a separate entry, because it has its own OAuth flow.
+
+### Panel
+
+9. **Every resource View page has "View as JSON".** The action shows the record as the wire shape of its `get` query's
+   output, with classified fields redacted by the caller's permission, a copy button and the record's public id. It is
+   free, and no resource writes code for it.
+
+10. **Every resource has a clone action and an activity tab.** The clone (duplicate) action is built in. The activity
+    tab puts the record's audit entries, comments and domain events on one timeline. Both belong to the resource surface
+    of [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards), and
+    [0321](/adr/0321-the-trait-inventory-owning-packages-and-schedulable) noted them without scheduling them.
+
+11. **Import maps columns through a port.** The import pipeline has a mapping step behind an `ImportMapper` port. The
+    default driver matches headers to fields. An AI mapper driver is deferred; its revival trigger is the first customer
+    onboarding with spreadsheets or documents that header matching cannot map. The port exists so that the driver plugs
+    in without a change to any import resource.
+
+### Web apps
+
+12. **Security headers and analytics defaults are generated.** Every web-served app runs behind Cloudflare
+    ([0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding)). Gen writes a CSP with
+    nonces (`@stackra/csp`), HSTS, `frame-ancestors`, `Referrer-Policy`, `Permissions-Policy`, and COOP and COEP where
+    they are safe, from `stackra.config`. WAF, bot management and Turnstile on public forms sit at the edge
+    ([0237](/adr/0237-generated-api-gateway-in-four-layers) layer 1). Cloudflare Web Analytics, which sets no cookie, is
+    on by default. Product analytics runs through the consent-gated driver
+    ([0190](/adr/0190-seed-profiles-and-product-analytics)). No Google Analytics is added by default. Google Search
+    Console verification is a setting of [0301](/adr/0301-stackra-seo-package).
+
+13. **One web manifest per locale.** Gen writes one manifest for each configured locale, taking `name`, `short_name`,
+    `description`, `dir`, `lang` and `shortcuts` from the lang keys of the identity section of
+    [0326](/adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets). Each locale's HTML links its
+    own manifest.
+
+14. **A declared mobile member adds the web-to-app links.** When `stackra.config` declares a mobile member, gen adds
+    `related_applications` for the stores, the Apple smart app banner meta, the association files and an install or
+    download banner component. Nothing is hand-written.
+
+15. **The capability list is fixed and every capability degrades.** The ports of
+    [0250](/adr/0250-stackra-platform-capability-ports-drivers-and-gate) cover haptics, the install prompt, share,
+    clipboard, camera, notifications, badging and file handling. Each is feature-detected and degrades: haptics run on
+    `expo-haptics` natively, on `navigator.vibrate` on Android web and do nothing on iOS web; the install prompt uses
+    `beforeinstallprompt` on Chromium and an instructions sheet on iOS Safari.
+
+### Packages and source
+
+16. **A package's contributions are discovered and listed.** Settings, config, widgets, routes, panels, menus,
+    shortcuts, resources, documents, lang files and assets are discovered by their group folders and listed under
+    `contributions` in the package's `stackra.manifest.json`. An app that imports the package module gets all of them.
+    Nothing is registered by hand ([0111](/adr/0111-module-is-the-unit-of-contribution)).
+
+17. **A docblock has one form per size.** A docblock with one sentence and no tags is one line, `/** … */`. A docblock
+    with a tag or more than one sentence is multi-line. The header and TSDoc rules of
+    [0007](/adr/0007-source-documentation-standard) are unchanged.
+
+18. **No `ai/` folder for machine readability.** A package is read by agents through its `AGENTS.md`, its docs pages and
+    the skills gen writes. The `ai/` group stays the home of the AI kinds only
+    ([0245](/adr/0245-ai-intelligence-plane-skills-prompts-context-providers-plans-and-intents),
+    [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming)).
+
+19. **TanStack AI is a spike, not a switch.** [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free) stands:
+    `@stackra/ai` builds on the AI SDK core and the MCP SDK. A half-day spike compares TanStack AI as a model adapter
+    driver behind the port of `@stackra/ai`, and its typed `decide()` may be copied as a helper either way. A switch
+    needs an ADR that amends 0155.
+
+### Process
+
+20. **Docs follow the framework build.** One docs workflow runs after the framework packages land: the root README is
+    rewritten to the final structure; each package gets a docs section (overview, API, examples, do and don't,
+    configuration); guides cover an app, a service, a package, a Worker and a CLI command; images are optimised SVG or
+    WebP in `apps/docs/src/assets`; videos are hosted outside and embedded; gen keeps the API reference current.
+
+21. **The owner reviews the CLI inventory before the CLI is built.** The full command list (create and scaffold, gen,
+    db, cache, tenant, queue and jobs, auth, settings, flags, i18n, deploy and runway, doctor) is written first, with
+    each command's arguments, its interactive prompts (search, select, confirm) and its non-interactive flags for CI,
+    all on the CLI package's one prompt and component API.
+
+### Scope
+
+22. **The commerce features belong to Figentra Commerce, a product above the OS.** Customer segments as a storefront
+    feature, related-product rules, reward points, gift cards, store credit, returns and fulfilment, the B2B set
+    (company accounts, shared catalogues, quotes, requisition lists, purchase approvals), visual merchandising, private
+    sales, the order, inventory and point-of-sale engines and generic manufacturing are features of Figentra Commerce
+    (working name), a first-party product that sits between Figentra OS and its editions, of which Muslin is the fashion
+    edition. The placement rule is: a capability that only sellers need is Commerce; one that another product or
+    Figentra's own billing needs too is OS. So pricing and Markets, the payments ledger (with gift-card and store-credit
+    balances), invoicing and the workforce app stay in the OS. None of these is a Stackra package, and this repository
+    writes no ADR for them; [0201](/adr/0201-the-app-split-framework-platform-core-and-first-party-apps) carries the matching note on its layer-3 list, and the line that
+    [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) draws between the framework and its products stands. The edition concept itself is a
+    framework matter and gets its own ADR.
+
+## Consequences
+
+- A migration is self-describing: every column says what it holds and whether it may be null, and the order of
+  migrations can be trusted across members.
+- A tenant never sees HTML from the API host, and a client can parse every answer it gets.
+- Every resource gets "View as JSON", clone and an activity tab without code, so every product page has the same floor.
+- Every web app ships the same security headers and the same analytics defaults, and a product that wants Google
+  Analytics turns it on in code, where the choice is reviewed.
+- Two process rules bind the framework build: the docs workflow and the CLI review happen, in that order, before the
+  CLI and the docs are called done.
+- The commerce backlog has one home, and a reader who looks for it in the ADR index finds this page and the pointer.
+
+## Enforcement
+
+- planned — gen checks (STA-340): a field without a docblock, a column without nullability, a foreign key out of
+  order, an extension outside the approved set, a `.mcp.yaml` with an `encore` entry, a web member without its
+  per-locale manifests or its security headers, and a package whose group folders do not match its manifest
+  `contributions`.
+- planned — an oxlint house rule, under [0129](/adr/0129-house-lint-plugin-and-coding-standard): the docblock form of
+  rule 17, and a validation message given as a string literal (rule 5).
+- planned — a gateway test: an unknown route on the API host answers the JSON envelope, and no API route answers HTML.
+- planned — a panel test: every resource View page renders "View as JSON" and the activity tab, and every resource has
+  the clone action.
+- Rules 20 to 22 are process and scope decisions. Review checks them; nothing mechanical does.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Notes: [0007](/adr/0007-source-documentation-standard),
+[0095](/adr/0095-zod-inside-field-decorators), [0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules),
+[0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions),
+[0237](/adr/0237-generated-api-gateway-in-four-layers), [0238](/adr/0238-database-and-connection-model),
+[0250](/adr/0250-stackra-platform-capability-ports-drivers-and-gate),
+[0262](/adr/0262-module-catalogue-and-module-generator),
+[0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc),
+[0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding),
+[0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) and
+[0326](/adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets). Reads with
+[0111](/adr/0111-module-is-the-unit-of-contribution), [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free)
+and [0321](/adr/0321-the-trait-inventory-owning-packages-and-schedulable). Sources: the owner's final structure review of
+2026-10-24 (STA-428), restated in this ADR's own words.

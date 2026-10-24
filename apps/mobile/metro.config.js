@@ -14,7 +14,7 @@ config.resolver.unstable_conditionNames = [
 
 // One copy of each of these, resolved from the app wherever the importer lives: the packages under
 // packages/design-system have their own node_modules, with the web catalog's React 19.3, and a second React,
-// Reanimated or HeroUI instance breaks hooks, shared values and context.
+// Reanimated, HeroUI or react-hook-form instance breaks hooks, shared values and context.
 const SINGLETONS = [
   "react",
   "react-native",
@@ -30,6 +30,7 @@ const SINGLETONS = [
   "@gorhom/bottom-sheet",
   "@internationalized/date",
   "@internationalized/number",
+  "react-hook-form",
 ];
 const APP_ORIGIN = path.join(__dirname, "package.json");
 

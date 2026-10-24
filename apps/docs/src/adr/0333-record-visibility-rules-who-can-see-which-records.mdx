@@ -1,0 +1,74 @@
+---
+title: "0333 — Record visibility rules: who can see which records, for any model"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Adds a Note to
+  [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names), the
+  IAM model, which records that visibility rules are conditions that its policy decision point
+  evaluates. Nothing else is amended.
+</Note>
+
+## Context
+
+Commerce platforms let a merchant decide which customers see which products, and private sales and shared B2B catalogues
+are the same idea. Documents, courses and pages need the same control. The owner decided that the mechanism is generic
+over any record type, rather than a feature of one catalogue. Isolation between tenants is row-level security on
+`tenant_id` ([0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views)), and a visibility rule
+sits on top of that isolation. It never replaces it.
+
+## Decision
+
+1. **Generic over any record type.** A model that needs visibility declares it, whether the model is a product, a
+   document, a course, a page or any other record.
+
+2. **A visibility rule.** A rule names an audience, a capability and a condition:
+   - the audience is a scope node ([0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer)), a segment
+     ([0332](/adr/0332-stackra-segments-audiences-defined-by-rules)) or a role ([0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names));
+   - the capability is to see the record, to list it, or to buy or use it;
+   - the condition is a condition of [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer) over
+     the attributes of the record.
+
+3. **Enforced in the policy decision point.** The IAM policy decision point evaluates visibility rules as conditions of
+   [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names) decision 3, with that
+   decision's deny rule.
+
+4. **Applied to queries.** For a query on a declaring model, the data layer adds a filter that carries the visibility
+   conditions, so that a principal does not receive rows it may not see. The filter is declared per model, and it narrows
+   the rows that a principal sees within its tenant.
+
+5. **Isolation stays in the database.** Tenant isolation is row-level security on `tenant_id` ([0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views)).
+   Visibility rules sit on top of isolation and never replace it. The visibility filter does not carry tenant isolation,
+   and it does not add the bypass decorator that [0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer)
+   refuses.
+
+6. **Configurations, not systems.** Catalogue permissions, private sales and B2B shared catalogues are configurations of
+   this mechanism. None of them is a separate system.
+
+7. **Not decided here.** This ADR does not decide what a record with no matching rule looks like to an audience. It is
+   open for the owner, and until the owner decides it, no record type ships with a default.
+
+## Consequences
+
+- A new record type gets catalogue-style visibility by declaring it, with no new system.
+- A query on a declaring model carries one more predicate, so the attributes that its rules test need indexes. Choosing
+  them is part of the model design.
+- Visibility sits beside the policy providers of [0132](/adr/0132-permissions-catalogue-and-policy-providers) and does not
+  change how permissions are granted.
+
+## Enforcement
+
+- planned — tests: a principal outside the audience gets no row from a list and no detail read, on every query path of a
+  declaring model.
+- planned — a test that the visibility filter never removes tenant isolation, which the RLS catalogue audit of
+  [0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views) also checks.
+- planned — gen check: a visibility rule names only registered attributes of its model ([0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer)).
+
+## Supersedes and sources
+
+Supersedes: none. Adds a Note to [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names).
+Builds on [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names), [0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views),
+[0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer), [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer)
+and [0332](/adr/0332-stackra-segments-audiences-defined-by-rules).
+Sources: the owner's final structure review of 2026-10-24, restated in this ADR's own words.

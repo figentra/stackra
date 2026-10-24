@@ -413,7 +413,23 @@
               "adr/0310-stackra-ui-pro-private-heroui-pro-wrappers",
               "adr/0311-stackra-ui-wave-3-fields-props-vocabulary",
               "adr/0312-stackra-ui-wave-4-overlays-and-feedback-props-vocabulary",
-              "adr/0313-stackra-ui-wave-5-data-primitives-props-vocabulary"
+              "adr/0313-stackra-ui-wave-5-data-primitives-props-vocabulary",
+              "adr/0314-postgis-approved-geospatial-field-and-macros",
+              "adr/0315-realtime-live-queries-and-streams",
+              "adr/0316-open-core-distribution",
+              "adr/0321-the-trait-inventory-owning-packages-and-schedulable",
+              "adr/0322-generated-constants-instead-of-string-literals",
+              "adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port",
+              "adr/0324-error-boundaries-nearest-error-tsx-ancestor-wins",
+              "adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy",
+              "adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets",
+              "adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer",
+              "adr/0328-value-classes-are-built-with-create-and-containers-are-never-constructed",
+              "adr/0330-shortcut-chords-on-a-tanstack-hotkeys-driver",
+              "adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer",
+              "adr/0332-stackra-segments-audiences-defined-by-rules",
+              "adr/0333-record-visibility-rules-who-can-see-which-records",
+              "adr/0334-final-structure-review-round-up-decided-rules-without-an-adr"
             ]
           }
         ]

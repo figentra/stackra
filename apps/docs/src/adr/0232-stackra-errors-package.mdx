@@ -1,7 +1,24 @@
 ---
 title: "0232 — @stackra/errors package"
-description: "Accepted, amended by 0294 · 2026-10-20"
+description: "Accepted, amended by 0294, 0324, 0328 · 2026-10-20 · amended 2026-10-24 (STA-428)"
 ---
+
+<Note>
+  Amended 2026-10-24 by [0328](/adr/0328-value-classes-are-built-with-create-and-containers-are-never-constructed):
+  an error is built with the static `create({...})` that `StackraError` provides, and not with `new`. That applies to
+  every error that extends the base. Decisions 1 to 8 stand.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-428), by
+  [0324](/adr/0324-error-boundaries-nearest-error-tsx-ancestor-wins) and
+  [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) (rule 35). The
+  chain in the note below no longer runs through `src/app.error.tsx`. An error bubbles from the
+  route to its layout, then to the nearest `.error.tsx` directly under `routes/` if an app writes
+  one, and otherwise to the root boundary that `@stackra/navigation` provides (0324 decisions 1 and
+  2). That boundary reports through the reporter port of this package, so the default named as
+  `@stackra/errors/react` in that note is superseded. The other decisions and notes stand.
+</Note>
 
 <Note>
   Carries the error envelope of [0140](/adr/0140-error-envelope-and-error-kinds). Its category is

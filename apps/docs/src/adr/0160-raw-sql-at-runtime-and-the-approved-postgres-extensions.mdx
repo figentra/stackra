@@ -1,9 +1,24 @@
 ---
 title: "0160 — Raw SQL at runtime and the approved Postgres extensions"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0314, 0334 · 2026-10-20"
 ---
 
+<Note>
+  Amended 2026-10-24 (STA-428) by
+  [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rule 3): a
+  migration enables an extension through the built-in `schema.createExtension(name)` step, for the
+  approved extensions of decision 2, as amended by 0314, only; a raw `schema.sql` is not the way.
+  Decision 2 stands.
+</Note>
+
 <Note>Amends [0014](/adr/0014-data-ownership-and-orm), decision 6 (raw SQL and extensions).</Note>
+
+<Note>
+  Amended by [0314](/adr/0314-postgis-approved-geospatial-field-and-macros): PostGIS is approved, so
+  decision 2 lists six extensions, not five. The statement that PostGIS is not approved yet, and the
+  Alternatives bullet "PostGIS now", no longer hold. The field, its macros and the GiST indexes are
+  decided in 0314.
+</Note>
 
 ## Context
 

@@ -1,0 +1,67 @@
+---
+title: "0324 — Error boundaries: the nearest .error.tsx ancestor wins"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0053](/adr/0053-decorator-route-classes-compiled-to-router-adapters) (the boundary chain
+  after decision 5), [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming)
+  (the `(root)` row of the app group table in decision 14) and
+  [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) (rule 35, the
+  apps-ship-no-root-boundary sentence) and [0232](/adr/0232-stackra-errors-package) (the chain step
+  to `src/app.error.tsx`). Each amended page carries a note that says what changed and which of its
+  decisions stand.
+</Note>
+
+## Context
+
+A route folder may hold a `<name>.error.tsx`, which React Router 7 uses as the route's error boundary
+([0053](/adr/0053-decorator-route-classes-compiled-to-router-adapters)). ADR 0305 gave the root boundary to
+`@stackra/navigation` and removed the app's `app.error.tsx`, but it did not say how a route, a layout or an app
+replaces that default. ADR 0232 still describes a failure bubbling to `src/app.error.tsx`. The owner decided in the
+final structure review of 2026-10-24 that the boundary follows React Router's own rule, the nearest ancestor wins,
+and that the file beside a route is the only place a failure view is declared.
+
+## Decision
+
+1. **The default.** `@stackra/navigation` provides the root error boundary, and its UI comes from `@stackra/ui`
+   (ADR 0305, rule 35). Gen wires it into every app.
+2. **The nearest ancestor wins.** A failure renders the nearest error boundary above the failing route:
+   - `routes/<name>/<name>.error.tsx`, beside a route, customises that route and every route nested under it.
+   - A layout's `<name>.error.tsx` covers every route under that layout.
+   - An `.error.tsx` file directly under `routes/`, with no route folder of its own, replaces the app-wide default
+     for every route that has no nearer boundary. An app writes one only when it wants a different default.
+   - With none of these, the default of rule 1 applies.
+3. **No option.** A route class has no `errorBoundary` option. The file beside the route is the declaration, and the
+   decorator test of ADR 0294 applies: the folder and the suffix already say it.
+4. **Gen maps each file to the React Router export** that ADR 0053 names (`ErrorBoundary`). That mapping is unchanged.
+5. **No `app.error.tsx`.** An `app.error.tsx` at the app root is not used. The file of rule 2 directly under `routes/`
+   is the only app-level override. This ADR fixes its place, not its file name.
+
+## Consequences
+
+- A reader finds the failure view for a route by walking up its folders. No option hides it.
+- Apps ship no failure view by default. An app that adds a file under `routes/` changes the failure view of every
+  route that has no nearer boundary, so that file is reviewed like a default.
+- The folder rules of ADR 0053 must allow one `.error.tsx` directly under `routes/`, in addition to route and layout
+  folders.
+- ADR 0232 named `src/app.error.tsx` as a step of the chain. This ADR replaces that step, and 0232 carries a note that
+  says so.
+
+## Enforcement
+
+- planned — STA-338, the `kind-path` check: an `.error.tsx` outside a route or layout folder, and outside the
+  `routes/` root, fails. An `app.error.tsx` at the app root fails.
+- planned — STA-340, the `folder-kinds` check: the `routes/` root file is the one `.error.tsx` allowed beside route
+  folders.
+- planned — the `Route` options type has no `errorBoundary` key, so an object literal that sets one fails typecheck.
+  It checks once `Route` ships.
+- planned — a gen test: a route with no nearer boundary renders the `@stackra/navigation` default.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0053](/adr/0053-decorator-route-classes-compiled-to-router-adapters) (the boundary chain),
+[0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (the `(root)` row of decision 14) and
+[0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) (rule 35) and
+[0232](/adr/0232-stackra-errors-package) (the chain step to `src/app.error.tsx`). Sources: the owner's
+decision in the final structure review of 2026-10-24 (STA-428).

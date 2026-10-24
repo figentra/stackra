@@ -43,7 +43,7 @@ describe("Text area page", () => {
   it("titles the page and the document, and sits at /text-area under Inputs", () => {
     renderPage();
     expect(TextAreaRoute.path).toBe("/text-area");
-    expect(TextAreaRoute.category).toBe("Inputs");
+    expect(TextAreaRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: "Text area" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Text area · Stackra Playground");

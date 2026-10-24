@@ -20,5 +20,5 @@ export class SurfaceRoute {
   static readonly title = "Surface";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Surfaces";
+  static readonly category: PageCategory = "Layout";
 }

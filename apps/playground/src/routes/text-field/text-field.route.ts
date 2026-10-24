@@ -20,5 +20,5 @@ export class TextFieldRoute {
   static readonly title = "Text field";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Inputs";
+  static readonly category: PageCategory = "Inputs and forms";
 }

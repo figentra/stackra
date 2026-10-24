@@ -7,8 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-012.
  */
+import { Description, FieldError, Label, Text } from "@stackra/ui/native";
 import { NumberField } from "@stackra/ui-pro/native";
-import { Description, FieldError, Label, Typography } from "heroui-native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
@@ -71,9 +71,9 @@ export function NumberFieldScreen() {
           </NumberField.Group>
           <Description>{STRINGS.width.hint}</Description>
         </NumberField>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.width.value} ${width}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.step.title} description={STRINGS.step.description}>

@@ -20,5 +20,5 @@ export class PageSkeletonRoute {
   static readonly title = "Page skeleton";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Feedback";
+  static readonly category: PageCategory = "Feedback and status";
 }

@@ -41,10 +41,10 @@ describe("Page skeleton page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /page-skeleton under Feedback", () => {
+  it("titles the page and the document, and sits at /page-skeleton under Feedback and status", () => {
     renderPage();
     expect(PageSkeletonRoute.path).toBe("/page-skeleton");
-    expect(PageSkeletonRoute.category).toBe("Feedback");
+    expect(PageSkeletonRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Page skeleton" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Page skeleton · Stackra Playground");

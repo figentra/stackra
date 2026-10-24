@@ -1,0 +1,70 @@
+---
+title: "0323 — Tenant vocabulary lives only in tenancy; other packages use the ScopeRef port"
+description: "Accepted, amended by 0327 · 2026-10-24"
+---
+
+<Note>
+  Amends [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions): the names
+  of the settings scope levels in decision 2 move to tenancy, and the other packages name a scope
+  through the `ScopeRef` port. The order of the cascade is unchanged. The note on 0213 records the
+  change.
+</Note>
+
+<Note>
+  Amended 2026-10-24 by [0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer): 0327
+  names the package that owns `ScopeRef`, which is `@stackra/scope`, in its `contracts` entry. There,
+  `ScopeRef` is a type, the public id `PublicId<"scp">` with the node's path, and not a port. The port
+  that resolves a request to a scope is the resolver of 0327. Decision 2 of this ADR says "a port in
+  `@stackra/contracts`", and it is read in that way. The other decisions stand.
+</Note>
+
+## Context
+
+The scope tree is one tree in the IAM model and in tenancy: a recursive tenant tree with one lifecycle per
+request ([0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names),
+[0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region),
+[0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan)). A tenant is one kind of node in that tree, and
+[0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope) was the earlier tenancy model, and 0210 superseded it.
+Other packages, settings included, have been writing the word `tenant` in their
+identifiers and types, so each of them depends on tenancy's vocabulary even when it only needs a scope.
+
+## Decision
+
+1. **Where the vocabulary is declared.** An identifier that contains `tenant` (a type, class, enum case, variable,
+   column or file name) is declared only in `@stackra/tenancy`, and in the scope code of `@stackra/iam`, where tenancy
+   is the subject. Other packages import and use the names that tenancy exports, such as `BelongsToTenant`, and that is allowed.
+2. **How other packages speak of a scope.** Every other package speaks of a scope through `ScopeRef`, a port in
+   `@stackra/contracts`. The shared primitives are placed there ([0117](/adr/0117-contracts-placement-and-decorator-ownership)).
+3. **The tenant column trait.** `BelongsToTenant` is exported by `@stackra/tenancy` ([0321](/adr/0321-the-trait-inventory-owning-packages-and-schedulable)).
+4. **Settings scope levels are data.** Tenancy contributes the tenant level of settings as data. An app writes
+   `TenancyScopes.Tenant`, and not a settings-owned case such as `SettingScope.Tenant`, the shape that this rule
+   removes. The levels keep their order in the cascade of
+   [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions) decision 2.
+5. **The lint rule.** A lint rule refuses a declaration of an identifier that contains `tenant` outside the packages named
+   in decision 1. Imports and uses of names that tenancy exports are allowed. The rule does not apply to user-facing
+   text, lang files, documentation, comments or generated code.
+6. **The existing code.** The template and the existing code are changed to match this rule.
+
+## Consequences
+
+- A package outside tenancy names a scope through `ScopeRef`, so its code does not change whether the scope is a
+  tenant or another node of the scope tree.
+- The scope tree stays one tree in tenancy and IAM ([0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan)).
+  This ADR moves vocabulary, and it does not change the tree.
+- The rule touches the template and the existing code, and many identifiers are renamed. This ADR does not set the
+  order or the dates of that change.
+- A reviewer checks a new package for a declaration that contains `tenant`. Such a declaration in any other package is
+  refused. A use of `BelongsToTenant` or `TenancyScopes.Tenant` is not.
+
+## Enforcement
+
+- planned — the lint rule of decision 5, which refuses a declaration of a `tenant` identifier outside tenancy and the IAM scope code.
+  It is not written yet.
+- planned — the template and existing code conform to decision 6. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions) (decision 2
+and the naming of the settings scope levels). Cites [0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope), which
+[0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) superseded.
+Sources: the owner's final structure review of 2026-10-24, restated in this ADR's own words.

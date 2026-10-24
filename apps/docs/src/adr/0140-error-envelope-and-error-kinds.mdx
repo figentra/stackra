@@ -1,7 +1,13 @@
 ---
 title: "0140 — The error envelope and error kinds"
-description: "Accepted, amended by 0294 · 2026-10-20"
+description: "Accepted, amended by 0294, 0328 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 by [0328](/adr/0328-value-classes-are-built-with-create-and-containers-are-never-constructed):
+  a `Refusal` is built with the static `create({...})` that `Refusal` provides on its class, and not with `new`. The pipeline step that makes the check raises the refusal, as the note below says. The envelope and the
+  ten categories are unchanged.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the

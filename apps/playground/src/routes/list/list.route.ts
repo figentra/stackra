@@ -20,5 +20,5 @@ export class ListRoute {
   static readonly title = "List";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Data";
+  static readonly category: PageCategory = "Data display";
 }

@@ -20,5 +20,5 @@ export class EmptyStateRoute {
   static readonly title = "Empty state";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Feedback";
+  static readonly category: PageCategory = "Feedback and status";
 }

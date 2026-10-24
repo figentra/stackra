@@ -1,7 +1,14 @@
 ---
 title: "0213 — Settings v2: the full cascade, flags as a settings kind, YAML packs and revisions"
-description: "Accepted, amended by 0270, 0294, 0307 · 2026-10-20"
+description: "Accepted, amended by 0270, 0294, 0307, 0323, 0327 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 by [0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer):
+  the `ScopeRef` that the 0323 note below names as a port of `@stackra/contracts` is a type, and it
+  comes from `@stackra/scope/contracts`. The resolver of 0327 is the port. The package that holds
+  the scope tree is `@stackra/scope`. The cascade order of decision 2 is unchanged.
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-406), by
@@ -37,6 +44,17 @@ Enforcement of this note: planned — STA-338 (the kind-path check for `access/`
 <Note>
   Amends [0108](/adr/0108-scoped-settings). Replaces the JSON export of 0108 S10 with YAML
   (contradiction C-16).
+</Note>
+
+<Note>
+  Amended 2026-10-24 by [0323](/adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port):
+  the tenant level of the cascade in decision 2 is contributed by `@stackra/tenancy` as data, so an app writes
+  `TenancyScopes.Tenant` and not `SettingScope.Tenant`. Other packages, settings included, name a scope through
+  the `ScopeRef` port of `@stackra/contracts`. The order of the levels is unchanged. The other decisions keep
+  the status that the notes above give them.
+
+Enforcement of this note: planned — the lint rule of 0323 decision 5.
+
 </Note>
 
 ## Context

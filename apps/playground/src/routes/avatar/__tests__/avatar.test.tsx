@@ -45,7 +45,7 @@ describe("Avatar page", () => {
   it("titles the page and the document, and sits at /avatar under Status", () => {
     renderPage();
     expect(AvatarRoute.path).toBe("/avatar");
-    expect(AvatarRoute.category).toBe("Status");
+    expect(AvatarRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Avatar" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Avatar · Stackra Playground");

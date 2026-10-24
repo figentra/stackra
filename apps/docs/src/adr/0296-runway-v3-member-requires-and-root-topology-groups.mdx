@@ -1,7 +1,22 @@
 ---
 title: "0296 — Runway v3: member requires and root topology groups"
-description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349)"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349) · amended 2026-10-24 (STA-417)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-417), for the runway v3 schemas of stackra#136, which replace the version
+  2 schemas on main when it lands: a member runway fixes `version` at 3, has no `member` key and
+  refuses every root key. The root schema carries the topology groups of decision 2 and three
+  sections that decision 2 did not list and this note records: `defaults.service.config` (the config
+  defaults every service group inherits), a group's `scaling` (the `min` and `max` instances of
+  decision 2 live there) and `workers.cpu`, `workers.memory` and `workers.instances` for workers
+  that run apart. `secrets.gateway` names the secrets the generated gateway reads
+  ([0237](/adr/0237-generated-api-gateway-in-four-layers) carries the matching note). The
+  `requires.<resource>.engine` values that decision 5 allows are, as of this date, `postgres`,
+  `valkey`, `s3` and `sns-sqs`; a new engine is a new row here and in the schema together, and the
+  deferred engines of 0227 stay refused. The schemas are built to this note; where a schema and this
+  note differ, the schema is corrected to the note.
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-349): a member runway may also hold a top-level `health` section, the
@@ -122,11 +137,11 @@ environments:
 
 ## Enforcement
 
-Today the only check that reaches these files is `checkYamlFlowMaps` in `tools/scripts/validate-repository.mjs`, which covers the block-style rule for repository YAML. No runway file is committed yet. The schemas on main describe format version 2: `tools/schemas/runway-root.schema.json`, `tools/schemas/runway-app.schema.json` and `tools/schemas/runway-service.schema.json` fix `version` at 2, and both member schemas require `member`, so a version 3 member runway fails them. Editors read these schemas, and the static Worker serves them; `pnpm validate` does not check runway files against them yet.
+Today the only check that reaches these files is `checkYamlFlowMaps` in `tools/scripts/validate-repository.mjs`, which covers the block-style rule for repository YAML. No runway file is committed yet. Until stackra#136 (STA-417) lands, the schemas on main describe format version 2: `tools/schemas/runway-root.schema.json`, `tools/schemas/runway-app.schema.json` and `tools/schemas/runway-service.schema.json` fix `version` at 2, and both member schemas require `member`, so a version 3 member runway fails them. #136 makes them version 3: the member schemas fix `version` at 3 and drop `member`, and the root schema carries the topology groups of decision 2. Editors read these schemas, and the static Worker serves them; `pnpm validate` does not check runway files against them yet.
 
 Planned, tracked in STA-339:
 
-- planned — STA-339: the three schemas are replaced by version 3 schemas. The member schemas fix `version` at 3, have no `member` key and refuse every root key; the root schema gains the topology groups of decision 2. `pnpm validate` checks every runway file against them. It fails when a member runway holds a root key, when a grouped environment does not place each member exactly once, when an engine is not allowed by ADR 0227, and when `dedicated` has no `reason`.
+- planned — STA-339: the version 3 schemas of stackra#136 replace the version 2 schemas, and `pnpm validate` checks every runway file against them. It fails when a member runway holds a root key, when a grouped environment does not place each member exactly once, when an engine is not allowed by ADR 0227, and when `dedicated` has no `reason`.
 - planned — STA-339: gen fails when a `requires` entry has no driver.
 
 ## Supersedes and related

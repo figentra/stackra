@@ -42,10 +42,10 @@ describe("Error state page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /error-state under Feedback", () => {
+  it("titles the page and the document, and sits at /error-state under Feedback and status", () => {
     renderPage();
     expect(ErrorStateRoute.path).toBe("/error-state");
-    expect(ErrorStateRoute.category).toBe("Feedback");
+    expect(ErrorStateRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Error state" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Error state · Stackra Playground");

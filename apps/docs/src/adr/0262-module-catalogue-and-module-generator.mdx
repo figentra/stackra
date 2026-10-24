@@ -1,7 +1,15 @@
 ---
 title: "0262 — Module catalogue generated from code, module plans in spec folders, and the module generator"
-description: "Accepted · 2026-10-21"
+description: "Accepted, amended by 0334 · 2026-10-21"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-428) by
+  [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rule 16): a
+  package's contributions are discovered by group folder and listed under `contributions` in its
+  `stackra.manifest.json`; an app that imports the package module gets them all, and nothing is
+  registered by hand. Decision 1 stands.
+</Note>
 
 <Note>
   Relates to [0126](/adr/0126-member-shapes-and-scaffold-templates) (the generator and the kind

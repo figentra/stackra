@@ -20,5 +20,5 @@ export class AlertRoute {
   static readonly title = "Alert";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Feedback";
+  static readonly category: PageCategory = "Feedback and status";
 }

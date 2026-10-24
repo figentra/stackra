@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: a labelled row of mutually exclusive choices, built from HeroUI Native buttons; the selected one is
+ * Purpose: a labelled row of mutually exclusive choices, built from @stackra/ui buttons; the selected one is
  *          filled and announced as selected, so the state does not rest on colour alone.
  * Boundary: one presentational, controlled component; it holds no state of its own.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-013.
  */
-import { Button, Typography } from "heroui-native";
+import { Button, Text } from "@stackra/ui/native";
 import { View } from "react-native";
 
 /** One choice of a {@link ChoiceGroup}. */
@@ -38,9 +38,9 @@ export function ChoiceGroup<Value extends string>({
 }: ChoiceGroupProps<Value>) {
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel={label} className="gap-2">
-      <Typography.Paragraph type="body-sm" color="muted">
+      <Text type="small" tone="muted">
         {label}
-      </Typography.Paragraph>
+      </Text>
       <View className="flex-row gap-2">
         {choices.map((choice) => {
           const isSelected = choice.value === value;

@@ -18,8 +18,7 @@ must exist first. Reasoning: `apps/docs/src/constitution/tenancy.mdx`.
    `FORCE ROW LEVEL SECURITY` (the owning role would otherwise bypass RLS), and a policy on
    `current_setting('app.tenant_id', true)`. A forgotten filter returns zero rows. Never hand-write the policy;
    generate it from the scoped-table pattern (`/adr/0014-data-ownership-and-orm`).
-3. **Scope tree (free code; depth is a plan entitlement).** The scope tree is free code in `@stackra/iam` and
-   `@stackra/tenancy`, with no `@stackra-pro` package (`/adr/0240-scope-tree-is-free-code-with-depth-by-plan`). Depth is a
+3. **Scope tree (free code; depth is a plan entitlement).** The scope tree is free code in `@stackra/scope`, which tenancy and IAM consume, with no `@stackra-pro` package (`/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer`, `/adr/0240-scope-tree-is-free-code-with-depth-by-plan`). Depth is a
    plan entitlement; numbers in 0242. When the tree is in use: nodes use `scope_id uuid PRIMARY KEY`; tables that belong to a node carry `scope_id` and a
    denormalised `scope_path ltree` with a GiST index. Use the OR-expansion `(scope_path <@ $1 OR scope_path <@ $2 ...)`;
    `<@ ANY(...)` seq-scans. Empty granted paths means `false`.

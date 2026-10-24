@@ -39,10 +39,10 @@ describe("ProgressCircle page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /progress-circle under Feedback", () => {
+  it("titles the page and the document, and sits at /progress-circle under Feedback and status", () => {
     renderPage();
     expect(ProgressCircleRoute.path).toBe("/progress-circle");
-    expect(ProgressCircleRoute.category).toBe("Feedback");
+    expect(ProgressCircleRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Progress circle" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Progress circle · Stackra Playground");

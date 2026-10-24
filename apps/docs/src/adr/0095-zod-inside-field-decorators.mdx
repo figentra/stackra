@@ -1,7 +1,22 @@
 ---
 title: "0095 — @stackra/validation: Laravel-style decorators compiled to one Zod schema, plus an output serializer"
-description: "Accepted, amended by 0133, 0162, 0294 · 2026-10-19"
+description: "Accepted, amended by 0133, 0162, 0294, 0328, 0334 · 2026-10-19"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-428) by
+  [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rule 5): a
+  validation message is the lang key `<module>::validation.<field>.<rule>`, never a string in the
+  decorator. The decorator set is unchanged.
+</Note>
+
+<Note>
+  Amended 2026-10-24 by [0328](/adr/0328-value-classes-are-built-with-create-and-containers-are-never-constructed): the two forms have one meaning each. `X.parse(input)` of decision 5
+  is the wire-boundary form. On invalid input it refuses with the invalid-argument `Refusal`, which is the `ValidationError`
+  of decision 5, the `validation` kind of [0140](/adr/0140-error-envelope-and-error-kinds), so the two agree. `X.create({...})` is how an author builds a
+  `Schema` value in code. An invalid argument there is a programming error: it throws an invariant error of the `internal`
+  category of 0140, and it is never a `Refusal`. The other decisions stand.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the

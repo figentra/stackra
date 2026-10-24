@@ -1,7 +1,16 @@
 ---
 title: "0305 — Programming model v3.1: one name per concept, partners by type argument, one declaration per file, class components"
-description: "Accepted · 2026-10-23"
+description: "Accepted, amended by 0324 · 2026-10-23 · amended 2026-10-24 (STA-428)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-428), by
+  [0324](/adr/0324-error-boundaries-nearest-error-tsx-ancestor-wins). Rule 35 changes in one place.
+  Apps still ship no root error file by default, but an app may write one `.error.tsx` directly
+  under `routes/`, which replaces the `@stackra/navigation` default for every route that has no
+  nearer boundary (0324 decision 2). The removal of `app.error.tsx` and of
+  `components/error-boundary` stands, and so do the other rules of this ADR.
+</Note>
 
 <Note>
   Amends [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (rules R2, R3,

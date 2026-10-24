@@ -44,7 +44,7 @@ describe("Form field page", () => {
   it("titles the page and the document, and sits at /form-field under Forms", () => {
     renderPage();
     expect(FormFieldRoute.path).toBe("/form-field");
-    expect(FormFieldRoute.category).toBe("Forms");
+    expect(FormFieldRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: "Form field" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Form field · Stackra Playground");
