@@ -1,0 +1,115 @@
+---
+title: "0326 — App identity, the desktop section, pwa in stackra.config, derived app shortcuts and native widgets"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries)
+  (decision 2, the sections of `defineApp`; decision 6, the closed set of code hatches; decision 12,
+  the `AppShortcuts` menu kind),
+  [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles) (the `MenuKind` list
+  in its note) and
+  [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) (a
+  `NativeWidget` placement). It keeps [0058](/adr/0058-desktop-is-electron) (Electron is the desktop
+  implementation) and [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron) (one app, several
+  targets). Each amended page carries a note that says what changed and which of its decisions
+  stand.
+</Note>
+
+## Context
+
+An app's name, identifiers and store text are written in several places: the name in `defineApp`, the bundle
+identifier in the platform section, and the metadata of the web, desktop and store builds in their own files. The
+desktop section of ADR 0295 is named `electron`, and the PWA options sit outside the one app definition. App
+shortcuts would be written by hand in a menu file and kept in step by hand, and native home-screen widgets are not
+covered by any ADR. The owner decided these points in the final structure review of 2026-10-24.
+
+## Decision
+
+**Identity.**
+
+1. **One `identity` section.** `stackra.config.ts` holds one `identity` section with the app id in reverse-DNS form,
+   the bundle identifier of each platform, the name, short name, description and copyright, the publisher and the
+   support URL.
+2. **Text comes from the lang files.** The name, short name, description and copyright are lang keys, so each
+   locale's value comes from its catalogue in `assets/lang` (ADR 0305, lang files). English and Arabic are set there,
+   not in the config.
+3. **Gen feeds every target from identity.** Gen feeds the web manifest, the Electron build, the Expo configuration,
+   the store listings and the HTML head from `identity`. No other file repeats those values.
+4. **One app id.** The app id is written once, in `identity`. The desktop section takes no app id of its own.
+
+**The desktop section.**
+
+5. **`desktop` replaces `electron`.** The `electron` section of `defineApp`, in ADR 0295 decision 2, is renamed
+   `desktop`. Electron stays the implementation ([0058](/adr/0058-desktop-is-electron),
+   [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron)). This ADR changes the section's name and not its
+   role. The Electron code hatch of ADR 0295 decision 6, `electron.extend.ts`, is renamed `desktop.extend.ts` with it.
+
+**The PWA section.**
+
+6. **PWA options are the `pwa` section.** The PWA options are the `pwa` section of `stackra.config.ts`, a section that
+   ADR 0295 decision 2 already lists.
+7. **`pwa.extend.ts` is a hatch for caching only.** The PWA runtime-caching hatch is `pwa.extend.ts`, which follows the
+   `<tool>.extend.ts` pattern of ADR 0295 decision 6. It holds runtime caching rules and nothing else. It joins that
+   decision's closed set and carries its `Reason:` header and manifest entry.
+
+**Derived app shortcuts.**
+
+8. **A route declares its shortcut.** A route declares `appShortcut: { icon, labelKey }`, as in this example:
+
+   ```ts
+   // apps/console/src/routes/orders/orders.route.ts
+   export class OrdersRoute extends Route({
+     path: "/orders",
+     appShortcut: { icon: Icons.House, labelKey: "console::shortcuts.orders" },
+   }) {}
+   ```
+
+9. **Gen emits every shortcut from the declarations.** From the same declarations, gen emits:
+   - the PWA manifest `shortcuts`;
+   - the Electron jump list and dock menu;
+   - the mobile quick actions, shown on long-press through `expo-quick-actions`.
+10. **`stackra.config` only orders and caps.** `stackra.config.ts` orders the shortcuts and caps their number. It
+    declares none. The `AppShortcuts` menu kind of ADR 0295 decision 12 is retired for this purpose.
+11. **Keyboard shortcuts are a different thing.** Keyboard shortcuts stay in `@stackra/shortcuts`, with the app's
+    `shortcuts/` group of `.shortcut.ts` files. An app shortcut is never a keyboard shortcut.
+12. **Icons.** `icon` takes a named icon, such as `Icons.House`, as ADR 0309 decides. How the icon constants are
+    generated is the subject of [0322](/adr/0322-generated-constants-instead-of-string-literals), not of this one.
+
+**Native home-screen widgets.**
+
+13. **A `NativeWidget` placement.** iOS WidgetKit widgets and Android Glance widgets are a `NativeWidget` placement
+    that reuses an existing Widget query ([0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards)).
+    The placement adds no query of its own.
+14. **An Expo config plugin writes the native code.** An Expo config plugin generates the Swift and Kotlin pieces of
+    the widget. Nobody writes them by hand.
+15. **PWAs have no home-screen widgets.** A PWA has no home-screen widgets on iOS or Android, so the web target
+    generates none.
+
+## Consequences
+
+- An app's name, identifiers and store text have one home, and the store listing and the UI read the same keys.
+- Derived shortcuts follow the routes: a route that is removed takes its shortcut with it.
+- A config that still writes `electron` is a breaking change for that member. Members convert in STA-344.
+- Native widgets need a native build. The Expo config plugin is the only generator of their Swift and Kotlin code.
+- The desktop section keeps Electron's name out of the config keys but not out of the implementation.
+
+## Enforcement
+
+- planned — gen check: every `identity` key resolves in each locale that the app ships. No work item yet.
+- planned — STA-339, the bundle identifier check of ADR 0295 applies to the bundle identifiers in `identity`.
+- planned — gen check: a route's `appShortcut` has an icon and a `labelKey` that resolves in each shipped locale. No
+  work item yet.
+- planned — the `pwa.extend.ts` hatch check of ADR 0295 decision 6 (a `Reason:` header and a manifest entry) applies to
+  it, as STA-339 plans for every hatch.
+- planned — a test that the Expo config plugin's Swift and Kotlin output compiles for iOS and Android. No work item
+  yet.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries)
+(decisions 2, 6 and 12), [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles) (the `MenuKind`
+list) and [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) (a `NativeWidget`
+placement). Keeps [0058](/adr/0058-desktop-is-electron), [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron)
+and [0309](/adr/0309-icons-declarations-name-an-icon-and-the-platform-resolves-it). Sources: the owner's decisions in
+the final structure review of 2026-10-24 (STA-428).

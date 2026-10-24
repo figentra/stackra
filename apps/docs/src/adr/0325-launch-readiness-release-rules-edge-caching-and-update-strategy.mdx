@@ -1,0 +1,128 @@
+---
+title: "0325 — Launch readiness: release rules, edge caching and update strategy"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Reads with [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding)
+  (whose HTML header stands) and amends
+  [0255](/adr/0255-pwa-service-worker-scope-and-push-per-platform) (adds the service worker's update
+  and navigation policy; decision 4, the offline shell, stands) and
+  [0237](/adr/0237-generated-api-gateway-in-four-layers) (the gateway applies rule 22). It reads
+  with [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted),
+  [0190](/adr/0190-seed-profiles-and-product-analytics) and
+  [0062](/adr/0062-mobile-release-push-and-crash-reporting), whose decisions stand.
+</Note>
+
+## Context
+
+Before the first production launch of a product, the release path needs rules that are checked, not remembered. The
+rules in this ADR are lessons from a previous production launch, restated in this repository's terms. Most of them
+are not built yet, and the Enforcement section says which are planned. One part extends a decision already made: the
+service worker, which ADR 0255 did not cover. The HTML cache header of ADR 0297 stands. The owner decided
+these points in the final structure review of 2026-10-24.
+
+## Decision
+
+**Release rules.**
+
+1. **Secret preflight.** Before a deploy starts, every secret that its runtime needs is checked to exist. A missing
+   secret stops the deploy.
+2. **One release unit.** A frontend release waits for the backend of the same commit sha to be live. No frontend of
+   one sha runs against a backend of another.
+3. **Release dashboard.** A dashboard shows the sha that each host serves, and it raises an alert when hosts drift
+   apart from the release.
+4. **Owner-approved deploy buttons.** A deploy started from a button needs the owner's approval, as a production
+   deploy already does ([0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted)).
+5. **Staging on its own domain.** Staging is served from its own domain, never from a production host.
+6. **Host map, then routes, then a build-id check.** The host map, which says which host serves which app, is
+   generated from the same configuration as the routes. After a deploy, each host's build id is checked against the
+   release.
+7. **Seeds.** Seeds are resumable and tested. Their status is shown in the ops console. A probe checks the production
+   demo account (the `demo` profile of [0190](/adr/0190-seed-profiles-and-product-analytics)).
+8. **Operator bootstrap.** The first operator is created by the `stackra ops bootstrap-operator` command, not by a
+   manual step.
+9. **Store checklist.** The store checklist is generated from configuration
+   ([0326](/adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets)). Its screenshot frames are
+   kept in the repository.
+10. **Clean builds.** A release build runs only from a clean checkout of the deployed sha. A disk-space preflight runs
+    before the build.
+11. **Token scopes.** Each token declares its scopes, and a dry call verifies them before the token is used.
+12. **End-to-end tests.** An end-to-end test is required, or it is quarantined with a stated reason, and the
+    quarantine list is visible.
+13. **Worktree-safe hooks.** The agent and git hooks run the same in a linked worktree as in the main checkout.
+14. **Order.** Before product features, these ship: the `Page` and `DataTable` components, the settings registry, a
+    readiness API, a branded email kit and the ops console. This is a planning rule and has no check.
+
+**Service worker policy.** This extends [0255](/adr/0255-pwa-service-worker-scope-and-push-per-platform).
+
+15. A new worker installs and waits. It calls `skipWaiting` only when the user accepts "Reload" (rule 25). Then
+    `clientsClaim` takes the open pages, and the page reloads once. A `critical` release (rule 26) skips the wait.
+16. Navigations are network-first. The cached shell serves a navigation when the network fails.
+17. The worker checks the host it runs on against the host its build was made for.
+18. A kill-switch `sw.js` can be published to retire an installed worker.
+19. An end-to-end test deploys one build, then a second, and checks three things. The worker of the second build waits
+    in `prompt` mode. A client of the first build still imports its lazy chunks after the second deploy (rule 29). And
+    accepting "Reload" moves the client to the second build with one reload.
+
+**Edge caching.** The caching rules are built into gen and runway, never written per app.
+
+20. A hashed `/assets/*` path is served with `public, max-age=31536000, immutable`.
+21. `sw.js`, `registerSW.js` and the web manifests are served with `max-age=0, must-revalidate`. HTML keeps
+    `private, no-cache` from [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding)
+    decision 3: the browser revalidates it on every load, and no shared cache stores a page.
+22. Every API response to a signed-in request, and every API response that sets a cookie, is `private, no-store`.
+    Static assets and HTML follow rules 20 and 21 whatever cookies the request carries. The gateway applies this rule
+    ([0237](/adr/0237-generated-api-gateway-in-four-layers), amended by this ADR). It is not a per-app option.
+23. Only a public endpoint may be cacheable: one declared `auth: false` in the `public` API area of
+    [0082](/adr/0082-public-ids-and-api-areas), with the gateway enforcing it ([0237](/adr/0237-generated-api-gateway-in-four-layers)).
+    Its cache is set by a cache profile of [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding)
+    decision 3, and no other API response is cacheable.
+24. Runway emits a Cloudflare Cache Rule that bypasses the cache on API hosts.
+
+**Update strategy.** Each app has one `updates` setting, with a `mode` and a `critical` flag.
+
+25. **Web.** The default mode is `prompt`. The service worker downloads and installs the new version and waits (rule 15),
+    and the page shows "New version — Reload".
+26. **Critical web release.** A release marked `critical` skips the wait of rule 15 and reloads the web app at once,
+    without the prompt.
+27. **Mobile.** Over-the-air updates ([0062](/adr/0062-mobile-release-push-and-crash-reporting), EAS Update) apply on
+    the next launch by default.
+28. **Critical mobile release.** A release marked `critical` is checked on launch, and the app reloads when it is
+    there.
+29. **Previous build kept.** After a deploy, the static host keeps the hashed assets of the previous build, at least
+    the previous release. An open tab that lazily imports a chunk of its own build then does not 404 between the deploy
+    and its reload.
+
+## Consequences
+
+- The release path has one set of checks, and a launch does not depend on a person remembering them.
+- The header table of rules 20 to 23 and the Cache Rule of rule 24 are gen and runway work. They are no longer a
+  choice each app makes.
+- No app can make a signed-in API response cacheable. Making an endpoint cacheable is a change to what is public, and
+  the test of rule 22 checks it.
+- Rule 14 delays product features until the foundation ships. The owner accepted that order.
+- In `prompt` mode (rule 15) a new worker waits, so an open page keeps running its own build until the user accepts
+  "Reload". Its lazy chunks stay on the host (rule 29), and the deploy-twice test of rule 19 covers both.
+
+## Enforcement
+
+- planned — no work item yet: the runway checks for rules 1, 2, 3, 6, 10 and 11 (secret preflight, one release unit,
+  drift alerts, the host map and build-id check, the clean-checkout and disk-space preflights, and the token dry call).
+- planned — the end-to-end tier of [0182](/adr/0182-testing-strategy-v2-tiers-coverage-infrastructure-and-policies)
+  checks rule 12 (the quarantine list) and rule 19 (the deploy-twice test).
+- planned — the store checklist generator has a test for rule 9.
+- planned — hook tests run the guard hooks from a linked worktree (rule 13).
+- planned — gen writes the header table of rules 20 to 23. A test fails when an API response to a signed-in request
+  becomes cacheable, and another fails when a static asset or an HTML response is marked `private, no-store` (rule 22). The HTML header of rule 21 is covered by the test that
+  [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding) already plans.
+- planned — a test for each update mode (rules 25 to 28).
+- planned — a runway output test for the Cache Rule of rule 24, which bypasses the cache on API hosts.
+- Rules 15 and 29 are covered by the deploy-twice test of rule 19 once it exists. Rules 16 to 18 have no check yet.
+  Rules 4, 5, 8 and 14 are owner decisions or planning rules, and this page says so.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0255](/adr/0255-pwa-service-worker-scope-and-push-per-platform) (service worker
+policy) and [0237](/adr/0237-generated-api-gateway-in-four-layers) (rule 22, the gateway's header rule). Sources: lessons from a previous production launch, restated in this repository's terms; the owner's
+decisions in the final structure review of 2026-10-24 (STA-428).
