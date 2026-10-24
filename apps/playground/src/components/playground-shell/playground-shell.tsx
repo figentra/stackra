@@ -171,16 +171,22 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
   const [params, setParams] = useSearchParams();
-  // React Router hands a functional update the params of the last render, so two choices made before the next render
-  // (a scheme, then a locale) would drop the first; each write starts from the one before it instead.
+  // React Router hands a functional update the params of the last render, so choices made before the next render (a
+  // scheme, then a locale) would keep only the last; each write starts from the one before it instead. The ref takes
+  // the URL's params only when something else changed them (a link, the back button), not on the echo of a write of
+  // its own still on its way.
   const latest = useRef(params);
+  const written = useRef(new Set<string>());
   useEffect(() => {
-    latest.current = params;
+    const search = params.toString();
+    if (search === latest.current.toString()) written.current.clear();
+    else if (!written.current.has(search)) latest.current = params;
   }, [params]);
   const setParam = (key: string, value: string) => {
     const next = new URLSearchParams(latest.current);
     next.set(key, value);
     latest.current = next;
+    written.current.add(next.toString());
     setParams(next, { replace: true });
   };
 

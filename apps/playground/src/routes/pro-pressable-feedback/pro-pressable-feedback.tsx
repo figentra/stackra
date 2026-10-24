@@ -30,6 +30,10 @@ const STRINGS = {
 const TILE =
   "relative overflow-hidden rounded-xl border border-border bg-surface p-4 text-start text-foreground";
 
+// A tile's text is positioned so it paints over HeroUI Pro's ripple or highlight layer, which is absolutely placed
+// and would otherwise hide the text's background from a contrast check; the layer spreads behind the text.
+const TEXT = "relative block";
+
 /** The PressableFeedback page. */
 export function ProPressableFeedback() {
   const [ripple, setRipple] = useState(0);
@@ -51,13 +55,13 @@ export function ProPressableFeedback() {
         <div className="flex flex-wrap gap-4">
           <UiPro.PressableFeedback className={TILE} onClick={() => setRipple(ripple + 1)}>
             <UiPro.PressableFeedback.Ripple />
-            <span className="block font-medium">{STRINGS.ripple}</span>
-            <span className="block text-sm">{STRINGS.pressed(ripple)}</span>
+            <span className={`${TEXT} font-medium`}>{STRINGS.ripple}</span>
+            <span className={`${TEXT} text-sm`}>{STRINGS.pressed(ripple)}</span>
           </UiPro.PressableFeedback>
           <UiPro.PressableFeedback className={TILE} onClick={() => setHighlight(highlight + 1)}>
             <UiPro.PressableFeedback.Highlight />
-            <span className="block font-medium">{STRINGS.highlight}</span>
-            <span className="block text-sm">{STRINGS.pressed(highlight)}</span>
+            <span className={`${TEXT} font-medium`}>{STRINGS.highlight}</span>
+            <span className={`${TEXT} text-sm`}>{STRINGS.pressed(highlight)}</span>
           </UiPro.PressableFeedback>
         </div>
       </section>
@@ -68,8 +72,8 @@ export function ProPressableFeedback() {
         <div>
           <UiPro.PressableFeedback className={TILE} isDisabled>
             <UiPro.PressableFeedback.Ripple />
-            <span className="block font-medium">{STRINGS.off}</span>
-            <span className="block text-sm">{STRINGS.text}</span>
+            <span className={`${TEXT} font-medium`}>{STRINGS.off}</span>
+            <span className={`${TEXT} text-sm`}>{STRINGS.text}</span>
           </UiPro.PressableFeedback>
         </div>
       </section>

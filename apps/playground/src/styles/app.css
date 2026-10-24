@@ -147,12 +147,6 @@ body {
   background-color: oklch(37.3% 0.034 259.733);
 }
 
-/* HeroUI Pro's press ripple is a positioned layer over the item's content, which hides the content's background from
-   a contrast check; the content is lifted above it, so the ripple spreads behind the text. */
-.pressable-feedback > :not(.pressable-feedback__ripple) {
-  position: relative;
-}
-
 /* Shiki's GitHub light theme, which HeroUI Pro's code blocks use (in Markdown too), has token colours under 4.5:1 on
    the surface behind code (keywords are 4:1); in the light scheme each token keeps its hue and chroma at a lightness
    of at most 50%, which holds 4.5:1 there. The dark scheme keeps HeroUI Pro's rule, whose dark theme holds already. */

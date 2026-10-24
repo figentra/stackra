@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: proves the playground shell takes the colour scheme and locale from the URL, applies them through the
- *          DesignSystemProvider, writes a switch back to the URL, marks the selected choice beyond its fill, keeps
- *          theme-color in step, declares its UI English, moves focus to the h1 on navigation, groups its navigation by category with the Free pages
- *          before the Pro pages (badged), filters it by tier from the URL, and draws its landmarks, leaving out `main` for a page that draws its own.
+ *          DesignSystemProvider, writes a switch back to the URL, keeps every choice made before the next render, marks
+ *          the selected choice beyond its fill, keeps theme-color in step, declares its UI English, moves focus to the
+ *          h1 on navigation, groups its navigation by category with the Free pages before the Pro pages (badged),
+ *          filters it by tier from the URL, and draws its landmarks, leaving out `main` for a page that draws its own.
  * Boundary: a memory router in jsdom with a stubbed matchMedia; no network.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0022 (test placement).
@@ -81,6 +82,20 @@ describe("PlaygroundShell", () => {
     expect(router.state.location.search).toBe("?scheme=dark&locale=ar");
     expect(root.dataset["theme"]).toBe("dark");
     expect(root.dir).toBe("rtl");
+  });
+
+  it("keeps every choice made before the next render, and follows a URL changed elsewhere", () => {
+    const router = renderShell("/?scheme=light&locale=en");
+    // One act: the three clicks land before the shell renders again, as quick clicks can in a browser.
+    act(() => {
+      screen.getByRole("radio", { name: "Dark" }).click();
+      screen.getByRole("radio", { name: /العربية/ }).click();
+      screen.getByRole("radio", { name: "Pro" }).click();
+    });
+    expect(router.state.location.search).toBe("?scheme=dark&locale=ar&tier=pro");
+    act(() => void router.navigate("/?scheme=light&locale=en"));
+    act(() => screen.getByRole("radio", { name: "Dark" }).click());
+    expect(router.state.location.search).toBe("?scheme=dark&locale=en");
   });
 
   it("marks the selected choice with a check mark, not by its fill alone", () => {
