@@ -27,6 +27,8 @@ catalog:
   yaml: 2.9.1
   # HTTP client for tools/scripts' GitHub and Linear calls: an Agent with a 30 s connect timeout (STA-302).
   undici: 8.12.2
+  # Runtime schemas: @stackra/validation, config and money, and the X$ schemas gen emits (ADR 0095).
+  zod: 4.6.7
 
 catalogs:
   # Toolchain that builds TypeScript output — a different risk/cadence than lint/format/test tools.
@@ -34,6 +36,13 @@ catalogs:
     typescript: 7.0.2
     tsdown: 0.23.1
     turbo: 2.11.9
+    # The class-component compiler (ADR 0305 rules 37 to 41): a Babel plugin gen ships and vite-plugin, Metro and
+    # tsdown run. Babel 8 ships its own types, so no @types/babel__* entries.
+    "@babel/core": 8.0.7
+    "@babel/generator": 8.0.6
+    "@babel/parser": 8.0.7
+    "@babel/traverse": 8.0.7
+    "@babel/types": 8.0.6
   # Root repo tooling that loads `typescript` as a JS API (tools/scripts/doc-standard.mjs), which TypeScript 7 (native)
   # does not ship yet. Members keep `tsc` from catalog:build; their own node_modules/.bin comes first on PATH.
   tooling:

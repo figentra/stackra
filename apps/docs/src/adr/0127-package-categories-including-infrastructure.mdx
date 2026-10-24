@@ -1,7 +1,68 @@
 ---
 title: "0127 — Package categories, including infrastructure and commerce"
-description: "Accepted, amended by 0282, 0286, 0294, 0302 · 2026-10-20"
+description: "Accepted, amended by 0282, 0286, 0294, 0302 · 2026-10-20 · amended 2026-10-24 (STA-348)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-348), for the programming model v3.1 build-out, as
+  [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) amended the
+  developer row. The placement table of the 2026-10-21 amendment changes as follows.
+
+- **Placed:** `state` in the `state` category (`packages/state/state`; the name stays, as
+  `experience/experience` did), which answers open question 1; `clients` in `application`;
+  `runway` in `developer`; `access-log` in `security`.
+- **Folded:** `ir` and `source` into `gen` (the committed `stackra.manifest.json` is the IR, and
+  gen reads source through the TypeScript API behind one adapter); `console` into `cli` (a
+  "Command" is a CLI command only, 0294 decision 23).
+- **Gone:** `connections`, folded into `integrations` by
+  [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks);
+  `schema` into `validation`; `network` and `pwa` into `platform`; `router` into `navigation`.
+- **The changed rows now read:** foundation: support, container, config, logger, events,
+  transport, query, i18n, contracts, validation, errors. state: state, settings, feature-flags,
+  theming, coordinator. application: actions, ai, clients, registry. security: entitlements,
+  licensing, identity, iam, tenancy, consent, csp, access-log. experience: experience,
+  navigation, panel, shortcuts, platform, peripherals, builder, collaboration. developer: cli,
+  gen, coding-standard, vite-plugin, devtools-kit, testing, runway, skills, mcp, renderers. The
+  other rows stand.
+- **Entries:** the rule governs the code entries of `tier:lib` packages, and the complete allowed
+  set is below. Every other extra code entry folds into one of these, and one symbol is exported
+  from one entry only (0294 decision 15). Non-code asset subpaths (CSS, fonts, images and JSON
+  schemas, such as `./assets/*`, `./fonts/*` and the `./themes/*` CSS of `@stackra/tokens`) are
+  allowed as asset paths and are not entries. The `tier:config` presets in `packages/tooling/`
+  are governed by [0300](/adr/0300-published-tooling-presets-and-enforced-spell-checking), not
+  by this note.
+  - The six standard entries: `.`, `./contracts`, `./node`, `./react`, `./native`, `./testing`.
+  - Five runtime-target entries: `./server` (the HTTP server or SSR runtime), `./worker`
+    (Cloudflare Workers), `./sw` (the service worker), `./browser` (browser-only drivers) and
+    `./electron` (the Electron main-process bridge and renderer drivers). There is no `./edge`.
+  - Two named tool-hook subpaths, allowed only because the tool needs a module of a fixed shape:
+    `@stackra/gen/metro-transformer` and `@stackra/platform/electron/after-pack`. A new tool-hook
+    subpath needs an ADR.
+  - Two package-specific exceptions, each for its package only: `@stackra/testing` also has
+    `./e2e` and `./contract` ([0269](/adr/0269-stackra-testing-package-entries-and-helper-placement)
+    decision 6), and `@stackra/icons` also has `./react/lucide-registry`,
+    `./native/lucide-registry`, `./react/lucide-icons` and `./native/lucide-icons`
+    ([0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 10).
+- **Kind bases and helpers:** `Port` and `Enum` live in `@stackra/contracts`; `Module` and
+  `Service` in `@stackra/container`; the four `define*` functions of `stackra.config.ts` and
+  `MigrationRunner` in `@stackra/contracts`. The kind helper in `@stackra/container` is
+  `createKind`, because `define` is reserved for those four functions
+  ([0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) rule 3).
+- **App runtime:** `@stackra/app` stays in `runtime`, where the 2026-10-21 table placed it. It
+  holds the per-target app runtime, `createApp` for each runtime target
+  ([0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries) decision 8),
+  and the app contexts. `Module` and `Service` live in `@stackra/container` and the `define*`
+  functions in `@stackra/contracts`, not in `@stackra/app`.
+- **Forms:** the form entries of `@stackra/ui` fold into `@stackra/ui/react` and
+  `@stackra/ui/native`, so coded forms (the 0270 note above) use those entries; there is no
+  `@stackra/ui/form`.
+- **Tone:** there is one `Tone`, in `@stackra/contracts`, with the five values of
+  [0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 7 (`default`, `accent`,
+  `success`, `warning`, `danger`); `@stackra/ui/contracts` uses it.
+- **Money:** the money codecs (`money()`, `currencyCode()`) ship from `@stackra/money`, not from
+  `@stackra/validation`.
+
+</Note>
 
 <Note>
   Amended by [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground), as 0282 amended

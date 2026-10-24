@@ -1,7 +1,37 @@
 ---
 title: "0159 — Migrations: gen-ordered SQL, migrations shipped in packages, and safety rules"
-description: "Accepted, amended by 0294, 0305 · 2026-10-20"
+description: "Accepted, amended by 0294, 0305 · 2026-10-20 · amended 2026-10-24 (STA-408)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-408): the spike that the 2026-10-23 note waited on is done. Encore's
+  runner (v1.58.6) sends each migration file and its own bookkeeping insert as one query string,
+  so Postgres runs them in an implicit transaction, and every concurrent index build fails with
+  SQLSTATE 25001. The runner has no option to change that. A constraint added `NOT VALID` and
+  validated in a later step works, but that covers constraints, not index builds.
+
+Decision 2 is amended: `stackra db migrate` applies the migrations as a release step in every
+environment, SaaS and on-prem. Encore's runner is not used. Rollback stays as the 2026-10-23
+note says: `stackra db rollback` on dev, preview and test databases only, and production stays
+forward-only.
+
+The runner keeps the `N_name.up.sql` numbering of the compiled SQL and the
+`schema_migrations(version, dirty)` table shape. It closes the gaps the spike found in
+Encore's runner:
+
+- **Steps outside a transaction.** A compiled step that cannot run in a transaction (a
+  concurrent index build, which sits in its own step under decision 3) carries a per-file
+  marker. The runner sends each of its statements as its own query and writes the bookkeeping
+  row separately.
+- **Timeouts.** Every session sets `lock_timeout` and `statement_timeout`, as decision 3
+  requires.
+- **Failed concurrent builds.** After a concurrent index build fails, the runner detects the
+  INVALID index it left, drops it concurrently, and then retries the step or reports it.
+- **Dirty versions.** A dirty version fails loudly and names the file. The runner never retries
+  it silently.
+- **Positions.** An error names the statement's position in the file.
+
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-406), by
