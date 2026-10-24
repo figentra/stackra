@@ -114,7 +114,7 @@ export function PageGallery({ pages, search, headingLevel }: PageGalleryProps) {
             <section
               key={category}
               aria-labelledby={id}
-              className="glass mb-4 grid break-inside-avoid gap-3 rounded-3xl p-4"
+              className="material mb-4 grid break-inside-avoid gap-3 rounded-3xl p-4"
             >
               <div className="grid gap-1 px-2 pt-1">
                 <div className="flex items-center justify-between gap-4">

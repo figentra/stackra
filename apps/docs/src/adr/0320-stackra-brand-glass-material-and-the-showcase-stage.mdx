@@ -49,15 +49,43 @@ limits, so the material does not drift into product screens or into the componen
 6. **Patterns and illustration.**
    - The brand's grid, graph and dots patterns may sit under glass, in hairline roles, and never carry meaning.
    - The brand icons (square caps, mitred joins, 24px grid) may wear a glass tile on a showcase stage.
+7. **The material is a theme token with three levels and four modes** (added 2026-10-24, STA-424).
+   - **Levels** (`MaterialLevel`) are thicknesses:
+     - `thin` is for small chrome without reading text (tiles, chips over art).
+     - `regular` (`.material`) is for bars, cards and panels.
+     - `thick` is for large surfaces that hold reading text (sheets, palettes).
+     - A theme gives each level a fill share of `surface` per colour mode, a px blur and a saturation factor, plus
+       the edge and rim-light shares (`Theme.materials`, validated by `defineTheme`).
+   - **Modes** (`MaterialMode`) are degrees, set once on `<html data-material>`. Every level scales by the mode's
+     factors (`MATERIAL_MODES`), so one switch moves the whole page:
+     - `solid` is opaque. It is the product default, and also what reduced transparency, more contrast and a missing
+       `backdrop-filter` force.
+     - `frosted` gives a dense fill and a heavy blur.
+     - `glass` is the theme as written, and the showcase default.
+     - `liquid` gives a thinner fill and a lifted backdrop (more saturation, a little brightness) with a sheen
+       along the top inside edge.
+   - **Liquid draws no refraction.** A displacement filter costs a filter pass per frame, works in Chromium only,
+     and warps text behind it. The lens is suggested by the lifted backdrop, the rim light and the sheen, all drawn
+     with backdrop filters and inset shadows. There are no pseudo-elements and no gradient images, so contrast
+     checkers can still measure text on the material.
+   - **Rendering.** `renderWebCss` writes the material:
+     - the shares, fills and filters go in the colour blocks, so a subtree with its own `data-theme` computes them
+       again;
+     - the mode factors go on `[data-material]`;
+     - the fallbacks come after the modes;
+     - the classes go in the one components layer.
+   - Native renders no material yet. A native surface reads `Theme.materials` and `MATERIAL_MODES` and maps them to
+     the platform's blur or Liquid Glass view.
 
 ## Consequences
 
 - `brand.json` `decided.surfaces` now cites this ADR. The kit's own `--check` (outside this repository) still asserts
   the old rule and must be updated when the kit is next regenerated.
-- The playground (`apps/playground`, STA-422) is the first surface. Its `glass` and `glass-strong` utilities and the
-  ambient field in `src/styles/app.css` are the reference implementation.
-- `@stackra/tokens` gains no glass token yet. When a second surface adopts the material, the fills and the blur become
-  theme tokens, rendered by `renderWebCss` and `renderNativeCss`.
+- The playground (`apps/playground`, STA-422) is the first surface. It uses the `.material*` classes, offers the four
+  modes in its display switcher (`?material=`) and keeps only its ambient field in `src/styles/app.css`.
+- `@stackra/tokens` carries the material (decision 7). A theme without `materials` no longer validates, and every
+  product theme adds the block.
+- The Theme Studio (STA-423) edits the levels and previews every mode.
 
 ## Enforcement
 
