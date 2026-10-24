@@ -6,9 +6,12 @@ description: "Accepted · 2026-10-21 · amended 2026-10-24 (STA-456)"
 <Note>
   Amended 2026-10-24 (STA-456), owner decision, with the note of the same day on
   [0186](/adr/0186-backups-and-disaster-recovery): the `region` field of decision 3 is chosen at
-  organisation creation from day one, from the regions 0186 now lists (GCC and EU), and the region
-  picker of decision 3 of the Open questions appears from launch. A tenant's region never changes
-  afterwards. The other decisions stand.
+  organisation creation from day one, from the two regions 0186 now lists (GCC and EU), so the
+  region picker that decision 3 deferred until cells exist appears from launch. A personal workspace
+  still defaults to the region nearest the user, which settles item 3 of the Open details below (the
+  nearer of the two). The region stays fixed per tenant, and moving one stays the separate job of
+  decision 3 and of [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region)
+  decision 4. The other decisions stand.
 </Note>
 
 <Note>

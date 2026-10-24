@@ -4,9 +4,9 @@ description: "Accepted · 2026-10-24"
 ---
 
 <Note>
-  Amends [0253](/adr/0253-peripherals-web-api-first-and-device-presets) (decisions 2 to 4: the
-  peripheral list, the drivers per target, and the first native module, which 0253 decision 3 says
-  needs its own ADR; this is that ADR) and, by a Note,
+  Amends [0253](/adr/0253-peripherals-web-api-first-and-device-presets) (decisions 2 and 4: the
+  peripheral list and the drivers per target) and applies its decision 3 (the first native module,
+  which that decision says needs its own ADR; this is that ADR) and, by a Note,
   [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles) (the desktop target of
   a point-of-sale app has peripheral access).
 </Note>
@@ -37,8 +37,8 @@ so that is the evidence 0253 decision 3 asked for.
    the preset, and takes camera scanning as a second driver. Serial and Bluetooth scanners are drivers added on
    evidence, under decision 3 of 0253.
 
-5. **Drivers per target.** Web: WebUSB, WebSerial and network (TCP to a printer on the LAN through the Worker is not
-   allowed; network printing from a browser uses the printer's HTTP or WebSocket interface where it has one). Electron:
+5. **Drivers per target.** Web: WebUSB, WebSerial and network (a browser has no raw TCP, so the web reaches a LAN printer only
+   through the printer's HTTP or WebSocket interface where it has one; raw TCP printing is a desktop and native driver). Electron:
    serial and USB through the main process, exposed to the renderer by the desktop bridge. Native: Bluetooth printers,
    as decision 6. A port's driver is chosen by target at build time, as [0250](/adr/0250-stackra-platform-capability-ports-drivers-and-gate)
    does for capabilities.
@@ -73,9 +73,21 @@ so that is the evidence 0253 decision 3 asked for.
    its evidence and its own ADR. The evidence is stated here; the per-provider ADRs follow the owner's provider
    choice. An integrated card payment never completes offline.
 
+2. **Android POS terminals (Sunmi, PAX, iMin).** The retail pilot runs on every till kind, and these terminals' built-in
+   printer and scanner have no Web API and no LAN path: each vendor's SDK is a native module, so under
+   [0253](/adr/0253-peripherals-web-api-first-and-device-presets) decision 3 each vendor gets its own ADR, with that
+   evidence. The ports of decision 1 are unchanged; only the drivers are added.
+
+3. **Customer display on every till kind.** `CustomerDisplay` of decision 1 needs a driver per till: a second Electron
+   window, the Android Presentation API, and an external-display scene on the iPad (which needs multi-scene support in
+   the Expo app). The platform-targets ADR records where each lives.
+
+4. **Wallet passes.** Loyalty cards and receipts as Apple Wallet and Google Wallet passes are an integration surface,
+   not a peripheral: a separate ADR, with the pass-signing certificate names in Infisical and no value in git.
+
 ## Supersedes and sources
 
-Supersedes: none. Amends: [0253](/adr/0253-peripherals-web-api-first-and-device-presets) (decisions 2 to 4) and, by a
-Note, [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles). Builds on
+Supersedes: none. Amends: [0253](/adr/0253-peripherals-web-api-first-and-device-presets) (decisions 2 and 4; decision 3 is
+applied) and, by a Note, [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles). Builds on
 [0250](/adr/0250-stackra-platform-capability-ports-drivers-and-gate). Sources: the owner's Muslin rethink decisions of
 2026-10-24 (STA-451), restated in this ADR's own words.

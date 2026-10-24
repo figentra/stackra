@@ -21,7 +21,7 @@ and the retail edition's e-receipts need the same primitive.
 ## Decision
 
 1. **A `Sequence` primitive in `@stackra/database`.** A module declares a sequence as a class that extends
-   `Sequence({ key })` in its `database/sequences/` group. Its scope is the tenant plus the series dimensions the module
+   `Sequence({ key })` in its `database/sequences/` group, in a `<name>.sequence.ts` file ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 13 as amended the same day). Its scope is the tenant plus the series dimensions the module
    names (`series: ["legalEntityId", "locationId"]`), and its format is a pattern (`"INV-{year}-{n:06}"`) with a reset
    rule (`never`, `yearly`).
 
@@ -36,14 +36,16 @@ and the retail edition's e-receipts need the same primitive.
    ([0338](/adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps)) holds a
    reserved block per series (`reserve: { size }`), taken at sync time; the documents it issues take numbers from the
    block in order, and an unused remainder is returned on the next sync or, when a device is wiped, recorded as voided
-   numbers with the reason, so the gap is explained and audited.
+   numbers with the reason, so the gap is explained and audited. Numbers from blocks are issued in block order, not
+   in date order across devices; a series whose law requires strict date order declares `reserve: false` and issues
+   online only, or adds the device as a series dimension, and the product's own record says which.
 
 5. **One primitive, no per-product counters.** A module never writes its own counter table. A product that needs a
    series the primitive cannot express extends the primitive in `@stackra/database`, with an ADR.
 
 ## Consequences
 
-- A tax audit of a series finds every number, in order, each either a document or an explained void.
+- A tax audit of a series finds every number, in block order, each either a document or an explained void.
 - Offline tills issue legal numbers without the network, and the audit trail says which block they came from.
 - A hot series serialises on its counter row for the duration of the commit; a product that needs more throughput adds
   a series dimension, not a second counter.

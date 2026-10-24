@@ -5,18 +5,18 @@ description: "Accepted, amended by 0272, 0275, 0327, 0343 · 2026-10-20 · amend
 
 <Note>
   Amended 2026-10-24 (STA-456) by
-  [0343](/adr/0343-cross-tenant-record-links-consented-copies-fed-by-events): two tenants outside
-  one tree may share chosen items through a consented cross-tenant link, which copies items under
+  [0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events): two tenants outside
+  one tree may share chosen items through a consented cross-tenant share, which copies items under
   each tenant's own `tenant_id` and feeds them by events. It is not the parent–child grant of
-  decision 1 and confers no tree position. Decisions 1 to 4 stand.
+  decision 1 and confers no tree position. The other decisions stand.
 </Note>
 
 <Note>
   Amended 2026-10-24 (STA-456): a model that is global by design (an official law corpus, a
-  reference table) declares it with `Model.global(...)` and carries no `tenant_id`; every other
-  model carries `BelongsToTenant`. Gen refuses a model that declares neither, so no tenant-owned
-  table ever lacks its `tenant_id` and its row-level-security policy. The tenant tree and lifecycle
-  decisions stand.
+  reference table) declares it with `Model.global(...)`, the static of `Model` in `@stackra/model`
+  that gen records in the manifest, and carries no `tenant_id`; every other model carries
+  `BelongsToTenant`. Gen refuses a model that declares neither, so no tenant-owned table ever lacks
+  its `tenant_id` and its row-level-security policy. The tenant tree and lifecycle decisions stand.
 </Note>
 
 <Note>

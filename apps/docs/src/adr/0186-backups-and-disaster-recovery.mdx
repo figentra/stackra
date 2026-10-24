@@ -7,13 +7,21 @@ description: "Accepted, amended by 0272 · 2026-10-20 · amended 2026-10-24 (STA
   Amended 2026-10-24 (STA-456), owner decision: decision 6 changes from one region to two
   independent hosting regions from launch, GCC and EU. A tenant stays in the region chosen at its
   creation ([0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region)
-  decision 4); the platform replicates no tenant data across regions, and the one thing that crosses
-  is an item a user explicitly releases over a cross-tenant link
-  ([0343](/adr/0343-cross-tenant-record-links-consented-copies-fed-by-events) decision 4), audited
-  and checked against the sending legal entity's transfer rules; the stack is never active-active,
-  so the 0227 row stands. A customer that needs in-country hosting in Saudi Arabia, the UAE or
-  Egypt, and every government customer, gets a dedicated in-country deployment per customer that
-  Figentra runs. Cells, within a region, still come later. Decisions 1 to 5 and 7 onward stand.
+  decision 4). The platform never replicates tenant data between regions: the object replication of
+  decision 3 and the snapshots of decision 2 stay inside the tenant's region (a second account and a
+  second availability zone of that region, never another region), and the one thing that crosses a
+  region boundary is an item a user explicitly releases over a cross-tenant share
+  ([0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events) decision 4), audited
+  and checked against the sending legal entity's transfer rules. The objectives of decision 5 hold
+  per region, for the loss of a zone, an account or a database inside it; after the loss of a whole
+  region, service is restored in that region when it returns, and whether a residency-compliant
+  standby is wanted for either region is an open owner item recorded here. The stack is never
+  active-active, so the rejection in the
+  [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) row stands (its wording takes a
+  Note there). A customer that needs in-country hosting in Saudi Arabia, the UAE or Egypt, and every
+  government customer, gets a dedicated in-country deployment per customer that Figentra runs.
+  Cells, within a region, still come later. Decisions 1, 4 and 7 stand; decisions 2, 3 and 5 are
+  read per region as above.
 </Note>
 
 <Note>

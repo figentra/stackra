@@ -1,13 +1,13 @@
 ---
-title: "0343 — Cross-tenant record links: consented copies fed by events, owned by tenancy"
+title: "0343 — Cross-tenant record sharing: consented copies fed by events, owned by tenancy"
 description: "Accepted · 2026-10-24"
 ---
 
 <Note>
   Amends [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) (decision
-  1, the parent–child grant, which this link is not) by a Note. Reads with
+  1, the parent–child grant, which this share is not) by a Note. Reads with
   [0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views) (row-level
-  security, which the link never crosses), [0141](/adr/0141-integration-event-names-and-envelope)
+  security, which the share never crosses), [0141](/adr/0141-integration-event-names-and-envelope)
   (the events that feed a copy) and [0186](/adr/0186-backups-and-disaster-recovery) as amended the
   same day (regions and in-country deployments, which decide how a copy crosses).
 </Note>
@@ -19,45 +19,48 @@ retailer and its supplier. Each keeps its own data, its own rules and its own re
 chosen documents, messages and invoices on that matter. Row-level security on `tenant_id`
 ([0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views)) forbids a query that reads across
 tenants, and the parent–child grant of [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region)
-decision 1 is for one organisation's tree, not for two peers. The owner locked the legal product's plan with this need on
+decision 1 is for one organisation's tree, not for two peers. The word is "share": [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 23 fixes "link" as `Link<T>`. The owner locked the legal product's plan with this need on
 2026-10-24, and Figentra OS adopted it.
 
 ## Decision
 
-1. **A link is an explicit, consented pair.** A cross-tenant link joins one record in tenant A to one record in tenant B.
-   Both tenants consent: one proposes, the other accepts, and either revokes. The link is a tenancy model, owned by
+1. **A share is an explicit, consented pair.** A cross-tenant share joins one record in tenant A to one record in tenant B.
+   Both tenants consent: one proposes, the other accepts, and either revokes. The share is a tenancy model, owned by
    `@stackra/tenancy`, with its own audit trail ([0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention)).
 
-2. **Shared items are copies.** A tenant shares an item (a document, a message, an invoice) by choosing it on the link.
+2. **Shared items are copies.** A tenant shares an item (a document, a message, an invoice) by choosing it on the share.
    The other tenant receives a copy in its own tables, under its own `tenant_id`, its own rules and its own region. No
    query ever reads the other tenant's rows; row-level security is untouched.
 
 3. **Inside one region or deployment, copies follow events.** When both tenants live in one region or in one
    dedicated deployment ([0186](/adr/0186-backups-and-disaster-recovery) as amended the same day), a shared item's
    updates travel as integration events ([0141](/adr/0141-integration-event-names-and-envelope)) from the owning
-   tenant to the copy, through the same outbox as any event. The copy carries the source tenant, the link and the
-   "as of" time of its last update, and it is read-only on the receiving side unless the link says otherwise for
+   tenant to the copy, through the same outbox as any event. The copy carries the source tenant, the share and the
+   "as of" time of its last update, and it is read-only on the receiving side unless the share says otherwise for
    that item kind.
 
 4. **Across regions or deployments, only what a user releases.** Between two regions, or between a region and a
-   dedicated in-country deployment, a link carries no event feed. A user of the sending tenant releases each item
+   dedicated in-country deployment, a share carries no event feed. A user of the sending tenant releases each item
    explicitly; every release is audited ([0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention)) and
    checked against the sending legal entity's data-transfer rules (the Saudi Personal Data Protection Law, Egypt's
-   Law 151 of 2020, and whatever else that entity's jurisdiction requires) before the copy leaves. The legal entity
-   is the transfer boundary. The platform replicates no tenant data between regions otherwise (owner decision,
+   Law 151 of 2020, and whatever else that entity's jurisdiction requires) before the copy leaves. A legal entity is
+   the registered company inside a tenant that owns a record, one per jurisdiction (a multi-country tenant has one per
+   country, keyed `legalEntityId`), and it is the transfer boundary. The platform replicates no tenant data between regions otherwise (owner decision,
    2026-10-24).
 
-5. **Revocation stops the sync, and says what stays.** When either tenant revokes the link, no further update crosses.
-   The link states, per item kind, whether the copies already received stay (the default for invoices and messages,
+5. **Revocation stops the sync, and says what stays.** When either tenant revokes the share, no further update crosses.
+   The share states, per item kind, whether the copies already received stay (the default for invoices and messages,
    which the receiver may need as records) or are deleted (the default for documents). What stays is marked as a
-   severed copy.
+   severed copy. A copy under a legal hold ([0134](/adr/0134-data-invariants-classification-and-delete-lifecycle) as
+   amended the same day, the `HoldRegistry` port) is never deleted on revocation: it stays as a severed copy until the
+   hold lifts.
 
 6. **Rules apply on both sides.** The sharing tenant's visibility rules ([0333](/adr/0333-record-visibility-rules-who-can-see-which-records))
    decide what it may share; the receiving tenant's rules decide who sees the copy. A classified field
    ([0134](/adr/0134-data-invariants-classification-and-delete-lifecycle)) keeps its class in the copy, and a field the
    sharing tenant's rules hide is never copied.
 
-7. **Not a tree, not a merge.** A link is not the parent–child grant of 0210, confers no scope-tree position, and
+7. **Not a tree, not a merge.** A share is not the parent–child grant of 0210, confers no scope-tree position, and
    never makes two tenants one. Consolidated reporting across tenants stays the nested-tenant model of 0210.
 
 ## Consequences
@@ -65,17 +68,17 @@ decision 1 is for one organisation's tree, not for two peers. The owner locked t
 - Two organisations collaborate on a matter with no shared table and no cross-tenant query, so isolation tests stay as
   they are.
 - A copy can be stale by the "as of" time it shows, and the receiver sees that.
-- A link across regions is slower by design: each item crosses by a person's decision, not by an event, and the
+- A share across regions is slower by design: each item crosses by a person's decision, not by an event, and the
   audit trail names who released it and which transfer rule it passed.
 - Revocation is clean and audited, and what remains is a labelled record, not a silent leftover.
 
 ## Enforcement
 
-- planned — tenancy isolation tests: a linked pair produces no cross-tenant read, a revoked link stops the next
-  event from producing a copy, and a link between tenants in different regions or deployments produces no
+- planned — tenancy isolation tests: a shared pair produces no cross-tenant read, a revoked share stops the next
+  event from producing a copy, and a share between tenants in different regions or deployments produces no
   event-fed copy.
 - planned — a release across regions without a recorded transfer-rule check is refused, and the attempt is logged.
-- planned — gen (STA-340): an item kind shared on a link without a stated revocation outcome fails.
+- planned — gen (STA-340): an item kind shared without a stated revocation outcome fails.
 
 ## Supersedes and sources
 

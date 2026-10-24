@@ -43,8 +43,8 @@ code, and run on both sides, with the server's answer winning.
    answers; it never rejects the sale, and the server's figure is the one in the ledger.
 
 5. **Versioned together.** The rule package's version is part of the client's build, and an action that accepts an
-   offline-computed document declares the oldest rule version it still accepts. A document from an older version is
-   re-evaluated on the server and flagged, not refused.
+   offline-computed document declares the oldest rule version it accepts without review. A document from an older version is
+   re-evaluated on the server and flagged for review, never refused.
 
 6. **Not tenant code.** Only first-party and edition module code ships this way. A tenant's rules remain data that
    references registered fields and operators ([0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer)

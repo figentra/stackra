@@ -8,9 +8,9 @@ description: "Accepted, amended by 0341 · 2026-10-20 · amended 2026-10-24 (STA
   path of the delete lifecycle consults a `HoldRegistry` port (a port, per
   [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 23, never a
   Guard) before it disposes of a record, and compliance-privacy implements it. A hold on a record
-  cascades to its linked records, the links of
-  [0343](/adr/0343-cross-tenant-record-links-consented-copies-fed-by-events) included. A held record
-  is never disposed of, and the attempt is logged. The classes and the lifecycle stand.
+  cascades to its copies of a record shared under
+  [0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events) included. A held
+  record is never disposed of, and the attempt is logged. The classes and the lifecycle stand.
 </Note>
 
 <Note>
