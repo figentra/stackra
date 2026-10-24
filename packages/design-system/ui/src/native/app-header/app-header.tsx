@@ -3,14 +3,16 @@
  * Purpose: the native `AppHeader`, an adapted form: a bar for a screen that wants the console's vocabulary. A row
  *          holding `startContent`, the `title` (the app's name or logo), the `search` slot taking the room left over,
  *          `endContent` and the `userMenu`, in that order from the inline start, so right-to-left mirrors it with the
- *          row itself. `label` names the bar for a screen reader.
+ *          row itself. `label` names the bar.
  * Boundary: HeroUI Native has no application bar, and on a phone the navigator's own header is the bar
  *           (`NavigationHeader`), so this is a plain `View` row on theme tokens. It imports no other shell piece: each
  *           part is a node (ADR 0314 decision 4). A string or number in any slot is drawn inside `Text` (semibold for
- *           the title), since React Native refuses a bare string in a `View`. The bar has no landmark role on native, so
- *           the name is an accessibility label on the row; the row is not itself accessible, so each control inside
- *           stays its own stop for a screen reader. It draws no safe-area inset: the screen or navigator that holds it owns the status bar. Extra
- *           props pass to the root `View`.
+ *           the title), since React Native refuses a bare string in a `View`. The row takes the `banner` role, the nearest
+ *           landmark React Native has, as the web bar is a `header`. It is not itself an accessibility element, so
+ *           each control inside stays its own stop for a screen reader and a platform that skips unfocusable
+ *           containers may never speak `label`; the name is the same one the web bar gets, not a promise of
+ *           announcement. It draws no safe-area inset: the screen or navigator that holds it owns the status bar.
+ *           Extra props pass to the root `View`.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0314 (decisions 1, 4 and 7); WCAG
  *          2.2 SC 1.3.1 and 2.5.8.
@@ -55,6 +57,7 @@ export function AppHeader({
 }: AppHeaderProps): ReactElement {
   return (
     <View
+      role="banner"
       {...rest}
       {...(label ? { accessibilityLabel: label } : {})}
       className={[

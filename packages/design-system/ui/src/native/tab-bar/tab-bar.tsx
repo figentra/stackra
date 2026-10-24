@@ -28,6 +28,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NavigationItem } from "#contracts/types/navigation-item.type";
 import type { TabBarContractProps } from "#contracts/types/tab-bar-contract-props.type";
 import { currentStateOf } from "#core/functions/current-state-of.function";
+import { isAbsoluteUrl } from "#core/functions/is-absolute-url.function";
 import { Badge } from "#native/badge/badge";
 import { Icon } from "#native/icon/icon";
 import { RouterContext } from "#native/router-provider/router-context";
@@ -41,9 +42,6 @@ const STRINGS = {
 
 /** The most tabs a phone's tab bar holds: Android's navigation bar limit. */
 const MAX_TABS = 5;
-
-/** An absolute URL starts with a scheme; a tab is a place in the app, so it never follows one. */
-const HAS_SCHEME = /^[a-z][a-z\d+.-]*:/i;
 
 /**
  * Props of the native TabBar: the shared contract plus the root `View`'s own props, passed through. The view's
@@ -126,7 +124,7 @@ export function TabBar({
   const follow = (item: NavigationItem) => {
     item.onPress?.();
     const href = item.href;
-    if (href !== undefined && navigate && !HAS_SCHEME.test(href)) navigate(href);
+    if (href !== undefined && navigate && !isAbsoluteUrl(href)) navigate(href);
   };
   return (
     <View

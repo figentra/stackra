@@ -20,7 +20,7 @@ import { View } from "react-native";
 
 import type { SectionContractProps } from "#contracts/types/section-contract-props.type";
 import { Card, type CardProps } from "#native/card/card";
-import { SectionActions } from "#native/section/section-actions";
+import { PageActions } from "#native/page-actions/page-actions";
 import { Text } from "#native/text/text";
 
 // shortcut: English until @stackra/i18n ships; then the key `ui::section.more-actions`.
@@ -63,10 +63,11 @@ export function Section({
               {description == null ? null : <Card.Description>{description}</Card.Description>}
             </View>
           </View>
-          <SectionActions
+          <PageActions
             actions={actions ?? []}
             moreActionsLabel={moreActionsLabel}
             endContent={endContent}
+            size="sm"
           />
         </View>
       </Card.Header>

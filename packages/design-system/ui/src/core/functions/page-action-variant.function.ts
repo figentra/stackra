@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: the look of one action drawn as a button by a Section: the first action is primary, the others secondary,
- *          and a danger action takes the danger colours in either role. The same rule as PageHeader's, so the two agree.
- * Boundary: pure; it names a `ButtonVariant` and draws nothing. PageHeader keeps its own copy until it takes this one.
+ * Purpose: the look of one action drawn as a button in the page actions row: the first action is primary, the others
+ *          secondary, and a danger action takes the danger colours in either role.
+ * Boundary: pure; it names a `ButtonVariant` and draws nothing. Both runtimes' `PageActions` take it, so PageHeader and
+ *           Section agree.
  * Runtime: isomorphic
  * Governing contract: ADR 0314 (decision 1, the page actions row).
  */

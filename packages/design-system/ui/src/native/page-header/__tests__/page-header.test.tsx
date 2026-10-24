@@ -289,8 +289,11 @@ describe("PageHeader (native)", () => {
   it("puts `label` on the root as the accessibility label only when given", () => {
     const { rerender } = render(<PageHeader title="Order" testID="header" />);
     expect(screen.getByTestId("header").hasAttribute("aria-label")).toBe(false);
+    expect(screen.getByTestId("header").getAttribute("data-extra")).not.toContain("role");
     rerender(<PageHeader title="Order" testID="header" label="Order header" />);
     expect(screen.getByTestId("header").getAttribute("aria-label")).toBe("Order header");
+    // The group role comes with the name only, so an unnamed header is no empty group.
+    expect(screen.getByTestId("header").getAttribute("data-extra")).toContain("role");
   });
 
   it("passes unknown props to the root and refuses a missing title and accessibilityLabel", () => {

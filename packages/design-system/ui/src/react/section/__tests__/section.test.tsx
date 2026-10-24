@@ -192,7 +192,7 @@ describe("Section (web)", () => {
 
   it("draws no actions group without actions or an end slot", () => {
     const { container } = render(sample());
-    expect(container.querySelector("[data-slot='section-actions']")).toBeNull();
+    expect(container.querySelector("[data-slot='page-actions']")).toBeNull();
   });
 
   it("passes unknown props through and refuses a missing title, aria-label and render", () => {

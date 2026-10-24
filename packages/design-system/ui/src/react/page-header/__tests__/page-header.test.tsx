@@ -197,7 +197,7 @@ describe("PageHeader (web)", () => {
 
   it("draws no actions group without actions or an end slot", () => {
     const { container } = render(sample());
-    expect(container.querySelector("[data-slot='page-header-actions']")).toBeNull();
+    expect(container.querySelector("[data-slot='page-actions']")).toBeNull();
   });
 
   it("is a named group, never a landmark, when it has a label", () => {

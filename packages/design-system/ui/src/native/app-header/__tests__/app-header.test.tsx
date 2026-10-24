@@ -116,6 +116,11 @@ describe("AppHeader (native)", () => {
     expect(screen.getByTestId("bar").getAttribute("aria-label")).toBe("Console top bar");
   });
 
+  it("gives the bar the banner role, named or not", () => {
+    render(<AppHeader testID="bar" />);
+    expect(screen.getByTestId("bar").getAttribute("data-extra")).toContain("role");
+  });
+
   it("merges the caller's classes and passes unknown props to the root", () => {
     render(<AppHeader testID="bar" className="extra" accessibilityHint="Top bar" />);
     expect(screen.getByTestId("bar").className).toContain("extra");

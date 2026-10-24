@@ -85,17 +85,31 @@ Accepted ADR's body changes only for typos and Enforcement, so the additions are
 ## Enforcement
 
 - `packages/design-system/ui/src/contracts/types/__tests__/shell-contract-props.test.ts` proves the shared types.
-- `turbo boundaries` and `packages/tooling/oxlint/src/boundaries.jsonc` keep `@stackra/ui` from importing
-  `@stackra/navigation` or a router; `tools/scripts/validate-repository.mjs` checks the new member's tier tag.
+- `turbo boundaries` keeps `@stackra/ui` from importing `@stackra/navigation` or a router, because it is an undeclared
+  dependency of the package; `packages/tooling/oxlint/src/boundaries.jsonc` holds no rule for it yet.
+  `tools/scripts/validate-repository.mjs` checks the new member's tier tag.
 - Each component's type test asserts that the runtime props extend the contract and refuse the raw names this
   vocabulary replaces (`aria-label`, `primaryAction`, `headerRight`).
 - `tools/scripts/spec-trace.mjs` (run by `pnpm validate`) refuses a spec id that no test covers.
 - Until a lint rule exists, review (`architecture-guardian`) checks this page.
-- As built, wave 6 extends the vocabulary in four places, recorded here so review can hold them: Sidebar's
-  `startContent` and `endContent` are the top and bottom of a vertical bar; the web-only props `isCompact` (the icon
-  rail of a NavigationList), `isCollapsible`, `isEmbedded`, `skipLabel` and `mainId` have no native counterpart; AppShell's
-  `sidebar` may be a function of `AppShellSidebarState`; and `markCurrentItems` lives in `@stackra/ui` core as decision 3
-  says.
+- As built, wave 6 extends the vocabulary in the places below, recorded here so review can hold them:
+  - Sidebar's `startContent` and `endContent` are the top and bottom of a vertical bar.
+  - AppHeader's `search` and `userMenu` are two more bar slots, after `title` and `endContent` respectively.
+  - NavigationHeader's `hasLargeTitle`, `onBack`, `backHref` and `backLabel` name the back control and the large title;
+    `backHref` follows the app-path rule of decision 3 and never opens an absolute URL. Its native-only `hasTopInset`
+    turns the safe-area top padding off for a header inside a modal.
+  - Screen's `isScrollable`, `isKeyboardAvoiding` and `edges` are native, and its web-only `isEmbedded` drops the
+    desktop title-bar insets for a screen inside a window that already clears them.
+  - TwoColumnLayout's required `aside` is the second column, and `moreActionsLabel` names the overflow button of
+    PageHeader and Section.
+  - The web-only props `isCompact` (the icon rail of a NavigationList), `isCollapsible`, `isEmbedded`, `skipLabel` and
+    `mainId` have no native counterpart.
+  - AppShell's `sidebar` may be a function of `AppShellSidebarState`, and `markCurrentItems` lives in `@stackra/ui`
+    core as decision 3 says.
+  - `PageActions` is an internal row on each runtime, not exported and not a shell piece: PageHeader and Section both
+    draw it, so decision 4 holds and the two share one implementation. Its web wrapper carries `data-slot="page-actions"`.
+  - The native components share two helpers: `isAbsoluteUrl` in core and `followHref` in the native
+    `router-provider` folder, so every press of a link follows one rule.
 
 ## Alternatives
 

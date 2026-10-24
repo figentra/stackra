@@ -20,7 +20,7 @@ import { createElement, useId, type ReactElement } from "react";
 
 import type { SectionContractProps } from "#contracts/types/section-contract-props.type";
 import { Card, type CardProps } from "#react/card/card";
-import { SectionActions } from "#react/section/section-actions";
+import { PageActions } from "#react/page-actions/page-actions";
 
 // shortcut: English until @stackra/i18n ships; then the key `ui::section.more-actions`.
 const STRINGS = { moreActions: "More actions" } as const;
@@ -69,10 +69,11 @@ export function Section({
             {description == null ? null : <Card.Description>{description}</Card.Description>}
           </div>
         </div>
-        <SectionActions
+        <PageActions
           actions={actions ?? []}
           moreActionsLabel={moreActionsLabel}
           endContent={endContent}
+          size="sm"
         />
       </Card.Header>
       {children == null ? null : <Card.Content>{children}</Card.Content>}

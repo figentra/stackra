@@ -16,17 +16,15 @@
  */
 import { ListGroup } from "heroui-native";
 import { use, type ReactElement } from "react";
-import { Linking, View, type ViewProps } from "react-native";
+import { View, type ViewProps } from "react-native";
 
 import type { NavigationItem } from "#contracts/types/navigation-item.type";
 import type { NavigationListContractProps } from "#contracts/types/navigation-list-contract-props.type";
 import { currentStateOf } from "#core/functions/current-state-of.function";
 import { ListItem } from "#native/list/list-item";
+import { followHref } from "#native/router-provider/follow-href.function";
 import { RouterContext } from "#native/router-provider/router-context";
 import { Text } from "#native/text/text";
-
-/** An absolute URL: it starts with a scheme (`https:`, `mailto:`, `tel:`, the app's own). */
-const HAS_SCHEME = /^[a-z][a-z\d+.-]*:/i;
 
 // shortcut: English until @stackra/i18n ships; then the key `ui::navigation-list.label`.
 const STRINGS = {
@@ -110,14 +108,7 @@ export function NavigationList({
   const navigate = use(RouterContext);
   const follow = (item: NavigationItem) => {
     item.onPress?.();
-    const href = item.href;
-    if (href === undefined) return;
-    if (navigate && !HAS_SCHEME.test(href)) {
-      navigate(href);
-      return;
-    }
-    // The URL stays out of the warning: it may hold a token.
-    Linking.openURL(href).catch(() => console.warn(STRINGS.couldNotOpen));
+    if (item.href !== undefined) followHref(item.href, navigate, STRINGS.couldNotOpen);
   };
   return (
     <View {...rest} role="navigation" accessibilityLabel={label}>

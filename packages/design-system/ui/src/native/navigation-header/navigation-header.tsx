@@ -25,6 +25,7 @@ import { View, type ViewProps } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { NavigationHeaderContractProps } from "#contracts/types/navigation-header-contract-props.type";
+import { isAbsoluteUrl } from "#core/functions/is-absolute-url.function";
 import { Heading } from "#native/heading/heading";
 import { Icon } from "#native/icon/icon";
 import { IconButton } from "#native/icon-button/icon-button";
@@ -33,9 +34,6 @@ import { Text } from "#native/text/text";
 
 // shortcut: English until @stackra/i18n ships; then the key `ui::navigation-header.back`.
 const STRINGS = { back: "Back" } as const;
-
-/** An absolute URL starts with a scheme; the back button opens app paths only, so it never follows one. */
-const HAS_SCHEME = /^[a-z][a-z\d+.-]*:/i;
 
 /**
  * Props of the native NavigationHeader: the shared contract, the top inset switch and the root `View`'s own props,
@@ -84,7 +82,7 @@ export function NavigationHeader({
   const navigate = use(RouterContext);
   const goBack = () => {
     onBack?.();
-    if (backHref !== undefined && navigate && !HAS_SCHEME.test(backHref)) navigate(backHref);
+    if (backHref !== undefined && navigate && !isAbsoluteUrl(backHref)) navigate(backHref);
   };
   const heading =
     typeof title === "string" || typeof title === "number" ? (
