@@ -268,6 +268,8 @@ test("apps come out in the v3 shape: config, root module, route folders, config 
     for (const retired of [
       "src/screens/",
       "src/components/ui/",
+      // Content never sits on glass (the owner's decision, 2026-10-24); the native header and tabs carry it.
+      "src/components/glass/",
       "src/routes.tsx",
       "src/styles.css",
     ])

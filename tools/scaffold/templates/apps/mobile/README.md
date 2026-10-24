@@ -26,7 +26,7 @@ src/
 ├── config/chrome.config.ts    {{PASCAL}}ChromeConfig: status bar and tab bar (ADR 0295 decision 11)
 ├── routes/<name>/             <name>.route.ts (path) and <name>.tsx (page): home, item, settings
 ├── navigation/                stand-in navigators, linking and param types, built from the routes
-├── components/<name>/         <name>.tsx and index.ts: screen (scroll container), glass (GlassView with fallback)
+├── components/<name>/         <name>.tsx and index.ts: screen (scroll container)
 └── styles/global.css          Tailwind + Uniwind + HeroUI Native styles
 ```
 
