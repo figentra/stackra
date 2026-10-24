@@ -1,0 +1,108 @@
+---
+title: "0349 — Product scopes, package names and the module-key registry across products"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0231](/adr/0231-naming-and-casing-standard) (the package row of the naming table),
+  [0131](/adr/0131-module-key-version-and-deprecation) (decision 1: key uniqueness across products),
+  [0109](/adr/0109-registry-manifests-published-by-ci) (decision 2: the registry owns module keys),
+  [0177](/adr/0177-package-distribution-npmjs-and-keygen) (the channel of first-party product
+  packages) and
+  [0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle)
+  (decision 3: which registry an edition consumes), each by a Note.
+</Note>
+
+## Context
+
+[0231](/adr/0231-naming-and-casing-standard) names framework packages `@stackra/<kebab>` and the OS's services
+`@figentra/service-<kebab>`, and nothing else. The commerce product, planned on 2026-10-24, needs names for its own
+packages and services, and the retail edition publishes under a brand scope of its own. Three products already reserve
+each other's module keys by hand in a file, while [0131](/adr/0131-module-key-version-and-deprecation) decision 1 checks
+uniqueness only inside one manifest. [0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle)
+decision 3 makes an edition consume its base as released packages "from the registry" without naming which, and
+[0177](/adr/0177-package-distribution-npmjs-and-keygen) names channels only for `@stackra/*` and `@stackra-pro/*`. One
+rule for every product settles the three questions.
+
+## Decision
+
+1. **Three scopes, one meaning each.** `@stackra/*` is the framework: MIT and public on npmjs, except a package an ADR
+   restricts ([0316](/adr/0316-open-core-distribution) decision 1). `@stackra-pro/*` is sold Pro code (0316 decision 2).
+   `@figentra/*` is every first-party product's code: the OS, the commerce product, the legal product, each edition. No
+   fourth scope names first-party code.
+
+2. **A product's packages carry the product key.** The OS keeps `@figentra/<name>` for packages and
+   `@figentra/service-<name>` for services. Every other product, editions included, uses `@figentra/<product>-<name>`
+   for packages and `@figentra/<product>-service-<name>` for services, where `<product>` is the product's registry key
+   ([0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle) decision 2)
+   in kebab case: `@figentra/commerce-service-orders`, `@figentra/commerce-pricing-rules`,
+   `@figentra/muslin-service-fashion`. The member folder keeps the short name (`services/orders`), and the module key
+   stays the folder name ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 20); only
+   the published name carries the product.
+
+3. **A brand scope is not a code name.** A scope named after a brand (`@muslin/*` and the like) names first-party code
+   nowhere. It may exist only as the publishing name of something the brand hands to third parties (a retailer-facing
+   SDK, a public widget), decided by its own ADR, and it re-exports a `@figentra/<product>-*` package under that name.
+   The retail edition's current brand-scoped names move to `@figentra/muslin-*` before its first registry publish.
+
+4. **First-party packages publish to the restricted channel only.** Every `@figentra/*` package publishes to the
+   licensed private channel of [0177](/adr/0177-package-distribution-npmjs-and-keygen) decision 2, the one
+   `@stackra/ui-pro` uses ([0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers) as amended on 2026-10-24), in
+   the Pro form of 0316 decision 2, and never to npmjs. It is installable by Figentra's own repositories and by the
+   repository of an edition of that product, under a licence of
+   [0178](/adr/0178-licensing-keygen-licences-and-the-stackra-licensing-verifier). This is the registry that 0335
+   decision 3 means.
+
+5. **One version line per product.** A product's packages share one fixed version, as `@stackra/*` does (0177
+   decision 5), and an edition's base range (0335 decision 2) resolves against that line. A product may not pin two
+   versions of one base.
+
+6. **The registry owns module keys across products.** A module key is reserved by the first product that publishes a
+   manifest carrying it ([0109](/adr/0109-registry-manifests-published-by-ci) decision 2). A manifest publish that
+   carries a key another product owns fails, and the registry records the owner. An edition's gen reads its base's
+   released manifests (0335 decision 2) and refuses a local module key that collides with a base key before publish.
+   The hand-kept reservation file is retired; nothing reserves a key by hand.
+
+7. **Permissions, events and action keys follow.** Because module keys are unique across products and prefix every
+   permission, event and action key (0131 decision 1), those identities are unique across products too, and the
+   wire names of [0231](/adr/0231-naming-and-casing-standard) stay as they are: no product prefix is added to them.
+
+## Consequences
+
+- A package name says which product owns it and a module key says which module; the registry, not a file, keeps
+  the two sets unique across the OS, the products and their editions.
+- An edition installs its base from the same private channel as the OS installs Stackra's restricted packages; one
+  licence model covers both.
+- The retail edition renames its brand-scoped packages once, before it publishes.
+- Wire identities do not change, so nothing stored or integrated moves.
+
+## Enforcement
+
+- planned — `tools/scripts/validate-repository.mjs` (and the product repositories' copy of it): a `@figentra/*`
+  package name matches `<product>-<name>` or `<product>-service-<name>` for a product repository, and `<name>` or
+  `service-<name>` for the OS; a `publishConfig` on a `@figentra/*` package names the restricted registry, as the
+  `ui-pro` check of 0310 already requires.
+- planned — the registry's manifest publish refuses a module key another product owns (0109 decision 2).
+- planned — gen (STA-340): a module key that collides with a key in the base's released manifests fails
+  (`module_key_owned_elsewhere`).
+
+## Alternatives
+
+- **A scope per product (`@commerce/*`, `@muslin/*`).** Not chosen: a scope per product multiplies registry
+  configuration and licences, and a brand scope leaks a brand into code names that outlive the brand.
+- **A product prefix in module keys.** Not chosen: it would change every permission, event and action key on the wire;
+  the registry makes the short keys unique instead.
+- **Keeping the reservation file.** Not chosen: a hand-kept list across three repositories drifts, and the registry
+  already holds every manifest.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Note: [0231](/adr/0231-naming-and-casing-standard),
+[0131](/adr/0131-module-key-version-and-deprecation), [0109](/adr/0109-registry-manifests-published-by-ci),
+[0177](/adr/0177-package-distribution-npmjs-and-keygen) and
+[0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle). Reads with
+[0316](/adr/0316-open-core-distribution), [0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers),
+[0178](/adr/0178-licensing-keygen-licences-and-the-stackra-licensing-verifier),
+[0200](/adr/0200-stackra-and-figentra-os-horizontal-services-private-os-repo) and
+[0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming). Sources: the commerce product's plan of
+2026-10-24 (its package-naming and module-key gaps) and the retail edition's catalogue, restated in this ADR's own words.
