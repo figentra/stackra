@@ -34,9 +34,13 @@
   "dependencies": {
     "@bottom-tabs/react-navigation": "catalog:mobile",
     "@gorhom/bottom-sheet": "catalog:mobile",
+    "@internationalized/date": "catalog:mobile",
+    "@internationalized/number": "catalog:mobile",
     "@react-navigation/native": "catalog:mobile",
     "@react-navigation/native-stack": "catalog:mobile",
     "@stackra/tokens": "workspace:*",
+    "@stackra/ui": "workspace:*",
+    "@stackra/ui-pro": "workspace:*",
     "expo": "catalog:mobile",
     "expo-blur": "catalog:mobile",
     "expo-constants": "catalog:mobile",
@@ -47,11 +51,13 @@
     "expo-status-bar": "catalog:mobile",
     "expo-system-ui": "catalog:mobile",
     "heroui-native": "catalog:mobile",
+    "heroui-native-pro": "catalog:mobile",
     "react": "catalog:mobile",
     "react-dom": "catalog:mobile",
     "react-native": "catalog:mobile",
     "react-native-bottom-tabs": "catalog:mobile",
     "react-native-gesture-handler": "catalog:mobile",
+    "react-native-nitro-modules": "catalog:mobile",
     "react-native-reanimated": "catalog:mobile",
     "react-native-safe-area-context": "catalog:mobile",
     "react-native-screens": "catalog:mobile",
@@ -60,7 +66,7 @@
     "tailwind-merge": "catalog:mobile",
     "tailwind-variants": "catalog:mobile",
     "tailwindcss": "catalog:frontend",
-    "uniwind": "catalog:mobile"
+    "uniwind": "catalog:uniwind-pro"
   },
   "devDependencies": {
     "@stackra/typescript-config": "workspace:*",

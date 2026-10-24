@@ -86,7 +86,7 @@
   --surface-tertiary-foreground: oklch(0.158 0.005 248);
   --overlay: oklch(1 0 0);
   --overlay-foreground: oklch(0.158 0.005 248);
-  --muted: oklch(0.5 0.01 250);
+  --muted: oklch(0.49 0.01 250);
   --default: oklch(0.935 0.004 110);
   --default-foreground: oklch(0.158 0.005 248);
   --accent: oklch(0.158 0.005 248);
@@ -99,7 +99,7 @@
   --danger-foreground: oklch(1 0 0);
   --field-background: oklch(1 0 0);
   --field-foreground: oklch(0.158 0.005 248);
-  --field-placeholder: oklch(0.5 0.01 250);
+  --field-placeholder: oklch(0.49 0.01 250);
   --field-border: oklch(0.6 0.008 250);
   --segment: oklch(1 0 0);
   --segment-foreground: oklch(0.158 0.005 248);
