@@ -72,6 +72,7 @@ export { ProgressBar, type ProgressBarProps } from "#native/progress-bar/progres
 export { ProgressCircle, type ProgressCircleProps } from "#native/progress-circle/progress-circle";
 export { PropertyList, type PropertyListProps } from "#native/property-list/property-list";
 export { RadioGroup, type RadioGroupProps } from "#native/radio-group/radio-group";
+export { Reveal, type RevealProps } from "#native/reveal/reveal";
 export { RouterProvider, type RouterProviderProps } from "#native/router-provider/router-provider";
 export { Screen, type ScreenProps } from "#native/screen/screen";
 export { SearchField, type SearchFieldProps } from "#native/search-field/search-field";
