@@ -1,0 +1,73 @@
+---
+title: "0339 — Point-of-sale peripherals: printers, labels, drawer, scanner, display, and the native Bluetooth printer driver"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0253](/adr/0253-peripherals-web-api-first-and-device-presets) (decisions 2 to 4: the
+  peripheral list, the drivers per target, and the first native module, which 0253 decision 3 says
+  needs its own ADR; this is that ADR) and, by a Note,
+  [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles) (the desktop target of
+  a point-of-sale app has peripheral access).
+</Note>
+
+## Context
+
+[0253](/adr/0253-peripherals-web-api-first-and-device-presets) made `@stackra/peripherals` Web-API first with device
+presets and allowed a native module only on evidence and with its own ADR. The retail edition's requirement, confirmed
+by the owner on 2026-10-24, is the full kit on day one: a receipt printer that prints Arabic, label printers, a cash
+drawer, a scanner, a customer-facing display, on a browser till, an Electron desktop till and a handheld native staff
+app that also checks out. Handheld checkout prints to a Bluetooth printer, which no Web API reaches from a native app,
+so that is the evidence 0253 decision 3 asked for.
+
+## Decision
+
+1. **The ports.** `@stackra/peripherals` exposes one port per peripheral: `ReceiptPrinter` (ESC/POS), `LabelPrinter`
+   (ZPL), `CashDrawer`, `Scanner`, `CustomerDisplay` and `CardTerminal` (the terminal's own protocol stays in the
+   payments driver; the port only pairs and reports). Each port is a class, and a client takes it by type.
+
+2. **Arabic prints as raster.** The ESC/POS driver renders a receipt to an image and prints it as raster, so Arabic
+   shaping and bidirectional text are the renderer's job, not the printer's. Text mode is a fallback for Latin-only
+   receipts on printers that cannot take raster.
+
+3. **The drawer kicks through the printer.** `CashDrawer` opens the drawer through the receipt printer's kick pulse by
+   default; a drawer on its own interface is a driver.
+
+4. **The scanner is a keyboard wedge first.** `Scanner` reads HID keyboard-wedge input with a prefix and suffix from
+   the preset, and takes camera scanning as a second driver. Serial and Bluetooth scanners are drivers added on
+   evidence, under decision 3 of 0253.
+
+5. **Drivers per target.** Web: WebUSB, WebSerial and network (TCP to a printer on the LAN through the Worker is not
+   allowed; network printing from a browser uses the printer's HTTP or WebSocket interface where it has one). Electron:
+   serial and USB through the main process, exposed to the renderer by the desktop bridge. Native: Bluetooth printers,
+   as decision 6. A port's driver is chosen by target at build time, as [0250](/adr/0250-stackra-platform-capability-ports-drivers-and-gate)
+   does for capabilities.
+
+6. **The native Bluetooth printer driver is approved.** It is the first native module of
+   [0253](/adr/0253-peripherals-web-api-first-and-device-presets) decision 3, for the `ReceiptPrinter` and
+   `LabelPrinter` ports on the native target only, through an Expo module. Its evidence is handheld checkout. Any
+   other native peripheral module needs its own ADR, as before.
+
+7. **Presets name the kit.** The POS preset of 0253 decision 4 lists its devices by vendor and model with their
+   prefixes, page widths, code pages and kick pulse. A till picks a preset; a new device is a preset entry, not code.
+
+## Consequences
+
+- A browser till prints Arabic receipts correctly on any ESC/POS printer that takes raster, and a handheld prints to a
+  Bluetooth printer with the same port.
+- Electron is needed only where the browser cannot reach the hardware; the port is the same on both.
+- One native module exists, with a stated reason, and the bar for the next one is unchanged.
+
+## Enforcement
+
+- planned — each driver has a test against a recorded device fixture (0253's rule), including an Arabic raster receipt
+  compared to a golden image.
+- planned — the validator rejects a native module in `@stackra/peripherals` other than the Bluetooth printer module
+  unless an ADR reference names it.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0253](/adr/0253-peripherals-web-api-first-and-device-presets) (decisions 2 to 4) and, by a
+Note, [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles). Builds on
+[0250](/adr/0250-stackra-platform-capability-ports-drivers-and-gate). Sources: the owner's Muslin rethink decisions of
+2026-10-24 (STA-451), restated in this ADR's own words.

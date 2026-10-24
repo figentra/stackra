@@ -1,7 +1,16 @@
 ---
 title: "0253 — Peripherals are Web-API first; native modules only on evidence; device presets"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0339 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-451) by
+  [0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver):
+  the peripheral ports are fixed (receipt printer with Arabic raster, ZPL label printer, cash drawer
+  through the printer, keyboard-wedge scanner, customer display, card terminal pairing), the drivers
+  per target are named, and the native Bluetooth printer driver is the first native module of
+  decision 3, approved by that ADR. Decisions 1, 3 and 5 stand.
+</Note>
 
 <Note>
   Clarifies [0235](/adr/0235-devices-and-iot-minimal-now-full-later): peripherals are the client's
