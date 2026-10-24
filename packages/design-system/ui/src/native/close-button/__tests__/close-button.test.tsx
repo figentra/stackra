@@ -36,11 +36,13 @@ vi.mock("heroui-native", async () => {
 const glass = vi.hoisted(() => ({
   look: undefined as { background: unknown; className: string } | undefined,
   asked: [] as string[],
+  disabled: undefined as boolean | undefined,
 }));
 
 vi.mock("#native/glass/use-glass-button", () => ({
-  useGlassButton: (variant: string) => {
+  useGlassButton: (variant: string, isDisabled?: boolean) => {
     glass.asked.push(variant);
+    glass.disabled = isDisabled;
     return glass.look;
   },
 }));
@@ -134,6 +136,11 @@ describe("CloseButton (native)", () => {
     glass.look = GLASS;
     render(<CloseButton label="Dismiss" background={null} />);
     expect(received.props["background"]).toBeNull();
+  });
+
+  it("hands the glass hook its disabled flag", () => {
+    render(<CloseButton label="Dismiss" isDisabled />);
+    expect(glass.disabled).toBe(true);
   });
 
   it("hands no background and no class while the look stays solid", () => {

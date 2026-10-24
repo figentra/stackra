@@ -55,11 +55,13 @@ const propsOf = (name: string) => received.props[name] ?? {};
 const glass = vi.hoisted(() => ({
   look: undefined as { background: unknown; className: string } | undefined,
   asked: [] as string[],
+  disabled: undefined as boolean | undefined,
 }));
 
 vi.mock("#native/glass/use-glass-button", () => ({
-  useGlassButton: (variant: string) => {
+  useGlassButton: (variant: string, isDisabled?: boolean) => {
     glass.asked.push(variant);
+    glass.disabled = isDisabled;
     return glass.look;
   },
 }));
@@ -185,6 +187,17 @@ describe("Button (native)", () => {
       </Button>,
     );
     expect(propsOf("button")["background"]).toBeNull();
+  });
+
+  it("hands the glass hook its disabled flag, so a disabled button stays solid", () => {
+    render(
+      <Button variant="secondary" isDisabled>
+        Save
+      </Button>,
+    );
+    expect(glass.disabled).toBe(true);
+    render(<Button variant="secondary">Save</Button>);
+    expect(glass.disabled).toBe(false);
   });
 
   it("hands no background and no class while the variant stays solid", () => {

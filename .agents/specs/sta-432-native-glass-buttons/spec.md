@@ -15,17 +15,18 @@
 **Analyze**: — <!-- lite lane: /speckit.analyze not run -->
 
 **Input**: Owner, choosing "Accent + glass" for the buttons (STA-425, ADR 0319): the native side gets its own mapping.
-Liquid Glass where the platform has it, else a blur under the `surface` tint at the regular fill share, solid under
-reduced transparency and more contrast; IconButton follows, CloseButton's default is glass, primary and danger stay
-solid.
+Refined by the owner on 2026-10-24: "CSS-only material on web with no refraction, Liquid Glass on iOS 26+, solid
+elsewhere". So native is Liquid Glass on iOS 26 and later, solid on Android, earlier iOS, under reduced transparency
+or more contrast, and while disabled; no blur anywhere. IconButton follows, CloseButton's default is glass, primary
+and danger stay solid.
 
 ## Impact
 
 - **Apps touched**: none
 - **Services touched**: none
 - **Packages touched**: `packages/design-system/ui` (the native `glass/` helpers, Button and CloseButton, IconButton
-  through Button, their tests, the optional peers `expo-blur` and `expo-glass-effect`, the `@stackra/tokens`
-  dependency for the material values)
+  through Button, their tests, the optional peer `expo-glass-effect`, the `@stackra/tokens` dependency for the
+  material modes)
 - **Workers touched**: none
 - **Public contract change**: none to the props; the native secondary, tertiary and outline buttons and the default
   close button draw a glass layer through HeroUI Native's `background` prop, which a caller's own `background` replaces
@@ -35,8 +36,8 @@ solid.
 - **Secrets**: none
 - **ADR needed**: no, it implements ADR 0319 decision 3 (the native mapping it leaves to the mobile side) with the
   material of ADR 0320 decision 7
-- **New dependencies**: none in the catalogs; `@stackra/ui` names `expo-blur` and `expo-glass-effect` from the
-  existing `catalog:mobile` entries as optional peers, and `@stackra/tokens` as a workspace dependency
+- **New dependencies**: none in the catalogs; `@stackra/ui` names `expo-glass-effect` from the existing
+  `catalog:mobile` entry as an optional peer, and `@stackra/tokens` as a workspace dependency
 - **Deploy modes**: every mode; native clients only
 - **Licence tier**: MIT (`@stackra/ui`)
 - **UI surfaces**: every native Button, IconButton and CloseButton in the quiet variants
@@ -49,8 +50,9 @@ solid.
 ### User Story 1 - A person sees the quiet native buttons as glass, and solid when they ask for less transparency (Priority: P1)
 
 A person opens the Stackra mobile app and sees the secondary, tertiary and outline buttons, the icon buttons in those
-variants and every close button as glass over what lies behind them, Liquid Glass on iOS 26, a blur elsewhere. With
-reduced transparency or more contrast switched on, they turn solid at once.
+variants and every close button as Liquid Glass over what lies behind them on iOS 26 and later, and solid elsewhere.
+With reduced transparency or more contrast switched on, they turn solid at once, and they never flash glass before
+the settings are read.
 
 **Independent Test**: the glass hook tests (`use-glass-material`, `use-glass-button`) and the Button, IconButton and
 CloseButton tests.
@@ -58,24 +60,25 @@ CloseButton tests.
 **Acceptance Scenarios**:
 
 1. **Given** iOS 26 with Liquid Glass, **When** a secondary button renders, **Then** it draws a regular `GlassView`.
-2. **Given** a device without Liquid Glass, **When** an outline button renders, **Then** it draws a blur tinted to the
-   colour scheme under the `surface` colour at the regular level's fill share.
-3. **Given** reduced transparency, darker system colours or high text contrast, **When** any button renders, **Then**
-   it draws HeroUI Native's solid look.
+2. **Given** Android or iOS before 26, **When** an outline button renders, **Then** it draws HeroUI Native's solid
+   look.
+3. **Given** reduced transparency or darker system colours, or before those settings have answered, **When** any
+   button renders, **Then** it draws HeroUI Native's solid look.
 
 ### Edge Cases
 
 - **EC-01**: A caller that passes its own `background` (or `null`) gets it, not the glass.
-- **EC-02**: Some iOS 26 betas report Liquid Glass without the API; they get the blur, not a crash.
+- **EC-02**: Some iOS 26 betas report Liquid Glass without the API; they get the solid look, not a crash.
+- **EC-03**: A disabled quiet button is solid, because HeroUI Native dims the button root that holds the glass.
 
 ## Requirements
 
-- **FR-001**: THE native Button SHALL draw its secondary, tertiary and outline variants on the regular glass level,
-  as Liquid Glass where the platform runs it, else a blur under the theme's `surface` at the regular fill share, and
-  leave primary, ghost, danger and danger-soft on HeroUI Native's look; IconButton and CloseButton (tertiary by
-  default) follow the same rule.
-- **FR-002**: THE native glass SHALL turn solid while reduced transparency, darker system colours or high text
-  contrast is on, and every mounted button SHALL switch together when the setting changes.
+- **FR-001**: THE native Button SHALL draw its secondary, tertiary and outline variants on Liquid Glass (a regular,
+  interactive `GlassView` in the colour scheme) where the platform runs it, and HeroUI Native's solid look elsewhere,
+  while disabled, and for primary, ghost, danger and danger-soft; IconButton and CloseButton (tertiary by default)
+  follow the same rule.
+- **FR-002**: THE native glass SHALL be solid while reduced transparency or darker system colours is on and until
+  those settings have answered, and every mounted button SHALL switch together when a setting changes.
 
 ## Success Criteria
 
@@ -98,3 +101,5 @@ CloseButton tests.
 - 2026-10-24 · Clarified → Planned · Claude (builder)
 - 2026-10-24 · Planned → Tasked · Claude (builder)
 - 2026-10-24 · Tasked → Implementing · Claude (builder)
+- 2026-10-24 · Implementing (amended) · Claude (builder) · the owner's glass decision: Liquid Glass on iOS 26+, solid
+  elsewhere, no blur

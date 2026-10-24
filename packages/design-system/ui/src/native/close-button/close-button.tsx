@@ -41,7 +41,7 @@ export function CloseButton({
   ...rest
 }: CloseButtonProps) {
   // HeroUI Native's CloseButton is a tertiary Button unless the caller picks another variant.
-  const glass = useGlassButton(rest.variant ?? "tertiary");
+  const glass = useGlassButton(rest.variant ?? "tertiary", isDisabled);
   return (
     <HeroCloseButton
       // Before the rest, so a caller's own `background` (or `null`) wins.

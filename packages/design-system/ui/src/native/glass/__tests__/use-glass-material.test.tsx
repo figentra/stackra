@@ -1,23 +1,21 @@
 /**
  * Stackra file contract:
- * Purpose: proves `useGlassMaterial` answers `liquid` only where Liquid Glass and its API both run, else `glass`,
- *          turns `solid` while reduced transparency, darker system colours or high text contrast is on, switches every
- *          mounted control together when a setting changes, and listens once for all of them until the last unmounts.
+ * Purpose: proves `useGlassMaterial` answers `liquid` only where Liquid Glass and its API both run and the settings
+ *          allow it, `solid` before the settings have answered and while reduced transparency or darker system
+ *          colours is on, `solid` wherever Liquid Glass is missing (Android, earlier iOS), switches every mounted
+ *          control together when a setting changes, and listens once for all of them until the last unmounts.
  * Boundary: React Native does not run in vitest, so react-native's AccessibilityInfo and expo-glass-effect's checks are
- *          stand-ins each test sets. The hook keeps its settings at module level, so every test imports a fresh copy.
+ *           stand-ins each test sets. The hook keeps its settings at module level, so every test imports a fresh copy.
  * Runtime: node
  * Governing contract: ADR 0319 (decision 3); ADR 0320 (decision 7); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 
-type Setting = "reduceTransparency" | "darkerColors" | "highContrast";
+type Setting = "reduceTransparency" | "darkerColors";
 
 const device = vi.hoisted(() => ({
-  settings: { reduceTransparency: false, darkerColors: false, highContrast: false } as Record<
-    string,
-    boolean
-  >,
+  settings: { reduceTransparency: false, darkerColors: false } as Record<string, boolean>,
   handlers: new Map<string, () => void>(),
   liquid: true,
   api: true,
@@ -27,7 +25,6 @@ vi.mock("react-native", () => ({
   AccessibilityInfo: {
     isReduceTransparencyEnabled: () => Promise.resolve(device.settings["reduceTransparency"]),
     isDarkerSystemColorsEnabled: () => Promise.resolve(device.settings["darkerColors"]),
-    isHighTextContrastEnabled: () => Promise.resolve(device.settings["highContrast"]),
     addEventListener: (event: string, handler: () => void) => {
       device.handlers.set(event, handler);
       return { remove: () => device.handlers.delete(event) };
@@ -52,15 +49,16 @@ const settle = () =>
 describe("useGlassMaterial", () => {
   beforeEach(() => {
     vi.resetModules();
-    device.settings = { reduceTransparency: false, darkerColors: false, highContrast: false };
+    device.settings = { reduceTransparency: false, darkerColors: false };
     device.handlers.clear();
     device.liquid = true;
     device.api = true;
   });
 
-  it("draws Liquid Glass where the platform has it and its API runs", async () => {
+  it("is solid until the settings answer, then Liquid Glass", async () => {
     const useGlassMaterial = await freshHook();
     const { result } = renderHook(() => useGlassMaterial());
+    expect(result.current).toBe("solid");
     await settle();
     expect(result.current).toBe("liquid");
   });
@@ -69,17 +67,17 @@ describe("useGlassMaterial", () => {
     [false, true],
     [true, false],
     [false, false],
-  ])("falls back to the blur when Liquid Glass is %s and its API %s", async (liquid, api) => {
+  ])("is solid when Liquid Glass is %s and its API %s", async (liquid, api) => {
     device.liquid = liquid;
     device.api = api;
     const useGlassMaterial = await freshHook();
     const { result } = renderHook(() => useGlassMaterial());
     await settle();
-    expect(result.current).toBe("glass");
+    expect(result.current).toBe("solid");
   });
 
-  it.each<Setting>(["reduceTransparency", "darkerColors", "highContrast"])(
-    "turns solid while %s is on",
+  it.each<Setting>(["reduceTransparency", "darkerColors"])(
+    "stays solid while %s is on",
     async (setting) => {
       device.settings[setting] = true;
       const useGlassMaterial = await freshHook();
@@ -112,20 +110,23 @@ describe("useGlassMaterial", () => {
     expect([...device.handlers.keys()]).toEqual([
       "reduceTransparencyChanged",
       "darkerSystemColorsChanged",
-      "highTextContrastChanged",
     ]);
     first.unmount();
-    expect(device.handlers.size).toBe(3);
+    expect(device.handlers.size).toBe(2);
     second.unmount();
     expect(device.handlers.size).toBe(0);
   });
 
   it("starts a later control in the last known state", async () => {
-    device.settings["highContrast"] = true;
+    device.settings["darkerColors"] = true;
     const useGlassMaterial = await freshHook();
     renderHook(() => useGlassMaterial()).unmount();
     await settle();
+    device.settings["darkerColors"] = false;
     const { result } = renderHook(() => useGlassMaterial());
+    // The last answer was solid, so the first frame is solid until the new answer lands.
     expect(result.current).toBe("solid");
+    await settle();
+    expect(result.current).toBe("liquid");
   });
 });
