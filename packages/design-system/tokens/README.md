@@ -80,14 +80,14 @@ keyword, `cubic-bezier()`, `steps()` or `linear()`), so no value can escape its 
 
 ## Entry points
 
-| Import                      | Holds                                                                                                                                                   |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/tokens`           | `STACKRA_THEME`, `MATERIAL_MODES`, `defineTheme`, `renderWebCss`, `renderNativeCss`, `oklchToHex`, `contrastRatio`, `InvalidThemeError`, `TokensConfig` |
-| `@stackra/tokens/contracts` | the schema: `Theme`, `ColorToken`, `ThemeColors`, `ThemeMaterials`, `ColorRole`, `MaterialLevel`, `MaterialMode`, and the part types                    |
-| `@stackra/tokens/node`      | `TokensModule`, the root module                                                                                                                         |
-| `@stackra/tokens/themes/*`  | `assets/public/themes/`: `stackra/web.css`, `stackra/native.css`                                                                                        |
-| `@stackra/tokens/fonts/*`   | `assets/public/fonts/`: Geist, Geist Mono, IBM Plex Sans Arabic (woff2), `fonts.css`, the OFL texts                                                     |
-| `@stackra/tokens/assets/*`  | any file under `assets/`                                                                                                                                |
+| Import                      | Holds                                                                                                                                                                                                                                                                                                                                     |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/tokens`           | `STACKRA_THEME`, `MATERIAL_MODES`, `THEME_JSON_FORMATS`, `defineTheme`, `deriveTheme`, `diffTheme`, `mergeTheme`, `themeVariables`, `materialModeVariables`, `renderWebCss`, `renderNativeCss`, `themeToDtcg`, `exportThemeJson`, `exportThemeDiff`, `parseThemeJson`, `oklchToHex`, `contrastRatio`, `InvalidThemeError`, `TokensConfig` |
+| `@stackra/tokens/contracts` | the schema: `Theme`, `ColorToken`, `ThemeColors`, `ThemeMaterials`, `ColorRole`, `MaterialLevel`, `MaterialMode`, and the part types                                                                                                                                                                                                      |
+| `@stackra/tokens/node`      | `TokensModule`, the root module                                                                                                                                                                                                                                                                                                           |
+| `@stackra/tokens/themes/*`  | `assets/public/themes/`: `stackra/web.css`, `stackra/native.css`                                                                                                                                                                                                                                                                          |
+| `@stackra/tokens/fonts/*`   | `assets/public/fonts/`: Geist, Geist Mono, IBM Plex Sans Arabic (woff2), `fonts.css`, the OFL texts                                                                                                                                                                                                                                       |
+| `@stackra/tokens/assets/*`  | any file under `assets/`                                                                                                                                                                                                                                                                                                                  |
 
 `.` and `./contracts` name stand-in barrels (`src/core/index.ts`, `src/contracts/index.ts`) until `stackra gen` writes
 the entry barrels (STA-339). `exports` point at source through the `@stackra/source` condition; `tsdown` builds `dist/`
@@ -117,6 +117,20 @@ Reduced transparency, more contrast and a browser without `backdrop-filter` all 
 `color-mix()` gets a static opaque material. Forced colours keep the edge. Reading text on the `regular` and `thick`
 levels holds 4.5:1 over pure black and pure white in every mode and scheme (ADR 0320 decision 4); `thin` carries none.
 Never put the material behind a component sample; samples sit on `background`.
+
+## Derive, export and import a theme
+
+The Theme Studio in the playground is built on these; any tool can use them.
+
+| Function                        | Does                                                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `deriveTheme(base, knobs)`      | a full, checked theme from an accent, a neutral hue and tint, a radius, the faces and a name                  |
+| `themeVariables(theme)`         | the web custom properties, split into HeroUI's own and Stackra's additions, per mode (`renderWebCss` uses it) |
+| `exportThemeJson(theme)`        | `stackra.theme/1`: the theme and its custom properties                                                        |
+| `diffTheme` / `exportThemeDiff` | `stackra.theme-diff/1`: only the leaves that differ from a base                                               |
+| `mergeTheme(base, diff)`        | applies a diff, dropping unsafe keys, and checks the result                                                   |
+| `parseThemeJson(text, base)`    | reads either export or a bare theme, size-capped and checked; throws `InvalidThemeError` with the reasons     |
+| `themeToDtcg(theme)`            | W3C design tokens (DTCG) for Figma and Style Dictionary                                                       |
 
 ## Generated stylesheets
 

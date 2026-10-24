@@ -51,6 +51,7 @@ const STRINGS = {
   product: "Playground",
   skip: "Skip to content",
   search: "Search components",
+  studio: "Theme Studio",
   settings: "Display settings",
   showSettings: "Scheme and language",
   colorScheme: "Colour scheme",
@@ -65,6 +66,7 @@ const STRINGS = {
     home: "Go to the index",
     components: "Browse every component",
     componentsDetail: "The gallery, by category",
+    studioDetail: "Derive, preview and export a theme",
   },
 } as const;
 
@@ -78,6 +80,9 @@ const MATERIAL_ICONS = {
   glass: "layers",
   liquid: "droplet",
 } as const satisfies Record<MaterialMode, string>;
+
+/** The routes that are workspaces and take the whole width of the window. */
+const WIDE_PATHS: ReadonlySet<string> = new Set(["/theme-studio"]);
 
 /** The mode the playground shows when the address names none: the showcase default. */
 const DEFAULT_MATERIAL: MaterialMode = "glass";
@@ -218,6 +223,14 @@ function ShellPalette({
       run: () => void navigate(`/${props.search}`),
     },
     {
+      id: "go-studio",
+      label: STRINGS.studio,
+      detail: STRINGS.actions.studioDetail,
+      icon: "palette",
+      keywords: "theme builder customise customize export tokens",
+      run: () => void navigate(`/theme-studio${props.search}`),
+    },
+    {
       id: "go-components",
       label: STRINGS.actions.components,
       detail: STRINGS.actions.componentsDetail,
@@ -237,6 +250,8 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
   const [isPaletteOpen, setPaletteOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const current = pages.find((page) => page.path === pathname);
+  // A workspace (the Theme Studio) takes the whole width; reading pages keep a measure.
+  const width = WIDE_PATHS.has(pathname) ? "w-[calc(100%-1.5rem)]" : "w-[min(100%-1.5rem,80rem)]";
   // The material mode is the document's, as the scheme is: the provider sets it (index.html before paint).
   const material = MaterialMode.find((mode) => mode === params.get("material")) ?? DEFAULT_MATERIAL;
   // React Router hands a functional update the params of the last render, so choices made before the next render (a
@@ -351,7 +366,9 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
           </a>
           {/* One row on every width: on a phone the search button keeps only its icon and the display settings fold
               behind a button; from the small breakpoint up both sit in the row. */}
-          <header className="material-thick sticky top-3 z-20 mx-auto mt-3 flex w-[min(100%-1.5rem,80rem)] flex-wrap items-center gap-x-2 gap-y-2 rounded-2xl px-2 py-2 sm:gap-x-3 sm:px-3">
+          <header
+            className={`material-thick sticky top-3 z-20 mx-auto mt-3 flex ${width} flex-wrap items-center gap-x-2 gap-y-2 rounded-2xl px-2 py-2 sm:gap-x-3 sm:px-3`}
+          >
             <Link
               href={`/${search}`}
               underline="hover"
@@ -383,6 +400,14 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
                 {SHORTCUT}
               </kbd>
             </Button>
+            <Link
+              href={`/theme-studio${search}`}
+              underline="hover"
+              className="flex min-h-9 items-center gap-1.5 rounded-xl px-2 text-sm hover:bg-default hover:no-underline"
+            >
+              <Icon name="palette" size="sm" />
+              <span className="max-lg:sr-only">{STRINGS.studio}</span>
+            </Link>
             <IconButton
               icon="settings"
               label={STRINGS.showSettings}
@@ -408,7 +433,7 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
               ref={main}
               id="main"
               tabIndex={-1}
-              className="mx-auto grid w-[min(100%-1.5rem,80rem)] min-w-0 gap-6 py-6 outline-none"
+              className={`mx-auto grid ${width} min-w-0 gap-6 py-6 outline-none`}
             >
               {pageArea}
             </div>
@@ -417,7 +442,7 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
               ref={main}
               id="main"
               tabIndex={-1}
-              className="mx-auto grid w-[min(100%-1.5rem,80rem)] min-w-0 gap-6 py-6 outline-none"
+              className={`mx-auto grid ${width} min-w-0 gap-6 py-6 outline-none`}
             >
               {pageArea}
             </main>

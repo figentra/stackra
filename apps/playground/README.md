@@ -36,12 +36,13 @@ masks, so axe measures text against every tint at once rather than giving up on 
 
 ## Pages
 
-| Route          | Page                                                                                                                |
-| -------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `/`            | the index: what the playground is and a link to every page                                                          |
-| `/foundations` | the `stackra` theme: colour roles with their contrast pairs, type scale, spacing, radii, shadows, motion            |
-| `/icon`        | `Icon`: sizes, tones, decorative and labelled use, mirrored and never-mirrored icons, own components, a live sample |
-| `/typography`  | `Text` and `Heading`: every type, level, tone, alignment, truncation and language, a live sample                    |
+| Route           | Page                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `/`             | the index: what the playground is and a link to every page                                                                |
+| `/theme-studio` | the Theme Studio: derive a theme from a few controls, preview it with its contrast, export CSS, JSON or DTCG, import JSON |
+| `/foundations`  | the `stackra` theme: colour roles with their contrast pairs, type scale, spacing, radii, shadows, motion                  |
+| `/icon`         | `Icon`: sizes, tones, decorative and labelled use, mirrored and never-mirrored icons, own components, a live sample       |
+| `/typography`   | `Text` and `Heading`: every type, level, tone, alignment, truncation and language, a live sample                          |
 
 Add a page as a route folder `src/routes/<name>/` with `<name>.route.ts` (path `/<name>` and title), the page
 `<name>.tsx` and `__tests__/`, and nothing else: the router, the gallery, the palette and the e2e suite find it. Its

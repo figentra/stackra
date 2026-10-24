@@ -24,3 +24,6 @@ export type {
   ThemeShadows,
   TypographyToken,
 } from "#contracts/types/theme.type";
+export type { ThemeDiff } from "#contracts/types/theme-diff.type";
+export type { ThemeKnobs } from "#contracts/types/theme-knobs.type";
+export type { ThemeVariables } from "#contracts/types/theme-variables.type";
