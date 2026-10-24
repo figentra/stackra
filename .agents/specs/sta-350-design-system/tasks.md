@@ -104,3 +104,12 @@ Linear issues: [STA-370] Modal and Drawer, [STA-371] AlertDialog and useConfirma
 Linear issues: [STA-376] Table, [STA-377] List and ListItem, [STA-378] PropertyList, [STA-379] Tabs and Accordion, [STA-380] CursorPagination and Breadcrumbs, [STA-381] EmptyState, ErrorState and PageSkeleton.
 
 - [x] T050 [US2] The shared collection, selection and sort contracts, `keysOfSelection` and `nextSortDescriptor` in `packages/design-system/ui/src`, the Data playground category and ADR 0313 — covers: FR-121, FR-122, P-062, P-063 — route: frontend — deps: T043
+
+## Phase 14: Wave 5 components (ADR 0313)
+
+- [x] T051 [US2] Table: contracts, `cellTextOf`, the web and native components, the `/table` route and its e2e file — covers: FR-123, FR-124, FR-125, P-065 — route: frontend — deps: T050
+- [x] T052 [US2] List and ListItem: contracts, the web and native components, the `/list` route and its e2e file — covers: FR-126, FR-127, FR-128, FR-129, FR-130, P-064 — route: frontend — deps: T050
+- [x] T053 [US2] PropertyList: contracts, `copyTextOf`, the web and native components, the `/property-list` route and its e2e file — covers: FR-131, FR-132, FR-133, FR-134, P-066 — route: frontend — deps: T050
+- [x] T054 [US2] Tabs and Accordion: contracts, the web and native components, and the `/tabs` and `/accordion` routes with e2e files — covers: FR-135, FR-136, FR-137, FR-138, FR-139, FR-140, P-067 — route: frontend — deps: T050
+- [x] T055 [US2] CursorPagination and Breadcrumbs: contracts, the web and native components, and their routes with e2e files — covers: FR-141, FR-142, FR-143, FR-144, FR-145, FR-146, P-068 — route: frontend — deps: T050
+- [x] T056 [US2] EmptyState, ErrorState and PageSkeleton: contracts, the shared state layout, the web and native components, and their routes with e2e files — covers: FR-147, FR-148, FR-149, FR-150, FR-151, SC-011, P-069 — route: frontend — deps: T050

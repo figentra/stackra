@@ -108,6 +108,12 @@ switcher and is covered by Playwright and axe. `@stackra/brand` is deleted; its 
 - **P-061**: A ProgressBar and a ProgressCircle are named, determinate or indeterminate by their value, and still under reduced motion — Validates: FR-117, FR-118, FR-119, FR-120
 - **P-062**: A collection takes items, an empty state and a loading flag, reports its selection as a list of string ids and a sort as a column and a direction — Validates: FR-121
 - **P-063**: A selection becomes ids in the items' order, and a press on a column moves its sort from none to ascending to descending — Validates: FR-122
+- **P-064**: A List shows rows, its empty state only when empty and nothing loads, reports its selection as ids and asks for more at its end — Validates: FR-126, FR-127, FR-128, FR-129, FR-130
+- **P-065**: A Table is named, sorts by a column and a direction, selects rows and loads more — Validates: FR-123, FR-124, FR-125
+- **P-066**: A PropertyList shows labelled values, an empty value for a missing one, and copies on request — Validates: FR-131, FR-132, FR-133, FR-134
+- **P-067**: Tabs and an Accordion select and expand by ids and follow the reading direction — Validates: FR-135, FR-136, FR-137, FR-138, FR-139, FR-140
+- **P-068**: Cursor pagination and breadcrumbs navigate, refuse a press while loading and mirror in right-to-left — Validates: FR-141, FR-142, FR-143, FR-144, FR-145, FR-146
+- **P-069**: An empty state, an error state and a page skeleton are named, announce as they should and carry no copy of their own — Validates: FR-147, FR-148, FR-149, FR-150, FR-151
 
 ## Contracts and events
 

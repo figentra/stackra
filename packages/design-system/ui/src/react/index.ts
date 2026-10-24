@@ -6,11 +6,13 @@
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { Accordion, type AccordionProps } from "#react/accordion/accordion";
 export { ActionMenu, type ActionMenuProps } from "#react/action-menu/action-menu";
 export { AlertDialog, type AlertDialogProps } from "#react/alert-dialog/alert-dialog";
 export { Alert, type AlertProps } from "#react/alert/alert";
 export { Avatar, type AvatarProps } from "#react/avatar/avatar";
 export { Badge, type BadgeAnchorProps, type BadgeProps } from "#react/badge/badge";
+export { Breadcrumbs, type BreadcrumbsProps } from "#react/breadcrumbs/breadcrumbs";
 export { Button, type ButtonProps } from "#react/button/button";
 export { Card, type CardProps } from "#react/card/card";
 export type { CardTitleProps } from "#react/card/card-title";
@@ -24,12 +26,18 @@ export {
   type ConfirmationProviderProps,
 } from "#react/confirmation/confirmation-provider";
 export { useConfirmation } from "#react/confirmation/use-confirmation";
+export {
+  CursorPagination,
+  type CursorPaginationProps,
+} from "#react/cursor-pagination/cursor-pagination";
 export { Description, type DescriptionProps } from "#react/description/description";
 export { DesignSystemProvider } from "#react/design-system-provider/design-system-provider";
 export { useDesignSystem } from "#react/design-system-provider/use-design-system";
 export { Drawer, type DrawerProps } from "#react/drawer/drawer";
 export type { DrawerCloseProps } from "#react/drawer/drawer-close";
 export type { DrawerTitleProps } from "#react/drawer/drawer-title";
+export { EmptyState, type EmptyStateProps } from "#react/empty-state/empty-state";
+export { ErrorState, type ErrorStateProps } from "#react/error-state/error-state";
 export { FieldError, type FieldErrorProps } from "#react/field-error/field-error";
 export { FormField, type FormFieldProps } from "#react/form-field/form-field";
 export { FormSection, type FormSectionProps } from "#react/form-section/form-section";
@@ -44,13 +52,17 @@ export {
   type LeaveConfirmationProps,
 } from "#react/leave-confirmation/leave-confirmation";
 export { Link, type LinkProps } from "#react/link/link";
+export { List, type ListProps } from "#react/list/list";
+export { ListItem, type ListItemProps } from "#react/list/list-item";
 export { Menu, type MenuProps } from "#react/menu/menu";
 export { Modal, type ModalProps } from "#react/modal/modal";
 export type { ModalCloseProps } from "#react/modal/modal-close";
 export type { ModalTitleProps } from "#react/modal/modal-title";
+export { PageSkeleton, type PageSkeletonProps } from "#react/page-skeleton/page-skeleton";
 export { Popover, type PopoverProps } from "#react/popover/popover";
 export { ProgressBar, type ProgressBarProps } from "#react/progress-bar/progress-bar";
 export { ProgressCircle, type ProgressCircleProps } from "#react/progress-circle/progress-circle";
+export { PropertyList, type PropertyListProps } from "#react/property-list/property-list";
 export { RadioGroup, type RadioGroupProps } from "#react/radio-group/radio-group";
 export { SearchField, type SearchFieldProps } from "#react/search-field/search-field";
 export { Select, type SelectProps } from "#react/select/select";
@@ -61,6 +73,8 @@ export { Spinner, type SpinnerProps } from "#react/spinner/spinner";
 export { StatusBadge, type StatusBadgeProps } from "#react/status-badge/status-badge";
 export { Surface, type SurfaceProps } from "#react/surface/surface";
 export { Switch, type SwitchProps } from "#react/switch/switch";
+export { Table, type TableProps } from "#react/table/table";
+export { Tabs, type TabsProps } from "#react/tabs/tabs";
 export { TagGroup, type TagGroupProps } from "#react/tag-group/tag-group";
 export { TextArea, type TextAreaProps } from "#react/text-area/text-area";
 export { TextField, type TextFieldProps } from "#react/text-field/text-field";
