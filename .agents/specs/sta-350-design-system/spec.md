@@ -388,6 +388,174 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
   in a `flex: 1` View whose Yoga `direction` is the resolved direction, because Uniwind's `LayoutDirection` is
   `display: contents` and never reaches the layout — verified by: unit, device check on `apps/mobile`
 
+- **FR-096**: `@stackra/ui/contracts` SHALL hold the props every wave 4 overlay and message shares, each optional so a
+  component adds only what it needs: `OpenStateContractProps` (`isOpen`, `defaultOpen`, `onOpenChange`),
+  `OverlayContractProps` (the open state plus `isDismissable` and `isKeyboardDismissDisabled`), `PlacementContractProps`
+  (`placement`, a `Placement` side by reading direction, and `align`, a `PlacementAlign`) and `FeedbackContractProps`
+  (`tone`, a `Tone`, and `icon`, an `IconSlot` or `false`), and the internal `FEEDBACK_BY_TONE` SHALL give every tone a
+  default icon and a live-region role, `alert` only for warning and danger — verified by: unit, typecheck
+- **FR-097**: `reactAriaPlacementOf` SHALL turn a side and an alignment into the placement string React Aria accepts
+  (the side alone when centred, and `start` and `end` read as top and bottom on a start or end side), and
+  `physicalSideOf` SHALL turn a logical side into HeroUI Native's `left` or `right` by text direction, leaving `top`
+  and `bottom` alone — verified by: unit, typecheck
+
+- **FR-098**: `@stackra/ui/contracts` SHALL hold `ModalContractProps` (`size` of `sm`, `md`, `lg` or `full`, and `position`
+  of `auto`, `top`, `center` or `bottom`), `DrawerContractProps` (`placement`, a `Placement` side) and
+  `OverlayTitleContractProps` (`level`), each on the shared overlay props with `trigger`, `label` and `children`, and
+  every `Close` part SHALL take the `CloseButton` contract, whose `label` is required — verified by: unit, typecheck
+- **FR-099**: On web, `Modal` and `Drawer` SHALL be one root with `Header`, `Title`, `Body`, `Footer` and `Close` parts
+  on HeroUI v3, open from a `trigger` or by `isOpen` and `onOpenChange`, named by the `Title` (placed in the outline
+  by `level`), dismissed by Escape and a press outside unless `isKeyboardDismissDisabled` or `isDismissable` turns it
+  off, with the Drawer's `start` and `end` placements mapped to the physical edge HeroUI lays out, so they mirror in
+  right-to-left once — verified by: unit
+- **FR-100**: On native, `Modal` SHALL be the HeroUI Native Dialog and `Drawer` the adapted form on its BottomSheet (a
+  phone has no side panel, so `placement` is `bottom`), with the same parts and props, string children wrapped in
+  `Text`, `isDismissable` mapped to a press outside and the swipe, and the Android back button swallowed only with
+  `isKeyboardDismissDisabled` — verified by: unit, device check on `apps/mobile`
+- **FR-101**: The `/modal` and `/drawer` playground routes SHALL show every size, position and placement, a controlled
+  example and the open state reported, and focus SHALL return to the trigger on close — verified by: unit, e2e
+- **FR-102**: `AlertDialog` SHALL ask one decision as an `alertdialog` named by its title and described by its
+  description, with the tone's icon, a confirm and a cancel button, `onConfirm` and `onCancel`, `isConfirmDisabled`,
+  focus starting on cancel on web (on native cancel comes first in reading order, as native moves no focus),
+  `isDismissable` false by default, and Escape or the Android back button cancelling unless
+  `isKeyboardDismissDisabled` is set, on web (HeroUI AlertDialog) and on native (the adapted form on Dialog) —
+  verified by: unit
+- **FR-103**: `useConfirmation()` SHALL return `confirm(options): Promise<boolean>` backed by the one `AlertDialog` a
+  `ConfirmationProvider` renders, resolving true on confirm and false on cancel, Escape or a newer question, and a
+  question with `confirmationText` SHALL keep confirm disabled until that text is typed — verified by: unit
+- **FR-104**: `LeaveConfirmation` SHALL guard unsaved work: while `when` is true the browser asks before the tab closes
+  or reloads, and `confirmLeave()` on its `ref` asks the question through an `AlertDialog`, resolving true at once
+  while `when` is false, true on discard and false on stay, with no router import — verified by: unit
+- **FR-105**: The `/alert-dialog`, `/use-confirmation` and `/leave-confirmation` playground routes SHALL show each
+  tone, the answer as it happens and the keyboard path, with the tone icons drawn from the kit's own registry, and axe
+  SHALL report nothing — verified by: unit, e2e
+- **FR-106**: `@stackra/ui/contracts` SHALL hold `MenuContractProps` (`sections`, `selectionMode`, `value`,
+  `defaultValue`, `onChange`, `onAction`, on the open state and placement props), `MenuSection`, `MenuItem` (a submenu one
+  level deep) and `MenuLeafItem`, and `ActionMenuContractProps` (`label`, `icon`, `variant`, `size`, `isDisabled`),
+  and `mergeSectionSelection` SHALL keep one choice per section in single mode and any number in multiple mode over
+  one flat list of keys — verified by: unit, typecheck
+- **FR-107**: `Menu` SHALL show its sections with a divider between them, each action with its icon, label, second
+  line, danger tone and disabled reason, and web also its shortcut hint, open from its one trigger child, call
+  `onAction` and `onPress`, scope selection to a section, and open a submenu on the arrow keys on web — verified by:
+  unit
+- **FR-108**: `ActionMenu` SHALL be an `IconButton` named by its required `label` that opens a `Menu`, at the reading end
+  by default, without letting a choice reach the row around the button — verified by: unit
+- **FR-109**: The `/menu` and `/action-menu` playground routes SHALL show grouped, selectable, danger, disabled and
+  submenu examples, and each choice SHALL be reported — verified by: unit, e2e
+- **FR-110**: `Popover` SHALL open its content from its trigger with an optional `title` and arrow, place it by
+  `placement` and `align` (a physical side by reading direction on native), close on Escape on web and on a press
+  outside unless `isDismissable` is false, and name the dialog by `aria-label` or `title` — verified by: unit, e2e
+- **FR-111**: `Tooltip` SHALL describe the element it wraps and never name it, on web showing on hover and keyboard
+  focus only, hiding on Escape and staying while the pointer is over it, and on native being the adapted form that
+  speaks the text as the element's accessibility hint — verified by: unit, e2e
+- **FR-112**: `Alert` and `toast()` SHALL take a `tone`, a title or message, an optional description and an icon
+  (the tone's own, the caller's, or `false`), and SHALL announce by tone: `alert` and assertive for warning and
+  danger, `status` and polite for the rest, set by the component and never by the caller — verified by: unit
+- **FR-113**: On web, `Alert` SHALL be HeroUI v3's Alert with a wrapping row for `actions`, and `toast()` SHALL show a
+  message on HeroUI v3's queue through a mounted `ToastProvider`, with `success`, `warning`, `danger` and `info`,
+  `close(id)` and `clear()`, an action that runs and then closes the toast, a timeout (0 keeps it) and a named
+  dismiss button — verified by: unit
+- **FR-114**: On native, `Alert` SHALL be an adapted form on views, and `toast()` the same call through HeroUI
+  Native's toast manager and a mounted `ToastProvider`, with a persistent toast for a timeout of 0 and a named
+  dismiss button beside the swipe — verified by: unit
+- **FR-115**: `liveRegionOf` SHALL turn a tone into its live-region role and `aria-live` value, `alert` and `assertive`
+  for warning and danger, `status` and `polite` for the others — verified by: unit
+- **FR-116**: The `/alert` and `/toast` playground routes SHALL show every tone, with and without a description,
+  actions and icon, and axe SHALL report nothing — verified by: unit, e2e
+- **FR-117**: `@stackra/ui/contracts` SHALL hold `ProgressContractProps` (`value`, `minValue`, `maxValue`, `size`,
+  `tone`, a required `label`, `valueLabel`), `ProgressBarContractProps` and `ProgressCircleContractProps`, a missing
+  `value` meaning indeterminate, and `progressStateOf` SHALL hold a value inside its range and give the fill, the
+  text in the reader's locale and the accessibility value, all unknown while the value is — verified by: unit,
+  typecheck
+- **FR-118**: On web, `ProgressBar` and `ProgressCircle` SHALL be HeroUI v3's, named by `label`, determinate or
+  indeterminate by `value`, showing the label and value text when asked — verified by: unit
+- **FR-119**: On native, `ProgressBar` and `ProgressCircle` SHALL be the adapted forms (views, and `react-native-svg`,
+  with `react-native-reanimated`), one `progressbar` with its range and text, busy while indeterminate, starting
+  from the inline start, and still under reduced motion — verified by: unit, device check on `apps/mobile`
+- **FR-120**: The `/progress-bar` and `/progress-circle` playground routes SHALL show determinate, indeterminate,
+  every tone and size, and an advance-and-reset example that announces its completion, and axe SHALL report
+  nothing — verified by: unit, e2e
+
+- **FR-121**: `@stackra/ui/contracts` SHALL hold the props every wave 5 collection shares: `CollectionContractProps`
+  (`items` of a `CollectionItem` with a string `id`, `emptyState`, `isLoading` and `loadingLabel`),
+  `SelectionContractProps` (`selectionMode`, and `selectedKeys`, `defaultSelectedKeys` and `onSelectionChange` as lists
+  of string ids, never a `Set`) and `SortDescriptor` (a column `id` and a `SortDirection`, `ascending` or
+  `descending`), each optional but `items` — verified by: unit, typecheck
+- **FR-122**: `keysOfSelection` SHALL turn a React Aria or HeroUI Native selection into a list of ids (`"all"` becomes
+  every id, a `Set` follows the items' order), and `nextSortDescriptor` SHALL start an unsorted column ascending and
+  flip an ascending one to descending — verified by: unit, typecheck
+- **FR-123**: On web, `Table` SHALL be HeroUI v3's, named by the required `label`, with `columns` and a `renderCell`
+  (a cell with none showing the row property its column's `id` names through `cellTextOf`), a checkbox column for
+  `multiple` selection, a row selected on press for `single`, sorting by `sortDescriptor` and `onSortChange` through
+  `nextSortDescriptor`, and loading by `isLoading` and `onLoadMore`, with one polite status message — verified by: unit
+- **FR-124**: On native, `Table` SHALL be the adapted form (ADR 0313 decision 7): a `FlatList` of cards with a sort
+  chooser in its header, selecting rows as checked radios or checkboxes, and no select-all — verified by: unit,
+  device check on `apps/mobile`
+- **FR-125**: The `/table` playground route SHALL show sorting, single and multiple selection, an empty and a loading
+  table and load more, and axe SHALL report nothing — verified by: unit, e2e
+- **FR-126**: `@stackra/ui/contracts` SHALL hold `ListContractProps`, `ListItemContractProps` and `ListItemData`
+  (`title`, `description`, `startIcon`, `endContent`, `hasChevron`, `onPress`, `isDisabled`) on the collection and
+  selection props — verified by: unit, typecheck
+- **FR-127**: On web, `List` and `ListItem` SHALL be a plain `ul` of rows without a selection mode, with a pressable
+  row a full-width HeroUI button, and a HeroUI `ListBox` with a checkmark when a selection mode is given — verified
+  by: unit
+- **FR-128**: Every `List` SHALL show its `emptyState` only when there are no items and nothing loads, be busy with one
+  named spinner while it loads, report its selection as ids in the items' order, and call `onLoadMore` when its end
+  is reached while `hasMore` is true — verified by: unit
+- **FR-129**: On native, `List` SHALL be a `FlatList` inside HeroUI Native's `ListGroup`, selecting rows as radios or
+  checkboxes with a check mark, and `onLoadMore` going to `onEndReached` — verified by: unit
+- **FR-130**: The `/list` playground route SHALL show plain, pressable, selecting, empty and loading lists, and axe
+  SHALL report nothing — verified by: unit, e2e
+- **FR-131**: `@stackra/ui/contracts` SHALL hold `PropertyListContractProps` and `PropertyListItem` (`label`, `value`,
+  `copyLabel`, `copyValue`), and `copyTextOf` SHALL decide a row is copyable only with a `copyLabel` and some text —
+  verified by: unit, typecheck
+- **FR-132**: On web, `PropertyList` SHALL be the adapted form (a `dl` of `dt` and `dd` rows, HeroUI has none), show
+  `emptyValue` for a missing, empty or false value and not for `0`, stack two columns on narrow screens, and copy
+  to the clipboard with a check mark and a polite announcement — verified by: unit
+- **FR-133**: On native, `PropertyList` SHALL be a `list` of `listitem` views with the same empty-value rule, and a
+  copy button that calls `onCopy` with the text — verified by: unit
+- **FR-134**: The `/property-list` playground route SHALL show one and two columns, empty values and copying, and axe
+  SHALL report nothing — verified by: unit, e2e
+- **FR-135**: `@stackra/ui/contracts` SHALL hold `TabsContractProps` and `TabItem`; on web, `Tabs` SHALL be HeroUI v3's,
+  the selection a list of one id, the first tab that is not disabled selected when none is given, and the arrow
+  keys following the reading direction — verified by: unit
+- **FR-136**: On native, `Tabs` SHALL be HeroUI Native's, keeping its own selected id and reading as horizontal —
+  verified by: unit
+- **FR-137**: `@stackra/ui/contracts` SHALL hold `AccordionContractProps`, `AccordionItem` and `AccordionVariant`; on
+  web, `Accordion` SHALL be HeroUI v3's with `expandedKeys` as ids and `canExpandMultiple` — verified by: unit
+- **FR-138**: On native, `Accordion` SHALL be HeroUI Native's with `canExpandMultiple` choosing a string or a list —
+  verified by: unit
+- **FR-139**: The `/tabs` playground route SHALL show both variants, both orientations and a disabled tab, and axe
+  SHALL report nothing — verified by: unit, e2e
+- **FR-140**: The `/accordion` playground route SHALL show single and multiple expansion, both variants and a disabled
+  item, and axe SHALL report nothing — verified by: unit, e2e
+- **FR-141**: `@stackra/ui/contracts` SHALL hold `CursorPaginationContractProps` (`hasMore`, `hasPrevious`, `onNext`,
+  `onPrevious`, `mode`, `count`, `isLoading`) and `BreadcrumbsContractProps` with `BreadcrumbItem` — verified by:
+  unit, typecheck
+- **FR-142**: On web, `CursorPagination` SHALL be a named navigation with previous and next buttons in `pager` mode, a
+  load-more button in `load-more` mode, a refused press while loading and chevrons that mirror in right-to-left —
+  verified by: unit
+- **FR-143**: On native, `CursorPagination` SHALL offer the same modes and refusals as on web — verified by: unit
+- **FR-144**: On web, `Breadcrumbs` SHALL be HeroUI v3's, wrap onto further lines, and mark the last step as the
+  current page — verified by: unit
+- **FR-145**: On native, `Breadcrumbs` SHALL be a text trail of pressable steps with the current page as plain text and
+  a mirrored chevron between steps — verified by: unit
+- **FR-146**: The `/cursor-pagination` and `/breadcrumbs` playground routes SHALL show every mode and a long trail in
+  both directions, and axe SHALL report nothing — verified by: unit, e2e
+- **FR-147**: `@stackra/ui/contracts` SHALL hold `StateContractProps`, `EmptyStateContractProps`,
+  `ErrorStateContractProps`, `PageSkeletonContractProps` and the `EmptyReason`, `ErrorKind` and `PageSkeletonLayout`
+  enums, with a required `title` on both states and a required `loadingLabel` on the page skeleton — verified by:
+  unit, typecheck
+- **FR-148**: `STATE_ICON`, `PAGE_SKELETON_ROWS` and `errorDetailsOf` SHALL pick the icon of a reason or kind, the
+  bones of a layout, and the message an error shows as its details — verified by: unit
+- **FR-149**: On web, `EmptyState`, `ErrorState` and `PageSkeleton` SHALL be the adapted forms on free parts (HeroUI has
+  none): `ErrorState` a live `alert` with an optional retry, `EmptyState` not live, `PageSkeleton` one named
+  busy region — verified by: unit
+- **FR-150**: On native, `EmptyState`, `ErrorState` and `PageSkeleton` SHALL be the same adapted forms, every string
+  child wrapped in `Text` — verified by: unit
+- **FR-151**: The `/empty-state`, `/error-state` and `/page-skeleton` playground routes SHALL show every reason, kind
+  and layout, and axe SHALL report nothing — verified by: unit, e2e
+
 ## Success Criteria
 
 - **SC-001**: `pnpm verify` is green with the change — verified by: CI (Quality Gate)
@@ -405,6 +573,14 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
   message showing and with a section disabled, a failed submit shows each message linked to its field and in a
   polite status line, the keyboard fills and submits the form, and a disabled section leaves the tab order —
   verified by: e2e
+- **SC-008**: axe reports nothing on `/modal` and `/drawer`, closed and with a dialog open, in light, dark, LTR and
+  RTL, and focus returns to the trigger on close — verified by: e2e
+- **SC-009**: axe reports nothing on `/menu` and `/action-menu`, closed and with a menu open, in light, dark, LTR and
+  RTL — verified by: e2e
+- **SC-010**: axe reports nothing on `/toast` and `/alert` in light, dark, LTR and RTL, with a toast showing, and a
+  toast announces by its tone — verified by: e2e
+- **SC-011**: axe reports nothing on `/table`, `/list`, `/property-list`, `/tabs`, `/accordion`, `/cursor-pagination`,
+  `/breadcrumbs`, `/empty-state`, `/error-state` and `/page-skeleton` in light, dark, LTR and RTL — verified by: e2e
 
 ## Out of scope
 
@@ -429,3 +605,7 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
 - 2026-10-23 · Clarified → Planned · Claude (spec-writer)
 - 2026-10-23 · Planned → Tasked · Claude (spec-writer)
 - 2026-10-23 · Tasked → Implementing · Claude (spec-writer) · setup pull request under way
+- 2026-10-23 · Implementing · Claude (frontend-builder) · wave 4 foundation: FR-096, FR-097 (ADR 0312)
+- 2026-10-24 · Implementing · Claude (frontend-builder) · wave 4 components: FR-098 to FR-120, SC-008 to SC-010
+- 2026-10-24 · Implementing · Claude (frontend-builder) · wave 5 foundation: FR-121, FR-122 (ADR 0313)
+- 2026-10-24 · Implementing · Claude (frontend-builder) · wave 5 components: FR-123 to FR-151, SC-011
