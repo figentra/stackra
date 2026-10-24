@@ -59,6 +59,7 @@ const STRINGS = {
   noResultsTitle: "No results",
   noResultsDescription: "No record matches the search and filters. Try changing or clearing them.",
   clearFilters: "Clear filters",
+  errorTitle: "The records could not be loaded",
   retry: "Try again",
   pagination: (label: string) => `${label} pagination`,
   bulkActions: (label: string) => `${label} actions`,
@@ -231,6 +232,7 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
       ) : null}
       {hasError ? (
         <ErrorState
+          title={STRINGS.errorTitle}
           headingLevel={headingLevel}
           kind={errorKind}
           error={error}

@@ -146,7 +146,9 @@ describe("AppShell (web)", () => {
   });
 
   it("passes unknown props through and refuses a missing page at the type level", () => {
-    render(sample({ id: "shell", className: "extra", "data-testid": "shell" } as AppShellProps));
+    render(
+      sample({ id: "shell", className: "extra", "data-testid": "shell" } as Partial<AppShellProps>),
+    );
     expect(screen.getByTestId("shell").id).toBe("shell");
     expect(screen.getByTestId("shell").className).toContain("extra");
     // @ts-expect-error: the page is required
