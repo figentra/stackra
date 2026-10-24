@@ -27,6 +27,10 @@ import { ModalBody, ModalFooter, ModalHeader } from "#native/modal/modal-section
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));
 
+vi.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 20, left: 0, right: 0 }),
+}));
+
 vi.mock("heroui-native", async () => {
   const { createElement } = await import("react");
   const record = (name: string) => (props: Record<string, unknown>) => {
@@ -105,6 +109,12 @@ describe("Drawer (native)", () => {
     render(<Drawer>x</Drawer>);
     expect(propsOf("overlay")["isCloseOnPress"]).toBe(true);
     expect(propsOf("content")["enablePanDownToClose"]).toBe(true);
+    expect(propsOf("content")).toMatchObject({
+      detached: true,
+      bottomInset: 32,
+      className: "mx-4",
+      backgroundClassName: "rounded-4xl",
+    });
   });
 
   it("refuses both when `isDismissable` is false", () => {

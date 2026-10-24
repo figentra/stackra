@@ -18,6 +18,7 @@
  */
 import { BottomSheet, type BottomSheetContentProps as HeroSheetContentProps } from "heroui-native";
 import type { ReactElement } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { DrawerContractProps } from "#contracts/types/drawer-contract-props.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -51,6 +52,8 @@ function DrawerRoot({
   label,
   ...rest
 }: DrawerProps): ReactElement {
+  // Owner decision 2026-10-24: every native sheet is HeroUI Native's inset style, detached and clear of the home bar.
+  const insets = useSafeAreaInsets();
   return (
     <BottomSheet
       {...omitUndefined({ isOpen, onOpenChange })}
@@ -60,6 +63,10 @@ function DrawerRoot({
       <BottomSheet.Portal unstable_accessibilityContainerViewIsModal>
         <BottomSheet.Overlay isCloseOnPress={isDismissable} />
         <BottomSheet.Content
+          detached
+          bottomInset={insets.bottom + 12}
+          className="mx-4"
+          backgroundClassName="rounded-4xl"
           {...rest}
           enablePanDownToClose={isDismissable}
           {...(label ? { accessibilityLabel: label } : {})}

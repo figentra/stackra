@@ -25,6 +25,10 @@ const received = vi.hoisted(() => ({
   items: [] as Record<string, unknown>[],
 }));
 
+vi.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 20, left: 0, right: 0 }),
+}));
+
 vi.mock("heroui-native", async () => {
   const { createElement } = await import("react");
   const record = (name: string) => (props: Record<string, unknown>) => {
@@ -98,6 +102,12 @@ describe("Select (native)", () => {
     expect(propsOf("root")["presentation"]).toBe("bottom-sheet");
     expect(propsOf("content")["presentation"]).toBe("bottom-sheet");
     expect(propsOf("content")).not.toHaveProperty("width");
+    expect(propsOf("content")).toMatchObject({
+      detached: true,
+      bottomInset: 32,
+      className: "mx-4",
+      backgroundClassName: "rounded-4xl",
+    });
   });
 
   it("draws an item per choice, with its label, key and disabled state", () => {

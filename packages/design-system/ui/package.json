@@ -138,6 +138,7 @@
     "react-hook-form": "catalog:frontend",
     "react-native": "catalog:mobile",
     "react-native-reanimated": "catalog:mobile",
+    "react-native-safe-area-context": "catalog:mobile",
     "react-native-svg": "catalog:mobile",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
@@ -154,6 +155,7 @@
     "react-hook-form": "^7.89.0",
     "react-native": ">=0.86.0",
     "react-native-reanimated": "^4.5.1",
+    "react-native-safe-area-context": "^5.7.0",
     "react-native-svg": "^15.15.4",
     "uniwind": "^1.12.1"
   },
@@ -177,6 +179,9 @@
       "optional": true
     },
     "react-native-reanimated": {
+      "optional": true
+    },
+    "react-native-safe-area-context": {
       "optional": true
     },
     "react-native-svg": {
