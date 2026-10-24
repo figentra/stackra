@@ -1,15 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: the Settings tab's screen, the app's settings and the native twin of the playground's Theme Studio:
- *          - Appearance: the colour scheme (System, Light, Dark).
+ *          - Appearance: the colour scheme (System, Light, Dark) and the language with its direction.
  *          - Theme: a preset; the accent (on or off, a hue strip, its strength and a live swatch); the neutral hue and
  *            tint; the corner radius; the Latin and Arabic faces. Every change restyles the whole app at once.
  *          - Contrast: the main pairs of the theme on screen against WCAG 2.2 AA.
  *          - Actions: undo, redo and reset; share the theme as JSON through the system share sheet; import a pasted
  *            theme JSON, listing what is wrong with it.
  *          - The app version, at the bottom.
- * Boundary: presentation; the theme state and its push into Uniwind are `../stores/theme-settings.store`, the colour
- *           scheme is Uniwind's own (`Uniwind.setTheme`).
+ * Boundary: presentation; the theme state and its push into Uniwind are `../stores/theme-settings.store`; the colour
+ *           scheme and the language are the design-system provider's (`useDesignSystem()`), shared with the review
+ *           area's display settings, so native headers, the tab bar and the direction follow them too.
  * Runtime: react-native
  * Governing contract: ADR 0320 (the Theme Studio); ADR 0007 (documentation); WCAG 2.2 SC 1.3.1, 1.4.3, 4.1.2, 4.1.3.
  */
@@ -21,12 +22,12 @@ import {
   STACKRA_THEME,
 } from "@stackra/tokens";
 import type { ThemeKnobs } from "@stackra/tokens/contracts";
+import { useDesignSystem } from "@stackra/ui/native";
 import Constants from "expo-constants";
 import { Button, Card, Label, Separator, Slider, Switch, TextArea, TextField } from "heroui-native";
 import { useState, type ReactNode } from "react";
-import { I18nManager, Share, Text, View } from "react-native";
+import { Share, Text, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
-import { Uniwind, useUniwind } from "uniwind";
 
 import { Screen } from "../components/ui/screen";
 import {
@@ -42,6 +43,8 @@ const STRINGS = {
   appearance: "Appearance",
   scheme: "Colour scheme",
   schemes: { system: "System", light: "Light", dark: "Dark" },
+  language: "Language and direction",
+  languages: { en: "English (LTR)", ar: "العربية (RTL)" },
   theme: "Theme",
   preset: "Preset",
   accent: "Accent colour",
@@ -78,6 +81,11 @@ const SCHEMES = [
   { id: "system", label: STRINGS.schemes.system },
   { id: "light", label: STRINGS.schemes.light },
   { id: "dark", label: STRINGS.schemes.dark },
+] as const;
+
+const LANGUAGES = [
+  { id: "en", label: STRINGS.languages.en },
+  { id: "ar", label: STRINGS.languages.ar },
 ] as const;
 
 /** The accent the switch turns on when the knobs hold none, as the web studio's. */
@@ -189,15 +197,15 @@ function KnobSlider({
 }
 
 /** The hue strip behind the accent hue slider, at the accent's strength; it runs end to start in RTL as the slider. */
-function HueStrip({ chroma }: { chroma: number }) {
+function HueStrip({ chroma, isRtl }: { chroma: number; isRtl: boolean }) {
   return (
     <Slider.TrackBackground>
       <Svg width="100%" height="100%" preserveAspectRatio="none">
         <Defs>
           <LinearGradient
             id="hue-strip"
-            x1={I18nManager.isRTL ? "1" : "0"}
-            x2={I18nManager.isRTL ? "0" : "1"}
+            x1={isRtl ? "1" : "0"}
+            x2={isRtl ? "0" : "1"}
             y1="0"
             y2="0"
           >
@@ -232,7 +240,14 @@ function Problems({ title, problems }: { title: string; problems: readonly strin
 /** The Settings tab: appearance, theme, contrast, theme actions and the app version. */
 export function SettingsScreen() {
   const settings = useThemeSettings();
-  const { theme: scheme, hasAdaptiveThemes } = useUniwind();
+  const {
+    colorScheme,
+    resolvedColorScheme: scheme,
+    setColorScheme,
+    locale,
+    setLocale,
+    direction,
+  } = useDesignSystem();
   const [pasted, setPasted] = useState("");
   const [importProblems, setImportProblems] = useState<readonly string[]>([]);
   const [status, setStatus] = useState("");
@@ -280,9 +295,10 @@ export function SettingsScreen() {
         <Choice
           label={STRINGS.scheme}
           options={SCHEMES}
-          value={hasAdaptiveThemes ? "system" : scheme}
-          onSelect={(id) => Uniwind.setTheme(id as (typeof SCHEMES)[number]["id"])}
+          value={colorScheme}
+          onSelect={(id) => setColorScheme(id as (typeof SCHEMES)[number]["id"])}
         />
+        <Choice label={STRINGS.language} options={LANGUAGES} value={locale} onSelect={setLocale} />
       </Section>
 
       <Section title={STRINGS.theme}>
@@ -321,7 +337,12 @@ export function SettingsScreen() {
           step={1}
           unit="°"
           isDisabled={accent === null}
-          track={<HueStrip chroma={accent?.chroma ?? DEFAULT_ACCENT.chroma} />}
+          track={
+            <HueStrip
+              chroma={accent?.chroma ?? DEFAULT_ACCENT.chroma}
+              isRtl={direction === "rtl"}
+            />
+          }
           onDraft={(hue) =>
             draft({ accent: { hue, chroma: accent?.chroma ?? DEFAULT_ACCENT.chroma } })
           }

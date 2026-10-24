@@ -63,7 +63,8 @@ invalid theme lists what is wrong and the last good one stays.
 ## Requirements
 
 - **FR-001**: THE mobile Settings screen SHALL offer the studio's knobs (appearance, preset, accent, neutral, radius,
-  faces), show the studio's contrast pairs against AA, and apply every change to the app's theme at once.
+  faces), show the studio's contrast pairs against AA, and apply every change to the app's theme at once. The colour
+  scheme and the language are the design-system provider's (`useDesignSystem()`), shared with the review area.
 - **FR-002**: THE theme settings store SHALL keep an undo and redo history, reset to the preset, export the theme as
   JSON and import a JSON theme only when it validates, keeping the last good theme otherwise.
 
