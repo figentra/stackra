@@ -64,7 +64,10 @@ export function Breadcrumbs({
                 // iOS ignores a label on a container that is not itself accessible, and making the container accessible
                 // would swallow the links, so the current step carries the trail's name and says it is selected.
                 {...(isCurrent
-                  ? { accessibilityState: { selected: true }, accessibilityLabel: `${label}: ${item.label}` }
+                  ? {
+                      accessibilityState: { selected: true },
+                      accessibilityLabel: `${label}: ${item.label}`,
+                    }
                   : {})}
               >
                 {item.label}

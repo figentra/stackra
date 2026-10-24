@@ -123,7 +123,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
     isLoading ? <LoadingContent text={loadingText} /> : emptyState;
 
   return (
-    <HeroTable {...rest} {...omitUndefined({ variant })} aria-busy={isLoading || undefined}>
+    <HeroTable {...omitUndefined({ ...rest, variant })} aria-busy={isLoading || undefined}>
       <HeroTable.ScrollContainer {...(isStickyHeader ? { style: { maxHeight } } : {})}>
         <HeroTable.Content
           aria-label={label}

@@ -77,7 +77,7 @@ export function Accordion({
       {...shared}
       selectionMode="multiple"
       value={[...expanded]}
-      onValueChange={(next) => change(keysOfSelection(next, ids))}
+      onValueChange={(next: string[]) => change(keysOfSelection(next, ids))}
     >
       {sections}
     </HeroAccordion>
@@ -86,7 +86,7 @@ export function Accordion({
       {...shared}
       selectionMode="single"
       value={expanded[0]}
-      onValueChange={(next) => change(next === undefined ? [] : [next])}
+      onValueChange={(next: string | undefined) => change(next === undefined ? [] : [next])}
     >
       {sections}
     </HeroAccordion>

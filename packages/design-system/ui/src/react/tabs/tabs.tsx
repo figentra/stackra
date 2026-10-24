@@ -65,9 +65,14 @@ export function Tabs({
   return (
     <HeroTabs
       {...rest}
-      {...omitUndefined({ orientation, variant, isDisabled })}
-      // A controlled empty list reads as "none chosen", which React Aria answers by selecting the first tab.
-      {...(selectedKeys === undefined ? {} : { selectedKey: selectedKeys[0] ?? null })}
+      {...omitUndefined({
+        orientation,
+        variant,
+        isDisabled,
+        // React Aria always has a tab chosen (its key type has no `null`), so a controlled empty list shows the first usable one.
+        selectedKey:
+          selectedKeys && (selectedKeys[0] ?? items.find((item) => !item.isDisabled)?.id),
+      })}
       {...(defaultSelectedKeys?.[0] === undefined
         ? {}
         : { defaultSelectedKey: defaultSelectedKeys[0] })}
