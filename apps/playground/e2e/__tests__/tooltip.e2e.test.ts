@@ -41,6 +41,23 @@ const settled = (page: Page) =>
 const centre = (element: Locator) =>
   element.evaluate((node) => node.scrollIntoView({ block: "center", inline: "center" }));
 
+/**
+ * Waits until the element has stopped moving for a few frames, fonts included. React Aria closes an open tooltip on any
+ * scroll of the page, so a late scroll (a font swap, or the scroll that focusing an element starts) would close a
+ * tooltip the test has just opened.
+ */
+const atRest = (element: Locator) =>
+  element.evaluate(async (node) => {
+    await document.fonts.ready;
+    let top = Number.NaN;
+    for (let still = 0; still < 5;) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const next = node.getBoundingClientRect().top;
+      still = next === top ? still + 1 : 0;
+      top = next;
+    }
+  });
+
 /** The tooltips on show: one that is fading out has been closed already, and a keyboard user passing by leaves one. */
 const tooltip = (page: Page) => page.getByRole("tooltip").and(page.locator(":not([data-exiting])"));
 
@@ -237,7 +254,9 @@ test("the live tooltip follows its switch and reports its state", async ({ page 
   await expect(live.getByTestId("tooltip-state")).toHaveText("State: hidden");
   await expect(tooltip(page)).toHaveCount(0);
   // From the keyboard: HeroUI's hidden input is overlapped by its drawn control, so a pointer click on it is refused.
+  await toggle.scrollIntoViewIfNeeded();
   await toggle.focus();
+  await atRest(toggle);
   await page.keyboard.press("Space");
   await expect(tooltip(page)).toHaveText("Export the table as CSV");
   await expect(live.getByTestId("tooltip-state")).toHaveText("State: shown");
