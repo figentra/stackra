@@ -12,8 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (registry v3.1 row: entries `.`, `./contracts`, `./react`, `./testing`; depends on
-storage and config; ADR 0298 decisions 1 to 6; ADR 0127 settlement: category security)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/consent` (security, wave 3) for real: the consent store, decline by default, Global Privacy
 Control refuses (ADR 0298).
@@ -31,8 +30,20 @@ Control refuses (ADR 0298).
   `@stackra/validation` through `workspace:*`; `zod` through `catalog:`; `jsdom` and `@testing-library/*` (tests only)
   through `catalog:frontend`
 - **Deploy modes**: same in all
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/security/consent/README.md`, `packages/security/consent/AGENTS.md`; ADR 0120, 0127, 0256, 0294, 0298, 0305 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R2 (privacy behaviour; no stored server data)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry v3.1 row: entries `.`, `./contracts`, `./react`, `./testing`; depends on
+  storage and config; ADR 0298 decisions 1 to 6; ADR 0127 settlement: category security
 
 ## User Scenarios & Testing
 
@@ -97,19 +108,19 @@ A host overrides `ConsentConfig` (`categories`, `cookieName`, `expiryDays`, `pol
 - **FR-005**: A stored value is parsed with a zod schema at the trust boundary and never throws.
 - **FR-006**: Consent state is client-only: `useConsent` shows no decision state in a server render or hydration pass.
 
-## Acceptance criteria
+## Success Criteria
 
-- **AC-001** (template imports): `ConsentCategory`, `ConsentConfig` (with `categories` entries of `category`,
+- **SC-001** (template imports): `ConsentCategory`, `ConsentConfig` (with `categories` entries of `category`,
   `required`, `defaultGranted`, `descriptionKey`; `cookieName`, `expiryDays`, `policyVersion`, `regionDefaults`,
   `askOnFirstLaunch`), `ConsentRegime.Gdpr`, `ConsentStatus.Undecided`/`Granted`, `ConsentConfig$` with `.shape.<field>
 .unwrap().default(...)`, `CookieConsentStoreDriver` from `.`; `ConsentStore` from `./contracts`; `useConsent(category)`
   returning `isLoaded`, `status`, `grant`, `deny`, `reset` and `useConsent()` returning `isGranted`, `set` from
   `./react`; `fakeConsent()` returning an object with `isGranted` from `./testing`.
-- **AC-002** (registry contract): entries `.`, `./contracts`, `./react`, `./testing`; decline by default; GPC refuses;
+- **SC-002** (registry contract): entries `.`, `./contracts`, `./react`, `./testing`; decline by default; GPC refuses;
   depends on storage and config.
-- **AC-003**: every public symbol has a test beside it; the barrel tests pin each entry's exports; the category labels
+- **SC-003**: every public symbol has a test beside it; the barrel tests pin each entry's exports; the category labels
   exist in `assets/lang/en` and `assets/lang/ar`.
-- **AC-004**: format and lint pass on the member (tests, typecheck and build run in the separate testing workflow).
+- **SC-004**: format and lint pass on the member (tests, typecheck and build run in the separate testing workflow).
 
 ## Out of scope (named, not built)
 
@@ -118,3 +129,7 @@ A host overrides `ConsentConfig` (`categories`, `cookieName`, `expiryDays`, `pol
 - Syncing a decision across browser tabs.
 - A `ConsentProvider` component: the registry row's `./react` entry is `useConsent` only; the ledger comes from the
   container.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

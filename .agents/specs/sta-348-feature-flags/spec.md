@@ -12,11 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved. The registry v3.1 row gives the entries `.`, `./contracts`, `./react` and
-`./testing`, and the dependency on config. ADR 0307 decision 25 adds `scopes`, which default to Platform and Tenant.
-ADR 0213 decision 3 as amended by 0294 says a flag is a kind of its own, not a settings kind, with native and PostHog
-drivers. The template's mobile gen sample imports `PosthogFlagProviderDriver` from a `./native` entry, which the
-registry row does not list. That entry is not built, and the driver ships from `.` (see Open items).
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/feature-flags` (state, wave 2) for real: the `Flag({ expires, removalIssue, default,
 scopes })` kind, the `FlagProvider` port with its `config` and `posthog` drivers, the reader, the configuration with
@@ -37,8 +33,23 @@ its shipped schema, `useFlag` and `fakeFlags`.
   optional peer
 - **Deploy modes**: the `config` driver makes no outbound call (safe for air-gapped installs); `posthog` calls the
   configured host
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/state/feature-flags/README.md`, `packages/state/feature-flags/AGENTS.md`; ADR 0071, 0120, 0127, 0213, 0269, 0294, 0305, 0307 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R2 (no flag changes a price or a right; a provider outage keeps the last values or the defaults)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- The registry v3.1 row gives the entries `.`, `./contracts`, `./react` and
+  `./testing`, and the dependency on config. ADR 0307 decision 25 adds `scopes`, which default to Platform and Tenant.
+  ADR 0213 decision 3 as amended by 0294 says a flag is a kind of its own, not a settings kind, with native and PostHog
+  drivers. The template's mobile gen sample imports `PosthogFlagProviderDriver` from a `./native` entry, which the
+  registry row does not list. That entry is not built, and the driver ships from `.` (see Open items).
 
 ## User Scenarios & Testing
 
@@ -94,11 +105,11 @@ removalIssue: null, scopes: ["platform", "tenant"] }`.
 ## Requirements
 
 - **FR-001**: The member files and the entries `.`, `./contracts`, `./react` and `./testing`, and no others.
-- **FR-002 (template contract)**: every symbol the template imports exists with the shape it uses. From `.`: `Flag`,
+- **FR-002**: (template contract) every symbol the template imports exists with the shape it uses. From `.`: `Flag`,
   `FeatureFlagsConfig`, `FlagTargeting`, `flagRefs`, and the gen samples' `ConfigFlagProviderDriver` and
   `PosthogFlagProviderDriver`. From `./contracts`: `FlagProvider`, typed so `DriverName<FlagProvider>` is
   `"config" | "posthog"`. From `./react`: `useFlag`. From `./testing`: `fakeFlags`.
-- **FR-003 (registry contract)**: `.` also exports `FeatureFlagsConfig$`, the shipped schema, and `FlagReader`.
+- **FR-003**: (registry contract) `.` also exports `FeatureFlagsConfig$`, the shipped schema, and `FlagReader`.
 - **FR-004**: `FeatureFlagsConfig` fields: `provider`, `values`, `targeting`, `refreshEvery` (the mobile override),
   `posthogKey` (fed by the template's env `featureFlagsPosthogKey`) and `posthogHost`.
 - **FR-005**: No identifier leaves the process for an anonymous caller.
@@ -116,3 +127,7 @@ removalIssue: null, scopes: ["platform", "tenant"] }`.
   (template conversion STA-344).
 - The template's `render(..., { flags })` option belongs to `@stackra/testing/react`, which is not built yet. It should
   bind the given `FlagsFake` in place of `FlagReader`.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

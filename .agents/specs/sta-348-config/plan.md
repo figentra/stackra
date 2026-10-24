@@ -26,7 +26,22 @@
   each held configuration through `buildConfig` and overrides the class and its root; `.withSecrets` also overrides
   `SecretStore` with a store over the map. Registered on load; `declare module "@stackra/container/testing"` types it.
 
-## Constitution check
+## Constitution Check
+
+| Law                                   | Result | Note                                                                                                                                                                              |
+| ------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Boundaries (tier direction, ADR 0003) | PASS   | `tier:lib` at `packages/foundation/config`; workspace imports: `@stackra/container`, `@stackra/contracts`, `@stackra/validation` (packages only); no app, service or `encore.dev` |
+| Secrets (ADR 0173)                    | PASS   | `@Secret` values are resolved blind through `SecretStore` and never serialised or logged                                                                                          |
+| Security                              | PASS   | a layer that sets a secret is refused; the package opens no connection                                                                                                            |
+| HTTP and events                       | N/A    | no action, endpoint or event                                                                                                                                                      |
+| Tenancy                               | N/A    | no tenant data                                                                                                                                                                    |
+| Delegation                            | PASS   | `package-builder` (route `package`) writes the code and `test-engineer` (route `tests`) the tests; a separate reviewer                                                            |
+| Not built yet (ADR 0227)              | PASS   | no rejected or deferred technology is introduced                                                                                                                                  |
+| Test placement (ADR 0022)             | PASS   | every test sits in `src/**/__tests__/` beside its subject                                                                                                                         |
+| Versions and catalogs                 | PASS   | `catalog:` and `workspace:*` only                                                                                                                                                 |
+| Deploy modes (ADR 0076)               | PASS   | a build-time library, identical in SaaS, on-prem and air-gapped                                                                                                                   |
+| Licence tier (ADR 0077)               | PASS   | MIT with `LICENSE`                                                                                                                                                                |
+| Docs and ADRs                         | PASS   | README, AGENTS, file contracts and TSDoc; the cited ADRs stand and no new ADR is needed                                                                                           |
 
 - Boundaries: runtime imports `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `zod` only; React is
   an optional peer; `./react` and `./testing` import `.` through aliases; no app, service or `encore.dev`.
@@ -35,3 +50,21 @@
   names (the React `ContainerProvider` is container's).
 - Secrets: values never logged, serialised or in errors (ADR 0173); tests assert it with a canary.
 - No parameter properties and no `#private` fields.
+
+## Deploy modes
+
+| Mode       | Behaviour                                                        |
+| ---------- | ---------------------------------------------------------------- |
+| SaaS       | a build-time library, bundled into the consumer's app or service |
+| On-prem    | identical: the same build, no SaaS-only code path                |
+| Air-gapped | identical: needs no network at build or run                      |
+
+## Correctness properties
+
+- **P-001**: `package.json` `exports` lists exactly `.`, `./react` and `./testing`, and there is no `./env` entry — Validates: FR-001
+- **P-002**: `.` exports `Config`, `Secret`, `env`, `hydrateEnv`, `buildConfig`, `configKey`, `SecretStore`, `ConfigInvalidError` and the types `BuildFacts` and `PublicPart` — Validates: FR-002
+- **P-003**: `useConfig` is exported from `./react`, and importing `./testing` adds `.withConfig` and `.withSecrets` to `TestingModuleBuilder` — Validates: FR-003
+- **P-004**: `configKey(X)` returns the same derived key for a `Config` class on every call, and the class itself is the injection token — Validates: FR-004
+- **P-005**: `buildConfig` merges the layers in the order of ADR 0294 decision 19, validates with the class's generated `X$` schema and returns a frozen object — Validates: FR-005
+- **P-006**: a `@Secret` value is resolved through `SecretStore` and never appears in the serialised config, and a layer that sets one is refused — Validates: FR-006
+- **P-007**: `package.json` lists the runtime dependencies `@stackra/contracts`, `@stackra/container`, `@stackra/validation` and `zod` and no others — Validates: FR-007

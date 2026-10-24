@@ -12,8 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (owner, 2026-10-24: gen ships the class-component pass and this package wires it;
-the `.` entry only)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/vite-plugin` (developer, wave 3) for real: the `stackra()` preset that serves `#stackra/*`,
 wires gen's class-component pass, and builds a member's Vite config from `stackra.config.ts` and gen's options.
@@ -32,8 +31,20 @@ wires gen's class-component pass, and builds a member's Vite config from `stackr
 - **New dependencies**: `vite-plugin-pwa`, `@cloudflare/vite-plugin`, `@react-router/dev` and `@sentry/vite-plugin`
   need catalog entries (owner review); `vite`, `@vitejs/plugin-react` and `@tailwindcss/vite` are in `catalog:frontend`
 - **Deploy modes**: same in all
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/developer/vite-plugin/README.md`, `packages/developer/vite-plugin/AGENTS.md`; ADR 0120, 0127, 0261, 0295, 0305 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R2 (new public contract; no auth, tenancy, secrets or HTTP)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Owner, 2026-10-24: gen ships the class-component pass and this package wires it;
+  the `.` entry only
 
 ## User Scenarios & Testing
 
@@ -104,3 +115,7 @@ prerendered documents are written from the entry's `render`; source maps go to S
   entry must follow the contract in the README (STA-339).
 - The React Compiler is not enabled: `@vitejs/plugin-react` 6 needs `oxc-transform-react` for it, which is not in a
   catalog.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

@@ -19,7 +19,22 @@
 - `DEVICE_HUB_PATHS` names the routes by the endpoint convention: `POST /devices/report`, `GET /device-commands`,
   `PUT /device-commands/:deviceCommandId/acknowledge`.
 
-## Constitution check
+## Constitution Check
+
+| Law                                   | Result | Note                                                                                                                                                                                                                                        |
+| ------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Boundaries (tier direction, ADR 0003) | PASS   | `tier:lib` at `packages/runtime/devices`; workspace imports: `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/errors`, `@stackra/transport`, `@stackra/validation` (packages only); no app, service or `encore.dev` |
+| Secrets (ADR 0173)                    | N/A    | no secret is read, stored or logged                                                                                                                                                                                                         |
+| Security                              | PASS   | devices authenticate as principals through `DeviceCredential`; no route or body names the device (ADR 0235 decision 1)                                                                                                                      |
+| HTTP and events                       | N/A    | no action or event; the HTTP drivers call the device hub through `@stackra/transport`                                                                                                                                                       |
+| Tenancy                               | N/A    | no tenant data                                                                                                                                                                                                                              |
+| Delegation                            | PASS   | `package-builder` (route `package`) writes the code and `test-engineer` (route `tests`) the tests; a separate reviewer                                                                                                                      |
+| Not built yet (ADR 0227)              | PASS   | no rejected or deferred technology is introduced                                                                                                                                                                                            |
+| Test placement (ADR 0022)             | PASS   | every test sits in `src/**/__tests__/` beside its subject                                                                                                                                                                                   |
+| Versions and catalogs                 | PASS   | `catalog:` and `workspace:*` only                                                                                                                                                                                                           |
+| Deploy modes (ADR 0076)               | PASS   | a build-time library, identical in SaaS, on-prem and air-gapped                                                                                                                                                                             |
+| Licence tier (ADR 0077)               | PASS   | MIT with `LICENSE`                                                                                                                                                                                                                          |
+| Docs and ADRs                         | PASS   | README, AGENTS, file contracts and TSDoc; the cited ADRs stand and no new ADR is needed                                                                                                                                                     |
 
 - Boundaries: imports `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`,
   `@stackra/errors`, `@stackra/transport` and `zod` only; no app, service or `encore.dev`.
@@ -27,3 +42,20 @@
 - Naming: v3.1; files `<name>.<kind>.ts`; drivers `<Name>Driver`, errors `<Name>Error`; no tenant word.
 - Secrets: none; the token is read per call and never stored or logged.
 - No parameter properties and no `#private` fields (apps typecheck the source under `erasableSyntaxOnly`).
+
+## Deploy modes
+
+| Mode       | Behaviour                                                                                                 |
+| ---------- | --------------------------------------------------------------------------------------------------------- |
+| SaaS       | a build-time library, bundled into the consumer's app or service                                          |
+| On-prem    | identical: the same build, no SaaS-only code path                                                         |
+| Air-gapped | identical: the package makes no call itself; the hub URL and the transport are configured by the consumer |
+
+## Correctness properties
+
+- **P-001**: `package.json` `exports` lists exactly `.` and `./contracts`, and `src/contracts/` imports no other entry — Validates: FR-001
+- **P-002**: `./contracts` exports `DeviceTelemetry`, `DeviceCommands`, `DeviceCredential`, `CommandStatus`, `TelemetryReading` and `DeviceCommand`, and `.` exports none of them — Validates: FR-002
+- **P-003**: `.` exports `DevicesConfig`, `DevicesConfig$`, `DevicesOptions`, `HttpDeviceTelemetryDriver`, `HttpDeviceCommandsDriver`, `DeviceUnauthorizedError`, `DeviceHubRefusedError` and `DEVICE_HUB_PATHS` — Validates: FR-003
+- **P-004**: `HttpDeviceTelemetryDriver` and `HttpDeviceCommandsDriver` send every request through a `@stackra/transport` transport (`createTransport` with `idempotencyKey`, `bearerToken`, `retry` and `timeout`) to a path in `DEVICE_HUB_PATHS` — Validates: FR-004
+- **P-005**: no path in `DEVICE_HUB_PATHS` and no request body names the device, and the bearer token comes from `DeviceCredential` — Validates: FR-005
+- **P-006**: the pending-commands response body is parsed with a zod schema before any command is returned — Validates: FR-006

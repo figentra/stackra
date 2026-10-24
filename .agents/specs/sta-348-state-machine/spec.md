@@ -12,9 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (registry v3.1 row: entry `.` only, exports `StateMachine` and `Transition`;
-ADR 0161 with its 0294 note; ADR 0305 rule 5 (partner as type argument: `StateMachine<Order>({ field })`); ADR 0294
-decisions 6, 16 and 25; no XState, ADR 0227)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/state-machine` (data, wave 4) for real: a class that extends
 `StateMachine<Order>({ field: "status" })` governs one field of its model; each method decorated with
@@ -33,8 +31,21 @@ decisions 6, 16 and 25; no XState, ADR 0227)
 - **New dependencies**: none outside the workspace and catalogs (`zod` is already `catalog:`);
   `@stackra/{container,contracts,errors,events,validation}` through `workspace:*`
 - **Deploy modes**: same in all; no outbound call
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: ; ADR 0120, 0161, 0227, 0294, 0305 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R2 (every governed field's writes go through it)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry v3.1 row: entry `.` only, exports `StateMachine` and `Transition`;
+  ADR 0161 with its 0294 note; ADR 0305 rule 5 (partner as type argument: `StateMachine<Order>({ field })`); ADR 0294
+  decisions 6, 16 and 25; no XState, ADR 0227
 
 ## User Scenarios & Testing
 
@@ -104,3 +115,7 @@ record id), unless the machine says `history: false`.
 - Timed transitions (ADR 0161 d5, the scheduler) and tenant customisation (d6): no consumer yet.
 - The `state-field-write` lint and gen's state checks (STA-340); the Mermaid diagram (gen, from the manifest).
 - Permissions per transition: a transition is reached through an action, which carries the permission (0161 note).
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

@@ -24,7 +24,22 @@
 - A kind base is recognised by name only when declared in a `@stackra/*` package; a dependency's declaration file is
   read only for a kind (`X_base: ConfigClass<...>`), an inherited field or a constant.
 
-## Constitution check
+## Constitution Check
+
+| Law                                   | Result | Note                                                                                                                                                                  |
+| ------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Boundaries (tier direction, ADR 0003) | PASS   | `tier:lib` at `packages/developer/gen`; workspace imports: `@stackra/contracts`, `@stackra/errors`, `@stackra/money` (packages only); no app, service or `encore.dev` |
+| Secrets (ADR 0173)                    | N/A    | no secret is read, stored or logged                                                                                                                                   |
+| Security                              | N/A    | no auth, tenant data or outbound call                                                                                                                                 |
+| HTTP and events                       | N/A    | gen is the compiler: it declares no action, endpoint or event; it writes the adapters the HTTP rules require                                                          |
+| Tenancy                               | N/A    | no tenant data                                                                                                                                                        |
+| Delegation                            | PASS   | `package-builder` (route `package`) writes the code and `test-engineer` (route `tests`) the tests; a separate reviewer                                                |
+| Not built yet (ADR 0227)              | PASS   | no rejected or deferred technology is introduced                                                                                                                      |
+| Test placement (ADR 0022)             | PASS   | every test sits in `src/**/__tests__/` beside its subject                                                                                                             |
+| Versions and catalogs                 | PASS   | `catalog:` and `workspace:*` only; the `typescript6` pin in `catalog:tooling` is added by the owner (T012)                                                            |
+| Deploy modes (ADR 0076)               | PASS   | a build-time library, identical in SaaS, on-prem and air-gapped                                                                                                       |
+| Licence tier (ADR 0077)               | PASS   | MIT with `LICENSE`                                                                                                                                                    |
+| Docs and ADRs                         | PASS   | README, AGENTS, file contracts and TSDoc; the cited ADRs stand and no new ADR is needed                                                                               |
 
 - Boundaries: runtime imports `@stackra/contracts`, `@stackra/errors`, `@stackra/money`, `@babel/core`, `typescript`
   (7) and `typescript6` only; no app, service or `encore.dev`. `@stackra/container`, `@stackra/config` and
@@ -34,3 +49,20 @@
 - Secrets: none; a config's schema never reaches a wire file.
 - Shortcut recorded: `readMemberFacts` reads the static `define*` call by pattern until a tool section needs the syntax
   tree (STA-339).
+
+## Deploy modes
+
+| Mode       | Behaviour                                                                           |
+| ---------- | ----------------------------------------------------------------------------------- |
+| SaaS       | a build-time library, bundled into the consumer's app or service                    |
+| On-prem    | identical: the same build, no SaaS-only code path                                   |
+| Air-gapped | identical: gen reads local source and committed manifests and makes no network call |
+
+## Correctness properties
+
+- **P-001**: `package.json` `exports` lists exactly `.`, `./node`, `./testing` and `./metro-transformer`, and every version in it is `catalog:` or `workspace:*` — Validates: FR-001
+- **P-002**: discovery reads only the member's own source in path order through one host seam, and takes a dependency's kinds and identities from its committed manifest, never from its `.d.ts` — Validates: FR-002
+- **P-003**: the manifest, `openapi.json`, the lock and the backward-compatibility comparison derive their identities by ADR 0294 decisions 20 to 22 and ADR 0305 rules 1, 28, 34 and 36, so one source gives one byte-identical output — Validates: FR-003
+- **P-004**: the shape compiler, wiring, member module and entries follow registry section 5 items 1 to 6 and gap G1, and one source and manifest give the same wiring and entries on every run — Validates: FR-004
+- **P-005**: `classComponents()` from `./node` applies the class-component pass of ADR 0305 rules 37 to 41 and no other transform — Validates: FR-005
+- **P-006**: `./testing` exports exactly the symbols the template imports from `@stackra/gen/testing` — Validates: FR-006

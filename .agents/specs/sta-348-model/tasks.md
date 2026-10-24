@@ -13,5 +13,5 @@
 - [x] T009 Stand-in barrel for `.` — covers: FR-002 — route: package — deps: T004, T005, T007, T008
 - [x] T010 Tests beside every subject and the barrel test — covers: SC-002 — route: tests — deps: T009
 - [x] T011 Changeset `.changeset/model-package.md` — covers: SC-001 — route: package — deps: T009
-- [ ] T012 Owner: add `@mikro-orm/core: 7.2.5` to the default catalog — covers: SC-003 — route: owner — deps: T002
+- [ ] T012 Owner: add `@mikro-orm/core: 7.2.5` to the default catalog — covers: SC-003 — route: dependencies — deps: T002
 - [ ] T013 `pnpm install` to link the member, then its tests, typecheck and build in the separate testing workflow — covers: SC-002, SC-003 — route: tests — deps: T010, T012

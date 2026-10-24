@@ -12,8 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (registry v3.1 row: entry `.` only, depends on config; ADR 0147 supersedes 0085:
-drivers are console, OTLP and Better Stack, no vendor SDK; the older STA-78 port spec is superseded by this one)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/logger` (foundation, wave 2) for real: `LoggingConfig` and `TelemetryConfig` with their
 shipped schemas, the driver of the contracts `Logger` port with channels, sampling and redaction, and the reporter
@@ -32,8 +31,20 @@ port with its console driver.
 - **New dependencies**: none new; `@stackra/contracts`, `@stackra/container`, `@stackra/validation`,
   `@stackra/config` through `workspace:*`; `zod` through `catalog:`
 - **Deploy modes**: same in all; the console reporter makes no outbound call (air-gapped safe)
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/foundation/logger/README.md`, `packages/foundation/logger/AGENTS.md`; ADR 0085, 0120, 0127, 0147, 0183, 0184, 0294 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R3 (the redaction step is the PII boundary of every log line)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry v3.1 row: entry `.` only, depends on config; ADR 0147 supersedes 0085:
+  drivers are console, OTLP and Better Stack, no vendor SDK; the older STA-78 port spec is superseded by this one
 
 ## User Scenarios & Testing
 
@@ -103,3 +114,7 @@ A service injects `Logger` and writes `info("orders.draft_priced", fields)`. `Ch
   configuration; the `LogReporter` port is their seam.
 - Automatic request-scope context (ADR 0147 decision 1): it needs the action pipeline's request context (W3); until
   then callers pass ids in `fields`.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

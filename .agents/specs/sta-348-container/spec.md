@@ -12,9 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (owner, 2026-10-24: `Port` and `Enum` live in `@stackra/contracts`;
-`UnresolvedPortError` is a plain `Error`; `Module` and `Service` live here; the kind helper is `createKind`; the ADR
-0227 note allowing build-time wiring landed in #130)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/container` (foundation, wave 1b) for real: classes as the only tokens, the container that
 boots gen-written wirings with no reflect-metadata, the kind bases `Module`, `Service`, `Explorer`, `Driver(Port)`,
@@ -34,8 +32,21 @@ the helpers every kind package builds on (`createKind`, `registerKind`, `kindOf`
 - **New dependencies**: none new; `@stackra/contracts` through `workspace:*`; React as an optional peer from
   `catalog:frontend`
 - **Deploy modes**: same in all; isomorphic core, `./testing` node only
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/foundation/container/README.md`, `packages/foundation/container/AGENTS.md`; ADR 0120, 0127, 0227, 0263, 0269, 0294, 0305 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R3 (every member boots through it: a wrong resolution or a missed driver is a boot or runtime defect)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Owner, 2026-10-24: `Port` and `Enum` live in `@stackra/contracts`;
+  `UnresolvedPortError` is a plain `Error`; `Module` and `Service` live here; the kind helper is `createKind`; the ADR
+  0227 note allowing build-time wiring landed in #130
 
 ## User Scenarios & Testing
 
@@ -117,3 +128,7 @@ by plugin.
   shape the template uses (the loyalty-kit and access-log wirings satisfy `Wiring`).
 - **SC-002**: A test beside every public symbol, plus the barrel tests, passes in the testing workflow.
 - **SC-003**: The kind-base and partner spike cases are ported as tests (type tests for the negative partner cases).
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

@@ -12,7 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (registry row; the template is the consumer contract)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/i18n` (foundation, wave 2) for real: the `Locale`, `NumberingSystem` and
 `LocaleUrlStrategy` enums, `I18nConfig` with its shipped `I18nConfig$`, the ICU engine over namespaced catalogues with
@@ -33,8 +33,19 @@ provider and hooks.
   package used it), referenced as `catalog:`; the owner adds the catalog pin. Others come from existing catalogs:
   `zod`, React and, for tests, `@testing-library/react` and `jsdom`.
 - **Deploy modes**: same in all; isomorphic, `./react` runs on web and native
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/foundation/i18n/README.md`, `packages/foundation/i18n/AGENTS.md`; ADR 0080, 0120, 0127, 0192, 0268, 0294, 0297, 0305 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R2 (user-visible text and prices; a wrong plural or digit is visible, not a data defect)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry row; the template is the consumer contract
 
 ## User Scenarios & Testing
 
@@ -134,3 +145,7 @@ Class components declare `translation = useTranslation()`, `money = useMoney()`,
 - A runtime that stores the locale choice (native, the console) passes `setLocale` to `I18nProvider`; persistence and
   catalogue loading are the runtime's (`@stackra/app`, W5).
 - Endonyms are case data rather than `Intl.DisplayNames`, so they do not depend on a native runtime's Intl data.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

@@ -12,9 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (registry v3.1 row: entries `.`, `./react`, `./native`; `.` exports `ColorScheme`,
-`ThemingConfig`, `ThemingConfig$`, `./react` exports `useColorScheme`; Q6: one `ColorScheme`, declared in
-`@stackra/ui/contracts` and used by theming; ADR 0127 2026-10-24 note: category `state`, allowed entries)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/theming` (state, wave 3) for real: colour mode and the theme configuration over
 `@stackra/tokens` themes.
@@ -32,8 +30,21 @@
   `@stackra/validation`, `@stackra/storage`, `@stackra/tokens`, `@stackra/ui`, `@stackra/assets` through
   `workspace:*`; `zod` through `catalog:`; React and React Native as optional peers
 - **Deploy modes**: same in all
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/state/theming/README.md`, `packages/state/theming/AGENTS.md`; ADR 0060, 0077, 0079, 0120, 0127, 0256, 0294, 0302 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R1 (client preference only)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry v3.1 row: entries `.`, `./react`, `./native`; `.` exports `ColorScheme`,
+  `ThemingConfig`, `ThemingConfig$`, `./react` exports `useColorScheme`; Q6: one `ColorScheme`, declared in
+  `@stackra/ui/contracts` and used by theming; ADR 0127 2026-10-24 note: category `state`, allowed entries
 
 ## User Scenarios & Testing
 
@@ -91,16 +102,16 @@ A toggle or settings page calls `useColorScheme()` and `setScheme(scheme)`; the 
   scheme.
 - **FR-006**: The package ships `theming::enums.color_scheme.*` labels in English and Arabic.
 
-## Acceptance criteria
+## Success Criteria
 
-- **AC-001** (template imports): `ColorScheme` (`.Light`, `.Dark`, `.System`, `Enum.values`), `ThemingConfig` (as
+- **SC-001** (template imports): `ColorScheme` (`.Light`, `.Dark`, `.System`, `Enum.values`), `ThemingConfig` (as
   `BaseThemingConfig` with `theme`, `logo`, `schemes`, `defaultScheme`, `themeColor`, `splash`, `selfHostedFonts`,
   `tenantOverride`; `useConfig`; constructor injection), `ThemingConfig$` (`.shape.<field>.unwrap().default(...)`,
   `.shape.splash.parse(undefined)`) from `.`; `useColorScheme` (`scheme`, `resolved`, `setScheme`) from `./react`.
-- **AC-002** (registry contract): colour mode and theme provider over `@stackra/tokens` themes; depends on tokens and
+- **SC-002** (registry contract): colour mode and theme provider over `@stackra/tokens` themes; depends on tokens and
   storage.
-- **AC-003**: every public symbol has a test beside it; the barrel tests pin each entry's exports.
-- **AC-004**: format and lint pass on the member (tests, typecheck and build run in the separate testing workflow).
+- **SC-003**: every public symbol has a test beside it; the barrel tests pin each entry's exports.
+- **SC-004**: format and lint pass on the member (tests, typecheck and build run in the separate testing workflow).
 
 ## Out of scope (named, not built)
 
@@ -112,3 +123,7 @@ A toggle or settings page calls `useColorScheme()` and `setScheme(scheme)`; the 
   does not have, and `useSignal` takes no server snapshot; the service uses `Storage` directly.
 - A cookie so the server knows the device's choice before hydration.
 - Per-tenant brand at runtime (Pro, ADR 0077); `tenantOverride` only gates a site's colours.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

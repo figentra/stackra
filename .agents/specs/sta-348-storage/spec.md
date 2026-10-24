@@ -12,8 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (registry A3: `Storage` is exported from `./contracts` only; the owner's 2026-10-24
-answers: extra entries fold into the standard six plus the runtime targets, so browser-only drivers use `./browser`)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/storage` (data, wave 2) for real: one client storage service with per-platform drivers, a
 time-to-live and typed values (ADR 0256); no ORM on a client. Export `Storage` from one entry only.
@@ -31,9 +30,21 @@ time-to-live and typed values (ADR 0256); no ORM on a client. Export `Storage` f
 - **New dependencies**: none new; `@stackra/contracts`, `@stackra/container`, `@stackra/validation` through
   `workspace:*`; React as an optional peer; zod (`catalog:`) for tests
 - **Deploy modes**: same in all; isomorphic core, `./browser` browser only, `./testing` node only
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/data/storage/README.md`, `packages/data/storage/AGENTS.md`; ADR 0120, 0127, 0256, 0266, 0269, 0294 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R2 (every client persists preferences, stores and the offline queue through it; a lost or misread
   value is user-visible)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry A3: `Storage` is exported from `./contracts` only; the owner's 2026-10-24
+  answers: extra entries fold into the standard six plus the runtime targets, so browser-only drivers use `./browser`
 
 ## User Scenarios & Testing
 
@@ -125,3 +136,7 @@ binds the `memory` candidate.
 - The `./sql` read-model entry of ADR 0256 decision 5: Phase 2, and not in the 0127 allowed entry set.
 - Gen need: each generated member file calls `registerStorageKeys([[Class, { key, area? }]])` for its stored shapes and
   persisted stores, beside `registerSchemas` (gap G1).
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

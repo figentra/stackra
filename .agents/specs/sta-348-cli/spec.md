@@ -12,9 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (ADR 0083 names `@stackra/cli` the `stackra` binary; ADR 0282 decision 3 lists
-its operations and decision 4 keeps internal ones out; ADR 0127 2026-10-24 note places `cli` in `developer` and folds
-`console` into it; the build plan ships the CLI thin first and adds `stackra db` with `@stackra/database`)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/cli` (developer, wave 3) for real: the `stackra` binary on top of `@stackra/gen`, thin
 first (gen, the member tool commands, ls), plus the `mcp` and `agents` commands `@stackra/mcp` was built for.
@@ -31,8 +29,11 @@ first (gen, the member tool commands, ls), plus the `mcp` and `agents` commands 
 - **New dependencies**: none outside the catalogs (`yaml` from the default catalog; workspace `@stackra/gen`,
   `@stackra/mcp`, `@stackra/contracts`). Argument parsing is `node:util` `parseArgs`; no CLI framework dependency
 - **Deploy modes**: same in all; developer tooling only
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/developer/cli/README.md`, `packages/developer/cli/AGENTS.md`; ADR 0083, 0120, 0127, 0282, 0294, 0295 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R2 (new public binary; starts developer tools, writes generated files through gen)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
 
 ## Consumer contract
 
@@ -52,6 +53,16 @@ The template imports no symbol from `@stackra/cli`. Its contract is the command 
 
 Registry row: `gen`, `dev`, `build`, `typecheck`, `test`, `lint`, `db`, `infra`, `ls`; absorbs `console`; depends on
 `gen`; ships thin, then grows.
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- ADR 0083 names `@stackra/cli` the `stackra` binary; ADR 0282 decision 3 lists
+  its operations and decision 4 keeps internal ones out; ADR 0127 2026-10-24 note places `cli` in `developer` and folds
+  `console` into it; the build plan ships the CLI thin first and adds `stackra db` with `@stackra/database`
 
 ## User Scenarios & Testing
 
@@ -122,3 +133,7 @@ Registry row: `gen`, `dev`, `build`, `typecheck`, `test`, `lint`, `db`, `infra`,
 - **SC-001**: Spec, package files and changeset exist; the package passes format and lint.
 - **SC-002**: Every command and public function has a test beside it.
 - **SC-003**: The tests, typecheck and build pass in the separate testing workflow.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

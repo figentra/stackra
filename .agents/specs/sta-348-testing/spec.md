@@ -36,6 +36,18 @@ consumer template's imports from `@stackra/testing`.
 - **New dependencies**: none new; `vitest` (already catalogued in `quality`) becomes a peer dependency
 - **Deploy modes**: none; a test kit, never deployed
 - **Licence tier**: MIT, published to npmjs with provenance (ADR 0177)
+- **Docs to update**: `packages/developer/testing/README.md`, `packages/developer/testing/AGENTS.md`; ADR 0022, 0127, 0177, 0269, 0294, 0305 are cited and amended only by a note if a decision here changes
+- **Lane**: lite (recorded reason: one small test-only kit in one package, set by ADR 0269)
+- **Change risk**: R2 (a new package; test-only code, no data or credentials)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- ADR 0269 sets the entries, what `.` holds, helper placement and mock hoisting; ADR 0127 with its 2026-10-24 note places the package in `developer` with the allowed entries; the consumer template's imports from `@stackra/testing` are the shape contract.
 
 ## User Scenarios
 
@@ -93,3 +105,7 @@ with `.build(overrides)`, `freezeClock(isoString)` in a test or hook, and `freez
   for the file and the returned function ends it.
 - **EC-02**: a fake is awaited, serialised or printed: `then`, `toJSON` and other probed names are never spied.
 - **EC-03**: an overridden fixture field whose default is a generator: the generator is not called.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

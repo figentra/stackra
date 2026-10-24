@@ -12,9 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (registry v3.1 row: entries `.` and `./contracts`, depends on config; conflict A3
-resolved as in `@stackra/errors`: the port `Cache` is exported from `./contracts` only; ADR 0305 rules 31 to 33,
-ADR 0150 as amended by 0297)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/cache` (runtime, wave 2) for real: the `Cache` port, `CacheKey.of`, keys scoped per call
 namespace, single-flight loads, a configuration, and the memory driver.
@@ -33,8 +31,21 @@ namespace, single-flight loads, a configuration, and the memory driver.
 - **New dependencies**: none new; `@stackra/contracts`, `@stackra/container`, `@stackra/validation`,
   `@stackra/config` through `workspace:*`; `zod` through `catalog:`
 - **Deploy modes**: same in all; the memory driver makes no outbound call (air-gapped safe)
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/runtime/cache/README.md`, `packages/runtime/cache/AGENTS.md`; ADR 0120, 0150, 0294, 0297, 0305 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R3 (the key scoping is the isolation boundary between namespaces)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry v3.1 row: entries `.` and `./contracts`, depends on config; conflict A3
+  resolved as in `@stackra/errors`: the port `Cache` is exported from `./contracts` only; ADR 0305 rules 31 to 33,
+  ADR 0150 as amended by 0297
 
 ## User Scenarios & Testing
 
@@ -108,3 +119,7 @@ later calls within ten minutes return the stored value; concurrent first calls s
 - `CacheScope` and the query `cache:` option runtime: the option belongs to `Query({...})` in `@stackra/actions` (not
   built), and `CacheScope.Tenant` (ADR 0305 rule 31) conflicts with the R-59 tenant-vocabulary rule; owner call.
 - Tags and stale-while-revalidate (ADR 0150 decision 4): no template caller; prefix forget covers the template.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

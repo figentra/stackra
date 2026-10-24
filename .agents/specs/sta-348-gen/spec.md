@@ -12,9 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (registry v3.1 gen row and section 5; ADR 0127 2026-10-24 note: `ir` and `source`
-fold into gen, the allowed entries include the `./metro-transformer` tool hook; A14: gen ships the class-component
-pass and `@stackra/vite-plugin` wires it, so there is no `./vite` entry and `classComponents()` lives in `./node`)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/gen` (developer, wave 2) for real: discovery on the TypeScript 7 API with a TypeScript 6
 fallback and no ts-morph; derived identities and the committed `stackra.manifest.json` and `openapi.json` with
@@ -39,8 +37,21 @@ packages; migration and entity emit waits for the data wave.
   `typescript6: npm:typescript@6.0.3`; everything else is already catalogued (`typescript` 7.0.2 and `@babel/core`
   8.0.7 in `catalog:build`) or `workspace:*`
 - **Deploy modes**: build-time tooling only; nothing runs in a deployed member
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/developer/gen/README.md`, `packages/developer/gen/AGENTS.md`; ADR 0120, 0127, 0227, 0294, 0295, 0305 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R3 (every member's generated wiring, schemas and locked identities come from here)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry v3.1 gen row and section 5; ADR 0127 2026-10-24 note: `ir` and `source`
+  fold into gen, the allowed entries include the `./metro-transformer` tool hook; A14: gen ships the class-component
+  pass and `@stackra/vite-plugin` wires it, so there is no `./vite` entry and `classComponents()` lives in `./node`
 
 ## User Scenarios & Testing
 
@@ -145,3 +156,7 @@ Clients, routes, navigation, resources and panels, flags, settings, permissions 
 intents, capabilities, assets, env, i18n keys, `EntitySchema` and migrations, the Encore app, tool configs, icon-name
 validation, hooks lint mapped back to the class line, the generated function-type declaration of a class component,
 and the snapshot-read lint (registry section 5, "Targets that land with their packages").
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

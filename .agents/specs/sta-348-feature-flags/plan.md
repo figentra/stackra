@@ -28,7 +28,22 @@
   far. `set(ref, value)` publishes synchronously. `fakeFlags(configure)` builds a fake, passes it to `configure` and
   returns it.
 
-## Constitution check
+## Constitution Check
+
+| Law                                   | Result | Note                                                                                                                                                                                                   |
+| ------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Boundaries (tier direction, ADR 0003) | PASS   | `tier:lib` at `packages/state/feature-flags`; workspace imports: `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/validation` (packages only); no app, service or `encore.dev` |
+| Secrets (ADR 0173)                    | PASS   | `posthogKey` reaches the package through the config class and never from code                                                                                                                          |
+| Security                              | N/A    | no auth, tenant data or outbound call                                                                                                                                                                  |
+| HTTP and events                       | N/A    | no action, endpoint or event                                                                                                                                                                           |
+| Tenancy                               | N/A    | no tenant data                                                                                                                                                                                         |
+| Delegation                            | PASS   | `package-builder` (route `package`) writes the code and `test-engineer` (route `tests`) the tests; a separate reviewer                                                                                 |
+| Not built yet (ADR 0227)              | PASS   | no rejected or deferred technology is introduced                                                                                                                                                       |
+| Test placement (ADR 0022)             | PASS   | every test sits in `src/**/__tests__/` beside its subject                                                                                                                                              |
+| Versions and catalogs                 | PASS   | `catalog:` and `workspace:*` only                                                                                                                                                                      |
+| Deploy modes (ADR 0076)               | PASS   | a build-time library, identical in SaaS, on-prem and air-gapped                                                                                                                                        |
+| Licence tier (ADR 0077)               | PASS   | MIT with `LICENSE`                                                                                                                                                                                     |
+| Docs and ADRs                         | PASS   | README, AGENTS, file contracts and TSDoc; the cited ADRs stand and no new ADR is needed                                                                                                                |
 
 - Boundaries: runtime imports are `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@stackra/config`,
   `zod` and `react` (peer) only. No app, service, `encore.dev` or vendor SDK. The `./testing` entry imports `.` and
@@ -38,3 +53,19 @@
   the kind is called only.
 - Secrets: none.
 - No parameter properties and no `#private` fields (erasable syntax).
+
+## Deploy modes
+
+| Mode       | Behaviour                                                                                                                                                      |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SaaS       | a build-time library, bundled into the consumer's app or service                                                                                               |
+| On-prem    | identical: the same build, no SaaS-only code path                                                                                                              |
+| Air-gapped | identical: the config provider needs no network; the PostHog driver is opt-in and configured by the consumer, so the package makes no call unless it is chosen |
+
+## Correctness properties
+
+- **P-001**: `package.json` `exports` lists exactly `.`, `./contracts`, `./react` and `./testing` — Validates: FR-001
+- **P-002**: every template import resolves: `.` exports `Flag`, `FeatureFlagsConfig`, `FlagTargeting`, `flagRefs`, `ConfigFlagProviderDriver` and `PosthogFlagProviderDriver`, `./contracts` exports `FlagProvider` with `DriverName<FlagProvider>` equal to `"config" | "posthog"`, `./react` exports `useFlag`, and `./testing` exports `fakeFlags` — Validates: FR-002
+- **P-003**: `.` also exports `FeatureFlagsConfig$` (the shipped schema) and `FlagReader` — Validates: FR-003
+- **P-004**: `FeatureFlagsConfig` has the fields `provider`, `values`, `targeting`, `refreshEvery`, `posthogKey` and `posthogHost`, and `posthogKey` is fed by the template env's `featureFlagsPosthogKey` — Validates: FR-004
+- **P-005**: a flag read for an anonymous caller sends no identifier out of the process — Validates: FR-005

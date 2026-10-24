@@ -12,9 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (registry v3.1 row: entry `.`, depends on state, no authored template import;
-ADR 0084 coordinator row: leader election and locks on `@stackra/state`; ADR 0079 decision 6; ADR 0103: client side
-only, no code shared with `@stackra/locking`)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/coordinator` (state, wave 3) for real: tab leader election through Web Locks, with a fallback.
 
@@ -30,8 +28,21 @@ only, no code shared with `@stackra/locking`)
 - **New dependencies**: none new; `@stackra/contracts`, `@stackra/state` through `workspace:*`; React (`catalog:frontend`)
   as a peer, because `signal` is exported from `@stackra/state/react`
 - **Deploy modes**: same in all; no outbound call (air-gapped safe)
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/state/coordinator/README.md`, `packages/state/coordinator/AGENTS.md`; ADR 0079, 0084, 0103, 0120, 0127, 0294 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R2 (client coordination; a double leader on the fallback is tolerated by idempotent work)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry v3.1 row: entry `.`, depends on state, no authored template import;
+  ADR 0084 coordinator row: leader election and locks on `@stackra/state`; ADR 0079 decision 6; ADR 0103: client side
+  only, no code shared with `@stackra/locking`
 
 ## User Scenarios & Testing
 
@@ -101,3 +112,7 @@ in-memory queue does.
   `./browser` entry. When query lands, each is a thin `Driver(QueueLeader)` over `electLeader`; where they live is an
   owner call (registry row versus gen sample).
 - A `pagehide` hook inside the package: a bfcache restore would leave a resigned election behind; the caller resigns.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

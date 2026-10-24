@@ -12,9 +12,7 @@
 
 **Linear project**: Developer tooling
 
-**Clarifications status**: resolved (registry row: entries tbd, no dependencies, template imports none; ADR 0282
-decisions 2, 6, 7 and open detail 1; ADR 0286 decisions 6 and 15; owner 2026-10-24: build now, tests run in a later
-workflow)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/skills` (developer, registry wave 8, built in the wave-2 lane) for real: every Stackra
 skill, rule, sub-agent, command and hook written once in one neutral format (Markdown with frontmatter), which
@@ -31,8 +29,21 @@ skill, rule, sub-agent, command and hook written once in one neutral format (Mar
 - **ADR needed**: no (ADR 0282 decides the package; ADR 0127 2026-10-24 note places it in developer)
 - **New dependencies**: none; `@stackra/contracts` (`workspace:*`), `yaml` and `zod` from the default catalog
 - **Deploy modes**: not deployed; a published library read by the CLI and the renderers
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/developer/skills/README.md`, `packages/developer/skills/AGENTS.md`; ADR 0120, 0127, 0282, 0286, 0294 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R1 (developer tooling; no runtime path, no auth, tenancy, secrets or HTTP)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry row: entries tbd, no dependencies, template imports none; ADR 0282
+  decisions 2, 6, 7 and open detail 1; ADR 0286 decisions 6 and 15; owner 2026-10-24: build now, tests run in a later
+  workflow
 
 ## User Scenarios & Testing
 
@@ -105,3 +116,7 @@ identities, merge gate, secrets inbox, delegation, spend) fails the loader test.
   the spec gate; it moves in once STA-298 settles the SDLC.
 - No sub-agent, command or hook document ships yet: the repository's sub-agents are Figentra-internal or reviewer
   checklists (layer 2), and the guard hooks are scripts that `@stackra/cli` will carry.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

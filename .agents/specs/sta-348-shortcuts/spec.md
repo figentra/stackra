@@ -12,11 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved. The registry v3.1 row gives the entries `.`, `./react` and `./testing`, and the
-template imports below. ADR 0294 decisions 16, 23 and the package-name row rename `@stackra/kbd` to
-`@stackra/shortcuts` and make palette and key entries Shortcuts. The owner's final review H adds chord sequences with
-a 1.5 s timeout and gen conflict checks; R-66 makes TanStack Hotkeys the web and desktop driver, with display and
-conflict checks ours. The row names `state` as a dependency; nothing here needs it (see Open items).
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/shortcuts` (experience, wave 3) for real: the `Shortcut({ keys })` kind plus a conflict
 detector, the palette list, the key hint, the keyboard bindings and `runShortcut`.
@@ -35,8 +31,23 @@ detector, the palette list, the key hint, the keyboard bindings and `runShortcut
   catalog entry is the owner's edit). `@stackra/contracts`, `@stackra/container` and `@stackra/icons` through
   `workspace:*`; React as an optional peer
 - **Deploy modes**: client only; no network
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/experience/shortcuts/README.md`, `packages/experience/shortcuts/AGENTS.md`; ADR 0120, 0127, 0245, 0269, 0294, 0305 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R1 (input handling only)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- The registry v3.1 row gives the entries `.`, `./react` and `./testing`, and the
+  template imports below. ADR 0294 decisions 16, 23 and the package-name row rename `@stackra/kbd` to
+  `@stackra/shortcuts` and make palette and key entries Shortcuts. The owner's final review H adds chord sequences with
+  a 1.5 s timeout and gen conflict checks; R-66 makes TanStack Hotkeys the web and desktop driver, with display and
+  conflict checks ours. The row names `state` as a dependency; nothing here needs it (see Open items).
 
 ## User Scenarios & Testing
 
@@ -92,12 +103,12 @@ dependencies in the constructor, or omits `keys` for a palette-only entry.
 ## Requirements
 
 - **FR-001**: The member files and the entries `.`, `./react` and `./testing`, and no others.
-- **FR-002 (template contract)**: from `.`: `Shortcut` (called with `{ keys?, group }`, subclasses with constructor
+- **FR-002**: (template contract) from `.`: `Shortcut` (called with `{ keys?, group }`, subclasses with constructor
   dependencies and `run()` or `run(ctx)` without `override`) and the `ShortcutContext` type; from `./react`:
   `ShortcutItem` (fields `key`, `label`, `group`, `keys`, `icon` as `IconName`, `intents`), `ShortcutKeys` (`keys` or
   `shortcut`, `className`), `useRunShortcut`, `useShortcut` and `useShortcuts`; from `./testing`: `runShortcut(Class,
 input?)` resolving to the context members plus the parts' `stores`, `router`, `navigations`.
-- **FR-003 (registry contract)**: the conflict detector (`findShortcutConflicts`) and chord sequences with a 1.5 s
+- **FR-003**: (registry contract) the conflict detector (`findShortcutConflicts`) and chord sequences with a 1.5 s
   timeout; TanStack Hotkeys never leaves `./react`.
 - **FR-004**: `ShortcutContext` and `ShortcutRun` are open for declaration merging; values come from
   `contributeShortcutContext` and `registerShortcutTestingPart`, so this package imports no navigation, theming or
@@ -122,3 +133,7 @@ input?)` resolving to the context members plus the parts' `stores`, `router`, `n
 - The gen side: `registerShortcuts` in the generated wiring, mounting `ShortcutBindings` in the app entry, a testing
   part that builds shortcuts from the member's wiring, and the theming, navigation and identity packages declaring and
   contributing their `ShortcutContext` members.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

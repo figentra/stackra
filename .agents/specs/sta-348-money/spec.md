@@ -12,8 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (owner, 2026-10-24: the money codecs ship from `@stackra/money`, which joins
-wave 1b and depends only on `@stackra/contracts` and zod)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/money` (commerce, wave 1b) for real: `Money` in minor units, ISO 4217 currency codes,
 rounding modes, exact allocation, and the `money()` and `currencyCode()` codecs that generated schemas import.
@@ -31,8 +30,20 @@ rounding modes, exact allocation, and the `money()` and `currencyCode()` codecs 
 - **New dependencies**: none new; `zod` from the default catalog (4.6.7, already pinned), `@stackra/contracts`
   through `workspace:*`
 - **Deploy modes**: same in all; isomorphic, no clock, locale, environment or network read
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/commerce/money/README.md`, `packages/commerce/money/AGENTS.md`; ADR 0120, 0127, 0220, 0294, 0305 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R3 (money arithmetic: a wrong rounding or a lost minor unit is a payment defect)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Owner, 2026-10-24: the money codecs ship from `@stackra/money`, which joins
+  wave 1b and depends only on `@stackra/contracts` and zod
 
 ## User Scenarios & Testing
 
@@ -139,3 +150,7 @@ currency: string)`, `Money.of(decimal, currency)`, `Money.zero(currency)`, `Mone
   so `Money` instances are not frozen; immutability is by `readonly` and by every operation returning a new value.
 - Withdrawn codes still in circulation in stored data (`ANG`, `BGN`) stay in the table beside their successors
   (`XCG`, `EUR`) so stored amounts keep decoding; removing a code is a breaking change with its own changeset.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

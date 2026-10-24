@@ -12,9 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (registry A3: `Platform` is exported from `./contracts` only; A13: the `Bridge`
-kind lives here, in `./electron`; the 2026-10-24 0127 note allows `./browser`, `./electron`, `./native`, `./sw`,
-`./worker` and the `./electron/after-pack` tool hook; `network` and `pwa` are folded in)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/platform` (experience, wave 3) for real: the capability ports and their drivers, the desktop
 bridge, push, the PWA configuration and the service worker's handlers (ADR 0250, 0251, 0255, 0281). Depends on
@@ -38,9 +36,22 @@ bridge, push, the PWA configuration and the service worker's handlers (ADR 0250,
   only, not yet in the catalog); `electron`, `expo-constants`, `react-native` from existing catalogs as optional peers
 - **Deploy modes**: same in all; isomorphic `.`/`./contracts`/`./react`, `./browser` browser only, `./electron` main
   and renderer, `./native` device only, `./worker` Cloudflare Worker, `./sw` service worker, `./testing` node only
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/experience/platform/README.md`, `packages/experience/platform/AGENTS.md`; ADR 0120, 0127, 0250, 0251, 0254, 0255, 0266, 0269, 0281, 0294 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R2 (every client reads online state, permissions and capabilities through it; a wrong refusal or a
   missed permission is user-visible; the bridge is a security boundary)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry A3: `Platform` is exported from `./contracts` only; A13: the `Bridge`
+  kind lives here, in `./electron`; the 2026-10-24 0127 note allows `./browser`, `./electron`, `./native`, `./sw`,
+  `./worker` and the `./electron/after-pack` tool hook; `network` and `pwa` are folded in
 
 ## User Scenarios & Testing
 
@@ -150,3 +161,7 @@ Main binds `PickFolderBridge` (`platform.files.pick_folder`) behind `FileSystem`
   update managers: Electron main work in `@stackra/app/electron`, not imported by the template.
 - The template's `Capability.Required` in a route's `capability` map is served by `Capability` itself (two requirement
   cases beside the capability codes); a separate requirement enum would need a template change.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

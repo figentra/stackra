@@ -12,9 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (registry v3.1 row: entry `.` only, `./traits` and `./orm` folded in per owner
-Q4; depends on validation, money, events; ADR 0294 decisions 4, 6, 11, 16, 25, 27 and 28; ADR 0096, 0133, 0135,
-0162, 0221, 0239)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/model` (data, wave 3) for real: `Model.with(...traits)`, the eight traits the template
 uses, relations (`Ref<T>`, `Collection<T>`, `Link<T>` across modules), the `@Index` and `@Searchable` facets, and the
@@ -33,8 +31,21 @@ ORM pieces (`LinkType`, `MoneySchema`) gen's entity metadata imports.
 - **New dependencies**: `@mikro-orm/core` 7.2.5 (not yet catalogued; referenced as `catalog:`; the owner adds the
   catalog entry); `@stackra/{container,contracts,events,money,validation}` through `workspace:*`
 - **Deploy modes**: same in all; no outbound call
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/data/model/README.md`, `packages/data/model/AGENTS.md`; ADR 0096, 0120, 0133, 0135, 0162, 0221, 0227, 0239, 0294 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R3 (the persisted shape of every model; the data gate applies)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry v3.1 row: entry `.` only, `./traits` and `./orm` folded in per owner
+  Q4; depends on validation, money, events; ADR 0294 decisions 4, 6, 11, 16, 25, 27 and 28; ADR 0096, 0133, 0135,
+  0162, 0221, 0239
 
 ## User Scenarios & Testing
 
@@ -114,3 +125,7 @@ Gen writes `{ type: new LinkType("catalogue.variant") }` and `{ kind: "embedded"
   ADR trait list's `Archivable`, `HasRevisions`, `Sluggable`, ...): later, each in its owning package with
   `createTrait`.
 - `EntitySchema`, `OptionalProps`, `CrudService`, `Factory`: @stackra/database.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

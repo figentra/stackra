@@ -12,11 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (registry v3.1 row: entries `.` and `./react`, depends on filesystem, template
-imports `.` `assets` and `./react` `useAsset`; ADR 0234 as amended places the package in `data` with `<module>::<path>`
-keys; ADR 0306 moves overrides to the host's `src/overrides/<owner>/` tree, settled by gen. ADR 0234 decision 3 also
-lists `./contracts`, `./node`, `./native` and `./testing`; the registry row and the ADR 0127 2026-10-24 note allow only
-`.` and `./react`, so the service ships from `.` and no other entry is built.)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/assets` (data, wave 3) for real: the builder the generated `#stackra/assets` calls, the
 service that resolves and reads published assets over a filesystem disk, and `useAsset`.
@@ -33,8 +29,23 @@ service that resolves and reads published assets over a filesystem disk, and `us
 - **ADR needed**: no (ADR 0234 as amended, 0306, 0261, 0263, 0294 decisions 15 to 17 and 20; ADR 0127 2026-10-24 note)
 - **New dependencies**: none outside the workspace and the existing `frontend` catalog (React as an optional peer)
 - **Deploy modes**: no network of its own; URLs come from the bound disk
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/data/assets/README.md`, `packages/data/assets/AGENTS.md`; ADR 0120, 0127, 0234, 0261, 0263, 0294, 0306 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R2 (key and path checks keep an asset path inside its folder)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry v3.1 row: entries `.` and `./react`, depends on filesystem, template
+  imports `.` `assets` and `./react` `useAsset`; ADR 0234 as amended places the package in `data` with `<module>::<path>`
+  keys; ADR 0306 moves overrides to the host's `src/overrides/<owner>/` tree, settled by gen. ADR 0234 decision 3 also
+  lists `./contracts`, `./node`, `./native` and `./testing`; the registry row and the ADR 0127 2026-10-24 note allow only
+  `.` and `./react`, so the service ships from `.` and no other entry is built.
 
 ## User Scenarios & Testing
 
@@ -98,3 +109,7 @@ A component calls `useAsset(Assets.console.public.logo_svg).url`; a service inje
 - `./native` and `./testing`: not in the registry row; a test binds `AssetLibrary` over a memory disk.
 - Content-hashed published paths: the publish step (`stackra build` or CI) owns hashing until gen writes a hash into
   the entry.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

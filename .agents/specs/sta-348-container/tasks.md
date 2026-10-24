@@ -8,8 +8,8 @@
 - [x] T004 [US1] `Module`, `Service`, `Explorer`, `Driver(Port)` — covers: FR-002 — route: package — deps: T003
 - [x] T005 [US3] `createDecorator`, `DecoratorTarget`, `Lifetime`, `Replaces` — covers: FR-002 — route: package — deps: T003
 - [x] T006 [US2] `Container`, `DiscoveryService`, `UnresolvedPortError`, `named`, `Named`, `DriverName`, `DriverRegistry`, `Wiring` types — covers: FR-002, FR-005 — route: package — deps: T004, T005
-- [x] T007 `./react` `ContainerProvider`, `useContainer` — covers: FR-003 — route: package — deps: T006
-- [x] T008 [US4] `./testing` builder, app, `registerWiring`, `registerTestingPlugin` — covers: FR-003 — route: package — deps: T006
+- [x] T007 `packages/foundation/container/src/react` `ContainerProvider`, `useContainer` — covers: FR-003 — route: package — deps: T006
+- [x] T008 [US4] `packages/foundation/container/src/testing` builder, app, `registerWiring`, `registerTestingPlugin` — covers: FR-003 — route: package — deps: T006
 - [x] T009 Stand-in barrels for the three entries — covers: FR-001, FR-004 — route: package — deps: T007, T008
 - [x] T010 Tests beside every subject and the barrel tests — covers: SC-002, SC-003 — route: tests — deps: T009
 - [x] T011 Changeset `.changeset/container-package.md` — covers: SC-001 — route: package — deps: T009

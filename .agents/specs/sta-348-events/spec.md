@@ -12,9 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (owner, 2026-10-24: `AnalyticsEvent` lives in events, delivery stays in analytics
-(ADR 0305 rule 20); `drainOutbox` works through a port fake, with no dependency on `@stackra/outbox`; extra entries fold
-into the standard six)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/events` (foundation, wave 2) for real: the abstract `Event` base, the `DomainEvent`,
 `IntegrationEvent`, `WebhookEvent` and `AnalyticsEvent` kind bases, the `Listener` kind base, the in-process bus,
@@ -33,9 +31,22 @@ recording kept off the aggregate, the `EventOutbox` port and the `./testing` hel
 - **New dependencies**: none new; `@stackra/contracts`, `@stackra/container`, `@stackra/validation` through
   `workspace:*`; `@stackra/testing` as an optional peer; `zod` (catalog) for tests only
 - **Deploy modes**: same in all; isomorphic core, `./testing` node only
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/foundation/events/README.md`, `packages/foundation/events/AGENTS.md`; ADR 0078, 0120, 0127, 0141, 0269, 0294, 0305, 0308 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R2 (every service declares events and listeners through it; a wrong option default or a listener
   failure leaking to the emitter is a contract defect)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Owner, 2026-10-24: `AnalyticsEvent` lives in events, delivery stays in analytics
+  (ADR 0305 rule 20); `drainOutbox` works through a port fake, with no dependency on `@stackra/outbox`; extra entries fold
+  into the standard six
 
 ## User Scenarios & Testing
 
@@ -127,3 +138,7 @@ await drainOutbox();`, `app.events.published().ofType(X)`, `app.listeners.calls(
 
 - The registry row lists `errors` as a dependency; nothing here raises a refusal (option mistakes are programmer
   errors, `TypeError`/`RangeError`), so the dependency is not declared until a refusal is needed.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

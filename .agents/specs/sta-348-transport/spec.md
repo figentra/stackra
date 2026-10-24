@@ -12,9 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (registry row: entries `.` and `./native`, the native entry runs on `expo/fetch`;
-the template imports nothing from this package, `@stackra/clients` consumes it; `TransportError` and `RetryOn` belong to
-`@stackra/clients`, so this package declares neither)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/transport` (foundation, wave 2) for real: a fetch pipeline of middleware for bearer auth,
 retry, timeout, the `Idempotency-Key` header and the `Stackra-Version` header, plus NDJSON and server-sent-event
@@ -33,8 +31,21 @@ readers, with a `./native` terminal fetch that streams on Expo.
 - **New dependencies**: none new; `@stackra/contracts` and `@stackra/errors` through `workspace:*`; `expo`
   (`catalog:mobile`) as the optional peer of `./native`
 - **Deploy modes**: same in all; `.` is isomorphic (browser, Node, Workers, React Native), `./native` is Expo only
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/foundation/transport/README.md`, `packages/foundation/transport/AGENTS.md`; ADR 0118, 0120, 0127, 0138, 0140, 0294 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R2 (every generated client call passes through it; a wrong retry rule repeats a write)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry row: entries `.` and `./native`, the native entry runs on `expo/fetch`;
+  the template imports nothing from this package, `@stackra/clients` consumes it; `TransportError` and `RetryOn` belong to
+  `@stackra/clients`, so this package declares neither
 
 ## User Scenarios & Testing
 
@@ -119,3 +130,7 @@ idempotencyKey(), retry({ attempts: 2 }), timeout(Duration.seconds(30))] })` and
 - The registry row lists `config` as a dependency. Nothing in the pipeline needs a `Config` class: every option is
   passed by the generated client from its own gen-time facts, so a `TransportConfig` would be speculative. Add it, and
   the dependency, when a member needs to override transport settings per deployment.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

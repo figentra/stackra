@@ -12,9 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (registry v3.1 row: entries `.` and `./contracts`, no template import; ADR 0235
-decisions 1 and 2: a telemetry port and a command port, the HTTP driver now, MQTT later; devices authenticate as
-principals in identity; ADR 0127 2026-10-21 settlement: category runtime)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/devices` (runtime, wave 3) for real: IoT telemetry and command ports and the HTTP driver.
 
@@ -32,8 +30,21 @@ principals in identity; ADR 0127 2026-10-21 settlement: category runtime)
 - **New dependencies**: none new; `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`,
   `@stackra/errors`, `@stackra/transport` through `workspace:*`; `zod` through `catalog:`
 - **Deploy modes**: same in all; the drivers call only the configured hub URL
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/runtime/devices/README.md`, `packages/runtime/devices/AGENTS.md`; ADR 0120, 0127, 0207, 0235, 0260, 0294 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R2 (a client of a hub that does not exist yet; no stored data)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry v3.1 row: entries `.` and `./contracts`, no template import; ADR 0235
+  decisions 1 and 2: a telemetry port and a command port, the HTTP driver now, MQTT later; devices authenticate as
+  principals in identity; ADR 0127 2026-10-21 settlement: category runtime
 
 ## User Scenarios & Testing
 
@@ -94,12 +105,12 @@ A host overrides `DevicesConfig` (`hubUrl`, `timeoutMs`, `attempts`); the driver
 - **FR-005**: No route or body names the device; the token comes from `DeviceCredential` (ADR 0235 decision 1).
 - **FR-006**: The pending-commands body is parsed with a zod schema at the trust boundary.
 
-## Acceptance criteria
+## Success Criteria
 
-- **AC-001** (template imports): the template imports nothing from `@stackra/devices`; nothing to satisfy.
-- **AC-002** (registry contract): entries `.` and `./contracts`; IoT telemetry and command ports; the HTTP driver.
-- **AC-003**: every public symbol has a test beside it; the barrel tests pin each entry's exports.
-- **AC-004**: format and lint pass on the member (tests, typecheck and build run in the separate testing workflow).
+- **SC-001** (template imports): the template imports nothing from `@stackra/devices`; nothing to satisfy.
+- **SC-002** (registry contract): entries `.` and `./contracts`; IoT telemetry and command ports; the HTTP driver.
+- **SC-003**: every public symbol has a test beside it; the barrel tests pin each entry's exports.
+- **SC-004**: format and lint pass on the member (tests, typecheck and build run in the separate testing workflow).
 
 ## Out of scope (named, not built)
 
@@ -110,3 +121,7 @@ A host overrides `DevicesConfig` (`hubUrl`, `timeoutMs`, `attempts`); the driver
 - A dependency on `@stackra/events`: the registry row lists it, but no symbol of this package needs it; device events
   belong to the owning module.
 - A memory driver or `./testing` entry: the registry row allows `.` and `./contracts` only.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

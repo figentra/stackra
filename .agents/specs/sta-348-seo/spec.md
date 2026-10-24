@@ -12,10 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (package row: entries `.`, `./contracts`; the old `./og`, `./robots` and
-`./sitemap` entries fold into standard entries per owner Q4 and the ADR 0127 2026-10-24 note: robots and sitemap into
-`.`, the Node renderer into `./server`, the Worker driver into `./worker`; depends on i18n and config; ADR 0301
-decisions 1 to 7; category cross-cutting per ADR 0127)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/seo` (cross-cutting, wave 3) for real: paged sitemaps, robots groups, the JSON-LD escaper,
 canonical redirects, `alternates`/`localePath` outside `.server`, one SEO chain (ADR 0301).
@@ -32,8 +29,22 @@ canonical redirects, `alternates`/`localePath` outside `.server`, one SEO chain 
 - **New dependencies**: `satori` and `@resvg/resvg-wasm` (Open Graph layout and rasterising), not yet in a catalog,
   referenced as `catalog:`; the rest through `workspace:*` and existing catalogs
 - **Deploy modes**: same in all
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/cross-cutting/seo/README.md`, `packages/cross-cutting/seo/AGENTS.md`; ADR 0120, 0127, 0294, 0297, 0301, 0305 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R2 (public page metadata and crawler-facing files; no stored data)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/app`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Package row: entries `.`, `./contracts`; the old `./og`, `./robots` and
+  `./sitemap` entries fold into standard entries per owner Q4 and the ADR 0127 2026-10-24 note: robots and sitemap into
+  `.`, the Node renderer into `./server`, the Worker driver into `./worker`; depends on i18n and config; ADR 0301
+  decisions 1 to 7; category cross-cutting per ADR 0127
 
 ## User Scenarios & Testing
 
@@ -91,20 +102,24 @@ The generated `robots`, `sitemap-index` and `sitemap` route modules call `robots
 - **FR-004**: `./server` exports `renderOgImage`; `./worker` exports `SatoriOgRendererDriver`.
 - **FR-005**: Nothing in `.` uses a Node or Worker API (ADR 0301 decision 6).
 
-## Acceptance criteria
+## Success Criteria
 
-- **AC-001** (template imports): every symbol the template imports exists with the shape it uses: `.` `Changefreq`,
+- **SC-001** (template imports): every symbol the template imports exists with the shape it uses: `.` `Changefreq`,
   `OgKind`, `Seo` (type), `SeoConfig` (override with `titleTemplate`, `robots`, `sitemapPageSize`, `noindexParams`,
   `consumedSitemaps`, `og`, `hreflang`, `jsonLd`), `alternates`, `robotsTxt`, `SitemapSource` (type), `sitemapFiles`,
   `sitemapPage`, `writeSitemap`, `writeSitemapIndex`; `./contracts` `OgRenderer`; `./server` `renderOgImage`;
   `./worker` `SatoriOgRendererDriver`.
-- **AC-002** (registry contract): the package row's purpose (paged sitemaps, robots groups, JSON-LD escaper, canonical
+- **SC-002** (registry contract): the package row's purpose (paged sitemaps, robots groups, JSON-LD escaper, canonical
   redirects, alternates and locale paths outside `.server`, one SEO chain) is implemented; changeset written.
-- **AC-003**: every public symbol has a test beside it in `__tests__/` (run later in the testing workflow).
-- **AC-004**: typecheck, lint, build and tests green in the separate testing workflow.
+- **SC-003**: every public symbol has a test beside it in `__tests__/` (run later in the testing workflow).
+- **SC-004**: typecheck, lint, build and tests green in the separate testing workflow.
 
 ## Out of scope
 
 - The route adapter that turns `ResolvedSeo` into tags and `ctx.redirectToCanonical`: `@stackra/navigation` (W7).
 - Gen's `#stackra/sitemap` and the robots, sitemap and OG route modules: `@stackra/gen`.
 - Host-chosen OG fonts: the faces are fixed until `@stackra/tokens` ships font files.
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)

@@ -12,10 +12,7 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: resolved (registry v3.1 row: entries `.`, `./react`, `./server`, `./browser`, `./native`,
-`./worker`, `./electron`; Q2 accepted: `Module`, `Service` and `define*` left this package for `@stackra/container` and
-`@stackra/contracts`; A13 recommendation taken: `Controller` lives in `./server`; ADR 0127 2026-10-24 note allows the
-runtime-target entries)
+**Clarifications status**: complete
 
 **Input**: Build `@stackra/app` (runtime, wave 3) for real: `createApp` per target returning the runtime object of ADR
 0295 decision 8, the app contexts, and the `Controller` kind.
@@ -35,8 +32,22 @@ runtime-target entries)
   desktop CSP header). Optional peers from existing catalogs: `react`, `react-dom`, `react-router` (frontend),
   `electron` (desktop), `react-native`, `expo-splash-screen` (mobile)
 - **Deploy modes**: same in all
+- **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
+- **Docs to update**: `packages/runtime/app/README.md`, `packages/runtime/app/AGENTS.md`; ADR 0120, 0127, 0173, 0251, 0263, 0295 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R3 (the desktop hardening baseline and the bridge allow-list are security boundaries)
+- **Branch members**: this branch (STA-348) also changes `packages/application/actions`, `packages/application/registry`, `packages/commerce/money`, `packages/commerce/pricing`, `packages/communication/versioning`, `packages/cross-cutting/seo`, `packages/data/assets`, `packages/data/filesystem`, `packages/data/model`, `packages/data/state-machine`, `packages/data/storage`, `packages/developer/cli`, `packages/developer/coding-standard`, `packages/developer/devtools-kit`, `packages/developer/gen`, `packages/developer/mcp`, `packages/developer/renderers`, `packages/developer/runway`, `packages/developer/skills`, `packages/developer/testing`, `packages/developer/vite-plugin`, `packages/experience/platform`, `packages/experience/shortcuts`, `packages/foundation/config`, `packages/foundation/container`, `packages/foundation/contracts`, `packages/foundation/errors`, `packages/foundation/events`, `packages/foundation/i18n`, `packages/foundation/logger`, `packages/foundation/support`, `packages/foundation/transport`, `packages/foundation/validation`, `packages/runtime/cache`, `packages/runtime/devices`, `packages/runtime/realtime`, `packages/security/consent`, `packages/security/csp`, `packages/security/entitlements`, `packages/security/licensing`, `packages/state/coordinator`, `packages/state/feature-flags`, `packages/state/state`, `packages/state/theming`, `packages/tooling/oxlint`; spec-trace names every member of the diff, and each sibling package has its own `sta-348-*` spec or is outside this spec's scope
+
+## Clarifications
+
+### Session 2026-10-24
+
+The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
+
+- Registry v3.1 row: entries `.`, `./react`, `./server`, `./browser`, `./native`,
+  `./worker`, `./electron`; Q2 accepted: `Module`, `Service` and `define*` left this package for `@stackra/container` and
+  `@stackra/contracts`; A13 recommendation taken: `Controller` lives in `./server`; ADR 0127 2026-10-24 note allows the
+  runtime-target entries
 
 ## User Scenarios & Testing
 
@@ -135,3 +146,7 @@ runtime-target entries)
   configured default locale.
 - Electron fuses: set at packaging by `@stackra/platform/electron/after-pack`, not at run time.
 - The generated Encore adapters that call `handlers`: gen (STA-339).
+
+## Status history
+
+- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)
