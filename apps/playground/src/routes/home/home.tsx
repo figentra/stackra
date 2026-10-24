@@ -73,7 +73,11 @@ export function Home({ pages }: HomeProps) {
         </Ui.Chip>
         {/* The stage above draws the name as the wordmark, so the heading shows the rest of it; its text, which
             titles the document, is the whole name. */}
-        <Ui.Heading level={1} className="[font:var(--display)] tracking-[-0.035em] text-balance">
+        <Ui.Heading
+          level={1}
+          align="center"
+          className="[font:var(--display)] tracking-[-0.035em] text-balance"
+        >
           <span className="sr-only">{STRINGS.brand} </span>
           {STRINGS.product}
         </Ui.Heading>

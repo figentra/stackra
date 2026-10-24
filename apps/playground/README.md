@@ -21,13 +21,15 @@ language (English, left to right; Arabic, right to left). Both live in the URL, 
 
 ## Navigation and the glass
 
-There is no sidebar. The index (`/`) is the landing: a hero, a live showcase of scenes built from `@stackra/ui`, and
+There is no sidebar. The index (`/`) is the landing: a hero stage (the beam-S wordmark echoed in hairline, glass
+tiles of the system's parts on the brand's graph lines and grid), a live showcase of scenes built from `@stackra/ui`, and
 a gallery with one glass panel per category (free pages first, Pro pages badged, an All / Free / Pro filter). Every
 page is one search away: the command palette opens from the bar's search button, ⌘K or Ctrl+K, and `/`. A component
 page shows its category as a strip above it (the current page marked) and the previous and next pages below it; the
 page itself sits on a solid sheet of the theme's background, because its samples are tuned against that colour.
 
-The glass (`glass`, `glass-strong` in `src/styles/app.css`) is built from the theme's roles only. It turns solid under
+The glass is a recorded brand amendment (ADR 0320): showcase and marketing surfaces only, never under a component
+sample. The glass (`glass`, `glass-strong` in `src/styles/app.css`) is built from the theme's roles only. It turns solid under
 `prefers-reduced-transparency`, `prefers-contrast: more` and in browsers without `backdrop-filter`, keeps an edge in
 forced colours, and its motion stops under `prefers-reduced-motion`. The ambient field under it is flat tints shaped by
 masks, so axe measures text against every tint at once rather than giving up on a gradient.
