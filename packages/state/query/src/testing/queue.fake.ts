@@ -1,0 +1,77 @@
+/**
+ * Stackra file contract:
+ * Purpose: `QueueFake`, the test double of `MutationQueue`: a queue open on a test partition and seeded with waiting
+ *          calls and conflicts, bound in place of `MutationQueue` (the render helpers' `queue` option, or
+ *          `createTestingModule(...).override(MutationQueue, fake)`), so `useMutationQueue()` reads it unchanged.
+ * Boundary: a real `MutationQueue` (so `instanceof` holds and `discard`, `resolve` and `drain` behave as in the app)
+ *           over memory storage, the memory platform (online), a leader that always leads and a sender that never
+ *           reaches a server, so a drain keeps every call. Seeded synchronously: a test renders it at once.
+ * Runtime: node
+ * Governing contract: ADR 0269 (decision 3: domain fakes in the owning package's `./testing`); ADR 0266 (decision 2:
+ *                     a fake per capability).
+ */
+import { Clock } from "@stackra/contracts";
+import { MemoryPlatformDriver } from "@stackra/platform";
+import { MemoryStorageDriver } from "@stackra/storage";
+
+import { MutationSender, QueueLeader } from "#contracts/index";
+import { MutationQueue, QueryConfig, StorageQueryPersisterDriver } from "#core/index";
+import type { PendingMutation } from "#react/index";
+import type { FakeQueueOptions } from "#testing/types/fake-queue-options.type";
+
+/** One week, the default retention, so a seeded call is never stale during a test. */
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** The seeded call number `index`, queued at `now`. */
+function seededCall(index: number, now: Date): PendingMutation {
+  return Object.freeze({
+    id: `fake_mutation_${index}`,
+    action: "fake.mutation.queue@1",
+    input: {},
+    aggregate: `fake_aggregate_${index}`,
+    queuedAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + WEEK_MS).toISOString(),
+  });
+}
+
+/**
+ * A mutation queue seeded by the test.
+ *
+ * @example
+ * const queue = new QueueFake({ pending: 2 });
+ * queue.pending; // 2
+ */
+export class QueueFake extends MutationQueue {
+  /** @param options - how many calls wait and how many conflicts need a person. */
+  constructor(options: FakeQueueOptions = {}) {
+    const clock = Object.assign(Object.create(Clock.prototype) as Clock, { now: () => new Date() });
+    const leader = Object.assign(Object.create(QueueLeader.prototype) as QueueLeader, {
+      isLeader: { get: () => true, subscribe: () => () => undefined },
+    });
+    const sender = Object.assign(Object.create(MutationSender.prototype) as MutationSender, {
+      send: () => Promise.resolve({ ok: false, code: null, server: null }),
+    });
+    super(
+      new QueryConfig(),
+      new StorageQueryPersisterDriver(new MemoryStorageDriver()),
+      sender,
+      leader,
+      new MemoryPlatformDriver(),
+      clock,
+    );
+    const now = clock.now();
+    const pending = options.pending ?? 0;
+    this.seed(
+      "query.queue.fake",
+      Array.from({ length: pending }, (_, index) => seededCall(index + 1, now)),
+      Array.from({ length: options.conflicts ?? 0 }, (_, index) =>
+        Object.freeze({
+          ...seededCall(pending + index + 1, now),
+          code: "fake_conflict",
+          server: null,
+          conflictedAt: now.toISOString(),
+        }),
+      ),
+    );
+  }
+}
