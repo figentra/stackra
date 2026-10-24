@@ -23,7 +23,7 @@ Location and tracking data, such as fleet positions, service areas and delivery 
 
 ## Decision
 
-1. **PostGIS is approved.** It joins the approved extensions of [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions), decision 2. It is enabled only by the built-in `schema.createExtension()` migration step, and not by a raw `schema.sql` file or a raw query.
+1. **PostGIS is approved.** It joins the approved extensions of [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions), decision 2. It is enabled only by `schema.createExtension(name)`, a step of the migration blueprint of [0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules) that emits `CREATE EXTENSION IF NOT EXISTS` for an approved name and fails for any other, and not by a raw `schema.sql` file or a raw query.
 2. **The geospatial field types, their macros and their index.**
    - Geospatial values are field types, not decorators, as the v3 Note of [0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events) gives money and JSON. The types are `GeoPoint`, `GeoPolygon` and `GeoLine`.
    - Each type is stored as a PostGIS column with SRID 4326 (WGS 84): `GeoPoint` is `geography(Point, 4326)`, `GeoPolygon` is `geography(Polygon, 4326)` and `GeoLine` is `geography(LineString, 4326)`.
@@ -40,7 +40,7 @@ Location and tracking data, such as fleet positions, service areas and delivery 
 
 ## Enforcement
 
-planned — gen rejects a `schema.createExtension()` call that names an extension outside the approved list of [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions), and rejects a `GeoPoint`, `GeoPolygon` or `GeoLine` column that has no GiST index. Nothing checks either rule yet.
+planned — gen rejects a `schema.createExtension()` call that names an extension outside the approved list of [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions), rejects `CREATE EXTENSION` inside any raw `schema.sql` step or raw query, and rejects a `GeoPoint`, `GeoPolygon` or `GeoLine` column whose migration drops the default GiST index without another spatial index. Nothing checks these rules yet.
 
 ## Supersedes and sources
 
