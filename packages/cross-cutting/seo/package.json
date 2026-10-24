@@ -1,0 +1,108 @@
+{
+  "name": "@stackra/seo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stackra SEO: the SEO chain of a route (app defaults, static seo, meta(), tenant record), hreflang alternates and locale paths callable from client code, the JSON-LD escaper, canonical redirects, robots groups per crawler, paged sitemaps within the protocol limits, the SeoConfig configuration, and the Open Graph image renderer for servers and Workers",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/cross-cutting/seo"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts",
+      "./src/config/*/index.ts"
+    ],
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*/index.ts"
+    ],
+    "#core/*": [
+      "./src/core/*",
+      "./src/core/*.ts",
+      "./src/core/*/index.ts"
+    ],
+    "#server/*": [
+      "./src/server/*",
+      "./src/server/*.ts",
+      "./src/server/*/index.ts"
+    ],
+    "#worker/*": [
+      "./src/worker/*",
+      "./src/worker/*.ts",
+      "./src/worker/*/index.ts"
+    ]
+  },
+  "exports": {
+    ".": {
+      "@stackra/source": "./src/core/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./contracts": {
+      "@stackra/source": "./src/contracts/index.ts",
+      "types": "./dist/contracts.d.mts",
+      "default": "./dist/contracts.mjs"
+    },
+    "./server": {
+      "@stackra/source": "./src/server/index.ts",
+      "types": "./dist/server.d.mts",
+      "default": "./dist/server.mjs"
+    },
+    "./worker": {
+      "@stackra/source": "./src/worker/index.ts",
+      "types": "./dist/worker.d.mts",
+      "default": "./dist/worker.mjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@resvg/resvg-wasm": "catalog:",
+    "@stackra/config": "workspace:*",
+    "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/i18n": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "satori": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@stackra/testing": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:quality",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  }
+}
