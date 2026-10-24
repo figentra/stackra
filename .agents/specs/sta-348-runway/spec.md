@@ -74,11 +74,12 @@ A runway file is checked against its kind's version 3 schema, and the root topol
 
 1. **Given** the template's seven runway files, **When** each is read for its kind, **Then** it passes.
 2. **Given** a member runway holding `member`, `deployable`, `isolate`, `group`, `cpu`, `memory` or `instances`, a
-   dedicated resource without a reason, or an engine ADR 0227 defers, **Then** it fails naming the path.
+   dedicated resource without a reason, or an engine outside ADR 0296's list, **Then** it fails naming the path.
 3. **Given** a grouped environment that leaves a member unplaced or places it twice, **Then** `checkPlacement` reports
    it with the environment and a snake_case code.
 4. **Given** a runway file with `$schema: "@stackra/runway/schema/<kind>.json"`, **Then** the package ships that file
-   and it equals `runwayJsonSchema(kind)`.
+   as a byte copy of the canonical `tools/schemas/runway-<kind>.schema.json`, and `runwayJsonSchema(kind)` equals it
+   once both are normalised.
 
 ## Requirements
 
@@ -90,7 +91,8 @@ A runway file is checked against its kind's version 3 schema, and the root topol
 - **FR-003**: `./node` exports `definesFor`, `devServer` (template) and `readRunway`.
 - **FR-004**: Member schemas fix `version` at 3, have no `member` key and refuse every root key; the root schema holds
   the topology groups (mode, isolate, default, groups with members, cpu, memory, instances, scaling, workers).
-- **FR-005**: `requires.<resource>.engine` accepts only `postgres` and `valkey`; `dedicated: true` needs a `reason`.
+- **FR-005**: `requires.<resource>.engine` accepts only the engines ADR 0296 lists (`postgres`, `valkey`, `s3`,
+  `sns-sqs`); `dedicated: true` needs a `reason`.
 - **FR-006**: The `.` entry has no static Node import; it reaches the file system through `process.getBuiltinModule`
   only under Node.
 - **FR-007**: The TLS paths of the dev facts never reach a bundle; no secret value is read anywhere.

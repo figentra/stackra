@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: `KEY_SCHEMA`, the spelling of a member key, a topology group name or a resource, queue or bucket name in a
- *          runway: lower case, starting with a letter, then letters, digits, `-` or `_`.
- * Boundary: internal; the runway schemas compose it. It checks spelling only; whether a member exists is
- *           `checkPlacement`'s.
+ * Purpose: `KEY_SCHEMA`, the spelling of a member key or a dev infra service name in the resolved runway facts:
+ *          lower case, starting with a letter, then letters, digits, `-` or `_`.
+ * Boundary: internal; the facts schema composes it. The runway files themselves follow the canonical schemas, which
+ *           leave these names open; whether a member exists is `checkPlacement`'s.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 20: member keys from folder names), ADR 0231.
  */

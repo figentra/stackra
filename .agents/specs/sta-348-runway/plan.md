@@ -7,8 +7,9 @@
    environment and root runway schemas, and the runway facts schema. Member objects are strict, so root keys fail;
    the root's provider blocks stay open. Enums through `Enum.of` from `@stackra/contracts`; `url()` from
    `@stackra/validation`.
-2. **One lookup** (`RUNWAY_SCHEMAS`) feeds `parseRunway` and `runwayJsonSchema`, so the parsed type and the committed
-   `schema/<kind>.json` cannot drift; a test compares the files with the derivation.
+2. **One lookup** (`RUNWAY_SCHEMAS`) feeds `parseRunway` and `runwayJsonSchema`. The shipped `schema/<kind>.json` are
+   byte copies of the canonical `tools/schemas/runway-<kind>.schema.json` (`pnpm validate` checks them); a test
+   compares the derivation with them once both are normalised, so the zod cannot drift from the canonical files.
 3. **Placement** is a pure function over a parsed root and a member list, returning every failure.
 4. **Facts**: one resolved document shape for `.stackra/dev/ports.json` and for the `__STACKRA_RUNWAY__` define. The
    `.` readers prefer the injected document, then walk up for the dev file through `process.getBuiltinModule`, so the
@@ -46,6 +47,6 @@
 - **P-002**: `.` exports `baseUrlOf`, `devPorts`, `updateFeed`, `parseRunway`, `checkPlacement`, `runwayJsonSchema`, the enums `RunwayKind`, `RunwayEnvironment`, `TopologyMode`, `RequirementEngine` and `CacheEviction`, the errors `RunwayInvalidError` and `RunwayUnresolvedError`, and the document, facts and issue types — Validates: FR-002
 - **P-003**: `./node` exports `definesFor`, `devServer` and `readRunway` — Validates: FR-003
 - **P-004**: a member schema fixes `version` at 3, has no `member` key and refuses every root key, while the root schema holds the topology groups — Validates: FR-004
-- **P-005**: `requires.<resource>.engine` accepts `postgres` and `valkey` only, and `dedicated: true` without a `reason` is refused — Validates: FR-005
+- **P-005**: `requires.<resource>.engine` accepts `postgres`, `valkey`, `s3` and `sns-sqs` only, and `dedicated: true` without a `reason` is refused — Validates: FR-005
 - **P-006**: the `.` entry has no static Node import and reaches the file system through `process.getBuiltinModule` only under Node — Validates: FR-006
 - **P-007**: the TLS paths of the dev facts never reach a bundle, and no secret value is read anywhere — Validates: FR-007

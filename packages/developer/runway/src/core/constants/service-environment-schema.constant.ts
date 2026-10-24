@@ -1,49 +1,53 @@
 /**
  * Stackra file contract:
- * Purpose: `SERVICE_ENVIRONMENT_SCHEMA`, one `environments.<env>` block of a service runway: the dev port, the
- *          database plan, storage, extensions, pool budget and read replica, the cache size, replicas and eviction,
- *          bucket sizes, queue settings, the cron switch and the `config` values.
- * Boundary: internal. Strict: a root key (`deployable`, `isolate`, `group`, `cpu`, `memory`, `instances`) fails here.
+ * Purpose: `SERVICE_ENVIRONMENT_SCHEMA`, one `environments.<env>` block of a service runway: the dev port, host and
+ *          dev console port, the size of the logical database (pool budget, plan, storage, extensions, read replica),
+ *          of the cache, of each bucket and queue, the cron switch, the secret names and the `config` values.
+ * Boundary: internal. Strict at its top: a root key (`deployable`, `isolate`, `group`, `cpu`, `memory`, `instances`)
+ *           fails here. The size blocks stay open, as the canonical schema leaves them.
  * Runtime: isomorphic
- * Governing contract: ADR 0296 (decision 1), ADR 0160 (approved Postgres extensions).
+ * Governing contract: ADR 0296 (decision 1), ADR 0238 (logical databases and pool budgets), ADR 0160 (extensions).
  */
-import { Enum } from "@stackra/contracts";
 import { z } from "zod";
 
 import { CONFIG_VALUES_SCHEMA } from "#core/constants/config-values-schema.constant";
-import { KEY_SCHEMA } from "#core/constants/key-schema.constant";
+import { OPEN_OBJECT_SCHEMA } from "#core/constants/open-object-schema.constant";
 import { PORT_SCHEMA } from "#core/constants/port-schema.constant";
-import { CacheEviction } from "#core/enums/cache-eviction.enum";
+import { SECRET_NAMES_SCHEMA } from "#core/constants/secret-names-schema.constant";
 
 /** One service environment. */
 export const SERVICE_ENVIRONMENT_SCHEMA = z.strictObject({
   port: PORT_SCHEMA.optional(),
+  host: z.string().optional(),
+  devConsolePort: PORT_SCHEMA.optional(),
   database: z
-    .strictObject({
-      plan: z.enum(["shared", "dedicated"]).optional(),
-      storageGb: z.int().positive().optional(),
-      extensions: z.array(KEY_SCHEMA).optional(),
-      poolBudget: z.int().positive().optional(),
+    .looseObject({
+      poolBudget: z.int().min(1).optional(),
+      plan: z.string().optional(),
+      storageGb: z.number().positive().optional(),
+      extensions: z.array(z.string()).optional(),
       readReplica: z.boolean().optional(),
     })
     .optional(),
   cache: z
-    .strictObject({
-      memoryMb: z.int().positive(),
+    .looseObject({
+      memoryMb: z.int().min(1).optional(),
       replicas: z.int().min(0).optional(),
-      eviction: z.enum(Enum.values(CacheEviction) as [CacheEviction, ...CacheEviction[]]),
+      eviction: z.string().optional(),
+      keyspaceMb: z.int().min(1).optional(),
     })
     .optional(),
-  buckets: z.record(KEY_SCHEMA, z.strictObject({ storageGb: z.int().positive() })).optional(),
+  buckets: z.record(z.string(), OPEN_OBJECT_SCHEMA).optional(),
   queues: z
     .record(
-      KEY_SCHEMA,
-      z.strictObject({
-        visibilityTimeoutSeconds: z.int().positive(),
+      z.string(),
+      z.looseObject({
+        visibilityTimeoutSeconds: z.int().min(0).optional(),
         dlq: z.boolean().optional(),
       }),
     )
     .optional(),
-  crons: z.strictObject({ enabled: z.boolean() }).optional(),
+  crons: z.looseObject({ enabled: z.boolean().optional() }).optional(),
+  secrets: SECRET_NAMES_SCHEMA.optional(),
   config: CONFIG_VALUES_SCHEMA.optional(),
 });

@@ -24,7 +24,7 @@ import type { RunwayDocument } from "#core/types/runway-document.type";
  * @throws RunwayInvalidError when the file cannot be read, is not YAML, or breaks the schema of `kind`.
  * @example
  * const root = readRunway("runway.yaml", "root");
- * root.environments.production?.topology.mode; // "grouped"
+ * root.environments.production?.topology?.mode; // "grouped"
  */
 export function readRunway<K extends RunwayKind>(file: string, kind: K): RunwayDocument[K] {
   let document: unknown;

@@ -1,8 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: the eviction policies a service runway's `environments.<env>.cache.eviction` may name.
+ * Purpose: the Valkey eviction policies, the values a service runway's `environments.<env>.cache.eviction` names
+ *          for a dedicated cache.
  * Boundary: an `Enum.of` value plus the type of the same name; the codes keep the Valkey spelling (a tool-owned
- *           value), so runway passes them to the cache unchanged.
+ *           value), so runway passes them to the cache unchanged. The canonical service schema leaves `eviction` a
+ *           free string (`volatile-ttl` and `allkeys-lru` are its examples), so `parseRunway` does not check it.
  * Runtime: isomorphic
  * Governing contract: ADR 0296 (decision 1: the cache eviction policy is a member size), ADR 0231.
  */

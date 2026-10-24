@@ -1,7 +1,8 @@
 # AGENTS — @stackra/runway
 
 Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway` (`tier:lib`). Entries `.` and
-`./node`, plus the committed `schema/{root,app,service}.json` assets (ADR 0127, 2026-10-24 note).
+`./node`, plus the `schema/{root,app,service}.json` assets, byte copies of `tools/schemas/runway-*.schema.json`
+(ADR 0127, 2026-10-24 note).
 
 ## Where code goes
 
@@ -17,7 +18,9 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
 ## Rules
 
 - `.` stays bundle-safe: no static `node:*` import; the dev facts file is read through `process.getBuiltinModule`.
-- A schema change regenerates `schema/<kind>.json` from `runwayJsonSchema(kind)`; a test fails when they drift.
+- The canonical schemas are `tools/schemas/runway-<kind>.schema.json`, owned by main: never edit `schema/<kind>.json`
+  by hand; `cp` the canonical file (`pnpm validate` checks the bytes) and change the zod to match (the
+  `runwayJsonSchema` test compares them).
 - A runway holds secret names only. `definesFor` inlines public vars (`VITE_`, `EXPO_PUBLIC_`, `RENDERER_VITE_`) and
   never the TLS paths.
 

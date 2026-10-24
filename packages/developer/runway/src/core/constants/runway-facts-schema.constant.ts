@@ -45,7 +45,7 @@ export const RUNWAY_FACTS_SCHEMA = z.object({
             pkceLoopbackPort: PORT_SCHEMA.optional(),
           })
           .default({}),
-        feed: z.object({ path: KEY_SCHEMA, channel: KEY_SCHEMA }).optional(),
+        feed: z.object({ path: z.string().min(1), channel: z.string().min(1) }).optional(),
       }),
     )
     .default({}),

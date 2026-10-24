@@ -4,7 +4,7 @@
  *          a default reports an unplaced member; a member in two groups, a group listing a non-member, a default
  *          naming no group and an isolate naming a non-member are each reported with their environment and code;
  *          monolith and split environments skip group placement.
- * Boundary: test only; topologies are built through `parseRunway` so they carry the parsed defaults.
+ * Boundary: test only; topologies are built through `parseRunway`, so each is a checked shape.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0296 (decision 2 and enforcement).
  */

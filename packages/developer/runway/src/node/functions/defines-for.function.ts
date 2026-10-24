@@ -95,13 +95,19 @@ export function definesFor(member: string, environment: string): Record<string, 
   let feedOrigin: string | undefined;
   if (feedPath !== undefined && channel !== undefined) {
     const root = readRunway(join(repositoryRoot(), "runway.yaml"), RunwayKind.Root);
-    feedOrigin = root.targets?.["electron-release"]?.feed?.publicOrigin;
-    if (feedOrigin === undefined) {
+    // the canonical root schema leaves target blocks open, so the origin is checked here
+    const feed = root.targets?.["electron-release"]?.["feed"];
+    const origin =
+      typeof feed === "object" && feed !== null && "publicOrigin" in feed
+        ? feed.publicOrigin
+        : undefined;
+    if (typeof origin !== "string" || !URL.canParse(origin)) {
       throw new RunwayUnresolvedError(
         `"${member}" has the desktop channel "${channel}" in ${target}, but the root runway has no ` +
-          "targets.electron-release.feed.publicOrigin",
+          "URL at targets.electron-release.feed.publicOrigin",
       );
     }
+    feedOrigin = origin;
   }
   defines[RUNWAY_FACTS_GLOBAL] = JSON.stringify({
     version: 1,

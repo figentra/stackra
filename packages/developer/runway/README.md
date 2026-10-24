@@ -16,7 +16,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `updateFeed(member)`                                                                    | the desktop update feed of the build's environment, or `null` in dev        |
 | `.`         | `parseRunway(kind, document, source?)`                                                  | check a parsed runway against its version 3 schema                          |
 | `.`         | `checkPlacement(root, members)`                                                         | every topology placement failure, for `stackra validate`                    |
-| `.`         | `runwayJsonSchema(kind)`                                                                | the JSON Schema the committed `schema/<kind>.json` files hold               |
+| `.`         | `runwayJsonSchema(kind)`                                                                | the zod schemas as JSON Schema, tested against the shipped canonical files  |
 | `.`         | `RunwayKind`, `RunwayEnvironment`, `TopologyMode`, `RequirementEngine`, `CacheEviction` | enums                                                                       |
 | `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`                                           | errors                                                                      |
 | `./node`    | `definesFor(member, environment)`                                                       | the bundler `define` map: public vars and the injected runway facts         |
@@ -28,8 +28,9 @@ The old `./ports` entry is folded into `.` and the old `./vite` entry into `./no
 
 ## The two files
 
-A member runway states what the member needs: `requires` (an engine ADR 0227 allows, and a `reason` when
-`dedicated`), secret names, `health`, its release block, and per environment its port, vars, config values and sizes.
+A member runway states what the member needs: `requires` (an engine ADR 0296 lists: `postgres`, `valkey`, `s3` or
+`sns-sqs`, and a `reason` when `dedicated`), secret names, `health`, its release block, and per environment its port,
+vars, config values and sizes.
 It never holds `member`, `deployable`, `isolate`, `group`, `cpu`, `memory` or `instances`; those fail the schema. The
 root runway states where members run: providers, destinations, shared pools, defaults and each environment's
 `topology`. In a grouped environment every service member sits in exactly one group, or in the `default` group;
@@ -66,5 +67,8 @@ the build environment under the same name (runway syncs it there) and fails the 
 
 ## Changing a schema
 
-The zod schemas in `src/core/constants/` are the source; `schema/<kind>.json` is `runwayJsonSchema(kind)` written out
-with two-space indentation. A test fails when they differ, so regenerate the three files with the schema change.
+The canonical schemas are `tools/schemas/runway-<kind>.schema.json` at the repository root (the static Worker serves
+them, ADR 0284). `schema/<kind>.json` is a byte copy of each, and `pnpm validate` fails until you `cp` the canonical
+file over it. The zod in `src/core/constants/` must accept and refuse the same documents (plus the cross-field rules
+JSON Schema cannot state), and the `runwayJsonSchema` test compares its derivation with the shipped file once both are
+normalised, so a canonical change lands with the matching zod change.

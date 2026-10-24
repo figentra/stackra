@@ -1,14 +1,17 @@
 /**
  * Stackra file contract:
- * Purpose: unit and type tests of `parseRunway`: the template's root, app and service runway shapes pass with defaults
- *          applied and typed per kind; a member runway refuses the root keys (`member`, `deployable`, `isolate`,
- *          `group`, `cpu`, `memory`, `instances`) at the top and in an environment; a dedicated resource needs a
- *          reason; a deferred engine, a version other than 3, a misspelt environment, a duplicated secret and an
- *          inverted instance range fail with their paths.
+ * Purpose: unit and type tests of `parseRunway` against the canonical runway v3 schemas: the template's root, app and
+ *          service runway shapes pass, typed per kind, with nothing added; a member runway refuses the root keys
+ *          (`member`, `deployable`, `isolate`, `group`, `cpu`, `memory`, `instances`) at the top and in an
+ *          environment; a dedicated resource needs a non-empty reason; the engines are ADR 0296's four; a grouped
+ *          topology needs groups and lists a member once; the root's environments, `secrets` and `destinations` are
+ *          closed while its provider and target blocks and the member size blocks stay open; a var reference names
+ *          exactly one origin; a version other than 3, a misspelt environment, a duplicated secret and an inverted
+ *          instance range fail with their paths.
  * Boundary: test only; the fixtures mirror the template's `runway.yaml` files, trimmed.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0296 (decisions 1, 2
- *                     and 5, and enforcement); ADR 0227.
+ *                     and 5, its 2026-10-24 note, and enforcement); ADR 0227.
  */
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
@@ -152,6 +155,11 @@ function issuePaths(run: () => unknown): string[] {
   throw new Error("expected a RunwayInvalidError");
 }
 
+/** Parses an app runway whose dev environment has the given vars. */
+function parseVars(vars: Record<string, unknown>): unknown {
+  return parseRunway("app", { version: 3, environments: { dev: { vars } } });
+}
+
 describe("parseRunway", () => {
   it("parses the template's service runway, typed ServiceRunway", () => {
     const commerce = parseRunway("service", COMMERCE, "services/commerce/runway.yaml");
@@ -165,29 +173,28 @@ describe("parseRunway", () => {
     expect(commerce.environments.production?.cache?.eviction).toBe("volatile-ttl");
   });
 
-  it("parses the template's app runway, typed AppRunway, with defaults applied", () => {
+  it("parses the template's app runway, typed AppRunway, adding no defaults", () => {
     const app = parseRunway("app", CONSOLE);
 
     expectTypeOf(app).toEqualTypeOf<AppRunway>();
     expect(app.release?.desktop?.feedPath).toBe("console");
     expect(app.environments.dev?.desktop?.remoteDebugPort).toBe(9222);
-    expect(
-      parseRunway("app", { version: 3, environments: { dev: { port: 3333 } } }).secrets,
-    ).toEqual([]);
+    const docs = { version: 3, environments: { dev: { port: 3333 } } };
+    expect(parseRunway("app", docs)).toEqual(docs);
   });
 
   it("parses the template's root runway, typed RootRunway, keeping open provider blocks", () => {
     const root = parseRunway("root", ROOT);
 
     expectTypeOf(root).toEqualTypeOf<RootRunway>();
-    expect(root.environments.production?.topology.groups?.commerce?.instances).toEqual({
+    expect(root.environments.production?.topology?.groups?.commerce?.instances).toEqual({
       min: 2,
       max: 10,
     });
-    expect(root.environments.dev?.["infra"]).toEqual({ gateway: { port: 4000 } });
-    expect(root.targets?.["electron-release"]?.feed?.publicOrigin).toBe(
-      "https://downloads.acme.example",
-    );
+    expect(root.environments.dev?.infra).toEqual({ gateway: { port: 4000 } });
+    expect(root.targets?.["electron-release"]?.["feed"]).toEqual({
+      publicOrigin: "https://downloads.acme.example",
+    });
   });
 
   it("refuses root keys in a member runway", () => {
@@ -212,29 +219,146 @@ describe("parseRunway", () => {
         }),
       ),
     ).toEqual(["requires.search.reason"]);
+    expect(
+      issuePaths(() =>
+        parseRunway("service", {
+          version: 3,
+          requires: { search: { dedicated: true, engine: "postgres", reason: "" } },
+          environments: {},
+        }),
+      ),
+    ).toEqual(["requires.search.reason"]);
     const shared = parseRunway("service", {
       version: 3,
-      requires: { search: { engine: "postgres" } },
+      requires: { search: { engine: "postgres" }, mail: { engine: "valkey", dedicated: false } },
       environments: {},
     });
-    expect(shared.requires?.search).toEqual({ engine: "postgres", dedicated: false });
+    expect(shared.requires?.search).toEqual({ engine: "postgres" });
+    expect(() =>
+      parseRunway("service", { version: 3, requires: { cache: {} }, environments: {} }),
+    ).toThrow(RunwayInvalidError);
   });
 
-  it("refuses an engine ADR 0227 defers, naming the allowed ones", () => {
+  it("allows the four engines ADR 0296 lists and refuses a deferred one, naming them", () => {
+    for (const engine of ["postgres", "valkey", "s3", "sns-sqs"]) {
+      expect(
+        parseRunway("app", { version: 3, requires: { store: { engine } }, environments: {} })
+          .requires?.store?.engine,
+      ).toBe(engine);
+    }
     expect(() =>
       parseRunway("service", {
         version: 3,
         requires: { search: { dedicated: true, engine: "typesense", reason: "fast search" } },
         environments: {},
       }),
-    ).toThrow(/ADR 0227 allows: postgres, valkey/);
+    ).toThrow(/ADR 0296 allows: postgres, valkey, s3, sns-sqs/);
+  });
+
+  it("needs groups in a grouped topology and lists a member once", () => {
+    const grouped = (topology: unknown) =>
+      parseRunway("root", { ...ROOT, environments: { staging: { topology } } });
+
+    expect(issuePaths(() => grouped({ mode: "grouped", default: "core" }))).toEqual([
+      "environments.staging.topology.groups",
+    ]);
+    expect(
+      issuePaths(() => grouped({ mode: "monolith", isolate: ["identity", "identity"] })),
+    ).toEqual(["environments.staging.topology.isolate"]);
+    expect(
+      issuePaths(() =>
+        grouped({ mode: "grouped", groups: { core: { members: ["commerce", "commerce"] } } }),
+      ),
+    ).toEqual(["environments.staging.topology.groups.core.members"]);
+    expect(
+      grouped({ mode: "grouped", groups: { core: { members: ["commerce"] } } }).environments.staging
+        ?.topology?.groups?.core,
+    ).toEqual({ members: ["commerce"] });
+    expect(parseRunway("root", { ...ROOT, environments: { dev: {} } }).environments.dev).toEqual(
+      {},
+    );
+  });
+
+  it("closes the root's environments, secrets and destinations, and its project spelling", () => {
+    const root = (patch: Record<string, unknown>) => () =>
+      parseRunway("root", { ...ROOT, ...patch });
+
+    expect(issuePaths(root({ environments: { dev: { deployables: [] } } }))).toEqual([
+      "environments.dev",
+    ]);
+    expect(issuePaths(root({ secrets: { runtime: ["A_KEY"] } }))).toEqual(["secrets"]);
+    expect(issuePaths(root({ secrets: { sync: "nightly" } }))).toEqual(["secrets.sync"]);
+    expect(issuePaths(root({ secrets: { gateway: ["A_KEY", "A_KEY"] } }))).toEqual([
+      "secrets.gateway",
+    ]);
+    expect(
+      issuePaths(root({ environments: { dev: { destinations: { workers: "compose" } } } })),
+    ).toEqual(["environments.dev.destinations"]);
+    expect(issuePaths(root({ project: "acme_platform" }))).toEqual(["project"]);
+    expect(
+      issuePaths(root({ providers: { infisical: { domain: "http://infisical.local" } } })),
+    ).toEqual(["providers.infisical.domain"]);
+    expect(
+      parseRunway("root", {
+        ...ROOT,
+        providers: { sentry: { org: "acme" } },
+        targets: { mintlify: { checks: ["validate"] } },
+        environments: { production: { destinations: { docs: "mintlify" }, ttl: "7d" } },
+      }).providers?.["sentry"],
+    ).toEqual({ org: "acme" });
+  });
+
+  it("keeps the member size blocks open and accepts the new member keys", () => {
+    const service = parseRunway("service", {
+      version: 3,
+      environments: {
+        dev: { host: "localhost", devConsolePort: 9400 },
+        production: {
+          database: { plan: "dedicated-large", storageGb: 2.5 },
+          cache: { eviction: "volatile-lfu", keyspaceMb: 64 },
+          queues: { default: { visibilityTimeoutSeconds: 0 } },
+          crons: {},
+          secrets: ["PRICING_API_KEY"],
+        },
+      },
+    });
+    expect(service.environments.production?.cache).toEqual({
+      eviction: "volatile-lfu",
+      keyspaceMb: 64,
+    });
+    const mobile = parseRunway("app", {
+      version: 3,
+      health: { path: "/healthz" },
+      environments: { dev: { mobile: { metroPort: 8081 }, e2e: { device: "pixel" } } },
+    });
+    expect(mobile.environments.dev?.mobile?.metroPort).toBe(8081);
+    expect(
+      issuePaths(() => parseRunway("app", { ...CONSOLE, health: { expects: "200" } })),
+    ).toEqual(["health.expects"]);
+  });
+
+  it("needs a var reference to name exactly one origin, and a var to be SCREAMING_SNAKE", () => {
+    expect(issuePaths(() => parseVars({ VITE_ORIGIN: { scheme: "ws" } }))).toEqual([
+      "environments.dev.vars.VITE_ORIGIN",
+    ]);
+    expect(
+      issuePaths(() =>
+        parseVars({ VITE_ORIGIN: { "from-port": "gateway", "from-member": "console" } }),
+      ),
+    ).toEqual(["environments.dev.vars.VITE_ORIGIN"]);
+    expect(issuePaths(() => parseVars({ vite_origin: "x" }))).toEqual([
+      "environments.dev.vars.vite_origin",
+    ]);
+    expect(
+      parseVars({ VITE_ORIGIN: { "from-member": "console", path: "realtime" } }),
+    ).toBeDefined();
   });
 
   it("names the path of each invalid value", () => {
     expect(issuePaths(() => parseRunway("app", { ...CONSOLE, version: 2 }))).toEqual(["version"]);
     expect(
       issuePaths(() => parseRunway("app", { version: 3, environments: { prod: {} } })),
-    ).toEqual(["environments.prod"]);
+    ).toEqual(["environments"]);
     expect(
       issuePaths(() => parseRunway("service", { ...COMMERCE, secrets: ["A_KEY", "A_KEY"] })),
     ).toEqual(["secrets"]);

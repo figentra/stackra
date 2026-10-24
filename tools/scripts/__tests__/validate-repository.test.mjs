@@ -7,6 +7,7 @@ import {
   checkFiles,
   checkImports,
   checkJsonConfigs,
+  checkRunwaySchemas,
   checkService,
   checkTestPlacement,
   checkYamlFlowMaps,
@@ -311,6 +312,32 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       (m) => m.split(":")[0],
     ),
     yamlOwed,
+  );
+});
+
+test("checkRunwaySchemas: each shipped runway schema is a byte copy of its tools/schemas file", () => {
+  const files = {};
+  for (const kind of ["app", "root", "service"]) {
+    files[`tools/schemas/runway-${kind}.schema.json`] = `{ "title": "${kind}" }\n`;
+    files[`packages/developer/runway/schema/${kind}.json`] = `{ "title": "${kind}" }\n`;
+  }
+  assert.deepEqual(
+    checkRunwaySchemas((p) => files[p]),
+    [],
+  );
+
+  files["packages/developer/runway/schema/root.json"] = '{"title":"root"}\n';
+  delete files["packages/developer/runway/schema/service.json"];
+  assert.deepEqual(
+    checkRunwaySchemas((p) => files[p]).map((m) => m.split(":")[0]),
+    [
+      "packages/developer/runway/schema/root.json differs from tools/schemas/runway-root.schema.json",
+      "packages/developer/runway/schema/service.json differs from tools/schemas/runway-service.schema.json",
+    ],
+  );
+  assert.match(
+    checkRunwaySchemas((p) => files[p])[0],
+    /: run `cp tools\/schemas\/runway-root\.schema\.json packages\/developer\/runway\/schema\/root\.json`$/,
   );
 });
 

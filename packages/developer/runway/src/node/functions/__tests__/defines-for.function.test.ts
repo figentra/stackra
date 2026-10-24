@@ -5,7 +5,7 @@
  *          the dev facts), server vars left out, and `__STACKRA_RUNWAY__` holding the member's dev facts without the
  *          TLS paths; outside dev, `ref:` and `${pr}` values from the build environment and the desktop feed from the
  *          root origin, member feed path and environment channel; and the failures for an unknown environment, an
- *          unset deploy-time value, a dev reference outside dev and a channel without a root feed origin.
+ *          unset deploy-time value, a dev reference outside dev and a channel without a root feed origin URL.
  * Boundary: test only; writes a throwaway repository (root and member runways, dev facts) in the OS temp directory and
  *           points `process.cwd()` at the member.
  * Runtime: node (vitest)
@@ -192,10 +192,16 @@ describe("definesFor", () => {
     expect(() => definesFor("console", "prod")).toThrow(RangeError);
   });
 
-  it("fails for a desktop channel without a root feed origin", () => {
+  it("fails for a desktop channel without a root feed origin, or with one that is no URL", () => {
     write("runway.yaml", `${ROOT_RUNWAY.slice(0, 6).join("\n")}\n`);
     vi.stubEnv("VITE_SENTRY_DSN", "https://public@sentry.example/1");
 
+    expect(() => definesFor("console", "production")).toThrow(/feed\.publicOrigin/);
+
+    write(
+      "runway.yaml",
+      `${[...ROOT_RUNWAY.slice(0, 9), "      publicOrigin: downloads"].join("\n")}\n`,
+    );
     expect(() => definesFor("console", "production")).toThrow(/feed\.publicOrigin/);
   });
 });

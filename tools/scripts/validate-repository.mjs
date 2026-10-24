@@ -8,6 +8,7 @@
  *          or v3 (`stackra.config.ts` and its root module, ADR 0294 R12) until STA-344 (`isV2Service`).
  *          Every test file anywhere in the repository sits directly in a __tests__/ folder (ADR 0022).
  *          Every JSON config is .jsonc unless its reader cannot take one (MUST_STAY_JSON).
+ *          The runway JSON Schemas @stackra/runway ships are byte copies of tools/schemas (checkRunwaySchemas).
  *          Repo-owned YAML has no flow mappings (block style; checkYamlFlowMaps).
  *          Member TS imports carry no file extension and climb at most one folder (checkImports, ADR 0233).
  *          Prints the findings and exits 1; prints nothing on success. Adapted from Figentra's checks 1–5.
@@ -352,6 +353,24 @@ export function checkJsonConfigs(paths) {
   return out;
 }
 
+/** The runway kinds whose JSON Schema `@stackra/runway` ships; `tools/schemas` holds the canonical file (ADR 0296). */
+export const RUNWAY_SCHEMA_KINDS = ["app", "root", "service"];
+
+/**
+ * `packages/developer/runway/schema/<kind>.json` is a byte copy of the canonical
+ * `tools/schemas/runway-<kind>.schema.json`. `read(path)` returns a repository file's text, or undefined when absent.
+ */
+export function checkRunwaySchemas(read) {
+  const out = [];
+  for (const kind of RUNWAY_SCHEMA_KINDS) {
+    const canonical = `tools/schemas/runway-${kind}.schema.json`;
+    const copy = `packages/developer/runway/schema/${kind}.json`;
+    if (read(copy) !== read(canonical))
+      out.push(`${copy} differs from ${canonical}: run \`cp ${canonical} ${copy}\``);
+  }
+  return out;
+}
+
 /** Generated or vendored YAML the flow-map rule does not own. pnpm-workspace.yaml joins when STA-300 lands. */
 const YAML_NOT_OWNED = [
   /^pnpm-lock\.yaml$/,
@@ -461,6 +480,10 @@ function main() {
     .filter((p) => p && existsSync(join(ROOT, p)));
   report("", checkTestPlacement(repoFiles));
   report("", checkJsonConfigs(repoFiles));
+  report(
+    "",
+    checkRunwaySchemas((p) => read(ROOT, p)),
+  );
   for (const p of repoFiles.filter(isMemberSource))
     report("", checkImports(p, readFileSync(join(ROOT, p), "utf8")));
   for (const p of repoFiles.filter(isRepoOwnedYaml))

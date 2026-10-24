@@ -1,461 +1,410 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://static.stackra.figentra.com/schemas/runway/app.json",
+  "$comment": "Stackra file contract: Purpose: the shape of an APP member's runway.yaml. Boundary: shape only; identity is stackra.config.ts, behaviour is src/config/*, accounts and zones are the root runway (runway/root.json). Runtime: node (editors and validators). Governing contract: ADR 0296 (runway v3: requires, no root facts), ADR 0168 (runway.yaml schema), ADR 0227 (allowed engines), ADR 0170 (environments; no literal ports outside runway), ADR 0173 (secret names only), ADR 0175 (domains), ADR 0180 (EAS), ADR 0254 (desktop release), ADR 0146 (config layers), ADR 0231 (names).",
+  "title": "runway.yaml (app member)",
+  "description": "What one app needs and how it runs, per environment (ADR 0296 d1; the folder names the member): the dev port (the only place it is written), domains, public vars, secret names, release channels and Workers knobs (ADR 0168, 0170, 0173, 0254). A value here may override a root default, never the reverse.",
   "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "environments"],
   "properties": {
     "$schema": {
-      "type": "string"
+      "type": "string",
+      "description": "The schema reference `stackra validate` reads (`@stackra/runway/schema/app.json`). Editors use the `# yaml-language-server: $schema=` comment instead.",
+      "examples": ["@stackra/runway/schema/app.json"]
     },
     "version": {
-      "type": "number",
-      "const": 3
+      "const": 3,
+      "description": "Runway format version (ADR 0296)."
     },
     "requires": {
-      "type": "object",
-      "propertyNames": {
-        "type": "string",
-        "pattern": "^[a-z][a-z0-9_-]*$"
-      },
-      "additionalProperties": {
-        "type": "object",
-        "properties": {
-          "engine": {
-            "type": "string",
-            "enum": ["postgres", "valkey"]
-          },
-          "dedicated": {
-            "default": false,
-            "type": "boolean"
-          },
-          "reason": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "required": ["engine"],
-        "additionalProperties": false
-      }
+      "$ref": "#/$defs/requires"
     },
     "secrets": {
-      "default": [],
-      "type": "array",
-      "items": {
-        "type": "string",
-        "pattern": "^[A-Z][A-Z0-9_]*$"
-      }
+      "$ref": "#/$defs/secretList",
+      "description": "Every @Secret of the env and config classes, by NAME. Values live in Infisical and runway syncs them on deploy (ADR 0173). A native client holds none (ADR 0206 d8)."
     },
     "health": {
       "type": "object",
+      "description": "The health endpoint the deploy gate calls (web and pwa targets; not desktop).",
+      "additionalProperties": false,
       "properties": {
         "path": {
           "type": "string",
-          "format": "starts_with",
-          "pattern": "^\\/.*"
+          "pattern": "^/",
+          "description": "Health path.",
+          "examples": ["/healthz"]
         },
         "expects": {
-          "type": "string",
-          "minLength": 1
+          "enum": ["sha"],
+          "description": "What the endpoint must answer: the release SHA (ADR 0170 DP24)."
         }
-      },
-      "required": ["path", "expects"],
-      "additionalProperties": false
+      }
     },
     "release": {
       "type": "object",
+      "description": "Release channels per target.",
+      "additionalProperties": false,
       "properties": {
         "pwa": {
           "type": "object",
-          "properties": {
-            "updates": {
-              "type": "string",
-              "minLength": 1
-            },
-            "betaBadgeOutsideProduction": {
-              "type": "boolean"
-            }
-          },
-          "required": ["updates"],
-          "additionalProperties": false
+          "description": "PWA updates. The strategy is pwa.config.ts `updates`; this only adds the beta badge outside production."
         },
         "desktop": {
           "type": "object",
+          "description": "Electron release (ADR 0254). Tooling is root `targets.electron-release`.",
           "properties": {
             "channels": {
-              "minItems": 1,
               "type": "array",
+              "description": "A subset of the root target's channels; `latest` is electron-updater's stable.",
               "items": {
-                "type": "string",
-                "pattern": "^[a-z][a-z0-9_-]*$"
-              }
+                "type": "string"
+              },
+              "examples": [["beta", "latest"]]
             },
             "signing": {
               "type": "object",
-              "properties": {
-                "mac": {
-                  "type": "boolean"
-                },
-                "windows": {
-                  "type": "boolean"
-                },
-                "linux": {
-                  "type": "boolean"
-                }
-              },
-              "additionalProperties": false
+              "description": "Per-platform signing switch. Unsigned until a deliverable is named (ADR 0254 d1).",
+              "additionalProperties": {
+                "type": "boolean",
+                "description": "Sign builds for this platform (mac, windows)."
+              }
             },
             "feedPath": {
               "type": "string",
-              "pattern": "^[a-z][a-z0-9_-]*$"
+              "description": "Update feed sub-path: `<root feed.publicOrigin>/<feedPath>/<channel>/`."
             },
             "platforms": {
               "type": "object",
-              "properties": {
-                "mac": {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                },
-                "windows": {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                },
-                "linux": {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                }
+              "description": "Installer formats per platform. Narrows desktop.config.ts packaging, never widens.",
+              "propertyNames": {
+                "enum": ["mac", "windows", "linux"]
               },
-              "additionalProperties": false
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "examples": [["dmg", "zip"]],
+                "description": "Installer formats electron-builder produces for this platform."
+              }
             }
-          },
-          "required": ["channels", "feedPath"],
-          "additionalProperties": false
+          }
         },
         "mobile": {
           "type": "object",
+          "description": "EAS build and submit (ADR 0180). The OTA rollout and credentials are root `targets.eas`.",
           "properties": {
             "profiles": {
               "type": "object",
-              "propertyNames": {
-                "type": "string",
-                "pattern": "^[a-z][a-z0-9_-]*$"
-              },
+              "description": "EAS build profiles. The update channel is the profile name.",
               "additionalProperties": {
                 "type": "object",
+                "description": "One EAS build profile.",
                 "properties": {
                   "distribution": {
-                    "type": "string",
-                    "enum": ["internal", "store"]
+                    "enum": ["internal", "store"],
+                    "description": "Internal distribution or the stores."
                   },
                   "developmentClient": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Build the Expo dev client."
                   },
                   "simulator": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Build for the iOS simulator."
                   },
                   "androidApk": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Build an APK instead of an AAB."
                   },
                   "autoIncrement": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Let EAS bump the build number."
                   },
                   "environment": {
                     "type": "string",
-                    "pattern": "^[a-z][a-z0-9_-]*$"
+                    "description": "The EAS environment runway syncs vars into."
                   }
-                },
-                "required": ["distribution", "environment"],
-                "additionalProperties": false
+                }
               }
             },
             "submit": {
               "type": "object",
+              "description": "Which stores the release job submits to. Root `targets.eas.submit` names the credentials.",
               "properties": {
                 "ios": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "description": "Submit to App Store Connect."
                 },
                 "android": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "description": "Submit to Google Play."
                 }
-              },
-              "additionalProperties": false
+              }
             },
             "whiteLabel": {
-              "type": "boolean"
+              "type": "boolean",
+              "description": "Per-tenant store builds (Pro; MR1)."
             }
-          },
-          "required": ["profiles"],
-          "additionalProperties": false
+          }
         }
-      },
-      "additionalProperties": false
+      }
     },
     "telemetry": {
       "type": "object",
+      "description": "Telemetry destinations that are per member, not per environment.",
+      "additionalProperties": false,
       "properties": {
         "sentryProject": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9_-]*$"
+          "description": "Sentry project. The org is root `providers.sentry.org`; the DSN is a var.",
+          "examples": ["acme-console"]
         }
-      },
-      "additionalProperties": false
+      }
     },
     "environments": {
       "type": "object",
+      "description": "Per-environment values. Names are fixed (ADR 0170 DP5).",
       "propertyNames": {
-        "type": "string",
-        "enum": ["dev", "preview", "staging", "production"]
+        "$ref": "#/$defs/envName"
       },
       "additionalProperties": {
-        "type": "object",
-        "properties": {
-          "port": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 65535
-          },
-          "host": {
-            "type": "string",
-            "minLength": 1
-          },
-          "https": {
-            "type": "boolean"
-          },
-          "open": {
-            "type": "boolean"
-          },
-          "domain": {
-            "type": "string",
-            "pattern": "^[a-z0-9${}.-]+$"
-          },
-          "aliases": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "pattern": "^[a-z0-9${}.-]+$"
-            }
-          },
-          "destination": {
-            "type": "string",
-            "pattern": "^[a-z][a-z0-9_-]*$"
-          },
-          "vars": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string",
-              "pattern": "^[A-Z][A-Z0-9_]*$"
-            },
-            "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "from-port": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "scheme": {
-                      "type": "string",
-                      "pattern": "^[a-z][a-z0-9+.-]*$"
-                    },
-                    "path": {
-                      "type": "string",
-                      "format": "starts_with",
-                      "pattern": "^\\/.*"
-                    }
-                  },
-                  "required": ["from-port"],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "from-member": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "scheme": {
-                      "type": "string",
-                      "pattern": "^[a-z][a-z0-9+.-]*$"
-                    },
-                    "path": {
-                      "type": "string",
-                      "format": "starts_with",
-                      "pattern": "^\\/.*"
-                    }
-                  },
-                  "required": ["from-member"],
-                  "additionalProperties": false
-                }
-              ]
-            }
-          },
-          "config": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string",
-              "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
-            },
-            "additionalProperties": {
-              "type": "object",
-              "propertyNames": {
-                "type": "string"
-              },
-              "additionalProperties": {}
-            }
-          },
-          "e2e": {
-            "type": "object",
-            "properties": {
-              "baseUrl": {
-                "anyOf": [
-                  {
-                    "type": "string",
-                    "const": "from-port"
-                  },
-                  {
-                    "type": "string",
-                    "format": "uri"
-                  }
-                ]
-              },
-              "seeds": {
-                "anyOf": [
-                  {
-                    "type": "string",
-                    "const": "from-stackra-config"
-                  },
-                  {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "minLength": 1
-                    }
-                  }
-                ]
-              },
-              "turnstile": {
-                "type": "string",
-                "const": "test-keys"
-              }
-            },
-            "additionalProperties": false
-          },
-          "desktop": {
-            "type": "object",
-            "properties": {
-              "devtools": {
-                "type": "boolean"
-              },
-              "remoteDebugPort": {
-                "type": "integer",
-                "minimum": 1,
-                "maximum": 65535
-              },
-              "pkceLoopbackPort": {
-                "type": "integer",
-                "minimum": 1,
-                "maximum": 65535
-              },
-              "channel": {
-                "type": "string",
-                "pattern": "^[a-z][a-z0-9_-]*$"
-              },
-              "rollout": {
-                "type": "object",
-                "properties": {
-                  "startPercent": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "maximum": 100
-                  }
-                },
-                "required": ["startPercent"],
-                "additionalProperties": false
-              }
-            },
-            "additionalProperties": false
-          },
-          "mobile": {
-            "type": "object",
-            "properties": {
-              "devClient": {
-                "type": "boolean"
-              },
-              "channel": {
-                "type": "string",
-                "pattern": "^[a-z][a-z0-9_-]*$"
-              },
-              "profile": {
-                "type": "string",
-                "pattern": "^[a-z][a-z0-9_-]*$"
-              }
-            },
-            "additionalProperties": false
-          },
-          "pwa": {
-            "type": "object",
-            "properties": {
-              "updates": {
-                "type": "string",
-                "minLength": 1
-              }
-            },
-            "required": ["updates"],
-            "additionalProperties": false
-          },
-          "workers": {
-            "type": "object",
-            "properties": {
-              "observability": {
-                "type": "object",
-                "properties": {
-                  "headSamplingRate": {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 1
-                  }
-                },
-                "required": ["headSamplingRate"],
-                "additionalProperties": false
-              },
-              "limits": {
-                "type": "object",
-                "properties": {
-                  "cpuMs": {
-                    "type": "integer",
-                    "exclusiveMinimum": 0,
-                    "maximum": 9007199254740991
-                  }
-                },
-                "required": ["cpuMs"],
-                "additionalProperties": false
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "additionalProperties": false
+        "$ref": "#/$defs/environment"
       }
     }
   },
-  "required": ["version", "environments"],
-  "additionalProperties": false,
-  "$id": "https://static.stackra.figentra.com/schemas/runway/app.json",
-  "title": "Stackra app runway, format version 3"
+  "$defs": {
+    "envName": {
+      "enum": ["dev", "preview", "staging", "production"],
+      "description": "Environment name (ADR 0170 DP5)."
+    },
+    "secretName": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*$",
+      "description": "Secret name in SCREAMING_SNAKE, `<PROVIDER>_<PURPOSE>` (ADR 0231).",
+      "examples": ["TURNSTILE_SECRET_KEY"]
+    },
+    "requires": {
+      "type": "object",
+      "description": "Resource name → one resource the member needs beyond what gen derives from the manifest (ADR 0296 d1).",
+      "additionalProperties": {
+        "type": "object",
+        "description": "One required resource. A dedicated one says why it cannot be shared.",
+        "additionalProperties": false,
+        "required": ["engine"],
+        "properties": {
+          "engine": {
+            "enum": ["postgres", "valkey", "s3", "sns-sqs"],
+            "description": "An engine ADR 0227 neither defers nor rejects (ADR 0296 d5)."
+          },
+          "dedicated": {
+            "type": "boolean",
+            "description": "The member gets its own instance instead of the shared one."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "One line: why the member cannot share the resource."
+          }
+        },
+        "if": {
+          "properties": {
+            "dedicated": {
+              "const": true
+            }
+          },
+          "required": ["dedicated"]
+        },
+        "then": {
+          "required": ["reason"]
+        }
+      }
+    },
+    "secretList": {
+      "type": "array",
+      "description": "The secret names this environment receives.",
+      "items": {
+        "$ref": "#/$defs/secretName"
+      },
+      "uniqueItems": true
+    },
+    "derived": {
+      "type": "object",
+      "description": "A value gen derives instead of a literal, so a port is never repeated (ADR 0170).",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "from-port": {
+          "type": "string",
+          "description": "Origin of a root dev infra service (lane offsets applied).",
+          "examples": ["gateway", "zitadel"]
+        },
+        "from-member": {
+          "type": "string",
+          "description": "Dev origin of another member.",
+          "examples": ["console"]
+        },
+        "scheme": {
+          "type": "string",
+          "description": "URL scheme to use instead of http.",
+          "examples": ["ws"]
+        },
+        "path": {
+          "type": "string",
+          "description": "Path appended to the origin.",
+          "examples": ["/realtime"]
+        }
+      }
+    },
+    "vars": {
+      "type": "object",
+      "description": "Values of the env class fields. gen checks the prefix: `VITE_` or `EXPO_PUBLIC_` for public values, `STACKRA_` for server values (ADR 0231). Never a secret.",
+      "propertyNames": {
+        "pattern": "^[A-Z][A-Z0-9_]*$"
+      },
+      "additionalProperties": {
+        "description": "A literal, `ref:<path>`, `from-port`, or a derived value.",
+        "anyOf": [
+          {
+            "type": ["string", "number", "boolean"]
+          },
+          {
+            "$ref": "#/$defs/derived"
+          }
+        ]
+      }
+    },
+    "config": {
+      "type": "object",
+      "description": "The last config layer (ADR 0146), keyed by config key.",
+      "additionalProperties": {
+        "type": "object",
+        "description": "Overrides of one config class.",
+        "examples": [
+          {
+            "traces": {
+              "sampleRate": 1
+            }
+          }
+        ]
+      }
+    },
+    "port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "description": "A TCP port. Lanes add N × `portStep` per worktree."
+    },
+    "environment": {
+      "type": "object",
+      "description": "One environment of an app member.",
+      "additionalProperties": false,
+      "properties": {
+        "port": {
+          "$ref": "#/$defs/port",
+          "description": "Dev server port (web, pwa, the desktop renderer); HMR defaults to port + 1."
+        },
+        "host": {
+          "type": "string",
+          "description": "Dev host; `<key>.localhost` once root `dev.proxy` is on.",
+          "examples": ["localhost"]
+        },
+        "https": {
+          "type": "boolean",
+          "description": "Serve the dev server over https."
+        },
+        "open": {
+          "type": "boolean",
+          "description": "Open a browser when the dev server starts."
+        },
+        "domain": {
+          "type": "string",
+          "description": "Public host in this environment; `${pr}` is expanded in previews.",
+          "examples": ["console.acme.dev"]
+        },
+        "aliases": {
+          "type": "array",
+          "description": "Hosts that redirect to `domain`.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "destination": {
+          "type": "string",
+          "description": "Override of root `destinations.web` for this member.",
+          "examples": ["cloudflare-workers"]
+        },
+        "vars": {
+          "$ref": "#/$defs/vars"
+        },
+        "secrets": {
+          "$ref": "#/$defs/secretList"
+        },
+        "config": {
+          "$ref": "#/$defs/config"
+        },
+        "e2e": {
+          "type": "object",
+          "description": "End-to-end settings: the base URL (`from-port`) and the seeds Playwright or Maestro use."
+        },
+        "workers": {
+          "type": "object",
+          "description": "Cloudflare Workers knobs: observability sampling and limits."
+        },
+        "pwa": {
+          "type": "object",
+          "description": "PWA update behaviour in this environment."
+        },
+        "desktop": {
+          "type": "object",
+          "description": "Electron settings in this environment.",
+          "properties": {
+            "devtools": {
+              "type": "boolean",
+              "description": "Open devtools in dev."
+            },
+            "remoteDebugPort": {
+              "$ref": "#/$defs/port",
+              "description": "Chrome remote debugging port in dev."
+            },
+            "pkceLoopbackPort": {
+              "$ref": "#/$defs/port",
+              "description": "Loopback port that takes the PKCE redirect in dev."
+            },
+            "channel": {
+              "type": "string",
+              "description": "Update channel of this environment."
+            },
+            "rollout": {
+              "type": "object",
+              "description": "Override of the root staged rollout."
+            }
+          }
+        },
+        "mobile": {
+          "type": "object",
+          "description": "Expo settings in this environment.",
+          "properties": {
+            "metroPort": {
+              "$ref": "#/$defs/port",
+              "description": "Metro bundler port (the only place it is written)."
+            },
+            "devClient": {
+              "type": "boolean",
+              "description": "Run with the Expo dev client."
+            },
+            "channel": {
+              "type": "string",
+              "description": "EAS update channel."
+            },
+            "profile": {
+              "type": "string",
+              "description": "EAS build profile from `release.mobile.profiles`."
+            }
+          }
+        }
+      }
+    }
+  }
 }

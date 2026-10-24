@@ -53,12 +53,13 @@ export function resolveVar(
         : `${name} names a dev origin, which has no value in ${environment}`,
     );
   }
+  // parseRunway refines that a reference names exactly one of `from-port` and `from-member`
   const reference =
     typeof value === "string"
       ? { by: "member", key: member }
-      : "from-port" in value
-        ? { by: "port", key: value["from-port"] }
-        : { by: "member", key: value["from-member"] };
+      : value["from-port"] === undefined
+        ? { by: "member", key: value["from-member"] ?? "" }
+        : { by: "port", key: value["from-port"] };
   const infra = Object.hasOwn(facts.infra, reference.key) ? facts.infra[reference.key] : undefined;
   const target = Object.hasOwn(facts.members, reference.key)
     ? facts.members[reference.key]
