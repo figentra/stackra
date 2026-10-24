@@ -23,6 +23,11 @@ const DESIGN_SYSTEM_COMPONENTS: typeof import("../screens/design-system-componen
 const DesignSystemScreen:
   | typeof import("../screens/design-system-screen").DesignSystemScreen
   | undefined = __DEV__ ? require("../screens/design-system-screen").DesignSystemScreen : undefined;
+const ComponentPage: typeof import("../components/ui/component-page").ComponentPage | undefined =
+  __DEV__ ? require("../components/ui/component-page").ComponentPage : undefined;
+const DisplaySettings:
+  | typeof import("../components/ui/display-settings").DisplaySettings
+  | undefined = __DEV__ ? require("../components/ui/display-settings").DisplaySettings : undefined;
 /* oxlint-enable typescript/no-require-imports */
 
 const Tabs = createNativeBottomTabNavigator<TabParamList>();
@@ -43,19 +48,29 @@ function SettingsTab() {
     <SettingsStack.Navigator screenOptions={largeTitleHeader}>
       <SettingsStack.Screen name="Settings" component={SettingsScreen} />
       {/* Development builds only, like the Settings row that opens it. */}
-      {DesignSystemScreen ? (
+      {/* Each page is framed by its category strip and pager; the display switcher sits in every header. */}
+      {DesignSystemScreen && ComponentPage && DisplaySettings ? (
         <>
           <SettingsStack.Screen
             name="DesignSystem"
             component={DesignSystemScreen}
-            options={{ ...detailHeader, title: "Design system" }}
+            options={{
+              ...detailHeader,
+              title: "Design system",
+              headerRight: () => <DisplaySettings />,
+            }}
           />
           {DESIGN_SYSTEM_COMPONENTS.map(({ route, title, screen }) => (
             <SettingsStack.Screen
               key={route}
               name={route}
               component={screen}
-              options={{ ...detailHeader, title }}
+              options={{ ...detailHeader, title, headerRight: () => <DisplaySettings /> }}
+              layout={({ children }) => (
+                <ComponentPage pages={DESIGN_SYSTEM_COMPONENTS} route={route}>
+                  {children}
+                </ComponentPage>
+              )}
             />
           ))}
         </>

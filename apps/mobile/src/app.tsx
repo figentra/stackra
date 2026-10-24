@@ -11,6 +11,7 @@ import { DarkTheme, DefaultTheme, NavigationContainer } from "@react-navigation/
 import { defineIconRegistry } from "@stackra/icons";
 import { IconRegistryProvider } from "@stackra/icons/native";
 import {
+  ArrowLeft,
   ArrowRight,
   Bell,
   Check,
@@ -19,12 +20,16 @@ import {
   CircleX,
   Download,
   Heart,
+  LayoutGrid,
+  Moon,
   Play,
   Plus,
   Search,
   SendHorizontal,
   Settings,
+  Sparkles,
   Star,
+  Sun,
   Trash,
   Undo2,
 } from "@stackra/icons/native/lucide-icons";
@@ -43,6 +48,7 @@ void SplashScreen.preventAutoHideAsync();
 // shortcut: written by hand, only the icons the screens draw, until gen emits it from the names used (STA-339).
 /** The icons the app draws by name, on top of the few `@stackra/ui` draws itself. */
 const APP_ICONS = defineIconRegistry({
+  "arrow-left": ArrowLeft,
   "arrow-right": ArrowRight,
   bell: Bell,
   check: Check,
@@ -51,12 +57,16 @@ const APP_ICONS = defineIconRegistry({
   "circle-x": CircleX,
   download: Download,
   heart: Heart,
+  "layout-grid": LayoutGrid,
+  moon: Moon,
   play: Play,
   plus: Plus,
   search: Search,
   "send-horizontal": SendHorizontal,
   settings: Settings,
+  sparkles: Sparkles,
   star: Star,
+  sun: Sun,
   trash: Trash,
   "undo-2": Undo2,
 });

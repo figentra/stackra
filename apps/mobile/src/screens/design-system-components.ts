@@ -6,15 +6,16 @@
  * Boundary: data only; the screens and the route names live elsewhere. The category is one of the owner's catalogue
  *          categories (`ComponentCategory`); the tier is "Free", a `@stackra/ui/native` component (screens in
  *          `free/`, routes `Free*`), or "Pro", a `@stackra/ui-pro/native` component (screens in `pro/`, routes
- *          `Pro*`). The index orders the rows, so this list's order does not matter.
+ *          `Pro*`). The list is exported in gallery order (category, then Free before Pro, then title), the order
+ *          the index lists the pages in and a page's pager walks them, so the order written below does not matter.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-013.
  */
 import type { ReactElement } from "react";
 
-import type { ComponentCategory } from "../enums/component-category.enum";
-import type { ComponentTier } from "../enums/component-tier.enum";
-import type { DesignSystemComponentRoute } from "../navigation/types";
+import { ComponentCategory } from "../enums/component-category.enum";
+import { ComponentTier } from "../enums/component-tier.enum";
+import type { PageLink } from "../types/page-link.type";
 import { AvatarScreen } from "./free/avatar-screen";
 import { BadgeScreen as FreeBadgeScreen } from "./free/badge-screen";
 import { ButtonScreen } from "./free/button-screen";
@@ -100,22 +101,14 @@ import { WheelPickerGroupScreen } from "./pro/wheel-picker-group-screen";
 import { WheelTimePickerScreen } from "./pro/wheel-time-picker-screen";
 import { WidgetScreen } from "./pro/widget-screen";
 
-/** One component of the review area. */
-export interface DesignSystemComponent {
-  /** The section of the index the component is listed under. */
-  category: ComponentCategory;
-  /** The package the component comes from: Free (`@stackra/ui`) or Pro (`@stackra/ui-pro`, badged in the list). */
-  tier: ComponentTier;
-  /** The component's name, shown in the list and as the page title. */
-  title: string;
-  /** The Settings stack route of the component's page. */
-  route: DesignSystemComponentRoute;
+/** One component of the review area: its page link and the screen that shows it. */
+export interface DesignSystemComponent extends PageLink {
   /** The page that shows the component. */
-  screen: () => ReactElement;
+  readonly screen: () => ReactElement;
 }
 
-/** The components of the review area; the index groups them by `category` and orders them by tier and title. */
-export const DESIGN_SYSTEM_COMPONENTS: readonly DesignSystemComponent[] = [
+/** The components as written, in no particular order. */
+const COMPONENTS: readonly DesignSystemComponent[] = [
   // Free
   { category: "Foundations", tier: "Free", title: "Icon", route: "FreeIcon", screen: IconScreen },
   {
@@ -666,3 +659,11 @@ export const DESIGN_SYSTEM_COMPONENTS: readonly DesignSystemComponent[] = [
     screen: SwipeableTabsScreen,
   },
 ];
+
+/** The components of the review area in gallery order: by category, then Free before Pro, then by title. */
+export const DESIGN_SYSTEM_COMPONENTS: readonly DesignSystemComponent[] = [...COMPONENTS].sort(
+  (a, b) =>
+    ComponentCategory.indexOf(a.category) - ComponentCategory.indexOf(b.category) ||
+    ComponentTier.indexOf(a.tier) - ComponentTier.indexOf(b.tier) ||
+    a.title.localeCompare(b.title),
+);
