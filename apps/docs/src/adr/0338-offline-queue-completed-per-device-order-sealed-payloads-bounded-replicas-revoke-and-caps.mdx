@@ -34,7 +34,10 @@ and wipeable. The rows of 0252 are therefore accepted, and the five rules below 
    sales across the tenant's branches, customers and the rule data of [0337](/adr/0337-client-rule-code-a-module-ships-pure-rules-that-run-on-the-till-and-on-the-server),
    as replicas declared by the module (`replica: { of, window, limit }`). Each replica is bounded by age and size, is
    refreshed in the background, and carries the "as of" time of its last refresh, which every screen that reads it
-   shows. A query that is not declared a replica is not available offline.
+   shows. A refresh is incremental: the client sends the replica's change cursor and receives only the changes since
+   it, on start, on reconnect and on the refresh signal of the live query it mirrors
+   ([0315](/adr/0315-realtime-live-queries-and-streams)); the first fill is the only full download. A query that is
+   not declared a replica is not available offline.
 
 4. **Revoke means wipe and lock.** When identity revokes the device principal, or when the tenant's offline limit
    (default 24 hours, a tenant setting) passes without a sync, the client wipes `outbox`, `cache` and `secrets`, keeps
