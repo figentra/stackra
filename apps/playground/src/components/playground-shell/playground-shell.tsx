@@ -253,7 +253,7 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
           </a>
           {/* One row on every width: on a phone the search button keeps only its icon and the display settings fold
               behind a button; from the small breakpoint up both sit in the row. */}
-          <header className="material sticky top-3 z-20 mx-auto mt-3 flex w-[min(100%-1.5rem,80rem)] flex-wrap items-center gap-x-2 gap-y-2 rounded-2xl px-2 py-2 sm:gap-x-3 sm:px-3">
+          <header className="material-thick sticky top-3 z-20 mx-auto mt-3 flex w-[min(100%-1.5rem,80rem)] flex-wrap items-center gap-x-2 gap-y-2 rounded-2xl px-2 py-2 sm:gap-x-3 sm:px-3">
             <Link
               href={`/${search}`}
               underline="hover"
