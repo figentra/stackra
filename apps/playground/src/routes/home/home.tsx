@@ -51,7 +51,7 @@ export function Home({ pages }: HomeProps) {
   const { search, hash } = useLocation();
   // A client-side link to `#components` changes the hash without scrolling, so the page scrolls to it.
   useEffect(() => {
-    if (hash) document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView();
+    if (hash) document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView?.();
   }, [hash]);
   // Undefined outside the shell (a unit test renders the page alone): the search button is left out then.
   const shell = useOutletContext<ShellContext | undefined>();
@@ -78,8 +78,7 @@ export function Home({ pages }: HomeProps) {
           align="center"
           className="[font:var(--display)] tracking-[-0.035em] text-balance"
         >
-          <span className="sr-only">{STRINGS.brand} </span>
-          {STRINGS.product}
+          <span className="sr-only">{STRINGS.brand}</span> {STRINGS.product}
         </Ui.Heading>
         {/* <bdi>: an English sentence keeps its full stop at its end inside a right-to-left page. */}
         <p className="max-w-2xl text-lg text-muted text-pretty">

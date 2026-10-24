@@ -172,7 +172,8 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
   // ⌘K or Ctrl+K anywhere, and `/` outside a text field, open the palette.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
+      // A key pressed with nothing focused targets the document, which is not an element.
+      const target = event.target instanceof Element ? event.target : null;
       const isTyping = target?.closest("input, textarea, select, [contenteditable='true']");
       const isCommandK = event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey);
       if (isCommandK || (event.key === "/" && !isTyping)) {

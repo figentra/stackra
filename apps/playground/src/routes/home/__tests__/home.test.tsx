@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0022 (test placement).
  */
-// @covers sta-350:FR-010
+// @covers sta-350:FR-010 sta-422:FR-002
 import { act, render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 

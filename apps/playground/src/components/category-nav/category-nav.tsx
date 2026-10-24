@@ -37,7 +37,7 @@ export function CategoryNav({ pages, current, search }: CategoryNavProps) {
   useEffect(() => {
     strip.current
       ?.querySelector('[aria-current="page"]')
-      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      ?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
   }, [current.path]);
   return (
     <nav
