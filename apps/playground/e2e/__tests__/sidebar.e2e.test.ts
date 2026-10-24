@@ -26,6 +26,9 @@ const open = async (page: Page, scheme: string, locale: string) => {
   await expect(page.getByRole("heading", { level: 1, name: "Sidebar" })).toBeVisible();
 };
 
+/** The tooltips on show: one fading out after focus moved on has been closed already. */
+const tooltip = (page: Page) => page.getByRole("tooltip").and(page.locator(":not([data-exiting])"));
+
 const boxOf = async (locator: Locator) => {
   const box = await locator.boundingBox();
   if (!box) throw new Error("the element has no box");
@@ -107,7 +110,7 @@ test("the rail keeps every label as a name, shows it in a tooltip and marks the 
   await home.focus();
   await page.keyboard.press("Tab");
   await expect(rail.getByRole("link", { name: /^Orders/ })).toBeFocused();
-  await expect(page.getByRole("tooltip")).toHaveText("Orders");
+  await expect(tooltip(page)).toHaveText("Orders");
   await expect(
     page
       .getByRole("navigation", { name: "Sidebar with the current place" })

@@ -59,15 +59,28 @@ const routeText = (page: Page) => page.getByText(/^Route: /);
 /** Gives a refused dismissal time to have closed the overlay, so "still open" is a fact and not a race. */
 const settle = (page: Page) => page.waitForTimeout(300);
 
+/** Hides or shows the page behind an overlay; the overlays sit in portals outside #root. */
+const setPageHidden = (page: Page, isHidden: boolean) =>
+  page.evaluate((hide) => {
+    const root = document.getElementById("root");
+    if (root) root.style.visibility = hide ? "hidden" : "";
+  }, isHidden);
+
 const boxOf = async (locator: Locator) => {
   const box = await locator.boundingBox();
   if (!box) throw new Error("the element has no box");
   return box;
 };
 
+/**
+ * Runs axe and expects nothing. Inside an overlay the page is hidden while it scans, as the date picker and menu
+ * pages do: the see-through backdrop puts the page under the overlay's text, which leaves contrast for review.
+ */
 const expectNothing = async (page: Page, include?: string) => {
   const builder = new AxeBuilder({ page }).withTags(AXE_TAGS);
+  if (include) await setPageHidden(page, true);
   const { violations, incomplete } = await (include ? builder.include(include) : builder).analyze();
+  if (include) await setPageHidden(page, false);
   expect(
     violations.map((finding) => finding.id),
     "axe violations",
@@ -103,7 +116,8 @@ test("opening by keyboard moves focus into the overlay, Escape closes it and foc
   await trigger.focus();
   await page.keyboard.press("Enter");
   const dialog = await settled(page.getByRole("dialog", { name: "Modal route" }));
-  await expect(dialog.locator(":focus")).toHaveCount(1);
+  // On the dialog itself or on a control in it: React Aria focuses the dialog when nothing in it asks for focus.
+  await expect(page.locator('[role="dialog"]:focus, [role="dialog"] :focus')).toHaveCount(1);
   await expect(routeText(page)).toHaveText("Route: /modal");
 
   await page.keyboard.press("Escape");

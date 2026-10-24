@@ -32,6 +32,9 @@ const open = async (page: Page, scheme: string, locale: string) => {
 const weight = (link: Locator) =>
   link.evaluate((element) => Number(getComputedStyle(element).fontWeight));
 
+/** The tooltips on show: one fading out after focus moved on has been closed already. */
+const tooltip = (page: Page) => page.getByRole("tooltip").and(page.locator(":not([data-exiting])"));
+
 const boxOf = async (locator: Locator) => {
   const box = await locator.boundingBox();
   if (!box) throw new Error("the element has no box");
@@ -78,9 +81,10 @@ test("the current entry is announced as the current page and set apart without c
   expect(await weight(current)).toBeGreaterThan(
     await weight(list.getByRole("link", { name: "Home" })),
   );
-  // The bar at the entry's start: a pseudo-element with a width, which is not colour.
-  const barWidth = await current.evaluate((element) => getComputedStyle(element, "::before").width);
-  expect(parseFloat(barWidth)).toBeGreaterThan(0);
+  // The bar at the entry's start, a decorative element with a width, which is not colour.
+  const bar = current.locator('span[aria-hidden="true"].absolute');
+  await expect(bar).toHaveCount(1);
+  expect((await bar.boundingBox())?.width ?? 0).toBeGreaterThan(0);
 });
 
 test("a link that only holds the current entry is announced as current too", async ({ page }) => {
@@ -138,14 +142,14 @@ test("a press moves the current place of the live list and focus stays on the en
 test("a shortcut shows in a tooltip on keyboard focus and hides on Escape", async ({ page }) => {
   await open(page, "light", "en");
   const list = page.getByRole("navigation", { name: "Navigation with shortcuts" });
-  await expect(page.getByRole("tooltip")).toHaveCount(0);
+  await expect(tooltip(page)).toHaveCount(0);
   // A Tab from the link before puts the page in keyboard modality, which React Aria needs to show a tooltip.
   await list.getByRole("link", { name: "Home" }).focus();
   await page.keyboard.press("Tab");
   await expect(list.getByRole("link", { name: "Orders" })).toBeFocused();
-  await expect(page.getByRole("tooltip")).toHaveText("G then O");
+  await expect(tooltip(page)).toHaveText("G then O");
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("tooltip")).toHaveCount(0);
+  await expect(tooltip(page)).toHaveCount(0);
 });
 
 test("the compact rail hides the labels from the screen, keeps them as names and shows them in a tooltip", async ({
@@ -164,7 +168,7 @@ test("the compact rail hides the labels from the screen, keeps them as names and
   await home.focus();
   await page.keyboard.press("Tab");
   await expect(orders).toBeFocused();
-  await expect(page.getByRole("tooltip")).toHaveText("Orders");
+  await expect(tooltip(page)).toHaveText("Orders");
 });
 
 for (const locale of LOCALES)

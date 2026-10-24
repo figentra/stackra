@@ -43,10 +43,19 @@ const liveBar = (page: Page) =>
 const matching = (page: Page) =>
   sectionOf(page, "filter-bar-live").locator('[role="status"]', { hasText: /match/ });
 
+/**
+ * Centres an element in the window, then focuses it. React Aria closes an open list or menu on a scroll, and a field
+ * at the window's edge, where focus alone would leave it, scrolls once its list opens below it.
+ */
+const focusInView = async (locator: Locator) => {
+  await locator.evaluate((element) => element.scrollIntoView({ block: "center" }));
+  await locator.focus();
+};
+
 /** Opens the add-filter menu of a bar with the keyboard and chooses a filter, returning its open editor. */
 const addFilter = async (page: Page, bar: Locator, label: string) => {
   const add = bar.getByRole("button", { name: "Add filter" });
-  await add.focus();
+  await focusInView(add);
   await page.keyboard.press("Enter");
   const menu = page.getByRole("menu");
   await expect(menu).toBeVisible();
@@ -114,7 +123,7 @@ test("the add-filter menu opens from the keyboard and lists only the filters not
     name: "Search the applied orders, filters",
   });
   const add = applied.getByRole("button", { name: "Add filter" });
-  await add.focus();
+  await focusInView(add);
   await page.keyboard.press("Enter");
   const menu = page.getByRole("menu");
   await expect(menu).toBeVisible();
@@ -136,7 +145,8 @@ test("a disabled filter is listed and refused", async ({ page }) => {
   await expect(total).toHaveAttribute("aria-disabled", "true");
   await total.click({ force: true });
   await expect(page.getByRole("menu")).toBeVisible();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  // The menu's own popover is a dialog; the refused filter opens no editor of its own.
+  await expect(page.getByRole("dialog", { name: "Total" })).toHaveCount(0);
 });
 
 test("a bar with every filter applied has its add button disabled", async ({ page }) => {
@@ -179,7 +189,7 @@ test("a chip opens its editor with its value, and Escape gives focus back to the
     name: "Search the applied orders, filters",
   });
   const chip = bar.getByRole("button", { name: "Status: Paid" });
-  await chip.focus();
+  await focusInView(chip);
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog", { name: "Status" });
   await expect(dialog).toBeVisible();
@@ -203,7 +213,8 @@ test("a filter of each kind narrows the live list: text, a number range and a da
   await liveBar(page).getByRole("button", { name: "Remove filter Customer" }).click();
 
   const number = await addFilter(page, liveBar(page), "Total");
-  const minimum = number.getByRole("spinbutton", { name: "Minimum" });
+  // React Aria's number input is a textbox, not a spinbutton.
+  const minimum = number.getByRole("textbox", { name: "Minimum" });
   await minimum.fill("50");
   await minimum.press("Enter");
   await expect(matching(page)).toHaveText("6 orders match.");

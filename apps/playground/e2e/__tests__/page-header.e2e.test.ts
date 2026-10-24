@@ -168,8 +168,10 @@ test("the sample with every part holds one trail whose last step is the current 
   await open(page, "light", "en");
   const trail = page.getByRole("navigation", { name: "Breadcrumbs" });
   await expect(trail).toHaveCount(1);
-  await expect(trail.getByRole("link")).toHaveCount(2);
+  // React Aria draws the current step as a disabled link with no href, so two steps lead anywhere.
+  await expect(trail.locator("a[href]")).toHaveCount(2);
   await expect(trail.locator('[aria-current="page"]')).toHaveText("Order 1042");
+  await expect(trail.locator('[aria-current="page"]')).not.toHaveAttribute("href");
 });
 
 test("the live header's primary action changes the status and its own label and keeps focus", async ({

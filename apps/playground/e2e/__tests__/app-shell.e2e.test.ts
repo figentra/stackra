@@ -171,8 +171,8 @@ test("opening by keyboard moves focus inside, hides the page, traps Tab, and Esc
   await page.keyboard.press("Enter");
   const dialog = await settled(page);
   expect(await isFocusInside(dialog)).toBe(true);
-  // React Aria hides the page behind an open drawer from assistive technology.
-  await expect(page.getByRole("heading", { level: 1, name: "App shell" })).toHaveCount(0);
+  // React Aria makes the page behind an open drawer inert, which Playwright's role queries do not count as hidden.
+  await expect(page.locator("#root")).toHaveAttribute("inert", "");
   for (let step = 0; step < 10; step += 1) {
     await page.keyboard.press("Tab");
     expect(await isFocusInside(dialog), `Tab ${step + 1}`).toBe(true);
@@ -184,6 +184,7 @@ test("opening by keyboard moves focus inside, hides the page, traps Tab, and Esc
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(opener).toBeFocused();
+  await expect(page.locator("#root")).not.toHaveAttribute("inert");
   await expect(page.getByRole("heading", { level: 1, name: "App shell" })).toBeVisible();
 });
 

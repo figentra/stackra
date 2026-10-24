@@ -105,8 +105,10 @@ test("the child wider than the column scrolls inside it and can be scrolled from
   expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth);
   await scroller.focus();
   await expect(scroller).toBeFocused();
-  await page.keyboard.press("End");
-  expect(await scroller.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  // An arrow key, not End: End scrolls a scroll container down, and this one only scrolls sideways.
+  await page.keyboard.press("ArrowRight");
+  // Polled: the browser animates a keyboard scroll.
+  await expect.poll(() => scroller.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
 });
 
 test("the page does not scroll sideways at 320 px, wide child or not", async ({ page }) => {

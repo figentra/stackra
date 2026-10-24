@@ -114,7 +114,15 @@ test("a row menu opens from the keyboard, runs an action and gives focus back to
   await open(page, "light", "en");
   const actions = sectionOf(page, "data-table-row-actions");
   const trigger = menuButton(actions, "#1002");
-  await trigger.focus();
+  // As a keyboard user does: onto the row, then along its cells with the arrow keys to the menu button. A script's
+  // own focus on the button is moved to the grid's first row by React Aria.
+  const row = actions.getByRole("row").filter({ hasText: "#1002" });
+  await row.evaluate((element) => (element as HTMLElement).focus());
+  for (let step = 0; step < 8; step += 1) {
+    if (await trigger.evaluate((button) => button === document.activeElement)) break;
+    await page.keyboard.press("ArrowRight");
+  }
+  await expect(trigger).toBeFocused();
   await page.keyboard.press("Enter");
   const menu = page.getByRole("menu");
   await expect(menu).toBeVisible();
@@ -267,7 +275,7 @@ test("each state of the list is shown", async ({ page }) => {
   await open(page, "light", "en");
   const states = sectionOf(page, "data-table-states");
   await expect(states.getByRole("heading", { name: "Nothing here yet" })).toBeVisible();
-  await expect(states.getByRole("heading", { name: "No results" })).toBeVisible();
+  await expect(states.getByRole("heading", { name: "No results", exact: true })).toBeVisible();
   await expect(states.getByRole("button", { name: "Clear filters" })).toBeVisible();
   await expect(states.getByRole("grid", { name: "Orders, reloading" })).toBeVisible();
   await expect(states.getByRole("alert")).toContainText("The order service did not answer.");

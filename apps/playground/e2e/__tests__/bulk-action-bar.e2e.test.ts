@@ -16,7 +16,7 @@
  */
 // @covers sta-350:FR-190 sta-350:FR-192 sta-350:FR-193 sta-350:SC-013
 import { AxeBuilder } from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -73,6 +73,12 @@ test("each bar is a named toolbar with the count and a button per action, and no
   ]);
 });
 
+/** Toggles a checkbox from the keyboard: HeroUI's input is visually hidden, so a pointer click on it is refused. */
+const toggle = async (page: Page, scope: Locator, name: string) => {
+  await scope.getByRole("checkbox", { name }).focus();
+  await page.keyboard.press("Space");
+};
+
 test("the live count is one polite status that is in the page before it speaks", async ({
   page,
 }) => {
@@ -81,17 +87,17 @@ test("the live count is one polite status that is in the page before it speaks",
   const status = live.locator('div[role="status"].sr-only');
   await expect(status).toHaveCount(1);
   await expect(status).toHaveText("2 selected");
-  await live.getByRole("checkbox", { name: "Order #1005" }).check();
+  await toggle(page, live, "Order #1005");
   await expect(status).toHaveText("3 selected");
-  await live.getByRole("checkbox", { name: "Order #1002" }).uncheck();
-  await live.getByRole("checkbox", { name: "Order #1003" }).uncheck();
-  await live.getByRole("checkbox", { name: "Order #1005" }).uncheck();
+  await toggle(page, live, "Order #1002");
+  await toggle(page, live, "Order #1003");
+  await toggle(page, live, "Order #1005");
   // With nothing selected the toolbar goes and the status stays, empty, ready for the next count.
   await expect(live.getByRole("toolbar")).toHaveCount(0);
   await expect(status).toHaveCount(1);
   await expect(status).toHaveText("");
   // The next count is a change of text in the same element, which is what a screen reader announces.
-  await live.getByRole("checkbox", { name: "Order #1001" }).check();
+  await toggle(page, live, "Order #1001");
   await expect(status).toHaveText("1 selected");
 });
 

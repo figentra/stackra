@@ -67,7 +67,8 @@ test("the page holds one h1, no banner landmark and a level 3 title in every par
 }) => {
   await open(page, "light", "en");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
-  await expect(page.getByRole("banner")).toHaveCount(0);
+  // The playground's own site header is the one banner; none comes from the page's bars.
+  await expect(page.locator("#main").getByRole("banner")).toHaveCount(0);
   const bars = headers(page);
   expect(await bars.count()).toBe(6);
   for (const bar of await bars.all())
