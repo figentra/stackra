@@ -1,9 +1,16 @@
 ---
 title: "0160 — Raw SQL at runtime and the approved Postgres extensions"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0314 · 2026-10-20"
 ---
 
 <Note>Amends [0014](/adr/0014-data-ownership-and-orm), decision 6 (raw SQL and extensions).</Note>
+
+<Note>
+  Amended by [0314](/adr/0314-postgis-approved-geospatial-field-and-macros): PostGIS is approved, so
+  decision 2 lists six extensions, not five. The statement that PostGIS is not approved yet, and the
+  Alternatives bullet "PostGIS now", no longer hold. The field, its macros and the GiST indexes are
+  decided in 0314.
+</Note>
 
 ## Context
 

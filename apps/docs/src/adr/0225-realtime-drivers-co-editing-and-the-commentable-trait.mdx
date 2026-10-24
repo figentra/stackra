@@ -1,7 +1,17 @@
 ---
 title: "0225 — Realtime drivers, co-editing and the Commentable trait"
-description: "Accepted, amended by 0270, 0294 · 2026-10-20 · amended 2026-10-23 (STA-349)"
+description: "Accepted, amended by 0270, 0294, 0315 · 2026-10-20 · amended 2026-10-23 (STA-349)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-406) by [0315](/adr/0315-realtime-live-queries-and-streams): decision 1
+  gains one bounded exception. The site invalidation channel of a Site-scoped, public query on a
+  published site has no principal and no IAM check; it is read-only for clients, carries only the
+  key and public input of the invalidated entry, publishes only when the public result changed,
+  lives in its own driver namespace, and identifies a subscriber by site, locale and market. Every
+  other channel, and every stream, is IAM-checked as decision 1 says; a stream is partitioned per
+  tenant and takes `permission` and `audience` like a broadcast. Decisions 2 and 3 are unchanged.
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-349), with the amendment of the same date on

@@ -27,7 +27,7 @@ equality on `tenant_id`), `.agents/rules/tenancy.md`, and the skill `db-models-a
 2. Migrations are expand-and-contract; destructive steps wait a release; lock and statement timeouts on each; concurrent
    index builds in their own migration; backfills run as queue jobs; forward fix only (0159).
 3. Raw SQL only in a module service method of `@stackra/database`, parameterised, Zod-typed, with a `// raw-sql:` reason;
-   extensions only from the approved list: pgvector, pg_trgm, ltree, citext, pgcrypto (0160).
+   extensions only from the approved list: pgvector, pg_trgm, ltree, citext, pgcrypto and PostGIS (0160, 0314).
 4. A tenant-owned table has `tenant_id`, RLS enabled and forced, and an equality policy; organisation views come from
    read models (0239). An isolation test proves tenant B sees nothing of tenant A.
 5. Tables snake_case plural, `idx_` and `fk_` names, public ids `<prefix>_<26>` (0135, 0231).

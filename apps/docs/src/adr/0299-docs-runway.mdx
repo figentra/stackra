@@ -1,11 +1,22 @@
 ---
 title: "0299 — Docs runway: Mintlify deployed from CI behind the checks, with the runway shape of the other apps"
-description: "Accepted · 2026-10-22"
+description: "Accepted, amended 2026-10-24 (STA-406) · 2026-10-22"
 ---
 
 <Note>
   Amends [0002](/adr/0002-docs-on-mintlify): CI deploys the site after the checks pass, and the
   deploy on every push through the Mintlify GitHub app is switched off when the CI deploy lands.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-406), by an owner decision of that date. ADRs move to an internal docs
+  deployment behind Cloudflare Access, the same access layer that [0237](/adr/0237-generated-api-gateway-in-four-layers)
+  puts in front of internal dashboards. The public docs site keeps the guides, the package docs and the API. The
+  internal host, and how the build splits the two sites, are not decided here. Until that split is built, the ADR
+  pages stay in the public navigation.
+
+Enforcement of this note: planned — the internal deployment and its Access policy are not built.
+
 </Note>
 
 ## Context
