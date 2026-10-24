@@ -57,6 +57,7 @@ export type { BadgeAnchorContractProps } from "#contracts/types/badge-anchor-con
 export type { BadgeContractProps } from "#contracts/types/badge-contract-props.type";
 export type { BreadcrumbItem } from "#contracts/types/breadcrumb-item.type";
 export type { BreadcrumbsContractProps } from "#contracts/types/breadcrumbs-contract-props.type";
+export type { BulkActionBarContractProps } from "#contracts/types/bulk-action-bar-contract-props.type";
 export type { ButtonContractProps } from "#contracts/types/button-contract-props.type";
 export type { CardContractProps } from "#contracts/types/card-contract-props.type";
 export type { CardTitleContractProps } from "#contracts/types/card-title-contract-props.type";
@@ -77,6 +78,8 @@ export type { ConfirmFunction } from "#contracts/types/confirm-function.type";
 export type { ConfirmationOptions } from "#contracts/types/confirmation-options.type";
 export type { ConfirmationProviderContractProps } from "#contracts/types/confirmation-provider-contract-props.type";
 export type { CursorPaginationContractProps } from "#contracts/types/cursor-pagination-contract-props.type";
+export type { DataTableContractProps } from "#contracts/types/data-table-contract-props.type";
+export type { DatePickerContractProps } from "#contracts/types/date-picker-contract-props.type";
 export type { DateRangeValue } from "#contracts/types/date-range-value.type";
 export type { DateValueContractProps } from "#contracts/types/date-value-contract-props.type";
 export type { DescriptionContractProps } from "#contracts/types/description-contract-props.type";
@@ -84,10 +87,19 @@ export type { DesignSystemProviderProps } from "#contracts/types/design-system-p
 export type { DesignSystemState } from "#contracts/types/design-system-state.type";
 export type { DrawerContractProps } from "#contracts/types/drawer-contract-props.type";
 export type { EmptyStateContractProps } from "#contracts/types/empty-state-contract-props.type";
+export type { EntityOptionPage } from "#contracts/types/entity-option-page.type";
+export type { EntityOption } from "#contracts/types/entity-option.type";
+export type {
+  EntityPickerBaseContractProps,
+  EntityPickerContractProps,
+  MultipleEntityPickerContractProps,
+  SingleEntityPickerContractProps,
+} from "#contracts/types/entity-picker-contract-props.type";
 export type { ErrorStateContractProps } from "#contracts/types/error-state-contract-props.type";
 export type { FeedbackContractProps } from "#contracts/types/feedback-contract-props.type";
 export type { FieldContractProps } from "#contracts/types/field-contract-props.type";
 export type { FieldErrorContractProps } from "#contracts/types/field-error-contract-props.type";
+export type { FilterBarContractProps } from "#contracts/types/filter-bar-contract-props.type";
 export type {
   BooleanFilterDefinition,
   DateRangeFilterDefinition,

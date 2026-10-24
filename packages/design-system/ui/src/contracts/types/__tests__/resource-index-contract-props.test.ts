@@ -13,6 +13,7 @@ import type { CalendarDate } from "@internationalized/date";
 
 import { FilterKind } from "#contracts/enums/filter-kind.enum";
 import type { AllMatchingSelectionContractProps } from "#contracts/types/all-matching-selection-contract-props.type";
+import type { DatePickerContractProps } from "#contracts/types/date-picker-contract-props.type";
 import type { DateRangeValue } from "#contracts/types/date-range-value.type";
 import type { DateValueContractProps } from "#contracts/types/date-value-contract-props.type";
 import type { FieldContractProps } from "#contracts/types/field-contract-props.type";
@@ -24,6 +25,7 @@ import type { FilterState, FilterValueByKind } from "#contracts/types/filter-val
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
 import type { NumberFieldContractProps } from "#contracts/types/number-field-contract-props.type";
 import type { NumberRangeValue } from "#contracts/types/number-range-value.type";
+import type { OpenStateContractProps } from "#contracts/types/open-state-contract-props.type";
 import type { ResourceAction } from "#contracts/types/resource-action.type";
 import type { ResourceQueryContractProps } from "#contracts/types/resource-query-contract-props.type";
 import type { ResourceQuery } from "#contracts/types/resource-query.type";
@@ -92,6 +94,14 @@ describe("number and date field contracts", () => {
     expectTypeOf<DateValueContractProps["minValue"]>().toEqualTypeOf<CalendarDate | undefined>();
     expectTypeOf<DateValueContractProps["isDateUnavailable"]>().toEqualTypeOf<
       ((date: CalendarDate) => boolean) | undefined
+    >();
+  });
+
+  it("makes the picker the day props plus the overlay open state and a named calendar button", () => {
+    expectTypeOf<DatePickerContractProps>().toExtend<DateValueContractProps>();
+    expectTypeOf<DatePickerContractProps>().toExtend<OpenStateContractProps>();
+    expectTypeOf<DatePickerContractProps["calendarButtonLabel"]>().toEqualTypeOf<
+      string | undefined
     >();
   });
 });
