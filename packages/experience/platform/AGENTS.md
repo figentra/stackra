@@ -1,0 +1,55 @@
+# AGENTS — @stackra/platform
+
+Capabilities of the running target. Member at `packages/experience/platform` (`tier:lib`), in the programming model
+v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./electron`, `./native`, `./react`, `./sw`,
+`./testing`, `./worker`.
+
+## Where code goes
+
+| You are writing…                     | It goes in…                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------ |
+| A port or a type its signature names | `src/contracts/ports/`, `src/contracts/types/`                                 |
+| A configuration                      | `src/config/<name>.config.ts`, its shape in `src/core/schemas/`                |
+| The shipped `X$` of a configuration  | `src/core/constants/<name>-config-schema.constant.ts`                          |
+| An enum, a function, a type          | `src/core/{enums,functions,types}/`                                            |
+| An isomorphic driver                 | `src/core/drivers/memory-<port>.driver.ts`                                     |
+| A target driver                      | `src/{browser,electron,native,worker}/drivers/`                                |
+| A bridge (Electron main)             | `src/electron/bridges/<name>.bridge.ts`, extends `Bridge({ key })`             |
+| A service-worker handler             | `src/sw/functions/handle-<event>.function.ts`, events typed in `src/sw/types/` |
+| React code                           | `src/react/<name>/`                                                            |
+| A test helper                        | `src/testing/functions/`                                                       |
+| A test                               | `__tests__/<name>.<kind>.test.ts(x)` beside it                                 |
+
+## Entries and barrels
+
+- `src/*/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new public file to its
+  barrel and to that entry's `index.test.ts`.
+- `Platform` is exported from `./contracts` only (registry A3). `./contracts` imports no other entry, so `has` takes a
+  capability code as a string.
+- `./react` stays platform-neutral: the driver supplies what differs (the scanner's `View`).
+- No module of `./electron` imports Electron at load time (the renderer loads the entry for its driver); a bridge loads
+  it inside `handle`.
+
+## This package
+
+- A new capability: a `Capability` case, a facet on `Platform` with its type, a row in `CAPABILITY_FACETS`, and an
+  implementation in the memory, web (and so Electron) drivers.
+- A capability call that the target or device cannot honour returns `refuse(capability, code)`; a programming error
+  throws.
+- A driver's constructor takes only container-built dependencies; gen reads constructor parameters as dependencies.
+- A bridge validates its input: it comes from the renderer. No parameter properties and no `#private` fields.
+
+## Rules that fail the build
+
+- A package never imports an app, a service, `encore.dev`/`~encore/*`, or another package's `src/`.
+- Versions are `catalog:<name>` or `workspace:*` only.
+- Coverage meets the shared gate (lines/functions 80, branches 70).
+
+## PII
+
+| Data                   | Where                              | Handling                                                         |
+| ---------------------- | ---------------------------------- | ---------------------------------------------------------------- |
+| Push tokens            | `PushTransport.register()`         | Per-device addresses; handed to the devices module, never logged |
+| Shared payloads        | IndexedDB `share_inbox`            | On the device only; read once by the share page                  |
+| Picked folder paths    | the app disk (`platform/folders/`) | On the user's machine only                                       |
+| `TURNSTILE_SECRET_KEY` | `SecretStore`                      | Read by name, sent only to Cloudflare, never logged              |
