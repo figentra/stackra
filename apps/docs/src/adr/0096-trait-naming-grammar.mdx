@@ -1,6 +1,6 @@
 ---
 title: "0096 — Trait naming grammar and the trait list"
-description: "Accepted, amended by 0133, 0162, 0225, 0270, 0294 · 2026-10-19"
+description: "Accepted, amended by 0133, 0162, 0225, 0270, 0294, 0321 · 2026-10-19"
 ---
 
 <Note>
@@ -38,6 +38,21 @@ Enforcement of this note: planned — STA-338 (the kind-path check for `database
 <Note>
   Amended by [0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events):
   the HasUserStamps trait joins the trait table.
+</Note>
+
+<Note>
+  Amended 2026-10-24 by [0321](/adr/0321-the-trait-inventory-owning-packages-and-schedulable): the trait
+  list of decision 4 gains the inventory of 0321, which names the owning package of each trait. Where the
+  two differ, 0321 applies: `HasSeo` is owned by `@stackra/seo`, `Commentable` by
+  `@stackra/collaboration` (0225) and `Translatable` by `@stackra/model` (0162). `Auditable`, `Searchable`
+  and `AccessLogged` are decorators and not traits. 0321 names `HasTimestamps` and `Versionable` as
+  `Timestamps` and `Versioned`. `BelongsToTenant` replaces `HasTenant`: the same trait, renamed, and
+  exported by `@stackra/tenancy`. The rows that 0321 does not name (`AsTenant`, `AsSubject`, `HasSettings`,
+  `Notifiable`, `Prunable`, `InteractsWithQueue` and `HasFactory`) stand until the owner decides them.
+  Decisions 1 to 3 and 5 stand.
+
+Enforcement of this note: planned — the trait-list test of the Enforcement section below.
+
 </Note>
 
 ## Context
