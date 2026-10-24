@@ -5,12 +5,14 @@
  *          the document after it, carry the scheme and direction on <html>, and pass axe (WCAG 2.0 to 2.2, A and AA,
  *          and best practices) with no violation and nothing left incomplete. The switcher's selected choice must
  *          stand 3:1 from the others in both schemes and work from the keyboard in right-to-left, and the `system`
- *          scheme must follow the system preference live. A new route folder is covered without editing this file.
+ *          scheme must follow the system preference live. The command palette opens from the keyboard and lands focus
+ *          on the page it opens, a component page marks itself in its category strip, and the glass turns solid
+ *          when more contrast is asked for. A new route folder is covered without editing this file.
  * Boundary: the production build under `vite preview`; Chromium only.
  * Runtime: node
  * Governing contract: ADR 0302 (decision 5); ADR 0182 (test tiers); ADR 0022 (test placement).
  */
-// @covers sta-350:FR-010 sta-350:FR-011 sta-350:P-007 sta-350:SC-002
+// @covers sta-350:FR-010 sta-350:FR-011 sta-350:P-007 sta-350:SC-002 sta-422:FR-001 sta-422:FR-004 sta-422:P-001 sta-422:P-004 sta-422:SC-001
 import { readdirSync } from "node:fs";
 
 import { AxeBuilder } from "@axe-core/playwright";
@@ -175,3 +177,66 @@ test("a client-side navigation titles the document and moves focus to the new h1
   await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
   await expect(page).toHaveTitle("Foundations · Stackra Playground");
 });
+
+test("the command palette opens from the keyboard, filters, and Enter opens the match with focus on its h1", async ({
+  page,
+}) => {
+  await page.goto("/?scheme=light&locale=en");
+  await page.keyboard.press("ControlOrMeta+k");
+  const palette = page.getByRole("dialog", { name: "Search components" });
+  await expect(palette).toBeVisible();
+  await expect(palette.getByRole("combobox")).toBeFocused();
+  await page.keyboard.type("check");
+  await expect(palette.getByRole("option").first()).toContainText("Checkbox");
+  await expect(palette.getByRole("status")).toContainText("result");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/checkbox\?scheme=light&locale=en$/);
+  await expect(palette).toBeHidden();
+  await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
+});
+
+test("Escape closes the command palette and hands focus back to the search button", async ({
+  page,
+}) => {
+  await page.goto("/foundations?scheme=dark&locale=ar");
+  const trigger = page.getByRole("button", { name: /Search components/ });
+  await trigger.click();
+  await expect(page.getByRole("dialog", { name: "Search components" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Search components" })).toBeHidden();
+  await expect(trigger).toBeFocused();
+});
+
+test("a component page marks itself in its category strip and links the pages before and after it", async ({
+  page,
+}) => {
+  await page.goto("/button?scheme=light&locale=en");
+  const strip = page.getByRole("navigation", { name: "Pages" });
+  await expect(strip.getByRole("link", { name: "Button", exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  const pager = page.getByRole("navigation", { name: "Previous and next page" });
+  await expect(pager.getByRole("link")).toHaveCount(2);
+  await pager.getByRole("link", { name: /Next/ }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
+  await expect(page).not.toHaveURL(/\/button\?/);
+});
+
+for (const scheme of SCHEMES)
+  test(`the glass turns solid when more contrast is asked for, in ${scheme}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme, contrast: "more" });
+    await page.goto(`/?scheme=${scheme}&locale=en`);
+    const bar = page.getByRole("banner");
+    const { filter, alpha } = await bar.evaluate((element) => {
+      const computed = getComputedStyle(element);
+      // The fill's alpha, read off a canvas so any CSS colour form reads.
+      const context = document.createElement("canvas").getContext("2d");
+      if (!context) throw new Error("no 2d canvas");
+      context.fillStyle = computed.backgroundColor;
+      context.fillRect(0, 0, 1, 1);
+      return { filter: computed.backdropFilter, alpha: context.getImageData(0, 0, 1, 1).data[3] };
+    });
+    expect(filter).toBe("none");
+    expect(alpha).toBe(255);
+  });

@@ -13,17 +13,26 @@ import { render } from "@testing-library/react";
 import { PlaygroundIcons } from "#src/components/playground-icons";
 
 describe("PlaygroundIcons", () => {
-  it.each(["check", "chevron-right", "settings", "trash", "circle-x", "building", "bell"])(
-    "draws %s by name",
-    (name) => {
-      const { container } = render(
-        <PlaygroundIcons>
-          <Icon name={name as "check"} />
-        </PlaygroundIcons>,
-      );
-      expect(container.querySelector("svg.lucide")).toBeTruthy();
-    },
-  );
+  it.each([
+    "check",
+    "chevron-right",
+    "settings",
+    "trash",
+    "circle-x",
+    "building",
+    "bell",
+    "sun",
+    "moon",
+    "monitor",
+    "layout-grid",
+  ])("draws %s by name", (name) => {
+    const { container } = render(
+      <PlaygroundIcons>
+        <Icon name={name as "check"} />
+      </PlaygroundIcons>,
+    );
+    expect(container.querySelector("svg.lucide")).toBeTruthy();
+  });
 
   it("draws nothing for an icon no page uses, so the full set is not bundled", () => {
     const { container } = render(

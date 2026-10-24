@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: finds the playground's pages from the route folders, so a new component is one folder and nothing else:
  *          every `routes/<name>/<name>.route.ts` that names a category is paired with its page `routes/<name>/<name>.tsx`,
- *          checked (path is `/<name>`, category is a known one, the page exists) and ordered by category and then by
- *          title. The router, the index page and the shell's navigation all draw from the result.
+ *          checked (path is `/<name>`, category is a known one, the page exists), given its tier (a `/pro-*` path is
+ *          Pro) and ordered by category, then tier (free first), then title. The router, the index page and the shell's navigation all draw from the result.
  * Boundary: discovery and validation only; `PLAYGROUND_PAGES` is the one `import.meta.glob` of the app, and
  *          `discoverPages` takes plain module records so a test can feed it without Vite. A route with no category
  *          (the index route) is not a listed page and is skipped here.
@@ -13,6 +13,7 @@
 import { createElement, type ReactElement } from "react";
 
 import { PageCategory } from "#src/enums/page-category.enum";
+import { PageTier } from "#src/enums/page-tier.enum";
 import type { PageLink } from "#src/types/page-link.type";
 
 /** The exports of one module, as `import.meta.glob` hands them over. */
@@ -46,7 +47,12 @@ function routeOf(exports: ModuleExports): PageLink | undefined {
     if (typeof value !== "function") continue;
     const { path, title, category } = value as unknown as Record<string, unknown>;
     if (typeof path === "string" && typeof title === "string" && typeof category === "string")
-      return { path, title, category: category as PageCategory };
+      return {
+        path,
+        title,
+        category: category as PageCategory,
+        tier: path.startsWith("/pro-") ? "Pro" : "Free",
+      };
   }
   return undefined;
 }
@@ -85,6 +91,7 @@ export function discoverPages(
   return found.sort(
     (a, b) =>
       PageCategory.indexOf(a.route.category) - PageCategory.indexOf(b.route.category) ||
+      PageTier.indexOf(a.route.tier ?? "Free") - PageTier.indexOf(b.route.tier ?? "Free") ||
       a.route.title.localeCompare(b.route.title, "en"),
   );
 }

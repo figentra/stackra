@@ -2,29 +2,48 @@
  * Stackra file contract:
  * Purpose: proves the playground shell takes the colour scheme and locale from the URL, applies them through the
  *          DesignSystemProvider, writes a switch back to the URL, marks the selected choice beyond its fill, keeps
- *          theme-color in step, declares its UI English, moves focus to the h1 on navigation, groups its navigation by category, and draws its landmarks.
- * Boundary: a memory router in jsdom with a stubbed matchMedia; no network.
+ *          theme-color in step, declares its UI English, moves focus to the h1 on navigation, draws a component
+ *          page's category strip (current page marked) and its previous and next links, opens the command palette
+ *          from its button and from ⌘K, and draws its landmarks.
+ * Boundary: a memory router in jsdom with a stubbed matchMedia and a stubbed `<dialog>` (jsdom has no showModal);
+ *          no network.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0022 (test placement).
  */
-// @covers sta-350:FR-010
-import { act, render, screen, within } from "@testing-library/react";
+// @covers sta-350:FR-010 sta-422:FR-001 sta-422:P-001
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { PlaygroundShell } from "#src/components/playground-shell";
+import type { PageLink } from "#src/types/page-link.type";
 
 const root = document.documentElement;
+
+const PAGES: readonly PageLink[] = [
+  { path: "/a", title: "Page A", category: "Foundations", tier: "Free" },
+  { path: "/b", title: "Page B", category: "Actions", tier: "Free" },
+  { path: "/c", title: "Page C", category: "Actions", tier: "Free" },
+];
+
+// jsdom has no modal dialog: opening and closing only flip `open`.
+function showModal(this: HTMLDialogElement) {
+  this.open = true;
+}
+
+function close(this: HTMLDialogElement) {
+  this.open = false;
+}
+
+const dialog = () => document.querySelector("dialog");
 
 function renderShell(url: string) {
   const router = createMemoryRouter(
     [
       {
-        element: (
-          <PlaygroundShell pages={[{ path: "/a", title: "Page A", category: "Foundations" }]} />
-        ),
+        element: <PlaygroundShell pages={PAGES} />,
         children: [
           { path: "/", element: <h1>Child page</h1> },
-          { path: "/a", element: <h1>Page A</h1> },
+          ...PAGES.map(({ path, title }) => ({ path, element: <h1>{title}</h1> })),
         ],
       },
     ],
@@ -41,6 +60,8 @@ describe("PlaygroundShell", () => {
       addEventListener: () => undefined,
       removeEventListener: () => undefined,
     }));
+    HTMLDialogElement.prototype.showModal = showModal;
+    HTMLDialogElement.prototype.close = close;
   });
 
   afterEach(() => {
@@ -48,13 +69,13 @@ describe("PlaygroundShell", () => {
   });
 
   it("applies the scheme and locale from the URL", () => {
-    renderShell("/?scheme=dark&locale=ar");
+    renderShell("/b?scheme=dark&locale=ar");
     expect(root.dataset["theme"]).toBe("dark");
     expect(root.dir).toBe("rtl");
     expect(root.lang).toBe("ar");
     expect(screen.getByRole("radio", { name: "Dark" }).getAttribute("aria-checked")).toBe("true");
-    expect(screen.getByRole("link", { name: "Page A" }).getAttribute("href")).toBe(
-      "/a?scheme=dark&locale=ar",
+    expect(screen.getByRole("link", { name: "Page C" }).getAttribute("href")).toBe(
+      "/c?scheme=dark&locale=ar",
     );
   });
 
@@ -106,19 +127,57 @@ describe("PlaygroundShell", () => {
     expect(document.activeElement).toBe(screen.getByRole("heading", { level: 1, name: "Page A" }));
   });
 
-  it("groups the navigation by category", () => {
-    renderShell("/");
-    const navigation = within(screen.getByRole("navigation", { name: "Pages" }));
-    expect(
-      within(navigation.getByRole("list", { name: "Foundations" })).getByRole("link").textContent,
-    ).toBe("Page A");
-    expect(navigation.queryByRole("list", { name: "Typography" })).toBeNull();
+  it("draws a component page's category strip with the current page marked", () => {
+    renderShell("/b");
+    const strip = within(screen.getByRole("navigation", { name: "Pages" }));
+    const links = within(strip.getByRole("list", { name: "Actions" })).getAllByRole("link");
+    expect(links.map((link) => link.textContent)).toEqual(["Page B", "Page C"]);
+    expect(links[0]?.getAttribute("aria-current")).toBe("page");
+    expect(links[1]?.getAttribute("aria-current")).toBeNull();
+    expect(strip.getByRole("link", { name: "All components" }).getAttribute("href")).toBe(
+      "/#components",
+    );
   });
 
-  it("draws the banner, navigation and main landmarks around the page", () => {
+  it("links a component page to the pages before and after it", () => {
+    renderShell("/b");
+    const pager = within(screen.getByRole("navigation", { name: "Previous and next page" }));
+    expect(pager.getByRole("link", { name: /Previous.*Page A/ }).getAttribute("href")).toBe("/a");
+    expect(pager.getByRole("link", { name: /Next.*Page C/ }).getAttribute("href")).toBe("/c");
+  });
+
+  it("draws no category strip or pager on the index", () => {
+    renderShell("/");
+    expect(screen.queryByRole("navigation", { name: "Pages" })).toBeNull();
+    expect(screen.queryByRole("navigation", { name: "Previous and next page" })).toBeNull();
+  });
+
+  it("opens the command palette from its button and from ⌘K", () => {
+    renderShell("/");
+    expect(dialog()?.open).toBe(false);
+    act(() => screen.getByRole("button", { name: /Search components/ }).click());
+    expect(dialog()?.open).toBe(true);
+    act(() => {
+      dialog()?.close();
+      fireEvent(dialog() as HTMLDialogElement, new Event("close"));
+    });
+    expect(dialog()?.open).toBe(false);
+    fireEvent.keyDown(document, { key: "k", metaKey: true });
+    expect(dialog()?.open).toBe(true);
+  });
+
+  it("folds the display settings behind a button that says whether they are open", () => {
+    renderShell("/");
+    const toggle = screen.getByRole("button", { name: "Scheme and language" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(toggle.getAttribute("aria-controls")).toBe("display-settings");
+    act(() => toggle.click());
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("draws the banner, display settings and main landmarks around the page", () => {
     renderShell("/");
     expect(screen.getByRole("banner")).toBeTruthy();
-    expect(screen.getByRole("navigation", { name: "Pages" })).toBeTruthy();
     expect(screen.getByRole("toolbar", { name: "Display settings" })).toBeTruthy();
     expect(screen.getByRole("main").textContent).toBe("Child page");
   });

@@ -1,0 +1,63 @@
+---
+title: "0320 — Stackra brand: the glass material and the showcase stage"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends the stackra brand kit's surface rule, which said "No glass (shadows allowed), no gradients"
+  and "no top-line highlight". The rule's record is
+  `packages/design-system/tokens/assets/data/stackra/brand.json` (`decided.surfaces`). Amends
+  [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) only where it describes the
+  playground's look.
+</Note>
+
+## Context
+
+The stackra brand kit (approved 2026-09-29) settled every surface as an opaque layer: the page ground, then section
+sheets, then recessed stages, with emphasis by an inverted card. It recorded "no glass, no gradients, no top-line
+highlight". On 2026-10-24 the owner asked for a premium, glass showcase for the design system playground, with Stackra
+branding throughout, and decided to change the brand record to allow it. This ADR records the change and draws its
+limits, so the material does not drift into product screens or into the component library.
+
+## Decision
+
+1. **A glass material joins the brand.** It is a translucent fill of a surface role, a backdrop blur and a hairline
+   edge, with a light top edge allowed. It is built from the theme's roles only, with no colour of its own. Glass is
+   for **showcase and marketing surfaces**: the playground, the docs landing, marketing pages and the static host.
+   Product UI (console, mobile, panel resources) and the `@stackra/ui` components keep the opaque layers. A future ADR
+   decides whether glass reaches them.
+2. **Glass never sits under a component sample.** The components' soft and translucent variants are tuned against the
+   theme's `background`, so a showcase page places them on a solid sheet of that colour. Glass frames the samples;
+   it never sits behind them.
+3. **Gradients are allowed only as soft ambient tints, never as fills of a control or of text.** Each tint is a flat
+   colour shaped by a mask. A contrast checker (axe) then measures text against every tint at full strength at once.
+   That is a stricter background than any point of the page shows, so the check gives a result instead of reporting
+   "incomplete". The tints stay light enough that muted text passes AA in that worst case.
+4. **The fallbacks are part of the material.**
+   - The glass turns solid (its surface role, no blur) under `prefers-reduced-transparency`, under
+     `prefers-contrast: more`, and where `backdrop-filter` is unsupported.
+   - It keeps a visible edge in forced colours.
+   - Under reduced motion it does not animate.
+   - Text on glass keeps the contrast it has on the solid surface: the fill is at least 72% surface.
+5. **The marks are unchanged.**
+   - The beam-S wordmark stays static, in its artwork colour (steel-deep on light, steel on dark).
+   - It may be drawn large and echoed as a hairline outline on a showcase stage.
+   - It is never glass, never a gradient, and never animated.
+   - Steel still fills no UI role, and the amber bar stays inside the "by figentra\_" signature.
+6. **Patterns and illustration.**
+   - The brand's grid, graph and dots patterns may sit under glass, in hairline roles, and never carry meaning.
+   - The brand icons (square caps, mitred joins, 24px grid) may wear a glass tile on a showcase stage.
+
+## Consequences
+
+- `brand.json` `decided.surfaces` now cites this ADR. The kit's own `--check` (outside this repository) still asserts
+  the old rule and must be updated when the kit is next regenerated.
+- The playground (`apps/playground`, STA-422) is the first surface. Its `glass` and `glass-strong` utilities and the
+  ambient field in `src/styles/app.css` are the reference implementation.
+- `@stackra/tokens` gains no glass token yet. When a second surface adopts the material, the fills and the blur become
+  theme tokens, rendered by `renderWebCss` and `renderNativeCss`.
+
+## Enforcement
+
+Planned: a design-brand review rule that refuses `backdrop-filter`, or a gradient fill, outside the surfaces of
+decision 1. Until then, review applies it.
