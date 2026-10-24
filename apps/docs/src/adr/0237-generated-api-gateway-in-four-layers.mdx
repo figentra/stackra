@@ -1,7 +1,14 @@
 ---
 title: "0237 — The API gateway is generated, in four layers, with no gateway service"
-description: "Accepted, amended by 0290, 0297, 0325, 0334 · 2026-10-20 · amended 2026-10-24 (STA-428)"
+description: "Accepted, amended by 0290, 0297, 0325, 0334 · 2026-10-20 · amended 2026-10-24 (STA-428) · amended 2026-10-24 (STA-417)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-417), with the runway v3 schemas (stackra#136): the generated gateway
+  reads the names of the secrets it needs from `secrets.gateway` in the root `runway.yaml`
+  ([0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups) as amended the same day), so
+  the gateway code holds no secret name of its own. The four layers stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-428) by
