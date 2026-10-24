@@ -240,3 +240,31 @@ for (const scheme of SCHEMES)
     expect(filter).toBe("none");
     expect(alpha).toBe(255);
   });
+
+test("the hero's jump to the gallery keeps the scheme and the locale", async ({ page }) => {
+  await page.goto("/?scheme=dark&locale=ar");
+  await page.getByRole("link", { name: /Browse components/ }).click();
+  await expect(page).toHaveURL(/\?scheme=dark&locale=ar#components$/);
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+});
+
+for (const scheme of SCHEMES)
+  for (const { locale, dir } of LOCALES)
+    for (const query of ["", "se"])
+      test(`the open command palette passes axe in ${scheme}, ${dir}, ${query ? "with results" : "empty"}`, async ({
+        page,
+      }) => {
+        await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
+        await page.goto(`/button?scheme=${scheme}&locale=${locale}`);
+        await page.keyboard.press("ControlOrMeta+k");
+        const palette = page.getByRole("dialog", { name: "Search components" });
+        await expect(palette).toBeVisible();
+        if (query) await page.keyboard.type(query);
+        await expect(palette.getByRole("option").first()).toBeVisible();
+        const { violations, incomplete } = await new AxeBuilder({ page })
+          .include("dialog")
+          .withTags(AXE_TAGS)
+          .analyze();
+        expect(violations.map((v) => v.id)).toEqual([]);
+        expect(incomplete.map((v) => v.id)).toEqual([]);
+      });

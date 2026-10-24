@@ -92,7 +92,6 @@ src/
 ├── routes/foundations/                `/foundations`
 ├── routes/icon/                       `/icon`
 ├── routes/typography/                 `/typography`
-├── components/page-list/              the pages grouped by category, as rows (the palette)
 ├── components/page-section/           a named region with a level-2 heading and a note
 ├── enums/page-category.enum.ts        the page categories, in navigation order
 ├── enums/page-tier.enum.ts            Free and Pro (a `/pro-*` path is Pro)

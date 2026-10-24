@@ -25,7 +25,8 @@
 - **Public contract change**: none (a dev tool, not deployed); `HomeRoute.title` becomes "Stackra Design System"
 - **Cross-service events**: none
 - **Tenancy and data**: none
-- **Security and privacy**: none; the playground stores nothing and calls nothing
+- **Security and privacy**: none; the playground calls nothing, and its palette keeps the last five page paths it
+  opened in this browser's localStorage (no personal data; cleared with the site data)
 - **Secrets**: none
 - **ADR needed**: yes, ADR 0320 (the brand amendment that allows glass on showcase surfaces)
 - **New dependencies**: none

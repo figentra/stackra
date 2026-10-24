@@ -26,9 +26,11 @@ limits, so the material does not drift into product screens or into the componen
    for **showcase and marketing surfaces**: the playground, the docs landing, marketing pages and the static host.
    Product UI (console, mobile, panel resources) and the `@stackra/ui` components keep the opaque layers. A future ADR
    decides whether glass reaches them.
-2. **Glass never sits under a component sample.** The components' soft and translucent variants are tuned against the
-   theme's `background`, so a showcase page places them on a solid sheet of that colour. Glass frames the samples;
-   it never sits behind them.
+2. **Glass never sits under a component's reference samples.** The components' soft and translucent variants are tuned
+   against the theme's `background`, so a page that documents a component (its variants, sizes and states) places them
+   on a solid sheet of that colour; glass frames that sheet and never sits behind it. Composed scenes that show the
+   system at work (the playground index's showcase, its gallery panels) may sit on glass cards, as a product's would;
+   axe checks them in every material mode, so their contrast holds.
 3. **Gradients are allowed only as soft ambient tints, never as fills of a control or of text.** Each tint is a flat
    colour shaped by a mask. A contrast checker (axe) then measures text against every tint at full strength at once.
    That is a stricter background than any point of the page shows, so the check gives a result instead of reporting

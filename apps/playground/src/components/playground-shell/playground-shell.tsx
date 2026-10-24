@@ -228,7 +228,11 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
       const target = event.target instanceof Element ? event.target : null;
       const isTyping = target?.closest("input, textarea, select, [contenteditable='true']");
       const isCommandK = event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey);
-      if (isCommandK || (event.key === "/" && !isTyping)) {
+      // A sample's own open dialog keeps the keys: the palette never opens over it.
+      const isDialogOpen = document.querySelector(
+        'dialog[open]:not(.command-palette), [role="dialog"][aria-modal="true"], [role="alertdialog"]',
+      );
+      if (!isDialogOpen && (isCommandK || (event.key === "/" && !isTyping))) {
         event.preventDefault();
         openPalette();
       }

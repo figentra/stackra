@@ -54,6 +54,10 @@ describe("HomeRoute", () => {
     expect(screen.getByRole("link", { name: /Page A/ }).getAttribute("href")).toBe(
       "/a?scheme=dark&locale=ar",
     );
+    // The hero's jump to the gallery keeps the view in the address too.
+    expect(screen.getByRole("link", { name: /Browse components/ }).getAttribute("href")).toBe(
+      "/?scheme=dark&locale=ar#components",
+    );
   });
 
   it("narrows the gallery to one tier", () => {

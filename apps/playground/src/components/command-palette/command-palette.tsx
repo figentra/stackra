@@ -286,7 +286,7 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
       aria-label={STRINGS.label}
       onClose={onClose}
       onClick={onScrim}
-      className="command-palette material-thick m-auto mt-[10vh] w-[min(100%-2rem,54rem)] max-w-none overflow-hidden rounded-3xl p-0 text-foreground"
+      className="command-palette glass-strong m-auto mt-[10vh] w-[min(100%-2rem,54rem)] max-w-none overflow-hidden rounded-3xl p-0 text-foreground"
     >
       {isOpen ? (
         <div className="grid max-h-[min(76vh,42rem)] grid-rows-[auto_minmax(0,1fr)_auto]">

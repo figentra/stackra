@@ -27,6 +27,8 @@ const STRINGS = {
   pro: "Pro",
   count: (count: number) => (count === 1 ? "1 page" : `${count} pages`),
   none: "No page in this tier yet. Pro pages arrive with @stackra/ui-pro.",
+  shown: (count: number, tier: string) =>
+    `${count === 1 ? "1 page" : `${count} pages`} shown${tier === "All" ? "" : `, ${tier} only`}.`,
 } as const;
 
 /** One line per category on what it holds; a category missing here lists without one. */
@@ -98,6 +100,10 @@ export function PageGallery({ pages, search, headingLevel }: PageGalleryProps) {
           </Choice>
         ))}
       </Ui.ToggleButtonGroup>
+      {/* The filter changes the list in place, so its result is announced. */}
+      <p role="status" className="sr-only">
+        {STRINGS.shown(shown.length, tier)}
+      </p>
       <nav aria-label={STRINGS.pages} className="columns-1 gap-4 md:columns-2 xl:columns-3">
         {shown.length === 0 ? <Ui.Text tone="muted">{STRINGS.none}</Ui.Text> : null}
         {PageCategory.map((category) => {
