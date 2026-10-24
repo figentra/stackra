@@ -1,0 +1,461 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "number",
+      "const": 3
+    },
+    "requires": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_-]*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "engine": {
+            "type": "string",
+            "enum": ["postgres", "valkey"]
+          },
+          "dedicated": {
+            "default": false,
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["engine"],
+        "additionalProperties": false
+      }
+    },
+    "secrets": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Z0-9_]*$"
+      }
+    },
+    "health": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "format": "starts_with",
+          "pattern": "^\\/.*"
+        },
+        "expects": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["path", "expects"],
+      "additionalProperties": false
+    },
+    "release": {
+      "type": "object",
+      "properties": {
+        "pwa": {
+          "type": "object",
+          "properties": {
+            "updates": {
+              "type": "string",
+              "minLength": 1
+            },
+            "betaBadgeOutsideProduction": {
+              "type": "boolean"
+            }
+          },
+          "required": ["updates"],
+          "additionalProperties": false
+        },
+        "desktop": {
+          "type": "object",
+          "properties": {
+            "channels": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]*$"
+              }
+            },
+            "signing": {
+              "type": "object",
+              "properties": {
+                "mac": {
+                  "type": "boolean"
+                },
+                "windows": {
+                  "type": "boolean"
+                },
+                "linux": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            },
+            "feedPath": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_-]*$"
+            },
+            "platforms": {
+              "type": "object",
+              "properties": {
+                "mac": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "windows": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "linux": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": ["channels", "feedPath"],
+          "additionalProperties": false
+        },
+        "mobile": {
+          "type": "object",
+          "properties": {
+            "profiles": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]*$"
+              },
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "distribution": {
+                    "type": "string",
+                    "enum": ["internal", "store"]
+                  },
+                  "developmentClient": {
+                    "type": "boolean"
+                  },
+                  "simulator": {
+                    "type": "boolean"
+                  },
+                  "androidApk": {
+                    "type": "boolean"
+                  },
+                  "autoIncrement": {
+                    "type": "boolean"
+                  },
+                  "environment": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_-]*$"
+                  }
+                },
+                "required": ["distribution", "environment"],
+                "additionalProperties": false
+              }
+            },
+            "submit": {
+              "type": "object",
+              "properties": {
+                "ios": {
+                  "type": "boolean"
+                },
+                "android": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            },
+            "whiteLabel": {
+              "type": "boolean"
+            }
+          },
+          "required": ["profiles"],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "telemetry": {
+      "type": "object",
+      "properties": {
+        "sentryProject": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "environments": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "enum": ["dev", "preview", "staging", "production"]
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "port": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "host": {
+            "type": "string",
+            "minLength": 1
+          },
+          "https": {
+            "type": "boolean"
+          },
+          "open": {
+            "type": "boolean"
+          },
+          "domain": {
+            "type": "string",
+            "pattern": "^[a-z0-9${}.-]+$"
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9${}.-]+$"
+            }
+          },
+          "destination": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          },
+          "vars": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "from-port": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "scheme": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9+.-]*$"
+                    },
+                    "path": {
+                      "type": "string",
+                      "format": "starts_with",
+                      "pattern": "^\\/.*"
+                    }
+                  },
+                  "required": ["from-port"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "from-member": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "scheme": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9+.-]*$"
+                    },
+                    "path": {
+                      "type": "string",
+                      "format": "starts_with",
+                      "pattern": "^\\/.*"
+                    }
+                  },
+                  "required": ["from-member"],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "config": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {}
+            }
+          },
+          "e2e": {
+            "type": "object",
+            "properties": {
+              "baseUrl": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "const": "from-port"
+                  },
+                  {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                ]
+              },
+              "seeds": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "const": "from-stackra-config"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                ]
+              },
+              "turnstile": {
+                "type": "string",
+                "const": "test-keys"
+              }
+            },
+            "additionalProperties": false
+          },
+          "desktop": {
+            "type": "object",
+            "properties": {
+              "devtools": {
+                "type": "boolean"
+              },
+              "remoteDebugPort": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+              },
+              "pkceLoopbackPort": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+              },
+              "channel": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]*$"
+              },
+              "rollout": {
+                "type": "object",
+                "properties": {
+                  "startPercent": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100
+                  }
+                },
+                "required": ["startPercent"],
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          "mobile": {
+            "type": "object",
+            "properties": {
+              "devClient": {
+                "type": "boolean"
+              },
+              "channel": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]*$"
+              },
+              "profile": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]*$"
+              }
+            },
+            "additionalProperties": false
+          },
+          "pwa": {
+            "type": "object",
+            "properties": {
+              "updates": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": ["updates"],
+            "additionalProperties": false
+          },
+          "workers": {
+            "type": "object",
+            "properties": {
+              "observability": {
+                "type": "object",
+                "properties": {
+                  "headSamplingRate": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": ["headSamplingRate"],
+                "additionalProperties": false
+              },
+              "limits": {
+                "type": "object",
+                "properties": {
+                  "cpuMs": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": ["cpuMs"],
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["version", "environments"],
+  "additionalProperties": false,
+  "$id": "https://static.stackra.figentra.com/schemas/runway/app.json",
+  "title": "Stackra app runway, format version 3"
+}

@@ -272,6 +272,10 @@ export const MUST_STAY_JSON = [
     /^packages\/design-system\/tokens\/assets\/data\/[\w-]+\/[\w-]+\.json$/,
     "brand-kit token reports, vendored byte-for-byte; the theme tests JSON.parse them",
   ],
+  [
+    /^packages\/developer\/runway\/schema\/[\w-]+\.json$/,
+    "runway JSON Schemas: shipped as @stackra/runway/schema/<kind>.json for editors and validators",
+  ],
   [/(^|\/)src\/docs\.json$/, "Mintlify parses docs.json with JSON.parse"],
   [
     /(^|\/)([\w-]+\.)?stackra\.manifest\.json$/,
