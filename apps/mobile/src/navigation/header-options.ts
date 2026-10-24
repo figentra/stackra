@@ -23,3 +23,9 @@ export const largeTitleHeader: NativeStackNavigationOptions = {
   headerLargeTitle: ios,
   headerLargeTitleShadowVisible: false,
 };
+
+/** Pages pushed from a tab root keep the glass header and the small title, so the large title stays on roots. */
+export const detailHeader: NativeStackNavigationOptions = {
+  ...glassHeader,
+  headerLargeTitle: false,
+};

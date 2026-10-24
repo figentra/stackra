@@ -8,6 +8,9 @@
  * Governing contract: ADR 0302 (decision 5); ADR 0022 (test placement).
  */
 // @covers sta-350:FR-056
+// HeroUI Pro's Sheet reads matchMedia as its module loads, and the real route folders include the Pro pages.
+import "#src/__tests__/stub-browser-apis";
+
 import { discoverPages, PLAYGROUND_PAGES } from "#src/components/playground-pages";
 
 /** A route module with the statics a route class carries. */
@@ -90,5 +93,12 @@ describe("PLAYGROUND_PAGES", () => {
       "Actions",
     );
     expect(PLAYGROUND_PAGES[0]?.route.category).toBe("Foundations");
+    expect(PLAYGROUND_PAGES.at(-1)?.route.category).toBe("Pro");
+  });
+
+  it("carries ownsMain for the page that draws its own main, and leaves it out elsewhere", () => {
+    const find = (path: string) => PLAYGROUND_PAGES.find(({ route }) => route.path === path)?.route;
+    expect(find("/pro-app-layout")?.ownsMain).toBe(true);
+    expect(find("/button")).not.toHaveProperty("ownsMain");
   });
 });

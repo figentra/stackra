@@ -23,6 +23,8 @@ import {
   type SelectRootProps,
 } from "heroui-native";
 
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import type { SelectContractProps } from "#contracts/types/select-contract-props.type";
 import type { SelectItem } from "#contracts/types/select-item.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -88,6 +90,8 @@ export function Select({
   className,
   ...rest
 }: SelectProps) {
+  // Owner decision 2026-10-24: every native sheet is HeroUI Native's inset style, detached and clear of the home bar.
+  const insets = useSafeAreaInsets();
   return (
     <HeroSelect
       {...rest}
@@ -121,6 +125,14 @@ export function Select({
         <HeroSelect.Content
           presentation={presentation}
           {...(presentation === "popover" ? { width: "trigger" as const } : {})}
+          {...(presentation === "bottom-sheet"
+            ? {
+                detached: true,
+                bottomInset: insets.bottom + 12,
+                className: "mx-4",
+                backgroundClassName: "rounded-4xl",
+              }
+            : {})}
         >
           {items.map((item) => (
             <SelectOption key={item.id} item={item} />

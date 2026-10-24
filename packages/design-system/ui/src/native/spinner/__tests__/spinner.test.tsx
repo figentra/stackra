@@ -31,6 +31,8 @@ vi.mock("heroui-native", async () => {
   };
 });
 
+const onLayout = () => undefined;
+
 describe("Spinner (native)", () => {
   beforeEach(() => {
     received.props = {};
@@ -75,7 +77,6 @@ describe("Spinner (native)", () => {
   });
 
   it("passes the spinner's own props through", () => {
-    const onLayout = () => undefined;
     render(
       <Spinner
         className="m-2"
