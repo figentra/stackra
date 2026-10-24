@@ -1,0 +1,38 @@
+# AGENTS — @stackra/gen
+
+The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
+0305). Entries `.`, `./node`, `./testing` and the `./metro-transformer` tool hook (ADR 0127, 2026-10-24 note).
+
+## Where code goes
+
+| You are writing…                                    | It goes in…                                 |
+| --------------------------------------------------- | ------------------------------------------- |
+| A pure formula or emitter (IR in, text out)         | `src/core/functions/<name>.function.ts`     |
+| Discovery, the host seam, file writing, Vite plugin | `src/node/functions/`                       |
+| The manifest contract helpers                       | `src/testing/functions/`                    |
+| Metro's transformer                                 | `src/metro-transformer/functions/`          |
+| Constants and types                                 | `src/<entry>/{constants,types}/`            |
+| A test                                              | `__tests__/<name>.<kind>.test.ts` beside it |
+
+## Entries and barrels
+
+- `src/{core,node,testing,metro-transformer}/index.ts` are stand-in barrels until gen writes its own entry barrels
+  (STA-339); add every new public file to its barrel.
+- `.` is pure: no `node:*`, no `typescript` import. Source is read only in `./node`, behind the one host seam
+  (`openHost`): TypeScript 7 first, `typescript6` as the fallback (ADR 0294 d26). Never ts-morph.
+
+## This package
+
+- The committed `stackra.manifest.json` is the IR; a dependency is described by its manifest, never its `.d.ts`.
+- Output is deterministic: files sorted by path, stable key order. Every refusal has a snake_case code, a position and
+  a fix; when there is one, nothing is written.
+- Identity formulas live in one place each (ADR 0294 decision 20); other packages call them, never copy them.
+
+## Rules that fail the build
+
+- A package never imports an app, a service, `encore.dev`/`~encore/*`, or another package's `src/`.
+- Versions are `catalog:<name>` or `workspace:*` only.
+
+## PII
+
+None. Gen reads source code and writes generated code and manifests; it handles no personal data.
