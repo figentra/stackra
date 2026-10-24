@@ -32,11 +32,11 @@ The playground keeps its copy until ds-web switches its import.
 - **Tenancy and data**: none
 - **Security and privacy**: none
 - **Secrets**: none
-- **ADR needed**: no. It follows ADR 0310, and the branding decision (ADR 0340) is pending elsewhere.
+- **ADR needed**: no. It follows ADR 0310. The branding decision (a), grow `@stackra/tokens`, is recorded elsewhere.
 - **New dependencies**: none; `@stackra/tokens` (`workspace:*`) becomes a dev dependency of `@stackra/ui-pro`
 - **Deploy modes**: none; a private library
 - **Licence tier**: our MIT stylesheet over HeroUI Pro's classes; no HeroUI Pro code is copied
-- **Docs to update**: the `@stackra/ui-pro` README (the import order)
+- **Docs to update**: the `@stackra/ui-pro` README (the exports table and the import order)
 - **Lane**: lite
 - **Change risk**: R1
 
@@ -51,7 +51,8 @@ The playground keeps its copy until ds-web switches its import.
 
 - **EC-01**: A variable a component sets inline at runtime is defined by no stylesheet. It is listed with where it is
   set, and the list may hold only variables that no stylesheet defines.
-- **EC-02**: A dark region inside a light document keeps HeroUI Pro's dark code colours.
+- **EC-02**: A region the Stackra theme marks dark (`.dark` or `[data-theme="dark"]`) inside a light document keeps
+  HeroUI Pro's dark code colours.
 
 ## Requirements
 
