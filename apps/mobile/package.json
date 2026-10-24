@@ -45,6 +45,7 @@
     "@stackra/ui-pro": "workspace:*",
     "expo": "catalog:mobile",
     "expo-blur": "catalog:mobile",
+    "expo-build-properties": "catalog:mobile",
     "expo-constants": "catalog:mobile",
     "expo-dev-client": "catalog:mobile",
     "expo-glass-effect": "catalog:mobile",
