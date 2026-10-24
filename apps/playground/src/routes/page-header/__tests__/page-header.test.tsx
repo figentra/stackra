@@ -44,10 +44,10 @@ describe("Page header page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("opens with a page header that is the page's one h1, and sits at /page-header under Shell", () => {
+  it("opens with a page header that is the page's one h1, and sits at /page-header under Layout", () => {
     renderPage();
     expect(PageHeaderRoute.path).toBe("/page-header");
-    expect(PageHeaderRoute.category).toBe("Shell");
+    expect(PageHeaderRoute.category).toBe("Layout");
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     const h1 = screen.getByRole("heading", { level: 1, name: "Page header" });
     expect(h1.closest("header")).toBeTruthy();

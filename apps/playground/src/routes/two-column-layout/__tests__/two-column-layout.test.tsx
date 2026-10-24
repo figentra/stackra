@@ -45,10 +45,10 @@ describe("Two column layout page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("opens with the page's one h1, and sits at /two-column-layout under Shell", () => {
+  it("opens with the page's one h1, and sits at /two-column-layout under Layout", () => {
     renderPage();
     expect(TwoColumnLayoutRoute.path).toBe("/two-column-layout");
-    expect(TwoColumnLayoutRoute.category).toBe("Shell");
+    expect(TwoColumnLayoutRoute.category).toBe("Layout");
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1, name: "Two column layout" })).toBeTruthy();
     expect(document.title).toBe("Two column layout · Stackra Playground");

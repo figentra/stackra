@@ -44,10 +44,10 @@ describe("Section page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("opens with the page's one h1, and sits at /section under Shell", () => {
+  it("opens with the page's one h1, and sits at /section under Layout", () => {
     renderPage();
     expect(SectionRoute.path).toBe("/section");
-    expect(SectionRoute.category).toBe("Shell");
+    expect(SectionRoute.category).toBe("Layout");
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1, name: "Section" })).toBeTruthy();
     expect(document.title).toBe("Section · Stackra Playground");

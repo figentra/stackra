@@ -52,10 +52,10 @@ describe("Filter bar page", () => {
     Reflect.deleteProperty(Element.prototype, "scrollTo");
   });
 
-  it("titles the page and the document, and sits at /filter-bar under Data", () => {
+  it("titles the page and the document, and sits at /filter-bar under Data display", () => {
     renderPage();
     expect(FilterBarRoute.path).toBe("/filter-bar");
-    expect(FilterBarRoute.category).toBe("Data");
+    expect(FilterBarRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Filter bar" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Filter bar · Stackra Playground");

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the navigation header page titles the document, sits at /navigation-header under Shell, draws six
+ * Purpose: proves the navigation header page titles the document, sits at /navigation-header under Navigation, draws six
  *          headers in the parts section (title only, back button, back link, slots, long title, large title) each with
  *          its title as a level 3 heading so the page keeps one `h1`, holds no banner landmark, draws the Arabic header
  *          in a right-to-left block with Arabic text, and runs the live header: the back button, the add action and the
@@ -44,10 +44,10 @@ describe("Navigation header page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /navigation-header under Shell", () => {
+  it("titles the page and the document, and sits at /navigation-header under Navigation", () => {
     renderPage();
     expect(NavigationHeaderRoute.path).toBe("/navigation-header");
-    expect(NavigationHeaderRoute.category).toBe("Shell");
+    expect(NavigationHeaderRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: "Navigation header" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Navigation header · Stackra Playground");

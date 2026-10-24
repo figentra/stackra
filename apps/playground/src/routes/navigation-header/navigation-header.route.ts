@@ -20,5 +20,5 @@ export class NavigationHeaderRoute {
   static readonly title = "Navigation header";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Shell";
+  static readonly category: PageCategory = "Navigation";
 }

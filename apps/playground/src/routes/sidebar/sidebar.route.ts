@@ -20,5 +20,5 @@ export class SidebarRoute {
   static readonly title = "Sidebar";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Shell";
+  static readonly category: PageCategory = "Navigation";
 }

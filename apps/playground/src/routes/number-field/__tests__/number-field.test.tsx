@@ -47,10 +47,10 @@ describe("Number field page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /number-field under Inputs", () => {
+  it("titles the page and the document, and sits at /number-field under Inputs and forms", () => {
     renderPage();
     expect(NumberFieldRoute.path).toBe("/number-field");
-    expect(NumberFieldRoute.category).toBe("Inputs");
+    expect(NumberFieldRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: "Number field" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Number field · Stackra Playground");

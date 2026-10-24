@@ -20,5 +20,5 @@ export class DatePickerRoute {
   static readonly title = "Date picker";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Inputs";
+  static readonly category: PageCategory = "Date and time";
 }

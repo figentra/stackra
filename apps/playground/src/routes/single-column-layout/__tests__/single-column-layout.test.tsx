@@ -42,10 +42,10 @@ describe("Single column layout page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("opens with the page's one h1, and sits at /single-column-layout under Shell", () => {
+  it("opens with the page's one h1, and sits at /single-column-layout under Layout", () => {
     renderPage();
     expect(SingleColumnLayoutRoute.path).toBe("/single-column-layout");
-    expect(SingleColumnLayoutRoute.category).toBe("Shell");
+    expect(SingleColumnLayoutRoute.category).toBe("Layout");
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1, name: "Single column layout" })).toBeTruthy();
     expect(document.title).toBe("Single column layout · Stackra Playground");

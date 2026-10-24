@@ -46,10 +46,10 @@ describe("Sidebar page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /sidebar under Shell", () => {
+  it("titles the page and the document, and sits at /sidebar under Navigation", () => {
     renderPage();
     expect(SidebarRoute.path).toBe("/sidebar");
-    expect(SidebarRoute.category).toBe("Shell");
+    expect(SidebarRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: "Sidebar" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Sidebar · Stackra Playground");

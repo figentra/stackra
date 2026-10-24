@@ -49,10 +49,10 @@ describe("App shell page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /app-shell under Shell", () => {
+  it("titles the page and the document, and sits at /app-shell under Layout", () => {
     renderPage();
     expect(AppShellRoute.path).toBe("/app-shell");
-    expect(AppShellRoute.category).toBe("Shell");
+    expect(AppShellRoute.category).toBe("Layout");
     expect(screen.getByRole("heading", { level: 1, name: "App shell" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("App shell · Stackra Playground");

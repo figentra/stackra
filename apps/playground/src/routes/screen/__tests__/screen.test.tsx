@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the screen page titles the document, sits at /screen under Shell, draws five edge samples with the
+ * Purpose: proves the screen page titles the document, sits at /screen under Layout, draws five edge samples with the
  *          insets of exactly the edges each is given, a scrolling sample and one that only holds its content, an Arabic
  *          screen in a right-to-left block with Arabic text, draws every sample as a plain div so the page holds no
  *          `main` of its own, and runs the live screen: the scrolling switch and the edge checkboxes change the screen's
@@ -49,10 +49,10 @@ describe("Screen page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /screen under Shell", () => {
+  it("titles the page and the document, and sits at /screen under Layout", () => {
     renderPage();
     expect(ScreenRoute.path).toBe("/screen");
-    expect(ScreenRoute.category).toBe("Shell");
+    expect(ScreenRoute.category).toBe("Layout");
     expect(screen.getByRole("heading", { level: 1, name: "Screen" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Screen · Stackra Playground");

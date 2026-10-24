@@ -20,5 +20,5 @@ export class BulkActionBarRoute {
   static readonly title = "Bulk action bar";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Data";
+  static readonly category: PageCategory = "Data display";
 }

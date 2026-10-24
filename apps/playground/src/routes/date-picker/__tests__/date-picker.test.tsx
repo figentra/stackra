@@ -46,10 +46,10 @@ describe("Date picker page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /date-picker under Inputs", () => {
+  it("titles the page and the document, and sits at /date-picker under Date and time", () => {
     renderPage();
     expect(DatePickerRoute.path).toBe("/date-picker");
-    expect(DatePickerRoute.category).toBe("Inputs");
+    expect(DatePickerRoute.category).toBe("Date and time");
     expect(screen.getByRole("heading", { level: 1, name: "Date picker" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Date picker · Stackra Playground");

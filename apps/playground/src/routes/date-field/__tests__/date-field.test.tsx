@@ -43,10 +43,10 @@ describe("Date field page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /date-field under Inputs", () => {
+  it("titles the page and the document, and sits at /date-field under Date and time", () => {
     renderPage();
     expect(DateFieldRoute.path).toBe("/date-field");
-    expect(DateFieldRoute.category).toBe("Inputs");
+    expect(DateFieldRoute.category).toBe("Date and time");
     expect(screen.getByRole("heading", { level: 1, name: "Date field" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Date field · Stackra Playground");

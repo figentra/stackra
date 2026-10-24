@@ -20,5 +20,5 @@ export class DateFieldRoute {
   static readonly title = "Date field";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Inputs";
+  static readonly category: PageCategory = "Date and time";
 }

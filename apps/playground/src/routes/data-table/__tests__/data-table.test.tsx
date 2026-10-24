@@ -59,10 +59,10 @@ describe("DataTable page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /data-table under Data", () => {
+  it("titles the page and the document, and sits at /data-table under Data display", () => {
     renderPage();
     expect(DataTableRoute.path).toBe("/data-table");
-    expect(DataTableRoute.category).toBe("Data");
+    expect(DataTableRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Data table" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Data table · Stackra Playground");
