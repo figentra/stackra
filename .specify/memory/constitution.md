@@ -368,7 +368,7 @@ When an authorization system exists, every service resolves permissions the same
 ```text
 effective(principal, tenant, activeScope) =
     grants      live grants for (principal, tenant)      # not expired, not revoked
-    applicable  grants whose scope path contains activeScope  # Pro scope driver; otherwise tenant-wide
+    applicable  grants whose scope path contains activeScope  # the scope tree of 0327 (free code, depth by plan); otherwise tenant-wide
     perms       union of role permissions over applicable
                   limited to entitled features
                   limited to token abilities            # API keys only

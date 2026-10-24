@@ -9,6 +9,7 @@ description: "Accepted · 2026-10-24"
   [0323](/adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port) (the
   package that owns `ScopeRef`). Adds Notes to
   [0127](/adr/0127-package-categories-including-infrastructure),
+  [0202](/adr/0202-stackra-pro-is-developer-side-os-capability-is-free-code),
   [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names),
   [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) and
   [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions), whose placement of
@@ -56,8 +57,9 @@ matter, and it stays where it is.
    ([0136](/adr/0136-action-runtime-contract)). A code block may run in a scope other than the current one, for emulation
    or impersonation. Each such switch is audited.
 
-7. **Resolver chain.** The scope of a request is resolved by a chain, in this order: a request header, a token claim,
-   tenancy, and a root fallback. Each step is a driver behind a resolver port ([0142](/adr/0142-cross-service-transport-through-drivers)).
+7. **Resolver chain.** The scope of a request is resolved by a chain, in this order: a request header (`X-Scope-Path`,
+   accepted only when its path is one the caller holds a grant for, and dropped otherwise), a token claim, tenancy, and a
+   root fallback. Each step is a driver behind a resolver port ([0142](/adr/0142-cross-service-transport-through-drivers)).
    The chain runs in the tenancy step of the action pipeline ([0138](/adr/0138-pipeline-order-is-fixed)).
 
 8. **Tenancy is a consumer.** `@stackra/tenancy` maps each tenant to a scope node, and it contributes the tenant level and
@@ -83,8 +85,8 @@ matter, and it stays where it is.
 - Tenancy keeps tenant isolation and gives up the tree, so tenant row isolation reads as it does today.
 - A consumer that stores values per scope writes its own typed table with `scope_id`. The package adds no filter to its rows.
 - A switch into another scope leaves an audit record, so impersonation is never silent.
-- Two documents still place the tree in `@stackra/iam` and `@stackra/tenancy` in places this ADR does not reach. The
-  tenancy rule and the constitution's tenancy page are updated with this ADR. The workspace layout rule is updated too.
+- The tenancy rule, the workspace-layout rule and the constitution's tenancy and security pages are updated with this
+  ADR, so no document still places the tree in `@stackra/iam` or `@stackra/tenancy`.
 
 ## Enforcement
 
@@ -98,7 +100,7 @@ matter, and it stays where it is.
 
 Supersedes: none. Amends: [0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan) (decision 1) and
 [0323](/adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port) (the owner of `ScopeRef`).
-Notes added to [0127](/adr/0127-package-categories-including-infrastructure), [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names),
+Notes added to [0127](/adr/0127-package-categories-including-infrastructure), [0202](/adr/0202-stackra-pro-is-developer-side-os-capability-is-free-code), [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names),
 [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) and
 [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions).
 Sources: the owner's final structure review of 2026-10-24, restated in this ADR's own words.

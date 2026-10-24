@@ -8,7 +8,7 @@ description: "Accepted, amended by 0294, 0305, 0334 · 2026-10-20 · amended 202
   [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rules 1, 2 and 4):
   every column carries a Postgres `COMMENT` taken from its field's docblock and an explicit
   nullability, and gen fails when either is missing; gen also fails on a foreign key to a table that
-  no earlier migration created; there are no schema-patch or data- patch kinds, a data change is a
+  no earlier migration created; there are no schema-patch or data-patch kinds, a data change is a
   seeder or a backfill job, and DML in a migration stays banned. The ordering and safety rules of
   this ADR stand.
 </Note>
