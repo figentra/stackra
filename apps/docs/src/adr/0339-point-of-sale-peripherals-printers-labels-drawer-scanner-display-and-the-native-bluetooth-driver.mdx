@@ -65,6 +65,14 @@ so that is the evidence 0253 decision 3 asked for.
 - planned — the validator rejects a native module in `@stackra/peripherals` other than the Bluetooth printer module
   unless an ADR reference names it.
 
+## Open questions
+
+1. **Integrated card terminals.** The retail edition needs integrated terminals from day one, with the provider chosen per
+   country (an owner item). `CardTerminal` pairs and reports; the terminal's own SDK on the native staff app and the
+   Electron till is a native module, and under [0253](/adr/0253-peripherals-web-api-first-and-device-presets) decision 3 each provider's SDK needs
+   its evidence and its own ADR. The evidence is stated here; the per-provider ADRs follow the owner's provider
+   choice. An integrated card payment never completes offline.
+
 ## Supersedes and sources
 
 Supersedes: none. Amends: [0253](/adr/0253-peripherals-web-api-first-and-device-presets) (decisions 2 to 4) and, by a
