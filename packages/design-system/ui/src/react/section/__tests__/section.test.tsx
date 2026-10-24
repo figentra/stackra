@@ -10,7 +10,7 @@
  * Boundary: jsdom with real HeroUI and React Aria, and an icon registry holding the ellipsis the ActionMenu draws; the
  *           theme CSS is not loaded, so classes and attributes are checked, not looks.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3); ADR 0314 (decisions 1, 4 and 5); ADR 0022 (test placement).
+ * Governing contract: ADR 0302 (decision 3); ADR 0317 (decisions 1, 4 and 5); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-169

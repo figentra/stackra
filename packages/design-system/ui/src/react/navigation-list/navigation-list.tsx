@@ -6,14 +6,14 @@
  *          it, and the current place carries `aria-current` (`page`, or `true` on an entry that only holds it). The
  *          icon sits before the label and the badge (a Chip) after it; a `shortcut` is a tooltip.
  * Boundary: no router import: an `href` reaches the app's router through the nearest `RouterProvider`, the same seam as
- *           `Link`, and `isCurrent` is the app's to set (ADR 0314 decision 3). HeroUI has no navigation list, so this is
+ *           `Link`, and `isCurrent` is the app's to set (ADR 0317 decision 3). HeroUI has no navigation list, so this is
  *           the adapted form on its `buttonVariants` and a React Aria `Link`. The current entry is marked by a filled
  *           track, bold text and a bar at its start, so it does not rest on colour alone. Every group is open: a list of
  *           a console's size does not need folding, and a disclosure would hide places from the keyboard's tab order.
  *           `isCompact` is the Sidebar's icon rail: the label stays in the accessible name and leaves the sight, and the
  *           tooltip shows it. Each link carries `data-navigation-item` so AppShell's drawer can close when one is chosen.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 1, 5 and 7); ADR 0314 (decisions 1, 3 and 5); ADR 0165
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 1, 5 and 7); ADR 0317 (decisions 1, 3 and 5); ADR 0165
  *          (HeroUI v3 on web); WCAG 2.2 SC 1.3.1, 1.4.1, 2.4.7, 2.5.8 and 4.1.2.
  */
 import { buttonVariants, cn } from "@heroui/react";

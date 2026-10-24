@@ -5,7 +5,7 @@
  *          from it up, and that no class names a physical side, so right-to-left mirrors by itself.
  * Boundary: data only.
  * Runtime: node
- * Governing contract: ADR 0314 (decision 6); ADR 0060 (right-to-left); ADR 0022 (test placement).
+ * Governing contract: ADR 0317 (decision 6); ADR 0060 (right-to-left); ADR 0022 (test placement).
  */
 // @covers sta-350:FR-172
 import { LayoutBreakpoint } from "#contracts/enums/layout-breakpoint.enum";

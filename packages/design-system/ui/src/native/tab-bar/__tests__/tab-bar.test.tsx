@@ -12,7 +12,7 @@
  *           Text are replaced by recording stand-ins that render plain DOM, so what reaches them is checked, not their
  *           rendering. The RouterProvider is the real one.
  * Runtime: node
- * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0314 (decisions 1, 3 and 7); ADR 0022 (test placement).
+ * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0317 (decisions 1, 3 and 7); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-176

@@ -5,7 +5,7 @@
  *          the `Link` seam and the leave confirmation guard. `stackra gen` replaces this file (STA-339).
  * Boundary: re-exports only; no logic. The overlay's own types are in `./contracts`.
  * Runtime: react-native
- * Governing contract: ADR 0294 (decision 15); ADR 0314.
+ * Governing contract: ADR 0294 (decision 15); ADR 0317.
  */
 export {
   ReactNavigationProvider,

@@ -6,7 +6,7 @@
  * Boundary: types only. The element and its role are the component's own choice; this is only the name.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7: `label` is a string where it names something);
- *          ADR 0314; WCAG 2.2 SC 1.3.1 and the ARIA landmark practices.
+ *          ADR 0317; WCAG 2.2 SC 1.3.1 and the ARIA landmark practices.
  */
 
 /** Props shared by every region the shell draws as a landmark. */

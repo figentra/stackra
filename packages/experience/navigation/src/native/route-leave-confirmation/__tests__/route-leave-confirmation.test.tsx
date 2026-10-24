@@ -7,7 +7,7 @@
  *           answer the test decides; what reaches them (`when`, the words, the held action) is checked, and the real
  *           dialog is proved by `@stackra/ui`. The Android back button and the iOS swipe are device checks.
  * Runtime: node
- * Governing contract: ADR 0314 (decision 2); ADR 0312; ADR 0022 (test placement); WCAG 2.2 SC 3.3.4.
+ * Governing contract: ADR 0317 (decision 2); ADR 0312; ADR 0022 (test placement); WCAG 2.2 SC 3.3.4.
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-183

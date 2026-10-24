@@ -5,7 +5,7 @@
  *          absolute URL, and a tree that is left unchanged.
  * Boundary: pure function, no DOM.
  * Runtime: node
- * Governing contract: ADR 0314 (decision 3); ADR 0022 (test placement).
+ * Governing contract: ADR 0317 (decision 3); ADR 0022 (test placement).
  */
 // @covers sta-350:FR-155
 import type { NavigationItem } from "#contracts/types/navigation-item.type";

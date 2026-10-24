@@ -7,7 +7,7 @@
  * Boundary: jsdom inside the DesignSystemProvider with a stubbed matchMedia and a memory router; the theme CSS is not
  *           loaded.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 5); ADR 0314; ADR 0022 (test placement).
+ * Governing contract: ADR 0302 (decision 5); ADR 0317; ADR 0022 (test placement).
  */
 // @covers sta-350:FR-162
 import { DesignSystemProvider } from "@stackra/ui/react";

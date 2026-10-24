@@ -4,7 +4,7 @@
  *          that is collapsed to an icon rail in the page is drawn in full inside the drawer a narrow window opens.
  * Boundary: types only.
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3); ADR 0314 (decisions 1 and 4).
+ * Governing contract: ADR 0302 (decision 3); ADR 0317 (decisions 1 and 4).
  */
 
 /** The state AppShell hands a `sidebar` function. */

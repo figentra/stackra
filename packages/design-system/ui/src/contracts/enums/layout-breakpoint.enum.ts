@@ -5,7 +5,7 @@
  *          AppShell turns its sidebar into a drawer below one, and TwoColumnLayout stacks its side column below one.
  * Boundary: the values only; the widths are the theme's breakpoints, so this enum never holds a pixel number.
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3); ADR 0314.
+ * Governing contract: ADR 0302 (decision 3); ADR 0317.
  */
 
 /** The layout breakpoints. */

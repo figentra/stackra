@@ -9,14 +9,14 @@
  * Boundary: the system tab bar of `react-native-bottom-tabs` is drawn by the platform and takes no children, so this is
  *           the documented adapted form on React Native's `Pressable`, the wave 1 Badge and Text, and theme tokens: the
  *           one bar an Android build and a design that needs a custom bar share. It has no web form (the web shell uses
- *           the Sidebar, ADR 0314 decision 7). No router import: a tab is a place in the app, so an `href` is an app
+ *           the Sidebar, ADR 0317 decision 7). No router import: a tab is a place in the app, so an `href` is an app
  *           path, and one with a scheme is not followed. Tabs are the first level of the items only, and a sixth item is
  *           left out with a development warning, because Android's bar holds five. The tab's accessible name holds the
  *           badge ("Orders, 3") since the badge itself is hidden from the reader. The bar is a `tablist` named by `label`;
  *           each tab is at least 56 points high, past the 24 px of WCAG 2.5.8. Every string child is drawn inside `Text`.
  *           Extra props pass to the root `View`.
  * Runtime: react-native
- * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decisions 1 and 7); ADR 0314 (decisions 1, 3 and
+ * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decisions 1 and 7); ADR 0317 (decisions 1, 3 and
  *          7); ADR 0061 (React Navigation and native tabs); ADR 0060; WCAG 2.2 SC 1.3.1, 2.5.8 and 4.1.2.
  */
 // Uniwind adds `className` to React Native's own components, which the root `View` and `Pressable` take.

@@ -5,7 +5,7 @@
  * Boundary: React Native does not render in vitest, so React Navigation and the provider are recording stand-ins; the
  *           link that reads the context is `@stackra/ui`'s own test.
  * Runtime: node
- * Governing contract: ADR 0314 (decision 2); ADR 0022 (test placement).
+ * Governing contract: ADR 0317 (decision 2); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-183

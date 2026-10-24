@@ -8,7 +8,7 @@
  *           React Router's data router (`createBrowserRouter`, `createMemoryRouter`). One question is open at a time:
  *           a blocker that fires again while the dialog is open waits for the answer.
  * Runtime: browser
- * Governing contract: ADR 0314 (decision 2); ADR 0312; ADR 0055 (forms); WCAG 2.2 SC 3.3.4.
+ * Governing contract: ADR 0317 (decision 2); ADR 0312; ADR 0055 (forms); WCAG 2.2 SC 3.3.4.
  */
 import type { LeaveConfirmationHandle } from "@stackra/ui/contracts";
 import { LeaveConfirmation } from "@stackra/ui/react";

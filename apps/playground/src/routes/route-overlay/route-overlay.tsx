@@ -12,7 +12,7 @@
  *           `state.returnTo`, so closing steps Back; one link shows the plain `Link` seam. Every string and class here
  *           is a stand-in a real app replaces with its own routes.
  * Runtime: browser
- * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0314 (decisions 2 and 9); ADR 0312; ADR 0060 (light, dark,
+ * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0317 (decisions 2 and 9); ADR 0312; ADR 0060 (light, dark,
  *          RTL); WCAG 2.2 SC 2.1.2, 2.4.3, 3.3.4 and 4.1.2.
  */
 import type { OverlayPresentation, RouteOverlayState } from "@stackra/navigation/contracts";

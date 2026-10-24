@@ -8,7 +8,7 @@
  *           so it accepts `isKeyboardAvoiding` and ignores it; native draws a `View` on `react-native-safe-area-context`.
  *           A screen draws no header and no tab bar: those belong to the navigator (`NavigationHeader`, `TabBar`).
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0314 (decisions 1, 5 and 7); ADR 0060; WCAG
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0317 (decisions 1, 5 and 7); ADR 0060; WCAG
  *          2.2 SC 1.4.10 (reflow) and 2.4.1.
  */
 import type { ReactNode } from "react";

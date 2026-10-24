@@ -5,7 +5,7 @@
  * Boundary: types only. Native has no widths to switch on, so an adapted native form accepts the prop and ignores it,
  *           and its page says so (ADR 0313 decision 7).
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0314.
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0317.
  */
 import type { LayoutBreakpoint } from "#contracts/enums/layout-breakpoint.enum";
 

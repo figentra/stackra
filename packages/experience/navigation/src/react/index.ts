@@ -5,7 +5,7 @@
  *          confirmation blocker. `stackra gen` replaces this file (STA-339).
  * Boundary: re-exports only; no logic. The overlay's own types are in `./contracts`.
  * Runtime: browser
- * Governing contract: ADR 0294 (decision 15); ADR 0314.
+ * Governing contract: ADR 0294 (decision 15); ADR 0317.
  */
 export {
   ReactRouterProvider,

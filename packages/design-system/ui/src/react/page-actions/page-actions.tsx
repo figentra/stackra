@@ -5,12 +5,12 @@
  *          An action with an `href` is a link drawn as a button, so it navigates through the nearest `RouterProvider`;
  *          one with only `onPress` is a button. `size` is `md` for a page and `sm` for a card header.
  * Boundary: an internal piece, reached from PageHeader and Section only; the barrel does not export it, and it takes
- *           its parts as props, so neither of them imports the other (ADR 0314 decision 4). It builds on the earlier
+ *           its parts as props, so neither of them imports the other (ADR 0317 decision 4). It builds on the earlier
  *           waves' Button and ActionMenu and the core split. A disabled action is always a button, so it leaves the tab
  *           order like every disabled button. The link-as-button is React Aria's `Link` with HeroUI's `buttonVariants`,
  *           the composition HeroUI documents for a router link.
  * Runtime: browser
- * Governing contract: ADR 0314 (decisions 1 and 4); ADR 0165 (HeroUI v3 on web); WCAG 2.2 SC 2.5.8.
+ * Governing contract: ADR 0317 (decisions 1 and 4); ADR 0165 (HeroUI v3 on web); WCAG 2.2 SC 2.5.8.
  */
 import { buttonVariants } from "@heroui/react";
 import type { ReactElement, ReactNode } from "react";

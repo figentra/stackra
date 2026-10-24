@@ -17,7 +17,7 @@ Router bindings for the Stackra Design System: route overlays, navigation items 
 | `@stackra/navigation/assets/*`  | `assets/`: static files (`public/`, `lang/`, …) at the package root (ADR 0234)     | the folder                            |
 
 `./react` (React Router 7), `./native` (React Navigation 7) and `./contracts` hold RouteOverlay, the router link seam and
-the leave confirmation (wave 6, ADR 0314). `@stackra/ui` is a
+the leave confirmation (wave 6, ADR 0317). `@stackra/ui` is a
 dependency and stays router-free: the router bindings live here, and the routers are optional peers. `exports` point at source through the
 `@stackra/source` condition; `tsdown` builds `dist/` for publishing (ADR 0025).
 

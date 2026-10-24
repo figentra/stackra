@@ -5,14 +5,14 @@
  *          is an ordered list: the first is the primary button, the next two secondary buttons and the rest go in an
  *          ActionMenu named by `moreActionsLabel`; `startContent` leads the title and `endContent` follows the actions.
  * Boundary: HeroUI Native has no section, so this is the earlier wave's `Card` (HeroUI Native's) with its header,
- *           title, description and body, and it imports no sibling piece of wave 6 (ADR 0314 decision 4). React Native
+ *           title, description and body, and it imports no sibling piece of wave 6 (ADR 0317 decision 4). React Native
  *           reports no heading levels, so `headingLevel` reaches the card title and is dropped there. The card is a
  *           `group` whose accessible name is `label`, or the title when that is a string; a title that is not a string
  *           names the group only through the heading inside it, so pass `label` then. A string or number in
  *           `startContent` or the body is drawn inside `Text`, since React Native refuses a bare string in a `View`.
  *           Extra props pass to the card.
  * Runtime: react-native
- * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0314 (decisions 1, 4 and 7); WCAG
+ * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0317 (decisions 1, 4 and 7); WCAG
  *          2.2 SC 1.3.1, 2.4.6 and 2.5.8.
  */
 import type { ReactElement, ReactNode } from "react";

@@ -4,7 +4,7 @@
  *          run outside one rather than doing nothing.
  * Boundary: jsdom; the context is provided by hand, so no navigation or sheet is involved.
  * Runtime: node
- * Governing contract: ADR 0314 (decisions 2 and 9); ADR 0022 (test placement).
+ * Governing contract: ADR 0317 (decisions 2 and 9); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-182

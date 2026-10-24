@@ -5,7 +5,7 @@
  * Boundary: reads the nearest overlay's context and throws outside one, because a screen that calls it expects an
  *           overlay and silently doing nothing would hide the mistake.
  * Runtime: react-native
- * Governing contract: ADR 0314 (decisions 2 and 9).
+ * Governing contract: ADR 0317 (decisions 2 and 9).
  */
 import { useContext } from "react";
 

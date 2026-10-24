@@ -7,7 +7,7 @@
  *           (`@source`); never build them from a template. `minmax(0,1fr)` lets the main column shrink below the width of
  *           its widest child, so a table in it scrolls instead of pushing the side column out.
  * Runtime: isomorphic
- * Governing contract: ADR 0314 (decision 6, widths are named); ADR 0060 (right-to-left); WCAG 2.2 SC 1.4.10.
+ * Governing contract: ADR 0317 (decision 6, widths are named); ADR 0060 (right-to-left); WCAG 2.2 SC 1.4.10.
  */
 import type { LayoutBreakpoint } from "#contracts/enums/layout-breakpoint.enum";
 

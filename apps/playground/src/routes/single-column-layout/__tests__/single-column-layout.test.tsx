@@ -6,7 +6,7 @@
  * Boundary: jsdom inside the DesignSystemProvider with a stubbed matchMedia; the theme CSS is not loaded, so the width
  *           of the column and the scrolling are checked in the playground's e2e suite, not here.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 5); ADR 0314; ADR 0022 (test placement).
+ * Governing contract: ADR 0302 (decision 5); ADR 0317; ADR 0022 (test placement).
  */
 // @covers sta-350:FR-173
 import { DesignSystemProvider } from "@stackra/ui/react";

@@ -7,7 +7,7 @@
  * Boundary: jsdom; the theme CSS is not loaded, so classes and attributes are checked, not looks. The mirroring in
  *           right-to-left and the stacking at a narrow width are layout, checked in the playground's e2e suite.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3); ADR 0314 (decisions 1 and 6); ADR 0022 (test placement).
+ * Governing contract: ADR 0302 (decision 3); ADR 0317 (decisions 1 and 6); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-172

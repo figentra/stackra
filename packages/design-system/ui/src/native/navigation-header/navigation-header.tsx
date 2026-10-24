@@ -7,7 +7,7 @@
  *          under the row. The header keeps clear of the status bar with the top safe-area inset, and `label` is its
  *          accessibility label.
  * Boundary: HeroUI Native has no navigation header, so this is a plain `View` row on theme tokens, composed from the
- *           wave 1 IconButton and the Heading. It imports no other shell piece (ADR 0314 decision 4) and no router:
+ *           wave 1 IconButton and the Heading. It imports no other shell piece (ADR 0317 decision 4) and no router:
  *           `backHref` is an app path opened through the nearest `RouterProvider`, after `onBack` has run, and does
  *           nothing without one. A string or number in a slot is drawn inside `Text` (React Native refuses a bare
  *           string in a `View`); a title that is any other node is drawn as given. `headingLevel` is accepted and
@@ -15,7 +15,7 @@
  *           bar itself, so the inset is on by default; `hasTopInset={false}` is for a header drawn under one that has
  *           already cleared it. Extra props pass to the root `View`.
  * Runtime: react-native
- * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0314 (decisions 1, 4 and 7); ADR
+ * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0317 (decisions 1, 4 and 7); ADR
  *          0061 (React Navigation); ADR 0060; WCAG 2.2 SC 1.3.1, 2.4.6 and 2.5.8.
  */
 // Uniwind adds `className` to React Native's own components, which the root `View` takes.

@@ -5,7 +5,7 @@
  * Boundary: types only. The layout draws no landmark and no heading: the page's `main` is the shell's and its `h1` the
  *           PageHeader's.
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0314 (decision 7).
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0317 (decision 7).
  */
 import type { ReactNode } from "react";
 

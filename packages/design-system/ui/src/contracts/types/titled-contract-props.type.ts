@@ -5,7 +5,7 @@
  *          page keeps one outline wherever they sit.
  * Boundary: types only. The heading level has no default here: PageHeader defaults to 1 and Section to 2.
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (the text slots row); ADR 0314;
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (the text slots row); ADR 0317;
  *          WCAG 2.2 SC 1.3.1 and 2.4.6.
  */
 import type { ReactNode } from "react";

@@ -9,7 +9,7 @@
  *          by 24 CSS pixels (WCAG 2.2 SC 2.5.8).
  * Boundary: the production build under `vite preview`; Chromium only.
  * Runtime: node
- * Governing contract: ADR 0302 (decision 5); ADR 0314; ADR 0060 (light, dark, RTL); ADR 0182 (test tiers); ADR 0022
+ * Governing contract: ADR 0302 (decision 5); ADR 0317; ADR 0060 (light, dark, RTL); ADR 0182 (test tiers); ADR 0022
  *          (test placement); WCAG 2.2 SC 1.3.1, 2.1.1, 2.5.8 and 4.1.2.
  */
 // @covers sta-350:FR-158 sta-350:FR-162 sta-350:SC-012 sta-350:SC-002

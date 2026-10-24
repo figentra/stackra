@@ -11,7 +11,7 @@
  *           is unread: a phone has no hover and no keyboard to hint. The landmark is the container's navigation role and
  *           name; rows carry the link role. Every string child is drawn inside `Text`.
  * Runtime: react-native
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 1, 5 and 7); ADR 0314 (decisions 1, 3, 5 and 7); ADR
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 1, 5 and 7); ADR 0317 (decisions 1, 3, 5 and 7); ADR
  *          0165 (HeroUI Native on native); WCAG 2.2 SC 1.3.1, 2.5.8 and 4.1.2.
  */
 import { ListGroup } from "heroui-native";

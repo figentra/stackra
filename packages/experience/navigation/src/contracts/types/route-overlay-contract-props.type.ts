@@ -6,7 +6,7 @@
  * Boundary: types only. The title names the overlay for assistive technology, and the close label is required so a
  *           screen reader never hears an unnamed button.
  * Runtime: isomorphic
- * Governing contract: ADR 0314 (decisions 2 and 9); ADR 0312 (overlay vocabulary); WCAG 2.2 SC 2.1.2, 2.4.3 and
+ * Governing contract: ADR 0317 (decisions 2 and 9); ADR 0312 (overlay vocabulary); WCAG 2.2 SC 2.1.2, 2.4.3 and
  *          4.1.2.
  */
 import type { ReactNode } from "react";

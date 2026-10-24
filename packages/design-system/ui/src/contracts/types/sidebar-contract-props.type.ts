@@ -8,7 +8,7 @@
  *           Sidebar accepts the state and ignores it. The open state of the off-canvas drawer a narrow window shows is
  *           AppShell's, not the Sidebar's.
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0314 (decisions 1 and 4); WCAG 2.2 SC 1.3.1
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0317 (decisions 1 and 4); WCAG 2.2 SC 1.3.1
  *          and 4.1.2.
  */
 import type { NavigationListContractProps } from "#contracts/types/navigation-list-contract-props.type";

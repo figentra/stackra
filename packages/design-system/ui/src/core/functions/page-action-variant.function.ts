@@ -5,7 +5,7 @@
  * Boundary: pure; it names a `ButtonVariant` and draws nothing. Both runtimes' `PageActions` take it, so PageHeader and
  *           Section agree.
  * Runtime: isomorphic
- * Governing contract: ADR 0314 (decision 1, the page actions row).
+ * Governing contract: ADR 0317 (decision 1, the page actions row).
  */
 import type { ButtonVariant } from "#contracts/enums/button-variant.enum";
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";

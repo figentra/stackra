@@ -1,0 +1,143 @@
+---
+title: "0318 — @stackra/ui wave 7: the resource index props vocabulary"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0303](/adr/0303-stackra-ui-component-catalogue-decisions) (decision 7, the props
+  vocabulary), as [0304](/adr/0304-stackra-ui-wave-2-props-vocabulary),
+  [0311](/adr/0311-stackra-ui-wave-3-fields-props-vocabulary),
+  [0312](/adr/0312-stackra-ui-wave-4-overlays-and-feedback-props-vocabulary),
+  [0313](/adr/0313-stackra-ui-wave-5-data-primitives-props-vocabulary) and
+  [0317](/adr/0317-stackra-ui-wave-6-shell-and-routing-props-vocabulary) did for waves 2 to 6. 0303
+  carries a note; its body is unchanged.
+</Note>
+
+## Context
+
+[0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 7 gave every component one props vocabulary. Wave 7
+adds the resource index: DataTable with BulkActionBar, FilterBar, EntityPicker, NumberField, and DateField with
+DatePicker. A resource index is the screen an admin lives on: a server-driven list with a search box, filters, a sort,
+row actions, a selection and bulk actions on it. Its pieces share more than any earlier wave's did: the same search,
+filters and sort feed FilterBar and DataTable, the same action feeds a row menu and a bulk bar, and the number and date
+bounds of the fields recur in the filters. The date fields also need a value type that React Aria, a form library and
+the phone's platform picker can all hold. An Accepted ADR's body changes only for typos and Enforcement, so the
+additions are recorded here.
+
+## Decision
+
+1. **The wave 7 vocabulary.** Decision 7 of 0303 stands; wave 7 adds these rows:
+
+   | Concept                 | Prop                                                                 | Type                                                                                                                       | Used by                                      | Runtime name left out of the type                          |
+   | ----------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------- |
+   | Resource query          | `query`, `onQueryChange`                                             | `ResourceQuery` (`search`, `filterValues`, `sort`) and `(query: ResourceQuery) => void`; controlled only                   | DataTable, FilterBar                         | `searchParams`, `useSearchParams`, TanStack table state    |
+   | Filter list             | `filters`                                                            | `readonly FilterDefinition[]` (`id`, `label`, `kind`, `icon`, `isDisabled` and the props of its kind)                      | FilterBar                                    | `filterOptions`, `facets`, Ant `ProTable` `valueType`      |
+   | Filter kind             | `kind`                                                               | `FilterKind`: `text`, `number`, `select`, `multi-select`, `date-range`, `boolean`                                          | `FilterDefinition`                           | `type`, `$gte` and `$lte` operators                        |
+   | Record actions          | `actions` (a selection), `rowActions` (a row)                        | `readonly ResourceAction[]`, and `(item) => readonly ResourceAction[]`; one type, a `MenuLeafItem` with an async `onPress` | BulkActionBar, DataTable                     | `commands`, `batchActions`, `tableAlertRender`             |
+   | Select all matching     | `totalCount`, `isAllMatchingSelected`, `onAllMatchingSelectedChange` | `number`, `boolean`, `(isAllMatchingSelected: boolean) => void`                                                            | DataTable, BulkActionBar                     | `selectAllPages`, `rowCount`, `isSelectAll`                |
+   | Number bounds and shape | `minValue`, `maxValue`, `step`, `formatOptions`                      | `number`, `number`, `number`, `Intl.NumberFormatOptions`                                                                   | NumberField, the number filter               | `min`, `max`, `precision`, `format`                        |
+   | Number steppers         | `hasSteppers`, `incrementLabel`, `decrementLabel`                    | `boolean` (default true), `string`, `string`                                                                               | NumberField                                  | `hideStepper`, `controls`, `aria-label` on the two buttons |
+   | Day value               | `value`, `defaultValue`, `onChange(value)`                           | `CalendarDate \| null` of `@internationalized/date`                                                                        | DateField, DatePicker, the date-range filter | `Date`, an ISO string, `DateValue`                         |
+   | Day bounds and refusal  | `minValue`, `maxValue`, `isDateUnavailable`                          | `CalendarDate`, `CalendarDate`, `(date: CalendarDate) => boolean`                                                          | DateField, DatePicker, the date-range filter | `minimumDate`, `maximumDate`, `disabledDate`               |
+
+2. **The query is one controlled object.** `ResourceQuery` holds the search text, the applied filters (a plain object
+   keyed by filter `id`; a filter with no key is not applied) and the sort. FilterBar edits `search` and
+   `filterValues`, DataTable edits `sort`, and each calls `onQueryChange` with the whole next query. Neither keeps a
+   copy. The page is not in the query: a cursor is the server's, the app keeps the history of cursors, and any change to
+   the query returns to the first page. `@stackra/navigation` mirrors the query to the URL in a later wave; until then
+   an app keeps it in its own state, and `@stackra/ui` stays router-free
+   ([0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 1). Three pure functions in core read it:
+   `isFilterValueEmpty`, `isResourceQueryFiltered` (search text or a set filter; a sort never counts) and
+   `clearResourceQueryFilters` (keeps the sort).
+3. **Six filter kinds, one editor each.** `text` holds a string, `number` a `NumberRangeValue` (`min`, `max`, either
+   `null`), `select` one key, `multi-select` a list of keys, `date-range` a `DateRangeValue` (`start`, `end`, either
+   `null`) and `boolean` a flag. `select` and `multi-select` take the short `SelectItem` list of wave 3; a filter over
+   thousands of records is a later `entity` kind built on EntityPicker, not a long option list. A number filter reuses
+   NumberField's bounds, step and format by name, and a date-range filter reuses the date bounds. An emptied filter
+   drops its chip; "no" on a `boolean` is a value, not an empty one.
+4. **A wave 7 piece may build on an earlier wave and on a leaf group of its own wave once that group is merged, never
+   on a sibling's unfinished file.** This keeps [0317](/adr/0317-stackra-ui-wave-6-shell-and-routing-props-vocabulary)
+   decision 4 for the parts that meet only in the app:
+   - DataTable and BulkActionBar are one group. DataTable draws BulkActionBar itself from `bulkActions` and
+     `AllMatchingSelectionContractProps`, so a table with selection has one bar.
+   - DataTable does not import FilterBar. It takes a `filterBar` node slot, drawn above the rows, and uses the query
+     only to choose the filtered-empty state over the empty one and to mark the sorted header. The app puts a
+     `FilterBar` in the slot with the same `query`.
+   - FilterBar's number and date-range editors are NumberField and DateField. NumberField and DateField with DatePicker
+     are leaf groups: they import only earlier waves, so FilterBar is built after both are on the branch.
+   - EntityPicker is a leaf group on ComboBox and TagGroup (wave 3). No other piece imports it in this wave.
+5. **One action type for a row and a selection.** `ResourceAction` is a `MenuLeafItem` (key, text, icon, shortcut hint,
+   tone, disabled and why, link) whose `onPress` may return a promise. The handler closes over the record or the
+   selected keys, so the table and the bar never hand them back. A pending promise shows the action busy and refuses a
+   second press. A rejection leaves the selection untouched and is reported by the app, as
+   [0139](/adr/0139-action-ux-confirmation-feedback-and-errors) says an action reports. The bar never changes the
+   selection itself: the app clears it after a success, and the bar's clear button calls `onClearSelection`. A row menu
+   hands the same actions to an ActionMenu unchanged.
+6. **Select all N across pages is two props and a flag.** The pages are cursor pages, so the total is the server's own
+   count and often unknown: without `totalCount` the choice is never offered. With `isAllMatchingSelected` true the
+   selected keys are only the rows on screen and the app acts on the query, not on the keys.
+7. **A day is a `CalendarDate`.** The date fields hold `CalendarDate | null` of `@internationalized/date`: a day with
+   no time and no zone, which is what a due date or a birthday is, and the type React Aria takes unchanged. A value of
+   `null` is an empty field, as for Select. The contracts import the type only, so the entry carries no runtime code,
+   and `@internationalized/date` becomes a required peer of `@stackra/ui`, pinned in the `frontend` catalog to the
+   version `react-aria-components` and `@heroui/react` already resolve (3.12.4). Native converts to and from the
+   platform's `Date` at local noon, so a day never shifts with the time zone. A time or date-time field is a later
+   wave and widens the type then.
+8. **Native date entry uses the platform.** Native `DatePicker` is `@expo/ui`'s community `DateTimePicker`
+   (`@expo/ui/community/datetime-picker`, in the `mobile` catalog at 57.0.25, the Expo SDK 57 version), the iOS and
+   Android picker. Native `DateField` is the adapted form, a field that opens that picker. Web `DateField` and
+   `DatePicker` are HeroUI's. `@expo/ui` is an optional peer used by the native entry only.
+9. **Numbers are read and written with `Intl`.** `NumberField` holds `number | null` and takes `formatOptions` for
+   percent, currency and unit. It clamps a typed or stepped value to the bounds. Web is HeroUI's number field. Native is
+   the adapted form on the text input and two buttons, so a phone keyboard shows the number pad. A money field is a
+   later wrapper on it, not a prop.
+10. **Where a runtime has no counterpart the page says so** ([0317](/adr/0317-stackra-ui-wave-6-shell-and-routing-props-vocabulary)
+    decision 7). Native DataTable is the adapted form of Table: a list of rows with the `filterBar` slot above it and a
+    bottom bar for the selection. Native FilterBar opens its editors in a sheet, and every native sheet of this wave
+    uses HeroUI Native's inset style, as the owner decided on 2026-10-24 (0317 decision 8). Native BulkActionBar is a
+    bottom bar whose overflow is an action sheet. Native EntityPicker is a sheet with a search field and a list.
+
+## Consequences
+
+- An app declares its filters once and gets the add-filter menu and chips on the console and the sheet on the phone from
+  the same list, and mirrors one object to the URL.
+- An action is written once and serves a row menu, a bulk bar and an ActionMenu.
+- The date fields pass values to a form library, to React Aria and to the date-range filter without conversion, at the
+  price of a `CalendarDate` that a plain JSON schema does not describe: a form that stores the value converts it, and
+  a URL codec writes ISO text.
+- `@stackra/ui` adds two peers: `@internationalized/date` (required) and `@expo/ui` (optional, native only).
+- The six wave 7 groups can be built mostly alone: only FilterBar waits, for two small leaf groups.
+
+## Enforcement
+
+- `packages/design-system/ui/src/contracts/types/__tests__/resource-index-contract-props.test.ts` proves the shared
+  types, and the three files in `packages/design-system/ui/src/core/functions/__tests__/` prove the query functions.
+- `pnpm-workspace.yaml` (catalog mode `strict`) pins `@internationalized/date` and `@expo/ui` exactly, and
+  `tools/scripts/validate-repository.mjs` refuses a literal version.
+- Each component's type test asserts that the runtime props extend the contract and refuse the raw names this vocabulary
+  replaces (`commands`, `hideStepper`, `minimumDate`, `searchParams`).
+- `tools/scripts/spec-trace.mjs` (run by `pnpm validate`) refuses a spec id that no test covers.
+- Until a lint rule exists, review (`architecture-guardian`) checks this page, and that no wave 7 file imports a
+  sibling group's file that is not yet on the branch.
+
+## Alternatives
+
+- **A date as an ISO string.** Not chosen: it serialises and validates in a plain schema, but React Aria and the native
+  picker both need a date object, so every field would parse and format on each render, and a typed string has no
+  invalid-day check of its own. The URL codec and a form schema convert at their edge instead.
+- **A JavaScript `Date`.** Not chosen: it carries a time and a zone, and a day typed in one zone shifts in another.
+- **DataTable holding its own search, filter and sort state.** Not chosen: a table with state of its own cannot be
+  mirrored to the URL by a binding it does not know, and FilterBar would need a second channel to reach it.
+- **DataTable importing FilterBar.** Not chosen: the two groups are built in parallel, and a slot keeps each buildable
+  and testable alone; the app composes them in one line.
+- **Separate `BulkAction` and `RowAction` types.** Not chosen: they differ only in what the handler closes over, which the
+  type need not know, and a second type would stop a row action from reaching the bar.
+- **Operators on filters (`$gte`, `$lte`) as Medusa has them.** Not chosen: a range with two optional bounds says the
+  same for numbers and days, and the server turns it into whichever operators it has.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 7. The catalogue rows,
+section 3 gaps and section 5 of the component catalogue (wave 7 of its build order), the HeroUI 3.2.6 and HeroUI Native
+1.0.10 component sources, `@expo/ui` 57.0.25 and `react-aria-components` 1.22.1. The owner's approval of
+`@internationalized/date` and `@expo/ui` as catalog additions on 2026-10-24.

@@ -11,7 +11,7 @@
  *           each case sets its viewport before the page opens. The layout draws no landmark, so the checks use CSS
  *           locators for its columns and role queries for the sections inside them.
  * Runtime: node
- * Governing contract: ADR 0302 (decision 5); ADR 0314 (decisions 1 and 6); ADR 0060 (light, dark, RTL); ADR 0182 (test
+ * Governing contract: ADR 0302 (decision 5); ADR 0317 (decisions 1 and 6); ADR 0060 (light, dark, RTL); ADR 0182 (test
  *          tiers); ADR 0022 (test placement); WCAG 2.2 SC 1.3.1, 1.3.2, 1.4.10, 2.1.1 and 4.1.3.
  */
 // @covers sta-350:FR-173 sta-350:SC-012 sta-350:SC-002

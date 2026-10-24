@@ -6,7 +6,7 @@
  * Boundary: context glue only; mount it once inside the `NavigationContainer`. An external link keeps going to the
  *           system browser.
  * Runtime: react-native
- * Governing contract: ADR 0314 (decision 2); ADR 0303 (decision 1: `@stackra/ui` is router-free); owner decision 1 of
+ * Governing contract: ADR 0317 (decision 2); ADR 0303 (decision 1: `@stackra/ui` is router-free); owner decision 1 of
  *          STA-350.
  */
 import { useLinkTo } from "@react-navigation/native";

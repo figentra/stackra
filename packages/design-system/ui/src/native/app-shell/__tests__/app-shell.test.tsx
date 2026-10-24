@@ -8,7 +8,7 @@
  * Boundary: React Native does not render in vitest: react-native, the native Drawer and Text are replaced by recording
  *           stand-ins that render plain DOM, so what reaches them is checked, not their rendering.
  * Runtime: node
- * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0314 (decisions 1, 4, 6 and 8); ADR 0022 (test
+ * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0317 (decisions 1, 4, 6 and 8); ADR 0022 (test
  *          placement).
  */
 // @vitest-environment jsdom

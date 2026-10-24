@@ -7,7 +7,7 @@
  *           decision 1), so the app, or `@stackra/navigation`, sets `isCurrent` from the route. A phone tab bar reads
  *           only the first level; `children` are for the sidebar and the navigation list.
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303 (decisions 1 and 7); ADR 0314.
+ * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303 (decisions 1 and 7); ADR 0317.
  */
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { IconSlot } from "#contracts/types/icon-slot.type";

@@ -6,7 +6,7 @@
  * Boundary: context glue only; mount it once inside the router, around the app (or around any subtree whose links
  *           should reach that router). An external link keeps the browser's own navigation.
  * Runtime: browser
- * Governing contract: ADR 0314 (decision 2); ADR 0303 (decision 1: `@stackra/ui` is router-free); ADR 0165 (React
+ * Governing contract: ADR 0317 (decision 2); ADR 0303 (decision 1: `@stackra/ui` is router-free); ADR 0165 (React
  *          Router 7 on web).
  */
 import { RouterProvider } from "@stackra/ui/react";

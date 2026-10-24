@@ -116,7 +116,9 @@
     "@stackra/icons": "workspace:*"
   },
   "devDependencies": {
+    "@expo/ui": "catalog:mobile",
     "@heroui/react": "catalog:frontend",
+    "@internationalized/date": "catalog:frontend",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
@@ -146,7 +148,9 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "@expo/ui": "^57.0.25",
     "@heroui/react": "^3.2.6",
+    "@internationalized/date": "^3.12.4",
     "heroui-native": "^1.0.10",
     "lucide-react": "^1.54.0",
     "lucide-react-native": "^1.54.0",
@@ -160,6 +164,9 @@
     "uniwind": "^1.12.1"
   },
   "peerDependenciesMeta": {
+    "@expo/ui": {
+      "optional": true
+    },
     "@heroui/react": {
       "optional": true
     },

@@ -10,7 +10,7 @@
  *           `landmark-unique`). The hrefs are same-page anchors, so a list never leaves the page. The page adds the
  *           icons it draws beyond the playground registry through a registry of its own.
  * Runtime: browser
- * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0314; ADR 0060 (right-to-left); WCAG
+ * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0317; ADR 0060 (right-to-left); WCAG
  *          2.2 SC 1.3.1, 2.4.7 and 4.1.2.
  */
 import { defineIconRegistry } from "@stackra/icons";

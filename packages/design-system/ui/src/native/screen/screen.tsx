@@ -13,7 +13,7 @@
  *           default). A `main` role names the root for the platforms that read one; `label` is its accessibility label.
  *           Extra props pass to the root `View`.
  * Runtime: react-native
- * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0314 (decisions 5 and 7); ADR 0061
+ * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0317 (decisions 5 and 7); ADR 0061
  *          (React Navigation); ADR 0060; WCAG 2.2 SC 1.3.4 and 1.4.10.
  */
 // Uniwind adds `className` to React Native's own components, which the root `View` and `ScrollView` take.

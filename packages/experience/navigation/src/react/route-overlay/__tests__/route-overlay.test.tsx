@@ -11,7 +11,7 @@
  *           finds nothing outside an open overlay (React Aria hides the page behind it), so each case holds what it
  *           needs before it opens one.
  * Runtime: browser
- * Governing contract: ADR 0314 (decisions 2 and 9); ADR 0312; ADR 0022 (test placement); WCAG 2.2 SC 2.1.2 and 4.1.2.
+ * Governing contract: ADR 0317 (decisions 2 and 9); ADR 0312; ADR 0022 (test placement); WCAG 2.2 SC 2.1.2 and 4.1.2.
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-179

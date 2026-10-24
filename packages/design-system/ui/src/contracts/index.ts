@@ -18,6 +18,7 @@ export { ControlVariant } from "#contracts/enums/control-variant.enum";
 export { Direction } from "#contracts/enums/direction.enum";
 export { EmptyReason } from "#contracts/enums/empty-reason.enum";
 export { ErrorKind } from "#contracts/enums/error-kind.enum";
+export { FilterKind } from "#contracts/enums/filter-kind.enum";
 export { HeadingLevel } from "#contracts/enums/heading-level.enum";
 export { HeadingType } from "#contracts/enums/heading-type.enum";
 export { LayoutBreakpoint } from "#contracts/enums/layout-breakpoint.enum";
@@ -47,6 +48,7 @@ export type { AccordionItem } from "#contracts/types/accordion-item.type";
 export type { ActionMenuContractProps } from "#contracts/types/action-menu-contract-props.type";
 export type { AlertContractProps } from "#contracts/types/alert-contract-props.type";
 export type { AlertDialogContractProps } from "#contracts/types/alert-dialog-contract-props.type";
+export type { AllMatchingSelectionContractProps } from "#contracts/types/all-matching-selection-contract-props.type";
 export type { AppHeaderContractProps } from "#contracts/types/app-header-contract-props.type";
 export type { AppShellContractProps } from "#contracts/types/app-shell-contract-props.type";
 export type { AppShellSidebarState } from "#contracts/types/app-shell-sidebar-state.type";
@@ -75,6 +77,8 @@ export type { ConfirmFunction } from "#contracts/types/confirm-function.type";
 export type { ConfirmationOptions } from "#contracts/types/confirmation-options.type";
 export type { ConfirmationProviderContractProps } from "#contracts/types/confirmation-provider-contract-props.type";
 export type { CursorPaginationContractProps } from "#contracts/types/cursor-pagination-contract-props.type";
+export type { DateRangeValue } from "#contracts/types/date-range-value.type";
+export type { DateValueContractProps } from "#contracts/types/date-value-contract-props.type";
 export type { DescriptionContractProps } from "#contracts/types/description-contract-props.type";
 export type { DesignSystemProviderProps } from "#contracts/types/design-system-provider-props.type";
 export type { DesignSystemState } from "#contracts/types/design-system-state.type";
@@ -84,6 +88,21 @@ export type { ErrorStateContractProps } from "#contracts/types/error-state-contr
 export type { FeedbackContractProps } from "#contracts/types/feedback-contract-props.type";
 export type { FieldContractProps } from "#contracts/types/field-contract-props.type";
 export type { FieldErrorContractProps } from "#contracts/types/field-error-contract-props.type";
+export type {
+  BooleanFilterDefinition,
+  DateRangeFilterDefinition,
+  FilterDefinition,
+  FilterDefinitionBase,
+  MultiSelectFilterDefinition,
+  NumberFilterDefinition,
+  SelectFilterDefinition,
+  TextFilterDefinition,
+} from "#contracts/types/filter-definition.type";
+export type {
+  FilterState,
+  FilterValue,
+  FilterValueByKind,
+} from "#contracts/types/filter-value.type";
 export type { FormContractProps } from "#contracts/types/form-contract-props.type";
 export type { FormFieldBinding } from "#contracts/types/form-field-binding.type";
 export type { FormFieldContractProps } from "#contracts/types/form-field-contract-props.type";
@@ -112,6 +131,8 @@ export type { ModalContractProps } from "#contracts/types/modal-contract-props.t
 export type { NavigationHeaderContractProps } from "#contracts/types/navigation-header-contract-props.type";
 export type { NavigationItem } from "#contracts/types/navigation-item.type";
 export type { NavigationListContractProps } from "#contracts/types/navigation-list-contract-props.type";
+export type { NumberFieldContractProps } from "#contracts/types/number-field-contract-props.type";
+export type { NumberRangeValue } from "#contracts/types/number-range-value.type";
 export type { OpenStateContractProps } from "#contracts/types/open-state-contract-props.type";
 export type { OverlayContractProps } from "#contracts/types/overlay-contract-props.type";
 export type { OverlayTitleContractProps } from "#contracts/types/overlay-title-contract-props.type";
@@ -125,6 +146,9 @@ export type { ProgressContractProps } from "#contracts/types/progress-contract-p
 export type { PropertyListContractProps } from "#contracts/types/property-list-contract-props.type";
 export type { PropertyListItem } from "#contracts/types/property-list-item.type";
 export type { RadioGroupContractProps } from "#contracts/types/radio-group-contract-props.type";
+export type { ResourceAction } from "#contracts/types/resource-action.type";
+export type { ResourceQueryContractProps } from "#contracts/types/resource-query-contract-props.type";
+export type { ResourceQuery } from "#contracts/types/resource-query.type";
 export type { ScreenContractProps } from "#contracts/types/screen-contract-props.type";
 export type { SearchFieldContractProps } from "#contracts/types/search-field-contract-props.type";
 export type { SectionContractProps } from "#contracts/types/section-contract-props.type";

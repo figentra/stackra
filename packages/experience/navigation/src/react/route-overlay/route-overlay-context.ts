@@ -4,7 +4,7 @@
  *          a page sits in.
  * Boundary: the context object only; null outside a route overlay.
  * Runtime: browser
- * Governing contract: ADR 0314 (decision 2).
+ * Governing contract: ADR 0317 (decision 2).
  */
 import { createContext } from "react";
 

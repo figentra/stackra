@@ -4,7 +4,7 @@
  *          its dismissal on or off while a flow runs.
  * Boundary: types only; each runtime implements the functions with its own router.
  * Runtime: isomorphic
- * Governing contract: ADR 0314 (decisions 2 and 9); ADR 0312.
+ * Governing contract: ADR 0317 (decisions 2 and 9); ADR 0312.
  */
 
 /** The controls of the route overlay a page sits in. */

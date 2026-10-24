@@ -119,6 +119,11 @@ switcher and is covered by Playwright and axe. `@stackra/brand` is deleted; its 
 - **P-072**: A section and the two layouts stack with an even gap, and the side column sits at the logical end from the breakpoint up — Validates: FR-169, FR-170, FR-171, FR-172, FR-173
 - **P-073**: A screen keeps clear of the safe areas, a navigation header and a tab bar name the current place and mirror in right-to-left — Validates: FR-174, FR-175, FR-176, FR-177
 - **P-074**: A route is an overlay whose route is its open state, closing returns to where the user came from, and unsaved work is confirmed before it is left — Validates: FR-153, FR-178, FR-179, FR-180, FR-181, FR-182, FR-183, FR-184
+- **P-075**: A resource query changes only through its owner, a filter with an empty value is not applied, and a sort never counts as a filter — Validates: FR-185, FR-186, FR-187
+- **P-076**: A data table shows its rows, the filtered-empty state only when the query narrows, and a bulk bar that runs an action once, stays busy while it is pending and leaves the selection alone on failure — Validates: FR-188, FR-189, FR-190, FR-191, FR-192, FR-193
+- **P-077**: A filter bar adds, edits and removes filters by kind and clears them all only when something is applied — Validates: FR-194, FR-195, FR-196, FR-197
+- **P-078**: An entity picker asks for options as the user types, keeps only the latest answer and reports the chosen entities — Validates: FR-198, FR-199, FR-200, FR-201
+- **P-079**: A number field clamps to its bounds and formats by locale, and a date field holds a day that never shifts with the zone — Validates: FR-202, FR-203, FR-204, FR-205, FR-206, FR-207, FR-208
 
 ## Contracts and events
 

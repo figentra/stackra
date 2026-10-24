@@ -5,7 +5,7 @@
  *          replaces with `returnTo` after a deep link; without it, closing goes to the parent route.
  * Boundary: types only; the state is plain data and survives a reload.
  * Runtime: isomorphic
- * Governing contract: ADR 0314 (decision 2).
+ * Governing contract: ADR 0317 (decision 2).
  */
 
 /** The location state a route overlay reads. */

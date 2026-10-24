@@ -6,12 +6,12 @@
  *          `RouterProvider`, an absolute URL in the system browser. `size` is `md` for a screen and `sm` for a card
  *          header.
  * Boundary: an internal piece, reached from PageHeader and Section only; the barrel does not export it, and it takes
- *           its parts as props, so neither of them imports the other (ADR 0314 decision 4). It builds on the earlier
+ *           its parts as props, so neither of them imports the other (ADR 0317 decision 4). It builds on the earlier
  *           waves' Button, Text and ActionMenu and the core split. A string or number in `endContent` is drawn inside
  *           `Text`, since React Native refuses a bare string in a `View`. A disabled action is a disabled button,
  *           which its reason does not reach: the reason is the overflow menu's second line only.
  * Runtime: react-native
- * Governing contract: ADR 0314 (decisions 1 and 4); ADR 0302 (decision 3, adapted forms); WCAG 2.2 SC 2.5.8.
+ * Governing contract: ADR 0317 (decisions 1 and 4); ADR 0302 (decision 3, adapted forms); WCAG 2.2 SC 2.5.8.
  */
 import { use, type ReactElement, type ReactNode } from "react";
 import { View } from "react-native";

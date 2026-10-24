@@ -5,7 +5,7 @@
  * Boundary: reads `matchMedia` and follows it; false where there is none (server render, a test without a stub). The
  *           breakpoint is the theme's `md`, written out because a media query cannot read a Tailwind class.
  * Runtime: browser
- * Governing contract: ADR 0314 (decision 6); ADR 0060 (right-to-left).
+ * Governing contract: ADR 0317 (decision 6); ADR 0060 (right-to-left).
  */
 import { useSyncExternalStore } from "react";
 

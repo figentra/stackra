@@ -339,7 +339,7 @@ A `Table` never sorts the rows it is given: the server does.
 - `EmptyState`, `ErrorState` and `PageSkeleton` are adapted forms on free parts and carry no copy: `title` and
   `loadingLabel` are required. `ErrorState` is a live region, with an optional `retry`.
 
-Wave 6 adds the shell (ADR 0314), router-free: links go through the nearest `RouterProvider`, and the router UI
+Wave 6 adds the shell (ADR 0317), router-free: links go through the nearest `RouterProvider`, and the router UI
 (`RouteOverlay`, `RouteLeaveConfirmation`) lives in `@stackra/navigation`.
 
 - `AppShell` takes `sidebar`, `header` and the page as children; on web (with its `skipLabel`) it is a skip link, the sidebar column

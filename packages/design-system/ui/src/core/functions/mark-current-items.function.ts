@@ -7,7 +7,7 @@
  * Boundary: pure function over the item tree; no React, no router. It returns a new tree and never mutates the one it
  *           is given. An absolute URL never matches, and `/` matches only itself.
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3: the same output on web and native); ADR 0314 (decision 3).
+ * Governing contract: ADR 0302 (decision 3: the same output on web and native); ADR 0317 (decision 3).
  */
 import type { NavigationItem } from "#contracts/types/navigation-item.type";
 

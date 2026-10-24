@@ -7,7 +7,7 @@
  *           decides; the real dialog is proved by `@stackra/ui` and the playground's e2e suite. What reaches the
  *           stand-in (`when`, the words) is checked as well.
  * Runtime: browser
- * Governing contract: ADR 0314 (decision 2); ADR 0312; ADR 0022 (test placement); WCAG 2.2 SC 3.3.4.
+ * Governing contract: ADR 0317 (decision 2); ADR 0312; ADR 0022 (test placement); WCAG 2.2 SC 3.3.4.
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-181

@@ -10,7 +10,7 @@
  * Boundary: the production build under `vite preview`; Chromium only. No overlay opens on this page, so role queries
  *           work throughout; CSS locators are used only to find a header by its sample.
  * Runtime: node
- * Governing contract: ADR 0302 (decision 5); ADR 0314 (decisions 5 and 7); ADR 0060 (light, dark, RTL); ADR 0182 (test
+ * Governing contract: ADR 0302 (decision 5); ADR 0317 (decisions 5 and 7); ADR 0060 (light, dark, RTL); ADR 0182 (test
  *          tiers); ADR 0022 (test placement); WCAG 2.2 SC 1.3.1, 1.4.10, 2.1.1, 2.4.3, 2.4.6, 2.5.8 and 4.1.3.
  */
 // @covers sta-350:FR-177 sta-350:SC-012 sta-350:SC-002

@@ -6,7 +6,7 @@
  * Boundary: React Router glue only; it never decides what is unsaved (a `useBlocker` does, in
  *           `RouteLeaveConfirmation`), so a blocked leave simply leaves the overlay open.
  * Runtime: browser
- * Governing contract: ADR 0314 (decision 2); the React Router 7 `useNavigate` contract.
+ * Governing contract: ADR 0317 (decision 2); the React Router 7 `useNavigate` contract.
  */
 import { useCallback } from "react";
 import { useLocation, useNavigate } from "react-router";

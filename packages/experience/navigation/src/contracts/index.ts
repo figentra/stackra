@@ -4,7 +4,7 @@
  *          enum a route overlay is described with. `stackra gen` replaces this file (STA-339).
  * Boundary: re-exports only; no logic.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 15); ADR 0314.
+ * Governing contract: ADR 0294 (decision 15); ADR 0317.
  */
 export { OverlayPresentation } from "#contracts/enums/overlay-presentation.enum";
 export type { RouteLeaveConfirmationContractProps } from "#contracts/types/route-leave-confirmation-contract-props.type";

@@ -4,7 +4,7 @@
  *          primary action and two beside it, so the bar stays one row on a tablet.
  * Boundary: data only; the web and native PageHeader and their tests share it.
  * Runtime: isomorphic
- * Governing contract: ADR 0314 (decision 1, the page actions row).
+ * Governing contract: ADR 0317 (decision 1, the page actions row).
  */
 
 /** The most actions a PageHeader draws as buttons. */

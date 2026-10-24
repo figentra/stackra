@@ -8,14 +8,14 @@
  *          navigates through the nearest `RouterProvider`; one with only `onPress` is a button.
  * Boundary: HeroUI has no page header, so this is the documented adapted form on the earlier waves' `Breadcrumbs`,
  *           `Heading` and `Text` over a flex layout of theme tokens, and it imports no sibling piece of wave 6:
- *           `status` is a node (ADR 0314 decision 4). The actions row is `PageActions`, an internal row shared with
+ *           `status` is a node (ADR 0317 decision 4). The actions row is `PageActions`, an internal row shared with
  *           Section and not a shell piece. The title is drawn in the `h3` style whatever its level, because the
  *           largest style is a marketing size too big for a console page. `label` makes the header a named group,
  *           never a landmark: a `header` inside `main` is not a banner, and a plain element may not take
  *           `aria-label`. The trail's landmark name is Breadcrumbs' own, so a page that draws two headers with a
  *           trail each gives one of them its own `Breadcrumbs` instead.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3, decision 5: adapted form); ADR 0303 (decision 7); ADR 0314 (decisions 1, 4
+ * Governing contract: ADR 0302 (decision 3, decision 5: adapted form); ADR 0303 (decision 7); ADR 0317 (decisions 1, 4
  *          and 5); ADR 0165 (HeroUI v3 on web); WCAG 2.2 SC 1.3.1, 2.4.6, 2.4.8 and 2.5.8.
  */
 import { cn } from "@heroui/react";

@@ -12,7 +12,7 @@
  *           controlled open, so a refused leave keeps it open. The close button stays even when `isDismissable` is
  *           false, so there is never a keyboard trap. Needs React Router's data router (`createBrowserRouter`).
  * Runtime: browser
- * Governing contract: ADR 0314 (decisions 2, 6 and 9); ADR 0312; ADR 0165 (React Router 7, no Next.js); ADR 0060
+ * Governing contract: ADR 0317 (decisions 2, 6 and 9); ADR 0312; ADR 0165 (React Router 7, no Next.js); ADR 0060
  *          (right-to-left); WCAG 2.2 SC 2.1.2, 2.4.3 and 4.1.2.
  */
 import * as Ui from "@stackra/ui/react";

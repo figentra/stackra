@@ -644,6 +644,80 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
   `RouteLeaveConfirmation` SHALL ask before a screen with unsaved work is left — verified by: unit
 - **FR-184**: The `/route-overlay` playground route SHALL show each presentation opened by a route, a dismissal that is
   refused while work is unsaved and a close that returns focus, and axe SHALL report nothing — verified by: unit, e2e
+- **FR-185**: `@stackra/ui/contracts` SHALL hold the props the resource index pieces share: `ResourceQuery` (`search`,
+  `filterValues`, `sort`) with `ResourceQueryContractProps` (a required `query` and `onQueryChange`, controlled only),
+  `ResourceAction` (a `MenuLeafItem` whose `onPress` may return a promise), `AllMatchingSelectionContractProps`
+  (`totalCount`, `isAllMatchingSelected`, `onAllMatchingSelectedChange`), the `FilterKind` enum (`text`, `number`,
+  `select`, `multi-select`, `date-range`, `boolean`), `FilterDefinition` told apart by `kind`, and `FilterValue` with
+  `FilterState` — verified by: unit, typecheck
+- **FR-186**: `@stackra/ui/contracts` SHALL hold the field props over numbers and days: `NumberFieldContractProps`
+  (`FieldContractProps<number | null>` with `placeholder`, `variant`, `isFullWidth`, `minValue`, `maxValue`, `step`,
+  `formatOptions`, `hasSteppers`, `incrementLabel`, `decrementLabel`), `DateValueContractProps`
+  (`FieldContractProps<CalendarDate | null>` with `variant`, `isFullWidth`, `minValue`, `maxValue`,
+  `isDateUnavailable`), `NumberRangeValue` and `DateRangeValue`, and `@internationalized/date` SHALL be a required
+  peer of `@stackra/ui` pinned in the `frontend` catalog — verified by: unit, typecheck, validate
+- **FR-187**: `@stackra/ui` core SHALL hold `isFilterValueEmpty` (a `boolean` is never empty), `isResourceQueryFiltered`
+  (blank search text and empty filters do not count, a sort never does) and `clearResourceQueryFilters` (keeps the
+  sort, returns a new query) — verified by: unit
+- **FR-188**: `DataTable` in `@stackra/ui/contracts` SHALL extend the `Table` props with `ResourceQueryContractProps`
+  (the table reads `query.sort` as its sort and calls `onQueryChange` with the next query), `rowActions`,
+  `bulkActions`, `AllMatchingSelectionContractProps` and a `filterBar` node slot; `BulkActionBar` SHALL take
+  `selectedCount`, `actions`, `onClearSelection` and `AllMatchingSelectionContractProps` — verified by: unit, typecheck
+- **FR-189**: On web, `DataTable` SHALL be the `Table` with a row menu of `rowActions`, the `filterBar` slot above the
+  rows, `EmptyState` with the `no-results` reason when the query is filtered and the `no-data` reason otherwise, and a
+  `BulkActionBar` while rows are selected — verified by: unit
+- **FR-190**: On web, `BulkActionBar` SHALL be a named toolbar that shows the selected count and one button per
+  action, shows an action busy while its promise is pending and refuses a second press, leaves the selection alone when
+  an action rejects, offers "select all N" only with `totalCount` and a fully selected page, and clears through
+  `onClearSelection` — verified by: unit
+- **FR-191**: On native, `DataTable` SHALL be the adapted form of `Table` (rows in a list, the `filterBar` slot above,
+  a bottom bar for the selection) and `BulkActionBar` a bottom bar whose overflow opens an inset action sheet, with
+  every string child wrapped in `Text` — verified by: unit
+- **FR-192**: A disabled row or bulk action SHALL refuse its press by pointer, keyboard and touch, and every press
+  target in `DataTable` and `BulkActionBar` SHALL be at least 24 CSS pixels — verified by: unit, e2e
+- **FR-193**: The `/data-table` and `/bulk-action-bar` playground routes SHALL show search, sort, row actions,
+  selection, select all matching, the filtered-empty state and a failing action, and axe SHALL report nothing —
+  verified by: unit, e2e
+- **FR-194**: `FilterBar` in `@stackra/ui/contracts` SHALL take `ResourceQueryContractProps`, `filters` (a list of
+  `FilterDefinition`), a `searchLabel` and an optional `searchPlaceholder` — verified by: unit, typecheck
+- **FR-195**: On web, `FilterBar` SHALL draw a search field bound to `query.search`, an add-filter menu listing the
+  filters not yet applied, one removable chip per applied filter and a clear-all button shown only while
+  `isResourceQueryFiltered` is true; choosing a filter opens the editor of its kind in a popover — verified by: unit
+- **FR-196**: Each filter kind SHALL have one editor that returns a `FilterValue` of its kind: a text field, two
+  `NumberField`s, a single-choice list, a multi-choice list, two `DateField`s and a yes-or-no choice, and a value that
+  `isFilterValueEmpty` drops its chip and its key — verified by: unit
+- **FR-197**: On native, `FilterBar` SHALL be the adapted form that opens its editors in an inset sheet from the same
+  `filters`, and the `/filter-bar` playground route SHALL show every kind, with axe reporting nothing —
+  verified by: unit, e2e
+- **FR-198**: `EntityPicker` in `@stackra/ui/contracts` SHALL be a field over a list of chosen `EntityOption`s (`id`,
+  `label`, `description`, `avatar`) with an async `loadOptions(search)` and a single or multiple `selectionMode` —
+  verified by: unit, typecheck
+- **FR-199**: On web, `EntityPicker` SHALL be `ComboBox` with `TagGroup` for the chosen entities, asking `loadOptions`
+  after the user pauses typing, ignoring a response that a later request has replaced, and showing a loading, an
+  empty and an error state in the list — verified by: unit
+- **FR-200**: On native, `EntityPicker` SHALL be the adapted form: a field that opens an inset sheet with a search
+  field and a list, every string child wrapped in `Text` — verified by: unit
+- **FR-201**: The `/entity-picker` playground route SHALL show single and multiple selection, a slow load and a
+  failing load, and axe SHALL report nothing — verified by: unit, e2e
+- **FR-202**: On web, `NumberField` SHALL wrap HeroUI's number field with the label, description and error of the
+  field contract, clamp a typed or stepped value to `minValue` and `maxValue`, format with `formatOptions`, hide the
+  steppers when `hasSteppers` is false and refuse change from keyboard and pointer when disabled or read-only —
+  verified by: unit
+- **FR-203**: On native, `NumberField` SHALL be the adapted form on the text input and two buttons with the same
+  contract, a number-pad keyboard and every string child wrapped in `Text` — verified by: unit
+- **FR-204**: The `/number-field` playground route SHALL show plain, bounded, percent, currency, no-stepper, invalid
+  and disabled fields, and axe SHALL report nothing — verified by: unit, e2e
+- **FR-205**: On web, `DateField` SHALL wrap HeroUI's date field and `DatePicker` HeroUI's date picker with its
+  calendar, both holding `CalendarDate | null`, refusing a day outside `minValue` and `maxValue` or for which
+  `isDateUnavailable` is true, and refusing change from keyboard and pointer when disabled or read-only —
+  verified by: unit
+- **FR-206**: On native, `DateField` SHALL be a field that opens the platform picker and `DatePicker` SHALL be
+  `@expo/ui`'s community date-time picker, converting a `CalendarDate` to a `Date` at local noon and back so a day never
+  shifts with the time zone — verified by: unit
+- **FR-207**: `@expo/ui` SHALL be in the `mobile` catalog at the Expo SDK 57 version and an optional peer of
+  `@stackra/ui` used by the native entry only — verified by: validate
+- **FR-208**: The `/date-field` and `/date-picker` playground routes SHALL show an empty, a filled, a bounded, an
+  invalid and a disabled field, and axe SHALL report nothing in light, dark, LTR and RTL — verified by: unit, e2e
 
 ## Success Criteria
 
@@ -673,6 +747,9 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
 - **SC-012**: axe reports nothing on `/app-shell`, `/sidebar`, `/navigation-list`, `/app-header`, `/page-header`,
   `/section`, `/single-column-layout`, `/two-column-layout`, `/screen`, `/navigation-header` and `/route-overlay` in
   light, dark, LTR and RTL, also with the drawer or the overlay open — verified by: e2e
+- **SC-013**: axe reports nothing on `/data-table`, `/bulk-action-bar`, `/filter-bar`, `/entity-picker`, `/number-field`,
+  `/date-field` and `/date-picker` in light, dark, LTR and RTL, also with a filter popover, a calendar or a list open
+  — verified by: e2e
 
 ## Out of scope
 
@@ -701,5 +778,7 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
 - 2026-10-24 · Implementing · Claude (frontend-builder) · wave 4 components: FR-098 to FR-120, SC-008 to SC-010
 - 2026-10-24 · Implementing · Claude (frontend-builder) · wave 5 foundation: FR-121, FR-122 (ADR 0313)
 - 2026-10-24 · Implementing · Claude (frontend-builder) · wave 5 components: FR-123 to FR-151, SC-011
-- 2026-10-24 · Implementing · Claude (frontend-builder) · wave 6 foundation: FR-152, FR-153 (ADR 0314)
+- 2026-10-24 · Implementing · Claude (frontend-builder) · wave 6 foundation: FR-152, FR-153 (ADR 0317)
 - 2026-10-24 · Implementing · Claude (frontend-builder) · wave 6 components: FR-154 to FR-184, SC-012
+- 2026-10-24 · Implementing · Claude (frontend-builder) · wave 7 foundation: FR-185 to FR-187 (ADR 0318)
+- 2026-10-24 · Implementing · Claude (frontend-builder) · wave 7 components: FR-188 to FR-208, SC-013

@@ -6,13 +6,13 @@
  *          (the bar's actions) and the `userMenu`, so right-to-left mirrors the whole bar without a physical side
  *          written anywhere. `label` names the landmark and every other `header` attribute passes through.
  * Boundary: HeroUI has no application bar (its Navbar is HeroUI Pro's), so this is the documented adapted form on a
- *           flex row and theme tokens. It imports no other shell piece: each part is a node the app fills (ADR 0314
+ *           flex row and theme tokens. It imports no other shell piece: each part is a node the app fills (ADR 0317
  *           decision 4). A string title is drawn as semibold text and truncated; any other node is drawn as it is. The
  *           title is not a heading, because the page's one `h1` is PageHeader's. A `header` inside `main`, `article` or
  *           `section` is not a banner, so a page that draws the bar there should leave `label` out: a name on a plain
  *           element is not allowed (ARIA 1.2).
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3, decision 5: adapted form); ADR 0303 (decision 7); ADR 0314 (decisions 1, 4
+ * Governing contract: ADR 0302 (decision 3, decision 5: adapted form); ADR 0303 (decision 7); ADR 0317 (decisions 1, 4
  *          and 5); ADR 0165 (HeroUI v3 on web); WCAG 2.2 SC 1.3.1, 2.4.1 and 2.5.8.
  */
 import { cn } from "@heroui/react";

@@ -13,7 +13,7 @@
  *           button after it closes are used there. Axe scans the open drawer alone, because the page behind it is
  *           deliberately hidden and the page-level rules belong to the closed page.
  * Runtime: node
- * Governing contract: ADR 0302 (decision 5); ADR 0312; ADR 0314 (decisions 5 and 6); ADR 0060 (light, dark, RTL); ADR
+ * Governing contract: ADR 0302 (decision 5); ADR 0312; ADR 0317 (decisions 5 and 6); ADR 0060 (light, dark, RTL); ADR
  *          0182 (test tiers); ADR 0022 (test placement); WCAG 2.2 SC 1.3.1, 1.4.10, 2.1.2, 2.4.1, 2.4.3 and 4.1.2.
  */
 // @covers sta-350:FR-160 sta-350:FR-162 sta-350:SC-012 sta-350:SC-002

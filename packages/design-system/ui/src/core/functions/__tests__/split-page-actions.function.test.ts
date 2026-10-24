@@ -4,7 +4,7 @@
  *          overflows the rest in order when there are more, copes with none, and keeps the caller's objects.
  * Boundary: pure function.
  * Runtime: node
- * Governing contract: ADR 0314 (decision 1); ADR 0022 (test placement).
+ * Governing contract: ADR 0317 (decision 1); ADR 0022 (test placement).
  */
 // @covers sta-350:FR-163
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";

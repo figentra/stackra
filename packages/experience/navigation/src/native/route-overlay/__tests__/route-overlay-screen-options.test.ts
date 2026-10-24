@@ -6,7 +6,7 @@
  *          platform modals.
  * Boundary: plain functions over plain objects; React Navigation is only a type.
  * Runtime: node
- * Governing contract: ADR 0314 (decisions 8 and 9); ADR 0022 (test placement).
+ * Governing contract: ADR 0317 (decisions 8 and 9); ADR 0022 (test placement).
  */
 // @covers sta-350:FR-182
 import { OverlayPresentation } from "#contracts/enums/overlay-presentation.enum";

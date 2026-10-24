@@ -15,7 +15,7 @@
  *           native modal on a device. Strings the caller passes as `title`, `children` or `footer` are wrapped in
  *           `Text` by the kit's sections.
  * Runtime: react-native
- * Governing contract: ADR 0314 (decisions 2, 8 and 9); ADR 0312; ADR 0165 (HeroUI Native on native); WCAG 2.2
+ * Governing contract: ADR 0317 (decisions 2, 8 and 9); ADR 0312; ADR 0165 (HeroUI Native on native); WCAG 2.2
  *          SC 2.1.2, 2.4.3 and 4.1.2.
  */
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";

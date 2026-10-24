@@ -5,7 +5,7 @@
  *          asks through the router blocker itself and nobody else needs the handle.
  * Boundary: types only.
  * Runtime: isomorphic
- * Governing contract: ADR 0314 (decision 2); ADR 0312; WCAG 2.2 SC 3.3.4.
+ * Governing contract: ADR 0317 (decision 2); ADR 0312; WCAG 2.2 SC 3.3.4.
  */
 import type { LeaveConfirmationContractProps } from "@stackra/ui/contracts";
 

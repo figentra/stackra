@@ -6,7 +6,7 @@
  *          onto the stack navigator's `presentation`.
  * Boundary: the values only; each runtime decides what they look like.
  * Runtime: isomorphic
- * Governing contract: ADR 0314 (decision 9); ADR 0303 (decision 7); ADR 0294 (vocabulary: Modal, Sheet, Drawer,
+ * Governing contract: ADR 0317 (decision 9); ADR 0303 (decision 7); ADR 0294 (vocabulary: Modal, Sheet, Drawer,
  *          FullScreen).
  */
 

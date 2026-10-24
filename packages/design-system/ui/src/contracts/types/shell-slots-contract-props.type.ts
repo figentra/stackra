@@ -6,7 +6,7 @@
  * Boundary: types only. A slot is a node the app fills, so no shell component imports another: the pieces meet in the
  *           app's code, as the wave 5 `emptyState` slot does (ADR 0313 decision 5).
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (the `endContent` row); ADR 0314.
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (the `endContent` row); ADR 0317.
  */
 import type { ReactNode } from "react";
 

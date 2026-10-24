@@ -4,12 +4,12 @@
  *          `startContent`, the `NavigationList` of the contract's `items` and `endContent` in a
  *          column, for the sheet AppShell opens, a settings screen or an iPad split view.
  * Boundary: built on the native NavigationList of this wave, which is the same group and so not a sibling in the sense of
- *           ADR 0314 decision 4. There is no icon rail on a phone, so `isCollapsed`, `defaultCollapsed` and
+ *           ADR 0317 decision 4. There is no icon rail on a phone, so `isCollapsed`, `defaultCollapsed` and
  *           `onCollapsedChange` are accepted for the shared call site and never read or called; the page says so. A
  *           string or number slot is drawn inside `Text`, because React Native refuses a bare string outside one. Extra
  *           props pass to the root `View`; `label` names the navigation.
  * Runtime: react-native
- * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0314 (decisions 1, 4 and 7); WCAG
+ * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0317 (decisions 1, 4 and 7); WCAG
  *          2.2 SC 1.3.1 and 4.1.2.
  */
 import type { ReactElement, ReactNode } from "react";

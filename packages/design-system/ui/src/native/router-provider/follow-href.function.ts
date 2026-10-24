@@ -7,7 +7,7 @@
  *           once. The failed-open warning never carries the URL, because it may hold a credential. It runs no `onPress`;
  *           the caller does that first.
  * Runtime: react-native
- * Governing contract: ADR 0303 (decision 5, router-free links); ADR 0314 (decisions 1 and 4).
+ * Governing contract: ADR 0303 (decision 5, router-free links); ADR 0317 (decisions 1 and 4).
  */
 import { Linking } from "react-native";
 

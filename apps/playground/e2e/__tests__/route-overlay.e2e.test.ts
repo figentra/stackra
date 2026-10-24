@@ -15,7 +15,7 @@
  *           after it has closed; the in-memory route is read with a text locator, which ignores `aria-hidden`; axe inside
  *           an open overlay is scoped to it for the same reason.
  * Runtime: node
- * Governing contract: ADR 0302 (decision 5); ADR 0314; ADR 0312; ADR 0060 (light, dark, RTL); ADR 0182 (test
+ * Governing contract: ADR 0302 (decision 5); ADR 0317; ADR 0312; ADR 0060 (light, dark, RTL); ADR 0182 (test
  *          tiers); ADR 0022 (test placement); WCAG 2.2 SC 2.1.1, 2.1.2, 2.4.3, 2.5.8, 3.3.4 and 4.1.2.
  */
 // @covers sta-350:FR-184 sta-350:SC-012 sta-350:SC-002

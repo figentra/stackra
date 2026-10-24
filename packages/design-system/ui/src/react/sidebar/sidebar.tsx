@@ -6,7 +6,7 @@
  *          rem; the collapsed state is controlled with `isCollapsed` and `onCollapsedChange` or left to
  *          `defaultCollapsed`.
  * Boundary: HeroUI has no sidebar, so this is the adapted form on HeroUI's `Button` (through `IconButton`) and the
- *           NavigationList of this wave, which is the same group and so not a sibling in the sense of ADR 0314 decision
+ *           NavigationList of this wave, which is the same group and so not a sibling in the sense of ADR 0317 decision
  *           4. It draws no off-canvas drawer: that is AppShell's, which hands a function `sidebar` slot
  *           `isInDrawer: true` so the sidebar can be drawn in full there with `isCollapsible` false. The slots are the
  *           app's nodes and are not told the collapsed state, so an app that shows a wordmark passes its own
@@ -14,7 +14,7 @@
  *           the pointer and keyboard path here. The toggle's icon mirrors in right-to-left, where the sidebar sits on
  *           the other side. Extra props pass to the root `div`; `label` names the `nav`.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0314 (decisions 1, 4 and 5); ADR 0060 (right-to-left);
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0317 (decisions 1, 4 and 5); ADR 0060 (right-to-left);
  *          WCAG 2.2 SC 1.3.1, 2.5.8 and 4.1.2.
  */
 import { cn } from "@heroui/react";

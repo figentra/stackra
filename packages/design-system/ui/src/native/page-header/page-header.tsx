@@ -8,14 +8,14 @@
  *          through the nearest `RouterProvider`, an absolute URL in the system browser.
  * Boundary: HeroUI Native has no page header and the navigator's header bar carries only a title and trailing
  *           buttons (`NavigationHeader`), so this is a plain `View` layout on the earlier waves' `Breadcrumbs`,
- *           `Heading` and `Text`, and it imports no sibling piece of wave 6 (ADR 0314 decision 4). The actions row is
+ *           `Heading` and `Text`, and it imports no sibling piece of wave 6 (ADR 0317 decision 4). The actions row is
  *           `PageActions`, an internal row shared with Section and not a shell piece. The title is drawn in the `h3`
  *           style whatever its level, and React Native reports no heading levels, so `headingLevel` only reaches the
  *           shared `Heading`. A string or number in `startContent` or `status` is drawn inside `Text`, since React
  *           Native refuses a bare string in a `View`. `label` names the root `View`, which takes the `group` role
  *           only when it has a name, as on web. Extra props pass to the root `View`.
  * Runtime: react-native
- * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0314 (decisions 1, 4 and 7); WCAG
+ * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0317 (decisions 1, 4 and 7); WCAG
  *          2.2 SC 1.3.1, 2.4.6 and 2.5.8.
  */
 import type { ReactElement, ReactNode } from "react";

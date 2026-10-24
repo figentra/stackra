@@ -5,11 +5,11 @@
  *          `search` slot (the palette trigger or a search field, taking the room left over), the `endContent` slot (the
  *          bar's actions, such as notifications) and the `userMenu` slot. Each runtime's `AppHeaderProps` is this plus
  *          its own base props, which pass through unchanged.
- * Boundary: types only. Every part is a node, so AppHeader imports no other shell piece (ADR 0314 decision 4): the app
+ * Boundary: types only. Every part is a node, so AppHeader imports no other shell piece (ADR 0317 decision 4): the app
  *           puts a Button in `startContent`, a SearchField in `search` and a Menu in `userMenu`. The title is not a
  *           heading, because the page's one `h1` belongs to PageHeader.
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0314 (decisions 1, 4 and 5); WCAG 2.2 SC 1.3.1
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0317 (decisions 1, 4 and 5); WCAG 2.2 SC 1.3.1
  *          and 2.4.1.
  */
 import type { ReactNode } from "react";

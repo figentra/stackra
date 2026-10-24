@@ -10,7 +10,7 @@
  *           takes `headingLevel={3}` and the page keeps its one `h1`. Each header sits in a box inside this page's `main`,
  *           so none is a banner landmark and none takes a `label`.
  * Runtime: browser
- * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0314 (decisions 4, 5 and 7); ADR 0060
+ * Governing contract: ADR 0302 (decisions 3 and 5); ADR 0303 (decision 7); ADR 0317 (decisions 4, 5 and 7); ADR 0060
  *          (right-to-left); WCAG 2.2 SC 1.3.1, 2.4.6, 2.5.8 and 4.1.3.
  */
 import * as Ui from "@stackra/ui/react";

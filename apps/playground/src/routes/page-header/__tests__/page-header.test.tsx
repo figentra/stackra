@@ -8,7 +8,7 @@
  *           finds nothing outside an open menu (React Aria hides the page behind it), so each case holds what it needs
  *           before it opens one.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 5); ADR 0314; ADR 0022 (test placement).
+ * Governing contract: ADR 0302 (decision 5); ADR 0317; ADR 0022 (test placement).
  */
 // @covers sta-350:FR-168
 import { DesignSystemProvider } from "@stackra/ui/react";

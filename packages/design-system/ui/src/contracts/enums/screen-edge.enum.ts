@@ -6,7 +6,7 @@
  * Boundary: the values only. `sides` names both horizontal edges together, because a safe-area inset is physical (the
  *           notch is on one real side) and the contract writes no `left` or `right` (ADR 0060).
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3); ADR 0314 (decision 7); ADR 0060 (right-to-left).
+ * Governing contract: ADR 0302 (decision 3); ADR 0317 (decision 7); ADR 0060 (right-to-left).
  */
 
 /** The screen edges that can be kept clear. */

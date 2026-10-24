@@ -5,7 +5,7 @@
  *          Tailwind names, and every prop but a title and an item's key and label is optional.
  * Boundary: type assertions and one tuple check; the assertions are checked by the typechecker.
  * Runtime: node
- * Governing contract: ADR 0314; ADR 0022 (test placement).
+ * Governing contract: ADR 0317; ADR 0022 (test placement).
  */
 // @covers sta-350:FR-152
 import type { ReactNode } from "react";

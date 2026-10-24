@@ -7,10 +7,10 @@
  *          through unchanged.
  * Boundary: types only. An action is the shared `MenuLeafItem` (key, text, icon, tone, disabled state, `href` and
  *           `onPress`), so the entries that overflow go into the menu unchanged. `status` is a node, usually a
- *           `StatusBadge`, so PageHeader imports no sibling piece of its wave (ADR 0314 decision 4); it builds on the
+ *           `StatusBadge`, so PageHeader imports no sibling piece of its wave (ADR 0317 decision 4); it builds on the
  *           earlier waves' Breadcrumbs, Heading, Button and ActionMenu.
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0314 (decisions 1, 4 and 5); WCAG 2.2 SC 1.3.1,
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0317 (decisions 1, 4 and 5); WCAG 2.2 SC 1.3.1,
  *          2.4.6 and 2.4.8.
  */
 import type { ReactNode } from "react";

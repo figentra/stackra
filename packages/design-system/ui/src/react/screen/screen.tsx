@@ -14,7 +14,7 @@
  *           its root is a plain `div`, because that page already holds the one `main`, and it takes no `label`, because
  *           a name on a plain element is not allowed (ARIA 1.2).
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3, decision 5: adapted form); ADR 0303 (decision 7); ADR 0314 (decisions 5
+ * Governing contract: ADR 0302 (decision 3, decision 5: adapted form); ADR 0303 (decision 7); ADR 0317 (decisions 5
  *          and 7); ADR 0165 (HeroUI v3 on web); ADR 0060; WCAG 2.2 SC 1.4.10 and 2.4.1.
  */
 import { cn } from "@heroui/react";

@@ -12,7 +12,7 @@
  *           `isInDrawer: true`. There is no `main` landmark on native, so the page is a plain `View`. Extra props pass to
  *           the root `View`. A string or number child is drawn inside `Text`.
  * Runtime: react-native
- * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0312; ADR 0314 (decisions 1, 4, 6, 7
+ * Governing contract: ADR 0302 (decision 3, adapted forms); ADR 0303 (decision 7); ADR 0312; ADR 0317 (decisions 1, 4, 6, 7
  *          and 8); WCAG 2.2 SC 1.3.1 and 2.1.2.
  */
 import { useState, type ReactElement, type ReactNode } from "react";

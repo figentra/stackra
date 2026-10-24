@@ -5,7 +5,7 @@
  *          external link leaves the router alone.
  * Boundary: jsdom with real HeroUI and React Aria and a React Router memory data router; no page loads.
  * Runtime: browser
- * Governing contract: ADR 0314 (decision 2); ADR 0303 (decision 1); ADR 0022 (test placement).
+ * Governing contract: ADR 0317 (decision 2); ADR 0303 (decision 1); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-180

@@ -4,7 +4,7 @@
  *          heading of its own, merges a caller's class, and passes every `div` prop through.
  * Boundary: jsdom; the theme CSS is not loaded, so classes and attributes are checked, not looks.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3); ADR 0314 (decision 7); ADR 0022 (test placement).
+ * Governing contract: ADR 0302 (decision 3); ADR 0317 (decision 7); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-171

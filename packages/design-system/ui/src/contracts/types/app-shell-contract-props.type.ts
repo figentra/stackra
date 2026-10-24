@@ -4,12 +4,12 @@
  *          page, and below `collapseBelow` it moves the sidebar into an off-canvas drawer (a bottom sheet on native)
  *          that the app opens through the open state. Each runtime's `AppShellProps` is this plus its own base props,
  *          which pass through unchanged.
- * Boundary: types only. The three regions are nodes, so AppShell imports no other shell piece (ADR 0314 decision 4):
+ * Boundary: types only. The three regions are nodes, so AppShell imports no other shell piece (ADR 0317 decision 4):
  *           the app puts a Sidebar in `sidebar`, an AppHeader in `header` and the page in `children`, and the button that
  *           opens the drawer is a node in the header's own `startContent`. `sidebar` may be a function of the
  *           {@link AppShellSidebarState} so the sidebar can draw itself in full inside the drawer.
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312 (the open state); ADR 0314 (decisions 1, 4,
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312 (the open state); ADR 0317 (decisions 1, 4,
  *          5 and 6); WCAG 2.2 SC 2.4.1, 1.4.10 and 1.3.1.
  */
 import type { ReactNode } from "react";

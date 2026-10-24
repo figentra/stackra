@@ -7,7 +7,7 @@
  *           entry with `href` or `onPress` is a link, and its `children` follow it, nested. The list never reads the
  *           router, so the current place is each item's `isCurrent`.
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 1 and 7); ADR 0314 (decisions 1, 3 and 5); WCAG 2.2
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decisions 1 and 7); ADR 0317 (decisions 1, 3 and 5); WCAG 2.2
  *          SC 1.3.1, 2.4.5 and 4.1.2.
  */
 import type { LandmarkContractProps } from "#contracts/types/landmark-contract-props.type";

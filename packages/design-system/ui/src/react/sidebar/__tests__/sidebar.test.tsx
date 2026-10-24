@@ -8,7 +8,7 @@
  * Boundary: jsdom with real HeroUI and React Aria; the theme CSS is not loaded, so classes and attributes are checked,
  *           not looks.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0314 (decisions 1 and 4); ADR 0022 (test
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0317 (decisions 1 and 4); ADR 0022 (test
  *          placement).
  */
 // @vitest-environment jsdom

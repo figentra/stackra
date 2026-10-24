@@ -4,7 +4,7 @@
  *          ActionMenu, so the web and native header agree on which is which.
  * Boundary: pure; it reorders nothing and keeps the caller's objects.
  * Runtime: isomorphic
- * Governing contract: ADR 0314 (decision 1, the page actions row).
+ * Governing contract: ADR 0317 (decision 1, the page actions row).
  */
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
 import { PAGE_HEADER_VISIBLE_ACTIONS } from "#core/constants/page-header-visible-actions.constant";

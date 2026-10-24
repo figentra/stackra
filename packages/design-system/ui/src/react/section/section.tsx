@@ -7,12 +7,12 @@
  *          children.
  * Boundary: HeroUI has no section, so this is the documented adapted form on HeroUI's `Card` (drawn as a `section`
  *           through React Aria's `render`, so its classes stay) with the title and description it already has, and it
- *           imports no sibling piece of wave 6 (ADR 0314 decision 4). The name is the title, through
+ *           imports no sibling piece of wave 6 (ADR 0317 decision 4). The name is the title, through
  *           `aria-labelledby`; `label` replaces it, for a page whose two sections share a title, and a caller's own
  *           `aria-label` or `aria-labelledby` is refused by the type. The title is the section's own heading, so a page's
  *           outline is the caller's to keep: a section under the page's `h1` is `h2`, one inside another section `h3`.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3, decision 5: adapted form); ADR 0303 (decision 7); ADR 0314 (decisions 1, 4
+ * Governing contract: ADR 0302 (decision 3, decision 5: adapted form); ADR 0303 (decision 7); ADR 0317 (decisions 1, 4
  *          and 5); ADR 0165 (HeroUI v3 on web); WCAG 2.2 SC 1.3.1, 2.4.6 and 2.5.8.
  */
 import { cn } from "@heroui/react";

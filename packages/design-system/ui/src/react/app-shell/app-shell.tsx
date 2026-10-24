@@ -7,7 +7,7 @@
  *          navigation entry in the drawer closes it.
  * Boundary: HeroUI has no app frame, so this is a flex layout on theme tokens plus the `Drawer` of wave 4. It imports no
  *           other shell piece: `sidebar`, `header` and `children` are nodes, and the button that opens the drawer is a
- *           node in the header (ADR 0314 decision 4). `sidebar` may be a function of `{ isInDrawer }` so a sidebar
+ *           node in the header (ADR 0317 decision 4). `sidebar` may be a function of `{ isInDrawer }` so a sidebar
  *           collapsed to a rail in the page can be drawn in full in the drawer. The breakpoint is a static Tailwind
  *           class from a map, never a computed string (decision 6), so it follows the viewport, not the shell's own
  *           width. `isEmbedded` is for a shell drawn inside another page (a preview, the playground): it fills its box
@@ -15,7 +15,7 @@
  *           already has both and a page holds one `main`. A drawer left open while the window grows past the breakpoint stays
  *           open until it is dismissed (see the shortcut note on {@link AppShell}).
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312; ADR 0314 (decisions 1, 4, 5 and 6); ADR
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312; ADR 0317 (decisions 1, 4, 5 and 6); ADR
  *          0165 (HeroUI v3 on web); WCAG 2.2 SC 1.3.1, 1.4.10, 2.4.1, 2.4.3 and 2.4.7.
  */
 import { cn } from "@heroui/react";

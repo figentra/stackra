@@ -10,7 +10,7 @@
  *           safe-area hook are replaced by recording stand-ins that render plain DOM; what reaches them is checked, not
  *           how it draws, and the sheet over a native modal is a device check.
  * Runtime: node
- * Governing contract: ADR 0314 (decisions 2, 8 and 9); ADR 0312; ADR 0022 (test placement); WCAG 2.2 SC 2.1.2 and
+ * Governing contract: ADR 0317 (decisions 2, 8 and 9); ADR 0312; ADR 0022 (test placement); WCAG 2.2 SC 2.1.2 and
  *          4.1.2.
  */
 // @vitest-environment jsdom

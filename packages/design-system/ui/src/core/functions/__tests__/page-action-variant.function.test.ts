@@ -4,7 +4,7 @@
  *          action `danger` or `danger-soft` by its role; any other tone reads as default.
  * Boundary: pure function.
  * Runtime: node
- * Governing contract: ADR 0314 (decision 1); ADR 0022 (test placement).
+ * Governing contract: ADR 0317 (decision 1); ADR 0022 (test placement).
  */
 // @covers sta-350:FR-163
 import { pageActionVariant } from "#core/functions/page-action-variant.function";

@@ -6,7 +6,7 @@
  *          confirmation's props are LeaveConfirmation's without its `ref`.
  * Boundary: types and one frozen tuple; nothing renders.
  * Runtime: node
- * Governing contract: ADR 0314 (decisions 2 and 9); ADR 0022 (test placement).
+ * Governing contract: ADR 0317 (decisions 2 and 9); ADR 0022 (test placement).
  */
 // @covers sta-350:FR-178
 import type { LeaveConfirmationContractProps } from "@stackra/ui/contracts";

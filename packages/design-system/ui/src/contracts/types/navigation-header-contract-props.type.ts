@@ -6,10 +6,10 @@
  *          bar instead, as an iOS large-title header does. Each runtime's `NavigationHeaderProps` is this plus its own
  *          base props, which pass through unchanged.
  * Boundary: types only. Every part but the title is a node or a handler, so the header imports no other shell piece
- *           (ADR 0314 decision 4); on web it is the compact form of PageHeader and does not import it. Router wiring is
+ *           (ADR 0317 decision 4); on web it is the compact form of PageHeader and does not import it. Router wiring is
  *           `@stackra/navigation`'s: it passes `onBack` from the navigator, and `backHref` is for a plain link.
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0314 (decisions 1, 4, 5 and 7); ADR 0060; WCAG
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0317 (decisions 1, 4, 5 and 7); ADR 0060; WCAG
  *          2.2 SC 1.3.1, 2.4.6 and 2.5.8.
  */
 import type { ReactNode } from "react";

@@ -8,7 +8,7 @@
  * Boundary: a pure function returning plain options; the header is hidden (the overlay draws its own title and close
  *           button). A native side drawer does not exist on phones, so `drawer` is a sheet here, as `Drawer` is.
  * Runtime: react-native
- * Governing contract: ADR 0314 (decisions 8 and 9); the React Navigation 7 native stack `presentation` option.
+ * Governing contract: ADR 0317 (decisions 8 and 9); the React Navigation 7 native stack `presentation` option.
  */
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 

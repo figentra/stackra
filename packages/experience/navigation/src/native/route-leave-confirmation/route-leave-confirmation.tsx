@@ -9,7 +9,7 @@
  *           is set here. The Android hardware back button is caught by the same hook; verify on a device. One question
  *           is open at a time: an action that fires again while the dialog is open waits for the answer.
  * Runtime: react-native
- * Governing contract: ADR 0314 (decision 2); ADR 0312; ADR 0055 (forms); WCAG 2.2 SC 3.3.4.
+ * Governing contract: ADR 0317 (decision 2); ADR 0312; ADR 0055 (forms); WCAG 2.2 SC 3.3.4.
  */
 import { useNavigation, usePreventRemove } from "@react-navigation/native";
 import type { LeaveConfirmationHandle } from "@stackra/ui/contracts";

@@ -8,7 +8,7 @@
  *           unchanged, as in PageHeader. The section is named by its `title`; `label` is only for a page that holds two
  *           sections with the same title.
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0314 (decisions 1, 4 and 5); WCAG 2.2 SC 1.3.1
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0317 (decisions 1, 4 and 5); WCAG 2.2 SC 1.3.1
  *          and 2.4.6.
  */
 import type { ReactNode } from "react";
