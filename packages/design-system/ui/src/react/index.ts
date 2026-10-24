@@ -15,6 +15,7 @@ export { AppShell, type AppShellProps } from "#react/app-shell/app-shell";
 export { Avatar, type AvatarProps } from "#react/avatar/avatar";
 export { Badge, type BadgeAnchorProps, type BadgeProps } from "#react/badge/badge";
 export { Breadcrumbs, type BreadcrumbsProps } from "#react/breadcrumbs/breadcrumbs";
+export { BulkActionBar, type BulkActionBarProps } from "#react/bulk-action-bar/bulk-action-bar";
 export { Button, type ButtonProps } from "#react/button/button";
 export { Card, type CardProps } from "#react/card/card";
 export type { CardTitleProps } from "#react/card/card-title";
@@ -32,6 +33,9 @@ export {
   CursorPagination,
   type CursorPaginationProps,
 } from "#react/cursor-pagination/cursor-pagination";
+export { DataTable, type DataTableProps } from "#react/data-table/data-table";
+export { DateField, type DateFieldProps } from "#react/date-field/date-field";
+export { DatePicker, type DatePickerProps } from "#react/date-picker/date-picker";
 export { Description, type DescriptionProps } from "#react/description/description";
 export { DesignSystemProvider } from "#react/design-system-provider/design-system-provider";
 export { useDesignSystem } from "#react/design-system-provider/use-design-system";
@@ -39,8 +43,10 @@ export { Drawer, type DrawerProps } from "#react/drawer/drawer";
 export type { DrawerCloseProps } from "#react/drawer/drawer-close";
 export type { DrawerTitleProps } from "#react/drawer/drawer-title";
 export { EmptyState, type EmptyStateProps } from "#react/empty-state/empty-state";
+export { EntityPicker, type EntityPickerProps } from "#react/entity-picker/entity-picker";
 export { ErrorState, type ErrorStateProps } from "#react/error-state/error-state";
 export { FieldError, type FieldErrorProps } from "#react/field-error/field-error";
+export { FilterBar, type FilterBarProps } from "#react/filter-bar/filter-bar";
 export { FormField, type FormFieldProps } from "#react/form-field/form-field";
 export { FormSection, type FormSectionProps } from "#react/form-section/form-section";
 export { Form, type FormProps } from "#react/form/form";
@@ -65,6 +71,7 @@ export {
   type NavigationHeaderProps,
 } from "#react/navigation-header/navigation-header";
 export { NavigationList, type NavigationListProps } from "#react/navigation-list/navigation-list";
+export { NumberField, type NumberFieldProps } from "#react/number-field/number-field";
 export { PageHeader, type PageHeaderProps } from "#react/page-header/page-header";
 export { PageSkeleton, type PageSkeletonProps } from "#react/page-skeleton/page-skeleton";
 export { Popover, type PopoverProps } from "#react/popover/popover";
