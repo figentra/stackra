@@ -1,7 +1,15 @@
 ---
 title: "0134 — Data invariants, field classification and the delete lifecycle"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0341 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-456) by
+  [0341](/adr/0341-product-defined-data-classes-and-the-privileged-class): the class set of decision
+  2 is open to products. A product declares a class with its four effects (AI audience, support
+  access, search snippet, export label), and Stackra ships `privileged` as a seventh built-in class
+  for protected professional material. The handling of the six classes is unchanged.
+</Note>
 
 <Note>
   Supersedes [0046](/adr/0046-global-data-invariants-and-per-model-opt-ins): the global invariants

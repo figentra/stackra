@@ -1,7 +1,15 @@
 ---
 title: "0210 — Tenancy: a recursive tenant tree, the lifecycle, one context per request, and region"
-description: "Accepted, amended by 0272, 0275, 0327 · 2026-10-20"
+description: "Accepted, amended by 0272, 0275, 0327 · 2026-10-20 · amended 2026-10-24 (STA-456)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-456): a model that is global by design (an official law corpus, a
+  reference table) declares it with `Model.global(...)` and carries no `tenant_id`; every other
+  model carries `BelongsToTenant`. Gen refuses a model that declares neither, so no tenant-owned
+  table ever lacks its `tenant_id` and its row-level-security policy. The tenant tree and lifecycle
+  decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 by [0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer):

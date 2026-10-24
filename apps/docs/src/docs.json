@@ -434,7 +434,9 @@
               "adr/0336-edition-extensions-typed-fields-on-another-products-models-and-screens-in-its-panel-slots",
               "adr/0337-client-rule-code-a-module-ships-pure-rules-that-run-on-the-till-and-on-the-server",
               "adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps",
-              "adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver"
+              "adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver",
+              "adr/0341-product-defined-data-classes-and-the-privileged-class",
+              "adr/0342-gapless-sequences-allocated-at-commit-per-tenant-and-series"
             ]
           }
         ]
