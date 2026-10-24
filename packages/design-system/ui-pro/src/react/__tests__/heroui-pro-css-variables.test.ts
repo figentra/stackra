@@ -3,8 +3,10 @@
  * Purpose: proves the installed HeroUI Pro stylesheet reads no CSS variable that nothing defines, so a theme reaches
  *          every Pro component: each `var(--x)` it reads with no fallback is defined by HeroUI Pro itself, HeroUI's
  *          theme, Tailwind's theme or the Stackra theme, or is one of the few a component sets inline at runtime. It
- *          also proves `@stackra/ui-pro/css` reads only defined variables and names only HeroUI Pro classes that still
- *          exist, so a Pro release that renames one fails here instead of dropping a fix in silence.
+ *          also proves `@stackra/ui-pro/css` reads only variables the Stackra theme, Tailwind or Pro defines (not
+ *          HeroUI's defaults, so a theme missing one fails here), names only HeroUI Pro classes and `data-*` values
+ *          that still exist, so a Pro release that renames one fails here instead of dropping a fix in silence, and
+ *          draws every colour from a theme variable.
  * Boundary: reads the stylesheets an app imports, from the installed packages; no browser. A `var(--x, fallback)` is
  *          never undefined, so only reads without a fallback are checked.
  * Runtime: node
@@ -14,18 +16,20 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const read = (path: string) => readFileSync(path, "utf8");
+const read = (path: string | URL) => readFileSync(path, "utf8");
 
 // Each specifier is written out in its `require.resolve`, so the dependency check sees which packages the test reads.
 const PRO = read(require.resolve("@heroui-pro/react/css"));
-const UI_PRO = read(new URL("../../../assets/public/css/ui-pro.css", import.meta.url).pathname);
+const UI_PRO = read(new URL("../../../assets/public/css/ui-pro.css", import.meta.url));
+const TAILWIND_THEME = read(require.resolve("tailwindcss/theme.css"));
+const STACKRA_THEME = read(require.resolve("@stackra/tokens/themes/stackra/web.css"));
 /** What an app imports beside HeroUI Pro: Tailwind's theme, HeroUI's theme and the Stackra theme. */
 const DEFINERS = [
   PRO,
-  read(require.resolve("tailwindcss/theme.css")),
+  TAILWIND_THEME,
   read(require.resolve("@heroui/styles/themes/shared/theme.css")),
   read(require.resolve("@heroui/styles/themes/default/variables.css")),
-  read(require.resolve("@stackra/tokens/themes/stackra/web.css")),
+  STACKRA_THEME,
 ];
 
 /**
@@ -62,15 +66,28 @@ describe("HeroUI Pro's CSS variables", () => {
     expect(undefinedReads).toEqual([]);
   });
 
-  it("still sets inline every variable the list says it does", () => {
+  it("lists as set at runtime only variables that no stylesheet defines", () => {
     for (const name of SET_AT_RUNTIME) expect(DEFINED.has(name), name).toBe(false);
   });
 });
 
 describe("@stackra/ui-pro/css", () => {
-  it("reads only defined variables", () => {
-    const undefinedReads = [...readsWithoutFallback(UI_PRO)].filter((name) => !DEFINED.has(name));
+  it("reads only variables the Stackra theme, Tailwind or HeroUI Pro defines", () => {
+    const own = new Set([PRO, TAILWIND_THEME, STACKRA_THEME].flatMap(declared));
+    const undefinedReads = [...readsWithoutFallback(UI_PRO)].filter((name) => !own.has(name));
     expect(undefinedReads).toEqual([]);
+  });
+
+  it("names only data-* values that the installed HeroUI Pro stylesheet still matches", () => {
+    // `data-theme` is the Stackra theme's own attribute, not HeroUI Pro's.
+    const attributes = [...UI_PRO.matchAll(/\[(data-(?!theme)[\w-]+)="([\w-]+)"\]/g)].map(
+      ([, name, value]) => `[${name}=${value}]`,
+    );
+    expect(attributes.length).toBeGreaterThan(5);
+    const missing = [...new Set(attributes)].filter(
+      (selector) => !PRO.includes(selector) && !PRO.includes(selector.replace(/=(.+)\]/, '="$1"]')),
+    );
+    expect(missing).toEqual([]);
   });
 
   it("names only HeroUI Pro classes that the installed stylesheet still has", () => {

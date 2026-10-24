@@ -115,8 +115,8 @@
 
 /* Shiki's GitHub light theme, which HeroUI Pro's code blocks use (in Markdown too), has token colours under 4.5:1 on
    the surface behind code (keywords are 4:1); in the light scheme each token keeps its hue and chroma at a lightness
-   of at most 50%, which holds 4.5:1 on a light surface. The dark scheme keeps HeroUI Pro's rule, whose dark theme
-   holds already. */
-:root:not(.dark) .code-block__code .shiki span {
+   of at most 50%, which holds 4.5:1 on a light surface. Code inside a dark scheme, on the document or on any ancestor
+   (the Stackra theme's `.dark` or `[data-theme="dark"]`), keeps HeroUI Pro's dark rule, whose dark theme holds. */
+.code-block__code .shiki span:not(:is(.dark, [data-theme="dark"]) *) {
   color: oklch(from var(--shiki-light, var(--surface-secondary-foreground)) min(l, 0.5) c h);
 }
