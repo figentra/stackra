@@ -90,7 +90,7 @@ export function CommandPalette({ pages, search, isOpen, onClose }: CommandPalett
       onClose={onClose}
       onClick={onScrim}
       onKeyDown={onKeyDown}
-      className="command-palette glass-strong m-auto mt-[12vh] w-[min(100%-2rem,40rem)] max-w-none rounded-3xl p-0 text-foreground"
+      className="command-palette material-thick m-auto mt-[12vh] w-[min(100%-2rem,40rem)] max-w-none rounded-3xl p-0 text-foreground"
     >
       {isOpen ? (
         <div className="grid max-h-[70vh] grid-rows-[auto_1fr_auto]">

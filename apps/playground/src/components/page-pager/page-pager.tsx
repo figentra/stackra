@@ -24,7 +24,7 @@ export interface PagePagerProps {
 }
 
 const CARD =
-  "glass lift grid min-h-16 gap-0.5 rounded-2xl px-4 py-3 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
+  "material lift grid min-h-16 gap-0.5 rounded-2xl px-4 py-3 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
 /** The previous and next page links. */
 export function PagePager({ pages, current, search }: PagePagerProps) {

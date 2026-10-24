@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: proves the token schema is enforced: a complete theme passes unchanged, and a missing role, an empty
  *          value, a bad hex, a non-kebab name, two tokens that write one CSS property, or a value outside its kind's
- *          grammar (each CSS injection attempt among them) fail with InvalidThemeError naming the token.
+ *          grammar (each CSS injection attempt among them), or a glass material out of its ranges fail with
+ *          InvalidThemeError naming the token.
  * Boundary: calls defineTheme on in-memory themes only.
  * Runtime: node
  * Governing contract: ADR 0302; ADR 0022 (test placement).
@@ -226,5 +227,40 @@ describe("defineTheme", () => {
         },
       }),
     ).toEqual([]);
+  });
+
+  it("refuses a material share outside 0 to 1, a blur that is not px, a wild saturation and a missing level", () => {
+    const { levels } = STACKRA_THEME.materials;
+    expect(
+      problemsOf({
+        ...STACKRA_THEME,
+        materials: {
+          levels: {
+            thin: { ...levels.thin, fill: { light: 1.2, dark: -0.1 } },
+            regular: { ...levels.regular, blur: "2rem", saturation: 9 },
+          },
+          edge: { light: 0.1 },
+          highlight: STACKRA_THEME.materials.highlight,
+        },
+      }),
+    ).toEqual([
+      "materials.levels.thin.fill.light is not a share from 0 to 1",
+      "materials.levels.thin.fill.dark is not a share from 0 to 1",
+      "materials.levels.regular.blur is not a px length",
+      "materials.levels.regular.saturation is not a factor from 0 to 4",
+      "materials.levels.thick is missing",
+      "materials.edge.dark is not a share from 0 to 1",
+    ]);
+    const { materials: _materials, ...withoutMaterials } = STACKRA_THEME;
+    expect(problemsOf(withoutMaterials)).toEqual(["materials is missing"]);
+  });
+
+  it("refuses a palette colour that would overwrite a material property", () => {
+    expect(
+      problemsOf({
+        ...STACKRA_THEME,
+        palette: { ...STACKRA_THEME.palette, "material-edge": STACKRA_THEME.colors.border },
+      }),
+    ).toEqual(["--material-edge is written by two tokens"]);
   });
 });

@@ -3,14 +3,16 @@
  * Purpose: validates a theme before it is used or rendered: every colour role, font stack, shadow and radius is
  *          present and non-empty, hex values are hex, token names are kebab-case, no two tokens render the same CSS
  *          custom property, and every value matches the grammar of its kind (colour, length, font stack, shadow,
- *          duration, easing). The grammars are allow-lists, so no value can escape its CSS declaration. A product's
+ *          duration, easing), and the glass material's shares sit between 0 and 1 with px blurs. The grammars are allow-lists, so no value can escape its CSS declaration. A product's
  *          own theme goes through it, as the stackra theme does.
  * Boundary: checks and returns the theme unchanged; renders nothing.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0232 (typed errors).
  */
 import { ColorRole } from "#contracts/enums/color-role.enum";
+import { MaterialLevel } from "#contracts/enums/material-level.enum";
 import type { ColorToken, Theme } from "#contracts/types/theme.type";
+import { MATERIAL_PROPERTIES } from "#core/constants/material-properties.constant";
 import { InvalidThemeError } from "#core/errors/invalid-theme.error";
 
 const TOKEN_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -142,6 +144,33 @@ export function defineTheme(theme: Theme): Theme {
     value(`motion.${key}.easing`, theme.motion[key]?.easing, "easing");
   }
 
+  const share = (path: string, candidate: unknown) => {
+    if (typeof candidate !== "number" || !(candidate >= 0 && candidate <= 1))
+      problems.push(`${path} is not a share from 0 to 1`);
+  };
+  const shares = (path: string, token: unknown) => {
+    if (!isRecord(token)) return void problems.push(`${path} is missing`);
+    share(`${path}.light`, token.light);
+    share(`${path}.dark`, token.dark);
+  };
+  if (isRecord(theme.materials)) {
+    for (const level of MaterialLevel) {
+      const path = `materials.levels.${level}`;
+      const token: unknown = theme.materials.levels?.[level];
+      if (!isRecord(token)) {
+        problems.push(`${path} is missing`);
+        continue;
+      }
+      shares(`${path}.fill`, token.fill);
+      if (typeof token.blur !== "string" || !PX.test(token.blur.trim()))
+        problems.push(`${path}.blur is not a px length`);
+      if (typeof token.saturation !== "number" || !(token.saturation >= 0 && token.saturation <= 4))
+        problems.push(`${path}.saturation is not a factor from 0 to 4`);
+    }
+    shares("materials.edge", theme.materials.edge);
+    shares("materials.highlight", theme.materials.highlight);
+  } else problems.push("materials is missing");
+
   // Every custom property the web renderer writes, as renderWebCss names them; two tokens must not write one.
   const rendered = [
     ...ColorRole,
@@ -154,6 +183,7 @@ export function defineTheme(theme: Theme): Theme {
     "field-radius",
     ...stepKeys.map((key) => `radius-${key}`),
     ...motionKeys.flatMap((key) => [`duration-${key}`, `ease-${key}`]),
+    ...MATERIAL_PROPERTIES,
   ];
   const seen = new Set<string>();
   for (const name of rendered)
