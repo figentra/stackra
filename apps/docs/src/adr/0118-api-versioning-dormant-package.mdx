@@ -9,8 +9,9 @@ description: "Accepted, amended by 0136, 0237, 0268, 0294 · 2026-10-19"
   unversioned paths of this ADR are unchanged, and so are the `.vN` names of integration events.
   What changes is how a conversion is written. A conversion of a response or of an event is a
   `Change` class with `up` and `down` functions, kept beside the schema or event it converts, in a
-  `*.change.ts` file. A dated response change takes `date`, an event change takes `from`, and both
-  carry `sunset`. `@Upcast` is retired. Domain events are never versioned.
+  `*.change.ts` file. Both kinds take `from` and `sunset`: `from` is a calendar date for a response
+  change and an integer version for an event change, as 0305 rule 5 writes it (corrected
+  2026-10-24, STA-348: an earlier wording said `date`). `@Upcast` is retired. Domain events are never versioned.
 
 Enforcement of this note: planned — STA-340 (gen check and a contract test for each `Change`
 class). The planned check of this page stands.
