@@ -11,6 +11,7 @@ import { Description, FieldError, Label, Text, useDesignSystem } from "@stackra/
 import { TimePicker, type TimePickerProps } from "@stackra/ui-pro/native";
 import { useState } from "react";
 
+import { useInsetSheet } from "#src/components/ui/inset-sheet";
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
 
@@ -71,6 +72,7 @@ interface TimeEntryProps extends Omit<TimePickerProps, "children"> {
 
 /** One labelled picker: field name, trigger, the wheel in the chosen presentation, help and error text. */
 function TimeEntry({ label, presentation = "popover", hint, error, ...rest }: TimeEntryProps) {
+  const insetSheet = useInsetSheet();
   return (
     <TimePicker label={label} {...rest}>
       <Label>{label}</Label>
@@ -82,7 +84,7 @@ function TimeEntry({ label, presentation = "popover", hint, error, ...rest }: Ti
         <TimePicker.Portal>
           <TimePicker.Overlay />
           {presentation === "bottom-sheet" ? (
-            <TimePicker.Content presentation="bottom-sheet">
+            <TimePicker.Content presentation="bottom-sheet" {...insetSheet}>
               <TimePicker.Wheel />
             </TimePicker.Content>
           ) : presentation === "dialog" ? (

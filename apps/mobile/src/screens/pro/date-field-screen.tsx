@@ -13,6 +13,7 @@ import { DateField, type DateFieldProps } from "@stackra/ui-pro/native";
 import { useState } from "react";
 
 import { CalendarParts } from "#src/components/ui/calendar-parts";
+import { useInsetSheet } from "#src/components/ui/inset-sheet";
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
 
@@ -67,6 +68,7 @@ interface DateEntryProps extends Omit<DateFieldProps, "children"> {
 
 /** One labelled field: name, masked input, calendar button, the calendar in the chosen presentation, help and error. */
 function DateEntry({ label, presentation = "popover", hint, error, ...rest }: DateEntryProps) {
+  const insetSheet = useInsetSheet();
   const calendar = (
     <DateField.Calendar>
       <CalendarParts hasYearPicker />
@@ -85,7 +87,9 @@ function DateEntry({ label, presentation = "popover", hint, error, ...rest }: Da
             <DateField.Portal>
               <DateField.Overlay />
               {presentation === "bottom-sheet" ? (
-                <DateField.Content presentation="bottom-sheet">{calendar}</DateField.Content>
+                <DateField.Content presentation="bottom-sheet" {...insetSheet}>
+                  {calendar}
+                </DateField.Content>
               ) : (
                 <DateField.Content presentation="popover" width="full">
                   {calendar}

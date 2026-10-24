@@ -12,6 +12,7 @@ import { Description, FieldError, Label, Text, useDesignSystem } from "@stackra/
 import { DateTimePicker, type DateTimePickerProps } from "@stackra/ui-pro/native";
 import { useState } from "react";
 
+import { useInsetSheet } from "#src/components/ui/inset-sheet";
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
 
@@ -71,6 +72,7 @@ function DateTimeEntry({
   error,
   ...rest
 }: DateTimeEntryProps) {
+  const insetSheet = useInsetSheet();
   return (
     <DateTimePicker label={label} {...rest}>
       <Label>{label}</Label>
@@ -82,7 +84,7 @@ function DateTimeEntry({
         <DateTimePicker.Portal>
           <DateTimePicker.Overlay />
           {presentation === "bottom-sheet" ? (
-            <DateTimePicker.Content presentation="bottom-sheet">
+            <DateTimePicker.Content presentation="bottom-sheet" {...insetSheet}>
               <DateTimePicker.Wheel />
             </DateTimePicker.Content>
           ) : (

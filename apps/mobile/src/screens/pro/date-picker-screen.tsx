@@ -14,6 +14,7 @@ import { DatePicker, type DatePickerProps } from "@stackra/ui-pro/native";
 import { useState } from "react";
 
 import { CalendarParts } from "#src/components/ui/calendar-parts";
+import { useInsetSheet } from "#src/components/ui/inset-sheet";
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
 
@@ -78,6 +79,7 @@ function DateField({
   hasMinimumToday = false,
   ...rest
 }: DateFieldProps) {
+  const insetSheet = useInsetSheet();
   const calendar = (
     <DatePicker.Calendar {...(hasMinimumToday ? { minValue: today(getLocalTimeZone()) } : {})}>
       <CalendarParts hasYearPicker />
@@ -94,7 +96,9 @@ function DateField({
         <DatePicker.Portal>
           <DatePicker.Overlay />
           {presentation === "bottom-sheet" ? (
-            <DatePicker.Content presentation="bottom-sheet">{calendar}</DatePicker.Content>
+            <DatePicker.Content presentation="bottom-sheet" {...insetSheet}>
+              {calendar}
+            </DatePicker.Content>
           ) : (
             <DatePicker.Content presentation="popover" width="trigger">
               {calendar}

@@ -4,6 +4,8 @@
  *          with a country picker, validation read from the value details, a restricted country list with a default
  *          country, and the disabled state.
  * Boundary: presentation and local demo state only; the field is @stackra/ui-pro's, nothing here is styled by hand.
+ *          The country picker opens in a dialog: HeroUI Native Pro fixes that presentation for this field, so unlike
+ *          the other pickers it has no inset bottom sheet.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */

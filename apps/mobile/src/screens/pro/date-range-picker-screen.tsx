@@ -12,6 +12,7 @@ import { Description, FieldError, Label, Text, useDesignSystem } from "@stackra/
 import { DateRangePicker, type DateRangePickerProps } from "@stackra/ui-pro/native";
 import { useState } from "react";
 
+import { useInsetSheet } from "#src/components/ui/inset-sheet";
 import { RangeCalendarParts } from "#src/components/ui/range-calendar-parts";
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
@@ -84,6 +85,7 @@ function RangeEntry({
   hasMinimumToday = false,
   ...rest
 }: RangeEntryProps) {
+  const insetSheet = useInsetSheet();
   const calendar = (
     <DateRangePicker.Calendar {...(hasMinimumToday ? { minValue: today(getLocalTimeZone()) } : {})}>
       <RangeCalendarParts hasYearPicker />
@@ -100,7 +102,7 @@ function RangeEntry({
         <DateRangePicker.Portal>
           <DateRangePicker.Overlay />
           {presentation === "bottom-sheet" ? (
-            <DateRangePicker.Content presentation="bottom-sheet">
+            <DateRangePicker.Content presentation="bottom-sheet" {...insetSheet}>
               {calendar}
             </DateRangePicker.Content>
           ) : presentation === "dialog" ? (

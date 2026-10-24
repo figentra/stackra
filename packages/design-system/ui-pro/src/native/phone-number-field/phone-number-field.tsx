@@ -42,11 +42,11 @@ interface PhoneNumberFieldParts {
   readonly Portal: typeof HeroPhoneNumberField.Portal;
   /** The dimmed layer behind the picker. */
   readonly Overlay: typeof HeroPhoneNumberField.Overlay;
-  /** The popover or sheet that holds the country list. */
+  /** The dialog that holds the country list; HeroUI Native Pro always presents it as a dialog. */
   readonly Content: typeof HeroPhoneNumberField.Content;
   /** The surface behind the content. */
   readonly ContentBackground: typeof HeroPhoneNumberField.ContentBackground;
-  /** The drag handle of the sheet. */
+  /** The drag handle of the dialog, which can be swiped to dismiss. */
   readonly ContentHandle: typeof HeroPhoneNumberField.ContentHandle;
   /** The pressable flag and dial code that opens the picker. */
   readonly Trigger: typeof HeroPhoneNumberField.Trigger;

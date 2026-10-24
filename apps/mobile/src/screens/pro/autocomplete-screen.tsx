@@ -11,6 +11,7 @@ import { Description, FieldError, Label, Text } from "@stackra/ui/native";
 import { Autocomplete, type AutocompleteProps } from "@stackra/ui-pro/native";
 import { useState } from "react";
 
+import { useInsetSheet } from "#src/components/ui/inset-sheet";
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";
 
@@ -93,6 +94,7 @@ function StateContent({ search }: { search: string }) {
 
 /** The Autocomplete page: one section per mode and state, in a scrollable screen. */
 export function AutocompleteScreen() {
+  const insetSheet = useInsetSheet();
   const [single, setSingle] = useState<AutocompleteProps["value"]>(undefined);
   const [multiple, setMultiple] = useState<NonNullable<AutocompleteProps<"multiple">["value"]>>([]);
 
@@ -148,7 +150,7 @@ export function AutocompleteScreen() {
           </Autocomplete.Trigger>
           <Autocomplete.Portal>
             <Autocomplete.Overlay />
-            <Autocomplete.Content presentation="bottom-sheet">
+            <Autocomplete.Content presentation="bottom-sheet" {...insetSheet}>
               <Autocomplete.SearchField accessibilityLabel={STRINGS.single.search} />
               <Autocomplete.List>
                 <Autocomplete.ListLabel>{STRINGS.sheet.west}</Autocomplete.ListLabel>
