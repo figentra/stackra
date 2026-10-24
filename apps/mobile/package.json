@@ -25,6 +25,7 @@
     "android": "expo run:android",
     "build": "expo export --platform ios --platform android --output-dir dist",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "lint": "oxlint .",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
@@ -64,10 +65,12 @@
   },
   "devDependencies": {
     "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
     "@types/react": "catalog:mobile",
     "babel-preset-expo": "catalog:mobile",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
-    "typescript": "catalog:mobile"
+    "typescript": "catalog:mobile",
+    "vitest": "catalog:quality"
   }
 }
