@@ -1,7 +1,17 @@
 ---
 title: "0225 — Realtime drivers, co-editing and the Commentable trait"
-description: "Accepted, amended by 0270, 0294, 0315 · 2026-10-20 · amended 2026-10-23 (STA-349)"
+description: "Accepted, amended by 0270, 0294, 0315, 0346 · 2026-10-20 · amended 2026-10-23 (STA-349)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-470) by
+  [0346](/adr/0346-collaboration-rooms-a-two-way-payload-channel-derived-from-a-documents-collaboration-level):
+  the channels of decision 1 gain a kind that clients publish to, the room, derived from a document
+  kind's collaboration level and authorised by the document's own permission at its `ScopeRef` plus
+  the live-collaboration entitlement; it carries typed presence, awareness and Yjs update payloads,
+  which is the transport decision 2 lacked. Every driver of decision 1 carries rooms. The other
+  decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-406) by [0315](/adr/0315-realtime-live-queries-and-streams): decision 1

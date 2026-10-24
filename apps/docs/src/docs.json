@@ -440,7 +440,9 @@
               "adr/0342-gapless-sequences-allocated-at-commit-per-tenant-and-series",
               "adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events",
               "adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix",
-              "adr/0345-native-code-generation-and-the-native-shared-layer"
+              "adr/0345-native-code-generation-and-the-native-shared-layer",
+              "adr/0346-collaboration-rooms-a-two-way-payload-channel-derived-from-a-documents-collaboration-level",
+              "adr/0347-row-level-security-layering-one-permissive-tenant-policy-and-generated-restrictive-policies"
             ]
           }
         ]

@@ -1,7 +1,15 @@
 ---
 title: "0338 — The offline queue, completed: per-device order, sealed payloads, bounded replicas, revoke and wipe, and caps"
-description: "Accepted · 2026-10-24"
+description: "Accepted · 2026-10-24 · amended 2026-10-24 (STA-470)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-470), reads with
+  [0347](/adr/0347-row-level-security-layering-one-permissive-tenant-policy-and-generated-restrictive-policies):
+  a scoped device session of decision 3 is narrowed in the database too, by the restrictive policy
+  on the scope column (`app.legal_entity_id`), so the replica cannot receive a row of another legal
+  entity even if the query layer erred. The decisions stand.
+</Note>
 
 <Note>
   Accepts the mechanics of [0252](/adr/0252-offline-on-every-client-completing-the-mutation-queue)

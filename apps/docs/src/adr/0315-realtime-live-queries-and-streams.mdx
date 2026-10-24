@@ -1,7 +1,15 @@
 ---
 title: "0315 — Realtime: live queries, typed module streams and action feedback"
-description: "Accepted · 2026-10-24"
+description: "Accepted, amended by 0346 · 2026-10-24"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-470) by
+  [0346](/adr/0346-collaboration-rooms-a-two-way-payload-channel-derived-from-a-documents-collaboration-level):
+  the room is a second payload-carrying channel kind beside the stream of decision 2, two-way and
+  per document; decision 4 applies to it unchanged (IAM-authorised, tenant from the session, never
+  across tenants), and the site channel stays the one exception. The other decisions stand.
+</Note>
 
 <Note>
   Builds on [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait). The transport
