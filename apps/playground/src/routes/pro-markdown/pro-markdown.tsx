@@ -64,7 +64,10 @@ export function ProMarkdown() {
         <h2 id="streaming-heading" className="type-h2">
           {STRINGS.streaming}
         </h2>
-        <UiPro.StreamMarkdown isStreaming>{STREAMING}</UiPro.StreamMarkdown>
+        {/* The reply here is fixed, so its words are not faded in: the fade would play once at load and show nothing. */}
+        <UiPro.StreamMarkdown isStreaming animated={false}>
+          {STREAMING}
+        </UiPro.StreamMarkdown>
       </section>
     </article>
   );

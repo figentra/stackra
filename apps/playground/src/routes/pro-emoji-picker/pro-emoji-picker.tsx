@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the page of the EmojiPicker route: `@stackra/ui-pro`'s EmojiPicker as a button that shows the chosen emoji
- *          and opens a searchable grid of emoji, with the choice reported beside it and an empty state when the search
- *          matches none.
+ *          beside its own name and opens a searchable grid of emoji, with the choice reported beside it and an empty
+ *          state when the search matches none.
  * Boundary: presentation and local state only. The grid holds a short hand-written list of emoji with names and tags
  *          (HeroUI Pro's docs load a full emoji dataset, which the playground does not carry), and has no skin-tone
  *          picker, since the list has no skin variants.
@@ -86,8 +86,9 @@ export function ProEmojiPicker() {
             value={value}
             onChange={(key) => setValue(String(key))}
           >
-            <UiPro.EmojiPicker.Trigger className="text-xl">
-              <UiPro.EmojiPicker.Value />
+            {/* The button shows its name beside the emoji: an emoji alone is no text a reader can match the name to. */}
+            <UiPro.EmojiPicker.Trigger className="gap-2 text-xl">
+              <UiPro.EmojiPicker.Value /> <span className="text-sm">{STRINGS.label}</span>
             </UiPro.EmojiPicker.Trigger>
             <UiPro.EmojiPicker.Popover>
               <UiPro.EmojiPicker.Content>

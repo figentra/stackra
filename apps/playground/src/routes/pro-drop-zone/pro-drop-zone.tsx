@@ -25,7 +25,7 @@ const STRINGS = {
   hint: "PDF, PNG or CSV files.",
   trigger: "Select files",
   progress: (name: string) => `Upload progress of ${name}`,
-  retry: (name: string) => `Retry the upload of ${name}`,
+  retry: (name: string) => `Try again to upload ${name}`,
   remove: (name: string) => `Remove ${name}`,
   failed: "Upload failed",
   disabled: "Disabled",
@@ -170,7 +170,9 @@ export function ProDropZone() {
         <h2 id="disabled-heading" className="type-h2">
           {STRINGS.disabled}
         </h2>
-        <UiPro.DropZone>
+        {/* React Aria keeps `aria-disabled` off the area, so the zone carries it: its prompt and hint are the text of
+            an inactive control, which WCAG 1.4.3 does not hold to 4.5:1. */}
+        <UiPro.DropZone aria-disabled>
           <UiPro.DropZone.Area label={STRINGS.disabledArea} isDisabled>
             <UiPro.DropZone.Icon />
             <UiPro.DropZone.Label>{STRINGS.disabledPrompt}</UiPro.DropZone.Label>

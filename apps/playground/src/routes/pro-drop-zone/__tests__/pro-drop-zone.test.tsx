@@ -39,7 +39,7 @@ describe("ProDropZone", () => {
       expect(screen.getByText(name)).toBeTruthy();
       expect(screen.getByRole("button", { name: `Remove ${name}` })).toBeTruthy();
     }
-    expect(screen.getByRole("button", { name: "Retry the upload of export.csv" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Try again to upload export.csv" })).toBeTruthy();
     expect(
       screen.getByRole("progressbar", { name: "Upload progress of proposal.pdf" }),
     ).toBeTruthy();

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: proves the EmojiReactionButton page sits at /pro-emoji-reaction-button in the Pro category, titles the page
- *          and the document, draws five reactions named by their meaning with the reader's heart already given, and
- *          adds a reaction to the totals when it is pressed.
+ *          and the document, draws five reactions named by their meaning and count with the reader's heart already
+ *          given, and adds a reaction to the totals when it is pressed.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `matchMedia` and `ResizeObserver` are stubbed because jsdom has
  *          neither.
  * Runtime: browser
@@ -29,16 +29,22 @@ describe("ProEmojiReactionButton", () => {
     expect(document.title).toBe("EmojiReactionButton · Stackra Playground");
   });
 
-  it("draws five reactions named by their meaning, the heart already given", () => {
+  it("draws five reactions named by their meaning and count, the heart already given", () => {
     render(<ProEmojiReactionButton />);
-    for (const name of ["Heart", "Party", "Thumbs up", "Laughing", "Rocket"])
+    for (const name of [
+      "Heart, 12 reactions",
+      "Party, 1 reaction",
+      "Thumbs up, 5 reactions",
+      "Laughing, 3 reactions",
+      "Rocket, 1 reaction",
+    ])
       expect(screen.getByRole("button", { name })).toBeTruthy();
     expect(screen.getByRole("status").textContent).toBe("22 reactions in total, 1 of them yours");
   });
 
   it("adds a reaction to the totals when it is pressed", () => {
     render(<ProEmojiReactionButton />);
-    fireEvent.click(screen.getByRole("button", { name: "Thumbs up" }));
+    fireEvent.click(screen.getByRole("button", { name: "Thumbs up, 5 reactions" }));
     expect(screen.getByRole("status").textContent).toBe("23 reactions in total, 2 of them yours");
   });
 });

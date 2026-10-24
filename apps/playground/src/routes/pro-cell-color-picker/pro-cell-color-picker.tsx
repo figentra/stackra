@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: the page of the CellColorPicker route: `@stackra/ui-pro`'s CellColorPicker, a colour picker styled as a
  *          settings cell, in a controlled cell that reports the colour as hex, an uncontrolled one, and a disabled one.
- * Boundary: presentation and local state only. The trigger button is named by `label`; the root draws no element, so it
- *          takes none. The popover holds a named colour area and a named hue slider.
+ * Boundary: presentation and local state only. The trigger button is named by its content, the label and the colour
+ *          as text; the root draws no element, so it takes no name. The popover holds a named colour area and a named hue slider.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
@@ -55,10 +55,13 @@ function Controls() {
 }
 
 /** The trigger of a cell: the label, the colour as text and the swatch. */
+// The trigger takes no `label`: its name comes from what it shows (the label and the colour as text), and an
+// `aria-label` of the label alone would leave the visible colour out of the name.
 function Trigger({ label, isDisabled }: { readonly label: string; readonly isDisabled?: boolean }) {
   return (
-    <UiPro.CellColorPicker.Trigger label={label} {...(isDisabled ? { isDisabled } : {})}>
-      <UiPro.CellColorPicker.Label>{label}</UiPro.CellColorPicker.Label>
+    <UiPro.CellColorPicker.Trigger {...(isDisabled ? { isDisabled } : {})}>
+      <UiPro.CellColorPicker.Label>{label}</UiPro.CellColorPicker.Label>{" "}
+      {/* The space keeps the name "Accent #3B82F6", not "Accent#3B82F6"; the flex row draws the gap. */}
       <UiPro.CellColorPicker.ValueDisplay />
       <UiPro.CellColorPicker.Swatch />
     </UiPro.CellColorPicker.Trigger>

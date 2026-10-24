@@ -4,7 +4,8 @@
  *          tilts and catches a holographic glare as the pointer moves over it, with the card's text as real text, and a
  *          flat, unlit one beside it for comparison.
  * Boundary: presentation only. The tilt and glare are pointer effects, so the card's content is readable without them;
- *          the gradient is set here, dark enough for the white text at any glare.
+ *          the gradient is set here, and the white text sits on solid plates of its darkest stop, so its contrast
+ *          rests on no gradient or glare.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
@@ -26,18 +27,21 @@ const STRINGS = {
 
 const GRADIENT = "linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #4c1d95 100%)";
 
-/** The face of a membership card, shared by both cards. */
+/** The plate under the card's text: the gradient's darkest stop, solid, so the white text holds under any glare. */
+const PLATE = "rounded-lg bg-[#1e1b4b] text-white";
+
+/** The face of a membership card, shared by both cards: one content layer, its text on solid plates. */
 function Face() {
   return (
     <>
       <UiPro.HoloCard.Inset />
       <UiPro.HoloCard.Pattern />
-      <UiPro.HoloCard.Content className="flex-col items-center justify-center gap-1">
-        <span className="text-3xl font-bold text-white">{STRINGS.holder}</span>
-        <span className="text-sm font-medium text-white">{STRINGS.tier}</span>
-      </UiPro.HoloCard.Content>
-      <UiPro.HoloCard.Content className="items-end justify-center pb-8">
-        <span className="text-sm text-white">{STRINGS.number}</span>
+      <UiPro.HoloCard.Content className="flex-col items-center pb-8">
+        <span className={`${PLATE} my-auto grid justify-items-center gap-1 px-4 py-2`}>
+          <span className="text-3xl font-bold">{STRINGS.holder}</span>
+          <span className="text-sm font-medium">{STRINGS.tier}</span>
+        </span>
+        <span className={`${PLATE} px-3 py-1 text-sm`}>{STRINGS.number}</span>
       </UiPro.HoloCard.Content>
     </>
   );

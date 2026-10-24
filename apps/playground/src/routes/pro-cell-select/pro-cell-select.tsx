@@ -2,13 +2,14 @@
  * Stackra file contract:
  * Purpose: the page of the CellSelect route: `@stackra/ui-pro`'s CellSelect, a select styled as a settings cell, in a
  *          controlled cell that reports the item chosen, an uncontrolled one with a placeholder, and a disabled one.
- * Boundary: presentation and local state only. Each cell is named by `label`, the same text as its visible label.
+ * Boundary: presentation and local state only. Each cell is named by `label`, the same text as its visible label, and
+ *          its trigger by the visible label and value.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import { ListBox, type Key } from "@heroui/react";
 import * as UiPro from "@stackra/ui-pro/react";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { ProCellSelectRoute } from "#src/routes/pro-cell-select/pro-cell-select.route";
 
@@ -54,6 +55,23 @@ function Items({ items }: { readonly items: readonly { id: string; name: string 
   );
 }
 
+/**
+ * The trigger of a cell, named by what it shows in reading order, the label then the value. React Aria names a select
+ * trigger value first ("Default Theme"), the reverse of the visible "Theme Default", so the trigger is labelled by its
+ * own label and value.
+ */
+function Trigger({ label }: { readonly label: string }) {
+  const id = useId();
+  return (
+    <UiPro.CellSelect.Trigger aria-labelledby={`${id}-label ${id}-value`}>
+      <UiPro.CellSelect.Label id={`${id}-label`}>{label}</UiPro.CellSelect.Label>{" "}
+      {/* The space keeps the visible text "Theme Default", as the name reads; the flex row draws the gap. */}
+      <UiPro.CellSelect.Value id={`${id}-value`} />
+      <UiPro.CellSelect.Indicator />
+    </UiPro.CellSelect.Trigger>
+  );
+}
+
 /** The CellSelect page. */
 export function ProCellSelect() {
   const [theme, setTheme] = useState<Key | null>("default");
@@ -76,11 +94,7 @@ export function ProCellSelect() {
           value={theme}
           onChange={(value) => setTheme(value as Key | null)}
         >
-          <UiPro.CellSelect.Trigger>
-            <UiPro.CellSelect.Label>{STRINGS.theme}</UiPro.CellSelect.Label>
-            <UiPro.CellSelect.Value />
-            <UiPro.CellSelect.Indicator />
-          </UiPro.CellSelect.Trigger>
+          <Trigger label={STRINGS.theme} />
           <UiPro.CellSelect.Popover>
             <Items items={THEMES} />
           </UiPro.CellSelect.Popover>
@@ -96,11 +110,7 @@ export function ProCellSelect() {
           {STRINGS.uncontrolled}
         </h2>
         <UiPro.CellSelect label={STRINGS.language} placeholder={STRINGS.placeholder}>
-          <UiPro.CellSelect.Trigger>
-            <UiPro.CellSelect.Label>{STRINGS.language}</UiPro.CellSelect.Label>
-            <UiPro.CellSelect.Value />
-            <UiPro.CellSelect.Indicator />
-          </UiPro.CellSelect.Trigger>
+          <Trigger label={STRINGS.language} />
           <UiPro.CellSelect.Popover>
             <Items items={LANGUAGES} />
           </UiPro.CellSelect.Popover>
@@ -111,11 +121,7 @@ export function ProCellSelect() {
           {STRINGS.disabled}
         </h2>
         <UiPro.CellSelect label={STRINGS.region} defaultValue="en" isDisabled>
-          <UiPro.CellSelect.Trigger>
-            <UiPro.CellSelect.Label>{STRINGS.region}</UiPro.CellSelect.Label>
-            <UiPro.CellSelect.Value />
-            <UiPro.CellSelect.Indicator />
-          </UiPro.CellSelect.Trigger>
+          <Trigger label={STRINGS.region} />
           <UiPro.CellSelect.Popover>
             <Items items={LANGUAGES} />
           </UiPro.CellSelect.Popover>

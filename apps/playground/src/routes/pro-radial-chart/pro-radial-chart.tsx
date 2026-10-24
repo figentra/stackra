@@ -109,7 +109,8 @@ export function ProRadialChart() {
               <UiPro.RadialChart.Bar background angleAxisId={0} cornerRadius={12} dataKey="value" />
               <UiPro.RadialChart.Tooltip content={<UiPro.RadialChart.TooltipContent />} />
             </UiPro.RadialChart>
-            <div className="pointer-events-none absolute inset-[30%] flex flex-col items-center justify-center rounded-full bg-background">
+            {/* The disc is roomy enough that its three lines never reach past its edge, whatever the font. */}
+            <div className="pointer-events-none absolute inset-[25%] flex flex-col items-center justify-center rounded-full bg-background whitespace-nowrap">
               <span className="text-xs text-muted">{STRINGS.users}</span>
               <span className="text-xl font-bold">
                 <bdi>{CURRENT.toLocaleString("en-US")}</bdi>

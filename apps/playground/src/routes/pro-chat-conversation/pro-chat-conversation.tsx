@@ -87,7 +87,7 @@ export function ProChatConversation() {
           </Ui.Button>
         </div>
         <div className="flex h-80 flex-col overflow-hidden rounded-2xl border border-border">
-          <UiPro.ChatConversation className="flex-1" aria-label={STRINGS.viewport}>
+          <UiPro.ChatConversation className="flex-1" label={STRINGS.viewport}>
             <UiPro.ChatConversation.Content className="flex-col gap-6 p-4">
               {messages.map((message) =>
                 message.role === "user" ? (

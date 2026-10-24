@@ -13,6 +13,10 @@ import "#src/__tests__/stub-browser-apis";
 
 import { discoverPages, PLAYGROUND_PAGES, tierOf } from "#src/components/playground-pages";
 
+/** The real catalogue's link to `path`. */
+const linkAt = (path: string) =>
+  PLAYGROUND_PAGES.find(({ route: link }) => link.path === path)?.route;
+
 /** A route module with the statics a route class carries. */
 const route = (path: string, title: string, category?: string) => ({
   Route: class {
@@ -116,8 +120,7 @@ describe("PLAYGROUND_PAGES", () => {
   });
 
   it("carries ownsMain for the page that draws its own main, and leaves it out elsewhere", () => {
-    const find = (path: string) => PLAYGROUND_PAGES.find(({ route }) => route.path === path)?.route;
-    expect(find("/pro-app-layout")?.ownsMain).toBe(true);
-    expect(find("/button")).not.toHaveProperty("ownsMain");
+    expect(linkAt("/pro-app-layout")?.ownsMain).toBe(true);
+    expect(linkAt("/button")).not.toHaveProperty("ownsMain");
   });
 });

@@ -3,8 +3,8 @@
  * Purpose: the page of the EmojiReactionButton route: `@stackra/ui-pro`'s EmojiReactionButton as a row of five
  *          reactions, each a toggle named by its meaning that adds or removes the reader's own reaction and its count,
  *          with the totals reported, and a disabled one.
- * Boundary: presentation and local state only. Each button is named by its meaning ("Thumbs up"), not by the emoji,
- *          since the emoji is decoration to a screen reader.
+ * Boundary: presentation and local state only. Each button is named by its meaning and the count it shows ("Thumbs
+ *          up, 5 reactions"), not by the emoji, since the emoji is decoration to a screen reader and the count is not.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
@@ -21,7 +21,9 @@ const STRINGS = {
   reactions: "Reactions",
   total: (count: number, mine: number) => `${count} reactions in total, ${mine} of them yours`,
   disabled: "Disabled",
-  disabledLabel: "Rocket, reactions are closed",
+  named: (label: string, count: number) =>
+    `${label}, ${count === 1 ? "1 reaction" : `${count} reactions`}`,
+  closed: (named: string) => `${named}, reactions are closed`,
 } as const;
 
 const REACTIONS = [
@@ -66,7 +68,7 @@ export function ProEmojiReactionButton() {
             return (
               <UiPro.EmojiReactionButton
                 key={reaction.id}
-                label={reaction.label}
+                label={STRINGS.named(reaction.label, count)}
                 isSelected={isSelected}
                 onChange={(next) => toggle(reaction.id, next)}
               >
@@ -85,7 +87,7 @@ export function ProEmojiReactionButton() {
           {STRINGS.disabled}
         </h2>
         <div>
-          <UiPro.EmojiReactionButton label={STRINGS.disabledLabel} isDisabled>
+          <UiPro.EmojiReactionButton label={STRINGS.closed(STRINGS.named("Rocket", 1))} isDisabled>
             <UiPro.EmojiReactionButton.Emoji>🚀</UiPro.EmojiReactionButton.Emoji>
             <UiPro.EmojiReactionButton.Count>1</UiPro.EmojiReactionButton.Count>
           </UiPro.EmojiReactionButton>
