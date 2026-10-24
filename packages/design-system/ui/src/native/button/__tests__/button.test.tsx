@@ -3,9 +3,11 @@
  * Purpose: proves the native Button hands HeroUI Native the variant, size and disabled flag unchanged, wraps a string
  *          label, orders its icons, stretches with `w-full`, blocks the press and reports `busy` while loading with a
  *          spinner in the label colour, sizes and colours its icons through a Lucide provider, maps `label` to the
- *          accessibility label, and passes the press feedback props through.
+ *          accessibility label, passes the press feedback props through, and hands HeroUI Native the glass look of
+ *          its variant (the layer and the class that clears the fill) unless the caller brings its own background.
  * Boundary: React Native does not render in vitest, so heroui-native and lucide-react-native are replaced by recording
- *          stand-ins that render plain DOM; what reaches HeroUI Native is checked, not its rendering.
+ *          stand-ins that render plain DOM, and the glass hook by a stand-in whose look each test sets; what reaches
+ *          HeroUI Native is checked, not its rendering.
  * Runtime: node
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0022 (test placement).
  */
@@ -49,6 +51,21 @@ vi.mock("lucide-react-native", async () => {
 
 const propsOf = (name: string) => received.props[name] ?? {};
 
+/** The glass look the hook stand-in returns, and the variants it was asked for. */
+const glass = vi.hoisted(() => ({
+  look: undefined as { background: unknown; className: string } | undefined,
+  asked: [] as string[],
+}));
+
+vi.mock("#native/glass/use-glass-button", () => ({
+  useGlassButton: (variant: string) => {
+    glass.asked.push(variant);
+    return glass.look;
+  },
+}));
+
+const GLASS = { background: "glass-layer", className: "bg-transparent" } as const;
+
 /** The order of the stand-in elements inside the button's provider. */
 const order = (container: HTMLElement) =>
   [...(container.querySelector('[data-testid="provider"]')?.children ?? [])].map(
@@ -78,6 +95,8 @@ const slotNames = (container: HTMLElement) =>
 describe("Button (native)", () => {
   beforeEach(() => {
     received.props = {};
+    glass.look = undefined;
+    glass.asked = [];
   });
 
   it("draws an icon name through Icon on either side and an element as given", () => {
@@ -141,6 +160,37 @@ describe("Button (native)", () => {
     rerender(<Button className="mine">Save</Button>);
     expect(propsOf("button")["className"]).toBe("mine");
     rerender(<Button>Save</Button>);
+    expect(propsOf("button")).not.toHaveProperty("className");
+  });
+
+  it("asks the glass look of its variant and hands HeroUI Native its layer and class", () => {
+    glass.look = GLASS;
+    render(
+      <Button variant="secondary" isFullWidth className="mine">
+        Save
+      </Button>,
+    );
+    expect(glass.asked.at(-1)).toBe("secondary");
+    expect(propsOf("button")).toMatchObject({
+      background: "glass-layer",
+      className: "w-full bg-transparent mine",
+    });
+  });
+
+  it("lets the caller's own background, or none, win over the glass layer", () => {
+    glass.look = GLASS;
+    render(
+      <Button variant="tertiary" background={null}>
+        Save
+      </Button>,
+    );
+    expect(propsOf("button")["background"]).toBeNull();
+  });
+
+  it("hands no background and no class while the variant stays solid", () => {
+    render(<Button variant="primary">Save</Button>);
+    expect(glass.asked.at(-1)).toBe("primary");
+    expect(propsOf("button")).not.toHaveProperty("background");
     expect(propsOf("button")).not.toHaveProperty("className");
   });
 

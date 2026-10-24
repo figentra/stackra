@@ -4,12 +4,14 @@
  *          state and a spinner in the label colour; `isFullWidth` to `w-full`; `label` to `accessibilityLabel`; a
  *          string label into `Button.Label`) and passes every other HeroUI Native prop through unchanged, the press
  *          feedback (`feedbackVariant`, `animation`, `background`) included.
- * Boundary: no styling of its own beyond `w-full`. HeroUI Native neither sizes nor colours a button's icons, so the
- *          content sits in a `LucideProvider` that gives every Lucide icon the label's size and colour. An icon-only
- *          button is built through `IconButton`, so `isIconOnly` is not a prop here.
+ * Boundary: no styling of its own beyond `w-full` and the glass of the quiet variants (`useGlassButton`: secondary,
+ *          tertiary and outline on Liquid Glass or a blur, solid under reduced transparency or more contrast). HeroUI
+ *          Native neither sizes nor colours a button's icons, so the content sits in a `LucideProvider` that gives
+ *          every Lucide icon the label's size and colour. An icon-only button is built through `IconButton`, so
+ *          `isIconOnly` is not a prop here.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0165 (HeroUI Native on native); owner
- *          decision 6 of STA-350.
+ *          decision 6 of STA-350; ADR 0319 (the glass quiet variants).
  */
 import {
   Button as HeroButton,
@@ -25,8 +27,9 @@ import type { ButtonVariant } from "#contracts/enums/button-variant.enum";
 import type { ButtonContractProps } from "#contracts/types/button-contract-props.type";
 import type { DistributiveOmit } from "#contracts/types/distributive-omit.type";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
-import { SlotIcon } from "#native/slot-icon/slot-icon";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { useGlassButton } from "#native/glass/use-glass-button";
+import { SlotIcon } from "#native/slot-icon/slot-icon";
 
 /**
  * Props of the native Button: the shared contract plus HeroUI Native's own button props, passed through unchanged.
@@ -74,6 +77,7 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const labelColor = useThemeColor(LABEL_COLOR[variant]);
+  const glass = useGlassButton(variant);
   const isBlocked = isDisabled || isLoading;
   // `disabled` is not on HeroUI Native's props (it owns the pressable's flag through `isDisabled`), but its pressable
   // reads it after its own, so a spread is how a loading button stops pressing without the dimming `isDisabled`
@@ -88,12 +92,17 @@ export function Button({
 
   return (
     <HeroButton
+      // Before the rest, so a caller's own `background` (or `null`) wins.
+      {...(glass ? { background: glass.background } : {})}
       {...rest}
       variant={variant}
       size={size}
       isDisabled={isDisabled}
       {...blocksPress}
-      {...omitUndefined({ onPress, className: isFullWidth ? cn("w-full", className) : className })}
+      {...omitUndefined({
+        onPress,
+        className: cn(isFullWidth && "w-full", glass?.className, className) || undefined,
+      })}
       {...(label ? { accessibilityLabel: label } : {})}
       // Replaces HeroUI's own state whole, so the disabled flag is written again beside `busy`.
       accessibilityState={{ ...accessibilityState, disabled: isBlocked, busy: isLoading }}
