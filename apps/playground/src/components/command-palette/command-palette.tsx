@@ -296,8 +296,8 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
               type="text"
               role="combobox"
               aria-label={STRINGS.label}
-              aria-expanded="true"
-              aria-controls={listId}
+              aria-expanded={flat.length > 0}
+              {...(flat.length > 0 ? { "aria-controls": listId } : {})}
               aria-autocomplete="list"
               aria-activedescendant={current ? optionId(current) : undefined}
               placeholder={STRINGS.placeholder}
@@ -315,69 +315,75 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
             <Key name="esc" />
           </div>
           <div className="grid min-h-0 md:grid-cols-[minmax(0,1fr)_16rem]">
-            <div
-              id={listId}
-              role="listbox"
-              aria-label={STRINGS.results}
-              className="min-h-0 overflow-y-auto overscroll-contain p-2"
-            >
-              {flat.length === 0 ? (
-                <div className="grid justify-items-center gap-1 px-4 py-12 text-center">
-                  <p className="font-medium">
-                    <bdi>{STRINGS.empty(query)}</bdi>
-                  </p>
-                  <p className="text-sm text-muted">
-                    <bdi>{STRINGS.emptyHint}</bdi>
-                  </p>
-                </div>
-              ) : null}
-              {shown.map((group) => {
-                const headingId = `${listId}-${group.title.toLowerCase().replaceAll(/\W+/g, "-")}`;
-                return (
-                  <div
-                    key={group.title}
-                    role="group"
-                    aria-labelledby={headingId}
-                    className="grid pb-2"
-                  >
-                    <p
-                      id={headingId}
-                      className="px-3 pt-2 pb-1 text-xs font-semibold tracking-wide text-muted"
+            {/* With nothing to list there is no listbox: an empty one would hold no option (ARIA 1.2). */}
+            {flat.length === 0 ? (
+              <div className="grid content-center justify-items-center gap-1 px-4 py-12 text-center">
+                <p className="font-medium">
+                  <bdi>{STRINGS.empty(query)}</bdi>
+                </p>
+                <p className="text-sm text-muted">
+                  <bdi>{STRINGS.emptyHint}</bdi>
+                </p>
+              </div>
+            ) : (
+              <div
+                id={listId}
+                role="listbox"
+                aria-label={STRINGS.results}
+                className="min-h-0 overflow-y-auto overscroll-contain p-2"
+              >
+                {shown.map((group) => {
+                  const headingId = `${listId}-${group.title.toLowerCase().replaceAll(/\W+/g, "-")}`;
+                  return (
+                    <div
+                      key={group.title}
+                      role="group"
+                      aria-labelledby={headingId}
+                      className="grid pb-2"
                     >
-                      {group.title}
-                    </p>
-                    {group.items.map((item) => {
-                      const isActive = item === current;
-                      return (
-                        <div
-                          key={item.id}
-                          id={optionId(item)}
-                          role="option"
-                          aria-selected={isActive}
-                          onMouseMove={() => setActive(flat.indexOf(item))}
-                          onClick={() => run(item)}
-                          className={`flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-2 ${isActive ? "bg-default" : ""}`}
-                        >
-                          <Tile item={item} />
-                          <span className="grid min-w-0 flex-1">
-                            <span className="truncate font-medium">
-                              <Marked label={item.label} words={words} />
+                      <p
+                        id={headingId}
+                        className="px-3 pt-2 pb-1 text-xs font-semibold tracking-wide text-muted"
+                      >
+                        {group.title}
+                      </p>
+                      {group.items.map((item) => {
+                        const isActive = item === current;
+                        return (
+                          <div
+                            key={item.id}
+                            id={optionId(item)}
+                            role="option"
+                            aria-selected={isActive}
+                            // Only a pointer that moves picks a row: content scrolling under a still pointer does not.
+                            onPointerMove={(event) => {
+                              if (event.movementX !== 0 || event.movementY !== 0)
+                                setActive(flat.indexOf(item));
+                            }}
+                            onClick={() => run(item)}
+                            className={`flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-2 ${isActive ? "bg-default" : ""}`}
+                          >
+                            <Tile item={item} />
+                            <span className="grid min-w-0 flex-1">
+                              <span className="truncate font-medium">
+                                <Marked label={item.label} words={words} />
+                              </span>
+                              <span className="truncate text-xs text-muted">{item.detail}</span>
                             </span>
-                            <span className="truncate text-xs text-muted">{item.detail}</span>
-                          </span>
-                          {item.page?.tier === "Pro" ? (
-                            <Ui.Chip size="sm" variant="soft" tone="accent">
-                              {STRINGS.pro}
-                            </Ui.Chip>
-                          ) : null}
-                          {isActive ? <Key name="corner-down-left" /> : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
+                            {item.page?.tier === "Pro" ? (
+                              <Ui.Chip size="sm" variant="soft" tone="accent">
+                                {STRINGS.pro}
+                              </Ui.Chip>
+                            ) : null}
+                            {isActive ? <Key name="corner-down-left" /> : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             {/* The preview repeats what the active row says, bigger; screen readers have it from the row. */}
             <div
               aria-hidden="true"
