@@ -1,0 +1,23 @@
+// Stackra file contract:
+// Purpose: the `mobile` role (ADR 0294): the Expo / React Native app (apps/mobile). The expo preset plus legacy
+//          decorators (field, method and class facet decorators exist in every member, ADR 0294 rule R6) and the
+//          member files gen reads and writes: stackra.config.ts, `*.extend.ts` hatches and the generated
+//          `.stackra/` (runtime entry, Expo and Metro config, Uniwind types; ADR 0295). `customConditions` repeats
+//          `@stackra/source` because expo's `react-native` list replaces base's (ADR 0025).
+// Owner: release-operations · Secrets: forbidden
+{
+  "display": "@stackra/typescript-config — mobile",
+  "extends": "./expo.json",
+  "compilerOptions": {
+    "customConditions": ["react-native", "@stackra/source"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": false,
+    "erasableSyntaxOnly": false
+  },
+  "include": [
+    "${configDir}/src",
+    "${configDir}/stackra.config.ts",
+    "${configDir}/*.extend.ts",
+    "${configDir}/.stackra"
+  ]
+}

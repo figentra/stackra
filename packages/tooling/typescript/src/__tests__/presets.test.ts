@@ -40,6 +40,26 @@ describe("@stackra/typescript-config presets", () => {
     });
   }
 
+  it("exports the v3 role names the template extends", () => {
+    for (const role of [
+      "app",
+      "mobile",
+      "library",
+      "service",
+      "tooling",
+      "desktop",
+      "service-worker",
+    ]) {
+      expect(pkg.exports, role).toHaveProperty([`./${role}`]);
+    }
+  });
+
+  it("library compiles the react and native entries (DOM lib, automatic JSX)", () => {
+    const library = readJsonc(join(root, "src", "library.json")).compilerOptions ?? {};
+    expect(library["jsx"]).toBe("react-jsx");
+    expect(library["lib"]).toEqual(expect.arrayContaining(["DOM", "DOM.Iterable"]));
+  });
+
   it("base keeps the non-negotiable strictness flags", () => {
     const base = readJsonc(join(root, "src", "base.json")).compilerOptions ?? {};
     for (const flag of [
