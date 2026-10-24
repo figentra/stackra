@@ -7,8 +7,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-010.
  */
+import { Button, Separator, Text } from "@stackra/ui/native";
 import { SwipeableRow } from "@stackra/ui-pro/native";
-import { Button, Separator, Typography } from "heroui-native";
 import type { SwipeableRowRootRef } from "heroui-native-pro/swipeable-row";
 import { Fragment, useRef, useState } from "react";
 import { View } from "react-native";
@@ -66,10 +66,10 @@ const STRINGS = {
 function MessageRow({ sender, preview }: { sender: string; preview: string }) {
   return (
     <View className="gap-1 p-4">
-      <Typography.Paragraph weight="semibold">{sender}</Typography.Paragraph>
-      <Typography.Paragraph type="body-sm" color="muted">
+      <Text weight="semibold">{sender}</Text>
+      <Text type="small" tone="muted">
         {preview}
-      </Typography.Paragraph>
+      </Text>
     </View>
   );
 }
@@ -107,9 +107,9 @@ export function SwipeableRowScreen() {
             <MessageRow sender={STRINGS.standalone.sender} preview={STRINGS.standalone.preview} />
           </SwipeableRow.Content>
         </SwipeableRow>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.standalone.last} ${lastAction}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.inline.title} description={STRINGS.inline.description}>

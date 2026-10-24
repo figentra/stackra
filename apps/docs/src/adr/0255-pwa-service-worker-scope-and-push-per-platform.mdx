@@ -6,10 +6,11 @@ description: "Accepted, amended by 0325 · 2026-10-20 · amended 2026-10-24 (STA
 <Note>
   Amended 2026-10-24 (STA-428), by
   [0325](/adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy). The service
-  worker's update and navigation policy is added: `skipWaiting` and `clientsClaim` are on,
-  navigations are network-first, the worker checks its host, a kill-switch `sw.js` can retire an
-  installed worker, and an end-to-end test deploys twice (0325 rules 15 to 19). Decision 4, the
-  offline shell, stands.
+  worker's update and navigation policy is added: a new worker installs and waits, calls
+  `skipWaiting` only when the user accepts "Reload" (at once for a `critical` release), then
+  `clientsClaim` takes the open pages; navigations are network-first, the worker checks its host, a
+  kill-switch `sw.js` can retire an installed worker, and an end-to-end test deploys twice (0325
+  rules 15 to 19 and 25 to 26). Decision 4, the offline shell, stands.
 </Note>
 
 <Note>

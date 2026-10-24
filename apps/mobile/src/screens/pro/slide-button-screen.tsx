@@ -6,8 +6,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-009.
  */
+import { Text } from "@stackra/ui/native";
 import { SlideButton } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";
@@ -65,9 +65,9 @@ export function SlideButtonScreen() {
           </SlideButton.OverlayContent>
           <SlideButton.Thumb />
         </SlideButton>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {isSent ? STRINGS.transfer.doneStatus : STRINGS.transfer.idleStatus}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.tones.title} description={STRINGS.tones.description}>

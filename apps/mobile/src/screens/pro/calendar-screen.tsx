@@ -8,9 +8,8 @@
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-011.
  */
 import { getLocalTimeZone, today, type DateValue } from "@internationalized/date";
-import { useDesignSystem } from "@stackra/ui/native";
+import { Text, useDesignSystem } from "@stackra/ui/native";
 import { Calendar } from "@stackra/ui-pro/native";
-import { Typography } from "heroui-native";
 import { useState } from "react";
 
 import { CalendarParts } from "#src/components/ui/calendar-parts";
@@ -58,9 +57,9 @@ export function CalendarScreen() {
         <Calendar label={STRINGS.selected.name} locale={locale} value={date} onChange={setDate}>
           <CalendarParts />
         </Calendar>
-        <Typography.Paragraph type="body-sm" color="muted" accessibilityLiveRegion="polite">
+        <Text type="small" tone="muted" accessibilityLiveRegion="polite">
           {`${STRINGS.selected.value} ${date.toString()}`}
-        </Typography.Paragraph>
+        </Text>
       </Section>
 
       <Section title={STRINGS.range.title} description={STRINGS.range.description}>

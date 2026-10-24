@@ -64,10 +64,10 @@ describe("List page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /list under Data", () => {
+  it("titles the page and the document, and sits at /list under Data display", () => {
     renderPage();
     expect(ListRoute.path).toBe("/list");
-    expect(ListRoute.category).toBe("Data");
+    expect(ListRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "List" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("List · Stackra Playground");

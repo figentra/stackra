@@ -44,7 +44,7 @@ describe("Spinner page", () => {
   it("titles the page and the document, and sits at /spinner under Status", () => {
     renderPage();
     expect(SpinnerRoute.path).toBe("/spinner");
-    expect(SpinnerRoute.category).toBe("Status");
+    expect(SpinnerRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Spinner" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Spinner · Stackra Playground");

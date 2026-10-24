@@ -22,7 +22,7 @@ describe("HomeRoute", () => {
           element: (
             <Home
               pages={[
-                { path: "/b", title: "Page B", category: "Typography" },
+                { path: "/pro-b", title: "Page B", category: "Charts" },
                 { path: "/a", title: "Page A", category: "Foundations" },
               ]}
             />
@@ -34,10 +34,10 @@ describe("HomeRoute", () => {
     render(<RouterProvider router={router} />);
     expect(
       screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent),
-    ).toEqual(["Foundations", "Typography"]);
-    expect(
-      within(screen.getByRole("list", { name: "Typography" })).getByRole("link").textContent,
-    ).toBe("Page B");
+    ).toEqual(["Foundations", "Charts"]);
+    expect(within(screen.getByRole("list", { name: "Charts" })).getByRole("link").textContent).toBe(
+      "Page B, Pro",
+    );
   });
 
   it("renders its page at / with a link to every page", () => {
@@ -48,7 +48,7 @@ describe("HomeRoute", () => {
           element: (
             <Home
               pages={[
-                { path: "/b", title: "Page B", category: "Typography" },
+                { path: "/pro-b", title: "Page B", category: "Charts" },
                 { path: "/a", title: "Page A", category: "Foundations" },
               ]}
             />

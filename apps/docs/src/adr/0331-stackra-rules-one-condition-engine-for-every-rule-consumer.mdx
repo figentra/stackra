@@ -1,0 +1,85 @@
+---
+title: "0331 — @stackra/rules: one condition engine for every rule consumer"
+description: "Accepted · 2026-10-24"
+---
+
+## Context
+
+Several features need the same thing: a test over facts about a customer, a cart, a record or an order history, which
+yields a yes or a no and a reason for the answer. Segments, discounts and promotions, pricing rules, related-product
+rules, automations and visibility rules all need one. Without a shared engine, each consumer would write its own
+evaluator, with its own operators and its own reading of a missing value, and one rule could give different answers in
+two places. A rule that a tenant writes is data that references registered code, which [0227](/adr/0227-rejected-and-deferred-technologies-refreshed)
+allows, and it never carries logic of its own ([0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step)).
+The owner decided the shape in the final structure review of 2026-10-24.
+
+## Decision
+
+1. **One engine.** `@stackra/rules` is a free framework package in the `application` category
+   ([0127](/adr/0127-package-categories-including-infrastructure)). It evaluates conditions for every rule consumer. A
+   consumer never builds an evaluator of its own.
+
+2. **Condition tree.** A condition is a tree of `all`, `any` and `not` nodes. Its leaves test one field with one operator
+   against a value.
+
+3. **Typed operators.** Each field type has an operator set that the engine fixes: string, number, money
+   ([0220](/adr/0220-stackra-money-and-the-ledger-package)), date, enum, list and geo. A consumer chooses fields, and it
+   does not choose operators.
+
+4. **Fact sources.** Each consumer registers a fact source, which is a typed description of the fields its rules may
+   test. Examples are customer attributes, cart totals, order history aggregates and record fields. The engine knows no
+   commerce. A field that no fact source registers cannot be tested.
+
+5. **Versioned rule sets.** A rule set is a model that carries revisions (`HasRevisions`, [0321](/adr/0321-the-trait-inventory-owning-packages-and-schedulable)).
+   An evaluation runs against one stated revision, and its explanation names that revision.
+
+6. **Deterministic evaluation.** The same facts and the same revision give the same result. The current time is a fact
+   that the caller supplies, and the engine does not read a clock.
+
+7. **Explanation.** Every result says which condition matched or failed, by its path in the tree.
+
+8. **Rule builder.** The package ships a rule-builder panel component in its `react` entry. The panel offers only the
+   registered fields and the operators of their types.
+
+9. **Consumers own the outcome.** The engine returns a result and nothing more. What a match does belongs to the consumer:
+   - segments ([0332](/adr/0332-stackra-segments-audiences-defined-by-rules)) record membership;
+   - discounts and promotions apply a discount;
+   - pricing rules choose a price, and pricing owns markets ([0244](/adr/0244-markets-owned-by-pricing));
+   - related-product rules rank through search ([0221](/adr/0221-search-postgres-hybrid-elasticsuite-parity-arabic-and-operations));
+   - automations trigger a workflow.
+
+10. **Tenant data, never code.** A rule is tenant data that references only registered fields and operators. That is the
+    data-that-references-registered-code case of [0227](/adr/0227-rejected-and-deferred-technologies-refreshed). It is not
+    an expression language. Arbitrary logic runs only in the sandboxed code step of [0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step).
+
+11. **IAM conditions.** IAM conditions ([0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names))
+    may reuse the operator set. The IAM policy decision point keeps its own evaluation path, for performance and security.
+
+12. **Entries.** The package has the `contracts`, `core`, `node` and `react` entries. It adds `config` and `testing` where
+    it needs them, as [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 15 allows.
+
+## Consequences
+
+- A consumer gets evaluation, explanation and versioning without writing them, and two consumers that test the same field
+  get the same answer.
+- A tenant cannot test a field that no fact source registers. Adding a field to a rule is a change that the owner of the
+  consumer makes in code.
+- Adding an operator is a change to the engine, and no consumer changes with it.
+- A rule that a tenant writes is versioned, explained and unable to run code.
+
+## Enforcement
+
+- planned — gen check: a rule set that names an unregistered field, or an operator outside the operator set of its field
+  type, fails.
+- planned — tests in `@stackra/rules`: determinism for a fixed revision and fixed facts, and an explanation that names the
+  matched or failed path.
+- planned — an oxlint boundary rule: no evaluator of condition trees outside `@stackra/rules`, and no dynamic code
+  evaluation in the package.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0127](/adr/0127-package-categories-including-infrastructure), [0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step),
+[0220](/adr/0220-stackra-money-and-the-ledger-package), [0227](/adr/0227-rejected-and-deferred-technologies-refreshed),
+[0244](/adr/0244-markets-owned-by-pricing) and [0321](/adr/0321-the-trait-inventory-owning-packages-and-schedulable).
+Keeps the evaluation path of the IAM decision point in [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names).
+Sources: the owner's final structure review of 2026-10-24, restated in this ADR's own words.

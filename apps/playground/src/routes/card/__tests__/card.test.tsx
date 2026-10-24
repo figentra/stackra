@@ -38,7 +38,7 @@ describe("Card page", () => {
   it("titles the page and the document, and sits at /card under Surfaces", () => {
     renderPage();
     expect(CardRoute.path).toBe("/card");
-    expect(CardRoute.category).toBe("Surfaces");
+    expect(CardRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Card" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Card · Stackra Playground");

@@ -1,7 +1,18 @@
 ---
 title: "0269 — @stackra/testing: entries, what it holds, and where domain helpers live"
-description: "Accepted · 2026-10-21 · amended 2026-10-23 (STA-349)"
+description: "Accepted · 2026-10-21 · amended 2026-10-23 (STA-349) · amended 2026-10-24 (STA-348)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-348), owner decision: decision 4 is replaced. The vitest preset configures
+  nothing for mock hoisting, and vitest 5 hoists `vi.mock` only when `vi` is imported from `vitest`
+  itself, so the preset cannot make a `vi` from `@stackra/testing` hoist. The rule is now: every
+  test imports `vi` from `vitest`, for `vi.mock`, `vi.hoisted`, `vi.fn`, spies and timers alike;
+  `@stackra/testing` no longer re-exports `vi`, so a wrong import fails typecheck. The gate test
+  `packages/developer/testing/src/__tests__/mock-hoisting.test.ts` asserts that a `vi.mock` with
+  `vi` from `vitest` is hoisted above the file's imports, and it stays the gate of decision 4. The
+  other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-349), with the amendment of the same date on

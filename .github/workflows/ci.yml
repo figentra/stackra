@@ -37,7 +37,8 @@ jobs:
     env:
       # Non-secret id of the Infisical machine identity that may read HEROUI_AUTH_TOKEN and UNIWIND_AUTH_TOKEN in /ci
       # (ADR 0310 decisions 9 and 11). It trusts the pull_request, main-push and merge-queue (gh-readonly-queue/main/*)
-      # OIDC subjects, one per event this job runs on.
+      # OIDC subjects, one per event this job runs on, in the immutable form the repository uses:
+      # repo:figentra@314302700/stackra@1425140001:<pull_request | ref:refs/heads/...>.
       INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
 
     steps:

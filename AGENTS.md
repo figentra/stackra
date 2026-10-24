@@ -712,7 +712,7 @@ stackra/
 │   ├── foundation/         # Contracts, validation, errors
 │   ├── infrastructure/     # Pulumi-based infra-* packages
 │   ├── runtime/            # Outbox, queue, scheduler, workflow, realtime, locking, cache
-│   ├── security/           # Identity, IAM, tenancy, entitlements, licensing
+│   ├── security/           # Identity, IAM, scope, tenancy, entitlements, licensing
 │   └── state/              # Settings, feature flags, theming
 ├── services/               # tier:service
 │   ├── example/            # Reference service (plain TypeScript)

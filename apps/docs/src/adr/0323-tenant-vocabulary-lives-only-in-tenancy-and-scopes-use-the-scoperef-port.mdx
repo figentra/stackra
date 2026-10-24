@@ -1,6 +1,6 @@
 ---
 title: "0323 — Tenant vocabulary lives only in tenancy; other packages use the ScopeRef port"
-description: "Accepted · 2026-10-24"
+description: "Accepted, amended by 0327 · 2026-10-24"
 ---
 
 <Note>
@@ -8,6 +8,14 @@ description: "Accepted · 2026-10-24"
   of the settings scope levels in decision 2 move to tenancy, and the other packages name a scope
   through the `ScopeRef` port. The order of the cascade is unchanged. The note on 0213 records the
   change.
+</Note>
+
+<Note>
+  Amended 2026-10-24 by [0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer): 0327
+  names the package that owns `ScopeRef`, which is `@stackra/scope`, in its `contracts` entry. There,
+  `ScopeRef` is a type, the public id `PublicId<"scp">` with the node's path, and not a port. The port
+  that resolves a request to a scope is the resolver of 0327. Decision 2 of this ADR says "a port in
+  `@stackra/contracts`", and it is read in that way. The other decisions stand.
 </Note>
 
 ## Context

@@ -9,18 +9,19 @@ Stackra Design System Pro components for Stackra's own apps only: the @stackra/u
 Private and never published (ADR 0310): only Stackra's own apps import it. `@stackra/ui` and every free package never do;
 `pnpm validate` refuses it.
 
-| Import                      | Holds                                                                                      |
-| --------------------------- | ------------------------------------------------------------------------------------------ |
-| `@stackra/ui-pro`           | `src/config/ui-pro.config.ts`: `UiProConfig`                                               |
-| `@stackra/ui-pro/contracts` | the props contracts (`<Name>ContractProps`) on `@stackra/ui/contracts`' `Size` and `Tone`  |
-| `@stackra/ui-pro/react`     | DataGrid, ActionPalette (HeroUI Pro `Command`), Sidebar, AppLayout, Kanban, Kpi, TrendChip |
-| `@stackra/ui-pro/native`    | ProgressButton, SlideButton, SwipeableRow, Calendar, DatePicker, NumberField               |
-| `@stackra/ui-pro/node`      | `src/node/ui-pro.module.ts`: the root module                                               |
-| `@stackra/ui-pro/assets/*`  | static files at the package root (ADR 0234)                                                |
+| Import                      | Holds                                                                                                                                                                                     |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/ui-pro`           | `src/config/ui-pro.config.ts`: `UiProConfig`                                                                                                                                              |
+| `@stackra/ui-pro/contracts` | the props contracts (`<Name>ContractProps`) on `@stackra/ui/contracts`' `Size` and `Tone`                                                                                                 |
+| `@stackra/ui-pro/react`     | every HeroUI Pro web component (66): charts, AI, forms, navigation, overlays, layout, data display and feedback; Pro `Command` is ActionPalette, `FloatingToc` is FloatingTableOfContents |
+| `@stackra/ui-pro/native`    | every HeroUI Native Pro component (55): charts, buttons, data display, date and time, forms and navigation; Pro `Fab` is FloatingActionButton                                             |
+| `@stackra/ui-pro/node`      | `src/node/ui-pro.module.ts`: the root module                                                                                                                                              |
+| `@stackra/ui-pro/assets/*`  | static files at the package root (ADR 0234)                                                                                                                                               |
 
 Each component is a thin wrapper: the `@stackra/ui` vocabulary (`size`, `tone`, `isDisabled`, `label`, `onPress`) maps
 onto HeroUI Pro's names, every other prop passes through, and the compound parts are HeroUI Pro's own. The web
-components are on the playground's "Pro" routes.
+components are on the playground's "Pro" routes, the native ones in `apps/mobile`'s design-system review area. A
+component with nothing in the vocabulary to map (most charts, Markdown, Timeline, Table) keeps HeroUI Pro's API as it is.
 
 ## Using it in an app
 

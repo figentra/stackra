@@ -42,13 +42,14 @@ extending the kind's base class. The group table is the docs page `standards/str
   `src/react/<name>/` over `@heroui-pro/react` or `src/native/<name>/` over `heroui-native-pro`, each with
   `__tests__/`. The `@stackra/ui` props vocabulary (ADR 0303 decision 7) maps onto HeroUI Pro's names; every other prop
   passes through. Compound parts are HeroUI Pro's own, typed in a parts interface.
-- Names follow the grammar: Pro `Command` is `ActionPalette` (ADR 0294 decision 23).
+- Names follow the grammar: Pro `Command` is `ActionPalette` (ADR 0294 decision 23); `FloatingToc` and `Fab` are
+  `FloatingTableOfContents` and `FloatingActionButton`, because identifiers take no abbreviations.
 - Verify every HeroUI Pro and HeroUI Native Pro API against the installed `.d.ts` or the Pro MCP before using it; never
   guess a compound structure. Prefer the subpath imports (`@heroui-pro/react/<name>`, `heroui-native-pro/<name>`).
 - Installing needs the HeroUI Pro build: locally a `heroui-pro login` session, in CI `HEROUI_AUTH_TOKEN` from Infisical
   `/ci`. Without it the package is an empty shell and nothing here typechecks.
 - Web tests render the real HeroUI Pro in jsdom (`@vitest-environment jsdom`); native tests replace `heroui-native-pro`
-  with recording stand-ins and check what reaches it. Each web component has a playground route under the "Pro" group.
+  with recording stand-ins and check what reaches it. Each web component has a playground route under the "Pro" group, and each native one a screen in `apps/mobile`'s design-system review area.
 
 ## Rules that fail the build
 

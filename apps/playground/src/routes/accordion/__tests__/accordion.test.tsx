@@ -47,10 +47,10 @@ describe("Accordion page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /accordion under Data", () => {
+  it("titles the page and the document, and sits at /accordion under Data display", () => {
     renderPage();
     expect(AccordionRoute.path).toBe("/accordion");
-    expect(AccordionRoute.category).toBe("Data");
+    expect(AccordionRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Accordion" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Accordion · Stackra Playground");

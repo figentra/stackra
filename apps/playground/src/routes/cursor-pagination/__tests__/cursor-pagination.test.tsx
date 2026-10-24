@@ -52,10 +52,10 @@ describe("Cursor pagination page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("titles the page and the document, and sits at /cursor-pagination under Data", () => {
+  it("titles the page and the document, and sits at /cursor-pagination under Navigation", () => {
     renderPage();
     expect(CursorPaginationRoute.path).toBe("/cursor-pagination");
-    expect(CursorPaginationRoute.category).toBe("Data");
+    expect(CursorPaginationRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: "Cursor pagination" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Cursor pagination · Stackra Playground");

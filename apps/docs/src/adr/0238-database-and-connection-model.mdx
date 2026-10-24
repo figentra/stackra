@@ -1,7 +1,16 @@
 ---
 title: "0238 — Database and connection model: one server per environment, one logical database per service"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0334 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-428) by
+  [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rule 6): the
+  finest split unit is the module, not the table. A module's tables live in the module's own
+  Postgres schema (0294), so runway topology may move a module to its own logical database with no
+  code change, and MikroORM then holds one connection per module. Decision 2, one logical database
+  per service, is the default and stands.
+</Note>
 
 <Note>
   Amends [0014](/adr/0014-data-ownership-and-orm) and [0097](/adr/0097-model-and-database-packages).

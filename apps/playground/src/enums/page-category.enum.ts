@@ -1,12 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: the categories the playground groups its pages in, in navigation order: Foundations, Actions, Typography,
- *          Navigation, Surfaces, Status, Inputs, Selection, Forms, Overlays, Feedback, Data and Shell, then Pro (the
- *          `@stackra/ui-pro` pages, ADR 0310). The shell's page navigation and the index page list pages under these
- *          headings; a category with no page yet is left out of both.
+ * Purpose: the categories the playground groups its pages in, in navigation order. Free `@stackra/ui` pages and Pro
+ *          `@stackra/ui-pro` pages share them (the tier is a badge, see `page-tier`). The shell's page navigation and
+ *          the index page list pages under these headings; a category with no page yet is left out of both.
  * Boundary: the values only; each route class names its category, and a page with no category cannot be listed.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 5); ADR 0294 (decision 14).
+ * Governing contract: ADR 0302 (decision 5); ADR 0294 (decision 14); ADR 0310 (decision 6); STA-416.
  */
 
 /** The page categories, in the order the navigation shows them. */
@@ -15,18 +14,16 @@
 export const PageCategory = Object.freeze([
   "Foundations",
   "Actions",
-  "Typography",
-  "Navigation",
-  "Surfaces",
-  "Status",
-  "Inputs",
+  "Inputs and forms",
   "Selection",
-  "Forms",
+  "Date and time",
+  "Charts",
+  "Data display",
+  "Feedback and status",
+  "Navigation",
   "Overlays",
-  "Feedback",
-  "Data",
-  "Shell",
-  "Pro",
+  "Layout",
+  "AI",
 ] as const);
 
 /** One page category. */

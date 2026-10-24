@@ -93,6 +93,27 @@ catalogs:
     # Required peers of @heroui-pro/react (Sheet, Sidebar, Kanban, AppLayout); 12.x is the major its peer range names.
     motion: 12.43.0
     react-resizable-panels: 4.14.5
+    # Optional peers of @heroui-pro/react for the rest of its components (owner, 2026-10-23, STA-416): tiptap for
+    # RichTextEditor, maplibre-gl for Map, the markdown set and shiki for Markdown, CodeBlock and the AI chat parts,
+    # number-flow for NumberValue, embla for Carousel. Newest release at least 7 days old inside Pro's peer range.
+    "@tiptap/core": 3.32.0
+    "@tiptap/extension-link": 3.32.0
+    "@tiptap/extension-underline": 3.32.0
+    "@tiptap/extensions": 3.32.0
+    "@tiptap/pm": 3.32.0
+    "@tiptap/react": 3.32.0
+    "@tiptap/starter-kit": 3.32.0
+    "@tiptap/suggestion": 3.32.0
+    maplibre-gl: 6.14.0
+    marked: 18.1.1
+    react-markdown: 10.1.0
+    remark-breaks: 4.0.0
+    remark-gfm: 4.0.1
+    streamdown: 2.7.0
+    shiki: 4.5.0
+    "@number-flow/react": 0.6.2
+    embla-carousel: 8.6.0
+    embla-carousel-react: 8.6.0
     # Icons for @stackra/ui/react's Icon (ADR 0303 decision 3, owner-approved 2026-10-23); ISC licence.
     lucide-react: 1.54.0
     # Form state for @stackra/ui FormField (ADR 0055, accepted by ADR 0303); newest release at least 14 days old.
@@ -134,6 +155,14 @@ catalogs:
     heroui-native-pro: 1.0.0-beta.11
     "@internationalized/date": 3.12.4
     "@internationalized/number": 3.6.9
+    # Optional peers of heroui-native-pro for the rest of its components (owner, 2026-10-23, STA-416): Skia and
+    # victory-native for the charts, libphonenumber-js for PhoneNumberField, pager-view for SwipeableTabs and
+    # Carousel, reanimated-dnd for drag and drop. Skia and pager-view at Expo SDK 57's bundled versions.
+    "@shopify/react-native-skia": 2.6.2
+    victory-native: 41.26.0
+    libphonenumber-js: 1.13.15
+    react-native-pager-view: 8.0.2
+    react-native-reanimated-dnd: 2.0.0
     # Required native peer of Uniwind Pro 1.9.0 (>= 0.37.1), for the apps that run it (catalog:uniwind-pro).
     react-native-nitro-modules: 0.37.1
     # Icons for @stackra/ui/native's Icon (ADR 0303 decision 3, owner-approved 2026-10-23); ISC licence.
@@ -313,6 +342,9 @@ allowBuilds:
   # Uniwind Pro, installed under the `uniwind` alias: both names, as Uniwind's docs say for pnpm.
   uniwind: true
   uniwind-pro: true
+  # Skia (STA-416, native charts): the postinstall copies the prebuilt Apple and Android libraries from its own
+  # platform packages into libs/, with no download; the native build needs them.
+  "@shopify/react-native-skia": true
 
 minimumReleaseAgeExclude:
   - "@turbo/darwin-64@2.11.7"

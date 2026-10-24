@@ -30,8 +30,9 @@ language (English, left to right; Arabic, right to left). Both live in the URL, 
 
 Add a page as a route folder `src/routes/<name>/` with `<name>.route.ts` (path `/<name>` and title), the page
 `<name>.tsx` and `__tests__/`, then one line in `PAGES` in `src/main.tsx`. Its h1 is its title. The route class also
-names its `category` (`Foundations`, `Actions`, `Typography` or `Navigation`, in `src/enums/page-category.enum.ts`),
-which groups it in the shell's navigation and on the index. The end-to-end suite finds the folder by itself.
+names its `category` (`Foundations`, `Actions`, `Inputs and forms`, `Charts` and the rest, in
+`src/enums/page-category.enum.ts`), which groups it in the shell's navigation and on the index. The tier is derived:
+a path that starts with `/pro-` is Pro (badged, listed after the Free pages, filterable with All / Free / Pro). The end-to-end suite finds the folder by itself.
 
 Every finished component belongs here, to be checked, tried and tested: each variant, size, tone and state with a
 short caption, and at least one live sample (a pressable button that updates a counter or toggles state). Pages
