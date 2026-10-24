@@ -13,16 +13,8 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0312; ADR 0165 (UI contract, HeroUI v3 on web); owner decision 6 of
  *          STA-350 (thin wrappers); WCAG 2.2 SC 2.1.1, 4.1.2.
  */
-import {
-  Description,
-  Dropdown,
-  Header,
-  Kbd,
-  Separator,
-  type DropdownRootProps,
-} from "@heroui/react";
+import { Dropdown, Header, Kbd, Separator, type DropdownRootProps } from "@heroui/react";
 import { Fragment, useState } from "react";
-import { Text } from "react-aria-components";
 
 import type { MenuContractProps } from "#contracts/types/menu-contract-props.type";
 import type { MenuItem } from "#contracts/types/menu-item.type";
@@ -54,8 +46,14 @@ function MenuItemContent({
       {isSelectable ? <Dropdown.ItemIndicator /> : null}
       <SlotIcon icon={item.icon} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Text slot="label">{item.label}</Text>
-        {detail ? <Description>{detail}</Description> : null}
+        {/* Plain spans, not React Aria's `label` and `description` slots: those name the item by its label alone
+            and describe it by the rest, and the rest is visible text that a name must hold (WCAG 2.5.3). */}
+        <span data-slot="label">{item.label}</span>
+        {detail ? (
+          <span data-slot="description" className="description">
+            {detail}
+          </span>
+        ) : null}
       </div>
       {item.shortcut ? (
         <Kbd>

@@ -36,8 +36,9 @@ describe("ListItem (web)", () => {
       </ul>,
     );
     expect(screen.queryByRole("button")).toBeNull();
-    expect(screen.getByText("Alpha").getAttribute("slot")).toBe("label");
-    expect(screen.getByText("First").getAttribute("slot")).toBe("description");
+    // Plain spans: a React Aria slot would name an option by its title alone and leave the description out of the name.
+    expect(screen.getByText("Alpha").hasAttribute("slot")).toBe(false);
+    expect(screen.getByText("First").hasAttribute("slot")).toBe(false);
   });
 
   it("draws a pressable row as HeroUI's ghost button that fills the row", () => {

@@ -3,7 +3,7 @@
  * Purpose: proves the tabs page titles the document, shows the named and unnamed tab lists, both variants, both
  *          orientations, a disabled tab and a disabled list, the empty state and the named loading spinner, and a live
  *          list whose selection the page holds, reports and moves from outside.
- * Boundary: jsdom inside the DesignSystemProvider with a stubbed matchMedia; the theme CSS is not loaded.
+ * Boundary: jsdom inside the DesignSystemProvider with stubbed matchMedia and ResizeObserver and no Web Animations; the theme CSS is not loaded.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0313; ADR 0022 (test placement).
  */
@@ -30,8 +30,23 @@ const press = (element: HTMLElement) => act(() => element.click());
 const selectedIn = (list: HTMLElement) =>
   [...list.querySelectorAll('[role="tab"][aria-selected="true"]')].map((tab) => tab.textContent);
 
+/** Watches nothing: jsdom has no layout, and the tab list's scroll shadow only needs the observer to exist. */
+class ResizeObserverStandIn {
+  observe() {}
+
+  unobserve() {}
+
+  disconnect() {}
+}
+
 describe("Tabs page", () => {
   beforeEach(() => {
+    vi.stubGlobal("ResizeObserver", ResizeObserverStandIn);
+    // jsdom has no Web Animations; the selected-tab indicator asks the element for its running ones.
+    Object.defineProperty(Element.prototype, "getAnimations", {
+      value: () => [],
+      configurable: true,
+    });
     vi.stubGlobal("matchMedia", () => ({
       matches: false,
       addEventListener: () => undefined,
@@ -41,6 +56,7 @@ describe("Tabs page", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    Reflect.deleteProperty(Element.prototype, "getAnimations");
   });
 
   it("titles the page and the document, and sits at /tabs under Navigation", () => {

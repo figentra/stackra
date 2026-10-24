@@ -220,10 +220,12 @@ for (const locale of LOCALES)
     expect(middle.y).toBeGreaterThan(viewport.height / 2);
     expect(Math.abs(middle.x - viewport.width / 2)).toBeLessThan(2);
 
+    // From the keyboard: HeroUI's hidden input is overlapped by its drawn control, so a pointer click on it is refused.
     await page
       .getByRole("region", { name: "Position and control" })
       .getByRole("switch", { name: "Show toasts at the top" })
-      .click();
+      .focus();
+    await page.keyboard.press("Space");
     await expect(regionOf(page)).toHaveClass(/toast-region--top/);
     middle = await middleOf();
     expect(middle.y).toBeLessThan(viewport.height / 2);

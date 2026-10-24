@@ -45,13 +45,14 @@ const ui = (props: Partial<AlertDialogProps> = {}): ReactElement => (
 const dialog = () => screen.getByRole("alertdialog");
 
 /** A press on the backdrop, outside the dialog. */
-const pressOutside = () => {
-  const backdrop = document.querySelector('[data-slot="alert-dialog-backdrop"]');
-  if (!backdrop) throw new Error("no backdrop");
-  // Both families: React Aria listens to pointer events where the platform has them, mouse events otherwise.
-  for (const type of ["pointerDown", "mouseDown", "pointerUp", "mouseUp"] as const)
-    fireEvent[type](backdrop);
-};
+const pressOutside = () =>
+  act(() => {
+    const backdrop = document.querySelector('[data-slot="alert-dialog-backdrop"]');
+    if (!backdrop) throw new Error("no backdrop");
+    // Both families, then the click: React Aria listens to pointer events where the platform has them, mouse events otherwise.
+    for (const type of ["pointerDown", "pointerUp", "mouseDown", "mouseUp", "click"] as const)
+      fireEvent[type](backdrop);
+  });
 const button = (name: string) => screen.getByRole("button", { name });
 
 describe("AlertDialog (web)", () => {
@@ -101,9 +102,10 @@ describe("AlertDialog (web)", () => {
     expect(dialog().querySelector('[data-slot="alert-dialog-icon"]')).toBeNull();
   });
 
-  it("starts focus on the cancel button", () => {
+  it("starts focus on the cancel button", async () => {
     render(ui({ tone: "danger" }));
-    expect(document.activeElement).toBe(button("Keep"));
+    // React Aria moves focus into the dialog after it mounts, not within the render itself.
+    await vi.waitFor(() => expect(document.activeElement).toBe(button("Keep")));
   });
 
   it("colours the confirm button danger for the danger tone and primary otherwise", () => {

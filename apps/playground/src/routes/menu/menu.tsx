@@ -114,7 +114,7 @@ const ORDER_SECTIONS: readonly MenuSection[] = [
         isDisabled: true,
         disabledReason: "Paid orders cannot be archived",
       },
-      { id: "delete", label: "Delete", icon: "trash", tone: "danger", shortcut: "⌘⌫" },
+      { id: "delete", label: "Delete", icon: "trash", tone: "danger", shortcut: "⌘Del" },
     ],
   },
 ];

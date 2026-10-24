@@ -336,7 +336,7 @@ describe("List (web)", () => {
     render(<List label="x" items={ITEMS} onEndReached={() => undefined} />);
     // @ts-expect-error a list needs its accessible name
     render(<List items={ITEMS} />);
-    // @ts-expect-error `aria-busy` follows `isLoading`
-    render(<List label="x" items={ITEMS} aria-busy />);
+    // A hyphenated JSX attribute is never checked by the compiler, so the type itself is asked.
+    expectTypeOf<ListProps>().not.toHaveProperty("aria-busy");
   });
 });

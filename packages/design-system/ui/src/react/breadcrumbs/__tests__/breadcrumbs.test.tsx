@@ -56,7 +56,8 @@ describe("Breadcrumbs (web)", () => {
 
   it("draws a single step as the current page and no separator", () => {
     render(<Breadcrumbs items={[{ id: "home", label: "Home", href: "/" }]} />);
-    expect(screen.queryByRole("link")).toBeNull();
+    // React Aria draws the current page as a disabled text item, so what must be absent is an anchor.
+    expect(document.querySelector("a")).toBeNull();
     expect(document.querySelectorAll("[data-slot='breadcrumbs-separator']")).toHaveLength(0);
     expect(screen.getByText("Home").closest("[aria-current='page']")).toBeTruthy();
   });

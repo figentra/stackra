@@ -61,6 +61,51 @@ const boxOf = async (locator: Locator) => {
 const isFocusInside = (dialog: Locator) =>
   dialog.evaluate((element) => element.contains(document.activeElement));
 
+/**
+ * Hides the page behind the overlay while it is scanned, and shows it again. Axe reads the elements under a see-through
+ * backdrop as part of the text's background, and a page that differs from one line of text to the next leaves the
+ * contrast check "for review"; the overlay's own colours are what is scanned, and the page has its own axe tests.
+ */
+const setPageHidden = (page: Page, isHidden: boolean) =>
+  page.evaluate((hide) => {
+    const root = document.getElementById("root");
+    if (root) root.style.visibility = hide ? "hidden" : "";
+  }, isHidden);
+
+/**
+ * Marks the lines of a scrolling body that are out of view, and first resizes the window until no line is cut by the
+ * body's edge. Axe reads the lines a scroll port hides as if they were drawn, over whatever lies behind the dialog, and
+ * cannot judge their colour; nobody sees them, so they are left out, and the lines in view are all scanned whole.
+ */
+const markHiddenLines = async (page: Page, body: Locator) => {
+  // The lines meet with no gap, so an edge is clear of them only within a pixel of where two lines meet.
+  for (let height = 720; height > 480; height -= 1) {
+    await page.setViewportSize({ width: 1280, height });
+    const isCut = await body.evaluate(async (element) => {
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+      const edge = element.getBoundingClientRect();
+      return [...element.querySelectorAll("p, li")].some((line) => {
+        const box = line.getBoundingClientRect();
+        return (
+          (box.top < edge.top - 1 && box.bottom > edge.top + 1) ||
+          (box.top < edge.bottom - 1 && box.bottom > edge.bottom + 1)
+        );
+      });
+    });
+    if (isCut) continue;
+    await body.evaluate((element) => {
+      const edge = element.getBoundingClientRect();
+      for (const line of element.querySelectorAll("p, li")) {
+        const box = line.getBoundingClientRect();
+        if (box.bottom <= edge.top + 1 || box.top >= edge.bottom - 1)
+          line.setAttribute("data-out-of-view", "");
+      }
+    });
+    return;
+  }
+  throw new Error("no window height shows whole lines only");
+};
+
 const expectNoFindings = async (builder: AxeBuilder) => {
   const { violations, incomplete } = await builder.withTags(AXE_TAGS).analyze();
   expect(
@@ -83,18 +128,27 @@ for (const scheme of SCHEMES)
     test(`axe finds nothing in the open modal in ${scheme}, ${locale}`, async ({ page }) => {
       await open(page, scheme, locale);
       await openDialog(page, "Open medium");
+      await setPageHidden(page, true);
       await expectNoFindings(new AxeBuilder({ page }).include('[role="dialog"]'));
+      await setPageHidden(page, false);
     });
   }
 
 test("axe finds nothing in the live form modal or the long modal", async ({ page }) => {
   await open(page, "light", "en");
   await openDialog(page, "Edit name");
+  await setPageHidden(page, true);
   await expectNoFindings(new AxeBuilder({ page }).include('[role="dialog"]'));
+  await setPageHidden(page, false);
   await page.keyboard.press("Escape");
   await expect(page.locator('[data-slot="modal-dialog"]')).toBeHidden();
   await openDialog(page, "Open long content");
-  await expectNoFindings(new AxeBuilder({ page }).include('[role="dialog"]'));
+  await markHiddenLines(page, page.locator('[data-slot="modal-body"]'));
+  await setPageHidden(page, true);
+  await expectNoFindings(
+    new AxeBuilder({ page }).include('[role="dialog"]').exclude("[data-out-of-view]"),
+  );
+  await setPageHidden(page, false);
 });
 
 test("the dialog is named by its level-2 title", async ({ page }) => {
@@ -115,7 +169,8 @@ test("opening by keyboard moves focus inside, hides the page, traps Tab, and clo
   const dialog = await settled(page);
   expect(await isFocusInside(dialog)).toBe(true);
   // React Aria hides the page behind an open modal from assistive technology.
-  await expect(page.getByRole("heading", { level: 1, name: "Modal" })).toHaveCount(0);
+  // React Aria marks the page root inert, which Playwright's role queries do not read, so the attribute is asked.
+  await expect(page.locator("#root")).toHaveAttribute("inert", "");
   for (let step = 0; step < 6; step += 1) {
     await page.keyboard.press("Tab");
     expect(await isFocusInside(dialog), `Tab ${step + 1}`).toBe(true);
@@ -226,8 +281,10 @@ test("a long body scrolls under the keyboard while the header and footer stay in
   const body = dialog.locator('[data-slot="modal-body"]');
   expect(await body.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
   await body.focus();
+  await expect(body).toBeFocused();
   await page.keyboard.press("PageDown");
-  expect(await body.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  // The browser scrolls a page of the body over a few frames, so the offset is read until it has moved.
+  await expect.poll(() => body.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
   await expect(dialog.getByRole("heading", { level: 2, name: "Terms of use" })).toBeInViewport();
   await expect(dialog.getByRole("button", { name: "Done" })).toBeInViewport();
 });

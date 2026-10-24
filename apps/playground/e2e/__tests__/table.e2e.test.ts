@@ -149,8 +149,14 @@ test("one row is selected by a press or Space, and the selection replaces the la
 
   await grid.getByRole("row", { name: /#1003/ }).click();
   await expect(selected).toHaveText("Selected: ord-1003");
+  // A press lands focus on the cell it hit; the arrow keys move it a row down and the selection follows it.
   await page.keyboard.press("ArrowDown");
-  await expect(grid.getByRole("row", { name: /#1004/ })).toBeFocused();
+  await expect(grid.locator("td:focus")).toHaveAttribute("data-key", "ord-1004:status");
+  await expect(selected).toHaveText("Selected: ord-1004");
+  await expect(grid.locator('[aria-selected="true"]')).toHaveCount(1);
+  // Space on the selected row clears it, as a single selection may be empty, and selects it again.
+  await page.keyboard.press("Space");
+  await expect(selected).toHaveText("Selected: none");
   await page.keyboard.press("Space");
   await expect(selected).toHaveText("Selected: ord-1004");
   await expect(grid.locator('[aria-selected="true"]')).toHaveCount(1);
@@ -180,17 +186,22 @@ test("an empty table says why, and a load is announced once through one status",
 }) => {
   await open(page, "light", "en");
   const states = page.getByRole("region", { name: "States" });
+  // With no rows the grid gives way to a group of the same name, which holds the message.
+  await expect(states.getByRole("grid", { name: "Orders, empty" })).toHaveCount(0);
   await expect(
-    states.getByRole("grid", { name: "Orders, empty" }).getByText("No orders match this filter."),
+    states.getByRole("group", { name: "Orders, empty" }).getByText("No orders match this filter."),
   ).toBeVisible();
 
-  const loading = states.getByRole("grid", { name: "Orders, loading" });
+  const loading = states.getByRole("group", { name: "Orders, loading" });
   await expect(loading.getByText("Loading orders")).toBeVisible();
   await expect(loading.getByText("No orders match this filter.")).toHaveCount(0);
 
-  const reloading = states.getByRole("grid", { name: "Orders, reloading" });
+  // With rows the grid stays, and the loading line sits after it in the same table.
+  const reloading = states
+    .locator('[data-slot="table"]')
+    .filter({ has: page.getByRole("grid", { name: "Orders, reloading" }) });
   await expect(reloading.getByRole("rowheader", { name: "#1001" })).toBeVisible();
-  await expect(reloading.getByText("Loading orders")).toBeVisible();
+  await expect(reloading.getByText("Loading orders").first()).toBeVisible();
 
   const messages = states.locator('div[role="status"]');
   await expect(messages).toHaveText(["", "Loading orders", "Loading orders"]);

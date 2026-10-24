@@ -28,12 +28,13 @@ function renderPage() {
 
 const section = (name: string) => within(screen.getByRole("region", { name }));
 /** A press on the backdrop, outside the dialog; both event families, as React Aria listens to whichever exists. */
-const pressOutside = () => {
-  const backdrop = document.querySelector('[data-slot="alert-dialog-backdrop"]');
-  if (!backdrop) throw new Error("no backdrop");
-  for (const type of ["pointerDown", "mouseDown", "pointerUp", "mouseUp"] as const)
-    fireEvent[type](backdrop);
-};
+const pressOutside = () =>
+  act(() => {
+    const backdrop = document.querySelector('[data-slot="alert-dialog-backdrop"]');
+    if (!backdrop) throw new Error("no backdrop");
+    for (const type of ["pointerDown", "pointerUp", "mouseDown", "mouseUp", "click"] as const)
+      fireEvent[type](backdrop);
+  });
 const open = (name: string) => act(() => screen.getByRole("button", { name }).click());
 
 describe("AlertDialog page", () => {

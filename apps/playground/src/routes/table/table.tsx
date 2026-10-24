@@ -297,7 +297,7 @@ export function Table() {
           selectedKeys={liveSelected}
           onSelectionChange={setLiveSelected}
           isStickyHeader
-          maxHeight="14rem"
+          maxHeight="10rem"
           isLoading={isLoadingMore}
           loadingLabel={STRINGS.loadingText}
           hasMore={count < ORDERS.length}

@@ -5,8 +5,8 @@
  *          row header, marks the sorted header with `aria-sort` and reports a press on a sortable header as the sort it
  *          asks for without reordering the rows, adds a checkbox column for several selected rows and selects on a row
  *          press for one, reports every selection as a list of ids in the items' order (select-all included) whether
- *          controlled or not, shows `emptyState` only when nothing loads and a spinner row with one status message while
- *          rows load, adds the load-more sentinel only when more pages exist, pins a sticky header, passes the root's
+ *          controlled or not, shows `emptyState` only when nothing loads and a spinner with one status message while
+ *          rows load, both in a named group in place of a grid with no rows, adds the load-more sentinel only when more pages exist, pins a sticky header, passes the root's
  *          other props through, and refuses HeroUI's selected key, a `Set` of keys and children.
  * Boundary: jsdom with real HeroUI and React Aria; the theme CSS is not loaded, so classes are checked, not looks.
  *           jsdom has no IntersectionObserver, which the load-more sentinel needs, so a stand-in is installed.
@@ -205,6 +205,9 @@ describe("Table (web)", () => {
       <Table {...baseProps} items={[]} emptyState={<p>No orders yet</p>} />,
     );
     expect(screen.getByText("No orders yet")).toBeTruthy();
+    expect(
+      within(screen.getByRole("group", { name: "Orders" })).getByText("No orders yet"),
+    ).toBeTruthy();
     rerender(<Table {...baseProps} items={[]} emptyState={<p>No orders yet</p>} isLoading />);
     expect(screen.queryByText("No orders yet")).toBeNull();
     rerender(<Table {...baseProps} emptyState={<p>No orders yet</p>} />);
@@ -216,15 +219,20 @@ describe("Table (web)", () => {
     expect(within(screen.getByRole("grid")).getAllByRole("row")).toHaveLength(1);
   });
 
-  it("shows a spinner row and says what loads once, through one status message", () => {
+  it("stands a spinner in for the grid and says what loads once, through one status message", () => {
     render(<Table {...baseProps} items={[]} isLoading loadingLabel="Loading orders" />);
     const status = screen.getByRole("status");
     expect(status.textContent).toBe("Loading orders");
     expect(screen.getAllByText("Loading orders")).toHaveLength(2);
     expect(document.querySelector('[data-slot="spinner"]')).toBeTruthy();
-    expect(screen.getByRole("grid").closest('[data-slot="table"]')?.getAttribute("aria-busy")).toBe(
-      "true",
-    );
+    // A grid with no rows has headers with no data cell to describe, so a named group takes its place.
+    expect(screen.queryByRole("grid")).toBeNull();
+    expect(
+      screen
+        .getByRole("group", { name: "Orders" })
+        .closest('[data-slot="table"]')
+        ?.getAttribute("aria-busy"),
+    ).toBe("true");
   });
 
   it("is silent and not busy when nothing loads", () => {
@@ -235,10 +243,12 @@ describe("Table (web)", () => {
     );
   });
 
-  it("keeps the rows and adds a loading row after them while a reload runs", () => {
+  it("keeps the rows and shows a loading line after them while a reload runs", () => {
     render(<Table {...baseProps} isLoading />);
     expect(screen.getByRole("rowheader", { name: "Ada" })).toBeTruthy();
-    expect(screen.getByText("Loading")).toBeTruthy();
+    // The loading line's words, and the one live status that says them aloud.
+    expect(screen.getAllByText("Loading")).toHaveLength(2);
+    expect(screen.getByRole("status").textContent).toBe("Loading");
   });
 
   it("adds the load-more sentinel only while more pages exist and a handler is given", () => {

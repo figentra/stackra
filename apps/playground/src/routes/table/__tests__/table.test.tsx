@@ -128,19 +128,23 @@ describe("Table page", () => {
   it("shows the empty state, a first load and a reload, announcing a load once", () => {
     renderPage();
     const states = section("States");
+    // With no rows the grid gives way to a group of the same name, which holds the message.
+    expect(states.queryByRole("grid", { name: "Orders, empty" })).toBeNull();
     expect(
-      within(states.getByRole("grid", { name: "Orders, empty" })).getByText(
+      within(states.getByRole("group", { name: "Orders, empty" })).getByText(
         "No orders match this filter.",
       ),
     ).toBeTruthy();
 
-    const loading = states.getByRole("grid", { name: "Orders, loading" });
+    const loading = states.getByRole("group", { name: "Orders, loading" });
     expect(within(loading).getByText("Loading orders")).toBeTruthy();
     expect(within(loading).queryByText("No orders match this filter.")).toBeNull();
 
+    // With rows the grid stays, and the loading line sits after it in the same table.
     const reloading = states.getByRole("grid", { name: "Orders, reloading" });
     expect(within(reloading).getByText("#1001")).toBeTruthy();
-    expect(within(reloading).getByText("Loading orders")).toBeTruthy();
+    const reloadingTable = reloading.closest<HTMLElement>('[data-slot="table"]');
+    expect(within(reloadingTable as HTMLElement).getAllByText("Loading orders")).toHaveLength(2);
     const messages = states
       .getAllByRole("status")
       .map((status) => status.textContent)

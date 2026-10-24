@@ -50,8 +50,10 @@ describe("Toast page", () => {
     }));
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     act(() => toast.clear());
+    // A cleared toast leaves on its exit; the queue is global, so a test waits for that before the next one starts.
+    await waitFor(() => expect(document.querySelectorAll('[data-slot="toast"]')).toHaveLength(0));
     vi.unstubAllGlobals();
   });
 

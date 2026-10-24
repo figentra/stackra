@@ -72,7 +72,9 @@ describe("ErrorState (web)", () => {
 
   it("hides the message in production, where it may be an internal", () => {
     vi.stubEnv("NODE_ENV", "production");
-    const { container } = render(<ErrorState title="Failed" error={new Error("db: pool exhausted")} />);
+    const { container } = render(
+      <ErrorState title="Failed" error={new Error("db: pool exhausted")} />,
+    );
     expect(container.querySelector('[data-slot="error-state-details"]')).toBeNull();
   });
 

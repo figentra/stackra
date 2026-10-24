@@ -7,9 +7,11 @@ icon: "smartphone"
 <Note>
   Status: target. `apps/mobile` has `eas.json` with `development`, `preview` and `production`
   profiles, but there is no Expo project link (`extra.eas.projectId`), no store records, no
-  `.eas/workflows/`, no `updates` config and no `staging` profile. Licensed packages (HeroUI Pro,
-  Uniwind Pro) are not installed, so the licence-token steps below apply only once they are. App:
-  Expo SDK 57, code-based React Navigation.
+  `.eas/workflows/`, no `updates` config and no `staging` profile. The app installs the licensed
+  packages HeroUI Native Pro and Uniwind Pro
+  ([0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers)), so an EAS build needs
+  `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` as secret variables (the licence-token steps below).
+  App: Expo SDK 57, code-based React Navigation.
 </Note>
 
 ## Concepts

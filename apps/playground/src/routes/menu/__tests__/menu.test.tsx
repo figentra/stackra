@@ -65,10 +65,10 @@ describe("Menu page", () => {
     expect(within(menu).getByRole("group", { name: "Danger zone" })).toBeTruthy();
     expect(
       within(menu)
-        .getByRole("menuitem", { name: "Delete" })
+        .getByRole("menuitem", { name: /^Delete/ })
         .classList.contains("menu-item--danger"),
     ).toBe(true);
-    const archive = within(menu).getByRole("menuitem", { name: "Archive" });
+    const archive = within(menu).getByRole("menuitem", { name: /^Archive/ });
     expect(archive.getAttribute("aria-disabled")).toBe("true");
     expect(within(archive).getByText("Paid orders cannot be archived")).toBeTruthy();
   });
@@ -103,7 +103,7 @@ describe("Menu page", () => {
     expect(live.getByText("The menu is closed.")).toBeTruthy();
     press(live.getByRole("button", { name: "Open the menu" }));
     expect(live.getByText("The menu is open.")).toBeTruthy();
-    press(screen.getByRole("menuitem", { name: "Rename" }));
+    press(screen.getByRole("menuitem", { name: /^Rename/ }));
     expect(live.getByText("Last action: rename")).toBeTruthy();
     await waitFor(() => expect(live.getByText("The menu is closed.")).toBeTruthy());
   });

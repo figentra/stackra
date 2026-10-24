@@ -41,7 +41,17 @@ const settled = (page: Page) =>
 const centre = (element: Locator) =>
   element.evaluate((node) => node.scrollIntoView({ block: "center", inline: "center" }));
 
-const tooltip = (page: Page) => page.getByRole("tooltip");
+/** The tooltips on show: one that is fading out has been closed already, and a keyboard user passing by leaves one. */
+const tooltip = (page: Page) => page.getByRole("tooltip").and(page.locator(":not([data-exiting])"));
+
+/**
+ * Hovers the element as a mouse user does. React Aria shows a tooltip on a hover only once it has seen the pointer move
+ * on the page, and Playwright's own hover jumps straight onto the element, so the pointer first moves in the corner.
+ */
+const hover = async (page: Page, element: Locator) => {
+  await page.mouse.move(2, 2);
+  await element.hover();
+};
 
 /**
  * Focuses the element as a keyboard user does: React Aria shows a tooltip on keyboard focus only, and a script's own
@@ -126,7 +136,7 @@ test("a tooltip shows on hover and stays while the pointer is over it", async ({
     .getByRole("region", { name: "Delay and switching off" })
     .getByRole("button", { name: "No delay" });
   await centre(button);
-  await button.hover();
+  await hover(page, button);
   await expect(tooltip(page)).toHaveText("Appears at once");
   await settled(page);
   const box = await boxOf(tooltip(page));
@@ -140,12 +150,12 @@ test("a tooltip shows on hover and stays while the pointer is over it", async ({
 test("the arrow is drawn only when asked", async ({ page }) => {
   await open(page, "light", "en");
   const arrows = page.getByRole("region", { name: "Arrow" });
-  await arrows.getByRole("button", { name: "No arrow" }).hover();
+  await hover(page, arrows.getByRole("button", { name: "No arrow" }));
   await expect(tooltip(page)).toBeVisible();
   await expect(page.locator('[data-slot="overlay-arrow"]')).toHaveCount(0);
   await page.mouse.move(2, 2);
   await expect(tooltip(page)).toHaveCount(0);
-  await arrows.getByRole("button", { name: "With an arrow" }).hover();
+  await hover(page, arrows.getByRole("button", { name: "With an arrow" }));
   await expect(tooltip(page)).toBeVisible();
   await expect(page.locator('[data-slot="overlay-arrow"]')).toHaveCount(1);
 });
@@ -155,7 +165,7 @@ test("a disabled tooltip never shows, on hover or on focus", async ({ page }) =>
   const button = page
     .getByRole("region", { name: "Delay and switching off" })
     .getByRole("button", { name: "Switched off" });
-  await button.hover();
+  await hover(page, button);
   await page.waitForTimeout(1200);
   await expect(tooltip(page)).toHaveCount(0);
   await focusByKeyboard(page, button);
@@ -175,7 +185,7 @@ for (const locale of LOCALES)
         .getByRole("region", { name: "Placement" })
         .getByRole("button", { name: side, exact: true });
       await centre(button);
-      await button.hover();
+      await hover(page, button);
       await expect(tooltip(page)).toBeVisible();
       await expect(async () => {
         await settled(page);
@@ -207,7 +217,7 @@ for (const locale of LOCALES)
         .getByRole("region", { name: "Alignment" })
         .getByRole("button", { name: `Align ${align}` });
       await centre(button);
-      await button.hover();
+      await hover(page, button);
       await expect(tooltip(page)).toBeVisible();
       await expect(async () => {
         await settled(page);
@@ -226,10 +236,12 @@ test("the live tooltip follows its switch and reports its state", async ({ page 
   const toggle = live.getByRole("switch", { name: "Show the tooltip" });
   await expect(live.getByTestId("tooltip-state")).toHaveText("State: hidden");
   await expect(tooltip(page)).toHaveCount(0);
-  await toggle.click();
+  // From the keyboard: HeroUI's hidden input is overlapped by its drawn control, so a pointer click on it is refused.
+  await toggle.focus();
+  await page.keyboard.press("Space");
   await expect(tooltip(page)).toHaveText("Export the table as CSV");
   await expect(live.getByTestId("tooltip-state")).toHaveText("State: shown");
-  await toggle.click();
+  await page.keyboard.press("Space");
   await expect(tooltip(page)).toHaveCount(0);
   await expect(live.getByTestId("tooltip-state")).toHaveText("State: hidden");
 });

@@ -69,15 +69,15 @@ describe("ActionMenu (web)", () => {
     press(screen.getByRole("button", { name: "More" }));
     const menu = screen.getByRole("menu");
     expect(within(menu).getAllByRole("group")).toHaveLength(2);
-    const rename = within(menu).getByRole("menuitem", { name: "Rename" });
+    const rename = within(menu).getByRole("menuitem", { name: /^Rename/ });
     expect(rename.querySelector('[data-testid="rename-icon"]')).toBeTruthy();
     expect(rename.querySelector("kbd")?.textContent).toBe("⌘R");
     expect(
       within(menu)
-        .getByRole("menuitem", { name: "Delete" })
+        .getByRole("menuitem", { name: /^Delete/ })
         .classList.contains("menu-item--danger"),
     ).toBe(true);
-    const archive = within(menu).getByRole("menuitem", { name: "Archive" });
+    const archive = within(menu).getByRole("menuitem", { name: /^Archive/ });
     expect(archive.getAttribute("aria-disabled")).toBe("true");
     expect(within(archive).getByText("Paid orders stay")).toBeTruthy();
   });
@@ -115,7 +115,7 @@ describe("ActionMenu (web)", () => {
       />,
     );
     press(screen.getByRole("button", { name: "More" }));
-    press(screen.getByRole("menuitem", { name: "Rename" }));
+    press(screen.getByRole("menuitem", { name: /^Rename/ }));
     expect(calls).toEqual(["onPress", "onAction:rename"]);
   });
 
@@ -129,7 +129,7 @@ describe("ActionMenu (web)", () => {
       </div>,
     );
     press(screen.getByRole("button", { name: "More" }));
-    press(screen.getByRole("menuitem", { name: "Rename" }));
+    press(screen.getByRole("menuitem", { name: /^Rename/ }));
     expect(onRowClick).not.toHaveBeenCalled();
   });
 
@@ -142,7 +142,7 @@ describe("ActionMenu (web)", () => {
       </div>,
     );
     press(screen.getByRole("button", { name: "More" }));
-    const rename = screen.getByRole("menuitem", { name: "Rename" });
+    const rename = screen.getByRole("menuitem", { name: /^Rename/ });
     fireEvent.keyDown(rename, { key: "Enter" });
     fireEvent.keyDown(rename, { key: " " });
     expect(onRowKeyDown).not.toHaveBeenCalled();
@@ -160,11 +160,13 @@ describe("ActionMenu (web)", () => {
     void (<ActionMenu sections={SECTIONS} />);
     // @ts-expect-error a menu needs its actions
     void (<ActionMenu label="More" />);
-    // @ts-expect-error the button is the component's own
     void (
-      <ActionMenu label="More" sections={SECTIONS}>
-        x
-      </ActionMenu>
+      (
+        // @ts-expect-error the button is the component's own
+        <ActionMenu label="More" sections={SECTIONS}>
+          x
+        </ActionMenu>
+      )
     );
     // @ts-expect-error an action menu keeps no selection
     void (<ActionMenu label="More" sections={SECTIONS} selectionMode="single" />);

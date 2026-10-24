@@ -112,7 +112,7 @@ test("the live pager ends on a short last page with next disabled", async ({ pag
   await expect(pagerOrders(page).getByRole("listitem")).toHaveCount(5);
 });
 
-test("the growing list adds a page per press, counts it as a status and loses its button at the end", async ({
+test("the growing list adds a page per press, counts it as a status and keeps its button, disabled, at the end", async ({
   page,
 }) => {
   await open(page, "light", "en");
@@ -128,7 +128,8 @@ test("the growing list adds a page per press, counts it as a status and loses it
     await more.click();
     await expect(orders).toHaveCount(count);
   }
-  await expect(more).toHaveCount(0);
+  // The button stays mounted, so focus on it is not lost when the last page arrives.
+  await expect(more).toBeDisabled();
   await expect(growing.getByRole("status")).toHaveText("Showing 45 items");
 });
 

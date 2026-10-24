@@ -154,6 +154,8 @@ test("scrolling the box to its end loads five more rows, up to fifteen, naming o
   const box = live.getByTestId("list-scroll");
   const count = live.getByTestId("list-count");
   await expect(count).toHaveText("5 rows");
+  // The end marker is watched against the window, so the box must be on screen, as it is when a reader scrolls it.
+  await box.scrollIntoViewIfNeeded();
 
   for (const next of [10, 15]) {
     await box.evaluate((element) => {

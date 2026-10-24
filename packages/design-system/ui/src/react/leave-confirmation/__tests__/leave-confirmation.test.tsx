@@ -84,7 +84,10 @@ describe("LeaveConfirmation (web)", () => {
     expect(document.getElementById(describedBy)?.textContent).toBe(
       "Your edits to this page will be lost.",
     );
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Stay" }));
+    // React Aria moves focus into the dialog after it mounts, not within the press itself.
+    await vi.waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Stay" })),
+    );
     expect(dialog.querySelector("svg.lucide-circle-alert")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Discard" }).className).toContain("button--danger");
   });

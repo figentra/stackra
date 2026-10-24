@@ -159,7 +159,7 @@ describe("Cursor pagination page", () => {
     expect(pager.getByRole("status").textContent).toBe("Showing 5 items");
   });
 
-  it("grows the live list by one page per press and removes the button at the end", () => {
+  it("grows the live list by one page per press and keeps the button, disabled, at the end", () => {
     renderPage();
     const live = section("Try it");
     const growing = nav(live, "Orders, growing");
@@ -176,6 +176,7 @@ describe("Cursor pagination page", () => {
       advance(600);
     }
     expect(count()).toBe(45);
-    expect(growing.queryByRole("button")).toBeNull();
+    // The button stays mounted, so focus on it is not lost when the last page arrives.
+    expect(disabled(growing.getByRole("button", { name: "Load more" }))).toBe(true);
   });
 });

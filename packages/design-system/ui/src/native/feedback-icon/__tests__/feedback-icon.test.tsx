@@ -38,8 +38,15 @@ vi.mock("@stackra/icons/native/lucide-icons", async () => {
       "data-props": JSON.stringify(props),
     });
   return {
+    ArrowDown: drawn("arrow-down"),
+    ArrowUp: drawn("arrow-up"),
+    Check: drawn("check"),
+    ChevronDown: drawn("chevron-down"),
+    ChevronLeft: drawn("chevron-left"),
+    ChevronRight: drawn("chevron-right"),
     CircleAlert: drawn("circle-alert"),
     CircleCheck: drawn("circle-check"),
+    Copy: drawn("copy"),
     Ellipsis: drawn("ellipsis"),
     ExternalLink: drawn("external-link"),
     Info: drawn("info"),
