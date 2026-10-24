@@ -28,11 +28,12 @@
 - **Tenancy and data**: no tables of its own; the audit log persists history through a listener
 - **Secrets**: none
 - **ADR needed**: no
-- **New dependencies**: none outside the workspace and catalogs (`zod` is already `catalog:`);
-  `@stackra/{container,contracts,errors,events,validation}` through `workspace:*`
+- **New dependencies**: none outside the workspace and catalogs (`zod` is already `catalog:`); `@stackra/container`,
+  `@stackra/contracts`, `@stackra/errors`, `@stackra/events`, `@stackra/model` and `@stackra/validation` through
+  `workspace:*`
 - **Deploy modes**: same in all; no outbound call
 - **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
-- **Docs to update**: ; ADR 0120, 0161, 0227, 0294, 0305 are cited and amended only by a note if a decision here changes
+- **Docs to update**: `packages/data/state-machine/README.md`, `packages/data/state-machine/AGENTS.md`; ADR 0120, 0161, 0227, 0294, 0305 are cited and amended only by a note if a decision here changes
 - **Lane**: full (a new package)
 - **Change risk**: R2 (every governed field's writes go through it)
 
@@ -42,9 +43,15 @@
 
 The package follows the v3.1 registry row and the owner decisions of 2026-10-24 (programming model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
 
-- Registry v3.1 row: entry `.` only, exports `StateMachine` and `Transition`;
+- Registry v3.1 row: entry `.` only, exports `StateMachine` and `Transition`, depends on `model` and `events`;
   ADR 0161 with its 0294 note; ADR 0305 rule 5 (partner as type argument: `StateMachine<Order>({ field })`); ADR 0294
   decisions 6, 16 and 25; no XState, ADR 0227
+- The partner is a real `Model` (`M extends Model`, from `@stackra/model`), and `field` accepts only a field typed as a
+  closed set of codes (`StateField<M>`): a plain `string` or a `PublicId` is refused by the compiler
+- A transition's condition is its precondition: the record is in a `from` state. Nothing is named Guard or Gate (ADR
+  0294 decision 23, ADR 0161's 0294 note); the permission stays on the calling action
+- The history is a `StateTransitioned` domain event recorded through the model's own `record`, after the body's events
+- The refusal is `TransitionNotAllowedError`, kind `Conflict`, like the template's state refusal `OrderNotPayableError`
 
 ## User Scenarios & Testing
 
@@ -83,7 +90,8 @@ record id), unless the machine says `history: false`.
 ### User Story 4 - Mistakes surface early (Priority: P2)
 
 1. **Given** `StateMachine({ field: "status" })` without a type argument, **Then** tsc shows the hint.
-2. **Given** `StateMachine<Order>({ field: "" })`, **Then** a TypeError at class definition.
+2. **Given** `StateMachine<Order>({ field: "" })`, **Then** a TypeError at class definition; `field: "note"` (a plain
+   string) or `field: "id"` (a public id) fails to compile.
 3. **Given** `@Transition` on a class that is not a state machine, or on a field, **Then** a TypeError at class
    definition (`createDecorator`).
 
@@ -93,9 +101,11 @@ record id), unless the machine says `history: false`.
   0294 R12.
 - **FR-002**: Every symbol the template imports: `StateMachine`, `Transition`. Also public because a consumer needs
   them: `TransitionNotAllowedError` (callers and tests match the refusal), `StateTransitioned` (the audit listener's
-  `handle` type), and the types `StateMachineOptions`, `TransitionOptions`, `TransitionName`, `StateField`.
+  `handle` type), and the types `StateMachineOptions`, `TransitionOptions`, `TransitionName`, `StateField` and
+  `StateMachineBase` (type only, so a consumer's declaration emit can name a machine's base).
 - **FR-003**: `StateMachine` is a called-only kind base (`createKind`, kind `state_machine`) whose partner model is the
-  type argument (`WithPartner`); options `{ field, history }`; inherited `can(record, name)` and `available(record)`.
+  type argument (`WithPartner`, `M extends Model`); options `{ field, history }`; inherited `can(record, name)` and
+  `available(record)`.
 - **FR-004**: `Transition` is made with `createDecorator` (method target, kind `state_machine`) and records metadata
   only; the base applies it when the machine is constructed (ADR 0294 decision 6: decorators record, the kind acts).
 - **FR-005**: The check, the body and the write run synchronously in the caller's call, so they share its unit of work.
@@ -117,4 +127,4 @@ record id), unless the machine says `history: false`.
 
 ## Status history
 
-- 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)
+- 2026-10-24 · — → Implementing · Claude (package-builder) · spec, member files and code in wave 4 (owner mode 2026-10-24: develop now, test later)
