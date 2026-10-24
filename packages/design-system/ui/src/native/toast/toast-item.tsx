@@ -27,7 +27,7 @@ export interface ToastItemProps {
   readonly toast: ToastComponentProps;
   /** The tone of the message. */
   readonly tone: Tone;
-  /** The message. */
+  /** The message the toast shows, as its first line. */
   readonly title: string;
   /** A second line under the message. */
   readonly description?: string | undefined;
