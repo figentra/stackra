@@ -237,11 +237,8 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
   const [isPaletteOpen, setPaletteOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const current = pages.find((page) => page.path === pathname);
+  // The material mode is the document's, as the scheme is: the provider sets it (index.html before paint).
   const material = MaterialMode.find((mode) => mode === params.get("material")) ?? DEFAULT_MATERIAL;
-  // The material mode is the document's, as the scheme is (index.html sets it before paint).
-  useLayoutEffect(() => {
-    document.documentElement.dataset["material"] = material;
-  }, [material]);
   // React Router hands a functional update the params of the last render, so choices made before the next render (a
   // scheme, then a locale) would keep only the last; each write starts from the one before it instead. The ref takes
   // the URL's params only when something else changed them (a link, the back button), not on the echo of a write of
@@ -337,6 +334,7 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
         locale={LOCALES.find(({ id }) => id === params.get("locale"))?.id}
         onColorSchemeChange={(scheme) => setParam("scheme", scheme)}
         onLocaleChange={(locale) => setParam("locale", locale)}
+        material={material}
       >
         <div lang="en" className="relative min-h-dvh text-foreground">
           <div className="ambient" aria-hidden="true">

@@ -22,7 +22,11 @@ export interface MaterialModeFactors {
   readonly saturationScale: number;
   /** The backdrop `brightness()` factor. */
   readonly brightness: number;
-  /** How much white the sheen along the top inside edge carries, 0 to 1. */
+  /**
+   * How strong the sheen along the top inside edge is, as a share of the theme's rim light (`materials.highlight`):
+   * the sheen is the rim light spread down, so it is bright on a light scheme and faint on a dark one, where white
+   * would wash out light text.
+   */
   readonly sheen: number;
 }
 
@@ -62,6 +66,7 @@ export const MATERIAL_MODES: Readonly<Record<MaterialMode, MaterialModeFactors>>
     blurScale: 1.2,
     saturationScale: 1.25,
     brightness: 1.06,
-    sheen: 0.22,
+    // 22% white on the stackra light scheme (rim light 0.7), under 3% on its dark one (0.09).
+    sheen: 0.31,
   },
 });

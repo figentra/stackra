@@ -123,7 +123,7 @@ function materialColours(theme: Theme, mode: "light" | "dark"): string[] {
     ),
     declare(
       "material-sheen-color",
-      "color-mix(in oklch, oklch(1 0 0) calc(var(--material-sheen) * 100%), transparent)",
+      "color-mix(in oklch, oklch(1 0 0) calc(var(--material-sheen) * var(--material-highlight-share) * 100%), transparent)",
     ),
   ];
 }
@@ -145,6 +145,23 @@ const materialRules = () => [
   materialRule(".material-thick", "thick", "overlay"),
 ];
 
+/**
+ * The static material of a browser without `color-mix()`: every computed property, written in the colour blocks, would
+ * be invalid there and leave the fill transparent, so each one gets a plain value instead (the surface, no filter, the
+ * border role, no rim light or sheen). A static declaration placed before a computed one cannot do this: a declaration
+ * that holds `var()` always parses, so the browser never falls back to the one before it.
+ */
+const staticMaterial = () =>
+  [
+    ...MaterialLevel.flatMap((level) => [
+      `    --material-${level}-fill: var(--surface);`,
+      `    --material-${level}-filter: none;`,
+    ]),
+    "    --material-edge: var(--border);",
+    "    --material-highlight: transparent;",
+    "    --material-sheen-color: transparent;",
+  ].join("\n");
+
 /** The fallbacks: solid where transparency is unwanted or unsupported, a stronger edge for more contrast. */
 function materialFallbacks(): string {
   const solid = modeFactors("solid", "    ").join("\n");
@@ -152,6 +169,7 @@ function materialFallbacks(): string {
     `@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {\n  :root,\n  [data-material] {\n${solid}\n  }\n}`,
     "@media (prefers-contrast: more) {\n  :root,\n  .dark,\n  [data-theme] {\n    --material-edge-share: 0.45;\n  }\n}",
     `@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {\n  :root,\n  [data-material] {\n${solid}\n  }\n}`,
+    `@supports not (color: color-mix(in oklch, white, black)) {\n  :root,\n  .dark,\n  [data-theme] {\n${staticMaterial()}\n  }\n}`,
     "@media (forced-colors: active) {\n  .material,\n  .material-regular,\n  .material-thin,\n  .material-thick {\n    border-color: CanvasText;\n  }\n}",
   ].join("\n\n");
 }

@@ -9,8 +9,10 @@ rim-light shares. `defineTheme` validates the block.
 `renderWebCss` writes the material:
 
 - the levels' fills and filters in the colour blocks;
-- the factors of the four modes (`solid`, `frosted`, `glass`, `liquid`) on `[data-material]`;
-- solid fallbacks for reduced transparency, more contrast and a missing `backdrop-filter`;
+- the factors of the four modes (`solid`, `frosted`, `glass`, `liquid`) on `[data-material]`, with liquid's sheen
+  scaled by the colour scheme's rim-light share;
+- solid fallbacks for reduced transparency, more contrast and a missing `backdrop-filter`, and a static opaque
+  material where `color-mix()` is unsupported;
 - the `.material`, `.material-thin` and `.material-thick` classes.
 
 New exports: `MaterialLevel`, `MaterialMode`, `ThemeMaterials` and the part types from `./contracts`, and

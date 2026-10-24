@@ -137,6 +137,11 @@ describe("renderWebCss", () => {
     expect(dark).toContain(
       `  --material-highlight-share: ${STACKRA_THEME.materials.highlight.dark};`,
     );
+    // The sheen is the rim light spread down, so it takes the scheme's rim-light share: faint on a dark scheme.
+    for (const block of [light, dark])
+      expect(block).toContain(
+        "  --material-sheen-color: color-mix(in oklch, oklch(1 0 0) calc(var(--material-sheen) * var(--material-highlight-share) * 100%), transparent);",
+      );
   });
 
   it("writes every mode's factors on [data-material], glass also on :root as the default", () => {
@@ -171,5 +176,19 @@ describe("renderWebCss", () => {
     expect(css.indexOf("prefers-reduced-transparency")).toBeGreaterThan(
       css.indexOf('[data-material="liquid"]'),
     );
+  });
+
+  it("gives a browser without color-mix a static, opaque material after the colour blocks", () => {
+    const query =
+      "@supports not (color: color-mix(in oklch, white, black)) {\n  :root,\n  .dark,\n  [data-theme] {\n";
+    const fallback = css.split(query)[1]?.split("\n  }\n}")[0] ?? "";
+    for (const level of MaterialLevel) {
+      expect(fallback).toContain(`    --material-${level}-fill: var(--surface);`);
+      expect(fallback).toContain(`    --material-${level}-filter: none;`);
+    }
+    expect(fallback).toContain("    --material-edge: var(--border);");
+    expect(fallback).toContain("    --material-sheen-color: transparent;");
+    // Equal specificity to the colour blocks (one class or attribute), so coming later is what makes it win.
+    expect(css.indexOf(query)).toBeGreaterThan(css.indexOf('.dark,\n[data-theme="dark"] {'));
   });
 });

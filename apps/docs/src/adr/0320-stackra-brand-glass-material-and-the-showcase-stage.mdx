@@ -35,12 +35,20 @@ limits, so the material does not drift into product screens or into the componen
    colour shaped by a mask. A contrast checker (axe) then measures text against every tint at full strength at once.
    That is a stricter background than any point of the page shows, so the check gives a result instead of reporting
    "incomplete". The tints stay light enough that muted text passes AA in that worst case.
-4. **The fallbacks are part of the material.**
+4. **The fallbacks are part of the material, and its contrast is measured.**
    - The glass turns solid (its surface role, no blur) under `prefers-reduced-transparency`, under
      `prefers-contrast: more`, and where `backdrop-filter` is unsupported.
+   - Where `color-mix()` is unsupported it is a static, opaque material: the surface, no filter, the border role as
+     its edge. A static declaration written before a computed one cannot do this, because a declaration that holds
+     `var()` always parses, so the fallback is an `@supports` block after the colour blocks.
    - It keeps a visible edge in forced colours.
    - Under reduced motion it does not animate.
-   - Text on glass keeps the contrast it has on the solid surface: the fill is at least 72% surface.
+   - The page root (`html` and `body`) stays opaque, so the material always blurs a painted page.
+   - **Reading text holds 4.5:1 over the worst backdrops.** On the `regular` and `thick` levels, the theme's
+     `foreground` holds 4.5:1 over pure black and over pure white, in every mode and colour scheme, with liquid's
+     sheen at full strength. `stackra-theme.constant.test.ts` computes it through 8-bit sRGB, as a browser
+     composites. The `thin` level carries no reading text. Muted text on a level is checked where it sits, by axe in
+     every mode, scheme and direction.
 5. **The marks are unchanged.**
    - The beam-S wordmark stays static, in its artwork colour (steel-deep on light, steel on dark).
    - It may be drawn large and echoed as a hairline outline on a showcase stage.
@@ -64,18 +72,29 @@ limits, so the material does not drift into product screens or into the componen
      - `glass` is the theme as written, and the showcase default.
      - `liquid` gives a thinner fill and a lifted backdrop (more saturation, a little brightness) with a sheen
        along the top inside edge.
+   - **Where each default comes from.** `glass` is the stylesheet's `:root` default, so a page with no
+     `data-material` (a static showcase page, the docs landing) gets the theme as written. `DesignSystemProvider`
+     sets `solid` unless it is given another mode (`material`), so product UI is opaque without asking, and a
+     showcase asks for glass. Solid also comes from the fallbacks of decision 4.
+   - **The sheen is the rim light spread down.** Its white is the mode's `sheen` times the colour scheme's rim-light
+     share (`materials.highlight`): about 22% on the stackra light scheme and under 3% on its dark one, where more
+     white would wash out light text.
    - **Liquid draws no refraction.** A displacement filter costs a filter pass per frame, works in Chromium only,
      and warps text behind it. The lens is suggested by the lifted backdrop, the rim light and the sheen, all drawn
      with backdrop filters and inset shadows. There are no pseudo-elements and no gradient images, so contrast
      checkers can still measure text on the material.
+     - Rejected: an SVG displacement filter through `backdrop-filter: url()`, a WebGL or canvas lens, and
+       pre-rendered refraction images.
+     - Revisit when WebKit bug 245510, Mozilla bug 1961378 or CSS Working Group issue 12316 is resolved.
    - **Rendering.** `renderWebCss` writes the material:
      - the shares, fills and filters go in the colour blocks, so a subtree with its own `data-theme` computes them
        again;
      - the mode factors go on `[data-material]`;
      - the fallbacks come after the modes;
      - the classes go in the one components layer.
-   - Native renders no material yet. A native surface reads `Theme.materials` and `MATERIAL_MODES` and maps them to
-     the platform's blur or Liquid Glass view.
+   - **Native** uses the platform's own material: Liquid Glass on iOS 26 and later, solid everywhere else (older iOS
+     and Android). It reads `Theme.materials` and `MATERIAL_MODES` only to choose between the two; the web's CSS
+     material is not drawn on native.
 
 ## Consequences
 
@@ -89,5 +108,12 @@ limits, so the material does not drift into product screens or into the componen
 
 ## Enforcement
 
-Planned: a design-brand review rule that refuses `backdrop-filter`, or a gradient fill, outside the surfaces of
-decision 1. Until then, review applies it.
+- `stackra-theme.constant.test.ts`: the worst-case contrast of decision 4.
+- `render-web-css.function.test.ts`: the levels, modes, sheen and fallbacks are written, the fallbacks after the
+  blocks they override; `web.css` is its file snapshot.
+- The playground's end-to-end suite: axe on the index in every mode, scheme and direction over an opaque root; the
+  glass solid under more contrast and under reduced transparency (emulated through the DevTools protocol); an edge in
+  forced colours.
+- `apps/playground/src/styles/__tests__/app.test.ts`: the playground never loads HeroUI Pro's glass theme.
+- Planned: a design-brand review rule that refuses `backdrop-filter`, or a gradient fill, outside the surfaces of
+  decision 1. Until then, review applies it.

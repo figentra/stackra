@@ -158,7 +158,7 @@
   --material-highlight-share: 0.7;
   --material-edge: color-mix(in oklch, var(--foreground) calc(var(--material-edge-share) * 100%), transparent);
   --material-highlight: color-mix(in oklch, oklch(1 0 0) calc(var(--material-highlight-share) * 100%), transparent);
-  --material-sheen-color: color-mix(in oklch, oklch(1 0 0) calc(var(--material-sheen) * 100%), transparent);
+  --material-sheen-color: color-mix(in oklch, oklch(1 0 0) calc(var(--material-sheen) * var(--material-highlight-share) * 100%), transparent);
 }
 
 .dark,
@@ -233,7 +233,7 @@
   --material-highlight-share: 0.09;
   --material-edge: color-mix(in oklch, var(--foreground) calc(var(--material-edge-share) * 100%), transparent);
   --material-highlight: color-mix(in oklch, oklch(1 0 0) calc(var(--material-highlight-share) * 100%), transparent);
-  --material-sheen-color: color-mix(in oklch, oklch(1 0 0) calc(var(--material-sheen) * 100%), transparent);
+  --material-sheen-color: color-mix(in oklch, oklch(1 0 0) calc(var(--material-sheen) * var(--material-highlight-share) * 100%), transparent);
 }
 
 [data-material="solid"] {
@@ -269,7 +269,7 @@
   --material-blur-scale: 1.2;
   --material-saturate-scale: 1.25;
   --material-brightness: 1.06;
-  --material-sheen: 0.22;
+  --material-sheen: 0.31;
 }
 
 .skeleton--shimmer:is(:dir(rtl), [dir="rtl"], [dir="rtl"] *)::after,
@@ -432,6 +432,22 @@
     --material-saturate-scale: 1;
     --material-brightness: 1;
     --material-sheen: 0;
+  }
+}
+
+@supports not (color: color-mix(in oklch, white, black)) {
+  :root,
+  .dark,
+  [data-theme] {
+    --material-thin-fill: var(--surface);
+    --material-thin-filter: none;
+    --material-regular-fill: var(--surface);
+    --material-regular-filter: none;
+    --material-thick-fill: var(--surface);
+    --material-thick-filter: none;
+    --material-edge: var(--border);
+    --material-highlight: transparent;
+    --material-sheen-color: transparent;
   }
 }
 

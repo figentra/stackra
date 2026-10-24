@@ -6,8 +6,10 @@
  *          and best practices) with no violation and nothing left incomplete. The switcher's selected choice must
  *          stand 3:1 from the others in both schemes and work from the keyboard in right-to-left, and the `system`
  *          scheme must follow the system preference live. The command palette opens from the keyboard and lands focus
- *          on the page it opens, a component page marks itself in its category strip, and the glass turns solid
- *          when more contrast is asked for, and the index passes axe in every material mode (ADR 0320). A new route folder is covered without editing this file.
+ *          on the page it opens, a component page marks itself in its category strip, the glass turns solid when more
+ *          contrast or reduced transparency is asked for and keeps an edge in forced colours, and the index passes axe
+ *          in every material mode, scheme and direction over an opaque page root (ADR 0320). A new route folder is
+ *          covered without editing this file.
  * Boundary: the production build under `vite preview`; Chromium only.
  * Runtime: node
  * Governing contract: ADR 0302 (decision 5); ADR 0182 (test tiers); ADR 0022 (test placement).
@@ -43,6 +45,16 @@ const paintedBackground = (locator: Locator) =>
     const [red = 0, green = 0, blue = 0] = context.getImageData(0, 0, 1, 1).data;
     return `#${[red, green, blue].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
   });
+
+/** The alpha (0 to 255) of a colour property an element computes, read off a canvas so any CSS colour form reads. */
+const paintedAlpha = (locator: Locator, property: "backgroundColor" | "borderTopColor") =>
+  locator.evaluate((element, name) => {
+    const context = document.createElement("canvas").getContext("2d");
+    if (!context) throw new Error("no 2d canvas");
+    context.fillStyle = getComputedStyle(element)[name];
+    context.fillRect(0, 0, 1, 1);
+    return context.getImageData(0, 0, 1, 1).data[3];
+  }, property);
 
 /**
  * The incomplete axe results a route's own suite measures instead, by route: a rule id and the markup its nodes carry.
@@ -232,31 +244,56 @@ for (const scheme of SCHEMES)
     await page.emulateMedia({ colorScheme: scheme, contrast: "more" });
     await page.goto(`/?scheme=${scheme}&locale=en`);
     const bar = page.getByRole("banner");
-    const { filter, alpha } = await bar.evaluate((element) => {
-      const computed = getComputedStyle(element);
-      // The fill's alpha, read off a canvas so any CSS colour form reads.
-      const context = document.createElement("canvas").getContext("2d");
-      if (!context) throw new Error("no 2d canvas");
-      context.fillStyle = computed.backgroundColor;
-      context.fillRect(0, 0, 1, 1);
-      return { filter: computed.backdropFilter, alpha: context.getImageData(0, 0, 1, 1).data[3] };
-    });
-    expect(filter).toContain("blur(0px)");
-    expect(alpha).toBe(255);
+    expect(await bar.evaluate((element) => getComputedStyle(element).backdropFilter)).toContain(
+      "blur(0px)",
+    );
+    expect(await paintedAlpha(bar, "backgroundColor")).toBe(255);
   });
 
 for (const material of MaterialMode)
   for (const scheme of SCHEMES)
-    test(`the index passes axe in the ${material} material, ${scheme}`, async ({ page }) => {
-      await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
-      await page.goto(`/?scheme=${scheme}&locale=en&material=${material}`);
-      await expect(page.locator("html")).toHaveAttribute("data-material", material);
-      const { violations, incomplete } = await new AxeBuilder({ page })
-        .withTags(AXE_TAGS)
-        .analyze();
-      expect(violations.map((v) => v.id)).toEqual([]);
-      expect(incomplete.map((v) => v.id)).toEqual([]);
-    });
+    for (const { locale, dir } of LOCALES)
+      test(`the index passes axe in the ${material} material, ${scheme}, ${dir}`, async ({
+        page,
+      }) => {
+        await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
+        await page.goto(`/?scheme=${scheme}&locale=${locale}&material=${material}`);
+        await expect(page.locator("html")).toHaveAttribute("data-material", material);
+        await expect(page.locator("html")).toHaveAttribute("dir", dir);
+        // The page root stays opaque in every mode, so the material always blurs a painted page.
+        expect(await paintedAlpha(page.locator("html"), "backgroundColor")).toBe(255);
+        expect(await paintedAlpha(page.locator("body"), "backgroundColor")).toBe(255);
+        const { violations, incomplete } = await new AxeBuilder({ page })
+          .withTags(AXE_TAGS)
+          .analyze();
+        expect(violations.map((v) => v.id)).toEqual([]);
+        expect(incomplete.map((v) => v.id)).toEqual([]);
+      });
+
+test("the glass turns solid under reduced transparency, even in the liquid material", async ({
+  page,
+}) => {
+  // Playwright cannot emulate prefers-reduced-transparency yet; the DevTools protocol can.
+  const devtools = await page.context().newCDPSession(page);
+  await devtools.send("Emulation.setEmulatedMedia", {
+    features: [{ name: "prefers-reduced-transparency", value: "reduce" }],
+  });
+  await page.goto("/?scheme=dark&locale=en&material=liquid");
+  const bar = page.getByRole("banner");
+  expect(await bar.evaluate((element) => getComputedStyle(element).backdropFilter)).toContain(
+    "blur(0px)",
+  );
+  expect(await paintedAlpha(bar, "backgroundColor")).toBe(255);
+});
+
+test("the glass keeps a visible edge in forced colours", async ({ page }) => {
+  await page.emulateMedia({ forcedColors: "active" });
+  await page.goto("/?scheme=light&locale=en&material=glass");
+  const bar = page.getByRole("banner");
+  expect(await bar.evaluate((element) => getComputedStyle(element).borderTopStyle)).toBe("solid");
+  expect(await bar.evaluate((element) => getComputedStyle(element).borderTopWidth)).toBe("1px");
+  expect(await paintedAlpha(bar, "borderTopColor")).toBe(255);
+});
 
 test("the hero's jump to the gallery keeps the scheme and the locale", async ({ page }) => {
   await page.goto("/?scheme=dark&locale=ar");

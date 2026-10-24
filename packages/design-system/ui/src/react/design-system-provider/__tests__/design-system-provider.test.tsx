@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: proves the web DesignSystemProvider puts the colour scheme, `lang` and `dir` on the document element,
+ * Purpose: proves the web DesignSystemProvider puts the colour scheme, the material mode, `lang` and `dir` on the
+ *          document element,
  *          follows the system scheme, hands React Aria the locale, and that useDesignSystem reads and sets the state.
  * Boundary: jsdom with a stubbed matchMedia; React Aria's I18nProvider is real.
  * Runtime: browser
@@ -81,6 +82,24 @@ describe("DesignSystemProvider (web)", () => {
     expect(root.lang).toBe("en");
     expect(root.dir).toBe("ltr");
     expect(screen.getByTestId("aria").textContent).toBe("en ltr");
+  });
+
+  it("runs the document in the solid material unless a showcase asks for another mode", () => {
+    root.removeAttribute("data-material");
+    const { rerender, unmount } = render(
+      <DesignSystemProvider>
+        <Probe />
+      </DesignSystemProvider>,
+    );
+    expect(root.dataset["material"]).toBe("solid");
+    rerender(
+      <DesignSystemProvider material="liquid">
+        <Probe />
+      </DesignSystemProvider>,
+    );
+    expect(root.dataset["material"]).toBe("liquid");
+    unmount();
+    expect(root.hasAttribute("data-material")).toBe(false);
   });
 
   it("applies a dark scheme and derives right-to-left from an Arabic locale", () => {

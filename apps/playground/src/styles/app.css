@@ -19,8 +19,10 @@ body {
   font-family: var(--font-arabic);
 }
 
-/* Jumps within a page glide, unless motion is reduced; a target scrolled or focused into view clears the sticky bar. */
+/* Jumps within a page glide, unless motion is reduced; a target scrolled or focused into view clears the sticky bar.
+   The root stays opaque in every material mode, so a glass layer always blurs a painted page (ADR 0320). */
 html {
+  background-color: var(--background);
   scroll-behavior: smooth;
   scroll-padding-top: 6rem;
 }

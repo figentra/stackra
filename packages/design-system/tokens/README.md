@@ -104,15 +104,19 @@ solid. The web stylesheet draws it as three classes:
 | `.material` (or `.material-regular`) | `regular` | bars, cards, panels                                    |
 | `.material-thick`                    | `thick`   | large surfaces with reading text: sheets, palettes     |
 
-Set the degree once on `<html data-material="…">`; the default is `glass`:
+Set the degree once on `<html data-material="…">`. With no attribute the stylesheet draws `glass`;
+`@stackra/ui`'s `DesignSystemProvider` sets `solid` unless it is given another mode, so product UI is opaque:
 
 - `solid`: opaque.
 - `frosted`: a dense fill and a heavy blur.
 - `glass`: the theme as written.
-- `liquid`: a thinner fill, a lifted backdrop and a sheen along the top edge.
+- `liquid`: a thinner fill, a lifted backdrop and a sheen along the top edge. The sheen takes the colour scheme's
+  rim-light share, so it is bright on light and faint on dark.
 
-Reduced transparency, more contrast and a browser without `backdrop-filter` all force `solid`. Forced colours keep
-the edge. Never put the material behind a component sample; samples sit on `background`.
+Reduced transparency, more contrast and a browser without `backdrop-filter` all force `solid`; a browser without
+`color-mix()` gets a static opaque material. Forced colours keep the edge. Reading text on the `regular` and `thick`
+levels holds 4.5:1 over pure black and pure white in every mode and scheme (ADR 0320 decision 4); `thin` carries none.
+Never put the material behind a component sample; samples sit on `background`.
 
 ## Generated stylesheets
 
