@@ -16,5 +16,5 @@ export class HomeRoute {
   static readonly path = "/";
 
   /** The page title. */
-  static readonly title = "Stackra Playground";
+  static readonly title = "Stackra Design System";
 }

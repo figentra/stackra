@@ -2,12 +2,17 @@
  * Stackra file contract:
  * Purpose: the playground shell: the layout route that reads the colour scheme and locale from the URL search
  *          params (`?scheme=light|dark|system&locale=en|ar`, so every combination deep-links), wraps the pages in
- *          the @stackra/ui DesignSystemProvider, and draws the header with the display switcher, the page navigation
- *          (grouped by category, with an All / Free / Pro filter kept in the `tier` search param) and the outlet. The UI is English (`lang="en"`) while `<html>` carries the chosen locale and direction,
- *          so the layout mirrors as the locale's would. On a client-side route change it moves focus to the new
- *          page's h1, and it keeps the browser's theme-color in step with the scheme on screen. A page that draws its own
- *          `main` (`ownsMain`, the Pro AppLayout) is hosted in a plain element, since a page has one `main` landmark.
- * Boundary: layout and the switcher only; the pages come from the route folders.
+ *          the @stackra/ui DesignSystemProvider and draws them on a glass stage: an ambient field, a floating glass
+ *          bar (the wordmark, the search button that opens the command palette, and the display switcher), and on a
+ *          component page its category strip above it, the page on a solid sheet of the theme's background (its
+ *          samples are tuned against that colour) and the previous and next pages below it. There is no
+ *          sidebar: the index is a gallery, and every page is one search away (⌘K, Ctrl+K or `/`). The UI is English
+ *          (`lang="en"`) while `<html>` carries the chosen locale and direction, so the layout mirrors as the
+ *          locale's would. On a client-side route change it moves focus to the new page's h1 and closes the
+ *          palette, and it keeps the browser's theme-color in step with the scheme on screen. A page that draws its
+ *          own `main` (`ownsMain`, the Pro AppLayout) is hosted in a plain element, since a page has one `main`
+ *          landmark.
+ * Boundary: layout, the switcher and the palette's open state only; the pages come from the route folders.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0165 (web client stack); ADR 0060 (light,
  *          dark, RTL).
@@ -15,67 +20,62 @@
 import { STACKRA_THEME } from "@stackra/tokens";
 import { ColorScheme } from "@stackra/ui/contracts";
 import {
+  Button,
   DesignSystemProvider,
+  Icon,
+  IconButton,
   Link,
   RouterProvider,
-  ToggleButton,
   ToggleButtonGroup,
   Toolbar,
   useDesignSystem,
 } from "@stackra/ui/react";
-import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Outlet, useHref, useLocation, useNavigate, useSearchParams } from "react-router";
 
-import { PageList } from "#src/components/page-list";
+import { CategoryNav } from "#src/components/category-nav";
+import { Choice } from "#src/components/choice";
 import {
-  matchesTier,
-  TIER_FILTERS,
-  tierOf,
-  type TierFilter,
-} from "#src/components/playground-pages/page-tier";
+  CommandPalette,
+  type CommandPaletteProps,
+  type PaletteAction,
+} from "#src/components/command-palette";
+import { PagePager } from "#src/components/page-pager";
 import type { PageLink } from "#src/types/page-link.type";
+import type { ShellContext } from "#src/types/shell-context.type";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::shell.*` keys.
 const STRINGS = {
-  title: "Stackra Playground",
+  brand: "Stackra",
+  product: "Playground",
   skip: "Skip to content",
-  pages: "Pages",
+  search: "Search components",
   settings: "Display settings",
+  showSettings: "Scheme and language",
   colorScheme: "Colour scheme",
   language: "Language and direction",
   scheme: { light: "Light", dark: "Dark", system: "System" },
-  tierFilter: "Show pages by tier",
-  tier: { all: "All", free: "Free", pro: "Pro" },
+  title: "Stackra Design System",
+  actions: {
+    scheme: (name: string) => `${name} scheme`,
+    home: "Go to the index",
+    components: "Browse every component",
+    componentsDetail: "The gallery, by category",
+  },
 } as const;
+
+/** The icon of each scheme choice; its name is the choice's accessible name. */
+const SCHEME_ICONS = { light: "sun", dark: "moon", system: "monitor" } as const;
 
 /** The locales the switcher offers: one left-to-right, one right-to-left; each name in its own language. */
 const LOCALES = [
-  { id: "en", name: "English (LTR)", dir: "ltr" },
-  { id: "ar", name: "العربية (RTL)", dir: "rtl" },
+  { id: "en", short: "English", name: "English (LTR)", dir: "ltr" },
+  { id: "ar", short: "العربية", name: "العربية (RTL)", dir: "rtl" },
 ] as const;
 
-// HeroUI marks the selected toggle with `accent-soft` on a `default` track, about 1:1 in this theme (an open brand
-// question), so the switcher paints the selected one with the accent fill instead: well over 3:1 in both schemes.
-const SELECTED_AS_ACCENT =
-  "[--toggle-button-bg-selected:var(--accent)] [--toggle-button-bg-selected-hover:var(--accent-hover)] [--toggle-button-bg-selected-pressed:var(--accent-pressed)] [--toggle-button-fg-selected:var(--accent-foreground)]";
-
-/** A switcher button: a check mark marks the selected one, so selection does not rest on the fill alone. */
-function Choice({ id, children }: { id: string; children: ReactNode }) {
-  return (
-    <ToggleButton id={id} className={SELECTED_AS_ACCENT}>
-      {({ isSelected }) => (
-        <>
-          {isSelected ? (
-            <svg viewBox="0 0 16 16" aria-hidden="true" data-testid="selected-mark">
-              <path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" strokeWidth="2" />
-            </svg>
-          ) : null}
-          {children}
-        </>
-      )}
-    </ToggleButton>
-  );
-}
+/** The palette's shortcut as this platform writes it. */
+const SHORTCUT =
+  typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent) ? "⌘K" : "Ctrl K";
 
 /** Props of {@link PlaygroundShell}. */
 export interface PlaygroundShellProps {
@@ -96,7 +96,7 @@ function DisplaySettings() {
   }, [themeColor]);
 
   return (
-    <Toolbar aria-label={STRINGS.settings} className="flex flex-wrap gap-3">
+    <Toolbar aria-label={STRINGS.settings} className="flex flex-wrap items-center gap-2">
       <ToggleButtonGroup
         aria-label={STRINGS.colorScheme}
         size="sm"
@@ -109,8 +109,8 @@ function DisplaySettings() {
         }}
       >
         {ColorScheme.map((scheme) => (
-          <Choice key={scheme} id={scheme}>
-            {STRINGS.scheme[scheme]}
+          <Choice key={scheme} id={scheme} aria-label={STRINGS.scheme[scheme]}>
+            <Icon name={SCHEME_ICONS[scheme]} size="sm" />
           </Choice>
         ))}
       </ToggleButtonGroup>
@@ -125,10 +125,10 @@ function DisplaySettings() {
           if (picked) setLocale(picked.id);
         }}
       >
-        {LOCALES.map(({ id, name, dir }) => (
-          <Choice key={id} id={id}>
+        {LOCALES.map(({ id, short, name, dir }) => (
+          <Choice key={id} id={id} aria-label={name}>
             <span lang={id} dir={dir}>
-              {name}
+              {short}
             </span>
           </Choice>
         ))}
@@ -137,40 +137,55 @@ function DisplaySettings() {
   );
 }
 
-/** The All / Free / Pro filter of the navigation, a single-selection ToggleButtonGroup like the display switcher. */
-function TierSwitch({
-  value,
-  onChange,
-}: {
-  value: TierFilter;
-  onChange: (tier: TierFilter) => void;
-}) {
-  return (
-    <ToggleButtonGroup
-      aria-label={STRINGS.tierFilter}
-      size="sm"
-      selectionMode="single"
-      disallowEmptySelection
-      selectedKeys={[value]}
-      onSelectionChange={(keys) => {
-        const picked = TIER_FILTERS.find((tier) => keys.has(tier));
-        if (picked) onChange(picked);
-      }}
-    >
-      {TIER_FILTERS.map((tier) => (
-        <Choice key={tier} id={tier}>
-          {STRINGS.tier[tier]}
-        </Choice>
-      ))}
-    </ToggleButtonGroup>
-  );
+/** The command palette with the shell's quick actions: the scheme, the language and the places to go. */
+function ShellPalette(props: Omit<CommandPaletteProps, "actions">) {
+  const { setColorScheme, setLocale } = useDesignSystem();
+  const navigate = useNavigate();
+  const actions: PaletteAction[] = [
+    ...ColorScheme.map((scheme) => ({
+      id: `scheme-${scheme}`,
+      label: STRINGS.actions.scheme(STRINGS.scheme[scheme]),
+      detail: STRINGS.colorScheme,
+      icon: SCHEME_ICONS[scheme],
+      keywords: "theme appearance mode",
+      run: () => setColorScheme(scheme),
+    })),
+    ...LOCALES.map(({ id, name }) => ({
+      id: `locale-${id}`,
+      label: name,
+      detail: STRINGS.language,
+      icon: "languages" as const,
+      keywords: `language direction ${id === "ar" ? "arabic rtl" : "english ltr"}`,
+      run: () => setLocale(id),
+    })),
+    {
+      id: "go-home",
+      label: STRINGS.actions.home,
+      detail: STRINGS.title,
+      icon: "sparkles",
+      keywords: "home index landing",
+      run: () => void navigate(`/${props.search}`),
+    },
+    {
+      id: "go-components",
+      label: STRINGS.actions.components,
+      detail: STRINGS.actions.componentsDetail,
+      icon: "layout-grid",
+      keywords: "gallery all pages",
+      run: () => void navigate(`/${props.search}#components`),
+    },
+  ];
+  return <CommandPalette {...props} actions={actions} />;
 }
 
-/** Layout route of the playground: provider, header, navigation and the current page. */
+/** Layout route of the playground: provider, glass bar, page chrome, the current page and the palette. */
 export function PlaygroundShell({ pages }: PlaygroundShellProps) {
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
   const [params, setParams] = useSearchParams();
+  const [isPaletteOpen, setPaletteOpen] = useState(false);
+  const [isSettingsOpen, setSettingsOpen] = useState(false);
+  const current = pages.find((page) => page.path === pathname);
   // React Router hands a functional update the params of the last render, so choices made before the next render (a
   // scheme, then a locale) would keep only the last; each write starts from the one before it instead. The ref takes
   // the URL's params only when something else changed them (a link, the back button), not on the echo of a write of
@@ -178,9 +193,9 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
   const latest = useRef(params);
   const written = useRef(new Set<string>());
   useEffect(() => {
-    const search = params.toString();
-    if (search === latest.current.toString()) written.current.clear();
-    else if (!written.current.has(search)) latest.current = params;
+    const query = params.toString();
+    if (query === latest.current.toString()) written.current.clear();
+    else if (!written.current.has(query)) latest.current = params;
   }, [params]);
   const setParam = (key: string, value: string) => {
     const next = new URLSearchParams(latest.current);
@@ -191,21 +206,73 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
   };
 
   // A client-side navigation announces nothing, so focus moves to the new page's h1; the first load keeps the
-  // browser's own focus.
+  // browser's own focus. The palette closes on the way; a modal dialog hands focus back to what it came from when it
+  // closes, so the h1 takes it again once the palette has closed.
   const main = useRef<HTMLDivElement>(null);
   const shownPath = useRef(pathname);
-  useEffect(() => {
-    if (shownPath.current === pathname) return;
-    shownPath.current = pathname;
+  const isFocusPending = useRef(false);
+  const focusHeading = () => {
     const heading = main.current?.querySelector("h1");
     heading?.setAttribute("tabindex", "-1");
     (heading ?? main.current)?.focus();
+  };
+  useEffect(() => {
+    if (shownPath.current === pathname) return;
+    shownPath.current = pathname;
+    isFocusPending.current = true;
+    setPaletteOpen(false);
+    focusHeading();
   }, [pathname]);
+  const openPalette = () => {
+    isFocusPending.current = false;
+    setPaletteOpen(true);
+  };
+  const onPaletteClose = () => {
+    setPaletteOpen(false);
+    if (isFocusPending.current) focusHeading();
+    isFocusPending.current = false;
+  };
 
-  const tier = TIER_FILTERS.find((value) => value === params.get("tier")) ?? "all";
-  const listed = pages.filter((page) => matchesTier(tierOf(page.path), tier));
+  // ⌘K or Ctrl+K anywhere, and `/` outside a text field, open the palette.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      // A key pressed with nothing focused targets the document, which is not an element.
+      const target = event.target instanceof Element ? event.target : null;
+      const isTyping = target?.closest("input, textarea, select, [contenteditable='true']");
+      const isCommandK = event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey);
+      // A sample's own open dialog keeps the keys: the palette never opens over it.
+      const isDialogOpen = document.querySelector(
+        'dialog[open]:not(.command-palette), [role="dialog"][aria-modal="true"], [role="alertdialog"]',
+      );
+      if (!isDialogOpen && (isCommandK || (event.key === "/" && !isTyping))) {
+        event.preventDefault();
+        openPalette();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const context: ShellContext = { openPalette };
+
   const ownsMain = pages.some((page) => page.path === pathname && page.ownsMain);
-  const outlet = <Outlet />;
+  const pageArea = (
+    <>
+      {current ? <CategoryNav pages={pages} current={current} search={search} /> : null}
+      {/* A component page sits on a solid sheet of the theme's background: its soft and translucent samples are tuned
+          against that colour, so the ambient field never shifts what they measure. */}
+      <div
+        className={
+          current
+            ? "min-w-0 rounded-3xl border border-separator bg-background p-4 sm:p-8"
+            : "min-w-0 px-1 sm:px-3"
+        }
+      >
+        <Outlet context={context} />
+      </div>
+      {current ? <PagePager pages={pages} current={current} search={search} /> : null}
+    </>
+  );
 
   return (
     <RouterProvider navigate={navigate} useHref={useHref}>
@@ -215,37 +282,95 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
         onColorSchemeChange={(scheme) => setParam("scheme", scheme)}
         onLocaleChange={(locale) => setParam("locale", locale)}
       >
-        <div lang="en" className="min-h-dvh bg-background text-foreground">
+        <div lang="en" className="relative min-h-dvh text-foreground">
+          <div className="ambient" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
           <a
             href="#main"
-            className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-10 focus:rounded focus:bg-surface focus:p-2 focus:outline-2 focus:outline-focus"
+            className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-30 focus:rounded-xl focus:bg-surface focus:p-2 focus:outline-2 focus:outline-focus"
           >
             {STRINGS.skip}
           </a>
-          <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border p-4">
-            <Link href={`/${search}`} underline="hover" className="text-lg font-semibold">
-              {STRINGS.title}
-            </Link>
-            <DisplaySettings />
-          </header>
-          <div className="grid md:grid-cols-[14rem_1fr]">
-            <nav
-              aria-label={STRINGS.pages}
-              className="grid content-start gap-4 border-border p-4 md:border-e"
+          {/* One row on every width: on a phone the search button keeps only its icon and the display settings fold
+              behind a button; from the small breakpoint up both sit in the row. */}
+          <header className="glass sticky top-3 z-20 mx-auto mt-3 flex w-[min(100%-1.5rem,80rem)] flex-wrap items-center gap-x-2 gap-y-2 rounded-2xl px-2 py-2 sm:gap-x-3 sm:px-3">
+            <Link
+              href={`/${search}`}
+              underline="hover"
+              className="flex min-w-0 items-center gap-2 rounded-xl px-1 py-1 hover:no-underline"
             >
-              <TierSwitch value={tier} onChange={(next) => setParam("tier", next)} />
-              <PageList pages={listed} search={search} />
-            </nav>
-            {ownsMain ? (
-              <div ref={main} id="main" tabIndex={-1} className="min-w-0 p-6">
-                {outlet}
-              </div>
-            ) : (
-              <main ref={main} id="main" tabIndex={-1} className="min-w-0 p-6">
-                {outlet}
-              </main>
-            )}
-          </div>
+              <span
+                aria-hidden="true"
+                className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent font-mono text-sm font-semibold text-accent-foreground"
+              >
+                st
+              </span>
+              <span className="font-semibold tracking-tight">{STRINGS.brand}</span>{" "}
+              <span className="text-muted max-sm:sr-only">{STRINGS.product}</span>
+            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              startIcon="search"
+              onPress={openPalette}
+              aria-keyshortcuts="Meta+K Control+K /"
+              className="ms-auto justify-start rounded-xl text-muted max-sm:min-w-9 max-sm:px-2 sm:w-64"
+            >
+              <span className="flex-1 text-start max-sm:sr-only">{STRINGS.search}</span>
+              <kbd
+                aria-hidden="true"
+                dir="ltr"
+                className="rounded-md border border-border px-1.5 font-mono text-xs max-sm:hidden"
+              >
+                {SHORTCUT}
+              </kbd>
+            </Button>
+            <IconButton
+              icon="settings"
+              label={STRINGS.showSettings}
+              variant="ghost"
+              size="sm"
+              aria-expanded={isSettingsOpen}
+              aria-controls="display-settings"
+              onPress={() => setSettingsOpen((open) => !open)}
+              className="sm:hidden"
+            />
+            <div
+              id="display-settings"
+              className={`max-sm:w-full max-sm:justify-center ${isSettingsOpen ? "max-sm:flex" : "max-sm:hidden"}`}
+            >
+              <DisplaySettings />
+            </div>
+          </header>
+          {ownsMain ? (
+            <div
+              ref={main}
+              id="main"
+              tabIndex={-1}
+              className="mx-auto grid w-[min(100%-1.5rem,80rem)] min-w-0 gap-6 py-6 outline-none"
+            >
+              {pageArea}
+            </div>
+          ) : (
+            <main
+              ref={main}
+              id="main"
+              tabIndex={-1}
+              className="mx-auto grid w-[min(100%-1.5rem,80rem)] min-w-0 gap-6 py-6 outline-none"
+            >
+              {pageArea}
+            </main>
+          )}
+          <ShellPalette
+            pages={pages}
+            search={search}
+            isOpen={isPaletteOpen}
+            onClose={onPaletteClose}
+          />
         </div>
       </DesignSystemProvider>
     </RouterProvider>

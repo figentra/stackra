@@ -13,7 +13,7 @@
     "motion": "Decided 2026-09-29 (user): keep the Brand System. The wordmark is static; the logo animation fades the frame and only the figentra_ bar in the signature blinks.",
     "endorsement": "by figentra_ — the figentra_ bar (cursor) appears in the signature only; the Latin name leads in both locales.",
     "cursor": "Inherited unchanged (amber); never used as a cursor on Stackra surfaces, never after the stackra name.",
-    "surfaces": "No glass (shadows allowed), no gradients."
+    "surfaces": "Amended 2026-10-24 (owner), ADR 0320: a glass material (a translucent surface role, backdrop blur, hairline edge) for showcase and marketing surfaces only, never under a component sample, solid under reduced transparency or more contrast; gradients only as masked ambient tints, never a control or text fill. Product UI keeps opaque layers; the wordmark is never glass."
   },
   "contract": {
     "motionSection": "Motion tokens",
