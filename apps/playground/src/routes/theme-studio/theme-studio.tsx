@@ -213,10 +213,13 @@ export function ThemeStudio() {
           </ul>
         </div>
       ) : null}
-      <div className="grid items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)] 2xl:grid-cols-[18rem_minmax(0,1fr)_24rem]">
-        <StudioControls knobs={knobs} onChange={(next) => change({ base, knobs: next })} />
+      {/* A builder's layout: the controls and the export stay in reach at the sides while the canvas scrolls. */}
+      <div className="grid items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)] 2xl:grid-cols-[20rem_minmax(0,1fr)_26rem]">
+        <div className="lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:overscroll-contain lg:rounded-3xl">
+          <StudioControls knobs={knobs} onChange={(next) => change({ base, knobs: next })} />
+        </div>
         <StudioPreview theme={derived.theme} scheme={resolvedColorScheme} />
-        <div className="lg:col-span-2 2xl:col-span-1">
+        <div className="lg:col-span-2 2xl:sticky 2xl:top-24 2xl:col-span-1 2xl:max-h-[calc(100dvh-7rem)] 2xl:overflow-y-auto 2xl:overscroll-contain 2xl:rounded-3xl">
           <StudioExport
             base={STACKRA_THEME}
             theme={derived.theme}

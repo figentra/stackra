@@ -35,7 +35,8 @@ function renderStudio(url = ThemeStudioRoute.path) {
 }
 
 const preview = () =>
-  screen.getByRole("heading", { name: "Preview" }).nextElementSibling as HTMLElement;
+  screen.getByRole("region", { name: "Preview" }).querySelector<HTMLElement>("[data-theme]") ??
+  document.body;
 const code = () => screen.getByRole("region", { name: /the export/ }).textContent ?? "";
 
 describe("ThemeStudio", () => {

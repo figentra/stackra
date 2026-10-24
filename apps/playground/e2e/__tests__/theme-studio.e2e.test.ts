@@ -18,8 +18,8 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 
 const previewVariable = (page: import("@playwright/test").Page, name: string) =>
   page
-    .getByRole("heading", { name: "Preview" })
-    .locator("xpath=following-sibling::div[1]")
+    .getByRole("region", { name: "Preview" })
+    .locator("[data-theme]")
     .evaluate((element, property) => getComputedStyle(element).getPropertyValue(property), name);
 
 test("a link with knobs opens the derived theme in the preview", async ({ page }) => {
