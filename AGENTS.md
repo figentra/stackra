@@ -484,7 +484,7 @@ means not yet. A row changes only by a new ADR. Full table with revival triggers
 | Storybook and `*.stories.*` files                                                                           | Rejected | nothing replaces it; stories files are banned (`/adr/0128-code-conventions-enums-classes-components-and-kind-folders`)                                                                                                                                                 |
 | GraphQL                                                                                                     | Rejected | one declaration per action, exposed as MCP tools and REST (`/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits`)                                                                                                                                          |
 | Hand-written gRPC                                                                                           | Rejected | a transport driver behind the port (`/adr/0142-cross-service-transport-through-drivers`)                                                                                                                                                                               |
-| Active-active across regions                                                                                | Rejected | one region; cells come later (`/adr/0186-backups-and-disaster-recovery`)                                                                                                                                                                                               |
+| Active-active across regions                                                                                | Rejected | two independent regions, GCC and EU, a tenant in one of them; cells within a region come later (`/adr/0186-backups-and-disaster-recovery`)                                                                                                                             |
 | An LLM proxy gateway in front of model providers; a separate-language agent runtime (LangGraph and similar) | Rejected | AI SDK core plus MCP SDK inside the service; one MCP gateway in the ai service (`/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free`)                                                                                                                             |
 | A runtime schema engine, JSONB-for-everything, tenant data that carries code, markup or logic               | Rejected | coded resources and build-time generation; allowed: data that only references registered code (L2 UI documents, builder agents, automations, custom fields); tenant logic only in the sandboxed code step (`/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step`) |
 | A shared React component library across web and native                                                      | Deferred | share types, client, validation, state, i18n and tokens, and the `@stackra/ui` contract (`/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs`)                                                                                                         |
@@ -777,10 +777,13 @@ new code in the v3 shape where the member already allows it.
 - Independent workspace members; feature modules in `src/modules/<key>/`, each with the module groups of ADR 0294
   decision 13 (`models/`, `actions/`, `queries/`, `schemas/`, `enums/`, `errors/`, `events/`, `listeners/`,
   `workflows/`, `access/`, `services/`, `drivers/`, `extensions/`, `integrations/`, `connections/`, `resources/<model>/`,
-  `database/{migrations,factories,seeders,macros}/`, `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its
+  `database/{migrations,factories,seeders,macros,sequences}/`, `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its
   first file; `database/` is per module, its migrations numbered per module, and each module's tables live in its own
   Postgres schema
 - Config classes in `src/config/`; the public type surface in `src/contracts/`
+- Three kinds added by ADR 0294's amendment of 2026-10-24: a sequence is `database/sequences/<name>.sequence.ts` (ADR 0342), a
+  product's data class is `access/<name>.data-class.ts` (ADR 0341), and an edition's model addition is
+  `models/<base>.model-addition.ts` (ADR 0336)
 - A migration is a frozen snapshot: it imports only `@stackra/database` and `#stackra/migrations`, and its tables and columns are literals (ADR 0159, v3.1 note)
 
 ##### Apps (<name>)

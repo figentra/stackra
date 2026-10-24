@@ -93,10 +93,13 @@ new code in the v3 shape where the member already allows it.
 - Independent workspace members; feature modules in `src/modules/<key>/`, each with the module groups of ADR 0294
   decision 13 (`models/`, `actions/`, `queries/`, `schemas/`, `enums/`, `errors/`, `events/`, `listeners/`,
   `workflows/`, `access/`, `services/`, `drivers/`, `extensions/`, `integrations/`, `connections/`, `resources/<model>/`,
-  `database/{migrations,factories,seeders,macros}/`, `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its
+  `database/{migrations,factories,seeders,macros,sequences}/`, `ai/`, `functions/`, `constants/`, `types/`), a group appearing with its
   first file; `database/` is per module, its migrations numbered per module, and each module's tables live in its own
   Postgres schema
 - Config classes in `src/config/`; the public type surface in `src/contracts/`
+- Three kinds added by ADR 0294's amendment of 2026-10-24: a sequence is `database/sequences/<name>.sequence.ts` (ADR 0342), a
+  product's data class is `access/<name>.data-class.ts` (ADR 0341), and an edition's model addition is
+  `models/<base>.model-addition.ts` (ADR 0336)
 - A migration is a frozen snapshot: it imports only `@stackra/database` and `#stackra/migrations`, and its tables and columns are literals (ADR 0159, v3.1 note)
 
 ### Apps (<name>)
