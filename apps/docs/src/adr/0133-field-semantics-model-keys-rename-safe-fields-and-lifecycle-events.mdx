@@ -1,6 +1,6 @@
 ---
 title: "0133 — Field semantics, model keys, rename-safe fields and lifecycle events"
-description: "Accepted, amended by 0264, 0294 · 2026-10-20"
+description: "Accepted, amended by 0264, 0294, 0314 · 2026-10-20"
 ---
 
 <Note>
@@ -27,6 +27,13 @@ without `@Renamed` fails through the manifest lock).
   Amends [0095](/adr/0095-zod-inside-field-decorators), [0096](/adr/0096-trait-naming-grammar) and
   [0097](/adr/0097-model-and-database-packages). Those pages keep their decisions; this ADR adds the
   field types, keys and events.
+</Note>
+
+<Note>
+  Amended by [0314](/adr/0314-postgis-approved-geospatial-field-and-macros): the deferral of the
+  geospatial field in decision 2 and in the deferred item is lifted. The field is given as the types
+  `GeoPoint`, `GeoPolygon` and `GeoLine`, backed by PostGIS, with the `t.point()`, `t.polygon()` and
+  `t.line()` macros and GiST indexes that 0314 sets out.
 </Note>
 
 <Note>

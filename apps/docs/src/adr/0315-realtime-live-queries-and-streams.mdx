@@ -1,0 +1,46 @@
+---
+title: "0315 — Realtime: live queries, typed module streams and action feedback"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Builds on [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait). The transport,
+  the drivers and the IAM check on each channel stay as 0225 sets them. This ADR adds what a query,
+  a module and an action can declare.
+</Note>
+
+## Context
+
+Screens should stay current without a reload. A table, a list or a dashboard should update when its data changes. A fleet map needs positions many times a second. A save should give feedback, and a long job should report its progress. [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait) fixed the transport (WebSocket, with a server-sent-events fallback), the drivers and the IAM check on each channel. It did not say how a query or a module declares that its data is live.
+
+Cached reads already name the events that invalidate them. A query takes `cache: { ttl, invalidateOn }` ([0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components), decision 31; [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding), decision 3), and a widget's refresh is derived from that list ([0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards), decision 17). This ADR reuses the same declaration for live data.
+
+## Decision
+
+1. **Live queries.** A query that declares `cache.invalidateOn` is live. Gen wires an invalidation channel for it, keyed by the query's cache scope:
+   - **Tenant and principal channels** apply to every cache scope other than Site. The channel is per tenant and principal.
+   - **Site channel** applies to a Site-scoped query ([0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components), decision 31), which reads no caller. The channel is keyed by site, locale and market, with no principal.
+
+   When an invalidating event fires, the channel tells the client, and `@stackra/query` refetches the query. Tables, lists and dashboards refresh this way, and a widget refreshes through its derived `refreshOn` ([0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards)).
+   - The channel carries the invalidation, not the data. The refetch is an ordinary read of the query, under its permission.
+
+2. **Typed module streams.** For high-rate data, such as fleet positions, a module declares a typed stream. The client subscribes to it directly, without a refetch cycle. The payload is a typed `Schema`, as every wire shape is.
+3. **Action feedback.**
+   - A short action returns a typed result to its caller, and the panel shows it, for example as a toast.
+   - A long action is a job ([0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules)). It streams its progress on a channel until it completes, with the completion notification that [0139](/adr/0139-actions-declare-their-user-experience) requires for long jobs.
+4. **Channels are IAM-authorised.** Every tenant and principal channel and every stream is checked by IAM, as [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait) decision 1 requires. A session that fails the check receives no channel and no refresh, and the payload is never sent to it. The site channel has no principal to check. It carries an invalidation only, never a payload, and its refetch is the Site-scoped query, which reads no caller.
+
+## Consequences
+
+- A query author adds the `cache.invalidateOn` list that already exists for caching, and the query becomes live. No polling code is written.
+- A live view is only as fresh as the events it invalidates on. A missing invalidating event leaves a stale view until the next read.
+- A live query in a non-Site scope uses a tenant and principal channel, so its refresh is checked against the subscriber's session. A live query in the Site scope uses the site channel, so its refresh does not depend on who is signed in.
+- Streams are a second kind of channel beside invalidation. The drivers of [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait) carry both.
+
+## Enforcement
+
+planned — the channel authorisation test named in [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait), extended to the tenant, principal and site invalidation channels and to module streams. The gen check `refresh_without_invalidation` of [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) already fails a widget's explicit refresh on an event that its query does not invalidate on.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on: [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait), [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding), [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components), [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards), [0139](/adr/0139-actions-declare-their-user-experience) and [0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules). Sources: owner decision of 2026-10-24 on realtime, live queries and streams.
