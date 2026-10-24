@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: proves page discovery pairs each categorised route with its page by folder, orders the pages by category
- *          and then title, skips the index route, refuses a wrong path, an unknown category and a missing page, and
+ * Purpose: proves page discovery pairs each categorised route with its page by folder, orders the pages by category,
+ *          then tier (a `/pro-*` path is Pro, after the free pages) and then title, skips the index route, refuses a wrong path, an unknown category and a missing page, and
  *          that the real route folders yield every category the existing pages use.
  * Boundary: plain module records for the rules; the real `import.meta.glob` result for the last case; jsdom, no network.
  * Runtime: browser
@@ -39,8 +39,30 @@ describe("discoverPages", () => {
       },
     );
     expect(pages.map(({ route: { title } }) => title)).toEqual(["Base", "Alpha", "Zeta", "Field"]);
-    expect(pages[0]?.route).toEqual({ path: "/base", title: "Base", category: "Foundations" });
+    expect(pages[0]?.route).toEqual({
+      path: "/base",
+      title: "Base",
+      category: "Foundations",
+      tier: "Free",
+    });
     expect(pages[0]?.element.type).toBeTypeOf("function");
+  });
+
+  it("marks a `/pro-*` path Pro and lists it after the free pages of its category", () => {
+    const pages = discoverPages(
+      {
+        "../../routes/pro-alpha/pro-alpha.route.ts": route("/pro-alpha", "Alpha Pro", "Actions"),
+        "../../routes/zeta/zeta.route.ts": route("/zeta", "Zeta", "Actions"),
+      },
+      {
+        "../../routes/pro-alpha/pro-alpha.tsx": page(),
+        "../../routes/zeta/zeta.tsx": page(),
+      },
+    );
+    expect(pages.map(({ route: { title, tier } }) => `${title} ${tier}`)).toEqual([
+      "Zeta Free",
+      "Alpha Pro Pro",
+    ]);
   });
 
   it("skips a route that names no category, as the index route does", () => {

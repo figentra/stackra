@@ -19,6 +19,19 @@ language (English, left to right; Arabic, right to left). Both live in the URL, 
 /foundations?scheme=dark&locale=ar
 ```
 
+## Navigation and the glass
+
+There is no sidebar. The index (`/`) is the landing: a hero, a live showcase of scenes built from `@stackra/ui`, and
+a gallery with one glass panel per category (free pages first, Pro pages badged, an All / Free / Pro filter). Every
+page is one search away: the command palette opens from the bar's search button, ⌘K or Ctrl+K, and `/`. A component
+page shows its category as a strip above it (the current page marked) and the previous and next pages below it; the
+page itself sits on a solid sheet of the theme's background, because its samples are tuned against that colour.
+
+The glass (`glass`, `glass-strong` in `src/styles/app.css`) is built from the theme's roles only. It turns solid under
+`prefers-reduced-transparency`, `prefers-contrast: more` and in browsers without `backdrop-filter`, keeps an edge in
+forced colours, and its motion stops under `prefers-reduced-motion`. The ambient field under it is flat tints shaped by
+masks, so axe measures text against every tint at once rather than giving up on a gradient.
+
 ## Pages
 
 | Route          | Page                                                                                                                |
@@ -29,7 +42,7 @@ language (English, left to right; Arabic, right to left). Both live in the URL, 
 | `/typography`  | `Text` and `Heading`: every type, level, tone, alignment, truncation and language, a live sample                    |
 
 Add a page as a route folder `src/routes/<name>/` with `<name>.route.ts` (path `/<name>` and title), the page
-`<name>.tsx` and `__tests__/`, then one line in `PAGES` in `src/main.tsx`. Its h1 is its title. The route class also
+`<name>.tsx` and `__tests__/`, and nothing else: the router, the gallery, the palette and the e2e suite find it. Its h1 is its title. The route class also
 names its `category` (`Foundations`, `Actions`, `Typography` or `Navigation`, in `src/enums/page-category.enum.ts`),
 which groups it in the shell's navigation and on the index. The end-to-end suite finds the folder by itself.
 
@@ -64,14 +77,23 @@ e2e/__tests__/playground.e2e.test.ts   every route × light/dark × LTR/RTL, h1,
 src/
 ├── playground.module.ts               the root module
 ├── main.tsx                           stand-in entry and route tree until gen writes them (STA-339)
-├── components/playground-shell/       the layout: provider, header, switcher, navigation
+├── components/playground-shell/       the layout: provider, glass bar, switcher, category strip, pager, palette
+├── components/command-palette/        search every page (⌘K, Ctrl+K or `/`)
+├── components/category-nav/           a component page's category strip
+├── components/page-pager/             previous and next page
+├── components/page-gallery/           the index gallery: a glass panel per category, All / Free / Pro
+├── components/showcase/               the index page's live scenes
+├── components/hero-art/               the index hero's decorative glass stack
+├── components/choice/                 a switcher choice with a check mark
 ├── routes/home/                       `/`
 ├── routes/foundations/                `/foundations`
 ├── routes/icon/                       `/icon`
 ├── routes/typography/                 `/typography`
-├── components/page-list/              the pages grouped by category (index page and navigation)
+├── components/page-list/              the pages grouped by category, as rows (the palette)
 ├── components/page-section/           a named region with a level-2 heading and a note
 ├── enums/page-category.enum.ts        the page categories, in navigation order
+├── enums/page-tier.enum.ts            Free and Pro (a `/pro-*` path is Pro)
+├── types/shell-context.type.ts        what the shell hands a page (open the palette)
 ├── types/page-link.type.ts            what a navigation link needs
-└── styles/app.css                     Tailwind, HeroUI, the stackra fonts and theme
+└── styles/app.css                     Tailwind, HeroUI, the stackra fonts and theme, the glass material
 ```

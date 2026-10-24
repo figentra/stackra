@@ -1,67 +1,77 @@
 /**
  * Stackra file contract:
- * Purpose: proves the index route sits at `/`, titles itself, and links every page it is given under its category (in
- *          category order), keeping the search params so the scheme and direction carry over.
- * Boundary: a memory router in jsdom; no network.
+ * Purpose: proves the index route sits at `/`, titles itself, shows its live showcase, and links every page it is
+ *          given in its gallery under its category (in category order), keeping the search params so the scheme and
+ *          direction carry over; the Free / Pro filter narrows the gallery and a Pro page wears its badge.
+ * Boundary: a memory router in jsdom; no network. Rendered alone, outside the shell, so the search button (which
+ *          needs the shell's palette) is left out.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0022 (test placement).
  */
 // @covers sta-350:FR-010
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { Home } from "#src/routes/home/home";
 import { HomeRoute } from "#src/routes/home/home.route";
+import type { PageLink } from "#src/types/page-link.type";
+
+const PAGES: readonly PageLink[] = [
+  { path: "/b", title: "Page B", category: "Typography", tier: "Free" },
+  { path: "/a", title: "Page A", category: "Foundations", tier: "Free" },
+  { path: "/pro-c", title: "Page C", category: "Typography", tier: "Pro" },
+];
+
+function renderHome(url = "/") {
+  const router = createMemoryRouter([{ path: HomeRoute.path, element: <Home pages={PAGES} /> }], {
+    initialEntries: [url],
+  });
+  render(<RouterProvider router={router} />);
+}
 
 describe("HomeRoute", () => {
-  it("lists the pages under their category, in category order", () => {
-    const router = createMemoryRouter(
-      [
-        {
-          path: HomeRoute.path,
-          element: (
-            <Home
-              pages={[
-                { path: "/b", title: "Page B", category: "Typography" },
-                { path: "/a", title: "Page A", category: "Foundations" },
-              ]}
-            />
-          ),
-        },
-      ],
-      { initialEntries: ["/"] },
-    );
-    render(<RouterProvider router={router} />);
-    expect(
-      screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent),
-    ).toEqual(["Foundations", "Typography"]);
-    expect(
-      within(screen.getByRole("list", { name: "Typography" })).getByRole("link").textContent,
-    ).toBe("Page B");
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = () => undefined;
   });
 
-  it("renders its page at / with a link to every page", () => {
-    const router = createMemoryRouter(
-      [
-        {
-          path: HomeRoute.path,
-          element: (
-            <Home
-              pages={[
-                { path: "/b", title: "Page B", category: "Typography" },
-                { path: "/a", title: "Page A", category: "Foundations" },
-              ]}
-            />
-          ),
-        },
-      ],
-      { initialEntries: ["/?scheme=dark&locale=ar"] },
-    );
-    render(<RouterProvider router={router} />);
+  it("lists the pages under their category, in category order, in the Pages navigation", () => {
+    renderHome();
+    const gallery = within(screen.getByRole("navigation", { name: "Pages" }));
+    expect(
+      gallery.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent),
+    ).toEqual(["Foundations", "Typography"]);
+    expect(
+      within(gallery.getByRole("list", { name: "Typography" }))
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(["PBPage B", "PCPage CPro"]);
+  });
+
+  it("renders its page at / with a link to every page that keeps the search params", () => {
+    renderHome("/?scheme=dark&locale=ar");
     expect(screen.getByRole("heading", { level: 1, name: HomeRoute.title })).toBeTruthy();
     expect(document.title).toBe(HomeRoute.title);
-    expect(screen.getByRole("link", { name: "Page A" }).getAttribute("href")).toBe(
+    expect(screen.getByRole("link", { name: /Page A/ }).getAttribute("href")).toBe(
       "/a?scheme=dark&locale=ar",
     );
+  });
+
+  it("narrows the gallery to one tier", () => {
+    renderHome();
+    act(() => screen.getByRole("radio", { name: "Pro" }).click());
+    const gallery = within(screen.getByRole("navigation", { name: "Pages" }));
+    expect(gallery.getAllByRole("link").map((link) => link.textContent)).toEqual(["PCPage CPro"]);
+    act(() => screen.getByRole("radio", { name: "Free" }).click());
+    expect(gallery.queryByText("Page C")).toBeNull();
+    expect(gallery.getAllByRole("link")).toHaveLength(2);
+  });
+
+  it("shows the live showcase, built from the system's components", () => {
+    renderHome();
+    const showcase = within(screen.getByRole("region", { name: "In use" }));
+    expect(showcase.getByRole("heading", { level: 3, name: "Invite your team" })).toBeTruthy();
+    expect(showcase.getByRole("textbox", { name: "Work email" })).toBeTruthy();
+    act(() => showcase.getByRole("button", { name: "Send invite" }).click());
+    expect(showcase.getByText(/Invite sent/)).toBeTruthy();
   });
 });
