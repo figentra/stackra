@@ -132,6 +132,11 @@ export class BlueprintRecord {
     return this.add(new ColumnRecord(name, "jsonb"));
   }
 
+  /** See `Blueprint.tsvector`. */
+  tsvector(name: string): ColumnDefinition {
+    return this.add(new ColumnRecord(name, "tsvector"));
+  }
+
   /**
    * See `Blueprint.enum`.
    *

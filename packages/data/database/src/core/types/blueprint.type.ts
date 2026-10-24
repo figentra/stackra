@@ -51,6 +51,9 @@ export interface Blueprint {
   /** A `jsonb` document. */
   jsonb(name: string): ColumnDefinition;
 
+  /** A `tsvector`, a full-text document for a GIN index; @stackra/search's `t.searchable(...)` macro writes them. */
+  tsvector(name: string): ColumnDefinition;
+
   /** `text` limited to `values` by the check constraint `ck_<table>_<column>`. */
   enum(name: string, values: readonly string[]): ColumnDefinition;
 
