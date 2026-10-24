@@ -1,22 +1,27 @@
 /**
  * Stackra file contract:
- * Purpose: `EntitlementRegistration`, one row gen hands `registerEntitlements`: an action or query class and the
- *          entitlements that gate it.
- * Boundary: a type only. Which entitlement gates which call is derived at build time (a limit gates its counted
- *           model's generated create), and the folders it is derived from are gone at runtime, so this row is how the
- *           plan driver knows it.
+ * Purpose: `EntitlementRegistration`, one row gen hands `registerEntitlements`: an entitlement class with the key gen
+ *          derived and locked in the manifest, and the action and query classes it gates (the manifest's
+ *          `entitlements[].gates`).
+ * Boundary: a type only. The key comes from the module folder and the gates from the build (a limit gates its counted
+ *           model's generated create; a declared `entitlement` option gates its call), and both are gone at runtime,
+ *           so this row is how the plan driver and the sources know them.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 20 and 22: derived identities); ADR 0138 (as amended: the entitlement step).
+ * Governing contract: ADR 0294 (decisions 10, 20 and 22: derived identities, the manifest lock); ADR 0138 (as amended:
+ *                     the entitlement step).
  */
 import type { AnyClass } from "@stackra/container";
 
 import type { EntitlementClass } from "#core/types/entitlement-class.type";
 
-/** The entitlements of one call. */
+/** The derived identity of one entitlement and the calls it gates. */
 export interface EntitlementRegistration {
-  /** The action or query class. */
-  readonly call: AnyClass;
+  /** The entitlement class. */
+  readonly type: EntitlementClass;
 
-  /** The entitlements the tenant's plan must grant for the call to run. */
-  readonly entitlements: readonly EntitlementClass[];
+  /** The locked key, `<module>.<name>` (`catalogue.product_limit`). */
+  readonly key: string;
+
+  /** The action and query classes the scope's plan must grant this entitlement for. */
+  readonly gates: readonly AnyClass[];
 }
