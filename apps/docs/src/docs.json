@@ -411,7 +411,13 @@
               "adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks",
               "adr/0309-icons-declarations-name-an-icon-and-the-platform-resolves-it",
               "adr/0310-stackra-ui-pro-private-heroui-pro-wrappers",
-              "adr/0311-stackra-ui-wave-3-fields-props-vocabulary"
+              "adr/0311-stackra-ui-wave-3-fields-props-vocabulary",
+              "adr/0321-the-trait-inventory-owning-packages-and-schedulable",
+              "adr/0322-generated-constants-instead-of-string-literals",
+              "adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port",
+              "adr/0324-error-boundaries-nearest-error-tsx-ancestor-wins",
+              "adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy",
+              "adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets"
             ]
           }
         ]

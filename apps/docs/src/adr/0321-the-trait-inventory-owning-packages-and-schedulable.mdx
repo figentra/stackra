@@ -1,0 +1,118 @@
+---
+title: "0321 — The trait inventory, the owning package of each trait, and Schedulable"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0096](/adr/0096-trait-naming-grammar): the trait list of its decision 4 gains the
+  inventory of decision 2 below, and the owner named here applies where the two differ. The note on
+  0096 records which of its rows stand.
+</Note>
+
+## Context
+
+[0096](/adr/0096-trait-naming-grammar) set the grammar for trait names and a first table of owners on
+2026-10-19. Later decisions moved some traits: SEO to its own package ([0301](/adr/0301-stackra-seo-package)),
+commenting to the collaboration package ([0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait)),
+and [0116](/adr/0116-content-types-and-custom-fields) bundles the content traits into content types. A model author needs
+one list of every trait a model can carry, with the package that owns each one. A reviewer also needs to know
+what is deliberately not a trait, because the same wish (personal data, consent, a feature gate) keeps coming
+back as one. The owner settled both in the final structure review of 2026-10-24.
+
+## Decision
+
+1. **Grammar and owners.** Traits keep the forms of [0096](/adr/0096-trait-naming-grammar) decision 2: `Has*` for
+   a trait that owns data, and `*able` for a capability that other code acts on. Each trait is exported by the
+   package that owns its behaviour, and that owner is recorded in the trait registry of `@stackra/model`.
+
+2. **The inventory.** These are the model traits of this inventory, each with its owner. A trait of the 0096 table that this list does not name stands under the note on 0096 until the owner decides it.
+
+   | Trait                | What it adds                                                                                                                                | Owning package           |
+   | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+   | `HasPublicId`        | The prefixed public id, typed `PublicId<"ord">`, in place of the database id                                                                | `@stackra/model`         |
+   | `BelongsToTenant`    | The `tenant_id` column with row-level security ([0323](/adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port)) | `@stackra/tenancy`       |
+   | `Timestamps`         | Created and updated times                                                                                                                   | `@stackra/model`         |
+   | `HasUserStamps`      | Created-by and updated-by user references ([0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events))            | `@stackra/model`         |
+   | `SoftDeletes`        | The soft delete policy ([0134](/adr/0134-data-invariants-classification-and-delete-lifecycle))                                              | `@stackra/database`      |
+   | `Archivable`         | The archive delete policy                                                                                                                   | `@stackra/database`      |
+   | `Versioned`          | A row version for optimistic concurrency                                                                                                    | `@stackra/database`      |
+   | `HasRevisions`       | Draft and published revisions ([0116](/adr/0116-content-types-and-custom-fields))                                                           | `@stackra/content`       |
+   | `AppendOnly`         | Rows are inserted and never updated or deleted                                                                                              | `@stackra/database`      |
+   | `Translatable`       | Per-locale field values and their fallback chain ([0162](/adr/0162-validation-translatable-fields-and-entityschema-placement))              | `@stackra/model`         |
+   | `Sluggable`          | A unique slug per locale                                                                                                                    | `@stackra/content`       |
+   | `Publishable`        | Draft, scheduled and published states                                                                                                       | `@stackra/content`       |
+   | `HasSeo`             | SEO metadata for the record ([0301](/adr/0301-stackra-seo-package))                                                                         | `@stackra/seo`           |
+   | `HasMedia`           | Attached files                                                                                                                              | `@stackra/media`         |
+   | `HasCustomFields`    | Tenant-defined fields in a side table, bounded by entitlements ([0116](/adr/0116-content-types-and-custom-fields))                          | `@stackra/content`       |
+   | `HasEncryptedFields` | Application-layer encryption of the named fields                                                                                            | `@stackra/database`      |
+   | `Commentable`        | Comments on any model ([0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait))                                             | `@stackra/collaboration` |
+   | `HasMetadata`        | A bounded `metadata` bag of string keys (decision 4)                                                                                        | `@stackra/database`      |
+   | `Taggable`           | Tags or labels drawn from a per-tenant tag list                                                                                             | `@stackra/database`      |
+   | `HasOwner`           | The owner or assignee of a record                                                                                                           | `@stackra/iam`           |
+   | `HasTree`            | A hierarchy stored as an `ltree` path ([0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions))                           | `@stackra/database`      |
+   | `Effective`          | A `valid_from` and `valid_until` window                                                                                                     | `@stackra/database`      |
+   | `HasLocation`        | The location column and types, as ADR 0314 defines them                                                                                     | named by ADR 0314        |
+   | `Schedulable`        | A future revision that is applied at its time (decision 6)                                                                                  | `@stackra/scheduler`     |
+
+3. **Four names do not take a grammar form of 0096.** `Timestamps`, `Versioned`, `AppendOnly` and `Effective` keep
+   the names that the inventory gives them. `SoftDeletes` stays by 0096 decision 3. A rename is a later decision,
+   and it changes this table and the trait registry together.
+
+4. **Seven traits are new to the list.**
+   - `HasMetadata` adds `metadata jsonb not null default '{}'`. Its keys are strings, and a record holds at most
+     16 KB of it. It never holds a secret or classified data, and gen checks that. It is filterable only when the
+     model declares a GIN index on it. It is on by default for every model that has a Resource or a public API,
+     and it is opt-in for every other model. A typed value that the tenant defines stays a custom field
+     ([0116](/adr/0116-content-types-and-custom-fields)), and metadata never carries code or logic
+     ([0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step)).
+   - `Taggable` holds tags and labels, drawn from a tag list that each tenant keeps.
+   - `HasOwner` holds the owner or assignee of a record. It serves "my records", assignment and owner-based policy.
+   - `HasTree` holds a hierarchy as an `ltree` path, through the approved extension. Categories and organisation
+     units use it.
+   - `Effective` holds a validity window, with `valid_from` and `valid_until`. Prices, contracts and schedules use it.
+   - `HasLocation` is defined by ADR 0314, which is not on disk yet. It is listed here so the inventory is complete.
+   - `Schedulable` is decision 6.
+
+5. **What is not a trait.**
+   - **Personal data.** A field carries `@Classify` ([0134](/adr/0134-data-invariants-classification-and-delete-lifecycle)).
+     `HasEncryptedFields` encrypts the named fields at the application layer, as [0046](/adr/0046-global-data-invariants-and-per-model-opt-ins)
+     set it. The key is per tenant (0134 decision 5). How those keys are managed is not decided here.
+   - **Consent.** Consent is a record of its own, in the privacy and identity module. It holds the purpose, the policy
+     version, the granted and withdrawn times, the source and the proof, because consent needs a history and evidence.
+     A model links to it with `Link<T>` ([0104](/adr/0104-links-and-query-graph)). Cookie and analytics consent stays
+     a separate matter: `@stackra/analytics` gates it under the rules of [0298](/adr/0298-consent-and-analytics).
+   - **Entitlements.** An entitlement gates a feature, not a record, so there is no trait for it. Actions, routes and
+     resources take the `entitlement:` option.
+   - **Decorators.** `@Auditable`, `@Searchable` and `@AccessLogged` carry metadata only. They are not traits and do
+     not appear in the inventory.
+
+6. **Schedulable.** A scheduled update is a future revision of a record, built on `HasRevisions`. `@stackra/scheduler`
+   applies the revision at its time, as a tenant schedule of [0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules)
+   decision 5. It is not a recurring `@Cron` job, which [0078](/adr/0078-messaging-layer-eight-packages) decision 6
+   keeps for recurring work. A scheduled update can be previewed and rolled back. A campaign groups several scheduled
+   updates. `Effective` stays for validity windows, which are a different thing. `Schedulable` is built after the
+   core data packages.
+
+## Consequences
+
+- One table answers who owns a trait. Three owners move from the 0096 table: `HasSeo` to `@stackra/seo`, `Commentable`
+  to `@stackra/collaboration`, and `Translatable` to `@stackra/model`, where [0162](/adr/0162-validation-translatable-fields-and-entityschema-placement)
+  places the decorator.
+- A resource model gets a `metadata` column by default. Each of its records may hold up to 16 KB of it, and the GIN
+  index is an explicit choice for each filter.
+- A trait that a model does not declare adds no column, so a model stays as small as its traits.
+- Four names are not in the grammar form (decision 3). They are kept so that the list matches the owner's decision.
+- Panel additions decided at the same time, which this ADR records and does not schedule: a built-in clone (duplicate)
+  action on resources, and a record activity tab that puts audit, comments and domain events on one timeline. Both
+  belong to the resource surface of [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards).
+
+## Enforcement
+
+- planned — the grammar check and the trait-list test of [0096](/adr/0096-trait-naming-grammar), which are not written yet.
+- planned — the gen check of `HasMetadata` (no secret or classified data, the 16 KB cap, and a GIN index before filtering).
+- No check exists today for the owner column or for `Schedulable`.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0096](/adr/0096-trait-naming-grammar) (the trait list, see the note above).
+Sources: the owner's final structure review of 2026-10-24, restated in this ADR's own words.

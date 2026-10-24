@@ -1,7 +1,19 @@
 ---
 title: "0295 — Build and entry: stackra.config.ts, generated tool configs and entries"
-description: "Accepted, amended by 0305 · 2026-10-22 · amended 2026-10-23 (STA-347, STA-349)"
+description: "Accepted, amended by 0305 and 0326 · 2026-10-22 · amended 2026-10-23 (STA-347, STA-349) and 2026-10-24 (STA-428)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-428), by
+  [0326](/adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets). Decision
+  2's sections change. `identity` is added and holds the app id, the bundle identifiers, the name,
+  short name, description, copyright, publisher and support URL, so the `name` field of the example
+  in decision 2 moves there. The `electron` section is named `desktop`, and the `pwa` section holds
+  the PWA options. Decision 6's closed set of code hatches gains `pwa.config.ts`, which holds
+  runtime caching rules only, and decision 6's `Reason:` and manifest rules apply to it. Decision
+  12's `AppShortcuts` menu kind is retired: app shortcuts come from route declarations, and
+  `stackra.config` orders and caps them (0326 decisions 8 to 10). The other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-406), by
