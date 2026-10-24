@@ -76,6 +76,9 @@ catalogs:
     # React Aria's I18nProvider for @stackra/ui/react (ADR 0302, owner-approved 2026-10-23); pinned to the version
     # @heroui/react 3.2.6 resolves its react-aria-components peer to, so both share one React Aria instance.
     react-aria-components: 1.22.1
+    # Date values for @stackra/ui DateField and DatePicker (owner-approved 2026-10-24); pinned to the version
+    # react-aria-components 1.22.1 and @heroui/react 3.2.6 already resolve, so one copy serves all three.
+    "@internationalized/date": 3.12.4
     "@testing-library/react": 16.3.3
     "@testing-library/dom": 10.4.2
     jsdom: 30.1.0
@@ -164,6 +167,9 @@ catalogs:
     react-native-nitro-modules: 0.37.1
     # Icons for @stackra/ui/native's Icon (ADR 0303 decision 3, owner-approved 2026-10-23); ISC licence.
     lucide-react-native: 1.54.0
+    # Platform date and time pickers for @stackra/ui/native DatePicker (owner-approved 2026-10-24); pinned to the
+    # Expo SDK 57 version in expo's bundledNativeModules.json.
+    "@expo/ui": 57.0.25
     uniwind: 1.12.1
     tailwind-merge: 3.7.0
     tailwind-variants: 3.3.1
