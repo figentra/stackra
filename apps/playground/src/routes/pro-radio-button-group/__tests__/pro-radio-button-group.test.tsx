@@ -9,7 +9,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0022 (test placement).
  */
 // @covers sta-416:FR-012
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProRadioButtonGroup } from "#src/routes/pro-radio-button-group/pro-radio-button-group";
@@ -40,7 +40,8 @@ describe("ProRadioButtonGroup", () => {
   it("reports the choice in the controlled group", () => {
     render(<ProRadioButtonGroup />);
     expect(screen.getByRole("status").textContent).toBe("Plan: Pro.");
-    fireEvent.click(screen.getByRole("radio", { name: /Enterprise/ }));
+    const plan = within(screen.getByRole("radiogroup", { name: "Select a plan" }));
+    fireEvent.click(plan.getByRole("radio", { name: /Enterprise/ }));
     expect(screen.getByRole("status").textContent).toBe("Plan: Enterprise.");
   });
 });

@@ -37,9 +37,9 @@ describe("ProCellSlider", () => {
 
   it("reports the value of the controlled slider", () => {
     render(<ProCellSlider />);
-    expect(screen.getByRole("status").textContent).toBe("Spacing is 0.50.");
+    expect(screen.getByText("Spacing is 0.50.").closest("[role=status]")).toBeTruthy();
     const slider = screen.getByRole("slider", { name: "Spacing" });
     fireEvent.change(slider, { target: { value: "0.8" } });
-    expect(screen.getByRole("status").textContent).toBe("Spacing is 0.80.");
+    expect(screen.getByText("Spacing is 0.80.").closest("[role=status]")).toBeTruthy();
   });
 });

@@ -10,8 +10,6 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useDesignSystem } from "@stackra/ui/native";
 import { useThemeColor } from "heroui-native";
 
-import { DESIGN_SYSTEM_COMPONENTS } from "../screens/design-system-components";
-import { DesignSystemScreen } from "../screens/design-system-screen";
 import { HomeScreen } from "../screens/home-screen";
 import { SettingsScreen } from "../screens/settings-screen";
 import { detailHeader, largeTitleHeader } from "./header-options";
@@ -78,24 +76,6 @@ function SettingsTab() {
   return (
     <SettingsStack.Navigator screenOptions={largeTitleHeader}>
       <SettingsStack.Screen name="Settings" component={SettingsScreen} />
-      {/* Development builds only, like the Settings row that opens it. */}
-      {__DEV__ ? (
-        <>
-          <SettingsStack.Screen
-            name="DesignSystem"
-            component={DesignSystemScreen}
-            options={{ ...detailHeader, title: "Design system" }}
-          />
-          {DESIGN_SYSTEM_COMPONENTS.map(({ route, title, screen }) => (
-            <SettingsStack.Screen
-              key={route}
-              name={route}
-              component={screen}
-              options={{ ...detailHeader, title }}
-            />
-          ))}
-        </>
-      ) : null}
     </SettingsStack.Navigator>
   );
 }

@@ -77,7 +77,6 @@ export function ProCheckboxButtonGroup() {
           {STRINGS.controlled}
         </h2>
         <UiPro.CheckboxButtonGroup
-          label={STRINGS.addons}
           name="addons"
           variant="secondary"
           value={chosen}
@@ -96,7 +95,6 @@ export function ProCheckboxButtonGroup() {
           {STRINGS.grid}
         </h2>
         <UiPro.CheckboxButtonGroup
-          label={STRINGS.features}
           className="max-w-2xl grid-cols-1 sm:grid-cols-3"
           defaultValue={["security", "storage"]}
           layout="grid"
@@ -112,7 +110,6 @@ export function ProCheckboxButtonGroup() {
           {STRINGS.disabled}
         </h2>
         <UiPro.CheckboxButtonGroup
-          label={STRINGS.disabledFeatures}
           defaultValue={["security"]}
           isDisabled
           name="locked-features"

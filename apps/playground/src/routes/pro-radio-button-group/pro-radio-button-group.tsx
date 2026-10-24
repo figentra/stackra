@@ -75,13 +75,7 @@ export function ProRadioButtonGroup() {
         <h2 id="controlled-heading" className="type-h2">
           {STRINGS.controlled}
         </h2>
-        <UiPro.RadioButtonGroup
-          label={STRINGS.plan}
-          name="plan"
-          variant="secondary"
-          value={plan}
-          onChange={setPlan}
-        >
+        <UiPro.RadioButtonGroup name="plan" variant="secondary" value={plan} onChange={setPlan}>
           <Ui.Label>{STRINGS.plan}</Ui.Label>
           <Ui.Description>{STRINGS.planHint}</Ui.Description>
           <Items items={PLANS} />
@@ -95,7 +89,6 @@ export function ProRadioButtonGroup() {
           {STRINGS.grid}
         </h2>
         <UiPro.RadioButtonGroup
-          label={STRINGS.delivery}
           className="max-w-2xl grid-cols-1 sm:grid-cols-3"
           defaultValue="express"
           layout="grid"
@@ -111,7 +104,6 @@ export function ProRadioButtonGroup() {
           {STRINGS.disabled}
         </h2>
         <UiPro.RadioButtonGroup
-          label={STRINGS.disabledPlan}
           defaultValue="starter"
           isDisabled
           name="locked-plan"

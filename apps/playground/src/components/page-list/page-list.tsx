@@ -53,9 +53,9 @@ export function PageList({ pages, search, headingLevel }: PageListProps) {
                     {page.title}
                     {tierOf(page.path) === "Pro" ? (
                       <>
-                        {/* Hidden separator: the accessible name reads "Title, Pro", not "TitlePro". */}
-                        <span className="sr-only">, </span>
-                        <Ui.Chip size="sm" className="ms-2 no-underline">
+                        {/* Hidden comma and a real space: the accessible name reads "Title, Pro", not "TitlePro". */}
+                        <span className="sr-only">,</span>{" "}
+                        <Ui.Chip size="sm" className="ms-1 no-underline">
                           {STRINGS.pro}
                         </Ui.Chip>
                       </>

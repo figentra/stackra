@@ -26,7 +26,7 @@ interface PerScheme {
 }
 
 /** The levels: the fill is the share of `surface`, the blur a radius in points, the saturation a factor. */
-export const MATERIAL_LEVELS: Readonly<
+const MATERIAL_LEVELS: Readonly<
   Record<MaterialLevel, { fill: PerScheme; blur: number; saturation: number }>
 > = {
   thin: { fill: { light: 0.6, dark: 0.62 }, blur: 12, saturation: 1.6 },
@@ -34,13 +34,10 @@ export const MATERIAL_LEVELS: Readonly<
   thick: { fill: { light: 0.9, dark: 0.92 }, blur: 28, saturation: 1.4 },
 };
 
-/** The hairline edge of every material, a share of `foreground`. */
-export const MATERIAL_EDGE: PerScheme = { light: 0.1, dark: 0.12 };
-/** The top highlight of every material, a share of white. */
-export const MATERIAL_HIGHLIGHT: PerScheme = { light: 0.7, dark: 0.09 };
+// The edge (0.1 / 0.12 of `foreground`) and the highlight (0.7 / 0.09 of white) are drawn as classes in `glass.tsx`.
 
 /** How each mode adjusts the levels; `solid` is opaque and is also the reduced-transparency fallback. */
-export const MATERIAL_MODES: Readonly<
+const MATERIAL_MODES: Readonly<
   Record<
     MaterialMode,
     {

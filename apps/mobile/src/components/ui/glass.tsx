@@ -29,7 +29,7 @@ const HIGHLIGHT = "absolute inset-x-4 top-0 h-px bg-white/70 dark:bg-white/9";
  * The app's material mode: Liquid Glass where the system has it, else glass, and solid while the user asks for
  * reduced transparency (iOS) or darker colours, that is more contrast (iOS). The one place the mode is decided.
  */
-export function useMaterialMode(): MaterialMode {
+function useMaterialMode(): MaterialMode {
   const [isSolid, setSolid] = useState({ transparency: false, contrast: false });
   useEffect(() => {
     let isMounted = true;
