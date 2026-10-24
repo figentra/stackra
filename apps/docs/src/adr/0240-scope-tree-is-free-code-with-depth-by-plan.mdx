@@ -1,7 +1,19 @@
 ---
 title: "0240 — The scope tree is free code; its depth is a plan entitlement"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0327 · 2026-10-20 · amended 2026-10-24 (STA-428)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-428), by
+  [0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer). The home of the tree in
+  decision 1 moves. The scope tree is free code in `@stackra/scope`, the package that 0327 creates,
+  and it is no longer held by `@stackra/iam` or `@stackra/tenancy`. Those two packages consume the
+  tree. Decision 2 (depth is a plan entitlement), decision 3 (settings and IAM share the tree) and
+  decision 5 (the `scope_id` and the GiST-indexed `scope_path`) stand. "There is no
+  `@stackra-pro/scope` package" stands too, because `@stackra/scope` is free code. The consequence
+  that a product gets the tree "without a separate package" means that no paid package is needed,
+  and it does not forbid `@stackra/scope`.
+</Note>
 
 <Note>
   Corrects the Pro statements about the scope tree in

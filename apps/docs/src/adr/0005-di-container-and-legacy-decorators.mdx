@@ -4,13 +4,13 @@ description: "Accepted, amended by 0143, 0145, 0263, 0294 · 2026-10-19"
 ---
 
 <Note>
-  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): no
-  parameter decorators are used, and `@Inject` and `@Dependencies` are retired, so a constructor
-  parameter names its token by its type (decision 3 is amended). The `defineToken` factory of
-  decision 2 is retired, because classes are the only tokens. The decorators stay TypeScript's
-  legacy (experimental) decorators. Revival trigger: the standard (TC39) decorators reach the
-  TypeScript release this repository pins. Until then the legacy form stays, and a move to the
-  standard form needs its own ADR.
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (decision
+  17): no parameter decorators are used, and `@Inject` and `@Dependencies` are retired, so a
+  constructor parameter names its token by its type (decision 3 is amended). The `defineToken`
+  factory of decision 2 is retired, because classes are the only tokens. The decorators stay
+  TypeScript's legacy (experimental) decorators. Revival trigger: the standard (TC39) decorators
+  reach the TypeScript release this repository pins. Until then the legacy form stays, and a move to
+  the standard form needs its own ADR.
 </Note>
 
 <Note>

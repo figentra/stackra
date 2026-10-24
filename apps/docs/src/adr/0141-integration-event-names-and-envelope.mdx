@@ -1,7 +1,13 @@
 ---
 title: "0141 — Integration event names and the envelope"
-description: "Accepted, amended by 0260, 0294 · 2026-10-20"
+description: "Accepted, amended by 0260, 0294, 0328 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 by [0328](/adr/0328-value-classes-are-built-with-create-and-containers-are-never-constructed):
+  an integration event is built from data with the static `create({...})` that `IntegrationEvent` provides, and not
+  with `new`. A domain event is built the same way, as the note below already says, through `DomainEvent`.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the

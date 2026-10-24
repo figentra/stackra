@@ -1,7 +1,13 @@
 ---
 title: "0223 — Notifications: more channels, cascading templates, manual sends and preferences"
-description: "Accepted, amended by 0270, 0294 · 2026-10-20"
+description: "Accepted, amended by 0270, 0294, 0328 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 by [0328](/adr/0328-value-classes-are-built-with-create-and-containers-are-never-constructed): notification data, the `<Name>Data` class that a notification
+  carries, is built in code with the static `create({...})` that `@stackra/notifications` provides, and not with `new`.
+  The other decisions stand.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the

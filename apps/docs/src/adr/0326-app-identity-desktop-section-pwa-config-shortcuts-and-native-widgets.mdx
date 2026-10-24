@@ -1,7 +1,15 @@
 ---
 title: "0326 — App identity, the desktop section, pwa in stackra.config, derived app shortcuts and native widgets"
-description: "Accepted · 2026-10-24"
+description: "Accepted, amended by 0334 · 2026-10-24"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-428) by
+  [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rules 13 and 14):
+  gen writes one web manifest per configured locale from the lang keys of the identity section, and
+  when `stackra.config` declares a mobile member it adds `related_applications`, the Apple smart app
+  banner, the association files and an install banner component. Decisions 1 to 15 stand.
+</Note>
 
 <Note>
   Amends [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries)
@@ -10,10 +18,10 @@ description: "Accepted · 2026-10-24"
   [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles) (the `MenuKind` list
   in its note) and
   [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) (a
-  `NativeWidget` placement). It keeps [0058](/adr/0058-desktop-is-electron) (Electron is the desktop
-  implementation) and [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron) (one app, several
-  targets). Each amended page carries a note that says what changed and which of its decisions
-  stand.
+  `NativeWidget` placement). It keeps [0181](/adr/0181-the-desktop-app-pipeline) (Electron is the
+  desktop implementation, as 0058 first decided and 0181 carries forward) and
+  [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron) (one app, several targets). Each
+  amended page carries a note that says what changed and which of its decisions stand.
 </Note>
 
 ## Context
@@ -41,7 +49,7 @@ covered by any ADR. The owner decided these points in the final structure review
 **The desktop section.**
 
 5. **`desktop` replaces `electron`.** The `electron` section of `defineApp`, in ADR 0295 decision 2, is renamed
-   `desktop`. Electron stays the implementation ([0058](/adr/0058-desktop-is-electron),
+   `desktop`. Electron stays the implementation ([0181](/adr/0181-the-desktop-app-pipeline),
    [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron)). This ADR changes the section's name and not its
    role. The Electron code hatch of ADR 0295 decision 6, `electron.extend.ts`, is renamed `desktop.extend.ts` with it.
 
@@ -110,6 +118,6 @@ covered by any ADR. The owner decided these points in the final structure review
 Supersedes: none. Amends: [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries)
 (decisions 2, 6 and 12), [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles) (the `MenuKind`
 list) and [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) (a `NativeWidget`
-placement). Keeps [0058](/adr/0058-desktop-is-electron), [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron)
+placement). Keeps [0181](/adr/0181-the-desktop-app-pipeline), [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron)
 and [0309](/adr/0309-icons-declarations-name-an-icon-and-the-platform-resolves-it). Sources: the owner's decisions in
 the final structure review of 2026-10-24 (STA-428).

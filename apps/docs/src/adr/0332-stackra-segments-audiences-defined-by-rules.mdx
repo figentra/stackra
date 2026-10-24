@@ -1,0 +1,61 @@
+---
+title: "0332 — @stackra/segments: audiences defined by rules"
+description: "Accepted · 2026-10-24"
+---
+
+## Context
+
+Several consumers need a named group of subjects: notification audiences ([0223](/adr/0223-notifications-channels-cascading-templates-manual-sends-and-preferences)),
+promotions, analytics, and the visibility rules of [0333](/adr/0333-record-visibility-rules-who-can-see-which-records).
+A group means the same thing to each of them, so it should exist once. A group can hold users, customers, contacts or
+companies, so the segment is generic over its subject and never commerce-specific. The owner decided this in the final
+structure review of 2026-10-24. A CRM is a later first-party app, and it is out of scope here.
+
+## Decision
+
+1. **A named audience over any subject model.** A segment is a named audience over a subject model. The subject may be
+   users, customers, contacts or companies. The package names no subject, and it is never commerce-specific.
+
+2. **Two ways to define one.** A segment is defined either by a rule set of [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer),
+   which makes it dynamic, or by a static list of subjects, which makes it manual.
+
+3. **Membership is materialised.** Membership is stored in a table keyed by the segment and by the subject record, which
+   is named by its model key and its public id. The table is recomputed on the subject's domain events and on a schedule
+   ([0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules)), which covers conditions that
+   depend on time. A new revision of a dynamic segment's rule set recomputes that segment.
+
+4. **Entered and left events.** Each change of membership emits a membership-entered or a membership-left integration
+   event ([0141](/adr/0141-integration-event-names-and-envelope)). A manual change emits the same events.
+
+5. **Consumers read membership.** Notification audiences, promotions, analytics and visibility rules read membership.
+   They do not evaluate the rule set of a segment themselves.
+
+6. **Out of scope: a CRM.** A CRM is not part of this package or of this decision. It is a later first-party app, a
+   layer 3 app ([0201](/adr/0201-the-app-split-framework-platform-core-and-first-party-apps)). A sync to a CRM vendor, such as
+   HubSpot or Intercom, is a connector in the integrations service ([0218](/adr/0218-integrations-the-connector-sdk-and-connections-per-chain-level))
+   that syncs contacts and segment membership. That connector does not change this decision.
+
+7. **Placement and entries.** `@stackra/segments` is a free framework package in the `application` category, beside the
+   rule engine ([0127](/adr/0127-package-categories-including-infrastructure)). It has the `contracts`, `core` and `node`
+   entries, and it adds `config` and `testing` where it needs them.
+
+## Consequences
+
+- A group is defined once and serves every consumer, so a notification audience and a promotion audience cannot disagree
+  about who is in them.
+- A consumer reads membership with a lookup, and the cost of recomputation sits on the events and on the schedule.
+- Membership events let other services react to a change without reading the table.
+- A CRM can later sync from membership, and segments do not change for it.
+
+## Enforcement
+
+- planned — tests in `@stackra/segments`: recomputation on a domain event, on the schedule and on a new rule-set revision,
+  and one entered or left event per change.
+- planned — gen check: a dynamic segment's rule set passes the checks of [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer).
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0141](/adr/0141-integration-event-names-and-envelope), [0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules),
+[0201](/adr/0201-the-app-split-framework-platform-core-and-first-party-apps), [0218](/adr/0218-integrations-the-connector-sdk-and-connections-per-chain-level),
+[0223](/adr/0223-notifications-channels-cascading-templates-manual-sends-and-preferences) and [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer).
+Sources: the owner's final structure review of 2026-10-24, restated in this ADR's own words.
