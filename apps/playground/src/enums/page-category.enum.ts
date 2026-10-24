@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the categories the playground groups its pages in, in navigation order: Foundations, Actions, Typography,
- *          Navigation, Surfaces, Status, Inputs, Selection and Forms. The shell's page navigation and the index page
+ *          Navigation, Surfaces, Status, Inputs, Selection and Forms, then Pro (the `@stackra/ui-pro` pages, ADR 0310). The shell's page navigation and the index page
  *          list pages under these headings; a category with no page yet is left out of both.
  * Boundary: the values only; each route class names its category, and a page with no category cannot be listed.
  * Runtime: browser
@@ -21,6 +21,7 @@ export const PageCategory = Object.freeze([
   "Inputs",
   "Selection",
   "Forms",
+  "Pro",
 ] as const);
 
 /** One page category. */
