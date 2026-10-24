@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: proves the native IconButton hands HeroUI Native the icon-only flag and the accessibility label, draws its
- *          icon as the only child, swaps it for the spinner while loading, and that the type refuses a missing label.
+ *          icon as the only child, swaps it for the spinner while loading, draws on its variant's glass through the
+ *          Button, and that the type refuses a missing label.
  * Boundary: React Native does not render in vitest, so heroui-native and lucide-react-native are replaced by recording
- *          stand-ins that render plain DOM.
+ *          stand-ins that render plain DOM, and the glass hook by a stand-in whose look each test sets.
  * Runtime: node
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); WCAG 2.2 SC 4.1.2; ADR 0022 (test
  *          placement).
@@ -55,6 +56,19 @@ vi.mock("#native/slot-icon/slot-icon", async () => {
   };
 });
 
+/** The glass look the hook stand-in returns, and the variants it was asked for. */
+const glass = vi.hoisted(() => ({
+  look: undefined as { background: unknown; className: string } | undefined,
+  asked: [] as string[],
+}));
+
+vi.mock("#native/glass/use-glass-button", () => ({
+  useGlassButton: (variant: string) => {
+    glass.asked.push(variant);
+    return glass.look;
+  },
+}));
+
 /** The icon names the slot stand-in drew, in document order. */
 const slotNames = (container: HTMLElement) =>
   [...container.querySelectorAll('[data-testid="slot-icon"]')].map((node) =>
@@ -64,6 +78,8 @@ const slotNames = (container: HTMLElement) =>
 describe("IconButton (native)", () => {
   beforeEach(() => {
     received.props = {};
+    glass.look = undefined;
+    glass.asked = [];
   });
 
   it("draws an icon name through Icon", () => {
@@ -89,6 +105,16 @@ describe("IconButton (native)", () => {
     const onPress = vi.fn();
     render(<IconButton icon={icon} label="Delete" variant="danger" size="lg" onPress={onPress} />);
     expect(propsOf("button")).toMatchObject({ variant: "danger", size: "lg", onPress });
+  });
+
+  it("draws on the glass of its variant, as the Button does", () => {
+    glass.look = { background: "glass-layer", className: "bg-transparent" };
+    render(<IconButton icon={icon} label="Filter" variant="outline" />);
+    expect(glass.asked.at(-1)).toBe("outline");
+    expect(propsOf("button")).toMatchObject({
+      background: "glass-layer",
+      className: "bg-transparent",
+    });
   });
 
   it("requires a label and has no text or full-width props", () => {
