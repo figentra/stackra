@@ -1,0 +1,126 @@
+---
+title: "0313 — @stackra/ui wave 5: the data primitives props vocabulary"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0303](/adr/0303-stackra-ui-component-catalogue-decisions) (decision 7, the props
+  vocabulary), as [0304](/adr/0304-stackra-ui-wave-2-props-vocabulary),
+  [0311](/adr/0311-stackra-ui-wave-3-fields-props-vocabulary) and
+  [0312](/adr/0312-stackra-ui-wave-4-overlays-and-feedback-props-vocabulary) did for waves 2 to 4.
+  0303 carries a note; its body is unchanged.
+</Note>
+
+## Context
+
+[0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 7 gave every component one props vocabulary, and
+0304, 0311 and 0312 extended it. Wave 5 adds the data primitives: Table, List with ListItem, PropertyList, Tabs with
+Accordion, CursorPagination with Breadcrumbs, and the three state pages EmptyState, ErrorState and PageSkeleton. Table,
+List and Tabs each take a list of items, can select some of them and have an empty and a loading state, and the runtimes
+disagree on every word: React Aria hands back a `Set` or the string `"all"` and names a loading table by an extra row,
+HeroUI Native's accordion takes `value` and `selectionMode`, the web accordion `expandedKeys` and
+`allowsMultipleExpanded`, and neither knows Stackra's cursor pages (`nextCursor`, `hasMore`). The sort of a table is
+the same everywhere: Stackra's pages are sorted by the server, so no table holds a sort of its own. An Accepted ADR's
+body changes only for typos and Enforcement, so the additions are recorded here.
+
+## Decision
+
+1. **The wave 5 vocabulary.** Decision 7 of 0303 stands; wave 5 adds these rows:
+
+   | Concept         | Prop                                                       | Type                                                                       | Used by                                   | Runtime name left out of the type                                |
+   | --------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------- |
+   | Items           | `items`                                                    | `readonly TItem[]`, `TItem` extends `CollectionItem` (a string `id`)       | Table, List, Tabs, Accordion, Breadcrumbs | JSX children as the only source, render-prop `renderItem`        |
+   | Selection       | `selectionMode`, `selectedKeys`, `defaultSelectedKeys`     | `none`, `single` or `multiple`; `readonly string[]`                        | Table, List; Tabs (without the mode)      | React Aria `Selection` (a `Set` or `"all"`), `selectedKey`       |
+   | Selection event | `onSelectionChange`                                        | `(keys: readonly string[]) => void`                                        | Table, List, Tabs                         | the `Set` argument                                               |
+   | Empty and busy  | `emptyState`, `isLoading`, `loadingLabel`                  | `ReactNode`, `boolean`, `string`                                           | Table, List, Tabs                         | `renderEmptyState`, a loading row, `aria-busy`                   |
+   | Sort            | `sortDescriptor`, `onSortChange`                           | `SortDescriptor` (`column`, `direction`), `(sort: SortDescriptor) => void` | Table                                     | none (React Aria's shape is the same)                            |
+   | Expansion       | `expandedKeys`, `defaultExpandedKeys`, `canExpandMultiple` | `readonly string[]`, `readonly string[]`, `boolean`                        | Accordion                                 | web `allowsMultipleExpanded`; native `value` and `selectionMode` |
+   | Expansion event | `onExpandedChange`                                         | `(keys: readonly string[]) => void`                                        | Accordion                                 | the `Set` argument; native `onValueChange`                       |
+   | Paging forward  | `hasMore`, `onNext`, `onLoadMore`                          | `boolean`, `() => void`, `() => void`                                      | CursorPagination (`onNext`); Table, List  | `onEndReached` (native), `Table.LoadMore`                        |
+   | Paging back     | `hasPrevious`, `onPrevious`                                | `boolean`, `() => void`                                                    | CursorPagination                          | none                                                             |
+   | Text slots      | `title`, `description`, `label`, `value`, `emptyValue`     | `ReactNode` (`label` is a string where it names something)                 | ListItem; PropertyList items              | native `ListGroup.ItemTitle` and `.ItemDescription` parts        |
+   | State page      | `reason`, `kind`, `layout`                                 | `EmptyReason`, `ErrorKind`, `PageSkeletonLayout`                           | EmptyState, ErrorState, PageSkeleton      | `variant` (reserved for emphasis), HTTP `status`                 |
+
+2. **A selection is a list of string ids.** Every key is an item's `id`, reported in the items' order, never a `Set`
+   and never `"all"`: select-all on a table reports every id. `keysOfSelection` is the one function that turns a
+   React Aria or HeroUI Native selection into that list, so the wrappers of Table, List, Tabs and Accordion share it.
+   Tabs takes the selection props without `selectionMode`, because a tab list always holds exactly one tab, and
+   reports a list of one id.
+3. **Sorting is controlled and belongs to the server.** A table takes `sortDescriptor` and reports `onSortChange`; it
+   never reorders the `items` it was given. `SortDirection` is `ascending` or `descending`, the values `aria-sort`
+   and React Aria use, and the sort is a column `id` plus a direction. The native adapted table has no header to
+   press, so it asks `nextSortDescriptor` for the sort a chosen column moves to.
+4. **Two paging words, never one for both.** `onNext` and `onPrevious` are a button the user presses on
+   CursorPagination, over a cursor page's `hasMore` and a `hasPrevious` the app keeps from its cursor history. `onLoadMore`
+   is the end of the list reached: the web table's `Table.LoadMore` row and the native list's end-reached callback.
+   Neither ever takes a page number: Stackra has no total.
+5. **Empty and loading are two states.** `emptyState` shows only when `isLoading` is false and `items` is empty. While
+   `isLoading` is true the collection is busy and names what loads by `loadingLabel`, spoken once and not
+   repeated for every placeholder row. `emptyState` is a node, so an app passes an `EmptyState`, and no wave 5 component
+   imports another: the pieces meet in the app's code and in the DataTable of wave 7 through these slots.
+6. **The state pages are named by their reason, not by `variant`.** EmptyState takes `reason`: `no-data`, `no-results`
+   or `permission-denied`. ErrorState takes `kind`: `unauthenticated` (HTTP 401, which sends the user to sign in),
+   `forbidden`, `not-found` or `unexpected`. PageSkeleton takes `layout`: `page`, `table`, `section` or `form`. Each
+   is a frozen tuple in its component's own contract. `variant` stays the emphasis word of 0303, and a status code is
+   not a prop because the error's own code is already in the details an app passes.
+7. **The adapted native forms of 0303 decision 3 keep the web words.** The native Table is a list (one row per item,
+   no columns, a sort chooser in its header), the native Breadcrumbs draw nothing because the navigation header's back
+   button is the same job, and the native CursorPagination is the same buttons. A prop with no meaning in an adapted form
+   is accepted and unread, and the component's page says so.
+8. **Amended 2026-10-24, while building (decisions 7 and 8).**
+   - Native Breadcrumbs draw a text trail of pressable steps instead of nothing: the catalogue's reasoning (the navigation
+     header's back button) holds only inside a stack, and a console deep link has no such header, so each step is a
+     `Link` (or plain text for the current page) with a mirrored chevron between steps.
+   - ListItem takes `endContent` (a node at the end of the row, such as a count or a status) and `hasChevron` (the
+     mirrored chevron of a row that leads somewhere); a row that takes a selection mode never calls `onPress`, so a
+     row selects or acts, not both.
+   - Table takes a required `label` (it names the table), `columns` of a `TableColumn` (`id`, `label`, `isRowHeader`,
+     `isSortable`, `align`), `renderCell`, `variant`, `isStickyHeader` and `maxHeight`; the native form reads the last
+     three as nothing.
+   - CursorPagination takes `mode` (`pager` or `load-more`), `count`, `isLoading` and its labels; load-more mode calls
+     `onNext`.
+   - ErrorState takes `retry` as one object (`label` and `onPress`) so a retry never lacks its label, and EmptyState
+     and ErrorState take `title` as a required node, since the design system carries no copy.
+   - PropertyList copies only when a row has a `copyLabel`; native has no clipboard in the free dependencies, so the app
+     writes it in `onCopy`, and a native row draws its copy button only when the list has an `onCopy` as well as the
+     row a `copyLabel`. A copy is always announced: `copiedLabel` defaults to an English word until i18n ships.
+   - Amended 2026-10-24, after the wave 5 review: ErrorState takes `isMessageShown`, which defaults to true outside
+     production and false in production, because a thrown server or driver message is an internal; an app whose error
+     text is written for the user sets it. CursorPagination shows the spinner on the button that was pressed, and the
+     web load-more button stays mounted, disabled, after the last page so focus is not lost. The native Breadcrumbs mark
+     the current step selected and speak it with the trail's name. The icons these components draw (`copy`, `check`,
+     `chevron-down`, and on native `arrow-up` and `arrow-down`) are in the `UI_ICONS` registry of each runtime.
+
+## Consequences
+
+- An app feeds Table, List, Tabs and Accordion the same way from one query result, selects and sorts the same way on
+  web and native, and a selection or a sort held in state is the same shape on both.
+- A table in the console and a list on the phone share `onSelectionChange` and `onSortChange` handlers.
+- A reader never has to know that React Aria hands back a `Set` or that HeroUI Native's accordion calls its keys `value`.
+- Each component reads a prop it does not use (a Tabs has no `selectionMode`) as absent from its type, so a misuse is a
+  type error, not a silent no-op.
+
+## Enforcement
+
+- `packages/design-system/ui/src/core/functions/__tests__` proves `keysOfSelection` and `nextSortDescriptor`, and
+  `packages/design-system/ui/src/contracts/types/__tests__/collection-contract-props.test.ts` proves the shared types.
+- Each component's type test asserts that the runtime props extend the contract and refuse the raw HeroUI and React Aria
+  names this vocabulary replaces (`selectedKey`, `allowsMultipleExpanded`, `onEndReached`, `variant` on a state page).
+- `tools/scripts/spec-trace.mjs` (run by `pnpm validate`) refuses a spec id that no test covers.
+- Until a lint rule exists, review (`architecture-guardian`) checks this page.
+
+## Alternatives
+
+- **Keep React Aria's `Selection`, a `Set` or `"all"`.** Not chosen: native has no such type, and `"all"` makes every
+  handler branch on a string before it can read a key.
+- **A page number for the pager.** Not chosen: the cursor pages of [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming)
+  carry no total, so "page 3 of 9" cannot be told truthfully.
+- **`variant` for the empty, error and skeleton shapes.** Not chosen: it already means emphasis in 0303, and a reader
+  would expect `variant="secondary"` to work.
+- **A table that sorts its own rows.** Not chosen: with cursor pages the rows on screen are a slice, so sorting them
+  would show an order the server does not have.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 7. The catalogue rows and
+section 3 gaps of the component catalogue (wave 5 of its build order) and the HeroUI 3.2.6 and HeroUI Native 1.0.10 component sources.
