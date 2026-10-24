@@ -33,6 +33,7 @@ export type { Email } from "#core/types/email.type";
 export type { Json } from "#core/types/json.type";
 export type { PackageDefinition } from "#core/types/package-definition.type";
 export type { PublicId } from "#core/types/public-id.type";
+export type { ScopeRef } from "#core/types/scope-ref.type";
 export type { ServiceDefinition } from "#core/types/service-definition.type";
 export type { StackraManifest } from "#core/types/stackra-manifest.type";
 export type { Url } from "#core/types/url.type";
