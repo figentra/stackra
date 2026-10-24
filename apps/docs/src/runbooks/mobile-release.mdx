@@ -113,9 +113,11 @@ eas update:rollback                                         # roll back a bad up
 ```
 
 - **Development on a device:** `development` builds the dev client for the simulator only. `development-device` builds
-  it for an iPhone registered with `eas device:create`; it installs the licensed packages like every profile, so the
-  `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` secret variables must be set first. Expo Go cannot run the app (Uniwind
-  Pro, Liquid Glass, Skia and native tabs need the dev client).
+  it for an iPhone registered with `eas device:create`, once the project is linked (the "Expo: link the project" step
+  above). It resolves to the EAS `development` environment and installs the licensed packages like every profile, so
+  `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` must be secret variables in `development` first, or the install gets
+  stubs. Expo Go cannot run the app: `react-native-bottom-tabs`, `react-native-nitro-modules` and Uniwind Pro need
+  the dev client.
 - **Internal testers:** `eas device:create` registers each iPhone, then `eas credentials:configure-build -p ios -e preview` builds an ad-hoc profile that includes them. TestFlight builds need no device registration.
 - **iOS submit:** `--auto-submit`, or `eas submit -p ios --profile production --latest`. Apple processes the upload for 10 to 30 minutes, then add testers under TestFlight, Internal Testing. External testers need one Beta App Review. Fallback: download the `.ipa` and use Apple's Transporter.
 - **Android submit:** `eas submit -p android --profile production --latest` sends a draft to the internal track; promote it in Play Console.
