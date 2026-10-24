@@ -5,10 +5,10 @@ icon: "smartphone"
 ---
 
 <Note>
-  Status: target. `apps/mobile` has `eas.json` with `development`, `preview` and `production`
-  profiles, but there is no Expo project link (`extra.eas.projectId`), no store records, no
-  `.eas/workflows/`, no `updates` config and no `staging` profile. The app installs the licensed
-  packages HeroUI Native Pro and Uniwind Pro
+  Status: target. `apps/mobile` has `eas.json` with `development` (simulator), `development-device`,
+  `preview` and `production` profiles, but there is no Expo project link (`extra.eas.projectId`), no
+  store records, no `.eas/workflows/`, no `updates` config and no `staging` profile. The app
+  installs the licensed packages HeroUI Native Pro and Uniwind Pro
   ([0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers)), so an EAS build needs
   `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` as secret variables (the licence-token steps below).
   App: Expo SDK 57, code-based React Navigation.
@@ -103,6 +103,7 @@ EAS uploads every file git does not ignore. Ensure `node_modules/`, `ios/`, `and
 
 ```bash
 cd apps/mobile
+eas build --profile development-device --platform ios       # dev client for a registered iPhone
 eas build --profile preview --platform ios                  # internal install via link
 eas build --profile staging --platform ios --auto-submit    # build and upload to TestFlight
 eas build --profile production --platform all --auto-submit
@@ -111,6 +112,10 @@ eas update:republish --group <id> --destination-channel production   # promote a
 eas update:rollback                                         # roll back a bad update
 ```
 
+- **Development on a device:** `development` builds the dev client for the simulator only. `development-device` builds
+  it for an iPhone registered with `eas device:create`; it installs the licensed packages like every profile, so the
+  `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` secret variables must be set first. Expo Go cannot run the app (Uniwind
+  Pro, Liquid Glass, Skia and native tabs need the dev client).
 - **Internal testers:** `eas device:create` registers each iPhone, then `eas credentials:configure-build -p ios -e preview` builds an ad-hoc profile that includes them. TestFlight builds need no device registration.
 - **iOS submit:** `--auto-submit`, or `eas submit -p ios --profile production --latest`. Apple processes the upload for 10 to 30 minutes, then add testers under TestFlight, Internal Testing. External testers need one Beta App Review. Fallback: download the `.ipa` and use Apple's Transporter.
 - **Android submit:** `eas submit -p android --profile production --latest` sends a draft to the internal track; promote it in Play Console.
