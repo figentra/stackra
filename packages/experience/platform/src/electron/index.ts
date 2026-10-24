@@ -9,7 +9,7 @@
  * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note (`./electron` entry); registry A13; the
  *                     STA-347 stand-in barrel decision.
  */
-export { Bridge } from "#electron/bases/bridge.base";
+export { Bridge, BridgeBase } from "#electron/bases/bridge.base";
 export { PickFolderBridge } from "#electron/bridges/pick-folder.bridge";
 export { ElectronPlatformDriver } from "#electron/drivers/electron-platform.driver";
 export type { BridgeOptions } from "#electron/types/bridge-options.type";
