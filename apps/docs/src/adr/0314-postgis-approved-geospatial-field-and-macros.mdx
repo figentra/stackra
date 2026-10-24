@@ -1,0 +1,45 @@
+---
+title: "0314 — PostGIS is an approved extension: the geospatial field, its macros and GiST indexes"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions), decision 2 (the
+  approved extensions). PostGIS joins pgvector, pg_trgm, ltree, citext and pgcrypto. Decision 2 said
+  PostGIS was not approved yet, and this ADR is the future ADR that its Alternatives section asks
+  for.
+</Note>
+
+<Note>
+  Lifts the deferral of `@Geo` in
+  [0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events), decision 2
+  and its deferred item. `@Geo` now has a decided shape, set out in decision 2 below.
+</Note>
+
+## Context
+
+Location and tracking data, such as fleet positions, service areas and delivery zones, need geospatial column types and spatial indexes. [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions) approved five Postgres extensions and left PostGIS out until an ADR approved it. The geography work belongs to the geography service, which is a layer 2 platform core service ([0201](/adr/0201-the-app-split-framework-platform-core-and-first-party-apps)). The owner approved PostGIS on 2026-10-24, with the field, the macros and the index type below.
+
+## Decision
+
+1. **PostGIS is approved.** It joins the approved extensions of [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions), decision 2. It is enabled only by the built-in `schema.createExtension()` migration step, and not by a raw `schema.sql` file or a raw query.
+2. **The geospatial field and its macros.**
+   - `@Geo` is the field type for geospatial values.
+   - The migration blueprint gains three macros: `t.point()`, `t.geography()` and `t.polygon()`.
+   - A geospatial column is indexed with GiST, and the index is named with the `idx_` prefix of [0231](/adr/0231-naming-and-casing-standard).
+   - The PostGIS column type behind each macro, and the SRID, are part of the geography package's design. This ADR does not set them.
+3. **Ownership.** The geography service's package owns the field, the macros and the GiST index support. No other package defines its own geospatial field or macro.
+
+## Consequences
+
+- A location feature uses one approved extension, and it does not need a new service.
+- Each environment that runs the geography package needs PostGIS installed in its Postgres, including on-prem and air-gapped deliveries ([0179](/adr/0179-on-prem-and-air-gapped-delivery)). [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions) already makes every approved extension a dependency of every environment.
+- The `@Geo` deferral of [0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events) has no revival trigger left to name, because the deferral is lifted.
+
+## Enforcement
+
+planned — gen rejects a `schema.createExtension()` call that names an extension outside the approved list of [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions), and rejects a `@Geo` column that has no GiST index. Nothing checks either rule yet.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions), decision 2; [0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events), decision 2 and the deferred item for `@Geo`. Builds on: [0201](/adr/0201-the-app-split-framework-platform-core-and-first-party-apps) (layer 2). Sources: owner decision of 2026-10-24 on geospatial and location macros.
