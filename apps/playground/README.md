@@ -81,7 +81,8 @@ src/
 ├── playground.module.ts               the root module
 ├── main.tsx                           stand-in entry and route tree until gen writes them (STA-339)
 ├── components/playground-shell/       the layout: provider, glass bar, switcher, category strip, pager, palette
-├── components/command-palette/        search every page (⌘K, Ctrl+K or `/`)
+├── components/command-palette/        the launcher: pages, quick actions, recent, preview (⌘K, Ctrl+K or `/`)
+├── components/category-glyph/         the brand glyph a category wears
 ├── components/category-nav/           a component page's category strip
 ├── components/page-pager/             previous and next page
 ├── components/page-gallery/           the index gallery: a glass panel per category, All / Free / Pro
@@ -92,7 +93,6 @@ src/
 ├── routes/foundations/                `/foundations`
 ├── routes/icon/                       `/icon`
 ├── routes/typography/                 `/typography`
-├── components/page-list/              the pages grouped by category, as rows (the palette)
 ├── components/page-section/           a named region with a level-2 heading and a note
 ├── enums/page-category.enum.ts        the page categories, in navigation order
 ├── enums/page-tier.enum.ts            Free and Pro (a `/pro-*` path is Pro)
