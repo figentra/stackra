@@ -1,0 +1,76 @@
+---
+title: "0337 — Client rule code: a module ships pure rules that run on the till and on the server"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Reads with [0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step) (tenant code stays in
+  the sandbox; this ADR is about first-party module code),
+  [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer) (tenant-authored
+  conditions are data that this code evaluates) and
+  [0338](/adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps)
+  (the replicas the code reads offline).
+</Note>
+
+## Context
+
+A till that is offline must still price a basket, apply promotions, compute tax, enforce discount limits and accept a
+return. Those rules are code that the pricing, promotions, tax and returns modules own on the server. Today a module's
+code runs in its service, and a client reaches it only through the generated client. Copying the rules into the app
+would make two implementations that drift. The owner decided on 2026-10-24 that these rules are written once, as pure
+code, and run on both sides, with the server's answer winning.
+
+## Decision
+
+1. **Rule code is a package with a `core` entry.** A module that must evaluate on clients puts its rule code in a
+   package of its product, in the isomorphic `core` entry of [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming)
+   decision 15, as pure functions in `functions/` (`<name>.function.ts`). The module's service and the client apps both
+   import that package. There is no second copy.
+
+2. **Pure means pure.** A rule function takes its inputs as arguments and returns a result. It performs no I/O, holds
+   no state, reads no clock (the time is an argument, as [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer)
+   decision 6 requires) and takes no injected service. It depends only on `core` and `contracts` entries. A random
+   number, a locale or a currency table is an input.
+
+3. **Data reaches the client as a replica.** The tenant data a rule needs (price lists, promotion rule sets of
+   [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer), tax registrations, return policies)
+   is a bounded replica with an "as of" time ([0338](/adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps)
+   decision 3), and the result names the replica's revision and "as of" time it was computed from.
+
+4. **The server re-evaluates and wins.** Every document a client computes offline (a priced sale, a return) carries the
+   rule code version and the replica revisions it used. On sync, the server runs the same function on its current
+   data. An equal result is confirmed. A different result is recorded as a review item on the document, with both
+   answers; it never rejects the sale, and the server's figure is the one in the ledger.
+
+5. **Versioned together.** The rule package's version is part of the client's build, and an action that accepts an
+   offline-computed document declares the oldest rule version it still accepts. A document from an older version is
+   re-evaluated on the server and flagged, not refused.
+
+6. **Not tenant code.** Only first-party and edition module code ships this way. A tenant's rules remain data that
+   references registered fields and operators ([0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer)
+   decision 10); tenant logic runs only in the sandboxed code step ([0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step)),
+   which is server-side, and is therefore never evaluated offline.
+
+## Consequences
+
+- One implementation of each rule, exercised by the same tests on both sides.
+- A till can finish a sale without the network, and the shop sees any difference later as a review item with the two
+  figures, never as a lost sale.
+- A rule change is a package release, and the oldest accepted version is an explicit line in the action.
+
+## Enforcement
+
+- planned — an oxlint house rule under [0129](/adr/0129-house-lint-plugin-and-coding-standard): a `core` function that
+  imports a `node` entry, a driver, a service or `Date.now` fails.
+- planned — a conformance test in `@stackra/testing`: for each rule package, the same fixtures produce the same result
+  in a Node run and in a jsdom run.
+- planned — gen (STA-340): an action that accepts offline documents without an oldest-accepted rule version fails.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0129](/adr/0129-house-lint-plugin-and-coding-standard),
+[0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step),
+[0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming),
+[0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer) and
+[0338](/adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps). Sources:
+the owner's Muslin rethink decisions of 2026-10-24 (STA-451), restated in this ADR's own words.

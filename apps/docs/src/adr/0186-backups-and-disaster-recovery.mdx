@@ -1,7 +1,20 @@
 ---
 title: "0186 — Backups and disaster recovery"
-description: "Accepted, amended by 0272 · 2026-10-20"
+description: "Accepted, amended by 0272 · 2026-10-20 · amended 2026-10-24 (STA-456)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-456), owner decision: decision 6 changes from one region to two
+  independent hosting regions from launch, GCC and EU. A tenant stays in the region chosen at its
+  creation ([0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region)
+  decision 4); the platform replicates no tenant data across regions, and the one thing that crosses
+  is an item a user explicitly releases over a cross-tenant link
+  ([0343](/adr/0343-cross-tenant-record-links-consented-copies-fed-by-events) decision 4), audited
+  and checked against the sending legal entity's transfer rules; the stack is never active-active,
+  so the 0227 row stands. A customer that needs in-country hosting in Saudi Arabia, the UAE or
+  Egypt, and every government customer, gets a dedicated in-country deployment per customer that
+  Figentra runs. Cells, within a region, still come later. Decisions 1 to 5 and 7 onward stand.
+</Note>
 
 <Note>
   Supersedes [0048](/adr/0048-point-in-time-recovery-and-quarterly-restore-drill). The drill record

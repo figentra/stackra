@@ -1,0 +1,77 @@
+---
+title: "0338 — The offline queue, completed: per-device order, sealed payloads, bounded replicas, revoke and wipe, and caps"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Accepts the mechanics of [0252](/adr/0252-offline-on-every-client-completing-the-mutation-queue)
+  decision 2, which that ADR left Proposed pending the owner, and adds five rules. 0252 carries a
+  note and becomes Accepted with this ADR. Reads with
+  [0256](/adr/0256-client-storage-one-stackra-storage-package) (the stores) and
+  [0235](/adr/0235-devices-and-iot-minimal-now-full-later) (devices as principals).
+</Note>
+
+## Context
+
+[0252](/adr/0252-offline-on-every-client-completing-the-mutation-queue) made offline a property of every client and
+listed the queue's mechanics, but stayed Proposed until the owner agreed the rows. On 2026-10-24 the owner confirmed
+deeper offline for the retail edition: a till keeps selling, returns a sale from any branch, redeems a gift card
+within a cap, and comes back in order. A shared till is also a device that can be lost, so what it holds must be sealed
+and wipeable. The rows of 0252 are therefore accepted, and the five rules below complete them.
+
+## Decision
+
+1. **Per-device order.** Every queued mutation carries the device's id ([0235](/adr/0235-devices-and-iot-minimal-now-full-later))
+   and a per-device sequence number. The server applies one device's mutations in sequence order and never applies a
+   later one before an earlier one has been applied or rejected. Order across devices is not promised; a cross-device
+   conflict is the version precondition of 0252 decision 2.
+
+2. **Payloads are sealed at rest.** The `outbox` and `cache` stores ([0256](/adr/0256-client-storage-one-stackra-storage-package))
+   hold their payloads encrypted with a key that lives in the `secrets` store and is bound to the device's session.
+   A payload is readable only while the device is signed in and not revoked.
+
+3. **Bounded replicas with an "as of" time.** A client holds read models that an action needs offline, such as recent
+   sales across the tenant's branches, customers and the rule data of [0337](/adr/0337-client-rule-code-a-module-ships-pure-rules-that-run-on-the-till-and-on-the-server),
+   as replicas declared by the module (`replica: { of, window, limit }`). Each replica is bounded by age and size, is
+   refreshed in the background, and carries the "as of" time of its last refresh, which every screen that reads it
+   shows. A refresh is incremental: the client sends the replica's change cursor and receives only the changes since
+   it, on start, on reconnect and on the refresh signal of the live query it mirrors
+   ([0315](/adr/0315-realtime-live-queries-and-streams)); the first fill is the only full download. A query that is
+   not declared a replica is not available offline. A replica may be scoped by a dimension of the tenant (`scope: "legalEntityId"`), so a device holds only the records of its own legal entity and personal data never crosses a border inside a multi-country tenant (the legal entity is the transfer boundary, as [0343](/adr/0343-cross-tenant-record-links-consented-copies-fed-by-events) decision 4 says for links); an action that touches a record outside the device's scope is online-only.
+
+4. **Revoke means wipe and lock.** When identity revokes the device principal, or when the tenant's offline limit
+   (default 24 hours, a tenant setting) passes without a sync, the client wipes `outbox`, `cache` and `secrets`, keeps
+   nothing readable, and locks until it is signed in again. A revoked device's unsynced mutations are lost by design,
+   and the server lists the device's last acknowledged sequence so the loss is known.
+
+5. **Caps per action.** An action's `offline:` option gains a cap: `offline: { cap: { count, amount, window } }`. The
+   client refuses the action offline once the cap is reached within the window, with the refusal of the action
+   pipeline ([0137](/adr/0137-declared-action-options-and-refusal-codes)), and the server reconciles the capped
+   actions on sync. A gift-card redemption or a store-credit spend is the kind of action that carries one; a sale does
+   not.
+
+6. **The mechanics of 0252 stand.** Client-minted ids, version preconditions on writes, retention, a queue leader across
+   tabs, action-version survival across an upgrade and the `offline:` option are accepted as 0252 decision 2 lists
+   them. Negative stock is never a reason to refuse a sale offline; it is a review item.
+
+## Consequences
+
+- A till that was offline replays in the order it sold, and a shop can see what a lost device had not yet sent.
+- A stolen tablet holds nothing readable once its session is revoked or its offline limit passes.
+- Every offline screen says how old its data is, and an action that could cost real money offline has a ceiling.
+
+## Enforcement
+
+- planned — the queue conformance test of 0252 gains cases for per-device order, a rejected earlier mutation blocking
+  later ones, wipe on revoke and on the offline limit, and a cap reached within its window.
+- planned — gen (STA-340): a replica without `window` and `limit` fails; an `offline` action whose output is money
+  without a cap is a warning the review reads.
+- planned — a `@stackra/storage` test that a payload at rest is unreadable without the `secrets` key.
+
+## Supersedes and sources
+
+Supersedes: none. Completes and accepts [0252](/adr/0252-offline-on-every-client-completing-the-mutation-queue).
+Builds on [0137](/adr/0137-declared-action-options-and-refusal-codes),
+[0235](/adr/0235-devices-and-iot-minimal-now-full-later), [0256](/adr/0256-client-storage-one-stackra-storage-package)
+and [0337](/adr/0337-client-rule-code-a-module-ships-pure-rules-that-run-on-the-till-and-on-the-server). Sources: the
+owner's Muslin rethink decisions of 2026-10-24 (STA-451), restated in this ADR's own words.

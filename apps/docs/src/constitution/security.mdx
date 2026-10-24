@@ -37,7 +37,7 @@ effective(principal, tenant, activeScope) =
 ```
 
 - Results are cached per `(principal, tenant, scope, grantsVersion)`. Any change to grants or roles bumps `grantsVersion`.
-- The check is shaped `check(subject, relation, object)` so the engine behind it can be replaced without touching callers. Free `@stackra/iam` resolves RBAC with no scope dependency; the scope tree and the relation engine are Pro drivers behind the same `check()` ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope), owner decision S3).
+- The check is shaped `check(subject, relation, object)` so the engine behind it can be replaced without touching callers. Free `@stackra/iam` resolves RBAC with no scope dependency; the scope tree is free code in `@stackra/scope` (0240, 0327) and the relation engine is a Pro driver behind the same `check()` ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope), owner decision S3).
 - A cross-tenant miss is `notFound`, never `permissionDenied`.
 
 ## Threat model template
