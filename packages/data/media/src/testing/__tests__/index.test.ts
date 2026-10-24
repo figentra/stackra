@@ -1,0 +1,22 @@
+/**
+ * Stackra file contract:
+ * Purpose: the consumer contract of the `./testing` entry: it exports `fakeUpload` (the template's commerce action
+ *          test) and nothing else at run time, and `FakeUpload` resolves.
+ * Boundary: test only; imports the stand-in barrel through its `#testing` alias.
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0022; ADR 0269 (decision 3); ADR 0294 (decision 15).
+ */
+import { describe, expect, expectTypeOf, it } from "@stackra/testing";
+
+import * as testing from "#testing/index";
+import type { FakeUpload } from "#testing/index";
+
+describe("@stackra/media/testing", () => {
+  it("exports exactly its values", () => {
+    expect(Object.keys(testing)).toEqual(["fakeUpload"]);
+  });
+
+  it("resolves FakeUpload with the claimed URL", () => {
+    expectTypeOf<FakeUpload["url"]>().toEqualTypeOf<string>();
+  });
+});
