@@ -47,6 +47,8 @@ catalog:
   # @stackra/database ./testing: Factory data (MIT) and the usePostgres Testcontainers fixture (MIT, ADR 0269 d3).
   "@faker-js/faker": 10.6.0
   "@testcontainers/postgresql": 12.2.0
+  # The server-state cache of @stackra/query (ADR 0079 decision 1); the React adapter is ours. MIT, no dependencies.
+  "@tanstack/query-core": 5.104.1
   # @stackra/seo Open Graph cards: satori lays the card out to SVG, resvg rasterises it to PNG. Both MPL-2.0.
   # satori stays on 0.36.0, the last release that exports `satori/yoga.wasm`, which the Worker driver imports.
   satori: 0.36.0
