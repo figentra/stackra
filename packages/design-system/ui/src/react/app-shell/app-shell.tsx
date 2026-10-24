@@ -135,9 +135,10 @@ export function AppShell({
       {sidebar === undefined ? null : (
         <Drawer isOpen={open} onOpenChange={setOpen} placement="start" label={STRINGS.navigation}>
           <Drawer.Body className="p-0">
-            {/* A click on an entry bubbles here; the entries are the keyboard-reachable controls, this only listens. */}
+            {/* The capture phase, because React Aria's press handling stops an entry's click from bubbling. The
+                entries are the keyboard-reachable controls; this only listens. */}
             {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- delegation only */}
-            <div onClick={closeOnEntry}>{draw(true)}</div>
+            <div onClickCapture={closeOnEntry}>{draw(true)}</div>
           </Drawer.Body>
           <Drawer.Footer>
             <Button variant="secondary" slot="close">

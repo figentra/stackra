@@ -78,7 +78,9 @@ describe("App header page", () => {
 
   it("holds no banner landmark and no heading from a bar's title", () => {
     renderPage();
-    expect(screen.queryByRole("banner")).toBeNull();
+    // DOM Testing Library calls every header a banner; HTML-AAM makes one inside these sectioning elements none.
+    for (const header of document.querySelectorAll("header"))
+      expect(header.closest("article, aside, main, nav, section")).not.toBeNull();
     expect(screen.getAllByRole("heading").map((heading) => heading.tagName)).toEqual([
       "H1",
       "H2",

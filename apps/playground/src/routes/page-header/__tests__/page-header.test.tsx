@@ -64,7 +64,10 @@ describe("Page header page", () => {
   it("holds one trail, in the sample with every part", () => {
     renderPage();
     const trail = screen.getByRole("navigation", { name: "Breadcrumbs" });
-    expect(within(trail).getAllByRole("link")).toHaveLength(2);
+    // React Aria draws the current step as a disabled link with no href, so two steps lead anywhere.
+    const links = within(trail).getAllByRole("link");
+    expect(links.filter((link) => link.hasAttribute("href"))).toHaveLength(2);
+    expect(links.at(-1)?.getAttribute("aria-current")).toBe("page");
     expect(section("Parts").getByRole("navigation", { name: "Breadcrumbs" })).toBe(trail);
   });
 

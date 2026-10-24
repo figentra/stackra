@@ -121,14 +121,14 @@ Linear issues: [STA-382] AppShell, [STA-383] AppHeader and PageHeader, [STA-384]
 - [x] T057 [US2] The shell contracts, `currentStateOf`, the web and native AppShell, Sidebar and NavigationList, and their three routes with e2e files — covers: FR-152, FR-154, FR-155, FR-156, FR-157, FR-158, FR-159, FR-160, FR-161, FR-162, SC-012, P-070 — route: frontend — deps: T050
 - [x] T058 [US2] AppHeader and PageHeader, `splitPageActions` and `pageActionVariant`, the web and native components, and their routes with e2e files — covers: FR-163, FR-164, FR-165, FR-166, FR-167, FR-168, P-071 — route: frontend — deps: T057
 - [x] T059 [US2] Section, SingleColumnLayout and TwoColumnLayout, the web and native components, and their routes with e2e files — covers: FR-169, FR-170, FR-171, FR-172, FR-173, P-072 — route: frontend — deps: T057
-- [x] T060 [US2] Screen, NavigationHeader and the native TabBar, with the `/screen` and `/navigation-header` routes and e2e files — covers: FR-174, FR-175, FR-176, FR-177, P-073 — route: frontend — deps: T057
-- [x] T061 [US2] `@stackra/navigation`: the route overlay contracts, RouteOverlay, the router providers and the leave confirmation for React Router 7 and React Navigation 7, with the `/route-overlay` route and e2e file — covers: FR-153, FR-178, FR-179, FR-180, FR-181, FR-182, FR-183, FR-184, P-074 — route: frontend — deps: T057
+- [x] T060 [US2] Screen, NavigationHeader and the native TabBar, with the /screen and /navigation-header routes and e2e files — covers: FR-174, FR-175, FR-176, FR-177, P-073 — route: frontend — deps: T057
+- [x] T061 [US2] @stackra/navigation: the route overlay contracts, RouteOverlay, the router providers and the leave confirmation for React Router 7 and React Navigation 7, with the /route-overlay route and e2e file — covers: FR-153, FR-178, FR-179, FR-180, FR-181, FR-182, FR-183, FR-184, P-074 — route: frontend — deps: T057
 
 ## Phase 16: Wave 7 foundation and components (ADR 0318)
 
 Linear issues: [STA-388] DataTable, [STA-389] FilterBar, [STA-390] BulkActionBar, [STA-391] EntityPicker, [STA-392] NumberField, [STA-393] DateField and DatePicker.
 
-- [x] T062 [US2] The resource index contracts, the number and date value contracts, the three query functions, the `@internationalized/date` and `@expo/ui` catalog entries and ADR 0318 — covers: FR-185, FR-186, FR-187, FR-207, P-075 — route: frontend — deps: T061
+- [x] T062 [US2] The resource index contracts, the number and date value contracts, the three query functions, the @internationalized/date and @expo/ui catalog entries and ADR 0318 — covers: FR-185, FR-186, FR-187, FR-207, P-075 — route: frontend — deps: T061
 - [x] T063 [US2] DataTable and BulkActionBar: contracts, the web components, and the /data-table and /bulk-action-bar routes with e2e files — covers: FR-188, FR-189, FR-190, FR-192, FR-193, P-076 — route: frontend — deps: T062
 - [x] T064 [US2] FilterBar: contract, the web component, the /filter-bar route and its e2e file — covers: FR-194, FR-195, FR-196, FR-197, P-077 — route: frontend — deps: T062, T066, T067
 - [x] T065 [US2] EntityPicker: contract, the web component, the /entity-picker route and its e2e file — covers: FR-198, FR-199, FR-201, P-078 — route: frontend — deps: T062

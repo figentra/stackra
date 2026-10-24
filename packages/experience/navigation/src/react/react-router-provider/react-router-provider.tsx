@@ -19,12 +19,25 @@ export interface ReactRouterProviderProps {
   readonly children?: ReactNode;
 }
 
+/** A URL with a scheme (`https:`, `mailto:`) or a protocol-relative one: it leaves the app, so the router never owns it. */
+const ABSOLUTE_URL = /^(?:[a-z][a-z\d+.-]*:|\/\/)/i;
+
+/**
+ * React Router's `useHref` for the app's own paths only. React Aria calls it for every link, and React Router would
+ * read an absolute URL as a relative path under the basename.
+ */
+function useRouterHref(href: string): string {
+  // Called on every render, whatever the href, so the hook order never changes.
+  const resolved = useHref(href);
+  return ABSOLUTE_URL.test(href) ? href : resolved;
+}
+
 /** Gives every `Link` below it React Router's navigate and href functions. */
 export function ReactRouterProvider({ children }: ReactRouterProviderProps): ReactElement {
   const navigate = useNavigate();
   return (
     // oxlint-disable-next-line react/hooks -- React Aria's RouterProvider takes the router's `useHref` hook as a prop and calls it itself.
-    <RouterProvider navigate={(href) => void navigate(href)} useHref={useHref}>
+    <RouterProvider navigate={(href) => void navigate(href)} useHref={useRouterHref}>
       {children}
     </RouterProvider>
   );

@@ -70,7 +70,7 @@ additions are recorded here.
    tone, disabled and why, link) whose `onPress` may return a promise. The handler closes over the record or the
    selected keys, so the table and the bar never hand them back. A pending promise shows the action busy and refuses a
    second press. A rejection leaves the selection untouched and is reported by the app, as
-   [0139](/adr/0139-action-ux-confirmation-feedback-and-errors) says an action reports. The bar never changes the
+   [0139](/adr/0139-actions-declare-their-user-experience) says an action reports. The bar never changes the
    selection itself: the app clears it after a success, and the bar's clear button calls `onClearSelection`. A row menu
    hands the same actions to an ActionMenu unchanged.
 6. **Select all N across pages is two props and a flag.** The pages are cursor pages, so the total is the server's own
