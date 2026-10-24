@@ -45,6 +45,8 @@ material and the ambient field; ADR 0320 records the brand amendment.
 
 - **P-001**: A client-side navigation, from a link or the palette, lands focus on the new page's h1 — Validates: FR-001
 - **P-002**: A page whose path starts with `/pro-` is Pro and lists after the free pages of its category — Validates: FR-003
+- **P-003**: The gallery lists every page under its category and the tier filter narrows it — Validates: FR-002
+- **P-004**: Every route passes axe in the four views and more contrast makes the glass opaque — Validates: FR-004
 
 ## Contracts and events
 

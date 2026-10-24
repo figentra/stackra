@@ -12,7 +12,7 @@
  * Runtime: node
  * Governing contract: ADR 0302 (decision 5); ADR 0182 (test tiers); ADR 0022 (test placement).
  */
-// @covers sta-350:FR-010 sta-350:FR-011 sta-350:P-007 sta-350:SC-002 sta-422:FR-001 sta-422:FR-004 sta-422:P-001 sta-422:SC-001
+// @covers sta-350:FR-010 sta-350:FR-011 sta-350:P-007 sta-350:SC-002 sta-422:FR-001 sta-422:FR-004 sta-422:P-001 sta-422:P-004 sta-422:SC-001
 import { readdirSync } from "node:fs";
 
 import { AxeBuilder } from "@axe-core/playwright";
