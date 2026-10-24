@@ -113,3 +113,13 @@ Linear issues: [STA-376] Table, [STA-377] List and ListItem, [STA-378] PropertyL
 - [x] T054 [US2] Tabs and Accordion: contracts, the web and native components, and the `/tabs` and `/accordion` routes with e2e files — covers: FR-135, FR-136, FR-137, FR-138, FR-139, FR-140, P-067 — route: frontend — deps: T050
 - [x] T055 [US2] CursorPagination and Breadcrumbs: contracts, the web and native components, and their routes with e2e files — covers: FR-141, FR-142, FR-143, FR-144, FR-145, FR-146, P-068 — route: frontend — deps: T050
 - [x] T056 [US2] EmptyState, ErrorState and PageSkeleton: contracts, the shared state layout, the web and native components, and their routes with e2e files — covers: FR-147, FR-148, FR-149, FR-150, FR-151, SC-011, P-069 — route: frontend — deps: T050
+
+## Phase 15: Wave 6 components (ADR 0314)
+
+Linear issues: [STA-382] AppShell, [STA-383] AppHeader and PageHeader, [STA-384] Section and the layouts, [STA-385] Screen, TabBar and NavigationHeader, [STA-386] RouteOverlay, [STA-387] Sidebar and NavigationList.
+
+- [x] T057 [US2] The shell contracts, `currentStateOf`, the web and native AppShell, Sidebar and NavigationList, and their three routes with e2e files — covers: FR-152, FR-154, FR-155, FR-156, FR-157, FR-158, FR-159, FR-160, FR-161, FR-162, SC-012, P-070 — route: frontend — deps: T050
+- [x] T058 [US2] AppHeader and PageHeader, `splitPageActions` and `pageActionVariant`, the web and native components, and their routes with e2e files — covers: FR-163, FR-164, FR-165, FR-166, FR-167, FR-168, P-071 — route: frontend — deps: T057
+- [x] T059 [US2] Section, SingleColumnLayout and TwoColumnLayout, the web and native components, and their routes with e2e files — covers: FR-169, FR-170, FR-171, FR-172, FR-173, P-072 — route: frontend — deps: T057
+- [x] T060 [US2] Screen, NavigationHeader and the native TabBar, with the `/screen` and `/navigation-header` routes and e2e files — covers: FR-174, FR-175, FR-176, FR-177, P-073 — route: frontend — deps: T057
+- [x] T061 [US2] `@stackra/navigation`: the route overlay contracts, RouteOverlay, the router providers and the leave confirmation for React Router 7 and React Navigation 7, with the `/route-overlay` route and e2e file — covers: FR-153, FR-178, FR-179, FR-180, FR-181, FR-182, FR-183, FR-184, P-074 — route: frontend — deps: T057

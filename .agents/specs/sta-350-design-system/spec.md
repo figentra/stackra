@@ -564,6 +564,86 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
 - **FR-153**: `@stackra/navigation` (`packages/experience/navigation`) SHALL be a `tier:lib` member that depends on
   `@stackra/ui` and takes React Router 7 and React Navigation 7 as optional peers, so router UI lives there and
   `@stackra/ui` imports no router — verified by: validate, boundaries
+- **FR-154**: `@stackra/ui/contracts` SHALL hold the wave 6 component props and the `ScreenEdge` enum:
+  `AppShellContractProps` with `AppShellSidebarState`, `SidebarContractProps`, `NavigationListContractProps`,
+  `AppHeaderContractProps`, `PageHeaderContractProps`, `SectionContractProps`, `SingleColumnLayoutContractProps`,
+  `TwoColumnLayoutContractProps`, `ScreenContractProps`, `NavigationHeaderContractProps` and `TabBarContractProps`,
+  each built from the shared shell contracts of FR-152 — verified by: typecheck
+- **FR-155**: `currentStateOf` SHALL say whether a navigation item is the current page, holds the current page in its
+  children (an ancestor) or neither, and `markCurrentItems` SHALL flag the entry whose `href` is the longest
+  whole-segment prefix of a pathname — verified by: unit
+- **FR-156**: On web, `NavigationList` SHALL be a named `nav` of nested lists whose links are React Aria links drawn as
+  HeroUI ghost buttons, marking the current place with `aria-current` (`page`, or `true` on an entry that only holds
+  it) and not by colour alone, drawing a badge only for a non-empty value and showing a `shortcut` in a tooltip —
+  verified by: unit, e2e
+- **FR-157**: On native, `NavigationList` SHALL be the adapted form: pressable rows in HeroUI Native's `ListGroup` that
+  run `onPress` and then follow `href` through the nearest `RouterProvider`, with the current row selected and every
+  string child wrapped in `Text` — verified by: unit
+- **FR-158**: On web, `Sidebar` SHALL stack `startContent`, the `NavigationList` and `endContent`, and collapse to an
+  icon rail and back through a toggle whose state is controlled by `isCollapsed` and `onCollapsedChange` or left to
+  `defaultCollapsed` — verified by: unit, e2e
+- **FR-159**: On native, `Sidebar` SHALL be the adapted form, an inset column of `startContent`, the `NavigationList`
+  and `endContent` — verified by: unit
+- **FR-160**: On web, `AppShell` SHALL put a skip link first in the tab order, the sidebar column at the inline start,
+  the header above the page and the page in one focusable `main`, and from `collapseBelow` down draw the sidebar in a
+  `Drawer` that the app opens by state and that closes when a navigation entry is chosen — verified by: unit, e2e
+- **FR-161**: On native, `AppShell` SHALL be the adapted form: the header, the page filling the screen and the sidebar
+  in a bottom sheet opened by `isOpen`, `defaultOpen` and `onOpenChange` — verified by: unit
+- **FR-162**: The `/app-shell`, `/sidebar` and `/navigation-list` playground routes SHALL show the shell, the expanded
+  and collapsed sidebar and every navigation state, and axe SHALL report nothing — verified by: unit, e2e
+- **FR-163**: `splitPageActions` and `pageActionVariant` SHALL give a page's ordered actions the first as primary, the
+  next two as secondary and the rest to an ActionMenu, so `PageHeader` and `Section` share one rule — verified by:
+  unit
+- **FR-164**: On web, `AppHeader` SHALL be a `header` holding `startContent`, `title`, the `search` slot taking the room
+  left over, `endContent` and `userMenu` from the inline start, naming itself with `label` only when one is given —
+  verified by: unit
+- **FR-165**: On web, `PageHeader` SHALL be a `header` holding the breadcrumb trail, the title as a real heading, a
+  `status`, a muted description and the ordered `actions`, where an action with an `href` navigates through the nearest
+  `RouterProvider` — verified by: unit
+- **FR-166**: On native, `AppHeader` SHALL be the same bar as a row that mirrors in right-to-left, named by `label` —
+  verified by: unit
+- **FR-167**: On native, `PageHeader` SHALL be the same page top as a column, an action with an `href` following it after
+  its `onPress` and every string child wrapped in `Text` — verified by: unit
+- **FR-168**: The `/app-header` and `/page-header` playground routes SHALL show every part, the action overflow and a
+  narrow width without horizontal scrolling, and axe SHALL report nothing — verified by: unit, e2e
+- **FR-169**: On web, `Section` SHALL be HeroUI's `Card` as a `section` landmark named by its title, which is a real
+  heading at `headingLevel`, with a muted description and the ordered `actions` — verified by: unit
+- **FR-170**: On native, `Section` SHALL be the adapted form: a group named by its title or `label`, with the same
+  heading, description and ordered actions, and every string child wrapped in `Text` — verified by: unit
+- **FR-171**: `SingleColumnLayout` SHALL stack its children with an even gap, on web and on native, and draw no landmark
+  — verified by: unit
+- **FR-172**: `TwoColumnLayout` SHALL place its `aside` at the logical end from `collapseBelow` up and stack it under the
+  main column below it on web, and stack the two columns in one view on native, which ignores `collapseBelow` —
+  verified by: unit
+- **FR-173**: The `/section`, `/single-column-layout` and `/two-column-layout` playground routes SHALL show the layouts
+  at each breakpoint, and axe SHALL report nothing — verified by: unit, e2e
+- **FR-174**: `Screen` SHALL be the page container of a screen outside the shell, keeping clear of the safe areas on its
+  `edges` and scrolling its content when `isScrollable`, as a `main` landmark on web and a safe-area view on native —
+  verified by: unit
+- **FR-175**: `NavigationHeader` SHALL hold a back control that is a link for `backHref` and a button for `onBack`, the
+  title as a heading and `startContent` and `endContent`, with a large title under the bar when `hasLargeTitle`, and
+  mirror the row and its chevron in right-to-left, on web and on native — verified by: unit
+- **FR-176**: On native, `TabBar` SHALL draw up to five tabs from navigation items, each an icon, a label and a count
+  badge, announce the current tab as selected, refuse a press on a disabled tab and follow `href` through the nearest
+  `RouterProvider`; it has no web form because the web shell uses the Sidebar — verified by: unit
+- **FR-177**: The `/screen` and `/navigation-header` playground routes SHALL show the screen container and every header
+  form, and axe SHALL report nothing — verified by: unit, e2e
+- **FR-178**: `@stackra/navigation/contracts` SHALL hold `OverlayPresentation` (`modal`, `sheet`, `drawer`,
+  `full-screen`), `RouteOverlayContractProps` with a required `title` and `closeLabel`, `RouteOverlayControls`,
+  `RouteOverlayState` and `RouteLeaveConfirmationContractProps` — verified by: unit, typecheck
+- **FR-179**: On web, `RouteOverlay` SHALL show a route as a modal, sheet, drawer or full-screen dialog whose route is
+  its open state, close by returning to where the user came from, and offer `useRouteOverlay` with `close`, `complete`
+  and `setDismissable` — verified by: unit
+- **FR-180**: On web, `ReactRouterProvider` SHALL fill the `RouterProvider` seam with React Router's `useNavigate` and
+  `useHref`, so a link in the kit navigates through the app's router without the kit importing one — verified by: unit
+- **FR-181**: On web, `RouteLeaveConfirmation` SHALL block a route change while the page holds unsaved work and ask
+  through LeaveConfirmation whether to stay or leave — verified by: unit
+- **FR-182**: On native, `RouteOverlay` SHALL be a React Navigation screen that presents as a sheet, drawer, modal or
+  full screen through `routeOverlayScreenOptions`, with the same controls as on web — verified by: unit
+- **FR-183**: On native, `ReactNavigationProvider` SHALL fill the seam with React Navigation's `useLinkTo`, and
+  `RouteLeaveConfirmation` SHALL ask before a screen with unsaved work is left — verified by: unit
+- **FR-184**: The `/route-overlay` playground route SHALL show each presentation opened by a route, a dismissal that is
+  refused while work is unsaved and a close that returns focus, and axe SHALL report nothing — verified by: unit, e2e
 
 ## Success Criteria
 
@@ -590,6 +670,9 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
   toast announces by its tone — verified by: e2e
 - **SC-011**: axe reports nothing on `/table`, `/list`, `/property-list`, `/tabs`, `/accordion`, `/cursor-pagination`,
   `/breadcrumbs`, `/empty-state`, `/error-state` and `/page-skeleton` in light, dark, LTR and RTL — verified by: e2e
+- **SC-012**: axe reports nothing on `/app-shell`, `/sidebar`, `/navigation-list`, `/app-header`, `/page-header`,
+  `/section`, `/single-column-layout`, `/two-column-layout`, `/screen`, `/navigation-header` and `/route-overlay` in
+  light, dark, LTR and RTL, also with the drawer or the overlay open — verified by: e2e
 
 ## Out of scope
 
@@ -618,5 +701,5 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
 - 2026-10-24 · Implementing · Claude (frontend-builder) · wave 4 components: FR-098 to FR-120, SC-008 to SC-010
 - 2026-10-24 · Implementing · Claude (frontend-builder) · wave 5 foundation: FR-121, FR-122 (ADR 0313)
 - 2026-10-24 · Implementing · Claude (frontend-builder) · wave 5 components: FR-123 to FR-151, SC-011
-- 2026-10-24 · Implementing · Claude (frontend-builder) · wave 6 foundation: FR-152, FR-153 (ADR 0314); the builders
-  take FR-154 onward
+- 2026-10-24 · Implementing · Claude (frontend-builder) · wave 6 foundation: FR-152, FR-153 (ADR 0314)
+- 2026-10-24 · Implementing · Claude (frontend-builder) · wave 6 components: FR-154 to FR-184, SC-012

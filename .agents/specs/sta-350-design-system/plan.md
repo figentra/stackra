@@ -114,6 +114,11 @@ switcher and is covered by Playwright and axe. `@stackra/brand` is deleted; its 
 - **P-067**: Tabs and an Accordion select and expand by ids and follow the reading direction — Validates: FR-135, FR-136, FR-137, FR-138, FR-139, FR-140
 - **P-068**: Cursor pagination and breadcrumbs navigate, refuse a press while loading and mirror in right-to-left — Validates: FR-141, FR-142, FR-143, FR-144, FR-145, FR-146
 - **P-069**: An empty state, an error state and a page skeleton are named, announce as they should and carry no copy of their own — Validates: FR-147, FR-148, FR-149, FR-150, FR-151
+- **P-070**: A navigation list marks the current place, a sidebar collapses, and an app shell keeps one main landmark and moves its sidebar into a drawer on a narrow screen — Validates: FR-152, FR-154, FR-155, FR-156, FR-157, FR-158, FR-159, FR-160, FR-161, FR-162
+- **P-071**: A page's ordered actions put the first as primary and the overflow in a menu, and the app bar and page header hold their parts in reading order — Validates: FR-163, FR-164, FR-165, FR-166, FR-167, FR-168
+- **P-072**: A section and the two layouts stack with an even gap, and the side column sits at the logical end from the breakpoint up — Validates: FR-169, FR-170, FR-171, FR-172, FR-173
+- **P-073**: A screen keeps clear of the safe areas, a navigation header and a tab bar name the current place and mirror in right-to-left — Validates: FR-174, FR-175, FR-176, FR-177
+- **P-074**: A route is an overlay whose route is its open state, closing returns to where the user came from, and unsaved work is confirmed before it is left — Validates: FR-153, FR-178, FR-179, FR-180, FR-181, FR-182, FR-183, FR-184
 
 ## Contracts and events
 

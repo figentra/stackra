@@ -10,6 +10,8 @@ export { Accordion, type AccordionProps } from "#react/accordion/accordion";
 export { ActionMenu, type ActionMenuProps } from "#react/action-menu/action-menu";
 export { AlertDialog, type AlertDialogProps } from "#react/alert-dialog/alert-dialog";
 export { Alert, type AlertProps } from "#react/alert/alert";
+export { AppHeader, type AppHeaderProps } from "#react/app-header/app-header";
+export { AppShell, type AppShellProps } from "#react/app-shell/app-shell";
 export { Avatar, type AvatarProps } from "#react/avatar/avatar";
 export { Badge, type BadgeAnchorProps, type BadgeProps } from "#react/badge/badge";
 export { Breadcrumbs, type BreadcrumbsProps } from "#react/breadcrumbs/breadcrumbs";
@@ -58,15 +60,28 @@ export { Menu, type MenuProps } from "#react/menu/menu";
 export { Modal, type ModalProps } from "#react/modal/modal";
 export type { ModalCloseProps } from "#react/modal/modal-close";
 export type { ModalTitleProps } from "#react/modal/modal-title";
+export {
+  NavigationHeader,
+  type NavigationHeaderProps,
+} from "#react/navigation-header/navigation-header";
+export { NavigationList, type NavigationListProps } from "#react/navigation-list/navigation-list";
+export { PageHeader, type PageHeaderProps } from "#react/page-header/page-header";
 export { PageSkeleton, type PageSkeletonProps } from "#react/page-skeleton/page-skeleton";
 export { Popover, type PopoverProps } from "#react/popover/popover";
 export { ProgressBar, type ProgressBarProps } from "#react/progress-bar/progress-bar";
 export { ProgressCircle, type ProgressCircleProps } from "#react/progress-circle/progress-circle";
 export { PropertyList, type PropertyListProps } from "#react/property-list/property-list";
 export { RadioGroup, type RadioGroupProps } from "#react/radio-group/radio-group";
+export { Screen, type ScreenProps } from "#react/screen/screen";
 export { SearchField, type SearchFieldProps } from "#react/search-field/search-field";
+export { Section, type SectionProps } from "#react/section/section";
 export { Select, type SelectProps } from "#react/select/select";
 export { Separator, type SeparatorProps } from "#react/separator/separator";
+export { Sidebar, type SidebarProps } from "#react/sidebar/sidebar";
+export {
+  SingleColumnLayout,
+  type SingleColumnLayoutProps,
+} from "#react/single-column-layout/single-column-layout";
 export { SkeletonGroup, type SkeletonGroupProps } from "#react/skeleton-group/skeleton-group";
 export { Skeleton, type SkeletonProps } from "#react/skeleton/skeleton";
 export { Spinner, type SpinnerProps } from "#react/spinner/spinner";
@@ -82,6 +97,10 @@ export { Text, type TextProps } from "#react/text/text";
 export { toast } from "#react/toast/toast";
 export { ToastProvider, type ToastProviderProps } from "#react/toast/toast-provider";
 export { Tooltip, type TooltipProps } from "#react/tooltip/tooltip";
+export {
+  TwoColumnLayout,
+  type TwoColumnLayoutProps,
+} from "#react/two-column-layout/two-column-layout";
 // The one router seam of the web kit: React Aria's own provider, re-exported so apps import UI only from here.
 export { RouterProvider } from "react-aria-components";
 // Web-only HeroUI components with nothing to unify with native, so they keep HeroUI's own API (ADR 0303 decision 6).

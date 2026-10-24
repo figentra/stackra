@@ -10,6 +10,8 @@ export { Accordion, type AccordionProps } from "#native/accordion/accordion";
 export { ActionMenu, type ActionMenuProps } from "#native/action-menu/action-menu";
 export { AlertDialog, type AlertDialogProps } from "#native/alert-dialog/alert-dialog";
 export { Alert, type AlertProps } from "#native/alert/alert";
+export { AppHeader, type AppHeaderProps } from "#native/app-header/app-header";
+export { AppShell, type AppShellProps } from "#native/app-shell/app-shell";
 export { Avatar, type AvatarProps } from "#native/avatar/avatar";
 export { Badge, type BadgeAnchorProps, type BadgeProps } from "#native/badge/badge";
 export { Breadcrumbs, type BreadcrumbsProps } from "#native/breadcrumbs/breadcrumbs";
@@ -58,6 +60,12 @@ export { Menu, type MenuProps } from "#native/menu/menu";
 export { Modal, type ModalProps } from "#native/modal/modal";
 export type { ModalCloseProps } from "#native/modal/modal-close";
 export type { ModalTitleProps } from "#native/modal/modal-title";
+export {
+  NavigationHeader,
+  type NavigationHeaderProps,
+} from "#native/navigation-header/navigation-header";
+export { NavigationList, type NavigationListProps } from "#native/navigation-list/navigation-list";
+export { PageHeader, type PageHeaderProps } from "#native/page-header/page-header";
 export { PageSkeleton, type PageSkeletonProps } from "#native/page-skeleton/page-skeleton";
 export { Popover, type PopoverProps } from "#native/popover/popover";
 export { ProgressBar, type ProgressBarProps } from "#native/progress-bar/progress-bar";
@@ -65,15 +73,23 @@ export { ProgressCircle, type ProgressCircleProps } from "#native/progress-circl
 export { PropertyList, type PropertyListProps } from "#native/property-list/property-list";
 export { RadioGroup, type RadioGroupProps } from "#native/radio-group/radio-group";
 export { RouterProvider, type RouterProviderProps } from "#native/router-provider/router-provider";
+export { Screen, type ScreenProps } from "#native/screen/screen";
 export { SearchField, type SearchFieldProps } from "#native/search-field/search-field";
+export { Section, type SectionProps } from "#native/section/section";
 export { Select, type SelectProps } from "#native/select/select";
 export { Separator, type SeparatorProps } from "#native/separator/separator";
+export { Sidebar, type SidebarProps } from "#native/sidebar/sidebar";
+export {
+  SingleColumnLayout,
+  type SingleColumnLayoutProps,
+} from "#native/single-column-layout/single-column-layout";
 export { SkeletonGroup, type SkeletonGroupProps } from "#native/skeleton-group/skeleton-group";
 export { Skeleton, type SkeletonProps } from "#native/skeleton/skeleton";
 export { Spinner, type SpinnerProps } from "#native/spinner/spinner";
 export { StatusBadge, type StatusBadgeProps } from "#native/status-badge/status-badge";
 export { Surface, type SurfaceProps } from "#native/surface/surface";
 export { Switch, type SwitchProps } from "#native/switch/switch";
+export { TabBar, type TabBarProps } from "#native/tab-bar/tab-bar";
 export { Table, type TableProps } from "#native/table/table";
 export { Tabs, type TabsProps } from "#native/tabs/tabs";
 export { TagGroup, type TagGroupProps } from "#native/tag-group/tag-group";
@@ -83,3 +99,7 @@ export { Text, type TextProps } from "#native/text/text";
 export { toast } from "#native/toast/toast";
 export { ToastProvider, type ToastProviderProps } from "#native/toast/toast-provider";
 export { Tooltip, type TooltipProps } from "#native/tooltip/tooltip";
+export {
+  TwoColumnLayout,
+  type TwoColumnLayoutProps,
+} from "#native/two-column-layout/two-column-layout";

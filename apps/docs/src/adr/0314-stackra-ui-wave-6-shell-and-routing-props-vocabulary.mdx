@@ -91,6 +91,11 @@ Accepted ADR's body changes only for typos and Enforcement, so the additions are
   vocabulary replaces (`aria-label`, `primaryAction`, `headerRight`).
 - `tools/scripts/spec-trace.mjs` (run by `pnpm validate`) refuses a spec id that no test covers.
 - Until a lint rule exists, review (`architecture-guardian`) checks this page.
+- As built, wave 6 extends the vocabulary in four places, recorded here so review can hold them: Sidebar's
+  `startContent` and `endContent` are the top and bottom of a vertical bar; the web-only props `isCompact` (the icon
+  rail of a NavigationList), `isCollapsible`, `isEmbedded`, `skipLabel` and `mainId` have no native counterpart; AppShell's
+  `sidebar` may be a function of `AppShellSidebarState`; and `markCurrentItems` lives in `@stackra/ui` core as decision 3
+  says.
 
 ## Alternatives
 

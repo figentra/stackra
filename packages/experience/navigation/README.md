@@ -6,16 +6,18 @@ Router bindings for the Stackra Design System: route overlays, navigation items 
 
 ## Entry points
 
-| Import                          | Holds                                                                             | Exports today                         |
-| ------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------- |
-| `@stackra/navigation`           | `src/config/`: the config classes a host subclasses; `src/core/`: isomorphic code | `src/config/navigation.config.ts`     |
-| `@stackra/navigation/node`      | `src/node/`: the root module and the module groups                                | `src/node/navigation.module.ts`       |
-| `@stackra/navigation/contracts` | `src/contracts/`: the leaf (`ports/`, `enums/`, `types/`)                         | not yet: exported with its first file |
-| `@stackra/navigation/testing`   | `src/testing/`: `fakes/` and `matchers/`                                          | not yet: exported with its first file |
-| `@stackra/navigation/assets/*`  | `assets/`: static files (`public/`, `lang/`, …) at the package root (ADR 0234)    | the folder                            |
+| Import                          | Holds                                                                              | Exports today                         |
+| ------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------- |
+| `@stackra/navigation`           | `src/config/`: the config classes a host subclasses; `src/core/`: isomorphic code  | `src/config/navigation.config.ts`     |
+| `@stackra/navigation/node`      | `src/node/`: the root module and the module groups                                 | `src/node/navigation.module.ts`       |
+| `@stackra/navigation/contracts` | `src/contracts/`: the leaf (`ports/`, `enums/`, `types/`)                          | `src/contracts/index.ts` (stand-in)   |
+| `@stackra/navigation/react`     | `src/react/`: React Router 7 bindings (route overlay, link seam, leave blocker)    | `src/react/index.ts` (stand-in)       |
+| `@stackra/navigation/native`    | `src/native/`: React Navigation 7 bindings (route overlay, link seam, leave guard) | `src/native/index.ts` (stand-in)      |
+| `@stackra/navigation/testing`   | `src/testing/`: `fakes/` and `matchers/`                                           | not yet: exported with its first file |
+| `@stackra/navigation/assets/*`  | `assets/`: static files (`public/`, `lang/`, …) at the package root (ADR 0234)     | the folder                            |
 
-`./react` (React Router 7) and `./native` (React Navigation 7), renderers in `react/<name>/` and `native/<name>/`, and
-`./contracts` are added by hand with their first file, which is RouteOverlay's (wave 6, ADR 0314). `@stackra/ui` is a
+`./react` (React Router 7), `./native` (React Navigation 7) and `./contracts` hold RouteOverlay, the router link seam and
+the leave confirmation (wave 6, ADR 0314). `@stackra/ui` is a
 dependency and stays router-free: the router bindings live here, and the routers are optional peers. `exports` point at source through the
 `@stackra/source` condition; `tsdown` builds `dist/` for publishing (ADR 0025).
 

@@ -582,6 +582,9 @@ importers:
       '@stackra/icons':
         specifier: workspace:*
         version: link:../../packages/design-system/icons
+      '@stackra/navigation':
+        specifier: workspace:*
+        version: link:../../packages/experience/navigation
       '@stackra/tokens':
         specifier: workspace:*
         version: link:../../packages/design-system/tokens

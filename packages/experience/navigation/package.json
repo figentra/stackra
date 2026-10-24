@@ -76,10 +76,25 @@
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
     },
+    "./contracts": {
+      "@stackra/source": "./src/contracts/index.ts",
+      "types": "./dist/contracts.d.mts",
+      "default": "./dist/contracts.mjs"
+    },
     "./node": {
       "@stackra/source": "./src/node/navigation.module.ts",
       "types": "./dist/node.d.mts",
       "default": "./dist/node.mjs"
+    },
+    "./react": {
+      "@stackra/source": "./src/react/index.ts",
+      "types": "./dist/react.d.mts",
+      "default": "./dist/react.mjs"
+    },
+    "./native": {
+      "@stackra/source": "./src/native/index.ts",
+      "types": "./dist/native.d.mts",
+      "default": "./dist/native.mjs"
     },
     "./assets/*": "./assets/*"
   },
@@ -136,6 +151,7 @@
     "@react-navigation/native-stack": "^7.21.0",
     "react": ">=19.2.0",
     "react-native": ">=0.86.0",
+    "react-native-safe-area-context": "^5.7.0",
     "react-router": "^7.18.4"
   },
   "peerDependenciesMeta": {
@@ -146,6 +162,9 @@
       "optional": true
     },
     "react-native": {
+      "optional": true
+    },
+    "react-native-safe-area-context": {
       "optional": true
     },
     "react-router": {
