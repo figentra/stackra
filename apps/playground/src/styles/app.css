@@ -31,66 +31,25 @@ html {
   }
 }
 
-/* The glass material, from the theme's roles only. The fill stays at least 72% surface, so text on it keeps the
-   contrast it has on the solid surface (the ambient field under it is the background, tinted by a few percent). */
+/* The glass itself is the theme's material (`.material`, `.material-thin`, `.material-thick` and `data-material` on
+   <html>, ADR 0320), from @stackra/tokens. This file draws only the field under it: the ambient tints, the hero's grid
+   and glow, and the motion of the playground's own pieces. */
 :root {
-  --glass-fill: color-mix(in oklch, var(--surface) 72%, transparent);
-  --glass-fill-strong: color-mix(in oklch, var(--surface) 88%, transparent);
-  --glass-edge: color-mix(in oklch, var(--foreground) 10%, transparent);
-  --glass-highlight: color-mix(in oklch, var(--white) 70%, transparent);
-  --glass-shadow:
-    0 1px 2px color-mix(in oklch, var(--ink) 6%, transparent),
-    0 12px 32px -12px color-mix(in oklch, var(--ink) 18%, transparent);
-  --glass-blur: blur(20px) saturate(160%);
   --ambient-a: color-mix(in oklch, var(--steel) 45%, transparent);
   --ambient-b: color-mix(in oklch, var(--amber) 8%, transparent);
   --ambient-c: color-mix(in oklch, var(--white) 70%, transparent);
   --ambient-dot: color-mix(in oklch, var(--foreground) 6%, transparent);
-  --tile-fill: color-mix(in oklch, var(--surface) 50%, transparent);
-  --tile-blur: blur(10px) saturate(180%);
   --glow-a: color-mix(in oklch, var(--amber) 45%, transparent);
   --glow-b: color-mix(in oklch, var(--graphite-300) 70%, transparent);
 }
 
 .dark {
-  --glass-fill: color-mix(in oklch, var(--surface) 74%, transparent);
-  --glass-fill-strong: color-mix(in oklch, var(--surface) 90%, transparent);
-  --glass-edge: color-mix(in oklch, var(--foreground) 12%, transparent);
-  --glass-highlight: color-mix(in oklch, var(--white) 9%, transparent);
-  --glass-shadow:
-    0 1px 2px color-mix(in oklch, var(--ink) 60%, transparent),
-    0 16px 40px -12px color-mix(in oklch, var(--ink) 90%, transparent);
   --ambient-a: color-mix(in oklch, var(--steel-deep) 95%, transparent);
   --ambient-b: color-mix(in oklch, var(--amber) 9%, transparent);
   --ambient-c: color-mix(in oklch, var(--graphite-800) 80%, transparent);
   --ambient-dot: color-mix(in oklch, var(--foreground) 6%, transparent);
-  --tile-fill: color-mix(in oklch, var(--surface-tertiary) 55%, transparent);
   --glow-a: color-mix(in oklch, var(--amber) 22%, transparent);
   --glow-b: color-mix(in oklch, var(--graphite-700) 80%, transparent);
-}
-
-/* A translucent layer over the ambient field: chrome, cards and the command palette. A bright top edge catches the
-   light; content scrolls under it. Never stack one glass layer on another. */
-@utility glass {
-  background-color: var(--glass-fill);
-  border: 1px solid var(--glass-edge);
-  box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    var(--glass-shadow);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-}
-
-/* The heavier material, for the larger surfaces (the command palette). */
-@utility glass-strong {
-  background-color: var(--glass-fill-strong);
-  border: 1px solid var(--glass-edge);
-  box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    var(--overlay-shadow),
-    var(--glass-shadow);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
 }
 
 /* The field under the glass: three soft glows and a faint dot grid that fades out, behind the whole page. Each
@@ -165,9 +124,6 @@ html {
 
 /* The hero's tiles settle in once, staggered: a short rise and the material arriving, then they hold still. */
 .hero-tile {
-  background-color: var(--tile-fill);
-  -webkit-backdrop-filter: var(--tile-blur);
-  backdrop-filter: var(--tile-blur);
   animation: tile-in 600ms var(--ease-fast) var(--tile-delay, 0ms) both;
 }
 
@@ -234,44 +190,10 @@ html {
   }
 }
 
-/* Reduced transparency and more contrast: the glass turns solid and its edge turns to the border role. */
+/* Reduced transparency and more contrast: the material turns solid on its own (the tokens); the dot grid goes too. */
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  :root,
-  .dark {
-    --glass-fill: var(--surface);
-    --glass-fill-strong: var(--surface);
-    --glass-blur: none;
-    --tile-fill: var(--surface);
-    --tile-blur: none;
-  }
-
   .ambient > :nth-child(4) {
     display: none;
-  }
-}
-
-@media (prefers-contrast: more) {
-  :root,
-  .dark {
-    --glass-edge: var(--field-border);
-  }
-}
-
-/* Forced colours (Windows High Contrast): the system paints the surfaces; keep a visible edge on every glass layer. */
-@media (forced-colors: active) {
-  .glass,
-  .glass-strong {
-    border-color: CanvasText;
-  }
-}
-
-/* A browser without backdrop-filter gets the solid fill, never a see-through one. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  :root,
-  .dark {
-    --glass-fill: var(--surface);
-    --glass-fill-strong: var(--surface);
-    --tile-fill: var(--surface);
   }
 }
 

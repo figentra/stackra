@@ -99,7 +99,7 @@ export function Home({ pages }: HomeProps) {
               variant="outline"
               startIcon="search"
               onPress={shell.openPalette}
-              className="glass rounded-full"
+              className="material rounded-full"
             >
               {STRINGS.search}
             </Ui.Button>
@@ -107,7 +107,7 @@ export function Home({ pages }: HomeProps) {
         </div>
         <ul className="flex flex-wrap justify-center gap-2 text-sm">
           {stats.map((stat) => (
-            <li key={stat} className="glass rounded-full px-3 py-1">
+            <li key={stat} className="material rounded-full px-3 py-1">
               <bdi>{stat}</bdi>
             </li>
           ))}

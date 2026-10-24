@@ -80,18 +80,39 @@ keyword, `cubic-bezier()`, `steps()` or `linear()`), so no value can escape its 
 
 ## Entry points
 
-| Import                      | Holds                                                                                                                                 |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/tokens`           | `STACKRA_THEME`, `defineTheme`, `renderWebCss`, `renderNativeCss`, `oklchToHex`, `contrastRatio`, `InvalidThemeError`, `TokensConfig` |
-| `@stackra/tokens/contracts` | the schema: `Theme`, `ColorToken`, `ThemeColors`, `ColorRole` (the role list), and the part types                                     |
-| `@stackra/tokens/node`      | `TokensModule`, the root module                                                                                                       |
-| `@stackra/tokens/themes/*`  | `assets/public/themes/`: `stackra/web.css`, `stackra/native.css`                                                                      |
-| `@stackra/tokens/fonts/*`   | `assets/public/fonts/`: Geist, Geist Mono, IBM Plex Sans Arabic (woff2), `fonts.css`, the OFL texts                                   |
-| `@stackra/tokens/assets/*`  | any file under `assets/`                                                                                                              |
+| Import                      | Holds                                                                                                                                                   |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/tokens`           | `STACKRA_THEME`, `MATERIAL_MODES`, `defineTheme`, `renderWebCss`, `renderNativeCss`, `oklchToHex`, `contrastRatio`, `InvalidThemeError`, `TokensConfig` |
+| `@stackra/tokens/contracts` | the schema: `Theme`, `ColorToken`, `ThemeColors`, `ThemeMaterials`, `ColorRole`, `MaterialLevel`, `MaterialMode`, and the part types                    |
+| `@stackra/tokens/node`      | `TokensModule`, the root module                                                                                                                         |
+| `@stackra/tokens/themes/*`  | `assets/public/themes/`: `stackra/web.css`, `stackra/native.css`                                                                                        |
+| `@stackra/tokens/fonts/*`   | `assets/public/fonts/`: Geist, Geist Mono, IBM Plex Sans Arabic (woff2), `fonts.css`, the OFL texts                                                     |
+| `@stackra/tokens/assets/*`  | any file under `assets/`                                                                                                                                |
 
 `.` and `./contracts` name stand-in barrels (`src/core/index.ts`, `src/contracts/index.ts`) until `stackra gen` writes
 the entry barrels (STA-339). `exports` point at source through the `@stackra/source` condition; `tsdown` builds `dist/`
 for publishing (ADR 0025).
+
+## The glass material
+
+`Theme.materials` is the glass material of ADR 0320. It is for showcase and marketing surfaces; product UI stays
+solid. The web stylesheet draws it as three classes:
+
+| Class                                | Level     | Use                                                    |
+| ------------------------------------ | --------- | ------------------------------------------------------ |
+| `.material-thin`                     | `thin`    | small chrome without reading text: tiles, chips on art |
+| `.material` (or `.material-regular`) | `regular` | bars, cards, panels                                    |
+| `.material-thick`                    | `thick`   | large surfaces with reading text: sheets, palettes     |
+
+Set the degree once on `<html data-material="…">`; the default is `glass`:
+
+- `solid`: opaque.
+- `frosted`: a dense fill and a heavy blur.
+- `glass`: the theme as written.
+- `liquid`: a thinner fill, a lifted backdrop and a sheen along the top edge.
+
+Reduced transparency, more contrast and a browser without `backdrop-filter` all force `solid`. Forced colours keep
+the edge. Never put the material behind a component sample; samples sit on `background`.
 
 ## Generated stylesheets
 

@@ -72,6 +72,18 @@
   --ease-base: ease-in-out;
   --duration-blink: 1000ms;
   --ease-blink: steps(1);
+  --material-thin-blur: 12px;
+  --material-thin-saturate: 1.6;
+  --material-regular-blur: 20px;
+  --material-regular-saturate: 1.6;
+  --material-thick-blur: 28px;
+  --material-thick-saturate: 1.4;
+  --material-fill-scale: 1;
+  --material-fill-floor: 0;
+  --material-blur-scale: 1;
+  --material-saturate-scale: 1;
+  --material-brightness: 1;
+  --material-sheen: 0;
 }
 
 :root,
@@ -133,6 +145,20 @@
   --surface-shadow: 0px 0px 0px 1px oklch(0.158 0.005 248 / 0.06), 0px 1px 2px 0px oklch(0.158 0.005 248 / 0.06);
   --overlay-shadow: 0px 0px 0px 1px oklch(0.158 0.005 248 / 0.08), 0px 8px 24px -4px oklch(0.158 0.005 248 / 0.14);
   --field-shadow: 0px 1px 0px 0px oklch(0.158 0.005 248 / 0.04);
+  --material-thin-share: 0.6;
+  --material-thin-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-thin-share) * var(--material-fill-scale), 1) * 100%), transparent);
+  --material-thin-filter: blur(calc(var(--material-thin-blur) * var(--material-blur-scale))) saturate(calc(var(--material-thin-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
+  --material-regular-share: 0.78;
+  --material-regular-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-regular-share) * var(--material-fill-scale), 1) * 100%), transparent);
+  --material-regular-filter: blur(calc(var(--material-regular-blur) * var(--material-blur-scale))) saturate(calc(var(--material-regular-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
+  --material-thick-share: 0.9;
+  --material-thick-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-thick-share) * var(--material-fill-scale), 1) * 100%), transparent);
+  --material-thick-filter: blur(calc(var(--material-thick-blur) * var(--material-blur-scale))) saturate(calc(var(--material-thick-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
+  --material-edge-share: 0.1;
+  --material-highlight-share: 0.7;
+  --material-edge: color-mix(in oklch, var(--foreground) calc(var(--material-edge-share) * 100%), transparent);
+  --material-highlight: color-mix(in oklch, oklch(1 0 0) calc(var(--material-highlight-share) * 100%), transparent);
+  --material-sheen-color: color-mix(in oklch, oklch(1 0 0) calc(var(--material-sheen) * 100%), transparent);
 }
 
 .dark,
@@ -194,6 +220,56 @@
   --surface-shadow: 0px 0px 0px 1px oklch(0.27 0.007 250), 0px 1px 0px 0px oklch(1 0 0 / 0.02) inset;
   --overlay-shadow: 0px 0px 0px 1px oklch(0.35 0.008 250), 0px 16px 32px -8px oklch(0 0 0 / 0.55);
   --field-shadow: 0px 1px 0px 0px oklch(0 0 0 / 0.2);
+  --material-thin-share: 0.62;
+  --material-thin-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-thin-share) * var(--material-fill-scale), 1) * 100%), transparent);
+  --material-thin-filter: blur(calc(var(--material-thin-blur) * var(--material-blur-scale))) saturate(calc(var(--material-thin-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
+  --material-regular-share: 0.8;
+  --material-regular-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-regular-share) * var(--material-fill-scale), 1) * 100%), transparent);
+  --material-regular-filter: blur(calc(var(--material-regular-blur) * var(--material-blur-scale))) saturate(calc(var(--material-regular-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
+  --material-thick-share: 0.92;
+  --material-thick-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-thick-share) * var(--material-fill-scale), 1) * 100%), transparent);
+  --material-thick-filter: blur(calc(var(--material-thick-blur) * var(--material-blur-scale))) saturate(calc(var(--material-thick-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
+  --material-edge-share: 0.12;
+  --material-highlight-share: 0.09;
+  --material-edge: color-mix(in oklch, var(--foreground) calc(var(--material-edge-share) * 100%), transparent);
+  --material-highlight: color-mix(in oklch, oklch(1 0 0) calc(var(--material-highlight-share) * 100%), transparent);
+  --material-sheen-color: color-mix(in oklch, oklch(1 0 0) calc(var(--material-sheen) * 100%), transparent);
+}
+
+[data-material="solid"] {
+  --material-fill-scale: 1;
+  --material-fill-floor: 1;
+  --material-blur-scale: 0;
+  --material-saturate-scale: 1;
+  --material-brightness: 1;
+  --material-sheen: 0;
+}
+
+[data-material="frosted"] {
+  --material-fill-scale: 1;
+  --material-fill-floor: 0.88;
+  --material-blur-scale: 1.6;
+  --material-saturate-scale: 0.85;
+  --material-brightness: 1;
+  --material-sheen: 0;
+}
+
+[data-material="glass"] {
+  --material-fill-scale: 1;
+  --material-fill-floor: 0;
+  --material-blur-scale: 1;
+  --material-saturate-scale: 1;
+  --material-brightness: 1;
+  --material-sheen: 0;
+}
+
+[data-material="liquid"] {
+  --material-fill-scale: 0.8;
+  --material-fill-floor: 0;
+  --material-blur-scale: 1.2;
+  --material-saturate-scale: 1.25;
+  --material-brightness: 1.06;
+  --material-sheen: 0.22;
 }
 
 .skeleton--shimmer:is(:dir(rtl), [dir="rtl"], [dir="rtl"] *)::after,
@@ -302,5 +378,68 @@
   }
   .typography--weight-bold {
     font-weight: 700;
+  }
+  .material,
+  .material-regular {
+    background-color: var(--material-regular-fill);
+    -webkit-backdrop-filter: var(--material-regular-filter);
+    backdrop-filter: var(--material-regular-filter);
+    border: 1px solid var(--material-edge);
+    box-shadow: inset 0 1px 0 var(--material-highlight), inset 0 14px 24px -18px var(--material-sheen-color), var(--overlay-shadow);
+  }
+  .material-thin {
+    background-color: var(--material-thin-fill);
+    -webkit-backdrop-filter: var(--material-thin-filter);
+    backdrop-filter: var(--material-thin-filter);
+    border: 1px solid var(--material-edge);
+    box-shadow: inset 0 1px 0 var(--material-highlight), inset 0 14px 24px -18px var(--material-sheen-color), var(--surface-shadow);
+  }
+  .material-thick {
+    background-color: var(--material-thick-fill);
+    -webkit-backdrop-filter: var(--material-thick-filter);
+    backdrop-filter: var(--material-thick-filter);
+    border: 1px solid var(--material-edge);
+    box-shadow: inset 0 1px 0 var(--material-highlight), inset 0 14px 24px -18px var(--material-sheen-color), var(--overlay-shadow);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root,
+  [data-material] {
+    --material-fill-scale: 1;
+    --material-fill-floor: 1;
+    --material-blur-scale: 0;
+    --material-saturate-scale: 1;
+    --material-brightness: 1;
+    --material-sheen: 0;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root,
+  .dark,
+  [data-theme] {
+    --material-edge-share: 0.45;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root,
+  [data-material] {
+    --material-fill-scale: 1;
+    --material-fill-floor: 1;
+    --material-blur-scale: 0;
+    --material-saturate-scale: 1;
+    --material-brightness: 1;
+    --material-sheen: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .material,
+  .material-regular,
+  .material-thin,
+  .material-thick {
+    border-color: CanvasText;
   }
 }

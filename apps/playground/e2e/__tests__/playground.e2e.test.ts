@@ -7,7 +7,7 @@
  *          stand 3:1 from the others in both schemes and work from the keyboard in right-to-left, and the `system`
  *          scheme must follow the system preference live. The command palette opens from the keyboard and lands focus
  *          on the page it opens, a component page marks itself in its category strip, and the glass turns solid
- *          when more contrast is asked for. A new route folder is covered without editing this file.
+ *          when more contrast is asked for, and the index passes axe in every material mode (ADR 0320). A new route folder is covered without editing this file.
  * Boundary: the production build under `vite preview`; Chromium only.
  * Runtime: node
  * Governing contract: ADR 0302 (decision 5); ADR 0182 (test tiers); ADR 0022 (test placement).
@@ -18,6 +18,7 @@ import { readdirSync } from "node:fs";
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator } from "@playwright/test";
 import { contrastRatio } from "@stackra/tokens";
+import { MaterialMode } from "@stackra/tokens/contracts";
 
 /** Each route folder's path: `/` for `home`, `/<folder>` for the others (the route classes follow this). */
 const ROUTES = readdirSync(new URL("../../src/routes", import.meta.url), { withFileTypes: true })
@@ -240,9 +241,22 @@ for (const scheme of SCHEMES)
       context.fillRect(0, 0, 1, 1);
       return { filter: computed.backdropFilter, alpha: context.getImageData(0, 0, 1, 1).data[3] };
     });
-    expect(filter).toBe("none");
+    expect(filter).toContain("blur(0px)");
     expect(alpha).toBe(255);
   });
+
+for (const material of MaterialMode)
+  for (const scheme of SCHEMES)
+    test(`the index passes axe in the ${material} material, ${scheme}`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
+      await page.goto(`/?scheme=${scheme}&locale=en&material=${material}`);
+      await expect(page.locator("html")).toHaveAttribute("data-material", material);
+      const { violations, incomplete } = await new AxeBuilder({ page })
+        .withTags(AXE_TAGS)
+        .analyze();
+      expect(violations.map((v) => v.id)).toEqual([]);
+      expect(incomplete.map((v) => v.id)).toEqual([]);
+    });
 
 test("the hero's jump to the gallery keeps the scheme and the locale", async ({ page }) => {
   await page.goto("/?scheme=dark&locale=ar");
