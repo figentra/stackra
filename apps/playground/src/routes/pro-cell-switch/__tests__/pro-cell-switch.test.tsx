@@ -21,7 +21,7 @@ describe("ProCellSwitch", () => {
   it("sits at /pro-cell-switch in the Pro group, and titles the page and the document", () => {
     render(<ProCellSwitch />);
     expect(ProCellSwitchRoute.path).toBe("/pro-cell-switch");
-    expect(ProCellSwitchRoute.category).toBe("Pro");
+    expect(ProCellSwitchRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: ProCellSwitchRoute.title })).toBeTruthy();
     expect(document.title).toBe("CellSwitch · Stackra Playground");
   });

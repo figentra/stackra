@@ -20,7 +20,7 @@ describe("ProChatAttachment", () => {
   it("sits at /pro-chat-attachment in the Pro category, and titles the page and the document", () => {
     render(<ProChatAttachment />);
     expect(ProChatAttachmentRoute.path).toBe("/pro-chat-attachment");
-    expect(ProChatAttachmentRoute.category).toBe("Pro");
+    expect(ProChatAttachmentRoute.category).toBe("AI");
     expect(
       screen.getByRole("heading", { level: 1, name: ProChatAttachmentRoute.title }),
     ).toBeTruthy();

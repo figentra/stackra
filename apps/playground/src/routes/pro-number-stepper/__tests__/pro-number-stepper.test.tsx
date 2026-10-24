@@ -22,7 +22,7 @@ describe("ProNumberStepper", () => {
   it("sits at /pro-number-stepper in the Pro group, and titles the page and the document", () => {
     render(<ProNumberStepper />);
     expect(ProNumberStepperRoute.path).toBe("/pro-number-stepper");
-    expect(ProNumberStepperRoute.category).toBe("Pro");
+    expect(ProNumberStepperRoute.category).toBe("Inputs and forms");
     expect(
       screen.getByRole("heading", { level: 1, name: ProNumberStepperRoute.title }),
     ).toBeTruthy();

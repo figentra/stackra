@@ -22,7 +22,7 @@ describe("ProKpiGroup", () => {
   it("sits at /pro-kpi-group in the Pro category, and titles the page and the document", () => {
     render(<ProKpiGroup />);
     expect(ProKpiGroupRoute.path).toBe("/pro-kpi-group");
-    expect(ProKpiGroupRoute.category).toBe("Pro");
+    expect(ProKpiGroupRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProKpiGroupRoute.title })).toBeTruthy();
     expect(document.title).toBe("KpiGroup · Stackra Playground");
   });

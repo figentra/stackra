@@ -20,7 +20,7 @@ describe("ProCodeBlock", () => {
   it("sits at /pro-code-block in the Pro category, and titles the page and the document", () => {
     render(<ProCodeBlock />);
     expect(ProCodeBlockRoute.path).toBe("/pro-code-block");
-    expect(ProCodeBlockRoute.category).toBe("Pro");
+    expect(ProCodeBlockRoute.category).toBe("AI");
     expect(screen.getByRole("heading", { level: 1, name: ProCodeBlockRoute.title })).toBeTruthy();
     expect(document.title).toBe("CodeBlock · Stackra Playground");
   });

@@ -22,7 +22,7 @@ describe("ProSheet", () => {
   it("sits at /pro-sheet in the Pro category, and titles the page and the document", () => {
     render(<ProSheet />);
     expect(ProSheetRoute.path).toBe("/pro-sheet");
-    expect(ProSheetRoute.category).toBe("Pro");
+    expect(ProSheetRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: ProSheetRoute.title })).toBeTruthy();
     expect(document.title).toBe("Sheet · Stackra Playground");
   });

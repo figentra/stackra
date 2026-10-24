@@ -21,7 +21,7 @@ describe("ProNumberValue", () => {
   it("sits at /pro-number-value in the Pro category, and titles the page and the document", () => {
     render(<ProNumberValue />);
     expect(ProNumberValueRoute.path).toBe("/pro-number-value");
-    expect(ProNumberValueRoute.category).toBe("Pro");
+    expect(ProNumberValueRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: ProNumberValueRoute.title })).toBeTruthy();
     expect(document.title).toBe("NumberValue · Stackra Playground");
   });

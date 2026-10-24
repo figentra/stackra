@@ -27,7 +27,7 @@ describe("ProPressableFeedback", () => {
   it("sits at /pro-pressable-feedback in the Pro category, and titles the page and the document", () => {
     render(<ProPressableFeedback />);
     expect(ProPressableFeedbackRoute.path).toBe("/pro-pressable-feedback");
-    expect(ProPressableFeedbackRoute.category).toBe("Pro");
+    expect(ProPressableFeedbackRoute.category).toBe("Actions");
     expect(
       screen.getByRole("heading", { level: 1, name: ProPressableFeedbackRoute.title }),
     ).toBeTruthy();

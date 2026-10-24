@@ -20,7 +20,7 @@ describe("ProRadarChart", () => {
   it("sits at /pro-radar-chart in the Pro category, and titles the page and the document", () => {
     render(<ProRadarChart />);
     expect(ProRadarChartRoute.path).toBe("/pro-radar-chart");
-    expect(ProRadarChartRoute.category).toBe("Pro");
+    expect(ProRadarChartRoute.category).toBe("Charts");
     expect(screen.getByRole("heading", { level: 1, name: ProRadarChartRoute.title })).toBeTruthy();
     expect(document.title).toBe("RadarChart · Stackra Playground");
   });

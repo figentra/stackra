@@ -20,7 +20,7 @@ describe("ProPromptInput", () => {
   it("sits at /pro-prompt-input in the Pro category, and titles the page and the document", () => {
     render(<ProPromptInput />);
     expect(ProPromptInputRoute.path).toBe("/pro-prompt-input");
-    expect(ProPromptInputRoute.category).toBe("Pro");
+    expect(ProPromptInputRoute.category).toBe("AI");
     expect(screen.getByRole("heading", { level: 1, name: ProPromptInputRoute.title })).toBeTruthy();
     expect(document.title).toBe("PromptInput · Stackra Playground");
   });

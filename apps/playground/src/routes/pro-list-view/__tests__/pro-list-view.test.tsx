@@ -21,7 +21,7 @@ describe("ProListView", () => {
   it("sits at /pro-list-view in the Pro category, and titles the page and the document", () => {
     render(<ProListView />);
     expect(ProListViewRoute.path).toBe("/pro-list-view");
-    expect(ProListViewRoute.category).toBe("Pro");
+    expect(ProListViewRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProListViewRoute.title })).toBeTruthy();
     expect(document.title).toBe("ListView · Stackra Playground");
   });

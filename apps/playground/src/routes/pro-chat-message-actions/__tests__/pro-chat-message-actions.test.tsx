@@ -20,7 +20,7 @@ describe("ProChatMessageActions", () => {
   it("sits at /pro-chat-message-actions in the Pro category, and titles the page and the document", () => {
     render(<ProChatMessageActions />);
     expect(ProChatMessageActionsRoute.path).toBe("/pro-chat-message-actions");
-    expect(ProChatMessageActionsRoute.category).toBe("Pro");
+    expect(ProChatMessageActionsRoute.category).toBe("AI");
     expect(
       screen.getByRole("heading", { level: 1, name: ProChatMessageActionsRoute.title }),
     ).toBeTruthy();

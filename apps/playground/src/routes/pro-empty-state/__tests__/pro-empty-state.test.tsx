@@ -21,7 +21,7 @@ describe("ProEmptyState", () => {
   it("sits at /pro-empty-state in the Pro category, and titles the page and the document", () => {
     render(<ProEmptyState />);
     expect(ProEmptyStateRoute.path).toBe("/pro-empty-state");
-    expect(ProEmptyStateRoute.category).toBe("Pro");
+    expect(ProEmptyStateRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProEmptyStateRoute.title })).toBeTruthy();
     expect(document.title).toBe("EmptyState · Stackra Playground");
   });

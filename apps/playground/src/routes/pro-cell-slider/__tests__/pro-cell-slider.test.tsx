@@ -21,7 +21,7 @@ describe("ProCellSlider", () => {
   it("sits at /pro-cell-slider in the Pro group, and titles the page and the document", () => {
     render(<ProCellSlider />);
     expect(ProCellSliderRoute.path).toBe("/pro-cell-slider");
-    expect(ProCellSliderRoute.category).toBe("Pro");
+    expect(ProCellSliderRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: ProCellSliderRoute.title })).toBeTruthy();
     expect(document.title).toBe("CellSlider · Stackra Playground");
   });

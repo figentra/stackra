@@ -20,7 +20,7 @@ describe("ProPromptSuggestion", () => {
   it("sits at /pro-prompt-suggestion in the Pro category, and titles the page and the document", () => {
     render(<ProPromptSuggestion />);
     expect(ProPromptSuggestionRoute.path).toBe("/pro-prompt-suggestion");
-    expect(ProPromptSuggestionRoute.category).toBe("Pro");
+    expect(ProPromptSuggestionRoute.category).toBe("AI");
     expect(
       screen.getByRole("heading", { level: 1, name: ProPromptSuggestionRoute.title }),
     ).toBeTruthy();

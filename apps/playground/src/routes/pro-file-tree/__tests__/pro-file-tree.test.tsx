@@ -21,7 +21,7 @@ describe("ProFileTree", () => {
   it("sits at /pro-file-tree in the Pro category, and titles the page and the document", () => {
     render(<ProFileTree />);
     expect(ProFileTreeRoute.path).toBe("/pro-file-tree");
-    expect(ProFileTreeRoute.category).toBe("Pro");
+    expect(ProFileTreeRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProFileTreeRoute.title })).toBeTruthy();
     expect(document.title).toBe("FileTree · Stackra Playground");
   });

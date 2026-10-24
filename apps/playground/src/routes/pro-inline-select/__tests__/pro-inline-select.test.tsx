@@ -22,7 +22,7 @@ describe("ProInlineSelect", () => {
   it("sits at /pro-inline-select in the Pro group, and titles the page and the document", () => {
     render(<ProInlineSelect />);
     expect(ProInlineSelectRoute.path).toBe("/pro-inline-select");
-    expect(ProInlineSelectRoute.category).toBe("Pro");
+    expect(ProInlineSelectRoute.category).toBe("Selection");
     expect(
       screen.getByRole("heading", { level: 1, name: ProInlineSelectRoute.title }),
     ).toBeTruthy();

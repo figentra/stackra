@@ -22,7 +22,7 @@ describe("ProActionBar", () => {
   it("sits at /pro-action-bar in the Pro category, and titles the page and the document", () => {
     render(<ProActionBar />);
     expect(ProActionBarRoute.path).toBe("/pro-action-bar");
-    expect(ProActionBarRoute.category).toBe("Pro");
+    expect(ProActionBarRoute.category).toBe("Actions");
     expect(screen.getByRole("heading", { level: 1, name: ProActionBarRoute.title })).toBeTruthy();
     expect(document.title).toBe("ActionBar · Stackra Playground");
   });

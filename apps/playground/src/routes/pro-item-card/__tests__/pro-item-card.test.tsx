@@ -21,7 +21,7 @@ describe("ProItemCard", () => {
   it("sits at /pro-item-card in the Pro category, and titles the page and the document", () => {
     render(<ProItemCard />);
     expect(ProItemCardRoute.path).toBe("/pro-item-card");
-    expect(ProItemCardRoute.category).toBe("Pro");
+    expect(ProItemCardRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProItemCardRoute.title })).toBeTruthy();
     expect(document.title).toBe("ItemCard · Stackra Playground");
   });

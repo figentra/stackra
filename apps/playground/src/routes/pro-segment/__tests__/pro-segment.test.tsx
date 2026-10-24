@@ -26,7 +26,7 @@ describe("ProSegment", () => {
   it("sits at /pro-segment in the Pro category, and titles the page and the document", () => {
     render(<ProSegment />);
     expect(ProSegmentRoute.path).toBe("/pro-segment");
-    expect(ProSegmentRoute.category).toBe("Pro");
+    expect(ProSegmentRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: ProSegmentRoute.title })).toBeTruthy();
     expect(document.title).toBe("Segment · Stackra Playground");
   });

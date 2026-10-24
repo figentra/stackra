@@ -21,7 +21,7 @@ describe("ProTimeline", () => {
   it("sits at /pro-timeline in the Pro category, and titles the page and the document", () => {
     render(<ProTimeline />);
     expect(ProTimelineRoute.path).toBe("/pro-timeline");
-    expect(ProTimelineRoute.category).toBe("Pro");
+    expect(ProTimelineRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProTimelineRoute.title })).toBeTruthy();
     expect(document.title).toBe("Timeline · Stackra Playground");
   });

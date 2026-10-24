@@ -22,7 +22,7 @@ describe("ProCheckboxButtonGroup", () => {
   it("sits at /pro-checkbox-button-group in the Pro group, and titles the page and the document", () => {
     render(<ProCheckboxButtonGroup />);
     expect(ProCheckboxButtonGroupRoute.path).toBe("/pro-checkbox-button-group");
-    expect(ProCheckboxButtonGroupRoute.category).toBe("Pro");
+    expect(ProCheckboxButtonGroupRoute.category).toBe("Selection");
     expect(
       screen.getByRole("heading", { level: 1, name: ProCheckboxButtonGroupRoute.title }),
     ).toBeTruthy();

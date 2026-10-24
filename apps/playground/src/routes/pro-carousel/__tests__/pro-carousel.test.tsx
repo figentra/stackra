@@ -35,7 +35,7 @@ describe("ProCarousel", () => {
   it("sits at /pro-carousel in the Pro category, and titles the page and the document", () => {
     render(<ProCarousel />);
     expect(ProCarouselRoute.path).toBe("/pro-carousel");
-    expect(ProCarouselRoute.category).toBe("Pro");
+    expect(ProCarouselRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProCarouselRoute.title })).toBeTruthy();
     expect(document.title).toBe("Carousel · Stackra Playground");
   });

@@ -20,5 +20,5 @@ export class CardRoute {
   static readonly title = "Card";
 
   /** The category the page is listed under. */
-  static readonly category: PageCategory = "Surfaces";
+  static readonly category: PageCategory = "Data display";
 }

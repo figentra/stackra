@@ -20,7 +20,7 @@ describe("ProChatListView", () => {
   it("sits at /pro-chat-list-view in the Pro category, and titles the page and the document", () => {
     render(<ProChatListView />);
     expect(ProChatListViewRoute.path).toBe("/pro-chat-list-view");
-    expect(ProChatListViewRoute.category).toBe("Pro");
+    expect(ProChatListViewRoute.category).toBe("AI");
     expect(
       screen.getByRole("heading", { level: 1, name: ProChatListViewRoute.title }),
     ).toBeTruthy();

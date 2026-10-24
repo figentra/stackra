@@ -22,7 +22,7 @@ describe("ProStepper", () => {
   it("sits at /pro-stepper in the Pro category, and titles the page and the document", () => {
     render(<ProStepper />);
     expect(ProStepperRoute.path).toBe("/pro-stepper");
-    expect(ProStepperRoute.category).toBe("Pro");
+    expect(ProStepperRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: ProStepperRoute.title })).toBeTruthy();
     expect(document.title).toBe("Stepper · Stackra Playground");
   });

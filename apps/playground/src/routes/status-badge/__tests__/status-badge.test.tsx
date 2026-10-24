@@ -39,7 +39,7 @@ describe("StatusBadge page", () => {
   it("titles the page and the document, and sits at /status-badge under Status", () => {
     renderPage();
     expect(StatusBadgeRoute.path).toBe("/status-badge");
-    expect(StatusBadgeRoute.category).toBe("Status");
+    expect(StatusBadgeRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: "Status badge" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Status badge · Stackra Playground");

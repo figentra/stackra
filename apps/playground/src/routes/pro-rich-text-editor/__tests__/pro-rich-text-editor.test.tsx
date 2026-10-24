@@ -30,7 +30,7 @@ describe("ProRichTextEditor", () => {
   it("sits at /pro-rich-text-editor in the Pro group, and titles the page and the document", () => {
     render(<ProRichTextEditor />);
     expect(ProRichTextEditorRoute.path).toBe("/pro-rich-text-editor");
-    expect(ProRichTextEditorRoute.category).toBe("Pro");
+    expect(ProRichTextEditorRoute.category).toBe("Inputs and forms");
     expect(
       screen.getByRole("heading", { level: 1, name: ProRichTextEditorRoute.title }),
     ).toBeTruthy();

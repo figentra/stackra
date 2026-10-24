@@ -21,7 +21,7 @@ describe("ProRating", () => {
   it("sits at /pro-rating in the Pro category, and titles the page and the document", () => {
     render(<ProRating />);
     expect(ProRatingRoute.path).toBe("/pro-rating");
-    expect(ProRatingRoute.category).toBe("Pro");
+    expect(ProRatingRoute.category).toBe("Feedback and status");
     expect(screen.getByRole("heading", { level: 1, name: ProRatingRoute.title })).toBeTruthy();
     expect(document.title).toBe("Rating · Stackra Playground");
   });

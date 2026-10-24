@@ -22,7 +22,7 @@ describe("ProRadioButtonGroup", () => {
   it("sits at /pro-radio-button-group in the Pro group, and titles the page and the document", () => {
     render(<ProRadioButtonGroup />);
     expect(ProRadioButtonGroupRoute.path).toBe("/pro-radio-button-group");
-    expect(ProRadioButtonGroupRoute.category).toBe("Pro");
+    expect(ProRadioButtonGroupRoute.category).toBe("Selection");
     expect(
       screen.getByRole("heading", { level: 1, name: ProRadioButtonGroupRoute.title }),
     ).toBeTruthy();

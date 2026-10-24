@@ -20,7 +20,7 @@ describe("ProChatMessage", () => {
   it("sits at /pro-chat-message in the Pro category, and titles the page and the document", () => {
     render(<ProChatMessage />);
     expect(ProChatMessageRoute.path).toBe("/pro-chat-message");
-    expect(ProChatMessageRoute.category).toBe("Pro");
+    expect(ProChatMessageRoute.category).toBe("AI");
     expect(screen.getByRole("heading", { level: 1, name: ProChatMessageRoute.title })).toBeTruthy();
     expect(document.title).toBe("ChatMessage · Stackra Playground");
   });

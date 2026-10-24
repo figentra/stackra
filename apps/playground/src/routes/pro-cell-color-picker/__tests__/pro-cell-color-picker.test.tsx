@@ -22,7 +22,7 @@ describe("ProCellColorPicker", () => {
   it("sits at /pro-cell-color-picker in the Pro group, and titles the page and the document", () => {
     render(<ProCellColorPicker />);
     expect(ProCellColorPickerRoute.path).toBe("/pro-cell-color-picker");
-    expect(ProCellColorPickerRoute.category).toBe("Pro");
+    expect(ProCellColorPickerRoute.category).toBe("Inputs and forms");
     expect(
       screen.getByRole("heading", { level: 1, name: ProCellColorPickerRoute.title }),
     ).toBeTruthy();

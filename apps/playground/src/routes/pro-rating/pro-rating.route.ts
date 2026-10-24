@@ -20,5 +20,5 @@ export class ProRatingRoute {
   static readonly title = "Rating";
 
   /** The category the page is listed under: the `@stackra/ui-pro` pages. */
-  static readonly category: PageCategory = "Pro";
+  static readonly category: PageCategory = "Feedback and status";
 }

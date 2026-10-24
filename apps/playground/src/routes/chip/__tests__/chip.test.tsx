@@ -42,7 +42,7 @@ describe("Chip page", () => {
   it("titles the page and the document, and sits at /chip under Status", () => {
     renderPage();
     expect(ChipRoute.path).toBe("/chip");
-    expect(ChipRoute.category).toBe("Status");
+    expect(ChipRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: "Chip" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.title).toBe("Chip · Stackra Playground");

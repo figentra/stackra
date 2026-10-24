@@ -20,7 +20,7 @@ describe("ProChartTooltip", () => {
   it("sits at /pro-chart-tooltip in the Pro category, and titles the page and the document", () => {
     render(<ProChartTooltip />);
     expect(ProChartTooltipRoute.path).toBe("/pro-chart-tooltip");
-    expect(ProChartTooltipRoute.category).toBe("Pro");
+    expect(ProChartTooltipRoute.category).toBe("Charts");
     expect(
       screen.getByRole("heading", { level: 1, name: ProChartTooltipRoute.title }),
     ).toBeTruthy();

@@ -20,7 +20,7 @@ describe("ProMarkdown", () => {
   it("sits at /pro-markdown in the Pro category, and titles the page and the document", () => {
     render(<ProMarkdown />);
     expect(ProMarkdownRoute.path).toBe("/pro-markdown");
-    expect(ProMarkdownRoute.category).toBe("Pro");
+    expect(ProMarkdownRoute.category).toBe("AI");
     expect(screen.getByRole("heading", { level: 1, name: ProMarkdownRoute.title })).toBeTruthy();
     expect(document.title).toBe("Markdown · Stackra Playground");
   });

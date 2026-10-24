@@ -20,7 +20,7 @@ describe("ProChainOfThought", () => {
   it("sits at /pro-chain-of-thought in the Pro category, and titles the page and the document", () => {
     render(<ProChainOfThought />);
     expect(ProChainOfThoughtRoute.path).toBe("/pro-chain-of-thought");
-    expect(ProChainOfThoughtRoute.category).toBe("Pro");
+    expect(ProChainOfThoughtRoute.category).toBe("AI");
     expect(
       screen.getByRole("heading", { level: 1, name: ProChainOfThoughtRoute.title }),
     ).toBeTruthy();

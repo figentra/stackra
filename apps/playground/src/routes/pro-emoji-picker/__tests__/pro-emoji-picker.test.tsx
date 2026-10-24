@@ -23,7 +23,7 @@ describe("ProEmojiPicker", () => {
   it("sits at /pro-emoji-picker in the Pro category, and titles the page and the document", () => {
     render(<ProEmojiPicker />);
     expect(ProEmojiPickerRoute.path).toBe("/pro-emoji-picker");
-    expect(ProEmojiPickerRoute.category).toBe("Pro");
+    expect(ProEmojiPickerRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: ProEmojiPickerRoute.title })).toBeTruthy();
     expect(document.title).toBe("EmojiPicker · Stackra Playground");
   });

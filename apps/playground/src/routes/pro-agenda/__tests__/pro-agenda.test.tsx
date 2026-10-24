@@ -27,7 +27,7 @@ describe("ProAgenda", () => {
   it("sits at /pro-agenda in the Pro category, and titles the page and the document", () => {
     render(<ProAgenda />);
     expect(ProAgendaRoute.path).toBe("/pro-agenda");
-    expect(ProAgendaRoute.category).toBe("Pro");
+    expect(ProAgendaRoute.category).toBe("Date and time");
     expect(screen.getByRole("heading", { level: 1, name: ProAgendaRoute.title })).toBeTruthy();
     expect(document.title).toBe("Agenda · Stackra Playground");
   });

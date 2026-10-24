@@ -25,7 +25,7 @@ describe("ProFloatingTableOfContents", () => {
   it("sits at /pro-floating-table-of-contents in the Pro category, and titles the page and the document", () => {
     render(<ProFloatingTableOfContents />);
     expect(ProFloatingTableOfContentsRoute.path).toBe("/pro-floating-table-of-contents");
-    expect(ProFloatingTableOfContentsRoute.category).toBe("Pro");
+    expect(ProFloatingTableOfContentsRoute.category).toBe("Navigation");
     expect(
       screen.getByRole("heading", { level: 1, name: ProFloatingTableOfContentsRoute.title }),
     ).toBeTruthy();

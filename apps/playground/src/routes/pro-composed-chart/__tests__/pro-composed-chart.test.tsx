@@ -20,7 +20,7 @@ describe("ProComposedChart", () => {
   it("sits at /pro-composed-chart in the Pro category, and titles the page and the document", () => {
     render(<ProComposedChart />);
     expect(ProComposedChartRoute.path).toBe("/pro-composed-chart");
-    expect(ProComposedChartRoute.category).toBe("Pro");
+    expect(ProComposedChartRoute.category).toBe("Charts");
     expect(
       screen.getByRole("heading", { level: 1, name: ProComposedChartRoute.title }),
     ).toBeTruthy();

@@ -20,5 +20,5 @@ export class ProFileTreeRoute {
   static readonly title = "FileTree";
 
   /** The category the page is listed under: the `@stackra/ui-pro` pages. */
-  static readonly category: PageCategory = "Pro";
+  static readonly category: PageCategory = "Data display";
 }

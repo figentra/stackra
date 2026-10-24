@@ -22,7 +22,7 @@ describe("ProHoverCard", () => {
   it("sits at /pro-hover-card in the Pro category, and titles the page and the document", () => {
     render(<ProHoverCard />);
     expect(ProHoverCardRoute.path).toBe("/pro-hover-card");
-    expect(ProHoverCardRoute.category).toBe("Pro");
+    expect(ProHoverCardRoute.category).toBe("Overlays");
     expect(screen.getByRole("heading", { level: 1, name: ProHoverCardRoute.title })).toBeTruthy();
     expect(document.title).toBe("HoverCard · Stackra Playground");
   });

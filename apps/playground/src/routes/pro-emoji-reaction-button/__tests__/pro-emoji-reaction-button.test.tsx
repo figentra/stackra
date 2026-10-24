@@ -22,7 +22,7 @@ describe("ProEmojiReactionButton", () => {
   it("sits at /pro-emoji-reaction-button in the Pro category, and titles the page and the document", () => {
     render(<ProEmojiReactionButton />);
     expect(ProEmojiReactionButtonRoute.path).toBe("/pro-emoji-reaction-button");
-    expect(ProEmojiReactionButtonRoute.category).toBe("Pro");
+    expect(ProEmojiReactionButtonRoute.category).toBe("Feedback and status");
     expect(
       screen.getByRole("heading", { level: 1, name: ProEmojiReactionButtonRoute.title }),
     ).toBeTruthy();

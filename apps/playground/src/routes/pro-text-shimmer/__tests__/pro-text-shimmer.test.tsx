@@ -20,7 +20,7 @@ describe("ProTextShimmer", () => {
   it("sits at /pro-text-shimmer in the Pro category, and titles the page and the document", () => {
     render(<ProTextShimmer />);
     expect(ProTextShimmerRoute.path).toBe("/pro-text-shimmer");
-    expect(ProTextShimmerRoute.category).toBe("Pro");
+    expect(ProTextShimmerRoute.category).toBe("AI");
     expect(screen.getByRole("heading", { level: 1, name: ProTextShimmerRoute.title })).toBeTruthy();
     expect(document.title).toBe("TextShimmer · Stackra Playground");
   });

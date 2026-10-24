@@ -21,7 +21,7 @@ describe("ProItemCardGroup", () => {
   it("sits at /pro-item-card-group in the Pro category, and titles the page and the document", () => {
     render(<ProItemCardGroup />);
     expect(ProItemCardGroupRoute.path).toBe("/pro-item-card-group");
-    expect(ProItemCardGroupRoute.category).toBe("Pro");
+    expect(ProItemCardGroupRoute.category).toBe("Data display");
     expect(
       screen.getByRole("heading", { level: 1, name: ProItemCardGroupRoute.title }),
     ).toBeTruthy();

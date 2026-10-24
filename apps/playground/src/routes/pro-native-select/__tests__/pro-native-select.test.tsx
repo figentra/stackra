@@ -21,7 +21,7 @@ describe("ProNativeSelect", () => {
   it("sits at /pro-native-select in the Pro group, and titles the page and the document", () => {
     render(<ProNativeSelect />);
     expect(ProNativeSelectRoute.path).toBe("/pro-native-select");
-    expect(ProNativeSelectRoute.category).toBe("Pro");
+    expect(ProNativeSelectRoute.category).toBe("Selection");
     expect(
       screen.getByRole("heading", { level: 1, name: ProNativeSelectRoute.title }),
     ).toBeTruthy();

@@ -21,7 +21,7 @@ describe("ProResizable", () => {
   it("sits at /pro-resizable in the Pro category, and titles the page and the document", () => {
     render(<ProResizable />);
     expect(ProResizableRoute.path).toBe("/pro-resizable");
-    expect(ProResizableRoute.category).toBe("Pro");
+    expect(ProResizableRoute.category).toBe("Layout");
     expect(screen.getByRole("heading", { level: 1, name: ProResizableRoute.title })).toBeTruthy();
     expect(document.title).toBe("Resizable · Stackra Playground");
   });

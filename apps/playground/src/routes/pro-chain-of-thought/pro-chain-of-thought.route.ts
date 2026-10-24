@@ -20,5 +20,5 @@ export class ProChainOfThoughtRoute {
   static readonly title = "ChainOfThought";
 
   /** The category the page is listed under: the `@stackra/ui-pro` pages. */
-  static readonly category: PageCategory = "Pro";
+  static readonly category: PageCategory = "AI";
 }

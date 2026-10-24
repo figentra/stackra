@@ -59,7 +59,7 @@ describe("ProMap", () => {
   it("sits at /pro-map in the Pro category, and titles the page and the document", () => {
     render(<ProMap />);
     expect(ProMapRoute.path).toBe("/pro-map");
-    expect(ProMapRoute.category).toBe("Pro");
+    expect(ProMapRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProMapRoute.title })).toBeTruthy();
     expect(document.title).toBe("Map · Stackra Playground");
   });

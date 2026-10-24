@@ -22,7 +22,7 @@ describe("ProContextMenu", () => {
   it("sits at /pro-context-menu in the Pro category, and titles the page and the document", () => {
     render(<ProContextMenu />);
     expect(ProContextMenuRoute.path).toBe("/pro-context-menu");
-    expect(ProContextMenuRoute.category).toBe("Pro");
+    expect(ProContextMenuRoute.category).toBe("Navigation");
     expect(screen.getByRole("heading", { level: 1, name: ProContextMenuRoute.title })).toBeTruthy();
     expect(document.title).toBe("ContextMenu · Stackra Playground");
   });

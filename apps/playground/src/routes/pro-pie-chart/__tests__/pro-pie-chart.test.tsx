@@ -20,7 +20,7 @@ describe("ProPieChart", () => {
   it("sits at /pro-pie-chart in the Pro category, and titles the page and the document", () => {
     render(<ProPieChart />);
     expect(ProPieChartRoute.path).toBe("/pro-pie-chart");
-    expect(ProPieChartRoute.category).toBe("Pro");
+    expect(ProPieChartRoute.category).toBe("Charts");
     expect(screen.getByRole("heading", { level: 1, name: ProPieChartRoute.title })).toBeTruthy();
     expect(document.title).toBe("PieChart · Stackra Playground");
   });

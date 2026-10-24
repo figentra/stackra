@@ -22,7 +22,7 @@ describe("ProDropZone", () => {
   it("sits at /pro-drop-zone in the Pro group, and titles the page and the document", () => {
     render(<ProDropZone />);
     expect(ProDropZoneRoute.path).toBe("/pro-drop-zone");
-    expect(ProDropZoneRoute.category).toBe("Pro");
+    expect(ProDropZoneRoute.category).toBe("Inputs and forms");
     expect(screen.getByRole("heading", { level: 1, name: ProDropZoneRoute.title })).toBeTruthy();
     expect(document.title).toBe("DropZone · Stackra Playground");
   });

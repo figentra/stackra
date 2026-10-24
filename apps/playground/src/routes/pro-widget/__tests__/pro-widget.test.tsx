@@ -20,7 +20,7 @@ describe("ProWidget", () => {
   it("sits at /pro-widget in the Pro category, and titles the page and the document", () => {
     render(<ProWidget />);
     expect(ProWidgetRoute.path).toBe("/pro-widget");
-    expect(ProWidgetRoute.category).toBe("Pro");
+    expect(ProWidgetRoute.category).toBe("Data display");
     expect(screen.getByRole("heading", { level: 1, name: ProWidgetRoute.title })).toBeTruthy();
     expect(document.title).toBe("Widget · Stackra Playground");
   });
