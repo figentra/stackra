@@ -66,9 +66,9 @@ describe("Action menu page", () => {
     press(section("Basics").getByRole("button", { name: "Actions for order 1001" }));
     const menu = screen.getByRole("menu");
     expect(within(menu).getAllByRole("group")).toHaveLength(2);
-    expect(within(menu).getByRole("menuitem", { name: "Delete" })).toBeTruthy();
+    expect(within(menu).getByRole("menuitem", { name: /^Delete/ })).toBeTruthy();
     expect(
-      within(within(menu).getByRole("menuitem", { name: "Archive" })).getByText(
+      within(within(menu).getByRole("menuitem", { name: /^Archive/ })).getByText(
         "Paid orders cannot be archived",
       ),
     ).toBeTruthy();
@@ -94,7 +94,7 @@ describe("Action menu page", () => {
     expect(live.getByText("Row opened 2 times.")).toBeTruthy();
 
     press(live.getByRole("button", { name: "Actions for order 1001" }));
-    press(screen.getByRole("menuitem", { name: "Duplicate" }));
+    press(screen.getByRole("menuitem", { name: /^Duplicate/ }));
     expect(live.getByText("Last action: duplicate")).toBeTruthy();
     expect(live.getByText("Row opened 2 times.")).toBeTruthy();
   });
