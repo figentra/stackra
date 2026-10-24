@@ -12,7 +12,7 @@ steps (store accounts, keys, the first Play upload) are in `apps/docs/src/runboo
 ## Rules
 
 1. **Profiles** in `apps/mobile/eas.json`, each extending `base`:
-   `development` (dev client, simulator), `preview` (internal, APK), `staging` (store distribution, `autoIncrement`),
+   `development` (dev client, simulator), `development-device` (dev client, registered device), `preview` (internal, APK), `staging` (store distribution, `autoIncrement`),
    `production` (store, `autoIncrement`), and `e2e` (Release build for simulators) when Maestro lands.
 2. **One channel per profile**, same name as the profile, and an **EAS environment** per profile: `development`,
    `preview` (also used by staging) and `production`.
@@ -44,6 +44,8 @@ steps (store accounts, keys, the first Play upload) are in `apps/docs/src/runboo
     "base": { "node": "24", "pnpm": "12.6.0" },
     "development": { "extends": "base", "developmentClient": true, "distribution": "internal",
                      "ios": { "simulator": true }, "channel": "development", "environment": "development" },
+    "development-device": { "extends": "base", "developmentClient": true, "distribution": "internal",
+                            "channel": "development-device", "environment": "development" },
     "preview": { "extends": "base", "distribution": "internal", "android": { "buildType": "apk" },
                  "channel": "preview", "environment": "preview" },
     "staging": { "extends": "base", "autoIncrement": true, "channel": "staging", "environment": "preview" },
