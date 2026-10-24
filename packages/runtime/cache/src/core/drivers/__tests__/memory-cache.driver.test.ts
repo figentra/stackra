@@ -12,7 +12,8 @@
  */
 import { buildConfig } from "@stackra/config";
 import { Clock, Duration } from "@stackra/contracts";
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { CacheConfig } from "#config/cache.config";
 import { Cache } from "#contracts/ports/cache.port";

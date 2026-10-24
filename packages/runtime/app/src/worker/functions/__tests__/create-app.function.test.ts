@@ -11,7 +11,8 @@
 import { Driver } from "@stackra/container";
 import type { Wiring } from "@stackra/container";
 import { ErrorReporter } from "@stackra/errors/contracts";
-import { beforeEach, describe, expect, it, vi } from "@stackra/testing";
+import { beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { RouterContextProvider } from "react-router";
 import type { ServerBuild } from "react-router";
 

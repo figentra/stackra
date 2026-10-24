@@ -7,7 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0079; ADR 0256.
  */
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { Store } from "#core/bases/store.base";
 import { hydrateStore } from "#core/functions/hydrate-store.function";

@@ -8,7 +8,8 @@
  */
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { renderToString } from "react-dom/server";
 
 import { Platform } from "#contracts/ports/platform.port";

@@ -6,7 +6,8 @@
  * Runtime: node
  * Governing contract: ADR 0269 (decision 2); ADR 0022 (test placement).
  */
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { freezeIds } from "#core/functions/freeze-ids.function";
 
 /** Sixteen bytes from the current random source. */

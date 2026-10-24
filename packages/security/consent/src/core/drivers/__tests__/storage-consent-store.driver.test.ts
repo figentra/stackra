@@ -10,7 +10,8 @@
 import { buildConfig } from "@stackra/config";
 import { Duration } from "@stackra/contracts";
 import { fakeStorage } from "@stackra/storage/testing";
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { ConsentConfig } from "#config/consent.config";
 import { ConsentStore } from "#contracts/ports/consent-store.port";

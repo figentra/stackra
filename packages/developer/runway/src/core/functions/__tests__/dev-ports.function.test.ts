@@ -7,7 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0296 (decision 1); ADR 0251.
  */
-import { afterEach, describe, expect, expectTypeOf, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, expectTypeOf, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { devPorts } from "#core/functions/dev-ports.function";

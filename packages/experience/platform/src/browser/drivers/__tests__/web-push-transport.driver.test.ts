@@ -9,7 +9,8 @@
  * Governing contract: ADR 0022; ADR 0255 (decision 3).
  */
 import { buildConfig } from "@stackra/config";
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { WebPushTransportDriver } from "#browser/drivers/web-push-transport.driver";
 import { PushConfig } from "#config/push.config";

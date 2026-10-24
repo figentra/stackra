@@ -7,7 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0294 (decision 15); ADR 0127 2026-10-24 note; registry A13.
  */
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import * as electron from "#electron/index";
 

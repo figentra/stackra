@@ -7,7 +7,8 @@
  * Governing contract: ADR 0022; ADR 0255 (share target).
  */
 import "fake-indexeddb/auto";
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { takeSharedPayload } from "#core/functions/take-shared-payload.function";
 import { handleShareTarget } from "#sw/functions/handle-share-target.function";

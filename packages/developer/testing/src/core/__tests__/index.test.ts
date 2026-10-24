@@ -23,7 +23,6 @@ const RUNNER = {
   it: [kit.it, vitest.it],
   onTestFinished: [kit.onTestFinished, vitest.onTestFinished],
   test: [kit.test, vitest.test],
-  vi: [kit.vi, vitest.vi],
 } as const;
 
 /** The runtime symbols the template imports from `@stackra/testing`, beyond the runner. */

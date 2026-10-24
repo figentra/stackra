@@ -9,7 +9,8 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0225 (decision 1: WebSocket with an SSE fallback).
  */
 import { kindOf } from "@stackra/container";
-import { afterEach, beforeEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { RealtimeTransport } from "#contracts/ports/realtime-transport.port";
 import { WebsocketRealtimeTransportDriver } from "#core/drivers/websocket-realtime-transport.driver";

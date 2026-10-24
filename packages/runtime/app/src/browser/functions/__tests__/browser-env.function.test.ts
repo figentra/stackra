@@ -6,7 +6,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decision 4).
  */
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { browserEnv } from "#browser/functions/browser-env.function";
 

@@ -11,7 +11,8 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { captureIo } from "#node/functions/capture-io.function";

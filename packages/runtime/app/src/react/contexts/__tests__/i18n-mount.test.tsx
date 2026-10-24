@@ -11,7 +11,8 @@ import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
 import { I18nConfig, Locale } from "@stackra/i18n";
 import { useLocale } from "@stackra/i18n/react";
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { renderToString } from "react-dom/server";
 
 import { I18nMount } from "#react/contexts/i18n-mount";

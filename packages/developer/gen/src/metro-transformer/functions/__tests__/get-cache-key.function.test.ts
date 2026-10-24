@@ -6,7 +6,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0127 2026-10-24 note.
  */
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { getCacheKey } from "#metro-transformer/functions/get-cache-key.function";
 import { writeMetroProject } from "#metro-transformer/__tests__/fixtures/write-metro-project";

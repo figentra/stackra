@@ -7,7 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0301 (decision 7).
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { OG_FONTS } from "#core/constants/og-fonts.constant";
 

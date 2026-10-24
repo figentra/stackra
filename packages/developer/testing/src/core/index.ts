@@ -18,7 +18,6 @@ export {
   it,
   onTestFinished,
   test,
-  vi,
 } from "vitest";
 export { Fake } from "#core/fake.fake";
 export { createMatcher } from "#core/functions/create-matcher.function";

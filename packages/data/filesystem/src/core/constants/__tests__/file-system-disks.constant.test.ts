@@ -7,7 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 4).
  */
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { FILE_SYSTEM_DISKS } from "#core/constants/file-system-disks.constant";
 import { MemoryFileSystemDriver } from "#core/drivers/memory-file-system.driver";

@@ -7,7 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0301 (decision 7).
  */
-import { beforeEach, describe, expect, it, vi } from "@stackra/testing";
+import { beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import type { OgCard } from "#contracts/types/og-card.type";
 

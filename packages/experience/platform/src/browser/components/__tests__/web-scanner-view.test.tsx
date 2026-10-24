@@ -7,7 +7,8 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0250 (decision 2).
  */
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
 import { WebScannerView } from "#browser/components/web-scanner-view";

@@ -7,7 +7,8 @@
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0147 (decision 1).
  */
 import { kindOf } from "@stackra/container";
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { ConsoleLogReporterDriver } from "#core/drivers/console-log-reporter.driver";
 import { LogReporter } from "#core/ports/log-reporter.port";

@@ -7,7 +7,8 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0232 (decision 8).
  */
 import { ErrorReporter } from "@stackra/errors/contracts";
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { ConsoleErrorReporterDriver } from "#core/drivers/console-error-reporter.driver";
 

@@ -14,7 +14,8 @@ import type { Wiring } from "@stackra/container";
 import { CspConfig } from "@stackra/csp";
 import { NotFoundError } from "@stackra/errors";
 import { ErrorReporter } from "@stackra/errors/contracts";
-import { beforeEach, describe, expect, it, vi } from "@stackra/testing";
+import { beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { BRIDGE_CHANNEL } from "#electron/constants/bridge-channel.constant";
 import { createApp } from "#electron/functions/create-app.function";

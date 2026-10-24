@@ -11,7 +11,8 @@
  *                     5, 9, 11 and 12); ADR 0294 (decision 17).
  */
 import { Clock, Port } from "@stackra/contracts";
-import { beforeEach, describe, expect, it, vi } from "@stackra/testing";
+import { beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { Driver } from "#core/bases/driver.base";
 import { Explorer } from "#core/bases/explorer.base";

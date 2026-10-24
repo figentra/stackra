@@ -7,7 +7,8 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0250; ADR 0281 (decision 2).
  */
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { WebPlatformDriver } from "#browser/drivers/web-platform.driver";
 import { Capability } from "#core/enums/capability.enum";

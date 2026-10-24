@@ -6,7 +6,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 22 and 26).
  */
-import { beforeEach, describe, expect, it, vi } from "@stackra/testing";
+import { beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { generate } from "@stackra/gen/node";
 

@@ -9,7 +9,8 @@
  */
 import { PassThrough } from "node:stream";
 
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { McpProtocolError } from "#node/errors/mcp-protocol.error";
 import { connectMcp } from "#node/functions/connect-mcp.function";

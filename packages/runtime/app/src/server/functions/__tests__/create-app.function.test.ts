@@ -11,7 +11,8 @@
 import { Module, Service } from "@stackra/container";
 import type { Wiring } from "@stackra/container";
 import { isRefusal } from "@stackra/errors";
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { AppDrainingError } from "#server/errors/app-draining.error";
 import { createApp } from "#server/functions/create-app.function";

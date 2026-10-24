@@ -8,7 +8,8 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0060.
  */
 import { kindOf } from "@stackra/container";
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { BrowserSystemColorSchemeDriver } from "#browser/drivers/browser-system-color-scheme.driver";
 import { SystemColorScheme } from "#contracts/index";

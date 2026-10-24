@@ -10,7 +10,8 @@
  */
 import type { Clock } from "@stackra/contracts";
 import { DomainEvent, EventBus } from "@stackra/events";
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { DEVTOOLS_BUFFER_SIZE } from "#core/constants/devtools-buffer-size.constant";
 import { DEVTOOLS_BUS_CHANNEL } from "#core/constants/devtools-bus-channel.constant";

@@ -7,7 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269 (decision 3); ADR 0298 (decision 1).
  */
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { ConsentCategory, ConsentLedger } from "#core/index";
 import { fakeConsent } from "#testing/functions/fake-consent.function";

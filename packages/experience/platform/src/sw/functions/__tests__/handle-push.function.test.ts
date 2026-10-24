@@ -6,7 +6,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0255 (decision 3).
  */
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { handlePush } from "#sw/functions/handle-push.function";
 

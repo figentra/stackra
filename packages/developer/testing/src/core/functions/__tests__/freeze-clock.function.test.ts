@@ -8,7 +8,8 @@
  * Runtime: node
  * Governing contract: ADR 0269 (decision 2); ADR 0022 (test placement).
  */
-import { afterAll, beforeAll, describe, expect, it, vi } from "@stackra/testing";
+import { afterAll, beforeAll, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { freezeClock } from "#core/functions/freeze-clock.function";
 
 /** The frozen instant of these cases. */

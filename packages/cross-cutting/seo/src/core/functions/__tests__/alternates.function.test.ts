@@ -8,7 +8,8 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0301 (decisions 6 and 7).
  */
 import { I18nConfig, Locale, LocaleUrlStrategy } from "@stackra/i18n";
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { alternates } from "#core/functions/alternates.function";
 import type { AlternatesContext } from "#core/types/alternates-context.type";

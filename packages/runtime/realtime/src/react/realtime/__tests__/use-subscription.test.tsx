@@ -10,7 +10,8 @@
  */
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { renderToString } from "react-dom/server";

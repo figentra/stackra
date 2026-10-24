@@ -7,7 +7,8 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0266.
  */
 import { kindOf } from "@stackra/container";
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { SystemColorScheme } from "#contracts/ports/system-color-scheme.port";
 import { MemorySystemColorSchemeDriver } from "#core/drivers/memory-system-color-scheme.driver";

@@ -7,7 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0301 (decision 2).
  */
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { Changefreq } from "#core/enums/changefreq.enum";
 import { sitemapPage } from "#core/functions/sitemap-page.function";

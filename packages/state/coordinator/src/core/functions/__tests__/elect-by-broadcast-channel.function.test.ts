@@ -10,7 +10,8 @@
  */
 // oxlint-disable-next-line no-restricted-imports -- reason: the flags under test are @stackra/state signals, exported from `./react` only
 import { signal } from "@stackra/state/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { electByBroadcastChannel } from "#core/functions/elect-by-broadcast-channel.function";
 

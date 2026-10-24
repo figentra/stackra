@@ -8,7 +8,8 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0084 (the coordinator row); ADR 0079 (decision 6).
  */
 import { Duration } from "@stackra/contracts";
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { MEMORY_ELECTIONS } from "#core/constants/memory-elections.constant";
 import { ElectionMethod } from "#core/enums/election-method.enum";

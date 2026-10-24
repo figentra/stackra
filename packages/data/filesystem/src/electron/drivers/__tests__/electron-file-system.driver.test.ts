@@ -16,7 +16,8 @@ import { pathToFileURL } from "node:url";
 import { buildConfig } from "@stackra/config";
 import { kindOf } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
-import { afterEach, beforeEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { app } from "electron";
 
 import { FilesystemConfig } from "#config/filesystem.config";

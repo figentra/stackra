@@ -11,7 +11,8 @@ import { buildConfig } from "@stackra/config";
 import type { ConfigValues } from "@stackra/config";
 import { Service } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { FeatureFlagsConfig } from "#config/feature-flags.config";
 import { FlagProvider } from "#contracts/ports/flag-provider.port";

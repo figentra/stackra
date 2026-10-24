@@ -8,7 +8,8 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0225 (decision 1).
  */
 import { kindOf } from "@stackra/container";
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { RealtimeTransport } from "#contracts/ports/realtime-transport.port";
 import { MemoryRealtimeTransportDriver } from "#core/drivers/memory-realtime-transport.driver";

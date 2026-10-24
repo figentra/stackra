@@ -11,7 +11,8 @@
  */
 import { buildConfig } from "@stackra/config";
 import { MemoryStorageDriver } from "@stackra/storage";
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import type { ColorScheme } from "@stackra/ui/contracts";
 
 import { ThemingConfig } from "#config/theming.config";

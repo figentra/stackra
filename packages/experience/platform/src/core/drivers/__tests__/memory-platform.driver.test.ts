@@ -7,7 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269 (fakes are real drivers); ADR 0250 (decisions 2 and 3).
  */
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { Platform } from "#contracts/ports/platform.port";
 import type { ScannerViewProps } from "#contracts/types/scanner-view-props.type";

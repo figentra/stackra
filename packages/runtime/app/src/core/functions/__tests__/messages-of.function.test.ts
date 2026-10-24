@@ -7,7 +7,8 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decision 10).
  */
 import { Locale } from "@stackra/i18n";
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { messagesOf } from "#core/functions/messages-of.function";
 

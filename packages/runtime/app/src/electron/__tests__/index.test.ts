@@ -7,7 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decision 8); ADR 0127 2026-10-24 note.
  */
-import { describe, expect, expectTypeOf, it, vi } from "@stackra/testing";
+import { describe, expect, expectTypeOf, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import * as electron from "#electron/index";
 import type { DesktopApp, DesktopAppOptions } from "#electron/index";

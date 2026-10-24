@@ -8,7 +8,8 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; ADR 0079 (decisions 2 and 6).
  */
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 

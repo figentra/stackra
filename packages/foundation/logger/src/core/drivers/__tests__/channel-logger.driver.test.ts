@@ -13,7 +13,8 @@ import { buildConfig } from "@stackra/config";
 import type { ConfigValues } from "@stackra/config";
 import { kindOf } from "@stackra/container";
 import { Clock, Logger } from "@stackra/contracts";
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { LoggingConfig } from "#config/logging.config";
 import { ChannelLoggerDriver } from "#core/drivers/channel-logger.driver";

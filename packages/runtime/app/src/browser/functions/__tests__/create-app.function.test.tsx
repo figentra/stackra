@@ -10,7 +10,8 @@
  */
 import type { Wiring } from "@stackra/container";
 import { useContainer } from "@stackra/container/react";
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { act } from "@testing-library/react";
 import { isValidElement } from "react";
 import type { ReactElement, ReactNode } from "react";

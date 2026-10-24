@@ -11,7 +11,8 @@ import { buildConfig } from "@stackra/config";
 import { kindOf } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 import { FilesystemConfig, MemoryFileSystemDriver } from "@stackra/filesystem";
-import { beforeEach, describe, expect, it, vi } from "@stackra/testing";
+import { beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { PickFolderBridge } from "#electron/bridges/pick-folder.bridge";
 

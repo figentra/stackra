@@ -7,7 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0254 (the feed); ADR 0296 (decision 1).
  */
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { updateFeed } from "#core/functions/update-feed.function";

@@ -6,7 +6,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0084 (the coordinator row).
  */
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { ElectionMethod } from "#core/enums/election-method.enum";
 import { detectElectionMethod } from "#core/functions/detect-election-method.function";

@@ -10,7 +10,8 @@
  */
 import { buildConfig } from "@stackra/config";
 import type { ConfigValues } from "@stackra/config";
-import { afterEach, describe, expect, freezeClock, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, freezeClock, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { ConsentConfig } from "#config/consent.config";
 import type { ConsentRecord } from "#contracts/types/consent-record.type";

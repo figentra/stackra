@@ -9,7 +9,8 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269; registry v3.1 R-66 (display is ours).
  */
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 

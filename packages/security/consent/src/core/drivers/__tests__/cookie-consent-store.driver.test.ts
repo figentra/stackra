@@ -9,7 +9,8 @@
  * Governing contract: ADR 0022; ADR 0298 (decisions 3 and 6).
  */
 import { buildConfig } from "@stackra/config";
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { ConsentConfig } from "#config/consent.config";
 import { ConsentStore } from "#contracts/ports/consent-store.port";

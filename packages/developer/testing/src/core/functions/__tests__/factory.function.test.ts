@@ -6,7 +6,8 @@
  * Runtime: node
  * Governing contract: ADR 0269 (decision 2); ADR 0022 (test placement).
  */
-import { describe, expect, expectTypeOf, it, vi } from "@stackra/testing";
+import { describe, expect, expectTypeOf, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { factory } from "#core/functions/factory.function";
 import { freezeClock } from "#core/functions/freeze-clock.function";
 import type { FixtureBuilder } from "#core/types/fixture-builder.type";

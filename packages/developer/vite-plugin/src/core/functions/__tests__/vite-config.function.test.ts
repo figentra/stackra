@@ -10,7 +10,8 @@
  */
 import { ApiArea, Target } from "@stackra/contracts";
 import type { AppDefinition } from "@stackra/contracts";
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import type { Plugin, PluginOption } from "vite";
 
 import { viteConfig } from "#core/functions/vite-config.function";

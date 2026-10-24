@@ -6,7 +6,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0282 (decisions 3 and 5).
  */
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { COMMANDS } from "#node/constants/commands.constant";
 import { CliUsageError } from "#node/errors/cli-usage.error";

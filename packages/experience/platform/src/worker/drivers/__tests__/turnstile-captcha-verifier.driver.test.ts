@@ -8,7 +8,8 @@
  * Governing contract: ADR 0022; ADR 0173 (secrets by name).
  */
 import { SecretStore } from "@stackra/config";
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { CaptchaVerifier } from "#contracts/ports/captcha-verifier.port";
 import { TurnstileCaptchaVerifierDriver } from "#worker/drivers/turnstile-captcha-verifier.driver";

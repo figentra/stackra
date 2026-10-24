@@ -7,7 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269 (decision 3); ADR 0225 (data-free refresh).
  */
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { RealtimeConnection, RealtimeStatus } from "#core/index";
 import { RealtimeFake } from "#testing/realtime.fake";

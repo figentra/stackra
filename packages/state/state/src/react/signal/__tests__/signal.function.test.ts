@@ -7,7 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0079 (decisions 2 and 6).
  */
-import { describe, expect, expectTypeOf, it, vi } from "@stackra/testing";
+import { describe, expect, expectTypeOf, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { signal } from "#react/signal/signal.function";
 import type { Signal } from "#react/signal/signal.type";

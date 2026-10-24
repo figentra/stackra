@@ -6,7 +6,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (decision 4: `vi.mock` from @stackra/testing hoists).
  */
-import { describe, expect, it, vi } from "@stackra/testing";
+import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { fetch as expoFetch } from "expo/fetch";
 
 import { nativeFetch } from "#native/native-fetch/native-fetch.function";

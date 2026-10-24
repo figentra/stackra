@@ -11,7 +11,8 @@ import { buildConfig } from "@stackra/config";
 import type { ConfigLayers } from "@stackra/config";
 import { Service } from "@stackra/container";
 import { Duration, Realm } from "@stackra/contracts";
-import { afterEach, beforeEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { RealtimeConfig } from "#config/realtime.config";
 import type { RealtimeMessage } from "#contracts/types/realtime-message.type";

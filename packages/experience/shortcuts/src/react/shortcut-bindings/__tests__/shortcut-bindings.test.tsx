@@ -11,7 +11,8 @@
  */
 import { Container, type Token } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { render } from "@testing-library/react";
 
 import { Shortcut } from "#core/bases/shortcut.base";

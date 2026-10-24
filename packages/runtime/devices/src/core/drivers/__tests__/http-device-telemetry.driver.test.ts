@@ -9,7 +9,8 @@
  */
 import { buildConfig } from "@stackra/config";
 import { isRefusal } from "@stackra/errors";
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { DevicesConfig } from "#config/devices.config";
 import { DeviceCredential } from "#contracts/ports/device-credential.port";

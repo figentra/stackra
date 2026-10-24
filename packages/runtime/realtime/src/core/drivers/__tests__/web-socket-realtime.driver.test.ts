@@ -10,7 +10,8 @@
 import { buildConfig } from "@stackra/config";
 import { kindOf } from "@stackra/container";
 import { Duration, Realm } from "@stackra/contracts";
-import { afterEach, describe, expect, it, vi } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { RealtimeConfig } from "#config/realtime.config";
 import { RealtimeDriver } from "#contracts/ports/realtime-driver.port";

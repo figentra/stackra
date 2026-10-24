@@ -7,7 +7,8 @@
  * Runtime: node
  * Governing contract: ADR 0269 (decision 2); ADR 0266 (decision 2); ADR 0022 (test placement).
  */
-import { describe, expect, expectTypeOf, it, vi } from "@stackra/testing";
+import { describe, expect, expectTypeOf, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { Fake } from "#core/fake.fake";
 
 /** A port: two abstract methods and one concrete one. */
