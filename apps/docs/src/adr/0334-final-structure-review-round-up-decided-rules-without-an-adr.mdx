@@ -43,7 +43,7 @@ anchor for each framework-side capability, and this page records the map so that
 | Custom attributes                                                                                                                                 | [0116](/adr/0116-content-types-and-custom-fields) (`HasCustomFields`)                                                                                                                                                                                                  |
 | Elasticsearch                                                                                                                                     | [0221](/adr/0221-search-postgres-hybrid-elasticsuite-parity-arabic-and-operations)                                                                                                                                                                                     |
 | The traits `HasOwner`, `HasTree`, `Effective`, `HasLocation`, `Taggable` and `HasMetadata`                                                        | [0321](/adr/0321-the-trait-inventory-owning-packages-and-schedulable)                                                                                                                                                                                                  |
-| The commerce features (related-product rules, reward points, gift cards, store credit, returns, the B2B set, visual merchandising, private sales) | Not framework packages: rule 22 below                                                                                                                                                                                                                                  |
+| The commerce features (related-product rules, reward points, gift cards, store credit, returns, the B2B set, visual merchandising, private sales) | Not framework packages: Figentra Commerce and its editions, rule 22 below                                                                                                                                                                                              |
 
 ## Decision
 
@@ -169,12 +169,17 @@ anchor for each framework-side capability, and this page records the map so that
 
 ### Scope
 
-22. **The commerce features belong to figentra-os.** Customer segments as a storefront feature, related-product rules,
-    reward points, gift cards, store credit, returns, the B2B set (company accounts, shared catalogues, quotes,
-    requisition lists, purchase approvals), visual merchandising and private sales are figentra-os applications built
-    on the framework primitives above. They are not Stackra packages, and this repository writes no ADR for them. The
-    deferral follows the line that [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) draws between the
-    framework and its products.
+22. **The commerce features belong to Figentra Commerce, a product above the OS.** Customer segments as a storefront
+    feature, related-product rules, reward points, gift cards, store credit, returns and fulfilment, the B2B set
+    (company accounts, shared catalogues, quotes, requisition lists, purchase approvals), visual merchandising, private
+    sales, the order, inventory and point-of-sale engines and generic manufacturing are features of Figentra Commerce
+    (working name), a first-party product that sits between Figentra OS and its editions, of which Muslin is the fashion
+    edition. The placement rule is: a capability that only sellers need is Commerce; one that another product or
+    Figentra's own billing needs too is OS. So pricing and Markets, the payments ledger (with gift-card and store-credit
+    balances), invoicing and the workforce app stay in the OS. None of these is a Stackra package, and this repository
+    writes no ADR for them; [0201](/adr/0201-the-app-split-framework-platform-core-and-first-party-apps) carries the matching note on its layer-3 list, and the line that
+    [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) draws between the framework and its products stands. The edition concept itself is a
+    framework matter and gets its own ADR.
 
 ## Consequences
 
