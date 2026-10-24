@@ -1,13 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: proves the native DateField shows its day as the locale writes it, opens the platform picker when pressed
- *          (Android's dialog on its own, iOS's inline calendar inside the inset sheet), reports the picked day as the
- *          local `CalendarDate` and closes, refuses an unavailable day, passes the bounds at local noon and opens an
- *          empty field on today kept inside them, closes on Android's dismissal, stays shut while disabled or
- *          read-only, has no calendar button, keeps its own day when uncontrolled, and hands HeroUI Native the field's
- *          states and the picker its locale, scheme and accent.
+ * Purpose: proves the native DateField shows its day as the locale writes it, opens Android's dialog on a press and
+ *          reports the day it returns, opens iOS's inline calendar in a dialog (not a sheet) whose Done reports the day
+ *          shown, today included, and whose Cancel reports nothing; refuses an unavailable day with a message and an
+ *          announcement (the iOS dialog stays open); passes the bounds at local noon and opens an empty field on today
+ *          kept inside them; closes on Android's dismissal; stays shut while disabled or read-only, announcing only
+ *          disabled as disabled; has no calendar button; keeps its own day when uncontrolled; reports the same local
+ *          day in any time zone; and hands HeroUI Native the field's states and the picker its locale, scheme and
+ *          accent.
  * Boundary: React Native does not render in vitest, so heroui-native, react-native, `@expo/ui`'s picker, the provider,
- *           the Drawer and the IconButton are replaced by stand-ins that render plain DOM; what reaches them is checked.
+ *           the Modal, Button, Text and IconButton are replaced by stand-ins that render plain DOM; what reaches them is
+ *           checked.
  * Runtime: node
  * Governing contract: ADR 0302 (decision 3); ADR 0318 (decision 8); ADR 0055; ADR 0022 (test placement).
  */
@@ -23,6 +26,7 @@ import { DateField, type DateFieldProps } from "#native/date-field/date-field";
 const state = vi.hoisted(() => ({
   props: {} as Record<string, Record<string, unknown>>,
   os: "android",
+  announced: [] as string[],
 }));
 
 vi.mock("heroui-native", async () => {
@@ -51,6 +55,9 @@ vi.mock("heroui-native", async () => {
 vi.mock("react-native", async () => {
   const { createElement: h } = await import("react");
   return {
+    AccessibilityInfo: {
+      announceForAccessibility: (text: string) => state.announced.push(text),
+    },
     Platform: {
       get OS() {
         return state.os;
@@ -86,25 +93,43 @@ vi.mock("#native/design-system-provider/use-design-system", () => ({
   useDesignSystem: () => ({ locale: "en-US", resolvedColorScheme: "dark" }),
 }));
 
-vi.mock("#native/drawer/drawer", async () => {
+vi.mock("#native/modal/modal", async () => {
   const { createElement: h } = await import("react");
   const part =
     (name: string) =>
     ({ children }: { readonly children?: ReactNode }) =>
       h("div", { "data-testid": name }, children);
   return {
-    Drawer: Object.assign(
-      (props: Record<string, unknown>) => {
-        state.props["drawer"] = props;
-        return h("div", { "data-testid": "drawer" }, props["children"] as ReactNode);
+    Modal: Object.assign(
+      (props: { readonly isOpen: boolean; readonly children?: ReactNode }) => {
+        state.props["modal"] = props as unknown as Record<string, unknown>;
+        return props.isOpen ? h("div", { "data-testid": "modal" }, props.children) : null;
       },
       {
-        Header: part("drawer-header"),
-        Title: part("drawer-title"),
-        Body: part("drawer-body"),
-        Close: ({ label }: { readonly label: string }) => h("button", { "aria-label": label }),
+        Header: part("modal-header"),
+        Title: part("modal-title"),
+        Body: part("modal-body"),
+        Footer: part("modal-footer"),
       },
     ),
+  };
+});
+
+vi.mock("#native/button/button", async () => {
+  const { createElement: h } = await import("react");
+  return {
+    Button: (props: { readonly children: string; readonly onPress: () => void }) =>
+      h("button", { onClick: props.onPress }, props.children),
+  };
+});
+
+vi.mock("#native/text/text", async () => {
+  const { createElement: h } = await import("react");
+  return {
+    Text: (props: { readonly children?: ReactNode }) => {
+      state.props["text"] = props as Record<string, unknown>;
+      return h("span", { "data-testid": "message" }, props.children);
+    },
   };
 });
 
@@ -123,14 +148,17 @@ const day = (text: string) => {
   return new CalendarDate(year, month, date);
 };
 
-/** Picks `date` in the open picker, as the platform reports it. */
+/** Moves the open picker to `date`, as the platform reports it. */
 const pickDate = (date: Date) =>
   act(() => (propsOf("picker")["onValueChange"] as (event: unknown, date: Date) => void)({}, date));
+
+const isSunday = (date: CalendarDate) => date.toDate("UTC").getUTCDay() === 0;
 
 describe("DateField (native)", () => {
   beforeEach(() => {
     state.props = {};
     state.os = "android";
+    state.announced = [];
   });
 
   it("shows the day as the locale writes it, and the empty word for no day", () => {
@@ -146,36 +174,19 @@ describe("DateField (native)", () => {
     expect(propsOf("pressable")["accessibilityValue"]).toEqual({ text: "Select a date" });
   });
 
-  it("opens Android's dialog on its own when pressed", () => {
-    render(<DateField label="Due" />);
-    expect(screen.queryByTestId("picker")).toBeNull();
-    fireEvent.click(field());
-    expect(screen.getByTestId("picker")).toBeTruthy();
-    expect(screen.queryByTestId("drawer")).toBeNull();
-    expect(propsOf("pressable")["accessibilityState"]).toMatchObject({ expanded: true });
-  });
-
-  it("opens iOS's inline calendar inside the inset sheet, titled by the label", () => {
-    state.os = "ios";
-    render(<DateField label="Due" />);
-    fireEvent.click(field());
-    expect(screen.getByTestId("drawer-body").contains(screen.getByTestId("picker"))).toBe(true);
-    expect(screen.getByTestId("drawer-title").textContent).toBe("Due");
-    expect(propsOf("drawer")).toMatchObject({ isOpen: true, label: "Due" });
-    expect(propsOf("picker")["display"]).toBe("inline");
-    expect(screen.getByRole("button", { name: "Close" })).toBeTruthy();
-  });
-
-  it("reports the picked local day and closes", () => {
+  it("opens Android's dialog on a press, reports the day it returns and closes", () => {
     const onChange = vi.fn();
     render(<DateField label="Due" value={day("2026-10-24")} onChange={onChange} />);
+    expect(screen.queryByTestId("picker")).toBeNull();
     fireEvent.click(field());
+    expect(screen.queryByTestId("modal")).toBeNull();
+    expect(propsOf("pressable")["accessibilityState"]).toMatchObject({ expanded: true });
     pickDate(new Date(2026, 4, 3, 0, 5));
     expect(onChange).toHaveBeenCalledWith(day("2026-05-03"));
     expect(screen.queryByTestId("picker")).toBeNull();
   });
 
-  it("closes without a report when the same day is picked", () => {
+  it("closes without a report when the same day comes back", () => {
     const onChange = vi.fn();
     render(<DateField label="Due" value={day("2026-10-24")} onChange={onChange} />);
     fireEvent.click(field());
@@ -184,24 +195,71 @@ describe("DateField (native)", () => {
     expect(screen.queryByTestId("picker")).toBeNull();
   });
 
-  it("refuses an unavailable day: iOS keeps the calendar open, Android's dialog has closed", () => {
-    const onChange = vi.fn();
-    const isSunday = (date: CalendarDate) => date.toDate("UTC").getUTCDay() === 0;
+  it("opens iOS's inline calendar in a dialog, titled by the label, and reports the day on Done", () => {
     state.os = "ios";
-    const { unmount } = render(
-      <DateField label="Due" isDateUnavailable={isSunday} onChange={onChange} />,
+    const onChange = vi.fn();
+    render(<DateField label="Due" value={day("2026-10-24")} onChange={onChange} />);
+    fireEvent.click(field());
+    expect(screen.getByTestId("modal-body").contains(screen.getByTestId("picker"))).toBe(true);
+    expect(screen.getByTestId("modal-title").textContent).toBe("Due");
+    expect(propsOf("picker")["display"]).toBe("inline");
+    pickDate(new Date(2026, 10, 2, 12));
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    expect(onChange).toHaveBeenCalledWith(day("2026-11-02"));
+    expect(screen.queryByTestId("modal")).toBeNull();
+  });
+
+  it("lets iOS pick the day the calendar opens on, today for an empty field", () => {
+    state.os = "ios";
+    const onChange = vi.fn();
+    render(<DateField label="Due" onChange={onChange} />);
+    fireEvent.click(field());
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    const today = new Date();
+    expect(onChange).toHaveBeenCalledWith(
+      new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate()),
     );
+  });
+
+  it("reports nothing on iOS's Cancel", () => {
+    state.os = "ios";
+    const onChange = vi.fn();
+    render(<DateField label="Due" onChange={onChange} />);
+    fireEvent.click(field());
+    pickDate(new Date(2026, 10, 2, 12));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("modal")).toBeNull();
+  });
+
+  it("refuses an unavailable day on iOS, says why and keeps the dialog open", () => {
+    state.os = "ios";
+    const onChange = vi.fn();
+    render(<DateField label="Due" isDateUnavailable={isSunday} onChange={onChange} />);
     fireEvent.click(field());
     pickDate(new Date(2026, 9, 25, 12));
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
     expect(onChange).not.toHaveBeenCalled();
-    expect(screen.getByTestId("picker")).toBeTruthy();
-    unmount();
-    state.os = "android";
+    expect(screen.getByTestId("modal")).toBeTruthy();
+    expect(screen.getByTestId("message").textContent).toBe(
+      "That day is not available. Choose another.",
+    );
+    expect(state.announced).toEqual(["That day is not available. Choose another."]);
+  });
+
+  it("refuses an unavailable day on Android, says why, and clears the message on a good day", () => {
+    const onChange = vi.fn();
     render(<DateField label="Due" isDateUnavailable={isSunday} onChange={onChange} />);
     fireEvent.click(field());
     pickDate(new Date(2026, 9, 25, 12));
     expect(onChange).not.toHaveBeenCalled();
     expect(screen.queryByTestId("picker")).toBeNull();
+    expect(propsOf("text")["accessibilityLiveRegion"]).toBe("polite");
+    fireEvent.click(field());
+    pickDate(new Date(2026, 9, 26, 12));
+    expect(onChange).toHaveBeenCalledWith(day("2026-10-26"));
+    expect(screen.queryByTestId("message")).toBeNull();
   });
 
   it("passes the bounds at local noon and opens an empty field on today kept inside them", () => {
@@ -223,9 +281,15 @@ describe("DateField (native)", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it.each([{ isDisabled: true }, { isReadOnly: true }])("stays shut while %o", (locked) => {
+  it.each([
+    [{ isDisabled: true }, true],
+    [{ isReadOnly: true }, false],
+  ])("stays shut while %o, announced as disabled: %s", (locked, isAnnouncedDisabled) => {
     render(<DateField label="Due" {...locked} />);
-    expect(propsOf("pressable")).toMatchObject({ disabled: true });
+    expect(propsOf("pressable")).toMatchObject({
+      disabled: true,
+      accessibilityState: { disabled: isAnnouncedDisabled },
+    });
     fireEvent.click(field());
     expect(screen.queryByTestId("picker")).toBeNull();
   });
@@ -241,6 +305,26 @@ describe("DateField (native)", () => {
     pickDate(new Date(2026, 10, 2, 12));
     expect(propsOf("input")["value"]).toBe("Nov 2, 2026");
   });
+
+  it.each(["Pacific/Kiritimati", "Pacific/Pago_Pago", "America/New_York"])(
+    "reports the day the platform shows in %s",
+    (zone) => {
+      const saved = process.env["TZ"];
+      process.env["TZ"] = zone;
+      try {
+        const onChange = vi.fn();
+        render(<DateField label="Due" value={day("2026-03-07")} onChange={onChange} />);
+        fireEvent.click(field());
+        expect(propsOf("picker")["value"]).toEqual(new Date(2026, 2, 7, 12));
+        pickDate(new Date(2026, 2, 8, 0, 30));
+        expect(onChange).toHaveBeenCalledWith(day("2026-03-08"));
+      } finally {
+        // Assigning `undefined` would store the string "undefined", so an unset zone is deleted.
+        if (saved === undefined) delete process.env["TZ"];
+        else process.env["TZ"] = saved;
+      }
+    },
+  );
 
   it("hands the picker the locale, the scheme and the accent, and lets the caller's display win", () => {
     render(<DateField label="Due" display="spinner" />);
