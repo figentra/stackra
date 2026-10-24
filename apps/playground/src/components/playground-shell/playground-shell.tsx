@@ -230,6 +230,7 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
               <span className="flex-1 text-start">{STRINGS.search}</span>
               <kbd
                 aria-hidden="true"
+                dir="ltr"
                 className="rounded-md border border-border px-1.5 font-mono text-xs"
               >
                 {SHORTCUT}

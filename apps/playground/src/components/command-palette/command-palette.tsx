@@ -126,7 +126,9 @@ export function CommandPalette({ pages, search, isOpen, onClose }: CommandPalett
           >
             {STRINGS.hints.map(([key, action]) => (
               <li key={action} className="flex items-center gap-1.5">
-                <kbd className="rounded-md border border-border px-1.5 font-mono">{key}</kbd>
+                <kbd dir="ltr" className="rounded-md border border-border px-1.5 font-mono">
+                  {key}
+                </kbd>
                 {action}
               </li>
             ))}

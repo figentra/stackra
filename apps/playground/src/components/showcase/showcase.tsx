@@ -67,7 +67,9 @@ export function Showcase({ headingLevel }: ShowcaseProps) {
       <Ui.Card className={CARD}>
         <Ui.Card.Header>
           <Ui.Card.Title level={headingLevel}>{STRINGS.invite.title}</Ui.Card.Title>
-          <Ui.Card.Description>{STRINGS.invite.description}</Ui.Card.Description>
+          <Ui.Card.Description>
+            <bdi>{STRINGS.invite.description}</bdi>
+          </Ui.Card.Description>
         </Ui.Card.Header>
         <Ui.Card.Content className="grid gap-4">
           <Ui.TextField
@@ -95,7 +97,9 @@ export function Showcase({ headingLevel }: ShowcaseProps) {
       <Ui.Card className={CARD}>
         <Ui.Card.Header>
           <Ui.Card.Title level={headingLevel}>{STRINGS.deploys.title}</Ui.Card.Title>
-          <Ui.Card.Description>{STRINGS.deploys.description}</Ui.Card.Description>
+          <Ui.Card.Description>
+            <bdi>{STRINGS.deploys.description}</bdi>
+          </Ui.Card.Description>
         </Ui.Card.Header>
         <Ui.Card.Content>
           <ul className="grid divide-y divide-separator">
@@ -117,7 +121,9 @@ export function Showcase({ headingLevel }: ShowcaseProps) {
       <Ui.Card className={`${CARD} md:col-span-2 lg:col-span-1`}>
         <Ui.Card.Header>
           <Ui.Card.Title level={headingLevel}>{STRINGS.filters.title}</Ui.Card.Title>
-          <Ui.Card.Description>{STRINGS.filters.description}</Ui.Card.Description>
+          <Ui.Card.Description>
+            <bdi>{STRINGS.filters.description}</bdi>
+          </Ui.Card.Description>
         </Ui.Card.Header>
         <Ui.Card.Content className="grid gap-4">
           <Ui.SearchField label={STRINGS.filters.search} value={query} onChange={setQuery} />
