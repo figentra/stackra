@@ -185,9 +185,10 @@ test("the command palette opens from the keyboard, filters, and Enter opens the 
   await page.keyboard.press("ControlOrMeta+k");
   const palette = page.getByRole("dialog", { name: "Search components" });
   await expect(palette).toBeVisible();
-  await expect(palette.getByRole("searchbox")).toBeFocused();
+  await expect(palette.getByRole("combobox")).toBeFocused();
   await page.keyboard.type("check");
-  await expect(palette.getByRole("link", { name: "Checkbox", exact: true })).toBeVisible();
+  await expect(palette.getByRole("option").first()).toContainText("Checkbox");
+  await expect(palette.getByRole("status")).toContainText("result");
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/checkbox\?scheme=light&locale=en$/);
   await expect(palette).toBeHidden();

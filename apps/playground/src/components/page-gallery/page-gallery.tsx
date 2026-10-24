@@ -13,7 +13,7 @@ import type { HeadingLevel } from "@stackra/ui/contracts";
 import * as Ui from "@stackra/ui/react";
 import { useState } from "react";
 
-import { BrandGlyph, type BrandGlyphName } from "#src/components/brand-glyph";
+import { CategoryGlyph } from "#src/components/category-glyph";
 import { Choice } from "#src/components/choice";
 import { PageCategory } from "#src/enums/page-category.enum";
 import { PageTier } from "#src/enums/page-tier.enum";
@@ -28,30 +28,6 @@ const STRINGS = {
   count: (count: number) => (count === 1 ? "1 page" : `${count} pages`),
   none: "No page in this tier yet. Pro pages arrive with @stackra/ui-pro.",
 } as const;
-
-/** The brand icon each category wears; a category missing here wears the module icon. */
-const CATEGORY_GLYPHS: Readonly<Record<string, BrandGlyphName>> = {
-  Foundations: "token",
-  Actions: "pipeline",
-  Typography: "docs",
-  Navigation: "link",
-  Surfaces: "module",
-  Status: "alert",
-  Inputs: "terminal",
-  Selection: "check",
-  Forms: "schema",
-  Overlays: "package",
-  Feedback: "alert",
-  Data: "graph",
-  Shell: "provider",
-  "Inputs and forms": "terminal",
-  "Date and time": "schema",
-  Charts: "graph",
-  "Data display": "module",
-  "Feedback and status": "alert",
-  Layout: "menu",
-  AI: "pipeline",
-};
 
 /** One line per category on what it holds; a category missing here lists without one. */
 const CATEGORY_NOTES: Readonly<Record<string, string>> = {
@@ -140,7 +116,7 @@ export function PageGallery({ pages, search, headingLevel }: PageGalleryProps) {
                     aria-hidden="true"
                     className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground"
                   >
-                    <BrandGlyph name={CATEGORY_GLYPHS[category] ?? "module"} className="size-5" />
+                    <CategoryGlyph category={category} className="size-5" />
                   </span>
                   <Ui.Heading id={id} level={headingLevel} className="flex-1">
                     {category}

@@ -32,7 +32,11 @@ import { Outlet, useHref, useLocation, useNavigate, useSearchParams } from "reac
 
 import { CategoryNav } from "#src/components/category-nav";
 import { Choice } from "#src/components/choice";
-import { CommandPalette } from "#src/components/command-palette";
+import {
+  CommandPalette,
+  type CommandPaletteProps,
+  type PaletteAction,
+} from "#src/components/command-palette";
 import { PagePager } from "#src/components/page-pager";
 import type { PageLink } from "#src/types/page-link.type";
 import type { ShellContext } from "#src/types/shell-context.type";
@@ -48,6 +52,13 @@ const STRINGS = {
   colorScheme: "Colour scheme",
   language: "Language and direction",
   scheme: { light: "Light", dark: "Dark", system: "System" },
+  title: "Stackra Design System",
+  actions: {
+    scheme: (name: string) => `${name} scheme`,
+    home: "Go to the index",
+    components: "Browse every component",
+    componentsDetail: "The gallery, by category",
+  },
 } as const;
 
 /** The icon of each scheme choice; its name is the choice's accessible name. */
@@ -121,6 +132,47 @@ function DisplaySettings() {
       </ToggleButtonGroup>
     </Toolbar>
   );
+}
+
+/** The command palette with the shell's quick actions: the scheme, the language and the places to go. */
+function ShellPalette(props: Omit<CommandPaletteProps, "actions">) {
+  const { setColorScheme, setLocale } = useDesignSystem();
+  const navigate = useNavigate();
+  const actions: PaletteAction[] = [
+    ...ColorScheme.map((scheme) => ({
+      id: `scheme-${scheme}`,
+      label: STRINGS.actions.scheme(STRINGS.scheme[scheme]),
+      detail: STRINGS.colorScheme,
+      icon: SCHEME_ICONS[scheme],
+      keywords: "theme appearance mode",
+      run: () => setColorScheme(scheme),
+    })),
+    ...LOCALES.map(({ id, name }) => ({
+      id: `locale-${id}`,
+      label: name,
+      detail: STRINGS.language,
+      icon: "languages" as const,
+      keywords: `language direction ${id === "ar" ? "arabic rtl" : "english ltr"}`,
+      run: () => setLocale(id),
+    })),
+    {
+      id: "go-home",
+      label: STRINGS.actions.home,
+      detail: STRINGS.title,
+      icon: "sparkles",
+      keywords: "home index landing",
+      run: () => void navigate(`/${props.search}`),
+    },
+    {
+      id: "go-components",
+      label: STRINGS.actions.components,
+      detail: STRINGS.actions.componentsDetail,
+      icon: "layout-grid",
+      keywords: "gallery all pages",
+      run: () => void navigate(`/${props.search}#components`),
+    },
+  ];
+  return <CommandPalette {...props} actions={actions} />;
 }
 
 /** Layout route of the playground: provider, glass bar, page chrome, the current page and the palette. */
@@ -279,7 +331,7 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
             </div>
             {current ? <PagePager pages={pages} current={current} search={search} /> : null}
           </main>
-          <CommandPalette
+          <ShellPalette
             pages={pages}
             search={search}
             isOpen={isPaletteOpen}
