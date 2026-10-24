@@ -5,8 +5,9 @@
  *          levels, entitlement grants) take it instead of naming a tenant or a level (ADR 0323, 0327).
  * Boundary: a type only. Levels are deployment data (ADR 0327 d2), so a ref carries no level; the path is the node's
  *           `ltree` path, which makes ancestor matching (`scope_path <@ path`) possible without a lookup. The id is the
- *           authenticated principal's scope, never request input. Moves to `@stackra/scope/contracts` once that
- *           package exists (ADR 0327 d5); the owner may keep it here as the leaf instead.
+ *           authenticated principal's scope, never request input. The type lives here, the leaf, so that
+ *           `@stackra/database` and `@stackra/scope` need no cycle; `@stackra/scope` owns its semantics and the
+ *           resolver and imports it (ADR 0327 d5 and ADR 0323, notes of 2026-10-24).
  * Runtime: isomorphic
  * Governing contract: ADR 0327 (decisions 3 and 5); ADR 0323 (every other package speaks of a scope through ScopeRef).
  */
