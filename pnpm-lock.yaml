@@ -1076,6 +1076,9 @@ importers:
 
   packages/design-system/ui-pro:
     dependencies:
+      '@stackra/tokens':
+        specifier: workspace:*
+        version: link:../tokens
       '@stackra/ui':
         specifier: workspace:*
         version: link:../ui

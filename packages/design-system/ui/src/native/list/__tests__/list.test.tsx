@@ -6,7 +6,8 @@
  *          disabled row, selects as radios or checkboxes with the checked state and a checkmark and reports ids in the
  *          items' order (controlled and not) without calling a row's `onPress`, shows `emptyState` only when nothing
  *          loads, is busy and names one spinner while loading, passes the end reached to the `FlatList` only while
- *          `hasMore` and not loading, and passes its root's props through.
+ *          `hasMore` and not loading, reveals its rows inside the group unless `isAnimated` is off, and passes its
+ *          root's props through.
  * Boundary: React Native does not render in vitest, so heroui-native, react-native and the wrappers below List are
  *           replaced by recording stand-ins that render plain DOM; what reaches them is checked, not their rendering.
  * Runtime: node
@@ -14,6 +15,7 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-121 sta-350:FR-122 sta-350:FR-128 sta-350:FR-129 sta-350:P-064
+// @covers sta-430:FR-008
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
@@ -115,6 +117,17 @@ vi.mock("#native/separator/separator", async () => {
   return { Separator: () => createElement("hr", { "data-testid": "separator" }) };
 });
 
+// Reanimated does not run in vitest; the stand-in records whether the rows are revealed with motion.
+vi.mock("#native/reveal/reveal", async () => {
+  const { createElement } = await import("react");
+  return {
+    Reveal: ({ children, isAnimated }: { children: never; isAnimated?: boolean }) => {
+      received.props["reveal"] = { isAnimated };
+      return createElement("div", { "data-testid": "reveal" }, children);
+    },
+  };
+});
+
 vi.mock("#native/spinner/spinner", async () => {
   const { createElement } = await import("react");
   return {
@@ -150,6 +163,15 @@ describe("List (native)", () => {
     });
     const keyExtractor = propsOf("list")["keyExtractor"] as (item: ListItemData) => string;
     expect(ITEMS.map(keyExtractor)).toEqual(["a", "b", "c"]);
+  });
+
+  it("reveals the rows inside the group, with motion unless isAnimated is off", () => {
+    const { unmount } = render(<List label="Orders" items={ITEMS} />);
+    expect(screen.getByTestId("reveal")).toBeTruthy();
+    expect(propsOf("reveal")).toEqual({ isAnimated: true });
+    unmount();
+    render(<List label="Orders" items={ITEMS} isAnimated={false} />);
+    expect(propsOf("reveal")).toEqual({ isAnimated: false });
   });
 
   it("hands the surface variant to the group only when set", () => {

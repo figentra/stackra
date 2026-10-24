@@ -5,8 +5,9 @@
  *          refuses a disabled one, becomes a list box when it selects (one and several, controlled and not) and reports
  *          the ids in the items' order without ever calling a row's `onPress`, shows `emptyState` only when nothing
  *          loads, is busy and names one spinner while loading, calls `onLoadMore` when the end shows and only while
- *          `hasMore` and not loading, passes its root's props and the surface variant through, and refuses the raw
- *          React Aria and HeroUI names the vocabulary replaces.
+ *          `hasMore` and not loading, passes its root's props and the surface variant through, reveals its rows inside
+ *          the surface unless `isAnimated` is off, and refuses the raw React Aria and HeroUI names the vocabulary
+ *          replaces.
  * Boundary: jsdom with real HeroUI and React Aria; the theme CSS is not loaded, so classes are checked, not looks.
  *           `IntersectionObserver` is replaced by a stand-in that the test fires by hand.
  * Runtime: browser
@@ -14,6 +15,7 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-121 sta-350:FR-122 sta-350:FR-127 sta-350:FR-128 sta-350:P-064
+// @covers sta-430:FR-008
 import { defineIconRegistry } from "@stackra/icons";
 import { IconRegistryProvider } from "@stackra/icons/react";
 import { act, render as renderBare, screen, within } from "@testing-library/react";
@@ -83,6 +85,17 @@ describe("List (web)", () => {
     expect(screen.queryByRole("listbox")).toBeNull();
     expect(screen.queryByRole("option")).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("reveals its rows inside the surface: hidden to start with, shown at once with isAnimated off", () => {
+    const { unmount } = render(<List label="Recent" items={ITEMS} />);
+    const reveal = screen.getByRole("list", { name: "Recent" }).closest('[data-slot="reveal"]');
+    expect(reveal).toBeTruthy();
+    expect((reveal as HTMLElement).style.opacity).toBe("0");
+    unmount();
+    render(<List label="Recent" items={ITEMS} isAnimated={false} />);
+    const still = screen.getByRole("list", { name: "Recent" }).closest('[data-slot="reveal"]');
+    expect((still as HTMLElement).style.opacity).not.toBe("0");
   });
 
   it("draws the title, the description, the start icon, the end content and the chevron of a row", () => {

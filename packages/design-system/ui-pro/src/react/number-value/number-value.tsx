@@ -1,26 +1,111 @@
 /**
  * Stackra file contract:
- * Purpose: the web `NumberValue` compound on HeroUI Pro's NumberValue (a locale-formatted number that animates when
- *          it changes, drawn with `@number-flow/react`): the root and the parts Prefix and Suffix, with HeroUI Pro's
- *          own names.
- * Boundary: no vocabulary prop applies, so every prop passes through unchanged: the root's `style` there is the
- *          number style (`currency`, `percent`, ...), not a CSS style, and keeps HeroUI Pro's name. The compound
- *          exposes the documented parts: HeroUI Pro's `NumberValue.Root` is left out. Imports the `number-value`
- *          subpath.
+ * Purpose: the web `NumberValue` compound on HeroUI Pro's NumberValue (a locale-formatted number): the root and the
+ *          parts Prefix and Suffix, with HeroUI Pro's own names. The number rolls to a new value with
+ *          `@number-flow/react` on the theme's reveal step (ADR 0329), unless `isAnimated` is off; NumberFlow keeps
+ *          it still under reduced motion.
+ * Boundary: no vocabulary prop applies, so every other prop passes through unchanged: the root's `style` there is the
+ *           number style (`currency`, `percent`, ...), not a CSS style, and keeps HeroUI Pro's name. The animated root
+ *           draws HeroUI Pro's own slots and classes around NumberFlow; a render-prop child, and a scientific or
+ *           engineering notation (which NumberFlow cannot draw), get HeroUI Pro's still number. The compound exposes
+ *           the documented parts: HeroUI Pro's `NumberValue.Root` is left out. Imports the `number-value` subpath.
  * Runtime: browser
- * Governing contract: ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
+ * Governing contract: ADR 0329 (motion layer); ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
  */
 import {
   NumberValue as HeroNumberValue,
   type NumberValueRootProps as HeroNumberValueRootProps,
 } from "@heroui-pro/react/number-value";
+import NumberFlow from "@number-flow/react";
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
+import { Children, isValidElement, type ReactNode } from "react";
+import { useLocale } from "react-aria-components";
 
-/** Props of the web NumberValue: HeroUI Pro's own root props, passed through unchanged. */
-export type NumberValueProps = HeroNumberValueRootProps;
+import { omitUndefined } from "#core/functions/omit-undefined.function";
 
-/** The root: HeroUI Pro's, which formats `value` for the locale and animates changes. */
-function NumberValueRoot(props: NumberValueProps) {
-  return <HeroNumberValue.Root {...props} />;
+const REVEAL = {
+  duration: motionTiming(STACKRA_THEME, "reveal").durationMs,
+  easing: STACKRA_THEME.motion["reveal"]?.easing ?? "ease-out",
+};
+
+/** Props of the web NumberValue: HeroUI Pro's own root props, passed through unchanged, plus `isAnimated`. */
+export type NumberValueProps = HeroNumberValueRootProps & {
+  /** Roll the number to a new value instead of swapping it; on by default. */
+  isAnimated?: boolean | undefined;
+};
+
+/** The root: formats `value` for the locale and rolls it to a new value. */
+function NumberValueRoot({ isAnimated = true, children, ...props }: NumberValueProps) {
+  const { locale: contextLocale } = useLocale();
+  const {
+    value,
+    locale,
+    formatOptions,
+    currency,
+    maximumFractionDigits,
+    minimumFractionDigits,
+    notation,
+    signDisplay,
+    style,
+    unit,
+    className,
+    ...rest
+  } = props;
+  const format =
+    formatOptions ??
+    omitUndefined({
+      currency,
+      maximumFractionDigits,
+      minimumFractionDigits,
+      notation,
+      signDisplay,
+      style,
+      unit,
+    });
+  const flowNotation = format.notation;
+  if (
+    !isAnimated ||
+    flowNotation === "scientific" ||
+    flowNotation === "engineering" ||
+    typeof children === "function"
+  ) {
+    return <HeroNumberValue.Root {...props}>{children}</HeroNumberValue.Root>;
+  }
+
+  let prefix: ReactNode = null;
+  let suffix: ReactNode = null;
+  const others: ReactNode[] = [];
+  Children.forEach(children, (child) => {
+    if (isValidElement(child) && child.type === HeroNumberValue.Prefix) prefix = child;
+    else if (isValidElement(child) && child.type === HeroNumberValue.Suffix) suffix = child;
+    else others.push(child);
+  });
+
+  // HeroUI Pro's render prop gives the parts its slot classes; the markup is HeroUI Pro's, with NumberFlow as the value.
+  return (
+    <HeroNumberValue.Root value={value}>
+      {() => (
+        <span
+          {...rest}
+          className={className ? `number-value ${className}` : "number-value"}
+          data-slot="number-value"
+        >
+          {prefix}
+          <NumberFlow
+            className="number-value__value"
+            data-slot="number-value-value"
+            value={value}
+            locales={locale ?? contextLocale}
+            format={{ ...format, notation: flowNotation }}
+            transformTiming={REVEAL}
+            spinTiming={REVEAL}
+          />
+          {suffix}
+          {others}
+        </span>
+      )}
+    </HeroNumberValue.Root>
+  );
 }
 
 /** The parts of the compound, typed from HeroUI Pro's own so the declaration output can name them. */
