@@ -126,7 +126,7 @@ unprivileged role sees only the rows of the scope set for its transaction, and n
 
 ## Open items (for the owner, not blocking)
 
-- The row-level-security policy is named `pol_<table>_<level>_id`; ADR 0231 names `idx_`, `fk_` and `ck_` only.
+- The row-level-security policy is named `pol_<table>_<column>`; ADR 0231 names `idx_`, `fk_` and `ck_` only.
 - Gen must register `[Service, Model]` and `[Factory, Model]` pairs (`registerModelPartners`) and entity schemas
   (`registerEntities`), and bind each `repositoryOf(Model)` token; the template's samples do neither yet.
 - A `memory` database driver for the template's `useDrivers("memory")` unit tests is not built.
