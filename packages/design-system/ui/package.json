@@ -118,6 +118,7 @@
   "devDependencies": {
     "@heroui/react": "catalog:frontend",
     "@internationalized/date": "catalog:frontend",
+    "@internationalized/number": "catalog:mobile",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
@@ -150,6 +151,7 @@
     "@expo/ui": "^57.0.25",
     "@heroui/react": "^3.2.6",
     "@internationalized/date": "^3.12.4",
+    "@internationalized/number": "^3.6.9",
     "heroui-native": "^1.0.10",
     "lucide-react": "^1.54.0",
     "lucide-react-native": "^1.54.0",
@@ -167,6 +169,9 @@
       "optional": true
     },
     "@heroui/react": {
+      "optional": true
+    },
+    "@internationalized/number": {
       "optional": true
     },
     "heroui-native": {
