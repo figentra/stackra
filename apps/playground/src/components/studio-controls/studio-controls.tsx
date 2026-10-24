@@ -145,7 +145,7 @@ export function StudioControls({ knobs, onChange }: StudioControlsProps) {
       aria-labelledby="studio-controls"
       className="material grid content-start gap-5 rounded-3xl p-5"
     >
-      <Ui.Heading id="studio-controls" level={2} type="h4">
+      <Ui.Heading id="studio-controls" level={2} className="[font:var(--h4)]">
         {STRINGS.title}
       </Ui.Heading>
       <Ui.TextField

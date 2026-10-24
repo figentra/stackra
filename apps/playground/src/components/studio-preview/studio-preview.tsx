@@ -91,7 +91,7 @@ export function StudioPreview({ theme, scheme: pageScheme }: StudioPreviewProps)
   return (
     <section aria-labelledby="studio-preview" className="grid min-w-0 content-start gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Ui.Heading id="studio-preview" level={2} type="h4">
+        <Ui.Heading id="studio-preview" level={2} className="[font:var(--h4)]">
           {STRINGS.title}
         </Ui.Heading>
         <Ui.Toolbar aria-label={STRINGS.canvas} className="flex flex-wrap items-center gap-2">
@@ -167,7 +167,7 @@ export function StudioPreview({ theme, scheme: pageScheme }: StudioPreviewProps)
       </div>
       <div className="material grid gap-3 rounded-3xl p-5">
         <div className="grid gap-1">
-          <Ui.Heading level={3} type="h5">
+          <Ui.Heading level={3} className="[font:var(--h5)]">
             {STRINGS.contrast}
           </Ui.Heading>
           <Ui.Text tone="muted" className="text-sm">

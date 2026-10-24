@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0022 (test placement).
  */
-// @covers sta-350:FR-010
+// @covers sta-350:FR-010 sta-422:FR-002 sta-422:P-003
 import { act, render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
@@ -53,6 +53,10 @@ describe("HomeRoute", () => {
     expect(document.title).toBe(HomeRoute.title);
     expect(screen.getByRole("link", { name: /Page A/ }).getAttribute("href")).toBe(
       "/a?scheme=dark&locale=ar",
+    );
+    // The hero's jump to the gallery keeps the view in the address too.
+    expect(screen.getByRole("link", { name: /Browse components/ }).getAttribute("href")).toBe(
+      "/?scheme=dark&locale=ar#components",
     );
   });
 
