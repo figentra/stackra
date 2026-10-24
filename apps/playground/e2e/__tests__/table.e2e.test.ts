@@ -241,9 +241,7 @@ test("the live table sorts from its first page, keeps its selection and resets",
 
   await grid.getByRole("columnheader", { name: "Total" }).click();
   await expect(live.getByTestId("table-live-sort")).toHaveText("Sorted by: total, ascending");
-  // The sort starts again from the first page of 8; the sentinel sits within one scroll height of the visible edge, so
-  // React Aria asks for the second page as soon as the first is in, and the count is 8 or 16 depending on the moment.
-  await expect(live.getByTestId("table-live-loaded")).toHaveText(/^Loaded (8|16) of 24 orders$/);
+  await expect(live.getByTestId("table-live-loaded")).toHaveText("Loaded 8 of 24 orders");
   await expect(grid.getByRole("rowheader").first()).toHaveText("#1001");
   await expect(live.getByTestId("table-live-selected")).toHaveText("Selected: ord-1002");
 

@@ -83,7 +83,8 @@ export function Tabs({
         <HeroTabs.List {...(label === undefined ? {} : { "aria-label": label })}>
           {items.map((item) => (
             <HeroTabs.Tab key={item.id} id={item.id}>
-              {item.label}
+              {/* Its own positioned element, above the indicator, so a checker finds the label's colour on the indicator. */}
+              <span className="relative z-10">{item.label}</span>
               <HeroTabs.Indicator />
             </HeroTabs.Tab>
           ))}

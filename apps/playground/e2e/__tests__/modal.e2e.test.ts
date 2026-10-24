@@ -73,10 +73,11 @@ const setPageHidden = (page: Page, isHidden: boolean) =>
   }, isHidden);
 
 /**
- * Resizes the window until no line of the scrolling body is cut by the body's edge. Axe cannot judge the colour behind
- * a line that is half out of view and leaves it "for review"; the lines are all alike, so whole ones are scanned.
+ * Marks the lines of a scrolling body that are out of view, and first resizes the window until no line is cut by the
+ * body's edge. Axe reads the lines a scroll port hides as if they were drawn, over whatever lies behind the dialog, and
+ * cannot judge their colour; nobody sees them, so they are left out, and the lines in view are all scanned whole.
  */
-const showWholeLinesOnly = async (page: Page, body: Locator) => {
+const markHiddenLines = async (page: Page, body: Locator) => {
   // The lines meet with no gap, so an edge is clear of them only within a pixel of where two lines meet.
   for (let height = 720; height > 480; height -= 1) {
     await page.setViewportSize({ width: 1280, height });
@@ -91,7 +92,16 @@ const showWholeLinesOnly = async (page: Page, body: Locator) => {
         );
       });
     });
-    if (!isCut) return;
+    if (isCut) continue;
+    await body.evaluate((element) => {
+      const edge = element.getBoundingClientRect();
+      for (const line of element.querySelectorAll("p, li")) {
+        const box = line.getBoundingClientRect();
+        if (box.bottom <= edge.top + 1 || box.top >= edge.bottom - 1)
+          line.setAttribute("data-out-of-view", "");
+      }
+    });
+    return;
   }
   throw new Error("no window height shows whole lines only");
 };
@@ -133,9 +143,11 @@ test("axe finds nothing in the live form modal or the long modal", async ({ page
   await page.keyboard.press("Escape");
   await expect(page.locator('[data-slot="modal-dialog"]')).toBeHidden();
   await openDialog(page, "Open long content");
-  await showWholeLinesOnly(page, page.locator('[data-slot="modal-body"]'));
+  await markHiddenLines(page, page.locator('[data-slot="modal-body"]'));
   await setPageHidden(page, true);
-  await expectNoFindings(new AxeBuilder({ page }).include('[role="dialog"]'));
+  await expectNoFindings(
+    new AxeBuilder({ page }).include('[role="dialog"]').exclude("[data-out-of-view]"),
+  );
   await setPageHidden(page, false);
 });
 

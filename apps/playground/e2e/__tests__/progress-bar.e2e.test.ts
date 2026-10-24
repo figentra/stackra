@@ -154,14 +154,15 @@ test("the indeterminate bar sweeps, and stands still under reduced motion", asyn
 });
 
 test("a determinate fill eases to its value, and jumps under reduced motion", async ({ page }) => {
-  const duration = () =>
+  // HeroUI turns the ease off with `transition-property: none` and leaves the duration as it is.
+  const property = () =>
     page
       .locator('[data-value="40"] .progress-bar__fill')
-      .evaluate((node) => getComputedStyle(node).transitionDuration);
+      .evaluate((node) => getComputedStyle(node).transitionProperty);
   await open(page, "light", "en", "reduce");
-  expect(await duration()).toBe("0s");
+  expect(await property()).toBe("none");
   await open(page, "light", "en", "no-preference");
-  expect(await duration()).not.toBe("0s");
+  expect(await property()).not.toBe("none");
 });
 
 test("the example advances from the keyboard, updates the value and announces the end", async ({
