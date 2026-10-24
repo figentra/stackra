@@ -425,7 +425,8 @@
               "adr/0330-shortcut-chords-on-a-tanstack-hotkeys-driver",
               "adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer",
               "adr/0332-stackra-segments-audiences-defined-by-rules",
-              "adr/0333-record-visibility-rules-who-can-see-which-records"
+              "adr/0333-record-visibility-rules-who-can-see-which-records",
+              "adr/0334-final-structure-review-round-up-decided-rules-without-an-adr"
             ]
           }
         ]

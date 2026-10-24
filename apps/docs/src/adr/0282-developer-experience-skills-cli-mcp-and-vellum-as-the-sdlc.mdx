@@ -1,7 +1,15 @@
 ---
 title: "0282 — Developer experience: @stackra/skills, @stackra/cli, @stackra/mcp and Vellum as the SDLC"
-description: "Accepted, amended by 0286 · 2026-10-22"
+description: "Accepted, amended by 0, 0334286 · 2026-10-22"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-428) by
+  [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rule 8): `stackra
+  mcp` proxies the local Encore MCP tools, with the app id from runway, so `.mcp.yaml` has no
+  separate `encore` entry; the `encore-cloud` server stays separate because it has its own OAuth
+  flow. Decision 9 is read with that.
+</Note>
 
 <Note>
   Amended by [0286](/adr/0286-vellum-as-the-sdlc-spike-bar-approvals-evidence-and-distribution):

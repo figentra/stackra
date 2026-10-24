@@ -1,7 +1,15 @@
 ---
 title: "0237 — The API gateway is generated, in four layers, with no gateway service"
-description: "Accepted, amended by 0290, 0297, 0325 · 2026-10-20 · amended 2026-10-24 (STA-428)"
+description: "Accepted, amended by 0, 0334290, 0297, 0325 · 2026-10-20 · amended 2026-10-24 (STA-428)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-428) by
+  [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rule 7): the API
+  host answers JSON only. Its root is a small index document, and an unknown route returns the error
+  envelope of 0140 with `not_found`, never HTML. A web host renders a React 404 route, and the
+  static host keeps its branded 404 page (0284). The four layers stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-428), by
