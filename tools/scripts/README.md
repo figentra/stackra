@@ -25,6 +25,7 @@ One line per script. Each file's docblock is the full contract; the tests are in
 | `pr-merge.mjs`            | `pnpm pr:merge [-R owner/repo] <n>` †              | the only agent merge (enqueues where a merge queue exists): green Quality Gate, `AI-REVIEW: PASS` on the head's patch id, owner approval when needed                                        |
 | `jsonc.mjs`               | —                                                  | the shared JSONC reader for the other scripts                                                                                                                                               |
 | `mcp.sh`                  | `.mcp.yaml`                                        | launches an MCP server with its secrets injected from the vault, never from `.mcp.json`                                                                                                     |
+| `guard-port.mjs`          | `node tools/scripts/guard-port.mjs <dir> <repo>`   | vendors `.agents/hooks` into figentra/os, muslin or juristra (`<dir>` its `.agents/hooks`) with the port hunks (STA-449)                                                                    |
 
 ## Rules
 
