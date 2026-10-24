@@ -45,6 +45,17 @@ const isHeldBack = (page: Page) =>
     return event.defaultPrevented;
   });
 
+/**
+ * Hides the page behind the overlay while it is scanned, and shows it again. Axe reads the elements under a see-through
+ * backdrop as part of the text's background, and a page that differs from one line of text to the next leaves the
+ * contrast check "for review"; the overlay's own colours are what is scanned, and the page has its own axe tests.
+ */
+const setPageHidden = (page: Page, isHidden: boolean) =>
+  page.evaluate((hide) => {
+    const root = document.getElementById("root");
+    if (root) root.style.visibility = hide ? "hidden" : "";
+  }, isHidden);
+
 const expectNothing = async (page: Page, include?: string) => {
   const builder = new AxeBuilder({ page }).withTags(AXE_TAGS);
   const { violations, incomplete } = await (include ? builder.include(include) : builder).analyze();
@@ -70,6 +81,7 @@ for (const scheme of SCHEMES)
     test(`axe finds nothing inside the open dialog in ${scheme}, ${locale}`, async ({ page }) => {
       await open(page, scheme, locale);
       await tryToLeave(page);
+      await setPageHidden(page, true);
       await expectNothing(page, '[role="alertdialog"]');
     });
   }

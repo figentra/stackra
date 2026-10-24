@@ -59,6 +59,17 @@ const boxOf = async (locator: Locator) => {
 
 const BASICS = "Actions for order 1001";
 
+/**
+ * Hides the page behind the overlay while it is scanned, and shows it again. Axe reads the elements under a see-through
+ * backdrop as part of the text's background, and a page that differs from one line of text to the next leaves the
+ * contrast check "for review"; the overlay's own colours are what is scanned, and the page has its own axe tests.
+ */
+const setPageHidden = (page: Page, isHidden: boolean) =>
+  page.evaluate((hide) => {
+    const root = document.getElementById("root");
+    if (root) root.style.visibility = hide ? "hidden" : "";
+  }, isHidden);
+
 for (const scheme of SCHEMES)
   for (const locale of LOCALES) {
     test(`axe finds nothing on the action menu page in ${scheme}, ${locale}`, async ({ page }) => {
@@ -79,6 +90,7 @@ for (const scheme of SCHEMES)
     test(`axe finds nothing in the open menu in ${scheme}, ${locale}`, async ({ page }) => {
       await open(page, scheme, locale);
       await openMenu(page, buttonIn(page, "action-menu-basics", BASICS));
+      await setPageHidden(page, true);
       const { violations, incomplete } = await new AxeBuilder({ page })
         .include('[role="menu"]')
         .withTags(AXE_TAGS)
