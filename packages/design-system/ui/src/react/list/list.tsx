@@ -1,0 +1,127 @@
+/**
+ * Stackra file contract:
+ * Purpose: the web `List`: draws `items` as `ListItem` rows on a surface. A list that does not select is a plain
+ *          `ul` of `li` rows (a pressable row is a button), so no widget role is claimed; a list that selects is HeroUI's
+ *          `ListBox` with one `ListBox.Item` per row, which brings the option roles, arrow keys, type-ahead and the
+ *          selected checkmark. The selection is reported as a list of ids in the items' order. An empty list shows
+ *          `emptyState`, a loading one a named spinner, and a list with `hasMore` calls `onLoadMore` when its end is
+ *          scrolled into view.
+ * Boundary: no styling layer of its own beyond the divider and corner utilities of the surface; the look is HeroUI's,
+ *           themed by `@stackra/tokens`. It never sorts, filters or fetches. While the list selects, a row's `onPress`
+ *           is not called: a row selects or acts, never both. Not built here, and not in the contract: sections,
+ *           virtualisation and pull to refresh (native keeps its own scrolling list).
+ * Runtime: browser
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (decisions 1, 2, 4 and 5); ADR 0165
+ *          (HeroUI v3 on web); WCAG 2.2 SC 4.1.2 and 4.1.3.
+ */
+import { ListBox } from "@heroui/react";
+import type { ComponentPropsWithRef } from "react";
+
+import type { ListContractProps } from "#contracts/types/list-contract-props.type";
+import type { ListItemData } from "#contracts/types/list-item-contract-props.type";
+import { keysOfSelection } from "#core/functions/keys-of-selection.function";
+import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { ListItem } from "#react/list/list-item";
+import { ListItemContent, textValueOf } from "#react/list/list-item-content";
+import { useEndReached } from "#react/list/use-end-reached";
+import { Spinner } from "#react/spinner/spinner";
+import { Surface } from "#react/surface/surface";
+
+/**
+ * Props of the web List: the shared contract plus the props of its root `div`, passed through unchanged. The root holds
+ * the surface, the empty state and the loading spinner, so `aria-busy` is set from `isLoading`, never by the caller.
+ */
+export type ListProps<TItem extends ListItemData = ListItemData> = ListContractProps<TItem> &
+  Omit<ComponentPropsWithRef<"div">, keyof ListContractProps | "children" | "aria-busy">;
+
+/**
+ * A list of rows. Name it with `label`. Give it `selectionMode` to make it a list box whose rows are selected by
+ * press, Space and Enter; without one it is a plain list. `emptyState` shows only when nothing is loading and there
+ * are no items, and `loadingLabel` is spoken once for the spinner, not for every row.
+ */
+export function List<TItem extends ListItemData = ListItemData>({
+  items,
+  emptyState,
+  isLoading = false,
+  loadingLabel,
+  label,
+  variant,
+  selectionMode = "none",
+  selectedKeys,
+  defaultSelectedKeys,
+  onSelectionChange,
+  hasMore,
+  onLoadMore,
+  ...rest
+}: ListProps<TItem>) {
+  const ids = items.map((item) => item.id);
+  const onReach = hasMore === true && !isLoading ? onLoadMore : undefined;
+  const marker = useEndReached(onReach, items.length);
+  return (
+    <div {...rest} aria-busy={isLoading}>
+      {items.length === 0 ? (
+        isLoading ? null : (
+          emptyState
+        )
+      ) : (
+        <Surface {...omitUndefined({ variant })} className="overflow-hidden rounded-2xl">
+          {selectionMode === "none" ? (
+            <ul aria-label={label} className="divide-y divide-separator">
+              {items.map((item) => (
+                // Named props, not a spread: an app's own item type may carry data that is not a `li` attribute.
+                <ListItem
+                  key={item.id}
+                  title={item.title}
+                  description={item.description}
+                  startIcon={item.startIcon}
+                  endContent={item.endContent}
+                  hasChevron={item.hasChevron}
+                  onPress={item.onPress}
+                  isDisabled={item.isDisabled}
+                  label={item.label}
+                />
+              ))}
+            </ul>
+          ) : (
+            <ListBox
+              aria-label={label}
+              selectionMode={selectionMode}
+              {...omitUndefined({
+                selectedKeys,
+                defaultSelectedKeys,
+              })}
+              onSelectionChange={(selection) =>
+                onSelectionChange?.(keysOfSelection(selection, ids))
+              }
+            >
+              {items.map((item) => (
+                <ListBox.Item
+                  key={item.id}
+                  id={item.id}
+                  textValue={textValueOf(item)}
+                  {...omitUndefined({ isDisabled: item.isDisabled })}
+                  {...(item.label === undefined ? {} : { "aria-label": item.label })}
+                >
+                  <ListItemContent
+                    title={item.title}
+                    description={item.description}
+                    startIcon={item.startIcon}
+                    endContent={item.endContent}
+                    hasChevron={item.hasChevron}
+                  />
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </ListBox>
+          )}
+        </Surface>
+      )}
+      {isLoading ? (
+        <div className="flex justify-center p-4">
+          <Spinner {...omitUndefined({ label: loadingLabel })} />
+        </div>
+      ) : null}
+      {onReach ? <div ref={marker} aria-hidden="true" /> : null}
+    </div>
+  );
+}

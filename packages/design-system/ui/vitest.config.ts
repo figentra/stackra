@@ -17,6 +17,9 @@ export default mergeConfig(
   defineConfig(
     withCoverage({
       test: {
+        // The first render of a real HeroUI component in jsdom is slow beside the other members' suites on a shared
+        // runner, and then runs past the 5000 ms default; the same test takes well under a second alone.
+        testTimeout: 30_000,
         include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
         exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],
       },

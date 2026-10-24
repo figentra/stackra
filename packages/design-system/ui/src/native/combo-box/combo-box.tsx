@@ -28,6 +28,7 @@ import {
 } from "heroui-native";
 import { useState } from "react";
 import { FlatList } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ComboBoxContractProps } from "#contracts/types/combo-box-contract-props.type";
 import type { SelectItem } from "#contracts/types/select-item.type";
@@ -118,6 +119,8 @@ export function ComboBox({
   className,
   ...rest
 }: ComboBoxProps) {
+  // Owner decision 2026-10-24: every native sheet is HeroUI Native's inset style, detached and clear of the home bar.
+  const insets = useSafeAreaInsets();
   const [ownText, setOwnText] = useState("");
   const text = inputValue ?? ownText;
   const isMultiple = selectionMode === "multiple";
@@ -176,7 +179,13 @@ export function ComboBox({
       ) : null}
       <HeroSelect.Portal>
         <HeroSelect.Overlay />
-        <HeroSelect.Content presentation="bottom-sheet">
+        <HeroSelect.Content
+          presentation="bottom-sheet"
+          detached
+          bottomInset={insets.bottom + 12}
+          className="mx-4"
+          backgroundClassName="rounded-4xl"
+        >
           {label ? <HeroSelect.ListLabel>{label}</HeroSelect.ListLabel> : null}
           <SearchField value={text} onChange={setText}>
             <SearchField.Group>
