@@ -30,7 +30,9 @@ export default defineConfig({
   webServer: {
     // vite itself, not through pnpm: Playwright stops the server it started, and a pnpm wrapper leaves vite running.
     // The tests start only once the URL answers, so a cold server is waited for, not retried.
-    command: `vite build && vite preview --port ${PORT} --strictPort`,
+    // NODE_ENV is set for the build: mise.toml exports "development" to every `mise exec`, which would otherwise make
+    // this a development build, with the dev JSX runtime and the stack traces that the tests say a production build hides.
+    command: `NODE_ENV=production vite build && vite preview --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !isCi,
     timeout: 120_000,

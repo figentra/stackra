@@ -20,7 +20,27 @@ export type HomeStackParamList = {
 export type SettingsStackParamList = {
   /** The Settings screen; takes no params. */
   Settings: undefined;
+  /** The design-system index, with the display switchers; deep link `stackra://design-system`. */
+  DesignSystem: undefined;
+  /** The ProgressButton page; deep link `stackra://design-system/pro/progress-button`. */
+  ProProgressButton: undefined;
+  /** The SlideButton page; deep link `stackra://design-system/pro/slide-button`. */
+  ProSlideButton: undefined;
+  /** The SwipeableRow page; deep link `stackra://design-system/pro/swipeable-row`. */
+  ProSwipeableRow: undefined;
+  /** The Calendar page; deep link `stackra://design-system/pro/calendar`. */
+  ProCalendar: undefined;
+  /** The DatePicker page; deep link `stackra://design-system/pro/date-picker`. */
+  ProDatePicker: undefined;
+  /** The NumberField page; deep link `stackra://design-system/pro/number-field`. */
+  ProNumberField: undefined;
 };
+
+/** The routes that show one design-system component: every Settings route except the settings and the index. */
+export type DesignSystemComponentRoute = Exclude<
+  keyof SettingsStackParamList,
+  "Settings" | "DesignSystem"
+>;
 
 /** The tab routes; each tab holds the stack of its own screens. */
 export type TabParamList = {

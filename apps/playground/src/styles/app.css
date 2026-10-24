@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@heroui/styles";
+@import "@heroui-pro/react/css";
 @import "@stackra/tokens/fonts/fonts.css";
 @import "@stackra/tokens/themes/stackra/web.css";
 
@@ -16,4 +17,56 @@ body {
 
 :root:lang(ar) body {
   font-family: var(--font-arabic);
+}
+
+/* Headings in the theme's type scale (`--h1` is a `font` shorthand); an Arabic document takes the `-ar` styles. */
+.type-h1 {
+  font: var(--h1);
+  letter-spacing: var(--h1-letter-spacing);
+}
+
+.type-h2 {
+  font: var(--h2);
+  letter-spacing: var(--h2-letter-spacing);
+}
+
+.type-h3 {
+  font: var(--h3);
+  letter-spacing: var(--h3-letter-spacing);
+}
+
+:root:lang(ar) .type-h1 {
+  font: var(--h1-ar);
+  letter-spacing: var(--h1-ar-letter-spacing);
+}
+
+:root:lang(ar) .type-h2 {
+  font: var(--h2-ar);
+  letter-spacing: var(--h2-ar-letter-spacing);
+}
+
+:root:lang(ar) .type-h3 {
+  font: var(--h3-ar);
+  letter-spacing: var(--h3-ar-letter-spacing);
+}
+
+/* A frame for the Pro shells (Sidebar, AppLayout): HeroUI Pro sizes them to the viewport (svh, dvh), so inside the
+   frame they are sized to it instead. The Pro stylesheet is unlayered, so this wins by selector weight. */
+.demo-frame {
+  height: 32rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 2);
+}
+
+.demo-frame .sidebar__provider,
+.demo-frame [data-app-layout] {
+  height: 100%;
+  min-height: 0;
+}
+
+.demo-frame .sidebar,
+.demo-frame .app-layout__aside,
+.demo-frame [data-app-layout][data-scroll-mode="content"] {
+  height: 100%;
 }

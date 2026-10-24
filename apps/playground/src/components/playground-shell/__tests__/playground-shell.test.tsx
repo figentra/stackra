@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: proves the playground shell takes the colour scheme and locale from the URL, applies them through the
  *          DesignSystemProvider, writes a switch back to the URL, marks the selected choice beyond its fill, keeps
- *          theme-color in step, declares its UI English, moves focus to the h1 on navigation, groups its navigation by category, and draws its landmarks.
+ *          theme-color in step, declares its UI English, moves focus to the h1 on navigation, groups its navigation by category with the Pro pages
+ *          last, and draws its landmarks, leaving out `main` for a page that draws its own.
  * Boundary: a memory router in jsdom with a stubbed matchMedia; no network.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0022 (test placement).
@@ -20,11 +21,18 @@ function renderShell(url: string) {
     [
       {
         element: (
-          <PlaygroundShell pages={[{ path: "/a", title: "Page A", category: "Foundations" }]} />
+          <PlaygroundShell
+            pages={[
+              { path: "/a", title: "Page A", category: "Foundations" },
+              { path: "/b", title: "Page B", category: "Pro" },
+              { path: "/c", title: "Page C", category: "Pro", ownsMain: true },
+            ]}
+          />
         ),
         children: [
           { path: "/", element: <h1>Child page</h1> },
           { path: "/a", element: <h1>Page A</h1> },
+          { path: "/c", element: <h1>Page C</h1> },
         ],
       },
     ],
@@ -115,11 +123,27 @@ describe("PlaygroundShell", () => {
     expect(navigation.queryByRole("list", { name: "Typography" })).toBeNull();
   });
 
+  it("lists the Pro pages last, under their category", () => {
+    renderShell("/");
+    const lists = screen.getByRole("navigation", { name: "Pages" }).querySelectorAll("ul");
+    expect([...lists].map((list) => list.getAttribute("aria-label"))).toEqual([
+      "Foundations",
+      "Pro",
+    ]);
+    expect(screen.getByRole("list", { name: "Pro" }).textContent).toBe("Page BPage C");
+  });
+
   it("draws the banner, navigation and main landmarks around the page", () => {
     renderShell("/");
     expect(screen.getByRole("banner")).toBeTruthy();
     expect(screen.getByRole("navigation", { name: "Pages" })).toBeTruthy();
     expect(screen.getByRole("toolbar", { name: "Display settings" })).toBeTruthy();
     expect(screen.getByRole("main").textContent).toBe("Child page");
+  });
+
+  it("adds no main landmark for a page that draws its own, keeping the skip target", () => {
+    renderShell("/c");
+    expect(screen.queryByRole("main")).toBeNull();
+    expect(document.getElementById("main")?.textContent).toBe("Page C");
   });
 });

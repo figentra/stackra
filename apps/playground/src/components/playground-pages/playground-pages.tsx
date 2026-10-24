@@ -40,13 +40,21 @@ function byFolder(files: Readonly<Record<string, ModuleExports>>, pattern: RegEx
   return folders;
 }
 
-/** The route class a route module exports: the one export that carries a string `path`, `title` and `category`. */
+/**
+ * The route class a route module exports: the one export that carries a string `path`, `title` and `category`, and
+ * `ownsMain` when it is `true`.
+ */
 function routeOf(exports: ModuleExports): PageLink | undefined {
   for (const value of Object.values(exports)) {
     if (typeof value !== "function") continue;
-    const { path, title, category } = value as unknown as Record<string, unknown>;
+    const { path, title, category, ownsMain } = value as unknown as Record<string, unknown>;
     if (typeof path === "string" && typeof title === "string" && typeof category === "string")
-      return { path, title, category: category as PageCategory };
+      return {
+        path,
+        title,
+        category: category as PageCategory,
+        ...(ownsMain === true && { ownsMain }),
+      };
   }
   return undefined;
 }

@@ -14,6 +14,21 @@
       "port": 3710
     },
     {
+      "name": "mobile",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@figentra/mobile",
+        "exec",
+        "expo",
+        "start",
+        "--dev-client",
+        "--port",
+        "8081"
+      ],
+      "port": 8081
+    },
+    {
       "name": "worker-static",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@figentra/worker-static", "dev"],

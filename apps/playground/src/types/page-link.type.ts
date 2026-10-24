@@ -17,4 +17,6 @@ export interface PageLink {
   readonly title: string;
   /** The category the page is listed under, in the navigation and on the index. */
   readonly category: PageCategory;
+  /** Whether the page draws its own `main` landmark (the Pro AppLayout does); the shell then adds none, so a page has one. */
+  readonly ownsMain?: boolean;
 }

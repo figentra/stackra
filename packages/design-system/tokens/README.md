@@ -114,6 +114,11 @@ the oklch values, so it holds. Stackra has **no accent colour**: every accent ro
 ink). Steel colours the wordmark and the st tile only. The kit predates HeroUI's `segment` role, so the theme aliases it
 to white in light and graphite-700 in dark.
 
+One documented deviation from the kit: the light `--muted` (and so `--field-placeholder`) is `oklch(0.49 0.01 250)`, not the
+kit's `oklch(0.5 0.01 250)`, so muted text keeps 4.5:1 on tinted surfaces such as soft chips (owner decision 2026-10-23,
+STA-403). The kit's resolved and contrast reports carry the new value and ratios, recomputed with `oklchToHex` and
+`contrastRatio`.
+
 The logos, marks, icons and other brand assets moved to the docs app (`apps/docs/src/assets/brand/`), all rights
 reserved under their `NOTICE` (ADR 0024). The fonts keep their SIL Open Font License, whose texts sit beside them.
 

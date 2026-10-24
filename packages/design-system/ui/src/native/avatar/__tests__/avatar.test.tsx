@@ -67,6 +67,7 @@ vi.mock("#native/design-system-provider/use-design-system", () => ({
 }));
 
 const propsOf = (name: string) => received.props[name] ?? {};
+const onLayout = () => undefined;
 
 describe("Avatar (native)", () => {
   beforeEach(() => {
@@ -164,7 +165,6 @@ describe("Avatar (native)", () => {
   });
 
   it("passes the root's own props through", () => {
-    const onLayout = () => undefined;
     render(
       <Avatar
         animation="disable-all"

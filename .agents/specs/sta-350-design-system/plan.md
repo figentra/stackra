@@ -98,6 +98,22 @@ switcher and is covered by Playwright and axe. `@stackra/brand` is deleted; its 
 - **P-051**: A Checkbox, CheckboxGroup, RadioGroup and Switch keep their own state, show `value` when controlled, tie a group's description and error to the group, and refuse input when disabled or read-only, with every sample shown — Validates: FR-082, FR-083, FR-084, FR-085, FR-086, FR-087, FR-088, FR-089
 - **P-052**: A Label names its control, a Description's id is the one a control names it by, a FieldError follows the field's validity, and a Form hands its validation errors to the fields in it — Validates: FR-090, FR-091, FR-092, FR-093, FR-094
 - **P-053**: The native provider sets the colour scheme React Native's `Appearance` follows, and releases it for `system` — Validates: FR-095
+- **P-054**: A side and an alignment give React Aria a placement it accepts and HeroUI Native a physical side that follows the reading direction — Validates: FR-097
+- **P-055**: Every tone has a default icon, and only warning and danger are announced at once — Validates: FR-096
+- **P-056**: A Modal and a Drawer open from a trigger or by state, are named by their title, dismiss by Escape and a press outside unless told not to, and return focus on close, with every size and placement shown — Validates: FR-098, FR-099, FR-100, FR-101
+- **P-057**: An AlertDialog asks one decision with focus on the safe button, useConfirmation answers it with a promise, and LeaveConfirmation asks before unsaved work is lost — Validates: FR-102, FR-103, FR-104, FR-105
+- **P-058**: A Menu and an ActionMenu list grouped actions, scope selection to a section, call the action's handler and name their trigger — Validates: FR-106, FR-107, FR-108, FR-109
+- **P-059**: A Popover places its content by side and alignment and closes as told, and a Tooltip describes the element and never names it — Validates: FR-110, FR-111
+- **P-060**: An Alert and a toast announce by tone, show the tone's icon and offer their actions, with every tone shown — Validates: FR-112, FR-113, FR-114, FR-115, FR-116
+- **P-061**: A ProgressBar and a ProgressCircle are named, determinate or indeterminate by their value, and still under reduced motion — Validates: FR-117, FR-118, FR-119, FR-120
+- **P-062**: A collection takes items, an empty state and a loading flag, reports its selection as a list of string ids and a sort as a column and a direction — Validates: FR-121
+- **P-063**: A selection becomes ids in the items' order, and a press on a column moves its sort from none to ascending to descending — Validates: FR-122
+- **P-064**: A List shows rows, its empty state only when empty and nothing loads, reports its selection as ids and asks for more at its end — Validates: FR-126, FR-127, FR-128, FR-129, FR-130
+- **P-065**: A Table is named, sorts by a column and a direction, selects rows and loads more — Validates: FR-123, FR-124, FR-125
+- **P-066**: A PropertyList shows labelled values, an empty value for a missing one, and copies on request — Validates: FR-131, FR-132, FR-133, FR-134
+- **P-067**: Tabs and an Accordion select and expand by ids and follow the reading direction — Validates: FR-135, FR-136, FR-137, FR-138, FR-139, FR-140
+- **P-068**: Cursor pagination and breadcrumbs navigate, refuse a press while loading and mirror in right-to-left — Validates: FR-141, FR-142, FR-143, FR-144, FR-145, FR-146
+- **P-069**: An empty state, an error state and a page skeleton are named, announce as they should and carry no copy of their own — Validates: FR-147, FR-148, FR-149, FR-150, FR-151
 
 ## Contracts and events
 

@@ -5,10 +5,12 @@
  *          the @stackra/ui DesignSystemProvider, and draws the header with the display switcher, the page navigation
  *          (grouped by category) and the outlet. The UI is English (`lang="en"`) while `<html>` carries the chosen locale and direction,
  *          so the layout mirrors as the locale's would. On a client-side route change it moves focus to the new
- *          page's h1, and it keeps the browser's theme-color in step with the scheme on screen.
+ *          page's h1, and it keeps the browser's theme-color in step with the scheme on screen. A page that draws its own
+ *          `main` (`ownsMain`, the Pro AppLayout) is hosted in a plain element, since a page has one `main` landmark.
  * Boundary: layout and the switcher only; the pages come from the route folders.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 5); ADR 0165 (web client stack); ADR 0060 (light, dark, RTL).
+ * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0165 (web client stack); ADR 0060 (light,
+ *          dark, RTL).
  */
 import { STACKRA_THEME } from "@stackra/tokens";
 import { ColorScheme } from "@stackra/ui/contracts";
@@ -144,7 +146,7 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
 
   // A client-side navigation announces nothing, so focus moves to the new page's h1; the first load keeps the
   // browser's own focus.
-  const main = useRef<HTMLElement>(null);
+  const main = useRef<HTMLDivElement>(null);
   const shownPath = useRef(pathname);
   useEffect(() => {
     if (shownPath.current === pathname) return;
@@ -153,6 +155,9 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
     heading?.setAttribute("tabindex", "-1");
     (heading ?? main.current)?.focus();
   }, [pathname]);
+
+  const ownsMain = pages.some((page) => page.path === pathname && page.ownsMain);
+  const outlet = <Outlet />;
 
   return (
     <RouterProvider navigate={navigate} useHref={useHref}>
@@ -179,9 +184,15 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
             <nav aria-label={STRINGS.pages} className="border-border p-4 md:border-e">
               <PageList pages={pages} search={search} />
             </nav>
-            <main ref={main} id="main" tabIndex={-1} className="min-w-0 p-6">
-              <Outlet />
-            </main>
+            {ownsMain ? (
+              <div ref={main} id="main" tabIndex={-1} className="min-w-0 p-6">
+                {outlet}
+              </div>
+            ) : (
+              <main ref={main} id="main" tabIndex={-1} className="min-w-0 p-6">
+                {outlet}
+              </main>
+            )}
           </div>
         </div>
       </DesignSystemProvider>

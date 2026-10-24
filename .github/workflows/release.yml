@@ -65,8 +65,12 @@ jobs:
         with:
           install_args: node pnpm
 
+      # The licensed Pro postinstalls (ADR 0310) fail without their CI tokens, which only the Quality Gate reads, so
+      # this job skips the three members that pull them in; none of them is published or deployed here.
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: >-
+          pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'
+          --filter='!@stackra/ui-pro'
 
       # ADR 0025 / 0119 D7: automation prepares, the owner decides. With pending changesets this opens or updates the
       # "chore(release): version packages" PR (`pnpm changeset:version` also refreshes the lockfile); Claude prepares
@@ -74,8 +78,10 @@ jobs:
       # (`privatePackages: { version: false, tag: false }`). On the merge run `changeset publish` (pnpm native publish) (after the Build step
       # above, which produces each dist) publishes every package with "private": false to npmjs
       # with provenance and tags it; the action pushes the tags and creates the GitHub releases.
+      # Only what is published: the packages. The private HeroUI Pro wrapper (ADR 0310) and the apps need the HeroUI
+      # Pro build, which this job never downloads; none of them is published.
       - name: Build
-        run: pnpm build
+        run: pnpm turbo run build --filter='./packages/**' --filter='!@stackra/ui-pro'
 
       - name: Publish dry run
         if: inputs.dry_run == true
@@ -116,8 +122,12 @@ jobs:
         with:
           install_args: node pnpm
 
+      # The licensed Pro postinstalls (ADR 0310) fail without their CI tokens, which only the Quality Gate reads, so
+      # this job skips the three members that pull them in; none of them is published or deployed here.
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: >-
+          pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'
+          --filter='!@stackra/ui-pro'
 
       # SBOM covers what actually got installed (node_modules), independent of whether this
       # run released. `--ignore-npm-errors` is required because cyclonedx-npm shells out to

@@ -410,7 +410,10 @@
               "adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards",
               "adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks",
               "adr/0309-icons-declarations-name-an-icon-and-the-platform-resolves-it",
+              "adr/0310-stackra-ui-pro-private-heroui-pro-wrappers",
               "adr/0311-stackra-ui-wave-3-fields-props-vocabulary",
+              "adr/0312-stackra-ui-wave-4-overlays-and-feedback-props-vocabulary",
+              "adr/0313-stackra-ui-wave-5-data-primitives-props-vocabulary",
               "adr/0314-postgis-approved-geospatial-field-and-macros",
               "adr/0315-realtime-live-queries-and-streams",
               "adr/0316-open-core-distribution"
