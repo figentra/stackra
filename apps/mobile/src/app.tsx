@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: the root component: gesture handling, safe-area insets, the Stackra design system provider (HeroUI
  *          Native, colour scheme and direction) and the navigation container, with the theme bridged from the
- *          Stackra brand colours. The review area's icons are its own (`components/ui/review-icons.tsx`), so a
- *          release build ships none of them.
+ *          Stackra brand colours. The review area's icon registry is its own (`components/ui/review-icons.tsx`), so a
+ *          release build drops it.
  * Boundary: composes the providers and the navigator; owns no screen and no data.
  * Runtime: react-native
  * Governing contract: ADR 0007 (documentation).

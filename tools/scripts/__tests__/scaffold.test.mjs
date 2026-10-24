@@ -268,12 +268,16 @@ test("apps come out in the v3 shape: config, root module, route folders, config 
     for (const retired of [
       "src/screens/",
       "src/components/ui/",
-      // Content never sits on glass (the owner's decision, 2026-10-24); the native header and tabs carry it.
+      // Content never sits on glass (STA-457); the native header and tabs carry it.
       "src/components/glass/",
       "src/routes.tsx",
       "src/styles.css",
     ])
       assert.ok(!files.some((f) => f.startsWith(retired)), `${kind}: ${retired}`);
+    // No glass panel means no blur and no glass view in the app's own dependencies (STA-457).
+    const { dependencies = {} } = json(dest, "package.json");
+    for (const glass of ["expo-blur", "expo-glass-effect"])
+      assert.ok(!(glass in dependencies), `${kind}: ${glass}`);
     // Beside the root module, src/ holds only the stand-ins gen replaces; the entry is marked (ADR 0294 d14).
     const STAND_INS = ["src/main.ts", "src/main.tsx", "src/app.tsx", "src/window-options.ts"];
     for (const f of files.filter((f) => /^src\/[^/]+(?<!\.d)\.tsx?$/.test(f)))

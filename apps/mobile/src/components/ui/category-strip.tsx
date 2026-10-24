@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the page navigation above a design-system page, the native twin of the web playground's `category-nav`:
- *          a glass strip with a pill back to every component and the pages of the current page's category as pills,
+ *          a solid strip with a pill back to every component and the pages of the current page's category as pills,
  *          the current one marked (selected to assistive technology, the accent fill and a dot, so not by colour
  *          alone). It scrolls sideways and brings the current pill into view.
  * Boundary: presses only; the caller navigates.

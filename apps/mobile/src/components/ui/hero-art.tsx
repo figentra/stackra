@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the design-system landing's hero stage, the native twin of the web playground's `hero-art`: the beam-S
  *          wordmark at full width, echoed above and below as hairline outlines, a soft glow behind it and the brand's
- *          graph lines across it, with thin glass tiles of the system's parts (the st tile, a switch, the faces, a
+ *          graph lines across it, with solid tiles of the system's parts (the st tile, a switch, the faces, a
  *          check, an avatar group) floating on them. The tiles settle in once; nothing moves after, and nothing moves
  *          under reduced motion (Reanimated's system setting). The phone set: the web's wide-screen-only tiles are
  *          left out, as the web leaves them out on a phone.

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the previous and next pages at the foot of a design-system page, the native twin of the web playground's
- *          `page-pager`: in gallery order across every category, as two glass cards, so a reviewer walks the whole
+ *          `page-pager`: in gallery order across every category, as two solid cards, so a reviewer walks the whole
  *          system without going back to the gallery. A card settles a little under the finger, unless motion is
  *          reduced.
  * Boundary: presses only; the caller navigates. The first page has no previous, the last no next.

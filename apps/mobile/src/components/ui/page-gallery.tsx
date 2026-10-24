@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the design-system landing's gallery, the native twin of the web playground's `page-gallery`: an All / Free
- *          / Pro filter, then one glass panel per category (in `ComponentCategory` order), each with its brand glyph,
+ *          / Pro filter, then one solid panel per category (in `ComponentCategory` order), each with its brand glyph,
  *          its name, its page count and a line on what it holds, listing its pages as rows (a monogram, the title, a
  *          "Pro" badge on Pro pages and a chevron), Free pages first.
  * Boundary: layout, the filter and the row presses only; the pages come in gallery order from the caller, which also

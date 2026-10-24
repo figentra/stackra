@@ -33,7 +33,7 @@ src/
 │   ├── design-system-components.ts     the one list (category, tier, title, route, screen) the index and stack read
 │   ├── free/<name>-screen.tsx          one review page per @stackra/ui/native component (tier Free)
 │   └── pro/<name>-screen.tsx           one review page per @stackra/ui-pro/native component (tier Pro, badged)
-└── components/ui/             Screen (scroll container), Glass (GlassView with fallback), Section, Sample, ChoiceGroup,
+└── components/ui/             Screen (scroll container), Section, Sample, ChoiceGroup, ReviewIcons (the review area's icons),
                                CalendarParts, useInsetSheet (HeroUI inset bottom-sheet props)
 ```
 

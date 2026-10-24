@@ -17,7 +17,7 @@ export function HomeScreen() {
   const navigation = useNavigation();
   return (
     <Screen>
-      {/* Content sits on a solid card: glass is for controls and navigation (the owner's decision, 2026-10-24). */}
+      {/* Content sits on a solid card: glass is for controls and navigation (STA-457). */}
       <Card>
         <Card.Body>
           <Card.Title>Welcome to Stackra</Card.Title>
