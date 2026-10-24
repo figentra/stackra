@@ -25,17 +25,17 @@ back as one. The owner settled both in the final structure review of 2026-10-24.
    a trait that owns data, and `*able` for a capability that other code acts on. Each trait is exported by the
    package that owns its behaviour, and that owner is recorded in the trait registry of `@stackra/model`.
 
-2. **The inventory.** These are the model traits of this inventory, each with its owner. A trait of the 0096 table that this list does not name stands under the note on 0096 until the owner decides it.
+2. **The inventory.** These are the model traits of this inventory, each with the owner decided in the final structure review of 2026-10-24. A trait of the 0096 table that this list does not name stands under the note on 0096 until the owner decides it.
 
    | Trait                | What it adds                                                                                                                                                                                                                                          | Owning package           |
    | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
    | `HasPublicId`        | The prefixed public id, typed `PublicId<"ord">`, in place of the database id                                                                                                                                                                          | `@stackra/model`         |
    | `BelongsToTenant`    | The `tenant_id` column with row-level security. It replaces `HasTenant` of [0096](/adr/0096-trait-naming-grammar), the same trait under the owner's name ([0323](/adr/0323-tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port)) | `@stackra/tenancy`       |
-   | `Timestamps`         | Created and updated times                                                                                                                                                                                                                             | `@stackra/model`         |
+   | `HasTimestamps`      | Created and updated times                                                                                                                                                                                                                             | `@stackra/model`         |
    | `HasUserStamps`      | Created-by and updated-by user references ([0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events))                                                                                                                      | `@stackra/model`         |
    | `SoftDeletes`        | The soft delete policy ([0134](/adr/0134-data-invariants-classification-and-delete-lifecycle))                                                                                                                                                        | `@stackra/database`      |
    | `Archivable`         | The archive delete policy                                                                                                                                                                                                                             | `@stackra/database`      |
-   | `Versioned`          | A row version for optimistic concurrency                                                                                                                                                                                                              | `@stackra/database`      |
+   | `Versionable`        | A row version for optimistic concurrency                                                                                                                                                                                                              | `@stackra/database`      |
    | `HasRevisions`       | Draft and published revisions ([0116](/adr/0116-content-types-and-custom-fields))                                                                                                                                                                     | `@stackra/content`       |
    | `AppendOnly`         | Rows are inserted and never updated or deleted                                                                                                                                                                                                        | `@stackra/database`      |
    | `Translatable`       | Per-locale field values and their fallback chain ([0162](/adr/0162-validation-translatable-fields-and-entityschema-placement))                                                                                                                        | `@stackra/model`         |
@@ -52,11 +52,12 @@ back as one. The owner settled both in the final structure review of 2026-10-24.
    | `HasTree`            | A hierarchy stored as an `ltree` path ([0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions))                                                                                                                                     | `@stackra/database`      |
    | `Effective`          | A `valid_from` and `valid_until` window                                                                                                                                                                                                               | `@stackra/database`      |
    | `HasLocation`        | The location column and types, as ADR 0314 defines them                                                                                                                                                                                               | named by ADR 0314        |
-   | `Schedulable`        | A future revision that is applied at its time (decision 6)                                                                                                                                                                                            | `@stackra/scheduler`     |
+   | `Schedulable`        | A future revision of a record, with its preview, rollback and campaigns (decision 6)                                                                                                                                                                  | `@stackra/content`       |
 
-3. **Four names do not take a grammar form of 0096.** `Timestamps`, `Versioned`, `AppendOnly` and `Effective` keep
-   the names that the inventory gives them. `SoftDeletes` stays by 0096 decision 3. A rename is a later decision,
-   and it changes this table and the trait registry together.
+3. **Four names do not take a grammar form of 0096.** `AppendOnly`, `Effective`, `BelongsToTenant` and `SoftDeletes`
+   keep the names that the inventory gives them. `SoftDeletes` is the exception that 0096 decision 3 keeps for
+   recognition. `BelongsToTenant` is the owner's name for `HasTenant` (0323). A rename is a later decision, and it
+   changes this table and the trait registry together.
 
 4. **Seven traits are new to the list.**
    - `HasMetadata` adds `metadata jsonb not null default '{}'`. Its keys are strings, and a record holds at most
@@ -88,11 +89,11 @@ back as one. The owner settled both in the final structure review of 2026-10-24.
    - **Decorators.** `@Auditable`, `@Searchable` and `@AccessLogged` carry metadata only. They are not traits and do
      not appear in the inventory.
 
-6. **Schedulable.** A scheduled update is a future revision of a record, built on `HasRevisions`. `@stackra/scheduler`
-   applies the revision at its time, as a tenant schedule of [0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules)
-   decision 5. It is not a recurring `@Cron` job, which [0078](/adr/0078-messaging-layer-eight-packages) decision 6
-   keeps for recurring work. A scheduled update can be previewed and rolled back. A campaign groups several scheduled
-   updates. `Effective` stays for validity windows, which are a different thing. `Schedulable` is built after the
+6. **Schedulable.** A scheduled update is a future revision of a record, built on `HasRevisions`. `@stackra/content` owns
+   the trait and its logic: the future revision, its preview, its rollback, and the campaigns that group several scheduled
+   updates. `@stackra/scheduler` only fires the update at its time, as a tenant schedule of [0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules)
+   decision 5. It is not a recurring `@Cron` job, which [0078](/adr/0078-messaging-layer-eight-packages) decision 6 keeps for
+   recurring work. `Effective` stays for validity windows, which are a different thing. `Schedulable` is built after the
    core data packages.
 
 ## Consequences

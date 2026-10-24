@@ -1,7 +1,12 @@
 ---
 title: "0097 — @stackra/model and @stackra/database; gen emits MikroORM EntitySchema"
-description: "Accepted, amended by 0133, 0159, 0161, 0162 · 2026-10-19"
+description: "Accepted, amended by 0133, 0159, 0161, 0162, 0328 · 2026-10-19"
 ---
+
+<Note>
+  Amended 2026-10-24 by [0328](/adr/0328-value-classes-are-built-with-create-and-containers-are-never-constructed): a model is built in code with the static `create({...})` that
+  `@stackra/model` provides on its base class, and not with `new`. The other decisions stand.
+</Note>
 
 <Note>
   Amended by [0238](/adr/0238-database-and-connection-model): the database and connection model.

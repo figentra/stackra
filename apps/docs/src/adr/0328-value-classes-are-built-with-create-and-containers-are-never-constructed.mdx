@@ -1,0 +1,75 @@
+---
+title: "0328 — Value classes are built with create(); container classes are never constructed by hand"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends, by Notes on [0095](/adr/0095-zod-inside-field-decorators),
+  [0097](/adr/0097-model-and-database-packages), [0140](/adr/0140-error-envelope-and-error-kinds),
+  [0141](/adr/0141-integration-event-names-and-envelope),
+  [0223](/adr/0223-notifications-channels-cascading-templates-manual-sends-and-preferences) and
+  [0232](/adr/0232-stackra-errors-package), the construction form of their kinds. It also fixes the
+  meaning of `parse` (decision 6). Each of those pages carries a note that says so.
+</Note>
+
+## Context
+
+An author builds schemas (inputs, outputs and views), refusals, errors, events, notification data and models in code.
+The ADRs that define those kinds did not fix one form for building them. [0078](/adr/0078-messaging-layer-eight-packages)
+and [0141](/adr/0141-integration-event-names-and-envelope) named `create()` for domain events only, and
+[0095](/adr/0095-zod-inside-field-decorators), [0140](/adr/0140-error-envelope-and-error-kinds) and
+[0232](/adr/0232-stackra-errors-package) showed no form, or showed `X.parse`. The container vocabulary already uses
+`make` for resolution, and [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 23 gives
+each word one meaning, so `make` cannot also mean construction. The containers build the DI kinds, which gen wires from
+constructor parameter types ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 17,
+[0263](/adr/0263-di-stays-and-gen-writes-the-wiring)).
+
+## Decision
+
+1. **Value classes use `create()`.** Every class that an author builds in code is built with its static
+   `X.create({...})`. These classes are schemas (inputs, outputs and views), refusals and other errors, integration and
+   domain events, notification data and models.
+
+2. **`create()` is typed and validated.** `create()` types its argument from the class it is called on, and it runs the
+   generated validation. It returns a valid instance.
+
+3. **Where it lives.** The base classes provide `create()`: `Schema` in `@stackra/validation`; `Refusal` and the error
+   classes in `@stackra/errors`; events in `@stackra/events`; notification data in `@stackra/notifications`; and models in
+   `@stackra/model`.
+
+4. **`make` is not used.** No value class is built with a method named `make`. In container vocabulary `make` means
+   resolution, and [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 23 allows one
+   meaning per word.
+
+5. **Container classes are never constructed by an author.** Actions, queries, services, listeners, drivers, policies,
+   interceptors and the other DI kinds are wired by gen from their constructor parameter types. An author writes neither
+   `new` nor `create()` for them.
+
+6. **`parse` is the wire form, and `create()` is the code form.** `X.parse(input)` is the form for untrusted input at the
+   wire boundary, such as a request body or a message from outside the process. On invalid input it refuses with the
+   invalid-argument `Refusal`, which is the `ValidationError` of [0095](/adr/0095-zod-inside-field-decorators) and the `validation` kind of
+   [0140](/adr/0140-error-envelope-and-error-kinds). `X.create({...})` is the form for code, and it never reads untrusted input. On an invalid argument
+   it is a programming error: it throws an invariant error of the `internal` category of [0140](/adr/0140-error-envelope-and-error-kinds), and it is
+   never a `Refusal`. Each name has one meaning.
+
+## Consequences
+
+- An author has one construction form for values made in code, and the validation runs when the value is made.
+- A reader can tell from the call whether input came from outside (`parse`) or from the code (`create()`).
+- A reviewer sees no `new` of a service or an action in author code, because gen wires those.
+- A base class that does not yet provide `create()` is a gap for its package to close. It is not a licence to use `new`.
+- Tests may build values with factories, so the rule below does not reach them.
+
+## Enforcement
+
+- planned — an oxlint house rule, under [0129](/adr/0129-house-lint-plugin-and-coding-standard), that refuses `new` on a
+  class whose base provides `create()`. Tests may build values with factories instead. Nothing checks it today.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Notes: [0095](/adr/0095-zod-inside-field-decorators), [0097](/adr/0097-model-and-database-packages),
+[0140](/adr/0140-error-envelope-and-error-kinds), [0141](/adr/0141-integration-event-names-and-envelope),
+[0223](/adr/0223-notifications-channels-cascading-templates-manual-sends-and-preferences) and
+[0232](/adr/0232-stackra-errors-package). Builds on [0263](/adr/0263-di-stays-and-gen-writes-the-wiring) and
+[0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming).
+Sources: the owner's final structure review of 2026-10-24, restated in this ADR's own words.

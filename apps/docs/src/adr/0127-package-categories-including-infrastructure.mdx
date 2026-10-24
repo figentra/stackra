@@ -1,7 +1,21 @@
 ---
 title: "0127 — Package categories, including infrastructure and commerce"
-description: "Accepted, amended by 0282, 0286, 0294, 0302 · 2026-10-20 · amended 2026-10-24 (STA-348)"
+description: "Accepted, amended by 0282, 0286, 0294, 0302, 0327, 0331, 0332 · 2026-10-20 · amended 2026-10-24 (STA-348, STA-428)"
 ---
+
+<Note>
+  Amended 2026-10-24 by [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer)
+  and [0332](/adr/0332-stackra-segments-audiences-defined-by-rules): the `application` row gains
+  `rules` (`@stackra/rules`, the one condition engine) and `segments` (`@stackra/segments`,
+  audiences defined by rules). The other rows stand.
+</Note>
+
+<Note>
+  Amended 2026-10-24 by [0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer):
+  `@stackra/scope`, the free package that owns the scope tree, is in the `security` category. The
+  security row of the placement table is read with `scope` among identity, iam, tenancy,
+  entitlements and the others. The other rows stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-348), for the programming model v3.1 build-out, as

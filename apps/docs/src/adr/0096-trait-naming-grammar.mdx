@@ -45,8 +45,7 @@ Enforcement of this note: planned — STA-338 (the kind-path check for `database
   list of decision 4 gains the inventory of 0321, which names the owning package of each trait. Where the
   two differ, 0321 applies: `HasSeo` is owned by `@stackra/seo`, `Commentable` by
   `@stackra/collaboration` (0225) and `Translatable` by `@stackra/model` (0162). `Auditable`, `Searchable`
-  and `AccessLogged` are decorators and not traits. 0321 names `HasTimestamps` and `Versionable` as
-  `Timestamps` and `Versioned`. `BelongsToTenant` replaces `HasTenant`: the same trait, renamed, and
+  and `AccessLogged` are decorators and not traits. 0321 uses `HasTimestamps` and `Versionable`, the names that its table gives them. `BelongsToTenant` replaces `HasTenant`: the same trait, renamed, and
   exported by `@stackra/tenancy`. The rows that 0321 does not name (`AsTenant`, `AsSubject`, `HasSettings`,
   `Notifiable`, `Prunable`, `InteractsWithQueue` and `HasFactory`) stand until the owner decides them.
   Decisions 1 to 3 and 5 stand.
