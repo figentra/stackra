@@ -90,7 +90,7 @@ false, visionPro: true }` by default), written into the generated store checklis
    | now   | Kiosk launch mode (desktop kiosk window, Android lock task, ChromeOS web kiosk) and a customer display per till kind                  | the retail pilot runs every till kind (owner, 2026-10-24); the operating-system lock stays the operator's device-management job                          |
    | now   | Vision Pro compatible iPad app on; iPad app on Apple-silicon Macs off                                                                 | store availability settings, so the Electron Mac app is the Mac app                                                                                      |
    | next  | Remote Live Activity updates over push; Apple Watch companion; share and notification-service surfaces; App Intents and controls      | push transport gains the live-activity path; a product names a watch screen; the share and media-notification needs of the legal and retail products     |
-   | next  | Android AppFunctions; Windows MSIX and the Microsoft Store; Wallet passes                                                             | the AppFunctions library reaches a stable release; the Windows signing answer of decision 7; the first loyalty or ticket flow                            |
+   | next  | Android AppFunctions; Windows MSIX and the Microsoft Store; Wallet passes                                                             | the AppFunctions library reaches a stable release; a customer or channel asks for the Store; the first loyalty or ticket flow                            |
    | later | Mac App Store; Wear OS; tvOS and Android TV as their own member; App Clips; native visionOS; Android XR spatial; Android Auto         | a channel that requires the Mac store; the watch companion has shipped and a product asks; a lean-back deliverable; a walk-up QR flow; a spatial feature |
    | later | Flatpak and Snap; store wrappers for the PWA (Microsoft Store, Play trusted web activity); Telegram and WhatsApp surfaces (own ADR)   | a Linux customer asks; the cheapest store presence is wanted; a market launch names the channel                                                          |
    | no    | A native macOS app (react-native-macos, Mac Catalyst, a second iPad-on-Mac listing); react-native-windows; the visionOS fork          | a second desktop runtime against 0058 and 0249; each trails the mobile React Native line; revived when it tracks the mobile minor and a need appears     |
@@ -99,11 +99,10 @@ false, visionPro: true }` by default), written into the generated store checklis
 
 7. **Desktop formats, signing and the Electron line.** macOS ships a disk image plus a zip archive and is signed and
    notarised from the first desktop release, because auto-update, the secure storage and the gatekeeper all need it;
-   this moves the signing of 0254 decision 1 and 0181 decision 5 forward for macOS. Windows ships an NSIS installer
-   for x64 and arm64; its signing path is an open owner question: Azure Artifact Signing public trust is available only
-   to organisations in listed countries, extended-validation certificates no longer help the reputation filter, and
-   if the signing entity does not qualify, the Microsoft Store (which signs MSIX) becomes the trusted Windows path in
-   the same tier. Azure authenticates from CI by federation over GitHub OIDC, never a client secret. Linux ships an
+   this moves the signing of 0254 decision 1 and 0181 decision 5 forward for macOS. Windows ships an NSIS installer for x64 and arm64, signed with Azure Artifact Signing public trust from the first
+   release (the signing entity is in an eligible country, owner answer of 2026-10-24), with CI authenticating by
+   federation over GitHub OIDC and never a client secret; extended-validation certificates buy nothing for the
+   reputation filter and are not bought. The Microsoft Store's MSIX stays a second Windows format at tier next. Linux ships an
    AppImage and a deb (the AppImage sandbox that 0251 requires is blocked on recent Ubuntu, so the deb is the install
    that keeps the baseline); this reads 0254 decision 2 as the Linux format only. Electron 45 is adopted under the
    four-week rule of 0254 decision 4, with its constraints: a self-contained preload, asynchronous secure storage, no
@@ -139,8 +138,8 @@ false, visionPro: true }` by default), written into the generated store checklis
   device-management policy, not Stackra, locks the device.
 - A new surface is one declaration (a placement, a shortcut, a share payload, a `tool: true`), and gen derives the
   rest; nobody lists bundle ids or extensions.
-- The Windows signing question must be answered before the first Windows release; macOS signing costs an Apple
-  developer account and the notarisation step from day one.
+- Both desktop platforms are signed from the first release: an Apple developer account with notarisation, and Azure
+  Artifact Signing with its federated identity, are day-one costs.
 - Every "no" and "later" row carries its trigger, so a platform request is answered by the table, not by a debate.
 
 ## Enforcement
@@ -164,14 +163,15 @@ false, visionPro: true }` by default), written into the generated store checklis
 - **Server-side channels as targets.** Not chosen: they have no runtime row of an app member and belong to the
   integration surfaces ADR.
 
-## Open questions
+## Open spikes
 
-1. **Windows signing.** The signing legal entity's country decides whether Azure Artifact Signing is available; the
-   owner answers, and the Microsoft Store path stands ready (decision 7).
-2. **The customer display on the iPad.** An external-display scene needs a second scene in the Expo app; whether the
-   current React Native line allows it is unconfirmed, and the Android and desktop displays do not wait for it.
-3. **Android widgets.** A spike decides between the widget library's Android path and the named fallback
-   ([0326](/adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets) as amended by this ADR).
+Two items are technical spikes, not owner decisions, and are tracked as Linear issues:
+
+1. **The customer display on the iPad (STA-475).** An external-display scene needs a second scene in the Expo app;
+   whether the current React Native line allows it is unconfirmed. The Android and desktop displays do not wait for it.
+2. **Android widgets (STA-476).** The spike decides between the widget library's Android path and the named fallback
+   ([0326](/adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets) as amended by
+   [0345](/adr/0345-native-code-generation-and-the-native-shared-layer)).
 
 ## Supersedes and sources
 
