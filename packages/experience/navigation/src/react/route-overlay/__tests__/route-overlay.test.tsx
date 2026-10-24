@@ -7,8 +7,9 @@
  *          sheet on a narrow window) for each presentation; refuses Escape while not dismissable and takes it back
  *          through `setDismissable`, while the close button stays; and shows the footer.
  * Boundary: jsdom with real HeroUI, React Aria and a React Router memory data router; the theme CSS is not loaded, so
- *           data attributes are checked, not looks, and focus return is the playground's e2e suite's. A role query
- *           finds nothing outside an open overlay (React Aria hides the page behind it), so each case holds what it
+ *           data attributes are checked, not looks; focus return after Escape is checked here, the rest is the
+ *           playground's e2e suite's. A role query finds nothing outside an open overlay (React Aria hides the page
+ *           behind it), so each case holds what it
  *           needs before it opens one.
  * Runtime: browser
  * Governing contract: ADR 0317 (decisions 2 and 9); ADR 0312; ADR 0022 (test placement); WCAG 2.2 SC 2.1.2 and 4.1.2.
@@ -118,6 +119,17 @@ describe("RouteOverlay (web)", () => {
     const router = build(["/orders/1/edit"]);
     fireEvent.keyDown(dialog(), { key: "Escape" });
     await waitFor(() => expect(where(router)).toBe("/orders/1"));
+  });
+
+  it("gives focus back to the link that opened it when Escape closes it", async () => {
+    const router = build(["/orders/1"]);
+    const opener = screen.getByRole("link", { name: "Edit" });
+    act(() => opener.focus());
+    act(() => opener.click());
+    await waitFor(() => expect(where(router)).toBe("/orders/1/edit"));
+    fireEvent.keyDown(dialog(), { key: "Escape" });
+    await waitFor(() => expect(where(router)).toBe("/orders/1"));
+    await waitFor(() => expect(document.activeElement).toBe(opener));
   });
 
   it("steps Back to where the opener was when the opener pushed the entry with returnTo", async () => {

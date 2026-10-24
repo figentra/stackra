@@ -147,7 +147,9 @@ export function DatePicker({
             <Calendar.NavButton slot="previous" className={MONTH_BUTTON_CLASS} />
             <Calendar.NavButton slot="next" className={MONTH_BUTTON_CLASS} />
           </Calendar.Header>
-          <Calendar.Grid>
+          {/* Narrow weekday names: HeroUI's short ones are whole words in Arabic and overflow its fixed-width grid.
+              A day is still read by its full date. */}
+          <Calendar.Grid weekdayStyle="narrow">
             <Calendar.GridHeader>
               {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
             </Calendar.GridHeader>

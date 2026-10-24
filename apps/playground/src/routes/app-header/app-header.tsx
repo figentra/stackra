@@ -51,7 +51,6 @@ const STRINGS = {
   profile: "Profile",
   settings: "Settings",
   signOut: "Sign out",
-  user: "Ada Lovelace",
   searchStatus: (query: string) =>
     query.trim() === "" ? "No search yet." : `Searching for “${query.trim()}”.`,
   unreadStatus: (unread: number) =>
@@ -65,7 +64,6 @@ const STRINGS = {
   arabicAccountLabel: "قائمة الحساب",
   arabicProfile: "الملف الشخصي",
   arabicSignOut: "تسجيل الخروج",
-  arabicUser: "منى السالم",
 } as const;
 
 /** The icons this page draws beyond the playground registry. */
@@ -123,19 +121,18 @@ const accountSections = (
 /** An avatar button that opens the account menu. */
 function UserMenu({
   label,
-  user,
   sections,
   onAction,
 }: {
   readonly label: string;
-  readonly user: string;
   readonly sections: readonly MenuSection[];
   readonly onAction?: (id: string) => void;
 }) {
   return (
     <Ui.Menu sections={sections} {...(onAction ? { onAction } : {})}>
       <Ui.Button variant="ghost" label={label}>
-        <Ui.Avatar name={user} size="sm" />
+        {/* An icon, not initials: initials are visible text that the menu's name does not hold (WCAG 2.5.3). */}
+        <Ui.Avatar size="sm" />
       </Ui.Button>
     </Ui.Menu>
   );
@@ -177,9 +174,7 @@ export function AppHeader() {
                 endContent={
                   <Ui.IconButton icon="bell" label={STRINGS.notifications(2)} variant="ghost" />
                 }
-                userMenu={
-                  <UserMenu label={STRINGS.accountLabel} user={STRINGS.user} sections={account} />
-                }
+                userMenu={<UserMenu label={STRINGS.accountLabel} sections={account} />}
               />
             </Sample>
             <Sample caption={STRINGS.titleOnly}>
@@ -205,17 +200,13 @@ export function AppHeader() {
                     isFullWidth
                   />
                 }
-                userMenu={
-                  <UserMenu label={STRINGS.accountLabel} user={STRINGS.user} sections={account} />
-                }
+                userMenu={<UserMenu label={STRINGS.accountLabel} sections={account} />}
               />
             </Sample>
             <Sample caption={STRINGS.long} className="max-w-sm">
               <Ui.AppHeader
                 title={STRINGS.longTitle}
-                userMenu={
-                  <UserMenu label={STRINGS.accountLabel} user={STRINGS.user} sections={account} />
-                }
+                userMenu={<UserMenu label={STRINGS.accountLabel} sections={account} />}
               />
             </Sample>
           </ul>
@@ -241,7 +232,6 @@ export function AppHeader() {
               userMenu={
                 <UserMenu
                   label={STRINGS.arabicAccountLabel}
-                  user={STRINGS.arabicUser}
                   sections={accountSections(STRINGS.arabicProfile, null, STRINGS.arabicSignOut)}
                 />
               }
@@ -274,7 +264,6 @@ export function AppHeader() {
                 userMenu={
                   <UserMenu
                     label={STRINGS.accountLabel}
-                    user={STRINGS.user}
                     sections={account}
                     onAction={(id) =>
                       setAction(

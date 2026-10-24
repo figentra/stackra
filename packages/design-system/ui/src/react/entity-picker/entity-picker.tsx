@@ -257,14 +257,14 @@ export function EntityPicker(props: EntityPickerProps) {
             <Tag key={option.id} id={option.id} textValue={option.label}>
               {option.label}
               {isDisabled || isReadOnly ? null : (
-                <>
-                  {/* React Aria names the button by its own "Remove" and the tag's text; the app's words already
-                      hold the record's name, so they replace both rather than repeat it. */}
-                  <Tag.RemoveButton aria-labelledby={`${labelId}-remove-${index}`} />
-                  <span id={`${labelId}-remove-${index}`} hidden>
-                    {removeLabel?.(option.label) ?? option.label}
-                  </span>
-                </>
+                // A direct child, or HeroUI's Tag adds a remove button of its own. It names itself by its
+                // `aria-label` alone: React Aria's `aria-labelledby` would add the tag's text, which the app's words
+                // already hold.
+                <Tag.RemoveButton
+                  id={`${labelId}-remove-${index}`}
+                  aria-label={removeLabel?.(option.label) ?? option.label}
+                  aria-labelledby={`${labelId}-remove-${index}`}
+                />
               )}
             </Tag>
           ))}

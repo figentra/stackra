@@ -6,8 +6,9 @@
  *          that opens an overlay through `ReactRouterProvider`, and a live example: edit a name, Save completes the
  *          route, and Cancel with unsaved changes asks through `RouteLeaveConfirmation` before it closes. A status
  *          line shows the current in-memory route. All from `@stackra/navigation/react` and `@stackra/ui/react`.
- * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. The memory router keeps the
- *           playground's own address bar and history untouched, and is created once per visit of the page. The page
+ * Boundary: presentation only; strings in one `STRINGS` constant until @stackra/i18n. The memory router runs in a React
+ *           root of its own (React Router refuses a router inside the playground's), keeps the playground's own
+ *           address bar and history untouched, and is created once per visit of the page. The page
  *           has the one `h1`; the workbench below it uses only section headings. Triggers navigate with
  *           `state.returnTo`, so closing steps Back; one link shows the plain `Link` seam. Every string and class here
  *           is a stand-in a real app replaces with its own routes.
@@ -18,7 +19,8 @@
 import type { OverlayPresentation, RouteOverlayState } from "@stackra/navigation/contracts";
 import * as Nav from "@stackra/navigation/react";
 import * as Ui from "@stackra/ui/react";
-import { useEffect, useState } from "react";
+import { StrictMode, useEffect, useRef, useState } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import {
   createMemoryRouter,
   Outlet,
@@ -29,6 +31,7 @@ import {
 } from "react-router";
 
 import { PageSection } from "#src/components/page-section";
+import { PlaygroundIcons } from "#src/components/playground-icons";
 import { RouteOverlayRoute } from "#src/routes/route-overlay/route-overlay.route";
 
 // shortcut: English strings in one place until @stackra/i18n ships; then `playground::route-overlay.*` keys.
@@ -309,11 +312,52 @@ const ROUTES = [
   },
 ];
 
+/** The workbench app: its in-memory router, made once for the life of the page so an open overlay survives a render. */
+function WorkbenchApp() {
+  const [router] = useState(() => createMemoryRouter(ROUTES, { initialEntries: ["/"] }));
+  return <RouterProvider router={router} />;
+}
+
+/**
+ * Hosts the workbench in a React root of its own. React Router refuses a router inside another, and the playground
+ * already runs one, so the workbench cannot sit in this tree; its root takes the page's scheme, locale and icons.
+ */
+function WorkbenchHost() {
+  const host = useRef<HTMLDivElement>(null);
+  const root = useRef<Root | null>(null);
+  const unmount = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const { colorScheme, locale, direction } = Ui.useDesignSystem();
+
+  useEffect(() => {
+    // A pending unmount from Strict Mode's rehearsal is called off, so the root is made once per container.
+    clearTimeout(unmount.current);
+    if (host.current) root.current ??= createRoot(host.current, { identifierPrefix: "workbench-" });
+    // Later, not now: React refuses to unmount one root synchronously while it commits another.
+    return () => {
+      unmount.current = setTimeout(() => {
+        root.current?.unmount();
+        root.current = null;
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    root.current?.render(
+      <StrictMode>
+        <PlaygroundIcons>
+          <Ui.DesignSystemProvider colorScheme={colorScheme} locale={locale} direction={direction}>
+            <WorkbenchApp />
+          </Ui.DesignSystemProvider>
+        </PlaygroundIcons>
+      </StrictMode>,
+    );
+  }, [colorScheme, locale, direction]);
+
+  return <div ref={host} />;
+}
+
 /** The Route overlay page. */
 export function RouteOverlay() {
-  // One router for the life of the page: a new one per render would drop the open overlay.
-  const [router] = useState(() => createMemoryRouter(ROUTES, { initialEntries: ["/"] }));
-
   return (
     <article className="grid gap-10">
       <title>{STRINGS.documentTitle}</title>
@@ -323,7 +367,7 @@ export function RouteOverlay() {
           <bdi>{STRINGS.intro}</bdi>
         </Ui.Text>
       </header>
-      <RouterProvider router={router} />
+      <WorkbenchHost />
     </article>
   );
 }

@@ -57,7 +57,9 @@ const STRINGS = {
 } as const;
 
 /** The box a layout sits in, so its edges show. */
-const BOX = "rounded-xl border border-border p-4";
+// `min-w-0` on every grid item between the page and the layout: a grid item grows to its content's min-content
+// otherwise, and the wide sample would widen the page instead of scrolling inside the column.
+const BOX = "min-w-0 rounded-xl border border-border p-4";
 
 /** A caption above the box a layout sits in. */
 function Sample({
@@ -70,7 +72,7 @@ function Sample({
   readonly sample: string;
 }) {
   return (
-    <div className="grid content-start gap-2">
+    <div className="grid min-w-0 content-start gap-2">
       <Ui.Text tone="muted" type="small">
         {caption}
       </Ui.Text>
@@ -86,7 +88,7 @@ export function SingleColumnLayout() {
   const [count, setCount] = useState(2);
 
   return (
-    <article className="grid gap-10">
+    <article className="grid grid-cols-[minmax(0,1fr)] gap-10">
       <title>{STRINGS.documentTitle}</title>
       <header className="grid gap-2">
         <Ui.Heading level={1}>{SingleColumnLayoutRoute.title}</Ui.Heading>

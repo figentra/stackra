@@ -96,12 +96,16 @@ function Entry({ item, isCompact }: EntryProps): ReactElement {
           "h-auto min-h-10 w-full justify-start gap-3 whitespace-normal rounded-xl px-3 py-2 text-start md:h-auto",
           // The current entry: a filled track, bold text and a bar at the start; the bar keeps it apart without colour.
           "data-[current=true]:font-semibold data-[current=true]:[--button-bg-hover:var(--default-hover)] data-[current=true]:[--button-bg-pressed:var(--default-hover)] data-[current=true]:[--button-bg:var(--default)]",
-          isPage
-            ? "before:absolute before:inset-y-2 before:start-0 before:w-1 before:rounded-full before:bg-accent"
-            : "",
         ) ?? ""
       }
     >
+      {isPage ? (
+        // An element, not a ::before: axe cannot measure the contrast of text whose ancestor draws a pseudo-element.
+        <span
+          aria-hidden="true"
+          className="absolute inset-y-2 start-0 w-1 rounded-full bg-accent"
+        />
+      ) : null}
       {item.icon === undefined ? (
         isCompact ? (
           // The rail has no room for the label, so an entry with no icon shows its first letter as a mark.
