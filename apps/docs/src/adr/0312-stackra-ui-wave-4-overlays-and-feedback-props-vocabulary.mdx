@@ -1,0 +1,84 @@
+---
+title: "0312 — @stackra/ui wave 4: the overlay and feedback props vocabulary"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0303](/adr/0303-stackra-ui-component-catalogue-decisions) (decision 7, the props
+  vocabulary), as [0304](/adr/0304-stackra-ui-wave-2-props-vocabulary) and
+  [0311](/adr/0311-stackra-ui-wave-3-fields-props-vocabulary) did for waves 2 and 3. 0303 carries a
+  note; its body is unchanged.
+</Note>
+
+## Context
+
+[0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 7 gave every component one props vocabulary, and
+0304 and 0311 extended it for waves 2 and 3. Wave 4 adds the overlays (Modal, Drawer, AlertDialog, Popover, Menu,
+Tooltip), the confirmation pieces built on them (`useConfirmation`, LeaveConfirmation, ActionMenu), the messages (Toast,
+Alert) and the progress indicators (ProgressBar, ProgressCircle). The overlays all open, close and dismiss, three of them
+anchor to a trigger, and the two messages carry a tone. The two runtimes disagree on each word: HeroUI Native calls the
+starting state `isDefaultOpen`, its sides `left` and `right`, and a dialog's backdrop dismissal `isCloseOnPress`; HeroUI
+for the web calls an Alert's tone `status` and a Toast's `variant`, and takes physical or logical sides as one
+space-separated string. An Accepted ADR's body changes only for typos and Enforcement, so the additions are recorded here.
+
+## Decision
+
+1. **The wave 4 vocabulary.** Decision 7 of 0303 stands; wave 4 adds these rows:
+
+   | Concept      | Prop                                                                                       | Type                                                                                                             | Used by                                                    | Runtime name left out of the type                                             |
+   | ------------ | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------- |
+   | Open state   | `isOpen`, `defaultOpen`, `onOpenChange`                                                    | `boolean`, `boolean`, `(isOpen: boolean) => void`                                                                | Modal, Drawer, AlertDialog, Popover, Menu, Tooltip         | native `isDefaultOpen`                                                        |
+   | Dismissal    | `isDismissable`, `isKeyboardDismissDisabled`                                               | `boolean` (`isDismissable` defaults to true), `boolean`                                                          | Modal, Drawer, AlertDialog, Popover                        | native `isCloseOnPress` and `closeOnPress`; the Escape key has no native twin |
+   | Placement    | `placement`, `align`                                                                       | `Placement` (`top`, `bottom`, `start`, `end`), `PlacementAlign` (`start`, `center`, `end`)                       | Popover, Tooltip, Menu; Drawer (`placement` only)          | web `left`, `right` and the space-separated string; native `left` and `right` |
+   | Message tone | `tone`, `icon`                                                                             | `Tone`, `IconSlot` or `false` (no icon)                                                                          | Alert, AlertDialog, Toast                                  | Alert and AlertDialog `status`, Toast `variant`                               |
+   | Progress     | `value`, `minValue`, `maxValue`, `label`, `valueLabel`, `isLabelVisible`, `isValueVisible` | `number` (left out means indeterminate), `number`, `number`, `string` (required), `string`, `boolean`, `boolean` | ProgressBar, ProgressCircle (the last two on the bar only) | HeroUI `isIndeterminate` and `aria-label`                                     |
+
+2. **Sides follow the reading direction.** `placement` is `Placement`, never a physical side, and `align` runs along the
+   edge that side leaves open (on a `start` or `end` side, `start` is the top). The web Popover, Tooltip and Menu turn the
+   pair into React Aria's placement string. The native ones turn `start` and `end` into physical sides by text
+   direction. The web Drawer does not: HeroUI lays its `left` and `right` edges out with flexbox, so they already
+   mean start and end, and a direction-based mapping would flip twice in right-to-left. It maps `start` to `left` and
+   `end` to `right` as a fixed table. Each is one pure function in `core/` shared by the whole
+   group. Among the overlays the word `placement` is reserved for `Placement`: the Drawer's edge takes it, defaulting to
+   `end`, and the two other things HeroUI calls `placement`, the Modal's vertical place (`auto`, `top`, `center`,
+   `bottom`) and the Toast region's side (`top`, `bottom`), take the word `position` in their own contracts.
+3. **One tone table for messages.** Alert, AlertDialog and Toast take the five `Tone` values as they are. A tone has
+   one default icon and one announcement role in `FEEDBACK_BY_TONE`: `alert` for `warning` and `danger`, which
+   interrupt assistive technology, and `status` for the rest, which wait. A message never chooses its own role.
+4. **The shared contracts live in `src/contracts`.** `OpenStateContractProps`, `OverlayContractProps` (the open state plus
+   dismissal), `PlacementContractProps` and `FeedbackContractProps` are exported from `@stackra/ui/contracts`, and a
+   component's own contract extends the ones it needs. Menu and Tooltip, which dismiss themselves, take the open state and
+   the placement but not the dismissal props.
+
+## Consequences
+
+- An app drives any overlay with the same three props and places any anchored one with the same two, in English and in
+  Arabic, on web and native.
+- A tone reads the same on an Alert, an AlertDialog and a Toast, and a screen reader hears a failure at once and a success politely.
+- A native overlay has no Escape key, so `isKeyboardDismissDisabled` is unread there unless a component's own page maps it
+  to the Android back button, which the page then states.
+- Each component reads a prop it does not use (an Alert has no `isDismissable`) as absent from its type, so a misuse is a
+  type error, not a silent no-op.
+
+## Enforcement
+
+- `packages/design-system/ui/src/core/functions/__tests__` proves both placement functions, and
+  `packages/design-system/ui/src/core/constants/__tests__` proves the tone table.
+- Each component's type test asserts that the runtime props extend the contract and refuse the raw HeroUI names this
+  vocabulary replaces (`isDefaultOpen`, `status`, `variant` on a message, `left`, `right`).
+- `tools/scripts/spec-trace.mjs` (run by `pnpm validate`) refuses a spec id that no test covers.
+- Until a lint rule exists, review (`architecture-guardian`) checks this page.
+
+## Alternatives
+
+- **One name for the message tone as HeroUI has it, `status` on Alert and `variant` on Toast.** Not chosen: two words for
+  one concept, and `variant` already means emphasis in 0303.
+- **Physical `left` and `right` sides.** Not chosen: they would put a tooltip on the wrong side in Arabic, against the
+  reading-direction rule of [0060](/adr/0060-i18n-logical-css-light-and-dark).
+- **A role chosen per message by the caller.** Not chosen: a status message read as an alert interrupts the user, and the
+  failure that needs it is the one a caller forgets to mark.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0303](/adr/0303-stackra-ui-component-catalogue-decisions) decision 7. Owner answers of
+2026-10-23 on the wave 4 design (STA-370 to STA-375 and STA-404).
