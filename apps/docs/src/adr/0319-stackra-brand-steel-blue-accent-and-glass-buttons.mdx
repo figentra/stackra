@@ -1,0 +1,64 @@
+---
+title: "0319 — Stackra brand: a steel-blue accent and glass buttons on the web"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends the stackra brand kit's accent rule ("No accent colour", accepted 2026-09-29), recorded in
+  `packages/design-system/tokens/assets/data/stackra/brand.json` (`decided.accent`,
+  `decided.colour`). It also amends
+  [0320](/adr/0320-stackra-brand-glass-material-and-the-showcase-stage) decision 1: the glass now
+  reaches the quiet button variants in every product. 0320's body is unchanged.
+</Note>
+
+## Context
+
+The stackra theme had no accent. The primary button was solid ink and the secondary flat grey. On 2026-10-24 the owner
+looked at the web Button page and asked "why web buttons like this!?". From the options offered, the owner chose
+"Accent + glass": a real brand accent for the primary action, and the glass material for the quieter variants.
+
+## Decision
+
+1. **The accent is steel blue.** It takes the wordmark's steel hue (248) at a chroma a control can carry:
+   - `accent`: `oklch(0.5 0.12 248)` light and `oklch(0.72 0.11 248)` dark.
+   - `accent-hover` and `accent-pressed` step darker.
+   - `accent-soft` and `accent-soft-foreground` are its tint and the text on that tint.
+   - `focus` is the accent.
+   - `accent-foreground` stays the kit's paper and ink: paper on the accent is 5.49:1 (light) and ink is 7.88:1
+     (dark). Both pass WCAG 2.2 AA for text; the focus ring stands 3:1 or more from the page.
+   - `link` and `signal` stay neutral.
+2. **The quiet button variants are glass on the web, with no backdrop filter.** Secondary, tertiary and outline sit
+   on the material's control fill; ghost takes it under the pointer and the press; the close button's default variant
+   takes it too. Primary and danger stay solid.
+   - The control fill is the `thick` level, never thinner than the `frosted` mode's floor (0.88 of `surface`), with
+     a hairline edge. A button has no backdrop filter: a blur under every button costs a filter pass each and smears
+     what sits behind a row of them, and the fill alone carries the material.
+   - The fill is chosen so a label holds 4.5:1 over the worst backdrops, pure black and pure white, at rest, on hover
+     (8% of `foreground`) and pressed (12%), in every mode and scheme, for the `default-foreground` and
+     `accent-soft-foreground` labels. The regular level fails that in the `liquid` mode, and so does the thick level
+     without the floor. This is also why a quiet button over media stays legible.
+   - The rules set HeroUI's own variant properties (`--button-bg`, `-hover`, `-pressed`) and the edge. They live in
+     the theme stylesheet `@stackra/tokens` renders, HeroUI's theming route.
+   - The `@stackra/ui` wrappers do not change, so IconButton, built on Button, follows.
+   - They set no box-shadow, so HeroUI's focus ring stays whole.
+   - The material's fallbacks (reduced transparency, more contrast, no backdrop filter, no `color-mix()`) make the
+     buttons solid.
+3. **Native.** The accent reaches mobile through `renderNativeCss` (HeroUI Native reads the same roles). The native
+   quiet Button is Liquid Glass on iOS 26 and later and solid everywhere else (older iOS and Android); there is no
+   blur view.
+
+## Consequences
+
+- The kit's tests hold the six amended tokens to the kit's WCAG minimums, not to its exact values or to the achromatic
+  rule; every other colour is still the kit's.
+- Product UI runs in the `solid` material mode by default (`DesignSystemProvider`'s `material`, ADR 0320), so its
+  quiet buttons are opaque until it asks for glass. A static showcase page without the provider gets the stylesheet's
+  `glass` default.
+- The brand kit outside this repository still records "no accent" and needs updating when it is next regenerated.
+- Mail templates keep the neutral ink button, which every mail client renders the same way.
+
+## Enforcement
+
+`stackra-theme.constant.test.ts` (the steel hue and chroma, accent-foreground 4.5:1 and focus 3:1 in both modes, and
+the quiet buttons' labels at 4.5:1 over black and white at rest, hover and pressed) and
+`render-web-css.function.test.ts` (the glass button rules: the control fill, no backdrop filter, no box-shadow).

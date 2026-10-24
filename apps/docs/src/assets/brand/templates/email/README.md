@@ -12,7 +12,7 @@ face: Geist → Segoe UI → Helvetica → Arial; IBM Plex Sans Arabic → Tahom
 | Password reset | `reset-{en,ar}.html` — the docs account is an assumption to confirm |
 | Signature | `../stationery/email-signature-{en,ar}.html` |
 
-- The button is ink with paper text (18:1): Stackra has no accent, so the primary action is the neutral one.
+- The button is ink with paper text (18:1). The web accent is steel blue since ADR 0319; mail keeps the neutral button, which every client renders the same.
 - Links are underlined; colour alone never marks them.
 - Host `logos/png/stackra-endorsed-*-light-h64.png` at a public URL and replace the relative `src` before sending.
 - Every `[bracketed]` value is listed in `../PLACEHOLDERS.md`.
