@@ -1,0 +1,18 @@
+// Stackra file contract:
+// Purpose: the `desktop` program: the Electron main process and preload of an app with a desktop target
+//          (ADR 0058), which gen writes into the app's `.stackra/desktop/`. Node types and no DOM, because main is
+//          Node; legacy decorators, because main resolves the app's config and menu classes. Only the tsconfig gen
+//          writes there extends it, never an authored member. The renderer's `bridge-client.ts` types
+//          `window.stackra`, so it stays in the app program and is excluded here.
+// Owner: release-operations · Secrets: forbidden
+{
+  "display": "@stackra/typescript-config — desktop (Electron main and preload)",
+  "extends": "./node.json",
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": false,
+    "erasableSyntaxOnly": false
+  },
+  "include": ["${configDir}/*.ts"],
+  "exclude": ["${configDir}/bridge-client.ts"]
+}

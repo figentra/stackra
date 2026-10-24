@@ -8,7 +8,7 @@ so every preset file has a header).
 | -------------------- | ------------ | ---------------------------------------------------------------------- |
 | `./base`             | —            | never directly; the shared baseline                                    |
 | `./node`             | `base`       | Node scripts and tooling                                               |
-| `./library`          | `node`       | a tsdown-built library (`packages/*/*`)                                |
+| `./library`          | `node`       | a tsdown-built library (`packages/*/*`); DOM lib and automatic JSX     |
 | `./decorators`       | `library`    | a library using legacy decorators, no metadata emission (the DI tier)  |
 | `./decorators-react` | `decorators` | a library using decorators + React (DOM lib, automatic JSX)            |
 | `./runtime`          | `decorators` | the tsx runtime loader for a package's `bin/` (never tsc or the build) |
@@ -18,6 +18,11 @@ so every preset file has a header).
 | `./vite`             | `react`      | Vite + React SPAs (the console extends `./node` while it is one entry) |
 | `./app`              | `vite`       | a Vite app that declares container modules with legacy decorators      |
 | `./vite-node`        | `node`       | the tooling packages whose config files Vite loads                     |
+| `./service`          | `decorators` | v3 `service` role: a service member and its gen files (`.stackra/`)    |
+| `./mobile`           | `expo`       | v3 `mobile` role: the Expo app with decorators and `.stackra/`         |
+| `./tooling`          | `vite-node`  | v3 `tooling` role: the same program as `vite-node`                     |
+| `./desktop`          | `node`       | gen-written only: Electron main and preload (`.stackra/desktop/`)      |
+| `./service-worker`   | `base`       | gen-written only: the PWA service worker (`.stackra/sw.ts`, WebWorker) |
 
 ## base
 

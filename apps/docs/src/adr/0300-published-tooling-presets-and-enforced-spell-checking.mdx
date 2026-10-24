@@ -1,7 +1,22 @@
 ---
 title: "0300 — Five published tooling presets, and spell checking that the gate enforces"
-description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349)"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349), 2026-10-24 (STA-417)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-417): the `library` TypeScript preset sets `jsx: react-jsx` and the
+  `DOM` and `DOM.Iterable` libraries. A package with a `./react` or `./native` entry needs both,
+  and the template's own `library` preset already sets them. The TypeScript preset also gains five
+  role presets: `mobile`, `service`, `tooling`, `desktop` and `service-worker`. They are exports
+  of `@stackra/typescript-config`, not new packages, so decision 1 (exactly five presets) stands.
+  Trade-off: a Node-only package now sees DOM types. That is accepted for now. If a real clash
+  appears, a `library-node` preset without the DOM libraries is added. The other decisions are
+  unchanged.
+
+Enforcement of this note: `packages/tooling/typescript/src/__tests__/presets.test.ts` checks that
+the role presets are exported and that `library` sets the JSX runtime and the DOM libraries.
+
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-349): two names under decision 2 are fixed. The vitest preset's
