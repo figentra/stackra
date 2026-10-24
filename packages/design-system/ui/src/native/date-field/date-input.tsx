@@ -149,6 +149,11 @@ export function DateInput({
   };
 
   const isIos = Platform.OS === "ios";
+  const refusal = isRefused ? (
+    <Text tone="danger" type="small" accessibilityLiveRegion="polite">
+      {WORDS.unavailable}
+    </Text>
+  ) : null;
   const platformPicker = (
     <DateTimePicker
       {...(isIos ? { display: "inline" as const } : {})}
@@ -200,11 +205,8 @@ export function DateInput({
           />
         )}
       </View>
-      {isRefused ? (
-        <Text tone="danger" type="small" accessibilityLiveRegion="polite">
-          {WORDS.unavailable}
-        </Text>
-      ) : null}
+      {/* While the iOS dialog is open its overlay covers the field, so the refusal is drawn inside it instead. */}
+      {isIos && open ? null : refusal}
       {description == null ? null : <Description hideOnInvalid>{description}</Description>}
       {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
       {isIos ? (
@@ -212,9 +214,18 @@ export function DateInput({
           <Modal.Header>
             <Modal.Title>{label ?? name}</Modal.Title>
           </Modal.Header>
-          <Modal.Body>{open ? platformPicker : null}</Modal.Body>
+          <Modal.Body>
+            {open ? platformPicker : null}
+            {refusal}
+          </Modal.Body>
           <Modal.Footer>
-            <Button variant="tertiary" onPress={() => setOpen(false)}>
+            <Button
+              variant="tertiary"
+              onPress={() => {
+                setRefused(false);
+                setOpen(false);
+              }}
+            >
               {WORDS.cancel}
             </Button>
             <Button onPress={() => pick(shown ?? day ?? startDayOf(minValue, maxValue))}>

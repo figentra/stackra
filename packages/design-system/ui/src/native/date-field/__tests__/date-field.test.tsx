@@ -242,10 +242,15 @@ describe("DateField (native)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Done" }));
     expect(onChange).not.toHaveBeenCalled();
     expect(screen.getByTestId("modal")).toBeTruthy();
+    // Inside the dialog, which covers the field while it is open.
+    expect(screen.getByTestId("modal-body").contains(screen.getByTestId("message"))).toBe(true);
+    expect(screen.getAllByTestId("message")).toHaveLength(1);
     expect(screen.getByTestId("message").textContent).toBe(
       "That day is not available. Choose another.",
     );
     expect(state.announced).toEqual(["That day is not available. Choose another."]);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByTestId("message")).toBeNull();
   });
 
   it("refuses an unavailable day on Android, says why, and clears the message on a good day", () => {
