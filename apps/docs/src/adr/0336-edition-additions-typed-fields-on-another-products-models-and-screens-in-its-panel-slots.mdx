@@ -29,7 +29,7 @@ The word is "addition": [0294](/adr/0294-programming-model-v3-grammar-folders-id
 23 reserves "extension" for an extension point's extensions.
 
 1. **A model addition is a class.** An edition module declares `extends ModelAddition(Product)({ ... })` in its own
-   `models/` group, in a `<base-model>.addition.ts` file, with typed fields written as any model's fields are
+   `models/` group, in a `<base-model>.model-addition.ts` file (the suffix matches the base, so the planned base-matches-suffix check of STA-338 classifies it), with typed fields written as any model's fields are
    ([0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events)). `Product` is the base model
    imported from the base product's released client package, never from its source.
 

@@ -37,9 +37,9 @@ and wipeable. The rows of 0252 are therefore accepted, and the five rules below 
    shows. A refresh is incremental: the server hands each replica an opaque, monotonic change cursor, the client sends it
    back and receives only the changes since it, on start, on reconnect and on the refresh signal of the live query it mirrors
    ([0315](/adr/0315-realtime-live-queries-and-streams)); the first fill is the only full download. A query that is
-   not declared a replica is not available offline. A replica may be scoped by a dimension of the tenant (`scope:
-"legalEntityId"`), so a device holds only the records of its own legal entity and personal data never crosses a
-   border inside a multi-country tenant (the legal entity is the transfer boundary, as
+   not declared a replica is not available offline. A replica may be scoped by a dimension of the tenant (`scope: "legalEntityId"`), so
+   a device holds only the records of its own legal entity and personal data never crosses a border inside a
+   multi-country tenant (the legal entity is the transfer boundary, as
    [0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events) decision 4 defines it); an action that
    touches a record outside the device's scope is online-only.
 
@@ -69,7 +69,6 @@ and wipeable. The rows of 0252 are therefore accepted, and the five rules below 
 
 - planned — a conformance test in `@stackra/storage`: a refresh with a stale change cursor receives every change since
   it and nothing older, and a scoped replica never receives a record outside its scope.
-
 - planned — the queue conformance test of 0252 gains cases for per-device order, a rejected earlier mutation blocking
   later ones, wipe on revoke and on the offline limit, and a cap reached within its window.
 - planned — gen (STA-340): a replica without `window` and `limit` fails; an `offline` action whose output is money

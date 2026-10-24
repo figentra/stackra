@@ -435,6 +435,7 @@
               "adr/0337-client-rule-code-a-module-ships-pure-rules-that-run-on-the-till-and-on-the-server",
               "adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps",
               "adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver",
+              "adr/0340-one-token-engine-stackra-tokens-grows-layers-policy-checks-and-native-palettes-brand-kits-are-figentra-os-tooling",
               "adr/0341-product-defined-data-classes-and-the-privileged-class",
               "adr/0342-gapless-sequences-allocated-at-commit-per-tenant-and-series",
               "adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events"

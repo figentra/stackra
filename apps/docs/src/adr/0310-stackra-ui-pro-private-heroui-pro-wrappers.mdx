@@ -1,7 +1,16 @@
 ---
 title: "0310 — @stackra/ui-pro: a private package of HeroUI Pro wrappers for Stackra's own apps"
-description: "Accepted · 2026-10-23 · amended 2026-10-24 (STA-445, STA-447) · amended 2026-10-24 (STA-451)"
+description: "Accepted · 2026-10-23 · amended 2026-10-24 (STA-445, STA-447) · amended 2026-10-24 (STA-451) · amended 2026-10-24 (STA-465)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-465), reads with
+  [0340](/adr/0340-one-token-engine-stackra-tokens-grows-layers-policy-checks-and-native-palettes-brand-kits-are-figentra-os-tooling):
+  HeroUI Pro is themed through CSS variables only. The `@stackra/ui-pro` stylesheet of STA-458
+  carries the Pro fixes and maps Pro's chart variables onto the theme's `palette.chart-*`, and a
+  test lists every variable Pro reads against the theme. The package produces no theme values and
+  never imports Pro's theme presets. Decisions 1 to 3 stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-451): the consumers of decision 2 include the apps of Figentra Commerce
