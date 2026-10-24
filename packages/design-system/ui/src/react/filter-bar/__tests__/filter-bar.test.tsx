@@ -280,15 +280,17 @@ describe("FilterBar (web)", () => {
     expect(latest.query.filterValues).toEqual({ gift: true });
   });
 
-  it("edits a number range through two fields that take the filter's bounds, step and format", async () => {
+  it("edits a number range through two fields, each bound by the other and by the filter's bounds, step and format", async () => {
     render(<Harness />);
     const editor = await add("Total");
     expect(received.props["Minimum"]).toMatchObject({ minValue: 0, maxValue: 1000, step: 5 });
     expect(received.props["Maximum"]).toMatchObject({ minValue: 0, maxValue: 1000, step: 5 });
     press(within(editor).getByRole("button", { name: "Set Minimum" }));
     expect(latest.query.filterValues).toEqual({ total: { min: 7, max: null } });
+    expect(received.props["Maximum"]).toMatchObject({ minValue: 7, maxValue: 1000 });
     press(within(editor).getByRole("button", { name: "Set Maximum" }));
     expect(latest.query.filterValues).toEqual({ total: { min: 7, max: 7 } });
+    expect(received.props["Minimum"]).toMatchObject({ minValue: 0, maxValue: 7 });
   });
 
   it("edits a day range through two fields, each bound by the other and by the filter's bounds", async () => {

@@ -83,10 +83,16 @@ describe("EntityPicker (web)", () => {
         disconnect() {}
       },
     );
+    // jsdom has no layout, and the list scrolls the focused option into view, which throws without this.
+    Object.defineProperty(Element.prototype, "scrollTo", {
+      value: () => undefined,
+      configurable: true,
+    });
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    Reflect.deleteProperty(Element.prototype, "scrollTo");
   });
 
   it("names the input by its label and asks for nothing until the list opens", () => {

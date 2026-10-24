@@ -69,24 +69,24 @@ export function FilterEditor({ definition, value, onChange }: FilterEditorProps)
       );
     case "number": {
       const range = filterValueOfKind("number", value) ?? { min: null, max: null };
-      const shared = {
-        minValue: definition.minValue,
-        maxValue: definition.maxValue,
-        step: definition.step,
-        formatOptions: definition.formatOptions,
-      };
+      const shared = { step: definition.step, formatOptions: definition.formatOptions };
+      // Each bound limits the other, as the day range's do, so the range never runs backwards.
       return (
         <div className="grid gap-3">
           <NumberField
             {...shared}
             label={WORDS.minimum}
             value={range.min}
+            minValue={definition.minValue}
+            maxValue={range.max ?? definition.maxValue}
             onChange={(min) => onChange({ ...range, min })}
           />
           <NumberField
             {...shared}
             label={WORDS.maximum}
             value={range.max}
+            minValue={range.min ?? definition.minValue}
+            maxValue={definition.maxValue}
             onChange={(max) => onChange({ ...range, max })}
           />
         </div>

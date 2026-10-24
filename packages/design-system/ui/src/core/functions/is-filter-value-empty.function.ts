@@ -4,7 +4,7 @@
  *          neither bound. A yes or no is never empty, because "no" is an answer. FilterBar drops the chip of an emptied
  *          filter with it, and `isResourceQueryFiltered` ignores such a value, so an editor left open and cleared does
  *          not count as an applied filter.
- * Boundary: pure; internal, not in the `.` barrel. It tells the kinds apart by the shape of the value, which the
+ * Boundary: pure; in the `.` barrel. It tells the kinds apart by the shape of the value, which the
  *           `FilterValueByKind` shapes keep distinct, so it needs no `FilterDefinition`.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0318.

@@ -52,11 +52,17 @@ describe("DataTable page", () => {
         disconnect() {}
       },
     );
+    // jsdom has no layout, and the menu scrolls the focused item into view on a timer, which would throw late.
+    Object.defineProperty(Element.prototype, "scrollTo", {
+      value: () => undefined,
+      configurable: true,
+    });
   });
 
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+    Reflect.deleteProperty(Element.prototype, "scrollTo");
   });
 
   it("titles the page and the document, and sits at /data-table under Data display", () => {

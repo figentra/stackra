@@ -3,7 +3,8 @@
  * Purpose: holds the records an EntityPicker lists and the three states of asking for them (idle, loading, failed), so
  *          the web and the native picker share one mechanism: the first search starts at once, later ones start after
  *          the user pauses typing, the next page is asked for with the cursor of the last, a response that a later
- *          request has replaced is dropped, and a failure keeps what was listed.
+ *          request has replaced is dropped, and a failed next page keeps what was listed while a failed new search
+ *          empties it.
  * Boundary: a plain store with no React in it, so core stays free of host libraries; each runtime's
  *           `useEntityOptions` reads it with `useSyncExternalStore`. Internal: not in the `.` barrel, `react/` and
  *           `native/` import it by path. The loader is read through a getter, so a picker that is given a new

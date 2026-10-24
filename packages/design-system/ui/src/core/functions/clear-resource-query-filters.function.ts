@@ -3,7 +3,7 @@
  * Purpose: the query a "clear all" press asks for: no search text and no filter, with the sort kept, because the user
  *          chose the order and clearing a filter does not unchoose it. FilterBar's clear-all button and DataTable's
  *          "clear filters" button in its filtered-empty state both call it, so they agree.
- * Boundary: pure; internal, not in the `.` barrel. It returns a new object and never changes the one it is given.
+ * Boundary: pure; in the `.` barrel. It returns a new object and never changes the one it is given.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0318.
  */
