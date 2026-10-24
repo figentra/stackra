@@ -1,0 +1,114 @@
+---
+title: "0350 — Additions across products: slots in app screens, released extension points, rule facts and enhanced modules"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends
+  [0336](/adr/0336-edition-additions-typed-fields-on-another-products-models-and-screens-in-its-panel-slots)
+  (decision 4: slots in app screens as well as panel resources; decision 6: the version check of a
+  point), [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components)
+  (decision 22: a point implemented from a released package),
+  [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer) (decision 4: addition
+  fields as facts), [0214](/adr/0214-registry-v2-and-the-module-install-lifecycle) (decision 3:
+  enhanced modules install without their targets) and
+  [0131](/adr/0131-module-key-version-and-deprecation) (decision 3: the `enhances` list beside
+  `dependsOn`), each by a Note.
+</Note>
+
+## Context
+
+[0336](/adr/0336-edition-additions-typed-fields-on-another-products-models-and-screens-in-its-panel-slots) lets an
+edition add typed fields to a base product's models and place screens in the base's panel resources. The commerce
+product's and the retail edition's plans of 2026-10-24 need four things it does not say: an edition placing components in
+a base product's app screens (the till, the staff app), which are routes and blocks, not panel resources; an edition
+module implementing a base product's extension point from a released package, where
+[0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) decision 22 speaks of sibling modules;
+an edition's addition fields usable in the base's rules
+([0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer)); and a module that plugs into a module
+not yet installed, because the base ships in releases and listing the later module in `dependsOn` would block the install
+([0214](/adr/0214-registry-v2-and-the-module-install-lifecycle) decision 3). This ADR decides all four, as the owner's
+standing rule for cross-product work asks: place and extend, never fork.
+
+## Decision
+
+1. **App screens have typed slots too.** A route or a block of a base product's app declares slots the way a panel
+   resource does ([0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) decision 18: a typed
+   place with a place type that limits displays and sizes), in its own file, and gen records them in the manifest. An
+   edition module places a component, a block or an action in such a slot from its own `blocks/` or `components/`
+   group, as a layer 2b placement ([0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers) as
+   amended by 0336). The host renders what is placed; the edition never overrides a screen file. A base that wants its
+   screens extensible declares slots; an edition that needs a slot the base lacks asks the base, through its release,
+   and until then uses nothing but its own screens.
+
+2. **A released point is a point.** An edition module implements an extension point of its base from the base's released
+   package (`extensions/<name>.extension.ts`, 0305 decision 22, which also admits a point imported from a released base
+   package), with the same `before` and `after` slots and `order`. The point's version is the base version range the
+   edition declares ([0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle)
+   decision 2); gen checks the point's signature in the base's released manifest against the implementation, and a
+   mismatch fails the build, as 0336 decision 6 already does for additions.
+
+3. **Addition fields are facts.** When an edition's `ModelAddition` is installed, its fields join the base model's fact
+   source ([0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer) decision 4) under the edition's
+   key, with the typed operators of their field types, so a base rule set can test them; a rule that names an
+   uninstalled edition's field is invalid for that tenant and the builder does not offer it. The engine still knows no
+   product.
+
+4. **Enhanced modules.** A module lists the modules it only enhances in an `enhances` list beside `dependsOn`
+   ([0131](/adr/0131-module-key-version-and-deprecation) decision 3). A module installs without the modules it enhances
+   (0214 decision 3 resolves `dependsOn` only). Its implementations of their points, its additions to their models and
+   its placements in their slots are inert until the enhanced module is installed for that tenant, and they activate on
+   that install without a release. Uninstalling or disabling the enhanced module deactivates them again and loses no
+   data: an addition's side table stays, under the delete lifecycle of
+   [0134](/adr/0134-data-invariants-classification-and-delete-lifecycle). A module may not both depend on and enhance the
+   same module.
+
+5. **The manifest says what is inert.** Gen records, per contribution, the module it targets and whether that module is
+   a dependency or an enhanced module; the registry of 0214 shows a tenant which contributions are active. A contribution
+   to a module that is neither a dependency nor enhanced fails the build.
+
+## Consequences
+
+- An edition reaches the till and the staff app the way it reaches the back office: through declared slots, never by
+  file overrides, so a base release cannot break an edition's screen.
+- Points and additions are checked against released manifests, so an edition learns at build time that a base release
+  moved a point.
+- A base's rules can use an edition's fields without the base knowing the edition.
+- A product can ship in releases and an edition can ship ahead of them: the edition's contributions wait, inert, for
+  the module they enhance.
+- A base that declares no slots in a screen gets no edition content there, which is the base's choice.
+
+## Enforcement
+
+- planned — gen (STA-340): a placement into a slot the base's manifest does not declare fails (`slot_unknown`); an
+  implementation of a released point whose signature differs fails (`extension_point_changed`); a contribution to a
+  module that is neither in `dependsOn` nor in `enhances` fails (`target_not_declared`); a module in both lists fails.
+- planned — a conformance test in `@stackra/registry`: installing a module without its enhanced module leaves the
+  contributions inert; installing the enhanced module activates them; uninstalling it deactivates them and keeps the
+  side table.
+- planned — a `@stackra/rules` test: an addition's fields appear in the base fact source only for a tenant with the
+  edition installed.
+
+## Alternatives
+
+- **Typed render props on the base's screen components.** Not chosen (the commerce product's interim): a prop is a code
+  dependency of the base on the edition's shape; a slot is declared once and placed by any edition.
+- **Listing later modules in `dependsOn`.** Not chosen: it blocks the install of a release-one edition until a
+  release-three module exists.
+- **Separate releases of the edition per base release.** Not chosen: the edition's contributions are checked against
+  the base range and wait inert, so one edition release spans base releases.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Note:
+[0336](/adr/0336-edition-additions-typed-fields-on-another-products-models-and-screens-in-its-panel-slots),
+[0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components),
+[0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer),
+[0214](/adr/0214-registry-v2-and-the-module-install-lifecycle) and
+[0131](/adr/0131-module-key-version-and-deprecation). Reads with
+[0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards),
+[0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers),
+[0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle) and
+[0134](/adr/0134-data-invariants-classification-and-delete-lifecycle). Sources: the commerce product's plan and the retail
+edition's catalogue of 2026-10-24 (slots in app screens, released points, addition facts, and the `enhances` list the
+edition already declares), restated in this ADR's own words.

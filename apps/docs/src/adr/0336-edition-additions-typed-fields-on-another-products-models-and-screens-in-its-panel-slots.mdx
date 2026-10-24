@@ -1,7 +1,18 @@
 ---
 title: "0336 — Edition additions: typed fields on another product's models, and screens in its panel slots"
-description: "Accepted · 2026-10-24"
+description: "Accepted, amended by 0350 · 2026-10-24"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-478) by
+  [0350](/adr/0350-additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules):
+  decision 4's slots include the typed slots a base product's app routes and blocks declare, not
+  only panel resources, placed from the edition's `blocks/` or `components/` group at layer 2b;
+  decision 6's version check also covers an edition's implementation of a base extension point; and
+  an addition's fields join the base model's rule fact source for a tenant with the edition
+  installed. An addition to a module the edition only enhances stays inert until that module is
+  installed. The other decisions stand.
+</Note>
 
 <Note>
   Amends, by Notes,

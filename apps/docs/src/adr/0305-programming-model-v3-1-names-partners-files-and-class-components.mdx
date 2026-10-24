@@ -1,7 +1,15 @@
 ---
 title: "0305 — Programming model v3.1: one name per concept, partners by type argument, one declaration per file, class components"
-description: "Accepted, amended by 0324 · 2026-10-23 · amended 2026-10-24 (STA-428)"
+description: "Accepted, amended by 0324, 0350 · 2026-10-23 · amended 2026-10-24 (STA-428)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-478) by
+  [0350](/adr/0350-additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules):
+  decision 22's `extensions/<name>.extension.ts` may implement a point imported from a released
+  package of the edition's base product, not only a sibling module's; gen checks the point's
+  signature in the base's released manifest against the implementation. The other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-428), by

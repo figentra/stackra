@@ -444,7 +444,8 @@
               "adr/0346-collaboration-rooms-a-two-way-payload-channel-derived-from-a-documents-collaboration-level",
               "adr/0347-row-level-security-layering-one-permissive-tenant-policy-and-generated-restrictive-policies",
               "adr/0348-integration-surfaces-assistant-hosts-chat-apps-messaging-flows-and-wallet-passes",
-              "adr/0349-product-scopes-package-names-and-the-module-key-registry-across-products"
+              "adr/0349-product-scopes-package-names-and-the-module-key-registry-across-products",
+              "adr/0350-additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules"
             ]
           }
         ]

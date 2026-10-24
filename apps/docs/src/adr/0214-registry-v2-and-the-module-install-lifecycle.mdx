@@ -1,7 +1,17 @@
 ---
 title: "0214 — Registry v2 and the module install lifecycle"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0350 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-478) by
+  [0350](/adr/0350-additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules):
+  the install of decision 3 resolves `dependsOn` only; a module installs without the modules it
+  lists in `enhances`, its contributions to them stay inert until they are installed for that
+  tenant, activate on that install without a release, and deactivate without data loss when the
+  enhanced module is disabled or uninstalled. The registry shows a tenant which contributions are
+  active. The other decisions stand.
+</Note>
 
 <Note>
   Amends [0109](/adr/0109-registry-manifests-published-by-ci) and
