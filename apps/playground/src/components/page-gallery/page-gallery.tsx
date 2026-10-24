@@ -44,6 +44,13 @@ const CATEGORY_GLYPHS: Readonly<Record<string, BrandGlyphName>> = {
   Feedback: "alert",
   Data: "graph",
   Shell: "provider",
+  "Inputs and forms": "terminal",
+  "Date and time": "schema",
+  Charts: "graph",
+  "Data display": "module",
+  "Feedback and status": "alert",
+  Layout: "menu",
+  AI: "pipeline",
 };
 
 /** One line per category on what it holds; a category missing here lists without one. */
@@ -62,6 +69,13 @@ const CATEGORY_NOTES: Readonly<Record<string, string>> = {
   Feedback: "Alerts, toasts and progress.",
   Data: "Tables, lists and the states around them.",
   Shell: "Application frames: headers, sidebars and layouts.",
+  "Inputs and forms": "Fields, groups and whole forms with validation.",
+  "Date and time": "Calendars, pickers and agendas.",
+  Charts: "Area, bar, line, pie and radial charts on the theme's colours.",
+  "Data display": "Avatars, badges, cards, chips, grids and lists.",
+  "Feedback and status": "Spinners, skeletons, ratings and the states that say what is happening.",
+  Layout: "Surfaces, separators and resizable panes.",
+  AI: "Conversations, prompts, sources and streamed text.",
 };
 
 /** The filter's choices: every tier, or one. */

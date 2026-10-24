@@ -166,6 +166,15 @@ describe("PlaygroundShell", () => {
     expect(dialog()?.open).toBe(true);
   });
 
+  it("folds the display settings behind a button that says whether they are open", () => {
+    renderShell("/");
+    const toggle = screen.getByRole("button", { name: "Scheme and language" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(toggle.getAttribute("aria-controls")).toBe("display-settings");
+    act(() => toggle.click());
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  });
+
   it("draws the banner, display settings and main landmarks around the page", () => {
     renderShell("/");
     expect(screen.getByRole("banner")).toBeTruthy();

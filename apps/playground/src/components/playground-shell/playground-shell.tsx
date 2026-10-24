@@ -20,6 +20,7 @@ import {
   Button,
   DesignSystemProvider,
   Icon,
+  IconButton,
   Link,
   RouterProvider,
   ToggleButtonGroup,
@@ -43,6 +44,7 @@ const STRINGS = {
   skip: "Skip to content",
   search: "Search components",
   settings: "Display settings",
+  showSettings: "Scheme and language",
   colorScheme: "Colour scheme",
   language: "Language and direction",
   scheme: { light: "Light", dark: "Dark", system: "System" },
@@ -127,6 +129,7 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
   const { pathname, search } = useLocation();
   const [params, setParams] = useSearchParams();
   const [isPaletteOpen, setPaletteOpen] = useState(false);
+  const [isSettingsOpen, setSettingsOpen] = useState(false);
   const current = pages.find((page) => page.path === pathname);
   const setParam = (key: string, value: string) =>
     setParams(
@@ -204,20 +207,22 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
           >
             {STRINGS.skip}
           </a>
-          <header className="glass relative z-20 sm:sticky sm:top-3 mx-auto mt-3 flex w-[min(100%-1.5rem,80rem)] flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-3 py-2">
+          {/* One row on every width: on a phone the search button keeps only its icon and the display settings fold
+              behind a button; from the small breakpoint up both sit in the row. */}
+          <header className="glass sticky top-3 z-20 mx-auto mt-3 flex w-[min(100%-1.5rem,80rem)] flex-wrap items-center gap-x-2 gap-y-2 rounded-2xl px-2 py-2 sm:gap-x-3 sm:px-3">
             <Link
               href={`/${search}`}
               underline="hover"
-              className="flex items-center gap-2 rounded-xl px-1 py-1 hover:no-underline"
+              className="flex min-w-0 items-center gap-2 rounded-xl px-1 py-1 hover:no-underline"
             >
               <span
                 aria-hidden="true"
-                className="grid size-8 place-items-center rounded-lg bg-accent font-mono text-sm font-semibold text-accent-foreground"
+                className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent font-mono text-sm font-semibold text-accent-foreground"
               >
                 st
               </span>
               <span className="font-semibold tracking-tight">{STRINGS.brand}</span>{" "}
-              <span className="text-muted">{STRINGS.product}</span>
+              <span className="text-muted max-sm:sr-only">{STRINGS.product}</span>
             </Link>
             <Button
               variant="outline"
@@ -225,18 +230,31 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
               startIcon="search"
               onPress={openPalette}
               aria-keyshortcuts="Meta+K Control+K /"
-              className="order-last w-full justify-start rounded-xl text-muted sm:order-none sm:ms-auto sm:w-64"
+              className="ms-auto justify-start rounded-xl text-muted max-sm:min-w-9 max-sm:px-2 sm:w-64"
             >
-              <span className="flex-1 text-start">{STRINGS.search}</span>
+              <span className="flex-1 text-start max-sm:sr-only">{STRINGS.search}</span>
               <kbd
                 aria-hidden="true"
                 dir="ltr"
-                className="rounded-md border border-border px-1.5 font-mono text-xs"
+                className="rounded-md border border-border px-1.5 font-mono text-xs max-sm:hidden"
               >
                 {SHORTCUT}
               </kbd>
             </Button>
-            <div className="ms-auto sm:ms-0">
+            <IconButton
+              icon="settings"
+              label={STRINGS.showSettings}
+              variant="ghost"
+              size="sm"
+              aria-expanded={isSettingsOpen}
+              aria-controls="display-settings"
+              onPress={() => setSettingsOpen((open) => !open)}
+              className="sm:hidden"
+            />
+            <div
+              id="display-settings"
+              className={`max-sm:w-full max-sm:justify-center ${isSettingsOpen ? "max-sm:flex" : "max-sm:hidden"}`}
+            >
               <DisplaySettings />
             </div>
           </header>
