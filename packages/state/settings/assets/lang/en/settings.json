@@ -1,0 +1,9 @@
+{
+  "refusals": {
+    "settings_locked": "This setting is locked at a higher level.",
+    "setting_value_invalid": "Enter a valid value for this setting."
+  },
+  "form": {
+    "not_saved": "This setting was not saved. Try again."
+  }
+}
