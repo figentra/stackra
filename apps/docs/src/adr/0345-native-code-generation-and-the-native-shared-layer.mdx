@@ -1,0 +1,168 @@
+---
+title: "0345 — Native code generation and the native shared layer"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0326](/adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets)
+  (decision 13: the widget route and the Android path; decision 9: the desktop shortcut outputs; a
+  Live Activity placement),
+  [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries) (decisions 2,
+  5 and 7: reserved target names, the root shims and the ignore file, the `none` runtime row),
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (decision 14: one app
+  group for authored native sources), [0127](/adr/0127-package-categories-including-infrastructure)
+  (the entry and tool-hook names after the desktop rename),
+  [0253](/adr/0253-peripherals-web-api-first-and-device-presets) (decision 3: the native modules
+  this ADR approves) and [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground)
+  (decision 2: two more renderers), each by a Note. Reads with
+  [0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix) and
+  [0340](/adr/0340-one-token-engine-stackra-tokens-grows-layers-policy-checks-and-native-palettes-brand-kits-are-figentra-os-tooling).
+</Note>
+
+## Context
+
+[0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix) derives native surfaces (widgets,
+Live Activities, shortcuts, share and notification surfaces, intents, a watch companion) from declarations. Each one
+runs outside the JavaScript bundle: a widget extension renders from a snapshot, a watch app is SwiftUI, an intent body
+is Swift. They all need the same things: the theme's colours and type in Swift and Kotlin, the shape of the data they
+show, a way to receive that data from the app, a token that lets them call the API without the app's refresh token, and
+a deep link back into the app. [0326](/adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets)
+decision 14 says nobody writes the Swift and Kotlin of a widget by hand, and
+[0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) says nobody writes a tool config. This ADR
+decides how gen produces that native layer, where the few authored native files may live, and which library routes
+carry the surfaces, as the owner decided on 2026-10-24 after the platform research and its critique.
+
+## Decision
+
+1. **Tokens render to Swift and Kotlin.** `@stackra/tokens` gains two renderers beside the native CSS one: a Swift
+   file with light and dark colour sets (which also feed the widget target's colour keys) and a Kotlin Compose object
+   with colour, dp and sp values; both carry the type scale, spacing, radii and motion. A resolved theme
+   ([0340](/adr/0340-one-token-engine-stackra-tokens-grows-layers-policy-checks-and-native-palettes-brand-kits-are-figentra-os-tooling))
+   is rendered, so a product or tenant layer reaches native surfaces unchanged. One breakpoint scale (600, 840, 1200
+   and 1600) is shared by web and native, so the foldable, the iPad and Android large screens lay out like the console.
+   No token-translation tool is adopted: it would add a second schema. The generated Swift and Kotlin get a compile
+   test in the release job, where the macOS runners run ([0166](/adr/0166-ci-policy-runners-budgets-concurrency-and-check-matrix)).
+   Surfaces built with the widget library take tokens as TypeScript values and need no Swift tokens.
+
+2. **A surface shows one versioned snapshot.** Each surfaced query has one JSON snapshot shaped by its Output schema.
+   Gen emits that shape three ways: the TypeScript writer, a Codable Swift struct and a serialisable Kotlin class, each
+   with `schemaVersion`; a reader that meets a newer major version shows a placeholder. On iOS the snapshot lives in
+   the one app group `group.<bundleId>` (the defaults suite for small snapshots, the shared container for files); Android
+   widgets run in the app's process and use app storage; the watch never uses the app group, because app groups do not
+   cross devices, and receives the same snapshot over the watch connectivity channel (the latest state as application
+   context, queued data as user-info transfers). A snapshot holds only what the surface displays, because lock-screen
+   surfaces are visible without unlocking.
+
+3. **Extensions and companions never hold the refresh token.** The app mints a short-lived, narrow-scope access token
+   through the identity provider's token exchange
+   ([0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)) and stores it in one
+   shared keychain access group, `<teamId>.<bundleId>.shared`; gen emits the keychain entitlement on the app and on
+   every surface that calls the API. The watch receives its token over the connectivity channel. Desktop uses the
+   sign-in flow of [0277](/adr/0277-cli-and-desktop-sign-in). Server-side hosts use OAuth
+   with the identity provider as the authorization server.
+
+4. **One link map.** Gen writes one link map from the routes into `#stackra/routes`; it feeds React Navigation linking
+   and React Router, and gen emits the custom scheme from identity, universal links and Android app links from it. The
+   static Worker serves the association files ([0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker),
+   [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) rule 14). Every entry point resolves
+   through the map: a widget tap, a quick action, a Live Activity tap, a notification tap, the desktop's open-URL and
+   second-instance events, and the web manifest's protocol handlers and shortcuts. Validation refuses an `appShortcut`
+   or a widget whose target route has no link entry.
+
+5. **Library routes.** Widgets and Live Activities use the Expo widget library on both platforms (its Android path
+   renders through Expo UI's Compose subset; a RemoteViews-based widget library is the named fallback if a spike finds
+   that subset too small). The other Apple surfaces use the Apple-targets config plugin driven by gen-written target
+   configs, after a spike settles whether it reads them through its root option or through symlinks. App-extension
+   entries go into the generated app config (`expo.extra.eas.build.experimental.ios.appExtensions`), never into
+   `eas.json`, and gen refuses a duplicate entry when a library plugin already added one. The watch companion is a
+   native SwiftUI app plus complications, because React Native does not run on the watch.
+
+6. **Authored native code has one home.** Hand-written Swift or Kotlin is allowed only where React Native cannot run:
+   watch screens, later Wear OS screens, and an intent body beyond the generated call. It lives in one new app group,
+   `src/native-sources/<surface>/`, which holds only `.swift` and `.kt` files and no configuration; gen writes every
+   property-list key, entitlement, model, token and string around it. The group joins the table of
+   [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 14 by Note, named so that it
+   does not reuse "target" (the `targets` key and the `Target` enum mean a build artifact, 0294 decision 23). Widgets,
+   quick actions, share and notification surfaces stay fully generated (0326 decision 14).
+
+7. **One local Expo config plugin holds every Stackra mod.** Gen writes `.stackra/expo/plugins/stackra.plugin.js`, the
+   single plugin that applies every Stackra modification, after the core and library plugins. A file-writing mod
+   (Android shortcut resources, the Swift and Kotlin tokens, a notification-service body, widget preview assets) is
+   allowed only inside it, each with a `Reason:` line. Nobody authors a config plugin.
+
+8. **Root shims and the build input.** [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries)
+   decision 5 already decides that a tool reading only the member root gets a gitignored shim; this ADR lists them:
+   `app.config.ts` re-exporting the generated Expo config, `eas.json`, `metro.config.js`, and `babel.config.js` only
+   when a section adds a plugin. The repository's EAS ignore file never excludes `.stackra/` or the shims, so the
+   build worker receives gen's output; the alternative is gen running in the post-install build hook, and the ADR for
+   the Expo emitter picks one. Gen output is byte-deterministic, so the native fingerprint of
+   [0180](/adr/0180-mobile-apps-and-release-trains) stays stable across runs.
+
+9. **Outputs and runtime rows.** Everything goes under `.stackra/`: `expo/app.config.json`, the plugin of decision 7,
+   `targets/<name>/expo-target.config.json`, `desktop/electron-builder.yml` with its entitlement lists, the desktop
+   entries `entry/desktop/main.ts` and `entry/desktop/preload.ts` (the preload is bundled self-contained), the Vite
+   config with the Cloudflare config passed programmatically (which retires the hand-written Workers config carve-out
+   of 0284), and `pwa/manifest.<locale>.webmanifest` with `sw.ts`. The `watchos` runtime row is `none` with host `ios`.
+   The desktop rename of 0326 decision 5 reaches the package entries: `@stackra/app/desktop` and
+   `@stackra/platform/desktop/after-pack` replace the `electron` names in
+   [0127](/adr/0127-package-categories-including-infrastructure), and the hatch is `desktop.extend.ts`.
+
+10. **Tray mode hides the dock at runtime.** The desktop mode is a runtime config
+    ([0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles) decision 3), so gen writes no
+    build-time agent key for it; the main process hides the dock when the mode says so.
+
+11. **Native modules this ADR approves.** Under [0253](/adr/0253-peripherals-web-api-first-and-device-presets)
+    decision 3: the watch connectivity bridge (next, with the watch companion), the Wear OS data-layer bridge (later),
+    and a window-posture module only if a layout needs it. Each is a generated or vendored Expo module listed in the
+    manifest. The till vendors' modules are 0339's per-vendor ADRs; nothing else is approved here.
+
+## Consequences
+
+- A product's theme reaches widgets, watch screens and intents without a second token file; Swift and Kotlin are
+  compiled once per release to prove it.
+- A surface's data contract is its Output schema, so a schema change is a surface change, and `schemaVersion` keeps an
+  old widget from crashing on a new app.
+- Authored native code is confined to one folder with no configuration, so a reviewer sees every hand-written native
+  file in one place.
+- The first widget wave carries the shims, the ignore-file rule and the plugin, which the current hand-written mobile
+  configuration does not have; STA-339 and STA-344 absorb that.
+- Each new app group and bundle id still needs the owner's interactive credentials step before CI can build it
+  ([0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix) decision 11).
+
+## Enforcement
+
+- planned — the release job compiles the generated Swift and Kotlin on the macOS runner (0326 Enforcement, made
+  concrete here).
+- planned — a `@stackra/tokens` snapshot test of the Swift and Kotlin renderers and the breakpoint scale.
+- planned — gen (STA-340): a snapshot writer, struct and class share one `schemaVersion`; a surface that calls the API
+  without the keychain group fails; a duplicate app-extension entry fails; a file under `src/native-sources/` that is
+  not `.swift` or `.kt` fails (the kind-path check of STA-338 gains the row).
+- planned — a determinism check in the gate: gen run twice produces identical output.
+- planned — the link-map validation of decision 4.
+
+## Alternatives
+
+- **A token-translation tool for Swift and Kotlin.** Not chosen: a second schema beside `Theme`.
+- **Running React Native inside each extension.** Not chosen: a second bundle per surface inside tight memory limits;
+  the hand-off route keeps one JavaScript entry, and the watch cannot run it at all.
+- **Hand-written native projects per surface.** Rejected by 0326 decision 14 and 0294; only the files React Native
+  cannot replace are authored, in one folder.
+- **A separate repository for native code.** Not chosen: the surfaces are derived from this member's declarations and
+  must build with it.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Note: [0326](/adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets),
+[0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries),
+[0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming),
+[0127](/adr/0127-package-categories-including-infrastructure),
+[0253](/adr/0253-peripherals-web-api-first-and-device-presets) and
+[0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground). Builds on
+[0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix),
+[0340](/adr/0340-one-token-engine-stackra-tokens-grows-layers-policy-checks-and-native-palettes-brand-kits-are-figentra-os-tooling),
+[0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral),
+[0277](/adr/0277-cli-and-desktop-sign-in),
+[0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker), [0180](/adr/0180-mobile-apps-and-release-trains) and
+[0166](/adr/0166-ci-policy-runners-budgets-concurrency-and-check-matrix). Sources: the owner's platform decisions of 2026-10-24 and
+the platform research of the same day with its critique, restated in this ADR's own words; library facts as of
+2026-10-24.

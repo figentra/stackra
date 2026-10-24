@@ -1,7 +1,17 @@
 ---
 title: "0254 — Desktop release: signing, notarisation, the R2 update feed, channels and version policy"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0344 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-469) by
+  [0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix) decision 7:
+  macOS is signed and notarised from the first desktop release (decision 1's "unsigned first" keeps
+  only Windows and Linux, and Windows signing is the open owner question there); decision 2's
+  "AppImage only" is the Linux format, read with a deb, while macOS ships a disk image plus zip and
+  Windows an NSIS installer; decision 4 moves to Electron 45 under the four-week rule, with its
+  constraints. Decisions 3 and 5 stand.
+</Note>
 
 <Note>
   Fulfils decision 4 of [0058](/adr/0058-desktop-is-electron) (the MR7–9 pipeline) as refined by

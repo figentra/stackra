@@ -1,0 +1,194 @@
+---
+title: "0344 — Platform targets, form factors, native surfaces and the tier matrix"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles) (decision 1:
+  the target list grows and the capability matrix of decision 2 extends to the native targets; a
+  kiosk launch mode), [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron) (decision 1: more
+  than three targets),
+  [0254](/adr/0254-desktop-release-signing-update-feed-channels-and-version-policy) (decisions 1, 2
+  and 4), [0181](/adr/0181-the-desktop-app-pipeline) (decision 5),
+  [0180](/adr/0180-mobile-apps-and-release-trains) (decision 2: the build image),
+  [0061](/adr/0061-mobile-keeps-react-navigation-and-native-tabs) (decision 4: the acceptance
+  condition), [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rule
+  15: the capability list grows by tier),
+  [0325](/adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy) (rule 9: owner
+  steps in the store checklist) and [0227](/adr/0227-rejected-and-deferred-technologies-refreshed)
+  (platform rows), each by a Note.
+  [0345](/adr/0345-native-code-generation-and-the-native-shared-layer) decides how the native
+  surfaces are generated.
+</Note>
+
+## Context
+
+An app member lists its targets ([0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles) decision
+1: `web`, `pwa`, `desktop`; [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries)
+decision 2: `ios`, `android`), and gen builds only what is listed. On 2026-10-24 the owner named three more surfaces
+for the near term: the Mac desktop app, an Apple Watch presence, and the new foldable iPhone, and asked which other
+platforms the one codebase should reach. The retail edition's pilot runs on every till kind
+([0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver)),
+so locked-down tills and a customer-facing display are needed now, not next. A research pass surveyed every candidate
+platform, and its critique corrected several of its claims; what follows records the decisions that survived it, in
+this repository's words. Facts about third-party platforms are stated as of 2026-10-24 and are re-checked before each
+emitter is built.
+
+## Decision
+
+1. **A target is one installable or store artifact with one runtime row.** `Target` stays a closed enum in
+   `@stackra/contracts`, and a code enters it only when its tier below reaches "now". Today's codes and runtimes: `web`
+   (browser), `pwa` (browser plus the service worker), `desktop` (the desktop runtime), `ios` and `android` (native); a
+   worker member has the worker runtime. The names `watchos` (next), `wear_os` and `tv` (later) are reserved and not
+   yet codes. A native-only target has runtime `none` and must name a host target in the same member (`watchos`
+   requires `ios`); validation refuses it alone. Gen reads `targets` from the syntax tree and fails on an unknown or
+   unhosted code instead of dropping it.
+
+2. **Form factors are rules of a target, not targets.** The foldable iPhone, iPad windowing, Android large screens,
+   foldables, ChromeOS, desktop windowing and XR two-dimensional panels, and the Vision Pro compatible iPad app are
+   rules inside the `ios` and `android` emitters: no orientation lock (orientation is a derived, Stackra-owned key, and
+   a lock is refused where the operating system ignores it), no full-screen requirement, resizable activities with
+   their configuration changes kept, every hardware feature declared optional, the x86-64 architecture included, the
+   scene lifecycle adopted (opt-in on the current SDK, default on the next), and layouts keyed on available width and
+   never on a device idiom. Store-only facts are Stackra keys in the `ios` section (`availability: { appleSiliconMac:
+false, visionPro: true }` by default), written into the generated store checklist of
+   [0325](/adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy) rule 9.
+
+3. **Native surfaces are derived from declarations and never listed.** A `NativeWidget` placement
+   ([0326](/adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets) decision 13) gives the
+   widget extension and the Android widget receiver; a route `appShortcut` (0326 decision 8) gives quick actions, the
+   web-manifest shortcuts, the Windows Jump List, the macOS Dock menu and Linux desktop actions; next, an action whose
+   Input is a share payload gives the share surface and its intent filters, a notification declaration with media
+   gives the notification-service surface, and `tool: true` gives an App Intent or an Android AppFunction. The family
+   is called a "native surface"; the word "extension" is reserved by
+   [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 23. Their identities are
+   derived and locked in `stackra.manifest.json`: bundle ids `<app>.widget`, `.share`, `.notification-service`,
+   `.intents` and `.watchkitapp` (set explicitly, because the widget library's default suffix differs), one app group
+   `group.<bundleId>` and one keychain group; they freeze at the first store upload (0326).
+
+4. **Emitters are a closed table.** `@stackra/gen` holds one row and one function file per `Target` code
+   (`emit-<target>-target.function.ts`): the runtime row, the host rule, the tool inputs it writes, the checks it adds
+   and the capabilities it may claim (the matrix of 0281 decision 2, extended to `ios` and `android`). There is no
+   public or third-party emitter, for the reason the hatch set is closed (0295 decision 6). Adding a target means an
+   ADR, a `Target` code and one row.
+
+5. **Server-side surfaces are not targets.** Assistant hosts over MCP, Slack and Teams apps, Telegram mini apps,
+   WhatsApp flows and Apple and Google Wallet passes run on the server or in another vendor's host, carry no runtime
+   row of an app member, and get their own ADR as integration surfaces of the AI service and of Integrations: their
+   webhooks go through `WebhookEvent<I>` ([0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks)
+   rule 15), and any user-interface bundle they serve is built in an app member or a package, never in a service
+   ([0003](/adr/0003-tier-dependency-direction)). Wallet passes are tier "next", triggered by the first loyalty or ticket
+   flow, with pass-signing certificate names in Infisical and no value in git.
+
+6. **Tiers.** Every entry has its tier and, for "later" and "no", its revival trigger. The projected rows of
+   [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) take a Note that points here.
+
+   | Tier  | Entry                                                                                                                                 | Trigger or reason                                                                                                                                        |
+   | ----- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | now   | Web, PWA; desktop on macOS, Windows and Linux; iOS (iPhone, the foldable, iPad); Android (phones, large screens, ChromeOS, XR panels) | decided by 0165, 0249, 0255, 0281, 0295, 0297                                                                                                            |
+   | now   | Widgets on both platforms; local Live Activities in the same widget extension; app shortcuts; Cloudflare Workers                      | 0326 decisions 8 to 14; a Live Activity started by the app needs no push                                                                                 |
+   | now   | Kiosk launch mode (desktop kiosk window, Android lock task, ChromeOS web kiosk) and a customer display per till kind                  | the retail pilot runs every till kind (owner, 2026-10-24); the operating-system lock stays the operator's device-management job                          |
+   | now   | Vision Pro compatible iPad app on; iPad app on Apple-silicon Macs off                                                                 | store availability settings, so the Electron Mac app is the Mac app                                                                                      |
+   | next  | Remote Live Activity updates over push; Apple Watch companion; share and notification-service surfaces; App Intents and controls      | push transport gains the live-activity path; a product names a watch screen; the share and media-notification needs of the legal and retail products     |
+   | next  | Android AppFunctions; Windows MSIX and the Microsoft Store; Wallet passes                                                             | the AppFunctions library reaches a stable release; the Windows signing answer of decision 7; the first loyalty or ticket flow                            |
+   | later | Mac App Store; Wear OS; tvOS and Android TV as their own member; App Clips; native visionOS; Android XR spatial; Android Auto         | a channel that requires the Mac store; the watch companion has shipped and a product asks; a lean-back deliverable; a walk-up QR flow; a spatial feature |
+   | later | Flatpak and Snap; store wrappers for the PWA (Microsoft Store, Play trusted web activity); Telegram and WhatsApp surfaces (own ADR)   | a Linux customer asks; the cheapest store presence is wanted; a market launch names the channel                                                          |
+   | no    | A native macOS app (react-native-macos, Mac Catalyst, a second iPad-on-Mac listing); react-native-windows; the visionOS fork          | a second desktop runtime against 0058 and 0249; each trails the mobile React Native line; revived when it tracks the mobile minor and a need appears     |
+   | no    | CarPlay and Android Automotive apps; smart-TV web stores; Meta Quest; Apple HomeView; Amazon and Huawei television and phone forks    | no product in an allowed category; old engines and two stores; no headset product; no SDK; revived by a product need on a maintained route               |
+   | no    | Android without Google services (Huawei); iMessage apps and stickers; Safari web extensions (under 0283); native desktop widgets      | push is unavailable without Google services and the capability degrades; revived by a market or a product that asks                                      |
+
+7. **Desktop formats, signing and the Electron line.** macOS ships a disk image plus a zip archive and is signed and
+   notarised from the first desktop release, because auto-update, the secure storage and the gatekeeper all need it;
+   this moves the signing of 0254 decision 1 and 0181 decision 5 forward for macOS. Windows ships an NSIS installer
+   for x64 and arm64; its signing path is an open owner question: Azure Artifact Signing public trust is available only
+   to organisations in listed countries, extended-validation certificates no longer help the reputation filter, and
+   if the signing entity does not qualify, the Microsoft Store (which signs MSIX) becomes the trusted Windows path in
+   the same tier. Azure authenticates from CI by federation over GitHub OIDC, never a client secret. Linux ships an
+   AppImage and a deb (the AppImage sandbox that 0251 requires is blocked on recent Ubuntu, so the deb is the install
+   that keeps the baseline); this reads 0254 decision 2 as the Linux format only. Electron 45 is adopted under the
+   four-week rule of 0254 decision 4, with its constraints: a self-contained preload, asynchronous secure storage, no
+   32-bit builds, and no hidden launch-at-login flag (tray mode hides the dock at runtime instead).
+
+8. **Mobile baseline.** The Expo emitter ships on the current SDK with the scene lifecycle switched on and the build
+   image pinned by its SDK alias, never by an image name. The move to the next SDK and React Native line is a separate,
+   owner-reviewed catalog change that first checks the peer ranges of HeroUI Native, Uniwind and the native tabs
+   library. 0061 stays Proposed until a build on the current Xcode confirms the native stack and native tabs on the
+   foldable's inner screen and in iPad windowing.
+
+9. **Capabilities.** The list of 0334 rule 15, the capability enum and the platform facets are reconciled into one
+   list, and the Expo native platform driver that 0249 decision 3 and 0250 decision 2 call for is built. The list
+   grows only with a tier: `live_activity` (next) and `companion_sync` (next). Widgets, shortcuts, intents and
+   functions are build-time projections, not capabilities. A missing capability is the typed unavailable refusal of
+   [0250](/adr/0250-stackra-platform-capability-ports-drivers-and-gate), never a crash.
+
+10. **Native modules keep their rule.** Every gen-written or vendored native module still needs its ADR under
+    [0253](/adr/0253-peripherals-web-api-first-and-device-presets) decision 3;
+    [0345](/adr/0345-native-code-generation-and-the-native-shared-layer) is the ADR for the ones it names, and the
+    till vendors' printer and scanner modules are the per-vendor ADRs that 0339 lists.
+
+11. **Owner steps stay owner steps.** Where a store has no API, the generated checklist of 0325 rule 9 names a manual
+    step rather than claiming gen output: screenshots of the foldable (required for every submission from April 2027),
+    the Vision Pro and Apple-silicon-Mac availability switches, registering each new app group with the interactive
+    credentials tool before CI can build the surface, and App Clip signing.
+
+## Consequences
+
+- One member reaches phones, foldables, tablets, Chromebooks, desktops and headset panels with no new target: the
+  form-factor rules do the work, and the layout work lands in `@stackra/ui` as size-class layouts.
+- The retail pilot gets locked-down tills and a customer display from the existing targets; the operator's
+  device-management policy, not Stackra, locks the device.
+- A new surface is one declaration (a placement, a shortcut, a share payload, a `tool: true`), and gen derives the
+  rest; nobody lists bundle ids or extensions.
+- The Windows signing question must be answered before the first Windows release; macOS signing costs an Apple
+  developer account and the notarisation step from day one.
+- Every "no" and "later" row carries its trigger, so a platform request is answered by the table, not by a debate.
+
+## Enforcement
+
+- planned — gen: an unknown or unhosted `Target` code fails the build (`unknown_target`, `unhosted_target`); a
+  declared capability a target cannot offer fails as 0281 decision 2 already says.
+- planned — validator (STA-340): an orientation lock, a required hardware feature or a full-screen requirement in an
+  `ios` or `android` section is refused.
+- planned — gen: an `appShortcut` or widget whose route has no entry in the link map fails
+  ([0345](/adr/0345-native-code-generation-and-the-native-shared-layer)).
+- planned — a test over the emitter table: one row and one function file per `Target` code, no code without a row.
+- planned — the store checklist generator names the manual owner steps of decision 11.
+
+## Alternatives
+
+- **One target per form factor.** Not chosen: a foldable or a tablet is the same artifact with layout rules, and a
+  target per device would multiply builds and store listings for nothing.
+- **An open emitter API.** Not chosen: the same reason the hatch set is closed; a target is an ADR-level decision.
+- **A native macOS app beside Electron.** Rejected (tier "no"): a second Mac app duplicates the Electron app and trails
+  the mobile React Native line.
+- **Server-side channels as targets.** Not chosen: they have no runtime row of an app member and belong to the
+  integration surfaces ADR.
+
+## Open questions
+
+1. **Windows signing.** The signing legal entity's country decides whether Azure Artifact Signing is available; the
+   owner answers, and the Microsoft Store path stands ready (decision 7).
+2. **The customer display on the iPad.** An external-display scene needs a second scene in the Expo app; whether the
+   current React Native line allows it is unconfirmed, and the Android and desktop displays do not wait for it.
+3. **Android widgets.** A spike decides between the widget library's Android path and the named fallback
+   ([0326](/adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets) as amended by this ADR).
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Note: [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles),
+[0249](/adr/0249-one-app-three-targets-web-pwa-and-electron),
+[0254](/adr/0254-desktop-release-signing-update-feed-channels-and-version-policy),
+[0181](/adr/0181-the-desktop-app-pipeline), [0180](/adr/0180-mobile-apps-and-release-trains),
+[0061](/adr/0061-mobile-keeps-react-navigation-and-native-tabs),
+[0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr),
+[0325](/adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy) and
+[0227](/adr/0227-rejected-and-deferred-technologies-refreshed). Reads with
+[0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries),
+[0326](/adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets),
+[0250](/adr/0250-stackra-platform-capability-ports-drivers-and-gate),
+[0253](/adr/0253-peripherals-web-api-first-and-device-presets),
+[0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver),
+[0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks) and
+[0283](/adr/0283-browser-extension-agent-connector-deferred). Sources: the owner's platform decisions of 2026-10-24 (the
+Mac app, the watch, the foldable iPhone, the retail pilot's till kinds), the platform research of the same day and its
+critique, restated in this ADR's own words; third-party facts as of 2026-10-24.

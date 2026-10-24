@@ -1,7 +1,20 @@
 ---
 title: "0295 — Build and entry: stackra.config.ts, generated tool configs and entries"
-description: "Accepted, amended by 0305 and 0326 · 2026-10-22 · amended 2026-10-23 (STA-347, STA-349) and 2026-10-24 (STA-428)"
+description: "Accepted, amended by 0305, 0326, 0345 · 2026-10-22 · amended 2026-10-23 (STA-347, STA-349) and 2026-10-24 (STA-428)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-469) by
+  [0345](/adr/0345-native-code-generation-and-the-native-shared-layer) and
+  [0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix): `Target` of
+  decision 2 reserves `watchos`, `wear_os` and `tv`, and the `ios` section gains the Stackra-owned
+  `availability` keys; decision 5's root shims are listed (`app.config.ts`, `eas.json`,
+  `metro.config.js`, and `babel.config.js` only with a plugin) and the EAS ignore file never
+  excludes `.stackra/` or the shims; decision 7 gains the runtime row `none` with a host target, for
+  `watchos`; the desktop hatch of decision 6 is `desktop.extend.ts` after 0326's rename; gen reads
+  `targets` from the syntax tree and fails on an unknown or unhosted code. Gen output is
+  byte-deterministic. The other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-428), by

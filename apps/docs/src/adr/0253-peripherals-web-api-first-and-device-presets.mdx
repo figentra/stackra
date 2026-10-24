@@ -1,7 +1,16 @@
 ---
 title: "0253 — Peripherals are Web-API first; native modules only on evidence; device presets"
-description: "Accepted, amended by 0339 · 2026-10-20"
+description: "Accepted, amended by 0339, 0345 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-469) by
+  [0345](/adr/0345-native-code-generation-and-the-native-shared-layer) decision 11, under decision
+  3: the native modules approved are the watch connectivity bridge (with the watch companion, tier
+  next), the Wear OS data-layer bridge (later) and a window-posture module only if a layout needs
+  it, each generated or vendored and listed in the manifest. The till vendors' printer and scanner
+  modules stay the per-vendor ADRs that 0339 lists. Decisions 1 to 5 stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-451) by

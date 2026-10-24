@@ -1,7 +1,20 @@
 ---
 title: "0281 — Desktop surfaces: targets per app, desktop modes and overlay styles"
-description: "Accepted, amended by 0295, 0326, 0339 · 2026-10-22 · amended 2026-10-23 (STA-349) and 2026-10-24 (STA-428)"
+description: "Accepted, amended by 0295, 0326, 0339, 0344 · 2026-10-22 · amended 2026-10-23 (STA-349) and 2026-10-24 (STA-428)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-469) by
+  [0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix): the target
+  list of decision 1 grows by that ADR's tier matrix (a code enters `Target` when its tier reaches
+  now; `watchos`, `wear_os` and `tv` are reserved), the capability matrix of decision 2 extends to
+  the `ios` and `android` targets through gen's emitter table, and `desktop.config.ts` gains a kiosk
+  launch mode (a kiosk window, no menu, no developer tools in production, overlays and global
+  shortcuts off; Android lock task through the Expo plugin; the web kiosk on ChromeOS), tier now for
+  the retail pilot. Tray mode hides the dock at runtime, not through a build key
+  ([0345](/adr/0345-native-code-generation-and-the-native-shared-layer) decision 10). Decisions 3 to
+  8 stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-451) by
