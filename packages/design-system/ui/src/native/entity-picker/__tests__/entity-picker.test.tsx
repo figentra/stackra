@@ -375,6 +375,33 @@ describe("EntityPicker (native)", () => {
     expect(state.announced).toEqual(["No people found"]);
   });
 
+  it("drops the empty message while a new search loads", async () => {
+    let answer: ((page: EntityOptionPage) => void) | undefined;
+    const loadOptions = vi.fn((search: string) =>
+      search === ""
+        ? Promise.resolve({ items: [] })
+        : new Promise<EntityOptionPage>((resolve) => (answer = resolve)),
+    );
+    render(
+      <EntityPicker
+        label="Owner"
+        emptyMessage="No people found"
+        debounceMs={0}
+        loadOptions={loadOptions}
+      />,
+    );
+    openSheet();
+    await settle();
+    expect(screen.getByTestId("message")).toBeTruthy();
+    fireEvent.change(screen.getByTestId("search"), { target: { value: "ad" } });
+    await settle();
+    expect(loadOptions).toHaveBeenLastCalledWith("ad", undefined);
+    expect(screen.getByTestId("spinner")).toBeTruthy();
+    expect(screen.queryByTestId("message")).toBeNull();
+    await act(async () => answer?.({ items: [ADA] }));
+    expect(state.props["row:Ada Lovelace"]).toBeTruthy();
+  });
+
   it("shows and announces the failure message when the load rejects", async () => {
     render(
       <EntityPicker
@@ -453,8 +480,9 @@ describe("EntityPicker (native)", () => {
     [{ isReadOnly: true }, false],
   ])("stays shut while %o, announced as disabled: %s", (locked, isAnnouncedDisabled) => {
     render(<EntityPicker label="Owner" loadOptions={answering(ADA)} {...locked} />);
+    // Pressable writes `disabled` over the announced state, so only a disabled field sets it.
     expect(state.props["field"]).toMatchObject({
-      disabled: true,
+      disabled: isAnnouncedDisabled,
       accessibilityState: { disabled: isAnnouncedDisabled },
     });
     openSheet();

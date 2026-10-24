@@ -156,7 +156,8 @@ export function EntityPicker(props: EntityPickerProps): ReactElement {
   const isLocked = Boolean(isDisabled || isReadOnly);
   const typed = text.trim();
   const isFailed = options.status === "error";
-  const isEmpty = options.hasAnswered && !isFailed && options.options.length === 0;
+  // Only an idle store has answered the current search; a new one keeps the old options while it loads.
+  const isEmpty = options.hasAnswered && options.status === "idle" && options.options.length === 0;
 
   // Screen readers on iOS have no live regions, so the list's failure and empty messages are announced.
   useEffect(() => {
@@ -219,8 +220,9 @@ export function EntityPicker(props: EntityPickerProps): ReactElement {
     >
       {label == null ? null : <Label>{label}</Label>}
       <Pressable
-        disabled={isLocked}
-        onPress={open}
+        // Pressable writes `disabled` over the announced state, so read-only stays enabled and does nothing.
+        disabled={Boolean(isDisabled)}
+        onPress={() => (isLocked ? undefined : open())}
         accessibilityRole="button"
         accessibilityLabel={name}
         accessibilityValue={{ text: chosen.map((record) => record.label).join(", ") }}

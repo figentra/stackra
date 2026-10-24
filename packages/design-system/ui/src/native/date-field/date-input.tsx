@@ -125,7 +125,10 @@ export function DateInput({
   const name = accessibilityLabel ?? (typeof label === "string" ? label : undefined);
 
   const setOpen = (next: boolean) => {
-    if (next) setShown(null);
+    if (next) {
+      setShown(null);
+      setRefused(false);
+    }
     if (isOpen === undefined) setOwnOpen(next);
     onOpenChange?.(next);
   };
@@ -174,8 +177,9 @@ export function DateInput({
       <View className="flex-row items-center gap-2">
         <Pressable
           className="flex-1"
-          disabled={isLocked}
-          onPress={() => setOpen(true)}
+          // Pressable writes `disabled` over the announced state, so read-only stays enabled and does nothing.
+          disabled={Boolean(isDisabled)}
+          onPress={() => (isLocked ? undefined : setOpen(true))}
           accessibilityRole="button"
           accessibilityLabel={name}
           accessibilityValue={{ text: text || WORDS.empty }}

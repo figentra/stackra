@@ -262,6 +262,15 @@ describe("DateField (native)", () => {
     expect(screen.queryByTestId("message")).toBeNull();
   });
 
+  it("clears the refusal when the picker opens again", () => {
+    render(<DateField label="Due" isDateUnavailable={isSunday} />);
+    fireEvent.click(field());
+    pickDate(new Date(2026, 9, 25, 12));
+    expect(screen.getByTestId("message")).toBeTruthy();
+    fireEvent.click(field());
+    expect(screen.queryByTestId("message")).toBeNull();
+  });
+
   it("passes the bounds at local noon and opens an empty field on today kept inside them", () => {
     render(<DateField label="Due" minValue={day("2999-01-01")} maxValue={day("2999-12-31")} />);
     fireEvent.click(field());
@@ -286,8 +295,9 @@ describe("DateField (native)", () => {
     [{ isReadOnly: true }, false],
   ])("stays shut while %o, announced as disabled: %s", (locked, isAnnouncedDisabled) => {
     render(<DateField label="Due" {...locked} />);
+    // Pressable writes `disabled` over the announced state, so only a disabled field sets it.
     expect(propsOf("pressable")).toMatchObject({
-      disabled: true,
+      disabled: isAnnouncedDisabled,
       accessibilityState: { disabled: isAnnouncedDisabled },
     });
     fireEvent.click(field());
