@@ -152,6 +152,7 @@ export type { ResizableHandleContractProps } from "#contracts/types/resizable-co
 export type {
   RichTextEditorActionButtonContractProps,
   RichTextEditorCommandButtonContractProps,
+  RichTextEditorLinkPopoverTriggerContractProps,
   RichTextEditorToggleButtonContractProps,
   RichTextEditorToolbarContractProps,
 } from "#contracts/types/rich-text-editor-contract-props.type";

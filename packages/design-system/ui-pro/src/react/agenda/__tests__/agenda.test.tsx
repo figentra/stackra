@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: proves the web Agenda takes the `useAgenda` state on its root, draws the heading and a timed event, passes
- *          unknown props through, and carries HeroUI Pro's own parts and `useAgenda` hook.
+ * Purpose: proves the web Agenda takes the `useAgenda` state on its root, draws the heading at the level asked for (not
+ *          HeroUI Pro's fixed h1) and a timed event, passes unknown props through, and carries HeroUI Pro's other parts
+ *          and `useAgenda` hook.
  * Boundary: jsdom with real HeroUI Pro and React Aria; `ResizeObserver` is stubbed and scrolling is not exercised
  *          because jsdom has no layout engine, so drag, resize and the current-time line are not checked.
  * Runtime: browser
@@ -36,7 +37,7 @@ function Example() {
   return (
     <Agenda {...agenda} data-testid="agenda" className="extra">
       <Agenda.Header>
-        <Agenda.Heading data-testid="heading" />
+        <Agenda.Heading data-testid="heading" level={3} />
       </Agenda.Header>
       <Agenda.Body>
         <Agenda.TimeGrid>
@@ -66,17 +67,18 @@ describe("Agenda (web)", () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it("draws the heading and the event from the useAgenda state, and passes unknown props through", () => {
+  it("draws the heading at its level and the event from the useAgenda state, and passes unknown props through", () => {
     render(<Example />);
     expect(screen.getByTestId("agenda").classList.contains("extra")).toBe(true);
     expect(screen.getByTestId("heading").textContent).toContain("2026");
+    expect(screen.getByRole("heading", { level: 3 })).toBe(screen.getByTestId("heading"));
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
     expect(screen.getByText("Standup")).toBeTruthy();
   });
 
   it("carries HeroUI Pro's own parts and hook", () => {
     for (const part of [
       "Header",
-      "Heading",
       "Navigation",
       "NavButton",
       "TodayButton",

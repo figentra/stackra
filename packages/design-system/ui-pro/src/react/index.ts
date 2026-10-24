@@ -10,7 +10,7 @@ export { ActionBar, type ActionBarProps } from "#react/action-bar/action-bar";
 export { ActionPalette, type ActionPaletteProps } from "#react/action-palette/action-palette";
 export type { ActionPaletteDialogProps } from "#react/action-palette/action-palette-dialog";
 export type { ActionPaletteInputGroupProps } from "#react/action-palette/action-palette-input-group";
-export { Agenda, useAgenda, type AgendaProps } from "#react/agenda/agenda";
+export { Agenda, useAgenda, type AgendaHeadingProps, type AgendaProps } from "#react/agenda/agenda";
 export { AppLayout, useAppLayout, type AppLayoutProps } from "#react/app-layout/app-layout";
 export type { AppLayoutAsideTriggerProps } from "#react/app-layout/app-layout-aside-trigger";
 export type { AppLayoutMenuToggleProps } from "#react/app-layout/app-layout-menu-toggle";
@@ -61,7 +61,11 @@ export {
   type ChatMessageActionsProps,
 } from "#react/chat-message-actions/chat-message-actions";
 export { ChatMessage, type ChatMessageActionProps } from "#react/chat-message/chat-message";
-export { ChatSource, type ChatSourceProps } from "#react/chat-source/chat-source";
+export {
+  ChatSource,
+  type ChatSourceProps,
+  type ChatSourceTriggerProps,
+} from "#react/chat-source/chat-source";
 export { ChatSources, type ChatSourcesProps } from "#react/chat-source/chat-sources";
 export { ChatTool, type ChatToolProps, type ToolPartState } from "#react/chat-tool/chat-tool";
 export { ChatToolGroup, type ChatToolGroupProps } from "#react/chat-tool/chat-tool-group";
@@ -124,6 +128,7 @@ export {
   HoverCard,
   type HoverCardContentProps,
   type HoverCardProps,
+  type HoverCardTriggerProps,
 } from "#react/hover-card/hover-card";
 export { InlineSelect, type InlineSelectProps } from "#react/inline-select/inline-select";
 export { ItemCardGroup, type ItemCardGroupProps } from "#react/item-card-group/item-card-group";
@@ -200,6 +205,7 @@ export {
 } from "#react/rich-text-editor/rich-text-editor";
 export type { RichTextEditorActionButtonProps } from "#react/rich-text-editor/rich-text-editor-action-button";
 export type { RichTextEditorCommandButtonProps } from "#react/rich-text-editor/rich-text-editor-command-button";
+export type { RichTextEditorLinkPopoverTriggerProps } from "#react/rich-text-editor/rich-text-editor-link-popover";
 export type { RichTextEditorToggleButtonProps } from "#react/rich-text-editor/rich-text-editor-toggle-button";
 export type { RichTextEditorToolbarProps } from "#react/rich-text-editor/rich-text-editor-toolbar";
 export { Segment, type SegmentProps } from "#react/segment/segment";

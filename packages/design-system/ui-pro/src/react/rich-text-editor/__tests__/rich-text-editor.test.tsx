@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: proves the web RichTextEditor names its toolbar and its toggle, action and command buttons from `label`
- *          (keeping HeroUI Pro's defaults without it), draws the editor with the value, placeholder and disabled state
- *          HeroUI Pro takes, passes unknown props through, carries HeroUI Pro's own parts and hooks, and refuses its
- *          `aria-label`.
+ * Purpose: proves the web RichTextEditor names its toolbar, its toggle, action and command buttons and its link trigger
+ *          (one button, inside no other) from `label` (keeping HeroUI Pro's defaults without it), draws the editor
+ *          with the value, placeholder and disabled state HeroUI Pro takes, passes unknown props through, carries
+ *          HeroUI Pro's own parts and hooks, and refuses its `aria-label`.
  * Boundary: jsdom with real HeroUI Pro and a real Tiptap editor; the theme CSS is not loaded, so classes are checked,
  *          not looks. ProseMirror measures text with `Range.getClientRects` and `getBoundingClientRect`, which jsdom
  *          lacks, so both are stubbed to empty geometry.
@@ -71,6 +71,23 @@ function Editor({ toolbar, toggle, action, command }: Labels) {
   );
 }
 
+/** An editor with only the link popover, so its trigger is the one button. */
+function LinkPopoverEditor(props: { readonly isReadOnly?: boolean }) {
+  return (
+    <RichTextEditor {...props}>
+      <RichTextEditor.Shell>
+        <RichTextEditor.LinkPopover>
+          <RichTextEditor.LinkPopover.Trigger label="Add a link" />
+          <RichTextEditor.LinkPopover.Content>
+            <RichTextEditor.LinkPopover.Input />
+          </RichTextEditor.LinkPopover.Content>
+        </RichTextEditor.LinkPopover>
+        <RichTextEditor.Content />
+      </RichTextEditor.Shell>
+    </RichTextEditor>
+  );
+}
+
 describe("RichTextEditor (web)", () => {
   beforeAll(() => {
     const emptyRect = { x: 0, y: 0, width: 0, height: 0, top: 0, right: 0, bottom: 0, left: 0 };
@@ -95,6 +112,18 @@ describe("RichTextEditor (web)", () => {
     expect(screen.getByRole("button", { name: /undo/i })).toBeTruthy();
   });
 
+  it("draws the link popover's trigger as one button named by label, inside no other button", () => {
+    const { rerender } = render(<LinkPopoverEditor />);
+    const trigger = screen.getByRole("button", { name: "Add a link" });
+    expect(trigger.getAttribute("data-slot")).toBe("rich-text-editor-link-popover-trigger");
+    expect(trigger.parentElement?.closest('[role="button"], button')).toBeNull();
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    rerender(<LinkPopoverEditor isReadOnly />);
+    expect((screen.getByRole("button", { name: "Add a link" }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+  });
+
   it("passes unknown props through to HeroUI Pro's root", () => {
     render(<Editor />);
     expect(screen.getByTestId("root")).toBeTruthy();
@@ -105,7 +134,9 @@ describe("RichTextEditor (web)", () => {
     expect(RichTextEditor.Shell).toBe(HeroRichTextEditor.Shell);
     expect(RichTextEditor.ToolbarGroup).toBe(HeroRichTextEditor.ToolbarGroup);
     expect(RichTextEditor.ToolbarSeparator).toBe(HeroRichTextEditor.ToolbarSeparator);
-    expect(RichTextEditor.LinkPopover).toBe(HeroRichTextEditor.LinkPopover);
+    for (const part of ["Content", "Input", "Actions", "ApplyButton", "UnsetButton"] as const) {
+      expect(RichTextEditor.LinkPopover[part]).toBe(HeroRichTextEditor.LinkPopover[part]);
+    }
     expect(RichTextEditor.Content).toBe(HeroRichTextEditor.Content);
     expect(RichTextEditor.BubbleMenu).toBe(HeroRichTextEditor.BubbleMenu);
     expect(RichTextEditor.FloatingMenu).toBe(HeroRichTextEditor.FloatingMenu);

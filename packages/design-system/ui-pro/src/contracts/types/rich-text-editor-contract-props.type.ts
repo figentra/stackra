@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the props the web `RichTextEditor` parts with an accessible name take from the shared vocabulary: the
- *          toolbar and its three kinds of button (format toggle, action and command) take `label`. The root, which
+ *          toolbar, its three kinds of button (format toggle, action and command) and the link popover's trigger take
+ *          `label`. The root, which
  *          already names its disabled state `isDisabled`, and every other part are HeroUI Pro's own and pass through
  *          unchanged.
  * Boundary: types only; web only.
@@ -24,6 +25,12 @@ export interface RichTextEditorToggleButtonContractProps {
 /** Props of `RichTextEditor.ActionButton` that the Stackra vocabulary names. */
 export interface RichTextEditorActionButtonContractProps {
   /** The accessible name of the button, read by screen readers; HeroUI Pro's `aria-label`, which it defaults from `action`. */
+  readonly label?: string | undefined;
+}
+
+/** Props of `RichTextEditor.LinkPopover.Trigger` that the Stackra vocabulary names. */
+export interface RichTextEditorLinkPopoverTriggerContractProps {
+  /** The accessible name of the button, read by screen readers; its `aria-label`, "Link" when left out. */
   readonly label?: string | undefined;
 }
 

@@ -191,6 +191,7 @@
     "marked": "^18.1.1",
     "motion": "^12.43.0",
     "react": ">=19.2.0",
+    "react-aria-components": "^1.22.1",
     "react-markdown": "^10.1.0",
     "react-native": ">=0.86.0",
     "react-native-pager-view": "^8.0.2",
@@ -269,6 +270,9 @@
       "optional": true
     },
     "motion": {
+      "optional": true
+    },
+    "react-aria-components": {
       "optional": true
     },
     "react-markdown": {

@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the web `RichTextEditor` compound on HeroUI Pro's RichTextEditor (a composable Tiptap editor): the root and
- *          most parts are HeroUI Pro's own; the toolbar and its three kinds of button map `label` to `aria-label`.
+ *          most parts are HeroUI Pro's own; the toolbar and its three kinds of button map `label` to `aria-label`, and
+ *          the link popover's trigger is the wrapper's own single button (see `rich-text-editor-link-popover.tsx`).
  * Boundary: no styling or behaviour of its own; the look needs `@heroui-pro/react/css`. The compound exposes the
  *          documented parts: HeroUI Pro's `RichTextEditor.Root` is left out. HeroUI Pro's hooks and the suggestion
  *          filter are re-exported as they are. Imports the `rich-text-editor` subpath, the only way to reach it (it
@@ -16,6 +17,7 @@ import {
 
 import { RichTextEditorActionButton } from "#react/rich-text-editor/rich-text-editor-action-button";
 import { RichTextEditorCommandButton } from "#react/rich-text-editor/rich-text-editor-command-button";
+import { RichTextEditorLinkPopover } from "#react/rich-text-editor/rich-text-editor-link-popover";
 import { RichTextEditorToggleButton } from "#react/rich-text-editor/rich-text-editor-toggle-button";
 import { RichTextEditorToolbar } from "#react/rich-text-editor/rich-text-editor-toolbar";
 
@@ -28,9 +30,14 @@ export {
 /** Props of the web RichTextEditor: HeroUI Pro's own, whose `isDisabled` already has the Stackra name. */
 export type RichTextEditorProps = HeroRichTextEditorProps;
 
-/** The root: HeroUI Pro's, which owns the Tiptap editor and its value. */
+/**
+ * The root: HeroUI Pro's, which owns the Tiptap editor and its value. A disabled editor says so on the root, so its
+ * dimmed toolbar, text and footer read as an inactive control's (WCAG 1.4.3 does not hold those to 4.5:1).
+ */
 function RichTextEditorRoot(props: RichTextEditorProps) {
-  return <HeroRichTextEditor.Root {...props} />;
+  return (
+    <HeroRichTextEditor.Root {...(props.isDisabled ? { "aria-disabled": true } : {})} {...props} />
+  );
 }
 
 /** The parts of the compound, typed from HeroUI Pro's own so the declaration output can name them. */
@@ -49,8 +56,8 @@ interface RichTextEditorParts {
   readonly ActionButton: typeof RichTextEditorActionButton;
   /** A button that runs your own Tiptap command; named by `label`. */
   readonly CommandButton: typeof RichTextEditorCommandButton;
-  /** The link control: a popover with a trigger, an input and apply and unset buttons. */
-  readonly LinkPopover: typeof HeroRichTextEditor.LinkPopover;
+  /** The link control: a popover with a trigger (named by `label`), an input and apply and unset buttons. */
+  readonly LinkPopover: typeof RichTextEditorLinkPopover;
   /** The editable area. */
   readonly Content: typeof HeroRichTextEditor.Content;
   /** A toolbar that appears over the selection. */
@@ -79,7 +86,7 @@ export const RichTextEditor: typeof RichTextEditorRoot & RichTextEditorParts = O
     ToggleButton: RichTextEditorToggleButton,
     ActionButton: RichTextEditorActionButton,
     CommandButton: RichTextEditorCommandButton,
-    LinkPopover: HeroRichTextEditor.LinkPopover,
+    LinkPopover: RichTextEditorLinkPopover,
     Content: HeroRichTextEditor.Content,
     BubbleMenu: HeroRichTextEditor.BubbleMenu,
     FloatingMenu: HeroRichTextEditor.FloatingMenu,

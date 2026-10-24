@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the web Map maps `label` to `aria-label` on the root, `onPress` to HeroUI Pro's `onClick` on a
+ * Purpose: proves the web Map names its root as a region from `label`, maps `onPress` to HeroUI Pro's `onClick` on a
  *          marker and a route, leaves each absent when not given, passes every other prop through, carries HeroUI
  *          Pro's own parts and `useMap`, and refuses HeroUI Pro's names.
  * Boundary: HeroUI Pro's map is replaced by a recording stand-in, because MapLibre needs WebGL and a layout engine,
@@ -65,9 +65,10 @@ describe("Map (web)", () => {
     for (const calls of Object.values(seen)) calls.length = 0;
   });
 
-  it("maps label to aria-label on the root, and passes every other prop through", () => {
+  it("names the root as a region from label, and passes every other prop through", () => {
     render(<Map label="Depots" isLoading mapStyle="https://example.test/style.json" />);
     expect(seen["Root"]?.at(-1)).toEqual({
+      role: "region",
       "aria-label": "Depots",
       isLoading: true,
       mapStyle: "https://example.test/style.json",
@@ -75,6 +76,7 @@ describe("Map (web)", () => {
     render(<Map />);
     expect("aria-label" in (seen["Root"]?.at(-1) ?? {})).toBe(false);
     expect("label" in (seen["Root"]?.at(-1) ?? {})).toBe(false);
+    expect("role" in (seen["Root"]?.at(-1) ?? {})).toBe(false);
   });
 
   it("maps a marker's onPress to HeroUI Pro's onClick, without the pointer event", () => {

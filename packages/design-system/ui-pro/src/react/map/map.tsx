@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the web `Map` compound on HeroUI Pro's Map: the map root, which maps the contract's `label` to
- *          `aria-label`, the parts Marker and Route, which map `onPress` to HeroUI Pro's `onClick`, and every other
+ * Purpose: the web `Map` compound on HeroUI Pro's Map: the map root, which a `label` names as a region (`role` and
+ *          `aria-label`), the parts Marker and Route, which map `onPress` to HeroUI Pro's `onClick`, and every other
  *          HeroUI Pro part (controls, markers, popups, arcs and clusters) as HeroUI Pro has it; `useMap` is
  *          re-exported.
  * Boundary: no styling or behaviour of its own; the look needs `@heroui-pro/react/css`. The map draws with
@@ -36,9 +36,15 @@ export type MapMarkerProps = MapMarkerContractProps &
 export type MapRouteProps = MapRouteContractProps &
   Omit<HeroMapRouteProps, keyof MapRouteContractProps | "onClick">;
 
-/** The map root: HeroUI Pro's, a MapLibre map named by `label`. */
+/** The map root: HeroUI Pro's, a MapLibre map, a region named by `label`. */
 function MapRoot({ label, ...rest }: MapProps) {
-  return <HeroMap.Root {...rest} {...omitUndefined({ "aria-label": label })} />;
+  // A named map is a region: a `div` with no role may not carry a name.
+  return (
+    <HeroMap.Root
+      {...rest}
+      {...(label === undefined ? {} : { role: "region", "aria-label": label })}
+    />
+  );
 }
 
 /** A marker at a longitude and latitude, pressed by `onPress`. */

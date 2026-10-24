@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: the web `ChatConversation` compound on HeroUI Pro's ChatConversation: a scrolling thread that sticks to
- *          the bottom, with the parts Content, ScrollAnchor and ScrollButton; the scroll button is named by `label`.
- * Boundary: no styling or behaviour of its own; the look needs `@heroui-pro/react/css`, and the scroll tracking
+ *          the bottom, with the parts Content, ScrollAnchor and ScrollButton. The thread is a `log` named by `label`
+ *          that takes focus, so the keyboard can scroll it (WCAG 2.1.1); the scroll button is named by its `label`.
+ * Boundary: no styling of its own; the look needs `@heroui-pro/react/css`, and the scroll tracking
  *          needs a layout engine. The compound exposes the documented parts: HeroUI Pro's `ChatConversation.Root`
  *          is left out. Imports the `chat-conversation` subpath.
  * Runtime: browser
@@ -19,9 +20,9 @@ import type {
   ChatConversationScrollButtonContractProps,
 } from "#contracts/types/chat-conversation-contract-props.type";
 
-/** Props of the web ChatConversation: the shared contract plus HeroUI Pro's own div props, passed through. */
+/** Props of the web ChatConversation: the shared contract plus HeroUI Pro's own div props, with `aria-label` as `label`. */
 export type ChatConversationProps = ChatConversationContractProps &
-  Omit<HeroChatConversationProps, keyof ChatConversationContractProps>;
+  Omit<HeroChatConversationProps, keyof ChatConversationContractProps | "aria-label">;
 
 /** Props of the scroll button: the shared contract plus HeroUI Pro's button props, with `aria-label` as `label`. */
 export type ChatConversationScrollButtonProps = ChatConversationScrollButtonContractProps &
@@ -30,9 +31,12 @@ export type ChatConversationScrollButtonProps = ChatConversationScrollButtonCont
     keyof ChatConversationScrollButtonContractProps | "aria-label"
   >;
 
-/** The scrolling root: HeroUI Pro's, which follows new content while the reader is at the bottom. */
-function ChatConversationRoot(props: ChatConversationProps) {
-  return <HeroChatConversation.Root {...props} />;
+/**
+ * The scrolling root: HeroUI Pro's, which follows new content while the reader is at the bottom. A chat history is a
+ * `log` (new messages are read out politely), and it scrolls, so it is in the tab order to scroll from the keyboard.
+ */
+function ChatConversationRoot({ label, ...rest }: ChatConversationProps) {
+  return <HeroChatConversation.Root role="log" tabIndex={0} {...rest} aria-label={label} />;
 }
 
 /** The button that jumps to the latest message: HeroUI Pro's, named by `label`. */

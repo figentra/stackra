@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: proves the web HoverCard maps `isOpen` to HeroUI Pro's `open`, names its card from `label`, passes unknown
- *          props through, carries HeroUI Pro's own parts, and refuses HeroUI Pro's `open` and `aria-label`.
+ * Purpose: proves the web HoverCard maps `isOpen` to HeroUI Pro's `open`, names its card from `label`, puts the
+ *          trigger's `aria-haspopup` and `aria-expanded` on the link itself (no wrapping span), passes unknown props
+ *          through, carries HeroUI Pro's Arrow, and refuses HeroUI Pro's `open` and `aria-label`.
  * Boundary: jsdom with real HeroUI Pro and React Aria; the theme CSS is not loaded, so roles and names are checked,
  *          not looks.
  * Runtime: browser
@@ -10,6 +11,7 @@
 // @vitest-environment jsdom
 // @covers sta-416:FR-004
 import { HoverCard as HeroHoverCard } from "@heroui-pro/react/hover-card";
+import { Link } from "@heroui/react";
 import { render, screen } from "@testing-library/react";
 
 import {
@@ -22,7 +24,11 @@ import {
 function Example(props: Partial<HoverCardProps>) {
   return (
     <HoverCard {...props}>
-      <HoverCard.Trigger data-testid="trigger">@stackra</HoverCard.Trigger>
+      <HoverCard.Trigger>
+        <Link href="#profile" data-testid="trigger">
+          @stackra
+        </Link>
+      </HoverCard.Trigger>
       <HoverCard.Content label="Profile" data-testid="card">
         Stackra design system
       </HoverCard.Content>
@@ -40,7 +46,9 @@ describe("HoverCard (web)", () => {
   it("leaves the card unnamed when label is left out", () => {
     render(
       <HoverCard defaultOpen>
-        <HoverCard.Trigger>@stackra</HoverCard.Trigger>
+        <HoverCard.Trigger>
+          <Link href="#profile">@stackra</Link>
+        </HoverCard.Trigger>
         <HoverCard.Content>Body</HoverCard.Content>
       </HoverCard>,
     );
@@ -54,14 +62,23 @@ describe("HoverCard (web)", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
+  it("puts the card's popup state on the link itself, with no span around it", () => {
+    const { rerender } = render(<Example isOpen={false} />);
+    const link = screen.getByRole("link", { name: "@stackra" });
+    expect(link.getAttribute("aria-haspopup")).toBe("dialog");
+    expect(link.getAttribute("aria-expanded")).toBe("false");
+    expect(link.parentElement?.hasAttribute("aria-expanded")).toBe(false);
+    rerender(<Example isOpen />);
+    expect(link.getAttribute("aria-expanded")).toBe("true");
+  });
+
   it("passes unknown props through to the trigger and the card", () => {
     render(<Example defaultOpen />);
     expect(screen.getByTestId("trigger").textContent).toBe("@stackra");
     expect(screen.getByTestId("card").textContent).toContain("Stackra design system");
   });
 
-  it("carries HeroUI Pro's own parts", () => {
-    expect(HoverCard.Trigger).toBe(HeroHoverCard.Trigger);
+  it("carries HeroUI Pro's own Arrow", () => {
     expect(HoverCard.Arrow).toBe(HeroHoverCard.Arrow);
   });
 
