@@ -782,3 +782,5 @@ dependency the inputs and forms build on. The ids continue this list; the wave 3
 - 2026-10-24 · Implementing · Claude (frontend-builder) · wave 6 components: FR-154 to FR-184, SC-012
 - 2026-10-24 · Implementing · Claude (frontend-builder) · wave 7 foundation: FR-185 to FR-187 (ADR 0318)
 - 2026-10-24 · Implementing · Claude (frontend-builder) · wave 7 components: FR-188 to FR-208, SC-013
+- 2026-10-24 · Implementing · Claude (ds-web) · wave 7 web components and routes; the native components (FR-191,
+  FR-197, FR-200, FR-203, FR-206) move to their own branch as T068

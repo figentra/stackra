@@ -129,8 +129,9 @@ Linear issues: [STA-382] AppShell, [STA-383] AppHeader and PageHeader, [STA-384]
 Linear issues: [STA-388] DataTable, [STA-389] FilterBar, [STA-390] BulkActionBar, [STA-391] EntityPicker, [STA-392] NumberField, [STA-393] DateField and DatePicker.
 
 - [x] T062 [US2] The resource index contracts, the number and date value contracts, the three query functions, the `@internationalized/date` and `@expo/ui` catalog entries and ADR 0318 — covers: FR-185, FR-186, FR-187, FR-207, P-075 — route: frontend — deps: T061
-- [ ] T063 [US2] DataTable and BulkActionBar: contracts, the web and native components, and the /data-table and /bulk-action-bar routes with e2e files — covers: FR-188, FR-189, FR-190, FR-191, FR-192, FR-193, P-076 — route: frontend — deps: T062
-- [ ] T064 [US2] FilterBar: contract, the web and native components, the /filter-bar route and its e2e file — covers: FR-194, FR-195, FR-196, FR-197, P-077 — route: frontend — deps: T062, T066, T067
-- [ ] T065 [US2] EntityPicker: contract, the web and native components, the /entity-picker route and its e2e file — covers: FR-198, FR-199, FR-200, FR-201, P-078 — route: frontend — deps: T062
-- [ ] T066 [US2] NumberField: the web and native components, the /number-field route and its e2e file — covers: FR-202, FR-203, FR-204, P-079 — route: frontend — deps: T062
-- [ ] T067 [US2] DateField and DatePicker: the web and native components and the /date-field and /date-picker routes with e2e files — covers: FR-205, FR-206, FR-208, P-079 — route: frontend — deps: T062
+- [x] T063 [US2] DataTable and BulkActionBar: contracts, the web components, and the /data-table and /bulk-action-bar routes with e2e files — covers: FR-188, FR-189, FR-190, FR-192, FR-193, P-076 — route: frontend — deps: T062
+- [x] T064 [US2] FilterBar: contract, the web component, the /filter-bar route and its e2e file — covers: FR-194, FR-195, FR-196, FR-197, P-077 — route: frontend — deps: T062, T066, T067
+- [x] T065 [US2] EntityPicker: contract, the web component, the /entity-picker route and its e2e file — covers: FR-198, FR-199, FR-201, P-078 — route: frontend — deps: T062
+- [x] T066 [US2] NumberField: the web component, the /number-field route and its e2e file — covers: FR-202, FR-204, P-079 — route: frontend — deps: T062
+- [x] T067 [US2] DateField and DatePicker: the contract of the picker, the web components and the /date-field and /date-picker routes with e2e files — covers: FR-205, FR-208, P-079 — route: frontend — deps: T062
+- [ ] T068 [US2] The wave 7 native components: DataTable and BulkActionBar, FilterBar, EntityPicker, NumberField, and DateField with DatePicker, on their own branch from the frozen contracts — covers: FR-191, FR-197, FR-200, FR-203, FR-206 — route: mobile — deps: T063, T064, T065, T066, T067
