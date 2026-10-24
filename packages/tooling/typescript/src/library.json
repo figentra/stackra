@@ -1,12 +1,18 @@
 // Stackra file contract:
 // Purpose: a tsdown-built library (packages/*/*) or service — node + vitest globals; `config/` (CF1 defaults)
-//          is typechecked beside `src/`. The declaration flags in base feed tsdown's dts step; a library
-//          therefore declares `@types/node` and `vitest` as devDependencies.
+//          is typechecked beside `src/`. The DOM library and the automatic JSX runtime are on because a
+//          package's `src/react/` and `src/native/` entries render JSX (ADR 0294 decision 15); without them those
+//          entries fail with "Cannot use JSX unless --jsx". The declaration flags in base feed tsdown's dts step;
+//          a library therefore declares `@types/node` and `vitest` as devDependencies.
 // Owner: release-operations · Secrets: forbidden
 {
   "display": "@stackra/typescript-config — library",
   "extends": "./node.json",
-  "compilerOptions": { "types": ["node", "vitest/globals"] },
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["node", "vitest/globals"]
+  },
   "include": [
     "${configDir}/src",
     "${configDir}/config",
