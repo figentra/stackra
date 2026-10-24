@@ -173,7 +173,7 @@ describe("renderWebCss", () => {
     );
   });
 
-  // @covers sta-425:FR-002
+  // @covers sta-425:FR-002 sta-425:P-002
   it("puts the quiet button variants and the close button on the regular glass level, the primary solid (ADR 0319)", () => {
     expect(layer).toContain(
       "  .button--secondary,\n  .button--tertiary,\n  .button--outline {\n    --button-bg: var(--material-regular-fill);",

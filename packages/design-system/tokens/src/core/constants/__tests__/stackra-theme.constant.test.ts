@@ -136,7 +136,7 @@ describe("STACKRA_THEME", () => {
     }
   });
 
-  // @covers sta-425:FR-001
+  // @covers sta-425:FR-001 sta-425:P-001
   it("gives the accent the brand's steel blue, with paper or ink on it at 4.5:1 or more (ADR 0319)", () => {
     for (const name of STEEL_ACCENT) {
       const token = tokenOf(name);
