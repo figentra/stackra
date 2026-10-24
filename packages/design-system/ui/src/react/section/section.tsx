@@ -57,7 +57,7 @@ export function Section({
       // A `label` names the section outright; otherwise the title does, so a renamed title renames the landmark too.
       {...(label ? { "aria-label": label } : { "aria-labelledby": titleId })}
       render={(domProps) => createElement("section", domProps)}
-      className={cn("gap-4", className)}
+      className={cn("gap-4", className) ?? ""}
     >
       <Card.Header className="flex-row flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="flex min-w-0 flex-1 basis-48 items-start gap-3">
