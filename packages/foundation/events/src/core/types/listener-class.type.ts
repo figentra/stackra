@@ -9,5 +9,5 @@
  */
 import type { ListenerBase } from "#core/bases/listener.base";
 
-/** A class of listeners. */
-export type ListenerClass = abstract new () => ListenerBase;
+/** A class of listeners; its constructor takes the dependencies gen wires (ADR 0294 decision 25). */
+export type ListenerClass = abstract new (...args: never[]) => ListenerBase;
