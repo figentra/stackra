@@ -1,0 +1,96 @@
+---
+title: "0336 — Edition additions: typed fields on another product's models, and screens in its panel slots"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends, by Notes,
+  [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers) (a placement
+  layer for an edition's modules) and
+  [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) (extension
+  fields on a resource's table, form and infolist). Builds on
+  [0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle).
+</Note>
+
+## Context
+
+A fashion edition needs apparel attributes on the commerce product model, size and fit on the variant, and its own
+tabs inside the commerce product screen. `HasCustomFields` ([0116](/adr/0116-content-types-and-custom-fields)) is
+tenant data, bounded and untyped in code, so it cannot carry an edition's typed, indexed, validated fields. The
+overrides tree ([0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers)) lets an app
+shadow a file it consumes, but a base product's migrations are frozen snapshots
+([0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules)) that no consumer may edit, and a sibling module may
+touch another module only through its public groups ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming)
+decision 24). An edition needs a typed way in that keeps the base intact.
+
+## Decision
+
+The word is "addition": [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision
+23 reserves "extension" for an extension point's extensions.
+
+1. **A model addition is a class.** An edition module declares `extends ModelAddition(Product)({ ... })` in its own
+   `models/` group, in a `<base-model>.addition.ts` file, with typed fields written as any model's fields are
+   ([0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events)). `Product` is the base model
+   imported from the base product's released client package, never from its source.
+
+2. **Storage is a side table in the edition's schema.** Gen writes the addition's columns to a table in the edition
+   module's own Postgres schema, keyed one-to-one by the base record's id, with the base's tenant column and
+   row-level security. The base product's tables and migrations do not change; an edition migration is the edition's
+   own, ordered after the base's by `after:` ([0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules)).
+
+3. **Fields appear under the edition's key.** On the wire, the addition's fields are read and written through the
+   base model's own queries and actions, nested under the edition module's key (`muslin: { fit, season }`), so a base
+   client that knows nothing of the edition ignores them and an edition client types them. Validation runs as for any
+   field, and the addition's fields take the base record's permissions and record rules
+   ([0333](/adr/0333-record-visibility-rules-who-can-see-which-records)); an edition adds a permission only for a
+   screen or an action of its own.
+
+4. **Screens go through slots and placements.** An edition module places its tabs, widgets and actions in the base
+   product's resource slots through the placements of
+   [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards), and gen adds the addition
+   fields to the base resource's table, form and infolist builders as columns and fields the edition declares in its
+   own `resources/` group. Those placements sit in a new layer of
+   [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers): layer 2b, the edition's
+   modules, above the host module (layer 2) and below the app's overrides (layer 3). An edition never shadows a base
+   file; it places and extends.
+
+5. **Events in, events out.** An edition reacts to the base's integration events with `Listener` classes and emits
+   its own events under its own module key ([0141](/adr/0141-integration-event-names-and-envelope)). It never
+   subscribes to the base's domain events or lifecycle events, which are private to the base.
+
+6. **Versioned against the base.** An addition is valid for the base version range the edition declares
+   ([0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle)
+   decision 2). A base rename carries `@Renamed(old)` ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming)
+   decision 20), and gen fails the edition build when an extended model or field no longer exists in the base version it
+   builds against.
+
+7. **Tenant custom fields stay separate.** `HasCustomFields` remains the tenant's typed-at-run-time addition, in its
+   side table. An edition's fields are code; a tenant's are data. The two do not share a table or a namespace.
+
+## Consequences
+
+- A base product can be extended by several editions at once, each in its own schema and under its own key, and a base
+  upgrade breaks an edition only at the fields it renamed or removed, which gen names.
+- An edition's screen is a placement, so a tenant's layout copy and a user's overlay (layers 4 and 5) still apply on
+  top of it.
+- The base's wire shape grows a namespaced object per installed edition; a base client that ignores unknown keys keeps
+  working.
+
+## Enforcement
+
+- planned — gen (STA-340): `addition_target_missing` when the extended model or field is not in the base version;
+  `addition_key_collision` when two editions use one module key; an addition that imports the base model from
+  source fails the boundary check.
+- planned — a conformance test in `@stackra/model`: an addition's fields round-trip through the base's get and update
+  with the base record's permission, and are absent for a caller without the edition installed.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Notes: [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers)
+and [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards). Builds on
+[0116](/adr/0116-content-types-and-custom-fields), [0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events),
+[0141](/adr/0141-integration-event-names-and-envelope), [0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules),
+[0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming),
+[0333](/adr/0333-record-visibility-rules-who-can-see-which-records) and
+[0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle). Sources: the
+owner's Muslin rethink decisions of 2026-10-24 (STA-451), restated in this ADR's own words.

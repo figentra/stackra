@@ -1,7 +1,15 @@
 ---
 title: "0323 — Tenant vocabulary lives only in tenancy; other packages use the ScopeRef port"
-description: "Accepted, amended by 0327 · 2026-10-24"
+description: "Accepted, amended by 0327 · 2026-10-24 · amended 2026-10-24 (STA-348)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-348): the 0327 note below is corrected. `ScopeRef` stays in
+  `@stackra/contracts`, where decision 2 first placed it, as a type `{ id: PublicId<"scp">; path:
+  string }`; `@stackra/scope` owns its semantics and the resolver, and imports it
+  ([0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer) as amended the same
+  day). Decision 2 is read as written, with "port" meaning the type and the resolver together.
+</Note>
 
 <Note>
   Amends [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions): the names
