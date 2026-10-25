@@ -36,9 +36,10 @@
 | Licence tier (ADR 0077)               | PASS   | MIT with `LICENSE`                                                                                               |
 | Docs and ADRs                         | PASS   | README, AGENTS, file contracts and TSDoc; the port's differences from the sample are listed in the README        |
 
-- Boundaries: runtime imports of actions, config, container, contracts, database, errors, events, i18n, ledger, model,
-  search, settings, tenancy, ui, validation and versioning; dev-only `@stackra/testing`, the testing library and the
-  tooling presets.
+- Boundaries: runtime imports of actions, config, container, contracts, database, errors, events, i18n, iam, ledger,
+  model, panel, search, settings, tenancy, ui, validation, versioning and workflow; dev-only `@stackra/testing`,
+  `@stackra/locking` (the workflow test's engine), the testing library and the tooling presets. None of them depends on
+  this package.
 - Versions: catalogs and `workspace:*` only.
 - Naming: drivers `<Name>Driver`, refusals end in `Error`, schemas in `schemas/` one per file, the extension point
   `LoyaltyKitExtensionPoint`, the change `PointsEarnedV1Change`; no `define` prefix.
@@ -54,6 +55,9 @@
 - **P-007**: the compiled migrations state and comment every column, carry the equality policy and the unique indexes, and build the account index concurrently — Validates: FR-007
 - **P-008**: both balance renderers warn exactly when the next expiry is less than thirty days away — Validates: FR-008
 - **P-009**: the fake answers from its ids and records each call; the matcher passes exactly on the ledger's balance — Validates: FR-009
+- **P-010**: for any actor and account, the policy denies exactly a customer subject on another member's account, any redemption from a frozen account and a freeze of a deleted one, and abstains otherwise — Validates: FR-010
+- **P-011**: for any redemption, the run answers with the debit when it parks, and the member's balance after the wait is the debited balance when confirmed in time and the starting balance otherwise, credited at most once — Validates: FR-011
+- **P-012**: the recorded resource, document and widget trees match the sample's declarations, keys and slot — Validates: FR-012
 
 ## Deploy modes
 

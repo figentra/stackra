@@ -3,12 +3,12 @@
  * Purpose: `ExpirePointsAction`, `loyalty_kit.points.expire@1`: the job that expires points older than the window the
  *          settings hold.
  * Boundary: a job is an action run from a queue; its `job` surface names the cron schedule that dispatches it once per
- *           scope (`perTenant`, the actions option), and gen checks the cron's `input` against `ExpirePointsInput`.
+ *           scope (`perScope`), and gen checks the cron's `input` against `ExpirePointsInput`.
  *           The only actor is the system, so it gets no endpoint and no tool, and the same pipeline applies isolation,
  *           audit and idempotency. Each driver cuts an expiry at zero, so a member whose earned points were spent is
  *           never taken below zero. It runs on the default queue until gen writes `#stackra/queues`
- *           (`Queues.Maintenance`); its permission is derived from the key until @stackra/iam ships
- *           `LoyaltyAccountPermissions.expire`.
+ *           (`Queues.Maintenance`). The key's aggregate (`points`) is not the model's, so the permission is named:
+ *           `LoyaltyAccountPermissions.expire`, a system permission no role grants.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 16, 18 and 21); ADR 0305 (rule 28: the job surface); ADR 0098; ADR 0148
  *                     (queue and scheduler); ADR 0220.
@@ -19,6 +19,7 @@ import type { SettingsReader } from "@stackra/settings";
 
 import type { LoyaltyLedger } from "#contracts/ports/loyalty-ledger.port";
 import { memberId } from "#core/functions/member-id.function";
+import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
 import { LoyaltyKitSettings } from "#node/loyalty-kit.settings";
 import type { ExpirePointsInput } from "#node/schemas/expire-points-input.schema";
 import { ExpirePointsOutput } from "#node/schemas/expire-points-output.schema";
@@ -32,12 +33,13 @@ import type { AccountService } from "#node/services/account.service";
  */
 export class ExpirePointsAction extends Action({
   key: "points.expire",
+  permission: LoyaltyAccountPermissions.expire,
   actors: [ActorKind.System],
   job: {
     unique: true,
     timeout: "5m",
     retries: 3,
-    cron: { schedule: "0 3 * * *", perTenant: true, input: { batchSize: 500 } },
+    cron: { schedule: "0 3 * * *", perScope: true, input: { batchSize: 500 } },
   },
 }) {
   /** Lists the accounts to visit. */

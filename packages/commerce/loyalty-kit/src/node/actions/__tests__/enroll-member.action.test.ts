@@ -18,6 +18,7 @@ import { vi } from "vitest";
 
 import { LoyaltyTier } from "#contracts/enums/loyalty-tier.enum";
 import { NotOwnPrincipalError } from "#core/errors/not-own-principal.error";
+import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
 import { EnrollMemberAction } from "#node/actions/enroll-member.action";
 import { LoyaltyAccount } from "#node/models/loyalty-account.model";
 import { EnrollMemberInput } from "#node/schemas/enroll-member-input.schema";
@@ -45,6 +46,7 @@ describe("EnrollMemberAction", () => {
   it("is the account.enroll action on its PUT route, a tool and an intent", () => {
     expect(kindOf(EnrollMemberAction)?.options).toMatchObject({
       key: "account.enroll",
+      permission: LoyaltyAccountPermissions.enroll,
       actors: [ActorKind.User, ActorKind.Agent, ActorKind.Service],
       endpoint: { method: HttpMethod.Put, path: "/loyalty/accounts/:accountId" },
       tool: true,

@@ -55,8 +55,14 @@ model v3 and v3.1, ADR 0294, 0305). The choices recorded when it was specified:
   what is left and no balance goes negative (the recorded defect)
 - The memory driver cuts each expiry the same way, oldest earn first, in one turn of the event loop
 - ADR 0323 d1: tenancy's trait, macro and `TenancyScopes.Tenant` settings level are used, never redeclared
-- `@stackra/iam`, `@stackra/workflow` and `@stackra/panel` are not built yet, so their kinds wait (see Open items); the
-  actions keep their keys, so their permissions are derived until the `LoyaltyAccountPermissions` statics exist
+- Reconciliation R2 (2026-10-25): once `@stackra/iam`, `@stackra/workflow` and `@stackra/panel` were committed, the
+  kinds that waited on them were added: `LoyaltyAccountPermissions` and `LoyaltyAccountPolicy` with the `permission:`
+  option on every action and query; the redemption workflow, its signal, the two actions and their schemas; the
+  resource, the overview document and the two widgets. The icon, slot and i18n keys of the panel declarations are
+  internal typed stand-ins until gen writes `Icons`, `#stackra/slots` and `#stackra/i18n` (R-56)
+- The engine answers the starting call as soon as a run parks on a wait, so `RedeemPointsAction` returns the debit and
+  the balance after it; a later timeout credits the points back on the run, not to that caller (the sample's
+  integration test expected the call itself to refuse with `workflow_timed_out`)
 - Gen is not here yet (STA-339): each schema, event and the settings group registers its zod schema in its own file,
   the driver names augment `DriverRegistry` by hand, and the renderers' i18n keys come from `keys()`
 - The renderers are function components on `@stackra/ui` (Card, Text, Chip), because the class-component compiler and
@@ -119,6 +125,30 @@ asserts with `toHaveBalance`.
 **Independent Test**: `src/testing/__tests__/loyalty-members.fake.test.ts`,
 `src/testing/__tests__/to-have-balance.matcher.test.ts`.
 
+### User Story 6 - Redeem points the host can still undo (Priority: P1)
+
+A host redeems points against an order with `loyalty_kit.points.redeem`; the call answers with the debit, and the host
+confirms with `loyalty_kit.points.confirm_redemption` within fifteen minutes or the points are credited back.
+
+**Independent Test**: `src/node/workflows/__tests__/redeem-points.workflow.test.ts`,
+`src/node/actions/__tests__/redeem-points.action.test.ts`,
+`src/node/actions/__tests__/confirm-redemption.action.test.ts`.
+
+**Acceptance Scenarios**:
+
+1. **Given** 1 000 points, **When** 300 are redeemed and the host confirms within the wait, **Then** the balance stays
+   700 after the wait.
+2. **Given** 1 000 points, **When** 300 are redeemed and no confirmation comes, **Then** the run compensates with
+   `workflow_timed_out` and the balance is 1 000 again.
+
+### User Story 7 - Staff manage accounts in the panel (Priority: P2)
+
+Staff list, filter and open loyalty accounts, enroll a member and freeze accounts in bulk; a member sees "My points";
+owners and managers see today's points on their dashboard; a customer reads and redeems only their own account.
+
+**Independent Test**: `src/node/resources/loyalty-account/__tests__/loyalty-account.resource.test.ts`,
+`src/node/access/__tests__/loyalty-account.policy.test.ts`.
+
 ### Edge Cases
 
 - A repeated earn reference: nothing written, zero returned, no event.
@@ -149,6 +179,16 @@ asserts with `toHaveBalance`.
   the points issued today.
 - **FR-009**: `./testing` SHALL ship `LoyaltyMembersFake`, `pointsEntry`, `toHaveBalance`, both model factories and the
   demo seeder with its ids.
+- **FR-010**: `LoyaltyAccountPermissions` SHALL declare `read` (L0), `enroll` (L1), `freeze` (L2), `redeem` (L1) and
+  `expire` (L2, system); every action and query SHALL name its permission; `LoyaltyAccountPolicy` SHALL deny a
+  customer (or anyone acting for one) another member's account, deny any redemption from a frozen account and deny
+  freezing a deleted one.
+- **FR-011**: `RedeemPointsAction` SHALL run `RedeemPointsWorkflow` (quote with the `redeemVerify` slot, covered debit,
+  a fifteen-minute wait for `RedemptionConfirmed` correlated on member and reference), whose `undoDebit` credits the
+  points back once under the revert reference; `ConfirmRedemptionAction` SHALL send that signal for the actor's member.
+- **FR-012**: The module SHALL declare `LoyaltyAccountResource` (admin), `LoyaltyOverviewDocument` (app dashboard),
+  `PointsBalanceWidget` (unplaced, bound to the member's account) and `PointsIssuedWidget` (dashboard main grid, owners
+  and managers), with no raw icon, key, route or permission string.
 
 ## Success Criteria
 
@@ -160,15 +200,9 @@ asserts with `toHaveBalance`.
 
 ## Open items (for the owner, not blocking)
 
-- Waiting on `@stackra/iam`: `LoyaltyAccountPermissions`, `LoyaltyAccountPolicy` and the `permission:` option of the
-  actions and queries (so `ctx.authorize(account)` refines the derived permissions until then).
-- Waiting on `@stackra/workflow`: `RedeemPointsWorkflow`, `RedemptionConfirmed`, `RedeemPointsAction`,
-  `ConfirmRedemptionAction` and their schemas (`RedeemPointsOutput`, `ConfirmRedemptionInput`,
-  `ConfirmRedemptionOutput`, `QuotedRedemption`); `RedeemPointsInput` ships because the `redeemVerify` slot takes it.
-- Waiting on `@stackra/panel`: `LoyaltyAccountResource`, `LoyaltyOverviewDocument`, `PointsBalanceWidget`,
-  `PointsIssuedWidget`.
 - Waiting on gen (STA-339): `Queues.Maintenance` (the expire job runs on the default queue), the generated `X$`
-  schema exports, `LoyaltyAccountOperations`, the class-component compiler and `#stackra/ui`, `#stackra/i18n`.
+  schema exports, `LoyaltyAccountOperations`, the class-component compiler and `#stackra/ui`, `#stackra/i18n`,
+  `#stackra/slots` and the generated `Icons` (the panel declarations use internal stand-ins meanwhile).
 - The template's manifest contract test and committed `stackra.manifest.json` wait for gen.
 - The Postgres, outbox and workflow integration tests of the sample run with the testing workflow once those drivers
   exist.

@@ -32,20 +32,33 @@ await loyalty.release(member, orderId, at);
 export class CommerceLoyaltyMembersDriver extends Driver(LoyaltyMembers) { … }
 ```
 
+A host that wants an undoable redemption instead calls the actions:
+
+```ts
+// spend points against an order; the call answers with the debit and the balance after it (Idempotency-Key required)
+await pipeline.execute(
+  RedeemPointsAction,
+  { points: 300, reference: orderId, totalMinor },
+  { actor },
+);
+// the order went through: keep the debit (otherwise it is credited back after 15 minutes)
+await pipeline.execute(ConfirmRedemptionAction, { reference: orderId }, { actor });
+```
+
 A hold is one covered debit (`LoyaltyLedger#debit`): the balance check and the write are one step per member, so two
 concurrent purchases never spend the same points. Settling is balance-neutral (a `redeem` entry plus the `release` that
 offsets the hold), so settle and release commute: the points come back exactly once, in either order.
 
 ## Entries
 
-| Entry         | Holds                                                                                                                                                                                                                                                                                               |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`           | `LoyaltyKitConfig`, `LoyaltyKitOptions`, `LoyaltyKitConfig$`, `LoyaltyService`, `MemoryLoyaltyLedgerDriver`, the four refusals, `BalanceView`, `LoyaltyAccountView`, `PointsIssuedView`, the reference constants, `memberId`, `isExpiringSoon`                                                      |
-| `./contracts` | the ports `LoyaltyLedger` and `LoyaltyMembers`, the enums `DebitOutcome`, `EntryKind`, `LoyaltyTier`, the types `PointsEntry`, `MemberId`, `EarnDraft`, `EarnRequest`, `RedemptionQuote`                                                                                                            |
-| `./node`      | `LoyaltyKitModule`, `LoyaltyKitSettings`, the enroll, freeze and expire actions, the balance and points-issued queries, their schemas, the events and the v1 change, the extension point and tier extension, the listener, the models, the services, `PostgresLoyaltyLedgerDriver`, both migrations |
-| `./react`     | `PointsBalance`, `PointsIssued` and their Props                                                                                                                                                                                                                                                     |
-| `./native`    | `PointsBalance` and its Props (the web Props, field for field)                                                                                                                                                                                                                                      |
-| `./testing`   | `LoyaltyMembersFake.with()`, `pointsEntry`, `toHaveBalance`, `LoyaltyAccountFactory`, `LedgerEntryFactory`, `LoyaltyKitDemoSeeder` and its `ids`                                                                                                                                                    |
+| Entry         | Holds                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.`           | `LoyaltyKitConfig`, `LoyaltyKitOptions`, `LoyaltyKitConfig$`, `LoyaltyService`, `MemoryLoyaltyLedgerDriver`, the four refusals, `BalanceView`, `LoyaltyAccountView`, `PointsIssuedView`, the reference constants (hold, settle, release, expire, revert), `memberId`, `isExpiringSoon`                                                                                                                                                                                                                                                                          |
+| `./contracts` | the ports `LoyaltyLedger` and `LoyaltyMembers`, the enums `DebitOutcome`, `EntryKind`, `LoyaltyTier`, the types `PointsEntry`, `MemberId`, `EarnDraft`, `EarnRequest`, `RedemptionQuote`                                                                                                                                                                                                                                                                                                                                                                        |
+| `./node`      | `LoyaltyKitModule`, `LoyaltyKitSettings`, `LoyaltyAccountPermissions`, `LoyaltyAccountPolicy`, the enroll, freeze, expire, redeem and confirm-redemption actions, the balance and points-issued queries, their schemas and `QuotedRedemption`, `RedeemPointsWorkflow` and `RedemptionConfirmed`, the events and the v1 change, the extension point and tier extension, the listener, the models, `LoyaltyAccountResource`, `LoyaltyOverviewDocument`, `PointsBalanceWidget`, `PointsIssuedWidget`, the services, `PostgresLoyaltyLedgerDriver`, both migrations |
+| `./react`     | `PointsBalance`, `PointsIssued` and their Props                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `./native`    | `PointsBalance` and its Props (the web Props, field for field)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `./testing`   | `LoyaltyMembersFake.with()`, `pointsEntry`, `toHaveBalance`, `LoyaltyAccountFactory`, `LedgerEntryFactory`, `LoyaltyKitDemoSeeder` and its `ids`                                                                                                                                                                                                                                                                                                                                                                                                                |
 
 ## The ledger and the floor
 
@@ -59,17 +72,42 @@ The Postgres driver keeps the points in `Journal<LedgerEntry>` (`@stackra/ledger
 
 The memory driver keeps the same contract in one turn of the event loop.
 
+## Access, redemption and the panel
+
+- **Access:** `LoyaltyAccountPermissions` declares `read` (L0), `enroll` (L1), `freeze` (L2), `redeem` (L1) and
+  `expire` (L2, system: only the platform holds it). The kit's keys name `account` and `points`, not the model, so every
+  action and query names its permission. `LoyaltyAccountPolicy` refines `read`, `redeem` and `freeze` per record: a
+  customer subject (`actor.onBehalfOf ?? actor`) reads and redeems only their own account, nobody redeems from a frozen
+  one, and a deleted account is never frozen.
+- **Redemption:** `RedeemPointsAction` (idempotency required, 30 a minute, `POST /loyalty/redemptions`) runs
+  `RedeemPointsWorkflow`: `quote` (the `redeemVerify` slot, then membership and balance), `debit` (one covered debit,
+  recording `points.redeemed`) and `confirm`, which parks the run for `RedemptionConfirmed` correlated on member and
+  reference, for fifteen minutes. The engine answers the call as soon as the run parks, with the debit and the balance
+  after it. `ConfirmRedemptionAction` (`PUT /loyalty/redemptions/:reference/confirm`) sends the signal for the actor's
+  member; without it the wait times out, `undoDebit` credits the points back once under `revert:<reference>`, and the
+  run ends `compensated` with `workflow_timed_out`.
+- **Panel:** `LoyaltyAccountResource` is the admin list, View page, enrol form and bulk Freeze; `LoyaltyOverviewDocument`
+  is the app-area "My points" dashboard at `/loyalty`; `PointsBalanceWidget` is unplaced (a document or a host's
+  `Widget.place` puts it) and bound to the signed-in member's account; `PointsIssuedWidget` sits on the dashboard's
+  main grid for owners and managers. Both widgets draw with the kit's `PointsBalance` and `PointsIssued` renderers.
+
 ## How this port differs from the template sample
 
 - **The expiry floor (the recorded defect):** the sample's `expire()` reversed every stale earn in full, so points
   spent since could take a balance negative; both drivers now cut each expiry at zero (above).
 - **Postgres `append` states `floor: null`:** with the model's default floor of zero, a settle's redeem line would
   otherwise be refused after the points were spent elsewhere, and the following release would credit points back.
-- **Not here yet, waiting on unbuilt packages:** `LoyaltyAccountPermissions`, `LoyaltyAccountPolicy` and the actions'
-  `permission:` option (`@stackra/iam`, so permissions are derived from the keys meanwhile); `RedeemPointsWorkflow`,
-  `RedemptionConfirmed`, `RedeemPointsAction`, `ConfirmRedemptionAction`, `RedeemPointsOutput`,
-  `ConfirmRedemptionInput`, `ConfirmRedemptionOutput` and `QuotedRedemption` (`@stackra/workflow`);
-  `LoyaltyAccountResource`, `LoyaltyOverviewDocument`, `PointsBalanceWidget`, `PointsIssuedWidget` (`@stackra/panel`).
+- **A redemption that times out:** the sample's integration test expected the redeem call to refuse with
+  `workflow_timed_out`. The engine answers the call when the run parks on the confirmation, so the call returns the
+  debit and the timeout shows only on the run (`quote:done`, `debit:compensated`, `confirm:timed_out`) and the balance.
+- **The policy's subject** is `actor.onBehalfOf ?? actor` (the sample read `actor`), so a service or an agent acting for
+  a customer is held to that customer; the undo's reference prefix is the exported `REVERT_REFERENCE_PREFIX`.
+- **`perScope`:** the expire job's cron says `perScope: true` (the actions option was renamed from `perTenant`, R-59);
+  the sample still writes `perTenant`.
+- **Panel stand-ins:** the navigation group, the icon and the dashboard slot come from internal typed constants
+  (`LOYALTY_KIT_KEYS.loyalty_kit.nav.loyalty`, `LOYALTY_KIT_ICONS.Star`, `LOYALTY_KIT_SLOTS.Dashboard.Main`) instead of
+  gen's `I18n`, `Icons` and `Slots`, so no raw string sits in those positions (R-56); the slots the overview document
+  publishes are gen's and not declared here.
 - **Gen stand-ins:** each schema, event and the settings group registers its zod schema in its own file; the config
   ships `LoyaltyKitConfig$` (the name the commerce host's generated schemas import; the sample's entry called it
   `LoyaltyKitOptions$`), and no other `X$`; the driver names augment `DriverRegistry` by hand; `Queues.Maintenance` is
@@ -88,5 +126,6 @@ The memory driver keeps the same contract in one turn of the event loop.
   three filter indexes with `@Index`; `PointsIssuedQuery` never reports `-0`; the demo ids are lowercase, as minted ids
   are; the settings' silver-below-gold rule is checked by the stand-in schema.
 - **Tests:** unit tests construct each class with fakes, because the gen-written wiring the sample's
-  `createTestingModule(LoyaltyKitModule)` tests need does not exist yet; the Postgres, outbox and workflow integration
-  tests and the manifest contract test wait for those drivers and for gen.
+  `createTestingModule(LoyaltyKitModule)` tests need does not exist yet (the policy test constructs the policy; the
+  workflow test drives the native engine on the memory journal directly); the Postgres and outbox integration tests,
+  the workflow's Postgres run and the manifest contract test wait for those drivers and for gen.

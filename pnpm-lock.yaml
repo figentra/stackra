@@ -1422,12 +1422,18 @@ importers:
       '@stackra/i18n':
         specifier: workspace:*
         version: link:../../foundation/i18n
+      '@stackra/iam':
+        specifier: workspace:*
+        version: link:../../security/iam
       '@stackra/ledger':
         specifier: workspace:*
         version: link:../ledger
       '@stackra/model':
         specifier: workspace:*
         version: link:../../data/model
+      '@stackra/panel':
+        specifier: workspace:*
+        version: link:../../experience/panel
       '@stackra/search':
         specifier: workspace:*
         version: link:../../data/search
@@ -1446,10 +1452,16 @@ importers:
       '@stackra/versioning':
         specifier: workspace:*
         version: link:../../communication/versioning
+      '@stackra/workflow':
+        specifier: workspace:*
+        version: link:../../runtime/workflow
       zod:
         specifier: 'catalog:'
         version: 4.6.7
     devDependencies:
+      '@stackra/locking':
+        specifier: workspace:*
+        version: link:../../runtime/locking
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../developer/testing

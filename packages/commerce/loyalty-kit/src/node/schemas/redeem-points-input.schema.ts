@@ -2,10 +2,9 @@
  * Stackra file contract:
  * Purpose: `RedeemPointsInput`, the input of `loyalty_kit.points.redeem@1`: points to spend, the idempotent reference
  *          and the amount still to pay.
- * Boundary: a shape class in its own file, the argument of the `redeemVerify` slot of the extension point; the action
- *           and the workflow that take it wait for @stackra/workflow. Built with `RedeemPointsInput.create`, never
- *           `new`. The actor is never a field. It registers its schema when the module loads (STA-339 replaces the
- *           registration).
+ * Boundary: a shape class in its own file, read by `RedeemPointsAction`, `RedeemPointsWorkflow` and the
+ *           `redeemVerify` slot of the extension point. Built with `RedeemPointsInput.create`, never `new`. The actor
+ *           is never a field. It registers its schema when the module loads (STA-339 replaces the registration).
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 4, 13 and 26); ADR 0305 (one declaration per file); ADR 0136 (the actor is
  *                     never an input field).

@@ -3,11 +3,11 @@
  * Purpose: `EnrollMemberAction`, `loyalty_kit.account.enroll@1`: enroll a principal (staff) or oneself (customer).
  *          Inline `handle`, one transaction, reachable over HTTP, as an MCP tool, from the intent router and through a
  *          host's generated client.
- * Boundary: the action is the contract: key, input and output (the types of `handle`, schemas in `schemas/`), actors
- *           and its surfaces; `AccountService` does the work. The sample's path is kept, so `endpoint` is written.
- *           `tool: true` exposes it as `loyalty_kit_account_enroll`; `intent: true` takes its phrases from
- *           `loyalty_kit::actions.account.enroll.intents` in every locale. Its permission is derived from the key until
- *           @stackra/iam ships `LoyaltyAccountPermissions.enroll`.
+ * Boundary: the action is the contract: key, input and output (the types of `handle`, schemas in `schemas/`),
+ *           permission, actors and its surfaces; its risk is the permission's (L1), and `AccountService` does the
+ *           work. The key's aggregate (`account`) is not the model's, so the permission is named. The sample's path is
+ *           kept, so `endpoint` is written. `tool: true` exposes it as `loyalty_kit_account_enroll`; `intent: true`
+ *           takes its phrases from `loyalty_kit::actions.account.enroll.intents` in every locale.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 2, 3, 16 and 21); ADR 0305 (rules 28 and 30); ADR 0098; ADR 0136; ADR 0155;
  *                     ADR 0245 (intents).
@@ -17,6 +17,7 @@ import { ActorKind, HttpMethod, Realm } from "@stackra/contracts";
 
 import { NotOwnPrincipalError } from "#core/errors/not-own-principal.error";
 import { memberId } from "#core/functions/member-id.function";
+import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
 import type { EnrollMemberInput } from "#node/schemas/enroll-member-input.schema";
 import { EnrollMemberOutput } from "#node/schemas/enroll-member-output.schema";
 import type { AccountService } from "#node/services/account.service";
@@ -30,6 +31,7 @@ import type { AccountService } from "#node/services/account.service";
  */
 export class EnrollMemberAction extends Action({
   key: "account.enroll",
+  permission: LoyaltyAccountPermissions.enroll,
   actors: [ActorKind.User, ActorKind.Agent, ActorKind.Service],
   endpoint: { method: HttpMethod.Put, path: "/loyalty/accounts/:accountId" },
   tool: true,

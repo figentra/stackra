@@ -12,6 +12,9 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./reac
 | The configuration and its shape                               | `src/config/`, `src/core/schemas/`                                |
 | Isomorphic logic, a refusal, a shared view, the memory driver | `src/core/{services,errors,schemas,drivers,functions,constants}/` |
 | A kind of the module (action, query, event, listener, …)      | its group under `src/node/`                                       |
+| A permission set or a policy                                  | `src/node/access/`                                                |
+| A workflow or a signal                                        | `src/node/workflows/`                                             |
+| A panel resource, document or widget                          | `src/node/resources/loyalty-account/`                             |
 | A model, its migration, a factory, the demo seeder            | `src/node/models/`, `src/node/database/*/`                        |
 | A renderer and its Props                                      | `src/react/<name>/`, `src/native/<name>/`                         |
 | A fake, fixture or matcher                                    | `src/testing/`                                                    |
@@ -39,7 +42,13 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./reac
   `.notNull()` or `.nullable()` with a `.comment()` equal to the model field's docblock.
 - Every `Schema`, event and settings class registers its zod schema in its own file until gen writes `#stackra/schemas`.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
-- Waiting kinds (iam, workflow, panel) are listed in the README; add them only once those packages exist.
+- Every action and query names its permission (`LoyaltyAccountPermissions.<verb>`); never leave one to the derived
+  name, because the kit's keys name `account` and `points`, not the model. Record rules go in `LoyaltyAccountPolicy`.
+- A redemption that must be undoable goes through `RedeemPointsWorkflow`; its undo credits under
+  `REVERT_REFERENCE_PREFIX`. The engine answers `ctx.run` when the run parks, so never promise a caller the outcome of
+  the wait.
+- Panel declarations take icons, slots and i18n keys from the internal stand-ins (`LOYALTY_KIT_ICONS`,
+  `LOYALTY_KIT_SLOTS`, `LOYALTY_KIT_KEYS`), never a raw string (R-56); delete the stand-ins with STA-339.
 
 ## Rules that fail the build
 

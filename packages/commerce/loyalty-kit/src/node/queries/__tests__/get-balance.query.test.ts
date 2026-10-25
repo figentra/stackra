@@ -21,6 +21,7 @@ import { LoyaltyTier } from "#contracts/enums/loyalty-tier.enum";
 import { MemoryLoyaltyLedgerDriver } from "#core/drivers/memory-loyalty-ledger.driver";
 import { memberId } from "#core/functions/member-id.function";
 import { BalanceView } from "#core/schemas/balance-view.schema";
+import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
 import { PointsEarned } from "#node/events/points-earned.event";
 import { PointsRedeemed } from "#node/events/points-redeemed.event";
 import { LoyaltyKitSettings } from "#node/loyalty-kit.settings";
@@ -65,6 +66,7 @@ describe("GetBalanceQuery", () => {
   it("is the points.balance query on its GET route, cached and dropped when points move", () => {
     expect(kindOf(GetBalanceQuery)?.options).toMatchObject({
       key: "points.balance",
+      permission: LoyaltyAccountPermissions.read,
       endpoint: { method: HttpMethod.Get, path: "/loyalty/accounts/:accountId/balance" },
       intent: true,
       cache: { ttl: "1m", invalidateOn: [PointsEarned, PointsRedeemed] },

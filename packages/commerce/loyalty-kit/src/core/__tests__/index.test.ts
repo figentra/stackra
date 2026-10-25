@@ -30,6 +30,7 @@ describe("@stackra/loyalty-kit", () => {
       "NotOwnPrincipalError",
       "PointsIssuedView",
       "RELEASE_REFERENCE_PREFIX",
+      "REVERT_REFERENCE_PREFIX",
       "SETTLE_REFERENCE_PREFIX",
       "isExpiringSoon",
       "memberId",
@@ -40,6 +41,7 @@ describe("@stackra/loyalty-kit", () => {
     expect(core.EXPIRE_REFERENCE_PREFIX).toBe("expire:");
     expect(core.HOLD_REFERENCE_PREFIX).toBe("hold:");
     expect(core.RELEASE_REFERENCE_PREFIX).toBe("release:");
+    expect(core.REVERT_REFERENCE_PREFIX).toBe("revert:");
     expect(core.SETTLE_REFERENCE_PREFIX).toBe("settle:");
     expect(core.MAX_POINTS_PER_ENTRY).toBe(1_000_000);
   });

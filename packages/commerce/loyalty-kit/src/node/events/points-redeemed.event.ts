@@ -3,8 +3,8 @@
  * Purpose: `PointsRedeemed`, points were debited by a redemption. Private: it never leaves the service; the balance and
  *          points-issued queries' caches are dropped by it.
  * Boundary: a domain event dispatched after commit in process; never in the outbox, never versioned, so it takes no
- *           options and its base is written bare. Recorded by the redemption's debit step (the workflow waits for
- *           @stackra/workflow). It registers its schema when the module loads (STA-339 replaces the registration).
+ *           options and its base is written bare. Recorded by the `debit` step of `RedeemPointsWorkflow`. It registers
+ *           its schema when the module loads (STA-339 replaces the registration).
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 16 and 20); ADR 0141 (private events); ADR 0305 (rule 19); ADR 0078
  *                     (decision 3: domain events are not versioned).

@@ -14,6 +14,7 @@ import type { PublicId } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
 import { FreezeAccountAction } from "#node/actions/freeze-account.action";
 import { LoyaltyAccount } from "#node/models/loyalty-account.model";
 import { FreezeAccountInput } from "#node/schemas/freeze-account-input.schema";
@@ -22,9 +23,10 @@ import type { AccountService } from "#node/services/account.service";
 const accountId = "lac_01ja0000000000000000000011" as PublicId<"lac">;
 
 describe("FreezeAccountAction", () => {
-  it("is the account.freeze action on its PUT route and a tool", () => {
+  it("is the account.freeze action under its L2 permission, on its PUT route and a tool", () => {
     expect(kindOf(FreezeAccountAction)?.options).toMatchObject({
       key: "account.freeze",
+      permission: LoyaltyAccountPermissions.freeze,
       actors: [ActorKind.User, ActorKind.Agent],
       endpoint: { method: HttpMethod.Put, path: "/loyalty/accounts/:accountId/freeze" },
       tool: true,

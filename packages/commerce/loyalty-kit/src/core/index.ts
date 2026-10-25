@@ -15,6 +15,7 @@ export { HOLD_REFERENCE_PREFIX } from "#core/constants/hold-reference-prefix.con
 export { LOYALTY_KIT_CONFIG_SCHEMA as LoyaltyKitConfig$ } from "#core/constants/loyalty-kit-config-schema.constant";
 export { MAX_POINTS_PER_ENTRY } from "#core/constants/max-points-per-entry.constant";
 export { RELEASE_REFERENCE_PREFIX } from "#core/constants/release-reference-prefix.constant";
+export { REVERT_REFERENCE_PREFIX } from "#core/constants/revert-reference-prefix.constant";
 export { SETTLE_REFERENCE_PREFIX } from "#core/constants/settle-reference-prefix.constant";
 export { MemoryLoyaltyLedgerDriver } from "#core/drivers/memory-loyalty-ledger.driver";
 export { AccountFrozenError } from "#core/errors/account-frozen.error";

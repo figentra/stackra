@@ -5,7 +5,7 @@
  * Boundary: read only; aggregates in SQL through the ledger entry repository, within the caller's scope session. Only
  *           the `User` actor may call it (scope-wide numbers are not for customers). It keeps no HTTP route
  *           (`endpoint: false`); it is still an MCP tool. Cached five minutes per principal and dropped when points
- *           move. Its permission is derived from the key until @stackra/iam ships `LoyaltyAccountPermissions.read`.
+ *           move. It runs under `LoyaltyAccountPermissions.read` (L0), named because the key's aggregate is `points`.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 2, 16 and 21); ADR 0305 (rules 28 and 31 to 33); ADR 0098; ADR 0155.
  */
@@ -15,6 +15,7 @@ import type { Repository } from "@stackra/database";
 
 import { EntryKind } from "#contracts/enums/entry-kind.enum";
 import { PointsIssuedView } from "#core/schemas/points-issued-view.schema";
+import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
 import { PointsEarned } from "#node/events/points-earned.event";
 import { PointsRedeemed } from "#node/events/points-redeemed.event";
 import type { LedgerEntry } from "#node/models/ledger-entry.model";
@@ -28,6 +29,7 @@ import type { PointsIssuedInput } from "#node/schemas/points-issued-input.schema
  */
 export class PointsIssuedQuery extends Query({
   key: "points.stats_today",
+  permission: LoyaltyAccountPermissions.read,
   actors: [ActorKind.User],
   endpoint: false,
   cache: { ttl: "5m", invalidateOn: [PointsEarned, PointsRedeemed] },

@@ -15,6 +15,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { EntryKind } from "#contracts/enums/entry-kind.enum";
+import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
 import type { LedgerEntry } from "#node/models/ledger-entry.model";
 import { PointsIssuedQuery } from "#node/queries/points-issued.query";
 import { PointsIssuedInput } from "#node/schemas/points-issued-input.schema";
@@ -23,6 +24,7 @@ describe("PointsIssuedQuery", () => {
   it("is the staff-only points.stats_today query with no route", () => {
     expect(kindOf(PointsIssuedQuery)?.options).toMatchObject({
       key: "points.stats_today",
+      permission: LoyaltyAccountPermissions.read,
       actors: [ActorKind.User],
       endpoint: false,
       cache: { ttl: "5m" },

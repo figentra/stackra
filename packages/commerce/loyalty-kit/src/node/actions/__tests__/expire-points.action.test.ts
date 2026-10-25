@@ -18,6 +18,7 @@ import { vi } from "vitest";
 import { EntryKind } from "#contracts/enums/entry-kind.enum";
 import { MemoryLoyaltyLedgerDriver } from "#core/drivers/memory-loyalty-ledger.driver";
 import { memberId } from "#core/functions/member-id.function";
+import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
 import { ExpirePointsAction } from "#node/actions/expire-points.action";
 import { LoyaltyKitSettings } from "#node/loyalty-kit.settings";
 import { LoyaltyAccount } from "#node/models/loyalty-account.model";
@@ -29,12 +30,13 @@ describe("ExpirePointsAction", () => {
   it("is a system-only nightly job, unique per scope", () => {
     expect(kindOf(ExpirePointsAction)?.options).toMatchObject({
       key: "points.expire",
+      permission: LoyaltyAccountPermissions.expire,
       actors: [ActorKind.System],
       job: {
         unique: true,
         timeout: "5m",
         retries: 3,
-        cron: { schedule: "0 3 * * *", perTenant: true, input: { batchSize: 500 } },
+        cron: { schedule: "0 3 * * *", perScope: true, input: { batchSize: 500 } },
       },
     });
   });

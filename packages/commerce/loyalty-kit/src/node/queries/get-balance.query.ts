@@ -6,8 +6,9 @@
  *           move (`invalidateOn` takes the event classes). The record check runs through `ctx.authorize(account)`.
  *           The next expiry is read from the member's own entries (the oldest earn not yet expired, plus the window),
  *           not from the account's `entries` relation, which journal rows do not fill until the backfill. `intent:
- *           true` takes its phrases from `loyalty_kit::actions.points.balance.intents`. The sample's path is kept. Its
- *           permission is derived from the key until @stackra/iam ships `LoyaltyAccountPermissions.read`.
+ *           true` takes its phrases from `loyalty_kit::actions.points.balance.intents`. The sample's path is kept. The key's
+ *           aggregate (`points`) is not the model's, so the permission is named (`LoyaltyAccountPermissions.read`, L0),
+ *           and `LoyaltyAccountPolicy#read` narrows a customer to their own account.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 2, 16 and 21); ADR 0305 (rules 28 and 31 to 33: the cache option); ADR
  *                     0150; ADR 0155; ADR 0245.
@@ -22,6 +23,7 @@ import type { LoyaltyLedger } from "#contracts/ports/loyalty-ledger.port";
 import { EXPIRE_REFERENCE_PREFIX } from "#core/constants/expire-reference-prefix.constant";
 import { memberId } from "#core/functions/member-id.function";
 import { BalanceView } from "#core/schemas/balance-view.schema";
+import { LoyaltyAccountPermissions } from "#node/access/loyalty-account.permissions";
 import { PointsEarned } from "#node/events/points-earned.event";
 import { PointsRedeemed } from "#node/events/points-redeemed.event";
 import { LoyaltyKitSettings } from "#node/loyalty-kit.settings";
@@ -37,6 +39,7 @@ import type { AccountService } from "#node/services/account.service";
  */
 export class GetBalanceQuery extends Query({
   key: "points.balance",
+  permission: LoyaltyAccountPermissions.read,
   actors: [ActorKind.User, ActorKind.Agent, ActorKind.Service],
   endpoint: { method: HttpMethod.Get, path: "/loyalty/accounts/:accountId/balance" },
   intent: true,
