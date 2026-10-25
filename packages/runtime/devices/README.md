@@ -26,6 +26,15 @@ the server's query of a device's last acknowledged sequence. An MQTT driver come
 | `DeviceHubRefusedError`                               | `.`           | any other failure status after retries; retryable                |
 | `DEVICE_HUB_PATHS`                                    | `.`           | the hub routes the drivers call, for the hub service to serve    |
 | `DeviceAcknowledgedQuery`                             | `./node`      | `devices.device.acknowledged@1`: a device's last acknowledged    |
+| `DeviceRegistry`, `DevicePairing`                     | `./contracts` | the registry (server) and pairing (device) ports (ADR 0361 d7)   |
+| `DeviceStatus`, `PairingState`                        | `./contracts` | `active`/`retired`; `pending`/`paired`/`expired`                 |
+| `RegisteredDevice`, `DeviceDraft`, `DeviceListQuery`  | `./contracts` | the registry's record, what a person gives, a filter             |
+| `PairingCode`, `PairingRequest`, `PairingStatus`      | `./contracts` | the code shown, what opens it, what the device learns            |
+| `MemoryDeviceRegistryDriver`                          | `.`           | the registry's `memory` driver                                   |
+| `HttpDevicePairingDriver`                             | `.`           | pairing over the hub; keeps the token in `secrets`               |
+| `StoredDeviceIdentityDriver`                          | `.`           | `DeviceIdentity`: the install id, minted once in `prefs`         |
+| `StoredDeviceCredentialDriver`                        | `.`           | `DeviceCredential`: the token kept at pairing                    |
+| `PairingCodeInvalidError`, `DEVICE_STORAGE_KEYS`      | `.`           | the registry's refusal; the storage keys the drivers share       |
 | `DeviceAcknowledgedInput`, `DeviceAcknowledgedOutput` | `./node`      | `{ deviceId? }` and `{ sequence: number \| null }`               |
 
 ## Reporting and taking commands
@@ -69,6 +78,28 @@ export class GatewayService extends Service {
 - A network failure, a timeout, a 429 or a 503 is retried up to `attempts`. Then a 401 or 403 rejects with
   `DeviceUnauthorizedError` and any other failure status with `DeviceHubRefusedError`; the body is never read or kept.
 - The drivers refuse to start while `hubUrl` is `null` (the default).
+
+## Pairing and the registry
+
+```ts
+// the device (a till): show a code, poll until a person enters it
+const pairing = await devicePairing.begin(); // POST /device-pairings { deviceId: <install id> }
+let status = await devicePairing.check(pairing); // GET /device-pairings/:pairingId
+// once paired, the token is in the secrets area and StoredDeviceCredentialDriver answers it
+
+// the devices service: open, claim, list, retire
+const code = await registry.openPairing({ deviceId, at: clock.now(), expiresAt }); // the lifetime is a setting
+const device = await registry.claim(
+  input.code,
+  { name: "Till 2", kind: "till", nodeId },
+  clock.now(),
+);
+await registry.retire(device.id, clock.now()); // then identity revokes the credential
+```
+
+- The device's id is its install id, registered as is, so the offline queue's order (below) survives pairing.
+- A code is single use; an unknown, used or expired code refuses with `PairingCodeInvalidError`, which never says
+  which.
 
 ## The offline queue's order
 

@@ -1,6 +1,6 @@
 # AGENTS — @stackra/devices
 
-Device telemetry and command ports and their HTTP drivers. Member at `packages/runtime/devices` (`tier:lib`), in the
+Device telemetry, command, identity, credential, pairing and registry ports and their drivers. Member at `packages/runtime/devices` (`tier:lib`), in the
 programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` and `./node` (the server's query).
 
 ## Where code goes
@@ -29,7 +29,13 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` and `.
 
 - Every HTTP call goes through `hubSender`: idempotency key, bearer token, retry, timeout, refusals. A new driver
   call reuses it.
-- No route or body names the device; the hub reads it from the credential (ADR 0235 decision 1).
+- No route or body names the device; the hub reads it from the credential (ADR 0235 decision 1). The one exception
+  is `POST /device-pairings`, which carries the install id because the device has no credential yet.
+- The registry and pairing ports live here, not in `@stackra/peripherals` (ADR 0361 decision 7, owner round 22). The
+  registry never issues or revokes a credential: identity does; the devices service calls it.
+- A device's id is its install id (`StoredDeviceIdentityDriver`), minted once and registered at pairing, so it never
+  changes. The pairing token lives only in the `secrets` storage area, never in a return value or a log.
+- Device kinds, code lifetimes and who may pair are product data and settings; nothing here fixes them.
 - Firmware, over-the-air updates, fleet dashboards and edge sync are not here (ADR 0235 decision 4); add them only
   with their own issue.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
@@ -44,5 +50,7 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` and `.
 
 | Data             | Where               | Handling                                                             |
 | ---------------- | ------------------- | -------------------------------------------------------------------- |
-| Device token     | request header only | Read from `DeviceCredential` per call; never stored or logged here.  |
+| Device token     | request header only | Read from `DeviceCredential` per call; never logged here.            |
+| Pairing token    | `secrets` area      | Written by `HttpDevicePairingDriver` once paired; never returned.    |
+| Pairing code     | the device's screen | Single use, short-lived; a refusal never says whether it exists.     |
 | Telemetry values | request body only   | Sent as given; never logged here. A refused response body is unread. |

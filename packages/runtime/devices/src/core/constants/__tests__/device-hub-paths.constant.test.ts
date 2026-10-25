@@ -17,6 +17,11 @@ describe("DEVICE_HUB_PATHS", () => {
     expect(DEVICE_HUB_PATHS.acknowledge("cmd_1")).toBe("/device-commands/cmd_1/acknowledge");
   });
 
+  it("names the pairing routes and encodes a pairing id", () => {
+    expect(DEVICE_HUB_PATHS.pairings).toBe("/device-pairings");
+    expect(DEVICE_HUB_PATHS.pairing("pr/1")).toBe("/device-pairings/pr%2F1");
+  });
+
   it("encodes a command id so it stays one segment", () => {
     expect(DEVICE_HUB_PATHS.acknowledge("a/b?c")).toBe("/device-commands/a%2Fb%3Fc/acknowledge");
   });

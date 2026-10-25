@@ -19,7 +19,11 @@ describe("@stackra/devices/contracts", () => {
       "DeviceCommands",
       "DeviceCredential",
       "DeviceIdentity",
+      "DevicePairing",
+      "DeviceRegistry",
+      "DeviceStatus",
       "DeviceTelemetry",
+      "PairingState",
     ]);
   });
 
@@ -28,6 +32,8 @@ describe("@stackra/devices/contracts", () => {
     expect(Object.getPrototypeOf(contracts.DeviceCommands)).toBe(Port);
     expect(Object.getPrototypeOf(contracts.DeviceCredential)).toBe(Port);
     expect(Object.getPrototypeOf(contracts.DeviceIdentity)).toBe(Port);
+    expect(Object.getPrototypeOf(contracts.DevicePairing)).toBe(Port);
+    expect(Object.getPrototypeOf(contracts.DeviceRegistry)).toBe(Port);
   });
 
   it("lets a class implement a port", async () => {

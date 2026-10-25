@@ -15,13 +15,19 @@ describe("@stackra/devices", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(devices).sort()).toEqual([
       "DEVICE_HUB_PATHS",
+      "DEVICE_STORAGE_KEYS",
       "DeviceHubRefusedError",
       "DeviceUnauthorizedError",
       "DevicesConfig",
       "DevicesConfig$",
       "DevicesOptions",
       "HttpDeviceCommandsDriver",
+      "HttpDevicePairingDriver",
       "HttpDeviceTelemetryDriver",
+      "MemoryDeviceRegistryDriver",
+      "PairingCodeInvalidError",
+      "StoredDeviceCredentialDriver",
+      "StoredDeviceIdentityDriver",
     ]);
   });
 
