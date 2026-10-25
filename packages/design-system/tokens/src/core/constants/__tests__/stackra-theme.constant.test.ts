@@ -257,4 +257,32 @@ describe("STACKRA_THEME", () => {
     }
     expect(failures).toEqual([]);
   });
+
+  // ADR 0320 decision 4 (owner, 2026-10-25): muted text holds the same 4.5:1, on the thick level only. Each mode's
+  // thick floor makes that level solid where its own fill cannot (liquid); on regular, muted text would fail in glass
+  // and liquid, so it never sits there.
+  it("keeps muted text at 4.5:1 on the thick material over black and white, in every mode", () => {
+    const failures: string[] = [];
+    for (const mode of ["light", "dark"] as const) {
+      const surface = oklchToHex(STACKRA_THEME.colors.surface[mode]);
+      const muted = oklchToHex(STACKRA_THEME.colors.muted[mode]);
+      const share = STACKRA_THEME.materials.levels.thick.fill[mode];
+      for (const [name, factors] of Object.entries(MATERIAL_MODES)) {
+        const floor = Math.max(factors.fillFloor, factors.thickFloor);
+        const fill = Math.min(1, Math.max(floor, share * factors.fillScale));
+        const sheen = factors.sheen * STACKRA_THEME.materials.highlight[mode];
+        for (const backdrop of ["#000000", "#ffffff"]) {
+          const ratio = contrastRatio(muted, over("#ffffff", sheen, over(surface, fill, backdrop)));
+          if (ratio < 4.5) failures.push(`${mode} ${name} over ${backdrop}: ${ratio.toFixed(2)}`);
+        }
+      }
+    }
+    expect(failures).toEqual([]);
+    // The thick floor is a fallback, not a look: it is solid only where the mode's own thick fill would fail.
+    expect(
+      Object.entries(MATERIAL_MODES)
+        .filter(([, f]) => f.thickFloor === 1)
+        .map(([name]) => name),
+    ).toEqual(["solid", "liquid"]);
+  });
 });

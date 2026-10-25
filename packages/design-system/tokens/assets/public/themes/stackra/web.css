@@ -80,6 +80,7 @@
   --material-thick-saturate: 1.4;
   --material-fill-scale: 1;
   --material-fill-floor: 0;
+  --material-thick-floor: 0;
   --material-blur-scale: 1;
   --material-saturate-scale: 1;
   --material-brightness: 1;
@@ -152,7 +153,7 @@
   --material-regular-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-regular-share) * var(--material-fill-scale), 1) * 100%), transparent);
   --material-regular-filter: blur(calc(var(--material-regular-blur) * var(--material-blur-scale))) saturate(calc(var(--material-regular-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
   --material-thick-share: 0.9;
-  --material-thick-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-thick-share) * var(--material-fill-scale), 1) * 100%), transparent);
+  --material-thick-fill: color-mix(in oklch, var(--surface) calc(clamp(max(var(--material-fill-floor), var(--material-thick-floor)), var(--material-thick-share) * var(--material-fill-scale), 1) * 100%), transparent);
   --material-thick-filter: blur(calc(var(--material-thick-blur) * var(--material-blur-scale))) saturate(calc(var(--material-thick-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
   --material-edge-share: 0.1;
   --material-highlight-share: 0.7;
@@ -228,7 +229,7 @@
   --material-regular-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-regular-share) * var(--material-fill-scale), 1) * 100%), transparent);
   --material-regular-filter: blur(calc(var(--material-regular-blur) * var(--material-blur-scale))) saturate(calc(var(--material-regular-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
   --material-thick-share: 0.92;
-  --material-thick-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-thick-share) * var(--material-fill-scale), 1) * 100%), transparent);
+  --material-thick-fill: color-mix(in oklch, var(--surface) calc(clamp(max(var(--material-fill-floor), var(--material-thick-floor)), var(--material-thick-share) * var(--material-fill-scale), 1) * 100%), transparent);
   --material-thick-filter: blur(calc(var(--material-thick-blur) * var(--material-blur-scale))) saturate(calc(var(--material-thick-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
   --material-edge-share: 0.12;
   --material-highlight-share: 0.09;
@@ -241,6 +242,7 @@
 [data-material="solid"] {
   --material-fill-scale: 1;
   --material-fill-floor: 1;
+  --material-thick-floor: 1;
   --material-blur-scale: 0;
   --material-saturate-scale: 1;
   --material-brightness: 1;
@@ -250,6 +252,7 @@
 [data-material="frosted"] {
   --material-fill-scale: 1;
   --material-fill-floor: 0.88;
+  --material-thick-floor: 0;
   --material-blur-scale: 1.6;
   --material-saturate-scale: 0.85;
   --material-brightness: 1;
@@ -259,6 +262,7 @@
 [data-material="glass"] {
   --material-fill-scale: 1;
   --material-fill-floor: 0;
+  --material-thick-floor: 0;
   --material-blur-scale: 1;
   --material-saturate-scale: 1;
   --material-brightness: 1;
@@ -268,6 +272,7 @@
 [data-material="liquid"] {
   --material-fill-scale: 0.8;
   --material-fill-floor: 0;
+  --material-thick-floor: 1;
   --material-blur-scale: 1.2;
   --material-saturate-scale: 1.25;
   --material-brightness: 1.06;
@@ -436,6 +441,7 @@
   [data-material] {
     --material-fill-scale: 1;
     --material-fill-floor: 1;
+    --material-thick-floor: 1;
     --material-blur-scale: 0;
     --material-saturate-scale: 1;
     --material-brightness: 1;
@@ -456,6 +462,7 @@
   [data-material] {
     --material-fill-scale: 1;
     --material-fill-floor: 1;
+    --material-thick-floor: 1;
     --material-blur-scale: 0;
     --material-saturate-scale: 1;
     --material-brightness: 1;

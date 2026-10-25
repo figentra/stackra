@@ -1,7 +1,15 @@
 ---
 title: "0234 — Module assets and storage"
-description: "Accepted, amended by 0263, 0264, 0294, 0305, 0306 · 2026-10-20"
+description: "Accepted, amended by 0263, 0264, 0294, 0305, 0306 · 2026-10-20 · amended 2026-10-24 (STA-456)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-456): a `data/` asset may declare a schema and a version
+  (`assets/data/<name>.data.json` beside `<name>.schema.json`). Gen validates it against the schema
+  at build, content-hashes it into the manifest as decision 5 already does for every asset, and the
+  runtime refuses to start a module whose shipped data does not match its manifest hash.
+  Jurisdiction rule packs and reference tables ship this way. The folder names of decision 2 stand.
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-406), by [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers) for the overrides and by [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) for the language files: decision 9 is superseded in part. Overrides no longer sit in `assets/overrides/<namespace>/`. They sit in the member's `src/overrides/<owner>/` tree, which mirrors the owner's path, and a file there shadows the file at the same path. Language files still merge key by key. Language files are namespaced: `assets/lang/<locale>/<namespace>.json`, for example `console`, `shortcuts`, `manifest`, `pages` and `documents`. Regional overlays such as `ar-SA` and `en-US` hold only the keys that differ, and they fall back to the base language (`ar` or `en`). Folder names use BCP 47 case, and URL prefixes stay lowercase (ADR 0297). Decisions 1 to 8 and 10 stand.

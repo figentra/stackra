@@ -10,7 +10,8 @@ rim-light shares. `defineTheme` validates the block.
 
 - the levels' fills and filters in the colour blocks;
 - the factors of the four modes (`solid`, `frosted`, `glass`, `liquid`) on `[data-material]`, with liquid's sheen
-  scaled by the colour scheme's rim-light share;
+  scaled by the colour scheme's rim-light share, and each mode's `thickFloor`, which makes the thick level solid in
+  liquid so muted text keeps 4.5:1 on it;
 - solid fallbacks for reduced transparency, more contrast and a missing `backdrop-filter`, and a static opaque
   material where `color-mix()` is unsupported;
 - the `.material`, `.material-thin` and `.material-thick` classes.
