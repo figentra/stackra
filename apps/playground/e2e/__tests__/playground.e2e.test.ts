@@ -7,9 +7,9 @@
  *          stand 3:1 from the others in both schemes and work from the keyboard in right-to-left, and the `system`
  *          scheme must follow the system preference live. The command palette opens from the keyboard and lands focus
  *          on the page it opens, a component page marks itself in its category strip, the glass turns solid when more
- *          contrast or reduced transparency is asked for and keeps an edge in forced colours, and the index passes axe
- *          in every material mode, scheme and direction over an opaque page root (ADR 0320). A new route folder is
- *          covered without editing this file.
+ *          contrast or reduced transparency is asked for and keeps an edge in forced colours, the thick level (where
+ *          muted text sits) is solid in liquid, and the index passes axe in every material mode, scheme and direction
+ *          over an opaque page root (ADR 0320). A new route folder is covered without editing this file.
  * Boundary: the production build under `vite preview`; Chromium only.
  * Runtime: node
  * Governing contract: ADR 0302 (decision 5); ADR 0182 (test tiers); ADR 0022 (test placement).
@@ -284,6 +284,13 @@ test("the glass turns solid under reduced transparency, even in the liquid mater
     "blur(0px)",
   );
   expect(await paintedAlpha(bar, "backgroundColor")).toBe(255);
+});
+
+test("the thick level, which muted text sits on, is solid in the liquid material", async ({
+  page,
+}) => {
+  await page.goto("/?scheme=light&locale=en&material=liquid");
+  expect(await paintedAlpha(page.getByRole("banner"), "backgroundColor")).toBe(255);
 });
 
 test("the glass keeps a visible edge in forced colours", async ({ page }) => {

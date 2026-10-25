@@ -143,7 +143,7 @@ export function StudioControls({ knobs, onChange }: StudioControlsProps) {
   return (
     <section
       aria-labelledby="studio-controls"
-      className="material grid content-start gap-5 rounded-3xl p-5"
+      className="material-thick grid content-start gap-5 rounded-3xl p-5"
     >
       <Ui.Heading id="studio-controls" level={2} className="[font:var(--h4)]">
         {STRINGS.title}

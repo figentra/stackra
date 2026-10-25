@@ -12,7 +12,7 @@ The constitution holds the rules that do not bend. An [ADR](/adr/index) may refi
 | [Secrets](/constitution/secrets)                 | where secret values live, who sets them, what agents may not do                |
 | [Security](/constitution/security)               | authenticated principal, server-side authorization, audit, data classification |
 | [HTTP and events](/constitution/http-and-events) | API shape, idempotency, errors, ids, event envelope                            |
-| [Tenancy](/constitution/tenancy)                 | two-layer tenant isolation, isolation tests, the Pro scope tree                |
+| [Tenancy](/constitution/tenancy)                 | two-layer tenant isolation, isolation tests, the scope tree (free code)        |
 | [Delegation](/constitution/delegation)           | who decides, how work is handed to agents, git discipline                      |
 
 ## How the hierarchy works
@@ -71,4 +71,5 @@ Reviewers cite these by name. Each is an application of one of the laws or ADRs 
 
 ## History
 
+- 2026-10-24, [0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer): the tenancy row's scope tree is free code, not Pro.
 - 2026-10-20, [0125](/adr/0125-constitution-amended-to-match-accepted-adrs): the dependency-direction principle follows [0003](/adr/0003-tier-dependency-direction); "factories" became "mechanisms" ([0094](/adr/0094-decorators-only-authoring)); the tenancy row names the Pro scope tree.

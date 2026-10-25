@@ -1,7 +1,17 @@
 ---
 title: "0326 — App identity, the desktop section, pwa in stackra.config, derived app shortcuts and native widgets"
-description: "Accepted, amended by 0334 · 2026-10-24"
+description: "Accepted, amended by 0334, 0335 · 2026-10-24"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-451) by
+  [0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle):
+  an app member built per retailer brand declares `brands: [...]` beside `identity`, each entry with
+  its own identity and brand tokens, and gen runs the build once per brand from the same codebase.
+  Decisions 1 and 4 are read per brand: each `brands` entry is one identity whose app id is written
+  once, in that entry, the member's own `identity` is the default brand, and the desktop section
+  still takes no app id. Decisions 2, 3 and 5 to 15 stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-428) by

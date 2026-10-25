@@ -103,6 +103,8 @@ describe("CommandPalette", () => {
     type("zzz");
     expect(screen.queryAllByRole("option")).toHaveLength(0);
     expect(screen.getByText("Nothing matches “zzz”.")).toBeTruthy();
+    // The live status says it too, so a screen reader hears the empty result (STA-433).
+    expect(screen.getByRole("status").textContent).toBe("No results");
     // No empty listbox: the field says the list is closed and points at nothing.
     expect(screen.queryByRole("listbox")).toBeNull();
     expect(input().getAttribute("aria-expanded")).toBe("false");

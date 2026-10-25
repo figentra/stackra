@@ -43,7 +43,7 @@ export function CategoryNav({ pages, current, search }: CategoryNavProps) {
     <nav
       ref={strip}
       aria-label={STRINGS.pages}
-      className="material flex items-center gap-2 overflow-x-auto rounded-2xl p-1.5 [scrollbar-width:none]"
+      className="material-thick flex items-center gap-2 overflow-x-auto rounded-2xl p-1.5 [scrollbar-width:none]"
     >
       <Ui.Link
         href={`/${search}#components`}

@@ -165,7 +165,7 @@ export function StudioPreview({ theme, scheme: pageScheme }: StudioPreviewProps)
           <Showcase headingLevel={3} />
         </div>
       </div>
-      <div className="material grid gap-3 rounded-3xl p-5">
+      <div className="material-thick grid gap-3 rounded-3xl p-5">
         <div className="grid gap-1">
           <Ui.Heading level={3} className="[font:var(--h5)]">
             {STRINGS.contrast}

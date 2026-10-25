@@ -1,7 +1,18 @@
 ---
 title: "0327 — @stackra/scope owns the scope tree; tenancy is one consumer"
-description: "Accepted · 2026-10-24"
+description: "Accepted · 2026-10-24 · amended 2026-10-24 (STA-348)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-348), as `@stackra/database` and `@stackra/scope` were placed in the
+  build: the `ScopeRef` type of decision 5 lives in `@stackra/contracts`, the foundation leaf, not
+  in `@stackra/scope/contracts`. `@stackra/database` and every data-tier package that scopes rows
+  depend on the type, and `@stackra/scope` depends on `@stackra/database` for its nodes table, so a
+  type in `@stackra/scope` would be a workspace cycle. The shape is unchanged, `{ id:
+  PublicId<"scp">; path: string }`, with no level, because levels are deployment data (decision 2).
+  `@stackra/scope` owns the type's semantics and the resolver of decision 7, imports the type and
+  does not re-export it (one home per symbol, 0294 decision 15). The rest of decision 5 stands.
+</Note>
 
 <Note>
   Amends [0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan) (decision 1, the package that

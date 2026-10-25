@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: one material mode's factors as the CSS custom properties the material's fills and filters read: the fill
- *          scale and floor, the blur and saturation scales, the backdrop brightness and the sheen.
+ *          scale and floor, the thick level's own floor, the blur and saturation scales, the backdrop brightness and the sheen.
  * Boundary: a pure function from a mode to property names (with their leading `--`) and values.
  * Runtime: isomorphic
  * Governing contract: ADR 0320 (the glass material).
@@ -15,6 +15,7 @@ export function materialModeVariables(mode: MaterialMode): Readonly<Record<strin
   return {
     "--material-fill-scale": String(factors.fillScale),
     "--material-fill-floor": String(factors.fillFloor),
+    "--material-thick-floor": String(factors.thickFloor),
     "--material-blur-scale": String(factors.blurScale),
     "--material-saturate-scale": String(factors.saturationScale),
     "--material-brightness": String(factors.brightness),

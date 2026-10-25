@@ -16,6 +16,11 @@ export interface MaterialModeFactors {
   readonly fillScale: number;
   /** The least fill share any level may have; 1 makes every level opaque. */
   readonly fillFloor: number;
+  /**
+   * The least fill share of the thick level, the one muted text sits on: 1 (solid) in a mode whose own thick fill
+   * cannot hold muted text at 4.5:1 over the worst backdrops (ADR 0320 decision 4).
+   */
+  readonly thickFloor: number;
   /** Multiplies every level's blur radius; 0 turns the blur off. */
   readonly blurScale: number;
   /** Multiplies every level's saturation factor. */
@@ -39,6 +44,7 @@ export const MATERIAL_MODES: Readonly<Record<MaterialMode, MaterialModeFactors>>
   solid: {
     fillScale: 1,
     fillFloor: 1,
+    thickFloor: 1,
     blurScale: 0,
     saturationScale: 1,
     brightness: 1,
@@ -47,6 +53,7 @@ export const MATERIAL_MODES: Readonly<Record<MaterialMode, MaterialModeFactors>>
   frosted: {
     fillScale: 1,
     fillFloor: 0.88,
+    thickFloor: 0,
     blurScale: 1.6,
     saturationScale: 0.85,
     brightness: 1,
@@ -55,6 +62,7 @@ export const MATERIAL_MODES: Readonly<Record<MaterialMode, MaterialModeFactors>>
   glass: {
     fillScale: 1,
     fillFloor: 0,
+    thickFloor: 0,
     blurScale: 1,
     saturationScale: 1,
     brightness: 1,
@@ -63,6 +71,8 @@ export const MATERIAL_MODES: Readonly<Record<MaterialMode, MaterialModeFactors>>
   liquid: {
     fillScale: 0.8,
     fillFloor: 0,
+    // Its thick fill (0.72) leaves muted text at 3.15:1 over black on the light scheme, so the thick level is solid.
+    thickFloor: 1,
     blurScale: 1.2,
     saturationScale: 1.25,
     brightness: 1.06,

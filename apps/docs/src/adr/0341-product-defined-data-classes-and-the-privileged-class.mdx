@@ -1,0 +1,66 @@
+---
+title: "0341 — Product-defined data classes, and the privileged class"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0134](/adr/0134-data-invariants-classification-and-delete-lifecycle) (decision 2, the
+  closed set of classes) by a Note. Reads with
+  [0245](/adr/0245-ai-intelligence-plane-skills-prompts-context-providers-plans-and-intents) (what
+  an agent may read),
+  [0221](/adr/0221-search-postgres-hybrid-elasticsuite-parity-arabic-and-operations) (search
+  snippets), [0163](/adr/0163-reports-exports-imports-and-declared-read-models) (exports) and
+  [0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention) (access logs).
+</Note>
+
+## Context
+
+[0134](/adr/0134-data-invariants-classification-and-delete-lifecycle) classifies every field as one of six classes and
+derives the handling from the class. A legal product holds attorney-client material, a medical product holds clinical
+notes, and neither fits `pii`, `secret` or `regulated`: the data is often not personal, it is privileged, and the
+handling it needs is specific (no AI audience unless the tenant allows it, never visible under support access, no
+search snippet outside the team, exported only with its label). The owner locked the legal product's plan on
+2026-10-24 with this need. A closed set that only Stackra can extend would make every such product wait for a
+framework release.
+
+## Decision
+
+1. **A product may declare a class.** A product declares a data class in its root module's `access/` group, in a
+   `<name>.data-class.ts` file, as a class that extends `DataClass({ key })` ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 13 as amended the same day), with the four effects below as typed options. Gen adds it to the `@Classify`
+   union for that product, so a field can carry it like a built-in class. A class is a framework-level concept with a
+   product-level instance; a tenant never declares one.
+
+2. **The effects a class sets.** Each class states, for its fields: `ai` (`never`, `tenantOptIn` or `allowed`: whether
+   the fields may enter an agent's context, [0245](/adr/0245-ai-intelligence-plane-skills-prompts-context-providers-plans-and-intents)),
+   `support` (`hidden` or `visible` under support access), `search` (`noSnippet` outside the record's own team, or
+   `snippet`), and `export` (`labelled`: every export carries the class label beside the value). The built-in classes of
+   0134 keep their handling; their values in these four effects are set in the change that ships `DataClass`, and
+   `support` is a new effect that then applies to every class.
+
+3. **`privileged` is a built-in class.** Stackra ships `privileged` beside the six classes of 0134: `ai: tenantOptIn`,
+   `support: hidden`, `search: noSnippet`, `export: labelled`. A legal or medical product uses it without declaring its
+   own; a product that needs a finer class declares one.
+
+4. **The handling is derived, as in 0134.** The AI context builder, support access, the search indexer and the export
+   writer read the class and apply its effects. No product writes a check for a class by hand.
+
+5. **Classes travel with the data.** An export, an integration event and an archive carry the class of each field, so a
+   consumer applies the same effects. A class name is a machine code, snake_case ([0231](/adr/0231-naming-and-casing-standard)).
+
+## Consequences
+
+- A product adds a class in its own code and gets the handling everywhere a class is read, without a framework release.
+- `privileged` exists once, with one meaning, for every product that holds protected professional material.
+- An agent sees privileged data only when the tenant turned it on, and a support engineer never does.
+
+## Enforcement
+
+- planned — gen (STA-340): a `@Classify` value outside the built-in set and the product's declared classes fails; a
+  declared class missing one of the four effects fails.
+- planned — tests in the AI context builder, support access, the search indexer and the export writer, each against a
+  fixture field of every class, built-in and declared.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Note: [0134](/adr/0134-data-invariants-classification-and-delete-lifecycle). Sources: the
+owner-locked plan of the legal product, 2026-10-24 (STA-456), restated in this ADR's own words.

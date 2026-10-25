@@ -127,7 +127,7 @@ export function StudioExport({ base, theme, onImport }: StudioExportProps) {
   return (
     <section
       aria-labelledby="studio-export"
-      className="material grid min-w-0 content-start gap-4 rounded-3xl p-5"
+      className="material-thick grid min-w-0 content-start gap-4 rounded-3xl p-5"
     >
       <Ui.Heading id="studio-export" level={2} className="[font:var(--h4)]">
         {STRINGS.title}

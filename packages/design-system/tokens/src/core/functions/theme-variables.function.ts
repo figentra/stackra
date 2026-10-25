@@ -19,6 +19,12 @@ import { materialModeVariables } from "#core/functions/material-mode-variables.f
 const SHADOWS = ["surface", "overlay", "field"] as const;
 const FONT_FAMILIES = ["sans", "mono", "arabic"] as const;
 
+/** The least fill share of a level: the mode's floor, and for the thick level, which muted text sits on, its own too. */
+const floorOf = (level: MaterialLevel) =>
+  level === "thick"
+    ? "max(var(--material-fill-floor), var(--material-thick-floor))"
+    : "var(--material-fill-floor)";
+
 /** The material's properties of one colour mode: each level's share, fill and filter, the edge, rim and sheen. */
 function materialColours(theme: Theme, mode: "light" | "dark"): Record<string, string> {
   const { levels, edge, highlight } = theme.materials;
@@ -28,7 +34,7 @@ function materialColours(theme: Theme, mode: "light" | "dark"): Record<string, s
         [`--material-${level}-share`, String(levels[level].fill[mode])],
         [
           `--material-${level}-fill`,
-          `color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-${level}-share) * var(--material-fill-scale), 1) * 100%), transparent)`,
+          `color-mix(in oklch, var(--surface) calc(clamp(${floorOf(level)}, var(--material-${level}-share) * var(--material-fill-scale), 1) * 100%), transparent)`,
         ],
         [
           `--material-${level}-filter`,

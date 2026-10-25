@@ -46,6 +46,8 @@ describe("themeVariables", () => {
     expect(materialModeVariables("liquid")).toEqual({
       "--material-fill-scale": String(MATERIAL_MODES.liquid.fillScale),
       "--material-fill-floor": "0",
+      // Liquid's thick level is solid, so muted text keeps 4.5:1 on it.
+      "--material-thick-floor": "1",
       "--material-blur-scale": String(MATERIAL_MODES.liquid.blurScale),
       "--material-saturate-scale": String(MATERIAL_MODES.liquid.saturationScale),
       "--material-brightness": String(MATERIAL_MODES.liquid.brightness),
