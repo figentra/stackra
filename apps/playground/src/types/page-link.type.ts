@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: what the shell's navigation and the index page need to link a playground page: its path, title and the
- *          category it is listed under. Every route class carries all three as statics.
+ * Purpose: what the shell's navigation and the index page need to link a playground page: its path, title, the
+ *          category it is listed under, and whether it draws its own `main`. Every route class carries the first three
+ *          as statics. The tier is not here: it follows from the path (`tierOf`, `/pro-*` is Pro).
  * Boundary: types only.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0294 (decision 14).

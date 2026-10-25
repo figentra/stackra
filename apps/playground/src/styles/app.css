@@ -21,6 +21,262 @@ body {
   font-family: var(--font-arabic);
 }
 
+/* Jumps within a page glide, unless motion is reduced; a target scrolled or focused into view clears the sticky bar. */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* The glass material, from the theme's roles only. The fill stays at least 72% surface, so text on it keeps the
+   contrast it has on the solid surface (the ambient field under it is the background, tinted by a few percent). */
+:root {
+  --glass-fill: color-mix(in oklch, var(--surface) 72%, transparent);
+  --glass-fill-strong: color-mix(in oklch, var(--surface) 88%, transparent);
+  --glass-edge: color-mix(in oklch, var(--foreground) 10%, transparent);
+  --glass-highlight: color-mix(in oklch, var(--white) 70%, transparent);
+  --glass-shadow:
+    0 1px 2px color-mix(in oklch, var(--ink) 6%, transparent),
+    0 12px 32px -12px color-mix(in oklch, var(--ink) 18%, transparent);
+  --glass-blur: blur(20px) saturate(160%);
+  --ambient-a: color-mix(in oklch, var(--steel) 45%, transparent);
+  --ambient-b: color-mix(in oklch, var(--amber) 8%, transparent);
+  --ambient-c: color-mix(in oklch, var(--white) 70%, transparent);
+  --ambient-dot: color-mix(in oklch, var(--foreground) 6%, transparent);
+  --tile-fill: color-mix(in oklch, var(--surface) 50%, transparent);
+  --tile-blur: blur(10px) saturate(180%);
+  --glow-a: color-mix(in oklch, var(--amber) 45%, transparent);
+  --glow-b: color-mix(in oklch, var(--graphite-300) 70%, transparent);
+}
+
+.dark {
+  --glass-fill: color-mix(in oklch, var(--surface) 74%, transparent);
+  --glass-fill-strong: color-mix(in oklch, var(--surface) 90%, transparent);
+  --glass-edge: color-mix(in oklch, var(--foreground) 12%, transparent);
+  --glass-highlight: color-mix(in oklch, var(--white) 9%, transparent);
+  --glass-shadow:
+    0 1px 2px color-mix(in oklch, var(--ink) 60%, transparent),
+    0 16px 40px -12px color-mix(in oklch, var(--ink) 90%, transparent);
+  --ambient-a: color-mix(in oklch, var(--steel-deep) 95%, transparent);
+  --ambient-b: color-mix(in oklch, var(--amber) 9%, transparent);
+  --ambient-c: color-mix(in oklch, var(--graphite-800) 80%, transparent);
+  --ambient-dot: color-mix(in oklch, var(--foreground) 6%, transparent);
+  --tile-fill: color-mix(in oklch, var(--surface-tertiary) 55%, transparent);
+  --glow-a: color-mix(in oklch, var(--amber) 22%, transparent);
+  --glow-b: color-mix(in oklch, var(--graphite-700) 80%, transparent);
+}
+
+/* A translucent layer over the ambient field: chrome, cards and the command palette. A bright top edge catches the
+   light; content scrolls under it. Never stack one glass layer on another. */
+@utility glass {
+  background-color: var(--glass-fill);
+  border: 1px solid var(--glass-edge);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+/* The heavier material, for the larger surfaces (the command palette). */
+@utility glass-strong {
+  background-color: var(--glass-fill-strong);
+  border: 1px solid var(--glass-edge);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    var(--overlay-shadow),
+    var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+/* The field under the glass: three soft glows and a faint dot grid that fades out, behind the whole page. Each
+   layer is a flat tint shaped by a mask, not a gradient image: a contrast checker (axe) then measures text against
+   every tint at full strength at once, a stricter background than any point of the page shows, instead of giving
+   up on the gradient. The tints stay light enough that the muted text passes even so. It sits at z-index -1 of the
+   root stacking context: under an isolated parent axe reads it as lying over the text. */
+.ambient {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--background);
+}
+
+.ambient > * {
+  position: absolute;
+  inset: 0;
+}
+
+.ambient > :nth-child(1) {
+  background-color: var(--ambient-a);
+  mask-image: radial-gradient(48rem 32rem at 8% 0, black, transparent 70%);
+}
+
+.ambient > :nth-child(2) {
+  background-color: var(--ambient-b);
+  mask-image: radial-gradient(40rem 28rem at 96% 6rem, black, transparent 72%);
+}
+
+.ambient > :nth-child(3) {
+  background-color: var(--ambient-c);
+  mask-image: radial-gradient(56rem 36rem at 50% 100%, black, transparent 70%);
+}
+
+.ambient > :nth-child(4) {
+  background-color: var(--ambient-dot);
+  mask-image:
+    radial-gradient(circle, black 1px, transparent 1.5px),
+    linear-gradient(to bottom, black, transparent 48rem);
+  mask-size:
+    24px 24px,
+    100% 100%;
+  mask-composite: intersect;
+}
+
+/* The glow behind the hero art, the same flat-tint-and-mask way: something for the glass panes to blur. */
+.hero-glow > * {
+  position: absolute;
+  inset: 0;
+}
+
+.hero-glow > :nth-child(1) {
+  background-color: var(--glow-a);
+  mask-image: radial-gradient(closest-side at 30% 35%, black, transparent);
+}
+
+.hero-glow > :nth-child(2) {
+  background-color: var(--glow-b);
+  mask-image: radial-gradient(closest-side at 72% 60%, black, transparent);
+}
+
+/* The brand's grid pattern behind the hero stage: hairlines on a 48px step that fade out from the middle. */
+.hero-grid {
+  background-color: var(--separator);
+  mask-image:
+    radial-gradient(closest-side, black, transparent),
+    repeating-linear-gradient(to right, black 0 1px, transparent 1px 48px),
+    repeating-linear-gradient(to bottom, black 0 1px, transparent 1px 48px);
+  mask-composite: intersect, add;
+}
+
+/* The hero's tiles settle in once, staggered: a short rise and the material arriving, then they hold still. */
+.hero-tile {
+  background-color: var(--tile-fill);
+  -webkit-backdrop-filter: var(--tile-blur);
+  backdrop-filter: var(--tile-blur);
+  animation: tile-in 600ms var(--ease-fast) var(--tile-delay, 0ms) both;
+}
+
+@keyframes tile-in {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+    scale: 0.92;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-tile {
+    animation: none;
+  }
+}
+
+/* The command palette's dimming scrim: modal, so it dims and blurs the page behind it. */
+.command-palette::backdrop {
+  background: var(--backdrop);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/* Materialise, not fade: the palette arrives with its blur and a small scale from just above. */
+.command-palette[open] {
+  animation: palette-in var(--duration-base) var(--ease-fast);
+}
+
+@keyframes palette-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+
+/* A card that lifts a little under the pointer; the press settles it back. */
+.lift {
+  transition:
+    transform var(--duration-fast) var(--ease-fast),
+    box-shadow var(--duration-fast) var(--ease-fast);
+}
+
+@media (hover: hover) {
+  .lift:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.lift:active {
+  transform: translateY(0) scale(0.99);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lift,
+  .lift:hover,
+  .lift:active {
+    transform: none;
+    transition: none;
+  }
+
+  .command-palette[open] {
+    animation: none;
+  }
+}
+
+/* Reduced transparency and more contrast: the glass turns solid and its edge turns to the border role. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root,
+  .dark {
+    --glass-fill: var(--surface);
+    --glass-fill-strong: var(--surface);
+    --glass-blur: none;
+    --tile-fill: var(--surface);
+    --tile-blur: none;
+  }
+
+  .ambient > :nth-child(4) {
+    display: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root,
+  .dark {
+    --glass-edge: var(--field-border);
+  }
+}
+
+/* Forced colours (Windows High Contrast): the system paints the surfaces; keep a visible edge on every glass layer. */
+@media (forced-colors: active) {
+  .glass,
+  .glass-strong {
+    border-color: CanvasText;
+  }
+}
+
+/* A browser without backdrop-filter gets the solid fill, never a see-through one. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root,
+  .dark {
+    --glass-fill: var(--surface);
+    --glass-fill-strong: var(--surface);
+    --tile-fill: var(--surface);
+  }
+}
+
 /* Headings in the theme's type scale (`--h1` is a `font` shorthand); an Arabic document takes the `-ar` styles. */
 .type-h1 {
   font: var(--h1);
