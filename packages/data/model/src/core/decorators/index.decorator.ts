@@ -30,9 +30,9 @@ const INDEX = createDecorator<readonly IndexDefinition[]>({
  * @throws TypeError when `properties` is empty; at class definition, when applied to anything but a model class.
  * @example
  * ```ts
- * @Index(["tenantId", "slug"], { unique: true })
- * @Index(["tenantId", "status"])
- * export class Product extends Model.with(HasPublicId("prd"), BelongsToTenant) {}
+ * @Index(["slug"], { unique: true })
+ * @Index(["status", "createdAt"])
+ * export class Product extends Model.with(HasPublicId("prd"), Timestamps) {}
  * ```
  */
 export function Index(

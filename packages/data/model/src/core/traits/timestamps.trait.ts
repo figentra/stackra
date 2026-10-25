@@ -13,7 +13,7 @@ import type { Trait } from "#core/types/trait.type";
  * The timestamps trait.
  *
  * @example
- * export class Variant extends Model.with(HasPublicId("var"), BelongsToTenant, Timestamps) {}
+ * export class Variant extends Model.with(HasPublicId("var"), Timestamps) {}
  */
 export const Timestamps: Trait<{ createdAt: Date; updatedAt: Date }> = createTrait(
   "timestamps",

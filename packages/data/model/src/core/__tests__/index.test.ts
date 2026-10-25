@@ -4,7 +4,8 @@
  *          `./traits` and `./orm` folded in) is exported, nothing else is, and the template's model shapes compile
  *          and run against it.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias and the runner through @stackra/testing.
- *           The models below copy the template's declarations (orders, catalogue, loyalty-kit).
+ *           The models below copy the template's declarations (orders, catalogue, loyalty-kit) without the ownership
+ *           trait, which is @stackra/tenancy's `BelongsToTenant` (ADR 0321, 0323 decision 3) and tested there.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0127 2026-10-24 note.
  */
@@ -15,7 +16,6 @@ import { Int, Str } from "@stackra/validation";
 import * as entry from "#core/index";
 import {
   AppendOnly,
-  BelongsToTenant,
   Collection,
   HasPublicId,
   Index,
@@ -33,10 +33,9 @@ import {
 } from "#core/index";
 import type { Attributes, Link, Ref, Translated } from "#core/index";
 
-@Index(["tenantId", "slug"], { unique: true })
+@Index(["slug"], { unique: true })
 class ProductCollection extends Model.with(
   HasPublicId("pcl"),
-  BelongsToTenant,
   Timestamps,
   Translatable(["title"]),
 ) {
@@ -47,14 +46,13 @@ class ProductCollection extends Model.with(
   slug!: string;
 }
 
-@Index(["tenantId", "slug"], { unique: true })
+@Index(["slug"], { unique: true })
 @Searchable({
   text: ["title", "variants.sku"],
   filters: ["status", "collections.slug"],
 })
 class Product extends Model.with(
   HasPublicId("prd"),
-  BelongsToTenant,
   Timestamps,
   Versioned,
   Translatable(["title"]),
@@ -69,7 +67,7 @@ class Product extends Model.with(
   variants = new Collection<Variant>(this);
 }
 
-class Variant extends Model.with(HasPublicId("var"), BelongsToTenant, Timestamps) {
+class Variant extends Model.with(HasPublicId("var"), Timestamps) {
   @ManyToOne(() => Product, { onDelete: OnDelete.Cascade })
   product!: Ref<Product>;
 
@@ -77,21 +75,15 @@ class Variant extends Model.with(HasPublicId("var"), BelongsToTenant, Timestamps
   sku!: string;
 }
 
-@Index(["tenantId", "total.minor"])
-class Order extends Model.with(
-  HasPublicId("ord"),
-  BelongsToTenant,
-  Timestamps,
-  UserStamps,
-  Versioned,
-) {
+@Index(["total.minor"])
+class Order extends Model.with(HasPublicId("ord"), Timestamps, UserStamps, Versioned) {
   total!: Money;
 
   @OneToMany(() => OrderLine, (line) => line.order, { orphanRemoval: true })
   lines = new Collection<OrderLine>(this);
 }
 
-class OrderLine extends Model.with(HasPublicId("oln"), BelongsToTenant) {
+class OrderLine extends Model.with(HasPublicId("oln")) {
   @ManyToOne(() => Order, { onDelete: OnDelete.Cascade })
   order!: Ref<Order>;
 
@@ -102,13 +94,13 @@ class OrderLine extends Model.with(HasPublicId("oln"), BelongsToTenant) {
   quantity!: number;
 }
 
-@Index(["tenantId", "memberId"], { unique: true, where: "deleted_at is null" })
-class LoyaltyAccount extends Model.with(HasPublicId("lac"), BelongsToTenant, SoftDeletes) {
+@Index(["memberId"], { unique: true, where: "deleted_at is null" })
+class LoyaltyAccount extends Model.with(HasPublicId("lac"), SoftDeletes) {
   @Str({ max: 64 })
   memberId!: string;
 }
 
-class LedgerEntry extends Model.with(HasPublicId("lpe"), BelongsToTenant, AppendOnly) {
+class LedgerEntry extends Model.with(HasPublicId("lpe"), AppendOnly) {
   @ManyToOne(() => LoyaltyAccount)
   account: Ref<LoyaltyAccount> | null = null;
 }
@@ -117,7 +109,6 @@ describe("@stackra/model", () => {
   it("exports exactly the runtime surface", () => {
     expect(Object.keys(entry).sort()).toEqual([
       "AppendOnly",
-      "BelongsToTenant",
       "Collection",
       "HasPublicId",
       "Index",
@@ -150,7 +141,7 @@ describe("@stackra/model", () => {
     const order = new Order();
     expect(order.id.startsWith("ord_")).toBe(true);
     expect(order.lines).toBeInstanceOf(entry.Collection);
-    expect(Index.on(Order)[0]?.properties).toEqual(["tenantId", "total.minor"]);
+    expect(Index.on(Order)[0]?.properties).toEqual(["total.minor"]);
     expect(Searchable.on(Product)?.filters).toEqual(["status", "collections.slug"]);
     expect(ManyToOne.members(OrderLine).get("variant")?.target()).toBe(Variant);
     expect(entry.traitsOf(LedgerEntry).map((trait) => trait.name)).toContain("append_only");

@@ -24,7 +24,7 @@ import type { TraitFields } from "#core/types/trait-fields.type";
  * The base of every model.
  *
  * @example
- * export class Order extends Model.with(HasPublicId("ord"), BelongsToTenant, Timestamps) {
+ * export class Order extends Model.with(HasPublicId("ord"), Timestamps) {
  *   status: OrderStatus = OrderStatus.PendingPayment;
  *
  *   @OneToMany(() => OrderLine, (line) => line.order, { orphanRemoval: true })

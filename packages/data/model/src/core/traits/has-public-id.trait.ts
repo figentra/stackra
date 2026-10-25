@@ -24,7 +24,7 @@ const PREFIX = /^[a-z]{2,6}$/;
  * @param prefix - the model's prefix, 2 to 6 lowercase letters, registered once in the manifest.
  * @throws TypeError when `prefix` is not 2 to 6 lowercase letters.
  * @example
- * export class Order extends Model.with(HasPublicId("ord"), BelongsToTenant) {}
+ * export class Order extends Model.with(HasPublicId("ord")) {}
  * order.id; // PublicId<"ord">
  */
 export function HasPublicId<const P extends string>(prefix: P): Trait<{ id: PublicId<P> }> {

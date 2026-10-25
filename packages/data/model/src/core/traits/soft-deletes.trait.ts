@@ -15,7 +15,7 @@ import type { Trait } from "#core/types/trait.type";
  * The soft-delete trait.
  *
  * @example
- * export class LoyaltyAccount extends Model.with(HasPublicId("lac"), BelongsToTenant, SoftDeletes) {}
+ * export class LoyaltyAccount extends Model.with(HasPublicId("lac"), SoftDeletes) {}
  */
 export const SoftDeletes: Trait<{ deletedAt: Date | null }> = createTrait(
   "soft_deletes",

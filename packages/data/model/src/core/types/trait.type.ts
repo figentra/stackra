@@ -14,7 +14,7 @@ import type { ModelClass } from "#core/types/model-class.type";
  * A trait whose application gives instances of `I`.
  *
  * @example
- * export class Order extends Model.with(HasPublicId("ord"), BelongsToTenant, Timestamps) {}
+ * export class Order extends Model.with(HasPublicId("ord"), Timestamps) {}
  */
 export interface Trait<I extends object = object> {
   /** Returns a subclass of `base` with the trait's fields. */

@@ -15,7 +15,7 @@ import type { Trait } from "#core/types/trait.type";
  * The user-stamps trait.
  *
  * @example
- * export class Order extends Model.with(HasPublicId("ord"), BelongsToTenant, Timestamps, UserStamps) {}
+ * export class Order extends Model.with(HasPublicId("ord"), Timestamps, UserStamps) {}
  */
 export const UserStamps: Trait<{ createdBy: PublicId | null; updatedBy: PublicId | null }> =
   createTrait(

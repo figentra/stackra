@@ -14,7 +14,7 @@ import type { Trait } from "#core/types/trait.type";
  * The optimistic-version trait.
  *
  * @example
- * export class StockLevel extends Model.with(HasPublicId("stk"), BelongsToTenant, Versioned) {}
+ * export class StockLevel extends Model.with(HasPublicId("stk"), Versioned) {}
  */
 export const Versioned: Trait<{ version: number }> = createTrait(
   "versioned",

@@ -14,13 +14,13 @@ import { Int, Str } from "@stackra/validation";
 
 import { Model } from "#core/bases/model.base";
 import { traitsOf } from "#core/functions/traits-of.function";
-import { BelongsToTenant } from "#core/traits/belongs-to-tenant.trait";
 import { HasPublicId } from "#core/traits/has-public-id.trait";
 import { Timestamps } from "#core/traits/timestamps.trait";
+import { Versioned } from "#core/traits/versioned.trait";
 
 class StockLow extends DomainEvent {}
 
-class StockLevel extends Model.with(HasPublicId("stk"), BelongsToTenant, Timestamps) {
+class StockLevel extends Model.with(HasPublicId("stk"), Versioned, Timestamps) {
   @Str({ max: 64 })
   locationId!: string;
 
@@ -42,7 +42,7 @@ describe(Model, () => {
     expect(level.onHand).toBe(0);
     expect(traitsOf(StockLevel).map((trait) => trait.name)).toEqual([
       "has_public_id",
-      "belongs_to_tenant",
+      "versioned",
       "timestamps",
     ]);
   });
@@ -60,7 +60,7 @@ describe(Model, () => {
   it("keeps only data fields on the instance", () => {
     const level = new StockLevel();
     expect(Object.keys(level).sort()).toEqual(
-      ["createdAt", "id", "locationId", "onHand", "tenantId", "updatedAt"].sort(),
+      ["createdAt", "id", "locationId", "onHand", "updatedAt", "version"].sort(),
     );
   });
 

@@ -14,7 +14,7 @@ import type { TraitRecord } from "#core/types/trait-record.type";
  *
  * @returns an empty array for a class composed with no trait.
  * @example
- * traitsOf(LedgerEntry).map((trait) => trait.name); // ["has_public_id", "belongs_to_tenant", "append_only"]
+ * traitsOf(LedgerEntry).map((trait) => trait.name); // ["has_public_id", "append_only"]
  */
 export function traitsOf(type: object): readonly TraitRecord[] {
   const records: TraitRecord[] = [];

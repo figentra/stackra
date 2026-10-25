@@ -10,7 +10,7 @@
 - `createTrait(name, apply, options)` checks a snake_case name and that `apply` returns a direct subclass, then
   records `{ name, options }` in `TRAIT_RECORDS` keyed by that class; `traitsOf` walks the constructor chain.
 - Traits: `HasPublicId(prefix)` (initializer `mintPublicId`, UUIDv7 in lowercase Crockford base32, from `Date.now()`
-  and `crypto.getRandomValues` so `freezeClock`/`freezeIds` make it deterministic), `BelongsToTenant` (`tenantId!`),
+  and `crypto.getRandomValues` so `freezeClock`/`freezeIds` make it deterministic),
   `Timestamps`, `UserStamps`, `Versioned` (`version = 1`), `SoftDeletes`, `AppendOnly` (marker), `Translatable(fields)`
   (marker with options). Exported trait constants carry an explicit `Trait<...>` type so declaration emit never names
   an anonymous class with Model's protected brand.
@@ -34,7 +34,7 @@
 | Secrets (ADR 0173)                    | N/A    | no secret is read, stored or logged                                                                                                                                                                             |
 | Security                              | N/A    | no auth, tenant data or outbound call                                                                                                                                                                           |
 | HTTP and events                       | PASS   | model events are recorded through `recordEvent` from `@stackra/events`; no endpoint                                                                                                                             |
-| Tenancy                               | N/A    | no table or query here; `BelongsToTenant` adds the `tenantId` field only, the unit of work fills it and the migration enables row-level security                                                                |
+| Tenancy                               | N/A    | no table or query here; the ownership trait `BelongsToTenant` is @stackra/tenancy's (ADR 0321, ADR 0323 decision 3)                                                                                             |
 | Delegation                            | PASS   | `package-builder` (route `package`) writes the code and `test-engineer` (route `tests`) the tests; a separate reviewer                                                                                          |
 | Not built yet (ADR 0227)              | PASS   | MikroORM through `@mikro-orm/core` only; no Prisma, Drizzle, TypeORM or Knex, and no ORM on a client                                                                                                            |
 | Test placement (ADR 0022)             | PASS   | every test sits in `src/**/__tests__/` beside its subject                                                                                                                                                       |
@@ -69,7 +69,7 @@
 ## Correctness properties
 
 - **P-001**: `package.json` names `@stackra/model` at `packages/data/model` and `exports` lists only `.` — Validates: FR-001
-- **P-002**: `.` exports every symbol the template imports (`AppendOnly`, `Attributes`, `BelongsToTenant`, `Collection`, `HasPublicId`, `Index`, `Link`, `LinkType`, `ManyToMany`, `ManyToOne`, `Model`, `MoneySchema`, `OnDelete`, `OneToMany`, `Ref`, `Searchable`, `SoftDeletes`, `Timestamps`, `Translatable`, `Translated`, `UserStamps`, `Versioned`) — Validates: FR-002
+- **P-002**: `.` exports every symbol the template imports (`AppendOnly`, `Attributes`, `Collection`, `HasPublicId`, `Index`, `Link`, `LinkType`, `ManyToMany`, `ManyToOne`, `Model`, `MoneySchema`, `OnDelete`, `OneToMany`, `Ref`, `Searchable`, `SoftDeletes`, `Timestamps`, `Translatable`, `Translated`, `UserStamps`, `Versioned`) — Validates: FR-002
 - **P-003**: `Model` is registered as the `model` kind and its constructor makes no state, and `record(event)` calls `recordEvent` from `@stackra/events` — Validates: FR-003
 - **P-004**: every trait is made with `createTrait`, and `traitsOf(SomeModel)` lists the traits that model class carries — Validates: FR-004
 - **P-005**: a decorator made with `createDecorator` marks model kinds only and records metadata without changing behaviour — Validates: FR-005

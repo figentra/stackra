@@ -1,6 +1,6 @@
 # @stackra/model
 
-The model kind of the programming model v3.1: `Model.with(...traits)`, the eight model traits, relations (`Ref<T>`
+The model kind of the programming model v3.1: `Model.with(...traits)`, the seven model traits, relations (`Ref<T>`
 and `Collection<T>` inside a module, `Link<T>` across modules), the `@Index` and `@Searchable` table facets, and the
 ORM column types and `Money` embeddable that gen's generated entity metadata imports.
 
@@ -10,9 +10,9 @@ Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@
 
 ## Entry points
 
-| Import           | Holds                     | Exports                                                                                                                                                                                                                                                                                                                                              |
-| ---------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/model` | `src/core/`: node runtime | `Model`, traits (`HasPublicId`, `BelongsToTenant`, `Timestamps`, `UserStamps`, `Versioned`, `SoftDeletes`, `AppendOnly`, `Translatable`), `createTrait`, `traitsOf`, `Index`, `Searchable`, `ManyToOne`, `OneToMany`, `ManyToMany`, `OnDelete`, `Collection`, `Ref`, `Link`, `Translated`, `Attributes`, `LinkType`, `TranslatedType`, `MoneySchema` |
+| Import           | Holds                     | Exports                                                                                                                                                                                                                                                                                                                           |
+| ---------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/model` | `src/core/`: node runtime | `Model`, traits (`HasPublicId`, `Timestamps`, `UserStamps`, `Versioned`, `SoftDeletes`, `AppendOnly`, `Translatable`), `createTrait`, `traitsOf`, `Index`, `Searchable`, `ManyToOne`, `OneToMany`, `ManyToMany`, `OnDelete`, `Collection`, `Ref`, `Link`, `Translated`, `Attributes`, `LinkType`, `TranslatedType`, `MoneySchema` |
 
 Entry barrels are generated, never authored (ADR 0294 decision 15); until `stackra gen` writes them (STA-339),
 `src/core/index.ts` is a stand-in barrel.
@@ -20,18 +20,11 @@ Entry barrels are generated, never authored (ADR 0294 decision 15); until `stack
 ## A model
 
 ```ts
-import {
-  BelongsToTenant,
-  Collection,
-  HasPublicId,
-  Index,
-  Model,
-  OneToMany,
-  Timestamps,
-} from "@stackra/model";
+import { Collection, HasPublicId, Index, Model, OneToMany, Timestamps } from "@stackra/model";
 import type { Money } from "@stackra/money";
+import { BelongsToTenant } from "@stackra/tenancy/node";
 
-@Index(["tenantId", "createdAt"])
+@Index(["status", "createdAt"])
 export class Order extends Model.with(HasPublicId("ord"), BelongsToTenant, Timestamps) {
   status: OrderStatus = OrderStatus.PendingPayment;
 
@@ -54,7 +47,6 @@ order.record(OrderPlaced.create({ orderId: order.id })); // kept beside the inst
 | Trait                  | Adds                                              | Notes                                                        |
 | ---------------------- | ------------------------------------------------- | ------------------------------------------------------------ |
 | `HasPublicId(prefix)`  | `id: PublicId<prefix>`, minted on create (UUIDv7) | Prefix 2 to 6 lowercase letters (ADR 0135)                   |
-| `BelongsToTenant`      | `tenantId`                                        | Filled by the unit of work; row-level security (ADR 0239)    |
 | `Timestamps`           | `createdAt`, `updatedAt`                          | `updatedAt` moves on every changing flush                    |
 | `UserStamps`           | `createdBy`, `updatedBy` (principal public ids)   | Filled from the actor, never from input                      |
 | `Versioned`            | `version` (starts at 1)                           | Optimistic concurrency; a stale write is a `conflict`        |
@@ -62,8 +54,10 @@ order.record(OrderPlaced.create({ orderId: order.id })); // kept beside the inst
 | `AppendOnly`           | nothing                                           | Marker read by `traitsOf`; updates are refused               |
 | `Translatable(fields)` | nothing                                           | Names the model's `Translated` fields (jsonb, `.in(locale)`) |
 
-`createTrait(name, apply, options)` makes a trait for another package, and `traitsOf(Model)` lists a model's traits
-with their options. `Model.with` refuses a trait applied twice.
+Ownership by a tenant is not a model trait: `BelongsToTenant` is `@stackra/tenancy/node`'s (ADR 0321, ADR 0323
+decision 3), built with `createTrait`, as in the example above. `createTrait(name, apply, options)` makes a trait for
+another package, and `traitsOf(Model)` lists a model's traits with their options. `Model.with` refuses a trait applied
+twice.
 
 ## Relations
 

@@ -23,7 +23,6 @@ export { LinkType } from "#core/orm/link.type";
 export { MoneySchema } from "#core/orm/money.schema";
 export { TranslatedType } from "#core/orm/translated.type";
 export { AppendOnly } from "#core/traits/append-only.trait";
-export { BelongsToTenant } from "#core/traits/belongs-to-tenant.trait";
 export { HasPublicId } from "#core/traits/has-public-id.trait";
 export { SoftDeletes } from "#core/traits/soft-deletes.trait";
 export { Timestamps } from "#core/traits/timestamps.trait";

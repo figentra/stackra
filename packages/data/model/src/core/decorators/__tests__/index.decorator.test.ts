@@ -11,12 +11,13 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { Model } from "#core/bases/model.base";
 import { Index } from "#core/decorators/index.decorator";
-import { BelongsToTenant } from "#core/traits/belongs-to-tenant.trait";
 
 @Index(["customerId"])
-@Index(["tenantId", "memberId"], { unique: true, where: "deleted_at is null" })
-@Index(["tenantId", "total.minor"])
-class Order extends Model.with(BelongsToTenant) {
+@Index(["scopeId", "memberId"], { unique: true, where: "deleted_at is null" })
+@Index(["scopeId", "total.minor"])
+class Order extends Model.with() {
+  scopeId!: string;
+
   customerId!: string;
 
   memberId!: string;
@@ -26,8 +27,8 @@ describe(Index, () => {
   it("reads every index back in source order", () => {
     expect(Index.on(Order)).toEqual([
       { properties: ["customerId"], unique: false },
-      { properties: ["tenantId", "memberId"], unique: true, where: "deleted_at is null" },
-      { properties: ["tenantId", "total.minor"], unique: false },
+      { properties: ["scopeId", "memberId"], unique: true, where: "deleted_at is null" },
+      { properties: ["scopeId", "total.minor"], unique: false },
     ]);
     expect(Object.isFrozen(Index.on(Order)[0])).toBe(true);
   });

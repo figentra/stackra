@@ -14,6 +14,6 @@ import type { Trait } from "#core/types/trait.type";
  * The append-only trait.
  *
  * @example
- * export class LedgerEntry extends Model.with(HasPublicId("lpe"), BelongsToTenant, AppendOnly) {}
+ * export class LedgerEntry extends Model.with(HasPublicId("lpe"), AppendOnly) {}
  */
 export const AppendOnly: Trait = createTrait("append_only", (base) => class extends base {});

@@ -31,7 +31,7 @@ const SEARCHABLE = createDecorator<SearchableOptions>({
  *   text: ["title", "description", "variants.sku"],
  *   filters: ["status", "collections.slug"],
  * })
- * export class Product extends Model.with(HasPublicId("prd"), BelongsToTenant) {}
+ * export class Product extends Model.with(HasPublicId("prd")) {}
  * ```
  */
 export function Searchable(options: SearchableOptions): DecoratorFunction {

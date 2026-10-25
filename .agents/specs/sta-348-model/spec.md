@@ -14,8 +14,8 @@
 
 **Clarifications status**: complete
 
-**Input**: Build `@stackra/model` (data, wave 3) for real: `Model.with(...traits)`, the eight traits the template
-uses, relations (`Ref<T>`, `Collection<T>`, `Link<T>` across modules), the `@Index` and `@Searchable` facets, and the
+**Input**: Build `@stackra/model` (data, wave 3) for real: `Model.with(...traits)`, the seven traits the template
+uses from it, relations (`Ref<T>`, `Collection<T>`, `Link<T>` across modules), the `@Index` and `@Searchable` facets, and the
 ORM pieces (`LinkType`, `MoneySchema`) gen's entity metadata imports.
 
 ## Impact
@@ -24,8 +24,8 @@ ORM pieces (`LinkType`, `MoneySchema`) gen's entity metadata imports.
 - **Services touched**: none here (the template's commerce and notifications services import from `.` already)
 - **Packages touched**: `packages/data/model` (new member)
 - **Cross-service events**: none (`record(event)` hands events to @stackra/events)
-- **Tenancy and data**: no tables of its own. `BelongsToTenant` declares the `tenantId` column; @stackra/tenancy fills
-  it and the migration enables row-level security (ADR 0239)
+- **Tenancy and data**: no tables of its own and no ownership trait: `BelongsToTenant` is @stackra/tenancy's (ADR 0321,
+  ADR 0323 decision 3), made with this package's `createTrait`
 - **Secrets**: none
 - **ADR needed**: no
 - **New dependencies**: `@mikro-orm/core` 7.2.5 (not yet catalogued; referenced as `catalog:`; the owner adds the
@@ -50,8 +50,9 @@ The package follows the v3.1 registry row and the owner decisions of 2026-10-24 
 
 ### User Story 1 - Declare a model with traits (Priority: P1)
 
-`class Order extends Model.with(HasPublicId("ord"), BelongsToTenant, Timestamps, UserStamps, Versioned)` gives an
-`id` minted on create, `tenantId`, timestamps, user stamps and an optimistic version, typed on the class.
+`class Order extends Model.with(HasPublicId("ord"), Timestamps, UserStamps, Versioned)` gives an `id` minted on create,
+timestamps, user stamps and an optimistic version, typed on the class (a tenant-owned model adds tenancy's
+`BelongsToTenant`).
 
 **Independent Test**: `src/core/bases/__tests__/model.base.test.ts`, `src/core/traits/__tests__/*.trait.test.ts`.
 
@@ -95,8 +96,8 @@ Gen writes `{ type: new LinkType("catalogue.variant") }` and `{ kind: "embedded"
 ## Requirements
 
 - **FR-001**: Package `@stackra/model` at `packages/data/model`, entry `.` only, member files per ADR 0294 R12.
-- **FR-002**: Every symbol the template imports from `@stackra/model`: `AppendOnly`, `Attributes` (t),
-  `BelongsToTenant`, `Collection`, `HasPublicId`, `Index`, `Link` (t), `LinkType`, `ManyToMany`, `ManyToOne`, `Model`,
+- **FR-002**: Every symbol the template imports from `@stackra/model` (its `BelongsToTenant` import moves to
+  `@stackra/tenancy/node`, R4): `AppendOnly`, `Attributes` (t), `Collection`, `HasPublicId`, `Index`, `Link` (t), `LinkType`, `ManyToMany`, `ManyToOne`, `Model`,
   `MoneySchema`, `OnDelete`, `OneToMany`, `Ref` (t), `Searchable`, `SoftDeletes`, `Timestamps`, `Translatable`,
   `Translated` (t), `UserStamps`, `Versioned`.
 - **FR-003**: `Model` is a bare kind base registered as `model`; no constructor-made state; `record(event)` uses
@@ -124,6 +125,13 @@ Gen writes `{ type: new LinkType("catalogue.variant") }` and `{ kind: "embedded"
   ADR trait list's `Archivable`, `HasRevisions`, `Sluggable`, ...): later, each in its owning package with
   `createTrait`.
 - `EntitySchema`, `OptionalProps`, `CrudService`, `Factory`: @stackra/database.
+
+## Reconciliation 2026-10-25 (R4)
+
+- `BelongsToTenant` left the package (trait file, barrel, tests, docs): @stackra/tenancy/node owns it (ADR 0321,
+  ADR 0323 decision 3) and fills `tenantId` from the running tenant call, where this package's copy declared an unset
+  `tenantId: string`. No package source imported the model copy. The template's import moves from
+  `@stackra/model/traits` (or `@stackra/model`) to `@stackra/tenancy/node` (STA-344).
 
 ## Status history
 
