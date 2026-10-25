@@ -9,19 +9,24 @@
  *          transparency, more contrast or no backdrop filter (ADR 0320). HeroUI's skeleton motion follows the reading
  *          direction and stops under reduced motion.
  * Boundary: a pure function from a Theme to a string; it validates nothing (`defineTheme` does) and writes no file.
+ *          The properties come from `themeVariables`, HeroUI's before Stackra's in each block.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0165 (HeroUI v3 on the web); ADR 0320 (the glass material).
  */
-import { ColorRole } from "#contracts/enums/color-role.enum";
 import { MaterialLevel } from "#contracts/enums/material-level.enum";
 import { MaterialMode } from "#contracts/enums/material-mode.enum";
 import type { Theme } from "#contracts/types/theme.type";
 import { HEROUI_TYPOGRAPHY_TOKENS } from "#core/constants/heroui-typography-tokens.constant";
-import { MATERIAL_MODES } from "#core/constants/material-modes.constant";
+import { materialModeVariables } from "#core/functions/material-mode-variables.function";
+import { themeVariables } from "#core/functions/theme-variables.function";
 
-const SHADOWS = ["surface", "overlay", "field"] as const;
-const FONT_FAMILIES = ["sans", "mono", "arabic"] as const;
-const declare = (name: string, value: string) => `  --${name}: ${value};`;
+/** Custom properties as declarations, one per line at the given indent. */
+const declarations = (
+  ...sets: readonly Readonly<Record<string, string>>[]
+): ((indent?: string) => string[]) => {
+  const entries = sets.flatMap((set) => Object.entries(set));
+  return (indent = "  ") => entries.map(([name, value]) => `${indent}${name}: ${value};`);
+};
 const block = (selector: string, lines: readonly string[]) =>
   `${selector} {\n${lines.join("\n")}\n}`;
 
@@ -79,62 +84,6 @@ const SKELETON_MOTION = [
 /** The shimmer skeleton in a right-to-left context: by `:dir()`, or by a `dir="rtl"` on it or on an ancestor. */
 const RTL_SHIMMER = '.skeleton--shimmer:is(:dir(rtl), [dir="rtl"], [dir="rtl"] *)';
 
-/** The mode factors as custom properties, for a `[data-material]` block or a fallback. */
-const modeFactors = (mode: MaterialMode, indent = "  ") => {
-  const factors = MATERIAL_MODES[mode];
-  return [
-    `${indent}--material-fill-scale: ${factors.fillScale};`,
-    `${indent}--material-fill-floor: ${factors.fillFloor};`,
-    `${indent}--material-thick-floor: ${factors.thickFloor};`,
-    `${indent}--material-blur-scale: ${factors.blurScale};`,
-    `${indent}--material-saturate-scale: ${factors.saturationScale};`,
-    `${indent}--material-brightness: ${factors.brightness};`,
-    `${indent}--material-sheen: ${factors.sheen};`,
-  ];
-};
-
-/** The least fill share of a level: the mode's floor, and for the thick level, which muted text sits on, its own too. */
-const floorOf = (level: MaterialLevel) =>
-  level === "thick"
-    ? "max(var(--material-fill-floor), var(--material-thick-floor))"
-    : "var(--material-fill-floor)";
-
-/**
- * The material's properties of one colour mode: each level's share of the surface, and the fills, filters, edge, rim
- * light and sheen computed from the shares and the mode factors. They sit in the colour blocks, so a subtree with its
- * own `data-theme` computes them again from its own colours.
- */
-function materialColours(theme: Theme, mode: "light" | "dark"): string[] {
-  const { levels, edge, highlight } = theme.materials;
-  return [
-    ...MaterialLevel.flatMap((level) => [
-      declare(`material-${level}-share`, String(levels[level].fill[mode])),
-      declare(
-        `material-${level}-fill`,
-        `color-mix(in oklch, var(--surface) calc(clamp(${floorOf(level)}, var(--material-${level}-share) * var(--material-fill-scale), 1) * 100%), transparent)`,
-      ),
-      declare(
-        `material-${level}-filter`,
-        `blur(calc(var(--material-${level}-blur) * var(--material-blur-scale))) saturate(calc(var(--material-${level}-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness))`,
-      ),
-    ]),
-    declare("material-edge-share", String(edge[mode])),
-    declare("material-highlight-share", String(highlight[mode])),
-    declare(
-      "material-edge",
-      "color-mix(in oklch, var(--foreground) calc(var(--material-edge-share) * 100%), transparent)",
-    ),
-    declare(
-      "material-highlight",
-      "color-mix(in oklch, oklch(1 0 0) calc(var(--material-highlight-share) * 100%), transparent)",
-    ),
-    declare(
-      "material-sheen-color",
-      "color-mix(in oklch, oklch(1 0 0) calc(var(--material-sheen) * var(--material-highlight-share) * 100%), transparent)",
-    ),
-  ];
-}
-
 /** One material class: the level's fill, filter, edge, rim light and sheen, over the theme's shadow. */
 const materialRule = (selector: string, name: MaterialLevel, shadow: string) =>
   inRule(selector, [
@@ -171,7 +120,7 @@ const staticMaterial = () =>
 
 /** The fallbacks: solid where transparency is unwanted or unsupported, a stronger edge for more contrast. */
 function materialFallbacks(): string {
-  const solid = modeFactors("solid", "    ").join("\n");
+  const solid = declarations(materialModeVariables("solid"))("    ").join("\n");
   return [
     `@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {\n  :root,\n  [data-material] {\n${solid}\n  }\n}`,
     "@media (prefers-contrast: more) {\n  :root,\n  .dark,\n  [data-theme] {\n    --material-edge-share: 0.45;\n  }\n}",
@@ -187,42 +136,17 @@ function materialFallbacks(): string {
  * the Arabic font stack.
  */
 export function renderWebCss(theme: Theme): string {
-  const colours = (mode: "light" | "dark") => [
-    ...ColorRole.map((role) => declare(role, theme.colors[role][mode])),
-    ...Object.entries(theme.palette).map(([name, token]) => declare(name, token[mode])),
-    ...SHADOWS.map((shadow) => declare(`${shadow}-shadow`, theme.shadows[shadow][mode])),
-    ...materialColours(theme, mode),
-  ];
-  const motion = Object.entries(theme.motion);
+  const { heroui, stackra } = themeVariables(theme);
+  const motion = Object.keys(theme.motion);
 
   return `${[
     `/* Generated by @stackra/tokens from the "${theme.name}" theme: change the theme, not this file. */`,
-    block(":root", [
-      ...FONT_FAMILIES.map((family) => declare(`font-${family}`, theme.fontFamily[family])),
-      ...Object.entries(theme.typography).flatMap(([name, style]) => [
-        declare(
-          name,
-          `${style.weight} ${style.size}/${style.lineHeight} var(--font-${style.family})`,
-        ),
-        declare(`${name}-letter-spacing`, style.letterSpacing),
-      ]),
-      ...Object.entries(theme.spacing).map(([name, size]) => declare(`space-${name}`, size)),
-      declare("radius", theme.radius.base),
-      declare("field-radius", theme.radius.field),
-      ...Object.entries(theme.radius.steps).map(([name, size]) => declare(`radius-${name}`, size)),
-      ...motion.flatMap(([name, step]) => [
-        declare(`duration-${name}`, step.duration),
-        declare(`ease-${name}`, step.easing),
-      ]),
-      ...MaterialLevel.flatMap((level) => [
-        declare(`material-${level}-blur`, theme.materials.levels[level].blur),
-        declare(`material-${level}-saturate`, String(theme.materials.levels[level].saturation)),
-      ]),
-      ...modeFactors("glass"),
-    ]),
-    block(':root,\n[data-theme="light"]', colours("light")),
-    block('.dark,\n[data-theme="dark"]', colours("dark")),
-    ...MaterialMode.map((mode) => block(`[data-material="${mode}"]`, modeFactors(mode))),
+    block(":root", declarations(heroui.root, stackra.root)()),
+    block(':root,\n[data-theme="light"]', declarations(heroui.light, stackra.light)()),
+    block('.dark,\n[data-theme="dark"]', declarations(heroui.dark, stackra.dark)()),
+    ...MaterialMode.map((mode) =>
+      block(`[data-material="${mode}"]`, declarations(materialModeVariables(mode))()),
+    ),
     // Unlayered, so the sweep beats HeroUI's `components` animation; `reverse` plays the keyframe backwards, which
     // starts the light on the inline-start side (HeroUI's start is the physical left, so in a right-to-left layout it
     // is the right), the way HeroUI Native sweeps in a right-to-left layout. The `[dir]` alternatives are there
@@ -230,7 +154,7 @@ export function renderWebCss(theme: Theme): string {
     // English `lang` island inside a right-to-left page.
     block(`${RTL_SHIMMER}::after,\n${RTL_SHIMMER}::before`, ["  animation-direction: reverse;"]),
     `@media (prefers-reduced-motion: reduce) {\n  :root {\n${motion
-      .map(([name]) => `    --duration-${name}: 0ms;`)
+      .map((name) => `    --duration-${name}: 0ms;`)
       .join("\n")}\n  }\n  ${SKELETON_MOTION} {\n    animation: none;\n  }\n}`,
     block(":root:lang(ar)", ["  font-family: var(--font-arabic);"]),
     componentsLayer(theme),
