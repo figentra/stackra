@@ -3770,9 +3770,15 @@ importers:
       '@stackra/errors':
         specifier: workspace:*
         version: link:../../foundation/errors
+      '@stackra/experience':
+        specifier: workspace:*
+        version: link:../experience
       '@stackra/i18n':
         specifier: workspace:*
         version: link:../../foundation/i18n
+      '@stackra/iam':
+        specifier: workspace:*
+        version: link:../../security/iam
       '@stackra/icons':
         specifier: workspace:*
         version: link:../../design-system/icons

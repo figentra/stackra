@@ -1,0 +1,14 @@
+{
+  "actions": {
+    "account": {
+      "enroll": {
+        "intents": ["enroll this customer in loyalty", "add them to the points program"]
+      }
+    }
+  },
+  "errors": {
+    "not_a_member": {
+      "message": "You are not enrolled in the loyalty program."
+    }
+  }
+}
