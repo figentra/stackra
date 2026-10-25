@@ -1,0 +1,89 @@
+---
+title: "0367 — Data transfer: streaming tabular files, column mapping and resumable imports with a batch ledger"
+description: "Proposed · 2026-10-25"
+---
+
+<Note>
+  Proposed. It implements decisions 3 and 4 of
+  [0163](/adr/0163-reports-exports-imports-and-declared-read-models) as a package and reads with
+  [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios)
+  (every limit and window below is a setting, never a number in code).
+</Note>
+
+## Context
+
+The owner approved `@stackra/data-transfer` (owner questionnaire 2026-10-25, #22): every console needs onboarding
+imports, and nothing on disk reads a CSV or XLSX file. [0163](/adr/0163-reports-exports-imports-and-declared-read-models) decision 3 says an import reads CSV and XLSX,
+supports a dry run, upserts by key, resumes after failure and rolls back a batch as a whole; decision 4 says exports
+respect permissions and can be scheduled. The products add Arabic needs: headers written in Arabic with diacritics,
+tatweel and invisible direction marks, and files saved by Arabic Excel in a legacy single-byte encoding (OS-162,
+Juristra). OS-163 asks for an undo of a finished import inside a window, and OS-162 sets row and size limits. Those
+values differ per market and plan, so they are settings and market-pack data
+([0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios) decisions 1, 3 and 5), and the package must take them as inputs.
+
+## Decision
+
+1. **One package, mechanism only.** `@stackra/data-transfer` (`packages/data/data-transfer`, `tier:lib`) holds the
+   readers, the writers, header normalisation, column mapping, the preview, the import runner and the batch ledger
+   port. Importers of other platforms (Shopify, Salla and the rest), AI mapping, scheduling, signed download links,
+   permission filtering of export rows and the full tenant export are OS and product code that use it.
+2. **Tabular ports.** `TabularReader` streams `{ sheet, row, cells }` from bytes; `TabularWriter` streams bytes from
+   named sheets of rows. Drivers: `csv` (written here, no dependency) and `xlsx` (over `exceljs`, multi-sheet, streamed).
+   A new format is a new driver. A reader never holds the whole file: rows leave as they are parsed.
+3. **Encoding is detected, the legacy fallback is data.** A byte order mark wins (UTF-8, UTF-16); otherwise valid
+   UTF-8 is UTF-8; otherwise the caller's fallback encoding is used. The fallback comes from the market pack (for an
+   Arabic market, `windows-1256`); no encoding name other than the Unicode ones appears in code. Decoding is strict: a
+   byte sequence the encoding cannot read is a refusal (`unreadable_encoding`), never silent replacement characters.
+4. **Limits are inputs.** Row and byte limits and the preview size are options the caller reads from settings; a
+   reader refuses past a limit with `transfer_limit_exceeded`. The package has no default for any of them.
+5. **Headers match after normalisation.** A header is compared after NFKC, removal of Arabic diacritics, tatweel,
+   invisible direction marks and the BOM, unification of alef forms and alef maqsura, Arabic-Indic digits to ASCII,
+   collapsed spaces and lower case. A mapping is `field → header`; `matchColumns` proposes one from a field's name and
+   its labels, and anything it cannot match is left for the user or the AI step. Saved mapping profiles are records
+   the consumer stores.
+6. **Per-row errors.** A mapped row is validated against the target's schema (the model's generated Zod schema). A
+   row that fails is reported with its sheet, row number and each issue's field, code and message; it never stops the
+   run.
+7. **Batches and the ledger.** `ImportRunner` reads rows, validates them and hands batches of a caller-set size to the
+   target's `upsert`, which runs one batch in one unit of work and returns, per record, its key and its before-image
+   (`null` for a record it created). After each batch the runner appends `{ index, lastRow, changes, errors }` to the
+   `ImportLedger` port, which advances the run's cursor. A failed batch is rolled back by its unit of work, the run is
+   marked failed, and running it again resumes after the cursor. Upsert by key makes a re-run after a crash between
+   the upsert and the ledger write safe.
+8. **Undo is a whole-run revert inside a window.** `revert(runId, target, { window })` reverts every batch, newest
+   first, through the target's `revert`, which restores the before-images and refuses records changed since. The
+   window is the caller's setting (OS-163); past it the revert is refused with `import_undo_expired`. A run that is
+   still running or already reverted is refused with `import_run_closed`.
+9. **Memory ledger first.** The package ships the memory ledger driver ([0266](/adr/0266-capabilities-phase-in-one-option-one-driver-memory-first)); the durable ledger table and its driver
+   belong to the OS data-exchange service.
+10. **CSV export guards formulas.** The CSV writer prefixes a text cell that starts with `=`, `+`, `-`, `@`, a tab or a
+    carriage return with an apostrophe unless the caller turns the guard off, so an exported file cannot run a formula
+    in a spreadsheet. It writes a UTF-8 BOM by default so spreadsheet tools read Arabic text.
+
+## Consequences
+
+- Every product imports and exports through the same readers and the same error report; a new market with a legacy
+  encoding is a market-pack value.
+- A model becomes importable by supplying an `ImportTarget` (schema, `upsert`, `revert`); `@Importable` can generate it.
+- The OS data-exchange service owns the durable ledger driver, the settings keys for limits, batch size, preview size
+  and the undo window, and the storage of mapping profiles.
+- `exceljs` becomes a catalogue dependency.
+
+## Enforcement
+
+planned — the package's unit tests (`packages/data/data-transfer/src/**/__tests__`) cover strict decoding, the
+fallback, limits, header normalisation, resume after a failed batch and the revert window; the 0363 lint rule flags
+an encoding or limit literal in package source.
+
+## Open questions
+
+1. **JSON and JSONL.** [0163](/adr/0163-reports-exports-imports-and-declared-read-models) decision 3 also names JSON; the full tenant export (OS-165) writes JSONL. Whether they are
+   drivers of these ports or a separate path is not decided.
+2. **Multi-sheet imports.** An import reads one sheet. Whether one run may feed several targets (products and their
+   variants in two sheets) is not decided.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner questionnaire 2026-10-25 #22; `notes/handover/stackra-package-needs.md`
+(`@stackra/data-transfer` row); `notes/handover/product-capability-map-2026-10-25.md`; OS-162, OS-163 and OS-164
+(`notes/handover/os/questionnaire-os.md`); COM-302 to COM-309 and COM-346; `notes/handover/config-model.md`.

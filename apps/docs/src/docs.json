@@ -466,7 +466,8 @@
               "adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios",
               "adr/0364-fiscal-e-invoicing-and-till-fiscal-drivers-chosen-by-market-pack-data",
               "adr/0365-documents-one-print-template-model-three-renderers-and-the-e-signature-port",
-              "adr/0366-stackra-calendar-umm-al-qura-business-days-recurrence-and-slots-over-market-pack-data"
+              "adr/0366-stackra-calendar-umm-al-qura-business-days-recurrence-and-slots-over-market-pack-data",
+              "adr/0367-data-transfer-streaming-tabular-files-mapping-and-resumable-imports-with-a-batch-ledger"
             ]
           }
         ]
