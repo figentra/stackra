@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `PERIPHERALS_CONFIG_SCHEMA`, the zod schema this package ships for `PeripheralsConfig` (exported as
- *          `PeripheralsConfig$`): the three drivers, the printer's address, the drawer pin, the scanner's key gap and
- *          the boot probe.
+ *          `PeripheralsConfig$`): the six drivers, the receipt and label printers' addresses, the drawer pin, the
+ *          scanner's key gap and the boot probe.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated `PeripheralsConfig$` extends it. The defaults equal
  *           `PeripheralsOptions`' initializers (tested). An address is empty, `tcp://<host>:<port>` or an absolute
@@ -25,7 +25,11 @@ export const PERIPHERALS_CONFIG_SCHEMA = z.object({
   printer: z.enum(PERIPHERAL_DRIVERS.printer).default("memory"),
   drawer: z.enum(PERIPHERAL_DRIVERS.drawer).default("memory"),
   scanner: z.enum(PERIPHERAL_DRIVERS.scanner).default("memory"),
+  labelPrinter: z.enum(PERIPHERAL_DRIVERS.labelPrinter).default("memory"),
+  customerDisplay: z.enum(PERIPHERAL_DRIVERS.customerDisplay).default("memory"),
+  cardTerminal: z.enum(PERIPHERAL_DRIVERS.cardTerminal).default("memory"),
   printerAddress: z.string().regex(PRINTER_ADDRESS).default(""),
+  labelPrinterAddress: z.string().regex(PRINTER_ADDRESS).default(""),
   drawerPin: z.union([z.literal(2), z.literal(5)]).default(2),
   scanKeyGap: z
     .custom<Duration>(

@@ -16,6 +16,9 @@ describe("PERIPHERAL_DRIVERS", () => {
       printer: ["memory", "escpos"],
       drawer: ["memory", "printer_kick"],
       scanner: ["memory", "hid"],
+      labelPrinter: ["memory", "zpl"],
+      customerDisplay: ["memory", "channel"],
+      cardTerminal: ["memory"],
     });
     expect(Object.isFrozen(PERIPHERAL_DRIVERS)).toBe(true);
   });

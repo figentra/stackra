@@ -17,12 +17,14 @@ vi.mock("electron", () => {
 });
 
 describe("@stackra/peripherals/desktop", () => {
-  it("exports the print bridge and the main-process drivers", () => {
+  it("exports the print bridges and the main-process drivers", () => {
     expect(Object.keys(electron).sort()).toEqual([
       "EscposReceiptPrinterDriver",
       "HidBarcodeScannerDriver",
+      "PrintLabelBridge",
       "PrintReceiptBridge",
       "PrinterKickCashDrawerDriver",
+      "ZplLabelPrinterDriver",
     ]);
   });
 });

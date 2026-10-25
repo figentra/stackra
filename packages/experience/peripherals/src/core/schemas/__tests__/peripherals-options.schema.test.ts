@@ -12,7 +12,10 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { Schema } from "@stackra/validation";
 
 import type { BarcodeScanner } from "#contracts/ports/barcode-scanner.port";
+import type { CardTerminal } from "#contracts/ports/card-terminal.port";
 import type { CashDrawer } from "#contracts/ports/cash-drawer.port";
+import type { CustomerDisplay } from "#contracts/ports/customer-display.port";
+import type { LabelPrinter } from "#contracts/ports/label-printer.port";
 import type { ReceiptPrinter } from "#contracts/ports/receipt-printer.port";
 import type { DrawerPin } from "#contracts/types/drawer-pin.type";
 import { PERIPHERALS_CONFIG_SCHEMA } from "#core/constants/peripherals-config-schema.constant";
@@ -29,6 +32,11 @@ describe("PeripheralsOptions", () => {
     expectTypeOf<PeripheralsOptions["printer"]>().toEqualTypeOf<DriverName<ReceiptPrinter>>();
     expectTypeOf<PeripheralsOptions["drawer"]>().toEqualTypeOf<DriverName<CashDrawer>>();
     expectTypeOf<PeripheralsOptions["scanner"]>().toEqualTypeOf<DriverName<BarcodeScanner>>();
+    expectTypeOf<PeripheralsOptions["labelPrinter"]>().toEqualTypeOf<DriverName<LabelPrinter>>();
+    expectTypeOf<PeripheralsOptions["customerDisplay"]>().toEqualTypeOf<
+      DriverName<CustomerDisplay>
+    >();
+    expectTypeOf<PeripheralsOptions["cardTerminal"]>().toEqualTypeOf<DriverName<CardTerminal>>();
     expectTypeOf<PeripheralsOptions["drawerPin"]>().toEqualTypeOf<DrawerPin>();
     expectTypeOf<PeripheralsOptions["scanKeyGap"]>().toEqualTypeOf<Duration>();
   });

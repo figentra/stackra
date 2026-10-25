@@ -2,7 +2,7 @@
   "name": "@stackra/peripherals",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra peripherals: the ReceiptPrinter, CashDrawer, BarcodeScanner and Scale ports with their typed refusals, PeripheralsConfig, memory drivers, ESC/POS receipts with the drawer kick through the printer, and the Electron main-process drivers and print bridge",
+  "description": "Stackra peripherals: the ReceiptPrinter, LabelPrinter, CashDrawer, BarcodeScanner, Scale, CustomerDisplay and CardTerminal ports with their typed refusals, PeripheralsConfig, memory drivers, the channel customer display, in-store weight and price barcode parsing, ESC/POS receipts with the drawer kick through the printer, ZPL labels, and the Electron main-process drivers and print bridges",
   "license": "MIT",
   "repository": {
     "type": "git",

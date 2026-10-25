@@ -23,34 +23,7 @@ import type { Receipt } from "#contracts/types/receipt.type";
 import { escposDrawerKick } from "#core/functions/escpos-drawer-kick.function";
 import { escposReceipt } from "#core/functions/escpos-receipt.function";
 import { refuse } from "#core/functions/refuse.function";
-
-/** How long a network printer has to accept the job, in milliseconds. */
-const TIMEOUT = 5000;
-
-/** Sends `bytes` to a network printer and resolves once they are flushed. */
-async function sendOverTcp(address: string, bytes: Uint8Array): Promise<void> {
-  const { createConnection } = await import("node:net");
-  const url = new URL(address);
-  const host = url.hostname.replace(/^\[|\]$/g, "");
-  await new Promise<void>((resolve, reject) => {
-    const socket = createConnection({ host, port: Number(url.port) });
-    socket.setTimeout(TIMEOUT, () => socket.destroy(new Error(`${address} timed out`)));
-    // `on`, not `once`: a second error (a reset after the timeout) must not reach main as an unhandled event.
-    socket.on("error", reject);
-    socket.once("connect", () => socket.end(bytes, () => resolve()));
-  });
-}
-
-/** Writes `bytes` to an existing device path. */
-async function sendToDevice(path: string, bytes: Uint8Array): Promise<void> {
-  const { constants, open } = await import("node:fs/promises");
-  const device = await open(path, constants.O_WRONLY);
-  try {
-    await device.write(bytes);
-  } finally {
-    await device.close();
-  }
-}
+import { sendToPrinter } from "#desktop/functions/send-to-printer.function";
 
 /**
  * An ESC/POS receipt printer reached from main.
@@ -91,8 +64,7 @@ export class EscposReceiptPrinterDriver extends Driver(ReceiptPrinter) {
     const address = this.config.printerAddress;
     if (address === "") return refuse(Capability.Print, "unavailable");
     try {
-      if (address.startsWith("tcp://")) await sendOverTcp(address, bytes);
-      else await sendToDevice(address, bytes);
+      await sendToPrinter(address, bytes);
       return { ok: true, data: undefined };
     } catch (error) {
       const code = (error as { readonly code?: unknown }).code;

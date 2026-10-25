@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: the `DriverRegistry` entries of the `ReceiptPrinter`, `CashDrawer` and `BarcodeScanner` ports, so
- *          `PeripheralsConfig`'s `printer`, `drawer` and `scanner` (typed `DriverName<Port>`) and a runway
- *          `peripherals.*` value take exactly this package's driver names.
+ * Purpose: the `DriverRegistry` entries of the six selectable peripheral ports, so `PeripheralsConfig`'s driver
+ *          fields (typed `DriverName<Port>`) and a runway `peripherals.*` value take exactly this package's driver
+ *          names.
  * Boundary: a module augmentation only; the stand-in for the entries this package's generated wiring writes (ADR 0263
  *           decision 9). `PeripheralsOptions` imports this file so the augmentation travels with the shape.
  * Runtime: isomorphic
@@ -18,5 +18,11 @@ declare module "@stackra/container" {
     "peripherals.CashDrawer": (typeof PERIPHERAL_DRIVERS.drawer)[number];
     /** The driver names of `BarcodeScanner` (`memory`, `hid`). */
     "peripherals.BarcodeScanner": (typeof PERIPHERAL_DRIVERS.scanner)[number];
+    /** The driver names of `LabelPrinter` (`memory`, `zpl`). */
+    "peripherals.LabelPrinter": (typeof PERIPHERAL_DRIVERS.labelPrinter)[number];
+    /** The driver names of `CustomerDisplay` (`memory`, `channel`). */
+    "peripherals.CustomerDisplay": (typeof PERIPHERAL_DRIVERS.customerDisplay)[number];
+    /** The driver names of `CardTerminal` (`memory`). */
+    "peripherals.CardTerminal": (typeof PERIPHERAL_DRIVERS.cardTerminal)[number];
   }
 }

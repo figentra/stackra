@@ -11,7 +11,10 @@ import type { DriverName } from "@stackra/container";
 import { describe, expectTypeOf, it } from "@stackra/testing";
 
 import type { BarcodeScanner } from "#contracts/ports/barcode-scanner.port";
+import type { CardTerminal } from "#contracts/ports/card-terminal.port";
 import type { CashDrawer } from "#contracts/ports/cash-drawer.port";
+import type { CustomerDisplay } from "#contracts/ports/customer-display.port";
+import type { LabelPrinter } from "#contracts/ports/label-printer.port";
 import type { ReceiptPrinter } from "#contracts/ports/receipt-printer.port";
 
 describe("peripherals DriverRegistry entries", () => {
@@ -19,5 +22,8 @@ describe("peripherals DriverRegistry entries", () => {
     expectTypeOf<DriverName<ReceiptPrinter>>().toEqualTypeOf<"escpos" | "memory">();
     expectTypeOf<DriverName<CashDrawer>>().toEqualTypeOf<"printer_kick" | "memory">();
     expectTypeOf<DriverName<BarcodeScanner>>().toEqualTypeOf<"hid" | "memory">();
+    expectTypeOf<DriverName<LabelPrinter>>().toEqualTypeOf<"zpl" | "memory">();
+    expectTypeOf<DriverName<CustomerDisplay>>().toEqualTypeOf<"channel" | "memory">();
+    expectTypeOf<DriverName<CardTerminal>>().toEqualTypeOf<"memory">();
   });
 });

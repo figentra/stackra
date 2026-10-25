@@ -1,6 +1,7 @@
 # AGENTS — @stackra/peripherals
 
-Point-of-sale hardware: receipt printer, cash drawer, barcode scanner, scale. Member at
+Point-of-sale hardware: receipt and label printers, cash drawer, barcode scanner, scale, customer display, card
+terminal (pairing only). Member at
 `packages/experience/peripherals` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
 `./contracts`, `./desktop`.
 
@@ -20,7 +21,13 @@ Point-of-sale hardware: receipt printer, cash drawer, barcode scanner, scale. Me
 ## This package
 
 - A call a device cannot honour returns `refuse(capability, code)` from `src/core/functions/`; a programming error
-  throws. Printer and drawer refuse on `print`, the scanner on `scanner`, the scale on `serial`.
+  throws. Printers and drawer refuse on `print`, the scanner on `scanner`, the scale on `serial`, the customer display
+  on `window`, the card terminal on `card_terminal`.
+- Configuration, not code: barcode layouts (prefixes, digits, decimals, unit), certified printers and what a customer
+  display shows are market-pack, seed-pack or settings data. Code holds the parsers and drivers only.
+- `CardTerminal` pairs and reports; the payment protocol stays in the payments driver (ADR 0339 decision 1). A
+  provider's SDK driver needs its own ADR (ADR 0339 open question 1).
+- The label bridge accepts one ZPL label with no `~` or `^J` command, or a packed raster; never raw bytes.
 - A new driver name goes into `PERIPHERAL_DRIVERS`; it must equal what gen writes for the port, because both augment
   the same `DriverRegistry` key.
 - No native module (ADR 0253 decision 3): main reaches printers over `node:net` or a device path, and the scanner
@@ -43,3 +50,5 @@ Point-of-sale hardware: receipt printer, cash drawer, barcode scanner, scale. Me
 | Receipt lines   | `ReceiptPrinter.print`, the bridge | Sent to the printer only; never logged, never put in a refusal's details |
 | Scanned codes   | `BarcodeScanner.onScan` listeners  | Handed to the listeners only; never stored here                          |
 | Printer address | `PeripheralsConfig.printerAddress` | On the user's own network or machine; shown as `printer`, not a secret   |
+| Label content   | `LabelPrinter.print`, the bridge   | Sent to the printer only; never logged, never put in a refusal's details |
+| Display views   | `CustomerDisplay.show`             | Posted to the app's own display window only (same-origin channel)        |

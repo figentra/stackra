@@ -16,13 +16,22 @@ import * as peripherals from "#core/index";
 describe("@stackra/peripherals", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(peripherals).sort()).toEqual([
+      "CUSTOMER_DISPLAY_CHANNEL",
+      "ChannelCustomerDisplayDriver",
+      "EmbeddedValue",
+      "LabelPrinterUnavailableError",
       "MemoryBarcodeScannerDriver",
+      "MemoryCardTerminalDriver",
       "MemoryCashDrawerDriver",
+      "MemoryCustomerDisplayDriver",
+      "MemoryLabelPrinterDriver",
       "MemoryReceiptPrinterDriver",
       "MemoryScaleDriver",
       "PeripheralsConfig",
       "PeripheralsConfig$",
       "PrinterUnavailableError",
+      "listenCustomerDisplay",
+      "parseEmbeddedBarcode",
     ]);
   });
 
