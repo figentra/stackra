@@ -256,6 +256,12 @@ export type SettingsStackParamList = {
   Settings: undefined;
 };
 
+/** The routes of the Search tab's stack (development builds only). */
+export type SearchStackParamList = {
+  /** The review area's search; deep link `stackra://search`. */
+  Search: undefined;
+};
+
 /** The routes that show one design-system component: every Home route except the home and the landing. */
 export type DesignSystemComponentRoute = Exclude<keyof HomeStackParamList, "Home" | "DesignSystem">;
 
@@ -265,6 +271,8 @@ export type TabParamList = {
   HomeTab: NavigatorScreenParams<HomeStackParamList>;
   /** The Settings tab, whose params are the Settings stack's. */
   SettingsTab: NavigatorScreenParams<SettingsStackParamList>;
+  /** The Search tab (development builds only), whose params are the Search stack's. */
+  SearchTab: NavigatorScreenParams<SearchStackParamList>;
 };
 
 /** The root stack: the tab shell and the item detail screen. */

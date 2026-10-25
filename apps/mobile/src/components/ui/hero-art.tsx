@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the design-system landing's hero stage, the native twin of the web playground's `hero-art`: the beam-S
  *          wordmark at full width, echoed above and below as hairline outlines, a soft glow behind it and the brand's
- *          graph lines across it, with thin glass tiles of the system's parts (the st tile, a switch, the faces, a
+ *          graph lines across it, with solid tiles of the system's parts (the st tile, a switch, the faces, a
  *          check, an avatar group) floating on them. The tiles settle in once; nothing moves after, and nothing moves
  *          under reduced motion (Reanimated's system setting). The phone set: the web's wide-screen-only tiles are
  *          left out, as the web leaves them out on a phone.
@@ -11,7 +11,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0320 (glass and the showcase stage); WCAG 2.2 SC 1.1.1, 2.3.3.
  */
-import { useDesignSystem } from "@stackra/ui/native";
+import { Surface, useDesignSystem } from "@stackra/ui/native";
 import { useThemeColor } from "heroui-native";
 import type { ReactNode } from "react";
 import { Text, View } from "react-native";
@@ -19,7 +19,6 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import Svg, { Defs, Path, RadialGradient, Rect, Stop } from "react-native-svg";
 
 import { BrandGlyph } from "./brand-glyph";
-import { Glass } from "./glass";
 import { StackraWordmark } from "./stackra-wordmark";
 
 /** A tile's place on the stage (percent of its box, from the inline start), its tilt, its size and its face. */
@@ -171,21 +170,17 @@ export function HeroArt() {
           entering={FadeInDown.delay(120 + index * 70).duration(600)}
           style={{ position: "absolute", start: `${start}%`, top: `${top}%` }}
         >
-          <Glass
-            level="thin"
-            radius={size * 0.22}
-            padding={0}
-            isInteractive={false}
+          <Surface
+            className="items-center justify-center p-0"
             style={{
               width: size,
               height: size,
-              alignItems: "center",
-              justifyContent: "center",
+              borderRadius: size * 0.22,
               transform: [{ rotate: `${tilt}deg` }],
             }}
           >
             {face}
-          </Glass>
+          </Surface>
         </Animated.View>
       ))}
     </View>

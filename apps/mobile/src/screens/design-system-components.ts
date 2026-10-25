@@ -922,5 +922,5 @@ export const DESIGN_SYSTEM_COMPONENTS: readonly DesignSystemComponent[] = [...CO
   (a, b) =>
     ComponentCategory.indexOf(a.category) - ComponentCategory.indexOf(b.category) ||
     ComponentTier.indexOf(a.tier) - ComponentTier.indexOf(b.tier) ||
-    a.title.localeCompare(b.title),
+    a.title.localeCompare(b.title, "en"),
 );

@@ -30,7 +30,7 @@ export interface ScreenProps {
   children: ReactNode;
   /** The scroll view, for a screen that scrolls itself (to a section). */
   ref?: Ref<ScrollView>;
-  /** True to draw the screen on the ambient field, for glass panels; otherwise the solid background. */
+  /** True to draw the screen on the ambient field, under the glass header and tab bar; otherwise the solid background. */
   isAmbient?: boolean;
 }
 

@@ -1,20 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: the previous and next pages at the foot of a design-system page, the native twin of the web playground's
- *          `page-pager`: in gallery order across every category, as two glass cards, so a reviewer walks the whole
+ *          `page-pager`: in gallery order across every category, as two solid cards, so a reviewer walks the whole
  *          system without going back to the gallery. A card settles a little under the finger, unless motion is
  *          reduced.
  * Boundary: presses only; the caller navigates. The first page has no previous, the last no next.
  * Runtime: react-native
  * Governing contract: ADR 0320 (glass and the showcase stage); WCAG 2.2 SC 2.4.8.
  */
-import { Icon, Text } from "@stackra/ui/native";
+import { Icon, Surface, Text } from "@stackra/ui/native";
 import { Pressable, View } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
 
 import type { DesignSystemComponentRoute } from "#src/navigation/types";
 import type { PageLink } from "#src/types/page-link.type";
-import { Glass } from "./glass";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
@@ -55,9 +54,8 @@ function PagerCard({
         pressed && !isReducedMotion ? { transform: [{ scale: 0.98 }] } : undefined
       }
     >
-      <Glass
-        radius={16}
-        padding={14}
+      <Surface
+        className="rounded-2xl p-3.5"
         style={{ gap: 2, alignItems: isNext ? "flex-end" : "flex-start" }}
       >
         <View className="flex-row items-center gap-1">
@@ -70,7 +68,7 @@ function PagerCard({
         <Text numberOfLines={1} className="font-semibold">
           {page.title}
         </Text>
-      </Glass>
+      </Surface>
     </Pressable>
   );
 }

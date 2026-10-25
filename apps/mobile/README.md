@@ -22,18 +22,21 @@ src/
 ├── global.css                 Tailwind + Uniwind + HeroUI Native and HeroUI Native Pro styles
 ├── navigation/
 │   ├── types.ts               every route + params (RootStackParamList, TabParamList, SettingsStackParamList, …)
-│   ├── linking.ts             deep links: stackra://items/<id> → Item, stackra://design-system[/free|pro/<name>]
+│   ├── linking.ts             deep links: stackra://items/<id> → Item, stackra://design-system[/free|pro/<name>],
+│   │                          stackra://search (development builds)
 │   ├── header-options.ts      transparent native-stack headers (Liquid Glass) + large titles
 │   ├── root-navigator.tsx     native stack: Tabs, Item (dynamic)
 │   └── tab-navigator.tsx      native tab bar (UITabBarController) with one stack per tab; the Home stack
-│                              also holds the design-system review pages
+│                              also holds the design-system review pages; the bar minimizes on scroll (iOS 26) and
+│                              development builds add a Search tab in the search role
 ├── enums/                     ComponentCategory (the catalogue order), ComponentTier (Free, Pro)
 ├── screens/                   one file per screen
 │   ├── design-system-screen.tsx        index of the review area: scheme + direction switchers, All/Free/Pro filter, list by category
 │   ├── design-system-components.ts     the one list (category, tier, title, route, screen) the index and stack read
+│   ├── search-screen.tsx               the Search tab: the review area's search, opening pages in the Home tab
 │   ├── free/<name>-screen.tsx          one review page per @stackra/ui/native component (tier Free)
 │   └── pro/<name>-screen.tsx           one review page per @stackra/ui-pro/native component (tier Pro, badged)
-└── components/ui/             Screen (scroll container), Glass (GlassView with fallback), Section, Sample, ChoiceGroup,
+└── components/ui/             Screen (scroll container), Section, Sample, ChoiceGroup, ReviewIcons (the review area's icons),
                                CalendarParts, useInsetSheet (HeroUI inset bottom-sheet props)
 ```
 
@@ -42,7 +45,7 @@ src/
 The Home tab (`stackra://design-system`; development builds only, release builds show the Home screen) is the mobile twin of `apps/playground`: switch the colour
 scheme (Light, Dark, System) and the direction (English LTR, العربية RTL), then open a component page
 (`stackra://design-system/free/<name>` or `stackra://design-system/pro/<name>`). To add a component, add its route to `HomeStackParamList`, its page under
-`src/screens/`, and one row to `DESIGN_SYSTEM_COMPONENTS` with its category and tier; the landing and the Home stack read that list.
+`src/screens/`, and one row to `DESIGN_SYSTEM_COMPONENTS` with its category and tier; the landing, the Search tab and the Home stack read that list.
 The index lists one section per category (Foundations to AI, empty ones hidden), Free rows before Pro rows, each
 alphabetical, with a "Pro" badge on Pro rows and an All / Free / Pro filter above. Bottom sheets use HeroUI's inset
 style through `useInsetSheet()`.

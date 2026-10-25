@@ -1,6 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: the tab shell, with one native stack per tab so each tab root gets its large title.
+ * Purpose: the tab shell, with one native stack per tab so each tab root gets its large title. In development
+ *          builds a Search tab (the review area's search) takes the search role, which iOS 26 draws as the search
+ *          button beside the tab bar, and the tab bar minimizes as the content scrolls down.
  * Boundary: the tabs and their stacks; the screens themselves come from `../screens`.
  * Runtime: react-native
  * Governing contract: ADR 0007 (documentation).
@@ -13,7 +15,12 @@ import { useThemeColor } from "heroui-native";
 import { HomeScreen } from "../screens/home-screen";
 import { SettingsScreen } from "../screens/settings-screen";
 import { detailHeader, largeTitleHeader } from "./header-options";
-import type { HomeStackParamList, SettingsStackParamList, TabParamList } from "./types";
+import type {
+  HomeStackParamList,
+  SearchStackParamList,
+  SettingsStackParamList,
+  TabParamList,
+} from "./types";
 
 // Release builds leave the review area out of the bundle: Metro folds `__DEV__` to false and drops these requires,
 // where static imports would bundle and evaluate all its screens and their native libraries at start-up.
@@ -28,11 +35,15 @@ const ComponentPage: typeof import("../components/ui/component-page").ComponentP
 const DisplaySettings:
   | typeof import("../components/ui/display-settings").DisplaySettings
   | undefined = __DEV__ ? require("../components/ui/display-settings").DisplaySettings : undefined;
+const SearchScreen: typeof import("../screens/search-screen").SearchScreen | undefined = __DEV__
+  ? require("../screens/search-screen").SearchScreen
+  : undefined;
 /* oxlint-enable typescript/no-require-imports */
 
 const Tabs = createNativeBottomTabNavigator<TabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
+const SearchStack = createNativeStackNavigator<SearchStackParamList>();
 
 // Each tab owns a native stack so its root gets a large title under the glass header.
 function HomeTab() {
@@ -80,13 +91,30 @@ function SettingsTab() {
   );
 }
 
-/** System tab bar (UITabBarController): Liquid Glass on iOS 26, Material on Android. */
+function SearchTab() {
+  if (!SearchScreen) return null;
+  return (
+    <SearchStack.Navigator screenOptions={largeTitleHeader}>
+      <SearchStack.Screen name="Search" component={SearchScreen} />
+    </SearchStack.Navigator>
+  );
+}
+
+/**
+ * System tab bar (UITabBarController): Liquid Glass on iOS 26, Material on Android. On iOS 26 it minimizes while the
+ * content scrolls down and comes back on scrolling up; the search tab's role sets it apart beside the bar.
+ */
 export function TabNavigator() {
   const [accent] = useThemeColor(["accent"]);
   // The in-app locale's direction, not the device's (`locale`, the default), so the switcher mirrors the tab bar.
   const { direction } = useDesignSystem();
   return (
-    <Tabs.Navigator tabBarActiveTintColor={accent} sidebarAdaptable layoutDirection={direction}>
+    <Tabs.Navigator
+      tabBarActiveTintColor={accent}
+      sidebarAdaptable
+      layoutDirection={direction}
+      minimizeBehavior="onScrollDown"
+    >
       <Tabs.Screen
         name="HomeTab"
         component={HomeTab}
@@ -97,6 +125,17 @@ export function TabNavigator() {
         component={SettingsTab}
         options={{ title: "Settings", tabBarIcon: () => ({ sfSymbol: "gearshape" }) }}
       />
+      {SearchScreen ? (
+        <Tabs.Screen
+          name="SearchTab"
+          component={SearchTab}
+          options={{
+            title: "Search",
+            role: "search",
+            tabBarIcon: () => ({ sfSymbol: "magnifyingglass" }),
+          }}
+        />
+      ) : null}
     </Tabs.Navigator>
   );
 }
