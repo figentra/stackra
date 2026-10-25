@@ -6,8 +6,8 @@
  *          workflow to the event bus.
  * Boundary: runs once per container, after every singleton is built. It acts only when the bound `WorkflowRunner` is
  *           the native engine; another engine driver wires itself. A starter is an in-process subscription built here,
- *           not a `Listener` kind file, so gen never wires it to every event. The runtime still runs `work` (the
- *           worker loop) per service.
+ *           not a `Listener` kind file, so gen never wires it to every event; the run it starts names no scope and
+ *           takes the session's from the engine. The runtime still runs `work` (the worker loop) per service.
  * Runtime: node
  * Governing contract: ADR 0144 (explorers) as amended by 0263; ADR 0294 (decision 6: the kind acts on what decorators
  *                     recorded); ADR 0101 (0294 note: an event starts a workflow only through `startOn`); ADR 0102
@@ -29,23 +29,15 @@ import { planOf } from "#core/functions/plan-of.function";
 /** The caller of a run an event without an actor starts. */
 const SYSTEM_ACTOR = Object.freeze({ kind: ActorKind.System, id: "sys_workflow" as PublicId });
 
-/** The origin of a run the event of `ctx` starts: its correlation (else the event) and its actor (else the system). */
+/**
+ * The origin of a run the event of `ctx` starts: its correlation (else the event) and its actor (else the system). It
+ * names no scope: the engine gives the run the scope of the session the delivery runs in.
+ */
 function originOf(ctx: ListenerContext, key: string): RunOrigin {
-  const {
-    eventId,
-    correlationId,
-    actor,
-    occurredAt: _occurredAt,
-    causationId: _causationId,
-    connection: _connection,
-    now: _now,
-    ...rest
-  } = ctx;
   return Object.freeze({
-    ...(rest as Pick<RunOrigin, "tenantId">),
-    callId: correlationId ?? eventId,
+    callId: ctx.correlationId ?? ctx.eventId,
     key,
-    actor: actor ?? SYSTEM_ACTOR,
+    actor: ctx.actor ?? SYSTEM_ACTOR,
     ...WORKFLOW_DEFAULTS.origin,
   });
 }

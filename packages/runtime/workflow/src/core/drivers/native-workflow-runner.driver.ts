@@ -14,8 +14,9 @@
  *           rejects with the failing step's error (`workflow_timed_out` for a timeout) after compensating. A sent
  *           signal is held in the sender's transaction and taken by the next tick, never by the sender's call. A
  *           step's integration events go to the outbox in the step's transaction and its domain events to the bus
- *           after it commits; events a model records reach the outbox through its own flush. Staging the events of a
- *           whole run until it succeeds (ADR 0102 decision 3) waits for a staged state in @stackra/outbox.
+ *           after it commits, with the run's scope id as the envelope's scope field and no `scope` key; events a model
+ *           records reach the outbox through its own flush. Staging the events of a whole run until it succeeds (ADR
+ *           0102 decision 3) waits for a staged state in @stackra/outbox.
  * Runtime: isomorphic
  * Governing contract: ADR 0102 (decisions 1, 2 and 7); ADR 0151 (decisions 2 and 3: the native driver behind the
  *                     engine port, which is @stackra/actions' `WorkflowRunner`); ADR 0292 (decision 2); ADR 0152 (0294
@@ -258,7 +259,8 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
 
   /**
    * Starts a run of `workflow` with `input` as `origin` and advances it until it completes, parks or compensates.
-   * A `startOn` workflow keys the run by its correlation, so a second start of the same key starts nothing.
+   * A `startOn` workflow keys the run by its correlation, so a second start of the same key starts nothing. An origin
+   * without a `scope` takes the caller's session scope, so its steps read it as `ctx.scope`.
    *
    * @returns `output(run)` over the results so far (`undefined` without an `output` method, or for a key that already
    *          has a run).
@@ -283,7 +285,11 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
           workflow: plan.key,
           status: WorkflowRunStatus.Running,
           input: toJson(input),
-          origin,
+          // A run an event starts has no call scope: its steps run in, and read, the session's.
+          origin:
+            origin.scope === undefined && scope !== undefined
+              ? Object.freeze({ ...origin, scope })
+              : origin,
           ...(scope === undefined ? {} : { scope }),
           startedAt,
           ...(plan.timeout === undefined ? {} : { deadlineAt: later(startedAt, plan.timeout) }),
@@ -710,21 +716,21 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     await bus.drain();
   }
 
-  /** The metadata of an event a step of `run` recorded at `at`: the starting caller, chained to its call. */
+  /**
+   * The metadata of an event a step of `run` recorded at `at`: the starting caller, chained to its call, and the run's
+   * scope id in the envelope's scope field (`tenantId`, ADR 0141); the `ScopeRef` itself never enters the envelope.
+   */
   private metaOf(run: WorkflowRun, at: Date): Omit<EventMeta, "id"> {
-    const {
-      callId,
-      key: _key,
-      locale: _locale,
-      timeZone: _timeZone,
-      currency: _currency,
-      market: _market,
-      ...caller
-    } = run.origin;
-    return { ...caller, occurredAt: at, correlationId: callId };
+    const { callId, actor, scope } = run.origin;
+    return {
+      actor,
+      ...(scope === undefined ? {} : { tenantId: scope.id }),
+      occurredAt: at,
+      correlationId: callId,
+    };
   }
 
-  /** The origin of a run `call` starts: its id, key and caller, and the running call's locale and market. */
+  /** The origin of a run `call` starts: its id, key, caller and scope, and the running call's locale and market. */
   private originOf(call: CallDescriptor): RunOrigin {
     const {
       type: _type,

@@ -15,3 +15,4 @@
 - [x] T011 [US1] Tests for every public symbol and each barrel in `src/**/__tests__/` — covers: SC-002 — route: tests — deps: T010
 - [x] T012 [US1] Changeset `.changeset/workflow-package.md`; `oxfmt` and `oxlint` clean; the validator reports nothing for the package — covers: SC-001, SC-003 — route: package — deps: T011
 - [ ] T013 [US1] Run the package's tests, typecheck and build in the separate testing workflow after the integrator's install — covers: SC-002, SC-003 — route: tests — deps: T012
+- [x] T014 [US2] R5 reconciliation: a run's origin keeps the call's `scope` (or takes the session's when it has none) so steps read `ctx.scope`; `metaOf` picks the event metadata field by field with the scope id in the envelope's scope field and no `scope` key; the explorer's origin names no `tenantId` — covers: FR-003, FR-006, P-003, P-006 — route: package — deps: T012

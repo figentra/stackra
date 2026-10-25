@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `WorkflowExplorer`: at boot it connects the native engine, plans each built workflow (so a bad
- *          plan fails at boot), subscribes a starter for each `startOn` workflow that starts a run with the event, and
- *          refuses a `startOn` workflow when no event bus is bound; it leaves another engine alone.
+ *          plan fails at boot), subscribes a starter for each `startOn` workflow that starts a run with the event (its
+ *          origin naming no scope), and refuses a `startOn` workflow when no event bus is bound; it leaves another
+ *          engine alone.
  * Boundary: test only; a stand-in container lists fixed instances and binds a recording bus; the engine runs on the
  *           memory journal.
  * Runtime: node (vitest)
@@ -81,16 +82,25 @@ describe(WorkflowExplorer, () => {
     if (subscription === undefined) throw new Error("the explorer subscribed a starter");
     const [type, starter] = subscription;
     expect(type).toBe(PaymentCaptured);
-    const ctx = { eventId: "evt_1", occurredAt: NOON, now: () => NOON } as ListenerContext;
+    const ctx = {
+      eventId: "evt_1",
+      occurredAt: NOON,
+      tenantId: "scp_1",
+      now: () => NOON,
+    } as ListenerContext;
     await (
       starter as unknown as { handle(event: object, context: ListenerContext): Promise<void> }
     ).handle(Object.assign(new PaymentCaptured(), { orderId: "ord_1" }), ctx);
 
     expect(fulfil.started).toEqual(["ord_1"]);
-    expect((await runner.last(FulfilWorkflow))?.origin).toMatchObject({
+    const origin = (await runner.last(FulfilWorkflow))?.origin;
+    expect(origin).toMatchObject({
       callId: "evt_1",
       actor: { kind: "system", id: "sys_workflow" },
     });
+    // The envelope's scope id is not a ScopeRef: the run takes its scope from the session, never from the event.
+    expect(origin).not.toHaveProperty("tenantId");
+    expect(origin).not.toHaveProperty("scope");
   });
 
   it("refuses a startOn workflow with no event bus, and a bad plan, at boot", () => {

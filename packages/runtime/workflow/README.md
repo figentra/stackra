@@ -76,7 +76,10 @@ An action starts it with `ctx.run(RedeemPointsWorkflow, input)`; another action 
   `ctx.progress`.
 - **Events**: `ctx.record(event)` writes an integration event to the outbox inside the step's transaction (through
   @stackra/events' `EventOutbox`, which @stackra/outbox implements) and dispatches a domain event in process after the
-  commit. Events a model records leave through the outbox's flush writer.
+  commit. Events a model records leave through the outbox's flush writer. The event's metadata carries the starting
+  caller, the call id as its correlation and the run's scope id in the envelope's scope field, never the `ScopeRef`.
+- **Scope**: a run started by `ctx.run` keeps the call's `scope` in its origin, so each step reads `ctx.scope`; a run
+  started without one (an event's `startOn`) takes the scope of the session it starts in.
 - **`startOn`**: `Workflow({ startOn: PaymentCaptured, correlate: (event) => event.orderId })` starts a run on each
   event (the explorer subscribes it); a key that already has a run starts nothing.
 

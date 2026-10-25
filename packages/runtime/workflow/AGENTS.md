@@ -42,6 +42,8 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 - One runner per run (`Locks`, key `workflow.run:<id>`). A tick takes over a running or compensating run only when its
   lock is free, and counts only runs it really advanced, so an idle worker pauses.
 - A step's integration events go to `EventOutbox` in its transaction; its domain events to `EventBus` after the commit.
+  Their metadata is picked field by field (`metaOf`): the origin's scope id goes in the events envelope's scope field,
+  and no `scope` key or other origin field leaks into it. Read the call's `scope`, never its `tenantId`.
 - Raw SQL only in the Postgres journal, every value bound, every row read through zod, each statement with a
   `// raw-sql:` reason (ADR 0160). A released migration is frozen; a change is a new migration.
 - No tenant word is declared here (final review R-59, ADR 0323): a scope is a `ScopeRef`. "Guard" in the engine is an
@@ -60,6 +62,6 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 | ------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | Run input     | `workflow.runs.input` (jsonb), memory journal         | The action's validated input as its author declared it; never logged                   |
 | Step results  | `workflow.steps.result`, `progress` (jsonb)           | What each step returned or reported; read back by later steps                          |
-| Caller        | `workflow.runs.origin` (jsonb)                        | Public ids and kinds of the caller, the call id and key, locale and market             |
+| Caller        | `workflow.runs.origin` (jsonb)                        | Public ids and kinds of the caller, the call id, key and scope, locale and market      |
 | Signal fields | `workflow.signals.payload` (jsonb)                    | The sender's payload; deleted when taken, dropped after seven days untaken             |
 | Failures      | `workflow.runs.error`, `workflow.steps.error` (jsonb) | The refusal code (`internal` otherwise) and message; never a stack or the step's input |

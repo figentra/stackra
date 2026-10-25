@@ -5,8 +5,10 @@
  *          first and rejects with the refusal; a failing step is retried within its budget with its progress kept; a
  *          `when` skips; a failing undo leaves the run failed; a signal wait parks the run, answers with the output so
  *          far, and resumes on the matching signal (sent before or after it parked), or times out and compensates;
- *          `startOn` runs once per key; the context carries the call, the step key and the clock, and recorded events
- *          go to the outbox or the bus; a tick takes over a run whose runner died; the port methods delegate.
+ *          `startOn` runs once per key; the context carries the call, its scope (the session's when the call has none),
+ *          the step key and the clock, and recorded events go to the outbox or the bus with the scope id as the
+ *          envelope's scope field and no `scope` key; a tick takes over a run whose runner died; the port methods
+ *          delegate.
  * Boundary: test only; the memory journal and lock driver, a settable clock, a map resolver, recording stand-ins for
  *           the outbox, the bus and the context storage. `backoffDelay` is mocked to zero so a retry does not wait.
  * Runtime: node (vitest)
@@ -18,7 +20,7 @@ import { ContextStorage, WorkflowRunner } from "@stackra/actions/contracts";
 import type { CallDescriptor } from "@stackra/actions/contracts";
 import type { AnyClass } from "@stackra/container";
 import { ActorKind, ApiArea } from "@stackra/contracts";
-import type { Actor, Clock } from "@stackra/contracts";
+import type { Actor, Clock, ScopeRef } from "@stackra/contracts";
 import { ErrorKind, Refusal } from "@stackra/errors";
 import { DomainEvent, EventBus, IntegrationEvent } from "@stackra/events";
 import { EventOutbox } from "@stackra/events/contracts";
@@ -49,6 +51,8 @@ const NOON = new Date(Date.UTC(2026, 9, 25, 12));
 const plus = (minutes: number): Date => new Date(NOON.getTime() + minutes * 60_000);
 
 const ACTOR: Actor = { kind: ActorKind.System, id: "sys_test" };
+
+const SCOPE: ScopeRef = { id: "scp_1", path: "platform.acme" };
 
 const ORIGIN: RunOrigin = {
   callId: "call-1",
@@ -222,10 +226,12 @@ function resolverOf(entries: readonly (readonly [AnyClass, object])[]): Resolver
   };
 }
 
-/** An engine on a fresh memory journal, connected to `entries`. */
-function engineWith(entries: readonly (readonly [AnyClass, object])[]) {
+/** An engine on `journal` (a fresh memory journal by default), connected to `entries`. */
+function engineWith(
+  entries: readonly (readonly [AnyClass, object])[],
+  journal: MemoryWorkflowJournalDriver = new MemoryWorkflowJournalDriver(),
+) {
   const clock = clockAt(NOON);
-  const journal = new MemoryWorkflowJournalDriver();
   const runner = new NativeWorkflowRunnerDriver(
     journal,
     new Locks(new MemoryLockDriver(), clock),
@@ -427,18 +433,47 @@ describe(NativeWorkflowRunnerDriver, () => {
       [EventBus, bus],
     ]);
 
-    await runner.start(OrderWorkflow, { sku: "sku_1", quantity: 1 }, ORIGIN);
+    await runner.start(OrderWorkflow, { sku: "sku_1", quantity: 1 }, { ...ORIGIN, scope: SCOPE });
 
     expect(written).toHaveLength(1);
     expect(written[0]?.event).toBeInstanceOf(OrderPlaced);
-    expect(written[0]?.meta).toMatchObject({
+    expect(written[0]?.meta).toEqual({
+      id: expect.stringMatching(/^evt_/),
       actor: ACTOR,
+      tenantId: SCOPE.id,
       correlationId: "call-1",
       occurredAt: NOON,
     });
-    expect(written[0]?.meta.id).toMatch(/^evt_/);
     expect(dispatched).toHaveLength(1);
     expect(dispatched[0]?.[0]).toBeInstanceOf(PointsDebited);
+    expect(dispatched[0]?.[1]).not.toHaveProperty("scope");
+  });
+
+  it("gives a run started without a call scope the session's, for its steps and its events", async () => {
+    const written: RecordedEvent[] = [];
+    const outbox = {
+      write: async (records: readonly RecordedEvent[]) => void written.push(...records),
+    };
+    class ScopedJournal extends MemoryWorkflowJournalDriver {
+      override currentScope(): Promise<ScopeRef | undefined> {
+        return Promise.resolve(SCOPE);
+      }
+    }
+    const order = Object.assign(new OrderWorkflow(), { recording: true });
+    const { runner } = engineWith(
+      [
+        [OrderWorkflow, order],
+        [EventOutbox, outbox],
+      ],
+      new ScopedJournal(),
+    );
+
+    await runner.start(OrderWorkflow, { sku: "sku_1", quantity: 1 }, ORIGIN);
+
+    const run = await runner.last(OrderWorkflow);
+    expect(run?.scope).toEqual(SCOPE);
+    expect(run?.origin.scope).toEqual(SCOPE);
+    expect(written[0]?.meta.tenantId).toBe(SCOPE.id);
   });
 
   it("refuses an integration event when no outbox is bound, failing the step", async () => {
@@ -471,6 +506,7 @@ describe(NativeWorkflowRunnerDriver, () => {
       kind: "action",
       key: "orders.order.place@1",
       actor: ACTOR,
+      scope: SCOPE,
       area: ApiArea.App,
     };
 
@@ -481,13 +517,20 @@ describe(NativeWorkflowRunnerDriver, () => {
       callId: "call-9",
       key: "orders.order.place@1",
       actor: ACTOR,
+      scope: SCOPE,
       locale: "ar-SA",
       timeZone: "Asia/Riyadh",
       currency: "SAR",
       market: "sa",
     });
     expect(seen).toHaveLength(2);
-    expect(seen[0]).toMatchObject({ callId: "call-9", step: "wrap", attempt: 1, runId: run?.id });
+    expect(seen[0]).toMatchObject({
+      callId: "call-9",
+      scope: SCOPE,
+      step: "wrap",
+      attempt: 1,
+      runId: run?.id,
+    });
   });
 
   it("holds a signal sent through the port", async () => {
