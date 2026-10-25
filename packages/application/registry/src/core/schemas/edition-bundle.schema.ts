@@ -17,7 +17,7 @@ import { EDITION_BUNDLE_SCHEMA } from "#core/constants/edition-bundle-schema.con
  *
  * @example
  * validate(EditionBundle, {
- *   product: "muslin",
+ *   product: "fashion",
  *   edition: { of: "commerce", version: "^1.0.0" },
  *   modules: ["fashion_sizes"],
  *   bundles: ["catalog", "orders"],

@@ -33,7 +33,7 @@
           "type": "string",
           "pattern": "^[a-z][a-z0-9-]*$",
           "description": "The product's registry key.",
-          "examples": ["muslin"]
+          "examples": ["fashion"]
         },
         "edition": {
           "type": "object",

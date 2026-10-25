@@ -10,7 +10,7 @@
  */
 import { z } from "zod";
 
-/** `{ key: "muslin", edition: { of: "commerce", version: "^1.0.0" } }`; a product with no `edition` is a base. */
+/** `{ key: "fashion", edition: { of: "commerce", version: "^1.0.0" } }`; a product with no `edition` is a base. */
 export const PRODUCT_SCHEMA = z.strictObject({
   key: z.string().regex(/^[a-z][a-z0-9-]*$/, "Expected a lower-case product key"),
   edition: z

@@ -20,11 +20,11 @@ describe("productOf", () => {
   it("returns an edition with its base and version range", () => {
     vi.stubGlobal("__STACKRA_RUNWAY__", {
       version: 1,
-      product: { key: "muslin", edition: { of: "commerce", version: "^1.0.0" } },
+      product: { key: "fashion", edition: { of: "commerce", version: "^1.0.0" } },
       members: {},
     });
 
-    expect(productOf()).toEqual({ key: "muslin", edition: { of: "commerce", version: "^1.0.0" } });
+    expect(productOf()).toEqual({ key: "fashion", edition: { of: "commerce", version: "^1.0.0" } });
   });
 
   it("returns a base product with no edition, and null with no product", () => {
@@ -36,7 +36,7 @@ describe("productOf", () => {
   });
 
   it("refuses a product that breaks its shape", () => {
-    vi.stubGlobal("__STACKRA_RUNWAY__", { version: 1, product: { key: "Muslin" }, members: {} });
+    vi.stubGlobal("__STACKRA_RUNWAY__", { version: 1, product: { key: "Fashion" }, members: {} });
 
     expect(() => productOf()).toThrow(RunwayInvalidError);
   });

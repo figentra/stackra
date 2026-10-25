@@ -6,7 +6,7 @@
  *           codes, so a `Quantity` converts to one directly. Which unit a Market or a user sees is market-pack data and
  *           the user's setting, never a default here.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 16: Enum.of); row "length units" of the package needs (2026-10-25); Muslin
+ * Governing contract: ADR 0294 (decision 16: Enum.of); row "length units" of the package needs (2026-10-25); Fashion
  *                     (garment measurements).
  */
 import { Enum } from "@stackra/contracts";

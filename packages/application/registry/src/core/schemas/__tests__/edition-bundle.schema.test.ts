@@ -13,7 +13,7 @@ import { EDITION_BUNDLE_SCHEMA } from "#core/constants/edition-bundle-schema.con
 import { EditionBundle } from "#core/schemas/edition-bundle.schema";
 
 const bundle = {
-  product: "muslin",
+  product: "fashion",
   edition: { of: "commerce", version: "^1.0.0" },
   modules: ["fashion_sizes"],
   bundles: ["catalog", "orders"],

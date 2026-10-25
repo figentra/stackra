@@ -12,7 +12,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { parseRunway } from "#core/functions/parse-runway.function";
 
-const ROOT = { version: 3, project: "muslin", environments: {} };
+const ROOT = { version: 3, project: "fashion", environments: {} };
 const APP = { version: 3, environments: {} };
 const BRAND = { key: "atelier", name: "Atelier", tokens: "t.css", appId: "com.atelier.shop" };
 
@@ -32,18 +32,18 @@ describe("parseRunway product", () => {
     expect(parseRunway("root", { ...ROOT, product: { key: "commerce" } }).product).toEqual({
       key: "commerce",
     });
-    const edition = { key: "muslin", edition: { of: "commerce", version: "^1.0.0" } };
+    const edition = { key: "fashion", edition: { of: "commerce", version: "^1.0.0" } };
     expect(parseRunway("root", { ...ROOT, product: edition }).product).toEqual(edition);
   });
 
   it("refuses a bad key, a missing base version and an unknown field", () => {
     const root = (product: unknown) => () => parseRunway("root", { ...ROOT, product });
 
-    expect(issuePaths(root({ key: "Muslin" }))).toEqual(["product.key"]);
-    expect(issuePaths(root({ key: "muslin", edition: { of: "commerce" } }))).toEqual([
+    expect(issuePaths(root({ key: "Fashion" }))).toEqual(["product.key"]);
+    expect(issuePaths(root({ key: "fashion", edition: { of: "commerce" } }))).toEqual([
       "product.edition.version",
     ]);
-    expect(issuePaths(root({ key: "muslin", base: "commerce" }))).toEqual(["product"]);
+    expect(issuePaths(root({ key: "fashion", base: "commerce" }))).toEqual(["product"]);
   });
 });
 
