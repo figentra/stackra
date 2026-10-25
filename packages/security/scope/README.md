@@ -28,6 +28,8 @@ its resolver, and imports it; it never re-exports it.
 | `./node`      | `ScopeNode`, `ScopeNodeService`, `PostgresScopeTreeDriver`                         | the node table, adding nodes, the server's `ScopeTree`               |
 | `./node`      | `ScopeDepthEntitlement`                                                            | the plan right that bounds the tree's depth (declared only)          |
 | `./react`     | `useScope`                                                                         | the active scope in a component, web and native                      |
+| `./native`    | `rememberActiveScope`                                                              | a device app restores its last scope from `prefs` and keeps it       |
+| `./testing`   | `scopeRefOf`, `fakeScopeTree`                                                      | stable test refs for a path; a memory tree of paths and ancestors    |
 
 ## Levels are data
 
@@ -84,6 +86,25 @@ await database.withScope(scope, () => pipeline.execute(type, input, { actor }));
 
 No answer refuses `scope_unresolved` (403). A deployment adds a step (tenancy's goes before the root) with a host
 override of `ChainScopeResolverDriver` that overrides `steps()`.
+
+## On a device
+
+```ts
+await storage.hydrate();
+const stop = rememberActiveScope(container.get(ActiveScopeService), storage.prefs);
+```
+
+A stored value that is not a `scp_` id with a valid path is dropped. The server still accepts the header only within the
+caller's grants, so a remembered scope widens nothing.
+
+## In a test
+
+```ts
+createTestingModule(AppModule)
+  .override(ScopeTree, fakeScopeTree(["platform.acme.shop_eu"], ["platform", "product", "store"]))
+  .compile();
+const acme = scopeRefOf("platform.acme");
+```
 
 ## Not here
 

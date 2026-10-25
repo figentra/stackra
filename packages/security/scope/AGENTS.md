@@ -21,13 +21,16 @@ active scope (ADR 0327). Member at `packages/security/scope` (`tier:lib`), in th
 
 ## Entries and barrels
 
-- `src/{core,contracts,node,react}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
+- `src/{core,contracts,node,react,native,testing}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
   every new public file to its barrel and to that entry's `index.test.ts`.
 - `src/contracts/` is the leaf; `core` imports `contracts`; `node` and `react` import `core` through `#core/index`.
 - `ScopeConfig$` mirrors `ScopeOptions` by hand until gen compiles this package's schemas; change both together. Every
   field keeps a default and there is no object-level refinement, so gen's override schema can `.extend` it.
 - `ScopeRef` is `@stackra/contracts`'; import it from there and never re-export it (one home per symbol).
-- `useScope` serves web and native from `./react`; a `./native` entry is added only once native-only code exists.
+- `useScope` serves web and native from `./react`. `./native` holds device-only code (`rememberActiveScope`, the
+  remembered scope across launches); `./testing` holds `scopeRefOf` and `fakeScopeTree` and imports no other package's
+  `./testing`.
+- The package is public (gate A): it has no `private` flag; a breaking change needs a major changeset.
 
 ## This package
 

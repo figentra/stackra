@@ -1,8 +1,7 @@
 {
   "name": "@stackra/scope",
   "version": "0.0.0",
-  "private": true,
-  "description": "Stackra scope tree: levels declared as deployment data (ScopeConfig, ScopeConfig$) with their aliases, the ScopeNode model on an ltree path with its migration, the ScopeTree, ScopeResolver and GrantedScopes ports, the resolver chain (X-Scope-Path header, token claim, root), the tree depth entitlement, ActiveScopeService and useScope",
+  "description": "Stackra scope tree: levels declared as deployment data (ScopeConfig, ScopeConfig$) with their aliases, the ScopeNode model on an ltree path with its migration, the ScopeTree, ScopeResolver and GrantedScopes ports, the resolver chain (X-Scope-Path header, token claim, root), the tree depth entitlement, ActiveScopeService and useScope, rememberActiveScope for device apps (./native), and the scopeRefOf and fakeScopeTree test helpers (./testing)",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,6 +33,11 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*/index.ts"
+    ],
     "#node/*": [
       "./src/node/*",
       "./src/node/*.ts",
@@ -44,6 +48,11 @@
       "./src/react/*.ts",
       "./src/react/*.tsx",
       "./src/react/*/index.ts"
+    ],
+    "#testing/*": [
+      "./src/testing/*",
+      "./src/testing/*.ts",
+      "./src/testing/*/index.ts"
     ]
   },
   "exports": {
@@ -66,6 +75,16 @@
       "@stackra/source": "./src/react/index.ts",
       "types": "./dist/react.d.mts",
       "default": "./dist/react.mjs"
+    },
+    "./native": {
+      "@stackra/source": "./src/native/index.ts",
+      "types": "./dist/native.d.mts",
+      "default": "./dist/native.mjs"
+    },
+    "./testing": {
+      "@stackra/source": "./src/testing/index.ts",
+      "types": "./dist/testing.d.mts",
+      "default": "./dist/testing.mjs"
     }
   },
   "publishConfig": {
@@ -91,6 +110,7 @@
     "@stackra/entitlements": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/model": "workspace:*",
+    "@stackra/storage": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },
