@@ -35,4 +35,7 @@ export interface AccessExplanation {
 
   /** The index of the deny rule that matched in the snapshot's `denies`, for a deny. */
   readonly rule?: number;
+
+  /** The index of the break-glass grant in the snapshot's `breakGlass`, for an allow by break-glass. */
+  readonly breakGlass?: number;
 }

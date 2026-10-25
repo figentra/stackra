@@ -36,6 +36,8 @@ describe("MemoryPolicySourceDriver", () => {
       segments: [],
       denies: [],
       visibility: [],
+      fields: [],
+      breakGlass: [],
     });
   });
 

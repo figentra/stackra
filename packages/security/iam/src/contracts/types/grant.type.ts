@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: `Grant`, one role a principal holds at one scope node, with an optional expiry: the unit the decision point
- *          reads from a policy snapshot.
+ * Purpose: `Grant`, one role a principal holds at one scope node, with an optional expiry and who made it: the unit
+ *          the decision point reads from a policy snapshot (a restricted permission is never self-granted).
  * Boundary: a type only. The principal is the snapshot's own, so it is not repeated here. A grant applies at its node
  *           and every node below it (ADR 0208 decision 1); an expired grant counts for nothing.
  * Runtime: isomorphic
  * Governing contract: ADR 0208 (decisions 1 and 2); ADR 0327 (decision 7: grants name a node of the scope tree).
  */
-import type { ScopeRef } from "@stackra/contracts";
+import type { PublicId, ScopeRef } from "@stackra/contracts";
 
 /**
  * A role held at a scope node.
@@ -24,4 +24,7 @@ export interface Grant {
 
   /** When the grant stops counting; absent for a grant without an end. */
   readonly expiresAt?: Date;
+
+  /** Who made the grant; a role holding a restricted permission counts only when this is someone else. */
+  readonly grantedBy?: PublicId;
 }

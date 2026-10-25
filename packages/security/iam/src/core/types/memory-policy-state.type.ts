@@ -8,7 +8,7 @@
  */
 import type { PublicId } from "@stackra/contracts";
 
-import type { DenyRule, Grant, VisibilityRule } from "#contracts/index";
+import type { BreakGlassGrant, DenyRule, FieldRule, Grant, VisibilityRule } from "#contracts/index";
 
 /** The memory source's whole policy. */
 export interface MemoryPolicyState {
@@ -26,4 +26,10 @@ export interface MemoryPolicyState {
 
   /** The record visibility rules in force. */
   readonly visibility?: readonly VisibilityRule[];
+
+  /** The field rules in force. */
+  readonly fields?: readonly FieldRule[];
+
+  /** Break-glass grants, each for one principal or (without `principal`) for every principal. */
+  readonly breakGlass?: readonly (BreakGlassGrant & { readonly principal?: PublicId })[];
 }

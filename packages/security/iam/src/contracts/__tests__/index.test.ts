@@ -24,7 +24,13 @@ import type {
 
 describe("@stackra/iam/contracts", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["Capability", "PolicySource"]);
+    expect(Object.keys(contracts).sort()).toEqual([
+      "Capability",
+      "DimensionValues",
+      "FieldAccess",
+      "PolicySnapshotStore",
+      "PolicySource",
+    ]);
   });
 
   it("resolves its public types", () => {

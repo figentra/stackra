@@ -26,6 +26,8 @@ export const AccessReason = Enum.of({
   Denied: "denied",
   /** The permission is a system permission, which no role grants and only the platform holds. */
   SystemOnly: "system_only",
+  /** No regular grant holds it, but an open break-glass grant does; the audit records the reason. */
+  BreakGlass: "break_glass",
 });
 
 /** One of the codes above. */

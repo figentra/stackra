@@ -11,8 +11,8 @@ import { describe, expect, it } from "@stackra/testing";
 import { Capability } from "#contracts/enums/capability.enum";
 
 describe("Capability", () => {
-  it("holds see, list and use, in that order", () => {
-    expect(Enum.values(Capability)).toEqual(["see", "list", "use"]);
+  it("holds see, list, use and exists, in that order", () => {
+    expect(Enum.values(Capability)).toEqual(["see", "list", "use", "exists"]);
     expect(Capability.Use).toBe("use");
   });
 });

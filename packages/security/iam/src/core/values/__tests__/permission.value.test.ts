@@ -28,6 +28,15 @@ describe("Permission", () => {
     expect(expire.isSystem).toBe(true);
   });
 
+  it("marks a restricted permission without changing its level", () => {
+    const readMedical = Permission.L3.restricted();
+    expect(readMedical.risk).toBe(Risk.L3);
+    expect(readMedical.isRestricted).toBe(true);
+    expect(readMedical.isSystem).toBe(false);
+    expect(Permission.L3.isRestricted).toBe(false);
+    expect(Permission.L2.restricted().system().isRestricted).toBe(true);
+  });
+
   it("returns a new frozen instance on every read", () => {
     const read = Permission.L0;
     expect(read).not.toBe(Permission.L0);

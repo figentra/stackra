@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `Permission`, the value of one static on a `<Model>Permissions` class: its risk level (`Permission.L2`)
- *          and whether it is a system permission no role may grant (`Permission.L2.system()`).
+ * Purpose: `Permission`, the value of one static on a `<Model>Permissions` class: its risk level (`Permission.L2`),
+ *          whether it is a system permission no role may grant (`Permission.L2.system()`), and whether it is a
+ *          restricted permission a principal can never grant itself (`Permission.L3.restricted()`).
  * Boundary: a frozen value. Each `Permission.Lx` read and each `.system()` call returns a new instance, so every static
  *           is its own object and `registerPermissions` can give each one its locked key (`permissionKey`). The value
  *           holds no key: the key is derived by gen from the module, the class and the static (ADR 0294 decision 20).
@@ -27,9 +28,13 @@ export class Permission {
   /** Held only by the platform (system and job actors); no role may grant it. */
   readonly isSystem: boolean;
 
-  private constructor(risk: Risk, isSystem: boolean) {
+  /** Counts only through a grant someone else made: never self-granted (safeguarding, medical, client funds). */
+  readonly isRestricted: boolean;
+
+  private constructor(risk: Risk, isSystem: boolean, isRestricted = false) {
     this.risk = risk;
     this.isSystem = isSystem;
+    this.isRestricted = isRestricted;
     Object.freeze(this);
   }
 
@@ -65,6 +70,17 @@ export class Permission {
    * static readonly expire = Permission.L2.system();
    */
   system(): Permission {
-    return new Permission(this.risk, true);
+    return new Permission(this.risk, true, this.isRestricted);
+  }
+
+  /**
+   * The same level as a restricted permission: a grant of a role holding it counts only when a principal other than
+   * the holder made it, and nobody may delegate it to themself.
+   *
+   * @example
+   * static readonly readMedical = Permission.L3.restricted();
+   */
+  restricted(): Permission {
+    return new Permission(this.risk, this.isSystem, true);
   }
 }

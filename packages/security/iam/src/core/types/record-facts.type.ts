@@ -21,4 +21,7 @@ export interface RecordFacts {
 
   /** The record's values. */
   readonly facts: Facts;
+
+  /** The model's key (`orders.order`), so conditions on its declared dimensions are checked against the projection. */
+  readonly model?: string;
 }

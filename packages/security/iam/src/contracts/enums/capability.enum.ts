@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `Capability`, what a record visibility rule lets its audience do with a matching record: see it, list it,
- *          or buy or use it.
+ *          buy or use it, or only learn that it exists (an existence-only hit behind an ethical wall).
  * Boundary: an `Enum.of` value plus the type of the same name. Codes are snake_case and stored in saved rules, so a
  *           code never changes. A capability is not a permission: visibility narrows which records a principal meets,
  *           and never grants a permission (ADR 0333 consequences).
@@ -10,7 +10,7 @@
  */
 import { Enum } from "@stackra/contracts";
 
-/** The three capabilities of ADR 0333. */
+/** The three capabilities of ADR 0333, and existence-only hits. */
 export const Capability = Enum.of({
   /** Open the record's detail. */
   See: "see",
@@ -18,6 +18,8 @@ export const Capability = Enum.of({
   List: "list",
   /** Buy the record or use it (a product, a course, a document). */
   Use: "use",
+  /** Learn only that the record exists (an id and a kind in a search or a conflict check), never its fields. */
+  Exists: "exists",
 });
 
 /** One of the codes above. */

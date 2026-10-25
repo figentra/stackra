@@ -29,4 +29,7 @@ export interface DenyRule {
 
   /** Refuses only records this condition matches (fields under the `record` fact source); absent for every record. */
   readonly condition?: Condition;
+
+  /** An open break-glass grant passes this deny (an ethical wall a reviewed emergency may cross); absent: never. */
+  readonly breakable?: boolean;
 }
