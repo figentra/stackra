@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `EditorNode`, one block instance of an open document: experience's `DocumentNode` with an id, and with its
+ * Purpose: `EditorNode`, one block instance of an open document: experience's `DocumentNode` with its optional `id`,
  *          props and children always present.
  * Boundary: a type only, in the leaf entry. It is a `DocumentNode`, so an editor's tree is the experience document
  *           as it stands, with no conversion. The id is unique in the document and stable across edits, so selection,
@@ -25,7 +25,7 @@ import type { DocumentNode } from "@stackra/experience/contracts";
  * };
  */
 export interface EditorNode extends DocumentNode {
-  /** Unique in the document: 1 to 64 of `A-Z`, `a-z`, `0-9`, `_` and `-` (a UUID fits). */
+  /** `DocumentNode.id`, here always set and unique in the document: 1 to 64 of `A-Z`, `a-z`, `0-9`, `_` and `-`. */
   readonly id: string;
 
   /** The props passed to the block, checked against its schema by `Editor.problems`. */

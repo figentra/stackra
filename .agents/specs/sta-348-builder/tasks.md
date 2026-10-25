@@ -14,3 +14,4 @@
 - [x] T010 Tests beside every subject and each barrel's test — covers: SC-002, P-002, P-003, P-004, P-005, P-006 — route: tests — deps: T009
 - [x] T011 Changeset `.changeset/builder-package.md`; `oxfmt`, `oxlint` and `validate-repository.mjs` clean — covers: SC-001, SC-003 — route: package — deps: T010
 - [ ] T012 `pnpm install` to link the new member, then its tests, typecheck and build in the separate testing workflow — covers: SC-002, SC-003 — route: tests — deps: T010
+- [x] T013 R3 reconciliation: `EditorOptions.blocks` takes `@stackra/experience`'s `registeredBlocks()`, and `EditorNode.id` is `DocumentNode`'s own optional `id`, in `packages/experience/builder/src/contracts/types/` — covers: FR-004, P-004, FR-005, P-005 — route: package — deps: T011

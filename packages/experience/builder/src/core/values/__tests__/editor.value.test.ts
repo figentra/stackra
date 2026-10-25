@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `Editor`: opening a document, the four changes, undo and redo (bounded, skipping steps a
  *          co-editor made impossible), the selection, state snapshots and listeners, `replace`, and `problems` against
- *          the registered blocks and their schemas.
+ *          the registered blocks and their schemas; it opens against `@stackra/experience`'s `registeredBlocks()`.
  * Boundary: test only; the block classes are plain classes whose schemas are registered with `registerSchemas`, as gen
  *           does for real blocks.
  * Runtime: node (vitest)
@@ -10,6 +10,7 @@
  */
 import type { AnyClass } from "@stackra/container";
 import { isRefusal } from "@stackra/errors";
+import { Block, BlockCategory, registerBlocks, registeredBlocks } from "@stackra/experience";
 import { describe, expect, it } from "@stackra/testing";
 import { registerSchemas } from "@stackra/validation";
 import { vi } from "vitest";
@@ -41,7 +42,7 @@ const BLOCKS: ReadonlyMap<string, AnyClass> = new Map<string, AnyClass>([
   ["web.hero_section", HeroSectionBlock],
 ]);
 
-/** page > [hero, footer], as stored (a variable, so the ids pass where a `DocumentNode` is typed). */
+/** page > [hero, footer], as stored, with each node's `DocumentNode.id`. */
 const PAGE = {
   id: "page",
   block: "web.page",
@@ -88,6 +89,21 @@ describe("Editor", () => {
     expect(Object.isFrozen(editor.state)).toBe(true);
     expect(editor.node("hero")?.props).toEqual({ title: "Hi" });
     expect(editor.node("nope")).toBeUndefined();
+  });
+
+  it("opens against the blocks experience registered", () => {
+    class BannerBlock extends Block({ category: BlockCategory.Marketing, icon: "megaphone" }) {}
+    registerBlocks([{ key: "web.banner", block: BannerBlock, component: () => null }]);
+    const editor = Editor.create({ root: { block: "web.banner" }, blocks: registeredBlocks() });
+    expect(editor.state.root.id).toBe("b0");
+    const id = editor.insert(editor.state.root.id, 0, "web.banner");
+    expect(order(editor)).toEqual([id]);
+    expect(
+      isRefusal(
+        thrown(() => editor.insert(id, 0, "web.page")),
+        BlockNotRegisteredError,
+      ),
+    ).toBe(true);
   });
 
   it("refuses a malformed document", () => {

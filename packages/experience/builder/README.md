@@ -26,7 +26,7 @@ peers for `./react`.
 ## The kernel
 
 ```ts
-const editor = Editor.create({ root: page.root, blocks });
+const editor = Editor.create({ root: page.root, blocks: registeredBlocks() }); // @stackra/experience
 const hero = editor.insert(editor.state.root.id, 0, "web.hero_section");
 editor.setProp(hero, "title", { "en-US": "Summer camp" });
 editor.move(hero, sectionId, 0);
@@ -36,7 +36,8 @@ editor.problems(); // { "<hero id>.title": "invalid_type" }
 ```
 
 - A document is a tree of block instances. `editor.state.root` is the experience document as it stands, ids included,
-  so saving needs no conversion. A stored node without an id gets `b<n>`, its position, when the document is opened.
+  so saving needs no conversion: `id` is `DocumentNode`'s own optional field. A stored node without one gets `b<n>`,
+  its position, when the document is opened.
 - The only changes are insert, move, remove and set-prop. Each one is undoable, and the undo stack keeps 200 steps. A
   step whose block a co-editor removed is skipped.
 - The palette is code (ADR 0270 decision 3). `insert` refuses a key that no registered block has.
@@ -75,7 +76,5 @@ block both keep their change. Editors that seed the same draft at once write one
 
 - The live room channel that carries Yjs updates between browsers is planned (ADR 0346). Until it lands, the
   `SyncTransport` driver is the host's.
-- The block registry comes in as a map in `EditorOptions.blocks` until `@stackra/experience` exports its registered
-  blocks.
 - Surfaces (canvas, document, grid, tree, graph), drag and drop, the generated inspector, comments, preview and publish
   are the apps' and the content type's, built on this kernel.
