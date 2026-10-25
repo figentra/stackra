@@ -16,7 +16,18 @@ import type { MailMessage, NotificationDelivery } from "#core/index";
 describe("@stackra/notifications", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(notifications).sort()).toEqual([
+      "CequensConnection",
+      "CequensIntegration",
+      "ConnectionMailTransportDriver",
+      "ConnectionSmsTransportDriver",
+      "ConnectionWhatsAppTransportDriver",
+      "DevicePushTransportDriver",
+      "ExpoIntegration",
+      "MAIL_CONNECTIONS",
       "MemoryNotifierDriver",
+      "MetaWhatsAppConnection",
+      "MetaWhatsAppIntegration",
+      "NoTemplateError",
       "Notification",
       "NotificationCategory",
       "NotificationsConfig",
@@ -24,6 +35,23 @@ describe("@stackra/notifications", () => {
       "NotificationsOptions",
       "Notifier",
       "Recipient",
+      "ResendConnection",
+      "ResendIntegration",
+      "SMS_CONNECTIONS",
+      "SesConnection",
+      "SesIntegration",
+      "TaqnyatConnection",
+      "TaqnyatIntegration",
+      "TwilioConnection",
+      "TwilioIntegration",
+      "UnifonicConnection",
+      "UnifonicIntegration",
+      "VOICE_CONNECTIONS",
+      "WHATSAPP_CONNECTIONS",
+      "dueEscalations",
+      "resolveTemplate",
+      "sendAfter",
+      "twiml",
     ]);
   });
 

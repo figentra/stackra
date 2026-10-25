@@ -2,7 +2,7 @@
   "name": "@stackra/notifications",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra notifications: the Notification({ category }) kind base, Recipient, the Notifier port with its memory driver and NotificationsConfig, the MailTransport, SmsTransport, InAppStore and ChatTransport channel ports, the .mail.tsx class-component bodies rendered to HTML and text with useMail, and the notifications Notifier driver (./node) that queues rendered mail on the notifications service",
+  "description": "Stackra notifications: the Notification({ category }) kind base, Recipient, the Notifier port with its memory driver and NotificationsConfig, the mail, SMS, WhatsApp, push, in-app and chat channel ports, provider drivers chosen per tenant and Market (Resend, SES, Unifonic, Taqnyat, Twilio with voice, Cequens, the WhatsApp Cloud API, Expo and Web Push with dead-device revocation), the template cascade with content-free variants, quiet hours with mandatory categories, escalation, the .mail.tsx class-component bodies rendered with useMail, and the notifications Notifier driver (./node)",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -99,7 +99,9 @@
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/errors": "workspace:*",
     "@stackra/i18n": "workspace:*",
+    "@stackra/integrations": "workspace:*",
     "@stackra/money": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"

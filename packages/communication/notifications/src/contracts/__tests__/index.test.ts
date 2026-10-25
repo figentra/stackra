@@ -18,12 +18,19 @@ import type {
 } from "#contracts/index";
 
 describe("@stackra/notifications/contracts", () => {
-  it("exports exactly its ports", () => {
+  it("exports exactly its ports and enums", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "ChatTransport",
       "InAppStore",
       "MailTransport",
+      "NotificationChannel",
+      "PushTokenStore",
+      "PushTransport",
+      "SendLog",
       "SmsTransport",
+      "TemplateOverrides",
+      "TemplateVariant",
+      "WhatsAppTransport",
     ]);
   });
 

@@ -18,7 +18,9 @@ describe("@stackra/notifications/testing", () => {
       "ChatTransportFake",
       "InAppStoreFake",
       "MailTransportFake",
+      "PushTransportFake",
       "SmsTransportFake",
+      "WhatsAppTransportFake",
       "renderMail",
     ]);
   });

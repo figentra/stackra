@@ -40,12 +40,21 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
 - `.` and `./contracts` never import React; only `./node`, `./react` and `./testing` do.
 - No "tenant" vocabulary: a scope recipient keeps the scope's id only (R-59).
 - No parameter properties and no `#private` fields; the source keeps to erasable syntax.
+- Configuration, not code: a provider is chosen by `ProviderResolver` (ADR 0356); quiet hours, mandatory categories,
+  channel order, sender ids and escalation steps are data passed in. Never branch on a Market or a country.
+- One provider, one Integration (ADR 0355): a provider with two channels (Twilio: SMS and voice) has one Integration and
+  one Connection implementing both interfaces.
+- A provider driver lives in `src/core/providers/<provider>/` as `<provider>.integration.ts` and
+  `<provider>.connection.ts`, and is added to its channel's `*_CONNECTIONS` map.
+- A restricted record never falls back from the content-free template to the full one.
 
 ## PII
 
-| Data                    | Where                       | Handling                                                                  |
-| ----------------------- | --------------------------- | ------------------------------------------------------------------------- |
-| Principal id            | `Recipient`                 | A public id only; the address and language are resolved at send time.     |
-| Notification data       | `NotificationDelivery.data` | Held in memory by the memory driver for the process's life; never logged. |
-| Recipient address, body | `OutboundMail`              | Passed to the transport only; this package never stores or logs it.       |
-| Rendered mail           | `renderMail`, the renderer  | Returned to the caller; never cached, logged or written here.             |
+| Data                             | Where                                                        | Handling                                                                  |
+| -------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| Principal id                     | `Recipient`                                                  | A public id only; the address and language are resolved at send time.     |
+| Notification data                | `NotificationDelivery.data`                                  | Held in memory by the memory driver for the process's life; never logged. |
+| Recipient address, body          | `OutboundMail`                                               | Passed to the transport only; this package never stores or logs it.       |
+| Rendered mail                    | `renderMail`, the renderer                                   | Returned to the caller; never cached, logged or written here.             |
+| Phone numbers, push targets      | `OutboundSms`, `OutboundWhatsApp`, `PushTarget`, `CallEvent` | Passed to the provider only; never logged; a dead push target is revoked. |
+| Provider credentials, VAPID keys | connection `@Secret` fields, `SecretStore`                   | Read at call time; never logged or put in an error.                       |

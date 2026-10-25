@@ -12,5 +12,7 @@ export { ChatTransportFake } from "#testing/chat-transport.fake";
 export { renderMail } from "#testing/functions/render-mail.function";
 export { InAppStoreFake } from "#testing/in-app-store.fake";
 export { MailTransportFake } from "#testing/mail-transport.fake";
+export { PushTransportFake } from "#testing/push-transport.fake";
 export { SmsTransportFake } from "#testing/sms-transport.fake";
+export { WhatsAppTransportFake } from "#testing/whatsapp-transport.fake";
 export type { MemoryNotifier } from "#testing/types/memory-notifier.type";

@@ -9,7 +9,8 @@ Strings are i18n keys, never literals. The package was `@stackra/mail` (ADR 0294
 
 **Tier:** `tier:lib` (`packages/communication/notifications`). Entries `.`, `./contracts`, `./node`, `./react` and
 `./testing`. Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`,
-`@stackra/i18n`, `@stackra/money`, `@stackra/assets` and `@stackra/clients` (`./node` queues through it). React is an
+`@stackra/i18n`, `@stackra/money`, `@stackra/assets`, `@stackra/errors`, `@stackra/integrations` (provider
+Integrations and the provider resolver) and `@stackra/clients` (`./node` queues through it). React is an
 optional peer, needed by `./node`, `./react` and `./testing` only.
 
 ## What is here
@@ -121,6 +122,37 @@ registerNotificationMails({
 
 Only the mail channel is sent, only to principals (a scope recipient is refused), and in the member's default locale
 until identity answers a principal's language. The action takes no category.
+
+## Channels and providers
+
+Products declare channels, never providers (ADR 0223 decision 2). The provider behind a channel is chosen per tenant
+and Market by `@stackra/integrations`' `ProviderResolver` (ADR 0356): the tenant's own Connection first, then the
+Market's platform Connection, both data.
+
+| Channel port (`./contracts`)                                | Driver (`.`)                                           | Providers                                                                          |
+| ----------------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `MailTransport`                                             | `ConnectionMailTransportDriver`                        | `ResendConnection`, `SesConnection` (SigV4)                                        |
+| `SmsTransport`                                              | `ConnectionSmsTransportDriver`                         | `UnifonicConnection`, `TaqnyatConnection`, `TwilioConnection`, `CequensConnection` |
+| `WhatsAppTransport`                                         | `ConnectionWhatsAppTransportDriver`                    | `MetaWhatsAppConnection` (WhatsApp Cloud API: templates and text)                  |
+| `PushTransport`                                             | `DevicePushTransportDriver`                            | `ExpoIntegration` (mobile) and Web Push (VAPID, `aes128gcm`)                       |
+| voice (`VoiceGateway` of `@stackra/integrations/contracts`) | `ProviderResolver.resolve("voice", VOICE_CONNECTIONS)` | `TwilioConnection` (calls, TwiML, speech, handover, recording)                     |
+
+- Every connection transport sends once per idempotency key through `SendLog` (keys and provider ids only).
+- A device the push service reports gone is revoked through `PushTokenStore`; `receipts` reads Expo receipts.
+- The VAPID keys and contact are platform secrets: `WEB_PUSH_VAPID_PUBLIC_KEY`, `WEB_PUSH_VAPID_PRIVATE_KEY`,
+  `WEB_PUSH_VAPID_SUBJECT`.
+
+## Templates, quiet hours and escalation
+
+| Symbol                                                | Use                                                                                       |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `resolveTemplate(candidates, query)`                  | the cascade: locale chain first, then the nearest scope's override, then the code default |
+| `TemplateVariant`, `TemplateOverrides`                | a restricted record takes only the content-free variant; no fallback to the full one      |
+| `sendAfter({ category, mandatory, quietHours, now })` | the send time: now for a mandatory category or outside quiet hours, else the window's end |
+| `dueEscalations(steps, state, now)`                   | the escalation steps due for an unacknowledged notification                               |
+
+The mandatory categories, quiet hours, channel order and escalation steps are data (settings floors, settings, rule
+sets), never defaults here.
 
 ## Testing
 
