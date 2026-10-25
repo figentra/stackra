@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://static.stackra.figentra.com/schemas/runway/app.json",
-  "$comment": "Stackra file contract: Purpose: the shape of an APP member's runway.yaml. Boundary: shape only; identity is stackra.config.ts, behaviour is src/config/*, accounts and zones are the root runway (runway/root.json). Runtime: node (editors and validators). Governing contract: ADR 0168 (runway.yaml schema), ADR 0170 (environments; no literal ports outside runway), ADR 0173 (secret names only), ADR 0175 (domains), ADR 0180 (EAS), ADR 0254 (desktop release), ADR 0146 (config layers), ADR 0231 (names).",
+  "$comment": "Stackra file contract: Purpose: the shape of an APP member's runway.yaml. Boundary: shape only; identity is stackra.config.ts, behaviour is src/config/*, accounts and zones are the root runway (runway/root.json). Runtime: node (editors and validators). Governing contract: ADR 0296 (runway v3: requires, no root facts), ADR 0168 (runway.yaml schema), ADR 0227 (allowed engines), ADR 0170 (environments; no literal ports outside runway), ADR 0173 (secret names only), ADR 0175 (domains), ADR 0180 (EAS), ADR 0254 (desktop release), ADR 0146 (config layers), ADR 0231 (names).",
   "title": "runway.yaml (app member)",
-  "description": "How and where one app runs, per environment: the dev port (the only place it is written), domains, public vars, secret names, release channels and Workers knobs (ADR 0168, 0170, 0173, 0254). A value here may override a root default, never the reverse.",
+  "description": "What one app needs and how it runs, per environment (ADR 0296 d1; the folder names the member): the dev port (the only place it is written), domains, public vars, secret names, release channels and Workers knobs (ADR 0168, 0170, 0173, 0254). A value here may override a root default, never the reverse.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "member", "environments"],
+  "required": ["version", "environments"],
   "properties": {
     "$schema": {
       "type": "string",
@@ -14,14 +14,15 @@
       "examples": ["@stackra/runway/schema/app.json"]
     },
     "version": {
-      "const": 2,
-      "description": "Runway format version."
+      "const": 3,
+      "description": "Runway format version (ADR 0296)."
     },
-    "member": {
-      "$ref": "#/$defs/memberKey"
+    "requires": {
+      "$ref": "#/$defs/requires"
     },
     "secrets": {
-      "$ref": "#/$defs/secretMap"
+      "$ref": "#/$defs/secretList",
+      "description": "Every @Secret of the env and config classes, by NAME. Values live in Infisical and runway syncs them on deploy (ADR 0173). A native client holds none (ADR 0206 d8)."
     },
     "health": {
       "type": "object",
@@ -178,33 +179,45 @@
       "enum": ["dev", "preview", "staging", "production"],
       "description": "Environment name (ADR 0170 DP5)."
     },
-    "memberKey": {
-      "type": "string",
-      "pattern": "^[a-z][a-z0-9_-]*$",
-      "description": "The member key. Must equal stackra.config.ts `key`.",
-      "examples": ["console"]
-    },
     "secretName": {
       "type": "string",
       "pattern": "^[A-Z][A-Z0-9_]*$",
       "description": "Secret name in SCREAMING_SNAKE, `<PROVIDER>_<PURPOSE>` (ADR 0231).",
       "examples": ["TURNSTILE_SECRET_KEY"]
     },
-    "secretMap": {
+    "requires": {
       "type": "object",
-      "description": "Every @Secret of the env and config classes, by NAME. Values live in Infisical and runway syncs them on deploy (ADR 0173). A native client holds none (ADR 0206 d8).",
-      "propertyNames": {
-        "$ref": "#/$defs/secretName"
-      },
+      "description": "Resource name → one resource the member needs beyond what gen derives from the manifest (ADR 0296 d1).",
       "additionalProperties": {
         "type": "object",
-        "description": "Options of one secret; `{}` takes the defaults.",
+        "description": "One required resource. A dedicated one says why it cannot be shared.",
         "additionalProperties": false,
+        "required": ["engine"],
         "properties": {
-          "path": {
+          "engine": {
+            "enum": ["postgres", "valkey", "s3", "sns-sqs"],
+            "description": "An engine ADR 0227 neither defers nor rejects (ADR 0296 d5)."
+          },
+          "dedicated": {
+            "type": "boolean",
+            "description": "The member gets its own instance instead of the shared one."
+          },
+          "reason": {
             "type": "string",
-            "description": "A `providers.infisical.paths` key; defaults to root `secrets.defaultPath`."
+            "minLength": 1,
+            "description": "One line: why the member cannot share the resource."
           }
+        },
+        "if": {
+          "properties": {
+            "dedicated": {
+              "const": true
+            }
+          },
+          "required": ["dedicated"]
+        },
+        "then": {
+          "required": ["reason"]
         }
       }
     },

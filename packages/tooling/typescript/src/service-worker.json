@@ -1,0 +1,15 @@
+// Stackra file contract:
+// Purpose: the `service-worker` program: an app's generated PWA service worker (`.stackra/sw.ts`, ADR 0165), with
+//          the WebWorker library instead of the DOM. The two libraries declare the same globals differently, so
+//          the worker cannot share the renderer's program. Only the `tsconfig.sw.json` gen writes into an app's
+//          `.stackra/` extends it, never an authored member.
+// Owner: release-operations · Secrets: forbidden
+{
+  "display": "@stackra/typescript-config — service worker",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "WebWorker"],
+    "types": []
+  },
+  "include": ["${configDir}/sw.ts"]
+}
