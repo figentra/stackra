@@ -74,8 +74,9 @@ import { DesignSystemProvider } from "@stackra/ui/native";
 The stand-in barrels are replaced when `stackra gen` writes the entry barrels (STA-339). `exports` point at source
 through the `@stackra/source` condition; `tsdown` builds `dist/` for publishing (ADR 0025).
 
-The UI libraries are optional peer dependencies, each needed only by its entry: `react-aria-components` and
-`lucide-react` for `./react` (and `@heroui/react` for its components), `heroui-native`, `uniwind`,
+The UI libraries are optional peer dependencies, each needed only by its entry: `react-aria-components`,
+`lucide-react` and `motion` (`Reveal`, and `List`, which reveals its rows with it) for `./react` (and `@heroui/react`
+for its components), `heroui-native`, `uniwind`,
 `lucide-react-native`, `react-native-svg` and `react-native-reanimated` (the native progress indicators) and `react-native` for `./native` (the native provider mounts a `LucideProvider`, so
 `lucide-react-native` is needed by the whole entry). `react` and `react-hook-form` are needed by both, and are not optional: `FormField` is exported from both entries and
 imports `react-hook-form`, so an app that imports either entry resolves it at build.

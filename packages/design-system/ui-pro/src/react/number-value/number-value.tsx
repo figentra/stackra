@@ -6,8 +6,9 @@
  *          it still under reduced motion.
  * Boundary: no vocabulary prop applies, so every other prop passes through unchanged: the root's `style` there is the
  *           number style (`currency`, `percent`, ...), not a CSS style, and keeps HeroUI Pro's name. The animated root
- *           draws HeroUI Pro's own slots and classes around NumberFlow; a render-prop child, and a scientific or
- *           engineering notation (which NumberFlow cannot draw), get HeroUI Pro's still number. The compound exposes
+ *           draws HeroUI Pro's own slots and classes around NumberFlow; a render-prop child, a scientific or
+ *           engineering notation and a locale whose digits are not Latin (`ar-SA`'s Arabic-Indic digits, for one),
+ *           which NumberFlow cannot draw, get HeroUI Pro's still number. The compound exposes
  *           the documented parts: HeroUI Pro's `NumberValue.Root` is left out. Imports the `number-value` subpath.
  * Runtime: browser
  * Governing contract: ADR 0329 (motion layer); ADR 0310 (decision 3); ADR 0303 (decision 7); STA-416 FR-005.
@@ -63,8 +64,13 @@ function NumberValueRoot({ isAnimated = true, children, ...props }: NumberValueP
       unit,
     });
   const flowNotation = format.notation;
+  const locales = locale ?? contextLocale;
+  // NumberFlow reads each digit with parseInt, so digits other than Latin ones (`ar-SA`'s, for one) would vanish.
+  const hasLatinDigits =
+    new Intl.NumberFormat(locales, format).resolvedOptions().numberingSystem === "latn";
   if (
     !isAnimated ||
+    !hasLatinDigits ||
     flowNotation === "scientific" ||
     flowNotation === "engineering" ||
     typeof children === "function"
@@ -95,7 +101,7 @@ function NumberValueRoot({ isAnimated = true, children, ...props }: NumberValueP
             className="number-value__value"
             data-slot="number-value-value"
             value={value}
-            locales={locale ?? contextLocale}
+            locales={locales}
             format={{ ...format, notation: flowNotation }}
             transformTiming={REVEAL}
             spinTiming={REVEAL}

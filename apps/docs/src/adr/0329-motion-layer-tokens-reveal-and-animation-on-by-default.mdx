@@ -46,8 +46,9 @@ material. Animating a blur radius on the web repaints the whole backdrop on each
      every series. Grouped bars (`BarGroupItem`) keep HeroUI's default, because `BarGroup` reads its items' props
      without rendering them.
    - The web `NumberValue` rolls its number with NumberFlow on the `reveal` step (`isAnimated`, on by default).
-     NumberFlow stays still under reduced motion. A render-prop child, and the scientific and engineering notations
-     that NumberFlow cannot draw, get HeroUI Pro's still number.
+     NumberFlow stays still under reduced motion. A render-prop child gets HeroUI Pro's still number, and so does
+     anything NumberFlow cannot draw: the scientific and engineering notations, and a locale whose digits are not
+     Latin, such as `ar-SA` and `ar-EG` with their Arabic-Indic digits. NumberFlow reads each digit as a Latin one.
 
 5. **Unchanged, because they already comply.** Web charts keep HeroUI Pro's Recharts defaults: they animate, with
    `isAnimationActive: "auto"`. Progress (bar, circle, meter) and toasts animate on both platforms and respect reduced
@@ -66,7 +67,8 @@ material. Animating a blur radius on the web repaints the whole backdrop on each
 
 - A screen gets motion from its components, with one set of timings, and reduced motion holds without per-screen code.
 - Changing the `reveal` step in the theme retimes every entrance, chart and number together.
-- `@stackra/ui` takes Motion as a peer on the web, so a web app that renders `Reveal` or `List` installs it.
+- `@stackra/ui` takes Motion as a peer of its `./react` entry, optional like the entry's other UI libraries, so a web
+  app that imports `@stackra/ui/react` installs it, and a native app does not.
 - An end-to-end accessibility scan can run while content is still fading in, and read a colour mid-fade. A scan
   therefore emulates reduced motion, which puts every entrance at rest before it is checked.
 

@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: proves the web NumberValue formats `value` through HeroUI Pro, keeps HeroUI Pro's `style` as the number
  *          style, passes unknown props through, draws the prefix and suffix, carries HeroUI Pro's own parts, and rolls
- *          the number with NumberFlow on the theme's reveal step unless `isAnimated` is off, a render prop is given or
- *          the notation is one NumberFlow cannot draw.
+ *          the number with NumberFlow on the theme's reveal step unless `isAnimated` is off, a render prop is given, or
+ *          the notation or the locale's digits are ones NumberFlow cannot draw.
  * Boundary: jsdom with real HeroUI Pro; `@number-flow/react` is replaced by a recording stand-in, so what reaches
  *           NumberFlow is checked, not its drawn frames.
  * Runtime: browser
@@ -53,10 +53,10 @@ describe("NumberValue (web)", () => {
 
   it("rolls the number with NumberFlow on the reveal step, with the locale and number format", () => {
     // oxlint-disable-next-line react/style-prop-object -- HeroUI Pro's `style` is the number style, a string
-    render(<NumberValue value={42} locale="ar-SA" style="currency" currency="SAR" />);
+    render(<NumberValue value={42} locale="en-SA" style="currency" currency="SAR" />);
     expect(flow.props).toMatchObject({
       value: 42,
-      locales: "ar-SA",
+      locales: "en-SA",
       format: { style: "currency", currency: "SAR" },
       className: "number-value__value",
       transformTiming: { duration: 400, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
@@ -83,6 +83,14 @@ describe("NumberValue (web)", () => {
     expect(document.querySelector('[data-slot="number-value-value"]')?.textContent).toBe("7");
     rerender(<NumberValue value={1200} notation="scientific" locale="en-US" />);
     expect(flow.props).toBeUndefined();
+  });
+
+  it("draws HeroUI Pro's still number for digits NumberFlow cannot read, such as ar-SA's Arabic-Indic ones", () => {
+    render(<NumberValue value={42} locale="ar-SA" />);
+    expect(flow.props).toBeUndefined();
+    expect(document.querySelector('[data-slot="number-value-value"]')?.textContent).toBe(
+      new Intl.NumberFormat("ar-SA").format(42),
+    );
   });
 
   it("carries HeroUI Pro's own parts", () => {

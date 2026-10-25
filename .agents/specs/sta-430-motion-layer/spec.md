@@ -24,7 +24,8 @@
 
 ## Impact
 
-- **Apps touched**: none. The playground and the mobile app pick up the defaults through the packages.
+- **Apps touched**: the playground's NumberValue page test only (it reads the rolling number through a NumberFlow
+  stand-in). The playground and the mobile app pick up the defaults through the packages.
 - **Services touched**: none
 - **Packages touched**: `packages/design-system/tokens`, `packages/design-system/ui`, `packages/design-system/ui-pro`
 - **Public contract change**: `@stackra/tokens` gains the `reveal` and `stagger` motion steps and `motionTiming`;
@@ -54,8 +55,8 @@
 - **EC-01**: A list on a glass surface reveals its rows inside the surface, so the material never has an animated
   ancestor.
 - **EC-02**: A caller's own animation props (`areaProps`, `animate`, `isAnimated={false}`) win over the defaults.
-- **EC-03**: A number format NumberFlow cannot draw (scientific or engineering notation), and a render-prop child, get
-  HeroUI Pro's still number.
+- **EC-03**: A number NumberFlow cannot draw (scientific or engineering notation, or a locale whose digits are not
+  Latin, such as `ar-SA`), and a render-prop child, get HeroUI Pro's still number.
 
 ## Requirements
 
@@ -71,7 +72,7 @@
 - **FR-006**: The native charts SHALL give their series a timing `animate` on the `reveal` step, and a caller's
   `animate` SHALL win.
 - **FR-007**: The web `NumberValue` SHALL roll its number with NumberFlow on the `reveal` step unless `isAnimated` is
-  off, a render prop is given, or the notation is scientific or engineering.
+  off, a render prop is given, the notation is scientific or engineering, or the locale's digits are not Latin.
 - **FR-008**: `List` SHALL reveal its rows inside its surface on both platforms unless `isAnimated` is off.
 
 ## Success Criteria
