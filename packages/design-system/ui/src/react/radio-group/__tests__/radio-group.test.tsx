@@ -61,6 +61,20 @@ describe("RadioGroup (web)", () => {
     expect((screen.getByRole("radio", { name: "Express" }) as HTMLInputElement).checked).toBe(true);
   });
 
+  it.each([
+    ["controlled", { value: "", onChange: vi.fn() }],
+    ["uncontrolled", { defaultValue: "" }],
+  ])(
+    "reads an empty %s value as nothing chosen and keeps the first radio in the tab order",
+    (_, props) => {
+      render(<RadioGroup label="Shipping" options={OPTIONS} {...props} />);
+      const radios = screen.getAllByRole<HTMLInputElement>("radio");
+      expect(radios.every((radio) => !radio.checked)).toBe(true);
+      // React Aria leaves every radio of an empty group tabbable; the browser's radio group makes it one Tab stop.
+      expect(radios[0]?.tabIndex).toBe(0);
+    },
+  );
+
   it("disables one option on its own, or every option with the group", () => {
     const { rerender } = render(<RadioGroup label="Shipping" options={OPTIONS} />);
     expect((screen.getByRole("radio", { name: "Overnight" }) as HTMLInputElement).disabled).toBe(

@@ -417,6 +417,8 @@
               "adr/0314-postgis-approved-geospatial-field-and-macros",
               "adr/0315-realtime-live-queries-and-streams",
               "adr/0316-open-core-distribution",
+              "adr/0317-stackra-ui-wave-6-shell-and-routing-props-vocabulary",
+              "adr/0318-stackra-ui-wave-7-resource-index-props-vocabulary",
               "adr/0320-stackra-brand-glass-material-and-the-showcase-stage",
               "adr/0321-the-trait-inventory-owning-packages-and-schedulable",
               "adr/0322-generated-constants-instead-of-string-literals",
