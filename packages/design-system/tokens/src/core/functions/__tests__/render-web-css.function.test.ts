@@ -2,14 +2,18 @@
  * Stackra file contract:
  * Purpose: proves the web renderer writes every HeroUI v3 colour role, palette colour and shadow for both modes
  *          under the selectors HeroUI's theming docs prescribe, that one `@layer components` block draws HeroUI's
- *          Typography classes in the theme's type scale (with Arabic twins and the weight modifiers), and that the committed
+ *          Typography classes in the theme's type scale (with Arabic twins and the weight modifiers) and the glass
+ *          material's classes, that the material's levels, modes and fallbacks are written (ADR 0320), and that the committed
  *          assets/public/themes/stackra/web.css equals its output byte for byte.
  * Boundary: renders in memory; `vitest run -u` rewrites the committed stylesheet.
  * Runtime: node
  * Governing contract: ADR 0302; ADR 0165 (HeroUI v3 on the web); ADR 0022 (test placement).
  */
 import { ColorRole } from "#contracts/enums/color-role.enum";
+import { MaterialLevel } from "#contracts/enums/material-level.enum";
+import { MaterialMode } from "#contracts/enums/material-mode.enum";
 import type { Theme } from "#contracts/types/theme.type";
+import { MATERIAL_MODES } from "#core/constants/material-modes.constant";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 import { renderWebCss } from "#core/functions/render-web-css.function";
 
@@ -74,7 +78,7 @@ describe("renderWebCss", () => {
     );
   });
 
-  it("draws HeroUI's Typography classes in the theme's scale inside one components layer", () => {
+  it("draws HeroUI's Typography classes in the theme's scale inside the one components layer", () => {
     expect(css.match(/@layer components \{/g)).toHaveLength(1);
     expect(layer).toContain(
       "  .typography--h1 {\n    font: var(--h1);\n    letter-spacing: var(--h1-letter-spacing);\n  }",
@@ -111,5 +115,87 @@ describe("renderWebCss", () => {
     expect(renderWebCss({ ...STACKRA_THEME, typography: noTwin } as Theme)).not.toContain(
       ".typography--h5:where(:lang(ar))",
     );
+  });
+
+  it("writes each material level's share, fill and filter in both colour blocks, and its blur and saturation once", () => {
+    const light = blockOf(':root,\n[data-theme="light"]');
+    const dark = blockOf('.dark,\n[data-theme="dark"]');
+    for (const level of MaterialLevel) {
+      const token = STACKRA_THEME.materials.levels[level];
+      expect(light).toContain(`  --material-${level}-share: ${token.fill.light};`);
+      expect(dark).toContain(`  --material-${level}-share: ${token.fill.dark};`);
+      for (const block of [light, dark]) {
+        // The thick level, which muted text sits on, also takes the mode's thick floor (solid in liquid).
+        const floor =
+          level === "thick"
+            ? "max(var(--material-fill-floor), var(--material-thick-floor))"
+            : "var(--material-fill-floor)";
+        expect(block).toContain(
+          `  --material-${level}-fill: color-mix(in oklch, var(--surface) calc(clamp(${floor}, var(--material-${level}-share) * var(--material-fill-scale), 1) * 100%), transparent);`,
+        );
+        expect(block).toContain(
+          `  --material-${level}-filter: blur(calc(var(--material-${level}-blur)`,
+        );
+      }
+      expect(blockOf(":root")).toContain(`  --material-${level}-blur: ${token.blur};`);
+    }
+    expect(dark).toContain(
+      `  --material-highlight-share: ${STACKRA_THEME.materials.highlight.dark};`,
+    );
+    // The sheen is the rim light spread down, so it takes the scheme's rim-light share: faint on a dark scheme.
+    for (const block of [light, dark])
+      expect(block).toContain(
+        "  --material-sheen-color: color-mix(in oklch, oklch(1 0 0) calc(var(--material-sheen) * var(--material-highlight-share) * 100%), transparent);",
+      );
+  });
+
+  it("writes every mode's factors on [data-material], glass also on :root as the default", () => {
+    for (const mode of MaterialMode) {
+      const factors = MATERIAL_MODES[mode];
+      const block = blockOf(`[data-material="${mode}"]`);
+      expect(block, mode).toContain(`  --material-fill-floor: ${factors.fillFloor};`);
+      expect(block, mode).toContain(`  --material-thick-floor: ${factors.thickFloor};`);
+      expect(block, mode).toContain(`  --material-sheen: ${factors.sheen};`);
+    }
+    expect(blockOf(":root")).toContain("  --material-fill-floor: 0;");
+    expect(blockOf(":root")).toContain("  --material-thick-floor: 0;");
+    expect(MATERIAL_MODES.solid).toMatchObject({ fillFloor: 1, thickFloor: 1, blurScale: 0 });
+  });
+
+  it("draws the material classes in the components layer, the regular level as .material", () => {
+    expect(layer).toContain(
+      "  .material,\n  .material-regular {\n    background-color: var(--material-regular-fill);",
+    );
+    expect(layer).toContain("  .material-thin {\n    background-color: var(--material-thin-fill);");
+    expect(layer).toContain("    backdrop-filter: var(--material-thick-filter);");
+    expect(layer).toContain("    border: 1px solid var(--material-edge);");
+  });
+
+  it("turns the material solid under reduced transparency, more contrast and no backdrop filter", () => {
+    expect(css).toContain(
+      "@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {\n  :root,\n  [data-material] {\n    --material-fill-scale: 1;\n    --material-fill-floor: 1;\n    --material-thick-floor: 1;\n    --material-blur-scale: 0;",
+    );
+    expect(css).toContain(
+      "@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {\n  :root,\n  [data-material] {\n    --material-fill-scale: 1;\n    --material-fill-floor: 1;",
+    );
+    expect(css).toContain("@media (forced-colors: active) {");
+    // The fallbacks come after the mode blocks, so they win at equal specificity.
+    expect(css.indexOf("prefers-reduced-transparency")).toBeGreaterThan(
+      css.indexOf('[data-material="liquid"]'),
+    );
+  });
+
+  it("gives a browser without color-mix a static, opaque material after the colour blocks", () => {
+    const query =
+      "@supports not (color: color-mix(in oklch, white, black)) {\n  :root,\n  .dark,\n  [data-theme] {\n";
+    const fallback = css.split(query)[1]?.split("\n  }\n}")[0] ?? "";
+    for (const level of MaterialLevel) {
+      expect(fallback).toContain(`    --material-${level}-fill: var(--surface);`);
+      expect(fallback).toContain(`    --material-${level}-filter: none;`);
+    }
+    expect(fallback).toContain("    --material-edge: var(--border);");
+    expect(fallback).toContain("    --material-sheen-color: transparent;");
+    // Equal specificity to the colour blocks (one class or attribute), so coming later is what makes it win.
+    expect(css.indexOf(query)).toBeGreaterThan(css.indexOf('.dark,\n[data-theme="dark"] {'));
   });
 });

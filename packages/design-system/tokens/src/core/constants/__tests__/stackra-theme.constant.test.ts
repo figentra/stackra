@@ -12,6 +12,7 @@
 import { existsSync, readFileSync } from "node:fs";
 
 import type { ColorToken } from "#contracts/types/theme.type";
+import { MATERIAL_MODES } from "#core/constants/material-modes.constant";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 import { contrastRatio } from "#core/functions/contrast-ratio.function";
 import { oklchToHex } from "#core/functions/oklch-to-hex.function";
@@ -30,6 +31,15 @@ const contrast = (one: string, two: string) => contrastRatio(oklchToHex(one), ok
 
 // The kit labels the modes "base" and "dark".
 const modeOf = (theme: string): Mode => (theme === "dark" ? "dark" : "light");
+
+const channels = (hex: string) => [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16));
+
+/** `top` at `alpha` over the opaque `bottom`, as a browser composites them: in 8-bit sRGB. */
+const over = (top: string, alpha: number, bottom: string) =>
+  `#${channels(top)
+    .map((value, index) => Math.round(value * alpha + (channels(bottom)[index] ?? 0) * (1 - alpha)))
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("")}`;
 
 // @covers sta-350:FR-002 sta-350:FR-020
 describe("STACKRA_THEME", () => {
@@ -131,5 +141,58 @@ describe("STACKRA_THEME", () => {
       expect(existsSync(new URL(`public/fonts/${file}`, assets)), file).toBe(true);
     for (const family of ["Geist", "Geist Mono", "IBM Plex Sans Arabic"])
       expect(css).toContain(`font-family: "${family}";`);
+  });
+
+  // ADR 0320 decision 4: reading text on the regular and thick levels holds 4.5:1 over the worst backdrops, pure black
+  // and pure white, in every mode and scheme, with liquid's sheen laid at full strength over the fill. The thin level
+  // carries no reading text, so it is not held to this.
+  it("keeps reading text at 4.5:1 on the regular and thick material over black and white, in every mode", () => {
+    const failures: string[] = [];
+    for (const mode of ["light", "dark"] as const) {
+      const surface = oklchToHex(STACKRA_THEME.colors.surface[mode]);
+      const text = oklchToHex(STACKRA_THEME.colors.foreground[mode]);
+      for (const level of ["regular", "thick"] as const) {
+        const share = STACKRA_THEME.materials.levels[level].fill[mode];
+        for (const [name, factors] of Object.entries(MATERIAL_MODES)) {
+          const fill = Math.min(1, Math.max(factors.fillFloor, share * factors.fillScale));
+          const sheen = factors.sheen * STACKRA_THEME.materials.highlight[mode];
+          for (const backdrop of ["#000000", "#ffffff"]) {
+            const ground = over("#ffffff", sheen, over(surface, fill, backdrop));
+            const ratio = contrastRatio(text, ground);
+            if (ratio < 4.5)
+              failures.push(`${mode} ${level} ${name} over ${backdrop}: ${ratio.toFixed(2)}`);
+          }
+        }
+      }
+    }
+    expect(failures).toEqual([]);
+  });
+
+  // ADR 0320 decision 4 (owner, 2026-10-25): muted text holds the same 4.5:1, on the thick level only. Each mode's
+  // thick floor makes that level solid where its own fill cannot (liquid); on regular, muted text would fail in glass
+  // and liquid, so it never sits there.
+  it("keeps muted text at 4.5:1 on the thick material over black and white, in every mode", () => {
+    const failures: string[] = [];
+    for (const mode of ["light", "dark"] as const) {
+      const surface = oklchToHex(STACKRA_THEME.colors.surface[mode]);
+      const muted = oklchToHex(STACKRA_THEME.colors.muted[mode]);
+      const share = STACKRA_THEME.materials.levels.thick.fill[mode];
+      for (const [name, factors] of Object.entries(MATERIAL_MODES)) {
+        const floor = Math.max(factors.fillFloor, factors.thickFloor);
+        const fill = Math.min(1, Math.max(floor, share * factors.fillScale));
+        const sheen = factors.sheen * STACKRA_THEME.materials.highlight[mode];
+        for (const backdrop of ["#000000", "#ffffff"]) {
+          const ratio = contrastRatio(muted, over("#ffffff", sheen, over(surface, fill, backdrop)));
+          if (ratio < 4.5) failures.push(`${mode} ${name} over ${backdrop}: ${ratio.toFixed(2)}`);
+        }
+      }
+    }
+    expect(failures).toEqual([]);
+    // The thick floor is a fallback, not a look: it is solid only where the mode's own thick fill would fail.
+    expect(
+      Object.entries(MATERIAL_MODES)
+        .filter(([, f]) => f.thickFloor === 1)
+        .map(([name]) => name),
+    ).toEqual(["solid", "liquid"]);
   });
 });

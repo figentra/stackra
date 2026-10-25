@@ -18,6 +18,7 @@
  *          dark, RTL).
  */
 import { STACKRA_THEME } from "@stackra/tokens";
+import { MaterialMode } from "@stackra/tokens/contracts";
 import { ColorScheme } from "@stackra/ui/contracts";
 import {
   Button,
@@ -55,9 +56,12 @@ const STRINGS = {
   colorScheme: "Colour scheme",
   language: "Language and direction",
   scheme: { light: "Light", dark: "Dark", system: "System" },
+  material: "Material",
+  materials: { solid: "Solid", frosted: "Frosted", glass: "Glass", liquid: "Liquid" },
   title: "Stackra Design System",
   actions: {
     scheme: (name: string) => `${name} scheme`,
+    material: (name: string) => `${name} material`,
     home: "Go to the index",
     components: "Browse every component",
     componentsDetail: "The gallery, by category",
@@ -66,6 +70,17 @@ const STRINGS = {
 
 /** The icon of each scheme choice; its name is the choice's accessible name. */
 const SCHEME_ICONS = { light: "sun", dark: "moon", system: "monitor" } as const;
+
+/** The icon of each material mode (ADR 0320); its name is the choice's accessible name. */
+const MATERIAL_ICONS = {
+  solid: "square",
+  frosted: "snowflake",
+  glass: "layers",
+  liquid: "droplet",
+} as const satisfies Record<MaterialMode, string>;
+
+/** The mode the playground shows when the address names none: the showcase default. */
+const DEFAULT_MATERIAL: MaterialMode = "glass";
 
 /** The locales the switcher offers: one left-to-right, one right-to-left; each name in its own language. */
 const LOCALES = [
@@ -83,8 +98,16 @@ export interface PlaygroundShellProps {
   pages: readonly PageLink[];
 }
 
-/** The colour scheme and locale switcher, built from HeroUI's Toolbar and ToggleButtonGroup. */
-function DisplaySettings() {
+/** Props of {@link DisplaySettings}. */
+interface DisplaySettingsProps {
+  /** The material mode on screen. */
+  material: MaterialMode;
+  /** Called with the mode the reader picks. */
+  onMaterialChange: (material: MaterialMode) => void;
+}
+
+/** The colour scheme, locale and material switcher, built from HeroUI's Toolbar and ToggleButtonGroup. */
+function DisplaySettings({ material, onMaterialChange }: DisplaySettingsProps) {
   const { colorScheme, resolvedColorScheme, locale, setColorScheme, setLocale } = useDesignSystem();
   const background = STACKRA_THEME.colors.background;
   const themeColor = resolvedColorScheme === "dark" ? background.hexDark : background.hexLight;
@@ -133,12 +156,32 @@ function DisplaySettings() {
           </Choice>
         ))}
       </ToggleButtonGroup>
+      <ToggleButtonGroup
+        aria-label={STRINGS.material}
+        size="sm"
+        selectionMode="single"
+        disallowEmptySelection
+        selectedKeys={[material]}
+        onSelectionChange={(keys) => {
+          const picked = MaterialMode.find((mode) => keys.has(mode));
+          if (picked) onMaterialChange(picked);
+        }}
+      >
+        {MaterialMode.map((mode) => (
+          <Choice key={mode} id={mode} aria-label={STRINGS.materials[mode]}>
+            <Icon name={MATERIAL_ICONS[mode]} size="sm" />
+          </Choice>
+        ))}
+      </ToggleButtonGroup>
     </Toolbar>
   );
 }
 
 /** The command palette with the shell's quick actions: the scheme, the language and the places to go. */
-function ShellPalette(props: Omit<CommandPaletteProps, "actions">) {
+function ShellPalette({
+  onMaterialChange,
+  ...props
+}: Omit<CommandPaletteProps, "actions"> & { onMaterialChange: (material: MaterialMode) => void }) {
   const { setColorScheme, setLocale } = useDesignSystem();
   const navigate = useNavigate();
   const actions: PaletteAction[] = [
@@ -157,6 +200,14 @@ function ShellPalette(props: Omit<CommandPaletteProps, "actions">) {
       icon: "languages" as const,
       keywords: `language direction ${id === "ar" ? "arabic rtl" : "english ltr"}`,
       run: () => setLocale(id),
+    })),
+    ...MaterialMode.map((mode) => ({
+      id: `material-${mode}`,
+      label: STRINGS.actions.material(STRINGS.materials[mode]),
+      detail: STRINGS.material,
+      icon: MATERIAL_ICONS[mode],
+      keywords: "glass liquid frosted solid material transparency",
+      run: () => onMaterialChange(mode),
     })),
     {
       id: "go-home",
@@ -186,6 +237,8 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
   const [isPaletteOpen, setPaletteOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const current = pages.find((page) => page.path === pathname);
+  // The material mode is the document's, as the scheme is: the provider sets it (index.html before paint).
+  const material = MaterialMode.find((mode) => mode === params.get("material")) ?? DEFAULT_MATERIAL;
   // React Router hands a functional update the params of the last render, so choices made before the next render (a
   // scheme, then a locale) would keep only the last; each write starts from the one before it instead. The ref takes
   // the URL's params only when something else changed them (a link, the back button), not on the echo of a write of
@@ -281,6 +334,7 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
         locale={LOCALES.find(({ id }) => id === params.get("locale"))?.id}
         onColorSchemeChange={(scheme) => setParam("scheme", scheme)}
         onLocaleChange={(locale) => setParam("locale", locale)}
+        material={material}
       >
         <div lang="en" className="relative min-h-dvh text-foreground">
           <div className="ambient" aria-hidden="true">
@@ -297,7 +351,7 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
           </a>
           {/* One row on every width: on a phone the search button keeps only its icon and the display settings fold
               behind a button; from the small breakpoint up both sit in the row. */}
-          <header className="glass sticky top-3 z-20 mx-auto mt-3 flex w-[min(100%-1.5rem,80rem)] flex-wrap items-center gap-x-2 gap-y-2 rounded-2xl px-2 py-2 sm:gap-x-3 sm:px-3">
+          <header className="material-thick sticky top-3 z-20 mx-auto mt-3 flex w-[min(100%-1.5rem,80rem)] flex-wrap items-center gap-x-2 gap-y-2 rounded-2xl px-2 py-2 sm:gap-x-3 sm:px-3">
             <Link
               href={`/${search}`}
               underline="hover"
@@ -343,7 +397,10 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
               id="display-settings"
               className={`max-sm:w-full max-sm:justify-center ${isSettingsOpen ? "max-sm:flex" : "max-sm:hidden"}`}
             >
-              <DisplaySettings />
+              <DisplaySettings
+                material={material}
+                onMaterialChange={(mode) => setParam("material", mode)}
+              />
             </div>
           </header>
           {ownsMain ? (
@@ -370,6 +427,7 @@ export function PlaygroundShell({ pages }: PlaygroundShellProps) {
             search={search}
             isOpen={isPaletteOpen}
             onClose={onPaletteClose}
+            onMaterialChange={(mode) => setParam("material", mode)}
           />
         </div>
       </DesignSystemProvider>

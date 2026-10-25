@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: proves the playground shell takes the colour scheme and locale from the URL, applies them through the
  *          DesignSystemProvider, writes a switch back to the URL, keeps every choice made before the next render,
- *          marks the selected choice beyond its fill, keeps theme-color in step, declares its UI English, moves focus to the h1 on navigation, draws a component
+ *          marks the selected choice beyond its fill, keeps theme-color in step, runs the document in the material
+ *          mode from the URL, declares its UI English, moves focus to the h1 on navigation, draws a component
  *          page's category strip (current page marked) and its previous and next links, opens the command palette
  *          from its button and from ⌘K, and draws its landmarks, leaving out `main` for a page that draws its own.
  * Boundary: a memory router in jsdom with a stubbed matchMedia and a stubbed `<dialog>` (jsdom has no showModal);
@@ -113,7 +114,7 @@ describe("PlaygroundShell", () => {
     renderShell("/?scheme=dark&locale=en");
     const dark = screen.getByRole("radio", { name: "Dark" });
     expect(dark.querySelector('[data-testid="selected-mark"]')).toBeTruthy();
-    expect(screen.getAllByTestId("selected-mark")).toHaveLength(2); // one per group: scheme and language
+    expect(screen.getAllByTestId("selected-mark")).toHaveLength(3); // one per group: scheme, material and language
     expect(dark.className).toContain("--toggle-button-bg-selected:var(--accent)");
   });
 
@@ -178,6 +179,20 @@ describe("PlaygroundShell", () => {
     expect(dialog()?.open).toBe(false);
     fireEvent.keyDown(document, { key: "k", metaKey: true });
     expect(dialog()?.open).toBe(true);
+  });
+
+  it("runs the document in the material mode from the URL, glass when none is named, and writes a switch back", () => {
+    const router = renderShell("/?material=liquid");
+    expect(root.dataset["material"]).toBe("liquid");
+    expect(screen.getByRole("radio", { name: "Liquid" }).getAttribute("aria-checked")).toBe("true");
+    act(() => screen.getByRole("radio", { name: "Solid" }).click());
+    expect(router.state.location.search).toBe("?material=solid");
+    expect(root.dataset["material"]).toBe("solid");
+  });
+
+  it("falls back to the glass material for an unknown mode", () => {
+    renderShell("/?material=chrome");
+    expect(root.dataset["material"]).toBe("glass");
   });
 
   it("folds the display settings behind a button that says whether they are open", () => {

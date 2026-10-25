@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the web `DesignSystemProvider` on HeroUI v3: puts the resolved colour scheme on the document element the
  *          way HeroUI v3 themes switch (`.dark` / `.light` and `data-theme`), follows `prefers-color-scheme` while the
- *          scheme is `system`, sets `lang` and `dir`, and wraps the app in React Aria's I18nProvider, which HeroUI v3
+ *          scheme is `system`, sets the material mode (`data-material`, solid unless asked), `lang` and `dir`, and wraps
+ *          the app in React Aria's I18nProvider, which HeroUI v3
  *          components read their locale and direction from. React Aria derives the direction from the locale alone,
  *          so when `direction` overrides the locale's own, it is given the locale with a script of that direction.
  * Boundary: applies the scheme and direction; the theme's CSS is imported by the app (`@stackra/tokens/themes/*`).
@@ -58,6 +59,7 @@ export function DesignSystemProvider({
   onLocaleChange,
   direction,
   theme = "stackra",
+  material = "solid",
 }: DesignSystemProviderProps) {
   const [ownColorScheme, setOwnColorScheme] = useState<ColorScheme>(defaultColorScheme);
   const [ownLocale, setOwnLocale] = useState(defaultLocale);
@@ -73,12 +75,13 @@ export function DesignSystemProvider({
   useLayoutEffect(() => {
     const root = document.documentElement;
     const had = { dark: root.classList.contains("dark"), light: root.classList.contains("light") };
-    const attributes = ["data-theme", "lang", "dir"].map(
+    const attributes = ["data-theme", "data-material", "lang", "dir"].map(
       (name) => [name, root.getAttribute(name)] as const,
     );
     root.classList.toggle("dark", resolvedColorScheme === "dark");
     root.classList.toggle("light", resolvedColorScheme === "light");
     root.dataset["theme"] = resolvedColorScheme;
+    root.dataset["material"] = material;
     root.lang = currentLocale;
     root.dir = currentDirection;
     return () => {
@@ -88,7 +91,7 @@ export function DesignSystemProvider({
         if (value === null) root.removeAttribute(name);
         else root.setAttribute(name, value);
     };
-  }, [resolvedColorScheme, currentLocale, currentDirection]);
+  }, [resolvedColorScheme, material, currentLocale, currentDirection]);
 
   const state = useMemo<DesignSystemState>(
     () => ({

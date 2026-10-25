@@ -7,15 +7,20 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { ColorRole } from "#contracts/enums/color-role.enum";
+export { MaterialLevel } from "#contracts/enums/material-level.enum";
+export { MaterialMode } from "#contracts/enums/material-mode.enum";
 export type { MotionTiming } from "#contracts/types/motion-timing.type";
 export type {
   ColorToken,
   FontFamilies,
   FontFamilyName,
+  MaterialLevelToken,
+  ModeShare,
   MotionToken,
   ShadowToken,
   Theme,
   ThemeColors,
+  ThemeMaterials,
   ThemeRadius,
   ThemeShadows,
   TypographyToken,

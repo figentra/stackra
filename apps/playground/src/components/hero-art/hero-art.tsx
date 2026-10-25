@@ -70,7 +70,7 @@ const SWATCHES = (
 );
 
 const AVATARS = (
-  <span className="flex -space-x-[18%] rtl:space-x-reverse">
+  <span className="flex -space-x-1.5 rtl:space-x-reverse">
     {["LH", "OS", "SK"].map((initials) => (
       <span
         key={initials}
@@ -165,7 +165,7 @@ export function HeroArt() {
       {TILES.map(({ start, top, tilt, size, face, isWide }, index) => (
         <span
           key={`${start}-${top}`}
-          className={`hero-tile glass absolute grid place-items-center rounded-[22%] ${SIZE[size]} ${isWide ? "max-sm:hidden" : ""}`}
+          className={`hero-tile material-thin absolute grid place-items-center rounded-[22%] ${SIZE[size]} ${isWide ? "max-sm:hidden" : ""}`}
           style={
             {
               insetInlineStart: `${start}%`,

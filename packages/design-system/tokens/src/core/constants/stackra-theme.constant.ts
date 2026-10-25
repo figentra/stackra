@@ -242,4 +242,15 @@ export const STACKRA_THEME = defineTheme({
     // The delay between items revealed in a row; only its duration is read.
     stagger: { duration: "40ms", easing: "linear" },
   },
+  // ADR 0320: text on a level keeps at least the regular fill's share of the surface behind it, so its contrast
+  // holds over the light ambient tints; the thin level is for chrome without reading text.
+  materials: {
+    levels: {
+      thin: { fill: { light: 0.6, dark: 0.62 }, blur: "12px", saturation: 1.6 },
+      regular: { fill: { light: 0.78, dark: 0.8 }, blur: "20px", saturation: 1.6 },
+      thick: { fill: { light: 0.9, dark: 0.92 }, blur: "28px", saturation: 1.4 },
+    },
+    edge: { light: 0.1, dark: 0.12 },
+    highlight: { light: 0.7, dark: 0.09 },
+  },
 });

@@ -51,7 +51,7 @@ export interface ShowcaseProps {
   headingLevel: HeadingLevel;
 }
 
-const CARD = "glass rounded-3xl";
+const CARD = "material-thick rounded-3xl";
 
 /** Three composed scenes. */
 export function Showcase({ headingLevel }: ShowcaseProps) {

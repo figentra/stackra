@@ -32,4 +32,10 @@ export interface DesignSystemProviderProps {
   readonly direction?: Direction | undefined;
   /** The name of the theme whose stylesheet the app loads. Defaults to `stackra`. */
   readonly theme?: string | undefined;
+  /**
+   * The mode of the theme's glass material, a name its stylesheet knows (`solid`, `frosted`, `glass` or `liquid` for
+   * the `@stackra/tokens` themes), set on `<html data-material>`. Defaults to `solid`: product UI is opaque, and a
+   * showcase surface asks for glass (ADR 0320 decision 7). A page with no provider gets the stylesheet's own default.
+   */
+  readonly material?: string | undefined;
 }

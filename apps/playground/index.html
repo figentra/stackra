@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#F5F6F3" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0B0D0F" media="(prefers-color-scheme: dark)" />
     <script>
-      // Before paint: the scheme and direction from ?scheme= and ?locale=, as DesignSystemProvider will set them.
+      // Before paint: the scheme, direction and material from ?scheme=, ?locale= and ?material=, as DesignSystemProvider will set them.
       try {
         var q = new URLSearchParams(location.search);
         var t = q.get("scheme");
@@ -20,6 +20,9 @@
         document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) {
           m.content = t === "dark" ? "#0B0D0F" : "#F5F6F3";
         });
+        var m = q.get("material");
+        document.documentElement.dataset.material =
+          m === "solid" || m === "frosted" || m === "liquid" ? m : "glass";
         if (q.get("locale") === "ar") {
           document.documentElement.lang = "ar";
           document.documentElement.dir = "rtl";
