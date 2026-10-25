@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `RequestOptions`, the last argument of a managed client call: query parameters, extra headers, the call's
- *          idempotency key and an abort signal.
+ *          idempotency key, an abort signal, and whether the body is sent as a form instead of JSON.
  * Boundary: a type only. Credentials are never passed here: the client adds them from the Integration's `auth`.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rule 13).
@@ -25,4 +25,10 @@ export interface RequestOptions {
 
   /** Aborts the call and its retries. */
   readonly signal?: AbortSignal;
+
+  /**
+   * Sends the body as `application/x-www-form-urlencoded` (Twilio, Unifonic) instead of JSON. The body must then be a
+   * flat record of strings, numbers and booleans; an array value repeats its key.
+   */
+  readonly form?: boolean;
 }

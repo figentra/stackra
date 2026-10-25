@@ -25,7 +25,7 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
   every new public file to the barrel and to its `__tests__/index.test.ts`.
 - `managedClient`, the placeholder lookup, the token calls, the JWT signer and the registries stay internal. `./testing`
   imports `.`, `./contracts` and `@stackra/container/testing` only (ADR 0269 decision 3). `./contracts` is the leaf: it
-  imports `@stackra/contracts` only.
+  imports `@stackra/contracts` and the `Money` and `Address` types only.
 
 ## This package
 
@@ -39,6 +39,12 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 - `Connection` does not declare `subscribe()` or `unsubscribe()`; a class adds them as its own methods and may say so
   with `implements ConnectionWebhooks`.
 - No parameter properties and no `#private` fields; the source keeps to erasable syntax.
+- Configuration, not code (ADR 0356): a provider is chosen through `ProviderResolver` from the tenant's Connection and
+  the Market's data (`ProviderDefaults`); never branch on a Market, a country or a tenant in code.
+- One provider, one Integration (ADR 0355): a provider's roles are listed in `roles`; never add a second Integration or
+  webhook route for the same provider.
+- A provider interface a Connection implements (`AccountingProvider`, `VoiceGateway`, the connectors) lives in
+  `./contracts/types`; its drivers live with the package that owns the capability.
 
 ## PII
 

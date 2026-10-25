@@ -26,6 +26,12 @@ export const IntegrationCategory = Enum.of({
   Shipping: "shipping",
   /** Calendars and scheduling. */
   Calendar: "calendar",
+  /** Booking marketplaces and reservation channels. */
+  Booking: "booking",
+  /** Telephone calls: numbers, inbound and outbound voice, recordings. */
+  Telephony: "telephony",
+  /** Wallet passes (Apple Wallet, Google Wallet). */
+  Wallet: "wallet",
   /** File and object storage. */
   Storage: "storage",
   /** Customer relationship management. */

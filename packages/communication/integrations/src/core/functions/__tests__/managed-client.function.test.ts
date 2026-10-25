@@ -284,6 +284,36 @@ describe("managedClient", () => {
     );
   });
 
+  it("sends a form body when the call asks, repeating array fields", async () => {
+    const fetchMock = stubFetch(() => json({ sid: "SM1" }));
+    await clientOf(new MailIntegration()).post(
+      "/messages",
+      { To: "+966500000001", Body: "Hi there", MediaUrl: ["a", "b"], Skip: undefined },
+      { form: true },
+    );
+    expect(fetchMock.mock.calls[0]?.[1].body).toBe(
+      "To=%2B966500000001&Body=Hi+there&MediaUrl=a&MediaUrl=b",
+    );
+    expect(headerOf(fetchMock, 0, "content-type")).toBe("application/x-www-form-urlencoded");
+    await expect(
+      clientOf(new MailIntegration()).post("/messages", { nested: { a: 1 } }, { form: true }),
+    ).rejects.toThrow(/string, a number or a boolean/);
+  });
+
+  it("fills a per-region host from the credential set", async () => {
+    class RegionalIntegration extends Integration({
+      ...BASE,
+      provider: "regional",
+      baseUrl: "https://{host}/api",
+      auth: { type: AuthType.None },
+    }) {
+      host = "gcc.inbox.example";
+    }
+    const fetchMock = stubFetch(() => json({}));
+    await clientOf(new RegionalIntegration()).get("/ping");
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe("https://gcc.inbox.example/api/ping");
+  });
+
   it("explains a call to an integration without a base URL", async () => {
     class HooksOnlyIntegration extends Integration({
       provider: "hooks-only",

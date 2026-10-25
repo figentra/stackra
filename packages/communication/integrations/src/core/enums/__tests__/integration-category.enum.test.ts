@@ -16,6 +16,14 @@ describe("IntegrationCategory", () => {
     expect(IntegrationCategory.Email).toBe("email");
   });
 
+  it("has the booking, telephony and wallet shelves", () => {
+    expect([
+      IntegrationCategory.Booking,
+      IntegrationCategory.Telephony,
+      IntegrationCategory.Wallet,
+    ]).toEqual(["booking", "telephony", "wallet"]);
+  });
+
   it("keeps every code snake_case and unique", () => {
     const codes = Enum.values(IntegrationCategory);
     expect(codes.every((code) => /^[a-z]+(?:_[a-z]+)*$/.test(code))).toBe(true);

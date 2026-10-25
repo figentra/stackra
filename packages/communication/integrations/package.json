@@ -2,7 +2,7 @@
   "name": "@stackra/integrations",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra integrations: the Integration kind base that describes a provider (levels, the six auth types, base URL, rate limits, retries, webhooks), the Connection kind base for one stored credential set, the ConnectionStore port with its local and hosted drivers, the ConnectionContext port (./contracts) with its request driver, and the managed client that authenticates, limits, retries and refuses each provider call",
+  "description": "Stackra integrations: the Integration kind base that describes a provider (roles, levels, the six auth types, a base URL with per-region placeholders, rate limits, retries, webhooks, the app market listing), the Connection kind base for one stored credential set, the ConnectionStore port with its local and hosted drivers, the ProviderResolver that picks a provider per tenant and Market (ADR 0356), the managed client, the Pass kind for wallet passes, accounting journals, the commerce connector and telephony contracts (./contracts), and the headless Chatwoot integration",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -72,7 +72,9 @@
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
-    "@stackra/errors": "workspace:*"
+    "@stackra/errors": "workspace:*",
+    "@stackra/money": "workspace:*",
+    "@stackra/validation": "workspace:*"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",

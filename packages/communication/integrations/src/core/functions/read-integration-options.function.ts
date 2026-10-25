@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `readIntegrationOptions`, the check `Integration({ ... })` runs when a class is declared: a provider code,
- *          a known category, known levels, a complete `auth` for its type, an http(s) base URL, well-formed rate
- *          limits, retries, health schedule and webhooks. It returns the options to record, `multiple` defaulted.
+ *          a known category, known levels, a complete `auth` for its type, an http(s) base URL (or an https one with
+ *          placeholders), known roles and connector kinds, well-formed rate limits, retries, health schedule and
+ *          webhooks. It returns the options to record, `multiple` defaulted.
  * Boundary: internal. A mistake here is the author's, so it throws a `TypeError` or `RangeError` on import, never a
  *           refusal. Placeholders are not resolved here: gen fails one that names no field
  *           (`integration_placeholder_unknown`), and the managed client refuses it at call time.
@@ -13,7 +14,9 @@ import { Enum } from "@stackra/contracts";
 
 import { AuthType } from "#core/enums/auth-type.enum";
 import { ConnectionLevel } from "#core/enums/connection-level.enum";
+import { ConnectorKind } from "#core/enums/connector-kind.enum";
 import { IntegrationCategory } from "#core/enums/integration-category.enum";
+import { IntegrationRole } from "#core/enums/integration-role.enum";
 import { RateLimitScope } from "#core/enums/rate-limit-scope.enum";
 import { intervalMs } from "#core/functions/interval-ms.function";
 import type { IntegrationOptions } from "#core/types/integration-options.type";
@@ -38,6 +41,13 @@ function isHttpUrl(value: unknown): boolean {
   if (!isText(value) || !URL.canParse(value)) return false;
   return ["http:", "https:"].includes(new URL(value).protocol);
 }
+
+/** Whether `value` is an https URL once each `{field}` placeholder is filled (a per-region host). */
+const isPlaceholderUrl = (value: unknown): boolean =>
+  isText(value) &&
+  /\{[A-Za-z_$][\w$]*\}/.test(value) &&
+  value.startsWith("https://") &&
+  isHttpUrl(value.replace(/\{[A-Za-z_$][\w$]*\}/g, "placeholder"));
 
 /** Whether `value` is a whole number from 1. */
 const isCount = (value: unknown): boolean => Number.isInteger(value) && (value as number) >= 1;
@@ -134,9 +144,28 @@ export function readIntegrationOptions(
       break;
   }
   ensure(
-    options.baseUrl === undefined || isHttpUrl(options.baseUrl),
+    options.baseUrl === undefined ||
+      isHttpUrl(options.baseUrl) ||
+      isPlaceholderUrl(options.baseUrl),
     "baseUrl",
-    "needs an http or https URL",
+    "needs an http or https URL, or an https URL with {field} placeholders",
+  );
+  ensure(
+    options.roles === undefined ||
+      (Array.isArray(options.roles) &&
+        options.roles.every((role) => Enum.values(IntegrationRole).includes(role)) &&
+        new Set(options.roles).size === options.roles.length),
+    "roles",
+    "needs distinct IntegrationRoles",
+  );
+  ensure(
+    options.connectors === undefined ||
+      (Array.isArray(options.connectors) &&
+        options.connectors.length > 0 &&
+        options.connectors.every((kind) => Enum.values(ConnectorKind).includes(kind)) &&
+        (options.roles ?? []).includes(IntegrationRole.Connector)),
+    "connectors",
+    "needs ConnectorKinds and the connector role",
   );
   for (const limit of options.rateLimits ?? []) {
     ensure(
@@ -169,5 +198,5 @@ export function readIntegrationOptions(
       "webhooks",
       "need a scheme, a secret placeholder and an eventType path",
     );
-  return { ...options, multiple: options.multiple ?? false };
+  return { ...options, roles: options.roles ?? [], multiple: options.multiple ?? false };
 }

@@ -10,7 +10,9 @@
  * Governing contract: ADR 0308 (rules 1, 6, 9, 10, 13 to 15); ADR 0305 (rule 2: a kind with options is called).
  */
 import type { ConnectionLevel } from "#core/enums/connection-level.enum";
+import type { ConnectorKind } from "#core/enums/connector-kind.enum";
 import type { IntegrationCategory } from "#core/enums/integration-category.enum";
+import type { IntegrationRole } from "#core/enums/integration-role.enum";
 import type { AuthOptions } from "#core/types/auth-options.type";
 import type { HealthCheck } from "#core/types/health-check.type";
 import type { IntegrationListing } from "#core/types/integration-listing.type";
@@ -37,13 +39,22 @@ export interface IntegrationOptions {
   /** The marketplace shelf. */
   readonly category: IntegrationCategory;
 
+  /** The roles the provider plays (ADR 0355 decision 1), shown on the listing; none when left out. */
+  readonly roles?: readonly IntegrationRole[];
+
+  /** The commerce connector kinds its Connection implements; only with the connector role. */
+  readonly connectors?: readonly ConnectorKind[];
+
   /** Where a connection may sit, in lookup order; empty for a platform-only integration with no connection. */
   readonly levels: readonly ConnectionLevel[];
 
   /** How a call authenticates. */
   readonly auth: AuthOptions;
 
-  /** The HTTPS origin and base path the managed client joins paths to; also its egress allowlist. */
+  /**
+   * The HTTPS origin and base path the managed client joins paths to; also its egress allowlist. A `{field}`
+   * placeholder in the host (`https://{host}`) is filled from the credential set, for a provider run per region.
+   */
   readonly baseUrl?: string;
 
   /** The provider's documented rate limits. */

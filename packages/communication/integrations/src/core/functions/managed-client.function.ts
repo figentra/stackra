@@ -4,7 +4,9 @@
  *          Integration's `baseUrl`, so a call never leaves its origin (the egress allowlist), adds the credentials
  *          of the Integration's `auth` type, keeps to its rate limits, retries what is safe to retry, and turns every
  *          provider outcome into a value or a typed refusal.
- * Boundary: internal; `IntegrationRuntime#client` builds it. JSON in and out. A `GET`, `HEAD`, `PUT` or `DELETE`
+ * Boundary: internal; `IntegrationRuntime#client` builds it. JSON in and out, or a form body when the call asks. A
+ *           `{field}` placeholder in the base URL (a per-region host) is filled from the credential set and must
+ *           resolve to an https origin. A `GET`, `HEAD`, `PUT` or `DELETE`
  *           retries on no answer, 408, 429 or 5xx; a `POST` or `PATCH` only with an idempotency key the provider
  *           deduplicates on. A 4xx is `ProviderRefusedError`; spent retries, or a bucket full past the longest wait,
  *           are `ProviderUnavailableError`. No credential, token or response body is ever put in an error. A bucket
@@ -55,6 +57,26 @@ function retryAfterMs(response: Response | undefined, now: Date): number | undef
   return Number.isNaN(at) ? undefined : Math.max(0, at - now.getTime());
 }
 
+/**
+ * `body` as a form: each field once, an array field repeated (`To=a&To=b`), undefined fields left out.
+ *
+ * @throws TypeError when `body` is not a flat record.
+ */
+function formOf(body: unknown): string {
+  if (typeof body !== "object" || body === null || Array.isArray(body))
+    throw new TypeError("A form body must be a flat record");
+  const form = new URLSearchParams();
+  for (const [key, value] of Object.entries(body)) {
+    if (value === undefined) continue;
+    for (const item of Array.isArray(value) ? value : [value]) {
+      if (typeof item === "object" && item !== null)
+        throw new TypeError(`Form field ${key} must be a string, a number or a boolean`);
+      form.append(key, String(item));
+    }
+  }
+  return form.toString();
+}
+
 /** The id the rate limits count a connection's calls under; `platform` for the Integration's own credentials. */
 const credentialOf = (connection: Connection | undefined): string =>
   connection === undefined ? "platform" : connection.id;
@@ -82,7 +104,9 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
   function urlOf(path: string, query: RequestOptions["query"]): URL {
     if (declared.baseUrl === undefined)
       throw new TypeError(`${name} declares no baseUrl, so it has no API to call`);
-    const base = declared.baseUrl.replace(/\/+$/, "");
+    const base = resolve(declared.baseUrl).replace(/\/+$/, "");
+    if (base !== declared.baseUrl.replace(/\/+$/, "") && new URL(base).protocol !== "https:")
+      throw new TypeError(`${name}'s baseUrl must resolve to an https origin`);
     const url = new URL(`${base}/${path.replace(/^\/+/, "")}`);
     for (const [key, value] of Object.entries(query ?? {}))
       url.searchParams.set(key, String(value));
@@ -153,7 +177,11 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     const url = urlOf(path, request.query);
     const headers = new Headers(request.headers);
     if (!headers.has("accept")) headers.set("accept", "application/json");
-    if (body !== undefined) headers.set("content-type", "application/json");
+    if (body !== undefined)
+      headers.set(
+        "content-type",
+        request.form === true ? "application/x-www-form-urlencoded" : "application/json",
+      );
     const key = request.idempotencyKey;
     if (key !== undefined && idempotencyHeader !== undefined) headers.set(idempotencyHeader, key);
     const retryable =
@@ -162,7 +190,9 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     const init: RequestInit = {
       method,
       headers,
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      ...(body === undefined
+        ? {}
+        : { body: request.form === true ? formOf(body) : JSON.stringify(body) }),
       ...(request.signal === undefined ? {} : { signal: request.signal }),
     };
     for (let attempt = 1; ; attempt += 1) {

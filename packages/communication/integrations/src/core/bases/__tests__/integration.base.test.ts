@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `Integration`: the template's Resend description declares and records its options with
- *          `multiple` defaulted, `@Secret` fields mark an integration, the runtime arrives through `super()` and makes
+ *          `roles` and `multiple` defaulted, `@Secret` fields mark an integration, the runtime arrives through `super()` and makes
  *          the `api` once, and every malformed option is refused when the class is declared.
  * Boundary: test only; the runtime is a stand-in whose `client` returns a marker.
  * Runtime: node (vitest)
@@ -15,7 +15,9 @@ import { vi } from "vitest";
 import { Integration } from "#core/bases/integration.base";
 import { AuthType } from "#core/enums/auth-type.enum";
 import { ConnectionLevel } from "#core/enums/connection-level.enum";
+import { ConnectorKind } from "#core/enums/connector-kind.enum";
 import { IntegrationCategory } from "#core/enums/integration-category.enum";
+import { IntegrationRole } from "#core/enums/integration-role.enum";
 import { RateLimitScope } from "#core/enums/rate-limit-scope.enum";
 import { IntegrationRuntime } from "#core/services/integration-runtime.service";
 import type { IntegrationApi } from "#core/types/integration-api.type";
@@ -63,7 +65,7 @@ describe("Integration", () => {
   it("records the description with multiple defaulted", () => {
     expect(kindOf(ResendIntegration)).toEqual({
       kind: "integration",
-      options: { ...RESEND, multiple: false },
+      options: { ...RESEND, roles: [], multiple: false },
     });
     expect(Secret.members(ResendIntegration)).toEqual(
       new Map([
@@ -118,6 +120,10 @@ describe("Integration", () => {
       }),
     ).toThrow(/needs a level/);
     expect(refuse({ baseUrl: "ftp://api.resend.com" })).toThrow(/baseUrl/);
+    expect(refuse({ baseUrl: "http://{host}/api" })).toThrow(/baseUrl/);
+    expect(refuse({ roles: [IntegrationRole.Driver, IntegrationRole.Driver] })).toThrow(/roles/);
+    expect(refuse({ roles: ["oracle" as IntegrationRole] })).toThrow(/roles/);
+    expect(refuse({ connectors: [ConnectorKind.SalesChannel] })).toThrow(/connectors/);
     expect(
       refuse({ rateLimits: [{ requests: 0, per: "1s", by: RateLimitScope.Credential }] }),
     ).toThrow(/rateLimits/);
@@ -130,6 +136,16 @@ describe("Integration", () => {
         webhooks: { scheme: "standard_webhooks", secret: "", eventType: { path: "type" } },
       }),
     ).toThrow(/webhooks/);
+  });
+
+  it("accepts roles, connector kinds and a per-region base URL", () => {
+    expect(
+      refuse({
+        baseUrl: "https://{host}/api",
+        roles: [IntegrationRole.Driver, IntegrationRole.Connector],
+        connectors: [ConnectorKind.SalesChannel, ConnectorKind.ProductFeed],
+      }),
+    ).not.toThrow();
   });
 
   it("accepts a platform-only integration with no level", () => {

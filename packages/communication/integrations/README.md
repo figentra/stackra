@@ -9,27 +9,37 @@ is safe and turns every provider outcome into a value or a typed refusal. This p
 
 **Tier:** `tier:lib` (`packages/communication/integrations`). Entries `.`, `./contracts` and `./testing`.
 Depends on `@stackra/actions` (the `RateLimitStore`, and `RequestContext` for the `request` connection context),
-`@stackra/config` (`@Secret`, `SecretStore`), `@stackra/container`, `@stackra/contracts` and `@stackra/errors`.
+`@stackra/config` (`@Secret`, `SecretStore`), `@stackra/container`, `@stackra/contracts`, `@stackra/errors`, and the
+`Money` and `Address` types of `@stackra/money` and `@stackra/validation`.
 
 ## What is here
 
-| Symbol                                                                                        | Use                                                                                  |
-| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `Integration`                                                                                 | the kind base of a provider description; `api` uses the platform's own credentials   |
-| `Connection`                                                                                  | the kind base of one credential set (`Connection<XIntegration>`), with `check()`     |
-| `ConnectedAccount`                                                                            | what `check()` returns: the provider account's id and label                          |
-| `AuthType`, `ConnectionLevel`, `IntegrationCategory`, `RateLimitScope`                        | the enums an Integration's options use                                               |
-| `ConnectionStore`                                                                             | the port: `find`, `byId`, `list`, `connect`, `disconnect`                            |
-| `LocalConnectionStoreDriver`, `HostedConnectionStoreDriver`                                   | `local` (in process, development) and `hosted` (the integrations service holds them) |
-| `ConnectionHost`                                                                              | the port of the store host behind `hosted`                                           |
-| `RequestConnectionContextDriver`                                                              | the `request` `ConnectionContext`: the running call's scope and user                 |
-| `./contracts`: `ConnectionContext`                                                            | the port the store drivers read the call's owners from                               |
-| `IntegrationRuntime`                                                                          | builds every Integration and its managed clients; holds and renews OAuth tokens      |
-| `registerConnections`                                                                         | links each connection class to its Integration and key; gen emits the call           |
-| `resolvePlaceholders`                                                                         | fills `{field}` placeholders, for `@stackra/webhooks`' secret lookup                 |
-| `ProviderRefusedError`, `ProviderUnavailableError`                                            | a provider's 4xx, and spent retries or a full bucket                                 |
-| `ConnectionCheckFailedError`, `ConnectionAmbiguousError`, `InvalidSignatureError`             | a failed `check()`, an ambiguous `find`, a webhook that does not verify              |
-| `./testing`: `fakeIntegrationApi`, `makeConnection`, `.withIntegrationApi`, `.withConnection` | fakes of the managed client and the store for tests                                  |
+| Symbol                                                                                              | Use                                                                                  |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `Integration`                                                                                       | the kind base of a provider description; `api` uses the platform's own credentials   |
+| `Connection`                                                                                        | the kind base of one credential set (`Connection<XIntegration>`), with `check()`     |
+| `ConnectedAccount`                                                                                  | what `check()` returns: the provider account's id and label                          |
+| `AuthType`, `ConnectionLevel`, `IntegrationCategory`, `RateLimitScope`                              | the enums an Integration's options use                                               |
+| `ConnectionStore`                                                                                   | the port: `find`, `byId`, `list`, `connect`, `disconnect`                            |
+| `LocalConnectionStoreDriver`, `HostedConnectionStoreDriver`                                         | `local` (in process, development) and `hosted` (the integrations service holds them) |
+| `ConnectionHost`                                                                                    | the port of the store host behind `hosted`                                           |
+| `RequestConnectionContextDriver`                                                                    | the `request` `ConnectionContext`: the running call's scope and user                 |
+| `./contracts`: `ConnectionContext`                                                                  | the port the store drivers read the call's owners from                               |
+| `IntegrationRuntime`                                                                                | builds every Integration and its managed clients; holds and renews OAuth tokens      |
+| `registerConnections`                                                                               | links each connection class to its Integration and key; gen emits the call           |
+| `resolvePlaceholders`                                                                               | fills `{field}` placeholders, for `@stackra/webhooks`' secret lookup                 |
+| `ProviderRefusedError`, `ProviderUnavailableError`                                                  | a provider's 4xx, and spent retries or a full bucket                                 |
+| `ConnectionCheckFailedError`, `ConnectionAmbiguousError`, `InvalidSignatureError`                   | a failed `check()`, an ambiguous `find`, a webhook that does not verify              |
+| `./testing`: `fakeIntegrationApi`, `makeConnection`, `.withIntegrationApi`, `.withConnection`       | fakes of the managed client and the store for tests                                  |
+| `IntegrationRole`, `ConnectorKind`                                                                  | the five roles (ADR 0355) and the commerce connector kinds an Integration declares   |
+| `ProviderResolver`, `ProviderDrivers`, `NoProviderError`                                            | the provider for a call: tenant Connection first, then the Market's platform default |
+| `./contracts`: `ProviderDefaults`, `MarketContext`, `ProviderChoice`                                | the market-pack data and the Market the resolver reads                               |
+| `credentialRef`, `./contracts`: `CredentialRef`                                                     | a stored reference to a Connection in the integrations vault, never the secret       |
+| `postJournal`, `assertBalanced`, `UnbalancedJournalError`, `./contracts`: `AccountingProvider`      | balanced journals, posted once per idempotency key                                   |
+| `./contracts`: `SalesChannelConnector`, `ProductFeedConnector`, `FulfilmentProviderConnector`       | what a commerce connector's Connection implements (carriers: `@stackra/shipping`)    |
+| `./contracts`: `VoiceGateway`, `CallInstruction`, `CallStatus`, `RecordingConsent`; `recordingPlan` | the telephony port per Market; recording from the pack's consent rule                |
+| `Pass`, `PassContent`                                                                               | the wallet pass kind a module declares (ADR 0348 decision 5)                         |
+| `ChatwootIntegration`, `ChatwootConnection`                                                         | headless Chatwoot per region: provisioning, inboxes, contacts, conversations         |
 
 ## An integration and its connection
 
@@ -100,9 +110,34 @@ const context = new RequestConnectionContextDriver(request);
 const store = new LocalConnectionStoreDriver(context, runtime);
 ```
 
+## Choosing a provider per tenant and Market (ADR 0356)
+
+```ts
+const voice = await resolver.resolve<VoiceGateway>("voice", VOICE_CONNECTIONS);
+```
+
+`ProviderResolver` reads the Market from `MarketContext` and its providers, in order, from `ProviderDefaults`
+(market-pack data). The tenant's own Connection of an offered provider wins; otherwise the Market's platform Connection
+serves; nothing fitting is `NoProviderError`. A follow-up call reloads the same Connection with `byConnection` or
+`byRef`. No Market, provider or default is written in code, and `@Replaces` is never used for this.
+
+## A per-region base URL
+
+`baseUrl: "https://{chatwootHost}"` fills the host from the credential set (connection first, then the Integration's
+`@Secret`), so each region's deployment talks to its own instance. It must start with `https://`.
+
+## Form bodies
+
+`api.post(path, body, { form: true })` sends `application/x-www-form-urlencoded` (Twilio, Unifonic); the body is a flat
+record and an array repeats its key.
+
 ## Not here
 
 - The webhook kind and its verification: `WebhookEvent` is `@stackra/events`'; verifying and routing is
   `@stackra/webhooks`, which reads `IntegrationWebhooks`.
 - The OAuth consent flow (authorize URL, PKCE, code exchange) and the console's connect pages: the integrations service.
 - Lifecycle events (`integrations.connection.*.v1`), tombstones and encryption at rest: the store host.
+- Provider drivers of other packages' ports: SMS, WhatsApp, push, mail and voice drivers are `@stackra/notifications`';
+  payment gateways `@stackra/payments`'; carriers OS integrations connectors behind `@stackra/shipping`.
+- Apple Wallet and Google Wallet drivers, ad-platform and marketplace Integrations: not built yet (see the spec's open
+  items).
