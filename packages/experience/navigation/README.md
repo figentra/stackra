@@ -10,7 +10,7 @@ native presentation options. The old `@stackra/router` package and its `./router
 `@stackra/platform`, `@stackra/seo` (locale paths, the SEO chain, canonical redirects), `@stackra/clients`,
 `@stackra/i18n`, `@stackra/settings`, `@stackra/feature-flags`, `@stackra/errors`, `@stackra/config`,
 `@stackra/validation`, `@stackra/container`, `@stackra/contracts` and `@stackra/icons`. React Router (`./react`,
-`./testing`) and React Navigation with React Native (`./native`) are optional peers.
+`./testing`), React Navigation with React Native (`./native`) and `@stackra/testing` (`./testing`) are optional peers.
 
 ## What is here
 
@@ -27,10 +27,13 @@ native presentation options. The old `@stackra/router` package and its `./router
 | `./react`     | `Link`, `NavLink`, `Outlet`, `RouteForm`, `useHref`, `useNavigate`, `useLocaleHref`              | router-aware links and navigation in the visitor's locale mount                            |
 | `./react`     | `useMenu`, `useNavigation`, `useLayoutData`, `useSubmit`                                         | menus, the gated navigation tree (or the router state), layout data, a page's submit       |
 | `./react`     | `RootErrorBoundary`                                                                              | the app-wide error boundary gen wires (ADR 0305 rule 35)                                   |
+| `./react`     | `BreadcrumbsProvider`, `useBreadcrumb`, `useBreadcrumbs`, `Breadcrumb`                           | the breadcrumb trail a panel's shell holds and pages publish to                            |
 | `./react`     | `toRoot`, `toLayout`, `toRoute`, `toPanel`, `toResource`, `toSettingsPage`, `registerRoutePages` | the data-route tree of a client-rendered app                                               |
 | `./react`     | `routeAdapter`, `routeContext`                                                                   | framework-mode route modules on the Worker                                                 |
 | `./native`    | `toScreen`, `useLayoutLoader`, `useNavigate`, `useRouteReload`, `ContextMenu`                    | the React Navigation tree, native navigation, pull to refresh, a value's context menu      |
-| `./testing`   | `runLoader`, `registerRouteTestingPart`, `createRoutesStub`                                      | `const { result } = await runLoader(TabsLayout, { session })`                              |
+| `./testing`   | `renderRoute`, `renderLayout`                                                                    | a route's page or a layout mounted under a router stub, with the parts' fakes              |
+| `./testing`   | `runRouteLoader`, `runRouteSubmit`, `routeMeta`                                                  | one loader or submit run, or the head for some data, without a router                      |
+| `./testing`   | `registerRouteTestingPart`, `createRoutesStub`                                                   | how another package's fakes take part; React Router's own stub                             |
 
 ## Declaring a route
 
@@ -74,8 +77,32 @@ declaration merging plus `contributeRouteContext(part)` for the value. `query` a
 `RouteCaller` driver (or the request's public clients on a Worker); `platform`, `captcha`, `settings` and `config` are
 read from the container when first used.
 
+## Resource routes and panel pages
+
+`toResource(Resources.Order)` routes the pages panel's `resource()` declares, by panel's page names: `list` at the base,
+`create` at `new`, `view` at `:id`, `edit` at `:id/edit`. The panel package registers the pages these routes and
+`toPanel` render with `registerRoutePages` (panel's `registerPanelPages`), so navigation imports no panel code.
+
 ## Testing
 
-`runLoader(Class, input)` runs one loader with the registered testing parts' fakes and returns `{ result, ...fakes }`;
-a redirect is `{ redirect, params }`. Another package's testing setup takes part with `registerRouteTestingPart`.
-`createRoutesStub` is React Router's, for mounting a component under a stub route.
+```ts
+import { renderRoute, runRouteLoader } from "@stackra/navigation/testing";
+import { screen } from "@stackra/testing/react";
+
+const { result, tenancy } = await runRouteLoader(TabsLayout, { session, services: [tenancyPart] });
+renderRoute(Routes.dashboard, { providers: [I18nTestProvider], session });
+expect(await screen.findByText("Today's revenue")).toBeTruthy();
+```
+
+- `runRouteLoader(Class, input)` and `runRouteSubmit(Route, { form, ... })` run one loader or submit and return
+  `{ result, ...fakes }`; a redirect is `{ redirect, params }`. `url`, `path` and `search` shape the request,
+  `container` builds the class and backs `ctx.config`, and any other member reaches the context as given.
+- `routeMeta(Route, { data, container, site, path })` returns the meta descriptors the web adapter writes, through the
+  same SEO chain (it needs a container with `SeoConfig`).
+- `renderRoute(Routes.x | XRoute, options)` mounts the page gen's route table bound (or `component`) under a React Router
+  stub at the route's path, through `@stackra/testing/react`'s `render` with the caller's `providers` and `wrapper`;
+  the loader and submit run through the route context. `renderLayout(XLayout, { component })` does the same for a
+  layout over an empty outlet. Loaders resolve after the first paint: read with `findBy`.
+- Another package's fakes take part through a testing part: registered for the process with
+  `registerRouteTestingPart`, or for one call in `services`. Navigation imports no tenancy, settings or identity code.
+- Web only: the React Navigation `renderRoute` is not built.

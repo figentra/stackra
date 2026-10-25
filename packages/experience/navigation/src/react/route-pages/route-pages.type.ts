@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `RoutePages`, the pages other packages render for the routes this entry builds without an app page: a
- *          panel's shell (`toPanel`), a resource's list, view, create and update pages (`toResource`), a generated
+ *          panel's shell (`toPanel`), a resource's list, view, create and edit pages (`toResource`), a generated
  *          settings page (`toSettingsPage`) and a document route's document.
  * Boundary: a type only; registered by the package that owns each (`registerRoutePages`), so navigation imports no
  *           panel, settings or experience component.
@@ -21,7 +21,7 @@ export interface RoutePages {
   /** One page of a resource. */
   readonly resource: ComponentType<{
     readonly resource: object;
-    readonly page: "list" | "view" | "create" | "update";
+    readonly page: "list" | "view" | "create" | "edit";
   }>;
 
   /** A generated settings page. */

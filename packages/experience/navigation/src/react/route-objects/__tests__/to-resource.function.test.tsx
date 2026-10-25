@@ -16,7 +16,7 @@ import { registerRoutePages } from "#react/route-pages/register-route-pages.func
 import { toResource } from "#react/route-objects/to-resource.function";
 
 const Order = { base: "/orders/orders", list: {}, view: {} };
-const ProductCollection = { base: "/catalogue/collections", list: {}, create: {}, update: {} };
+const ProductCollection = { base: "/catalogue/collections", list: {}, create: {}, edit: {} };
 
 afterEach(() => {
   cleanup();

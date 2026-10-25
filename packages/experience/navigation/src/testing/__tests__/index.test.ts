@@ -1,9 +1,11 @@
+// @vitest-environment jsdom
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./testing` entry: the template's `createRoutesStub` (React Router's own) and
- *          `runLoader`, with the extension point `registerRouteTestingPart`, and nothing else.
+ * Purpose: the consumer contract of the `./testing` entry: the route helpers `renderRoute`, `renderLayout`,
+ *          `runRouteLoader`, `runRouteSubmit` and `routeMeta`, the extension point `registerRouteTestingPart`, React
+ *          Router's own `createRoutesStub`, and nothing else.
  * Boundary: test only; imports the stand-in barrel through its `#testing` alias.
- * Runtime: node (vitest)
+ * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269 (decision 6); ADR 0294 (decision 15).
  */
 import { describe, expect, it } from "@stackra/testing";
@@ -16,7 +18,11 @@ describe("@stackra/navigation/testing", () => {
     expect(Object.keys(testing).sort()).toEqual([
       "createRoutesStub",
       "registerRouteTestingPart",
-      "runLoader",
+      "renderLayout",
+      "renderRoute",
+      "routeMeta",
+      "runRouteLoader",
+      "runRouteSubmit",
     ]);
     expect(testing.createRoutesStub).toBe(createRoutesStub);
   });

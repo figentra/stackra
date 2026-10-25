@@ -1,15 +1,19 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./react` entry of @stackra/navigation (router-aware links and hooks, the root error
- *          boundary, and the React Router 7 adapters: the data-route builders of a client-rendered app and the
- *          framework-mode route module bindings; the old `./router` entry is folded here) until `stackra gen` writes the
- *          entry barrels (STA-339).
+ * Purpose: Stand-in barrel: the `./react` entry of @stackra/navigation (router-aware links and hooks, the breadcrumb
+ *          trail, the root error boundary, and the React Router 7 adapters: the data-route builders of a
+ *          client-rendered app and the framework-mode route module bindings; the old `./router` entry is folded here)
+ *          until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. `Outlet` and `RouteForm` are React Router's own, re-exported so
  *           an app imports routing UI from here only. Imports `.` internals one way; nothing here is React Native.
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 15); ADR 0303 (decision 1); ADR 0165; the STA-347 stand-in barrel decision.
  */
 export { Outlet, Form as RouteForm } from "react-router";
+export type { Breadcrumb } from "#react/breadcrumbs/breadcrumb.type";
+export { BreadcrumbsProvider } from "#react/breadcrumbs/breadcrumbs-provider";
+export { useBreadcrumb } from "#react/breadcrumbs/use-breadcrumb";
+export { useBreadcrumbs } from "#react/breadcrumbs/use-breadcrumbs";
 export { useHref } from "#react/href/use-href";
 export { useLayoutData } from "#react/layout-data/use-layout-data";
 export { Link } from "#react/link/link";

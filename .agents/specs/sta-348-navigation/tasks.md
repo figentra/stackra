@@ -16,3 +16,6 @@
 - [x] T012 Tests beside every subject and each barrel's test — covers: SC-001, SC-002 — route: tests — deps: T011
 - [x] T013 Changeset `.changeset/navigation-package.md` — covers: SC-001 — route: package — deps: T011
 - [ ] T014 Owner: `pnpm install`, tests, typecheck and build in the separate testing workflow — covers: SC-002, SC-003 — route: tests — deps: T012
+- [x] T015 [US4] Reconciliation R4: `runLoader` renamed `runRouteLoader`; `runRouteSubmit`, `routeMeta`, `renderRoute`, `renderLayout` and the input's `path`, `search`, `container` and `services` in `packages/experience/navigation/src/testing/`; `registerRoutes` keeps gen's pages (`ROUTE_PAGE_TABLE`); tests beside each — covers: FR-006, P-006 — route: package — deps: T010
+- [x] T016 [US3] Reconciliation R4: the breadcrumb trail (`BreadcrumbsProvider`, `useBreadcrumb`, `useBreadcrumbs`) in `packages/experience/navigation/src/react/breadcrumbs/`; `toResource` and `RoutePages` on panel's `edit` page; tests — covers: FR-007, P-007 — route: package — deps: T008
+- [x] T017 README, AGENTS and changeset for R4 — covers: FR-006, FR-007, SC-001 — route: package — deps: T015, T016

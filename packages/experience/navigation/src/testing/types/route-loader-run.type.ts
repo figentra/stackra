@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `RouteLoaderRun`, the extra members a test reads after `runLoader` besides `result`: the fakes the run used
- *          (the tenancy switcher it called, the navigations it recorded).
+ * Purpose: `RouteLoaderRun`, the extra members a test reads after a route helper (`runRouteLoader` besides `result`,
+ *          `renderRoute`): the fakes the run used (the tenancy switcher it called, the navigations it recorded).
  * Boundary: a type only, and open: this package declares no member. The package whose testing part supplies one adds
  *           it by declaration merging (`declare module "@stackra/navigation/testing" { interface RouteLoaderRun { ... } }`).
  * Runtime: node
@@ -9,7 +9,7 @@
  */
 
 /**
- * What testing parts add to the result of `runLoader`.
+ * What testing parts add to the result of `runRouteLoader`.
  *
  * @example
  * declare module "@stackra/navigation/testing" {

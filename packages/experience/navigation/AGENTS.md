@@ -30,6 +30,11 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `
 - `RouteProps` is exported from `.` only (registry A3); the old `./router` symbols live in `./react`, where the
   template imports them.
 - `RootErrorBoundary` needs no container; the adapters report unexpected loader and submit errors.
+- The breadcrumb trail (`BreadcrumbsProvider`, `useBreadcrumb`, `useBreadcrumbs`) lives here, in `./react`; panel's
+  shell mounts the provider and re-uses the hooks. Panel depends on navigation, never the reverse.
+- `toResource` uses panel's page names (`list`, `view`, `create`, `edit`); `RoutePages.resource` takes the same.
+- `./testing` builds on `@stackra/testing/react` (an optional peer) and passes the caller's providers through; it adds
+  none of its own and imports no tenancy, settings or identity code (their fakes arrive as testing parts).
 - `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).
 
 ## Rules that fail the build

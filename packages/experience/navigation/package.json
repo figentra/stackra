@@ -136,12 +136,16 @@
   },
   "peerDependencies": {
     "@react-navigation/native": "catalog:mobile",
+    "@stackra/testing": "workspace:*",
     "react": "catalog:frontend",
     "react-native": "catalog:mobile",
     "react-router": "catalog:frontend"
   },
   "peerDependenciesMeta": {
     "@react-navigation/native": {
+      "optional": true
+    },
+    "@stackra/testing": {
       "optional": true
     },
     "react": {

@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: `RouteTestingPart`, how another package's testing setup takes part in `runLoader` without this package
- *          importing it: identity fakes `session`, tenancy fakes its switcher, gen's test setup builds the route or
- *          layout from the member's wiring.
- * Boundary: a type only; called once per `runLoader`, so each run starts from fresh fakes. Registered with
- *           `registerRouteTestingPart` from the part's own testing setup, which gen's vitest config loads.
+ * Purpose: `RouteTestingPart`, how another package's testing setup takes part in the route helpers without this
+ *          package importing it: identity fakes `session`, tenancy fakes its switcher, gen's test setup builds the route
+ *          or layout from the member's wiring.
+ * Boundary: a type only; called once per run (once per mount for `renderRoute`), so each starts from fresh fakes.
+ *           Registered with `registerRouteTestingPart` from the part's own testing setup, which gen's vitest config
+ *           loads, or passed for one call in the input's `services`.
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3: a package never reaches into another package's `./testing`).
  */

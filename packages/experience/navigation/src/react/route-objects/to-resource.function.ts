@@ -3,8 +3,9 @@
  * Purpose: `toResource(resource)`, the data routes of a resource under its `base` path: the list at the base, the
  *          create page at `new`, the record at `:id` and its edit page at `:id/edit`, each only when the resource
  *          declares it (`...toResource(Resources.Order)` in the shell).
- * Boundary: reads the resource as data (its `base` and which of `list`, `create`, `view`, `update` it has); renders the
- *           registered `resource` page with the page kind, so navigation imports no panel code.
+ * Boundary: reads the resource as data: its `base` and which of the page refs `list`, `create`, `view` and `edit` that
+ *           panel's `resource()` gives it; renders the registered `resource` page with the page name (panel's
+ *           `ResourcePage` codes), so navigation imports no panel code.
  * Runtime: browser
  * Governing contract: ADR 0307 (resource tables and pages); ADR 0164.
  */
@@ -24,14 +25,14 @@ export function toResource(resource: {
   readonly list?: unknown;
   readonly create?: unknown;
   readonly view?: unknown;
-  readonly update?: unknown;
+  readonly edit?: unknown;
 }): RouteObject[] {
   const base = resource.base.replace(/^\/+|\/+$/g, "");
   const pages = [
     ["list", base],
     ["create", `${base}/new`],
     ["view", `${base}/:id`],
-    ["update", `${base}/:id/edit`],
+    ["edit", `${base}/:id/edit`],
   ] as const;
   return pages
     .filter(([page]) => resource[page] !== undefined)

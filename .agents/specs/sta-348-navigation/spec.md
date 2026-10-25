@@ -103,13 +103,23 @@ adapter and root boundary tests, the `./native` screen and layout-loader tests.
   `routeRef`, `tabs`; from `./react`: `Link`, `NavLink`, `Outlet`, `RouteForm`, `useHref`, `useLayoutData`,
   `useLocaleHref`, `useMenu`, `useNavigate`, `useNavigation`, `useSubmit` and the folded `./router` symbols; from
   `./native`: `ContextMenu`, `toScreen`, `useLayoutLoader`, `useNavigate`, `useRouteReload`; from `./testing`:
-  `createRoutesStub`, `runLoader`.
+  `createRoutesStub`, `runRouteLoader` (the template's mobile `runLoader` is renamed, R4), and the route helpers the
+  template imports from `@stackra/testing/react` (`renderRoute`, `renderLayout`, `runRouteSubmit`, `routeMeta`), which
+  move here (R4).
 - **FR-003**: (registry contract) router adapters over React Router 7 and React Navigation from the catalogs; the root
   error boundary on `@stackra/ui`; hrefs in lowercase locale mounts by `@stackra/seo`'s rule; `.` stays isomorphic.
 - **FR-004**: `RouteServices` and `RouteLoaderRun` are open for declaration merging; values come from
   `contributeRouteContext` and `registerRouteTestingPart`, so this package imports no identity, tenancy or state code.
 - **FR-005**: The form body read by `ctx.formData()` drops prototype segments and oversized list indexes; params that
   break the route's shape are a 404; query entries that break it are dropped.
+- **FR-006**: `./testing` ships `runRouteLoader`, `runRouteSubmit` and `routeMeta` (one run without a router, through
+  `createRouteContext` and the SEO chain) and `renderRoute` and `renderLayout` (the page or layout under a React Router
+  stub, mounted with `@stackra/testing/react`'s `render` and the caller's providers). Another package's fakes take
+  part through testing parts, registered or passed per call in `services`; `url`, `path`, `search` and `container`
+  shape the run. `registerRoutes` keeps the page gen's route table binds, so `renderRoute(Routes.x)` mounts it.
+- **FR-007**: `./react` holds the breadcrumb trail (`BreadcrumbsProvider`, `useBreadcrumb`, `useBreadcrumbs`,
+  `Breadcrumb`) that panel's shell mounts, and `toResource` and `RoutePages.resource` use panel's page names
+  (`list`, `view`, `create`, `edit`).
 
 ## Success Criteria
 
@@ -127,11 +137,29 @@ adapter and root boundary tests, the `./native` screen and layout-loader tests.
   `ctx.session`, `ctx.identity`, `ctx.actor`, `ctx.prefs`, `ctx.env` (identity, iam, state, gen augment
   `RouteServices`), `RouteLoaderRun.tenancy` (tenancy's testing part), the `Form submit={...}` adapter (ui).
 - Gen: `registerRoutes(routeTable)` in the generated entry (the console sample does not call it yet), `toRoot({ keys })`
-  for client-rendered apps, `useLayoutLoader(TabsLayout, session.status)` in the mobile tree, panel and settings
-  packages calling `registerRoutePages`, experience calling `registerDocumentResolver`.
+  for client-rendered apps, `useLayoutLoader(TabsLayout, session.status)` in the mobile tree, settings calling
+  `registerRoutePages` and the entry calling panel's `registerPanelPages`, experience calling
+  `registerDocumentResolver`; gen's test setup calling `registerRoutes(routeTable)` and registering the testing parts.
+- Testing (R4): the native `renderRoute` (React Navigation) is not built: `./testing` imports React Router, so a native
+  helper of the same name needs its own entry (ADR 0294 decision 15 allows none today) or another name; owner call.
+  `renderRoute` runs only the route's own loader (the layout's data comes in as `layoutData`), and `renderLayout` needs
+  `component` (gen binds no layout pages). The template's house options (`locale`, `flags`, `session` as providers) and
+  read-backs (`router`, `i18n`, `navigation`, `direction`) need the owning packages' providers and testing parts.
+- Template moves (STA-344): `renderRoute`, `renderLayout`, `runRouteLoader`, `runRouteSubmit` and `routeMeta` are
+  imported from `@stackra/navigation/testing`, not `@stackra/testing/react`; the mobile `runLoader` is `runRouteLoader`;
+  `renderRoute`/`renderLayout`'s `route:` option is `path:`; a run's answer is `.result` (`(await
+runRouteLoader(X, input)).result.redirect`, `(await runRouteSubmit(X, input)).result.status`); `routeMeta` takes
+  `container`.
 - Not built: the navigation package's own lang catalogue (the boundary and screen strings are English shortcuts), the
   `ShortcutContext` `navigate` member (needs a shortcuts dependency the row does not list), entitlement and
   module-install gating of the navigation tree.
+
+## Reconciliation 2026-10-25 (R4)
+
+- `runLoader` became `runRouteLoader` (the template's web name wins); `runRouteSubmit`, `routeMeta`, `renderRoute` and
+  `renderLayout` joined it (FR-006). `RouteLoaderInput` gained `path`, `search`, `container` and `services`.
+- The breadcrumb trail moved here from panel, and `toResource` checks panel's `edit` page instead of `update` (FR-007).
+  The route adapters do not publish crumbs yet.
 
 ## Status history
 

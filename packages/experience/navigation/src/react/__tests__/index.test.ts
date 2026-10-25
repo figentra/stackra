@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `./react` entry: every symbol the template imports from
  *          `@stackra/navigation/react` (the links and hooks, `Outlet`, `RouteForm`, the root boundary and the old
- *          `./router` adapters folded here) plus `registerRoutePages`, and nothing else.
+ *          `./router` adapters folded here) plus `registerRoutePages` and the breadcrumb trail panel's shell re-uses,
+ *          and nothing else.
  * Boundary: test only; imports the stand-in barrel through its `#react` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15); ADR 0303 (decision 1).
@@ -15,6 +16,7 @@ import * as react from "#react/index";
 describe("@stackra/navigation/react", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(react).sort()).toEqual([
+      "BreadcrumbsProvider",
       "Link",
       "NavLink",
       "Outlet",
@@ -29,6 +31,8 @@ describe("@stackra/navigation/react", () => {
       "toRoot",
       "toRoute",
       "toSettingsPage",
+      "useBreadcrumb",
+      "useBreadcrumbs",
       "useHref",
       "useLayoutData",
       "useLocaleHref",

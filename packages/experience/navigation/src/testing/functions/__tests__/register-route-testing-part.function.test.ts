@@ -12,7 +12,7 @@ import { Layout } from "#core/bases/layout.base";
 import type { LayoutContext } from "#core/types/layout-context.type";
 import { ROUTE_TESTING_PARTS } from "#testing/constants/route-testing-parts.constant";
 import { registerRouteTestingPart } from "#testing/functions/register-route-testing-part.function";
-import { runLoader } from "#testing/functions/run-loader.function";
+import { runRouteLoader } from "#testing/functions/run-route-loader.function";
 
 class EchoLayout extends Layout {
   override loader(ctx: LayoutContext<this>) {
@@ -29,9 +29,9 @@ describe("registerRouteTestingPart", () => {
     registerRouteTestingPart("@stackra/identity", ({ input }) => ({
       context: { session: input["session"] ?? "anonymous" },
     }));
-    expect((await runLoader(EchoLayout)).result).toBe("anonymous");
+    expect((await runRouteLoader(EchoLayout)).result).toBe("anonymous");
     registerRouteTestingPart("@acme/override", () => ({ context: { session: "override" } }));
-    expect((await runLoader(EchoLayout)).result).toBe("override");
+    expect((await runRouteLoader(EchoLayout)).result).toBe("override");
   });
 
   it("replaces a name, moving it last, and disposes only its own part", async () => {
@@ -39,10 +39,10 @@ describe("registerRouteTestingPart", () => {
     registerRouteTestingPart("b", () => ({ context: { session: "b" } }));
     const again = registerRouteTestingPart("a", () => ({ context: { session: "a2" } }));
     expect([...ROUTE_TESTING_PARTS.keys()]).toEqual(["b", "a"]);
-    expect((await runLoader(EchoLayout)).result).toBe("a2");
+    expect((await runRouteLoader(EchoLayout)).result).toBe("a2");
     first();
     expect(ROUTE_TESTING_PARTS.has("a")).toBe(true);
     again();
-    expect((await runLoader(EchoLayout)).result).toBe("b");
+    expect((await runRouteLoader(EchoLayout)).result).toBe("b");
   });
 });
