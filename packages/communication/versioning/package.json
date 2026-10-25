@@ -1,0 +1,71 @@
+{
+  "name": "@stackra/versioning",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stackra versioning: the Change kind base for integration event versions and dated response changes, the transforms that serve an older version (downgrade, upgrade), and the Stackra-Version resolution with its Deprecation and Sunset headers",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/communication/versioning"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#core/*": [
+      "./src/core/*",
+      "./src/core/*.ts",
+      "./src/core/*/index.ts"
+    ]
+  },
+  "exports": {
+    ".": {
+      "@stackra/source": "./src/core/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/errors": "workspace:*",
+    "@stackra/events": "workspace:*",
+    "@stackra/validation": "workspace:*"
+  },
+  "devDependencies": {
+    "@stackra/testing": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:quality",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality",
+    "zod": "catalog:"
+  }
+}

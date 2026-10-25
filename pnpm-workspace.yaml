@@ -19,6 +19,9 @@ catalogMode: strict
 # Refuse an unsupported Node (engines). Lives here, not in .npmrc, so npm stops warning about pnpm-only keys;
 # auto-install-peers, shamefully-hoist=false and strict-peer-dependencies=false are pnpm defaults.
 engineStrict: true
+# Several agents share one checkout: a `pnpm <script>` must never install on its own (a failed auto-install empties
+# node_modules for everyone); it warns, and the integrator runs `pnpm install` once per wave.
+verifyDepsBeforeRun: warn
 
 # Default catalog (`catalog:`): shared by many members, no reason to fork a version per topic.
 catalog:
@@ -29,6 +32,31 @@ catalog:
   undici: 8.12.2
   # Runtime schemas: @stackra/validation, config and money, and the X$ schemas gen emits (ADR 0095).
   zod: 4.6.7
+  # ICU messages for @stackra/i18n: CLDR plural categories (all six for Arabic), select, number and date
+  # arguments behind formatMessage and useTranslation. BSD-3-Clause.
+  intl-messageformat: 12.1.3
+  # The S3/R2/MinIO disk of @stackra/filesystem (S3FileSystemDriver) and its SigV4 presigned temporary URLs.
+  # Apache-2.0; bump the pair together.
+  "@aws-sdk/client-s3": 3.1149.0
+  "@aws-sdk/s3-request-presigner": 3.1149.0
+  # @stackra/model on the server only (ADR 0014, 0227): Collection, Ref, custom Types and the Money embeddable.
+  # The version the STA-335 entity-schema spike proved. MIT.
+  "@mikro-orm/core": 7.2.5
+  # The Postgres driver of @stackra/database beside core; bump the pair together. MIT.
+  "@mikro-orm/postgresql": 7.2.5
+  # @stackra/database ./testing: Factory data (MIT) and the usePostgres Testcontainers fixture (MIT, ADR 0269 d3).
+  "@faker-js/faker": 10.6.0
+  "@testcontainers/postgresql": 12.2.0
+  # The server-state cache of @stackra/query (ADR 0079 decision 1); the React adapter is ours. MIT, no dependencies.
+  "@tanstack/query-core": 5.104.1
+  # AI SDK core for @stackra/ai (ADR 0155, 0100; owner R-67 decide()). Apache-2.0; providers and the MCP gateway live in the ai service.
+  ai: 7.0.137
+  # The CRDT behind @stackra/collaboration shared documents (ADR 0270), kept behind its contracts port. MIT.
+  yjs: 13.6.33
+  # @stackra/seo Open Graph cards: satori lays the card out to SVG, resvg rasterises it to PNG. Both MPL-2.0.
+  # satori stays on 0.36.0, the last release that exports `satori/yoga.wasm`, which the Worker driver imports.
+  satori: 0.36.0
+  "@resvg/resvg-wasm": 2.6.2
 
 catalogs:
   # Toolchain that builds TypeScript output — a different risk/cadence than lint/format/test tools.
@@ -47,6 +75,8 @@ catalogs:
   # does not ship yet. Members keep `tsc` from catalog:build; their own node_modules/.bin comes first on PATH.
   tooling:
     typescript: 6.0.3
+    # The TypeScript 6 fallback host of @stackra/gen discovery (ADR 0294 d26), installed beside TypeScript 7.
+    typescript6: npm:typescript@6.0.3
   # Format/lint/test tools every member's scripts run.
   quality:
     oxlint: 1.86.0
@@ -54,6 +84,8 @@ catalogs:
     vitest: 5.0.5
     "@vitest/coverage-v8": 5.0.3
     knip: 6.41.0
+    # Test-only IndexedDB for @stackra/platform's share inbox. Apache-2.0.
+    fake-indexeddb: 6.2.5
   # Release tooling: changesets, commitlint, git hooks.
   release:
     "@changesets/cli": 3.0.3
@@ -81,6 +113,10 @@ catalogs:
     "@internationalized/date": 3.12.4
     "@testing-library/react": 16.3.3
     "@testing-library/dom": 10.4.2
+    # @stackra/testing's ./react and ./native entries (STA-348): the user-event companion of Testing Library and the
+    # React Native renderer, newest stable releases at least two weeks old. MIT.
+    "@testing-library/user-event": 14.6.7
+    "@testing-library/react-native": 14.1.0
     jsdom: 30.1.0
     # Code-based routing for the console and every Vite app (no file routing anywhere).
     react-router: 7.18.4
@@ -118,6 +154,17 @@ catalogs:
     lucide-react: 1.54.0
     # Form state for @stackra/ui FormField (ADR 0055, accepted by ADR 0303); newest release at least 14 days old.
     react-hook-form: 7.89.0
+    # Web and desktop keyboard driver of @stackra/shortcuts (owner decision R-66); pre-1.0, so bump deliberately. MIT.
+    "@tanstack/hotkeys": 0.11.0
+    # @stackra/vite-plugin's optional build plugins, each loaded only for its target. All MIT.
+    # vite-plugin-pwa: the PWA injectManifest service worker (ADR 0255).
+    vite-plugin-pwa: 2.0.0
+    # Workers runtime for server rendering (ADR 0297); 1.63.0 is the release whose wrangler peer matches catalog:deploy.
+    "@cloudflare/vite-plugin": 1.63.0
+    # React Router framework mode (ADR 0165, 0297); kept on the react-router version above.
+    "@react-router/dev": 7.18.4
+    # Uploads hidden source maps to Sentry; reads SENTRY_AUTH_TOKEN itself.
+    "@sentry/vite-plugin": 5.4.1
   # Expo SDK 57 app (apps/mobile). Pins match academorix/apps/mobile; react stays on 19.2.3 because
   # react-native 0.86 renders with that exact renderer version. Bump with `expo install --check`.
   mobile:
@@ -140,6 +187,8 @@ catalogs:
     expo-system-ui: 57.0.4
     expo-glass-effect: 57.0.4
     expo-blur: 57.0.3
+    # Push permission and tokens for @stackra/platform/native (optional peer). MIT.
+    expo-notifications: 57.0.22
     babel-preset-expo: 57.0.16
     react: 19.2.3
     react-dom: 19.2.3
@@ -335,6 +384,17 @@ allowBuilds:
   # Cloudflare's Workers runtime, pulled in by wrangler (workers/static): its postinstall checks the platform binary that
   # `wrangler dev` runs. `wrangler deploy` does not need it, but a skipped check leaves `pnpm dev` broken.
   workerd: true
+  # @stackra/filesystem needs only electron's types (ElectronFileSystemDriver); a library never runs the binary.
+  # The first desktop app member flips this to true.
+  electron: false
+  # Pulled in by @sentry/vite-plugin: its postinstall only re-downloads the CLI binary that the platform
+  # package (@sentry/cli-<os>) already installs as an optional dependency.
+  "@sentry/cli": false
+  # Pulled in by @testcontainers/postgresql: its install only builds an optional native cpu-features binding.
+  ssh2: false
+  cpu-features: false
+  # Pulled in by @testcontainers/postgresql too: protobufjs wants a postinstall only for its CLI.
+  protobufjs: false
   # HeroUI Pro (ADR 0310): the postinstall downloads the licensed build from HeroUI's CDN (a CLI login locally,
   # HEROUI_AUTH_TOKEN in CI); without it the package is an empty shell.
   "@heroui-pro/react": true

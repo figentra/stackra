@@ -1,12 +1,23 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the public surface of the `./native` entry of @stackra/navigation, the native router
- *          bindings for the Stackra Design System on React Navigation 7: the route overlay and its screen options,
- *          the `Link` seam and the leave confirmation guard. `stackra gen` replaces this file (STA-339).
- * Boundary: re-exports only; no logic. The overlay's own types are in `./contracts`.
+ * Purpose: Stand-in barrel: the `./native` entry of @stackra/navigation (the React Navigation adapters: `toScreen` and
+ *          `useLayoutLoader` for the generated navigation tree, the native `useNavigate`, `useRouteReload`, and the
+ *          `ContextMenu` a menu class is bound to a value with) until `stackra gen` writes the entry barrels (STA-339).
+ * Boundary: names each re-export and declares nothing. Imports `.` internals one way; nothing here touches the DOM or
+ *           React Router. `RouteProps` is exported from `.` only (registry A3).
  * Runtime: react-native
- * Governing contract: ADR 0294 (decision 15); ADR 0317.
+ * Governing contract: ADR 0317 (route overlay); ADR 0294 (decision 15); ADR 0165 (React Navigation; expo-router rejected); the STA-347 stand-in
+ *                     barrel decision.
  */
+export { ContextMenu } from "#native/context-menu/context-menu";
+export type { ContextMenuProps } from "#native/context-menu/context-menu.props";
+export type { LayoutLoaderState } from "#native/layout-loader/layout-loader-state.type";
+export { useLayoutLoader } from "#native/layout-loader/use-layout-loader";
+export type { NativeNavigate } from "#native/navigate/native-navigate.type";
+export { useNavigate } from "#native/navigate/use-navigate";
+export type { RouteReload } from "#native/route-reload/route-reload.type";
+export { useRouteReload } from "#native/route-reload/use-route-reload";
+export { toScreen } from "#native/screen/to-screen.function";
 export {
   ReactNavigationProvider,
   type ReactNavigationProviderProps,

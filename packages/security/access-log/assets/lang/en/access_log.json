@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "access_log_entry": {
+      "purge": "Purge old access records"
+    }
+  },
+  "errors": {
+    "access_log_write_failed": {
+      "message": "Access log unavailable; the read was served."
+    }
+  }
+}

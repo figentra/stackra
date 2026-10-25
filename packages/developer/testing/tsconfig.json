@@ -1,0 +1,6 @@
+// TypeScript project for this member: extends exactly one @stackra/typescript-config preset and sets nothing else
+// (pnpm validate checks the preset). tsc reads tsconfig.json as JSONC, so the name stays .json.
+// `library`: no decorators and no parameter properties; it adds the node and vitest types, and the DOM lib the
+// `./react` entry's Testing Library types need.
+// Owner: release-operations · Secrets: forbidden
+{ "extends": "@stackra/typescript-config/library" }

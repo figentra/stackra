@@ -1,0 +1,7 @@
+// TypeScript project for this member: extends exactly one @stackra/typescript-config preset and sets nothing else
+// (pnpm validate checks the preset). tsc reads tsconfig.json as JSONC, so the name stays .json.
+// `decorators`: no decorators of its own and no TSX, but a `Change` is a shape, so it typechecks
+// @stackra/validation's source, whose shapes carry legacy field decorators (ADR 0005). The source keeps to erasable
+// syntax (no parameter properties), because apps typecheck it under erasableSyntaxOnly.
+// Owner: release-operations · Secrets: forbidden
+{ "extends": "@stackra/typescript-config/decorators" }

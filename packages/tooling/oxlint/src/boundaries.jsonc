@@ -68,7 +68,7 @@
               {
                 "group": [
                   "**/apps/**",
-                  "**/services/**",
+                  ".*/**/services/**", // relative only: a #core/services/... subpath is a package group, not the tier
                   "**/workers/**",
                   "encore.dev",
                   "encore.dev/*",
@@ -96,7 +96,7 @@
               {
                 "group": [
                   "**/apps/**",
-                  "**/services/**",
+                  ".*/**/services/**", // relative only: a #core/services/... subpath is a package group, not the tier
                   "**/workers/**",
                   "encore.dev",
                   "encore.dev/*",
@@ -140,7 +140,7 @@
               {
                 "group": [
                   "**/apps/**",
-                  "**/services/**",
+                  ".*/**/services/**", // relative only: a #core/services/... subpath is a package group, not the tier
                   "**/workers/**",
                   "encore.dev",
                   "encore.dev/*",
@@ -182,7 +182,7 @@
               {
                 "group": [
                   "**/apps/**",
-                  "**/services/**",
+                  ".*/**/services/**", // relative only: a #core/services/... subpath is a package group, not the tier
                   "**/workers/**",
                   "encore.dev",
                   "encore.dev/*",
@@ -216,7 +216,7 @@
               {
                 "group": [
                   "**/apps/**",
-                  "**/services/**",
+                  ".*/**/services/**", // relative only: a #core/services/... subpath is a package group, not the tier
                   "**/workers/**",
                   "encore.dev",
                   "encore.dev/*",

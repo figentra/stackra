@@ -1,0 +1,38 @@
+/**
+ * Stackra file contract:
+ * Purpose: unit tests of `LoyaltyKitOptions`: a registered shape whose initializers are the package defaults, built
+ *          with `create`.
+ * Boundary: test only.
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 26); ADR 0328.
+ */
+import { describe, expect, it } from "@stackra/testing";
+import { Schema } from "@stackra/validation";
+
+import { LoyaltyKitOptions } from "#core/schemas/loyalty-kit-options.schema";
+
+describe("LoyaltyKitOptions", () => {
+  it("is a shape whose initializers are the defaults", () => {
+    const options = new LoyaltyKitOptions();
+    expect(options).toBeInstanceOf(Schema);
+    expect({ ...options }).toEqual({
+      ledger: "postgres",
+      ledgers: {},
+      pointValueMinor: 1,
+      earnPerMinor: 0.01,
+      maxRedeemPercent: 50,
+    });
+  });
+
+  it("builds through its registered schema", () => {
+    const options = LoyaltyKitOptions.create({
+      ledger: "memory",
+      ledgers: {},
+      pointValueMinor: 2,
+      earnPerMinor: 0.1,
+      maxRedeemPercent: 30,
+    });
+    expect(options.ledger).toBe("memory");
+    expect(options.pointValueMinor).toBe(2);
+  });
+});

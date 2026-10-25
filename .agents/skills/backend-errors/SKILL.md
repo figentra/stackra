@@ -37,7 +37,7 @@ interface ErrorEnvelope {
 | `internal`             | 500  | A bug                                                         |
 
 Refusal codes from the pipeline are snake_case and fixed: `module_disabled`, `entitlement_missing`, `flag_off`,
-`consent_missing`, `rate_limited`, `region_unsupported`, `maintenance`, `step_up_required`, `limit_exceeded` (ADR 0137).
+`consent_missing`, `rate_limited`, `region_unsupported`, `maintenance`, `step_up_required`, `limit_reached` (ADR 0137).
 
 ## Worked example
 

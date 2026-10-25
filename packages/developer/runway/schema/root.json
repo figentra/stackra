@@ -1,0 +1,586 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://static.stackra.figentra.com/schemas/runway/root.json",
+  "$comment": "Stackra file contract: Purpose: the shape of the ROOT runway.yaml, the infrastructure itself. Boundary: shape only; `stackra infra`, `stackra gen`, `stackra dev` and the runway workflows read the file. Member facts live in member runways (runway/app.json, runway/service.json). Runtime: node (editors and validators). Governing contract: ADR 0168 (one schema-validated runway.yaml, its sections), ADR 0169 and ADR 0296 (topology groups), ADR 0170 (environments, release), ADR 0171 (ref: values), ADR 0173 (secrets), ADR 0175 (edge), ADR 0184 (observability), ADR 0238 (one database server per environment), ADR 0237 (gateway secret names), ADR 0299 (the docs destination).",
+  "title": "runway.yaml (root)",
+  "description": "The root runway: destinations per environment, shared resources, provider target blocks, the edge, the secrets defaults, the release policy and the defaults members inherit and the topology of each environment (ADR 0168, 0170, 0173, 0296). Members state what they need in their own runway.yaml; the root says where they run and how they are packed. No secret value. `ref:<path>` resolves from the private stacks repo's Pulumi config at infra time (ADR 0171 d4).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "project", "environments"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "The schema reference `stackra validate` reads (`@stackra/runway/schema/root.json`). Editors use the `# yaml-language-server: $schema=` comment instead.",
+      "examples": ["@stackra/runway/schema/root.json"]
+    },
+    "version": {
+      "const": 3,
+      "description": "Runway format version. Version 3 moves placement and sizes into the root topology groups (ADR 0296)."
+    },
+    "project": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Prefix for stacks (`<project>/staging`), images (`<project>-core`), Workers and tags.",
+      "examples": ["acme-platform"]
+    },
+    "providers": {
+      "type": "object",
+      "description": "Every account and vendor, named once. Values are public ids or `ref:<path>`; never a secret.",
+      "$comment": "Typed for the providers whose shape the runway tools rely on; any other provider is an object of ids so a new vendor needs no schema change.",
+      "properties": {
+        "aws": {
+          "type": "object",
+          "description": "AWS accounts, Pulumi state, ECR and cost controls.",
+          "properties": {
+            "region": {
+              "type": "string",
+              "description": "The one region (ADR 0186). A tenant's region is immutable (ADR 0210 d4).",
+              "examples": ["me-central-1"]
+            },
+            "accounts": {
+              "type": "object",
+              "description": "Account role → account id or `ref:` (shared, nonprod, prod).",
+              "additionalProperties": {
+                "$ref": "#/$defs/value"
+              }
+            },
+            "state": {
+              "type": "object",
+              "description": "Pulumi state: the S3 bucket and KMS key (ADR 0171 d4)."
+            },
+            "ecr": {
+              "type": "object",
+              "description": "Image registry: the owning account and the scan, SBOM and signing tools."
+            },
+            "budgets": {
+              "type": "object",
+              "description": "Cost alerts: percentage thresholds and the point non-production stops."
+            },
+            "requiredTags": {
+              "type": "array",
+              "description": "Tags every resource must carry.",
+              "items": {
+                "type": "string"
+              },
+              "examples": [["env", "service", "tenant"]]
+            }
+          }
+        },
+        "encore": {
+          "type": "object",
+          "description": "Encore Cloud.",
+          "properties": {
+            "app": {
+              "type": "string",
+              "description": "Encore Cloud app id (public)."
+            }
+          }
+        },
+        "cloudflare": {
+          "type": "object",
+          "description": "Cloudflare account and DNS zones (ADR 0175).",
+          "properties": {
+            "accountId": {
+              "$ref": "#/$defs/value",
+              "description": "Account id or `ref:`."
+            },
+            "zones": {
+              "type": "object",
+              "description": "Zone name → zone id or `ref:`. Member runways name hosts under these zones.",
+              "additionalProperties": {
+                "$ref": "#/$defs/value"
+              }
+            }
+          }
+        },
+        "github": {
+          "type": "object",
+          "description": "GitHub org, repository and deployment environments with their reviewers (ADR 0170 d6)."
+        },
+        "infisical": {
+          "type": "object",
+          "description": "The secret store (ADR 0173).",
+          "properties": {
+            "domain": {
+              "type": "string",
+              "pattern": "^https://",
+              "description": "Infisical instance URL.",
+              "examples": ["https://eu.infisical.com"]
+            },
+            "workspace": {
+              "$ref": "#/$defs/value",
+              "description": "Infisical project id or `ref:`."
+            },
+            "environments": {
+              "type": "object",
+              "description": "Runway environment → Infisical environment slug.",
+              "propertyNames": {
+                "$ref": "#/$defs/envName"
+              },
+              "additionalProperties": {
+                "type": "string",
+                "description": "Infisical environment slug.",
+                "examples": ["prod"]
+              }
+            },
+            "paths": {
+              "type": "object",
+              "description": "Named secret folders (runtime, ci, agents). A member may name `path: ci`.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^/",
+                "description": "Folder path in the Infisical project.",
+                "examples": ["/runtime"]
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": {
+        "type": "object",
+        "description": "Another vendor: public ids or `ref:` values."
+      }
+    },
+    "environments": {
+      "type": "object",
+      "description": "Per-environment destinations, shared resources and member defaults. Exactly these four names in every tool (ADR 0170 DP5; `local` is `dev`).",
+      "propertyNames": {
+        "$ref": "#/$defs/envName"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/environment"
+      }
+    },
+    "targets": {
+      "type": "object",
+      "description": "Provider shape per destination, selected by `environments.<env>.destinations.*`.",
+      "propertyNames": {
+        "$ref": "#/$defs/destination"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "description": "Settings of that destination (cloud, compute, registry, signing, rollout)."
+      }
+    },
+    "edge": {
+      "type": "object",
+      "description": "The edge in front of every public host: proxying, WAF, bot mode, per-IP rate limit, TLS, the API host and the analytics proxy path (ADR 0175, ADR 0237 layer 1)."
+    },
+    "secrets": {
+      "type": "object",
+      "description": "Vault defaults. Secret NAMES are declared by members (ADR 0168 d5, 0173, 0257).",
+      "additionalProperties": false,
+      "properties": {
+        "sync": {
+          "enum": ["on-deploy"],
+          "description": "When runway copies Infisical values into the runtimes (Encore, Workers, EAS, compose, Kubernetes)."
+        },
+        "defaultPath": {
+          "type": "string",
+          "description": "The `providers.infisical.paths` key a member secret uses unless it names another.",
+          "examples": ["runtime"]
+        },
+        "ci": {
+          "type": "array",
+          "description": "CI-only secret names the release workflows read over OIDC; never given to a runtime.",
+          "items": {
+            "$ref": "#/$defs/secretName"
+          },
+          "uniqueItems": true
+        },
+        "gateway": {
+          "type": "array",
+          "description": "Runtime secret names the generated API gateway reads (ADR 0237). The gateway belongs to no member, so its names sit here.",
+          "items": {
+            "$ref": "#/$defs/secretName"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "release": {
+      "type": "object",
+      "description": "Release policy: the promotion unit, gates, strategy, rollback, records, build order and on-prem upgrades (ADR 0170)."
+    },
+    "observability": {
+      "type": "object",
+      "description": "Observability defaults: log retention, heartbeats and when SLOs start (ADR 0184)."
+    }
+  },
+  "$defs": {
+    "envName": {
+      "enum": ["dev", "preview", "staging", "production"],
+      "description": "Environment name (ADR 0170 DP5)."
+    },
+    "secretName": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*$",
+      "description": "Secret name in SCREAMING_SNAKE (ADR 0231).",
+      "examples": ["TURBO_TOKEN"]
+    },
+    "value": {
+      "type": ["string", "number", "boolean"],
+      "description": "A public value, or `ref:<path>` resolved from the stacks repo at infra time (ADR 0171 d4)."
+    },
+    "destination": {
+      "type": "string",
+      "description": "Where a kind of member runs. Each name has a block under `targets`.",
+      "examples": [
+        "compose",
+        "vite-dev",
+        "expo-dev",
+        "encore-cloud",
+        "aws-ecs",
+        "helm",
+        "cloudflare-workers",
+        "eas",
+        "electron-release"
+      ]
+    },
+    "resources": {
+      "type": "object",
+      "description": "Compute size and scaling of one process.",
+      "properties": {
+        "cpu": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "vCPUs per instance.",
+          "examples": [0.25, 1]
+        },
+        "memory": {
+          "type": "string",
+          "pattern": "^[0-9]+(\\.[0-9]+)?(Mi|Gi)$",
+          "description": "Memory per instance, in Mi or Gi.",
+          "examples": ["512Mi", "2Gi"]
+        },
+        "instances": {
+          "type": "object",
+          "description": "Instance count bounds.",
+          "required": ["min", "max"],
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Fewest instances kept running."
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Most instances scaling may add."
+            }
+          }
+        },
+        "scaling": {
+          "type": "object",
+          "description": "Autoscaling rule.",
+          "properties": {
+            "metric": {
+              "type": "string",
+              "description": "Metric that drives scaling.",
+              "examples": ["cpu"]
+            },
+            "target": {
+              "type": "number",
+              "description": "Target value of the metric, in percent for cpu."
+            }
+          }
+        }
+      }
+    },
+    "topology": {
+      "type": "object",
+      "description": "How the service members of this environment are packed into processes (ADR 0296 d2). In a grouped environment every service member is placed in exactly one group; `stackra validate` checks that.",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "enum": ["monolith", "grouped", "split"],
+          "description": "One process for every service, named groups, or one process per service."
+        },
+        "isolate": {
+          "type": "array",
+          "description": "Members that keep their own database server and network policy (ADR 0296 d2). A member runway cannot undo it.",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "examples": [["identity", "payments"]]
+        },
+        "default": {
+          "type": "string",
+          "description": "The group of every service member no group lists. Without it, an unplaced member fails `stackra validate`.",
+          "examples": ["core"]
+        },
+        "groups": {
+          "type": "object",
+          "description": "Group name → its members and size. Each group is a process allocation inside the one generated Encore app (ADR 0296 d3).",
+          "additionalProperties": {
+            "$ref": "#/$defs/group"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "grouped"
+              }
+            }
+          },
+          "then": {
+            "required": ["groups"]
+          }
+        }
+      ]
+    },
+    "group": {
+      "type": "object",
+      "description": "One process allocation: the members it runs, their size and where their background work runs.",
+      "additionalProperties": false,
+      "required": ["members"],
+      "properties": {
+        "members": {
+          "type": "array",
+          "description": "The service member keys this group runs.",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "examples": [["commerce", "notifications"]]
+        },
+        "cpu": {
+          "$ref": "#/$defs/resources/properties/cpu"
+        },
+        "memory": {
+          "$ref": "#/$defs/resources/properties/memory"
+        },
+        "instances": {
+          "$ref": "#/$defs/resources/properties/instances"
+        },
+        "scaling": {
+          "$ref": "#/$defs/resources/properties/scaling"
+        },
+        "workers": {
+          "type": "object",
+          "description": "Background work (queues, crons, the outbox relay) of this group's members.",
+          "additionalProperties": false,
+          "required": ["split"],
+          "properties": {
+            "split": {
+              "type": "boolean",
+              "description": "Run background work in its own process, which scales apart from request handling."
+            },
+            "cpu": {
+              "$ref": "#/$defs/resources/properties/cpu"
+            },
+            "memory": {
+              "$ref": "#/$defs/resources/properties/memory"
+            },
+            "instances": {
+              "$ref": "#/$defs/resources/properties/instances"
+            }
+          }
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "description": "One environment of the root runway.",
+      "additionalProperties": false,
+      "properties": {
+        "destinations": {
+          "type": "object",
+          "description": "Where each kind of member runs. A member runway may override its own.",
+          "propertyNames": {
+            "enum": ["services", "web", "mobile", "desktop", "docs"]
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/destination"
+          }
+        },
+        "infra": {
+          "type": "object",
+          "description": "Dev only: the containers `stackra dev` brings (gateway, postgres, valkey, minio, zitadel, mailpit, otel-lgtm). A driver set to `memory` in every service removes its container.",
+          "additionalProperties": {
+            "type": "object",
+            "description": "One container: image, ports and when it starts."
+          }
+        },
+        "lanes": {
+          "type": "object",
+          "description": "Dev only: worktree N adds N × `portStep` to every dev port, member and infra.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Turn lanes on."
+            },
+            "portStep": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Port offset per lane.",
+              "examples": [100]
+            },
+            "from": {
+              "type": "string",
+              "description": "Environment variable holding the lane number.",
+              "examples": ["STACKRA_LANE"]
+            }
+          }
+        },
+        "https": {
+          "type": "object",
+          "description": "Dev only: a local CA and `<key>.localhost` names behind one proxy."
+        },
+        "proxy": {
+          "type": "object",
+          "description": "Dev only: routes by Host to member dev ports; needed only for `*.localhost` or https."
+        },
+        "encore": {
+          "type": "object",
+          "description": "Encore Cloud environment name, account and process allocation (`from-topology`: one allocation per topology group)."
+        },
+        "ttl": {
+          "type": "string",
+          "pattern": "^[0-9]+[hd]$",
+          "description": "Preview only: how long a per-pull-request environment lives.",
+          "examples": ["7d"]
+        },
+        "data": {
+          "type": "string",
+          "description": "Preview only: which data a preview gets.",
+          "examples": ["synthetic"]
+        },
+        "shared": {
+          "type": "object",
+          "description": "Resources shared by every member: ONE database server per environment (ADR 0238 d1), the cache cluster, the queue provider, networking and bucket defaults.",
+          "additionalProperties": false,
+          "properties": {
+            "network": {
+              "type": "object",
+              "description": "VPC and load balancer."
+            },
+            "database": {
+              "type": "object",
+              "description": "The Postgres server: engine, class, storage, Multi-AZ, backups, extensions and pooling."
+            },
+            "cache": {
+              "type": "object",
+              "description": "The cache cluster: engine, node type and replicas."
+            },
+            "queues": {
+              "type": "object",
+              "description": "The queue provider and dead-letter default."
+            },
+            "buckets": {
+              "type": "object",
+              "description": "Defaults for every member bucket: versioning and lifecycle."
+            }
+          }
+        },
+        "defaults": {
+          "type": "object",
+          "description": "Defaults every member of that kind inherits in this environment.",
+          "additionalProperties": false,
+          "properties": {
+            "service": {
+              "type": "object",
+              "description": "Service member defaults. Placement is `topology.default` and sizes live in the topology groups (ADR 0296).",
+              "additionalProperties": false,
+              "properties": {
+                "database": {
+                  "type": "object",
+                  "description": "Defaults of every service's logical database (ADR 0238).",
+                  "additionalProperties": false,
+                  "properties": {
+                    "poolBudget": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "description": "Database connections one service may hold on the shared server unless its runway says otherwise (ADR 0238)."
+                    }
+                  }
+                },
+                "config": {
+                  "type": "object",
+                  "description": "The config layer every service starts from in this environment, keyed by config key, driver choices included (ADR 0146, 0296 d1). A member runway's `config` overrides one key.",
+                  "additionalProperties": {
+                    "type": "object",
+                    "description": "Overrides of one config class."
+                  }
+                }
+              }
+            },
+            "app": {
+              "type": "object",
+              "description": "App member defaults (dev server flags, Workers observability)."
+            }
+          }
+        },
+        "topology": {
+          "$ref": "#/$defs/topology"
+        },
+        "domains": {
+          "type": "object",
+          "description": "How member hosts are named in this environment.",
+          "properties": {
+            "zone": {
+              "type": "string",
+              "description": "A zone from `providers.cloudflare.zones`."
+            },
+            "pattern": {
+              "type": "string",
+              "description": "Host pattern; `${member}` and `${pr}` are expanded.",
+              "examples": ["${member}-pr-${pr}.preview", "${member}.staging"]
+            },
+            "tenantDomains": {
+              "type": "string",
+              "description": "How tenant custom domains are served.",
+              "examples": ["cloudflare-for-saas"]
+            }
+          }
+        },
+        "deploy": {
+          "type": "object",
+          "description": "What triggers a deploy and what gates it (ADR 0170).",
+          "properties": {
+            "on": {
+              "enum": ["pull-request", "merge-to-main", "promote"],
+              "description": "Trigger: each pull request, each merge to main, or `runway promote <sha>`."
+            },
+            "gate": {
+              "type": "string",
+              "description": "Post-deploy gate (DP24).",
+              "examples": ["health"]
+            },
+            "approval": {
+              "type": "string",
+              "description": "Who approves a promotion.",
+              "examples": ["github-environment"]
+            }
+          }
+        },
+        "mobile": {
+          "type": "object",
+          "description": "Mobile release defaults members inherit.",
+          "properties": {
+            "channel": {
+              "type": "string",
+              "description": "EAS update channel."
+            }
+          }
+        },
+        "desktop": {
+          "type": "object",
+          "description": "Desktop release defaults members inherit.",
+          "properties": {
+            "channel": {
+              "type": "string",
+              "description": "electron-updater channel; `latest` is stable (ADR 0254).",
+              "examples": ["beta", "latest"]
+            }
+          }
+        }
+      }
+    }
+  }
+}

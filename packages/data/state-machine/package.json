@@ -1,0 +1,72 @@
+{
+  "name": "@stackra/state-machine",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stackra state machines: the StateMachine<Model>({ field, history }) kind base and the @Transition method decorator; a transition checks its from states, runs the body in the caller's unit of work, writes the to state and records the history; no XState",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/data/state-machine"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#core/*": [
+      "./src/core/*",
+      "./src/core/*.ts",
+      "./src/core/*/index.ts"
+    ]
+  },
+  "exports": {
+    ".": {
+      "@stackra/source": "./src/core/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/errors": "workspace:*",
+    "@stackra/events": "workspace:*",
+    "@stackra/model": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@stackra/testing": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:quality",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  }
+}

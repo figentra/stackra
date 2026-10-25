@@ -59,7 +59,15 @@ test("drift: unnamed members, missing ticked paths, untouched docs at Done", () 
   assert.deepEqual(ok, []);
   assert.match(
     drift({ ...base, changed: ["packages/data/other/src/x.ts", docs] }).join(),
-    /changes `packages\/data\/other`, which Impact does not name/,
+    /changes `packages\/data\/other`, which no spec in the diff names in its Impact/,
+  );
+  assert.deepEqual(
+    drift({
+      ...base,
+      changed: ["packages/data/other/src/x.ts", docs],
+      named: new Set(["packages/data/other"]),
+    }),
+    [],
   );
   assert.match(
     drift({ ...base, changed: [] }).join(),

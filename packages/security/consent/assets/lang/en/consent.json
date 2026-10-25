@@ -1,0 +1,9 @@
+{
+  "enums": {
+    "consent_category": {
+      "necessary": "Necessary",
+      "analytics": "Product analytics",
+      "crash_replay": "Crash replays"
+    }
+  }
+}

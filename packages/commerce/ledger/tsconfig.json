@@ -1,0 +1,7 @@
+// TypeScript project for this member: extends exactly one @stackra/typescript-config preset and sets nothing else
+// (pnpm validate checks the preset). tsc reads tsconfig.json as JSONC, so the name stays .json.
+// `decorators`: the `@Journaled` class facet is a legacy decorator (ADR 0005), and this member typechecks the source of
+// @stackra/database and @stackra/model, whose decorators are too. No TSX. The source keeps to erasable syntax (no
+// parameter properties), because services typecheck it under erasableSyntaxOnly.
+// Owner: release-operations · Secrets: forbidden
+{ "extends": "@stackra/typescript-config/decorators" }

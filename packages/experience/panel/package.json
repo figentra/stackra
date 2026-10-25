@@ -1,0 +1,129 @@
+{
+  "name": "@stackra/panel",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stackra panel: the Resource<M, R>, Widget<Q>, Document({ kind }) and Panel kinds, the pure resource and widget builders that gen records, the metric shapes and the time range input, typed slots and placement layers, the data constructors gen writes into #stackra/resources, panels and slots, and the web dashboard, shell, breadcrumbs and action runner and the native widget slot",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/experience/panel"
+  },
+  "files": [
+    "dist",
+    "src",
+    "assets",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#core/*": [
+      "./src/core/*",
+      "./src/core/*.ts",
+      "./src/core/*/index.ts"
+    ],
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*.tsx",
+      "./src/native/*/index.ts"
+    ],
+    "#react/*": [
+      "./src/react/*",
+      "./src/react/*.ts",
+      "./src/react/*.tsx",
+      "./src/react/*/index.ts"
+    ]
+  },
+  "exports": {
+    ".": {
+      "@stackra/source": "./src/core/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./react": {
+      "@stackra/source": "./src/react/index.ts",
+      "types": "./dist/react.d.mts",
+      "default": "./dist/react.mjs"
+    },
+    "./native": {
+      "@stackra/source": "./src/native/index.ts",
+      "types": "./dist/native.d.mts",
+      "default": "./dist/native.mjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@stackra/actions": "workspace:*",
+    "@stackra/clients": "workspace:*",
+    "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/errors": "workspace:*",
+    "@stackra/experience": "workspace:*",
+    "@stackra/i18n": "workspace:*",
+    "@stackra/iam": "workspace:*",
+    "@stackra/icons": "workspace:*",
+    "@stackra/money": "workspace:*",
+    "@stackra/navigation": "workspace:*",
+    "@stackra/query": "workspace:*",
+    "@stackra/ui": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@stackra/testing": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@tanstack/query-core": "catalog:",
+    "@testing-library/dom": "catalog:frontend",
+    "@testing-library/react": "catalog:frontend",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:frontend",
+    "@types/react-dom": "catalog:frontend",
+    "@vitest/coverage-v8": "catalog:quality",
+    "jsdom": "catalog:frontend",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "react": "catalog:frontend",
+    "react-dom": "catalog:frontend",
+    "react-native": "catalog:mobile",
+    "react-router": "catalog:frontend",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "react": "catalog:frontend",
+    "react-native": "catalog:mobile",
+    "react-router": "catalog:frontend"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-native": {
+      "optional": true
+    },
+    "react-router": {
+      "optional": true
+    }
+  }
+}

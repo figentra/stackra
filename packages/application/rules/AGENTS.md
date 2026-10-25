@@ -1,0 +1,54 @@
+# AGENTS — @stackra/rules
+
+One condition engine for every rule consumer: the condition tree, the operator sets, fact sources, the check, the
+evaluator, versioned rule sets and the rule builder (ADR 0331). Member at `packages/application/rules` (`tier:lib`), in
+the programming model v3.1 shape (ADR 0294, 0305). Entries `./contracts`, `.`, `./node`, `./react`.
+
+## Where code goes
+
+| You are writing…                             | It goes in…                                               |
+| -------------------------------------------- | --------------------------------------------------------- |
+| A field type, an operator                    | `src/contracts/enums/`                                    |
+| A type a consumer registers                  | `src/contracts/types/`                                    |
+| A condition, fact or evaluation type         | `src/core/types/`                                         |
+| The registry, the evaluator, an operand rule | `src/core/{values,functions}/`                            |
+| A refusal, the event and its shipped schema  | `src/core/{errors,events,constants}/`                     |
+| The model, its service                       | `src/node/{models,services}/`                             |
+| A migration                                  | `src/node/database/migrations/<NNNN>-<name>.migration.ts` |
+| The rule builder and its parts               | `src/react/rule-builder/`                                 |
+| A word the builder shows                     | `assets/lang/{en,ar}/rules.json`                          |
+| A test                                       | `__tests__/<name>.<kind>.test.ts(x)` beside it            |
+
+## Entries and barrels
+
+- `src/{contracts,core,node,react}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
+  every new public file to its barrel and to that entry's `index.test.ts`.
+- `src/contracts/` is the leaf; `core` imports `contracts`; `node` and `react` import `core` through `#core/index`.
+- `.` stays isomorphic: nothing under `src/core/` imports an ORM or a Node API, so the builder previews evaluations.
+
+## This package
+
+- One evaluator (ADR 0331 decision 1): never write a second walk of a condition tree here or in a consumer.
+- Data only (decision 10): no `eval`, `Function`, template or regex from user input; a new operator is a case of
+  `Operator`, a place in `FieldType`'s sets, an operand rule in `fitsOperand` and a branch of `evaluate`, never data.
+- Deterministic (decision 6): the evaluator reads no clock, store or environment; the time is `EvaluateOptions.now`.
+- A missing fact matches `is_not_set` and nothing else; keep that one reading everywhere.
+- The engine returns results only; it never applies an outcome (decision 9).
+- No tenant vocabulary (R-59, ADR 0323): rule sets are keyed by the contracts `ScopeRef`.
+- Field error codes are snake_case and never echo a value; explanation steps never carry a fact's value.
+- Migrations are frozen literal snapshots that import only @stackra/database.
+- No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
+
+## Rules that fail the build
+
+- A package never imports an app, a service, `encore.dev`/`~encore/*`, or another package's `src/`.
+- Versions are `catalog:<name>` or `workspace:*` only.
+- Coverage meets the shared gate (lines/functions 80, branches 70).
+
+## PII
+
+| Data        | Where                                  | Handling                                                                          |
+| ----------- | -------------------------------------- | --------------------------------------------------------------------------------- |
+| Facts       | `Facts` passed to `evaluate`           | Possibly personal (an email, a location); read in memory, never stored or logged. |
+| Conditions  | `content.revisions.data` of a rule set | Scope configuration; may name a value such as an email domain; never logged.      |
+| Explanation | `Evaluation.steps`                     | Paths, fields and operators only; no fact value.                                  |

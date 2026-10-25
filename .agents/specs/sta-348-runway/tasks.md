@@ -1,0 +1,15 @@
+# Tasks: `@stackra/runway` wave 2
+
+**Input**: `.agents/specs/sta-348-runway/`
+
+- [x] T001 [US1] Spec, plan and tasks in `.agents/specs/sta-348-runway/` — covers: SC-001 — route: spec-draft
+- [x] T002 [US1] Member files (`package.json`, `tsconfig.json`, `turbo.jsonc`, `stackra.config.ts`, tool configs, README, LICENSE) in `packages/developer/runway` — covers: FR-001 — route: package — deps: T001
+- [x] T003 [US2] Enums and zod schemas in `packages/developer/runway/src/core/enums/` and `packages/developer/runway/src/core/constants/` — covers: FR-004, FR-005 — route: package — deps: T002
+- [x] T004 [US2] `parseRunway`, `checkPlacement`, `runwayJsonSchema`, errors and types in `packages/developer/runway/src/core/` — covers: FR-002 — route: package — deps: T003
+- [x] T005 [US2] Committed `packages/developer/runway/schema/root.json`, `packages/developer/runway/schema/app.json` and `packages/developer/runway/schema/service.json` from `runwayJsonSchema` — covers: SC-001 — route: package — deps: T004
+- [x] T006 [US1] Facts reader and `baseUrlOf`, `devPorts`, `updateFeed` in `packages/developer/runway/src/core/functions/` — covers: FR-002, FR-006 — route: package — deps: T003
+- [x] T007 [US1] `definesFor`, `devServer`, `readRunway` in `packages/developer/runway/src/node/` — covers: FR-003, FR-007 — route: package — deps: T006
+- [x] T008 [US1, US2] Tests beside every public symbol (`packages/developer/runway/src/**/__tests__/`) — covers: SC-002 — route: tests — deps: T007
+- [x] T009 [US1] Changeset `.changeset/runway-package.md` — covers: SC-001 — route: package — deps: T007
+- [x] T011 [US2] Reconcile with the canonical runway v3 schemas of PR #136: `packages/developer/runway/schema/root.json`, `packages/developer/runway/schema/app.json` and `packages/developer/runway/schema/service.json` become byte copies of `tools/schemas/runway-*.schema.json`, the zod in `packages/developer/runway/src/core/constants/` accepts and refuses what they do, the `runwayJsonSchema` test compares the normalised derivation, and `tools/scripts/validate-repository.mjs` checks the copies — covers: FR-004, FR-005, SC-001 — route: package — deps: T005
+- [ ] T010 [US1, US2] Run the package's tests, typecheck and build in the separate testing workflow — covers: SC-003 — route: tests — deps: T008, T011

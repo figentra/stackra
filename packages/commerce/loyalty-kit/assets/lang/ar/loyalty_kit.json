@@ -1,0 +1,102 @@
+{
+  "nav": {
+    "loyalty": "الولاء"
+  },
+  "enums": {
+    "loyalty_tier": {
+      "bronze": "برونزي",
+      "silver": "فضي",
+      "gold": "ذهبي"
+    },
+    "entry_kind": {
+      "earn": "مكتسبة",
+      "redeem": "مستخدمة",
+      "expire": "منتهية",
+      "adjust": "معدّلة",
+      "hold": "محجوزة",
+      "release": "مُعادة"
+    }
+  },
+  "resources": {
+    "loyalty_account": {
+      "title": "حسابات الولاء"
+    }
+  },
+  "widgets": {
+    "points_issued": {
+      "title": "نقاط اليوم"
+    },
+    "points_balance": {
+      "title": "رصيد النقاط",
+      "expiry_note": "ستنتهي صلاحية بعض نقاطك قريباً."
+    }
+  },
+  "documents": {
+    "loyalty_overview": {
+      "title": "نقاطي"
+    }
+  },
+  "settings": {
+    "title": "الولاء",
+    "expiry_months": {
+      "label": "انتهاء صلاحية النقاط بعد (أشهر)",
+      "help": "تنتهي صلاحية النقاط المكتسبة غير المستخدمة بعد هذا العدد من الأشهر من اكتسابها."
+    },
+    "tiers": {
+      "label": "المستويات",
+      "help": "الأرصدة التي يُرقّى عندها الحساب؛ لا يُخفَّض مستوى الحساب تلقائياً.",
+      "silver_from": {
+        "label": "الفضي من (نقاط)"
+      },
+      "gold_from": {
+        "label": "الذهبي من (نقاط)"
+      }
+    }
+  },
+  "permissions": {
+    "loyalty_account": {
+      "read": "عرض حسابات الولاء",
+      "enroll": "تسجيل الأعضاء",
+      "freeze": "تجميد الحسابات",
+      "redeem": "استخدام النقاط",
+      "expire": "إنهاء صلاحية النقاط"
+    }
+  },
+  "actions": {
+    "account": {
+      "enroll": {
+        "success": "تم تسجيل العضو",
+        "intents": ["سجّل هذا العميل في برنامج الولاء", "أضفه إلى برنامج النقاط"]
+      },
+      "freeze": {
+        "confirm": "تجميد هذا الحساب؟ لن يتمكن العضو من كسب النقاط أو استخدامها حتى يُرفع التجميد.",
+        "success": "تم تحديث الحساب"
+      }
+    },
+    "points": {
+      "balance": {
+        "intents": ["كم نقطة لدي", "اعرض رصيد نقاط الولاء"]
+      }
+    }
+  },
+  "account": {
+    "frozen_badge": "مجمّد"
+  },
+  "adjustment": {
+    "points": "نقاط الولاء"
+  },
+  "errors": {
+    "insufficient_points": {
+      "message": "ليس لديك نقاط كافية."
+    },
+    "not_a_member": {
+      "message": "أنت غير مسجل في برنامج الولاء."
+    },
+    "account_frozen": {
+      "message": "هذا الحساب مجمّد."
+    },
+    "not_own_principal": {
+      "message": "يمكنك تسجيل نفسك فقط."
+    }
+  }
+}

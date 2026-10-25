@@ -8,6 +8,7 @@
  *          or v3 (`stackra.config.ts` and its root module, ADR 0294 R12) until STA-344 (`isV2Service`).
  *          Every test file anywhere in the repository sits directly in a __tests__/ folder (ADR 0022).
  *          Every JSON config is .jsonc unless its reader cannot take one (MUST_STAY_JSON).
+ *          The runway JSON Schemas @stackra/runway ships are byte copies of tools/schemas (checkRunwaySchemas).
  *          Repo-owned YAML has no flow mappings (block style; checkYamlFlowMaps).
  *          Member TS imports carry no file extension and climb at most one folder (checkImports, ADR 0233).
  *          An Expo app locks no orientation and asks for no full screen, and its code never sizes from the device
@@ -358,10 +359,22 @@ export const MUST_STAY_JSON = [
     /^packages\/design-system\/tokens\/assets\/data\/[\w-]+\/[\w-]+\.json$/,
     "brand-kit token reports, vendored byte-for-byte; the theme tests JSON.parse them",
   ],
+  [
+    /^packages\/developer\/runway\/schema\/[\w-]+\.json$/,
+    "runway JSON Schemas: shipped as @stackra/runway/schema/<kind>.json for editors and validators",
+  ],
   [/(^|\/)src\/docs\.json$/, "Mintlify parses docs.json with JSON.parse"],
+  [
+    /(^|\/)([\w-]+\.)?stackra\.manifest\.json$/,
+    "stackra gen writes the committed manifest as strict JSON (ADR 0294 R10); test fixtures copy it",
+  ],
   [/(^|\/)(app|eas)\.json$/, "Expo/EAS: fixed names, rewritten by the expo/eas CLIs"],
   [/^\.specify\//, "spec-kit CLI output, read by its scripts with jq / python json"],
   [/^\.(agents|claude)\/skills\//, "vendored skills: upstream content"],
+  [
+    /(^|\/)assets\/lang\/[\w-]+\/[\w-]+\.json$/,
+    "lang catalogues are assets/lang/<locale>/<namespace>.json by ADR 0305 (rule 1); @stackra/i18n reads JSON",
+  ],
 ];
 
 /**
@@ -395,6 +408,24 @@ export function checkJsonConfigs(paths) {
       out.push(
         `${p}: convert to .yaml, or add it to MUST_STAY_JSONC naming the reader without YAML support`,
       );
+  }
+  return out;
+}
+
+/** The runway kinds whose JSON Schema `@stackra/runway` ships; `tools/schemas` holds the canonical file (ADR 0296). */
+export const RUNWAY_SCHEMA_KINDS = ["app", "root", "service"];
+
+/**
+ * `packages/developer/runway/schema/<kind>.json` is a byte copy of the canonical
+ * `tools/schemas/runway-<kind>.schema.json`. `read(path)` returns a repository file's text, or undefined when absent.
+ */
+export function checkRunwaySchemas(read) {
+  const out = [];
+  for (const kind of RUNWAY_SCHEMA_KINDS) {
+    const canonical = `tools/schemas/runway-${kind}.schema.json`;
+    const copy = `packages/developer/runway/schema/${kind}.json`;
+    if (read(copy) !== read(canonical))
+      out.push(`${copy} differs from ${canonical}: run \`cp ${canonical} ${copy}\``);
   }
   return out;
 }
@@ -544,6 +575,10 @@ function main() {
     .filter((p) => p && existsSync(join(ROOT, p)));
   report("", checkTestPlacement(repoFiles));
   report("", checkJsonConfigs(repoFiles));
+  report(
+    "",
+    checkRunwaySchemas((p) => read(ROOT, p)),
+  );
   for (const p of repoFiles.filter(isMemberSource))
     report("", checkImports(p, readFileSync(join(ROOT, p), "utf8")));
   for (const p of repoFiles.filter(isRepoOwnedYaml))

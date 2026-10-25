@@ -1,0 +1,167 @@
+{
+  "name": "@stackra/app",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stackra app runtime: createApp per runtime target (server, worker, browser, native, electron) returning that target's app object, the shared boot from the generated wiring, the client Contexts, and the Controller kind for raw HTTP",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/runtime/app"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#browser/*": [
+      "./src/browser/*",
+      "./src/browser/*.ts",
+      "./src/browser/*.tsx"
+    ],
+    "#core/*": [
+      "./src/core/*",
+      "./src/core/*.ts",
+      "./src/core/*/index.ts"
+    ],
+    "#electron/*": [
+      "./src/electron/*",
+      "./src/electron/*.ts"
+    ],
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*.tsx"
+    ],
+    "#react/*": [
+      "./src/react/*",
+      "./src/react/*.ts",
+      "./src/react/*.tsx"
+    ],
+    "#server/*": [
+      "./src/server/*",
+      "./src/server/*.ts"
+    ],
+    "#worker/*": [
+      "./src/worker/*",
+      "./src/worker/*.ts"
+    ]
+  },
+  "exports": {
+    ".": {
+      "@stackra/source": "./src/core/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./react": {
+      "@stackra/source": "./src/react/index.ts",
+      "types": "./dist/react.d.mts",
+      "default": "./dist/react.mjs"
+    },
+    "./server": {
+      "@stackra/source": "./src/server/index.ts",
+      "types": "./dist/server.d.mts",
+      "default": "./dist/server.mjs"
+    },
+    "./worker": {
+      "@stackra/source": "./src/worker/index.ts",
+      "types": "./dist/worker.d.mts",
+      "default": "./dist/worker.mjs"
+    },
+    "./browser": {
+      "@stackra/source": "./src/browser/index.ts",
+      "types": "./dist/browser.d.mts",
+      "default": "./dist/browser.mjs"
+    },
+    "./native": {
+      "@stackra/source": "./src/native/index.ts",
+      "types": "./dist/native.d.mts",
+      "default": "./dist/native.mjs"
+    },
+    "./electron": {
+      "@stackra/source": "./src/electron/index.ts",
+      "types": "./dist/electron.d.mts",
+      "default": "./dist/electron.mjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@stackra/config": "workspace:*",
+    "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/csp": "workspace:*",
+    "@stackra/errors": "workspace:*",
+    "@stackra/i18n": "workspace:*"
+  },
+  "devDependencies": {
+    "@stackra/testing": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@testing-library/dom": "catalog:frontend",
+    "@testing-library/react": "catalog:frontend",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:frontend",
+    "@types/react-dom": "catalog:frontend",
+    "@vitest/coverage-v8": "catalog:quality",
+    "electron": "catalog:desktop",
+    "expo-splash-screen": "catalog:mobile",
+    "jsdom": "catalog:frontend",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "react": "catalog:frontend",
+    "react-dom": "catalog:frontend",
+    "react-native": "catalog:mobile",
+    "react-router": "catalog:frontend",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "electron": "catalog:desktop",
+    "expo-splash-screen": "catalog:mobile",
+    "react": "catalog:frontend",
+    "react-dom": "catalog:frontend",
+    "react-native": "catalog:mobile",
+    "react-router": "catalog:frontend"
+  },
+  "peerDependenciesMeta": {
+    "electron": {
+      "optional": true
+    },
+    "expo-splash-screen": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "react-native": {
+      "optional": true
+    },
+    "react-router": {
+      "optional": true
+    }
+  }
+}

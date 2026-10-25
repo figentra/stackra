@@ -1,0 +1,100 @@
+{
+  "name": "@stackra/workflow",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stackra workflow: the Workflow and Signal kind bases, the @Step method decorator and the Run<W> and StepContext types; the native engine that runs a workflow's steps in process, records every run and step in a durable journal (Postgres by default, memory for tests), parks a run on a signal wait, retries with backoff, times out steps and runs, and compensates completed steps in reverse; the WorkflowRunner driver behind ctx.run and ctx.signal, and the in-process test driver",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/runtime/workflow"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts"
+    ],
+    "#core/*": [
+      "./src/core/*",
+      "./src/core/*.ts",
+      "./src/core/*/index.ts"
+    ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
+    ],
+    "#testing/*": [
+      "./src/testing/*",
+      "./src/testing/*.ts",
+      "./src/testing/*/index.ts"
+    ]
+  },
+  "exports": {
+    ".": {
+      "@stackra/source": "./src/core/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
+    },
+    "./testing": {
+      "@stackra/source": "./src/testing/index.ts",
+      "types": "./dist/testing.d.mts",
+      "default": "./dist/testing.mjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@stackra/actions": "workspace:*",
+    "@stackra/config": "workspace:*",
+    "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/database": "workspace:*",
+    "@stackra/errors": "workspace:*",
+    "@stackra/events": "workspace:*",
+    "@stackra/locking": "workspace:*",
+    "@stackra/queue": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@stackra/testing": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:quality",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  }
+}

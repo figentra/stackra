@@ -1,0 +1,105 @@
+{
+  "name": "@stackra/database",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stackra database: the MikroORM layer on Postgres. CrudService<M> with table and metrics reads, repositories, the graph reader, the Migration, Macro and Seeder kinds with the migration compiler, the idx_/fk_/ck_ naming strategy, the unit of work and scope sessions, gapless Sequence numbers, the record-visibility filter seam, and the Factory and usePostgres test helpers",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/data/database"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#core/*": [
+      "./src/core/*",
+      "./src/core/*.ts",
+      "./src/core/*/index.ts"
+    ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
+    ],
+    "#testing/*": [
+      "./src/testing/*",
+      "./src/testing/*.ts",
+      "./src/testing/*/index.ts"
+    ]
+  },
+  "exports": {
+    ".": {
+      "@stackra/source": "./src/core/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./testing": {
+      "@stackra/source": "./src/testing/index.ts",
+      "types": "./dist/testing.d.mts",
+      "default": "./dist/testing.mjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@mikro-orm/core": "catalog:",
+    "@mikro-orm/postgresql": "catalog:",
+    "@stackra/actions": "workspace:*",
+    "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/errors": "workspace:*",
+    "@stackra/model": "workspace:*"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "catalog:",
+    "@stackra/testing": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@testcontainers/postgresql": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:quality",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "@faker-js/faker": "catalog:",
+    "@stackra/testing": "workspace:*",
+    "@testcontainers/postgresql": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "@faker-js/faker": {
+      "optional": true
+    },
+    "@stackra/testing": {
+      "optional": true
+    },
+    "@testcontainers/postgresql": {
+      "optional": true
+    }
+  }
+}

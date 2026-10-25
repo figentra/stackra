@@ -2,7 +2,7 @@
   "name": "@stackra/navigation",
   "version": "0.0.0",
   "private": true,
-  "description": "Router bindings for the Stackra Design System: route overlays, navigation items and the shell's links, on React Router 7 and React Navigation.",
+  "description": "Stackra navigation: the Route, Layout and Menu kinds, typed route refs and contexts, chrome config, the React Router 7 and React Navigation adapters, the root error boundary and router-aware links",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -12,8 +12,6 @@
   "files": [
     "dist",
     "src",
-    "assets",
-    "stackra.manifest.json",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
@@ -21,17 +19,16 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts",
+      "./src/config/*/index.ts"
+    ],
     "#contracts/*": [
       "./src/contracts/*",
       "./src/contracts/*.ts",
       "./src/contracts/*.tsx",
       "./src/contracts/*/index.ts"
-    ],
-    "#config/*": [
-      "./src/config/*",
-      "./src/config/*.ts",
-      "./src/config/*.tsx",
-      "./src/config/*/index.ts"
     ],
     "#core/*": [
       "./src/core/*",
@@ -39,11 +36,11 @@
       "./src/core/*.tsx",
       "./src/core/*/index.ts"
     ],
-    "#node/*": [
-      "./src/node/*",
-      "./src/node/*.ts",
-      "./src/node/*.tsx",
-      "./src/node/*/index.ts"
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*.tsx",
+      "./src/native/*/index.ts"
     ],
     "#react/*": [
       "./src/react/*",
@@ -51,28 +48,16 @@
       "./src/react/*.tsx",
       "./src/react/*/index.ts"
     ],
-    "#native/*": [
-      "./src/native/*",
-      "./src/native/*.ts",
-      "./src/native/*.tsx",
-      "./src/native/*/index.ts"
-    ],
     "#testing/*": [
       "./src/testing/*",
       "./src/testing/*.ts",
       "./src/testing/*.tsx",
       "./src/testing/*/index.ts"
-    ],
-    "#stackra/*": [
-      "./.stackra/gen/*",
-      "./.stackra/gen/*.ts",
-      "./.stackra/gen/*.tsx",
-      "./.stackra/gen/*/index.ts"
     ]
   },
   "exports": {
     ".": {
-      "@stackra/source": "./src/config/navigation.config.ts",
+      "@stackra/source": "./src/core/index.ts",
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
     },
@@ -80,11 +65,6 @@
       "@stackra/source": "./src/contracts/index.ts",
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
-    },
-    "./node": {
-      "@stackra/source": "./src/node/navigation.module.ts",
-      "types": "./dist/node.d.mts",
-      "default": "./dist/node.mjs"
     },
     "./react": {
       "@stackra/source": "./src/react/index.ts",
@@ -96,7 +76,11 @@
       "types": "./dist/native.d.mts",
       "default": "./dist/native.mjs"
     },
-    "./assets/*": "./assets/*"
+    "./testing": {
+      "@stackra/source": "./src/testing/index.ts",
+      "types": "./dist/testing.d.mts",
+      "default": "./dist/testing.mjs"
+    }
   },
   "publishConfig": {
     "access": "public",
@@ -114,12 +98,27 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
-    "@stackra/ui": "workspace:*"
+    "@stackra/clients": "workspace:*",
+    "@stackra/config": "workspace:*",
+    "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/errors": "workspace:*",
+    "@stackra/feature-flags": "workspace:*",
+    "@stackra/i18n": "workspace:*",
+    "@stackra/iam": "workspace:*",
+    "@stackra/icons": "workspace:*",
+    "@stackra/platform": "workspace:*",
+    "@stackra/seo": "workspace:*",
+    "@stackra/settings": "workspace:*",
+    "@stackra/ui": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@heroui/react": "catalog:frontend",
     "@react-navigation/native": "catalog:mobile",
     "@react-navigation/native-stack": "catalog:mobile",
+    "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
@@ -147,18 +146,25 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
-    "@react-navigation/native": "^7.5.1",
-    "@react-navigation/native-stack": "^7.21.0",
-    "react": ">=19.2.0",
-    "react-native": ">=0.86.0",
-    "react-native-safe-area-context": "^5.7.0",
-    "react-router": "^7.18.4"
+    "@react-navigation/native": "catalog:mobile",
+    "@react-navigation/native-stack": "catalog:mobile",
+    "@stackra/testing": "workspace:*",
+    "react": "catalog:frontend",
+    "react-native": "catalog:mobile",
+    "react-native-safe-area-context": "catalog:mobile",
+    "react-router": "catalog:frontend"
   },
   "peerDependenciesMeta": {
     "@react-navigation/native": {
       "optional": true
     },
     "@react-navigation/native-stack": {
+      "optional": true
+    },
+    "@stackra/testing": {
+      "optional": true
+    },
+    "react": {
       "optional": true
     },
     "react-native": {

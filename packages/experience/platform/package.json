@@ -1,0 +1,192 @@
+{
+  "name": "@stackra/platform",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stackra platform: the Platform capability port with its typed refusal, the push and captcha ports, the desktop, PWA and push configurations, memory, web, Electron, Expo and Turnstile drivers, the Bridge kind, the service-worker handlers, the React hooks and fakePlatform",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/experience/platform"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#browser/*": [
+      "./src/browser/*",
+      "./src/browser/*.ts",
+      "./src/browser/*.tsx",
+      "./src/browser/*/index.ts"
+    ],
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts"
+    ],
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*/index.ts"
+    ],
+    "#core/*": [
+      "./src/core/*",
+      "./src/core/*.ts",
+      "./src/core/*/index.ts"
+    ],
+    "#electron/*": [
+      "./src/electron/*",
+      "./src/electron/*.ts",
+      "./src/electron/*/index.ts"
+    ],
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*/index.ts"
+    ],
+    "#react/*": [
+      "./src/react/*",
+      "./src/react/*.ts",
+      "./src/react/*.tsx",
+      "./src/react/*/index.ts"
+    ],
+    "#sw/*": [
+      "./src/sw/*",
+      "./src/sw/*.ts",
+      "./src/sw/*/index.ts"
+    ],
+    "#testing/*": [
+      "./src/testing/*",
+      "./src/testing/*.ts",
+      "./src/testing/*/index.ts"
+    ],
+    "#worker/*": [
+      "./src/worker/*",
+      "./src/worker/*.ts",
+      "./src/worker/*/index.ts"
+    ]
+  },
+  "exports": {
+    ".": {
+      "@stackra/source": "./src/core/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./contracts": {
+      "@stackra/source": "./src/contracts/index.ts",
+      "types": "./dist/contracts.d.mts",
+      "default": "./dist/contracts.mjs"
+    },
+    "./browser": {
+      "@stackra/source": "./src/browser/index.ts",
+      "types": "./dist/browser.d.mts",
+      "default": "./dist/browser.mjs"
+    },
+    "./electron": {
+      "@stackra/source": "./src/electron/index.ts",
+      "types": "./dist/electron.d.mts",
+      "default": "./dist/electron.mjs"
+    },
+    "./native": {
+      "@stackra/source": "./src/native/index.ts",
+      "types": "./dist/native.d.mts",
+      "default": "./dist/native.mjs"
+    },
+    "./react": {
+      "@stackra/source": "./src/react/index.ts",
+      "types": "./dist/react.d.mts",
+      "default": "./dist/react.mjs"
+    },
+    "./sw": {
+      "@stackra/source": "./src/sw/index.ts",
+      "types": "./dist/sw.d.mts",
+      "default": "./dist/sw.mjs"
+    },
+    "./testing": {
+      "@stackra/source": "./src/testing/index.ts",
+      "types": "./dist/testing.d.mts",
+      "default": "./dist/testing.mjs"
+    },
+    "./worker": {
+      "@stackra/source": "./src/worker/index.ts",
+      "types": "./dist/worker.d.mts",
+      "default": "./dist/worker.mjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@stackra/config": "workspace:*",
+    "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/filesystem": "workspace:*",
+    "@stackra/state": "workspace:*",
+    "@stackra/storage": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@stackra/testing": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@testing-library/dom": "catalog:frontend",
+    "@testing-library/react": "catalog:frontend",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:frontend",
+    "@types/react-dom": "catalog:frontend",
+    "@vitest/coverage-v8": "catalog:quality",
+    "electron": "catalog:desktop",
+    "expo-constants": "catalog:mobile",
+    "expo-notifications": "catalog:mobile",
+    "fake-indexeddb": "catalog:quality",
+    "jsdom": "catalog:frontend",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "react": "catalog:frontend",
+    "react-dom": "catalog:frontend",
+    "react-native": "catalog:mobile",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "electron": "catalog:desktop",
+    "expo-constants": "catalog:mobile",
+    "expo-notifications": "catalog:mobile",
+    "react": "catalog:frontend",
+    "react-native": "catalog:mobile"
+  },
+  "peerDependenciesMeta": {
+    "electron": {
+      "optional": true
+    },
+    "expo-constants": {
+      "optional": true
+    },
+    "expo-notifications": {
+      "optional": true
+    },
+    "react-native": {
+      "optional": true
+    }
+  }
+}

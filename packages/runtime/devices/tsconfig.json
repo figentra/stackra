@@ -1,0 +1,8 @@
+// TypeScript project for this member: extends exactly one @stackra/typescript-config preset and sets nothing else
+// (pnpm validate checks the preset). tsc reads tsconfig.json as JSONC, so the name stays .json.
+// `decorators`, as @stackra/logger: the options shape extends `Schema` from @stackra/validation, whose field
+// decorators are made by `createDecorator` (ADR 0005, ADR 0294 R6). The fetch globals (`Request`, `Response`) come
+// from @types/node. No TSX. The source keeps to erasable syntax (no parameter properties), because apps typecheck it
+// under erasableSyntaxOnly.
+// Owner: release-operations · Secrets: forbidden
+{ "extends": "@stackra/typescript-config/decorators" }

@@ -1,0 +1,434 @@
+/**
+ * Stackra file contract:
+ * Purpose: unit tests of `compileMigration`: the SQL and inverses of the template's migration shapes (create with
+ *          trait, money, enum, link and foreign-key columns; expand steps; online indexes; raw statements with `after`),
+ *          macros installed by name, the generated equality and ancestor row-level-security policies, the scope-tree
+ *          columns with their GiST index, generated columns, and every safety refusal (missing nullability or comment,
+ *          NOT NULL without a default, non-concurrent index on an existing table, concurrent index on a new one,
+ *          unapproved extension, raw statement without an inverse, a policy the table cannot take).
+ * Boundary: test only; pure compilation, no database.
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0159 (as amended); ADR 0160; ADR 0239; ADR 0327 (decisions 3 and 9);
+ *                     `.agents/rules/tenancy.md`; ADR 0231; ADR 0022; ADR 0269.
+ */
+import { describe, expect, it } from "@stackra/testing";
+
+import { Macro } from "#core/bases/macro.base";
+import { Migration } from "#core/bases/migration.base";
+import { Extension } from "#core/enums/extension.enum";
+import { compileMigration } from "#core/functions/compile-migration.function";
+import type { Blueprint } from "#core/types/blueprint.type";
+import type { ColumnGroup } from "#core/types/column-group.type";
+import type { MigrationId } from "#core/types/migration-id.type";
+import type { SchemaBuilder } from "#core/types/schema-builder.type";
+
+/** An id column with its equality policy, the way an isolation package's macro writes one. */
+class BelongsToWorkspaceMacro extends Macro {
+  apply(t: Blueprint): ColumnGroup {
+    const group = t.group(t.uuid("workspace_id").notNull().comment("The owning workspace."));
+    t.rowLevelSecurity("workspace_id", { setting: "app.workspace_id", match: "equals" });
+    return group;
+  }
+}
+
+/** A one-column convention with a parameter, like the template's data-classification macro. */
+class DataClassificationMacro extends Macro {
+  apply(t: Blueprint, column: string): ColumnGroup {
+    return t.group(t.enum(column, ["personal", "financial"]));
+  }
+}
+
+/** The macro methods the fixtures call, typed the way gen's `blueprint.d.ts` merge types them. */
+type WithMacros = Blueprint & {
+  belongsToWorkspace(): ColumnGroup;
+  dataClassification(column: string): ColumnGroup;
+};
+
+const macros = [BelongsToWorkspaceMacro, DataClassificationMacro];
+
+class CreateOrdersMigration extends Migration {
+  up(schema: SchemaBuilder): void {
+    schema.create("orders", (blueprint: Blueprint) => {
+      const t = blueprint as WithMacros;
+      t.hasPublicId("ord");
+      t.belongsToWorkspace();
+      t.timestamps();
+      t.userStamps();
+      t.versioned();
+      t.string("customer_id", 30).notNull().comment("The customer who placed it.");
+      t.enum("status", ["pending_payment", "paid"])
+        .notNull()
+        .default("pending_payment")
+        .comment("Lifecycle; written only by the state machine.");
+      t.money("total").notNull().comment("Amount charged.");
+      t.jsonb("adjustments").notNull().default([]).comment("Applied adjustments.");
+      t.string("payment_id", 64).nullable().comment("The payment, once authorized.");
+      t.index(["workspace_id", "status"]);
+    });
+    schema.create("order_lines", (t: Blueprint) => {
+      t.hasPublicId("oln");
+      t.belongsTo("orders", { column: "order_id" })
+        .notNull()
+        .cascadeOnDelete()
+        .comment("The owning order.");
+      t.link("variant_id").notNull().comment("The catalogue variant sold.");
+      t.integer("quantity").notNull().comment("Units ordered.");
+    });
+  }
+}
+
+describe(compileMigration, () => {
+  it("compiles a create migration to one transactional step with its inverse", () => {
+    const { after, steps } = compileMigration(CreateOrdersMigration, {
+      schema: "orders",
+      createsSchema: true,
+      macros,
+    });
+    expect(after).toEqual([]);
+    expect(steps).toHaveLength(1);
+    const [step] = steps;
+    expect(step?.transactional).toBe(true);
+    expect(step?.sql[0]).toBe('create schema if not exists "orders"');
+    expect(step?.sql[1]).toBe(
+      [
+        'create table "orders"."orders" (',
+        '  "id" varchar(33) not null,',
+        '  "workspace_id" uuid not null,',
+        '  "created_at" timestamptz default now() not null,',
+        '  "updated_at" timestamptz default now() not null,',
+        '  "created_by" varchar(33) null,',
+        '  "updated_by" varchar(33) null,',
+        '  "version" integer default 1 not null,',
+        '  "customer_id" varchar(30) not null,',
+        `  "status" text default 'pending_payment' not null constraint "ck_orders_status" check ("status" in ('pending_payment', 'paid')),`,
+        '  "total_minor" bigint not null,',
+        '  "total_currency" char(3) not null,',
+        `  "adjustments" jsonb default '[]'::jsonb not null,`,
+        '  "payment_id" varchar(64) null,',
+        '  primary key ("id")',
+        ")",
+      ].join("\n"),
+    );
+    expect(step?.sql).toContain(
+      `comment on column "orders"."orders"."total_minor" is 'Amount charged. (minor units)'`,
+    );
+    expect(step?.sql).toContain(
+      'create index "idx_orders_workspace_id_status" on "orders"."orders" ("workspace_id", "status")',
+    );
+    expect(step?.sql).toContain('alter table "orders"."orders" force row level security');
+    expect(step?.sql).toContain(
+      `create policy "pol_orders_workspace_id" on "orders"."orders" using ("workspace_id" = nullif(current_setting('app.workspace_id', true), '')::uuid) with check ("workspace_id" = nullif(current_setting('app.workspace_id', true), '')::uuid)`,
+    );
+    expect(step?.sql).toContain(
+      'alter table "orders"."order_lines" add constraint "fk_order_lines_order_id" foreign key ("order_id") references "orders"."orders" ("id") on delete cascade',
+    );
+    expect(step?.sql).toContain(
+      'create index "idx_order_lines_variant_id" on "orders"."order_lines" ("variant_id")',
+    );
+    expect(step?.inverse).toEqual([
+      'drop table if exists "orders"."order_lines"',
+      'drop table if exists "orders"."orders"',
+      'drop schema if exists "orders"',
+    ]);
+  });
+
+  it("compiles an expand step and an online index as separate steps", () => {
+    class AddPaidAtMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("orders", (t: Blueprint) => {
+          t.timestamp("paid_at").nullable().comment("When the payment was captured.");
+          t.index(["status", "paid_at"]).concurrently();
+        });
+      }
+    }
+    expect(compileMigration(AddPaidAtMigration, { schema: "orders" }).steps).toEqual([
+      {
+        sql: [
+          'alter table "orders"."orders" add column "paid_at" timestamptz null',
+          `comment on column "orders"."orders"."paid_at" is 'When the payment was captured.'`,
+        ],
+        transactional: true,
+        inverse: ['alter table "orders"."orders" drop column if exists "paid_at"'],
+      },
+      {
+        sql: [
+          'create index concurrently "idx_orders_status_paid_at" on "orders"."orders" ("status", "paid_at")',
+        ],
+        transactional: false,
+        inverse: ['drop index concurrently if exists "orders"."idx_orders_status_paid_at"'],
+      },
+    ]);
+  });
+
+  it("keeps after, puts each concurrent statement in its own step, and keeps a stated inverse", () => {
+    const textFunctions = "search.0001_create_text_functions" as MigrationId;
+    class ProductsSearchIndexMigration extends Migration({ after: [textFunctions] }) {
+      up(schema: SchemaBuilder): void {
+        schema.table("products", (t: Blueprint) => {
+          t.index(["search_vector_en"]).using("gin").concurrently();
+        });
+        schema.sql(
+          "CREATE INDEX CONCURRENTLY idx_products_search_text_trgm ON catalogue.products (x)",
+          {
+            inverse: "DROP INDEX CONCURRENTLY IF EXISTS catalogue.idx_products_search_text_trgm",
+          },
+        );
+      }
+    }
+    const { after, steps } = compileMigration(ProductsSearchIndexMigration, {
+      schema: "catalogue",
+    });
+    expect(after).toEqual([textFunctions]);
+    expect(steps.map((step) => step.transactional)).toEqual([false, false]);
+    expect(steps[0]?.sql).toEqual([
+      'create index concurrently "idx_products_search_vector_en" on "catalogue"."products" using gin ("search_vector_en")',
+    ]);
+    expect(steps[1]?.inverse).toEqual([
+      "DROP INDEX CONCURRENTLY IF EXISTS catalogue.idx_products_search_text_trgm",
+    ]);
+  });
+
+  it("writes a partial unique index, a macro with parameters, an extension and a generated column", () => {
+    class CreateAccountsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.createExtension(Extension.Trigram);
+        schema.create("accounts", (blueprint: Blueprint) => {
+          const t = blueprint as WithMacros;
+          t.hasPublicId("acc");
+          t.softDeletes();
+          t.string("member_id", 64).notNull().comment("The member.");
+          t.dataClassification("classification").notNull().comment("How sensitive it is.");
+          t.integer("points").notNull().default(0).comment("Points held.");
+          t.integer("double_points").notNull().storedAs("points * 2").comment("Twice the points.");
+          t.tsvector("search_vector").nullable().comment("The full-text document.");
+          t.unique(["member_id"]).where("deleted_at is null");
+        });
+      }
+    }
+    const [step] = compileMigration(CreateAccountsMigration, { schema: "loyalty", macros }).steps;
+    expect(step?.sql[0]).toBe('create extension if not exists "pg_trgm"');
+    expect(step?.sql[1]).toContain(
+      `"classification" text not null constraint "ck_accounts_classification" check ("classification" in ('personal', 'financial'))`,
+    );
+    expect(step?.sql[1]).toContain(
+      '"double_points" integer generated always as (points * 2) stored not null',
+    );
+    expect(step?.sql[1]).toContain('"search_vector" tsvector null');
+    expect(step?.sql).toContain(
+      'create unique index "idx_accounts_member_id" on "loyalty"."accounts" ("member_id") where deleted_at is null',
+    );
+    expect(step?.inverse).toEqual([
+      'drop table if exists "loyalty"."accounts"',
+      'drop extension if exists "pg_trgm"',
+    ]);
+  });
+
+  it("marks a step irreversible when a raw statement says so", () => {
+    class TriggerMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.sql("create function app.refuse_update() returns trigger as $$ begin end $$", {
+          inverse: false,
+        });
+      }
+    }
+    expect(compileMigration(TriggerMigration, { schema: "app" }).steps[0]?.inverse).toBe(false);
+  });
+
+  it("adds the row-level-security policy to an existing table with its inverse", () => {
+    class ScopeMessagesMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("messages", (t: Blueprint) => {
+          t.uuid("workspace_id").nullable().comment("The owning workspace.");
+          t.rowLevelSecurity("workspace_id", { setting: "app.workspace_id", match: "equals" });
+        });
+      }
+    }
+    const [step] = compileMigration(ScopeMessagesMigration, { schema: "messages" }).steps;
+    expect(step?.inverse).toEqual([
+      'drop policy if exists "pol_messages_workspace_id" on "messages"."messages"',
+      'alter table "messages"."messages" no force row level security',
+      'alter table "messages"."messages" disable row level security',
+      'alter table "messages"."messages" drop column if exists "workspace_id"',
+    ]);
+  });
+
+  it("writes the scope-tree columns, their indexes and the ancestor policy on a new table", () => {
+    class CreateDocumentsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.createExtension(Extension.Ltree);
+        schema.create("documents", (t: Blueprint) => {
+          t.hasPublicId("doc");
+          t.scopeId().notNull().comment("The scope node the document belongs to.");
+          t.scopePath().notNull().comment("The node's path, denormalised.");
+          t.rowLevelSecurity("scope_path", { setting: "app.scope_paths", match: "ancestor" });
+        });
+      }
+    }
+    const [step] = compileMigration(CreateDocumentsMigration, { schema: "documents" }).steps;
+    expect(step?.sql[1]).toContain('"scope_id" varchar(33) not null');
+    expect(step?.sql[1]).toContain('"scope_path" ltree not null');
+    expect(step?.sql).toContain(
+      'create index "idx_documents_scope_id" on "documents"."documents" ("scope_id")',
+    );
+    expect(step?.sql).toContain(
+      'create index "idx_documents_scope_path" on "documents"."documents" using gist ("scope_path")',
+    );
+    const check = `"scope_path" ? array(select (granted || '.*')::lquery from unnest(string_to_array(current_setting('app.scope_paths', true), '|')) as granted)`;
+    expect(step?.sql).toContain(
+      `create policy "pol_documents_scope_path" on "documents"."documents" using (${check}) with check (${check})`,
+    );
+  });
+
+  it("adds the scope path to an existing table with its GiST index as an online step", () => {
+    class ScopeDocumentsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("documents", (t: Blueprint) => {
+          t.scopePath().nullable().comment("The node's path, denormalised.");
+          t.rowLevelSecurity("scope_path", { setting: "app.scope_path", match: "ancestor" });
+        });
+      }
+    }
+    const steps = compileMigration(ScopeDocumentsMigration, { schema: "documents" }).steps;
+    expect(steps[0]?.sql).toContain(
+      'alter table "documents"."documents" add column "scope_path" ltree null',
+    );
+    expect(steps[0]?.inverse).toContain(
+      'drop policy if exists "pol_documents_scope_path" on "documents"."documents"',
+    );
+    expect(steps[1]).toEqual({
+      sql: [
+        'create index concurrently "idx_documents_scope_path" on "documents"."documents" using gist ("scope_path")',
+      ],
+      transactional: false,
+      inverse: ['drop index concurrently if exists "documents"."idx_documents_scope_path"'],
+    });
+  });
+
+  it.each([
+    [
+      "an ancestor match on a column that is not ltree",
+      (t: Blueprint) => {
+        t.uuid("owner_id").notNull().comment("The owner.");
+        t.rowLevelSecurity("owner_id", { setting: "app.owner_id", match: "ancestor" });
+      },
+      /is not ltree/,
+    ],
+    [
+      "a policy on a column the blueprint lacks",
+      (t: Blueprint) =>
+        t.rowLevelSecurity("scope_path", { setting: "app.scope_path", match: "ancestor" }),
+      /needs the scope_path column/,
+    ],
+    [
+      "a setting without its prefix",
+      (t: Blueprint) => t.rowLevelSecurity("scope_id", { setting: "scope_id", match: "equals" }),
+      /not a custom setting/,
+    ],
+    [
+      "a second policy",
+      (t: Blueprint) => {
+        t.scopeId().notNull().comment("The scope node.");
+        t.scopePath().notNull().comment("The node's path.");
+        t.rowLevelSecurity("scope_id", { setting: "app.scope_id", match: "equals" });
+        t.rowLevelSecurity("scope_path", { setting: "app.scope_paths", match: "ancestor" });
+      },
+      /a table takes one/,
+    ],
+  ])("refuses %s", (_name, define, message) => {
+    class BadMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("documents", define);
+      }
+    }
+    expect(() => compileMigration(BadMigration, { schema: "documents" })).toThrow(message);
+  });
+
+  it.each([
+    [
+      "a column without a comment",
+      (t: Blueprint) => t.string("sku", 64).notNull(),
+      /every column states notNull\(\) or nullable\(\) and has a comment\(\); not sku/,
+    ],
+    [
+      "a column without its nullability",
+      (t: Blueprint) => t.string("sku", 64).comment("The SKU."),
+      /not sku/,
+    ],
+    [
+      "a concurrent index on a table being created",
+      (t: Blueprint) => {
+        t.hasPublicId("prd");
+        t.index(["id"]).concurrently();
+      },
+      /builds in the transaction/,
+    ],
+  ])("refuses %s on a new table", (_name, define, message) => {
+    class BadMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("products", define);
+      }
+    }
+    expect(() => compileMigration(BadMigration, { schema: "catalogue" })).toThrow(message);
+  });
+
+  it.each([
+    [
+      "NOT NULL without a default",
+      (t: Blueprint) => t.string("sku", 64).notNull().comment("The SKU."),
+      /contract step/,
+    ],
+    ["an index that is not concurrent", (t: Blueprint) => t.index(["sku"]), /add concurrently\(\)/],
+    ["a primary key", (t: Blueprint) => t.primary(["sku"]), /never added to an existing table/],
+  ])("refuses %s on an existing table", (_name, define, message) => {
+    class BadMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("products", define);
+      }
+    }
+    expect(() => compileMigration(BadMigration, { schema: "catalogue" })).toThrow(message);
+  });
+
+  it("refuses an unapproved extension and a raw statement without an inverse", () => {
+    class PostgisMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.createExtension("postgis" as Extension);
+      }
+    }
+    class RawMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.sql("select 1", {} as { inverse: string });
+      }
+    }
+    expect(() => compileMigration(PostgisMigration, { schema: "geo" })).toThrow(/needs an ADR/);
+    expect(() => compileMigration(RawMigration, { schema: "geo" })).toThrow(/needs \{ inverse \}/);
+  });
+
+  it("refuses a class that is not a migration, a bad schema name and a misnamed macro", () => {
+    class NotAMigration {}
+    class Classify extends Macro {
+      apply(t: Blueprint): ColumnGroup {
+        return t.group();
+      }
+    }
+    class StringMacro extends Macro {
+      apply(t: Blueprint): ColumnGroup {
+        return t.group();
+      }
+    }
+    class EmptyMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("things", () => undefined);
+      }
+    }
+    expect(() =>
+      compileMigration(NotAMigration as unknown as typeof EmptyMigration, { schema: "x" }),
+    ).toThrow(/does not extend Migration/);
+    expect(() => compileMigration(EmptyMigration, { schema: "Bad-Schema" })).toThrow(TypeError);
+    expect(() => compileMigration(EmptyMigration, { schema: "x", macros: [Classify] })).toThrow(
+      /not named <Name>Macro/,
+    );
+    expect(() => compileMigration(EmptyMigration, { schema: "x", macros: [StringMacro] })).toThrow(
+      /takes the name t.string/,
+    );
+  });
+});

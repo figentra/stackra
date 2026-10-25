@@ -1,0 +1,13 @@
+/**
+ * Stackra file contract:
+ * Purpose: Stand-in barrel: the `./node` entry of @stackra/rules (the `RuleSet` model, `RuleSetService` and the
+ *          revision it reads) until `stackra gen` writes the entry barrels (STA-339).
+ * Boundary: names each re-export and declares nothing. Server only: it reaches MikroORM through @stackra/model,
+ *           @stackra/database and @stackra/content. The migration is found by its path, as every migration is, so it
+ *           is not re-exported.
+ * Runtime: node
+ * Governing contract: ADR 0294 (decision 15); ADR 0331 (decisions 5 and 12); the STA-347 stand-in barrel decision.
+ */
+export { RuleSet } from "#node/models/rule-set.model";
+export { RuleSetService } from "#node/services/rule-set.service";
+export type { RuleSetRevision } from "#node/types/rule-set-revision.type";

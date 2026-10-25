@@ -1,0 +1,45 @@
+# AGENTS — @stackra/peripherals
+
+Point-of-sale hardware: receipt printer, cash drawer, barcode scanner, scale. Member at
+`packages/experience/peripherals` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
+`./contracts`, `./electron`.
+
+## Where code goes
+
+| You are writing…                     | It goes in…                                                          |
+| ------------------------------------ | -------------------------------------------------------------------- |
+| A port or a type its signature names | `src/contracts/ports/`, `src/contracts/types/`                       |
+| The configuration                    | `src/config/peripherals.config.ts`, its shape in `src/core/schemas/` |
+| The shipped `PeripheralsConfig$`     | `src/core/constants/peripherals-config-schema.constant.ts`           |
+| A memory driver                      | `src/core/drivers/memory-<port>.driver.ts`                           |
+| An encoder, a refusal builder        | `src/core/functions/`                                                |
+| A refusal                            | `src/core/errors/<name>.error.ts`                                    |
+| A main-process driver or bridge      | `src/electron/drivers/`, `src/electron/bridges/`                     |
+| A test                               | `__tests__/<name>.<kind>.test.ts` beside it                          |
+
+## This package
+
+- A call a device cannot honour returns `refuse(capability, code)` from `src/core/functions/`; a programming error
+  throws. Printer and drawer refuse on `print`, the scanner on `scanner`, the scale on `serial`.
+- A new driver name goes into `PERIPHERAL_DRIVERS`; it must equal what gen writes for the port, because both augment
+  the same `DriverRegistry` key.
+- No native module (ADR 0253 decision 3): main reaches printers over `node:net` or a device path, and the scanner
+  through `before-input-event`. A browser driver needs a `./browser` entry first.
+- No module of `./electron` imports Electron or a Node module at load time; each loads it when it runs.
+- The bridge validates its input: it comes from the renderer. Lines are text, never printer commands.
+- `src/*/index.ts` are stand-in barrels until gen writes them (STA-339); add every public file to its barrel and to
+  that entry's `index.test.ts`.
+
+## Rules that fail the build
+
+- A package never imports an app, a service, `encore.dev`/`~encore/*`, or another package's `src/`.
+- Versions are `catalog:<name>` or `workspace:*` only.
+- Coverage meets the shared gate (lines/functions 80, branches 70).
+
+## PII
+
+| Data            | Where                              | Handling                                                                 |
+| --------------- | ---------------------------------- | ------------------------------------------------------------------------ |
+| Receipt lines   | `ReceiptPrinter.print`, the bridge | Sent to the printer only; never logged, never put in a refusal's details |
+| Scanned codes   | `BarcodeScanner.onScan` listeners  | Handed to the listeners only; never stored here                          |
+| Printer address | `PeripheralsConfig.printerAddress` | On the user's own network or machine; shown as `printer`, not a secret   |

@@ -4,7 +4,8 @@
  * Purpose: spec-trace — FR/SC/P → task → `@covers` test traceability and spec-vs-diff drift for specs in
  *   `.agents/specs/sta-<n>-<slug>/` (owner decision OR12; the plan's §3.6).
  *   trace <dir> [--json]    the matrix: each live FR and P with its tasks and covering tests, each SC with its method
- *   drift <dir> [--base=r]  members changed in the diff that Impact does not name; ticked tasks whose paths are gone;
+ *   drift <dir> [--base=r]  members changed in the diff that Impact does not name (in `ci`, that no changed spec's
+ *                           Impact names); ticked tasks whose paths are gone;
  *                           for a Done spec, Impact "Docs to update" pages the diff does not touch
  *   ci [--base=r]           for every spec folder changed since the base: at Implementing or later, drift; at Done,
  *                           every live FR and P covered by a test (an FR may be covered through a P that is) and
@@ -70,13 +71,22 @@ export function traceProblems(t) {
   return problems;
 }
 
-/** Drift between a spec and the changed paths. `exists` tells whether a repo path exists. */
-export function drift({ spec, tasks = "", changed = [], exists = () => true }) {
+/** The text of a spec's `## Impact` section. */
+export function impactOf(spec) {
+  return strip(spec).match(/^## Impact\b[^\n]*\n([\s\S]*?)(?=^## |(?![\s\S]))/m)?.[1] ?? "";
+}
+
+/**
+ * Drift between a spec and the changed paths. `exists` tells whether a repo path exists; `named` holds the members
+ * another spec in the same diff already names (one branch may carry many specs, as the STA-348 build does).
+ */
+export function drift({ spec, tasks = "", changed = [], exists = () => true, named = new Set() }) {
   const problems = [];
-  const impact = strip(spec).match(/^## Impact\b[^\n]*\n([\s\S]*?)(?=^## |(?![\s\S]))/m)?.[1] ?? "";
+  const impact = impactOf(spec);
   const members = new Set(changed.map(memberOf).filter(Boolean));
   for (const m of members)
-    if (!impact.includes(m)) problems.push(`the diff changes \`${m}\`, which Impact does not name`);
+    if (!impact.includes(m) && !named.has(m))
+      problems.push(`the diff changes \`${m}\`, which no spec in the diff names in its Impact`);
   for (const t of parseTasks(tasks).filter((x) => x.done && !x.struck))
     for (const p of t.paths)
       if (/\//.test(p) && !/[[\]<>*]/.test(p) && !exists(p))
@@ -138,13 +148,17 @@ function main([mode, ...args]) {
     ]
       .map((d) => join(ROOT, d))
       .filter((d) => existsSync(join(d, "spec.md")));
+    const specs = dirs.map(load);
+    const members = new Set(names.map(memberOf).filter(Boolean));
+    const named = new Set(
+      [...members].filter((m) => specs.some((s) => impactOf(s.spec).includes(m))),
+    );
     let failures = 0;
     let tests;
-    for (const d of dirs) {
-      const s = load(d);
+    for (const s of specs) {
       const status = statusOf(s.spec);
       if (status !== "implementing" && status !== "done") continue;
-      const problems = drift({ ...s, changed: names, exists });
+      const problems = drift({ ...s, changed: names, exists, named });
       if (status === "done")
         problems.push(...traceProblems(trace({ ...s, tests: (tests ??= testsText()) })));
       for (const p of problems) console.error(`spec-trace: ${SPECS_DIR}/${s.folder}: ${p}`);

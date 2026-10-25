@@ -1,0 +1,18 @@
+/**
+ * Stackra file contract:
+ * Purpose: `SEARCH_CONFIG_SCHEMA`, the zod schema this package ships for `SearchConfig` (exported as `SearchConfig$`):
+ *          which driver runs.
+ * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
+ *           full defaults and a host's generated `SearchConfig$` can `.extend` it. The default equals `SearchOptions`'
+ *           initializer (tested). No credential: the Postgres driver uses the service's own database connection.
+ * Runtime: isomorphic
+ * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0173 (no secret values in config).
+ */
+import { z } from "zod";
+
+import { SEARCH_DRIVERS } from "#core/constants/search-drivers.constant";
+
+/** The shipped `SearchConfig$`. */
+export const SEARCH_CONFIG_SCHEMA = z.object({
+  driver: z.enum(SEARCH_DRIVERS).default("postgres"),
+});

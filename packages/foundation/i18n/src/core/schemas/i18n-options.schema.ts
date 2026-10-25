@@ -1,0 +1,52 @@
+/**
+ * Stackra file contract:
+ * Purpose: `I18nOptions`, the options shape of `I18nConfig`: the shipped locales and the default, the right-to-left
+ *          set, each locale's fallback chain, the digits, how a locale appears in a URL, and the flags gen and the
+ *          runtime read (`followDevice`, `tenantChoosesNumerals`, `failOnMissingLocale`, `cookieName`).
+ * Boundary: a shape class: fields, types, defaults and field rules only. The defaults are a launch member's (ADR 0080
+ *           decision 2: English only, Latin digits); a member lists more locales in its `I18nConfig` override. The
+ *           cross-field rules (the default and every fallback are shipped locales) live in `I18nConfig$`.
+ * Runtime: isomorphic
+ * Governing contract: ADR 0294 (decision 19), ADR 0080, ADR 0192, ADR 0297 (decision 4), ADR 0305 (conventions 1).
+ */
+import { List, Schema, Str } from "@stackra/validation";
+
+import { Locale } from "#core/enums/locale.enum";
+import { LocaleUrlStrategy } from "#core/enums/locale-url-strategy.enum";
+import { NumberingSystem } from "#core/enums/numbering-system.enum";
+
+/** The options of `I18nConfig`. */
+export class I18nOptions extends Schema {
+  /** Every locale the member ships: base languages and regional overlays. */
+  @List({ min: 1, unique: true })
+  locales: Locale[] = [Locale.En];
+
+  /** The locale of a visitor nothing else decides for, and the unprefixed web locale. */
+  defaultLocale: Locale = Locale.En;
+
+  /** The right-to-left locales: `dir="rtl"`, the native layout flip and one RTL e2e project each. */
+  @List({ unique: true })
+  rtl: Locale[] = [Locale.Ar, Locale.ArSa];
+
+  /** Per locale, the locales a missing key falls back to, nearest first (`ar-SA` → `ar` → `en`). */
+  fallbacks: Record<string, Locale[]> = {};
+
+  /** The digits of numbers, money and dates (ADR 0192: Latin by default). */
+  numerals: NumberingSystem = NumberingSystem.Latn;
+
+  /** How a web member's URLs carry the locale (ADR 0297 decision 4). */
+  urlStrategy: LocaleUrlStrategy = LocaleUrlStrategy.PrefixExceptDefault;
+
+  /** A native first launch takes the shipped locale closest to the device's. */
+  followDevice = false;
+
+  /** A tenant setting may switch Arabic text to Arabic-Indic digits (ADR 0192). */
+  tenantChoosesNumerals = false;
+
+  /** Gen fails, instead of warning, on a base locale that misses a namespace. */
+  failOnMissingLocale = false;
+
+  /** The cookie the browser writes to remember the visitor's choice; never read to redirect. */
+  @Str({ min: 1, max: 64, pattern: /^[A-Za-z0-9_-]+$/ })
+  cookieName = "locale";
+}

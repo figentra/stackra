@@ -1,0 +1,102 @@
+{
+  "nav": {
+    "loyalty": "Loyalty"
+  },
+  "enums": {
+    "loyalty_tier": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold"
+    },
+    "entry_kind": {
+      "earn": "Earned",
+      "redeem": "Redeemed",
+      "expire": "Expired",
+      "adjust": "Adjusted",
+      "hold": "Held",
+      "release": "Released"
+    }
+  },
+  "resources": {
+    "loyalty_account": {
+      "title": "Loyalty accounts"
+    }
+  },
+  "widgets": {
+    "points_issued": {
+      "title": "Points today"
+    },
+    "points_balance": {
+      "title": "Points balance",
+      "expiry_note": "Some of your points expire soon."
+    }
+  },
+  "documents": {
+    "loyalty_overview": {
+      "title": "My points"
+    }
+  },
+  "settings": {
+    "title": "Loyalty",
+    "expiry_months": {
+      "label": "Points expire after (months)",
+      "help": "Unspent earned points expire this many months after they were earned."
+    },
+    "tiers": {
+      "label": "Tiers",
+      "help": "The balances at which an account is promoted; an account is never demoted automatically.",
+      "silver_from": {
+        "label": "Silver from (points)"
+      },
+      "gold_from": {
+        "label": "Gold from (points)"
+      }
+    }
+  },
+  "permissions": {
+    "loyalty_account": {
+      "read": "View loyalty accounts",
+      "enroll": "Enroll members",
+      "freeze": "Freeze accounts",
+      "redeem": "Redeem points",
+      "expire": "Expire points"
+    }
+  },
+  "actions": {
+    "account": {
+      "enroll": {
+        "success": "Member enrolled",
+        "intents": ["enroll this customer in loyalty", "add them to the points programme"]
+      },
+      "freeze": {
+        "confirm": "Freeze this account? The member cannot earn or spend until it is unfrozen.",
+        "success": "Account updated"
+      }
+    },
+    "points": {
+      "balance": {
+        "intents": ["how many points do I have", "show my loyalty balance"]
+      }
+    }
+  },
+  "account": {
+    "frozen_badge": "Frozen"
+  },
+  "adjustment": {
+    "points": "Loyalty points"
+  },
+  "errors": {
+    "insufficient_points": {
+      "message": "You do not have enough points."
+    },
+    "not_a_member": {
+      "message": "You are not enrolled in the loyalty programme."
+    },
+    "account_frozen": {
+      "message": "This account is frozen."
+    },
+    "not_own_principal": {
+      "message": "You can only enroll yourself."
+    }
+  }
+}

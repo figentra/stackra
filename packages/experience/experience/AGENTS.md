@@ -1,0 +1,41 @@
+# AGENTS — @stackra/experience
+
+The `Block` kind, `LocalizedText`, the L2 document format and validator, the `Renderer` port and the web and native
+`DocumentRenderer`. Member at `packages/experience/experience` (`tier:lib`), in the programming model v3.1 shape
+(ADR 0294, 0305). Entries `.`, `./contracts`, `./react`, `./native`.
+
+## Where code goes
+
+| You are writing…              | It goes in…                                    |
+| ----------------------------- | ---------------------------------------------- |
+| The document format, the port | `src/contracts/types/`, `src/contracts/ports/` |
+| The kind base (`Block`)       | `src/core/bases/block.base.ts`                 |
+| The validator, the registry   | `src/core/functions/`                          |
+| A refusal                     | `src/core/errors/`                             |
+| Web drawing                   | `src/react/<name>/`, `src/react/drivers/`      |
+| Native drawing                | `src/native/<name>/`, `src/native/drivers/`    |
+| A test                        | `__tests__/<name>.<kind>.test.ts(x)` beside it |
+
+## This package
+
+- A document holds data that references registered code only: no markup, CSS, script, expression or URL to code
+  (ADR 0110 decision 4, ADR 0154). Never evaluate a prop.
+- Keys are derived by gen; never add a `key` option to `Block`. The icon is an `IconName` written as a generated
+  constant (R-56).
+- `resolveDocument` checks the whole tree before a driver draws anything; drivers never draw an unchecked node.
+- `./contracts` stays a leaf: the builder and collaboration read `DocumentNode` from it without a renderer.
+- `BLOCK_ENTRIES` stays internal; the only way out is `registeredBlocks()`, a copy without the components.
+- The web and native drawings are separate code on `@stackra/ui` and `@stackra/ui/native` (ADR 0112 X9); keep them in
+  step.
+- `BlockProps` in `.` and in `./native` are two declarations: the native one adds a required `onEvent` (registry A3).
+- `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).
+
+## Rules that fail the build
+
+- A package never imports an app, a service, `encore.dev`/`~encore/*`, or another package's `src/` or `./testing`.
+- Versions are `catalog:<name>` or `workspace:*` only.
+
+## PII
+
+Documents are tenant content and may hold personal text a tenant wrote; this package renders it and stores nothing.
+A refusal names a key and a path, never a prop's value.

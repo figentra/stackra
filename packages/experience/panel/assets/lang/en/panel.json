@@ -1,0 +1,26 @@
+{
+  "widgets": {
+    "empty": "Nothing to show yet.",
+    "failed": "This tile could not load.",
+    "retry": "Try again",
+    "range": "Period",
+    "change": "{change} vs previous period",
+    "target": "Target {target}",
+    "not_rendered": "This tile cannot be shown here."
+  },
+  "time_range": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "last_7_days": "Last 7 days",
+    "last_30_days": "Last 30 days",
+    "this_month": "This month",
+    "custom": "Custom"
+  },
+  "actions": {
+    "confirm_title": "Are you sure?",
+    "confirm": "Continue",
+    "cancel": "Cancel",
+    "done": "Done.",
+    "refused": "This could not be done."
+  }
+}

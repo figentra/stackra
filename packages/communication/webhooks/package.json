@@ -1,0 +1,107 @@
+{
+  "name": "@stackra/webhooks",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stackra webhooks: Standard Webhooks signing and verification (HMAC-SHA256, webhook-id, webhook-timestamp, webhook-signature, a five-minute tolerance, dual-secret rotation), SignatureScheme, the WebhookReceiver that verifies an inbound provider webhook against the secret its Integration names and routes it to its WebhookEvent class through the outbox, and outbound delivery of webhook integration events to the endpoints a scope registers as a queue job with retries, a delivery log and automatic disable, plus the deliverWebhook test helper",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/communication/webhooks"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*/index.ts"
+    ],
+    "#core/*": [
+      "./src/core/*",
+      "./src/core/*.ts",
+      "./src/core/*/index.ts"
+    ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
+    ],
+    "#testing/*": [
+      "./src/testing/*",
+      "./src/testing/*.ts",
+      "./src/testing/*/index.ts"
+    ]
+  },
+  "exports": {
+    ".": {
+      "@stackra/source": "./src/core/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./contracts": {
+      "@stackra/source": "./src/contracts/index.ts",
+      "types": "./dist/contracts.d.mts",
+      "default": "./dist/contracts.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
+    },
+    "./testing": {
+      "@stackra/source": "./src/testing/index.ts",
+      "types": "./dist/testing.d.mts",
+      "default": "./dist/testing.mjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@stackra/actions": "workspace:*",
+    "@stackra/config": "workspace:*",
+    "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/database": "workspace:*",
+    "@stackra/errors": "workspace:*",
+    "@stackra/events": "workspace:*",
+    "@stackra/integrations": "workspace:*",
+    "@stackra/model": "workspace:*",
+    "@stackra/queue": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@stackra/testing": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:quality",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  }
+}

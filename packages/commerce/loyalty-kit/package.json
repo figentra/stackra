@@ -1,0 +1,169 @@
+{
+  "name": "@stackra/loyalty-kit",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stackra loyalty kit, the golden capability kit: points accounts, tiers, earning and redemption maths behind the LoyaltyLedger and LoyaltyMembers ports, memory and Postgres ledger drivers (the Postgres one on @stackra/ledger's journal, floored at zero), the loyalty account permissions and policy, the enroll, freeze, expire, redeem and confirm actions, the redemption workflow and its signal, the balance and points-issued queries, versioned events, an extension point with the tier multiplier, settings, the panel resource, overview document and two widgets, web and native renderers, and the members fake, points fixture and balance matcher",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/commerce/loyalty-kit"
+  },
+  "files": [
+    "dist",
+    "src",
+    "assets",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts",
+      "./src/config/*/index.ts"
+    ],
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*/index.ts"
+    ],
+    "#core/*": [
+      "./src/core/*",
+      "./src/core/*.ts",
+      "./src/core/*/index.ts"
+    ],
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*.tsx",
+      "./src/native/*/index.ts"
+    ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
+    ],
+    "#react/*": [
+      "./src/react/*",
+      "./src/react/*.ts",
+      "./src/react/*.tsx",
+      "./src/react/*/index.ts"
+    ],
+    "#testing/*": [
+      "./src/testing/*",
+      "./src/testing/*.ts",
+      "./src/testing/*/index.ts"
+    ]
+  },
+  "exports": {
+    ".": {
+      "@stackra/source": "./src/core/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./contracts": {
+      "@stackra/source": "./src/contracts/index.ts",
+      "types": "./dist/contracts.d.mts",
+      "default": "./dist/contracts.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
+    },
+    "./react": {
+      "@stackra/source": "./src/react/index.ts",
+      "types": "./dist/react.d.mts",
+      "default": "./dist/react.mjs"
+    },
+    "./native": {
+      "@stackra/source": "./src/native/index.ts",
+      "types": "./dist/native.d.mts",
+      "default": "./dist/native.mjs"
+    },
+    "./testing": {
+      "@stackra/source": "./src/testing/index.ts",
+      "types": "./dist/testing.d.mts",
+      "default": "./dist/testing.mjs"
+    },
+    "./assets/*": "./assets/*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "dependencies": {
+    "@stackra/actions": "workspace:*",
+    "@stackra/config": "workspace:*",
+    "@stackra/container": "workspace:*",
+    "@stackra/contracts": "workspace:*",
+    "@stackra/database": "workspace:*",
+    "@stackra/errors": "workspace:*",
+    "@stackra/events": "workspace:*",
+    "@stackra/i18n": "workspace:*",
+    "@stackra/iam": "workspace:*",
+    "@stackra/ledger": "workspace:*",
+    "@stackra/model": "workspace:*",
+    "@stackra/panel": "workspace:*",
+    "@stackra/search": "workspace:*",
+    "@stackra/settings": "workspace:*",
+    "@stackra/tenancy": "workspace:*",
+    "@stackra/ui": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "@stackra/versioning": "workspace:*",
+    "@stackra/workflow": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@stackra/locking": "workspace:*",
+    "@stackra/testing": "workspace:*",
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@testing-library/dom": "catalog:frontend",
+    "@testing-library/react": "catalog:frontend",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:frontend",
+    "@types/react-dom": "catalog:frontend",
+    "@vitest/coverage-v8": "catalog:quality",
+    "jsdom": "catalog:frontend",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "react": "catalog:frontend",
+    "react-dom": "catalog:frontend",
+    "react-native": "catalog:mobile",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "@stackra/testing": "workspace:*",
+    "react": "catalog:frontend",
+    "react-native": "catalog:mobile"
+  },
+  "peerDependenciesMeta": {
+    "@stackra/testing": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-native": {
+      "optional": true
+    }
+  }
+}
