@@ -38,7 +38,9 @@ twin for `@stackra/ui`'s native Text to add. `defineTheme` therefore wants each 
 
 The web file switches modes the HeroUI way: light on `:root` and `[data-theme="light"]`, dark on `.dark` and
 `[data-theme="dark"]`. The native file defines the same variables in Uniwind's `@variant light` and `@variant dark`;
-switch with `Uniwind.setTheme`. Expo cannot load woff2, so native text uses the system face until TTF builds of the
+switch with `Uniwind.setTheme`. It also writes the palette as Uniwind colours (`--color-<name>`), so a theme's own
+accent steps (`accent-soft`, `accent-soft-foreground`, `accent-hover`) replace HeroUI Native's `color-mix` defaults
+as they do on the web, and the rest are classes such as `bg-accent-pressed`. Expo cannot load woff2, so native text uses the system face until TTF builds of the
 fonts are added.
 
 ## Bring your own theme
