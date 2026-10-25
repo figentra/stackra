@@ -1,0 +1,43 @@
+---
+title: "0352 — Runway is the one deployment tool: Pulumi is its infrastructure engine, gen is its build step"
+description: "Accepted · 2026-10-25"
+---
+
+<Note>
+  Amends [0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml) (decision 1:
+  the reusable workflows become thin callers of the Runway CLI),
+  [0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra) (decision 3: no
+  separate `stackra infra` generator) and
+  [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing) (decision
+  1: the `cloudflare-workers` provider is a Runway provider; its workflow only calls the CLI).
+</Note>
+
+## Context
+
+By 2026-10-25 the deploy path had three owners. Runway had its manifest (`runway.yaml`, [0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)) and one public reusable workflow per provider, each carrying its own logic ([0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml), STA-72). Pulumi was planned as a second tool, `stackra infra gen/preview`, generating a program from the app manifest ([0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra) decision 3). gen already writes the build artifacts: the generated Encore app, the Wrangler, EAS, PWA and desktop configs ([0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries)). Three places to change for one deploy, and deploy logic in YAML where nothing can test it. The earlier private platform (`figentra/platform`, reference only, [0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule) action R) showed the shape that holds: a manifest declares, a provider gives it meaning, the CLI is the only logic surface and a workflow is a thin caller. The owner decided on 2026-10-25 that Stackra has one deployment tool.
+
+## Decision
+
+1. **One tool.** `@stackra/runway` is the single deployment tool for every Stackra-based repository, exposed as `stackra runway <command>` through `@stackra/cli`: `validate`, `plan`, `infra preview`, `infra up`, `deploy`, `promote`, `rollback`, `secrets sync` and `status`. There is no other deploy tool, script or command.
+2. **One manifest.** `runway.yaml` (the root and the member files of [0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)) is the only input that says what runs where, what infrastructure it needs, which secrets it reads and how a release moves.
+3. **Providers behind one port.** Each target is a provider in `@stackra/runway/node` with the same four operations: plan, apply, verify and rollback. The providers follow the build order of [0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml) decision 3: npm (and Keygen), Cloudflare Workers, Encore Cloud, EAS, AWS or Compose, and Mintlify. A new target is a new provider, never a new tool or workflow.
+4. **Pulumi is the infrastructure engine.** `stackra runway infra preview|up` drives the Pulumi components of the `@stackra/infra-*` packages through Pulumi's Automation API, from `runway.yaml`. No Pulumi program is written by hand and there is no separate `stackra infra` command. Stack state and stack config stay in `figentra/infra` ([0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing) decision 9). Agents run `infra preview` only; `infra up` is the owner's.
+5. **gen is the build step, not a deploy step.** gen produces the artifacts a deploy ships; Runway runs gen as the first step of a `deploy` and never the other way round. gen holds no deploy, promote, secret or infrastructure logic.
+6. **Workflows are thin callers.** CI holds one public reusable `runway.yml` (deploy) and one `runway-promote.yml`, each a few steps that check out the commit, log in over OIDC and run the CLI. The CLI behaves the same in CI and in a terminal; a terminal run that would deploy dispatches the workflow, so every deploy runs in CI from a commit of main ([0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) decision 6).
+7. **Records.** Every deploy, promote and rollback writes one record: the SHA (or the image digest on-prem), the environment, the approver and the gate result, to the GitHub Deployments API, a Linear release and Slack ([0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) decision 10).
+
+## Consequences
+
+- A deploy is one command over one file, testable in the package, identical in CI and on a laptop.
+- The per-provider workflows of STA-72 wave 1 keep working until the CLI ships; then their steps move into providers and the workflows shrink to callers.
+- `tools/scripts/runway.mjs` is the interim command and folds into `stackra runway`.
+- Infrastructure and deploys share the manifest, the plan and the records, so a reviewer reads one plan for both.
+- `@stackra/runway` grows from a schema library into the tool, so its entries gain `./node` and its dependency on the infra-\* packages is a Node-only one.
+
+## Enforcement
+
+planned — STA-72: the provider port and its conformance tests in `@stackra/runway`; the `runway` commands in `@stackra/cli` (STA-607); `validate-repository.mjs` refusing a workflow that deploys without calling the Runway CLI; the `runway-deploy` guard ask (in place for `pnpm runway deploy|promote`).
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml) decision 1, [0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra) decision 3 and [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing) decision 1. Sources: owner decisions in chat, 2026-10-25 (one deployment tool in `@stackra/runway` plus the CLI; Pulumi inside Runway; one generic thin caller); `figentra/platform` at `bed480d` read as reference only (its README model: manifest declares, provider gives meaning, CLI is the only logic surface).

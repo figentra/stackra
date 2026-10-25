@@ -451,7 +451,8 @@
               "adr/0348-integration-surfaces-assistant-hosts-chat-apps-messaging-flows-and-wallet-passes",
               "adr/0349-product-scopes-package-names-and-the-module-key-registry-across-products",
               "adr/0350-additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules",
-              "adr/0351-iam-conditions-on-a-dimension-another-service-owns-declared-dimensions-and-projections"
+              "adr/0351-iam-conditions-on-a-dimension-another-service-owns-declared-dimensions-and-projections",
+              "adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step"
             ]
           }
         ]

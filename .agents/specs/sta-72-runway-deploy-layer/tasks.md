@@ -30,6 +30,16 @@
 - [x] T012 [US5] `tools/scripts/__tests__/runway.test.mjs` and the guard case in `.agents/hooks/__tests__/guard-bash.test.mjs` — covers: P-010 — route: tests — deps: T011 [STA-268]
 - [x] T013 `apps/docs/src/runbooks/runway.mdx`, `apps/docs/src/runbooks/deploys.mdx`, `apps/docs/src/docs.json` and `.github/workflows/README.md` — covers: FR-011, FR-012 — route: steward-docs — deps: T008, T011 [STA-603]
 
-## Phase 6: Testing pass (owner mode: deferred)
+## Phase 6: The one deployment tool (ADR 0352; waits for the STA-348 completion branch)
 
-- [ ] T014 Run the script tests, the guard tests, actionlint, zizmor and a first run of each workflow in the testing pass — covers: SC-003 — route: tests — deps: T004, T009, T012, T013
+- [x] T015 ADR 0352, its notes on ADR 0168, 0171 and 0289, the ADR index and the nav entry in `apps/docs/src/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step.mdx` — covers: FR-013 — route: adr — deps: T001 [STA-72]
+- [ ] T016 Provider port, plan model and records in `packages/developer/runway/src/node/` — covers: FR-014, FR-017 — route: package — deps: T015 [STA-607]
+- [ ] T017 Providers in build order (npm, cloudflare-workers, mintlify first; encore-cloud and eas after STA-136 and STA-17) in `packages/developer/runway/src/node/providers/` — covers: FR-014 — route: package — deps: T016 [STA-607]
+- [ ] T018 The infra engine over the infra-* components in `packages/developer/runway/src/node/infra/` — covers: FR-015 — route: infra — deps: T016 [STA-607]
+- [ ] T019 `stackra runway` commands in `packages/developer/cli/src/node/` with gen run first on deploy; remove `tools/scripts/runway.mjs` — covers: FR-013, FR-018 — route: package — deps: T017, T018 [STA-607]
+- [ ] T021 Runway MCP tools in `packages/developer/mcp/src/node/` and the `runway` skill in `.agents/skills/runway/SKILL.md` — covers: FR-019 — route: package — deps: T019 [STA-607]
+- [ ] T020 `.github/workflows/runway.yml` and `.github/workflows/runway-promote.yml`; the wave 1 workflows become callers; the validator check — covers: FR-016 — route: ci-permissions — deps: T019 [STA-607]
+
+## Phase 7: Testing pass (owner mode: deferred)
+
+- [ ] T014 Run the script tests, the guard tests, actionlint, zizmor and a first run of each workflow in the testing pass — covers: SC-003 — route: tests — deps: T004, T009, T012, T013, T020

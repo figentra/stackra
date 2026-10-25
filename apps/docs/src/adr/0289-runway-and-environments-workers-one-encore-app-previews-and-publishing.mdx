@@ -1,7 +1,14 @@
 ---
 title: "0289 — Runway and environments: Workers, one Encore app, one preview host and publishing"
-description: "Accepted, amended by 0296 · 2026-10-22"
+description: "Accepted, amended by 0296, 0352 · 2026-10-22"
 ---
+
+<Note>
+  Amended by
+  [0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step)
+  decision 1: the `cloudflare-workers` provider is a Runway provider in `@stackra/runway`; its
+  workflow only calls the CLI.
+</Note>
 
 <Note>
   Amended by [0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups): runway is split

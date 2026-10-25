@@ -75,6 +75,13 @@ emit the Encore app wait for gen and are recorded as blocked. Source: the SDLC a
 - Tools come from mise, not from setup actions (ADR 0027 decision 2), so no new third-party action is pinned. Trivy is
   pinned past the March 2026 compromise of its release tags (CVE-2026-33634).
 
+- Owner, 2026-10-25 (later the same day): **one deployment tool** (ADR 0352). `@stackra/runway` plus `stackra runway
+<command>` in the CLI is the single source of deployment; Pulumi runs inside it through the Automation API over the
+  infra-* components; gen is the build step and holds no deploy logic; CI keeps one generic thin caller per action.
+  The wave 1 workflows (FR-005 to FR-007) stay until the CLI ships, then shrink to callers (FR-016). The code of
+  FR-013 to FR-018 waits for the STA-348 completion branch, because runway, cli, gen and infra are frozen until it
+  lands.
+
 ## User Scenarios & Testing
 
 ### User Story 1 - A runway file is checked before anything deploys (Priority: P1)
@@ -181,6 +188,25 @@ dispatch the same CI workflow a merge runs.
   names-only plan before every sync, and which parts wait for gen, STA-136 and STA-17.
 - **FR-012**: The reusable workflows are released as the tag `runway-v<n>` on a main commit; an external caller pins
   the commit SHA with the tag in a comment, and core's own callers use the local path. Documented in the runbook.
+
+- **FR-013**: `@stackra/runway` with `stackra runway validate|plan|infra preview|infra up|deploy|promote|rollback|secrets
+sync|status` in `@stackra/cli` is the one deployment tool (ADR 0352 decision 1); `tools/scripts/runway.mjs` folds into
+  it.
+- **FR-014**: Every target is a provider in `@stackra/runway/node` behind one port (plan, apply, verify, rollback), in
+  the build order npm and Keygen, Cloudflare Workers, Encore Cloud, EAS, AWS or Compose, Mintlify (ADR 0352 decision 3).
+- **FR-015**: `stackra runway infra preview|up` drives the `@stackra/infra-*` components through the Pulumi Automation
+  API from `runway.yaml`, with state and config in `figentra/infra`; agents run `preview` only (ADR 0352 decision 4).
+- **FR-016**: CI holds one public reusable `runway.yml` and one `runway-promote.yml` that run the CLI; the per-provider
+  workflows of FR-005 to FR-007 shrink to callers of them (ADR 0352 decision 6).
+- **FR-017**: Every deploy, promote and rollback writes one record to GitHub Deployments, a Linear release and Slack
+  (ADR 0352 decision 7, ADR 0170 decision 10).
+- **FR-018**: `deploy` runs gen first for the members it ships; gen holds no deploy, promote, secret or infrastructure
+  logic (ADR 0352 decision 5).
+
+- **FR-019**: Runway is AI-operable: `validate`, `plan`, `status` and `infra preview` are MCP tools any agent may call;
+  `deploy`, `promote`, `rollback` and `infra up` are MCP tools that need the owner's approval; a `runway` skill is the
+  agents' blueprint for writing `runway.yaml`, reading a plan and repairing a failed deploy (ADR 0155, ADR 0352). The
+  logic stays in the package; the skill never re-implements it.
 
 ## Success Criteria
 

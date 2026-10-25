@@ -65,4 +65,11 @@ readers). This change adds the deploy layer that needs no gen output, in the own
 - **P-009**: `release-tags.json` covers `runway-v*`, `schemas@*` and the package tags with update and deletion rules — Validates: FR-009
 - **P-010**: `runway.mjs` refuses a dirty tree, an unpushed commit or a SHA not on `origin/main` before it dispatches, prints the SHA, and `plan` prints names only — Validates: FR-010
 - **P-011**: the runbook states the sync source, identities, write paths, plan and blocked parts — Validates: FR-011
+- **P-013**: `stackra runway --help` lists exactly the nine commands and `tools/scripts/runway.mjs` is gone — Validates: FR-013
+- **P-014**: a conformance suite runs plan, apply, verify and rollback against every provider with a fake target — Validates: FR-014
+- **P-015**: `infra preview` against a fake Pulumi workspace prints the plan and never applies; `infra up` is a guard ask — Validates: FR-015
+- **P-016**: no workflow under `.github/workflows` deploys without calling the Runway CLI (validator check) — Validates: FR-016
+- **P-017**: each command that changes an environment writes exactly one record per destination — Validates: FR-017
+- **P-018**: gen's sources import nothing from `@stackra/runway/node` deploy code, and `deploy` calls gen before any provider — Validates: FR-018
+- **P-019**: the MCP server lists the four read tools without approval and the four write tools behind approval; the `runway` skill names only CLI commands, never raw provider calls — Validates: FR-019
 - **P-012**: the runbook states the `runway-v<n>` tag rule and the SHA pin for external callers — Validates: FR-012
