@@ -20,6 +20,7 @@ its resolver, and imports it; it never re-exports it.
 | `.`           | `ChainScopeResolverDriver`                                                         | the chain: header, claim, root; `scope_unresolved` when none answers |
 | `.`           | `MemoryScopeTreeDriver`                                                            | a `ScopeTree` over a fixed list (tests, local runs, a client)        |
 | `.`           | `ActiveScopeService`, `SCOPE_PATH_HEADER`                                          | the client's current scope and the one header that carries it        |
+| `.`           | `SCOPE_PATH_CLAIM`                                                                 | the token claim the claim step reads (identity writes it)            |
 | `.`           | `childLevelsOf`, `isScopePath`, `isWithinScope`, `scopeLevelLabel`                 | the level rule, the path rule, the grant test, a level's lang key    |
 | `.`           | `ScopeUnresolvedError`, `ScopeLevelInvalidError`, `ScopeLabelInvalidError`         | refusals                                                             |
 | `./contracts` | `ScopeTree`, `ScopeResolver`, `GrantedScopes`                                      | the ports                                                            |
@@ -70,14 +71,15 @@ A label is 1 to 63 of `a-z`, `0-9` and `_`; the root's label is `ScopeConfig.roo
 const scope = await chain.resolve({
   actor,
   header: headers.get(SCOPE_PATH_HEADER) ?? undefined,
-  claim: token.scopePath,
+  claim: verifiedClaims[SCOPE_PATH_CLAIM], // a string, or undefined when the token carries none
 });
 await database.withScope(scope, () => pipeline.execute(type, input, { actor }));
 ```
 
 1. `X-Scope-Path`: accepted only when it is a scope path at or below a path the caller holds a grant for
    (`GrantedScopes`), and dropped otherwise, never refused.
-2. The verified token's scope path claim.
+2. The verified token's scope path claim, `SCOPE_PATH_CLAIM` (`urn:stackra:scope_path`), which identity's
+   `IDENTITY_CLAIMS.scopePath` re-uses.
 3. The root at `ScopeConfig.root`, which row-level security shows only to a caller granted the root.
 
 No answer refuses `scope_unresolved` (403). A deployment adds a step (tenancy's goes before the root) with a host

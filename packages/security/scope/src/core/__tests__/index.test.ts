@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: pins the exports of the `.` entry of @stackra/scope: the configuration and its schema, the header name, the
+ * Purpose: pins the exports of the `.` entry of @stackra/scope: the configuration and its schema, the header and claim names, the
  *          resolver steps and chain, the memory tree, the refusals, the path functions and the active scope service;
  *          no port (they are `./contracts`'), no `ScopeOptions` and no `ScopeRef`.
  * Boundary: test only.
@@ -26,6 +26,7 @@ describe("@stackra/scope", () => {
       "HeaderScopeResolverDriver",
       "MemoryScopeTreeDriver",
       "RootScopeResolverDriver",
+      "SCOPE_PATH_CLAIM",
       "SCOPE_PATH_HEADER",
       "ScopeConfig",
       "ScopeConfig$",

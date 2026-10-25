@@ -14,6 +14,7 @@ import { Container, Driver } from "@stackra/container";
 import type { Token } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
 import { ErrorReporter } from "@stackra/errors/contracts";
+import { PermissionSnapshotService } from "@stackra/iam";
 import { ActiveScopeService } from "@stackra/scope";
 import { TenantSwitcher } from "@stackra/tenancy";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
@@ -51,6 +52,7 @@ function sessionOf(signedIn: boolean): SessionService {
     buildConfig(IdentityConfig),
     new MemorySessionStoreDriver(USER, signedIn),
     new TenantSwitcher(new ActiveScopeService()),
+    new PermissionSnapshotService(),
   );
 }
 
@@ -120,6 +122,7 @@ describe("useSession", () => {
       buildConfig(IdentityConfig),
       store,
       new TenantSwitcher(new ActiveScopeService()),
+      new PermissionSnapshotService(),
     );
     const reporter = new KeptErrorReporterDriver();
     const { result } = renderHook(() => useSession(), {

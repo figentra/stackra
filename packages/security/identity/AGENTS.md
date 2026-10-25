@@ -38,6 +38,8 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./react`, `./tes
   every stored or fetched session through its schema.
 - `invalid_grant` on renewal is a revoked session; any other renewal failure keeps the session (ADR 0206 d9).
 - The session's state lives in `SessionService` only; drivers keep credentials and never notify.
+- `SessionService` is the only writer of `@stackra/iam`'s `PermissionSnapshotService`; iam never imports identity
+  (identity depends on iam, not the reverse).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

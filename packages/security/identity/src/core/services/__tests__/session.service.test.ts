@@ -6,7 +6,7 @@
  *          revoked session becomes `revoked`; sign-in is loading while it runs and a cancellation restores the state;
  *          sign-out always ends signed out; a refused token revokes; the idle rule signs out a quiet client; a window
  *          coming back into view reads the session again; `current()` is a stable snapshot and subscribers hear every
- *          change.
+ *          change; the signed-in user's permission keys reach IAM's snapshot and leave it on sign-out.
  * Boundary: test only; jsdom for the window listeners, fake timers for the idle rule, and a scripted store.
  * Runtime: browser (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0206 (decision 8); ADR 0210 (decision 3); ADR 0338 (decision 4).
@@ -14,6 +14,7 @@
 import { buildConfig } from "@stackra/config";
 import type { ConfigValues } from "@stackra/config";
 import { Driver } from "@stackra/container";
+import { PermissionSnapshotService } from "@stackra/iam";
 import { ActiveScopeService } from "@stackra/scope";
 import { TenantSwitcher } from "@stackra/tenancy";
 import { afterEach, describe, expect, it } from "@stackra/testing";
@@ -32,7 +33,7 @@ const USER: SessionUser = {
   userId: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3",
   email: "rana@acme.example",
   displayName: "Rana",
-  permissions: [],
+  permissions: ["orders.order.read"],
   tenants: [
     {
       tenantId: "scp_01j9z3k4m5n6p7q8r9s0t1v2w4",
@@ -77,12 +78,18 @@ class ScriptedStoreDriver extends Driver(SessionStore) {
   }
 }
 
-/** A service over a scripted store, with its switcher. */
+/** A service over a scripted store, with its switcher and permission snapshot. */
 function setup(values: Partial<ConfigValues<IdentityConfig>> = {}) {
   const store = new ScriptedStoreDriver();
   const switcher = new TenantSwitcher(new ActiveScopeService());
-  const session = new SessionService(buildConfig(IdentityConfig, { values }), store, switcher);
-  return { store, switcher, session };
+  const permissions = new PermissionSnapshotService();
+  const session = new SessionService(
+    buildConfig(IdentityConfig, { values }),
+    store,
+    switcher,
+    permissions,
+  );
+  return { store, switcher, permissions, session };
 }
 
 describe("SessionService", () => {
@@ -116,6 +123,17 @@ describe("SessionService", () => {
     await session.signOut();
     expect(listener).toHaveBeenCalledTimes(1);
     expect(session.current()).not.toBe(snapshot);
+  });
+
+  it("sets the signed-in user's permission keys into IAM's snapshot, and empties it on sign-out", async () => {
+    const { store, permissions, session } = setup();
+    store.user = USER;
+    expect(permissions.current()).toEqual([]);
+    await session.start();
+    expect(permissions.current()).toEqual(["orders.order.read"]);
+    expect(permissions.can("orders.order.read")).toBe(true);
+    await session.signOut();
+    expect(permissions.current()).toEqual([]);
   });
 
   it("boots signed out on a read failure, which only the first caller sees", async () => {

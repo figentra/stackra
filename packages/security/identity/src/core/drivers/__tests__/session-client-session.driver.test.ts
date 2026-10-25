@@ -9,6 +9,7 @@
  */
 import { ClientSession } from "@stackra/clients/contracts";
 import { buildConfig } from "@stackra/config";
+import { PermissionSnapshotService } from "@stackra/iam";
 import { ActiveScopeService } from "@stackra/scope";
 import { TenantSwitcher } from "@stackra/tenancy";
 import { describe, expect, it } from "@stackra/testing";
@@ -42,6 +43,7 @@ async function setup(signedIn: boolean) {
     buildConfig(IdentityConfig),
     new TokenStoreDriver(USER, signedIn),
     new TenantSwitcher(scope),
+    new PermissionSnapshotService(),
   );
   await session.start();
   return { scope, driver: new SessionClientSessionDriver(session, scope) };

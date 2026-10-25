@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/scope (the configuration with its shipped schema, the header
- *          name, the path functions, the resolver steps and chain, the memory tree, the client's active scope and the
- *          refusals) until `stackra gen` writes the entry barrels (STA-339).
+ *          and claim names, the path functions, the resolver steps and chain, the memory tree, the client's active
+ *          scope and the refusals) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. `ScopeConfig` lives in the `src/config/` entry folder;
  *           `ScopeOptions` stays internal. Isomorphic: nothing here touches a database, a DOM or a Node API.
  * Runtime: isomorphic
@@ -10,6 +10,7 @@
  */
 export { ScopeConfig } from "#config/scope.config";
 export { ScopeConfig$ } from "#core/constants/scope-config-schema.constant";
+export { SCOPE_PATH_CLAIM } from "#core/constants/scope-path-claim.constant";
 export { SCOPE_PATH_HEADER } from "#core/constants/scope-path-header.constant";
 export { ChainScopeResolverDriver } from "#core/drivers/chain-scope-resolver.driver";
 export { ClaimScopeResolverDriver } from "#core/drivers/claim-scope-resolver.driver";

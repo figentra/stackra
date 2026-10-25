@@ -12,6 +12,7 @@
  * Governing contract: ADR 0269 (decision 3); ADR 0266 (decision 2: a fake per capability); ADR 0206.
  */
 import { buildConfig } from "@stackra/config";
+import { PermissionSnapshotService } from "@stackra/iam";
 import { ActiveScopeService } from "@stackra/scope";
 import { TenantSwitcher } from "@stackra/tenancy";
 import { vi } from "vitest";
@@ -63,6 +64,7 @@ export class SessionFake extends SessionService {
       buildConfig(IdentityConfig),
       new MemorySessionStoreDriver(account, status === SessionStatus.SignedIn),
       new TenantSwitcher(new ActiveScopeService()),
+      new PermissionSnapshotService(),
     );
     this.set(
       status === SessionStatus.SignedIn ? { status, user: account } : { status, user: null },

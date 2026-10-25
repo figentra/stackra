@@ -13,3 +13,4 @@
 - [x] T009 [US1] Tests for every public symbol and each barrel in `src/**/__tests__/` — covers: SC-002 — route: tests — deps: T008
 - [x] T010 [US1] Changeset `.changeset/scope-package.md`; `oxfmt` and `oxlint` clean; the validator reports nothing for the package — covers: SC-001, SC-003 — route: package — deps: T009
 - [ ] T011 [US1] Run the package's tests, typecheck and build in the separate testing workflow after the integrator's install — covers: SC-002, SC-003 — route: tests — deps: T010
+- [x] T012 [US2] R3 reconciliation: `SCOPE_PATH_CLAIM` in `packages/security/scope/src/core/constants/scope-path-claim.constant.ts`, the one home of the claim the claim step reads and identity emits — covers: FR-004, P-004 — route: package — deps: T005

@@ -7,8 +7,8 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 
 **Tier:** `tier:lib` (`packages/security/identity`). Entries `.`, `./contracts`, `./react` and `./testing`. Depends on
 `@stackra/clients`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/errors`,
-`@stackra/scope`, `@stackra/storage`, `@stackra/tenancy`, `@stackra/transport`, `@stackra/validation` and zod; React
-is an optional peer of `./react`, vitest of `./testing`.
+`@stackra/iam`, `@stackra/scope`, `@stackra/storage`, `@stackra/tenancy`, `@stackra/transport`, `@stackra/validation`
+and zod; React is an optional peer of `./react`, vitest of `./testing`.
 
 ## What is here
 
@@ -66,6 +66,9 @@ return <Avatar name={session.user.displayName} src={session.user.avatarUrl} />;
   leaves it signed out and goes to the bound `ErrorReporter`.
 - Every state hands its memberships to `@stackra/tenancy`'s `TenantSwitcher`, so the switcher and the active scope
   follow the session.
+- Every state sets the user's permission keys into `@stackra/iam`'s `PermissionSnapshotService` (empty when signed
+  out), so `usePermission()` hides the same controls the session allows. Presentation only: the producer checks every
+  call.
 - `signIn` rejects `SignInCancelledError` when the user closes the hosted page; the page shows it inline.
 - With `idleMinutes` set, a client without a pointer or key press for that long signs out. With `refreshOnFocus`, a
   window coming back into view reads the session again.
@@ -88,12 +91,12 @@ WebCrypto. No `SignInBrowser` driver ships here yet: the Expo and Electron ones 
 
 A Stackra token carries, besides `email`, `name` and `picture`:
 
-| Claim (`IDENTITY_CLAIMS`)                 | Holds                                                                     |
-| ----------------------------------------- | ------------------------------------------------------------------------- |
-| `userId` = `urn:stackra:user_id`          | the `usr_` public id                                                      |
-| `memberships` = `urn:stackra:memberships` | `[{ scopeId: "scp_…", path, name, roles }]`                               |
-| `scopePath` = `urn:stackra:scope_path`    | the scope the token was issued for; the scope chain's claim step reads it |
-| `permissions` = `urn:stackra:permissions` | the permission names held in that scope (presentation only)               |
+| Claim (`IDENTITY_CLAIMS`)                 | Holds                                                                                  |
+| ----------------------------------------- | -------------------------------------------------------------------------------------- |
+| `userId` = `urn:stackra:user_id`          | the `usr_` public id                                                                   |
+| `memberships` = `urn:stackra:memberships` | `[{ scopeId: "scp_…", path, name, roles }]`                                            |
+| `scopePath` = `urn:stackra:scope_path`    | the scope the token was issued for; scope's `SCOPE_PATH_CLAIM`, read by its claim step |
+| `permissions` = `urn:stackra:permissions` | the permission names held in that scope (presentation only)                            |
 
 On ZITADEL the identity service's action adds them, mapping each organisation to its scope node. `sessionUserOf` maps
 them to a `SessionUser`, whose memberships are the tenancy package's `TenantMembership`.
