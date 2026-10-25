@@ -54,3 +54,12 @@ expect(result).toRefuseWith(refusal(NotOwnPrincipalError)); // a `{ ok: false, e
 never message text.
 
 Governing ADRs: 0140 (envelope and kinds), 0232 (this package), 0294 (decisions 16, 20, 25), 0305 (rule 2), 0269.
+
+## Sentry and live configuration
+
+- `SentryErrorReporterDriver` (driver name `sentry`) is an `ErrorReporter` with no vendor SDK: each error becomes one
+  Sentry envelope POSTed with `fetch` to the project of the DSN secret (`SentryConfig.dsnSecret`, `SENTRY_DSN` by
+  default), tagged with the environment, the release and a refusal's code, sampled by `sampleRate`. It sends no
+  request, user or input. Call `flush()` before a process ends.
+- `LiveReadOnlyError` (`live_read_only`, 409) is the refusal of a structural-configuration write in live (ADR 0359
+  decision 3); the action pipeline raises it through its `LiveConfigurationGuard`.

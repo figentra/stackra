@@ -2,7 +2,7 @@
   "name": "@stackra/errors",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra refusals: the Refusal({ kind }) kind base, ErrorKind, the core refusals, the ADR 0140 error envelope, the ErrorReporter port, useErrorReporter and the toRefuseWith matcher",
+  "description": "Stackra refusals: the Refusal({ kind }) kind base, ErrorKind, the core refusals, the ADR 0140 error envelope, the ErrorReporter port, useErrorReporter and the toRefuseWith matcher, the Sentry ErrorReporter driver with SentryConfig, and LiveReadOnlyError",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -19,6 +19,10 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts"
+    ],
     "#contracts/*": [
       "./src/contracts/*",
       "./src/contracts/*.ts",
@@ -79,8 +83,11 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
-    "@stackra/contracts": "workspace:*"
+    "@stackra/contracts": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",
