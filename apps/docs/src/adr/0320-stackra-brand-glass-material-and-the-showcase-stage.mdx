@@ -110,7 +110,14 @@ limits, so the material does not drift into product screens or into the componen
   modes in its display switcher (`?material=`) and keeps only its ambient field in `src/styles/app.css`.
 - `@stackra/tokens` carries the material (decision 7). A theme without `materials` no longer validates, and every
   product theme adds the block.
-- The Theme Studio (STA-423) edits the levels and previews every mode.
+- The Theme Studio (STA-423, `/theme-studio`) derives a theme from a few controls and previews it, with its contrast
+  checked against AA. It exports from the one theme through `@stackra/tokens`:
+  - the web CSS (`renderWebCss`, HeroUI v3) and native CSS (`renderNativeCss`, Uniwind);
+  - the full JSON (`stackra.theme/1`: the theme, with HeroUI's own custom properties and Stackra's additions);
+  - a changes-only JSON (`stackra.theme-diff/1`);
+  - W3C DTCG tokens.
+
+  It imports either JSON, checked by `parseThemeJson`.
 
 ## Enforcement
 
