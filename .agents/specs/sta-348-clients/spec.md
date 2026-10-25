@@ -68,7 +68,7 @@ The package follows the v3.1 registry row and the owner decisions of 2026-10-24.
   mobile wiring lists `clients` as depending on `identity`; a queued call over HTTP sends `Prefer: respond-async`
   (RFC 7240); `Stackra-Visitor` is `<address>;<unix seconds>;<base64url HMAC-SHA256>`; public clients refuse any area
   but the public one; `useIntentRouter` matches phrases locally (no model call) and proposes an empty input; `risk` is
-  text until `@stackra/iam` ships `Risk`
+  `@stackra/iam`'s `Risk` (`Risk.L2`)
 
 ## User Scenarios & Testing
 
@@ -170,7 +170,7 @@ The web Worker builds `createPublicClients(...)` per request with the locale, th
 - A fake kept in a variable and then passed to `.override(Client, fake)` must name the client
   (`fakeClient<PaymentsClient>()`); inline it is inferred. The template's commerce and notifications tests change
   in STA-344.
-- `risk` is text until `@stackra/iam` ships `Risk`; the console palette indexes its labels by `Risk`.
+- `risk` is `@stackra/iam`'s `Risk` (`l0` to `l4`); the console palette indexes its labels by `Risk`.
 - `useIntentRouter` matches the declared phrases locally and proposes an empty input; a model-backed router for text
   that matches no phrase is not built.
 - `ClientSession` needs identity's driver, and the template's render helpers (`render(..., { clients })`,
