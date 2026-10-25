@@ -4,7 +4,7 @@
     "slug": "stackra",
     "scheme": "stackra",
     "version": "0.0.1",
-    "orientation": "portrait",
+    "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/app-icon-ios-1024.png",
     "ios": {
@@ -22,6 +22,7 @@
     },
     "plugins": [
       "react-native-bottom-tabs",
+      ["expo-build-properties", { "ios": { "enableSceneSupport": true } }],
       [
         "expo-splash-screen",
         {

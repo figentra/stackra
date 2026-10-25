@@ -6,10 +6,13 @@ import {
   checkExports,
   checkFiles,
   checkImports,
+  checkIosFormFactor,
   checkJsonConfigs,
   checkService,
   checkTestPlacement,
+  checkWindowSizing,
   checkYamlFlowMaps,
+  isExpoAppConfig,
   isMemberSource,
   isV2Service,
   isRepoOwnedYaml,
@@ -383,4 +386,32 @@ test("isMemberSource: member TS only; Node-loaded tooling presets and lint fixtu
     "apps/console/src/a.js",
   ])
     assert.equal(isMemberSource(p), false);
+});
+
+/** An Expo app config's text with the given `expo` block. */
+const config = (expo) => JSON.stringify({ expo });
+
+// @covers STA-461
+test("checkIosFormFactor: refuses an orientation lock and a full-screen request; allows none or default", () => {
+  assert.deepEqual(checkIosFormFactor("a/app.json", config({ name: "x" })), []);
+  assert.deepEqual(checkIosFormFactor("a/app.json", config({ orientation: "default" })), []);
+  assert.deepEqual(checkIosFormFactor("a/app.json", JSON.stringify({ name: "not expo" })), []);
+  const locked = checkIosFormFactor("a/app.json", config({ orientation: "portrait" }));
+  assert.equal(locked.length, 1);
+  assert.match(locked[0], /orientation.*portrait.*STA-461/);
+  const full = checkIosFormFactor("a/app.json", config({ ios: { requireFullScreen: true } }));
+  assert.equal(full.length, 1);
+  assert.match(full[0], /requireFullScreen/);
+});
+
+test("checkWindowSizing: refuses Dimensions.get and allows the window hook", () => {
+  assert.equal(checkWindowSizing("a.tsx", "const { width } = Dimensions.get('window');").length, 1);
+  assert.deepEqual(checkWindowSizing("a.tsx", "const { width } = useWindowDimensions();"), []);
+});
+
+test("isExpoAppConfig: app members and app templates only", () => {
+  assert.equal(isExpoAppConfig("apps/mobile/app.json"), true);
+  assert.equal(isExpoAppConfig("tools/scaffold/templates/apps/mobile/app.json"), true);
+  assert.equal(isExpoAppConfig("apps/mobile/src/app.json"), false);
+  assert.equal(isExpoAppConfig("packages/x/y/app.json"), false);
 });

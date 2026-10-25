@@ -122,6 +122,9 @@ catalogs:
   # react-native 0.86 renders with that exact renderer version. Bump with `expo install --check`.
   mobile:
     expo: 57.0.30
+    # The iOS scene lifecycle the iOS 27 SDK and resizable windows need (ios.enableSceneSupport, STA-461);
+    # SDK 58 builds it in, so the entry and its plugin go with the SDK 58 bump (STA-460).
+    expo-build-properties: 57.0.22
     # Code-based navigation (no expo-router routes): React Navigation 7 + Callstack's native tab bar,
     # which drives UITabBarController so iOS 26 draws the Liquid Glass tab bar.
     "@react-navigation/native": 7.5.1
