@@ -9,8 +9,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 9 and 10); ADR 0327 (decisions 3 and 5).
  */
+import type { ConnectionContext } from "#contracts/ports/connection-context.port";
 import { ConnectionLevel } from "#core/enums/connection-level.enum";
-import type { ConnectionContext } from "#core/ports/connection-context.port";
 import type { ConnectionRecord } from "#core/types/connection-record.type";
 
 /** Whether the node at `ancestor` is the node at `path` or above it. */

@@ -1,8 +1,8 @@
 # AGENTS — @stackra/notifications
 
 Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `packages/communication/notifications`
-(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./react`,
-`./testing`.
+(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`,
+`./react`, `./testing`.
 
 ## Where code goes
 
@@ -17,6 +17,7 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
 | A type                      | `src/core/types/<name>.type.ts`                |
 | The configuration           | `src/config/notifications.config.ts`           |
 | Mail rendering and its hook | `src/react/mail/`                              |
+| The service-queueing driver | `src/node/drivers/<name>.driver.ts`            |
 | A test helper or double     | `src/testing/`                                 |
 | A test                      | `__tests__/<name>.<kind>.test.ts(x)` beside it |
 
@@ -24,7 +25,8 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
 
 - Each entry has a stand-in barrel (`src/<entry>/index.ts`) until gen writes them (STA-339); add every new public file
   to it and to its `__tests__/index.test.ts`.
-- `contracts` is the leaf. `react` imports `core`; `testing` imports them all. No symbol is exported from two entries:
+- `contracts` is the leaf. `react` imports `core`; `node` imports `core` and the internal mail renderer of `react`;
+  `testing` imports them all. No symbol is exported from two entries:
   `MemoryNotifier` in `./testing` is the type of `MemoryNotifierDriver` in `.`.
 - `MailMessage` is exported as a type only. `prepareNotification`, `htmlToText`, `NotificationBase`, the mail renderer
   and `MailTools` stay internal.
@@ -35,7 +37,7 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
   found by name and a subclass writes them without `override`.
 - Strings are i18n keys (`I18nKey`), never literals or concatenations. No template engine at run time: a body is a
   compiled `.mail.tsx` component rendered with `react-dom/server`.
-- `.` and `./contracts` never import React; only `./react` and `./testing` do.
+- `.` and `./contracts` never import React; only `./node`, `./react` and `./testing` do.
 - No "tenant" vocabulary: a scope recipient keeps the scope's id only (R-59).
 - No parameter properties and no `#private` fields; the source keeps to erasable syntax.
 

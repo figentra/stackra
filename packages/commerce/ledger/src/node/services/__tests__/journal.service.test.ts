@@ -4,7 +4,8 @@
  *          account's entries, refuses a debit below the floor (the model's default, a call's override, or none with
  *          `null`) and reports a retried debit as a duplicate, serialises concurrent debits so they never overdraw,
  *          reverses set-wise once and cuts a reversal at the floor (the loyalty kit's stale-earn expiry can no longer
- *          go negative), posts balanced lines or nothing, and refuses floats and a model without `AppendOnly`.
+ *          go negative), posts balanced lines or nothing, and refuses floats and a model without `AppendOnly`. A model with a currency field
+ *          keeps one ISO 4217 currency per posting and sums balances per currency.
  * Boundary: test only; the entries live in a memory repository that keeps the model's unique (account, reference)
  *           index, and the locks are the real `Locks` over the memory lock driver.
  * Runtime: node (vitest)
@@ -21,8 +22,8 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { Journaled } from "#core/decorators/journaled.decorator";
 import { UnbalancedPostingError } from "#core/errors/unbalanced-posting.error";
-import { journalOf } from "#core/functions/journal-of.function";
-import type { Journal } from "#core/services/journal.service";
+import { journalOf } from "#node/functions/journal-of.function";
+import type { Journal } from "#node/services/journal.service";
 
 /** Why a points entry exists. */
 type PointsKind = "earn" | "redeem" | "expire" | "adjust";
@@ -421,5 +422,110 @@ describe("Journal", () => {
     expectTypeOf<
       NonNullable<Parameters<Journal<PointsEntry>["balance"]>[0]["amount"]>
     >().toEqualTypeOf<"points">();
+  });
+});
+
+/** A money ledger row with a currency field and a floor of zero. */
+@Journaled({ currency: "currency", floor: 0 })
+class MoneyEntry extends Model.with(AppendOnly) {
+  account!: string;
+
+  amount!: number;
+
+  kind!: string;
+
+  reference!: string;
+
+  at!: Date;
+
+  currency!: string;
+}
+
+/** A money line on `account` in `currency`. */
+const money = (account: string, amount: number, currency: string, reference = "t1") => ({
+  account,
+  amount,
+  kind: "transfer",
+  reference,
+  at: day(1),
+  currency,
+});
+
+describe("Journal with a currency field", () => {
+  it("writes and reads the currency, and sums balances per currency", async () => {
+    const entries = new MemoryEntries("account");
+    const journal = journalOver(MoneyEntry, entries);
+    await journal.append(money("a1", 100, "EUR", "o1"));
+    await journal.append(money("a1", 70, "USD", "o2"));
+
+    expect(entries.rows[0]).toMatchObject({ amount: 100, currency: "EUR" });
+    expect(await journal.balance({ account: "a1", currency: "EUR" })).toBe(100);
+    expect(await journal.balance({ account: "a1", currency: "USD" })).toBe(70);
+    expect(await journal.find({ account: "a1", reference: "o2" })).toMatchObject({
+      currency: "USD",
+    });
+  });
+
+  it("keeps the floor per currency", async () => {
+    const journal = journalOver(MoneyEntry, new MemoryEntries("account"));
+    await journal.append(money("a1", 100, "EUR", "o1"));
+
+    expect(await journal.append(money("a1", -50, "USD", "d1"))).toEqual({
+      written: false,
+      belowFloor: true,
+    });
+    expect(await journal.append(money("a1", -50, "EUR", "d2"))).toMatchObject({ written: true });
+  });
+
+  it("posts lines that share one currency and refuses a mixed posting", async () => {
+    const entries = new MemoryEntries("account");
+    const journal = journalOver(MoneyEntry, entries);
+
+    expect(await journal.post([money("issued", -5, "EUR"), money("a1", 5, "EUR")])).toMatchObject({
+      written: true,
+    });
+    const mixed = await journal
+      .post([money("a", -5, "EUR", "m1"), money("b", 5, "USD", "m1")])
+      .catch((error: unknown) => error);
+    expect(isRefusal(mixed, UnbalancedPostingError)).toBe(true);
+    expect(mixed).toMatchObject({ lines: 2, total: 0, currencies: ["EUR", "USD"] });
+    expect(entries.rows).toHaveLength(2);
+  });
+
+  it("reverses each currency against its own balance", async () => {
+    const journal = journalOver(MoneyEntry, new MemoryEntries("account"));
+    await journal.append(money("a1", 40, "EUR", "o1"));
+    await journal.append(money("a1", 90, "USD", "o2"));
+    await journal.append({ ...money("a1", -30, "EUR", "d1"), kind: "redeem" });
+
+    const reversed = await journal.reverseWhere(
+      { account: "a1", kind: "transfer", before: day(2) },
+      { kind: "expire", referencePrefix: "expire:", at: day(3) },
+    );
+
+    // 10 EUR are left above the floor, so the EUR earn is cut to 10; the USD earn is reversed in full
+    expect(reversed.map((entry) => [entry.reference, entry.amount, entry.currency])).toEqual([
+      ["o1", 10, "EUR"],
+      ["o2", 90, "USD"],
+    ]);
+    expect(await journal.balance({ account: "a1", currency: "EUR" })).toBe(0);
+    expect(await journal.balance({ account: "a1", currency: "USD" })).toBe(0);
+  });
+
+  it("refuses a missing or malformed currency, and a balance without one", async () => {
+    const journal = journalOver(MoneyEntry, new MemoryEntries("account"));
+
+    await expect(
+      journal.append({ account: "a1", amount: 1, kind: "x", reference: "o1", at: day(1) }),
+    ).rejects.toThrow(RangeError);
+    await expect(journal.append(money("a1", 1, "eur", "o1"))).rejects.toThrow(RangeError);
+    await expect(journal.balance({ account: "a1" })).rejects.toThrow(TypeError);
+  });
+
+  it("refuses a currency on a model that names no currency field", async () => {
+    const journal = journalOver(CashEntry, new MemoryEntries("account"));
+
+    await expect(journal.append(money("a1", 1, "EUR", "o1"))).rejects.toThrow(TypeError);
+    await expect(journal.balance({ account: "a1", currency: "EUR" })).rejects.toThrow(TypeError);
   });
 });

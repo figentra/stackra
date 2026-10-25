@@ -15,6 +15,12 @@ describe("NOTIFICATIONS_CONFIG_SCHEMA", () => {
     expect(NOTIFICATIONS_CONFIG_SCHEMA.parse({})).toEqual({ driver: "memory" });
   });
 
+  it("accepts the notifications driver", () => {
+    expect(NOTIFICATIONS_CONFIG_SCHEMA.parse({ driver: "notifications" })).toEqual({
+      driver: "notifications",
+    });
+  });
+
   it("refuses a driver this package does not ship", () => {
     expect(NOTIFICATIONS_CONFIG_SCHEMA.safeParse({ driver: "smtp" }).success).toBe(false);
   });

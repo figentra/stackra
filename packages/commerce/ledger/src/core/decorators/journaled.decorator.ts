@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `@Journaled(options)`, the class facet that makes a model a journal's entry model: which of its fields hold
- *          the account, amount, kind, reference and time, and the default balance floor of its accounts.
+ *          the account, amount, kind, reference, time and currency, and the default balance floor of its accounts.
  * Boundary: made with `createDecorator`, so it records metadata only; one per model, models only. `Journal` reads it
  *           with `Journaled.on(model)` when it runs; nothing acts on it at boot, so the package has no Explorer (as
  *           `@Searchable` in @stackra/model). Gen checks the field names against the model.

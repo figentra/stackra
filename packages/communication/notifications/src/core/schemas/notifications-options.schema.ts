@@ -23,7 +23,10 @@ import type { Notifier } from "#core/ports/notifier.port";
  * }
  */
 export class NotificationsOptions extends Schema {
-  /** The `Notifier` driver: `memory` keeps deliveries in the process for dev and tests. */
+  /**
+   * The `Notifier` driver: `memory` keeps deliveries in the process for dev and tests; `notifications` (`./node`)
+   * queues rendered mail on the notifications service.
+   */
   driver: DriverName<Notifier> = "memory";
 }
 

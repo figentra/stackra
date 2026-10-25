@@ -170,7 +170,7 @@ export const BILLING_IR: MemberIR = {
         deps: [
           {
             class: { name: "Invoice", from: INVOICE },
-            of: { name: "journalOf", from: "@stackra/ledger" },
+            of: { name: "journalOf", from: "@stackra/ledger/node" },
           },
         ],
       },

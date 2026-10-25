@@ -62,7 +62,7 @@ offsets the hold), so settle and release commute: the points come back exactly o
 
 ## The ledger and the floor
 
-The Postgres driver keeps the points in `Journal<LedgerEntry>` (`@stackra/ledger`). `LedgerEntry` carries
+The Postgres driver keeps the points in `Journal<LedgerEntry>` (`@stackra/ledger/node`). `LedgerEntry` carries
 `@Journaled({ account: "memberId", amount: "points", floor: 0 })`, and every driver call states its floor:
 
 - `append` lifts it (`floor: null`): the port's plain append, used for credits, a settle's redeem line and releases.

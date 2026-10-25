@@ -30,4 +30,10 @@ export interface JournalEntry<M extends object = object> {
 
   /** When the cause happened, from the caller's clock, not when the row was written. */
   readonly at: Date;
+
+  /**
+   * The ISO 4217 code (`EUR`) of the amount. Required when the model's `@Journaled` facet names a `currency` field,
+   * refused when it does not: a points journal has no currency.
+   */
+  readonly currency?: string;
 }

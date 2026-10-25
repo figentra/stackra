@@ -6,9 +6,11 @@
  * Boundary: an abstract class that is its own token, with two drivers: `local` (in process, for the template and
  *           development) and `hosted` (the integrations service holds the credentials, encrypted, and refreshes
  *           the tokens). A loaded connection carries its fields and its managed client; its secret fields are never
- *           enumerable. `byId` does not authorize: the caller (a policy, the webhook router) has.
+ *           enumerable. `byId` does not authorize: the caller (a policy, the webhook router) has. It stays in `.`, not
+ *           `./contracts`: its signatures use the `Connection` base and `ConnectionClass` of `.` (and a connection's
+ *           `check()` returns `ConnectedAccount`), which the template imports from `@stackra/integrations`.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rules 2, 9, 10, 12, 14, 17 and 18).
+ * Governing contract: ADR 0308 (rules 2, 9, 10, 12, 14, 17 and 18); ADR 0294 (decision 15).
  */
 import { Port } from "@stackra/contracts";
 

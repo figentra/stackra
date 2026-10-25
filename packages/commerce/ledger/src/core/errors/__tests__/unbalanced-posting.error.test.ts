@@ -23,4 +23,10 @@ describe("UnbalancedPostingError", () => {
       details: { lines: 2, total: -10 },
     });
   });
+
+  it("carries the currencies of a mixed-currency posting", () => {
+    const error = UnbalancedPostingError.create({ lines: 2, total: 0, currencies: ["EUR", "USD"] });
+
+    expect(error.toEnvelope()).toMatchObject({ details: { currencies: ["EUR", "USD"] } });
+  });
 });

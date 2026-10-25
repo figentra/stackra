@@ -13,7 +13,7 @@
  * Governing contract: ADR 0294 (decisions 15 and 16); ADR 0220 (decisions 4 and 5); ADR 0266.
  */
 import { Driver } from "@stackra/container";
-import type { Journal } from "@stackra/ledger";
+import type { Journal } from "@stackra/ledger/node";
 
 import { DebitOutcome } from "#contracts/enums/debit-outcome.enum";
 import { EntryKind } from "#contracts/enums/entry-kind.enum";

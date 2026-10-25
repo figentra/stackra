@@ -25,6 +25,13 @@ describe("@Journaled", () => {
     expect(Journaled.on(CashEntry)).toBeUndefined();
   });
 
+  it("records the currency field", () => {
+    @Journaled({ currency: "currency" })
+    class MoneyEntry extends Model.with(AppendOnly) {}
+
+    expect(Journaled.on(MoneyEntry)).toEqual({ currency: "currency" });
+  });
+
   it("refuses a floor that is not a whole number", () => {
     expect(() => Journaled({ floor: 0.5 })).toThrow(RangeError);
   });

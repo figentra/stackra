@@ -119,7 +119,7 @@ describe("emitWiring", () => {
     ])
       expect(billing).toContain(line);
     expect(billing).toContain('import { InboundWebhooksController } from "#stackra/webhooks";');
-    expect(billing).toContain('import { journalOf } from "@stackra/ledger";');
+    expect(billing).toContain('import { journalOf } from "@stackra/ledger/node";');
     expect(billing.match(/provide: Locks,/g)).toHaveLength(1);
   });
 

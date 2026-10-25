@@ -12,8 +12,8 @@ import { Locks, MemoryLockDriver } from "@stackra/locking";
 import { AppendOnly, Model } from "@stackra/model";
 import { describe, expect, it } from "@stackra/testing";
 
-import { journalOf } from "#core/functions/journal-of.function";
-import { Journal } from "#core/services/journal.service";
+import { journalOf } from "#node/functions/journal-of.function";
+import { Journal } from "#node/services/journal.service";
 
 /** One entry model. */
 class LedgerEntry extends Model.with(AppendOnly) {}

@@ -2,7 +2,7 @@
 
 The AI kinds of a module's `ai/` group (`Prompt`, `Skill`, `Facts<M>`), the tool-table vocabulary (`ToolSource`,
 `Approval`, `approvalFor`) and `decide()` on AI SDK core. Member at `packages/application/ai` (`tier:lib`), in the
-programming model v3.1 shape (ADR 0294, 0305). Entry `.` only.
+programming model v3.1 shape (ADR 0294, 0305). Entry `.` only (plus `retrieve`, the Facts retrieval helper over the `@stackra/search` ports).
 
 ## Where code goes
 

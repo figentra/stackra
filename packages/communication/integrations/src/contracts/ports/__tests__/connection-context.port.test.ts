@@ -10,7 +10,7 @@ import { Driver } from "@stackra/container";
 import { Port, type PublicId, type ScopeRef } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
-import { ConnectionContext } from "#core/ports/connection-context.port";
+import { ConnectionContext } from "#contracts/ports/connection-context.port";
 
 class FixedConnectionContextDriver extends Driver(ConnectionContext) {
   scope(): ScopeRef {

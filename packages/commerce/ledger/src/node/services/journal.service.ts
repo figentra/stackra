@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `Journal<M>`, the double-entry arithmetic every ledger shares, over one append-only entry model: append once
  *          per (account, reference), the balance as the sum of an account's entries, a debit refused below a balance
- *          floor, set-based reversal cut at the floor, and balanced multi-line postings.
+ *          floor, set-based reversal cut at the floor, and balanced multi-line postings. A model that names a currency field has every entry and posting in one ISO
+ *          4217 currency and every balance per currency (ADR 0220).
  * Boundary: a service over the model's repository; it writes no SQL. Rows are inserted, never updated: the model must
  *           carry `AppendOnly`, and a correction is a reversal. Every write that lowers a balance holds its account's
  *           lock from `Locks` (a transaction-level advisory lock on Postgres, so it lasts until the caller commits), so
@@ -25,8 +26,8 @@ import type { Where } from "@stackra/database/contracts";
 import type { Locks } from "@stackra/locking";
 import { traitsOf } from "@stackra/model";
 
-import { JOURNAL_FIELDS } from "#core/constants/journal-fields.constant";
-import { JOURNAL_LOCK_TTL } from "#core/constants/journal-lock-ttl.constant";
+import { JOURNAL_FIELDS } from "#node/constants/journal-fields.constant";
+import { JOURNAL_LOCK_TTL } from "#node/constants/journal-lock-ttl.constant";
 import { Journaled } from "#core/decorators/journaled.decorator";
 import { UnbalancedPostingError } from "#core/errors/unbalanced-posting.error";
 import type { JournalEntry } from "#core/types/journal-entry.type";
@@ -34,7 +35,10 @@ import type { JournalLine } from "#core/types/journal-line.type";
 import type { JournalWrite } from "#core/types/journal-write.type";
 
 /** The model's field of each journal name, and its default floor. */
-type Fields = typeof JOURNAL_FIELDS & { readonly floor?: number };
+type Fields = typeof JOURNAL_FIELDS & { readonly floor?: number; readonly currency?: string };
+
+/** The shape of an ISO 4217 alphabetic code. */
+const CURRENCY_CODE = /^[A-Z]{3}$/;
 
 /** Written now. */
 const WRITTEN: JournalWrite = Object.freeze({ written: true, belowFloor: false });
@@ -51,6 +55,25 @@ function assertAmount(amount: number): void {
     throw new RangeError(
       `A journal amount is a safe integer of points or minor units, not ${amount}`,
     );
+}
+
+/**
+ * The currency an entry is written in: its own when the model has a currency field, undefined when it has none.
+ *
+ * @throws RangeError when the model has a currency field and the entry's currency is not an ISO 4217 code.
+ * @throws TypeError when the entry names a currency the model has no field for.
+ */
+function currencyOf(entry: { readonly currency?: string }, fields: Fields): string | undefined {
+  if (fields.currency === undefined) {
+    if (entry.currency !== undefined)
+      throw new TypeError(
+        "A journal entry names a currency, but its model's @Journaled has no currency field",
+      );
+    return undefined;
+  }
+  if (entry.currency === undefined || !CURRENCY_CODE.test(entry.currency))
+    throw new RangeError(`A journal entry names an ISO 4217 currency code, not ${entry.currency}`);
+  return entry.currency;
 }
 
 /** The floor a write keeps: the call's (`null` lifts it), else the model's default; undefined for none. */
@@ -75,6 +98,7 @@ function rowOf<M extends object>(
     [fields.kind]: entry.kind,
     [fields.reference]: entry.reference,
     [fields.at]: entry.at,
+    ...(fields.currency === undefined ? {} : { [fields.currency]: entry.currency }),
   };
   // reason: as in `whereOf`, the keys are the model's field names read at run time
   return row as unknown as Parameters<Repository<M>["insert"]>[0];
@@ -89,6 +113,7 @@ function entryOf<M extends object>(row: object, fields: Fields): JournalEntry<M>
     kind: record[fields.kind] as JournalEntry<M>["kind"],
     reference: String(record[fields.reference]),
     at: record[fields.at] as Date,
+    ...(fields.currency === undefined ? {} : { currency: String(record[fields.currency]) }),
   };
 }
 
@@ -123,17 +148,27 @@ export abstract class Journal<M extends object> extends Service {
   /**
    * The balance of `query.account`: the sum of its entries' amounts; zero when it has none.
    *
-   * @param query - the account, and the integer field to sum when it is not the journal's amount (a base-currency
-   *                amount kept beside the transaction amount, ADR 0220 decision 1).
+   * @param query - the account, the currency when the model has a currency field (balances are per currency, so a
+   *                sum never mixes two), and the integer field to sum when it is not the journal's amount (a
+   *                base-currency amount kept beside the transaction amount, ADR 0220 decision 1).
+   * @throws TypeError when the model has a currency field and no currency is given, or has none and one is.
    */
   async balance(query: {
     readonly account: string;
+    readonly currency?: string;
     readonly amount?: { [K in keyof M]-?: M[K] extends number ? K : never }[keyof M] & string;
   }): Promise<number> {
     const fields = this.fields();
+    if ((fields.currency === undefined) !== (query.currency === undefined))
+      throw new TypeError(
+        `${this.model.name}'s balance is per currency exactly when its @Journaled names a currency field`,
+      );
     return this.entries().sum(
       query.amount ?? fields.amount,
-      whereOf<M>({ [fields.account]: query.account }),
+      whereOf<M>({
+        [fields.account]: query.account,
+        ...(fields.currency === undefined ? {} : { [fields.currency]: query.currency }),
+      }),
     );
   }
 
@@ -156,7 +191,8 @@ export abstract class Journal<M extends object> extends Service {
    *
    * @param options - `floor` overrides the model's default floor for this call; `null` lifts it.
    * @returns `written` false when the pair was already applied; `belowFloor` true when the floor refused it.
-   * @throws RangeError when the amount is not a safe integer.
+   * @throws RangeError when the amount is not a safe integer, or the currency is not an ISO 4217 code.
+   * @throws TypeError when the currency is named and the model has no currency field, or the reverse.
    * @throws LockUnavailableError when another write held the account for the whole wait.
    */
   async append(
@@ -165,13 +201,14 @@ export abstract class Journal<M extends object> extends Service {
   ): Promise<JournalWrite> {
     assertAmount(entry.amount);
     const fields = this.fields();
+    const currency = currencyOf(entry, fields);
     if (entry.amount >= 0) return (await this.insertOnce(entry, fields)) ? WRITTEN : NOT_WRITTEN;
     const floor = floorOf(options.floor, fields);
     return this.locked([entry.account], async () => {
       if ((await this.find(entry)) !== null) return NOT_WRITTEN;
       if (
         floor !== undefined &&
-        (await this.balance({ account: entry.account })) + entry.amount < floor
+        (await this.balance({ account: entry.account, currency })) + entry.amount < floor
       )
         return BELOW_FLOOR;
       return (await this.insertOnce(entry, fields)) ? WRITTEN : NOT_WRITTEN;
@@ -232,22 +269,35 @@ export abstract class Journal<M extends object> extends Service {
               }),
             );
       const done = new Set(applied.map((row) => entryOf<M>(row, fields).reference));
-      let balance = floor === undefined ? 0 : await this.balance({ account: where.account });
+      const balances = new Map<string | undefined, number>();
       const reversed: JournalEntry<M>[] = [];
       for (const entry of candidates) {
         const reference = reversal.referencePrefix + entry.reference;
         if (done.has(reference)) continue;
         const full = -entry.amount;
+        const balance =
+          balances.get(entry.currency) ??
+          (floor === undefined
+            ? 0
+            : // oxlint-disable-next-line no-await-in-loop -- read once per currency, before its first reversal
+              await this.balance({ account: where.account, currency: entry.currency }));
         const amount =
           floor === undefined || full >= 0 ? full : Math.min(0, Math.max(full, floor - balance));
         // oxlint-disable-next-line no-await-in-loop -- each reversal is cut against the balance the one before left
         await this.entries().insert(
           rowOf<M>(
-            { account: where.account, amount, kind: reversal.kind, reference, at: reversal.at },
+            {
+              account: where.account,
+              amount,
+              kind: reversal.kind,
+              reference,
+              at: reversal.at,
+              currency: entry.currency,
+            },
             fields,
           ),
         );
-        balance += amount;
+        balances.set(entry.currency, balance + amount);
         reversed.push({ ...entry, amount: -amount || 0 }); // `|| 0`: a cut-to-nothing reversal reports 0, never -0
       }
       return reversed;
@@ -261,20 +311,28 @@ export abstract class Journal<M extends object> extends Service {
    *
    * @returns `written` false when a pair was already applied; `belowFloor` true when an account would end below its
    *          floor; either way nothing was written.
-   * @throws UnbalancedPostingError when the lines do not sum to zero or are fewer than two.
+   * @throws UnbalancedPostingError when the lines do not sum to zero, are fewer than two, or are not in one currency
+   *         (a model with a currency field: every line names an ISO 4217 code and they all match).
    * @throws TypeError when two lines share an (account, reference) pair.
    * @throws RangeError when an amount is not a safe integer.
    * @throws LockUnavailableError when another write held an account for the whole wait.
    */
   async post(lines: readonly JournalLine<M>[]): Promise<JournalWrite> {
     for (const line of lines) assertAmount(line.amount);
+    const fields = this.fields();
+    const currencies = [...new Set(lines.map((line) => currencyOf(line, fields)))];
     const total = lines.reduce((sum, line) => sum + line.amount, 0);
+    if (currencies.length > 1)
+      throw UnbalancedPostingError.create({
+        lines: lines.length,
+        total,
+        currencies: currencies.map(String),
+      });
     if (lines.length < 2 || total !== 0)
       throw UnbalancedPostingError.create({ lines: lines.length, total });
     const pairs = new Set(lines.map((line) => JSON.stringify([line.account, line.reference])));
     if (pairs.size !== lines.length)
       throw new TypeError("Journal.post: two lines share an account and a reference");
-    const fields = this.fields();
     return this.locked(
       lines.map((line) => line.account),
       async () => {
@@ -295,7 +353,11 @@ export abstract class Journal<M extends object> extends Service {
           const net = change.get(line.account) ?? 0;
           if (floor === undefined || net >= 0) continue;
           // oxlint-disable-next-line no-await-in-loop -- one balance read per lowered account, on the caller's connection
-          if ((await this.balance({ account: line.account })) + net < floor) return BELOW_FLOOR;
+          if (
+            (await this.balance({ account: line.account, currency: line.currency })) + net <
+            floor
+          )
+            return BELOW_FLOOR;
         }
         for (const line of lines)
           // oxlint-disable-next-line no-await-in-loop -- the lines are written in order on the caller's connection

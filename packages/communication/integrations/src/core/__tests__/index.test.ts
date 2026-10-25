@@ -30,7 +30,6 @@ describe("@stackra/integrations", () => {
       "Connection",
       "ConnectionAmbiguousError",
       "ConnectionCheckFailedError",
-      "ConnectionContext",
       "ConnectionHost",
       "ConnectionLevel",
       "ConnectionStore",
@@ -43,6 +42,7 @@ describe("@stackra/integrations", () => {
       "ProviderRefusedError",
       "ProviderUnavailableError",
       "RateLimitScope",
+      "RequestConnectionContextDriver",
       "registerConnections",
       "resolvePlaceholders",
     ]);

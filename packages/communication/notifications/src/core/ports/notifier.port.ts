@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the `Notifier` port: sends one notification for one event to every recipient it names, on every channel it
- *          declares. Config `notifications.driver` picks the driver (`memory` today).
+ *          declares. Config `notifications.driver` picks the driver (`memory`, or `notifications` in `./node`).
  * Boundary: an abstract class that is its own token. Gen's generated listener calls `notify` once per event id, on
  *           the notifications queue after commit, with the notification instance the container built; a driver never
  *           reads preferences (the notifications service owns them, ADR 0223 as amended by ADR 0270). Exported from

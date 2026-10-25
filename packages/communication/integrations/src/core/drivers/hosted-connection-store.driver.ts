@@ -13,6 +13,7 @@
 import { Driver } from "@stackra/container";
 import { NotFoundError } from "@stackra/errors";
 
+import type { ConnectionContext } from "#contracts/ports/connection-context.port";
 import type { Connection } from "#core/bases/connection.base";
 import { AuthType } from "#core/enums/auth-type.enum";
 import { ConnectionAmbiguousError } from "#core/errors/connection-ambiguous.error";
@@ -25,7 +26,6 @@ import { reachableConnections } from "#core/functions/reachable-connections.func
 import { registrationOf } from "#core/functions/registration-of.function";
 import { sameOwner } from "#core/functions/same-owner.function";
 import { splitFields } from "#core/functions/split-fields.function";
-import type { ConnectionContext } from "#core/ports/connection-context.port";
 import type { ConnectionHost } from "#core/ports/connection-host.port";
 import { ConnectionStore } from "#core/ports/connection-store.port";
 import type { IntegrationRuntime } from "#core/services/integration-runtime.service";

@@ -7,9 +7,9 @@ or a user. Both expose the same **managed client** (`api`), which authenticates,
 is safe and turns every provider outcome into a value or a typed refusal. This package absorbs the retired
 `@stackra/connections`.
 
-**Tier:** `tier:lib` (`packages/communication/integrations`). Entries `.` and `./testing`. Depends on
-`@stackra/actions` (the `RateLimitStore`), `@stackra/config` (`@Secret`, `SecretStore`), `@stackra/container`,
-`@stackra/contracts` and `@stackra/errors`.
+**Tier:** `tier:lib` (`packages/communication/integrations`). Entries `.`, `./contracts` and `./testing`.
+Depends on `@stackra/actions` (the `RateLimitStore`, and `RequestContext` for the `request` connection context),
+`@stackra/config` (`@Secret`, `SecretStore`), `@stackra/container`, `@stackra/contracts` and `@stackra/errors`.
 
 ## What is here
 
@@ -21,7 +21,9 @@ is safe and turns every provider outcome into a value or a typed refusal. This p
 | `AuthType`, `ConnectionLevel`, `IntegrationCategory`, `RateLimitScope`                        | the enums an Integration's options use                                               |
 | `ConnectionStore`                                                                             | the port: `find`, `byId`, `list`, `connect`, `disconnect`                            |
 | `LocalConnectionStoreDriver`, `HostedConnectionStoreDriver`                                   | `local` (in process, development) and `hosted` (the integrations service holds them) |
-| `ConnectionContext`, `ConnectionHost`                                                         | the ports the drivers need: the call's owners, and the store host                    |
+| `ConnectionHost`                                                                              | the port of the store host behind `hosted`                                           |
+| `RequestConnectionContextDriver`                                                              | the `request` `ConnectionContext`: the running call's scope and user                 |
+| `./contracts`: `ConnectionContext`                                                            | the port the store drivers read the call's owners from                               |
 | `IntegrationRuntime`                                                                          | builds every Integration and its managed clients; holds and renews OAuth tokens      |
 | `registerConnections`                                                                         | links each connection class to its Integration and key; gen emits the call           |
 | `resolvePlaceholders`                                                                         | fills `{field}` placeholders, for `@stackra/webhooks`' secret lookup                 |
@@ -86,10 +88,21 @@ await api.post<ResendSendResult>("/emails", mail, { idempotencyKey });
 above it on its path. The scope tree's own levels (platform, product, tenant) are deployment data (ADR 0327), so this
 package names none of them.
 
+## The call's owners
+
+`ConnectionContext` (`@stackra/integrations/contracts`) answers the running call's scope node and the user it acts for.
+`RequestConnectionContextDriver` reads both from `@stackra/actions`' `RequestContext`: `scope()` is the call's scope,
+`user()` is `actor.onBehalfOf ?? actor` when that is a user. Outside a call, or for a service, agent, job or system
+subject, the answer is `undefined`. It never reads request input.
+
+```ts
+const context = new RequestConnectionContextDriver(request);
+const store = new LocalConnectionStoreDriver(context, runtime);
+```
+
 ## Not here
 
 - The webhook kind and its verification: `WebhookEvent` is `@stackra/events`'; verifying and routing is
   `@stackra/webhooks`, which reads `IntegrationWebhooks`.
 - The OAuth consent flow (authorize URL, PKCE, code exchange) and the console's connect pages: the integrations service.
-- A `ConnectionContext` driver: the runtime binds one that reads the call's scope and actor.
 - Lifecycle events (`integrations.connection.*.v1`), tombstones and encryption at rest: the store host.

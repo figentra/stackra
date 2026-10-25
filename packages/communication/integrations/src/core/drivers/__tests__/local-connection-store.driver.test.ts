@@ -16,6 +16,7 @@ import { NotFoundError } from "@stackra/errors";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import { ConnectionContext } from "#contracts/ports/connection-context.port";
 import { Connection } from "#core/bases/connection.base";
 import { Integration } from "#core/bases/integration.base";
 import { LocalConnectionStoreDriver } from "#core/drivers/local-connection-store.driver";
@@ -25,7 +26,6 @@ import { IntegrationCategory } from "#core/enums/integration-category.enum";
 import { ConnectionAmbiguousError } from "#core/errors/connection-ambiguous.error";
 import { ConnectionCheckFailedError } from "#core/errors/connection-check-failed.error";
 import { registerConnections } from "#core/functions/register-connections.function";
-import { ConnectionContext } from "#core/ports/connection-context.port";
 import { IntegrationRuntime } from "#core/services/integration-runtime.service";
 import type { ConnectionSubscription } from "#core/types/connection-subscription.type";
 import type { ConnectionWebhooks } from "#core/types/connection-webhooks.type";

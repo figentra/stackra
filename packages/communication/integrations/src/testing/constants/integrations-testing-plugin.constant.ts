@@ -8,7 +8,7 @@
  * Boundary: no request leaves the process and no secret is read: a connection's client is its Integration's fake,
  *           looked up when it is called, so the calls may come in any order; a connection put in place skips its
  *           `check()`. The connection's class must be registered (`registerConnections`, which gen's module does).
- *           Imports `.` and `@stackra/container/testing` only (ADR 0269 decision 3).
+ *           Imports `.`, `./contracts` and `@stackra/container/testing` only (ADR 0269 decision 3).
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3); the STA-348 registry row (builder extension point); ADR 0308 (rule 12).
  */
@@ -16,6 +16,7 @@ import type { PublicId, ScopeRef } from "@stackra/contracts";
 import { registerTestingPlugin } from "@stackra/container/testing";
 import type { TestingModuleBuilder, TestingPlugin } from "@stackra/container/testing";
 
+import { ConnectionContext } from "#contracts/ports/connection-context.port";
 import { INTEGRATION_STATE } from "#core/constants/integration-state.constant";
 import { LOCAL_CONNECTIONS } from "#core/constants/local-connections.constant";
 import { integrationOptionsOf } from "#core/functions/integration-options-of.function";
@@ -24,7 +25,6 @@ import { registrationOf } from "#core/functions/registration-of.function";
 import { splitFields } from "#core/functions/split-fields.function";
 import {
   ConnectedAccount,
-  ConnectionContext,
   ConnectionLevel,
   ConnectionStore,
   IntegrationRuntime,

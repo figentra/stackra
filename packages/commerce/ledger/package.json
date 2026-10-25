@@ -2,7 +2,7 @@
   "name": "@stackra/ledger",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra ledger: double-entry primitives over an append-only entry model. Journal<M> appends once per (account, reference), derives balances from entries, refuses a debit below a balance floor, reverses entries set-wise (clamped at the floor) and posts balanced multi-line entries; the @Journaled class facet maps a model's fields; journalOf(Model) is the class token gen wires",
+  "description": "Stackra ledger: double-entry primitives over an append-only entry model. Journal<M> appends once per (account, reference), derives balances from entries, refuses a debit below a balance floor, reverses entries set-wise (clamped at the floor) and posts balanced multi-line entries; the @Journaled class facet maps a model's fields; journalOf(Model) is the class token gen wires (both in ./node); the @Journaled facet also names the currency field, so postings share one currency and balances are per currency",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -23,6 +23,11 @@
       "./src/core/*",
       "./src/core/*.ts",
       "./src/core/*/index.ts"
+    ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
     ]
   },
   "exports": {
@@ -30,6 +35,11 @@
       "@stackra/source": "./src/core/index.ts",
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
     }
   },
   "publishConfig": {

@@ -1,14 +1,15 @@
 # AGENTS — @stackra/integrations
 
 Provider integrations, connections and their store (ADR 0308). Member at `packages/communication/integrations`
-(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.` and `./testing`.
+(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` and `./testing`.
 
 ## Where code goes
 
 | You are writing…         | It goes in…                                 |
 | ------------------------ | ------------------------------------------- |
 | A kind base              | `src/core/bases/<name>.base.ts`             |
-| A port                   | `src/core/ports/<name>.port.ts`             |
+| A port with leaf types   | `src/contracts/ports/<name>.port.ts`        |
+| A port that uses `.`     | `src/core/ports/<name>.port.ts`             |
 | A store driver           | `src/core/drivers/<name>.driver.ts`         |
 | The runtime service      | `src/core/services/<name>.service.ts`       |
 | A function               | `src/core/functions/<name>.function.ts`     |
@@ -20,10 +21,11 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
 
 ## Entries and barrels
 
-- `src/core/index.ts` and `src/testing/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
+- `src/core/index.ts`, `src/contracts/index.ts` and `src/testing/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
   every new public file to the barrel and to its `__tests__/index.test.ts`.
 - `managedClient`, the placeholder lookup, the token calls, the JWT signer and the registries stay internal. `./testing`
-  imports `.` and `@stackra/container/testing` only (ADR 0269 decision 3).
+  imports `.`, `./contracts` and `@stackra/container/testing` only (ADR 0269 decision 3). `./contracts` is the leaf: it
+  imports `@stackra/contracts` only.
 
 ## This package
 

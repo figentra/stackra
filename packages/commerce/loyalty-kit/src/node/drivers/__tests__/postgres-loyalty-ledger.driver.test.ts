@@ -10,7 +10,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0266 (decision 2); ADR 0220 (decisions 4 and 5).
  */
-import type { Journal, JournalWrite } from "@stackra/ledger";
+import type { JournalWrite } from "@stackra/ledger";
+import type { Journal } from "@stackra/ledger/node";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 

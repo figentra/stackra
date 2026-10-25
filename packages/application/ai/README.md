@@ -6,20 +6,49 @@ an MCP tool by default and an action with `tool: true` (both from `@stackra/acti
 the one MCP gateway in the `ai` service serves it.
 
 **Tier:** `tier:lib` (`packages/application/ai`). One entry, `.`. Depends on `@stackra/actions` (types),
-`@stackra/container`, `@stackra/contracts`, AI SDK core (`ai`) and zod.
+`@stackra/container`, `@stackra/contracts`, `@stackra/search` (ports), AI SDK core (`ai`) and zod.
 
 ## What is here
 
-| Symbol                           | Use                                                                                        |
-| -------------------------------- | ------------------------------------------------------------------------------------------ |
-| `Prompt`, `Prompt({ version })`  | kind base of a versioned MCP prompt in `ai/<name>.prompt.ts`                               |
-| `Skill({ tools })`               | kind base of an agent skill in `ai/<name>.skill.ts`; `examples` field typed `SkillExample` |
-| `Facts<M>`                       | kind base of the facts about one record in `ai/<name>.facts.ts`; `provide(id, ctx)`        |
-| `FactsContext`, `ContextFacts`   | types: `provide`'s context (`actor`, `locale`, `authorize`, `money`) and result            |
-| `ToolSource`                     | `Query`, `Action`: what a tool row of `#stackra/ai` projects                               |
-| `Approval`, `approvalFor(risk)`  | `Confirm` (L2), `NamedApprover` (L3, L4): the default human gate of an agent's call        |
-| `decide({ model, prompt, ... })` | one of `choices`, a `score` in a range, or `yesNo` as a boolean, typed                     |
-| `PromptClass`, `SkillClass`, ... | types: the class types and options of the kinds above                                      |
+| Symbol                                              | Use                                                                                                         |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `Prompt`, `Prompt({ version })`                     | kind base of a versioned MCP prompt in `ai/<name>.prompt.ts`                                                |
+| `Skill({ tools })`                                  | kind base of an agent skill in `ai/<name>.skill.ts`; `examples` field typed `SkillExample`                  |
+| `Facts<M>`                                          | kind base of the facts about one record in `ai/<name>.facts.ts`; `provide(id, ctx)`                         |
+| `FactsContext`, `ContextFacts`                      | types: `provide`'s context (`actor`, `locale`, `authorize`, `money`) and result                             |
+| `ToolSource`                                        | `Query`, `Action`: what a tool row of `#stackra/ai` projects                                                |
+| `Approval`, `approvalFor(risk)`                     | `Confirm` (L2), `NamedApprover` (L3, L4): the default human gate of an agent's call                         |
+| `retrieve(query, { index, embedder, topK, scope })` | top-k passages (`text`, `source`, `score`) for a `Facts` class, over the `VectorIndex` and `Embedder` ports |
+| `decide({ model, prompt, ... })`                    | one of `choices`, a `score` in a range, or `yesNo` as a boolean, typed                                      |
+| `PromptClass`, `SkillClass`, ...                    | types: the class types and options of the kinds above                                                       |
+
+## Retrieval for Facts
+
+`retrieve` is the vector/RAG helper (owner decision 23), not a tool source: it embeds the query with the `Embedder`, asks
+the `VectorIndex` (both from `@stackra/search/contracts`) for the top-k hits in the caller's scope, and returns
+`RetrievedPassage`s. A `Facts` subclass injects the two ports and returns the passages from `provide`.
+
+```ts
+export class ArticleFacts extends Facts<Article> {
+  constructor(index: VectorIndex, embedder: Embedder) {
+    super();
+    this.index = index;
+    this.embedder = embedder;
+  }
+
+  async provide(articleId: Article["id"], ctx: FactsContext): Promise<ContextFacts> {
+    const passages = await retrieve(question, {
+      index: this.index,
+      embedder: this.embedder,
+      topK: 4,
+      scope,
+    });
+    return { summary: `${passages.length} passages match.`, facts: { passages } };
+  }
+}
+```
+
+The scope is the caller's own, never request input; `source` is the passage's `source` metadata, else its id.
 
 ## A module's `ai/` group
 

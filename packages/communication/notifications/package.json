@@ -2,7 +2,7 @@
   "name": "@stackra/notifications",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra notifications: the Notification({ category }) kind base, Recipient, the Notifier port with its memory driver and NotificationsConfig, the MailTransport port, and the .mail.tsx class-component bodies rendered to HTML and text with useMail",
+  "description": "Stackra notifications: the Notification({ category }) kind base, Recipient, the Notifier port with its memory driver and NotificationsConfig, the MailTransport, SmsTransport, InAppStore and ChatTransport channel ports, the .mail.tsx class-component bodies rendered to HTML and text with useMail, and the notifications Notifier driver (./node) that queues rendered mail on the notifications service",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -33,6 +33,11 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
+    ],
     "#react/*": [
       "./src/react/*",
       "./src/react/*.ts",
@@ -56,6 +61,11 @@
       "@stackra/source": "./src/contracts/index.ts",
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
     },
     "./react": {
       "@stackra/source": "./src/react/index.ts",
@@ -85,6 +95,7 @@
   },
   "dependencies": {
     "@stackra/assets": "workspace:*",
+    "@stackra/clients": "workspace:*",
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",

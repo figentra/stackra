@@ -11,7 +11,7 @@
 import type { AnyClass } from "@stackra/container";
 import type { Locks } from "@stackra/locking";
 
-import { Journal } from "#core/services/journal.service";
+import { Journal } from "#node/services/journal.service";
 
 /** The token made for each model. */
 const TOKENS = new WeakMap<object, unknown>();

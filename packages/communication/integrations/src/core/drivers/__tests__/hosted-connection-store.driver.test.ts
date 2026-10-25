@@ -17,6 +17,7 @@ import { NotFoundError } from "@stackra/errors";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import { ConnectionContext } from "#contracts/ports/connection-context.port";
 import { Connection } from "#core/bases/connection.base";
 import { Integration } from "#core/bases/integration.base";
 import { HostedConnectionStoreDriver } from "#core/drivers/hosted-connection-store.driver";
@@ -24,7 +25,6 @@ import { AuthType } from "#core/enums/auth-type.enum";
 import { ConnectionLevel } from "#core/enums/connection-level.enum";
 import { IntegrationCategory } from "#core/enums/integration-category.enum";
 import { registerConnections } from "#core/functions/register-connections.function";
-import { ConnectionContext } from "#core/ports/connection-context.port";
 import { ConnectionHost } from "#core/ports/connection-host.port";
 import { IntegrationRuntime } from "#core/services/integration-runtime.service";
 import type { ConnectionRecord } from "#core/types/connection-record.type";

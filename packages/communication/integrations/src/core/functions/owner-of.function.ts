@@ -9,8 +9,8 @@
  */
 import type { PublicId, ScopeRef } from "@stackra/contracts";
 
+import type { ConnectionContext } from "#contracts/ports/connection-context.port";
 import { ConnectionLevel } from "#core/enums/connection-level.enum";
-import type { ConnectionContext } from "#core/ports/connection-context.port";
 
 /**
  * The owner of a connection at `level`.

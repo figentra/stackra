@@ -7,25 +7,32 @@ Each channel is a method the class declares. The mail body is a `.mail.tsx` clas
 compiles it at build time, and it is rendered to HTML and text. There is no template engine at run time (R-26).
 Strings are i18n keys, never literals. The package was `@stackra/mail` (ADR 0294 decision 23).
 
-**Tier:** `tier:lib` (`packages/communication/notifications`). Entries `.`, `./contracts`, `./react` and `./testing`.
-Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`, `@stackra/i18n`,
-`@stackra/money` and `@stackra/assets`. React is an optional peer, needed by `./react` and `./testing` only.
+**Tier:** `tier:lib` (`packages/communication/notifications`). Entries `.`, `./contracts`, `./node`, `./react` and
+`./testing`. Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`,
+`@stackra/i18n`, `@stackra/money`, `@stackra/assets` and `@stackra/clients` (`./node` queues through it). React is an
+optional peer, needed by `./node`, `./react` and `./testing` only.
 
 ## What is here
 
-| Entry         | Symbol                                                                | Use                                                                         |
-| ------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `.`           | `Notification`                                                        | the kind base: `Notification({ category })`, with `recipients(event)`       |
-| `.`           | `NotificationCategory`                                                | `transactional`, `activity`, `marketing`; case data `mutable`, `optIn`      |
-| `.`           | `Recipient`                                                           | `Recipient.principal(id)` or `Recipient.scope(scope)` (the scope's id only) |
-| `.`           | `MailMessage` (type)                                                  | what `mail(data, mail)` returns: `mail.subject(key, values)`                |
-| `.`           | `Notifier`                                                            | the port gen's listener calls: `notify(notification, event)`                |
-| `.`           | `MemoryNotifierDriver`                                                | the `memory` driver: keeps deliveries for tests and dev                     |
-| `.`           | `NotificationsConfig`, `NotificationsConfig$`, `NotificationsOptions` | config key `notifications`; `driver` picks the `Notifier`                   |
-| `.`           | `NotificationDelivery`, `NotificationOptions`, `NotifierDriverName`   | types                                                                       |
-| `./contracts` | `MailTransport`, `OutboundMail` (type)                                | the port a mail provider driver implements (`Driver(MailTransport)`)        |
-| `./react`     | `useMail`, `MailProps` (type)                                         | what a `.mail.tsx` body imports                                             |
-| `./testing`   | `renderMail`, `MemoryNotifier` (type), `MailTransportFake`            | render a body in a locale; read what was sent; a transport double           |
+| Entry         | Symbol                                                                         | Use                                                                         |
+| ------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| `.`           | `Notification`                                                                 | the kind base: `Notification({ category })`, with `recipients(event)`       |
+| `.`           | `NotificationCategory`                                                         | `transactional`, `activity`, `marketing`; case data `mutable`, `optIn`      |
+| `.`           | `Recipient`                                                                    | `Recipient.principal(id)` or `Recipient.scope(scope)` (the scope's id only) |
+| `.`           | `MailMessage` (type)                                                           | what `mail(data, mail)` returns: `mail.subject(key, values)`                |
+| `.`           | `Notifier`                                                                     | the port gen's listener calls: `notify(notification, event)`                |
+| `.`           | `MemoryNotifierDriver`                                                         | the `memory` driver: keeps deliveries for tests and dev                     |
+| `.`           | `NotificationsConfig`, `NotificationsConfig$`, `NotificationsOptions`          | config key `notifications`; `driver` picks the `Notifier`                   |
+| `.`           | `NotificationDelivery`, `NotificationOptions`, `NotifierDriverName`            | types                                                                       |
+| `./contracts` | `MailTransport`, `OutboundMail` (type)                                         | the port a mail provider driver implements (`Driver(MailTransport)`)        |
+| `./contracts` | `SmsTransport`, `OutboundSms` (type)                                           | the port an SMS provider driver implements                                  |
+| `./contracts` | `InAppStore`, `InAppMessage`, `InAppEntry` (types)                             | a person's in-app inbox: `append`, `list`, `markRead`                       |
+| `./contracts` | `ChatTransport`, `OutboundChatMessage` (type)                                  | the port a chat app driver implements (Slack, Teams, Telegram)              |
+| `./node`      | `NotificationsNotifierDriver`                                                  | the `notifications` driver: queues rendered mail on the service             |
+| `./node`      | `registerNotificationMails`, `NotificationMails` (type)                        | gen's registration of the mail bodies and lang loaders                      |
+| `./react`     | `useMail`, `MailProps` (type)                                                  | what a `.mail.tsx` body imports                                             |
+| `./testing`   | `renderMail`, `MemoryNotifier` (type)                                          | render a body in a locale; read what was sent                               |
+| `./testing`   | `MailTransportFake`, `SmsTransportFake`, `InAppStoreFake`, `ChatTransportFake` | a double of each channel port                                               |
 
 ## A notification
 
@@ -92,9 +99,28 @@ outside a mail render.
 
 ## Delivery
 
-`NotificationsConfig.driver` picks the `Notifier` driver; runway sets it per environment (ADR 0266). Today the package
-ships `memory`. The notifications service owns delivery, preferences, the log and the inbox (ADR 0223 as amended by
-0270). Its `MailTransport` drivers (`memory`, `resend`) implement the port from `./contracts`.
+`NotificationsConfig.driver` picks the `Notifier` driver; runway sets it per environment (ADR 0266): `memory` (in `.`)
+keeps deliveries in the process, and `notifications` (`NotificationsNotifierDriver` in `./node`) queues each mail on the
+notifications service. The notifications service owns delivery, preferences, the log and the inbox (ADR 0223 as amended
+by 0270). Its `MailTransport` drivers (`memory`, `resend`) implement the port from `./contracts`; the SMS, in-app and
+chat ports are there for the same split, and provider drivers stay with their integrations (ADR 0308).
+
+The `notifications` driver renders the subject and the `.mail.tsx` body, then queues `messages.message.send@1`
+(`{ mail, to: { principalId }, subject, html, text }`) through `@stackra/clients` once per principal. It needs the body
+of each notification and the member's lang loaders, which gen registers at startup:
+
+```ts
+import { registerNotificationMails } from "@stackra/notifications/node";
+import { loaders } from "#stackra/i18n";
+
+registerNotificationMails({
+  bodies: [[OrderReceiptNotification, OrderReceiptMail]],
+  catalogues: loaders,
+});
+```
+
+Only the mail channel is sent, only to principals (a scope recipient is refused), and in the member's default locale
+until identity answers a principal's language. The action takes no category.
 
 ## Testing
 
@@ -110,4 +136,5 @@ expect(sent[0]?.recipient).toEqual(Recipient.principal(order.customerId));
 ```
 
 `renderMail` reads the member's own lang files from the working directory (the base language, then the regional
-overlay) unless a test passes `messages`. `MailTransportFake` stands in for `MailTransport`.
+overlay) unless a test passes `messages`. `MailTransportFake`, `SmsTransportFake`, `InAppStoreFake` and
+`ChatTransportFake` stand in for their ports.

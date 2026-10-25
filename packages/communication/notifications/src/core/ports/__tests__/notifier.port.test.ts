@@ -35,7 +35,7 @@ describe("Notifier", () => {
 
   it("types notify and its driver names", () => {
     expectTypeOf<Notifier["notify"]>().parameters.toEqualTypeOf<[Notification, object]>();
-    expectTypeOf<NotifierDriverName>().toEqualTypeOf<"memory">();
+    expectTypeOf<NotifierDriverName>().toEqualTypeOf<"memory" | "notifications">();
     expectTypeOf<"memory">().toExtend<DriverName<Notifier>>();
   });
 });

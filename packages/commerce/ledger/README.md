@@ -4,21 +4,22 @@ Stackra ledger: the double-entry primitives every ledger shares, over an append-
 (ADR 0220). `Journal<M>` appends once per (account, reference), derives a balance from an account's entries, refuses a
 debit below a balance floor, reverses entries set-wise and posts balanced multi-line entries.
 
-**Tier:** `tier:lib` (`packages/commerce/ledger`). Entry `.` only. Depends on `@stackra/container`,
+**Tier:** `tier:lib` (`packages/commerce/ledger`). Entries `.` (the `@Journaled` facet, the refusal and the types, no database import) and `./node` (the
+database-bound `Journal` and `journalOf`). Depends on `@stackra/container`,
 `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/locking` and `@stackra/model`.
 
 ## What is here
 
-| Symbol                   | Entry | Use                                                                                     |
-| ------------------------ | ----- | --------------------------------------------------------------------------------------- |
-| `Journal<M>`             | `.`   | `balance`, `find`, `append`, `reverseWhere`, `post` over the entry model `M`            |
-| `@Journaled(options)`    | `.`   | class facet on the entry model: which fields hold account, amount, kind, reference, at  |
-| `journalOf(Model)`       | `.`   | the class token of `Journal<Model>`, as `repositoryOf(Model)` is `Repository<Model>`'s  |
-| `UnbalancedPostingError` | `.`   | `unbalanced_posting` (412): a posting's lines do not sum to zero, or are fewer than two |
-| `JournalEntry<M>`        | `.`   | one movement in the journal's names; `kind` is the model's own kind type                |
-| `JournalLine<M>`         | `.`   | one posting line, with the floor its account keeps                                      |
-| `JournalWrite`           | `.`   | `{ written, belowFloor }`, what an append or a posting did                              |
-| `JournaledOptions`       | `.`   | the facet's field map and default floor                                                 |
+| Symbol                   | Entry    | Use                                                                                              |
+| ------------------------ | -------- | ------------------------------------------------------------------------------------------------ |
+| `Journal<M>`             | `./node` | `balance`, `find`, `append`, `reverseWhere`, `post` over the entry model `M`                     |
+| `@Journaled(options)`    | `.`      | class facet on the entry model: which fields hold account, amount, kind, reference, at, currency |
+| `journalOf(Model)`       | `./node` | the class token of `Journal<Model>`, as `repositoryOf(Model)` is `Repository<Model>`'s           |
+| `UnbalancedPostingError` | `.`      | `unbalanced_posting` (412): a posting's lines do not sum to zero, or are fewer than two          |
+| `JournalEntry<M>`        | `.`      | one movement in the journal's names; `kind` is the model's own kind type                         |
+| `JournalLine<M>`         | `.`      | one posting line, with the floor its account keeps                                               |
+| `JournalWrite`           | `.`      | `{ written, belowFloor }`, what an append or a posting did                                       |
+| `JournaledOptions`       | `.`      | the facet's field map and default floor                                                          |
 
 ## The entry model
 
@@ -26,6 +27,7 @@ The journal owns no table. The consumer's model is the entry row: it carries `Ap
 without it), its scope or tenant trait, and a unique index over its scope column, account and reference, which is the
 idempotency key. `@Journaled` maps the journal's names onto the model's fields; a model whose fields are already named
 `account`, `amount`, `kind`, `reference` and `at` needs no facet.
+`Journal` is imported from `@stackra/ledger/node`; `.` has no database import.
 
 ```ts
 @Index(["tenantId", "memberId", "reference"], { unique: true })
@@ -95,6 +97,14 @@ await journal.post([
 The lines sum to zero and are at least two (`UnbalancedPostingError` otherwise); every line is written or none; a
 posting with a line already applied is a duplicate. Each account the posting lowers keeps its line's floor, so a counter
 account lifts it with `floor: null` while the party's account keeps the model's.
+
+## Currency
+
+A money journal names a `currency` field in the facet: `@Journaled({ currency: "currency", floor: 0 })`. Then every entry
+carries an ISO 4217 code (`EUR`; a missing or malformed one is a `RangeError`), every posting's lines share one currency
+(`UnbalancedPostingError` with `currencies` otherwise), and `balance({ account, currency })` sums per currency, as do
+the floor checks and reversals. A model with no `currency` field is single-unit (points): it takes no currency, and a
+currency on its entry is a `TypeError`.
 
 ## Scope and isolation
 

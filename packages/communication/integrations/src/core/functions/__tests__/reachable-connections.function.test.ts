@@ -10,9 +10,9 @@
 import type { PublicId, ScopeRef } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
+import { ConnectionContext } from "#contracts/ports/connection-context.port";
 import { ConnectionLevel } from "#core/enums/connection-level.enum";
 import { reachableConnections } from "#core/functions/reachable-connections.function";
-import { ConnectionContext } from "#core/ports/connection-context.port";
 import type { ConnectionRecord } from "#core/types/connection-record.type";
 import { ConnectedAccount } from "#core/values/connected-account.value";
 

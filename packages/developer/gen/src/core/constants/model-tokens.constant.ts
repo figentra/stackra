@@ -24,7 +24,7 @@ export const MODEL_TOKENS: Readonly<
   },
   Journal: {
     package: "@stackra/ledger",
-    factory: { name: "journalOf", from: "@stackra/ledger" },
+    factory: { name: "journalOf", from: "@stackra/ledger/node" },
     deps: [{ name: "Locks", from: "@stackra/locking" }],
   },
 });

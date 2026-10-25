@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `NOTIFICATIONS_CONFIG_SCHEMA`, the zod schema this package ships for `NotificationsConfig` (exported as
- *          `NotificationsConfig$`): the `Notifier` driver.
+ *          `NotificationsConfig$`): the `Notifier` driver (`memory` or `notifications`).
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated `NotificationsConfig$` extends it. The defaults equal
  *           `NotificationsOptions`' initializers (tested).
@@ -14,5 +14,5 @@ import { z } from "zod";
 // shortcut: authored until gen compiles this package's NotificationsOptions into #stackra/schemas; replace with STA-339.
 /** The shipped `NotificationsConfig$`. */
 export const NOTIFICATIONS_CONFIG_SCHEMA = z.object({
-  driver: z.enum(["memory"]).default("memory"),
+  driver: z.enum(["memory", "notifications"]).default("memory"),
 });

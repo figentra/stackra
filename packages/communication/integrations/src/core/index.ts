@@ -3,7 +3,8 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/integrations, which has several public files, until `stackra gen`
  *          writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The managed client's internals (`managedClient`, the placeholder
- *           lookup, the token calls, the JWT signer) and the registries stay internal.
+ *           lookup, the token calls, the JWT signer) and the registries stay internal. The `ConnectionContext` port is
+ *           exported from `./contracts` only (ADR 0294 decision 15).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
@@ -11,6 +12,7 @@ export { Connection } from "#core/bases/connection.base";
 export { Integration } from "#core/bases/integration.base";
 export { HostedConnectionStoreDriver } from "#core/drivers/hosted-connection-store.driver";
 export { LocalConnectionStoreDriver } from "#core/drivers/local-connection-store.driver";
+export { RequestConnectionContextDriver } from "#core/drivers/request-connection-context.driver";
 export { AuthType } from "#core/enums/auth-type.enum";
 export { ConnectionLevel } from "#core/enums/connection-level.enum";
 export { IntegrationCategory } from "#core/enums/integration-category.enum";
@@ -22,7 +24,6 @@ export { ProviderRefusedError } from "#core/errors/provider-refused.error";
 export { ProviderUnavailableError } from "#core/errors/provider-unavailable.error";
 export { registerConnections } from "#core/functions/register-connections.function";
 export { resolvePlaceholders } from "#core/functions/resolve-placeholders.function";
-export { ConnectionContext } from "#core/ports/connection-context.port";
 export { ConnectionHost } from "#core/ports/connection-host.port";
 export { ConnectionStore } from "#core/ports/connection-store.port";
 export { IntegrationRuntime } from "#core/services/integration-runtime.service";

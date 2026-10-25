@@ -19,7 +19,7 @@ describe("MODEL_TOKENS", () => {
     });
     expect(MODEL_TOKENS["Journal"]).toEqual({
       package: "@stackra/ledger",
-      factory: { name: "journalOf", from: "@stackra/ledger" },
+      factory: { name: "journalOf", from: "@stackra/ledger/node" },
       deps: [{ name: "Locks", from: "@stackra/locking" }],
     });
     expect(Object.isFrozen(MODEL_TOKENS)).toBe(true);

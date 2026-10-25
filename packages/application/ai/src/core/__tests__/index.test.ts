@@ -17,6 +17,8 @@ import type {
   FactsContext,
   PromptClass,
   PromptOptions,
+  RetrieveOptions,
+  RetrievedPassage,
   SkillClass,
   SkillExample,
   SkillOptions,
@@ -32,6 +34,7 @@ describe("@stackra/ai", () => {
       "ToolSource",
       "approvalFor",
       "decide",
+      "retrieve",
     ]);
   });
 
@@ -46,6 +49,16 @@ describe("@stackra/ai", () => {
     } as const;
     expect(tool.approval).toBe(entry.Approval.Confirm);
     expect(tool.from).toBe("action");
+  });
+
+  it("types the retrieval helper for Facts", () => {
+    expectTypeOf<RetrievedPassage>().toEqualTypeOf<{
+      readonly text: string;
+      readonly source: string;
+      readonly score: number;
+    }>();
+    expectTypeOf<RetrieveOptions["topK"]>().toEqualTypeOf<number>();
+    expectTypeOf(entry.retrieve).returns.resolves.toEqualTypeOf<readonly RetrievedPassage[]>();
   });
 
   it("resolves the type exports", () => {

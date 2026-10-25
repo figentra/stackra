@@ -6,9 +6,12 @@
  * Boundary: an abstract class that is its own token; the integrations service's generated client implements it. Refresh
  *           tokens and client secrets never leave the host: a record carries only what the managed client sends, and
  *           an OAuth connection's access token comes from `accessToken` (ADR 0308 rule 20). The host keeps a tombstone
- *           of each disconnected connection and emits the lifecycle events (rule 18).
+ *           of each disconnected connection and emits the lifecycle events (rule 18). It stays in `.`, not
+ *           `./contracts`: its signatures use `ConnectionRecord` (a stored connection, with its `ConnectionLevel` and
+ *           `ConnectedAccount`) and `OAuthTokens` of `.`, beside the `Connection` base the template imports from
+ *           `@stackra/integrations`.
  * Runtime: isomorphic
- * Governing contract: ADR 0308 (rules 3, 7, 12, 18 and 20); ADR 0188 (envelope encryption).
+ * Governing contract: ADR 0308 (rules 3, 7, 12, 18 and 20); ADR 0188 (envelope encryption); ADR 0294 (decision 15).
  */
 import { Port, type PublicId, type ScopeRef } from "@stackra/contracts";
 
