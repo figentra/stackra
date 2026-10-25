@@ -1,7 +1,15 @@
 ---
 title: "0321 — The trait inventory, the owning package of each trait, and Schedulable"
-description: "Accepted · 2026-10-24"
+description: "Accepted · 2026-10-24 · amended 2026-10-24 (STA-456)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-456): `AppendOnly` gains a correction chain. A correction is a new row
+  whose `corrects` names the row it corrects; the original row stays, reads resolve to the latest
+  correction unless history is asked for, and a correction of a correction chains. Time entries,
+  money and decisions use it. A model that is global by design declares `Model.global(...)` instead
+  of `BelongsToTenant` (0210 as amended the same day). The inventory stands.
+</Note>
 
 <Note>
   Amends [0096](/adr/0096-trait-naming-grammar): the trait list of its decision 4 gains the

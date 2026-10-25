@@ -37,7 +37,7 @@ effective(principal, tenant, activeScope) =
 ```
 
 - Results are cached per `(principal, tenant, scope, grantsVersion)`. Any change to grants or roles bumps `grantsVersion`.
-- The check is shaped `check(subject, relation, object)` so the engine behind it can be replaced without touching callers. Free `@stackra/iam` resolves RBAC with no scope dependency; the scope tree and the relation engine are Pro drivers behind the same `check()` ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope), owner decision S3).
+- The check is shaped `check(subject, relation, object)` so the engine behind it can be replaced without touching callers. Free `@stackra/iam` resolves RBAC with no scope dependency; the scope tree is free code in `@stackra/scope` ([0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan), [0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer)) and the relation engine is a Pro driver behind the same `check()` ([0088](/adr/0088-tenancy-free-pool-pro-silo-and-scope), owner decision S3).
 - A cross-tenant miss is `notFound`, never `permissionDenied`.
 
 ## Threat model template
@@ -52,5 +52,6 @@ Each service that handles user data keeps a `docs/threat-model.md` in its member
 
 ## History
 
+- 2026-10-24, [0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer): the scope tree is free code in `@stackra/scope` ([0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan)); only the relation engine stays a Pro driver behind `check()`.
 - 2026-10-20, [0125](/adr/0125-constitution-amended-to-match-accepted-adrs): SEC3 audit runs in the action pipeline with the 0098 actor chain; the scope step of the effective-permission formula applies only with the Pro scope driver.
 - 2026-10-20, [0229](/adr/0229-constitution-amended-for-the-2026-10-20-decisions): ZITADEL, step-up, break-glass and the fixed pipeline became SEC8 and SEC9 ([0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral), [0207](/adr/0207-authentication-assurance-and-machine-identities), [0188](/adr/0188-operator-access-and-the-encryption-key-hierarchy), [0138](/adr/0138-pipeline-order-is-fixed)).
