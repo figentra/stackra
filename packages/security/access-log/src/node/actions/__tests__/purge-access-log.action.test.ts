@@ -32,7 +32,7 @@ describe("PurgeAccessLogAction", () => {
     expect(options?.["job"]).toEqual({
       unique: true,
       timeout: "5m",
-      cron: { schedule: "30 3 * * *", perTenant: true },
+      cron: { schedule: "30 3 * * *", perScope: true },
     });
   });
 

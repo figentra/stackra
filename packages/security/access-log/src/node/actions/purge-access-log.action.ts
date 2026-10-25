@@ -36,7 +36,7 @@ export class PurgeAccessLogAction extends Action({
     timeout: "5m",
     cron: {
       schedule: "30 3 * * *",
-      perTenant: true,
+      perScope: true,
     },
   },
 }) {
