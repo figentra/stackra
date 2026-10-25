@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "access_log_entry": {
+      "purge": "حذف سجلات الوصول القديمة"
+    }
+  },
+  "errors": {
+    "access_log_write_failed": {
+      "message": "سجل الوصول غير متاح؛ تمت القراءة."
+    }
+  }
+}
