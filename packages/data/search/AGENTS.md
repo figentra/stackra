@@ -15,6 +15,7 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
 | The port or a type it uses               | `src/contracts/{ports,types}/`                            |
 | An isomorphic driver, function, refusal  | `src/core/{drivers,functions,errors}/`                    |
 | A server driver                          | `src/node/drivers/`                                       |
+| The outbox change consumer               | `src/node/services/searchable-change.service.ts`          |
 | A migration macro                        | `src/node/database/macros/<name>.macro.ts`                |
 | A migration                              | `src/node/database/migrations/<NNNN>-<name>.migration.ts` |
 | A test                                   | `__tests__/<name>.<kind>.test.ts` beside it               |
@@ -33,7 +34,9 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
 
 - One normalisation: `searchWordsOf` for documents and phrases, and `search.unaccent_immutable` in the migration for
   the trigram index. Change the two together; a released migration is frozen, so a change is a new migration.
-- Drivers deal in ids and documents; only `SearchIndex` touches the ORM. Isolation is the database's: never add a
+- Automatic indexing goes through `@stackra/outbox` only (`registerSearchableModels`); outbox must never depend on
+  search. `SEARCHABLE_MODELS` stays internal.
+- Drivers deal in ids and documents; only `SearchIndex` and `SearchableChangeService` (one row load) touch the ORM. Isolation is the database's: never add a
   scope filter in application code (ADR 0327 d9).
 - Raw SQL only in `PostgresSearchDriver`, every value bound, identifiers quoted, configuration names from
   `TEXT_SEARCH_CONFIGS`, each statement with a `// raw-sql:` reason (ADR 0160).

@@ -52,6 +52,7 @@
 - **P-006**: for every request, the driver's SQL has exactly as many placeholders as parameters, in order, and no request value appears in the SQL text — Validates: FR-006
 - **P-007**: for every column list, the macro's columns are nullable and commented, one vector per locale, and the compiled SQL has no `create index` — Validates: FR-007
 - **P-008**: `grep -ri tenant packages/data/search/src` finds nothing, and the only extension created is `pg_trgm` — Validates: FR-008
+- **P-009**: for every change of a registered model, the consumer calls `index` with the loaded row exactly when the change is not a delete and the row is found, and `remove` with its id otherwise; a model nobody registered is ignored, and a refused registration records nothing — Validates: FR-009
 
 ## Deploy modes
 

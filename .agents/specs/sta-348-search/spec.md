@@ -117,6 +117,9 @@ The Postgres driver fuses a full-text lane and a trigram lane by reciprocal rank
   and `search_filters` columns and no index.
 - **FR-008**: No identifier, comment or default in the package SHALL carry tenant vocabulary, and no extension outside
   ADR 0160's list SHALL be created.
+- **FR-009**: `registerSearchableModels` SHALL watch each `@Searchable` model's rows through `@stackra/outbox`, and
+  `SearchableChangeService` SHALL index a created or updated row it loads in the change's scope and remove the document
+  of a deleted row or one the session no longer finds.
 
 ## Success Criteria
 

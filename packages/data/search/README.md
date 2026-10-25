@@ -5,8 +5,8 @@ Stackra search: Postgres hybrid search over a model's `@Searchable` index (ADR 0
 migration macro writes, so a search runs in the caller's transaction under the same row-level security as the data.
 
 **Tier:** `tier:lib` (`packages/data/search`). Entries `.`, `./contracts` and `./node`. Depends on `@stackra/config`,
-`@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/model` and
-`@stackra/validation`.
+`@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/model`,
+`@stackra/outbox` and `@stackra/validation`.
 
 ## What is here
 
@@ -21,6 +21,7 @@ migration macro writes, so a search runs in the caller's transaction under the s
 | `./contracts` | `SearchDocument`, `SearchRequest`, `SearchTable`, `SearchFilterValue` | what a driver stores and is asked                                  |
 | `./node`      | `PostgresSearchDriver`                                                | the hybrid engine: full-text and trigram, fused by reciprocal rank |
 | `./node`      | `SearchableMacro`, `SearchableColumns`                                | `t.searchable({ text, filters, locales })` in a migration          |
+| `./node`      | `registerSearchableModels`, `SearchableChangeService`                 | automatic indexing from the outbox's row changes (gen's wiring)    |
 
 ## Searching
 
@@ -61,6 +62,12 @@ await database.withScope(scope, () => search.in(Product).reindex()); // the back
 A document holds each text field's words (a translated field per locale; relation paths such as `variants.sku` read
 the populated relation) and each filter field's values. `index` populates the relations the facet's paths walk.
 
+Gen's wiring calls `registerSearchableModels([Product, Article])` for a service's `@Searchable` models: from then on
+every committed row change reaches `SearchableChangeService` through `@stackra/outbox`, which loads the row in its scope
+and indexes it, or removes its document when the row is deleted or no longer visible. Delivery is at least once and
+idempotent. A change of a related model a dotted path reads (`variants.sku`) does not re-index the parent: its writer
+still calls `index`.
+
 ## The columns
 
 ```ts
@@ -87,8 +94,8 @@ the trigram extension and `search.unaccent_immutable(text)`.
 
 ## Not here
 
-- Keeping documents current from the unit of work by itself: that needs the outbox (ADR 0221 d5) or an ORM subscriber
-  kind; until then the writer calls `index` and `remove`, and `reindex` backfills.
+- Re-indexing a parent when a related row its facet reads changes: the writer calls `index` for it; `reindex`
+  backfills.
 - The vector lane (pgvector) waits for an embedding port; the versioned index swap, the palette, the public search API
   and the IAM predicate of ADR 0221 are later work.
 - An OpenSearch driver: built behind the same port when ADR 0221 d9's trigger is met.

@@ -78,6 +78,7 @@
     "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/model": "workspace:*",
+    "@stackra/outbox": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },
