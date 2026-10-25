@@ -53,8 +53,8 @@ export class DeliverMessageAction extends Action({
 ```
 
 - Queue it from another action with `ctx.dispatch(DeliverMessageAction, input)`, usually inside `ctx.afterCommit`. The
-  job keeps the caller as `onBehalfOf` and runs as the `job` actor when the action lists `ActorKind.Job`, else as the
-  `system` actor (`Action({ job })` requires one of the two).
+  job keeps the caller as `onBehalfOf` and the call's scope (`ctx.scope`), and runs as the `job` actor when the action
+  lists `ActorKind.Job`, else as the `system` actor (`Action({ job })` requires one of the two).
 - When the `job` option leaves a field out: queue `default`, three retries, exponential backoff, a five-minute timeout.
   A reservation holds for the timeout plus a minute, so a worker that dies hands the job to the next one.
 - A refusal that is not retryable ends the job at once; any other error, a timeout included, is retried while attempts
@@ -69,8 +69,9 @@ export class DeliverMessageAction extends Action({
 `QueueService.push(Action, input, { origin, scope, idempotencyKey, causedBy })` is the one way in. A transport that
 receives a queued call (`Prefer: respond-async`, sent by `client.x.y.queue(input)` of @stackra/clients) pushes it with
 the verified caller as `origin`, the resolved `ScopeRef` and the Idempotency-Key, and answers at once; an action without
-a `job` option then runs as its caller. A job with a `scope` runs each attempt inside `Database.withScope(scope, ...)`.
-The scheduler pushes a cron job once per scope with that scope.
+a `job` option then runs as its caller. A job with a `scope` runs each attempt inside `Database.withScope(scope, ...)`
+and with that scope as the call's, so the handler reads `ctx.scope`. `ctx.dispatch` queues the job in the calling
+action's scope. The scheduler pushes a cron job once per scope with that scope.
 
 ## Running jobs
 

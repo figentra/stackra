@@ -1,15 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `QueueJobDispatcherDriver`: it is the `JobDispatcher` behind `ctx.dispatch`, and it stores the
- *          job on the action's queue on behalf of the calling actor, caused by the call.
+ *          job on the action's queue on behalf of the calling actor, in the call's scope, caused by the call; a call
+ *          with no scope queues a platform job.
  * Boundary: test only; a real `QueueService` over the memory driver and a fixed clock.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0305 (rule 28); ADR 0136 (decision 3).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0305 (rule 28); ADR 0136 (decision 3); ADR 0327 (decision 6).
  */
 import { Action } from "@stackra/actions";
 import { JobDispatcher } from "@stackra/actions/contracts";
 import type { CallDescriptor } from "@stackra/actions/contracts";
-import { type Actor, ActorKind, ApiArea, Clock, Realm } from "@stackra/contracts";
+import { type Actor, ActorKind, ApiArea, Clock, Realm, type ScopeRef } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { MemoryQueueDriver } from "#core/drivers/memory-queue.driver";
@@ -66,5 +67,15 @@ describe(QueueJobDispatcherDriver, () => {
       causedBy: "call-1",
       runAt: NOON,
     });
+    await dispatcher.dispatch(DeliverMessageAction, { messageId: "msg_2" }, call);
+    expect(await driver.reserve("delivery", NOON)).not.toHaveProperty("scope");
+  });
+
+  it("queues the job in the call's scope, so the worker opens that scope session", async () => {
+    const driver = new MemoryQueueDriver();
+    const dispatcher = new QueueJobDispatcherDriver(new QueueService(driver, new FixedClock()));
+    const scope: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" };
+    await dispatcher.dispatch(DeliverMessageAction, { messageId: "msg_1" }, { ...call, scope });
+    expect((await driver.reserve("delivery", NOON))?.scope).toEqual(scope);
   });
 });

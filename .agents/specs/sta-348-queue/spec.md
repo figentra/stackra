@@ -140,10 +140,10 @@ An operator lists the dead letters of a queue and redrives one; it runs again wi
   scope, the Idempotency-Key and a lease, skip a unique job already waiting or running in the same scope, and refuse a
   queued call of an action without a `job` option that names no caller.
 - **FR-005**: `QueueWorkerService` SHALL run each attempt through the action pipeline as the job's actor, inside the
-  job's scope session, with its timeout, then remove the job, retry it after its backoff, dead-letter it and call
+  job's scope session and with the job's scope as the call's scope, with its timeout, then remove the job, retry it after its backoff, dead-letter it and call
   `onDeadLetter` once, or drop and log it.
 - **FR-006**: `QueueJobDispatcherDriver` SHALL implement `JobDispatcher` so `ctx.dispatch` stores the job on behalf of
-  the calling actor.
+  the calling actor, in the call's scope (`CallDescriptor.scope`, ADR 0327 decision 6).
 - **FR-007**: `PostgresQueueDriver` SHALL reserve with `FOR UPDATE SKIP LOCKED`, decide a unique conflict by the partial
   unique index, bind every value as a parameter and read every row through zod; `MemoryQueueDriver` SHALL behave the
   same in one process.
@@ -160,9 +160,9 @@ An operator lists the dead letters of a queue and redrives one; it runs again wi
 
 ## Open items (for the owner, not blocking)
 
-- `CallDescriptor` carries no `ScopeRef`, so a job queued by `ctx.dispatch` keeps the caller's actor but opens no scope
-  session; a scope on the action context (ADR 0327 "current scope in the action context") would let the dispatcher
-  carry it. A transport or the scheduler that knows the scope passes it to `QueueService.push`.
+- Resolved 2026-10-25 (R1): `CallDescriptor` now carries the call's `scope`, so a job queued by `ctx.dispatch` keeps
+  it and the worker opens that scope session and passes it on as the call's scope. A call with no scope (a platform
+  call, or a transport that does not resolve one yet) still queues a platform job.
 - Gen needs: `registerJobs` rows (the job actions with their locked keys) in each generated entry, the generated
   Encore Topic and subscription that call `QueueWorkerService.process` in SaaS (ADR 0148 decision 6), the queued-call
   adapter that answers `Prefer: respond-async` by pushing, and the workers `createApp` starts per runway queue.

@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `QueueWorkerService`, the runtime of a job: it reserves due jobs, runs each attempt through the action
- *          pipeline as the job's actor inside the job's scope session with its timeout, then removes the job, retries
- *          it after its backoff, dead-letters it (and calls the action's `onDeadLetter` method once), or drops it.
+ *          pipeline as the job's actor inside the job's scope session (and with it as the call's scope, so the handler
+ *          reads `ctx.scope`) with its timeout, then removes the job, retries it after its backoff, dead-letters it
+ *          (and calls the action's `onDeadLetter` method once), or drops it.
  * Boundary: a platform service over the `QueueDriver` port and the `Clock`; `connect(container)` gives it the
  *           container whose pipeline runs the actions (the runtime and the testing module call it, as they call
  *           `EventBus.connect`). A job of an action with a `job` option runs as a `job` actor when the action lists
@@ -15,7 +16,7 @@
  * Runtime: node
  * Governing contract: ADR 0148 (decisions 1 and 3); ADR 0305 (rules 28 and 30); ADR 0138 (as amended: the pipeline);
  *                     ADR 0136 (decision 3: jobs derive their Idempotency-Keys); ADR 0260 (decision 4); ADR 0327
- *                     (decision 9: the scope session).
+ *                     (decisions 6 and 9: the call's scope, the scope session).
  */
 import { ActionPipeline } from "@stackra/actions";
 import type { Action, Resolver } from "@stackra/actions";
@@ -198,6 +199,7 @@ export class QueueWorkerService extends Service {
     const controller = new AbortController();
     const call = pipeline.execute(type, job.input as never, {
       actor: this.actorOf(plan, job),
+      ...(job.scope === undefined ? {} : { scope: job.scope }),
       ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
       abortSignal: controller.signal,
     });

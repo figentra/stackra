@@ -14,3 +14,4 @@
 - [x] T010 [US5] Tests for every public symbol and each barrel in `src/**/__tests__/` — covers: SC-002 — route: tests — deps: T009
 - [x] T011 [US1] Changeset `.changeset/queue-package.md`; `oxfmt` and `oxlint` clean; the validator reports nothing for the package — covers: SC-001, SC-003 — route: package — deps: T010
 - [ ] T012 [US1] Run the package's tests, typecheck and build in the separate testing workflow after the integrator's install — covers: SC-002, SC-003 — route: tests — deps: T011
+- [x] T013 [US1] `QueueJobDispatcherDriver` pushes the call's `scope`; `QueueWorkerService` passes the job's scope to the pipeline as the call's; tests, README — covers: FR-005, P-005, FR-006, P-006 — route: package — deps: T007

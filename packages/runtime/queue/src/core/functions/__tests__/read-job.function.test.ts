@@ -40,7 +40,7 @@ class ExpireUnpaidOrdersAction extends Action({
     unique: true,
     timeout: "2m",
     retries: 3,
-    cron: { schedule: "*/5 * * * *", perTenant: true, input: { batchSize: 100 } },
+    cron: { schedule: "*/5 * * * *", perScope: true, input: { batchSize: 100 } },
   },
 }) {
   async handle(): Promise<void> {}

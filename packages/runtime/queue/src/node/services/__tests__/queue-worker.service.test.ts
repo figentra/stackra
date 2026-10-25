@@ -5,12 +5,13 @@
  *          attempt with one `onDeadLetter` call; a refusal that is not retryable ends the job at once; a job without a
  *          dead letter is dropped and logged; a queued call runs as its caller under its Idempotency-Key; a job
  *          derives its own key when a store is bound; an attempt past its timeout is aborted and retried; an unknown
- *          key is dead-lettered; a scoped job runs in its scope session; `work` loops until aborted.
+ *          key is dead-lettered; a scoped job runs in its scope session with its scope as the call's (`ctx.scope`);
+ *          `work` loops until aborted.
  * Boundary: test only; the memory driver, a fixed clock and a map resolver with an allowing `AccessControl`. Fake timers
  *           only in the timeout test.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0148 (decisions 1 and 3); ADR 0305 (rules 28 and 30); ADR 0136
- *                     (decision 3).
+ *                     (decision 3); ADR 0327 (decision 6).
  */
 import {
   Action,
@@ -283,18 +284,19 @@ describe(QueueWorkerService, () => {
     ]);
   });
 
-  it("runs a scoped job in its scope session", async () => {
+  it("runs a scoped job in its scope session, with its scope as the call's", async () => {
     const withScope = vi.fn(async (_scope: unknown, work: () => Promise<unknown>) => work());
     const current = vi
       .spyOn(Database, "current")
       .mockReturnValue({ withScope } as unknown as Database);
     try {
-      const { queue, worker } = setup();
+      const { queue, worker, deliver } = setup();
       const scope = { id: "scp_1", path: "platform.acme" } as const;
       await queue.push(DeliverMessageAction, { messageId: "msg_1" }, { scope });
       const [run] = await worker.drain();
       expect(run?.outcome).toBe(JobOutcome.Done);
       expect(withScope).toHaveBeenCalledWith(scope, expect.any(Function));
+      expect(deliver.contexts[0]?.scope).toEqual(scope);
     } finally {
       current.mockRestore();
     }

@@ -57,7 +57,7 @@
 - **P-003**: `buildConfig(QueueConfig)` equals `QueueConfig$.parse({})` with driver `postgres`, `memory` builds, and another name refuses — Validates: FR-003
 - **P-004**: for every push, the stored job carries the action's queue, the caller, the scope and a lease of the timeout plus a minute; a second unique push of the same scope is skipped and one of another scope is stored — Validates: FR-004
 - **P-005**: for every sequence of attempt outcomes, a job is removed when done, retried at `now` plus its backoff while attempts remain and the error is retryable, and otherwise dead-lettered with one `onDeadLetter` call or removed with one log line — Validates: FR-005
-- **P-006**: `ctx.dispatch(Action, input)` stores one job whose origin is the calling actor and whose `causedBy` is the call id — Validates: FR-006
+- **P-006**: `ctx.dispatch(Action, input)` stores one job whose origin is the calling actor, whose scope is the call's scope (none for a platform call) and whose `causedBy` is the call id — Validates: FR-006
 - **P-007**: for every method, the driver's SQL holds no value text and has as many placeholders as parameters; the memory driver hands each due job to one reservation at a time — Validates: FR-007
 - **P-008**: `grep -rE "(const|let|class|interface|type|function) [A-Za-z]*[Tt]enant" packages/runtime/queue/src` and `grep -rE "@(Job|Queue)\b" packages/runtime/queue/src` find nothing — Validates: FR-008
 
