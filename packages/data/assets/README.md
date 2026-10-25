@@ -59,6 +59,13 @@ a service and a package resolve the same way. The URL is the disk's `filesystem.
 assets get a URL; `resolve` throws for any other kind. `useAsset` throws outside a `ContainerProvider` or when the
 container does not bind `AssetLibrary`.
 
+## Data assets
+
+A `data/` asset (a jurisdiction rule pack, a reference table) ships as `assets/data/<name>.data.json` beside
+`<name>.schema.json`. Gen validates it against the schema at build and writes its `version` and SHA-256 `hash` into
+the entry. Before a module starts, the runtime calls `library.verify(moduleAssets)`; a shipped file whose bytes differ
+throws `AssetHashMismatchError` and the module does not start. `library.json(entry)` reads one after the same check.
+
 ## Overrides
 
 A host replaces an overridable asset with a file at the same path under its one overrides tree,

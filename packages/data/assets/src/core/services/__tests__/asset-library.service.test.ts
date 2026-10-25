@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `AssetLibrary`: a service that resolves a public asset to the disk URL of
  *          `<module>/<kind>/<path>` with its key and source file, refuses a URL for a non-public asset or a disk with
- *          no public URL, and reads the published bytes and UTF-8 text of any asset.
+ *          no public URL, reads the published bytes and UTF-8 text of any asset, and
+ *          checks a data asset's bytes against its hash.
  * Boundary: test only; a memory disk from @stackra/filesystem stands in for the CDN bucket, with a fixed clock.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0234 (decisions 3, 6
@@ -14,6 +15,7 @@ import { Clock } from "@stackra/contracts";
 import { FileNotFoundError, FilesystemConfig, MemoryFileSystemDriver } from "@stackra/filesystem";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
+import { AssetHashMismatchError } from "#core/errors/asset-hash-mismatch.error";
 import { assets } from "#core/functions/assets.function";
 import { AssetLibrary } from "#core/services/asset-library.service";
 import type { ResolvedAsset } from "#core/types/resolved-asset.type";
@@ -109,5 +111,46 @@ describe("AssetLibrary", () => {
     await expect(library.text(Assets.orders.ai.explain_order_md)).rejects.toBeInstanceOf(
       FileNotFoundError,
     );
+  });
+});
+
+describe("AssetLibrary data assets", () => {
+  /** The published contents of the data asset. */
+  const CONTENT = '{"days":30}';
+
+  /** A data asset with `hash`, published with CONTENT. */
+  async function published(hash: string) {
+    const files = disk();
+    await files.write("legal/data/sa-rules.data.json", CONTENT);
+    const entry = {
+      key: "legal::data/sa-rules.data.json" as const,
+      file: "assets/data/sa-rules.data.json",
+      overridable: false,
+      hash,
+      version: "2026.10",
+    };
+    return { library: new AssetLibrary(files), entry };
+  }
+
+  /** The real SHA-256 of CONTENT, so the fixture never depends on a typed digest. */
+  async function realHash(): Promise<string> {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(CONTENT));
+    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join(
+      "",
+    );
+  }
+
+  it("reads a data asset whose bytes match its hash", async () => {
+    const { library, entry } = await published(await realHash());
+    await expect(library.verify([entry])).resolves.toBeUndefined();
+    expect(await library.json(entry)).toEqual({ days: 30 });
+  });
+
+  it("refuses a data asset whose bytes differ, and skips an entry with no hash", async () => {
+    const { library, entry } = await published("0".repeat(64));
+    await expect(library.json(entry)).rejects.toThrow(AssetHashMismatchError);
+    await expect(
+      library.verify([{ key: entry.key, file: entry.file, overridable: false }]),
+    ).resolves.toBeUndefined();
   });
 });

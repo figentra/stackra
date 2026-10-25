@@ -139,4 +139,15 @@ describe("assets", () => {
   it("refuses an entry whose overridable flag is not a boolean", () => {
     expect(() => assets(treeWith({ overridable: "yes" }))).toThrow(/overridable/);
   });
+
+  it("keeps a data asset's hash and version, and refuses a malformed one", () => {
+    const hash = "a".repeat(64);
+    const tree = assets(treeWith({ hash, version: "2026.10" }));
+    expect(Object.values(Object.values(Object.values(tree)[0] ?? {})[0] ?? {})[0]).toMatchObject({
+      hash,
+      version: "2026.10",
+    });
+    expect(() => assets(treeWith({ hash: "ABC" }))).toThrow(/SHA-256/);
+    expect(() => assets(treeWith({ version: " " }))).toThrow(/blank version/);
+  });
 });

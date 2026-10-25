@@ -13,7 +13,7 @@ import type { AssetEntry, AssetKey, AssetTree, ResolvedAsset } from "#core/index
 
 describe("@stackra/assets", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(core).sort()).toEqual(["AssetLibrary", "assets"]);
+    expect(Object.keys(core).sort()).toEqual(["AssetHashMismatchError", "AssetLibrary", "assets"]);
   });
 
   it("resolves its public types", () => {

@@ -2,19 +2,21 @@
  * Stackra file contract:
  * Purpose: `AssetLibrary`, the read-only view of the published assets over the injected `FileSystem` disk: the URL of
  *          a public asset (`useAsset`, mail and head tags) and the bytes or text of any asset (prompt templates,
- *          evaluation sets, seed data).
+ *          evaluation sets, seed data), and the hash check of `data/` assets that keeps a module with changed data from
+ *          starting.
  * Boundary: a service with no state. An asset is published at `<module>/<kind>/<path>` on the disk, derived from its
  *           key alone, so every member layout (app, service, package) resolves the same way; the publish step
  *           (`stackra build` or CI) copies the winning file there. Only `public/` assets get a URL: the others are
  *           never published to the CDN (ADR 0234 decision 6). Named `AssetLibrary` so it never clashes with the
  *           generated `Assets` constants a consumer imports beside it.
  * Runtime: isomorphic
- * Governing contract: ADR 0234 (decisions 3, 6 and 7 as amended); ADR 0263 (resolved by type); ADR 0294 (decisions
+ * Governing contract: ADR 0234 (decisions 3, 6 and 7 as amended; 2026-10-24 note); ADR 0263 (resolved by type); ADR 0294 (decisions
  *                     16, 17 and 25).
  */
 import { Service } from "@stackra/container";
 import { FileSystem } from "@stackra/filesystem/contracts";
 
+import { AssetHashMismatchError } from "#core/errors/asset-hash-mismatch.error";
 import { parseAssetKey } from "#core/functions/parse-asset-key.function";
 import type { AssetEntry } from "#core/types/asset-entry.type";
 import type { AssetKey } from "#core/types/asset-key.type";
@@ -71,6 +73,35 @@ export class AssetLibrary extends Service {
    */
   async text(entry: AssetEntry): Promise<string> {
     return new TextDecoder().decode(await this.read(entry));
+  }
+
+  /**
+   * Checks every entry that carries a hash against the SHA-256 of its published bytes; the runtime calls it before a
+   * module starts, with the module's assets.
+   *
+   * @throws AssetHashMismatchError for the first entry whose bytes differ.
+   * @throws FileNotFoundError (from `@stackra/filesystem`) when a hashed asset was not published.
+   */
+  async verify(entries: Iterable<AssetEntry>): Promise<void> {
+    for (const entry of entries) {
+      if (entry.hash === undefined) continue;
+      const digest = await crypto.subtle.digest("SHA-256", await this.read(entry));
+      const actual = Array.from(new Uint8Array(digest), (byte) =>
+        byte.toString(16).padStart(2, "0"),
+      ).join("");
+      if (actual !== entry.hash) throw new AssetHashMismatchError(entry.key, entry.hash, actual);
+    }
+  }
+
+  /**
+   * The parsed JSON of a data asset, checked against its hash first when it has one.
+   *
+   * @throws AssetHashMismatchError when its bytes differ from its hash.
+   * @throws SyntaxError when it is not JSON.
+   */
+  async json<T = unknown>(entry: AssetEntry): Promise<T> {
+    await this.verify([entry]);
+    return JSON.parse(await this.text(entry)) as T;
   }
 
   /** The disk key an asset is published under: `<module>/<kind>/<path>`. */
