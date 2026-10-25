@@ -11,6 +11,8 @@ connected install. It never calls home on its own, and no standing deletes data.
 
 | Symbol                                                                       | Use                                                                             |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `LicenceVerifier`, `KeygenLicenceVerifierDriver`                             | the port an install verifies through, and its Keygen driver over the config     |
+| `LicensingConfig`, `LicensingConfig$`, `LicensingOptions`                    | key `licensing`: `apiUrl` (Keygen hosted by default), `account`, `publicKey`    |
 | `verifyLicenceFile`                                                          | checks the Ed25519 signature, decrypts an encrypted file, returns the `Licence` |
 | `licenceStanding`                                                            | `active`, `grace` or `read_only` at a given time, after a grace period          |
 | `checkLicenceKey`                                                            | Keygen `validate-key`, only for an install that opted in                        |
@@ -56,6 +58,20 @@ check.valid; // false with check.code "EXPIRED", "SUSPENDED", "TOO_MANY_MACHINES
 ```
 
 `LicenceCheckUnavailableError` means Keygen did not answer; the install keeps its offline standing.
+
+## Configuration, not code
+
+The licence API origin is configuration: `LicensingConfig.apiUrl` defaults to Keygen's hosted API and an air-gapped
+install points it at its own server. `checkLicenceKey` without a `baseUrl` reads that default; no origin is a constant
+in code.
+
+```ts
+export class LicensingConfig extends BaseLicensingConfig {
+  override account = "figentra";
+  override publicKey = "e8601e48…"; // the account's Ed25519 verify key, public
+}
+// const licence = await container.get(LicenceVerifier).verify(file);
+```
 
 ## Not here
 

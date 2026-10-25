@@ -5,13 +5,16 @@ shape (ADR 0294, 0305). Entry `.` only.
 
 ## Where code goes
 
-| You are writing… | It goes in…                                 |
-| ---------------- | ------------------------------------------- |
-| A function       | `src/core/functions/<name>.function.ts`     |
-| A type           | `src/core/types/<name>.type.ts`             |
-| An enum          | `src/core/enums/<name>.enum.ts`             |
-| A refusal        | `src/core/errors/<name>.error.ts`           |
-| A test           | `__tests__/<name>.<kind>.test.ts` beside it |
+| You are writing…  | It goes in…                                                                 |
+| ----------------- | --------------------------------------------------------------------------- |
+| The configuration | `src/config/licensing.config.ts`, schema in `src/core/{schemas,constants}/` |
+| A port            | `src/core/ports/<name>.port.ts`                                             |
+| A driver          | `src/core/drivers/<name>.driver.ts`                                         |
+| A function        | `src/core/functions/<name>.function.ts`                                     |
+| A type            | `src/core/types/<name>.type.ts`                                             |
+| An enum           | `src/core/enums/<name>.enum.ts`                                             |
+| A refusal         | `src/core/errors/<name>.error.ts`                                           |
+| A test            | `__tests__/<name>.<kind>.test.ts` beside it                                 |
 
 ## Entries and barrels
 
@@ -23,6 +26,7 @@ shape (ADR 0294, 0305). Entry `.` only.
 
 - No phone-home (ADR 0178 decision 5): `checkLicenceKey` is the only network call and runs only when the caller asks.
 - Expiry is a standing, never a refusal (decision 4). Nothing here deletes or hides data.
+- The licence API origin, account and verify key are `LicensingConfig` values; never write an origin in code.
 - Web Crypto only (`crypto.subtle`, Ed25519 and AES-GCM); no crypto dependency.
 - No parameter properties, no `#private` fields, no decorators (`erasableSyntaxOnly`).
 

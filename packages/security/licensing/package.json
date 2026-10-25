@@ -2,7 +2,7 @@
   "name": "@stackra/licensing",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra licence verifier: reads a Keygen signed licence file offline, derives the soft-enforcement standing (active, grace, read-only), and runs the opt-in online key check for connected installs",
+  "description": "Stackra licence verifier: the LicenceVerifier port and its Keygen driver over the LicensingConfig configuration (API origin, account, verify key), reading a signed licence file offline, deriving the soft-enforcement standing (active, grace, read-only), and running the opt-in online key check for connected installs",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -19,6 +19,10 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts"
+    ],
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
@@ -48,9 +52,13 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/config": "workspace:*",
+    "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
-    "@stackra/transport": "workspace:*"
+    "@stackra/transport": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",

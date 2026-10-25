@@ -22,6 +22,6 @@ export interface LicenceKeyCheckOptions {
   /** The transport to send through; `createTransport()` (the global fetch) when left out. */
   readonly transport?: Transport;
 
-  /** The Keygen API origin; `https://api.keygen.sh` when left out, or a self-hosted Keygen. */
+  /** The licence API origin; `LicensingConfig`'s default `apiUrl` when left out, or a self-hosted Keygen's. */
   readonly baseUrl?: string;
 }

@@ -20,9 +20,14 @@ import type {
 describe("@stackra/licensing", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(licensing).sort()).toEqual([
+      "KeygenLicenceVerifierDriver",
       "LicenceCheckUnavailableError",
       "LicenceFileInvalidError",
       "LicenceStanding",
+      "LicenceVerifier",
+      "LicensingConfig",
+      "LicensingConfig$",
+      "LicensingOptions",
       "checkLicenceKey",
       "licenceStanding",
       "verifyLicenceFile",

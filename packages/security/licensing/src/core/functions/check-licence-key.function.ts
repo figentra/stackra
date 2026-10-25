@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `checkLicenceKey`, the opt-in online check for a connected install: asks Keygen's `validate-key` action
  *          whether the licence key is valid, scoped to this machine's fingerprint when one is given.
- * Boundary: the only network call in the package, and never made unless the install opted in (ADR 0178 decision 5:
+ * Boundary: the only network call in the package; the origin is `baseUrl`, else `LicensingConfig`'s default (never a
+ *           constant here), and never made unless the install opted in (ADR 0178 decision 5:
  *           no phone-home by default). Sent through a `Transport`; the key goes in the body, never the URL. A status
  *           other than 200 or a body without `meta.valid` refuses with `LicenceCheckUnavailableError`, which the caller
  *           treats as "keep the offline standing". The key is never stored or logged.
@@ -11,13 +12,11 @@
  */
 import { createTransport } from "@stackra/transport";
 
+import { LICENSING_CONFIG_SCHEMA } from "#core/constants/licensing-config-schema.constant";
 import { LicenceCheckUnavailableError } from "#core/errors/licence-check-unavailable.error";
 import { isRecord } from "#core/functions/is-record.function";
 import type { LicenceKeyCheck } from "#core/types/licence-key-check.type";
 import type { LicenceKeyCheckOptions } from "#core/types/licence-key-check-options.type";
-
-/** Keygen's hosted API origin. */
-const KEYGEN_API_URL = "https://api.keygen.sh";
 
 /** Keygen speaks JSON:API. */
 const JSON_API = "application/vnd.api+json";
@@ -32,7 +31,8 @@ const JSON_API = "application/vnd.api+json";
  */
 export async function checkLicenceKey(options: LicenceKeyCheckOptions): Promise<LicenceKeyCheck> {
   const send = options.transport ?? createTransport();
-  const url = `${options.baseUrl ?? KEYGEN_API_URL}/v1/accounts/${encodeURIComponent(options.account)}/licenses/actions/validate-key`;
+  const origin = options.baseUrl ?? LICENSING_CONFIG_SCHEMA.parse({}).apiUrl;
+  const url = `${origin}/v1/accounts/${encodeURIComponent(options.account)}/licenses/actions/validate-key`;
   const meta =
     options.fingerprint === undefined
       ? { key: options.licenceKey }
