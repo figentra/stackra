@@ -5,7 +5,8 @@
  * Boundary: internal; the runtime side of `ColumnDefinition` and `ForeignKeyColumn`. It records calls and checks each
  *           value as it comes; the blueprint decides where each statement goes (create, alter, online step).
  * Runtime: node
- * Governing contract: ADR 0159 as amended by ADR 0305; ADR 0231 (`fk_`, `ck_`); ADR 0014 (decision 6).
+ * Governing contract: ADR 0159 as amended by ADR 0305; ADR 0231 (`fk_`, `ck_`); ADR 0014 (decision 6);
+ *                     the Arabic collation row (OS-391).
  */
 import { constraintName } from "#core/functions/constraint-name.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
@@ -61,6 +62,9 @@ export class ColumnRecord implements ForeignKeyColumn {
 
   /** Whether deleting the referenced row deletes this one. */
   cascades = false;
+
+  /** The module collation it compares and sorts by (`arabic`), when not the database default. */
+  collation: string | undefined = undefined;
 
   /**
    * @param name - the column name, snake_case.
@@ -136,6 +140,19 @@ export class ColumnRecord implements ForeignKeyColumn {
   }
 
   /**
+   * See `ColumnDefinition.collate`.
+   *
+   * @throws TypeError for a name that is not snake_case, or a column that is not text.
+   */
+  collate(collation: string): this {
+    quoteIdentifier(collation);
+    if (!/^(varchar|text|citext)\b/.test(this.type))
+      throw new TypeError(`${this.name} is ${this.type}, so it takes no collation`);
+    this.collation = collation;
+    return this;
+  }
+
+  /**
    * See `ForeignKeyColumn.cascadeOnDelete`.
    *
    * @throws TypeError on a column that is not a foreign key.
@@ -158,9 +175,11 @@ export class ColumnRecord implements ForeignKeyColumn {
     return this;
   }
 
-  /** The column definition inside `CREATE TABLE` or `ADD COLUMN`. */
-  definition(table: string): string {
+  /** The column definition inside `CREATE TABLE` or `ADD COLUMN`; a collation is the module schema's. */
+  definition(table: string, schema: string): string {
     const parts = [quoteIdentifier(this.name), this.type];
+    if (this.collation !== undefined)
+      parts.push(`collate ${quoteIdentifier(schema)}.${quoteIdentifier(this.collation)}`);
     if (this.generated !== undefined) parts.push(`generated always as (${this.generated}) stored`);
     if (this.defaultSql !== undefined) parts.push(`default ${this.defaultSql}`);
     if (this.nullability !== undefined) parts.push(this.nullability);

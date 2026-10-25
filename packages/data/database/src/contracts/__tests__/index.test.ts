@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: `VisibilityFilter` is the only value, and `Where` accepts a
+ * Purpose: the consumer contract of the `./contracts` entry: `Disposal`, `HoldRegistry` and `VisibilityFilter` are the values, and `Where` accepts a
  *          typed filter and one `$raw` fragment.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -13,7 +13,7 @@ import type { Where } from "#contracts/index";
 
 describe("@stackra/database/contracts", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["VisibilityFilter"]);
+    expect(Object.keys(contracts).sort()).toEqual(["Disposal", "HoldRegistry", "VisibilityFilter"]);
   });
 
   it("types a filter of M", () => {

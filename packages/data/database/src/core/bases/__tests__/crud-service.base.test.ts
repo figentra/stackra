@@ -5,7 +5,8 @@
  *          key, `findOneOrFail` refuses with `not_found`, `insert` flushes in a savepoint or its own transaction,
  *          `update` assigns, `table` builds the cursor read, `sum` aggregates, and `metrics` returns a reader. With a
  *          `VisibilityFilter` bound, every read ANDs its conditions for the running call's actor (none outside a
- *          call), and a read with no conditions or no driver is unchanged.
+ *          call), and a read with no conditions or no driver is unchanged. With a `HoldRegistry`
+ *          connected, `purge` removes only the rows no hold covers.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0307 (rules 2 and 16); ADR 0333 (decision 4); ADR 0022;
@@ -15,6 +16,8 @@ import { TransactionPropagation } from "@mikro-orm/core";
 import type { OptionalProps } from "@mikro-orm/core";
 import type { EntityManager } from "@mikro-orm/postgresql";
 import { ContextStorage } from "@stackra/actions/contracts";
+import { Driver } from "@stackra/container";
+import type { AnyClass } from "@stackra/container";
 import { ActorKind, Realm, SortDirection } from "@stackra/contracts";
 import { isRefusal, NotFoundError } from "@stackra/errors";
 import { HasPublicId, Model } from "@stackra/model";
@@ -23,10 +26,13 @@ import { vi } from "vitest";
 
 import { CrudService } from "#core/bases/crud-service.base";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
+import { connectHoldRegistry } from "#core/functions/connect-hold-registry.function";
 import { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
 import { registerModelPartners } from "#core/functions/register-model-partners.function";
 import { sql } from "#core/functions/sql.function";
 import { Database } from "#core/ports/database.port";
+import { Disposal } from "#contracts/enums/disposal.enum";
+import { HoldRegistry } from "#contracts/ports/hold-registry.port";
 import { VisibilityFilter } from "#contracts/ports/visibility-filter.port";
 import { MetricsReader } from "#core/values/metrics-reader.value";
 
@@ -256,5 +262,47 @@ describe(CrudService, () => {
     });
     expect(await new OrderService().count({ status: "paid" })).toBe(3);
     expect(em.count).toHaveBeenLastCalledWith(Order, { status: "paid" });
+  });
+});
+
+describe("CrudService.purge with legal holds", () => {
+  afterEach(() => {
+    connectHoldRegistry(undefined);
+  });
+
+  /** A registry holding `ord_2`, recording what it was asked. */
+  function registry() {
+    const asked: unknown[][] = [];
+    class Holds extends Driver(HoldRegistry) {
+      async heldAmong<M extends object>(
+        model: AnyClass<M>,
+        ids: readonly string[],
+        disposal: Disposal,
+      ): Promise<ReadonlySet<string>> {
+        asked.push([model, [...ids], disposal]);
+        return new Set(ids.filter((id) => id === "ord_2"));
+      }
+    }
+    return { holds: new Holds(), asked };
+  }
+
+  it("removes only the matching rows no hold covers", async () => {
+    const em = connect();
+    em.find.mockResolvedValueOnce([{ id: "ord_1" }, { id: "ord_2" }] as never);
+    const { holds, asked } = registry();
+    connectHoldRegistry(holds);
+    expect(await new OrderService().purge({ status: "paid" })).toBe(2);
+    expect(asked).toEqual([[Order, ["ord_1", "ord_2"], Disposal.Purge]]);
+    expect(em.nativeDelete).toHaveBeenCalledWith(Order, {
+      $and: [{ status: "paid" }, { id: { $in: ["ord_1"] } }],
+    });
+  });
+
+  it("removes nothing when every match is held", async () => {
+    const em = connect();
+    em.find.mockResolvedValueOnce([{ id: "ord_2" }] as never);
+    connectHoldRegistry(registry().holds);
+    expect(await new OrderService().purge({ status: "paid" })).toBe(0);
+    expect(em.nativeDelete).not.toHaveBeenCalled();
   });
 });

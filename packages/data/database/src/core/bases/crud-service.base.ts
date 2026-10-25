@@ -9,10 +9,11 @@
  *           caller's transaction (an action's unit of work) and a query reads on a fork. A hand-written method of the
  *           same name overrides an inherited one. Every read (`find`, `findOne`, `findOneOrFail`, `count`, `sum`,
  *           `table`, `metrics`) ANDs in the bound `VisibilityFilter`'s conditions, on top of row-level security;
- *           writes and `purge` carry none.
+ *           writes and `purge` carry none. `purge` skips every row the connected `HoldRegistry` holds.
  * Runtime: node
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0097 (decision 5.3); ADR 0307 (rules 2 and 16);
- *                     ADR 0305 (rule 5: partner by type argument); ADR 0136 (decision 2); ADR 0333 (decision 4).
+ *                     ADR 0305 (rule 5: partner by type argument); ADR 0136 (decision 2); ADR 0333 (decision 4);
+ *                     ADR 0134 (2026-10-24 amendment: legal holds).
  */
 import { TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
@@ -29,7 +30,9 @@ import type { AnyClass } from "@stackra/container";
 import { SortDirection } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
 
+import { HOLD_HOST } from "#core/constants/hold-host.constant";
 import { columnOf } from "#core/functions/column-of.function";
+import { disposableIds } from "#core/functions/disposable-ids.function";
 import { filterOf } from "#core/functions/filter-of.function";
 import { modelOf } from "#core/functions/model-of.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
@@ -41,6 +44,7 @@ import type { TableOptions } from "#core/types/table-options.type";
 import type { TablePage } from "#core/types/table-page.type";
 import type { TableQuery } from "#core/types/table-query.type";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
+import { Disposal } from "#contracts/enums/disposal.enum";
 import type { Where } from "#contracts/types/where.type";
 import { MetricsReader } from "#core/values/metrics-reader.value";
 
@@ -141,9 +145,25 @@ export abstract class CrudService<M extends object> extends Service implements R
     );
   }
 
-  /** See `Repository.purge`. */
-  purge(where: Where<M>): Promise<number> {
-    return this.em().nativeDelete(this.model(), filterOf(where));
+  /**
+   * See `Repository.purge`. With a `HoldRegistry` connected, it removes only the matching rows no legal hold covers
+   * (the registry logs each held one) and counts only those; with none, one statement removes every match.
+   */
+  async purge(where: Where<M>): Promise<number> {
+    const em = this.em();
+    const model = this.model();
+    const filter = filterOf(where);
+    if (HOLD_HOST.registry === undefined) return em.nativeDelete(model, filter);
+    const [key = "id"] = em.getMetadata(model).primaryKeys;
+    const rows = (await em.find(model, filter, { fields: [key] as never })) as Record<
+      string,
+      unknown
+    >[];
+    const ids = rows.map((row) => String(row[key]));
+    const free = await disposableIds(model, ids, Disposal.Purge);
+    if (free.length === 0) return 0;
+    // Only the checked ids, so a row inserted after the read is never removed unchecked.
+    return em.nativeDelete(model, { $and: [filter, { [key]: { $in: free } }] } as never);
   }
 
   /**

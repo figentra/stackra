@@ -37,4 +37,11 @@ export interface SchemaBuilder {
 
   /** Creates one of the approved extensions, if the database does not have it. */
   createExtension(extension: Extension): void;
+
+  /**
+   * Creates the ICU collation `name` in the module's schema for `locale` (a BCP 47 tag with ICU keywords, such as
+   * `ar-u-kn-true`), which a text column then names with `collate(name)`. Which locale a module sorts by is the
+   * migration's literal, taken from the market pack the module serves; nothing here picks one.
+   */
+  createCollation(name: string, locale: string): void;
 }

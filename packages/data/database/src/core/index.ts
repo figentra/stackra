@@ -5,7 +5,7 @@
  *          and `UniqueViolation` are MikroORM's own, re-exported, so generated entity metadata and `instanceof` checks
  *          use the classes the ORM throws and reads.
  * Boundary: names each re-export and declares nothing. The Postgres and unit-of-work drivers live in `./node`; the
- *           `VisibilityFilter` port and the `Where` type live in `./contracts`. The migration records, the registries, the name helpers, the
+ *           `VisibilityFilter` and `HoldRegistry` ports and the `Where` type live in `./contracts`. The migration records, the registries, the name helpers, the
  *           block-id minting and the visibility filter function stay internal; the sequence tables' migration is found
  *           by its path (`src/node/database/migrations/`), as every migration is, so it is not re-exported.
  * Runtime: node
@@ -25,11 +25,14 @@ export { Sequence } from "#core/bases/sequence.base";
 export { Aggregate } from "#core/enums/aggregate.enum";
 export { Extension } from "#core/enums/extension.enum";
 export { MixedCurrencyError } from "#core/errors/mixed-currency.error";
+export { RecordHeldError } from "#core/errors/record-held.error";
 export { SequenceBlockClosedError } from "#core/errors/sequence-block-closed.error";
 export { SequenceNotReservableError } from "#core/errors/sequence-not-reservable.error";
 export { SequenceNumberOutOfOrderError } from "#core/errors/sequence-number-out-of-order.error";
 export { compileMigration } from "#core/functions/compile-migration.function";
+export { connectHoldRegistry } from "#core/functions/connect-hold-registry.function";
 export { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
+export { disposableIds } from "#core/functions/disposable-ids.function";
 export { formatSequenceNumber } from "#core/functions/format-sequence-number.function";
 export { operationAction } from "#core/functions/operation-action.function";
 export { operationQuery } from "#core/functions/operation-query.function";
@@ -39,6 +42,8 @@ export { registerSequences } from "#core/functions/register-sequences.function";
 export { repositoryOf } from "#core/functions/repository-of.function";
 export { sql } from "#core/functions/sql.function";
 export { table } from "#core/functions/table.function";
+export { visibleKeysQuery } from "#core/functions/visible-keys-query.function";
+export { HoldSubscriber } from "#core/orm/hold.subscriber";
 export { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 export { Database } from "#core/ports/database.port";
 export { GraphQuery } from "#core/services/graph-query.service";

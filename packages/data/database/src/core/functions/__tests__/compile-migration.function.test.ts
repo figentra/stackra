@@ -5,7 +5,8 @@
  *          macros installed by name, the generated equality and ancestor row-level-security policies, the scope-tree
  *          columns with their GiST index, generated columns, and every safety refusal (missing nullability or comment,
  *          NOT NULL without a default, non-concurrent index on an existing table, concurrent index on a new one,
- *          unapproved extension, raw statement without an inverse, a policy the table cannot take).
+ *          unapproved extension, raw statement without an inverse, a policy the table cannot take), and the ICU
+ *          collation of a text column (with its refusals).
  * Boundary: test only; pure compilation, no database.
  * Runtime: node (vitest)
  * Governing contract: ADR 0159 (as amended); ADR 0160; ADR 0239; ADR 0327 (decisions 3 and 9);
@@ -250,6 +251,43 @@ describe(compileMigration, () => {
       'alter table "messages"."messages" disable row level security',
       'alter table "messages"."messages" drop column if exists "workspace_id"',
     ]);
+  });
+
+  it("creates an ICU collation in the module schema and collates a text column by it", () => {
+    class CreatePartiesMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.createCollation("arabic", "ar-u-kn-true");
+        schema.create("parties", (t: Blueprint) => {
+          t.hasPublicId("pty");
+          t.string("name", 200).notNull().collate("arabic").comment("The party's name.");
+        });
+      }
+    }
+    const [step] = compileMigration(CreatePartiesMigration, { schema: "parties" }).steps;
+    expect(step?.sql[0]).toBe(
+      `create collation if not exists "parties"."arabic" (provider = icu, locale = 'ar-u-kn-true')`,
+    );
+    expect(step?.sql[1]).toContain('"name" varchar(200) collate "parties"."arabic" not null');
+    expect(step?.inverse).toContain('drop collation if exists "parties"."arabic"');
+  });
+
+  it("refuses a collation on a column that is not text, and a locale that is not BCP 47", () => {
+    class NumberCollationMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("parties", (t: Blueprint) => {
+          t.integer("rank").notNull().collate("arabic").comment("Rank.");
+        });
+      }
+    }
+    class BadLocaleMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.createCollation("arabic", "ar'; drop table x; --");
+      }
+    }
+    expect(() => compileMigration(NumberCollationMigration, { schema: "parties" })).toThrow(
+      /takes no collation/,
+    );
+    expect(() => compileMigration(BadLocaleMigration, { schema: "parties" })).toThrow(/BCP 47/);
   });
 
   it("writes the scope-tree columns, their indexes and the ancestor policy on a new table", () => {

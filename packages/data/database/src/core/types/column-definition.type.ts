@@ -24,6 +24,12 @@ export interface ColumnDefinition {
   /** A plain index on the column alone (`idx_<table>_<column>`); built online when the table already exists. */
   index(): this;
 
+  /**
+   * Compares and sorts the text column by `collation`, an ICU collation the module's migration created with
+   * `schema.createCollation` (Arabic letter order, digits by value). Text columns only.
+   */
+  collate(collation: string): this;
+
   /** A persisted computed value: `GENERATED ALWAYS AS (<expression>) STORED`; the model reads it with a getter. */
   storedAs(expression: string): this;
 }

@@ -355,7 +355,7 @@ export class BlueprintRecord {
     const primary =
       this.primaryKey ??
       this.columns.filter((column) => column.primary).map((column) => column.name);
-    const definitions = this.columns.map((column) => column.definition(this.table));
+    const definitions = this.columns.map((column) => column.definition(this.table, schema));
     if (primary.length > 0)
       definitions.push(`primary key (${primary.map(quoteIdentifier).join(", ")})`);
     const statements: CompiledStatement[] = [
@@ -413,7 +413,7 @@ export class BlueprintRecord {
           `${this.table}.${column.name}: an added column is nullable or has a default; NOT NULL without one waits for a contract step`,
         );
       statements.push({
-        sql: `alter table ${qualified} add column ${column.definition(this.table)}`,
+        sql: `alter table ${qualified} add column ${column.definition(this.table, schema)}`,
         inverse: [`alter table ${qualified} drop column if exists ${quoteIdentifier(column.name)}`],
       });
       statements.push({ sql: column.commentSql(qualified), inverse: [] });

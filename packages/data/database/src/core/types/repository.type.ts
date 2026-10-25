@@ -59,6 +59,8 @@ export interface Repository<M extends object> {
    */
   insert(data: RequiredEntityData<M>, options?: TransactionOptions): Promise<M>;
 
-  /** Deletes the rows matching `where` in one statement and returns how many; retention and purge jobs only. */
+  /**
+   * Deletes the rows matching `where` that no legal hold covers and returns how many; retention and purge jobs only.
+   */
   purge(where: Where<M>): Promise<number>;
 }

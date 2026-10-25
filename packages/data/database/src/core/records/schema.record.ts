@@ -4,7 +4,8 @@
  *          them to steps, one transactional step first and then each online statement as its own step, each with
  *          its derived inverse.
  * Boundary: internal. Raw statements keep the inverse the migration stated; a `CONCURRENTLY` statement becomes its
- *           own non-transactional step. Extensions are the ADR 0160 list only.
+ *           own non-transactional step. Extensions are the ADR 0160 list only; an ICU collation is created
+ *           in the module's schema.
  * Runtime: node
  * Governing contract: ADR 0159 (decision 3; 2026-10-23 and 2026-10-24 notes); ADR 0160 (approved extensions).
  */
@@ -12,6 +13,7 @@ import { Enum } from "@stackra/contracts";
 
 import { Extension } from "#core/enums/extension.enum";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
+import { sqlLiteral } from "#core/functions/sql-literal.function";
 import { BlueprintRecord } from "#core/records/blueprint.record";
 import type { Blueprint } from "#core/types/blueprint.type";
 import type { CompiledStatement } from "#core/types/compiled-statement.type";
@@ -22,6 +24,7 @@ import type { SchemaBuilder } from "#core/types/schema-builder.type";
 /** One recorded operation: a table blueprint, or a statement with its inverse. */
 type Operation =
   | { readonly blueprint: BlueprintRecord }
+  | { readonly collation: string; readonly locale: string }
   | { readonly statement: string; readonly inverse: string | false };
 
 /** A statement that cannot run inside a transaction. */
@@ -93,6 +96,18 @@ export class SchemaRecord implements SchemaBuilder {
   }
 
   /**
+   * See `SchemaBuilder.createCollation`.
+   *
+   * @throws TypeError for a name that is not snake_case, or a locale that is not a BCP 47 tag.
+   */
+  createCollation(name: string, locale: string): void {
+    quoteIdentifier(name);
+    if (!/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{1,8})*$/.test(locale))
+      throw new TypeError(`"${locale}" is not a BCP 47 locale for an ICU collation`);
+    this.operations.push({ collation: name, locale });
+  }
+
+  /**
    * The steps of the migration in apply order.
    *
    * @param schema - the module's Postgres schema.
@@ -107,6 +122,14 @@ export class SchemaRecord implements SchemaBuilder {
         inverse: [`drop schema if exists ${quoteIdentifier(schema)}`],
       });
     for (const operation of this.operations) {
+      if ("collation" in operation) {
+        const collation = `${quoteIdentifier(schema)}.${quoteIdentifier(operation.collation)}`;
+        transactional.push({
+          sql: `create collation if not exists ${collation} (provider = icu, locale = ${sqlLiteral(operation.locale)})`,
+          inverse: [`drop collation if exists ${collation}`],
+        });
+        continue;
+      }
       if ("blueprint" in operation) {
         const compiled = operation.blueprint.compile(schema);
         transactional.push(...compiled.statements);
