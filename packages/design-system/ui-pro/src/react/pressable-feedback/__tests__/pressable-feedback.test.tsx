@@ -23,9 +23,10 @@ describe("PressableFeedback (web)", () => {
   it("sets disabled as a boolean, so React warns about no string on it", () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     render(<PressableFeedback isDisabled>Save</PressableFeedback>);
-    expect((screen.getByRole("button") as HTMLButtonElement).disabled).toBe(true);
-    expect(error.mock.calls.flat().join(" ")).not.toMatch(/boolean attribute/);
+    const logged = error.mock.calls.flat().join(" ");
     error.mockRestore();
+    expect((screen.getByRole("button") as HTMLButtonElement).disabled).toBe(true);
+    expect(logged).not.toMatch(/boolean attribute/);
   });
 
   it("renders a button with its feedback layers and passes unknown props through", () => {

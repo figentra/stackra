@@ -40,6 +40,7 @@ const STOPS = [
     time: "9:12 AM",
     latitude: 37.79519,
     longitude: -122.39385,
+    label: "top",
   },
   {
     id: "market",
@@ -48,6 +49,7 @@ const STOPS = [
     time: "9:19 AM",
     latitude: 37.7896,
     longitude: -122.3887,
+    label: "top",
   },
   {
     id: "chase",
@@ -56,6 +58,8 @@ const STOPS = [
     time: "9:27 AM",
     latitude: 37.76892,
     longitude: -122.38779,
+    // The route arrives from the north, so a label above this last stop would sit on the line.
+    label: "bottom",
   },
 ] as const;
 
@@ -73,7 +77,8 @@ const STYLES = { light: blank("#e5e7eb"), dark: blank("#1f2937") };
 
 /** The Map page. */
 export function ProMap() {
-  const [chosen, setChosen] = useState<(typeof STOPS)[number] | null>(STOPS[1]);
+  // The last stop opens first: nothing sits above it, so its popup covers no other stop.
+  const [chosen, setChosen] = useState<(typeof STOPS)[number] | null>(STOPS[2]);
 
   return (
     <article className="grid gap-6">
@@ -106,20 +111,20 @@ export function ProMap() {
               >
                 <UiPro.Map.MarkerContent>
                   <UiPro.Map.MarkerDot />
-                  <UiPro.Map.MarkerLabel>{stop.name}</UiPro.Map.MarkerLabel>
+                  <UiPro.Map.MarkerLabel position={stop.label}>{stop.name}</UiPro.Map.MarkerLabel>
                 </UiPro.Map.MarkerContent>
               </UiPro.Map.Marker>
             ))}
             {chosen === null ? null : (
-              // To the right of the stop and clear of its label, which sits centred above the dot.
+              // No fixed anchor, so MapLibre keeps the popup inside the map at any width; the offset lifts it
+              // clear of a label above the dot.
               <UiPro.Map.Popup
-                anchor="left"
                 closeButton
                 closeOnClick={false}
                 focusAfterOpen={false}
                 latitude={chosen.latitude}
                 longitude={chosen.longitude}
-                offset={44}
+                offset={40}
                 onClose={() => setChosen(null)}
               >
                 <div className="space-y-1 pe-4 text-xs">
