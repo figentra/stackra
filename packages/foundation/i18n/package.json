@@ -2,7 +2,7 @@
   "name": "@stackra/i18n",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra i18n: the Locale, NumberingSystem and LocaleUrlStrategy enums, the I18nConfig configuration, the ICU message engine over namespaced catalogues with regional overlays, the typed key builder gen calls, and the React provider and formatting hooks",
+  "description": "Stackra i18n: the Locale, NumberingSystem, LocaleUrlStrategy and LengthUnit enums, the I18nConfig configuration, the ICU message engine over namespaced catalogues with regional overlays, the typed key builder gen calls, the Arabic normaliser, digit switching, address, country and length formatting, the translation, geocoding and address-autocomplete ports (./contracts), and the React provider and formatting hooks",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -24,6 +24,11 @@
       "./src/config/*.ts",
       "./src/config/*/index.ts"
     ],
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*/index.ts"
+    ],
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
@@ -41,6 +46,11 @@
       "@stackra/source": "./src/core/index.ts",
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
+    },
+    "./contracts": {
+      "@stackra/source": "./src/contracts/index.ts",
+      "types": "./dist/contracts.d.mts",
+      "default": "./dist/contracts.mjs"
     },
     "./react": {
       "@stackra/source": "./src/react/index.ts",
@@ -67,6 +77,7 @@
     "@stackra/config": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/money": "workspace:*",
+    "@stackra/support": "workspace:*",
     "@stackra/validation": "workspace:*",
     "intl-messageformat": "catalog:",
     "zod": "catalog:"

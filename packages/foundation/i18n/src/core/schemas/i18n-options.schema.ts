@@ -26,7 +26,7 @@ export class I18nOptions extends Schema {
 
   /** The right-to-left locales: `dir="rtl"`, the native layout flip and one RTL e2e project each. */
   @List({ unique: true })
-  rtl: Locale[] = [Locale.Ar, Locale.ArSa];
+  rtl: Locale[] = [Locale.Ar, Locale.ArSa, Locale.ArAe, Locale.ArEg];
 
   /** Per locale, the locales a missing key falls back to, nearest first (`ar-SA` → `ar` → `en`). */
   fallbacks: Record<string, Locale[]> = {};

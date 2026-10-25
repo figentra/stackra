@@ -16,12 +16,18 @@ describe("@stackra/i18n", () => {
     expect(Object.keys(i18n).sort()).toEqual([
       "I18nConfig",
       "I18nConfig$",
+      "LengthUnit",
       "Locale",
       "LocaleUrlStrategy",
       "NumberingSystem",
+      "countryName",
+      "formatAddress",
+      "formatLength",
       "formatMessage",
       "keys",
       "mergeCatalogues",
+      "normalizeArabic",
+      "withDigits",
     ]);
   });
 

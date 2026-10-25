@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `Locale`, the closed set of locales a member may ship: the base languages `en` and `ar` and their regional
- *          overlays `en-US` and `ar-SA`, each with its endonym (its name in its own language) as case data.
+ * Purpose: `Locale`, the closed set of locales a member may ship: the base languages `en`, `ar`, `fr` and `de` and the
+ *          regional overlays `en-US`, `ar-SA`, `ar-AE` and `ar-EG`, each with its endonym (its name in its own language) as case data.
  * Boundary: an `Enum.of` value plus the type of the same name. Codes are BCP 47 tags in BCP 47 case (a tool-owned
  *           spelling, so not snake_case): they name the `assets/lang/<locale>/` folders and are the `lang` attribute;
  *           URL prefixes are their lowercase form (ADR 0297). Direction is not case data: the member's `I18nConfig.rtl`
@@ -21,6 +21,14 @@ export const Locale = Enum.of({
   Ar: ["ar", { endonym: "العربية" }],
   /** The Saudi overlay of `ar`. */
   ArSa: ["ar-SA", { endonym: "العربية (السعودية)" }],
+  /** The Emirati overlay of `ar`. */
+  ArAe: ["ar-AE", { endonym: "العربية (الإمارات)" }],
+  /** The Egyptian overlay of `ar`. */
+  ArEg: ["ar-EG", { endonym: "العربية (مصر)" }],
+  /** French. */
+  Fr: ["fr", { endonym: "Français" }],
+  /** German. */
+  De: ["de", { endonym: "Deutsch" }],
 });
 
 /** One of the codes above. */

@@ -1,19 +1,20 @@
 # AGENTS — @stackra/i18n
 
 Locales, the i18n configuration, the ICU engine and the React hooks. Member at `packages/foundation/i18n`
-(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.` and `./react`.
+(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` and `./react`.
 
 ## Where code goes
 
-| You are writing…                       | It goes in…                                         |
-| -------------------------------------- | --------------------------------------------------- |
-| The configuration class                | `src/config/i18n.config.ts`                         |
-| Its options shape                      | `src/core/schemas/i18n-options.schema.ts`           |
-| Its shipped zod schema (`I18nConfig$`) | `src/core/constants/i18n-config-schema.constant.ts` |
-| An enum                                | `src/core/enums/<name>.enum.ts`                     |
-| A function, a type                     | `src/core/{functions,types}/`                       |
-| React code                             | `src/react/<name>/`                                 |
-| A test                                 | `__tests__/<name>.<kind>.test.ts(x)` beside it      |
+| You are writing…                        | It goes in…                                         |
+| --------------------------------------- | --------------------------------------------------- |
+| The configuration class                 | `src/config/i18n.config.ts`                         |
+| Its options shape                       | `src/core/schemas/i18n-options.schema.ts`           |
+| Its shipped zod schema (`I18nConfig$`)  | `src/core/constants/i18n-config-schema.constant.ts` |
+| An enum                                 | `src/core/enums/<name>.enum.ts`                     |
+| A function, a type                      | `src/core/{functions,types}/`                       |
+| A provider port, or a type it exchanges | `src/contracts/{ports,types}/`                      |
+| React code                              | `src/react/<name>/`                                 |
+| A test                                  | `__tests__/<name>.<kind>.test.ts(x)` beside it      |
 
 ## Entries and barrels
 
@@ -33,6 +34,11 @@ Locales, the i18n configuration, the ICU engine and the React hooks. Member at `
 - `useLocaleChoice` never runs on the server path: its server snapshot is `null`, and nothing here reads the cookie to
   redirect or vary a response.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
+- No vendor SDK and no provider driver here (ADR 0147, 0236): translators, geocoders and autocomplete providers are
+  Integrations behind the `./contracts` ports, chosen per tenant and Market (ADR 0356).
+- Configuration, not code: an address layout, a Market's length unit or digit choice is data passed in. Address and
+  country types are `@stackra/validation`'s; do not redeclare them.
+- `normalizeArabic` is the only Arabic normaliser; callers keep no copy (ADR 0080 note).
 
 ## Rules that fail the build
 

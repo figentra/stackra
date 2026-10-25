@@ -49,7 +49,7 @@ describe("I18nConfig", () => {
     expect({ ...config }).toEqual({
       locales: ["en"],
       defaultLocale: "en",
-      rtl: ["ar", "ar-SA"],
+      rtl: ["ar", "ar-SA", "ar-AE", "ar-EG"],
       fallbacks: {},
       numerals: "latn",
       urlStrategy: "prefix_except_default",
@@ -105,7 +105,7 @@ describe("I18nConfig", () => {
   });
 
   it("refuses an unknown locale code and a cookie name that is not a token", () => {
-    expect(I18nConfig$.safeParse({ locales: ["en", "fr"] }).success).toBe(false);
+    expect(I18nConfig$.safeParse({ locales: ["en", "tr"] }).success).toBe(false);
     expect(I18nConfig$.safeParse({ cookieName: "locale; Path=/admin" }).success).toBe(false);
   });
 

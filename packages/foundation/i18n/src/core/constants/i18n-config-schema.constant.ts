@@ -37,7 +37,7 @@ export const I18nConfig$ = z.object({
   rtl: z
     .array(LOCALE)
     .refine(distinct, { message: "Locales must be distinct" })
-    .default(() => [Locale.Ar, Locale.ArSa]),
+    .default(() => [Locale.Ar, Locale.ArSa, Locale.ArAe, Locale.ArEg]),
   fallbacks: z.record(z.string(), z.array(LOCALE)).default(() => ({})),
   numerals: z.enum(Enum.values(NumberingSystem)).default(NumberingSystem.Latn),
   urlStrategy: z
