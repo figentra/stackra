@@ -54,7 +54,9 @@ const VISITS_SERIES = [
   { name: "Sign-ups", color: "var(--chart-1)" },
 ] as const;
 
-const thousands = (value: number) => `${(value / 1000).toFixed(0)}k`;
+// Compact, with one fraction digit only when a tick needs it (7.5K, 2K), and a plain 0 at zero.
+const thousands = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 })
+  .format;
 
 /** The legend of a chart: a swatch and the name of each series. */
 function Legend({ series }: { series: readonly { name: string; color: string }[] }) {

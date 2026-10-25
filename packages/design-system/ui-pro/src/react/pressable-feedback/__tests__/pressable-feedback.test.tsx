@@ -19,6 +19,16 @@ import {
 } from "#react/pressable-feedback/pressable-feedback";
 
 describe("PressableFeedback (web)", () => {
+  // First in the file: React warns about a boolean attribute once per run, so a later disabled render hides it.
+  it("sets disabled as a boolean, so React warns about no string on it", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<PressableFeedback isDisabled>Save</PressableFeedback>);
+    const logged = error.mock.calls.flat().join(" ");
+    error.mockRestore();
+    expect((screen.getByRole("button") as HTMLButtonElement).disabled).toBe(true);
+    expect(logged).not.toMatch(/boolean attribute/);
+  });
+
   it("renders a button with its feedback layers and passes unknown props through", () => {
     render(
       <PressableFeedback data-testid="press" className="extra" type="button">

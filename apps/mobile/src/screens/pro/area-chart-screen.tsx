@@ -24,8 +24,8 @@ const STRINGS = {
     title: "Curve types",
     description:
       "`curveType` on the area: `linear` draws straight segments, `monotoneX` smooths them.",
-    linear: "Area chart with linear segments.",
-    monotone: "Area chart with a smooth monotone curve.",
+    linear: "Area chart of six swinging monthly values, drawn with straight segments.",
+    monotone: "The same six values, drawn as a smooth monotone curve.",
   },
   stacked: {
     title: "Stacked areas",
@@ -53,6 +53,16 @@ const REVENUE = [
   { month: "Oct", revenue: 10200 },
   { month: "Nov", revenue: 9800 },
   { month: "Dec", revenue: 11500 },
+];
+
+// Few points with big swings, so the straight segments and the smoothed curve differ at a glance.
+const SWINGS = [
+  { month: "Jan", revenue: 2000 },
+  { month: "Feb", revenue: 9000 },
+  { month: "Mar", revenue: 3000 },
+  { month: "Apr", revenue: 10000 },
+  { month: "May", revenue: 4000 },
+  { month: "Jun", revenue: 11000 },
 ];
 
 const TICKETS = [
@@ -92,14 +102,14 @@ export function AreaChartScreen() {
 
       <Section title={STRINGS.curves.title} description={STRINGS.curves.description}>
         <View accessible accessibilityRole="image" accessibilityLabel={STRINGS.curves.linear}>
-          <AreaChart data={REVENUE} xKey="month" yKeys={["revenue"]} wrapperClassName="h-40">
+          <AreaChart data={SWINGS} xKey="month" yKeys={["revenue"]} wrapperClassName="h-40">
             {({ points, chartBounds }) => (
               <AreaChart.Area points={points.revenue} y0={chartBounds.bottom} curveType="linear" />
             )}
           </AreaChart>
         </View>
         <View accessible accessibilityRole="image" accessibilityLabel={STRINGS.curves.monotone}>
-          <AreaChart data={REVENUE} xKey="month" yKeys={["revenue"]} wrapperClassName="h-40">
+          <AreaChart data={SWINGS} xKey="month" yKeys={["revenue"]} wrapperClassName="h-40">
             {({ points, chartBounds }) => (
               <AreaChart.Area
                 points={points.revenue}

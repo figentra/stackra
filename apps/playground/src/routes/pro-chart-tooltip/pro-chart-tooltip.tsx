@@ -36,6 +36,10 @@ const DATA = [
 
 const dollars = (value: number) => `$${value.toLocaleString("en-US")}`;
 
+// Compact, with one fraction digit only when a tick needs it (7.5K, 2K), and a plain 0 at zero.
+const thousands = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 })
+  .format;
+
 /** The ChartTooltip page. */
 export function ProChartTooltip() {
   return (
@@ -78,11 +82,7 @@ export function ProChartTooltip() {
         <UiPro.BarChart data={DATA} height={220} label={STRINGS.inChartLabel} role="img">
           <UiPro.BarChart.Grid vertical={false} />
           <UiPro.BarChart.XAxis tick={<DemoChartTick />} dataKey="month" tickMargin={8} />
-          <UiPro.BarChart.YAxis
-            tick={<DemoChartTick />}
-            tickFormatter={(value: number) => `${value / 1000}k`}
-            width={36}
-          />
+          <UiPro.BarChart.YAxis tick={<DemoChartTick />} tickFormatter={thousands} width={36} />
           <UiPro.BarChart.Bar
             barSize={14}
             dataKey="revenue"

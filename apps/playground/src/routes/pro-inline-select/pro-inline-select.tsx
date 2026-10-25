@@ -79,7 +79,8 @@ export function ProInlineSelect() {
         <h2 id="controlled-heading" className="type-h2">
           {STRINGS.controlled}
         </h2>
-        <p className="flex flex-wrap items-center gap-1">
+        {/* A div, not a p: the InlineSelect's root is React Aria's Select, a div, which a p cannot hold. */}
+        <div className="flex flex-wrap items-center gap-1">
           <bdi>{STRINGS.showing}</bdi>
           <UiPro.InlineSelect
             label={STRINGS.period}
@@ -88,7 +89,7 @@ export function ProInlineSelect() {
           >
             <Parts />
           </UiPro.InlineSelect>
-        </p>
+        </div>
         <p role="status" className="text-sm">
           <bdi>
             {STRINGS.chosen(PERIODS.find((item) => item.id === period)?.name ?? STRINGS.none)}
@@ -99,12 +100,12 @@ export function ProInlineSelect() {
         <h2 id="disabled-heading" className="type-h2">
           {STRINGS.disabled}
         </h2>
-        <p className="flex flex-wrap items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           <bdi>{STRINGS.sorted}</bdi>
           <UiPro.InlineSelect label={STRINGS.sort} defaultValue="month" isDisabled>
             <Parts />
           </UiPro.InlineSelect>
-        </p>
+        </div>
       </section>
     </article>
   );
