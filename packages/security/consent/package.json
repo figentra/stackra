@@ -2,7 +2,7 @@
   "name": "@stackra/consent",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra visitor consent: decline by default, Global Privacy Control refuses, the decision stored with its policy version (ADR 0298); the ConsentConfig configuration with its shipped schema, the ConsentLedger, the ConsentStore port with cookie, storage and memory drivers, the React useConsent hook and the fakeConsent test helper",
+  "description": "Stackra visitor consent: decline by default, Global Privacy Control refuses, the decision stored with its policy version (ADR 0298); the ConsentConfig configuration with its shipped schema, the ConsentLedger, the ConsentStore port with cookie, storage and memory drivers, the React useConsent hook and the fakeConsent test helper; the server's versioned terms acceptance and consent proofs (ConsentProofService over the ConsentProofStore and ConsentAuthority ports), consent on behalf of another, and the cookie banner, consent preferences, legal page and terms prompt (./ui)",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -44,6 +44,12 @@
       "./src/testing/*",
       "./src/testing/*.ts",
       "./src/testing/*/index.ts"
+    ],
+    "#ui/*": [
+      "./src/ui/*",
+      "./src/ui/*.ts",
+      "./src/ui/*.tsx",
+      "./src/ui/*/index.ts"
     ]
   },
   "exports": {
@@ -66,6 +72,11 @@
       "@stackra/source": "./src/testing/index.ts",
       "types": "./dist/testing.d.mts",
       "default": "./dist/testing.mjs"
+    },
+    "./ui": {
+      "@stackra/source": "./src/ui/index.ts",
+      "types": "./dist/ui.d.mts",
+      "default": "./dist/ui.mjs"
     }
   },
   "publishConfig": {
@@ -87,7 +98,10 @@
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/errors": "workspace:*",
+    "@stackra/i18n": "workspace:*",
     "@stackra/storage": "workspace:*",
+    "@stackra/ui": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
   },

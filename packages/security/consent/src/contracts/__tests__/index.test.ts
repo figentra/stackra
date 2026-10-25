@@ -14,7 +14,11 @@ import type { ConsentRecord } from "#contracts/index";
 
 describe("@stackra/consent/contracts", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["ConsentStore"]);
+    expect(Object.keys(contracts).sort()).toEqual([
+      "ConsentAuthority",
+      "ConsentProofStore",
+      "ConsentStore",
+    ]);
   });
 
   it("types the stored decision", () => {

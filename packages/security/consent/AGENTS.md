@@ -19,9 +19,12 @@ Entries `.`, `./contracts`, `./react`, `./testing`.
 
 ## Entries and barrels
 
-- `src/{core,contracts,react,testing}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
+- `src/{core,contracts,react,testing,ui}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
   every new public file to its barrel and to that entry's `index.test.ts`.
 - The record schema, `parseConsentRecord`, `hasGlobalPrivacyControl` and the storage key stay internal.
+- `./ui` renders `@stackra/ui` web components; `./react` stays hooks only. Reject all has the same weight as accept
+  all. Legal texts render as plain paragraphs, never as HTML.
+- Proofs are append-only and hold ids, never the text; a relationship comes from `ConsentAuthority`, never input.
 
 ## This package
 

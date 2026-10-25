@@ -16,16 +16,20 @@ import type { ConsentCategoryEntry } from "#core/index";
 describe("@stackra/consent", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(consent).sort()).toEqual([
+      "ConsentAuthorityMissingError",
       "ConsentCategory",
       "ConsentConfig",
       "ConsentConfig$",
       "ConsentLedger",
       "ConsentOptions",
+      "ConsentProofService",
       "ConsentRegime",
       "ConsentStatus",
       "CookieConsentStoreDriver",
+      "MemoryConsentProofStoreDriver",
       "MemoryConsentStoreDriver",
       "StorageConsentStoreDriver",
+      "needsGuardianConsent",
     ]);
   });
 

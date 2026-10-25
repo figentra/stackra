@@ -10,20 +10,35 @@ is an optional peer of `./react`.
 
 ## What is here
 
-| Entry         | Symbol                      | Use                                                                                       |
-| ------------- | --------------------------- | ----------------------------------------------------------------------------------------- |
-| `.`           | `ConsentConfig`             | the configuration (key `consent`): categories, cookie, expiry, policy version, regions    |
-| `.`           | `ConsentConfig$`            | the shipped schema a member's generated override extends                                  |
-| `.`           | `ConsentCategory`           | `necessary`, `analytics`, `crash_replay`                                                  |
-| `.`           | `ConsentStatus`             | `granted`, `denied`, `undecided`                                                          |
-| `.`           | `ConsentRegime`             | `gdpr` (opt-in) and `ccpa` (opt-out), per region in `regionDefaults`                      |
-| `.`           | `ConsentLedger`             | the service that decides: `status`, `isGranted`, `set`, `reset`, `setRegion`, `subscribe` |
-| `.`           | `CookieConsentStoreDriver`  | the web store: the one decision cookie                                                    |
-| `.`           | `StorageConsentStoreDriver` | the device store: `consent.decision` in the `prefs` area                                  |
-| `.`           | `MemoryConsentStoreDriver`  | tests and previews                                                                        |
-| `./contracts` | `ConsentStore`              | the port the drivers implement (`read`, `write`, `clear`)                                 |
-| `./react`     | `useConsent`                | `useConsent(category)` for a banner, `useConsent()` for a settings page                   |
-| `./testing`   | `fakeConsent`               | a real ledger over memory, nothing decided                                                |
+| Entry         | Symbol                                                                           | Use                                                                                       |
+| ------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `.`           | `ConsentConfig`                                                                  | the configuration (key `consent`): categories, cookie, expiry, policy version, regions    |
+| `.`           | `ConsentConfig$`                                                                 | the shipped schema a member's generated override extends                                  |
+| `.`           | `ConsentCategory`                                                                | `necessary`, `analytics`, `crash_replay`                                                  |
+| `.`           | `ConsentStatus`                                                                  | `granted`, `denied`, `undecided`                                                          |
+| `.`           | `ConsentRegime`                                                                  | `gdpr` (opt-in) and `ccpa` (opt-out), per region in `regionDefaults`                      |
+| `.`           | `ConsentLedger`                                                                  | the service that decides: `status`, `isGranted`, `set`, `reset`, `setRegion`, `subscribe` |
+| `.`           | `CookieConsentStoreDriver`                                                       | the web store: the one decision cookie                                                    |
+| `.`           | `StorageConsentStoreDriver`                                                      | the device store: `consent.decision` in the `prefs` area                                  |
+| `.`           | `MemoryConsentStoreDriver`                                                       | tests and previews                                                                        |
+| `./contracts` | `ConsentStore`                                                                   | the port the drivers implement (`read`, `write`, `clear`)                                 |
+| `./react`     | `useConsent`                                                                     | `useConsent(category)` for a banner, `useConsent()` for a settings page                   |
+| `./testing`   | `fakeConsent`                                                                    | a real ledger over memory, nothing decided                                                |
+| `.`           | `ConsentProofService`                                                            | server proofs: `pending` terms by version, `answer`, `answerFor` another, `current`       |
+| `.`           | `MemoryConsentProofStoreDriver`, `TermsDocument`, `ConsentAuthorityMissingError` | the memory proof store, a versioned document, the refusal                                 |
+| `.`           | `needsGuardianConsent`                                                           | whether a birth date is below an age of consent (the age is market-pack data)             |
+| `./contracts` | `ConsentProofStore`, `ConsentAuthority`, `ConsentProof`                          | the append-only proof store; who may consent for whom                                     |
+| `./ui`        | `ConsentBanner`, `ConsentPreferences`                                            | the cookie banner (accept all, reject all, manage) and the category switches              |
+| `./ui`        | `LegalPage`, `TermsPrompt`                                                       | one legal text (plain paragraphs); versioned terms acceptance                             |
+
+## Terms, proofs and consent for another
+
+The visitor's cookie decision proves nothing on the server. Versioned terms and purpose consents are proofs:
+`ConsentProofService.pending(user, documents)` lists the documents whose current version the person has not accepted;
+`answer` appends their acceptance or refusal with the text's hash; `answerFor(child, parent, document, granted)` appends
+a consent given for someone else after `ConsentAuthority` confirms the relationship, which is stored with the proof.
+The texts, versions and required documents come from the OS compliance service per market; the age of consent comes
+from the market pack (`needsGuardianConsent(birthDate, today, age)`).
 
 ## The rules, in order
 

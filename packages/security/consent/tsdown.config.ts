@@ -15,4 +15,5 @@ export default library({
   contracts: "src/contracts/index.ts",
   react: "src/react/index.ts",
   testing: "src/testing/index.ts",
+  ui: "src/ui/index.ts",
 });

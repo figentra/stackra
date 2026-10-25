@@ -12,11 +12,16 @@
 export { ConsentConfig } from "#config/consent.config";
 export { CONSENT_CONFIG_SCHEMA as ConsentConfig$ } from "#core/constants/consent-config-schema.constant";
 export { CookieConsentStoreDriver } from "#core/drivers/cookie-consent-store.driver";
+export { MemoryConsentProofStoreDriver } from "#core/drivers/memory-consent-proof-store.driver";
 export { MemoryConsentStoreDriver } from "#core/drivers/memory-consent-store.driver";
 export { StorageConsentStoreDriver } from "#core/drivers/storage-consent-store.driver";
 export { ConsentCategory } from "#core/enums/consent-category.enum";
 export { ConsentRegime } from "#core/enums/consent-regime.enum";
 export { ConsentStatus } from "#core/enums/consent-status.enum";
+export { ConsentAuthorityMissingError } from "#core/errors/consent-authority-missing.error";
+export { needsGuardianConsent } from "#core/functions/needs-guardian-consent.function";
 export { ConsentOptions } from "#core/schemas/consent-options.schema";
 export { ConsentLedger } from "#core/services/consent-ledger.service";
+export { ConsentProofService } from "#core/services/consent-proof.service";
 export type { ConsentCategoryEntry } from "#core/types/consent-category-entry.type";
+export type { TermsDocument } from "#core/types/terms-document.type";

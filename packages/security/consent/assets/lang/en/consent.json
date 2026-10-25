@@ -5,5 +5,26 @@
       "analytics": "Product analytics",
       "crash_replay": "Crash replays"
     }
+  },
+  "ui": {
+    "banner": {
+      "title": "Cookies and storage",
+      "body": "We use what this site needs to work. With your permission we also use optional cookies and storage for the purposes listed in the settings.",
+      "accept_all": "Accept all",
+      "reject_all": "Reject all",
+      "manage": "Manage",
+      "policy": "Cookie policy"
+    },
+    "preferences": {
+      "title": "Consent preferences"
+    },
+    "legal": {
+      "version": "Version {version}, in effect from {effectiveFrom}"
+    },
+    "terms": {
+      "title": "Please review our terms",
+      "body": "These documents are new or have changed. Please read them and accept to continue.",
+      "accept": "Accept and continue"
+    }
   }
 }
