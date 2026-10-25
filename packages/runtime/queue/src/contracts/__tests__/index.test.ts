@@ -12,7 +12,7 @@ import * as contracts from "#contracts/index";
 
 describe("@stackra/queue/contracts", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["JobStatus", "QueueDriver"]);
+    expect(Object.keys(contracts).sort()).toEqual(["BrokerPublisher", "JobStatus", "QueueDriver"]);
   });
 
   it("types a stored job's failure", () => {

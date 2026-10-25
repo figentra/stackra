@@ -17,17 +17,23 @@ describe("@stackra/queue", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(queue).sort()).toEqual([
       "Backoff",
+      "BrokerConfig",
+      "BrokerConfig$",
+      "BrokerOptions",
       "JobOutcome",
       "JobTimedOutError",
+      "MemoryBrokerPublisherDriver",
       "MemoryQueueDriver",
       "QueueConfig",
       "QueueConfig$",
       "QueueJobDispatcherDriver",
       "QueueOptions",
       "QueueService",
+      "TopicBrokerPublisherDriver",
       "UnknownJobError",
       "backoffDelay",
       "queues",
+      "registerBrokerTopics",
       "registerJobs",
     ]);
   });

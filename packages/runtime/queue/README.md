@@ -106,3 +106,16 @@ expect(job).toDeadLetter({ attempts: 6 });
 
 `drainQueue` runs every job due now; `runJob` runs one job's attempts without waiting for the backoff. Both act on the
 testing app compiled last, through its own queue driver.
+
+## Broker publisher
+
+`BrokerPublisher` (`./contracts`) hands a message `{ id, body }` to a named broker topic; `BrokerConfig` (key
+`queue.broker`) picks the driver:
+
+| Driver   | Entry    | Use                                                                                            |
+| -------- | -------- | ---------------------------------------------------------------------------------------------- |
+| `memory` | `.`      | the default: an in-process broker with `subscribe(topic, handler)` for tests                   |
+| `topic`  | `.`      | the generated Encore Pub/Sub topics, registered by gen with `registerBrokerTopics`             |
+| `valkey` | `./node` | one Valkey stream per topic (`XADD`, trimmed to `valkey.maxLength`), `QUEUE_BROKER_VALKEY_URL` |
+
+The outbox's `broker` publisher publishes each integration event to the topic of its wire name through it.

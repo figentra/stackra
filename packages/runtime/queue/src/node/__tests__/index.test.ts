@@ -11,6 +11,10 @@ import * as node from "#node/index";
 
 describe("@stackra/queue/node", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(node).sort()).toEqual(["PostgresQueueDriver", "QueueWorkerService"]);
+    expect(Object.keys(node).sort()).toEqual([
+      "PostgresQueueDriver",
+      "QueueWorkerService",
+      "ValkeyBrokerPublisherDriver",
+    ]);
   });
 });

@@ -42,6 +42,8 @@ Member at `packages/runtime/queue` (`tier:lib`), in the programming model v3.1 s
   `// raw-sql:` reason (ADR 0160). A released migration is frozen; a change is a new migration.
 - No tenant word is declared here (final review R-59, ADR 0323): a scope is a `ScopeRef`.
 - No `@Job` or `@Queue`: job, queue and cron are typed sub-options of `Action({...})` (R-13).
+- A broker publisher never imports `encore.dev`: generated topics reach the `topic` driver as structural objects
+  through `registerBrokerTopics`. `BROKER_PUBLISHERS` names each driver by its file prefix.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build
