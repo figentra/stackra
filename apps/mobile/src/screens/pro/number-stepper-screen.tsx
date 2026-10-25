@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `NumberStepper` (@stackra/ui-pro): a controlled stepper with
+ * Purpose: the design-system review page of the native `NumberStepper` (@stackra-pro/ui): a controlled stepper with
  *          the value read back, one with a step, a minimum and a maximum, one with a fractional step, a stepper whose
  *          minus button stays active at the minimum, and the disabled state.
- * Boundary: presentation and local demo state only; the stepper is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the stepper is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Text } from "@stackra/ui/native";
-import { NumberStepper } from "@stackra/ui-pro/native";
+import { NumberStepper } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";

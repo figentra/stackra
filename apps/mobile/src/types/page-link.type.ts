@@ -14,7 +14,7 @@ import type { DesignSystemComponentRoute } from "../navigation/types";
 export interface PageLink {
   /** The section of the gallery the page is listed under, and its category strip. */
   readonly category: ComponentCategory;
-  /** The package the component comes from: Free (`@stackra/ui`) or Pro (`@stackra/ui-pro`, badged). */
+  /** The package the component comes from: Free (`@stackra/ui`) or Pro (`@stackra-pro/ui`, badged). */
   readonly tier: ComponentTier;
   /** The component's name, shown in the gallery, on the strip and pager, and as the page title. */
   readonly title: string;

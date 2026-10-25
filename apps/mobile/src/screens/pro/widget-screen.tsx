@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `Widget` (@stackra/ui-pro): a card with title, legend and a
+ * Purpose: the design-system review page of the native `Widget` (@stackra-pro/ui): a card with title, legend and a
  *          payload, with a description, and with a footer, each holding a small line chart or a figure.
- * Boundary: presentation and demo data only; the widget is @stackra/ui-pro's, legend colours are theme classes.
+ * Boundary: presentation and demo data only; the widget is @stackra-pro/ui's, legend colours are theme classes.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
-import { LineChart, NumberValue, Widget } from "@stackra/ui-pro/native";
+import { LineChart, NumberValue, Widget } from "@stackra-pro/ui/native";
 import { View } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";

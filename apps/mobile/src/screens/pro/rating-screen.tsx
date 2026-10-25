@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `Rating` (@stackra/ui-pro): a controlled rating, the three
+ * Purpose: the design-system review page of the native `Rating` (@stackra-pro/ui): a controlled rating, the three
  *          sizes, read-only fractional values, a ten-star maximum and the disabled state.
- * Boundary: presentation and local demo state only; the rating is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the rating is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Text } from "@stackra/ui/native";
-import { Rating } from "@stackra/ui-pro/native";
+import { Rating } from "@stackra-pro/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
 

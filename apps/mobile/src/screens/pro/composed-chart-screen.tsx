@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `ComposedChart` (@stackra/ui-pro): bars with a line on a
+ * Purpose: the design-system review page of the native `ComposedChart` (@stackra-pro/ui): bars with a line on a
  *          second axis, stacked bars with a line, and an area under a line.
- * Boundary: presentation and demo data only; the chart is @stackra/ui-pro's, series colours come from theme tokens.
+ * Boundary: presentation and demo data only; the chart is @stackra-pro/ui's, series colours come from theme tokens.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
-import { ComposedChart } from "@stackra/ui-pro/native";
+import { ComposedChart } from "@stackra-pro/ui/native";
 import { useThemeColor } from "heroui-native";
 import { View } from "react-native";
 

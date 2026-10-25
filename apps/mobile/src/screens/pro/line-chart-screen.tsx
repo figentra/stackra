@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `LineChart` (@stackra/ui-pro): a single line, several series,
+ * Purpose: the design-system review page of the native `LineChart` (@stackra-pro/ui): a single line, several series,
  *          the linear and natural curves, and a draw-on line that replays on request.
- * Boundary: presentation and local demo state only; the chart is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the chart is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Button } from "@stackra/ui/native";
-import { LineChart } from "@stackra/ui-pro/native";
+import { LineChart } from "@stackra-pro/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
 

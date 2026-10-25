@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `Segment` (@stackra/ui-pro): a controlled segmented control
+ * Purpose: the design-system review page of the native `Segment` (@stackra-pro/ui): a controlled segmented control
  *          with the choice read back, the three sizes, separators between items, a horizontally scrolling row, a
  *          single disabled item, and the whole control disabled.
- * Boundary: presentation and local demo state only; the control is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the control is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Text } from "@stackra/ui/native";
-import { Segment } from "@stackra/ui-pro/native";
+import { Segment } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";

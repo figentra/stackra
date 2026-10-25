@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/database until `stackra gen` writes the entry barrels
  *          (STA-339): `PostgresDatabaseDriver`, which gen's boot calls to connect, and `DatabaseUnitOfWorkDriver`, the
- *          action pipeline's unit of work on it. The sequence tables' migration under `database/migrations/` is found
+ *          action pipeline's unit of work on it, and `migrate` and `rollback`, the runner `stackra db` calls. The sequence tables' migration under `database/migrations/` is found
  *          by its path and not exported.
  * Boundary: names each re-export and declares nothing. Server only: the entry that starts MikroORM, so it stays out of
  *           the `.` entry that the models and services import.
@@ -11,3 +11,5 @@
  */
 export { DatabaseUnitOfWorkDriver } from "#node/drivers/database-unit-of-work.driver";
 export { PostgresDatabaseDriver } from "#node/drivers/postgres-database.driver";
+export { migrate } from "#node/functions/migrate.function";
+export { rollback } from "#node/functions/rollback.function";

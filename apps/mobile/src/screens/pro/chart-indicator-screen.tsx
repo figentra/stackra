@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `ChartIndicator` (@stackra/ui-pro): the dot that follows a
+ * Purpose: the design-system review page of the native `ChartIndicator` (@stackra-pro/ui): the dot that follows a
  *          press on a line chart, at its default size, enlarged, and in theme colours.
- * Boundary: presentation and demo data only; the indicator is @stackra/ui-pro's, the press state is victory-native's.
+ * Boundary: presentation and demo data only; the indicator is @stackra-pro/ui's, the press state is victory-native's.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
-import { ChartIndicator, LineChart } from "@stackra/ui-pro/native";
+import { ChartIndicator, LineChart } from "@stackra-pro/ui/native";
 import { useThemeColor } from "heroui-native";
 import { View } from "react-native";
 import { useChartPressState } from "victory-native";

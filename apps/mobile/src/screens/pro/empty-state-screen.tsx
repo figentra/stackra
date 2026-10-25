@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `EmptyState` (@stackra/ui-pro): title and description only,
+ * Purpose: the design-system review page of the native `EmptyState` (@stackra-pro/ui): title and description only,
  *          with an icon-style media block, with an action, and inside a dashed border.
- * Boundary: presentation and local demo state only; the empty state is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the empty state is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Button, Text } from "@stackra/ui/native";
-import { EmptyState } from "@stackra/ui-pro/native";
+import { EmptyState } from "@stackra-pro/ui/native";
 import { useState } from "react";
 import { Text as NativeText } from "react-native";
 

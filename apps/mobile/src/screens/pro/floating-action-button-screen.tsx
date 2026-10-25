@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `FloatingActionButton` (@stackra/ui-pro): a button that opens
+ * Purpose: the design-system review page of the native `FloatingActionButton` (@stackra-pro/ui): a button that opens
  *          a list of actions, placed automatically from its corner, placed by hand, controlled from outside, and disabled.
- * Boundary: presentation and local demo state only; the button is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the button is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Text } from "@stackra/ui/native";
-import { FloatingActionButton } from "@stackra/ui-pro/native";
+import { FloatingActionButton } from "@stackra-pro/ui/native";
 import { type ReactNode, useState } from "react";
 import { Text as NativeText, View } from "react-native";
 

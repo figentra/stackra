@@ -1,16 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `PhoneNumberField` (@stackra/ui-pro): a masked number input
+ * Purpose: the design-system review page of the native `PhoneNumberField` (@stackra-pro/ui): a masked number input
  *          with a country picker, validation read from the value details, a restricted country list with a default
  *          country, and the disabled state.
- * Boundary: presentation and local demo state only; the field is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the field is @stackra-pro/ui's, nothing here is styled by hand.
  *          The country picker opens in a dialog: HeroUI Native Pro fixes that presentation for this field, so unlike
  *          the other pickers it has no inset bottom sheet.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Description, FieldError, Label, Text } from "@stackra/ui/native";
-import { PhoneNumberField, type PhoneNumberFieldProps } from "@stackra/ui-pro/native";
+import { PhoneNumberField, type PhoneNumberFieldProps } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";

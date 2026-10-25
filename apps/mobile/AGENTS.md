@@ -17,7 +17,7 @@ Expo SDK 57 app at `apps/mobile` (`tier:app`). Code lives in `src/`; the entry i
 - Navigation is code-based React Navigation: no expo-router, no `app/` folder. Navigate with typed `navigation.navigate(...)`.
 - UI uses HeroUI Native components and Uniwind `className`; colours come from the theme (`useThemeColor`), not literals.
 - Native versions must match the SDK (`pnpm doctor`). Versions are `catalog:mobile` / `workspace:*` only.
-- `react` stays on the `mobile` catalog (19.2.x): React Native 0.86 pins its renderer to it. `metro.config.js` pins `react`, `react-native`, HeroUI Native and the other native singletons to this app's copy for the workspace packages (`@stackra/ui`, `@stackra/ui-pro`), which carry the web catalog's React in their own `node_modules`: add a new native singleton to its `SINGLETONS` list.
+- `react` stays on the `mobile` catalog (19.2.x): React Native 0.86 pins its renderer to it. `metro.config.js` pins `react`, `react-native`, HeroUI Native and the other native singletons to this app's copy for the workspace packages (`@stackra/ui`, `@stackra-pro/ui`), which carry the web catalog's React in their own `node_modules`: add a new native singleton to its `SINGLETONS` list.
 - The app root is `DesignSystemProvider` from `@stackra/ui/native` (it renders `HeroUINativeProvider`), inside `GestureHandlerRootView` and `SafeAreaProvider`; read the scheme and direction with `useDesignSystem()`.
 
 ## Tasks

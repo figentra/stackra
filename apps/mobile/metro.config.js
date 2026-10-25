@@ -6,7 +6,7 @@ const { withUniwindConfig } = require("uniwind/metro");
 
 const config = getDefaultConfig(__dirname);
 
-// The workspace packages (`@stackra/ui`, `@stackra/ui-pro`) are read as source: ADR 0025's export condition.
+// The workspace packages (`@stackra/ui`, `@stackra-pro/ui`) are read as source: ADR 0025's export condition.
 config.resolver.unstable_conditionNames = [
   ...(config.resolver.unstable_conditionNames ?? ["require", "import"]),
   "@stackra/source",

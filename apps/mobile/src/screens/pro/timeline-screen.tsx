@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `Timeline` (@stackra/ui-pro): an order chronology, each item
+ * Purpose: the design-system review page of the native `Timeline` (@stackra-pro/ui): an order chronology, each item
  *          status, a leading time column, and the small compact size.
- * Boundary: presentation only; the timeline is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation only; the timeline is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
-import { Timeline } from "@stackra/ui-pro/native";
+import { Timeline } from "@stackra-pro/ui/native";
 import { Text } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";

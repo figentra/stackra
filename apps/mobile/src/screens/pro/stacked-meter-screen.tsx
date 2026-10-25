@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `StackedMeter` (@stackra/ui-pro): a labelled meter with its
+ * Purpose: the design-system review page of the native `StackedMeter` (@stackra-pro/ui): a labelled meter with its
  *          legend, the three sizes, status colours, a fixed capacity with raw values, and the disabled state.
- * Boundary: presentation and demo data only; the meter is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and demo data only; the meter is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
-import { StackedMeter, type StackedMeterProps } from "@stackra/ui-pro/native";
+import { StackedMeter, type StackedMeterProps } from "@stackra-pro/ui/native";
 
 import { Screen } from "#src/components/ui/screen";
 import { Section } from "#src/components/ui/section";

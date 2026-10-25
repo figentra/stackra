@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `ToggleButton` (@stackra/ui-pro): a controlled toggle, both
+ * Purpose: the design-system review page of the native `ToggleButton` (@stackra-pro/ui): a controlled toggle, both
  *          variants, the three sizes, an icon-only toggle and the disabled state, selected and not.
- * Boundary: presentation and local demo state only; the button is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the button is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Text } from "@stackra/ui/native";
-import { ToggleButton } from "@stackra/ui-pro/native";
+import { ToggleButton } from "@stackra-pro/ui/native";
 import { useState } from "react";
 import { Text as NativeText, View } from "react-native";
 

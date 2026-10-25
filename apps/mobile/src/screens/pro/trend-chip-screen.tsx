@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `TrendChip` (@stackra/ui-pro): the three trend directions,
+ * Purpose: the design-system review page of the native `TrendChip` (@stackra-pro/ui): the three trend directions,
  *          the four variants, the three sizes and a chip with a prefix and a suffix around the value.
- * Boundary: presentation only; the chip is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation only; the chip is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
-import { TrendChip } from "@stackra/ui-pro/native";
+import { TrendChip } from "@stackra-pro/ui/native";
 import { View } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";

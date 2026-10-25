@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `FlipCard` (@stackra/ui-pro): a tap-to-flip card, the vertical
+ * Purpose: the design-system review page of the native `FlipCard` (@stackra-pro/ui): a tap-to-flip card, the vertical
  *          direction, a card flipped from a button, and one that ignores taps.
- * Boundary: presentation and local demo state only; the card is @stackra/ui-pro's, the faces use theme classes.
+ * Boundary: presentation and local demo state only; the card is @stackra-pro/ui's, the faces use theme classes.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Button, Heading, Text } from "@stackra/ui/native";
-import { FlipCard } from "@stackra/ui-pro/native";
+import { FlipCard } from "@stackra-pro/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
 

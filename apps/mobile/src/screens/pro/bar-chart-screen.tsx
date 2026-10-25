@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `BarChart` (@stackra/ui-pro): single bars with the default
+ * Purpose: the design-system review page of the native `BarChart` (@stackra-pro/ui): single bars with the default
  *          and fully rounded corners, grouped bars and stacked bars.
- * Boundary: presentation and demo data only; the chart is @stackra/ui-pro's, series colours come from theme tokens.
+ * Boundary: presentation and demo data only; the chart is @stackra-pro/ui's, series colours come from theme tokens.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
-import { BarChart } from "@stackra/ui-pro/native";
+import { BarChart } from "@stackra-pro/ui/native";
 import { useThemeColor } from "heroui-native";
 import { View } from "react-native";
 

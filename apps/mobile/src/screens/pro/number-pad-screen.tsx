@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `NumberPad` (@stackra/ui-pro): the default keypad as a PIN
+ * Purpose: the design-system review page of the native `NumberPad` (@stackra-pro/ui): the default keypad as a PIN
  *          entry with a maximum length and a completion message, a hand-composed keypad whose spacer is a decimal
  *          key, and the disabled state.
- * Boundary: presentation and local demo state only; the keypad is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the keypad is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Heading, Text } from "@stackra/ui/native";
-import { NumberPad } from "@stackra/ui-pro/native";
+import { NumberPad } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";

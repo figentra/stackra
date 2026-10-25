@@ -1,16 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `DatePicker` (@stackra/ui-pro): a trigger field that opens
+ * Purpose: the design-system review page of the native `DatePicker` (@stackra-pro/ui): a trigger field that opens
  *          the calendar in a popover, in a bottom sheet (`@gorhom/bottom-sheet`, through HeroUI Native), with a
  *          display format and a limited range, and with the invalid state and its message, in the locale the
  *          display switcher chose.
- * Boundary: presentation and local demo state only; the picker is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the picker is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-011.
  */
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Description, FieldError, Label, Text, useDesignSystem } from "@stackra/ui/native";
-import { DatePicker, type DatePickerProps } from "@stackra/ui-pro/native";
+import { DatePicker, type DatePickerProps } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { CalendarParts } from "#src/components/ui/calendar-parts";

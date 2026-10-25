@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `ChartCrosshair` (@stackra/ui-pro): the vertical press guide
+ * Purpose: the design-system review page of the native `ChartCrosshair` (@stackra-pro/ui): the vertical press guide
  *          in its dashed and solid variants, and with a value pill that follows it.
- * Boundary: presentation and demo data only; the crosshair is @stackra/ui-pro's, the press state is victory-native's.
+ * Boundary: presentation and demo data only; the crosshair is @stackra-pro/ui's, the press state is victory-native's.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
-import { ChartCrosshair, ChartIndicator, LineChart } from "@stackra/ui-pro/native";
+import { ChartCrosshair, ChartIndicator, LineChart } from "@stackra-pro/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
 import { useDerivedValue } from "react-native-reanimated";

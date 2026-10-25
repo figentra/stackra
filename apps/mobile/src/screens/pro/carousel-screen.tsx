@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `Carousel` (@stackra/ui-pro): one slide per view with
+ * Purpose: the design-system review page of the native `Carousel` (@stackra-pro/ui): one slide per view with
  *          buttons and dots, several slides per view with the next one peeking, and side padding.
- * Boundary: presentation and demo data only; the carousel is @stackra/ui-pro's, the slides use theme classes.
+ * Boundary: presentation and demo data only; the carousel is @stackra-pro/ui's, the slides use theme classes.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Heading, Text } from "@stackra/ui/native";
-import { Carousel } from "@stackra/ui-pro/native";
+import { Carousel } from "@stackra-pro/ui/native";
 import { View } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";

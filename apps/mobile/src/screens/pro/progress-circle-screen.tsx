@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `ProgressCircle` (@stackra/ui-pro): a ring with its value, the
+ * Purpose: the design-system review page of the native `ProgressCircle` (@stackra-pro/ui): a ring with its value, the
  *          three sizes and a custom size, each `tone`, the indeterminate state, stroke widths and the disabled state.
- * Boundary: presentation only; the ring is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation only; the ring is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
-import { ProgressCircle } from "@stackra/ui-pro/native";
+import { ProgressCircle } from "@stackra-pro/ui/native";
 import { View } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";

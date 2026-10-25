@@ -1,15 +1,15 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `WheelTimePicker` (@stackra/ui-pro): a controlled hour and
+ * Purpose: the design-system review page of the native `WheelTimePicker` (@stackra-pro/ui): a controlled hour and
  *          minute wheel with the chosen time read back, a 24-hour wheel, a wheel with a minute step, a wheel that
  *          reports only when it comes to rest, and the disabled state, in the locale the display switcher chose.
- * Boundary: presentation and local demo state only; the wheel is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the wheel is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Time } from "@internationalized/date";
 import { Text, useDesignSystem } from "@stackra/ui/native";
-import { WheelTimePicker } from "@stackra/ui-pro/native";
+import { WheelTimePicker } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";

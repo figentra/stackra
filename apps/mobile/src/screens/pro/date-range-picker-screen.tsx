@@ -1,15 +1,15 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `DateRangePicker` (@stackra/ui-pro): a trigger that opens a
+ * Purpose: the design-system review page of the native `DateRangePicker` (@stackra-pro/ui): a trigger that opens a
  *          range calendar in a popover, in a bottom sheet and in a dialog, with a display format, a separator and a
  *          limited range, and with the invalid and disabled states, in the locale the display switcher chose.
- * Boundary: presentation and local demo state only; the picker is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the picker is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Description, FieldError, Label, Text, useDesignSystem } from "@stackra/ui/native";
-import { DateRangePicker, type DateRangePickerProps } from "@stackra/ui-pro/native";
+import { DateRangePicker, type DateRangePickerProps } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { useInsetSheet } from "#src/components/ui/inset-sheet";

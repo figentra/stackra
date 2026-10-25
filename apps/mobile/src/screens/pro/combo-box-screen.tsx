@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `ComboBox` (@stackra/ui-pro): a text input that filters a
+ * Purpose: the design-system review page of the native `ComboBox` (@stackra-pro/ui): a text input that filters a
  *          popover list, with a clear button, a multiple selection shown below the input, the menu opening only while
  *          typing or only from the chevron, grouped items, and the invalid and disabled states.
- * Boundary: presentation and local demo state only; the field is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the field is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Description, FieldError, Label, Text } from "@stackra/ui/native";
-import { ComboBox, type ComboBoxProps } from "@stackra/ui-pro/native";
+import { ComboBox, type ComboBoxProps } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";

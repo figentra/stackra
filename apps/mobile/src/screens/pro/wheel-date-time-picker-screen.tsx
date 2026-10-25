@@ -1,16 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `WheelDateTimePicker` (@stackra/ui-pro): a controlled date and
+ * Purpose: the design-system review page of the native `WheelDateTimePicker` (@stackra-pro/ui): a controlled date and
  *          time wheel with the chosen value read back, a 24-hour wheel with a minute step, a limited date range with
  *          a custom date label, a wheel that reports only when it comes to rest, and the disabled state, in the
  *          locale the display switcher chose.
- * Boundary: presentation and local demo state only; the wheel is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the wheel is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { CalendarDateTime, getLocalTimeZone, today } from "@internationalized/date";
 import { Text, useDesignSystem } from "@stackra/ui/native";
-import { WheelDateTimePicker } from "@stackra/ui-pro/native";
+import { WheelDateTimePicker } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";

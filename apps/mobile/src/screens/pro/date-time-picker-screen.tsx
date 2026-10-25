@@ -1,15 +1,15 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `DateTimePicker` (@stackra/ui-pro): a trigger that opens a
+ * Purpose: the design-system review page of the native `DateTimePicker` (@stackra-pro/ui): a trigger that opens a
  *          date and time wheel in a popover and in a bottom sheet, a 24-hour wheel with a minute step and a limited
  *          date range, and the invalid and disabled states, in the locale the display switcher chose.
- * Boundary: presentation and local demo state only; the picker is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the picker is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Description, FieldError, Label, Text, useDesignSystem } from "@stackra/ui/native";
-import { DateTimePicker, type DateTimePickerProps } from "@stackra/ui-pro/native";
+import { DateTimePicker, type DateTimePickerProps } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { useInsetSheet } from "#src/components/ui/inset-sheet";

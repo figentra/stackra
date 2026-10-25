@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `ChartTooltip` (@stackra/ui-pro): the card that follows a press
+ * Purpose: the design-system review page of the native `ChartTooltip` (@stackra-pro/ui): the card that follows a press
  *          on a bar and line chart with a header and one row per series, above or below the pressed point.
- * Boundary: presentation and local demo state only; the tooltip is @stackra/ui-pro's, the press state is victory-native's.
+ * Boundary: presentation and local demo state only; the tooltip is @stackra-pro/ui's, the press state is victory-native's.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
@@ -12,7 +12,7 @@ import {
   ChartIndicator,
   ChartTooltip,
   ComposedChart,
-} from "@stackra/ui-pro/native";
+} from "@stackra-pro/ui/native";
 import { useThemeColor } from "heroui-native";
 import { useChartTooltipAnchor } from "heroui-native-pro/chart-tooltip";
 import { useState } from "react";

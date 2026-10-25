@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the tiers of the design-system review area: "Free", a `@stackra/ui/native` component (screens in
- *          `free/`), and "Pro", a `@stackra/ui-pro/native` component (screens in `pro/`). The index lists Free rows
+ *          `free/`), and "Pro", a `@stackra-pro/ui/native` component (screens in `pro/`). The index lists Free rows
  *          before Pro rows inside each category, badges the Pro ones and filters by tier.
  * Boundary: the values only; each row of `design-system-components.ts` names its tier.
  * Runtime: react-native

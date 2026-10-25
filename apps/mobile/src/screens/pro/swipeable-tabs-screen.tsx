@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `SwipeableTabs` (@stackra/ui-pro): a tab list whose indicator
+ * Purpose: the design-system review page of the native `SwipeableTabs` (@stackra-pro/ui): a tab list whose indicator
  *          follows a swiping pager, the controlled form with lazy pages and the page read back, and the secondary
  *          (underlined) variant with a scrollable list.
- * Boundary: presentation and local demo state only; the tabs are @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the tabs are @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Text } from "@stackra/ui/native";
-import { SwipeableTabs } from "@stackra/ui-pro/native";
+import { SwipeableTabs } from "@stackra-pro/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
 

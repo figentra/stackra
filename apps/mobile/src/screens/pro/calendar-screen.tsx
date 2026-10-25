@@ -1,15 +1,15 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `Calendar` (@stackra/ui-pro): a controlled calendar with a
+ * Purpose: the design-system review page of the native `Calendar` (@stackra-pro/ui): a controlled calendar with a
  *          selected date, one limited by `minValue` and `maxValue`, one with the year picker and event dots, and
  *          the disabled state, in the locale the display switcher chose.
- * Boundary: presentation and local demo state only; the calendar is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the calendar is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-011.
  */
 import { getLocalTimeZone, today, type DateValue } from "@internationalized/date";
 import { Text, useDesignSystem } from "@stackra/ui/native";
-import { Calendar } from "@stackra/ui-pro/native";
+import { Calendar } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { CalendarParts } from "#src/components/ui/calendar-parts";

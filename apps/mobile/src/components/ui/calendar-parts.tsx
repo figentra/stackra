@@ -8,7 +8,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-011.
  */
-import { Calendar } from "@stackra/ui-pro/native";
+import { Calendar } from "@stackra-pro/ui/native";
 
 /** Props of {@link CalendarParts}. */
 export interface CalendarPartsProps {

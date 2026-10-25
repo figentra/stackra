@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `Badge` (@stackra/ui-pro): a count and a dot over an anchor,
+ * Purpose: the design-system review page of the native `Badge` (@stackra-pro/ui): a count and a dot over an anchor,
  *          each `tone`, the three variants and sizes, and the four corner placements.
- * Boundary: presentation only; the badge is @stackra/ui-pro's, the anchored boxes use theme classes.
+ * Boundary: presentation only; the badge is @stackra-pro/ui's, the anchored boxes use theme classes.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Text } from "@stackra/ui/native";
-import { Badge } from "@stackra/ui-pro/native";
+import { Badge } from "@stackra-pro/ui/native";
 import { View } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";

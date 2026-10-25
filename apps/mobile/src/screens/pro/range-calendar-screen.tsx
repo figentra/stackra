@@ -1,16 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `RangeCalendar` (@stackra/ui-pro): a controlled range with the
+ * Purpose: the design-system review page of the native `RangeCalendar` (@stackra-pro/ui): a controlled range with the
  *          chosen start and end read back, one limited by `minValue` and `maxValue`, one with weekends unavailable
  *          that a range may not span, one with the year picker, and the disabled state, in the locale the display
  *          switcher chose.
- * Boundary: presentation and local demo state only; the calendar is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the calendar is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { getLocalTimeZone, isWeekend, today } from "@internationalized/date";
 import { Text, useDesignSystem } from "@stackra/ui/native";
-import { RangeCalendar, type RangeCalendarProps } from "@stackra/ui-pro/native";
+import { RangeCalendar, type RangeCalendarProps } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { RangeCalendarParts } from "#src/components/ui/range-calendar-parts";

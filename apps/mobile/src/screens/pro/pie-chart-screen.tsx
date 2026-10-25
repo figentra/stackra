@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `PieChart` (@stackra/ui-pro): a pie, a donut, a segmented
+ * Purpose: the design-system review page of the native `PieChart` (@stackra-pro/ui): a pie, a donut, a segmented
  *          donut with gaps between the slices and a half-circle arc, each with a legend that does not rest on colour.
- * Boundary: presentation and demo data only; the chart is @stackra/ui-pro's, slice colours come from theme tokens.
+ * Boundary: presentation and demo data only; the chart is @stackra-pro/ui's, slice colours come from theme tokens.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Text } from "@stackra/ui/native";
-import { PieChart } from "@stackra/ui-pro/native";
+import { PieChart } from "@stackra-pro/ui/native";
 import { useThemeColor } from "heroui-native";
 import { View } from "react-native";
 

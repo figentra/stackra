@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `MorphTabs` (@stackra/ui-pro): pill tabs whose active pill
+ * Purpose: the design-system review page of the native `MorphTabs` (@stackra-pro/ui): pill tabs whose active pill
  *          grows to show its label while a pager swipes between pages, one controlled with the page read back and its
  *          pages mounted lazily, and one with the list below the pager like a bottom bar.
- * Boundary: presentation and local demo state only; the tabs are @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the tabs are @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Text } from "@stackra/ui/native";
-import { MorphTabs } from "@stackra/ui-pro/native";
+import { MorphTabs } from "@stackra-pro/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
 

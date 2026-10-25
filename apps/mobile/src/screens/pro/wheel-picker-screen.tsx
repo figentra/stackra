@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `WheelPicker` (@stackra/ui-pro): a controlled year wheel with
+ * Purpose: the design-system review page of the native `WheelPicker` (@stackra-pro/ui): a controlled year wheel with
  *          the chosen value read back, a wheel with a mask and taller rows, a wheel with a custom row, and the
  *          disabled state.
- * Boundary: presentation and local demo state only; the wheel is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the wheel is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Text } from "@stackra/ui/native";
-import { WheelPicker } from "@stackra/ui-pro/native";
+import { WheelPicker } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";

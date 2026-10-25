@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `ProgressBar` (@stackra/ui-pro): a labelled bar with its value,
+ * Purpose: the design-system review page of the native `ProgressBar` (@stackra-pro/ui): a labelled bar with its value,
  *          the three sizes, each `tone`, the indeterminate state, a custom range and the disabled state.
- * Boundary: presentation and local demo state only; the bar is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the bar is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Button } from "@stackra/ui/native";
-import { ProgressBar } from "@stackra/ui-pro/native";
+import { ProgressBar } from "@stackra-pro/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
 

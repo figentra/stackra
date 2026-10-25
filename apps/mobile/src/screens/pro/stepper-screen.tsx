@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `Stepper` (@stackra/ui-pro): a vertical stepper whose active
+ * Purpose: the design-system review page of the native `Stepper` (@stackra-pro/ui): a vertical stepper whose active
  *          step is controlled from previous and next buttons, a horizontal stepper that reads its steps as titles,
  *          and a stepper with its animations off.
- * Boundary: presentation and local demo state only; the stepper is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the stepper is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Button, Text } from "@stackra/ui/native";
-import { Stepper } from "@stackra/ui-pro/native";
+import { Stepper } from "@stackra-pro/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
 

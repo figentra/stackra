@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `ToggleButtonGroup` (@stackra/ui-pro): single and multiple
+ * Purpose: the design-system review page of the native `ToggleButtonGroup` (@stackra-pro/ui): single and multiple
  *          selection, a detached group, a vertical group, full width, the sizes and the disabled state.
- * Boundary: presentation and local demo state only; the group is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the group is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Text } from "@stackra/ui/native";
-import { ToggleButton, ToggleButtonGroup } from "@stackra/ui-pro/native";
+import { ToggleButton, ToggleButtonGroup } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";

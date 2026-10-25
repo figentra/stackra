@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `Agenda` (@stackra/ui-pro): a month calendar over a day, week
+ * Purpose: the design-system review page of the native `Agenda` (@stackra-pro/ui): a month calendar over a day, week
  *          and month body with timed, all-day, read-only and unconfirmed events that can be dragged and resized, with
  *          the view switched from a button row and the visible period read back, in the locale the display switcher
  *          chose.
- * Boundary: presentation and local demo state only; the agenda is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the agenda is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
@@ -17,7 +17,7 @@ import {
   type CalendarDateTime,
 } from "@internationalized/date";
 import { Text, useDesignSystem } from "@stackra/ui/native";
-import { Agenda, useAgenda } from "@stackra/ui-pro/native";
+import { Agenda, useAgenda } from "@stackra-pro/ui/native";
 import { useCallback, useState } from "react";
 import { View } from "react-native";
 

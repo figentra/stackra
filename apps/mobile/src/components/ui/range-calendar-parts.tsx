@@ -8,7 +8,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
-import { RangeCalendar } from "@stackra/ui-pro/native";
+import { RangeCalendar } from "@stackra-pro/ui/native";
 
 /** Props of {@link RangeCalendarParts}. */
 export interface RangeCalendarPartsProps {

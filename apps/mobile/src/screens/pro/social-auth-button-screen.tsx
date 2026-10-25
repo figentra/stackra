@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `SocialAuthButton` (@stackra/ui-pro): all eleven providers
+ * Purpose: the design-system review page of the native `SocialAuthButton` (@stackra-pro/ui): all eleven providers
  *          with their default labels, custom labels, a side-by-side pair, the three sizes and the disabled state.
- * Boundary: presentation and local demo state only; the button is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the button is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Text } from "@stackra/ui/native";
-import { SocialAuthButton } from "@stackra/ui-pro/native";
+import { SocialAuthButton } from "@stackra-pro/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
 

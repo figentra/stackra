@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `NumberField` (@stackra/ui-pro): a controlled field with a
+ * Purpose: the design-system review page of the native `NumberField` (@stackra-pro/ui): a controlled field with a
  *          label, a description and a minimum, then a step with a minimum and a maximum, currency and percent
  *          formats, the invalid state with its message, and the disabled state.
- * Boundary: presentation and local demo state only; the field is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the field is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-012.
  */
 import { Description, FieldError, Label, Text } from "@stackra/ui/native";
-import { NumberField } from "@stackra/ui-pro/native";
+import { NumberField } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { Screen } from "#src/components/ui/screen";

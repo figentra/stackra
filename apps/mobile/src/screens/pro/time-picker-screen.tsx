@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `TimePicker` (@stackra/ui-pro): a trigger that opens an hour
+ * Purpose: the design-system review page of the native `TimePicker` (@stackra-pro/ui): a trigger that opens an hour
  *          and minute wheel in a popover, in a bottom sheet and in a dialog, a 24-hour wheel with a minute step, and
  *          the invalid and disabled states, in the locale the display switcher chose.
- * Boundary: presentation and local demo state only; the picker is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the picker is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Description, FieldError, Label, Text, useDesignSystem } from "@stackra/ui/native";
-import { TimePicker, type TimePickerProps } from "@stackra/ui-pro/native";
+import { TimePicker, type TimePickerProps } from "@stackra-pro/ui/native";
 import { useState } from "react";
 
 import { useInsetSheet } from "#src/components/ui/inset-sheet";

@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `NumberValue` (@stackra/ui-pro): a plain number, currency and
+ * Purpose: the design-system review page of the native `NumberValue` (@stackra-pro/ui): a plain number, currency and
  *          percent styles, a prefix and a suffix around the value, fraction digits, and tabular figures in a column.
- * Boundary: presentation only; the value is @stackra/ui-pro's. Compact, sign and unit formats need the FormatJS
+ * Boundary: presentation only; the value is @stackra-pro/ui's. Compact, sign and unit formats need the FormatJS
  *          polyfills on some engines, so this page leaves them out.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
-import { NumberValue } from "@stackra/ui-pro/native";
+import { NumberValue } from "@stackra-pro/ui/native";
 import { View } from "react-native";
 
 import { Screen } from "#src/components/ui/screen";

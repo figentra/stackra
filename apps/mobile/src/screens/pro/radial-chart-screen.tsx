@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `RadialChart` (@stackra/ui-pro): concentric rings, evenly
+ * Purpose: the design-system review page of the native `RadialChart` (@stackra-pro/ui): concentric rings, evenly
  *          spaced rings, and a single-ring gauge on a fixed 0 to 100 scale, each with a legend that names the values.
- * Boundary: presentation and demo data only; the chart is @stackra/ui-pro's, ring colours come from theme tokens.
+ * Boundary: presentation and demo data only; the chart is @stackra-pro/ui's, ring colours come from theme tokens.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Text } from "@stackra/ui/native";
-import { RadialChart } from "@stackra/ui-pro/native";
+import { RadialChart } from "@stackra-pro/ui/native";
 import { useThemeColor } from "heroui-native";
 import { View } from "react-native";
 

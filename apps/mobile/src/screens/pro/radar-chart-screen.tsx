@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `RadarChart` (@stackra/ui-pro): a single series, a circle
+ * Purpose: the design-system review page of the native `RadarChart` (@stackra-pro/ui): a single series, a circle
  *          grid with a radius axis on a fixed scale, two series overlaid, and dots only.
- * Boundary: presentation and demo data only; the chart is @stackra/ui-pro's, series colours come from theme tokens.
+ * Boundary: presentation and demo data only; the chart is @stackra-pro/ui's, series colours come from theme tokens.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
-import { RadarChart } from "@stackra/ui-pro/native";
+import { RadarChart } from "@stackra-pro/ui/native";
 import { useThemeColor } from "heroui-native";
 import { View } from "react-native";
 

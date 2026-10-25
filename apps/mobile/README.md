@@ -35,7 +35,7 @@ src/
 │   ├── design-system-components.ts     the one list (category, tier, title, route, screen) the index and stack read
 │   ├── search-screen.tsx               the Search tab: the review area's search, opening pages in the Home tab
 │   ├── free/<name>-screen.tsx          one review page per @stackra/ui/native component (tier Free)
-│   └── pro/<name>-screen.tsx           one review page per @stackra/ui-pro/native component (tier Pro, badged)
+│   └── pro/<name>-screen.tsx           one review page per @stackra-pro/ui/native component (tier Pro, badged)
 └── components/ui/             Screen (scroll container), Section, Sample, ChoiceGroup, ReviewIcons (the review area's icons),
                                CalendarParts, useInsetSheet (HeroUI inset bottom-sheet props)
 ```
@@ -50,7 +50,7 @@ The index lists one section per category (Foundations to AI, empty ones hidden),
 alphabetical, with a "Pro" badge on Pro rows and an All / Free / Pro filter above. Bottom sheets use HeroUI's inset
 style through `useInsetSheet()`.
 
-`metro.config.js` reads `@stackra/ui` and `@stackra/ui-pro` as source (the `@stackra/source` condition), resolves the
+`metro.config.js` reads `@stackra/ui` and `@stackra-pro/ui` as source (the `@stackra/source` condition), resolves the
 packages' `#` imports, and pins `react`, `react-native`, HeroUI Native and the other native singletons to this app's
 copy, because the workspace packages have their own `node_modules` with the web catalog's React.
 

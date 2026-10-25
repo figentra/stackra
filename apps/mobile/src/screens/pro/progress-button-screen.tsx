@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `ProgressButton` (@stackra/ui-pro): a controlled
+ * Purpose: the design-system review page of the native `ProgressButton` (@stackra-pro/ui): a controlled
  *          press-and-hold confirmation that goes idle, filling, done, then each `tone`, two hold durations and the
  *          disabled state.
- * Boundary: presentation and local demo state only; the button is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the button is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-008.
  */
 import { Button, Text } from "@stackra/ui/native";
-import { ProgressButton } from "@stackra/ui-pro/native";
+import { ProgressButton } from "@stackra-pro/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
 

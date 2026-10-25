@@ -5,7 +5,7 @@
  *          registers the routes from it, so a component is added in one place.
  * Boundary: data only; the screens and the route names live elsewhere. The category is one of the owner's catalogue
  *          categories (`ComponentCategory`); the tier is "Free", a `@stackra/ui/native` component (screens in
- *          `free/`, routes `Free*`), or "Pro", a `@stackra/ui-pro/native` component (screens in `pro/`, routes
+ *          `free/`, routes `Free*`), or "Pro", a `@stackra-pro/ui/native` component (screens in `pro/`, routes
  *          `Pro*`). The list is exported in gallery order (category, then Free before Pro, then title), the order
  *          the index lists the pages in and a page's pager walks them, so the order written below does not matter.
  * Runtime: react-native

@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `SplitView` (@stackra/ui-pro): two panes divided by a
+ * Purpose: the design-system review page of the native `SplitView` (@stackra-pro/ui): two panes divided by a
  *          draggable handle that snaps to set heights, one whose snap index is controlled from buttons, and one with
  *          its animations off.
- * Boundary: presentation and local demo state only; the split view is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the split view is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 12); STA-416 FR-013.
  */
 import { Text } from "@stackra/ui/native";
-import { SplitView } from "@stackra/ui-pro/native";
+import { SplitView } from "@stackra-pro/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
 

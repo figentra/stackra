@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: the design-system review page of the native `SwipeableRow` (@stackra/ui-pro): standalone rows with
+ * Purpose: the design-system review page of the native `SwipeableRow` (@stackra-pro/ui): standalone rows with
  *          start and end actions in different `tone`s, an inline list, a row opened from a button through its ref,
  *          and the disabled state.
- * Boundary: presentation and local demo state only; the row is @stackra/ui-pro's, nothing here is styled by hand.
+ * Boundary: presentation and local demo state only; the row is @stackra-pro/ui's, nothing here is styled by hand.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-403 FR-010.
  */
 import { Button, Separator, Text } from "@stackra/ui/native";
-import { SwipeableRow } from "@stackra/ui-pro/native";
+import { SwipeableRow } from "@stackra-pro/ui/native";
 import type { SwipeableRowRootRef } from "heroui-native-pro/swipeable-row";
 import { Fragment, useRef, useState } from "react";
 import { View } from "react-native";
