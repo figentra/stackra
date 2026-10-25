@@ -5,15 +5,17 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
 
 ## Where code goes
 
-| You are writing…                        | It goes in…                                                |
-| --------------------------------------- | ---------------------------------------------------------- |
-| The kind base (`Model`)                 | `src/core/bases/model.base.ts`                             |
-| A trait                                 | `src/core/traits/<name>.trait.ts`, made with `createTrait` |
-| A relation decorator or a table facet   | `src/core/decorators/<name>.decorator.ts`                  |
-| A value (`Link`, `Translated`)          | `src/core/values/<name>.value.ts`                          |
-| An ORM column type or embeddable schema | `src/core/orm/<name>.type.ts`, `<name>.schema.ts`          |
-| An enum, a function, a constant, a type | `src/core/{enums,functions,constants,types}/`              |
-| A test                                  | `__tests__/<name>.<kind>.test.ts` beside it                |
+| You are writing…                              | It goes in…                                                |
+| --------------------------------------------- | ---------------------------------------------------------- |
+| The kind base (`Model`)                       | `src/core/bases/model.base.ts`                             |
+| A trait                                       | `src/core/traits/<name>.trait.ts`, made with `createTrait` |
+| A kind factory (`DataClass`, `ModelAddition`) | `src/core/bases/<name>.base.ts`                            |
+| A built-in data class (`PrivilegedDataClass`) | `src/core/access/<name>.data-class.ts`                     |
+| A relation decorator or a table facet         | `src/core/decorators/<name>.decorator.ts`                  |
+| A value (`Link`, `Translated`)                | `src/core/values/<name>.value.ts`                          |
+| An ORM column type or embeddable schema       | `src/core/orm/<name>.type.ts`, `<name>.schema.ts`          |
+| An enum, a function, a constant, a type       | `src/core/{enums,functions,constants,types}/`              |
+| A test                                        | `__tests__/<name>.<kind>.test.ts` beside it                |
 
 ## Entries and barrels
 
@@ -33,6 +35,11 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
   `RelationSource` brand.
 - Never import @stackra/rules or @stackra/iam either (both reach this package): `@Visibility` names attributes and
   relations only, and the rules, their evaluation and the query filter are IAM's (ADR 0333).
+- Marker traits (`AppendOnly`, `Commentable`, `HasAttachments`) add no column; the owning package acts on them
+  (ADR 0321). `HasCorrections` stays apart from `AppendOnly` so existing append-only tables keep their columns.
+- Data classes (ADR 0341): `DataClass` records the four effects; their readers (AI context, support access, search,
+  export) apply them. The effects of the six classes of ADR 0134 are not set here yet; only `privileged` ships.
+- `Model.global(...)` marks a model global by design (no `tenant_id`, ADR 0210 amendment); `Model.isGlobal` reads it.
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 
 ## Rules that fail the build

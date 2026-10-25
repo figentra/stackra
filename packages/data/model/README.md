@@ -10,9 +10,9 @@ Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@
 
 ## Entry points
 
-| Import           | Holds                     | Exports                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| ---------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/model` | `src/core/`: node runtime | `Model`, traits (`HasPublicId`, `Timestamps`, `UserStamps`, `Versioned`, `SoftDeletes`, `AppendOnly`, `Translatable`, `HasEncryptedFields`), `createTrait`, `traitsOf`, `encryptedFieldsOf`, `EncryptedFieldsSubscriber`, `Index`, `Searchable`, `Visibility`, `ManyToOne`, `OneToMany`, `ManyToMany`, `OnDelete`, `Collection`, `Ref`, `Link`, `Translated`, `Attributes`, `LinkType`, `TranslatedType`, `MoneySchema` |
+| Import           | Holds                     | Exports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/model` | `src/core/`: node runtime | `Model`, traits (`HasPublicId`, `Timestamps`, `UserStamps`, `Versioned`, `SoftDeletes`, `AppendOnly`, `HasCorrections`, `Commentable`, `HasAttachments`, `Taggable`, `Translatable`, `HasEncryptedFields`), `currentRows`, `Model.global`, `ModelAddition`, `DataClass`, `PrivilegedDataClass`, `Classify`, `AiAudience`, `SupportAccess`, `SearchSnippet`, `ExportLabel`, `Meter`, `MeterKind`, `createTrait`, `traitsOf`, `encryptedFieldsOf`, `EncryptedFieldsSubscriber`, `Index`, `Searchable`, `Visibility`, `ManyToOne`, `OneToMany`, `ManyToMany`, `OnDelete`, `Collection`, `Ref`, `Link`, `Translated`, `Attributes`, `LinkType`, `TranslatedType`, `MoneySchema` |
 
 Entry barrels are generated, never authored (ADR 0294 decision 15); until `stackra gen` writes them (STA-339),
 `src/core/index.ts` is a stand-in barrel.
@@ -52,6 +52,10 @@ order.record(OrderPlaced.create({ orderId: order.id })); // kept beside the inst
 | `Versioned`                     | `version` (starts at 1)                           | Optimistic concurrency; a stale write is a `conflict`        |
 | `SoftDeletes`                   | `deletedAt`                                       | Delete policy `soft`                                         |
 | `AppendOnly`                    | nothing                                           | Marker read by `traitsOf`; updates are refused               |
+| `HasCorrections`                | `corrects` (the corrected row's id)               | With `AppendOnly`; `currentRows` keeps the latest correction |
+| `Commentable`                   | nothing                                           | Marker; comments live in the collaboration service           |
+| `HasAttachments`                | nothing                                           | Marker; attached files live in the files service             |
+| `Taggable`                      | `tags` (tag keys)                                 | Keys from the tenant's tag list; GIN index to filter         |
 | `Translatable(fields)`          | nothing                                           | Names the model's `Translated` fields (jsonb, `.in(locale)`) |
 | `HasEncryptedFields(...fields)` | nothing                                           | Names string fields that rest sealed; see below              |
 
@@ -101,6 +105,27 @@ matter). The facet only declares: `@stackra/iam`'s decision point evaluates the 
 @Index(["collection"])
 export class Product extends Model.with(HasPublicId("prd"), BelongsToTenant) {}
 ```
+
+## Global models, additions, data classes and meters
+
+```ts
+export class Statute extends Model.global(HasPublicId("stt")) {} // no tenant_id (ADR 0210 amendment)
+
+export class ProductAddition extends ModelAddition(Product) {
+  fit!: string;
+} // an edition's side table (ADR 0336)
+
+export class AdviceNote extends Model.with(HasPublicId("adv")) {
+  @Classify(PrivilegedDataClass) // ai: tenant_opt_in, support: hidden, search: no_snippet, export: labelled (ADR 0341)
+  body!: string;
+}
+
+@Meter({ key: "matters.active", kind: MeterKind.Count }) // usage.recorded.v1 through the outbox (ADR 0216)
+export class Matter extends Model.with(HasPublicId("mat")) {}
+```
+
+A product declares its own class with `class X extends DataClass({ key, ai, support, search, export }) {}` in its
+module's `access/<name>.data-class.ts`.
 
 ## Factories
 
