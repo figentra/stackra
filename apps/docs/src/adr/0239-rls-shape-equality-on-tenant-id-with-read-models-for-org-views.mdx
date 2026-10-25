@@ -1,7 +1,18 @@
 ---
 title: "0239 — RLS shape: equality on tenant_id, with read models for organisation views"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0347 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-470) by
+  [0347](/adr/0347-row-level-security-layering-one-permissive-tenant-policy-and-generated-restrictive-policies):
+  the equality policy of decision 1 is the only permissive policy of a business table
+  (`pol_<table>_tenant_id`), and every narrowing inside a tenant is a generated restrictive policy
+  named after the column it tests, emitted from the model's `rowScopes` (today `legalEntityId`), of
+  the shape "the session setting is unset, or the column equals it". The Enforcement audit checks
+  force, exactly one permissive policy, and that every other policy is restrictive and named.
+  Decisions 2 to 4 stand.
+</Note>
 
 <Note>
   Builds on [0014](/adr/0014-data-ownership-and-orm),

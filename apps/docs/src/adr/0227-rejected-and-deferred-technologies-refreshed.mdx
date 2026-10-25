@@ -1,13 +1,27 @@
 ---
 title: "0227 — Rejected and deferred technologies, refreshed"
-description: "Accepted, amended by 0267, 0283, 0287 · 2026-10-20 · amended 2026-10-24 (STA-348) · amended 2026-10-24 (STA-456)"
+description: "Accepted, amended by 0267, 0283, 0287, 0344 · 2026-10-20 · amended 2026-10-24 (STA-348) · amended 2026-10-24 (STA-456)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-469) by
+  [0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix): the platform
+  rows of its tier matrix join this table. Rejected, each with a revival trigger there: a native
+  macOS app beside Electron (react-native-macos, Mac Catalyst, a second iPad-on-Mac listing),
+  react-native-windows, the visionOS fork, CarPlay and Android Automotive apps, smart-TV web stores,
+  Meta Quest, Android without Google services, iMessage apps, native desktop widgets. Deferred, each
+  with a trigger: Wear OS, tvOS and Android TV, App Clips, native visionOS, Android XR spatial,
+  Android Auto, Flatpak and Snap, store wrappers for the PWA, Telegram and WhatsApp surfaces. Safari
+  web extensions sit under the browser-extension row
+  ([0283](/adr/0283-browser-extension-agent-connector-deferred)). The projected table follows in its
+  own change.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-456), with [0186](/adr/0186-backups-and-disaster-recovery) as amended the
   same day: the "use instead" column of the active-active row reads two independent regions, GCC and
   EU, a tenant in one of them and never active-active; cells within a region come later. The
-  rejection stands. The projected rule table follows in its own change.
+  rejection stands. The projected rule table follows in STA-466.
 </Note>
 
 <Note>

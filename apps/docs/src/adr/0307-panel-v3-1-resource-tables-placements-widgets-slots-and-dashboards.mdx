@@ -1,7 +1,17 @@
 ---
 title: "0307 — Panel v3.1: resource tables as server contracts, placements by input, metric widgets, typed slots, dashboards and settings"
-description: "Accepted, amended by 0326, 0334, 0336 · 2026-10-23 · amended 2026-10-24 (STA-428)"
+description: "Accepted, amended by 0326, 0334, 0336, 0350 · 2026-10-23 · amended 2026-10-24 (STA-428)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-478) by
+  [0350](/adr/0350-additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules):
+  the place kinds of decision 18 gain `LineEntry`, a slot on a resource for a document with lines
+  that holds exactly one line editor, filled by the base at layer 1 and replaceable by an edition at
+  layer 2b with an editor bound to the base's `Line` schema; the variants resource uses the same
+  kind for a matrix editor. Decision 13 stands: an addition's columns take a display from the closed
+  set, and no custom column renderer exists.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-451) by

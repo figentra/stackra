@@ -1,7 +1,17 @@
 ---
 title: "0231 — Naming and casing standard"
-description: "Accepted, amended by 0264, 0294 · 2026-10-20 · amended 2026-10-24 (STA-348)"
+description: "Accepted, amended by 0264, 0294, 0349 · 2026-10-20 · amended 2026-10-24 (STA-348)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-477) by
+  [0349](/adr/0349-product-scopes-package-names-and-the-module-key-registry-across-products): the
+  package row reads `@stackra/<kebab>` for the framework; `@figentra/<kebab>` and
+  `@figentra/service-<kebab>` for the OS; `@figentra/<product>-<kebab>` and
+  `@figentra/<product>-service-<kebab>` for every other first-party product and edition, where
+  `<product>` is the product's registry key. A brand scope never names first-party code. Wire
+  identifiers are unchanged. The other rows stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-348), as `@stackra/database` was built: the database row gains a fourth

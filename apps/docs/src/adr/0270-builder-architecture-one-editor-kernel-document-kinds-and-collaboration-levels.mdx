@@ -1,7 +1,16 @@
 ---
 title: "0270 — Builder architecture: one editor kernel, document kinds and collaboration levels"
-description: "Accepted, amended by 0294, 0305, 0307 · 2026-10-21"
+description: "Accepted, amended by 0294, 0305, 0307, 0346 · 2026-10-21"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-470) by
+  [0346](/adr/0346-collaboration-rooms-a-two-way-payload-channel-derived-from-a-documents-collaboration-level):
+  `@stackra/collaboration` of decision 5 runs on the room channel of `@stackra/realtime`, derived
+  from the collaboration levels of decision 6 (a kind at full or presence has a room; a kind at OCC
+  has none), and ships memory drivers only until that channel lands. Its ports do not change. The
+  other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-406), by

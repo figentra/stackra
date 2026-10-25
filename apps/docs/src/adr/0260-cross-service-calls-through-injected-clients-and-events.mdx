@@ -1,7 +1,16 @@
 ---
 title: "0260 — Cross-service reach: one generated client with call, command and typed events"
-description: "Accepted, amended by 0294 · 2026-10-21"
+description: "Accepted, amended by 0294, 0351 · 2026-10-21"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-479) by
+  [0351](/adr/0351-iam-conditions-on-a-dimension-another-service-owns-declared-dimensions-and-projections):
+  the read models of decision 7 include the dimension projections gen derives when a module's record
+  carries a `DimensionId` field of a dimension another service owns; the owning service publishes
+  the dimension's values as integration events, and the IAM check never calls it. The other
+  decisions stand.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): the

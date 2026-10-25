@@ -1,7 +1,15 @@
 ---
 title: "0109 — The registry: build manifests published by CI to a Postgres-backed registry service"
-description: "Accepted, amended by 0335 · 2026-10-19"
+description: "Accepted, amended by 0335, 0349 · 2026-10-19"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-477) by
+  [0349](/adr/0349-product-scopes-package-names-and-the-module-key-registry-across-products): the
+  manifest publish of decision 2 also records the owning product of every module key and refuses a
+  key another product owns; the registry is the one place keys are reserved, and no file reserves
+  them by hand. The other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-451) by

@@ -1,7 +1,16 @@
 ---
 title: "0217 — API surfaces: MCP first plus REST, SDKs and rate limits"
-description: "Accepted, amended by 0274, 0278, 0294 · 2026-10-20"
+description: "Accepted, amended by 0274, 0278, 0294, 0348 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-474) by
+  [0348](/adr/0348-integration-surfaces-assistant-hosts-chat-apps-messaging-flows-and-wallet-passes):
+  the one declaration of decision 1 also reaches the integration surfaces (assistant hosts with a
+  rendered interface, Slack and Teams apps, messaging flows), each an Integration that exposes only
+  the actions and queries that are already tools, filtered by IAM and entitlements. Decisions 2 and
+  3 stand.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the

@@ -1,7 +1,19 @@
 ---
 title: "0291 — Porting and provenance: one assignment, one legal name, one vocabulary and fresh writing"
-description: "Accepted, amended by 0302 · 2026-10-22"
+description: "Accepted, amended by 0302, 0340 · 2026-10-22"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-465) by
+  [0340](/adr/0340-one-token-engine-stackra-tokens-grows-layers-policy-checks-and-native-palettes-brand-kits-are-figentra-os-tooling):
+  decision 1 is satisfied, the rights assignment is signed (owner, 2026-10-24), so the named ports
+  of 0340 may merge. Decision 8 changes: no separate `figentra/brand` repository is created; the kit
+  tool is Figentra OS tooling (`tools/brand-kit` in figentra/os), the product accent layers live in
+  `@figentra/brand` there, and each product repository keeps its own marks, lockups and app icons
+  under its `NOTICE`. Decision 9: the engine is ported in named pieces into `@stackra/tokens` (where
+  0302 already moved it) and the kit generators into the kit tool, each with one `ORIGIN.md` line
+  under decision 4. The rest stands.
+</Note>
 
 <Note>
   Amended by [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground): Stackra has no

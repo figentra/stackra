@@ -25,9 +25,11 @@ framework release.
 
 ## Decision
 
-1. **A product may declare a class.** A product declares a data class in its root module's `access/` group, in a
-   `<name>.data-class.ts` file, as a class that extends `DataClass({ key })` ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 13 as amended the same day), with the four effects below as typed options. Gen adds it to the `@Classify`
-   union for that product, so a field can carry it like a built-in class. A class is a framework-level concept with a
+1. **A product may declare a class.** A product declares a data class in the `access/` group of the module whose fields
+   carry it (several modules may each declare their own), in a `<name>.data-class.ts` file, as a class that extends
+   `DataClass({ key })` ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 13 as amended the same day), with the four effects below as typed options. `DataClass`, the four effects and the `@Classify`
+   union live in `@stackra/model`, the package that owns `@Classify`; gen adds each declared class to that union for
+   its product, so a field can carry it like a built-in class. A class is a framework-level concept with a
    product-level instance; a tenant never declares one.
 
 2. **The effects a class sets.** Each class states, for its fields: `ai` (`never`, `tenantOptIn` or `allowed`: whether

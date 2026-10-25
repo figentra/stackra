@@ -1,0 +1,98 @@
+---
+title: "0347 — Row-level security layering: one permissive tenant policy and generated restrictive policies"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views) (decision
+  1: the equality policy is the only permissive policy, and narrowing is a restrictive layer; the
+  Enforcement audit) by a Note. Reads with [0231](/adr/0231-naming-and-casing-standard) as amended
+  on 2026-10-24 (policy names),
+  [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) (every
+  tenant-owned table has its policy; global models have none) and
+  [0338](/adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps)
+  (sessions scoped to one legal entity).
+</Note>
+
+## Context
+
+[0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views) gives every business table one
+row-level-security policy: equality on `tenant_id`, the same for every table, so the isolation test is one pattern. As
+the database package is built, that is one permissive policy per table. New needs want rows narrowed further inside a
+tenant: a device session that holds only its legal entity's records
+([0338](/adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps) decision 3),
+and a legal entity as the transfer boundary of a multi-country tenant
+([0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events) decision 4). Postgres combines policies
+two ways: permissive policies are joined by OR, so a second permissive policy widens access; restrictive policies are
+joined by AND, so each one can only narrow. The framework build asked on 2026-10-24 how the two layers are used, and
+this ADR answers.
+
+## Decision
+
+1. **Exactly one permissive policy per business table, the tenant equality of 0239.** It is named
+   `pol_<table>_tenant_id` ([0231](/adr/0231-naming-and-casing-standard)), it is `FOR ALL`, and its one allowed extra
+   clause is the audited operator grant of 0239 decision 3. Gen writes it from `BelongsToTenant`
+   ([0321](/adr/0321-the-trait-inventory-owning-packages-and-schedulable)); nobody writes a second permissive policy,
+   and a migration that creates one fails.
+
+2. **Every narrowing is a restrictive policy.** Anything that limits rows inside a tenant is `AS RESTRICTIVE`, so it
+   can only remove rows the tenant policy allows and never add one. Restrictive policies are generated, never
+   hand-written, and each is named after the column it tests, `pol_<table>_<column>` (0231).
+
+3. **A model declares the columns a session may be narrowed to.** A model lists them as `rowScopes` (today
+   `legalEntityId`, the dimension 0338's device sessions and 0343's transfer boundary use), and gen emits one
+   restrictive policy per listed column of the shape "the session setting is unset, or the column equals it":
+   `current_setting('app.<column>', true) IS NULL OR <column> = current_setting('app.<column>', true)::<type>`. An
+   unscoped session therefore sees the whole tenant, and a scoped session sees its slice. The settings are written by
+   the tenancy context (`withTenant`) from the authenticated session, as `app.tenant_id` already is, never from a
+   client value.
+
+4. **What is not a restrictive policy.** Record visibility rules
+   ([0333](/adr/0333-record-visibility-rules-who-can-see-which-records) decision 5) stay in the query layer; the IAM
+   scope path stays a predicate inside one tenant (0239 decision 4); soft deletes, holds and classes are column
+   effects, not policies. Read models keep the shape of 0239 decision 2, and a global model
+   (`Model.global`, [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) as amended on
+   2026-10-24) has no policy at all.
+
+5. **Force and audit.** Every tenant-owned table has row-level security enabled and forced. The RLS catalogue audit of
+   0239 checks, per table: `FORCE ROW LEVEL SECURITY`, exactly one permissive policy with the tenant shape, every other
+   policy restrictive and named by its column, and no policy that names a column the model does not list in
+   `rowScopes`. A policy the audit cannot classify fails the gate.
+
+## Consequences
+
+- Tenant isolation stays one pattern and one test; narrowing cannot widen it, by the semantics of the layer it lives in.
+- A scoped device or user is narrowed in the database, not only in the application, so a bug above the database cannot
+  leak another legal entity's rows to it.
+- Each restrictive policy adds a predicate to every read of its table; a model lists a scope column only when a session
+  is actually narrowed to it.
+- The migration generator gains the `AS RESTRICTIVE` form and the per-column names, and the frozen-snapshot rule of
+  [0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules) applies to them as to every other statement.
+
+## Enforcement
+
+- planned — the RLS catalogue audit of 0239, extended as decision 5 says, in the tenant isolation tests.
+- planned — gen (STA-340): a second permissive policy, a hand-written `CREATE POLICY`, or a restrictive policy on a
+  column outside `rowScopes` fails the build; the policy names follow 0231.
+- planned — a tenant isolation test: a session with `app.legal_entity_id` set reads no row of another legal entity in
+  the same tenant, and a session without it reads the whole tenant.
+
+## Alternatives
+
+- **Widening the tenant policy with more clauses.** Not chosen: every added clause is a chance to widen, and the audit
+  can no longer check one shape.
+- **Narrowing only in the application layer.** Not chosen for session scoping: the database is the isolation boundary
+  of 0239 and 0333 decision 5, and a scoped device must be narrowed there.
+- **One schema per legal entity.** Not chosen: 0210 decision 7 keeps the pool with no schema per tenant, and a legal
+  entity is a dimension inside a tenant.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Note: [0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views).
+Builds on [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region),
+[0231](/adr/0231-naming-and-casing-standard), [0321](/adr/0321-the-trait-inventory-owning-packages-and-schedulable),
+[0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules),
+[0333](/adr/0333-record-visibility-rules-who-can-see-which-records),
+[0338](/adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps) and
+[0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events). Sources: the framework build's question
+of 2026-10-24 on policy layering, and the Postgres policy semantics, restated in this ADR's own words.

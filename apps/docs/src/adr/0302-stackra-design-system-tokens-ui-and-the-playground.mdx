@@ -1,7 +1,25 @@
 ---
 title: "0302 — The Stackra Design System: a design-system category, @stackra/tokens, @stackra/ui and the playground"
-description: "Accepted · 2026-10-23"
+description: "Accepted, amended by 0303, 0340 · 2026-10-23 · amended 2026-10-24 (STA-469)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-469) by
+  [0345](/adr/0345-native-code-generation-and-the-native-shared-layer) decision 1: `@stackra/tokens`
+  renders a resolved theme to Swift and Kotlin as well as to web and native CSS, and ships one
+  breakpoint scale shared by web and native. Decision 2 is read with that; the rest stands.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-465) by
+  [0340](/adr/0340-one-token-engine-stackra-tokens-grows-layers-policy-checks-and-native-palettes-brand-kits-are-figentra-os-tooling):
+  the scope of decision 2 grows. `@stackra/tokens` also holds `ThemeLayer` and `LayerPolicy`,
+  `resolveTheme`, the opt-in contrast and separation checks with their suggestions, `deriveAccent`,
+  a native palette and the DTCG export; `defineTheme` still checks grammar only. Decision 4 stands.
+  The consequence that left the Figentra runtime `BrandService` unplaced is settled: tenant branding
+  is the branding module of the Figentra OS experience service. The `assets/data/stackra/` kit
+  record leaves the package before it publishes.
+</Note>
 
 <Note>
   Amended by [0303](/adr/0303-stackra-ui-component-catalogue-decisions): decision 3 and, through

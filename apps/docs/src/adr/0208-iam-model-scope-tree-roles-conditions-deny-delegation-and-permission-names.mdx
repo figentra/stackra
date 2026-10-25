@@ -1,7 +1,18 @@
 ---
 title: "0208 — The IAM model: scope tree, roles, conditions and deny, delegation and permission names"
-description: "Accepted, amended by 0240, 0242, 0294, 0327, 0333 · 2026-10-20"
+description: "Accepted, amended by 0240, 0242, 0294, 0327, 0333, 0351 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-479) by
+  [0351](/adr/0351-iam-conditions-on-a-dimension-another-service-owns-declared-dimensions-and-projections):
+  a structured condition of decision 3 may also name a dimension another module or service owns and
+  declares (a channel, a location, a market, a legal entity), tested on the record's dimension-id
+  field and resolved in process against an event-fed projection of the owner's values; an
+  unprojected, retired or unregistered value denies, and a retirement marks the grants that named it
+  for the reviews of decision 7. Conditions stay structured, with no expressions. The other
+  decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 by [0333](/adr/0333-record-visibility-rules-who-can-see-which-records): a

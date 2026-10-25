@@ -1,7 +1,15 @@
 ---
 title: "0335 — Editions: a product made of another product's modules, its own packs, its brand and its entitlement bundle"
-description: "Accepted · 2026-10-24"
+description: "Accepted, amended by 0349 · 2026-10-24"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-477) by
+  [0349](/adr/0349-product-scopes-package-names-and-the-module-key-registry-across-products): the
+  registry of decision 3 is the restricted channel of 0177 decision 2, the base's packages are named
+  `@figentra/<base>-*`, and an edition's own packages `@figentra/<edition>-*`; the edition's module
+  keys are checked against the base's released manifests before publish. The other decisions stand.
+</Note>
 
 <Note>
   Amends, by Notes, [0109](/adr/0109-registry-manifests-published-by-ci) (the registry records
@@ -28,10 +36,9 @@ become a fork of its base product, which is the thing the module model exists to
    [0201](/adr/0201-the-app-split-framework-platform-core-and-first-party-apps)) that is made of another product's
    modules, called its base, plus its own packs, its brand and its entitlement bundle. It has its own repository, its
    own app members and its own plan ladder. Muslin is an edition of Figentra Commerce (working name); Figentra Commerce is a product
-   above Figentra OS and is not an edition. It is built in its own repository from its design records; the thin
-   commerce reference slice planned for this repository stays a reference app under
-   [0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services) decision 2, proves the framework, and
-   seeds no product.
+   above Figentra OS and is not an edition. It is built in its own repository from its design records; a reference app in this
+   repository, if one is built, proves the framework under
+   [0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services) decision 2 and seeds no product.
 
 2. **Declared once, in the root runway.** The edition's root `runway.yaml` declares a `product` section:
    `product: { key, edition: { of: <base product key>, version: <range> } }`. A product with no `edition` is a base

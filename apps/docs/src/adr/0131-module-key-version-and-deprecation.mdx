@@ -1,7 +1,24 @@
 ---
 title: "0131 — Module key, version and deprecation"
-description: "Accepted, amended by 0264 · 2026-10-20"
+description: "Accepted, amended by 0264, 0349, 0350 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-478) by
+  [0350](/adr/0350-additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules):
+  the optional metadata of decision 3 gains `enhances`, the modules a module only extends and does
+  not need; a module may not list one module in both `dependsOn` and `enhances`. The other decisions
+  stand.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-477) by
+  [0349](/adr/0349-product-scopes-package-names-and-the-module-key-registry-across-products): the
+  uniqueness of decision 1 holds across products, not only inside one manifest: the registry
+  reserves a module key for the first product that publishes it and refuses another product's
+  manifest that carries it, and an edition's gen refuses a local key that collides with its base's
+  released manifests. Decisions 2 to 4 stand.
+</Note>
 
 <Note>
   Amended by [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders): A

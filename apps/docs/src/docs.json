@@ -440,9 +440,18 @@
               "adr/0337-client-rule-code-a-module-ships-pure-rules-that-run-on-the-till-and-on-the-server",
               "adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps",
               "adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver",
+              "adr/0340-one-token-engine-stackra-tokens-grows-layers-policy-checks-and-native-palettes-brand-kits-are-figentra-os-tooling",
               "adr/0341-product-defined-data-classes-and-the-privileged-class",
               "adr/0342-gapless-sequences-allocated-at-commit-per-tenant-and-series",
-              "adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events"
+              "adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events",
+              "adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix",
+              "adr/0345-native-code-generation-and-the-native-shared-layer",
+              "adr/0346-collaboration-rooms-a-two-way-payload-channel-derived-from-a-documents-collaboration-level",
+              "adr/0347-row-level-security-layering-one-permissive-tenant-policy-and-generated-restrictive-policies",
+              "adr/0348-integration-surfaces-assistant-hosts-chat-apps-messaging-flows-and-wallet-passes",
+              "adr/0349-product-scopes-package-names-and-the-module-key-registry-across-products",
+              "adr/0350-additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules",
+              "adr/0351-iam-conditions-on-a-dimension-another-service-owns-declared-dimensions-and-projections"
             ]
           }
         ]

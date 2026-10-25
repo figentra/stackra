@@ -1,0 +1,188 @@
+---
+title: "0340 — One token engine: @stackra/tokens grows layers, policy checks and native palettes; brand kits are Figentra OS tooling"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) (decision 2 grows; the
+  open consequence on the runtime `BrandService` is settled) and
+  [0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule) (decision 8: no separate
+  brand repository; decision 9: the engine is ported in named pieces; decision 1 is satisfied).
+  Reads with [0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers),
+  [0316](/adr/0316-open-core-distribution) and [0084](/adr/0084-figentra-os-package-port-plan) (the
+  theming and brand rows), each of which carries a Note.
+</Note>
+
+## Context
+
+Three theming engines exist. `@stackra/tokens` holds the `Theme` schema, the `stackra` theme and the web and native
+renderers ([0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) decision 2), but it has no notion of a
+parent theme, no contrast or separation check, and its native output carries no palette. The archived basalt engine, which
+[0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule) decision 9 said to port, has tiers, inheritance, an
+accent-separation rule, a tenant verdict that refuses a colour with a suggestion, and the generators that built every brand
+kit, but it is a second schema with a dependency that no longer exists. A product's runtime theming package is a third
+engine, and it adjusts a failing colour silently. Meanwhile `@stackra/tokens` ships, under `assets/data/stackra/`, a kit
+record that names the Figentra brand as its parent and lists the family's products and accents, which an MIT package may not
+carry ([0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) decision 4,
+[0316](/adr/0316-open-core-distribution) decision 1).
+
+The Figentra OS brand record of 2026-10-24 stacks four layers (Stackra, Figentra, product, tenant) and binds them: a layer
+below Figentra changes colour, never shape; the fonts stay; every layer passes WCAG AA in both schemes; a failing tenant
+colour is refused with a suggestion; the banner, acting-as, danger and warning colours are reserved. Five sessions were
+consulted and all chose to grow `@stackra/tokens`; the owner decided on 2026-10-24, confirmed that the rights assignment
+of 0291 decision 1 is signed, and answered the open questions. This ADR records the Stackra side. The Figentra side
+(the Figentra theme, the product accents, the marks and the kit outputs) is the Figentra OS design record's.
+
+## Decision
+
+1. **One engine, one schema.** `Theme` in `@stackra/tokens` is the only token schema, and `@stackra/tokens` is the only
+   code that computes a colour. The basalt engine retires as a running engine, every kit's token JSON retires, and the
+   product runtime theming package retires onto this engine once its consumers have moved. Nobody adds a theming
+   mechanism beside it. A planned client package may hold client state only (the scheme, the material mode, the text
+   size, which resolved CSS to load); it never computes colours.
+
+2. **A brand above Stackra is a layer, not a theme.** A `ThemeLayer` is a `ThemeDiff` (the existing `stackra.theme-diff`
+   shape) plus `extends` (its parent's name), an `id` (any string, a tenant public id included), a derived kebab-case
+   `name` for the resolved theme, and an optional `LayerPolicy`. `resolveTheme(base, layers, rootPolicy?)` is a pure fold
+   over any number of layers that never throws: it refuses a layer whose `extends` is not the current name, checks every
+   changed path against the policy in force, merges, recomputes `hexLight` and `hexDark` from the oklch value of every
+   changed colour, and narrows the policy for the layers below. It returns a `ThemeVerdict`: accepted with the theme,
+   or refused with `ThemeFinding`s (snake_case codes: `wrong_parent`, `path_not_allowed`, `path_locked`,
+   `policy_widened`, `invalid_value`, `hex_drift`, `contrast_too_low`) and the suggestions of decision 4.
+
+3. **Policies are data a brand owner writes; the gates are opt-in.** A `LayerPolicy` has `allow` and `lock` path
+   patterns (a trailing `*` only; `lock` wins), extra `ContrastPair`s and `SeparationRule`s. A lower layer may only
+   narrow it. The tiers of the old engine become policies, and Stackra encodes no brand rule: which paths Figentra
+   allows, which roles it locks, and whether fonts may change are entries in Figentra's policies, approved by the owner.
+   `defineTheme` keeps checking grammar and completeness only, so every existing theme and every framework user's theme
+   keeps working. The contrast and separation checks run through `checkTheme(theme, pairs?)`, which `resolveTheme`
+   and the `stackra` theme's own tests call.
+
+4. **Refuse with a suggestion, never adjust.** `checkTheme` measures the default AA pairs (role pairs only, in both
+   schemes; palette pairs belong to the `stackra` theme test) and any pairs the policy adds, over what the components
+   actually paint: HeroUI's `color-mix` derived soft and hover values on the web and on native, not the declared tokens
+   alone. A translucent colour is composited over its background or skipped with a finding; nothing throws. A failing
+   colour is refused, and `suggestColour` returns the nearest lightness per scheme that clears every contrast pair
+   naming that path, for the form to show. A submitted accent is kept as given; `deriveAccent` fills only hover, pressed,
+   soft and soft-foreground from it, per scheme, and moves the link only when asked. No fixed-lightness derivation and
+   no silent correction exists anywhere in the engine.
+
+5. **Separation is a notice, and a family test.** `checkSeparation` ports the old rule (at least 25 degrees of hue or
+   0.1 of lightness, hue wrap-around, the hue test skipped when either chroma is under 0.03) and runs only where a
+   policy names neighbours; the recommended neighbours for a tenant accent are danger, warning, success and the banner
+   tokens. For a tenant it is a notice, as in the old engine: the verdict is accepted with `requiresIconAndLabel` set,
+   and the user interface must then show every status with an icon and a label, never by colour alone. The separation
+   of the product accents from each other is a test in the Figentra brand package over its own registry; Stackra ships
+   no family list, and Stackra's steel accent is outside that test.
+
+6. **Paths are stable, and stored diffs are versioned.** A stored layer names token paths, so a rename in
+   `@stackra/tokens` must not refuse a tenant's brand or break the public resolve endpoint. A path-stability test
+   refuses a rename without an alias; the stored diff carries the token-set version (`stackra.theme-diff/2`), and
+   `resolveTheme` applies the alias map before it checks paths.
+
+7. **Native parity.** `renderNativeCss` writes every palette entry in both scheme blocks and registers each as
+   `--color-<name>: var(--<name>)` in `@theme`, so Uniwind makes a class for it; the palette stays in
+   `themeVariables().stackra`, and the mobile theme store sends those entries to Uniwind too. `themeToDtcg` emits the
+   DTCG 2025.10 object forms, and the per-token hex serves email and sign-in surfaces.
+
+8. **The open-core line.** `@stackra/tokens` holds the schema, the checks, the renderers, the `stackra` theme and its
+   OFL fonts, and nothing else: no brand data, no family names, no marks, no logo rules, no asset manifest and no asset
+   generation. `assets/data/stackra/` leaves the package: the `decided` record joins the marks in
+   `apps/docs/src/assets/brand/`, the minimums become in-code pairs and tests, and the `stackra` theme's kit-equality
+   test becomes a frozen in-code snapshot. The signature colour and the `cursor` token move with the marks or take
+   neutral names. A neutrality test refuses any product or family name under `src/` or `assets/`. Only then does the
+   package drop `private` and publish a snapshot ([0177](/adr/0177-package-distribution-npmjs-and-keygen), STA-210),
+   because Figentra OS consumes Stackra from the registry ([0200](/adr/0200-stackra-and-figentra-os-horizontal-services-private-os-repo)).
+
+9. **Two new token groups in the `stackra` theme.** `palette.banner-sandbox`, `banner-staging` and `banner-acting-as`,
+   each with a `-foreground`, for the banner of [0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner)
+   decision 5, which `@stackra/panel` draws, so Figentra can lock them; and `palette.chart-1` to `chart-5`, a
+   categorical set checked at 3:1 against the surface, which the `@stackra/ui-pro` stylesheet (STA-458) maps onto
+   HeroUI Pro's chart variables so a very light or very dark product accent cannot push a chart below 3:1.
+
+10. **Kit generation is Figentra OS tooling.** The brand kit tool lives in figentra/os at `tools/brand-kit`, an
+    unpublished workspace member that imports `@stackra/tokens` and never copies it, and is the only producer of
+    Figentra and product assets. It holds no colour logic: every colour comes from a resolved theme. Logo selection
+    rules and the asset manifest are typed constants beside the marks, not part of `Theme`. It keeps a generator for
+    every Latin and Arabic lockup and endorsement, a determinism check on its outputs, and a literal scan that refuses a
+    hard-coded brand colour in a consumer. Its outliner, fonts and baselines are the Figentra OS design record's.
+
+11. **Where the Figentra layers live.** Every product's accent layer lives in `@figentra/brand` (figentra/os
+    `packages/brand`), so one test checks the family's separation; each product's marks, lockups and app icons live in
+    that product's own repository under its all-rights-reserved `NOTICE`
+    ([0024](/adr/0024-mit-license-with-exclusions) decision 2), so no product receives another's unreleased identity.
+    A product identity is an accent and a mark; type and radius exceptions are refused. Product user interfaces default
+    to the solid material, with glass on showcase surfaces only. Tenant fonts are not offered.
+
+12. **Runtime placement.** Tenant branding is the branding module of the Figentra OS experience service. It stores
+    tenant layers only (the platform and product layers come from `@figentra/brand` at build time), resolves the cascade
+    with locks as policy paths, refuses with suggestions, caches the rendered web CSS and native variables per revision,
+    and feeds the identity provider's label policy and the email layout from the hex values. The same pure functions run
+    offline, on a till included. White-label requires Pro and up ([0215](/adr/0215-entitlements)). A tenant picks its
+    app icon from a closed, prebuilt set. This settles the `BrandService` that
+    [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) and
+    [0084](/adr/0084-figentra-os-package-port-plan) left unplaced.
+
+13. **Ports, under 0291.** The rights assignment of [0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule)
+    decision 1 is signed, so named modules of the archived basalt engine (separation, the suggestion, the merge and
+    policy rules, the logo selector, the raster and SVG readers, the artefact applier, the literal scan) and the
+    approved kit's generators are ported (P) into `@stackra/tokens` and `tools/brand-kit` respectively, each package
+    with one `ORIGIN.md` line (decision 4). Property-based tests come over as example tables; no property-testing
+    library is added. No separate brand repository is created, which amends decision 8.
+
+## Consequences
+
+- A framework user keeps today's `defineTheme` and full freedom: the gates arrive only with a policy. Figentra, the
+  products and the tenants get the gates through their layers.
+- Product layers inherit Stackra's type, spacing, radius, motion, fonts and materials, so a product adds an accent and
+  a mark and nothing else; a wish for its own fonts or radius is an owner decision recorded in that product's repository
+  ([0227](/adr/0227-rejected-and-deferred-technologies-refreshed) keeps product decisions there) and refused by policy
+  until then.
+- The web and mobile theme studios, their presets and the mobile theme store move onto layers in one wave with the
+  native renderer, after the open token pull requests land; `Theme`'s shape does not change, which keeps the wave small.
+- A tenant's accent near a reserved colour is allowed and labelled, not refused, so support never fights a brand over a
+  hue; a tenant's accent that fails AA is refused with the colour that would pass.
+- `@stackra/tokens` publishes, and figentra/os pins it. Until the assets leave the package, nothing publishes.
+- Books, decks, stationery and print are build artefacts of the kit tool, generated on demand and not committed; app
+  assets are committed per product.
+
+## Enforcement
+
+- planned — tests in `@stackra/tokens`: the default pairs on the `stackra` theme in both schemes; a policy table for
+  `resolveTheme` (parent, allow, lock, narrowing, hex recompute); `hex_drift`; the painted-colour check against
+  HeroUI's derived values; the native palette snapshot; the DTCG object-form shapes; the path-stability test with the
+  alias map; the neutrality test; the committed-CSS-equals-generator test of 0302.
+- planned — a test in `@stackra/ui-pro` that lists every CSS variable HeroUI Pro reads against the theme and the chart
+  mapping (STA-458).
+- planned — in `@figentra/brand`: the family separation test over every product accent, and a test that the Figentra
+  layer changes only the paths its policy allows.
+- planned — `pnpm brand-kit check` in figentra/os: output determinism, re-measured contrast and construction drift.
+- `pnpm validate`'s planned `ORIGIN.md` check of 0291 decision 4 covers the ported packages.
+
+## Alternatives
+
+- **Revive the basalt engine as the generator on top of `@stackra/tokens`.** Not chosen: a second schema, a dead
+  dependency, tiers that allow full product identities against the brand record, and two producers of the same HeroUI
+  variables.
+- **Promote the product runtime theming package to the shared engine.** Not chosen: a third model in a product
+  repository, no inheritance, no materials, no native palette, and it adjusts colours silently.
+- **A separate private brand repository for the kits**, as 0291 decision 8 said. Not chosen: the kit reads its inputs
+  from `@figentra/brand` in figentra/os, so a second repository means two private repositories to keep in sync and a
+  release before every asset change.
+- **Gates inside `defineTheme`.** Not chosen: it would refuse every existing theme and every framework user's theme;
+  the gates are opt-in through policies.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Note: [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) (decision 2
+and the `BrandService` consequence), [0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule) (decisions
+1, 8 and 9). Reads with [0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers),
+[0316](/adr/0316-open-core-distribution), [0084](/adr/0084-figentra-os-package-port-plan),
+[0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner), [0215](/adr/0215-entitlements),
+[0177](/adr/0177-package-distribution-npmjs-and-keygen),
+[0200](/adr/0200-stackra-and-figentra-os-horizontal-services-private-os-repo) and
+[0024](/adr/0024-mit-license-with-exclusions). The two design-system ADRs still in review (the steel accent and glass
+quiet buttons; materials) take a Note when they land: the accent and the materials inherit through layers, and products
+default to solid. Sources: the owner's decisions of 2026-10-24 on the branding engine, after a consultation of the
+design-system, framework, OS and ADR sessions; the Figentra OS design record (`docs/product/brand.md` in figentra/os),
+which holds the Figentra side; restated in this ADR's own words.

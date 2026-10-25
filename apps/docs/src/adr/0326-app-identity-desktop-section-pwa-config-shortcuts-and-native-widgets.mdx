@@ -1,7 +1,19 @@
 ---
 title: "0326 — App identity, the desktop section, pwa in stackra.config, derived app shortcuts and native widgets"
-description: "Accepted, amended by 0334, 0335 · 2026-10-24"
+description: "Accepted, amended by 0334, 0335, 0345 · 2026-10-24"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-469) by
+  [0345](/adr/0345-native-code-generation-and-the-native-shared-layer): decision 13 reads "iOS
+  WidgetKit widgets and Android widgets through the Expo widget library (its Compose subset), with a
+  RemoteViews-based library as the named fallback after a spike", not Glance; the widget bundle id
+  suffix is set explicitly to `.widget` before the first upload; a Live Activity is a placement in
+  the same widget extension (local updates now, remote updates over push next); and the shortcuts of
+  decision 9 also feed the Windows Jump List, the macOS Dock menu and Linux desktop actions, with
+  Android's static shortcuts written as a resource by the one Stackra plugin. Decision 14 stands:
+  nobody writes the native code by hand. The other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-451) by

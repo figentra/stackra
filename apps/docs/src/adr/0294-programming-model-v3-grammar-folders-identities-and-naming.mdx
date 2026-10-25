@@ -1,17 +1,32 @@
 ---
 title: "0294 — Programming model v3: grammar, group folders, derived identities and naming"
-description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349, STA-406) and 2026-10-24 (STA-428) · amended 2026-10-24 (STA-456)"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349, STA-406) and 2026-10-24 (STA-428) · amended 2026-10-24 (STA-456) · amended 2026-10-24 (STA-469) · amended 2026-10-24 (STA-479)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-479) by
+  [0351](/adr/0351-iam-conditions-on-a-dimension-another-service-owns-declared-dimensions-and-projections):
+  the `access/` group of decision 13 also holds a module's declared dimensions as
+  `<model>.dimension.ts` (`Dimension`), beside permissions, policies and data classes. The projected
+  rule table follows in its own rules change.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-469) by
+  [0345](/adr/0345-native-code-generation-and-the-native-shared-layer) decision 6: the app-group
+  table of decision 14 gains `native-sources/<surface>/`, holding only `.swift` and `.kt` files that
+  React Native cannot replace (watch screens, intent bodies), with no configuration beside them; the
+  kind-path check of STA-338 gains the row. The word "target" keeps its one meaning (a build
+  artifact). The other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-456): the module table of decision 13 gains `database/sequences/` for
   `<name>.sequence.ts` (`Sequence`,
   [0342](/adr/0342-gapless-sequences-allocated-at-commit-per-tenant-and-series)), beside migrations,
-  factories, seeders and macros, and the `access/` group also holds a product's data classes as
-  `<name>.data-class.ts` (`DataClass`,
+  factories, seeders and macros, the `models/` group also holds an edition's model additions as `<base>.model-addition.ts` (`ModelAddition`, [0336](/adr/0336-edition-additions-typed-fields-on-another-products-models-and-screens-in-its-panel-slots)), and the `access/` group also holds a product's data classes as `<name>.data-class.ts` (`DataClass`,
   [0341](/adr/0341-product-defined-data-classes-and-the-privileged-class)). Both are kinds with a
-  base class, so the naming rules and the decorator test apply unchanged. The projected rule table
-  follows in its own change.
+  base class, so the naming rules and the decorator test apply unchanged. The projected rule table follows in STA-466.
 </Note>
 
 <Note>
