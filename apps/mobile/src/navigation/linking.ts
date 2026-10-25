@@ -119,6 +119,8 @@ export const linking: LinkingOptions<RootStackParamList> = {
         screens: {
           HomeTab: HOME_TAB_LINKS,
           SettingsTab: { screens: { Settings: "settings" } },
+          // Development builds only, like the tab itself.
+          ...(__DEV__ ? { SearchTab: { screens: { Search: "search" } } } : {}),
         },
       },
       Item: "items/:id",
