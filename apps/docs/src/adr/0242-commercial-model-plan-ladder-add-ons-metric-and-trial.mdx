@@ -1,35 +1,45 @@
 ---
 title: "0242 — Commercial model: per-product plan ladders, shared add-ons, hybrid metric, and a 14-day trial"
-description: "Accepted, amended by 0353, 0358, 0359 · 2026-10-20"
+description: "Accepted, amended by OS 0001, OS 0021, OS 0023, OS 0024, OS 0025, OS 0061, OS 0062 · 2026-10-20"
 ---
 
 <Note>
-  Amended 2026-10-25 by
-  [0353](/adr/0353-data-residency-three-regions-fixed-at-sign-up-a-global-login-directory-and-copies-within-a-jurisdiction)
-  decision 3 (owner, round-3 #4): in the ladder of decision 4, the "Region choice" row (no / no /
-  yes / dedicated) no longer holds. Every tier picks `eu` or `me` at sign-up, and the region is then
-  fixed. Whether "dedicated" stays an Enterprise row is open.
+  Amended 2026-10-25 by [Figentra OS
+  0001](https://docs.os.figentra.com/adr/0001-three-regions-on-aws-and-gcp-one-account-per-product-and-region)
+  (owner, round-3 #4): in the ladder of decision 4, the "Region choice" row (no / no / yes /
+  dedicated) no longer holds. Every tier picks `eu` or `me` at sign-up, and the region is then fixed
+  ([0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction)
+  decision 2). Whether "dedicated" stays an Enterprise row is open.
 </Note>
 
 <Note>
-  Amended 2026-10-25 by
-  [0358](/adr/0358-money-plans-and-pricing-four-levels-one-billing-engine-and-hybrid-pricing) (owner
-  decisions in chat, OS rounds 8 to 13): decision 1's buying unit is one plan per product bundling
-  its OS part, plus paid modules in the app market (0358 decisions 1 and 5); decision 2's seats are
-  active internal members, counted per product, with storage, AI credits and automation runs pooled
-  per organisation (0358 decisions 8 and 9); decision 4's numbers stay placeholders until the cost
-  model and the owner's approval (0358 decision 16); decision 5's trial is one per product per
-  organisation (0358 decision 17, OS-83). The "Support" row follows 0358 decision 19 and the "Audit
-  retention" row 0358 decision 20; the ladder also gains device and external-user limits (0358
-  decision 18, placeholders). Decisions 3, 6 and 7 stand.
+  Amended 2026-10-25 by Figentra OS ADRs (owner decisions in chat, OS rounds 8 to 13): decision 1's
+  buying unit is one plan per product bundling its OS part, plus paid modules in the app market ([OS
+  0021](https://docs.os.figentra.com/adr/0021-hybrid-pricing-model-and-the-money-hierarchy));
+  decision 2's seats are active internal members, counted per product, with storage, AI credits and
+  automation runs pooled per organisation ([OS
+  0025](https://docs.os.figentra.com/adr/0025-seats-devices-external-users-and-pooled-limits));
+  decision 4's numbers stay placeholders until the cost model and the owner's approval ([OS
+  0024](https://docs.os.figentra.com/adr/0024-limits-and-prices-from-a-cost-model-and-changes-at-renewal));
+  decision 5's trial is one per product per organisation ([OS
+  0023](https://docs.os.figentra.com/adr/0023-plan-lifecycle-trials-plan-changes-downgrades-and-dunning),
+  OS-83). The "Support" row follows [OS
+  0062](https://docs.os.figentra.com/adr/0062-operations-slas-and-support-tiers) and the "Audit
+  retention" row [OS
+  0061](https://docs.os.figentra.com/adr/0061-audit-kept-in-full-plans-limit-what-is-visible); the
+  ladder also gains device and external-user limits ([OS
+  0025](https://docs.os.figentra.com/adr/0025-seats-devices-external-users-and-pooled-limits),
+  placeholders). Decisions 3, 6 and 7 stand.
 </Note>
 
 <Note>
-  Amended 2026-10-25 by
-  [0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records)
-  decision 10 (owner, OS-16): in the ladder of decision 4, the "Sandbox environments" row is Starter
+  Amended 2026-10-25 by [Figentra OS
+  0024](https://docs.os.figentra.com/adr/0024-limits-and-prices-from-a-cost-model-and-changes-at-renewal)
+  decision 6 (owner, OS-16): in the ladder of decision 4, the "Sandbox environments" row is Starter
   1, Pro 1, Business 3, Enterprise custom. Every tier gets a sandbox because live configuration is
-  read-only.
+  read-only
+  ([0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records)
+  decision 3).
 </Note>
 
 <Note>

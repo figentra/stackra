@@ -1,0 +1,77 @@
+---
+title: "0358 — The Stackra licence and one billing engine with the seller as a parameter"
+description: "Accepted · 2026-10-25"
+---
+
+<Note>
+  Amends [0203](/adr/0203-the-commercial-model-billing-provider-and-tier-names) (decision 1: a
+  vendor billing product is not the system of record) by a Note. Figentra's plans, prices, seats,
+  regional tiers and discounts, which also amend 0203 and
+  [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial), are Figentra OS ADRs,
+  each linked from a Note on those ADRs.
+</Note>
+
+## Context
+
+[0203](/adr/0203-the-commercial-model-billing-provider-and-tier-names) put Figentra's own billing on Stripe Billing.
+Stripe Billing was found unable to issue ZATCA or ETA invoices or charge mada and local wallets, and products need
+subscriptions for their own customers (Academorix fees, Juristra retainers, Commerce subscription products). The owner
+decided the billing and pricing rules in OS rounds 8 to 13 on 2026-10-25, and in round 22 that Stackra keeps only
+the mechanism ([0259](/adr/0259-module-placement-three-homes)). The money hierarchy, hybrid pricing, plans, seats,
+regional price tiers, discounts, support tiers and audit visibility per plan are Figentra's choices, recorded in Figentra
+OS ADRs [0020](https://docs.os.figentra.com/adr/0020-one-os-billing-engine-for-figentra-plans-and-product-subscriptions)
+to [0031](https://docs.os.figentra.com/adr/0031-how-tenants-pay-figentra-contracting-entities-and-tax).
+
+## Decision
+
+1. **The Stackra licence.** Stackra is sold to developers as the developer licence of
+   [0202](/adr/0202-stackra-pro-is-developer-side-os-capability-is-free-code), issued and checked through Keygen
+   ([0178](/adr/0178-licensing-keygen-licences-and-the-stackra-licensing-verifier)). It is the only commercial level
+   Stackra itself owns; everything a product sells on top is the product's.
+2. **One billing engine, the seller a parameter** (OS-59, OS-60). Subscriptions run on one engine whose seller is a
+   parameter: the platform operator or a tenant. Plans, cycles, proration, dunning and invoice requests are the same
+   for both. A due cycle emits an event that the product may turn into an order.
+3. **Providers are drivers.** Payment providers (Stripe, Moyasar, Paymob and others) are drivers behind
+   `@stackra/payments` ([0357](/adr/0357-payments-architecture-ports-gateway-drivers-a-platform-layer-and-a-closed-loop-wallet)).
+   No vendor billing product is the system of record, and the engine never calls one.
+4. **Built on Stackra's primitives.** The engine reads [0215](/adr/0215-entitlements) entitlements and
+   [0216](/adr/0216-meters-and-usage-events) meters, and billing events create, renew and revoke Keygen licences
+   (0178 decision 3). A seat meter counts the principal kinds the product declares as seats.
+
+## Consequences
+
+- One engine issues every subscription invoice request, including the fiscal ones a vendor billing product could not.
+- Any product on Stackra can sell subscriptions to its own customers without a second engine.
+- Each product owns its own price list, seat definition and plan ladder; Stackra ships none.
+
+## Enforcement
+
+planned — a dependency check that no vendor billing SDK (Stripe Billing, Chargebee and similar) is imported by the
+billing engine; the seller-as-parameter contract test in the engine; the seat meter reading the product's declared seat
+kinds.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Note, [0203](/adr/0203-the-commercial-model-billing-provider-and-tier-names) decision 1.
+Reads with [0202](/adr/0202-stackra-pro-is-developer-side-os-capability-is-free-code),
+[0215](/adr/0215-entitlements), [0216](/adr/0216-meters-and-usage-events) and
+[0243](/adr/0243-organisations-on-the-tenant-tree-consolidated-billing-guardrails-and-standalone-exit). Figentra's
+choices are Figentra OS ADRs: the billing service and no revenue before it in
+[0020](https://docs.os.figentra.com/adr/0020-one-os-billing-engine-for-figentra-plans-and-product-subscriptions); the
+money hierarchy and hybrid pricing in
+[0021](https://docs.os.figentra.com/adr/0021-hybrid-pricing-model-and-the-money-hierarchy); OS sold alone in
+[0022](https://docs.os.figentra.com/adr/0022-figentra-os-sold-alone-and-the-app-split-core-tier-module); trials and plan
+changes in [0023](https://docs.os.figentra.com/adr/0023-plan-lifecycle-trials-plan-changes-downgrades-and-dunning); the
+cost model and changes at renewal in
+[0024](https://docs.os.figentra.com/adr/0024-limits-and-prices-from-a-cost-model-and-changes-at-renewal); seats,
+devices and external users in
+[0025](https://docs.os.figentra.com/adr/0025-seats-devices-external-users-and-pooled-limits); overrides in
+[0026](https://docs.os.figentra.com/adr/0026-entitlements-effective-set-gate-policies-and-overrides); packs and overage
+in [0027](https://docs.os.figentra.com/adr/0027-usage-metering-overage-and-prepaid-packs); AI and message credits in
+[0028](https://docs.os.figentra.com/adr/0028-ai-credits-messaging-credits-and-bring-your-own-providers); regional price
+tiers in [0029](https://docs.os.figentra.com/adr/0029-currencies-and-regional-price-tiers); discounts in
+[0030](https://docs.os.figentra.com/adr/0030-discount-programmes); payment methods, entities and tax in
+[0031](https://docs.os.figentra.com/adr/0031-how-tenants-pay-figentra-contracting-entities-and-tax); audit and support
+tiers in [0061](https://docs.os.figentra.com/adr/0061-audit-kept-in-full-plans-limit-what-is-visible) and
+[0062](https://docs.os.figentra.com/adr/0062-operations-slas-and-support-tiers). Sources: owner decisions in chat,
+2026-10-25: OS rounds 8 and 22, OS-59 and OS-60 (`notes/handover/os/owner-answers.md`).

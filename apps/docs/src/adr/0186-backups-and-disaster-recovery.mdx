@@ -1,19 +1,21 @@
 ---
 title: "0186 — Backups and disaster recovery"
-description: "Accepted, amended by 0272, 0353 · 2026-10-20 · amended 2026-10-24 (STA-456)"
+description: "Accepted, amended by 0272, 0353, OS 0001, OS 0062 · 2026-10-20 · amended 2026-10-24 (STA-456)"
 ---
 
 <Note>
   Amended 2026-10-25 by
-  [0353](/adr/0353-data-residency-three-regions-fixed-at-sign-up-a-global-login-directory-and-copies-within-a-jurisdiction)
-  decisions 7 and 8 (owner, OS-5 and OS-6): the regions are `eu`, `me` and `us`. Disaster copies
-  (backups, snapshots and the object replication of decision 3) stay inside one jurisdiction, in a
-  second account, zone or region of it, and never cross between `eu`, `me` and `us`; this replaces
-  "cross-region replication" in decision 3 and "never another region" in the Note of 2026-10-24.
-  Open question 2 is settled: after a whole-region loss `eu` is restored in a second EU region, and
-  `me` is down until its region returns, as the SLA states. Decision 11 of 0353 (default OS-304)
-  answers open question 1: one tenant is restored from the pooled database through an isolated
-  point-in-time copy and data-transfer tooling, as a support operation for Business and above.
+  [0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction)
+  decisions 6 and 8 (owner, OS-5; default OS-304): disaster copies (backups, snapshots and the
+  object replication of decision 3) stay inside one jurisdiction, in a second account, zone or
+  region of it, and never cross between jurisdictions; this replaces "cross-region replication" in
+  decision 3 and "never another region" in the Note of 2026-10-24. Open question 1 is answered: one
+  tenant is restored from the pooled database through an isolated point-in-time copy and
+  data-transfer tooling. Open question 2 is answered for Figentra by [OS
+  0001](https://docs.os.figentra.com/adr/0001-three-regions-on-aws-and-gcp-one-account-per-product-and-region)
+  (OS-6): after a whole-region loss `eu` is restored in a second EU region and `me` is down until
+  its region returns, as the SLA states; which plans get a single-tenant restore is [OS
+  0062](https://docs.os.figentra.com/adr/0062-operations-slas-and-support-tiers).
 </Note>
 
 <Note>

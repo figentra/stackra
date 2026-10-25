@@ -6,9 +6,7 @@ description: "Accepted · 2026-10-25"
 <Note>
   Amends [0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner) (decision 1: live
   configuration is read-only and changes by promotion, and the catalogue's structure is promoted
-  while its products, prices and stock are live records),
-  [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial) (the "Sandbox
-  environments" row of the ladder: Starter gets one) and
+  while its products, prices and stock are live records) and
   [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) (decision 13:
   saved views with grouping), each by a Note.
 </Note>
@@ -28,23 +26,23 @@ The owner wants every configuration kept in the system in full detail, a develop
 7. **Promote.** Promotion is one action at risk L4. The owner or an admin of the live tenant approves it with a step-up ([0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner) open detail 1, [0207](/adr/0207-authentication-assurance-and-machine-identities) decision 1). An AI agent may prepare a change set in the sandbox but never applies one without a named human (OS-306, OS-322). The promotion record holds the approver, the diff and the verify result (and the change-set hash if decision 6 is confirmed).
 8. **Proposed, not yet decided by the owner: rollback.** Rollback re-applies the previous live snapshot as a new change set, through the same action at the same level. Live keeps every applied snapshot.
 9. **Break-glass.** For an incident, the owner may change live configuration directly with a step-up and a written reason. The change is audited and copied back to every sandbox, so the next promotion does not undo it (OS-21, Q6).
-10. **Every tier has a sandbox.** Starter 1, Pro 1, Business 3, Enterprise custom (OS-16).
-11. **What a sandbox holds and does.** A new or reset sandbox holds live configuration plus synthetic demo data seeded by each product (OS-17). Payment gateways are forced to test mode, every outbound message is captured in a sandbox inbox, and integrations use their test endpoints (OS-18). AI credits, API calls and messages used in a sandbox are not billed, within a sandbox quota per tier and with lower rate limits (OS-19).
+10. **Every tenant has a sandbox.** Because live configuration is read-only, every plan tier includes at least one sandbox. Figentra's sandbox counts per tier are Figentra OS [ADR 0024](https://docs.os.figentra.com/adr/0024-limits-and-prices-from-a-cost-model-and-changes-at-renewal) decision 6 (OS-16) and [ADR 0006](https://docs.os.figentra.com/adr/0006-sandboxes-and-promotion-structural-configuration-goes-through-a-sandbox).
+11. **What a sandbox holds and does.** A new or reset sandbox holds live configuration plus synthetic demo data seeded by each product (OS-17). Payment gateways are forced to test mode, every outbound message is captured in a sandbox inbox, and integrations use their test endpoints (OS-18). Usage in a sandbox is metered apart from live usage and carries its own quota and lower rate limits; whether it is billed is the product's choice (Figentra: not billed, [ADR 0027](https://docs.os.figentra.com/adr/0027-usage-metering-overage-and-prepaid-packs) decision 5, OS-19).
 12. **Normal mode hides the sandbox.** In normal mode the sandbox is created for the tenant, and promotion is one "publish to live" step from the same editor; the merchant never has to manage a sandbox (OS-15).
 13. **Not a code deploy.** Tenant promotion is an OS tenancy action. It is not `stackra runway promote` ([0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step)), which moves code between Figentra environments. The two share only the words and the record shape.
 
-14. **Saved views** (OS-259). Rule 13 of [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) is reopened now: a saved view of a resource gets Linear-style grouping, sub-grouping, totals and sharing. Reports remain saved views, report widgets and dashboards plus an "explore" view, with no free report builder (OS-258).
+14. **Saved views** (OS-259). Rule 13 of [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) is reopened now: a saved view of a resource gets Linear-style grouping, sub-grouping, totals and sharing. Figentra's report scope (no free report builder, OS-258) is Figentra OS [ADR 0057](https://docs.os.figentra.com/adr/0057-saved-views-with-grouping-and-reports-without-a-report-builder).
 
 ## Consequences
 
 - A broken live store has two fixes: edit an operational record directly, or break-glass. Everything else goes through a reviewed change set.
 - Every configuration kind needs export, diff, apply and verify, and every service must say which of its fields are live-editable.
-- Every tenant now carries at least one sandbox, which costs provisioning and storage for Starter too.
+- Every tenant now carries at least one sandbox, which costs provisioning and storage on every tier.
 - Hiding fields in normal mode needs a per-field "essential" marker in each product.
 
 ## Enforcement
 
-planned — a settings test that refuses a write to a non-live field in a live tenant; a promotion test that asserts no key or secret is copied (and, if decision 6 is confirmed, refuses a change set whose base revision is stale) ([0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner) enforcement); an IAM test that the developer-mode flag never changes a permission check; the entitlement table test of [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial) with the new sandbox row.
+planned — a settings test that refuses a write to a non-live field in a live tenant; a promotion test that asserts no key or secret is copied (and, if decision 6 is confirmed, refuses a change set whose base revision is stale) ([0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner) enforcement); an IAM test that the developer-mode flag never changes a permission check; a tenancy test that every new live tenant gets a sandbox.
 
 ## Open questions
 
@@ -57,4 +55,4 @@ planned — a settings test that refuses a write to a non-live field in a live t
 
 ## Supersedes and sources
 
-Supersedes: none. Amends [0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner) decision 1, [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial) decision 4 (the sandbox row) and [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) decision 13. Sources: owner decisions in chat, 2026-10-25: Commerce questionnaire Answers, Modes (`notes/handover/360/questionnaire-commerce.md`); OS round 3, OS-15 and OS-16, round 6, OS-306, and round 16, OS-258 and OS-259 (`notes/handover/os/owner-answers.md`); AI chain plan, Owner answers Q6, and sections 4.2 to 4.4 (`notes/handover/360/ai-chain-plan.md`); recommended defaults OS-17 to OS-21 and OS-322 (`notes/handover/os/default-applied.md`, `notes/handover/os/questionnaire-os.md`).
+Supersedes: none. Amends [0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner) decision 1 and [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) decision 13. Sources: owner decisions in chat, 2026-10-25: Commerce questionnaire Answers, Modes (`notes/handover/360/questionnaire-commerce.md`); OS round 3, OS-15 and OS-16, round 6, OS-306, and round 16, OS-258 and OS-259 (`notes/handover/os/owner-answers.md`); AI chain plan, Owner answers Q6, and sections 4.2 to 4.4 (`notes/handover/360/ai-chain-plan.md`); recommended defaults OS-17 to OS-21 and OS-322 (`notes/handover/os/default-applied.md`, `notes/handover/os/questionnaire-os.md`).

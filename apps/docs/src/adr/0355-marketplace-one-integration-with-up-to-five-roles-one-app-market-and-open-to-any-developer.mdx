@@ -52,52 +52,42 @@ shared install and billing path. The owner answered these on 2026-10-25: the rou
 
 7. One app market holds first-party modules, partner apps and connector listings: one install flow, one bill, and an
    entitlement per module. A listing's price stays a reference to an Entitlement (0308 rule 21).
-8. **Connectors at launch (OS-217).** Only first-party connectors ship at launch. Most are included in the product
-   plan. Premium connectors (ERP, accounting, marketplaces, sales channels) are paid. Sync runs are metered. Partner
-   connectors come later.
+   **Developers.**
 
-**Developers and partners.**
-
-9. **Open to any developer (OS-127).** Anyone can create an app, integrate it and test it in developer sandboxes. A
-   Figentra review team approves an app before it is listed. Developer sandboxes, the review process and the developer
-   portal are launch scope.
-10. **Billing partner apps (OS-128).** Figentra bills the tenant for a partner app on its one invoice and pays the
-    partner monthly.
-11. **Fee schedules (OS-129).** Sales sets a fee schedule per partner: tiered, flat percentage, percentage with a cap,
-    fixed per install, or custom. The default is 0% on a partner's first 1M USD, then 15%. Every schedule and every
-    change is audited and needs a second approver.
-12. **Agencies (OS-382).** An agency programme ships at launch: delegated access to client tenants and a referral
-    share (for example 20% for 12 months). Resellers come later.
+8. **Open to any developer (OS-127).** Anyone can create an app, integrate it and test it in developer sandboxes. A
+   review step approves an app before it is listed. The registry carries the review state, developer sandboxes and the
+   partner payout and fee-schedule records a product needs to bill partner apps on the tenant's one invoice.
 
 **Settled by their recommended default (owner rule, `default-applied.md`).**
 
-13. Tenant admins install modules per tenant; organisation admins may force-install or allow-list apps for child
-    tenants (OS-122). Minor and patch versions auto-update; a major version or new permissions wait for admin consent
-    (OS-123). Uninstall keeps the module's data 30 days, then deletes it with notice; legal holds win (OS-124). A
-    disabled paid module is not billed from the next period (OS-125).
-14. A listing may be free or flat monthly at launch; per seat and usage pricing come later (OS-130). Manual review for
-    the first publish and for any scope or data-class change; automated checks for other versions (OS-131).
-15. Private (unlisted) apps run in production on Enterprise; any tier may install its own unlisted app in a sandbox
-    (OS-132). Partner apps may not request sensitive or privileged data classes at launch
-    ([0341](/adr/0341-product-defined-data-classes-and-the-privileged-class), OS-133).
-16. One developer portal for every product, with per-region endpoints (OS-136). On-prem installs take only approved,
-    Figentra-signed app bundles from a customer allow-list (OS-141).
+9. Tenant admins install modules per tenant; organisation admins may force-install or allow-list apps for child
+   tenants (OS-122). Minor and patch versions auto-update; a major version or new permissions wait for admin consent
+   (OS-123). Uninstall keeps the module's data for a retention window, then deletes it with notice; legal holds win
+   (OS-124). A disabled paid module is not billed from the next period (OS-125).
+
+**Figentra's choices.**
+
+10. Which connectors ship at launch and how they are priced, partner billing and fee schedules, the agency programme,
+    listing prices, review rules, private apps, partner data-class limits, the developer portal and on-prem app bundles
+    are Figentra OS ADRs
+    [0037](https://docs.os.figentra.com/adr/0037-registry-and-the-app-market-modules-partner-apps-developers-and-agencies),
+    [0038](https://docs.os.figentra.com/adr/0038-connectors-pricing) and
+    [0039](https://docs.os.figentra.com/adr/0039-developer-platform-on-prem-and-licensing) (owner round 22,
+    [0259](/adr/0259-module-placement-three-homes)).
 
 ## Consequences
 
 - A provider is described and listed once, whatever it does. Slack and Meta are not three listings each.
 - The market shows a tenant only what the tenant connects, consents to or pays for. Platform plumbing stays out of it.
 - One install flow and one invoice serve first-party modules and partner apps alike.
-- Launch scope grows: developer sandboxes, a review queue with staff, the developer portal, partner payouts and per-partner
-  fee schedules must exist before the first partner app is listed.
+- Developer sandboxes, a review queue and partner payout records must exist before the first partner app is listed.
 - The Activepieces piece format stays out of scope (0308 rule 21); only the publisher restriction changes.
 
 ## Enforcement
 
 planned — a `roles` declaration on the Integration (or derived by gen from the classes that bind it), checked by gen
 (STA-339/340); the listing schema in `@stackra/integrations` (today `IntegrationListing` holds only `docsUrl`); the OS
-registry and integrations services for the install flow, review queue and partner payouts; the fee-schedule
-second-approver check in OS billing.
+registry and integrations services for the install flow, review queue and partner payouts.
 
 ## Open questions
 
@@ -105,7 +95,6 @@ second-approver check in OS billing.
    connectors for later. May a partner app declare its own Integration (its own provider credentials and webhooks) at
    launch, or only use first-party Integrations? Not decided.
 2. **Shelves.** Whether connector listings and apps are separate shelves inside the one app market is not decided.
-3. **Agency referral share.** "20% for 12 months" was given as an example in OS-382, not as the fixed rate.
 
 ## Supersedes and sources
 
@@ -117,8 +106,7 @@ Supersedes: none. Amends, by Note:
 [0274](/adr/0274-app-grants-and-the-connect-app-page),
 [0348](/adr/0348-integration-surfaces-assistant-hosts-chat-apps-messaging-flows-and-wallet-passes),
 [0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default) and
-[0358](/adr/0358-money-plans-and-pricing-four-levels-one-billing-engine-and-hybrid-pricing). Sources: owner decisions in
+[0358](/adr/0358-the-stackra-licence-and-one-billing-engine-with-the-seller-as-a-parameter). Sources: owner decisions in
 chat, 2026-10-25: round-3 questionnaire 5 to 7 and 11 (`notes/handover/360/questionnaire-round-3.md`); Commerce
-questionnaire Answers, Channels (`360/questionnaire-commerce.md`); OS rounds 9, 12 and 15 (OS-127, OS-128, OS-129,
-OS-217, OS-382) and the defaults OS-122 to OS-125, OS-130 to OS-133, OS-136 and OS-141 (`notes/handover/os/`); the
+questionnaire Answers, Channels (`360/questionnaire-commerce.md`); OS rounds 9, 12, 15 and 22 (OS-127) and the defaults OS-122 to OS-125 (`notes/handover/os/`); the
 role rule of `360/integrations-and-marketplace.md` section 1.3.

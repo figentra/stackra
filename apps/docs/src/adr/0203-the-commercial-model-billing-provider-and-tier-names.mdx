@@ -1,16 +1,21 @@
 ---
 title: "0203 — The commercial model: billing provider, metric and tier names"
-description: "Accepted, amended by 0358 · 2026-10-20"
+description: "Accepted, amended by 0358, OS 0020, OS 0021, OS 0025 · 2026-10-20"
 ---
 
 <Note>
   Amended 2026-10-25 by
-  [0358](/adr/0358-money-plans-and-pricing-four-levels-one-billing-engine-and-hybrid-pricing) (owner
-  decisions OS-59, OS-60, OS-67 and round 9): decision 1 changes; the OS billing engine is the
-  system of record for Figentra's plans and every product's customer subscriptions, and Stripe,
-  Moyasar and Paymob are payment drivers. Decision 3's add-ons become paid modules in the app
-  market, with usage credits and packs (0358 decisions 5 and 10). Decision 4's seats are active
-  internal members only (0358 decision 8). Decisions 2 and 5 stand.
+  [0358](/adr/0358-the-stackra-licence-and-one-billing-engine-with-the-seller-as-a-parameter)
+  decisions 2 and 3 (owner, OS-59 and OS-60): decision 1 changes; one billing engine with the seller
+  as a parameter is the system of record, and payment providers are drivers, never a vendor billing
+  product. Figentra's own choices amend the rest, in Figentra OS ADRs: the OS billing service and
+  Stripe, Moyasar and Paymob as its drivers ([OS
+  0020](https://docs.os.figentra.com/adr/0020-one-os-billing-engine-for-figentra-plans-and-product-subscriptions));
+  decision 3's add-ons become paid modules with usage credits and packs ([OS
+  0021](https://docs.os.figentra.com/adr/0021-hybrid-pricing-model-and-the-money-hierarchy));
+  decision 4's seats are active internal members only ([OS
+  0025](https://docs.os.figentra.com/adr/0025-seats-devices-external-users-and-pooled-limits)).
+  Decisions 2 and 5 stand.
 </Note>
 
 <Note>

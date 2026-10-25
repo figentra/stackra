@@ -1,21 +1,24 @@
 ---
 title: "0206 — ZITADEL is the identity provider; @stackra/identity is provider-neutral"
-description: "Accepted, amended by 0268, 0353, 0361 · 2026-10-20"
+description: "Accepted, amended by 0268, 0353, 0361, OS 0002, OS 0007 · 2026-10-20"
 ---
 
 <Note>
-  Amended 2026-10-25 by [0353](/adr/0353-data-residency-three-regions-fixed-at-sign-up-a-global-login-directory-and-copies-within-a-jurisdiction) decisions 4 and 9 (recommended defaults OS-22 and OS-37): decision 4:
-  Figentra's SaaS uses one ZITADEL instance per region, ZITADEL Cloud where it has a region that
-  meets residency and self-hosted, unmodified, in `me`; self-hosting for on-prem and air-gap stands.
-  Decision 7: one login host per product and region, for example `login.me.<product-domain>`;
-  sign-in on a tenant's custom domain is Enterprise only.
+  Amended 2026-10-25 by [0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction) decisions 3 and 7 (recommended defaults OS-22 and OS-37):
+  decision 4: a deployment runs one ZITADEL instance per region, in the IdP's cloud where it has a
+  region that meets residency and self-hosted, unmodified, in the region otherwise; self-hosting for
+  on-prem and air-gap stands. Decision 7: one login host per product and region, for example
+  `login.<region>.<product-domain>`. Figentra's choices (self-hosted in `me`, custom-domain sign-in
+  on Enterprise only) are [OS 0002](https://docs.os.figentra.com/adr/0002-region-routing-global-login-directory-hosts-and-regional-operations) and [OS 0007](https://docs.os.figentra.com/adr/0007-figentra-id-one-login-layer-on-zitadel-per-region).
 </Note>
 
 <Note>
-  Amended 2026-10-25 by [0361](/adr/0361-principals-parties-and-figentra-id), owner decision in chat
-  (OS-25): decision 5: Figentra ID is one ZITADEL instance per region, not one instance for all
-  regions, and end customers sign in once with Figentra ID in the product's brand, linked to each
-  merchant's customer profile only by sign-up or consent. The other decisions stand.
+  Amended 2026-10-25 by [0361](/adr/0361-principals-and-parties) decision 6, owner decision in chat
+  (OS-25): decision 5: one ZITADEL instance per region, not one instance for all regions, and end
+  customers sign in once in the product's brand, linked to each merchant's customer profile only by
+  sign-up or consent. The Figentra ID name and its choices are [OS
+  0007](https://docs.os.figentra.com/adr/0007-figentra-id-one-login-layer-on-zitadel-per-region).
+  The other decisions stand.
 </Note>
 
 <Note>

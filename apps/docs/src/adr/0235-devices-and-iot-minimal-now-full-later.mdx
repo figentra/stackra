@@ -1,13 +1,18 @@
 ---
 title: "0235 — Devices and IoT: minimal now, full later"
-description: "Accepted, amended by 0361 · 2026-10-20"
+description: "Accepted, amended by 0361, OS 0016 · 2026-10-20"
 ---
 
 <Note>
-  Amended 2026-10-25 by [0361](/adr/0361-principals-parties-and-figentra-id), owner decision in chat
-  (OS-43): decision 1: devices live in a separate OS devices service (inventory, pairing, health,
-  location). Identity still issues and revokes device credentials, and a device is still a
-  principal. Decisions 2 to 5 stand.
+  Amended 2026-10-25 by [0361](/adr/0361-principals-and-parties) decision 7 (owner, OS-43 and round
+  22): decision 1: the device registry leaves identity. Identity still issues and revokes device
+  credentials, and a device is still a principal. Decision 2's `@stackra/devices` also holds the
+  device identity, registry and pairing ports, beside telemetry and command; `@stackra/peripherals`
+  holds printers, scanners, cash drawers, scales, customer displays and card terminals. The two stay
+  separate packages. For Figentra, the OS devices service (inventory, pairing, health, location)
+  drives the registry and pairing ports and uses both packages ([OS
+  0016](https://docs.os.figentra.com/adr/0016-the-devices-service-inventory-pairing-health-and-location)).
+  Decisions 2 to 5 otherwise stand.
 </Note>
 
 ## Context

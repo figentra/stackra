@@ -453,15 +453,15 @@
               "adr/0350-additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules",
               "adr/0351-iam-conditions-on-a-dimension-another-service-owns-declared-dimensions-and-projections",
               "adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step",
-              "adr/0353-data-residency-three-regions-fixed-at-sign-up-a-global-login-directory-and-copies-within-a-jurisdiction",
-              "adr/0354-two-clouds-aws-and-gcp-one-aws-account-per-product-region-and-ksa-in-country",
+              "adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction",
+              "adr/0354-two-clouds-aws-and-gcp-and-one-aws-account-per-product-region",
               "adr/0355-marketplace-one-integration-with-up-to-five-roles-one-app-market-and-open-to-any-developer",
               "adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default",
-              "adr/0357-payments-architecture-one-engine-gateway-drivers-a-platform-layer-and-figentra-pay",
-              "adr/0358-money-plans-and-pricing-four-levels-one-billing-engine-and-hybrid-pricing",
+              "adr/0357-payments-architecture-ports-gateway-drivers-a-platform-layer-and-a-closed-loop-wallet",
+              "adr/0358-the-stackra-licence-and-one-billing-engine-with-the-seller-as-a-parameter",
               "adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records",
               "adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor",
-              "adr/0361-principals-parties-and-figentra-id",
+              "adr/0361-principals-and-parties",
               "adr/0362-no-code-without-an-answered-questionnaire-and-a-plan"
             ]
           }

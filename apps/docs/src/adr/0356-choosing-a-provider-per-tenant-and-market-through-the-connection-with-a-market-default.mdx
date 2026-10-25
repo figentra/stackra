@@ -12,7 +12,7 @@ shipping, accounting and AI do exactly that: a KSA tenant charges through a KSA 
 its own SMS account. [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks) rule 4
 lets a Connection's fields override an Integration's, but that covers credentials, not the choice of provider. The
 adapter readiness report asked for one rule before payments and fiscal are built. The owner decided it on 2026-10-25
-(round-3 #8, with OS-74).
+(round-3 #8, with OS-74), and in round 22 kept Figentra's own provider choices in the Figentra OS ADRs.
 
 ## Decision
 
@@ -28,29 +28,30 @@ adapter readiness report asked for one rule before payments and fiscal are built
    ([0244](/adr/0244-markets-owned-by-pricing)). For payments the Market is the checkout's Market, which already carries
    the payment methods and processors (0244 decision 1).
 4. **Two ways to get a provider.** For each capability that offers both, the tenant uses either:
-   - **Figentra-provided**: the platform's provider account. The tenant pays Figentra (credits for messages, the
-     platform rate for payments, credits for AI); or
+   - **platform-provided**: the platform's provider account, through a platform Connection; the tenant pays the
+     platform (for example in credits or a platform rate); or
    - **bring your own**: the tenant connects its own provider account from the app market
      ([0355](/adr/0355-marketplace-one-integration-with-up-to-five-roles-one-app-market-and-open-to-any-developer)) and
-     pays the provider directly.
-5. **Bring your own, by capability.**
-   - **Payments**: the merchant may use its own gateway account or Figentra's platform account; the fees are in
-     [0357](/adr/0357-payments-architecture-one-engine-gateway-drivers-a-platform-layer-and-figentra-pay) decision 6.
-   - **Messaging** (SMS, WhatsApp, push): Figentra sends through its own providers against credits, or the tenant brings
-     its own provider with its own key (OS-74). A tenant's own WhatsApp Business account connects through Meta's
-     embedded sign-up (OS-188).
-   - **AI model keys**: see [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor) decision 17.
-   - **Other provider accounts and OAuth apps** (by default): own provider accounts on every paid plan; an own OAuth
-     app on higher plans and Enterprise (OS-216; [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks)
-     rule 11).
-6. **Platform market defaults are data, not code.** The default provider per Market for a capability (for example the
-   SMS defaults of OS-186: KSA Unifonic with Taqnyat as failover, UAE Twilio, Egypt Cequens, EU Twilio) is set as
+     pays the provider directly. Payments ([0357](/adr/0357-payments-architecture-ports-gateway-drivers-a-platform-layer-and-a-closed-loop-wallet)
+     decision 3), messaging (SMS, WhatsApp, push), AI model keys and other provider accounts and OAuth apps
+     ([0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks) rule 11) all use this
+     rule. Which plans may bring their own account is the product's choice.
+5. **Platform market defaults are data, not code.** The default provider per Market for a capability is set as
    platform configuration, so a change of default is not a release.
-7. **Sandboxes.** Sandbox behaviour (test-mode gateways, captured messages, test endpoints) is in
+6. **Sandboxes.** Sandbox behaviour (test-mode gateways, captured messages, test endpoints) is in
    [0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records) decision 11,
    whichever way the provider was chosen.
-8. **Failover** is always on for the platform's own provider accounts; on tenant-owned providers it is a higher-plan
-   feature (OS-202).
+7. **Failover** across a capability's providers is a driver feature of the port; on which accounts it is on is the
+   product's choice.
+8. **Figentra's choices.** Figentra's default providers per Market (for example its SMS defaults), the fees and credits
+   it charges, which plans may bring their own accounts, OAuth apps or AI keys, and failover on tenant accounts are
+   Figentra OS ADRs [0028](https://docs.os.figentra.com/adr/0028-ai-credits-messaging-credits-and-bring-your-own-providers),
+   [0034](https://docs.os.figentra.com/adr/0034-payments-architecture-one-engine-three-layers-and-providers),
+   [0035](https://docs.os.figentra.com/adr/0035-figentra-pay-fees-wallets-refunds-disputes-and-reconciliation),
+   [0047](https://docs.os.figentra.com/adr/0047-notifications-and-paid-messaging-figentra-service-or-bring-your-own-provider),
+   [0049](https://docs.os.figentra.com/adr/0049-integrations-connectors-and-outbound-webhooks) and
+   [0067](https://docs.os.figentra.com/adr/0067-ai-data-region-credits-own-keys-and-customer-facing-ai) (owner round 22,
+   [0259](/adr/0259-module-placement-three-homes)).
 
 ## Consequences
 

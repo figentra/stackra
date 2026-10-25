@@ -9,9 +9,7 @@ description: "Accepted · 2026-10-25"
   (decision 3: AI on by default for reads and L0-L1; decision 4: a field allow-list per data class;
   decision 5: the default-deny write list gives way to the tool default),
   [0099](/adr/0099-risk-scale-l0-to-l4) (decision 2: a new `bulk` effect tag) and
-  [0100](/adr/0100-ai-model-and-ownership) (decision 5: the approval modes) and
-  [0205](/adr/0205-the-figentra-os-build-order-and-the-first-slice) (decision 1: workflow and AI
-  come earlier in the build order), each by a Note.
+  [0100](/adr/0100-ai-model-and-ownership) (decision 5: the approval modes), each by a Note.
 </Note>
 
 ## Context
@@ -57,7 +55,7 @@ data could never reach a model (0021 decision 4). The owner answered the plan's 
    list of 0021 decision 5. L3 and L4 actions still need a named human on every call.
 5. **AI is on by default.** For every tenant, AI is on for reads and for L0-L1 tools from the first sign-in. L2 and
    above follow the approval modes (decisions 6 to 9). The per-tenant off switch of 0021 decision 3 is kept as an off
-   switch. Setup and onboarding AI is free (decision 19).
+   switch. Whether setup and onboarding AI uses credits is the product's choice (decision 16).
 
 ### Approval modes
 
@@ -88,7 +86,9 @@ data could never reach a model (0021 decision 4). The owner answered the plan's 
    2. **bulk customer messages**: an action with both the `external-communication` and the new `bulk` tag. A send
       above 100 recipients always asks a human (OS-325). Outbound messages to external people default to "ask", and a
       tenant may set "allow by default" per notification type;
-   3. **deletes**: every L4 action, every `irreversible` action, and every delete an agent calls, whatever its level;
+   3. **deletes**: every L4 action, every `irreversible` action, and every delete an agent performs, whatever its
+      level and soft deletes included: the agent asks a person first. People deleting in the UI keep the usual
+      confirm and undo (AI chain Q5, owner round 22);
    4. **live configuration**: a configuration change on a live tenant reaches live only through promotion from its
       sandbox ([0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner));
    5. **security and access**: role grants, keys and connections, support access, MFA policy and changes to the
@@ -123,38 +123,35 @@ data could never reach a model (0021 decision 4). The owner answered the plan's 
 
 ### Data, residency and providers
 
-13. **No training on tenant data.** Tenant data is never used to train or fine-tune a model. Providers run under
-    zero-retention terms. Customer-facing AI always says it is AI, and a tenant cannot turn that off. A tenant may
-    later opt in to tune its own models on its own data (OS-310).
-14. **Region rules.** AI processing for an `eu` tenant stays in the EU. For an `me` tenant it runs in-region where the
-    model exists, otherwise in the EU with disclosure; a strict in-region option is offered. Processing never goes to
-    the US unless the tenant opts in (OS-311).
+13. **Data rules per product, enforced by the spine.** Whether tenant data may train or tune a model, which providers
+    are allowed (for example zero-retention only), and how customer-facing AI discloses that it is AI are product
+    rules. The OS `ai` gateway and `@stackra/ai` enforce them on every call; customer-facing AI always carries a
+    visible AI label (decision 11).
+14. **Region routing.** `@stackra/ai` routes every model call by the tenant's region
+    ([0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction))
+    under a rule the product sets per region: in-region only; in-region where the model exists, otherwise a named
+    jurisdiction with disclosure; and a list of jurisdictions never used without the tenant's opt-in. A strict
+    in-region option is always available to the tenant. Sign-in is not routed by this rule; it stays in the region.
 15. **A field allow-list per data class.** Context reaches a model only through a field allow-list per data class
     ([0341](/adr/0341-product-defined-data-classes-and-the-privileged-class)). Special-category and privileged data
     reach a model only when the tenant enables an in-region, zero-retention provider for that class. This replaces the
     absolute ban of 0021 decision 4; the redaction of contact details, document numbers and card numbers stays
     (OS-315).
 
-### Commercial and product rules
+### Figentra's choices
 
-16. **Credits.** One AI credit is a fixed amount of model cost (placeholder 0.01 USD), shown as credits, never tokens.
-    Tenants are warned at 80% of their cap. At the cap, AI that runs actions stops, while help and search continue on
-    a fast model. Top-up packs are optional (OS-316, OS-317).
-17. **Bring your own keys** on Business and above, with a small per-call platform fee instead of credits (OS-313).
-18. **Customer-facing AI with a human hand-off.** AI answers end customers' routine questions in Arabic and English,
-    labelled as AI, with "talk to a human". The shopper assistant may run checkout and booking actions only after
-    asking the shopper, and is capped per person per day (OS-326, OS-435). Who pays for shopper-facing AI has three
-    options (the merchant, metered with a cap; included in the plan; the shopper, for premium features); each product
-    sets its default and a merchant may switch.
-19. **Free setup AI.** AI that the platform runs for onboarding and setup uses no credits (OS-316).
-20. **The tenant owns AI output.** Figentra disclaims the accuracy of generated content but is responsible for the
-    platform enforcing the approval rules. The terms state AI use and no training on tenant data (OS-424).
-21. **Each product names its own assistant** (OS-335).
-
-### Build order
-
-22. **Workflow and AI come earlier** in the OS build order, ahead of webhooks and integrations (OS-339), and every OS
-    service ships before Commerce release 1 (OS-358; a later launch is accepted).
+16. **Figentra's AI rules live in the OS** (owner round 22, [0259](/adr/0259-module-placement-three-homes)). No
+    training on tenant data, zero-retention providers and the region rule (OS-310, OS-311) are Figentra OS
+    [ADR 0067](https://docs.os.figentra.com/adr/0067-ai-data-region-credits-own-keys-and-customer-facing-ai); credits,
+    the 80% warning, free setup AI and own keys on Business and above (OS-313, OS-316, OS-317) are
+    [ADR 0028](https://docs.os.figentra.com/adr/0028-ai-credits-messaging-credits-and-bring-your-own-providers);
+    customer-facing AI and who pays for it (OS-326, OS-435) are ADRs 0067 and
+    [0021](https://docs.os.figentra.com/adr/0021-hybrid-pricing-model-and-the-money-hierarchy); output ownership and
+    the terms (OS-424) are [ADR 0060](https://docs.os.figentra.com/adr/0060-legal-pages-contracts-and-the-code-licence);
+    each product naming its own assistant (OS-335) is
+    [ADR 0065](https://docs.os.figentra.com/adr/0065-brand-kits-fonts-and-trademarks); and workflow and AI earlier in
+    the OS build order (OS-339, OS-358) is
+    [ADR 0068](https://docs.os.figentra.com/adr/0068-the-os-build-order-workflow-and-ai-earlier).
 
 ## Consequences
 
@@ -166,7 +163,7 @@ data could never reach a model (0021 decision 4). The owner answered the plan's 
 - The plan proposes (Q13, unanswered) that the approval step in the action pipeline, effect tags in the manifest, the
   audit actor chain, settings revisions and the sandbox-to-live split block Commerce release 1
   (`ai-chain-plan.md` section 6), because they are costly to add after modules ship.
-- Juristra can use AI over privileged documents once an in-region, zero-retention provider exists for that class.
+- A product can open privileged documents to AI once an in-region, zero-retention provider exists for that class.
 - 0021 is still Proposed; this ADR amends it but does not accept it (Open questions).
 
 ## Enforcement
@@ -190,8 +187,6 @@ region rules and the field allow-list. Nothing checks these rules yet.
   Claude Code") did not set one.
 - **Approval-mode permission.** The plan proposed `ai.approval.manage` at L4 for changing modes. The owner placed mode
   changes under "security and access" but named no permission.
-- **Consumer AI default.** OS-309's default put consumer-facing AI off until the merchant enables it; the owner's
-  answer covered the internal assistant only. Whether shopper-facing AI starts on or off is open.
 - **0021's status.** 0021 is still Proposed. Accept it as amended here, or fold it into this ADR.
 - **Live read-only and developer mode** (the owner's answer to Q6 and the modes answer of `questionnaire-commerce.md`)
   are not recorded here; they are in
@@ -199,7 +194,7 @@ region rules and the field allow-list. Nothing checks these rules yet.
 
 ## Supersedes and sources
 
-Supersedes: none. Amends, by Note, [0205](/adr/0205-the-figentra-os-build-order-and-the-first-slice) decision 1, [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free) decision 1,
+Supersedes: none. Amends, by Note, [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free) decision 1,
 [0021](/adr/0021-ai-engine-and-agent-write-safety) decisions 3, 4 and 5, [0099](/adr/0099-risk-scale-l0-to-l4)
 decision 2 and [0100](/adr/0100-ai-model-and-ownership) decision 5. Reads with
 [0098](/adr/0098-actions-are-the-unit), [0139](/adr/0139-actions-declare-their-user-experience),
@@ -208,6 +203,6 @@ decision 2 and [0100](/adr/0100-ai-model-and-ownership) decision 5. Reads with
 [0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner) and
 [0293](/adr/0293-agent-permission-tiers-and-executor-pushes). Sources: owner decisions in chat, 2026-10-25 (the AI
 direction in `questionnaire-commerce.md` Answers; the "Owner answers" of `ai-chain-plan.md`: Q1, Q2, Q3, Q6, Q7,
-Q10, Q12; OS rounds 6, 18 and 19 to 21 in `os/owner-answers.md`: OS-305, OS-309, OS-310, OS-311, OS-313, OS-315, OS-316, OS-317,
+Q10, Q12; OS rounds 6, 18 and 19 to 22 in `os/owner-answers.md`: OS-305, OS-309, OS-310, OS-311, OS-313, OS-315, OS-316, OS-317,
 OS-326, OS-335, OS-339, OS-358, OS-424, OS-435, with OS-306, OS-307, OS-319 and OS-320 settled by the plan answers); OS-334, OS-325, OS-327, OS-332,
 OS-321 and OS-323 taken at their recommended defaults (`os/default-applied.md`).

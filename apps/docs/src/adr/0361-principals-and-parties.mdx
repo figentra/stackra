@@ -1,0 +1,97 @@
+---
+title: "0361 — Principals and parties: who signs in and acts, and who a tenant deals with"
+description: "Accepted · 2026-10-25"
+---
+
+<Note>
+  Amends [0235](/adr/0235-devices-and-iot-minimal-now-full-later) (decision 1: the device registry
+  leaves identity, which keeps issuing device credentials; decision 2: `@stackra/devices` and
+  `@stackra/peripherals` stay separate) and
+  [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)
+  (decision 5: one ZITADEL instance per region, and end customers sign in once instead of through a
+  ZITADEL org per tenant), each by a Note.
+</Note>
+
+## Context
+
+Three things were mixed up in the OS planning: who can sign in, who can act, and who a tenant does business with. The
+OS draft had a `people` service owning a tenant-scoped Person (OS-351) and Company (OS-352), identity owning the login,
+and devices in identity ([0235](/adr/0235-devices-and-iot-minimal-now-full-later) decision 1) while the Commerce answer
+33 put them in a devices service (OS-43). Shoppers needed a sign-in that works across merchants without merchants
+seeing each other's data (OS-25), and residency rules put sign-in identifiers inside each region (OS-22). The owner
+answered in chat on 2026-10-25 (OS rounds 3, 5 and 7) and, in round 22, kept the principals and parties mechanism in
+Stackra and Figentra's own choices (the Figentra ID name, the `parties` and `devices` services, sign-in methods,
+support access terms) in Figentra OS ADRs ([0259](/adr/0259-module-placement-three-homes)).
+
+## Decision
+
+1. **Login holds no business record.** The login layer, on ZITADEL with one instance per region
+   ([0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction)),
+   holds credentials, sign-in methods and sessions. It holds no business record about a person.
+2. **Principals live in identity and IAM.** Every actor that can authenticate or be granted access is a principal in
+   identity and IAM: humans, AI agents, bots, service accounts, API keys, OAuth apps, devices and integrations. Grants,
+   roles and approvals apply to principals only.
+3. **Parties hold the tenant's records of people and organisations.** Per tenant, a parties model holds `Person` and
+   `Organisation` records: customers, clients, students, leads, suppliers and companies. A party is not a principal.
+4. **A party links to a login only by sign-up or consent.** A `Person` links to a login only when the human signs up,
+   or consents to the link. A party without a login is normal.
+5. **Products add their own fields.** Products extend parties with their own fields and records, never with a second
+   person or organisation model.
+6. **End customers sign in once.** An end customer has one login per region, shown in the product's brand. Each
+   merchant holds its own customer profile (a party) linked to that login only by sign-up or consent. Merchants never
+   see each other's data or each other's customer profiles.
+7. **Devices: credentials in identity, two packages** (OS-43, owner round 22). Identity issues and revokes device
+   credentials; a device is still a principal (decision 2). The device registry leaves identity (this replaces 0235
+   decision 1). `@stackra/devices` holds device identity, the registry and pairing ports; `@stackra/peripherals` holds
+   the peripheral ports: printers, scanners, cash drawers, scales, customer displays and card terminals. The two stay
+   separate packages, and a devices service that implements the registry uses both.
+8. **Till staff** (Commerce answers 31 and 32): PIN quick-switch and a manager override above limits live in Stackra
+   identity and IAM. A PIN-only cashier is a principal; whether it counts as a seat is the product's choice.
+
+## Consequences
+
+- One question has one home: "can it sign in" is the login layer, "may it do this" is IAM, "who is this customer to
+  us" is parties.
+- A shopper with accounts at two merchants has one login and two separate profiles, so a merchant's export, erasure or
+  consent touches only its own profile.
+- Every product's customer, client or student model becomes a reference to a party plus its own fields; product
+  migrations must map their own person tables onto parties.
+- Revoking a device stays one revocation path in identity, while inventory and pairing move out of identity.
+
+## Enforcement
+
+planned — a catalogue check: no service other than the one owning parties declares a person or organisation model,
+and no service other than identity issues credentials. planned — a conformance test in the identity service that a
+revoked device credential is refused (as 0235 already plans). Nothing checks these rules yet.
+
+## Open questions
+
+- **Staff records.** The principals report lists a staff or employee record separate from the user account (I5).
+  Whether staff are parties, workforce records, or both, is not decided.
+- **Staff accounts per region.** [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)
+  decision 5 says Staff have one global account. With one ZITADEL instance per region, whether staff keep one account
+  per region or a global one is not decided.
+- **Customer realm.** [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)
+  decision 5 gave each tenant a ZITADEL org for its end customers. How the customer realm and per-tenant login
+  branding map onto one regional directory is not designed yet.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Note, [0235](/adr/0235-devices-and-iot-minimal-now-full-later) decisions 1 and 2 and
+[0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral) decision 5. Reads with
+[0207](/adr/0207-authentication-assurance-and-machine-identities),
+[0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events) and
+[0153](/adr/0153-automations-run-as-principals-and-every-package-exposes-building-blocks). Figentra's choices are
+Figentra OS ADRs: Figentra ID in [0007](https://docs.os.figentra.com/adr/0007-figentra-id-one-login-layer-on-zitadel-per-region);
+sign-in methods at launch and metered login codes in
+[0008](https://docs.os.figentra.com/adr/0008-sign-in-methods-every-method-at-launch-including-national-ids) and
+[0027](https://docs.os.figentra.com/adr/0027-usage-metering-overage-and-prepaid-packs); the `parties` service, its name
+and the activity timeline in [0013](https://docs.os.figentra.com/adr/0013-principals-and-parties-are-separate) and
+[0014](https://docs.os.figentra.com/adr/0014-the-parties-service-launch-scope-merging-and-names); the devices service in
+[0016](https://docs.os.figentra.com/adr/0016-the-devices-service-inventory-pairing-health-and-location); till staff not
+being seats in [0025](https://docs.os.figentra.com/adr/0025-seats-devices-external-users-and-pooled-limits); support
+access terms (OS-49, OS-50), which amend [0211](/adr/0211-memberships-and-support-access) decision 3, in
+[0018](https://docs.os.figentra.com/adr/0018-support-access-and-staff-access-to-production). Sources: owner decisions in
+chat, 2026-10-25, in `os/owner-answers.md`: OS-25 (round 3), OS-43 (round 5), OS-351 and OS-352 (round 7), round 22
+(device ports); Commerce answers 31 to 33 (`questionnaire-commerce.md`); the principals table of
+`360/payments-devices-entitlements-principals.md` section 4.

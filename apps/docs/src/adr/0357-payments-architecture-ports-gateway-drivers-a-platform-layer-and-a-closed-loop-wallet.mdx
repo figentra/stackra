@@ -1,0 +1,93 @@
+---
+title: "0357 — Payments architecture: ports, gateway drivers, a platform layer and a closed-loop wallet"
+description: "Accepted · 2026-10-25"
+---
+
+## Context
+
+Commerce, Muslin, Academorix fees, Juristra invoices and Figentra's own billing all take payments. Academorix (Stripe
+Connect, dunning, disputes) and Muslin (split tender, gift cards, Paymob, Tabby) each carry their own payment code, and
+no gateway port exists in Stackra. [0219](/adr/0219-the-merchant-account-chain-and-registered-price-models) fixes the
+merchant chain, the payment modes and the fee cascade, and [0220](/adr/0220-stackra-money-and-the-ledger-package) the
+money and ledger primitives, but not the shape of the payment ports. The owner decided the architecture on 2026-10-25
+(Commerce questionnaire Answers and 27 to 30; OS rounds 5, 13 and 14) and, in round 22, that Stackra keeps only the
+mechanism ([0259](/adr/0259-module-placement-three-homes)). Figentra Pay, the providers per market, fees and
+Figentra's legal role are Figentra's choices, recorded in Figentra OS
+[ADR 0034](https://docs.os.figentra.com/adr/0034-payments-architecture-one-engine-three-layers-and-providers) and
+[ADR 0035](https://docs.os.figentra.com/adr/0035-figentra-pay-fees-wallets-refunds-disputes-and-reconciliation).
+
+## Decision
+
+**Ports and one engine.**
+
+1. `@stackra/payments` holds the payment ports. A product never carries its own payment code: it calls the payments
+   engine built on these ports (for Figentra, the OS payments and payments-ledger services). Academorix and Muslin code
+   is not mixed in.
+2. The ports serve three layers:
+   - **gateway drivers**: one driver per provider behind the gateway port, chosen per tenant and Market through the
+     Connection ([0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default));
+   - **a platform-payments layer**: a Connect-style port for merchant onboarding with KYC, splits, the platform fee and
+     payouts, served by a licensed provider's platform product;
+   - **a branded payments surface**: checkout, saved methods, payment links, refunds and wallets, which a product shows
+     in its own brand. One engine serves every brand.
+3. **Merchant accounts.** The port serves both a merchant's own gateway account and the platform's account
+   ([0219](/adr/0219-the-merchant-account-chain-and-registered-price-models) decision 2). A platform fee posts through
+   the ledger and is reversed pro rata on a refund when the product charges one.
+
+**Closed-loop wallet.**
+
+4. **Ledger kinds.** Stored value is closed-loop only: store credit, gift cards, loyalty and a prepaid balance at the
+   same merchant, each a ledger account kind in payments-ledger ([0220](/adr/0220-stackra-money-and-the-ledger-package)
+   decision 4). The wallet actions offer no transfer between people and no cash-out; top-up is only buying a gift card
+   or a prepaid balance, under a cap per Market. Loyalty is a shared kit (OS-343). An open wallet needs a new ADR.
+
+**Safety rules.**
+
+5. **PCI SAQ-A** (Commerce 28). Hosted fields or redirect only; the platform never touches card numbers. Terminals are
+   semi-integrated. A saved card is a gateway token.
+6. **The `unknown` state** (Commerce 29). A payment whose result is lost (for example a terminal that drops) enters an
+   `unknown` state. It is resolved by a lookup at the provider before any retry. A manager may resolve it by hand,
+   with a reason.
+7. **KYC reuse as a port** (OS-54). Business verification sits behind a port: a business is checked once, every
+   product and every payments brand reuses the result, and it is passed to the payment provider's own KYC. The design
+   holds that only the licensed provider holds money, never the platform.
+8. Sandbox gateways: see [0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records) decision 11.
+
+**Cash.**
+
+9. **Cash rounding** (Commerce answer 34). A `@stackra/money` table per currency and market sets the rounding step. It
+   applies to cash only, and the difference is posted on its own ledger line.
+
+## Consequences
+
+- One payment engine to build, certify and secure, instead of one per product.
+- Every product gets platform payments, wallets and payouts under its own brand without writing payment code.
+- The gateway port must serve a merchant's own provider and the platform provider in the same Market.
+- Academorix and Muslin move onto the engine at their rewrite.
+
+## Enforcement
+
+planned — the gateway, platform-layer, dispute and settlement ports in `@stackra/payments` with a conformance suite
+per driver (including the `unknown` state and lookup-before-retry); a log and access-log redaction test that no card
+number is ever accepted or logged; the validator check of round-3 #38 that no vendor SDK is reached outside a driver;
+the wallet actions refusing transfer and cash-out.
+
+## Supersedes and sources
+
+Supersedes: none. Reads with [0219](/adr/0219-the-merchant-account-chain-and-registered-price-models),
+[0220](/adr/0220-stackra-money-and-the-ledger-package), [0244](/adr/0244-markets-owned-by-pricing),
+[0338](/adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps),
+[0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver) and
+[0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default). Figentra's
+choices on this mechanism are Figentra OS ADRs: Figentra Pay and its brands, the gateway set and platform providers per
+market, the legal role and counsel's sign-off, payouts, deposits and bank transfers in
+[0034](https://docs.os.figentra.com/adr/0034-payments-architecture-one-engine-three-layers-and-providers); the platform
+fee, own-account fees, wallet limits, refunds, splits, disputes and reconciliation in
+[0035](https://docs.os.figentra.com/adr/0035-figentra-pay-fees-wallets-refunds-disputes-and-reconciliation); the
+settlement FX snapshot and loyalty in
+[0032](https://docs.os.figentra.com/adr/0032-pricing-markets-price-lists-and-compare-at-with-date) and
+[0033](https://docs.os.figentra.com/adr/0033-promotions-through-rules-and-tax-per-line); the verification service in
+[0015](https://docs.os.figentra.com/adr/0015-the-verification-service-kyc-and-kyb). Sources: owner decisions in chat,
+2026-10-25: Commerce questionnaire 27 to 30, 34 and its Answers (`notes/handover/360/questionnaire-commerce.md`);
+round-3 questionnaire 9, 12 and 13; OS answers OS-54, OS-97, OS-101, OS-343 and round 22 (`notes/handover/os/`);
+`360/payments-devices-entitlements-principals.md`.

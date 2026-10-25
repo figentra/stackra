@@ -1,21 +1,22 @@
 ---
 title: "0172 — AWS accounts, primary region and cloud cost controls"
-description: "Accepted, amended by 0353, 0354 · 2026-10-20"
+description: "Accepted, amended by 0353, 0354, OS 0001 · 2026-10-20"
 ---
 
 <Note>
   Amended 2026-10-25 by
-  [0354](/adr/0354-two-clouds-aws-and-gcp-one-aws-account-per-product-region-and-ksa-in-country)
-  decision 2 (owner, OS-1): decision 1 becomes one AWS account per product and region, plus the
-  shared and tooling account. Stackra also deploys to GCP (0354 decision 1). The rest of decision 1
-  stands.
+  [0354](/adr/0354-two-clouds-aws-and-gcp-and-one-aws-account-per-product-region) decision 2 (owner,
+  OS-1): decision 1 becomes one AWS account per product and region, plus the shared and tooling
+  account. Stackra also deploys to GCP (0354 decision 1). The rest of decision 1 stands.
 </Note>
 
 <Note>
   Amended 2026-10-25 by
-  [0353](/adr/0353-data-residency-three-regions-fixed-at-sign-up-a-global-login-directory-and-copies-within-a-jurisdiction)
-  decision 3: the tenant `region` column of decision 3 holds `eu`, `me` or `us`, chosen at sign-up
-  and fixed. Decision 2 stands as the location of `me`.
+  [0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction)
+  decisions 1 and 2: the tenant `region` column of decision 3 holds one of the deployment's region
+  keys, chosen at sign-up and fixed. Figentra's keys (`eu`, `me`, `us`) and where each runs are [OS
+  0001](https://docs.os.figentra.com/adr/0001-three-regions-on-aws-and-gcp-one-account-per-product-and-region).
+  Decision 2 stands as the location of Figentra's `me`.
 </Note>
 
 ## Context
