@@ -16,14 +16,22 @@ import type { SessionState } from "#core/index";
 describe("@stackra/identity", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(identity).sort()).toEqual([
+      "ApiKeyKind",
+      "ApiKeyRejectedError",
+      "AssuranceLevel",
       "AuthFlow",
       "BffSessionStoreDriver",
+      "GuardianActingService",
+      "GuardianshipMissingError",
       "IDENTITY_CLAIMS",
       "IdentityConfig",
       "IdentityConfig$",
       "IdentityOptions",
+      "MemoryGuardianshipDriver",
       "MemoryIdentityResolverDriver",
       "MemorySessionStoreDriver",
+      "MemoryStaffPinStoreDriver",
+      "MemoryVerificationDriver",
       "PkceSessionStoreDriver",
       "SessionClientSessionDriver",
       "SessionOfflineSessionDriver",
@@ -31,7 +39,23 @@ describe("@stackra/identity", () => {
       "SessionService",
       "SessionStatus",
       "SignInCancelledError",
+      "StaffPinLockedError",
+      "StaffPinRejectedError",
+      "StaffPinService",
+      "StepUpRequiredError",
+      "StorageStaffPinStoreDriver",
+      "VerificationService",
+      "VerificationUnavailableError",
+      "assuranceOf",
+      "checkPublishableKey",
+      "externalSignIn",
+      "isOriginAllowed",
+      "mintApiKey",
+      "parseApiKey",
+      "requireAssurance",
       "sessionUserOf",
+      "signInProvidersOf",
+      "stepUpSignIn",
     ]);
   });
 
@@ -45,6 +69,11 @@ describe("@stackra/identity", () => {
       "codeChallengeOf",
       "jwtClaimsOf",
       "base64UrlOf",
+      "hashStaffPin",
+      "crc32",
+      "base62Of",
+      "sameText",
+      "signInParams",
     ]) {
       expect(name in identity).toBe(false);
     }

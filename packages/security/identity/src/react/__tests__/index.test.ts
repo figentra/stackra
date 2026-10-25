@@ -8,7 +8,7 @@
  */
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
-import type { SessionUser } from "#contracts/index";
+import type { SessionUser, SignInOptions } from "#contracts/index";
 import * as react from "#react/index";
 import type { SessionValue, SignedInSession } from "#react/index";
 
@@ -21,6 +21,8 @@ describe("@stackra/identity/react", () => {
     expectTypeOf<SignedInSession["user"]>().toEqualTypeOf<SessionUser>();
     expectTypeOf<SignedInSession["status"]>().toEqualTypeOf<"signed_in">();
     expectTypeOf<SessionValue["user"]>().toEqualTypeOf<SessionUser | null>();
-    expectTypeOf<SessionValue["signIn"]>().toEqualTypeOf<() => Promise<void>>();
+    expectTypeOf<SessionValue["signIn"]>().toEqualTypeOf<
+      (options?: SignInOptions) => Promise<void>
+    >();
   });
 });

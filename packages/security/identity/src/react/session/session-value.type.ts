@@ -7,6 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0206 (decision 8); ADR 0294 (decision 8); ADR 0295 (decision 10).
  */
+import type { SignInOptions } from "#contracts/index";
 import type { SessionState } from "#core/index";
 
 /**
@@ -23,7 +24,7 @@ export type SessionValue = SessionState & {
    *
    * @throws SignInCancelledError when the user stopped it.
    */
-  readonly signIn: () => Promise<void>;
+  readonly signIn: (options?: SignInOptions) => Promise<void>;
 
   /** Ends the session here and at the provider. */
   readonly signOut: () => Promise<void>;

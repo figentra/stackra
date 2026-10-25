@@ -16,7 +16,15 @@ import type { SessionUser } from "#contracts/index";
 
 describe("@stackra/identity/contracts", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["SessionStore", "SignInBrowser"]);
+    expect(Object.keys(contracts).sort()).toEqual([
+      "Guardianship",
+      "SessionStore",
+      "SignInBrowser",
+      "StaffPinStore",
+      "Verification",
+      "VerificationKind",
+      "VerificationStatus",
+    ]);
   });
 
   it("types the signed-in user", () => {

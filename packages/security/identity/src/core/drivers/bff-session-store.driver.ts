@@ -22,7 +22,9 @@ import { z } from "zod";
 import { IdentityConfig } from "#config/identity.config";
 import { SessionStore } from "#contracts/ports/session-store.port";
 import type { SessionUser } from "#contracts/types/session-user.type";
+import type { SignInOptions } from "#contracts/types/sign-in-options.type";
 import { SESSION_USER_SCHEMA } from "#core/constants/session-user-schema.constant";
+import { signInParams } from "#core/functions/sign-in-params.function";
 
 /** The session endpoint's answer: the user, or `null` when signed out. */
 const BFF_SESSION = z.object({ user: SESSION_USER_SCHEMA }).nullable();
@@ -59,8 +61,11 @@ export class BffSessionStoreDriver extends Driver(SessionStore) {
   }
 
   /** The BFF login URL that comes back to `returnTo`, an in-app path. */
-  loginUrl(returnTo: string): string {
-    return `${this.endpoint("login")}?returnTo=${encodeURIComponent(returnTo)}`;
+  loginUrl(returnTo: string, options: SignInOptions = {}): string {
+    const params = new URLSearchParams({ returnTo, ...signInParams(options) });
+    if (options.scopes !== undefined && options.scopes.length > 0)
+      params.set("scope", options.scopes.join(" "));
+    return `${this.endpoint("login")}?${params.toString()}`;
   }
 
   /**
@@ -83,10 +88,12 @@ export class BffSessionStoreDriver extends Driver(SessionStore) {
    *
    * @throws TypeError outside a browser, where there is no page to leave.
    */
-  async signIn(): Promise<void> {
+  async signIn(options: SignInOptions = {}): Promise<void> {
     if (typeof location === "undefined")
       throw new TypeError("The BFF flow signs in from a browser page");
-    location.assign(this.loginUrl(`${location.pathname}${location.search}${location.hash}`));
+    location.assign(
+      this.loginUrl(`${location.pathname}${location.search}${location.hash}`, options),
+    );
     // The page unloads for the hosted sign-in, so this never settles.
     return new Promise<void>(() => undefined);
   }

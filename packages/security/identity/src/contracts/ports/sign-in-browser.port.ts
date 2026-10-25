@@ -4,8 +4,9 @@
  *          the system browser and handing back the URL the provider redirected to.
  * Boundary: an abstract class that is its own token, keyed `identity.SignInBrowser`. The redirect URI is the platform's
  *           fact (the app scheme on a phone, the deep link or loopback on desktop), so the driver builds it from the
- *           configured path. The driver never reads the code or the state; `PkceSessionStoreDriver` checks both. A
- *           platform driver (Expo's auth session, Electron's deep link) implements it; none ships here yet.
+ *           configured path. The driver never reads the code or the state; `PkceSessionStoreDriver` checks both. The
+ *           platform drivers ship in `./native` (`ExpoSignInBrowserDriver`, the system authentication session) and
+ *           `./desktop` (`ElectronSignInBrowserDriver`, a loopback redirect).
  * Runtime: isomorphic
  * Governing contract: ADR 0206 (decision 8); ADR 0241 (decision 4); ADR 0277 (decisions 1 and 6); ADR 0268 (R3: no
  *                     login UI of ours).

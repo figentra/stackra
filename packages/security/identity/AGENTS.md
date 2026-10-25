@@ -2,7 +2,7 @@
 
 Identity, provider-neutral over ZITADEL: the sign-in flows (BFF on the web, PKCE on devices), the client's session and
 the claims mapping (ADR 0206, 0241, 0277). Member at `packages/security/identity` (`tier:lib`), in the programming
-model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./react`, `./testing`.
+model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./native`, `./react`, `./testing`.
 
 ## Where code goes
 
@@ -25,8 +25,8 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./react`, `./tes
   every new public file to its barrel and to that entry's `index.test.ts`.
 - The session-user schema and the PKCE helpers (`randomToken`, `codeChallengeOf`, `jwtClaimsOf`, `base64UrlOf`) stay
   internal.
-- A platform driver (an Expo or Electron `SignInBrowser`, a foreground hook reading `refreshOnForeground`) needs a new
-  `./native` or `./electron` entry and its dependency in a catalog; neither ships yet.
+- Platform drivers live in their own entries: `./native` (Expo, `expo-web-browser` and `expo-linking`) and `./desktop`
+  (Electron main, `electron` and `node:http`), each an optional peer; never import them from `.`.
 
 ## This package
 
@@ -42,6 +42,13 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./react`, `./tes
 - The session's state lives in `SessionService` only; drivers keep credentials and never notify.
 - `SessionService` is the only writer of `@stackra/iam`'s `PermissionSnapshotService`; iam never imports identity
   (identity depends on iam, not the reverse).
+- Configuration, not code: which external sign-in providers a market offers and which KYC/KYB providers answer each
+  check are market-pack data (`signInProvidersKey`, `verificationPackKey`); the provider ids, PIN rules, step-up window
+  and key prefixes are `IdentityConfig` values. Never name a country, provider or number in code.
+- A staff PIN is stored only as its salted PBKDF2 hash and compared in constant time; a key is shown once and only its
+  hash is stored. Never log either.
+- A guardian acting for a minor, a manager override and a step-up grant nothing themselves: the IAM decision point still
+  decides the action.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

@@ -37,7 +37,11 @@ export function useSession(): SessionValue {
     });
   }, [container, service]);
   return useMemo(
-    () => ({ ...state, signIn: () => service.signIn(), signOut: () => service.signOut() }),
+    () => ({
+      ...state,
+      signIn: (options) => service.signIn(options),
+      signOut: () => service.signOut(),
+    }),
     [service, state],
   );
 }

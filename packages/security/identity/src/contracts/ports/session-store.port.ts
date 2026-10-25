@@ -15,6 +15,7 @@
 import { Port } from "@stackra/contracts";
 
 import type { SessionUser } from "#contracts/types/session-user.type";
+import type { SignInOptions } from "#contracts/types/sign-in-options.type";
 
 /**
  * The session of one flow.
@@ -39,12 +40,12 @@ export abstract class SessionStore extends Port {
   abstract load(): Promise<SessionUser | null>;
 
   /**
-   * Runs the flow's sign-in. A device resolves once the tokens are kept; the web leaves the page for the hosted sign-in
-   * and never resolves.
+   * Runs the flow's sign-in, with `options` (an external provider hint, a step-up) passed to the hosted sign-in. A
+   * device resolves once the tokens are kept; the web leaves the page for the hosted sign-in and never resolves.
    *
    * @throws SignInCancelledError when the user closed the hosted sign-in.
    */
-  abstract signIn(): Promise<void>;
+  abstract signIn(options?: SignInOptions): Promise<void>;
 
   /** Ends the session here and at the provider; nothing happens when signed out. */
   abstract signOut(): Promise<void>;

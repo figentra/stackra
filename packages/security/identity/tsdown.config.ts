@@ -13,6 +13,8 @@ import { library } from "@stackra/tsdown-config";
 export default library({
   index: "src/core/index.ts",
   contracts: "src/contracts/index.ts",
+  desktop: "src/desktop/index.ts",
+  native: "src/native/index.ts",
   react: "src/react/index.ts",
   testing: "src/testing/index.ts",
 });

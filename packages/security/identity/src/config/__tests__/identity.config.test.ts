@@ -76,6 +76,28 @@ describe("IdentityConfig", () => {
       idleMinutes: 0,
       refreshOnFocus: true,
       refreshOnForeground: true,
+      externalProviders: {},
+      externalProviderScope: "urn:zitadel:iam:org:idp:id:{id}",
+      signInProvidersKey: "identity.sign_in_providers",
+      assuranceByMethod: {
+        pwd: "aal1",
+        otp: "aal2",
+        sms: "aal2",
+        mfa: "aal2",
+        swk: "aal2",
+        user: "aal2",
+        hwk: "aal3",
+      },
+      stepUpMaxAgeMinutes: 10,
+      pinMinLength: 4,
+      pinMaxLength: 8,
+      pinHashIterations: 600_000,
+      pinMaxAttempts: 5,
+      pinLockoutMinutes: 15,
+      managerOverrideSeconds: 120,
+      apiKeyPrefixes: { secret: "stackra_sk", publishable: "stackra_pk" },
+      verificationPackKey: "verification.drivers",
+      signInTimeoutMinutes: 10,
     });
   });
 

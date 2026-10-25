@@ -177,6 +177,22 @@ describe("PkceSessionStoreDriver", () => {
     expect(storage.secrets.has("identity.session")).toBe(true);
   });
 
+  it("adds a provider hint scope and a step-up to the authorization request", async () => {
+    const { browser, driver, tokens } = setup();
+    stubProvider(() => tokens());
+    await driver.signIn({
+      scopes: ["urn:zitadel:iam:org:idp:id:42", "openid"],
+      forceLogin: true,
+      maxAge: 0,
+    });
+    const request = browser.request;
+    expect(request?.searchParams.get("scope")).toBe(
+      "openid profile email offline_access urn:zitadel:iam:org:idp:id:42",
+    );
+    expect(request?.searchParams.get("prompt")).toBe("login");
+    expect(request?.searchParams.get("max_age")).toBe("0");
+  });
+
   it("cancels when the browser is closed or the user declines", async () => {
     const { browser, driver, tokens } = setup();
     stubProvider(() => tokens());

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `IdentityConfig`, the configuration of @stackra/identity (key `identity`): the flow per target, the public
  *          client of a device, the scopes, the BFF mount, the device redirect path, the route after sign-out, the idle
- *          rule and the refresh switches, read by the session drivers, the `SessionService` and gen's wiring.
+ *          rule and the refresh switches, read by the session drivers, the `SessionService` and gen's wiring; and the
+ *          external providers, step-up, staff PIN, API key and verification settings their services read.
  * Boundary: the class is the DI token; it has no env map: the issuer and the client id are public values runway's
  *           `config.identity` layer sets per environment, and no secret ever lives here. A host overrides it under the
  *           same name, with this class aliased `BaseIdentityConfig`, by `override` members only; its presence mounts

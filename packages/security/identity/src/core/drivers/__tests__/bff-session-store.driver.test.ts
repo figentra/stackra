@@ -81,6 +81,21 @@ describe("BffSessionStoreDriver", () => {
     );
   });
 
+  it("adds a provider hint and a step-up to the login URL", () => {
+    const url = new URL(
+      driver().loginUrl("/", {
+        scopes: ["urn:zitadel:iam:org:idp:id:42"],
+        forceLogin: true,
+        maxAge: 0,
+        acrValues: ["mfa"],
+      }),
+    );
+    expect(url.searchParams.get("scope")).toBe("urn:zitadel:iam:org:idp:id:42");
+    expect(url.searchParams.get("prompt")).toBe("login");
+    expect(url.searchParams.get("max_age")).toBe("0");
+    expect(url.searchParams.get("acr_values")).toBe("mfa");
+  });
+
   it("leaves for the login and comes back to the current path", async () => {
     const assign = vi.fn();
     vi.stubGlobal("location", { pathname: "/orders", search: "?page=2", hash: "#top", assign });

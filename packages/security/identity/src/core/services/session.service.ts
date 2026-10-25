@@ -24,6 +24,7 @@ import { TenantSwitcher } from "@stackra/tenancy";
 import { IdentityConfig } from "#config/identity.config";
 import { SessionStore } from "#contracts/ports/session-store.port";
 import type { SessionUser } from "#contracts/types/session-user.type";
+import type { SignInOptions } from "#contracts/types/sign-in-options.type";
 import { SessionStatus } from "#core/enums/session-status.enum";
 import { SessionRevokedError } from "#core/errors/session-revoked.error";
 import type { SessionState } from "#core/types/session-state.type";
@@ -143,11 +144,11 @@ export class SessionService extends Service {
    *
    * @throws SignInCancelledError when the user stopped it; the state is back where it was.
    */
-  async signIn(): Promise<void> {
+  async signIn(options?: SignInOptions): Promise<void> {
     const before = this.state;
     this.set(LOADING);
     try {
-      await this.store.signIn();
+      await this.store.signIn(options);
     } catch (error) {
       this.set(before);
       throw error;

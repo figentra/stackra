@@ -12,26 +12,35 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 
 ## What is here
 
-| Entry         | Symbol                                          | Use                                                                                    |
-| ------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `.`           | `IdentityConfig`                                | the configuration (key `identity`): flow per target, device client, scopes, idle rule  |
-| `.`           | `IdentityConfig$`                               | the shipped schema a member's generated override extends                               |
-| `.`           | `AuthFlow`                                      | `bff`, `pkce`                                                                          |
-| `.`           | `SessionStatus`                                 | `loading`, `signed_in`, `signed_out`, `revoked`                                        |
-| `.`           | `SessionService`                                | the client's session: state, listeners, sign-in, sign-out, idle rule                   |
-| `.`           | `BffSessionStoreDriver`                         | the web's session: the BFF and its cookie                                              |
-| `.`           | `PkceSessionStoreDriver`                        | the device's session: PKCE, tokens in the `secrets` storage area                       |
-| `.`           | `MemorySessionStoreDriver`                      | tests and previews                                                                     |
-| `.`           | `SessionClientSessionDriver`                    | `@stackra/clients`' `ClientSession`: the bearer token and `X-Scope-Path`               |
-| `.`           | `SessionOfflineSessionDriver`                   | `@stackra/query`'s `OfflineSession`: revoked and signed-in signals, the local sign-out |
-| `.`           | `MemoryIdentityResolverDriver`                  | the contracts' `IdentityResolver` over principals in memory                            |
-| `.`           | `IDENTITY_CLAIMS`, `sessionUserOf`              | the Stackra claim names, and claims to a `SessionUser`                                 |
-| `.`           | `SignInCancelledError`, `SessionRevokedError`   | refusals                                                                               |
-| `./contracts` | `SessionStore`                                  | the port of a flow (`load`, `signIn`, `signOut`, `accessToken`)                        |
-| `./contracts` | `SignInBrowser`                                 | the platform step of PKCE: open the hosted sign-in, hand back the redirect             |
-| `./contracts` | `SessionUser`                                   | the signed-in user: id, address, name, permissions, memberships                        |
-| `./react`     | `useSession`, `SessionValue`, `SignedInSession` | the session in a component                                                             |
-| `./testing`   | `fakeSession`, `SessionFake`, `fakeIdentity`    | a session in any status with spied actions; a resolver over named principals           |
+| Entry         | Symbol                                                                                                     | Use                                                                                     |
+| ------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `.`           | `IdentityConfig`                                                                                           | the configuration (key `identity`): flow per target, device client, scopes, idle rule   |
+| `.`           | `IdentityConfig$`                                                                                          | the shipped schema a member's generated override extends                                |
+| `.`           | `AuthFlow`                                                                                                 | `bff`, `pkce`                                                                           |
+| `.`           | `SessionStatus`                                                                                            | `loading`, `signed_in`, `signed_out`, `revoked`                                         |
+| `.`           | `SessionService`                                                                                           | the client's session: state, listeners, sign-in, sign-out, idle rule                    |
+| `.`           | `BffSessionStoreDriver`                                                                                    | the web's session: the BFF and its cookie                                               |
+| `.`           | `PkceSessionStoreDriver`                                                                                   | the device's session: PKCE, tokens in the `secrets` storage area                        |
+| `.`           | `MemorySessionStoreDriver`                                                                                 | tests and previews                                                                      |
+| `.`           | `SessionClientSessionDriver`                                                                               | `@stackra/clients`' `ClientSession`: the bearer token and `X-Scope-Path`                |
+| `.`           | `SessionOfflineSessionDriver`                                                                              | `@stackra/query`'s `OfflineSession`: revoked and signed-in signals, the local sign-out  |
+| `.`           | `MemoryIdentityResolverDriver`                                                                             | the contracts' `IdentityResolver` over principals in memory                             |
+| `.`           | `IDENTITY_CLAIMS`, `sessionUserOf`                                                                         | the Stackra claim names, and claims to a `SessionUser`                                  |
+| `.`           | `SignInCancelledError`, `SessionRevokedError`                                                              | refusals                                                                                |
+| `./contracts` | `SessionStore`                                                                                             | the port of a flow (`load`, `signIn`, `signOut`, `accessToken`)                         |
+| `./contracts` | `SignInBrowser`                                                                                            | the platform step of PKCE: open the hosted sign-in, hand back the redirect              |
+| `./contracts` | `SessionUser`                                                                                              | the signed-in user: id, address, name, permissions, memberships                         |
+| `.`           | `AssuranceLevel`, `assuranceOf`, `requireAssurance`, `stepUpSignIn`, `StepUpRequiredError`                 | step-up: the session's level and age, the refusal, the re-authentication                |
+| `.`           | `signInProvidersOf`, `externalSignIn`                                                                      | a market's external sign-in providers (pack data) and the hint that sends sign-in there |
+| `.`           | `StaffPinService`, `StorageStaffPinStoreDriver`, `MemoryStaffPinStoreDriver`                               | staff PIN quick-switch and manager override on a shared device                          |
+| `.`           | `ApiKeyKind`, `mintApiKey`, `parseApiKey`, `checkPublishableKey`, `isOriginAllowed`                        | secret and publishable keys; the origin-bound Storefront key                            |
+| `.`           | `GuardianActingService`, `MemoryGuardianshipDriver`                                                        | a guardian acting for a minor, after the relationship check                             |
+| `.`           | `VerificationService`, `MemoryVerificationDriver`                                                          | KYC and KYB through the providers the market pack lists                                 |
+| `./contracts` | `Verification`, `VerificationKind`, `VerificationStatus`, `StaffPinStore`, `Guardianship`, `SignInOptions` | the verification, PIN and guardianship ports; sign-in extras                            |
+| `./native`    | `ExpoSignInBrowserDriver`                                                                                  | Expo: the system authentication session and the app's link                              |
+| `./desktop`   | `ElectronSignInBrowserDriver`                                                                              | Electron main: the system browser and a loopback redirect                               |
+| `./react`     | `useSession`, `SessionValue`, `SignedInSession`                                                            | the session in a component                                                              |
+| `./testing`   | `fakeSession`, `SessionFake`, `fakeIdentity`                                                               | a session in any status with spied actions; a resolver over named principals            |
 
 ## Configuring a member
 
@@ -96,6 +105,24 @@ audience, expiry and nonce, and keeps the tokens and the user in the `secrets` s
 a minute before it expires, with the refresh token rotated; `invalid_grant` drops the tokens (`revoked`), and any other
 failure keeps the session so a signed-in device works through a provider outage (ADR 0206 decision 9). The flow needs
 WebCrypto. No `SignInBrowser` driver ships here yet: the Expo and Electron ones come with their platform entries.
+
+## Step-up, external providers, PINs, keys, guardians and verification
+
+- **Step-up.** `requireAssurance(assuranceOf(claims, identity), AssuranceLevel.Aal2, identity, now)` refuses
+  `step_up_required` when the level is lower or the authentication is older than `stepUpMaxAgeMinutes`; the client then
+  calls `session.signIn(stepUpSignIn())`. Which actions need it is rule and settings data.
+- **External providers.** A market pack lists its sign-in providers under `signInProvidersKey`; `externalProviders`
+  maps each to its id at this deployment. `session.signIn(externalSignIn(key, identity))` sends the hosted sign-in
+  straight there.
+- **Staff PINs.** `StaffPinService.enrol`, `switchTo` and `override` keep a salted PBKDF2 hash per device and staff
+  member (in the `secrets` area on the till), lock out after `pinMaxAttempts`, and check the manager's permission
+  through the IAM decision point.
+- **API keys.** `mintApiKey(ApiKeyKind.Publishable, identity)` makes a prefixed, checksummed key; the gateway calls
+  `checkPublishableKey(key, origin, record.origins, identity)` before the lookup.
+- **Guardians.** `GuardianActingService.actFor(actor, minor, { purpose, birthDate, ageOfMajority })` checks the link,
+  its restrictions and the pack's age, and returns the delegated principal to record.
+- **Verification.** `VerificationService.register(key, driver)` wires providers; `verify(request, resolved, on)` tries
+  the providers the pack lists under `verificationPackKey` for the request's kind, in order.
 
 ## The claims
 

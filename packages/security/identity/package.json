@@ -2,7 +2,7 @@
   "name": "@stackra/identity",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra identity, provider-neutral over ZITADEL (ADR 0206): the IdentityConfig configuration with its shipped schema, the SessionStore port with the BFF cookie and PKCE drivers, the SessionService with the session claims mapping, the ClientSession and memory IdentityResolver drivers, the React useSession hook, and the fakeSession and fakeIdentity test helpers",
+  "description": "Stackra identity, provider-neutral over ZITADEL (ADR 0206): the IdentityConfig configuration with its shipped schema, the SessionStore port with the BFF cookie and PKCE drivers, the SessionService with the session claims mapping, the ClientSession and memory IdentityResolver drivers, the React useSession hook, and the fakeSession and fakeIdentity test helpers; step-up (assurance levels, stepUpSignIn), national and other external identity providers chosen by market pack, the Expo (./native) and Electron (./desktop) SignInBrowser drivers, staff PIN quick-switch with manager override, publishable origin-bound API keys, a guardian acting for a minor, and the KYC and KYB Verification port with VerificationService selecting providers from market-pack data",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -33,6 +33,16 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
+    "#desktop/*": [
+      "./src/desktop/*",
+      "./src/desktop/*.ts",
+      "./src/desktop/*/index.ts"
+    ],
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*/index.ts"
+    ],
     "#react/*": [
       "./src/react/*",
       "./src/react/*.ts",
@@ -55,6 +65,16 @@
       "@stackra/source": "./src/contracts/index.ts",
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
+    },
+    "./desktop": {
+      "@stackra/source": "./src/desktop/index.ts",
+      "types": "./dist/desktop.d.mts",
+      "default": "./dist/desktop.mjs"
+    },
+    "./native": {
+      "@stackra/source": "./src/native/index.ts",
+      "types": "./dist/native.d.mts",
+      "default": "./dist/native.mjs"
     },
     "./react": {
       "@stackra/source": "./src/react/index.ts",
@@ -89,6 +109,7 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/iam": "workspace:*",
+    "@stackra/market-packs": "workspace:*",
     "@stackra/query": "workspace:*",
     "@stackra/scope": "workspace:*",
     "@stackra/storage": "workspace:*",
@@ -108,6 +129,9 @@
     "@types/react": "catalog:frontend",
     "@types/react-dom": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",
+    "electron": "catalog:desktop",
+    "expo-linking": "catalog:mobile",
+    "expo-web-browser": "catalog:mobile",
     "jsdom": "catalog:frontend",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
@@ -118,10 +142,22 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "electron": "catalog:desktop",
+    "expo-linking": "catalog:mobile",
+    "expo-web-browser": "catalog:mobile",
     "react": "catalog:frontend",
     "vitest": "catalog:quality"
   },
   "peerDependenciesMeta": {
+    "electron": {
+      "optional": true
+    },
+    "expo-linking": {
+      "optional": true
+    },
+    "expo-web-browser": {
+      "optional": true
+    },
     "react": {
       "optional": true
     },

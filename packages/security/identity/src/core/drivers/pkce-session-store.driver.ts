@@ -29,10 +29,12 @@ import { IdentityConfig } from "#config/identity.config";
 import { SessionStore } from "#contracts/ports/session-store.port";
 import { SignInBrowser } from "#contracts/ports/sign-in-browser.port";
 import type { SessionUser } from "#contracts/types/session-user.type";
+import type { SignInOptions } from "#contracts/types/sign-in-options.type";
 import { SESSION_USER_SCHEMA } from "#core/constants/session-user-schema.constant";
 import { SessionRevokedError } from "#core/errors/session-revoked.error";
 import { SignInCancelledError } from "#core/errors/sign-in-cancelled.error";
 import { codeChallengeOf } from "#core/functions/code-challenge-of.function";
+import { signInParams } from "#core/functions/sign-in-params.function";
 import { jwtClaimsOf } from "#core/functions/jwt-claims-of.function";
 import { randomToken } from "#core/functions/random-token.function";
 import { sessionUserOf } from "#core/functions/session-user-of.function";
@@ -151,7 +153,7 @@ export class PkceSessionStoreDriver extends Driver(SessionStore) {
    * @throws UnauthenticatedError when the callback or the ID token fails a check.
    * @throws TransportError when the provider cannot be reached or answers something unreadable.
    */
-  async signIn(): Promise<void> {
+  async signIn(options: SignInOptions = {}): Promise<void> {
     const endpoints = await this.endpoints();
     const redirectUri = this.browser.redirectUri(this.config.nativeRedirectPath);
     const verifier = randomToken();
@@ -162,11 +164,12 @@ export class PkceSessionStoreDriver extends Driver(SessionStore) {
       response_type: "code",
       client_id: this.clientId(),
       redirect_uri: redirectUri,
-      scope: this.config.scopes.join(" "),
+      scope: [...new Set([...this.config.scopes, ...(options.scopes ?? [])])].join(" "),
       state,
       nonce,
       code_challenge: await codeChallengeOf(verifier),
       code_challenge_method: "S256",
+      ...signInParams(options),
     }).toString();
     const callback = await this.browser.authorize(authorize.toString(), redirectUri);
     if (callback === null) throw SignInCancelledError.create();

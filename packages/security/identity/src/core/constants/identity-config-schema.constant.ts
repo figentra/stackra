@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: `IDENTITY_CONFIG_SCHEMA`, the zod schema this package ships for `IdentityConfig` (exported as
  *          `IdentityConfig$`): the flow per target, the public client of a device, the scopes, the BFF mount, the
- *          device redirect path, the route after sign-out, the idle rule and the refresh switches.
+ *          device redirect path, the route after sign-out, the idle rule and the refresh switches, plus the external
+ *          providers, the step-up rule, the staff PIN rules, the API key prefixes and the market-pack keys sign-in and
+ *          verification read.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default and there is no object-level
  *           refinement, so `.parse({})` gives the full defaults and a member's generated `IdentityConfig$` extends it
  *           (`IdentityConfig$.shape.idleMinutes.unwrap().default(30)`). The rules sit on the fields: a flow is keyed by
@@ -16,6 +18,8 @@ import { Enum, Target } from "@stackra/contracts";
 import { url } from "@stackra/validation";
 import { z } from "zod";
 
+import { ApiKeyKind } from "#core/enums/api-key-kind.enum";
+import { AssuranceLevel } from "#core/enums/assurance-level.enum";
 import { AuthFlow } from "#core/enums/auth-flow.enum";
 
 /** An OAuth scope token (RFC 6749 section 3.3): no space, quote or backslash. */
@@ -26,6 +30,12 @@ const MOUNT_PATH = /^\/[^\s?#]*$/;
 
 /** A relative path with no query or fragment (`auth/callback`). */
 const REDIRECT_PATH = /^[^/\s?#][^\s?#]*$/;
+
+/** A dotted lowercase market-pack key (`identity.sign_in_providers`). */
+const PACK_KEY = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/;
+
+/** An API key prefix: lowercase letters, digits and underscores, no trailing underscore. */
+const KEY_PREFIX = /^[a-z][a-z0-9_]*[a-z0-9]$/;
 
 /** The target codes a flow may be keyed by. */
 const TARGETS: readonly string[] = Enum.values(Target);
@@ -63,4 +73,42 @@ export const IDENTITY_CONFIG_SCHEMA = z.object({
   idleMinutes: z.number().int().min(0).max(1440).default(0),
   refreshOnFocus: z.boolean().default(true),
   refreshOnForeground: z.boolean().default(true),
+  externalProviders: z.record(z.string().min(1), z.string().min(1)).default(() => ({})),
+  externalProviderScope: z
+    .string()
+    .regex(/\{id\}/)
+    .default("urn:zitadel:iam:org:idp:id:{id}"),
+  signInProvidersKey: z.string().regex(PACK_KEY).default("identity.sign_in_providers"),
+  assuranceByMethod: z
+    .record(z.string().min(1), z.enum(Enum.values(AssuranceLevel)))
+    .default(() => ({
+      pwd: AssuranceLevel.Aal1,
+      otp: AssuranceLevel.Aal2,
+      sms: AssuranceLevel.Aal2,
+      mfa: AssuranceLevel.Aal2,
+      swk: AssuranceLevel.Aal2,
+      user: AssuranceLevel.Aal2,
+      hwk: AssuranceLevel.Aal3,
+    })),
+  stepUpMaxAgeMinutes: z.number().int().min(1).max(1440).default(10),
+  pinMinLength: z.number().int().min(4).max(12).default(4),
+  pinMaxLength: z.number().int().min(4).max(12).default(8),
+  pinHashIterations: z.number().int().min(100_000).default(600_000),
+  pinMaxAttempts: z.number().int().min(1).max(20).default(5),
+  pinLockoutMinutes: z.number().int().min(1).max(1440).default(15),
+  managerOverrideSeconds: z.number().int().min(10).max(3600).default(120),
+  apiKeyPrefixes: z
+    .object({
+      [ApiKeyKind.Secret]: z.string().regex(KEY_PREFIX),
+      [ApiKeyKind.Publishable]: z.string().regex(KEY_PREFIX),
+    })
+    .refine((prefixes) => prefixes.secret !== prefixes.publishable, {
+      message: "Each API key kind has its own prefix",
+    })
+    .default(() => ({
+      [ApiKeyKind.Secret]: "stackra_sk",
+      [ApiKeyKind.Publishable]: "stackra_pk",
+    })),
+  verificationPackKey: z.string().regex(PACK_KEY).default("verification.drivers"),
+  signInTimeoutMinutes: z.number().int().min(1).max(60).default(10),
 });
