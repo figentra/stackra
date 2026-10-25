@@ -2,7 +2,7 @@
   "name": "@stackra/settings",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra settings: the Settings({ scopes, navigation }) kind and the @Setting field decorator, SettingsReader resolving a module's group through the scope cascade with locks, the SettingValueStore port with its memory and Postgres drivers and the stored-settings table, the generated-key helpers settingKeys and settingsPage, the native SettingsForm and fakeSettings",
+  "description": "Stackra settings: the Settings({ scopes, navigation }) kind and the @Setting field decorator, SettingsReader resolving a module's group through the scope cascade with locks, the SettingValueStore port with its memory and Postgres drivers and the stored-settings table, the generated-key helpers settingKeys and settingsPage, SettingsResolver with market-pack legal floors, provenance, live and sandbox keys, revisions, four-eyes approval and schedules, YAML settings packs with diff and apply, the Promotable port with its settings driver, the native SettingsForm and fakeSettings",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -96,9 +96,12 @@
     "@stackra/errors": "workspace:*",
     "@stackra/i18n": "workspace:*",
     "@stackra/icons": "workspace:*",
+    "@stackra/market-packs": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/ui": "workspace:*",
-    "@stackra/validation": "workspace:*"
+    "@stackra/validation": "workspace:*",
+    "yaml": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@stackra/config": "workspace:*",
@@ -120,8 +123,7 @@
     "react-native": "catalog:mobile",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
-    "vitest": "catalog:quality",
-    "zod": "catalog:"
+    "vitest": "catalog:quality"
   },
   "peerDependencies": {
     "react": "catalog:frontend",

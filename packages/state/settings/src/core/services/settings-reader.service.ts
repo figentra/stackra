@@ -19,37 +19,13 @@ import { validate } from "@stackra/validation";
 import { SettingValueStore } from "#contracts/index";
 import type { SettingTarget, SettingValue } from "#contracts/index";
 import type { Settings } from "#core/bases/settings.base";
-import { SettingValueInvalidError } from "#core/errors/setting-value-invalid.error";
-import { isSettingValue } from "#core/functions/is-setting-value.function";
 import { mergeSettingLayers } from "#core/functions/merge-setting-layers.function";
+import { nestSettingValues } from "#core/functions/nest-setting-values.function";
+import { settingPageChanges } from "#core/functions/setting-page-changes.function";
+import { settingPathInGroup } from "#core/functions/setting-path-in-group.function";
 import { settingsKeyOf } from "#core/functions/settings-key-of.function";
-import type { SettingKey } from "#core/types/setting-key.type";
 import type { SettingsPage } from "#core/types/settings-page.type";
 import type { SettingsSnapshot } from "#core/types/settings-snapshot.type";
-
-/** A key's path relative to its group: `<section>.<name>`, or `<name>` outside a section. */
-const pathInGroup = (key: SettingKey): string =>
-  key.section === undefined ? key.name : `${key.section}.${key.name}`;
-
-/** Flat paths as one object, a `<section>.<field>` path as a field of its section (one level deep). */
-function nest(values: Readonly<Record<string, SettingValue>>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [path, value] of Object.entries(values)) {
-    const dot = path.indexOf(".");
-    if (dot === -1) {
-      out[path] = value;
-      continue;
-    }
-    const section = path.slice(0, dot);
-    const current = out[section];
-    const inner =
-      typeof current === "object" && current !== null
-        ? (current as Record<string, unknown>)
-        : (out[section] = {} as Record<string, unknown>);
-    inner[path.slice(dot + 1)] = value;
-  }
-  return out;
-}
 
 /**
  * Reads settings for a module or a page.
@@ -76,7 +52,7 @@ export class SettingsReader extends Service {
    */
   async get<S extends Settings>(type: AnyClass<S>, target: SettingTarget = {}): Promise<S> {
     const { values } = mergeSettingLayers(await this.store.layers(settingsKeyOf(type), target));
-    const resolved = validate(type, nest(values));
+    const resolved = validate(type, nestSettingValues(values));
     if (!resolved.success) throw resolved.error;
     return resolved.data;
   }
@@ -87,7 +63,7 @@ export class SettingsReader extends Service {
     const values: Record<string, SettingValue> = {};
     const locked: string[] = [];
     for (const key of page.fields) {
-      const path = pathInGroup(key);
+      const path = settingPathInGroup(key);
       values[key.name] = Object.hasOwn(merged.values, path)
         ? (merged.values[path] ?? null)
         : key.default;
@@ -108,18 +84,7 @@ export class SettingsReader extends Service {
     values: Readonly<Record<string, unknown>>,
     target: SettingTarget = {},
   ): Promise<void> {
-    const changes: Record<string, SettingValue> = {};
-    const refused: string[] = [];
-    for (const [name, value] of Object.entries(values)) {
-      const key = page.fields.find((field) => field.name === name);
-      if (key !== undefined && isSettingValue(key, value)) changes[pathInGroup(key)] = value;
-      else refused.push(key?.path ?? `${page.key}.${name}`);
-    }
-    if (refused.length > 0)
-      throw SettingValueInvalidError.create(
-        { keys: refused },
-        { fieldErrors: Object.fromEntries(refused.map((path) => [path, "setting_value_invalid"])) },
-      );
+    const { changes } = settingPageChanges(page, values);
     await this.store.write(page.key, target, changes);
   }
 }

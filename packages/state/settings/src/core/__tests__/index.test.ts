@@ -11,6 +11,10 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as settings from "#core/index";
 import type {
+  ResolvedSetting,
+  SettingChangeSet,
+  SettingWriteOptions,
+  SettingsChange,
   SettingKey,
   SettingKeyInput,
   SettingKeys,
@@ -29,16 +33,34 @@ import type {
 describe("@stackra/settings", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(settings).sort()).toEqual([
+      "MemorySettingFloorSourceDriver",
+      "MemorySettingRevisionStoreDriver",
       "MemorySettingValueStoreDriver",
+      "PromotionBaseStaleError",
       "Setting",
+      "SettingBelowFloorError",
+      "SettingFourEyesError",
+      "SettingLiveReadOnlyError",
+      "SettingRevisionClosedError",
       "SettingScope",
       "SettingType",
       "SettingValueInvalidError",
       "Settings",
+      "SettingsChange$",
       "SettingsLockedError",
+      "SettingsMode",
+      "SettingsPack$",
+      "SettingsPackService",
+      "SettingsPromotableDriver",
       "SettingsReader",
+      "SettingsResolver",
+      "diffSettingsPacks",
+      "settingFloorsOf",
       "settingKeys",
+      "settingsPackFromYaml",
+      "settingsPackToYaml",
       "settingsPage",
+      "visibleSettingFields",
     ]);
   });
 
@@ -60,5 +82,11 @@ describe("@stackra/settings", () => {
     expectTypeOf<SettingsRules<object>>().toHaveProperty("atMost");
     expectTypeOf<SettingsSnapshot["locked"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<InstanceType<SettingsClass>>().toHaveProperty("rules");
+    expectTypeOf<SettingOptions["live"]>().toEqualTypeOf<boolean | undefined>();
+    expectTypeOf<SettingKeyInput["floor"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<ResolvedSetting["holder"]>().toEqualTypeOf<string | null>();
+    expectTypeOf<SettingWriteOptions["author"]>().toEqualTypeOf<string>();
+    expectTypeOf<SettingsChange["lockedAfter"]>().toEqualTypeOf<boolean>();
+    expectTypeOf<SettingChangeSet["removed"]>().toEqualTypeOf<readonly string[]>();
   });
 });

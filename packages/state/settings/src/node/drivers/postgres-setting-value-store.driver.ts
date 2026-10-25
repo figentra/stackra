@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `PostgresSettingValueStoreDriver`, the server's `SettingValueStore`: reads `settings.stored_settings`
- *          through `StoredSettingService` and hands each row on as a layer; a write runs the shared lock check against
- *          the rows above its holder, then stores.
+ *          through `StoredSettingService` and hands each row on as a layer naming its holder; a write runs the shared
+ *          lock check against the rows above its holder, then stores; a remove drops paths from the holder's row.
  * Boundary: reads and writes in the caller's transaction and scope session; the node chain comes from the target's
  *           node or the session's, never from request input. It adds no filter beyond the ancestor chain.
  * Runtime: node
@@ -17,8 +17,12 @@ import { refuseLockedPaths } from "#core/functions/refuse-locked-paths.function"
 import type { StoredSetting } from "#node/models/stored-setting.model";
 import { StoredSettingService } from "#node/services/stored-setting.service";
 
-/** The layer of one row. */
-const layerOf = (row: StoredSetting): SettingLayer => ({ values: row.values, locked: row.locked });
+/** The layer of one row, named by its node path or `user:<id>`. */
+const layerOf = (row: StoredSetting): SettingLayer => ({
+  values: row.values,
+  locked: row.locked,
+  holder: row.userId === null ? (row.scopePath ?? "") : `user:${row.userId}`,
+});
 
 /** Whether `row` is the target's own: its user's row, else its node's. */
 const isOwn = (row: StoredSetting, target: SettingTarget): boolean =>
@@ -57,5 +61,10 @@ export class PostgresSettingValueStoreDriver extends Driver(SettingValueStore) {
     const above = (await this.settings.chainOf(group, target)).filter((row) => !isOwn(row, target));
     refuseLockedPaths(above.map(layerOf), Object.keys(values));
     await this.settings.store(group, target, values, locked);
+  }
+
+  /** See `SettingValueStore.remove`. */
+  async remove(group: string, target: SettingTarget, paths: readonly string[]): Promise<void> {
+    await this.settings.drop(group, target, paths);
   }
 }

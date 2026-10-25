@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `MemorySettingValueStoreDriver`: seeds sit at the root holder; layers come root first along
  *          the node's path and then the user's, never a sibling's; a write sets values and locks in its own holder,
- *          keeps a lock without `locked`, and a key locked above refuses the whole write.
+ *          keeps a lock without `locked`, a key locked above refuses the whole write, each layer names its holder, and a
+ *          remove drops paths from the target's own holder.
  * Boundary: test only; no database.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0213 (decision 2: the cascade, locks).
@@ -32,13 +33,13 @@ describe(MemorySettingValueStoreDriver, () => {
     await store.write("orders", { scope: OTHER }, { a: 9 });
     await store.write("orders", { user: USER }, { a: 4 });
     await expect(store.layers("orders", { scope: ACME, user: USER })).resolves.toEqual([
-      { values: { acceptingOrders: false }, locked: [] },
-      { values: { a: 2 }, locked: [] },
-      { values: { a: 3 }, locked: [] },
-      { values: { a: 4 }, locked: [] },
+      { values: { acceptingOrders: false }, locked: [], holder: "" },
+      { values: { a: 2 }, locked: [], holder: "platform" },
+      { values: { a: 3 }, locked: [], holder: "platform.acme" },
+      { values: { a: 4 }, locked: [], holder: `user:${USER}` },
     ]);
     await expect(store.layers("orders", {})).resolves.toEqual([
-      { values: { acceptingOrders: false }, locked: [] },
+      { values: { acceptingOrders: false }, locked: [], holder: "" },
     ]);
     await expect(store.layers("inventory", { scope: ACME })).resolves.toEqual([]);
   });
@@ -48,11 +49,11 @@ describe(MemorySettingValueStoreDriver, () => {
     await store.write("orders", { scope: PLATFORM }, { a: 1, b: 2 }, ["a"]);
     await store.write("orders", { scope: PLATFORM }, { a: 5 });
     await expect(store.layers("orders", { scope: PLATFORM })).resolves.toEqual([
-      { values: { a: 5, b: 2 }, locked: ["a"] },
+      { values: { a: 5, b: 2 }, locked: ["a"], holder: "platform" },
     ]);
     await store.write("orders", { scope: PLATFORM }, { a: 6 }, []);
     await expect(store.layers("orders", { scope: PLATFORM })).resolves.toEqual([
-      { values: { a: 6, b: 2 }, locked: [] },
+      { values: { a: 6, b: 2 }, locked: [], holder: "platform" },
     ]);
   });
 
@@ -68,7 +69,7 @@ describe(MemorySettingValueStoreDriver, () => {
       store.write("orders", { user: USER, scope: ACME }, { a: 4 }),
     ).rejects.toBeInstanceOf(SettingsLockedError);
     await expect(store.layers("orders", { scope: ACME, user: USER })).resolves.toEqual([
-      { values: { a: 1 }, locked: ["a"] },
+      { values: { a: 1 }, locked: ["a"], holder: "platform" },
     ]);
   });
 
@@ -76,5 +77,16 @@ describe(MemorySettingValueStoreDriver, () => {
     const store = new MemorySettingValueStoreDriver();
     await store.write("orders", { scope: PLATFORM }, { a: 1 }, ["a"]);
     await expect(store.write("orders", { scope: PLATFORM }, { a: 2 })).resolves.toBeUndefined();
+  });
+
+  it("removes paths and their locks from the target's own holder only", async () => {
+    const store = new MemorySettingValueStoreDriver();
+    await store.write("orders", { scope: PLATFORM }, { a: 1 });
+    await store.write("orders", { scope: ACME }, { a: 2, b: 3 }, ["a"]);
+    await store.remove("orders", { scope: ACME }, ["a", "missing"]);
+    await expect(store.layers("orders", { scope: ACME })).resolves.toEqual([
+      { values: { a: 1 }, locked: [], holder: "platform" },
+      { values: { b: 3 }, locked: [], holder: "platform.acme" },
+    ]);
   });
 });

@@ -3,8 +3,8 @@
  * Purpose: the `SettingValueStore` port: where the stored values of a settings group live, per holder. The memory
  *          driver serves tests and local runs; the Postgres driver (`./node`) serves a service; a client driver calls
  *          the generated settings operations.
- * Boundary: an abstract class that is its own token, keyed `settings.SettingValueStore`. It stores values and locks
- *           only: defaults, sections and bounds are the class schema's, so a store never needs the settings classes.
+ * Boundary: an abstract class that is its own token, keyed `settings.SettingValueStore`. It stores, removes and
+ *           reports values and locks only (each layer names its holder): defaults, sections and bounds are the class schema's, so a store never needs the settings classes.
  *           Each service keeps its own values (ADR 0213 decision 1); there is no shared key-value table (ADR 0327 d9).
  * Runtime: isomorphic
  * Governing contract: ADR 0213 (decisions 1 and 2); ADR 0327 (decision 9); ADR 0294 (decisions 4, 15 and 16); ADR
@@ -47,4 +47,12 @@ export abstract class SettingValueStore extends Port {
     values: Readonly<Record<string, SettingValue>>,
     locked?: readonly string[],
   ): Promise<void>;
+
+  /**
+   * Removes each of `paths` (its value and its lock) from the target's own layer, so it inherits again. A path the
+   * holder does not store is skipped.
+   *
+   * @throws TypeError when the store cannot tell the target's holder.
+   */
+  abstract remove(group: string, target: SettingTarget, paths: readonly string[]): Promise<void>;
 }

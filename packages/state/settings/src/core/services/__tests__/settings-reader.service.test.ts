@@ -155,7 +155,11 @@ describe(SettingsReader, () => {
       { scope: ACME },
     );
     await expect(store.layers("orders", { scope: ACME })).resolves.toEqual([
-      { values: { acceptingOrders: false, "cancellation.autoCancelAfterMinutes": 60 }, locked: [] },
+      {
+        values: { acceptingOrders: false, "cancellation.autoCancelAfterMinutes": 60 },
+        locked: [],
+        holder: "platform.acme",
+      },
     ]);
     expect(Keys.orders.autoCancelAfterMinutes.path).toBe(
       "orders.cancellation.autoCancelAfterMinutes",

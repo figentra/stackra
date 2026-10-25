@@ -34,8 +34,9 @@ const rowAt = (scope: ScopeRef, values: Record<string, unknown>, locked: string[
 /** The driver over `rows`, with a recording `store`. */
 function driverOver(rows: StoredSetting[]) {
   const store = vi.fn(async () => rows[0]);
-  const settings = { chainOf: async () => rows, store } as unknown as StoredSettingService;
-  return { driver: new PostgresSettingValueStoreDriver(settings), store };
+  const drop = vi.fn(async () => undefined);
+  const settings = { chainOf: async () => rows, store, drop } as unknown as StoredSettingService;
+  return { driver: new PostgresSettingValueStoreDriver(settings), store, drop };
 }
 
 describe(PostgresSettingValueStoreDriver, () => {
@@ -46,7 +47,7 @@ describe(PostgresSettingValueStoreDriver, () => {
   it("hands each chain row on as a layer", async () => {
     const { driver } = driverOver([rowAt(PLATFORM, { a: 1 }, ["a"])]);
     await expect(driver.layers("orders", { scope: ACME })).resolves.toEqual([
-      { values: { a: 1 }, locked: ["a"] },
+      { values: { a: 1 }, locked: ["a"], holder: "platform" },
     ]);
   });
 
@@ -62,6 +63,12 @@ describe(PostgresSettingValueStoreDriver, () => {
       SettingsLockedError,
     );
     expect(store).not.toHaveBeenCalled();
+  });
+
+  it("drops removed paths through the service", async () => {
+    const { driver, drop } = driverOver([]);
+    await driver.remove("orders", { scope: ACME }, ["a"]);
+    expect(drop).toHaveBeenCalledWith("orders", { scope: ACME }, ["a"]);
   });
 
   it("lets a holder change its own locked value", async () => {

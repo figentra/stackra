@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `StoredSettingService`: the chain read is a parameterised raw `ltree` ancestor condition on
  *          the target's path or the session's `app.scope_path`, in path order, followed by the user's row; a store
- *          adds a row for a new holder, merges values and sets locks on an existing one, and refuses a target with no
- *          holder.
+ *          adds a row for a new holder, merges values and sets locks on an existing one, a drop removes paths and their
+ *          locks, and both refuse a target with no holder.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0327 (decisions 3 and 9); ADR 0160.
@@ -103,6 +103,16 @@ describe(StoredSettingService, () => {
     expect(existing).toMatchObject({ values: { a: 3, b: 2 }, locked: ["b"] });
     await service.store("orders", { user: USER }, { b: 4 }, []);
     expect(existing).toMatchObject({ values: { a: 3, b: 4 }, locked: [] });
+  });
+
+  it("drops paths and their locks from the holder's row, and skips a holder with no row", async () => {
+    const existing = rowOf({ userId: USER, values: { a: 1, b: 2 }, locked: ["a", "b"] });
+    connect([], existing);
+    await new StoredSettingService().drop("orders", { user: USER }, ["a"]);
+    expect(existing).toMatchObject({ values: { b: 2 }, locked: ["b"] });
+    const em = connect([], null);
+    await new StoredSettingService().drop("orders", { scope: ACME }, ["a"]);
+    expect(em.flush).not.toHaveBeenCalled();
   });
 
   it("refuses a target with no holder", async () => {

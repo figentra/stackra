@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of the `SettingValueStore` port: an abstract class extending `Port`, its own token, and
- *          a driver of it is an instance of it with the two methods typed as the port declares.
+ *          a driver of it is an instance of it with the three methods typed as the port declares.
  * Boundary: test only; the driver is a minimal stand-in.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 15 and 16); ADR 0263.
@@ -20,6 +20,8 @@ class EmptySettingValueStoreDriver extends Driver(SettingValueStore) {
   }
 
   async write(): Promise<void> {}
+
+  async remove(): Promise<void> {}
 }
 
 describe("SettingValueStore", () => {
@@ -33,10 +35,13 @@ describe("SettingValueStore", () => {
     await expect(new EmptySettingValueStoreDriver().layers()).resolves.toEqual([]);
   });
 
-  it("types its two methods", () => {
+  it("types its three methods", () => {
     expectTypeOf<SettingValueStore["layers"]>().parameters.toEqualTypeOf<[string, SettingTarget]>();
     expectTypeOf<SettingValueStore["write"]>().parameters.toEqualTypeOf<
       [string, SettingTarget, Readonly<Record<string, SettingValue>>, (readonly string[])?]
+    >();
+    expectTypeOf<SettingValueStore["remove"]>().parameters.toEqualTypeOf<
+      [string, SettingTarget, readonly string[]]
     >();
     expectTypeOf<SettingValueStore["~key"]>().toEqualTypeOf<"settings.SettingValueStore">();
   });

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `SettingKeyInput`, the metadata gen writes for one setting key in a member's `#stackra/settings`: its type,
- *          default, levels, label and help keys, bounds, nullability, lock, approval and client flags, its section and
- *          its earlier names.
+ *          default, levels, label and help keys, bounds, nullability, lock, approval, client, live and essential flags,
+ *          the market-pack key that floors it, its section and its earlier names.
  * Boundary: a type only, data gen derives from the settings classes and the consumed manifests; authored code never
  *           writes it. The label and help are the declaring module's `<module>::settings.<path>.label|help` keys.
  * Runtime: isomorphic
@@ -49,6 +49,15 @@ export interface SettingKeyInput {
 
   /** Whether clients receive it in the area bootstrap. */
   readonly client?: boolean;
+
+  /** Whether it is edited in place on live (an operational value); otherwise only by promotion. */
+  readonly live?: boolean;
+
+  /** Whether normal mode shows it. */
+  readonly essential?: boolean;
+
+  /** The market-pack key whose legal floor bounds it. */
+  readonly floor?: string;
 
   /** The section field that holds it, when it belongs to a section. */
   readonly section?: string;

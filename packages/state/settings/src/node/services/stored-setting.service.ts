@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `StoredSettingService`, the module service over `StoredSetting`: reads the rows of a group along a node's
- *          ancestor chain (root first) and a user's row, and stores a holder's values and locks.
+ *          ancestor chain (root first) and a user's row, and stores or drops a holder's values and locks.
  * Boundary: a `CrudService<StoredSetting>`, so every read and write runs in the caller's transaction. The node read
  *           takes the target's path, or the running scope session's `app.scope_path` (`Database.withScope`), which is
  *           the authenticated principal's; outside a session it finds no node row. It never reads a sibling's or a
@@ -86,6 +86,29 @@ export class StoredSettingService extends CrudService<StoredSetting> {
     return this.update(
       { id: row.id },
       { values: { ...row.values, ...values }, locked: nextLocked(row.locked) },
+    );
+  }
+
+  /**
+   * Removes each of `paths` (its value and its lock) from `target`'s own row of `group`; a holder with no row, or a
+   * path the row does not hold, is skipped.
+   *
+   * @throws TypeError when `target` names neither a node nor a user.
+   */
+  async drop(group: string, target: SettingTarget, paths: readonly string[]): Promise<void> {
+    const holder = holderOf(target);
+    const row = await this.findOne(
+      holder.userId === null
+        ? { groupKey: group, scopeId: holder.scopeId }
+        : { groupKey: group, userId: holder.userId },
+    );
+    if (row === null) return;
+    const values = Object.fromEntries(
+      Object.entries(row.values).filter(([path]) => !paths.includes(path)),
+    );
+    await this.update(
+      { id: row.id },
+      { values, locked: row.locked.filter((path) => !paths.includes(path)) },
     );
   }
 }

@@ -3,8 +3,9 @@
  * Purpose: `MemorySettingValueStoreDriver`, a `SettingValueStore` held in memory: for tests (it backs `fakeSettings`),
  *          local runs and a client with no settings service.
  * Boundary: holds one holder per group and node path or user; a target with no node is the root holder (path `""`,
- *           above every node), since memory has no scope session. Reads return copies; a write runs the shared lock
- *           check against the holders above its own before it changes anything. Values live as long as the instance.
+ *           above every node), since memory has no scope session. Reads return copies, each naming its holder; a write
+ *           runs the shared lock check against the holders above its own before it changes anything; a remove drops
+ *           paths from the target's own holder. Values live as long as the instance.
  * Runtime: isomorphic
  * Governing contract: ADR 0213 (decision 2: the cascade, locks); ADR 0142 (drivers behind a port); ADR 0294 (decision
  *                     16).
@@ -40,10 +41,11 @@ const isAtOrAbove = (holder: string, node: string): boolean =>
 /** The depth of a node path; the root is 0. */
 const depthOf = (path: string): number => (path === "" ? 0 : path.split(".").length);
 
-/** A holder as a layer, copied. */
+/** A holder as a layer, copied, named by its node path or `user:<id>`. */
 const layerOf = (holder: Holder): SettingLayer => ({
   values: { ...holder.values },
   locked: [...holder.locked],
+  holder: holder.user === null ? holder.path : `user:${holder.user}`,
 });
 
 /**
@@ -87,6 +89,15 @@ export class MemorySettingValueStoreDriver extends Driver(SettingValueStore) {
       for (const path of Object.keys(values))
         if (locked.includes(path)) holder.locked.add(path);
         else holder.locked.delete(path);
+  }
+
+  /** See `SettingValueStore.remove`. */
+  async remove(group: string, target: SettingTarget, paths: readonly string[]): Promise<void> {
+    const holder = this.holderOf(group, target);
+    for (const path of paths) {
+      delete holder.values[path];
+      holder.locked.delete(path);
+    }
   }
 
   /** The holders of `group` that apply at `target`: the node chain from the root down, then the user's. */

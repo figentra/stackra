@@ -37,6 +37,12 @@ generated-key helpers, the native form and the fake (ADR 0307 rules 22 to 24, AD
 - `SettingsRules` is a type: gen reads `rules(r)` from the syntax tree. Keep the set closed; a new comparison needs an
   ADR note on 0307.
 - The lock check lives in `refuseLockedPaths`, run by every store driver before it writes.
+- Floors are market-pack data, never numbers in code: `SettingFloorSource` answers them, `settingFloorsOf` maps pack
+  floors to keys, `SettingsResolver` refuses (`refuseBelowFloors`) and lifts (`crossesFloor`).
+- Every write through `SettingsResolver` records a `SettingRevision`; `applyChange` is the promotion and pack path and
+  skips only the live and approval checks, never floors or locks.
+- `Promotable` is homed here (package-needs conflict note, ADR 0359 d6); a kind's driver validates its snapshot.
+- A store driver names each layer's holder (`SettingLayer.holder`) and implements `remove`.
 - Raw SQL lives only in `StoredSettingService` methods, parameterised with `sql`, with a `// raw-sql:` comment (ADR
   0160). The scope path comes from the target or the session, never from request input.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
@@ -53,4 +59,5 @@ generated-key helpers, the native form and the fake (ADR 0307 rules 22 to 24, AD
 | ---------------- | ----------------------------------------------- | ------------------------------------------------------------- |
 | User preferences | `settings.stored_settings` user rows, `user_id` | A person's own choices keyed by a public id; never logged.    |
 | Setting values   | `settings.stored_settings.values`               | Configuration, never a secret or classified data; not logged. |
+| Revision authors | `settings.stored_setting_revisions.author`      | A principal's public id, kept as the audit of a change.       |
 | Scope node       | `scope_id`, `scope_path`                        | A node's id and path, not personal data.                      |
