@@ -9,7 +9,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0294 (decisions 14 and 16); ADR 0297 (decision 4); ADR 0305 (rule 35).
  */
-import { afterEach, describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { createMemoryRouter, Outlet, RouterProvider } from "react-router";

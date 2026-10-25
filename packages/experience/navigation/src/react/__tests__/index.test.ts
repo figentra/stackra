@@ -8,7 +8,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15); ADR 0303 (decision 1).
  */
-import { describe, expect, it } from "@stackra/testing";
+import { describe, expect, it } from "vitest";
 import { Form, Outlet } from "react-router";
 
 import * as react from "#react/index";

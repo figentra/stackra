@@ -13,6 +13,7 @@
 import { BASE_MATCHES_SUFFIX_RULE } from "#core/constants/base-matches-suffix-rule.constant";
 import { DISABLE_NEEDS_REASON_RULE } from "#core/constants/disable-needs-reason-rule.constant";
 import { DOCBLOCK_SHAPE_RULE } from "#core/constants/docblock-shape-rule.constant";
+import { FILE_CONTRACT_RULE } from "#core/constants/file-contract-rule.constant";
 import { HOOK_FILE_NAME_RULE } from "#core/constants/hook-file-name-rule.constant";
 import { LINES_BETWEEN_CLASS_MEMBERS_RULE } from "#core/constants/lines-between-class-members-rule.constant";
 import { MEMBER_ORDER_RULE } from "#core/constants/member-order-rule.constant";
@@ -23,6 +24,8 @@ import { NO_ENUM_RULE } from "#core/constants/no-enum-rule.constant";
 import { NO_HASH_PRIVATE_RULE } from "#core/constants/no-hash-private-rule.constant";
 import { NO_KIND_DECORATOR_RULE } from "#core/constants/no-kind-decorator-rule.constant";
 import { NO_PARAMETER_DECORATOR_RULE } from "#core/constants/no-parameter-decorator-rule.constant";
+import { NO_RAW_KEY_LITERAL_RULE } from "#core/constants/no-raw-key-literal-rule.constant";
+import { NO_TENANT_VOCABULARY_RULE } from "#core/constants/no-tenant-vocabulary-rule.constant";
 import { ONE_DECLARATION_PER_FILE_RULE } from "#core/constants/one-declaration-per-file-rule.constant";
 import type { Plugin } from "#core/types/plugin.type";
 
@@ -43,6 +46,7 @@ export const STACKRA_PLUGIN: Plugin = {
     "base-matches-suffix": BASE_MATCHES_SUFFIX_RULE,
     "disable-needs-reason": DISABLE_NEEDS_REASON_RULE,
     "docblock-shape": DOCBLOCK_SHAPE_RULE,
+    "file-contract": FILE_CONTRACT_RULE,
     "hook-file-name": HOOK_FILE_NAME_RULE,
     "lines-between-class-members": LINES_BETWEEN_CLASS_MEMBERS_RULE,
     "member-order": MEMBER_ORDER_RULE,
@@ -53,6 +57,8 @@ export const STACKRA_PLUGIN: Plugin = {
     "no-hash-private": NO_HASH_PRIVATE_RULE,
     "no-kind-decorator": NO_KIND_DECORATOR_RULE,
     "no-parameter-decorator": NO_PARAMETER_DECORATOR_RULE,
+    "no-raw-key-literal": NO_RAW_KEY_LITERAL_RULE,
+    "no-tenant-vocabulary": NO_TENANT_VOCABULARY_RULE,
     "one-declaration-per-file": ONE_DECLARATION_PER_FILE_RULE,
   },
 };

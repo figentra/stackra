@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: proves ADR 0269 decision 2: no workspace package among the runtime or peer dependencies; the `.` entry
- *          imports only vitest, node built-ins and its own files; the `./react` and `./native` entries import no
- *          workspace package (every package's tests depend on this one, so an edge back would be a cycle); and no
- *          domain vocabulary anywhere in the public surface.
+ * Purpose: proves ADR 0269 decision 2: no workspace package among the runtime or peer dependencies except navigation
+ *          as an optional peer; the `.` entry imports only vitest, node built-ins and its own files; `./native` and
+ *          `./e2e` import no workspace package and `./react` only `@stackra/navigation/testing` for the route helpers
+ *          (navigation is a dev dependency here so the module resolves; navigation does not depend on this package back, so there is no turbo cycle); and no domain
+ *          vocabulary anywhere in the public surface.
  * Boundary: reads package.json and the files under src/ from disk; asserts nothing about behaviour.
  * Runtime: node
  * Governing contract: ADR 0269 (decision 2); ADR 0003 (tier direction); ADR 0022 (test placement).
@@ -30,16 +31,16 @@ const inEntry = (path: string, entry: string): boolean => path.split(/[\\/]/)[0]
 
 // @covers sta-348:FR-008
 describe("the entries of @stackra/testing", () => {
-  it("depends on no workspace package at runtime, and needs only vitest", () => {
+  it("depends on no workspace package at runtime but optional navigation, and needs only vitest", () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as Record<
       string,
       Record<string, string> | undefined
     >;
     const runtime = { ...pkg["dependencies"], ...pkg["peerDependencies"] };
-    expect(Object.values(runtime).filter((version) => version.startsWith("workspace:"))).toEqual(
-      [],
-    );
-    expect(Object.keys(runtime).filter((name) => name.startsWith("@stackra/"))).toEqual([]);
+    expect(Object.keys(runtime).filter((name) => name.startsWith("@stackra/"))).toEqual([
+      "@stackra/navigation",
+    ]);
+    expect(pkg["devDependencies"]?.["@stackra/navigation"]).toBe("workspace:*");
     const optional = Object.keys(pkg["peerDependenciesMeta"] ?? {});
     expect(Object.keys(runtime).filter((name) => !optional.includes(name))).toEqual(["vitest"]);
   });
@@ -56,13 +57,16 @@ describe("the entries of @stackra/testing", () => {
   });
 
   // @covers sta-348:FR-009
-  it("keeps ./react and ./native free of workspace imports", () => {
-    const rendering = sources.filter(
-      ({ path }) => inEntry(path, "react") || inEntry(path, "native"),
+  it("keeps ./native and ./e2e free of workspace imports, and ./react to navigation's route helpers", () => {
+    const entries = sources.filter(({ path }) =>
+      ["react", "native", "e2e"].some((e) => inEntry(path, e)),
     );
-    expect(rendering.length).toBeGreaterThan(0);
-    for (const { path, text } of rendering) {
-      const workspace = specifiersOf(text).filter((s) => s.startsWith("@stackra/"));
+    expect(entries.length).toBeGreaterThan(0);
+    for (const { path, text } of entries) {
+      const allowed = inEntry(path, "react") ? ["@stackra/navigation/testing"] : [];
+      const workspace = specifiersOf(text).filter(
+        (s) => s.startsWith("@stackra/") && !allowed.includes(s),
+      );
       expect({ path, workspace }).toEqual({ path, workspace: [] });
     }
   });

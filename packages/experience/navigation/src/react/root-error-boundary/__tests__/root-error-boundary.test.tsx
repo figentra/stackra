@@ -10,7 +10,7 @@
  * Governing contract: ADR 0022; ADR 0305 (rule 35); ADR 0324.
  */
 import { ErrorKind, Refusal } from "@stackra/errors";
-import { afterEach, describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { createMemoryRouter, data, RouterProvider } from "react-router";

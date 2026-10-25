@@ -248,4 +248,82 @@ describe(DevtoolsKit, () => {
       await expect(session.call("router.match")).rejects.toMatchObject({ code: "detached" });
     });
   });
+
+  describe("edges", () => {
+    it("keeps every entry at exactly the buffer size and drops the oldest one past it", () => {
+      const { kit } = setup();
+      for (let index = 0; index < DEVTOOLS_BUFFER_SIZE; index += 1) kit.emit("cache.hit", index);
+      const { session } = kit.attach({ name: "test-host" });
+      expect(session.replay()[0]?.payload).toBe(0);
+
+      kit.emit("cache.hit", DEVTOOLS_BUFFER_SIZE);
+      expect(session.replay()).toHaveLength(DEVTOOLS_BUFFER_SIZE);
+      expect(session.replay()[0]?.payload).toBe(1);
+    });
+
+    it("replays one channel only", () => {
+      const { kit } = setup();
+      kit.emit("cache.hit", 1);
+      kit.emit("cache.miss", 2);
+      kit.emit("cache.hit", 3);
+      const { session } = kit.attach({ name: "test-host" });
+
+      expect(session.replay("cache.hit").map((entry) => entry.payload)).toEqual([1, 3]);
+      expect(session.replay("none.here")).toEqual([]);
+    });
+
+    it("tells the host when an RPC function is removed, and the removed name no longer answers", async () => {
+      const { kit } = setup();
+      const onRpcChanged = vi.fn();
+      const { session } = kit.attach({ name: "panel", onRpcChanged });
+      const remove = kit.defineRpc("router.match", answerOne);
+      remove();
+      remove();
+
+      expect(onRpcChanged.mock.calls).toEqual([[["router.match"]], [[]]]);
+      await expect(session.call("router.match")).rejects.toMatchObject({ code: "unknown_rpc" });
+    });
+
+    it("passes a failing read or RPC handler's error to the host's caller", async () => {
+      const { kit } = setup();
+      kit.defineTab({
+        id: "router.tree",
+        title: "Routes",
+        read: () => {
+          throw new Error("read failed");
+        },
+      });
+      kit.defineRpc("router.match", async () => {
+        throw new Error("rpc failed");
+      });
+      const { session } = kit.attach({ name: "panel" });
+
+      await expect(session.readTab("router.tree")).rejects.toThrow("read failed");
+      await expect(session.call("router.match")).rejects.toThrow("rpc failed");
+    });
+
+    it("serves a host that has no callbacks", () => {
+      const { kit } = setup();
+      kit.attach({ name: "bare" });
+
+      expect(() => kit.emit("cache.hit", 1)).not.toThrow();
+      expect(() => kit.defineTab({ id: "a.b", title: "A", read: () => 1 })).not.toThrow();
+      expect(() => kit.defineRpc("a.b", answerOne)).not.toThrow();
+    });
+
+    it("refuses a second host with a message naming both", () => {
+      const { kit } = setup();
+      kit.attach({ name: "panel" });
+
+      expect(() => kit.attach({ name: "console" })).toThrow('"console" cannot attach: "panel"');
+    });
+
+    it("names the missing tab and RPC in the error message", async () => {
+      const { kit } = setup();
+      const { session } = kit.attach({ name: "panel" });
+
+      await expect(session.readTab("a.b")).rejects.toThrow('no devtools tab "a.b"');
+      await expect(session.call("a.b")).rejects.toThrow('no devtools RPC "a.b"');
+    });
+  });
 });

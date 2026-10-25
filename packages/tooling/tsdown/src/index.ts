@@ -1,6 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: the one tsdown preset every library's `tsdown.config.ts` calls: `export default library()`.
+ * Purpose: the one tsdown preset every library's `tsdown.config.ts` calls: `export default library()`; the same
+ *          function is exported as `libraryPreset`, the name generated `.stackra/tsdown.config.ts` files import
+ *          (STA-339), with `LibraryPresetOptions` as its options type.
  *          ESM only as `dist/*.mjs` + `.d.mts` (ADR 0025), maps, sourcemaps, clean dist, tree-shaking. The optional decorators flag turns
  *          on the legacy-decorator transform for the DI tier.
  * Boundary: builds the configuration object; it does not run the build.
@@ -92,3 +94,9 @@ export function library(
     ...(options.decorators ? { inputOptions: withDecorators } : {}),
   });
 }
+
+/** The role-vocabulary name of {@link library}, which generated `.stackra/tsdown.config.ts` files import. */
+export const libraryPreset = library;
+
+/** The options type of {@link libraryPreset}; the same type as {@link LibraryOptions}. */
+export type LibraryPresetOptions = LibraryOptions;

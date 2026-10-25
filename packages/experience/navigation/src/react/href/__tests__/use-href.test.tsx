@@ -11,7 +11,7 @@ import { buildConfig } from "@stackra/config";
 import { Container, type Token } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
 import { I18nConfig, Locale } from "@stackra/i18n";
-import { afterEach, describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router";

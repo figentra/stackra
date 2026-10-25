@@ -7,7 +7,7 @@
  * Governing contract: ADR 0022; ADR 0140.
  */
 import { ErrorKind, Refusal } from "@stackra/errors";
-import { describe, expect, it } from "@stackra/testing";
+import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
 import { fieldErrorsOf } from "#core/functions/field-errors-of.function";

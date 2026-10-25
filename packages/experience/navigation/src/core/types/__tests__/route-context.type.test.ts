@@ -8,7 +8,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0294 (decision 16); ADR 0305 (class components typed by their route).
  */
-import { describe, expect, expectTypeOf, it } from "@stackra/testing";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import { Schema } from "@stackra/validation";
 
 import { Layout } from "#core/bases/layout.base";

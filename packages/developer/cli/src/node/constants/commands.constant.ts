@@ -1,14 +1,17 @@
 /**
  * Stackra file contract:
- * Purpose: `COMMANDS`, every command the `stackra` binary has, in help order: gen, the member tool commands, ls, and
- *          the local MCP and agent-file commands.
+ * Purpose: `COMMANDS`, every command the `stackra` binary has, in help order: gen, the member tool commands, the db
+ *          commands, ls, and the local MCP and agent-file commands.
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
- *           are never added here (ADR 0282 decision 4); `stackra db` lands with `@stackra/database`.
+ *           are never added here (ADR 0282 decision 4); `stackra db diff` and `seed` land with
+ *           `@stackra/database`; infra is `stackra runway infra`, not a command here (ADR 0352).
  * Runtime: node
  * Governing contract: ADR 0282 (decisions 3 and 4); ADR 0083; registry v3.1 (cli ships thin, then grows).
  */
 import { AGENTS_CHECK_COMMAND } from "#node/constants/agents-check-command.constant";
 import { AGENTS_SYNC_COMMAND } from "#node/constants/agents-sync-command.constant";
+import { DB_MIGRATE_COMMAND } from "#node/constants/db-migrate-command.constant";
+import { DB_ROLLBACK_COMMAND } from "#node/constants/db-rollback-command.constant";
 import { GEN_COMMAND } from "#node/constants/gen-command.constant";
 import { LS_COMMAND } from "#node/constants/ls-command.constant";
 import { MCP_COMMAND } from "#node/constants/mcp-command.constant";
@@ -26,6 +29,8 @@ export const COMMANDS: readonly CliCommand[] = [
   toolCommand("typecheck", "Generate, then type-check the member"),
   toolCommand("test", "Generate, then run the member's tests (--tier unit|e2e)"),
   toolCommand("lint", "Lint the member with oxlint"),
+  DB_MIGRATE_COMMAND,
+  DB_ROLLBACK_COMMAND,
   LS_COMMAND,
   MCP_COMMAND,
   MCP_SYNC_COMMAND,

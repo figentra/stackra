@@ -13,7 +13,7 @@ import { Container, type Token } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
 import { I18nConfig, Locale } from "@stackra/i18n";
 import { PermissionSnapshotService } from "@stackra/iam";
-import { describe, expect, it } from "@stackra/testing";
+import { describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useState, type ReactNode } from "react";
 import { createMemoryRouter, RouterProvider } from "react-router";

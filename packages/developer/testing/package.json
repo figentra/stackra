@@ -2,7 +2,7 @@
   "name": "@stackra/testing",
   "version": "0.0.0",
   "private": true,
-  "description": "The generic Stackra test kit: vitest re-exports, a frozen clock and ids, the Fake base, typed matchers, plain fixture factories, and thin React and React Native render helpers",
+  "description": "The generic Stackra test kit: vitest re-exports, a frozen clock and ids, the Fake base, typed matchers, plain fixture factories, thin React and React Native render helpers with the route helpers, and the Playwright end-to-end kit",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -23,6 +23,11 @@
       "./src/core/*",
       "./src/core/*.ts",
       "./src/core/*/index.ts"
+    ],
+    "#e2e/*": [
+      "./src/e2e/*",
+      "./src/e2e/*.ts",
+      "./src/e2e/*/index.ts"
     ],
     "#native/*": [
       "./src/native/*",
@@ -50,6 +55,11 @@
       "@stackra/source": "./src/native/index.ts",
       "types": "./dist/native.d.mts",
       "default": "./dist/native.mjs"
+    },
+    "./e2e": {
+      "@stackra/source": "./src/e2e/index.ts",
+      "types": "./dist/e2e.d.mts",
+      "default": "./dist/e2e.mjs"
     }
   },
   "publishConfig": {
@@ -68,6 +78,9 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:e2e",
+    "@playwright/test": "catalog:e2e",
+    "@stackra/navigation": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
@@ -89,6 +102,9 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "@axe-core/playwright": "catalog:e2e",
+    "@playwright/test": "catalog:e2e",
+    "@stackra/navigation": "workspace:*",
     "@testing-library/dom": "catalog:frontend",
     "@testing-library/react": "catalog:frontend",
     "@testing-library/react-native": "catalog:frontend",
@@ -98,6 +114,15 @@
     "vitest": "catalog:quality"
   },
   "peerDependenciesMeta": {
+    "@axe-core/playwright": {
+      "optional": true
+    },
+    "@playwright/test": {
+      "optional": true
+    },
+    "@stackra/navigation": {
+      "optional": true
+    },
     "@testing-library/dom": {
       "optional": true
     },

@@ -7,7 +7,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0165 (React Navigation on mobile).
  */
-import { describe, expect, it } from "@stackra/testing";
+import { describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { vi } from "vitest";
 

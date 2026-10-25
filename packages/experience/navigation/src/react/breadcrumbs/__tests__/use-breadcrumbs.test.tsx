@@ -9,7 +9,7 @@
  * Governing contract: ADR 0022 (test placement); ADR 0164; ADR 0303 (decision 1).
  */
 import type { I18nKey } from "@stackra/i18n";
-import { afterEach, describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 
 import { BreadcrumbsProvider } from "#react/breadcrumbs/breadcrumbs-provider";

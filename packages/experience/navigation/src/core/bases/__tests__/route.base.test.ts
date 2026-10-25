@@ -9,7 +9,7 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 14, 16 and 25).
  */
 import { kindOf } from "@stackra/container";
-import { describe, expect, expectTypeOf, it } from "@stackra/testing";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { Layout } from "#core/bases/layout.base";
 import { Route } from "#core/bases/route.base";

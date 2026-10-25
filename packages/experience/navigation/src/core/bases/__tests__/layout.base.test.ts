@@ -8,7 +8,7 @@
  */
 import { kindOf } from "@stackra/container";
 import { Target } from "@stackra/contracts";
-import { describe, expect, expectTypeOf, it } from "@stackra/testing";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { Layout } from "#core/bases/layout.base";
 import type { LayoutClass } from "#core/types/layout-class.type";

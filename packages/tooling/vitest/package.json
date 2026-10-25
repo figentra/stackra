@@ -2,11 +2,11 @@
   "name": "@stackra/vitest-config",
   "version": "0.1.0",
   "private": true,
-  "description": "Shared vitest presets: base, decorators (legacy decorators, no metadata), react (jsdom). A workspace's vitest.config.ts extends one preset and adds only its include globs.",
+  "description": "Shared vitest presets by member role: libraryPreset, servicePreset, appPreset, mobilePreset and toolingPreset, over the base, decorators and react presets and the coverage gate.",
   "license": "MIT",
   "type": "module",
   "exports": {
-    ".": "./src/preset.ts",
+    ".": "./src/index.ts",
     "./preset": "./src/preset.ts",
     "./preset-decorators": "./src/preset-decorators.ts",
     "./preset-react": "./src/preset-react.ts",
@@ -20,6 +20,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@vitest/coverage-v8": "catalog:quality",
+    "jsdom": "catalog:frontend",
     "vitest": "catalog:quality"
   },
   "devDependencies": {

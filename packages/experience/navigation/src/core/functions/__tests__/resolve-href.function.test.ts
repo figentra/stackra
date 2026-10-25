@@ -9,7 +9,7 @@
  */
 import { Locale } from "@stackra/i18n";
 import { LocaleUrlStrategy } from "@stackra/i18n";
-import { afterEach, describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { Route } from "#core/bases/route.base";
 import { ROUTE_TABLE } from "#core/constants/route-table.constant";

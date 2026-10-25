@@ -6,7 +6,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
  */
-import { describe, expect, it } from "@stackra/testing";
+import { describe, expect, it } from "vitest";
 import { vi } from "vitest";
 
 vi.mock("react-native", () => ({ Linking: { openURL: vi.fn() } }));

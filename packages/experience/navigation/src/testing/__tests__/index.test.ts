@@ -8,7 +8,7 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269 (decision 6); ADR 0294 (decision 15).
  */
-import { describe, expect, it } from "@stackra/testing";
+import { describe, expect, it } from "vitest";
 import { createRoutesStub } from "react-router";
 
 import * as testing from "#testing/index";

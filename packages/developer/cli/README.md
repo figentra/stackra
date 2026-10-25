@@ -35,7 +35,11 @@ that cannot start.
 
 ## Not here yet
 
-`stackra db` (migrate, diff, seed, rollback) lands with `@stackra/database` in the data wave (ADR 0159 note).
-`new`, `validate`, `verify`, `structure`, `doctor`, `infra` and `agents setup` move in from `tools/scripts` and their
+`stackra db migrate` and `stackra db rollback` are pending: the command code is here, but `@stackra/database/node`
+exports no `migrate` and `rollback` yet, so both fail until a follow-up item for `@stackra/database` lands them with the
+`DatabaseRunner` signature (`migrate({ cwd, environment }) -> { applied }`, `rollback(...) -> { reverted }`), where
+`environment` selects the database the call connects to so the production rollback guard protects the right one.
+`stackra db diff` and `seed` land with `@stackra/database` in the data wave (ADR 0159 note).
+`new`, `validate`, `verify`, `structure`, `doctor` and `agents setup` move in from `tools/scripts` and their
 owning packages as those are built (ADR 0282 consequences). Figentra-internal operations never ship here (ADR 0282
 decision 4).

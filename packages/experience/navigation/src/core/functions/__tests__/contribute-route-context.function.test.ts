@@ -6,7 +6,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0294 (decisions 17 and 23).
  */
-import { afterEach, describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { Route } from "#core/bases/route.base";
 import { ROUTE_CONTEXT_PARTS } from "#core/constants/route-context-parts.constant";

@@ -6,7 +6,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0294 (decision 20).
  */
-import { describe, expect, expectTypeOf, it } from "@stackra/testing";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { Route } from "#core/bases/route.base";
 import { routeRef } from "#core/functions/route-ref.function";

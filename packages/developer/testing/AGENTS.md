@@ -5,15 +5,19 @@ The generic test kit. Member at `packages/developer/testing` (`tier:lib`), in th
 
 ## Rules
 
-- Entries `.` (`src/core/`), `./react` (`src/react/`) and `./native` (`src/native/`). `./e2e` and `./contract`
-  (ADR 0269 decision 6) are added with app, each when it holds real code.
+- Entries `.` (`src/core/`), `./react` (`src/react/`), `./native` (`src/native/`) and `./e2e` (`src/e2e/`, ADR 0269
+  decision 6). `./node` and `./contract` are added only when something imports them (owner decision 14).
 - `.` is generic (ADR 0269 decision 2): its only runtime edge is the `vitest` peer. No workspace import, no domain
   type, nothing that knows a module, action, permission or event. `src/__tests__/package-boundary.test.ts` checks it.
-- `./react` and `./native` import no `@stackra/*` package either: every package's tests depend on this one, so an edge
-  back is a cycle in the turbo graph. Their third-party edges (Testing Library, React, React Native) are optional
-  peers. They import `.` internals one way and never each other, so the small wrapper helper is kept in each.
-- No house provider here: the renders take `providers` and `wrapper`, and framework packages compose theirs. Route
-  helpers live in `@stackra/navigation/testing`.
+- `./native` and `./e2e` import no `@stackra/*` package; `./react` imports only `@stackra/navigation/testing`, whose
+  route helpers it re-exports (registry v3.1). `@stackra/navigation` is an optional peer and never a dev dependency:
+  every package's tests depend on this one, so a dev edge back is a cycle in the turbo graph. Third-party edges
+  (Testing Library, React, React Native, Playwright, axe) are optional peers. Entries import `.` internals one way and
+  never each other, so the small wrapper helper is kept in each.
+- No house provider here: the renders take `providers` and `wrapper`, and framework packages compose theirs. The route
+  helpers are implemented in `@stackra/navigation/testing`, never copied here.
+- `./e2e` runs in the Playwright runner only; its unit tests cover the pure parts (`e2ePreset` with
+  `@playwright/test` mocked, endpoint matching, the axe gate) and never load Playwright under vitest.
 - Domain helpers never come here: they go in the owning package's `./testing` entry (ADR 0269 decision 3).
 - Re-export vitest's objects except `vi`; never wrap or copy them, so `expect.extend` acts on the consumer's instance.
   `vi` is imported from `vitest` directly: vitest hoists `vi.mock` only for that import (ADR 0269 decision 4, note of

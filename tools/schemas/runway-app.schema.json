@@ -24,6 +24,50 @@
       "$ref": "#/$defs/secretList",
       "description": "Every @Secret of the env and config classes, by NAME. Values live in Infisical and runway syncs them on deploy (ADR 0173). A native client holds none (ADR 0206 d8)."
     },
+    "brands": {
+      "type": "array",
+      "description": "Per-brand builds of this app (ADR 0335 d8): gen runs the app build once per brand from the same codebase, with that brand's tokens overlay and ids.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "name", "tokens", "appId"],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The brand key, unique in the member.",
+            "examples": ["atelier"]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The brand's display name.",
+            "examples": ["Atelier"]
+          },
+          "tokens": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Path of the brand's design tokens overlay, relative to the member.",
+            "examples": ["brands/atelier/tokens.css"]
+          },
+          "appId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The brand's app id.",
+            "examples": ["com.atelier.shop"]
+          },
+          "bundleIds": {
+            "type": "object",
+            "description": "The brand's store bundle ids.",
+            "additionalProperties": false,
+            "properties": {
+              "ios": { "type": "string", "minLength": 1 },
+              "android": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
     "health": {
       "type": "object",
       "description": "The health endpoint the deploy gate calls (web and pwa targets; not desktop).",

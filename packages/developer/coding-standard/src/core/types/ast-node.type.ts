@@ -62,6 +62,9 @@ export interface AstNode {
   /** A call's arguments. */
   readonly arguments?: readonly AstNode[];
 
+  /** An array literal's elements. */
+  readonly elements?: readonly (AstNode | null)[];
+
   /** An object literal's properties. */
   readonly properties?: readonly AstNode[];
 

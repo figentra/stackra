@@ -8,7 +8,7 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0305 (rule 34).
  */
 import { buildConfig, ConfigInvalidError, configKey } from "@stackra/config";
-import { describe, expect, expectTypeOf, it } from "@stackra/testing";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { ChromeConfig } from "#config/chrome.config";
 import { ChromeConfig$ } from "#core/constants/chrome-config-schema.constant";

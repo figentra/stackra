@@ -9,8 +9,8 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269 (decisions 3 and 6).
  */
-import { afterEach, describe, expect, it } from "@stackra/testing";
-import { screen, userEvent } from "@stackra/testing/react";
+import { afterEach, describe, expect, it } from "vitest";
+import { fireEvent, screen } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 import { Form, useActionData } from "react-router";
 
@@ -101,7 +101,7 @@ describe("renderRoute", () => {
 
   it("runs the route's submit for the page's form", async () => {
     renderRoute(GreetRoute, { component: Greet as never, path: "/greet/Lina" });
-    await userEvent.click(await screen.findByRole("button", { name: "Send" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Send" }));
     expect((await screen.findByRole("status")).textContent).toBe("hi");
   });
 

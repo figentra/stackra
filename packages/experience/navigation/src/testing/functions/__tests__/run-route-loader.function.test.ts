@@ -8,7 +8,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269 (decisions 3 and 6).
  */
-import { afterEach, describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "vitest";
 import { vi } from "vitest";
 
 import { Layout } from "#core/bases/layout.base";

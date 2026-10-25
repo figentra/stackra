@@ -6,7 +6,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0214; ADR 0164.
  */
-import { describe, expect, it } from "@stackra/testing";
+import { describe, expect, it } from "vitest";
 
 import { navigation } from "#core/functions/navigation.function";
 import { routeRef } from "#core/functions/route-ref.function";

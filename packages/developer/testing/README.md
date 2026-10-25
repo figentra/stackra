@@ -22,13 +22,14 @@ import { vi } from "vitest";
 | types `Matchers`, `FakeConstructor`, `FakeRecorder`, `FactoryDefaults`, `FixtureBuilder`                                 | the shapes behind the helpers above                                                                                             |
 
 `.` is generic: it has no workspace dependency and no domain type. Domain helpers (`createTestingModule`, `run`,
-actors, `toRefuseWith`, …) live in the `./testing` entry of the package that owns them (ADR 0269 decision 3). The
-`./e2e` and `./contract` entries arrive with app.
+actors, `toRefuseWith`, …) live in the `./testing` entry of the package that owns them (ADR 0269 decision 3). There is no `./node` or
+`./contract` entry: nothing imports one yet.
 
 ## `./react` and `./native`
 
-Thin, provider-agnostic wrappers over Testing Library. They depend on no workspace package either, so every package's
-tests can use them; a framework package passes its own providers.
+Thin, provider-agnostic wrappers over Testing Library. The render helpers depend on no workspace package, so every
+package's tests can use them; a framework package passes its own providers. `./react` also offers navigation's route
+helpers, so an app's route tests import one entry.
 
 | Entry      | Export                                           | What it does                                                                                                          |
 | ---------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
@@ -36,6 +37,8 @@ tests can use them; a framework package passes its own providers.
 | `./react`  | `renderHook(hook, { providers, wrapper, ... })`  | the same for a hook                                                                                                   |
 | `./react`  | `userEvent`                                      | user-event with the house default: one `userEvent.setup()` session per render, used by every call until the test ends |
 | `./react`  | `screen`, `within`, `act`                        | Testing Library's own                                                                                                 |
+| `./react`  | `renderRoute`, `renderLayout`                    | `@stackra/navigation/testing`'s: mount a route (by class or `Routes.<key>`) or a layout under a router stub           |
+| `./react`  | `runRouteLoader`, `runRouteSubmit`, `routeMeta`  | the same package's: run a loader, a submit or `meta` with a fake route context                                        |
 | `./native` | `render`, `renderHook`, `userEvent`              | the same over `@testing-library/react-native` 14, whose renders are asynchronous: `await render(...)`                 |
 | `./native` | `screen`, `act`                                  | the library's own                                                                                                     |
 | `./native` | `axe(view)`, `toHaveNoViolations`                | `expect(await axe(view)).toHaveNoViolations()`: pressables have a name, images a label, headings a name               |
@@ -55,8 +58,56 @@ it("cancels", async () => {
 - A web test switches itself to jsdom with `// @vitest-environment jsdom`. `./native` imports the library's `pure`
   entry, so no jest matchers or global hooks are installed.
 - `axe` on native checks three rules over the host tree, not axe-core's set (there is no React Native runner).
-- The route helpers (`renderRoute`, `renderLayout`, `runRouteLoader`, `runRouteSubmit`, `routeMeta`) need navigation,
-  so they live in `@stackra/navigation/testing`.
+- The route helpers are `@stackra/navigation/testing`'s own objects. `@stackra/navigation` is an optional peer and
+  a dev dependency here, so `./react` resolves; navigation's tests import vitest directly, so there is no turbo cycle.
+  An app that uses them already depends on navigation.
+- `./native` has no `renderRoute` (STA-348 #45 stays open): mounting a React Navigation screen needs a native route
+  table and native testing parts, which `@stackra/navigation/testing` does not export (it is web only). Tracked
+  dependency: add the native `renderRoute(Routes.<key>, { locale, clients, session, storage, consent, flags, platform,
+analytics })` to `@stackra/navigation/testing` first, returning `{ navigation, i18n, tenancy, ... }`; then
+  `./native` offers it, as `./react` does, and the mobile template tests resolve `@stackra/testing/native`.
+
+## `./e2e`
+
+The end-to-end tier over Playwright (ADR 0269 decision 6). It runs in the Playwright runner only, never under vitest;
+`@playwright/test` and `@axe-core/playwright` are optional peers.
+
+| Export                     | What it does                                                                                                         |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `test`                     | Playwright's `test`; every test records the requests its context sent and got an answer to                           |
+| `expect`                   | Playwright's `expect` plus `toHaveNoViolations()` for `axe`'s report                                                 |
+| `axe(page)`                | axe-core with the WCAG 2.x A and AA tags; `toHaveNoViolations` fails on serious or critical only (ADR 0183 d2)       |
+| `apiCalls(key)`            | the recorded calls of a consumed key (`orders.order.create@1`), found through the app's and services' manifests      |
+| `seed(key)`                | runs one seeder in the stack (`POST /__stackra/e2e/seed`)                                                            |
+| `loginAs(page, actor)`     | signs a test actor in on the page's context (`POST /__stackra/e2e/session`)                                          |
+| `evictShell(page)`         | deletes the precached `index.html` shells, so the worker answers with the offline page                               |
+| `launchDesktop({ fakes })` | launches `dist/desktop/main.js` under Playwright's Electron with `STACKRA_E2E_FAKES`; `app.openUrl(link)` deep-links |
+| `e2ePreset(options)`       | the Playwright config gen writes: projects per runner and RTL locale, `pwa` and `desktop` projects, the stack        |
+| `E2E_CONTROL`              | the control route paths the stack serves                                                                             |
+
+```ts
+import { axe, expect, loginAs, seed, test } from "@stackra/testing/e2e";
+
+test.beforeEach(async ({ page }) => {
+  await seed("orders.demo");
+  await loginAs(page, { role: "staff", tenant: "ten_1" });
+});
+
+test("places a quick order", async ({ page }) => {
+  await page.goto("/quick-order");
+  await expect(await axe(page)).toHaveNoViolations();
+});
+```
+
+What the e2e stack must provide (`stackra dev` started by `e2ePreset` with `STACKRA_E2E=1`):
+
+- `POST /__stackra/e2e/seed` with `{ key }` and `POST /__stackra/e2e/session` with `{ role, tenant, memberships? }` on
+  the app's origin, answering 2xx (the session route sets the session cookie);
+- the consumed services from `STACKRA_E2E_SERVICES` on memory drivers, seeded with `STACKRA_E2E_SEEDS`, and
+  Cloudflare's Turnstile test keys when `STACKRA_E2E_TURNSTILE=test-keys`;
+- in the desktop main process, a bridge named in `STACKRA_E2E_FAKES` answers with its value as `data`.
+
+None of these is served yet; the journeys that use `seed`, `loginAs` or `launchDesktop` fail until they are.
 
 ## A fake, a matcher and a fixture
 

@@ -23,6 +23,40 @@
       "description": "Prefix for stacks (`<project>/staging`), images (`<project>-core`), Workers and tags.",
       "examples": ["acme-platform"]
     },
+    "product": {
+      "type": "object",
+      "description": "The product this repository ships (ADR 0335 d2). A product with no `edition` is a base product; an edition names the base product it is made of and the range of released base versions it accepts.",
+      "additionalProperties": false,
+      "required": ["key"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "The product's registry key.",
+          "examples": ["muslin"]
+        },
+        "edition": {
+          "type": "object",
+          "description": "Present when this product is an edition of another.",
+          "additionalProperties": false,
+          "required": ["of", "version"],
+          "properties": {
+            "of": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$",
+              "description": "The base product's registry key.",
+              "examples": ["commerce"]
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The semver range of released base manifests the edition is built against.",
+              "examples": ["^1.0.0"]
+            }
+          }
+        }
+      }
+    },
     "providers": {
       "type": "object",
       "description": "Every account and vendor, named once. Values are public ids or `ref:<path>`; never a secret.",

@@ -18,6 +18,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { definesFor } from "#node/functions/defines-for.function";
 
@@ -203,5 +204,40 @@ describe("definesFor", () => {
       `${[...ROOT_RUNWAY.slice(0, 9), "      publicOrigin: downloads"].join("\n")}\n`,
     );
     expect(() => definesFor("console", "production")).toThrow(/feed\.publicOrigin/);
+  });
+
+  it("injects the root product and the app brands in dev and in production", () => {
+    write("runway.yaml", `${[...ROOT_RUNWAY, "product:", "  key: acme"].join("\n")}\n`);
+    write(
+      "apps/console/runway.yaml",
+      `${[...CONSOLE_RUNWAY, "brands:", "  - { key: acme, name: Acme, tokens: acme.json, appId: com.acme }"].join("\n")}\n`,
+    );
+    write(".stackra/dev/ports.json", JSON.stringify(DEV_FACTS));
+    vi.stubEnv("VITE_SENTRY_DSN", "https://public@sentry.example/1");
+
+    for (const environment of ["dev", "production"]) {
+      const injected = JSON.parse(definesFor("console", environment)["__STACKRA_RUNWAY__"] ?? "");
+      expect(injected.product).toEqual({ key: "acme" });
+      expect(injected.members.console.brands).toEqual([
+        { key: "acme", name: "Acme", tokens: "acme.json", appId: "com.acme" },
+      ]);
+    }
+  });
+
+  it("gives no product and does not throw outside a pnpm workspace", () => {
+    const outside = mkdtempSync(join(tmpdir(), "stackra-outside-"));
+    vi.spyOn(process, "cwd").mockReturnValue(outside);
+    try {
+      const defines = definesFor("docs", "staging");
+      expect(JSON.parse(defines["__STACKRA_RUNWAY__"] ?? "").product).toBeUndefined();
+    } finally {
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
+
+  it("still fails for an invalid root runway", () => {
+    write("runway.yaml", "version: 3\nenvironments: nope\n");
+
+    expect(() => definesFor("console", "staging")).toThrow(RunwayInvalidError);
   });
 });

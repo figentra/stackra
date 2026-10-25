@@ -9,7 +9,7 @@
 import type { ActionRef, ActionResult, QueryRef, RefInput, RefOutput } from "@stackra/clients";
 import { Driver } from "@stackra/container";
 import { Port } from "@stackra/contracts";
-import { describe, expect, expectTypeOf, it } from "@stackra/testing";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { RouteCaller } from "#contracts/ports/route-caller.port";
 

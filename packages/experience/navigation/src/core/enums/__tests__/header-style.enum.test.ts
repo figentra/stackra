@@ -6,7 +6,7 @@
  * Governing contract: ADR 0022; ADR 0128 (`Enum.of`).
  */
 import { Enum } from "@stackra/contracts";
-import { describe, expect, expectTypeOf, it } from "@stackra/testing";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { HeaderStyle } from "#core/enums/header-style.enum";
 

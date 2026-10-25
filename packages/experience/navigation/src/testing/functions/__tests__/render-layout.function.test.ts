@@ -7,8 +7,8 @@
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022; ADR 0269 (decisions 3 and 6).
  */
-import { describe, expect, it } from "@stackra/testing";
-import { screen } from "@stackra/testing/react";
+import { describe, expect, it } from "vitest";
+import { screen } from "@testing-library/react";
 import { createElement } from "react";
 import { useLoaderData } from "react-router";
 

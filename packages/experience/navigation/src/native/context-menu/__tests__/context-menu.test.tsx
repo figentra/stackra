@@ -12,7 +12,7 @@
  */
 import { Container } from "@stackra/container";
 import { ContainerProvider } from "@stackra/container/react";
-import { afterEach, describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { vi } from "vitest";

@@ -22,6 +22,7 @@ describe("STACKRA_PLUGIN", () => {
       "base-matches-suffix",
       "disable-needs-reason",
       "docblock-shape",
+      "file-contract",
       "hook-file-name",
       "lines-between-class-members",
       "member-order",
@@ -32,6 +33,8 @@ describe("STACKRA_PLUGIN", () => {
       "no-hash-private",
       "no-kind-decorator",
       "no-parameter-decorator",
+      "no-raw-key-literal",
+      "no-tenant-vocabulary",
       "one-declaration-per-file",
     ]);
   });
@@ -39,7 +42,7 @@ describe("STACKRA_PLUGIN", () => {
   it.each(Object.entries(STACKRA_PLUGIN.rules))("%s is a complete rule", (_name, rule) => {
     expect(typeof rule.create).toBe("function");
     expect(rule.meta.schema).toEqual([]);
-    expect(rule.meta.docs.description).toMatch(/\(.*(ADR|R-11).*\)\.$/);
+    expect(rule.meta.docs.description).toMatch(/\(.*(ADR|R-11|R-56|R-59|owner H).*\)\.$/);
     expect(Object.keys(rule.meta.messages).length).toBeGreaterThan(0);
   });
 

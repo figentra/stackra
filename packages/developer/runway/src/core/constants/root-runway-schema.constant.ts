@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `ROOT_RUNWAY_SCHEMA`, the repository's root `runway.yaml` at format version 3: the project, the providers
+ * Purpose: `ROOT_RUNWAY_SCHEMA`, the repository's root `runway.yaml` at format version 3: the project, the product (an edition's base), the providers
  *          and accounts, each environment (destinations, shared resources, defaults, topology), the deploy targets,
  *          the edge, the secret defaults with the CI and gateway secret names, the release policy and observability.
  * Boundary: internal; `parseRunway("root", …)` and `runwayJsonSchema("root")` read it, and it accepts what the
@@ -9,13 +9,14 @@
  *           owners check them (`definesFor` reads `targets.electron-release.feed.publicOrigin` itself).
  * Runtime: isomorphic
  * Governing contract: ADR 0296 (decision 2 and its 2026-10-24 note), ADR 0168 (decisions 1 to 3 and 6), ADR 0171
- *                     (`ref:` values), ADR 0173 (secret names only), ADR 0237 (gateway secret names).
+ *                     (`ref:` values), ADR 0173 (secret names only), ADR 0237 (gateway secret names), ADR 0335 (decision 2: product).
  */
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
 
 import { OPEN_OBJECT_SCHEMA } from "#core/constants/open-object-schema.constant";
 import { ROOT_ENVIRONMENT_SCHEMA } from "#core/constants/root-environment-schema.constant";
+import { PRODUCT_SCHEMA } from "#core/constants/product-schema.constant";
 import { SECRET_NAMES_SCHEMA } from "#core/constants/secret-names-schema.constant";
 import { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 
@@ -32,6 +33,7 @@ export const ROOT_RUNWAY_SCHEMA = z.strictObject({
   $schema: z.string().optional(),
   version: z.literal(3),
   project: z.string().regex(/^[a-z][a-z0-9-]*$/, "Expected a lower-case project name"),
+  product: PRODUCT_SCHEMA.optional(),
   providers: z
     .object({
       aws: z

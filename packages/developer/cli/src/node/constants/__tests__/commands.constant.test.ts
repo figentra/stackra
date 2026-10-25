@@ -36,7 +36,15 @@ describe("COMMANDS", () => {
     ]) {
       expect(names).toContain(name);
     }
-    expect(names).toEqual(expect.arrayContaining(["mcp exec", "agents sync", "agents check"]));
+    expect(names).toEqual(
+      expect.arrayContaining([
+        "mcp exec",
+        "agents sync",
+        "agents check",
+        "db migrate",
+        "db rollback",
+      ]),
+    );
   });
 
   it("holds no Figentra-internal operation", () => {

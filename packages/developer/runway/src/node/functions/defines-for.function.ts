@@ -3,7 +3,7 @@
  * Purpose: `definesFor(member, environment)`, the bundler `define` map of an app member for one environment: each
  *          public var of its runway's `environments.<env>.vars` (`VITE_`, `EXPO_PUBLIC_`, `RENDERER_VITE_`) as
  *          `import.meta.env.<NAME>`, resolved; and `__STACKRA_RUNWAY__`, the member's resolved runway facts (its dev
- *          ports in dev; its desktop feed path, channel and the root feed origin elsewhere), which the `.` readers
+ *          ports in dev; its brands and the product; its desktop feed path, channel and the root feed origin elsewhere), which the `.` readers
  *          answer from inside the bundle.
  * Boundary: reads the member runway at the working directory (the member root, where the generated config runs), the
  *           root runway only for the feed origin, and the dev facts only when a value needs them. A server var
@@ -21,6 +21,7 @@ import { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 import { RunwayKind } from "#core/enums/runway-kind.enum";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { readDevFacts } from "#core/functions/read-dev-facts.function";
+import type { Product } from "#core/types/product.type";
 import type { RunwayFacts } from "#core/types/runway-facts.type";
 import { PUBLIC_VAR_PREFIXES } from "#node/constants/public-var-prefixes.constant";
 import { RUNWAY_FACTS_GLOBAL } from "#node/constants/runway-facts-global.constant";
@@ -62,6 +63,16 @@ export function definesFor(member: string, environment: string): Record<string, 
     return devFacts;
   };
 
+  const brands = runway?.brands;
+  let product: Product | undefined;
+  try {
+    const file = join(repositoryRoot(), "runway.yaml");
+    product = existsSync(file) ? readRunway(file, RunwayKind.Root).product : undefined;
+  } catch (error) {
+    // a bundle built outside a repository has no product; any other failure is real
+    if (!(error instanceof RunwayUnresolvedError)) throw error;
+  }
+
   const defines: Record<string, string> = {};
   for (const [name, value] of Object.entries(values?.vars ?? {})) {
     if (!PUBLIC_VAR_PREFIXES.some((prefix) => name.startsWith(prefix))) continue;
@@ -84,7 +95,8 @@ export function definesFor(member: string, environment: string): Record<string, 
         environment: target,
         lane: facts.lane,
         feedOrigin: facts.feedOrigin,
-        members: { [member]: { url, port, host, https, open, desktop, feed } },
+        product,
+        members: { [member]: { url, port, host, https, open, desktop, feed, brands } },
       });
     }
     return defines;
@@ -113,11 +125,13 @@ export function definesFor(member: string, environment: string): Record<string, 
     version: 1,
     environment: target,
     feedOrigin,
+    product,
     members: {
-      [member]:
-        feedPath !== undefined && channel !== undefined
-          ? { feed: { path: feedPath, channel } }
-          : {},
+      [member]: {
+        ...(feedPath !== undefined &&
+          channel !== undefined && { feed: { path: feedPath, channel } }),
+        brands,
+      },
     },
   });
   return defines;
