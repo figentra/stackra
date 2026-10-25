@@ -5,7 +5,7 @@ and a few typed field decorators refine it. `stackra gen` compiles each shape to
 here, so `validate(X, raw)` and `X.create(...)` find it. Authors write no zod except through `@Field(zod)`.
 
 **Tier:** `tier:lib` (`packages/foundation/validation`). Entry `.` only (the old `./runtime` entry is folded in).
-Depends on `@stackra/contracts`, `@stackra/container` and `zod`. It absorbs the retired `@stackra/schema`.
+Depends on `@stackra/contracts`, `@stackra/container` and `zod`; one-time codes use Web Crypto. It absorbs the retired `@stackra/schema`.
 
 ## What is here
 
@@ -22,6 +22,54 @@ Depends on `@stackra/contracts`, `@stackra/container` and `zod`. It absorbs the 
 | `FieldDecorator`, `ShapeClass`                                     | the types behind a field decorator and a derived shape class            |
 
 `Enum` is `@stackra/contracts`'; `money()` and `currencyCode()` are `@stackra/money`'s.
+
+## Identifiers, phones, addresses and barcodes
+
+Formats are market-pack data; this package holds the algorithms only, so no country is written in code.
+
+| Symbol                                                        | Use                                                                                                                                                               |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `IdentifierFormat`, `IdentifierCheck`                         | a Market's pattern for a national ID, Iqama, Emirates ID, VAT or TRN, IBAN or postal code, and its check algorithm (`luhn`, `mod97`, `gs1`, `century_birth_date`) |
+| `checkIdentifier(value, format)`, `identifier(format)`        | normalise (spaces, hyphens, Arabic-Indic digits, case) and check; the schema outputs the normalised value                                                         |
+| `normalizeIdentifier`                                         | the normal form alone                                                                                                                                             |
+| `e164()`, `E164`                                              | a phone number typed any common way, output as `+966500000001`                                                                                                    |
+| `countryCode()`, `CountryCode`                                | ISO 3166-1 alpha-2, upper-cased, known to Intl                                                                                                                    |
+| `address(format)`, `Address`, `AddressFormat`, `AddressField` | an address checked against its Market's required parts, line count, postal code and short address                                                                 |
+| `gtin()`, `isGtin`, `gtinCheckDigit`                          | GTIN-8, UPC-A, EAN-13 and GTIN-14 check digits; the schema outputs GTIN-14 (conflict #1)                                                                          |
+
+```ts
+const vat = identifier(valueOf(pack, "identity.vat_number", today).value as IdentifierFormat);
+vat.parse("3000 0000 0000 003");
+```
+
+## One-time codes
+
+Issue and verify login, pickup and verification codes (conflict #2 puts them here).
+
+```ts
+const { code, record } = await issueOneTimeCode({
+  purpose: "login",
+  subject: userId,
+  policy,
+  pepper,
+  now,
+});
+// deliver `code` once; store `record` (it holds a peppered HMAC, never the code)
+const { result, record: next } = await verifyOneTimeCode({
+  record,
+  code: typed,
+  policy,
+  pepper,
+  now,
+});
+// store `next` with a compare-and-set on `attempts`
+```
+
+- `policy` (`length`, `alphabet`, `ttlSeconds`, `maxAttempts`) is settings data; nothing is defaulted but the digit
+  alphabet.
+- The digest is HMAC-SHA-256 under the pepper over purpose, subject and code; compared in constant time
+  (`constantTimeEqual`). Random digits come from Web Crypto without modulo bias.
+- `OneTimeCodeResult`: `valid` (the record is spent), `invalid` (an attempt is counted), `expired`, `locked`.
 
 ## Shapes
 

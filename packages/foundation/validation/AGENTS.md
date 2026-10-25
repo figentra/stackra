@@ -33,6 +33,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only.
 - A runtime helper's output type must equal the platform type it stands for (`PublicId<P>`, `Date`, `Json`, `Url`),
   or every generated `X$Check` breaks.
 - Only add a symbol a consumer imports today (the template, a generated sample, a package, or the registry row).
+- Configuration, not code: an identifier, phone, postal-code or address format is market-pack data passed in as an
+  `IdentifierFormat` or `AddressFormat`. Add an algorithm (`IdentifierCheck`), never a country's pattern.
+- One-time codes store a peppered HMAC only; never log or return a code after issue, never compare with `===`.
 
 ## Rules that fail the build
 
@@ -48,6 +51,7 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only.
 
 ## PII
 
-| Data | Where | Handling                                                                                          |
-| ---- | ----- | ------------------------------------------------------------------------------------------------- |
-| None | —     | Shapes only; `@Classified` records a field's class of personal data but this package stores none. |
+| Data          | Where              | Handling                                                                                          |
+| ------------- | ------------------ | ------------------------------------------------------------------------------------------------- |
+| None          | —                  | Shapes only; `@Classified` records a field's class of personal data but this package stores none. |
+| One-time code | `issueOneTimeCode` | Returned once to the caller for delivery; the record holds an HMAC digest only.                   |
