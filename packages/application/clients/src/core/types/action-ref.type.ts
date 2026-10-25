@@ -8,6 +8,7 @@
  * Governing contract: ADR 0260 (decisions 3 and 4); ADR 0294 (decision 20: derived permission); ADR 0059 (offline).
  */
 import type { EndpointOptions } from "@stackra/actions";
+import type { Risk } from "@stackra/iam";
 import type { ZodType } from "zod";
 
 import type { ActionTexts } from "#core/types/action-texts.type";
@@ -36,7 +37,7 @@ export type ActionRef<
   readonly endpoint?: EndpointOptions;
 
   /** The risk code of the permission (`l2`). */
-  readonly risk?: string;
+  readonly risk?: Risk;
 
   /** The confirmation, success and queued texts. */
   readonly texts: ActionTexts;

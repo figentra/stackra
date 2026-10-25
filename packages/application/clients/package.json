@@ -109,6 +109,7 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/i18n": "workspace:*",
+    "@stackra/iam": "workspace:*",
     "@stackra/query": "workspace:*",
     "@stackra/transport": "workspace:*",
     "@stackra/validation": "workspace:*",
