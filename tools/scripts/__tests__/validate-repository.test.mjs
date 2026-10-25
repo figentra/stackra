@@ -62,8 +62,24 @@ test("dependencies replaced by Accepted ADRs are forbidden", () => {
 });
 
 test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0310)", () => {
-  const pro = (dir, pkg) => check({ ...ok, dir, pkg }).filter((m) => /HeroUI Pro|private/.test(m));
-  const wrapper = { name: "@stackra/ui-pro", private: true };
+  const pro = (dir, pkg) =>
+    check({ ...ok, dir, pkg }).filter((m) => /HeroUI Pro|@stackra\/ui-pro /.test(m));
+  const wrapper = {
+    name: "@stackra/ui-pro",
+    private: true,
+    files: ["dist", "assets", "!**/*.map"],
+    exports: { ".": { "@stackra/source": "./src/index.ts", default: "./dist/index.mjs" } },
+    publishConfig: {
+      registry: "https://npm.pkg.keygen.sh/figentra/",
+      exports: { ".": { types: "./dist/index.d.mts", default: "./dist/index.mjs" } },
+    },
+  };
+  const registryFinding =
+    "@stackra/ui-pro publishConfig.registry must be Keygen's npm engine, https://npm.pkg.keygen.sh/<account>/ (ADR 0310)";
+  const filesFinding =
+    '@stackra/ui-pro files must list no src and must end with "!**/*.map": its tarball ships dist only (ADR 0316)';
+  const exportsFinding =
+    "@stackra/ui-pro publishConfig.exports must name every entry of exports, on dist or assets only, with no @stackra/source condition (ADR 0316)";
   for (const dep of ["@heroui-pro/react", "heroui-native-pro", "@stackra/ui-pro"]) {
     assert.deepEqual(
       pro("packages/design-system/ui", {
@@ -85,12 +101,37 @@ test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0310)", 
     pro(ui, { ...wrapper, devDependencies: { "@heroui-pro/react": "catalog:frontend" } }),
     [],
   );
-  assert.deepEqual(pro(ui, { name: "@stackra/ui-pro" }), [
-    '@stackra/ui-pro must be "private": true with no publishConfig (ADR 0310)',
+  assert.deepEqual(pro(ui, wrapper), []);
+  assert.deepEqual(pro(ui, { name: "@stackra/ui-pro", files: ["dist", "./src/"] }), [
+    '@stackra/ui-pro must be "private": true, so nothing publishes it to npmjs (ADR 0310)',
+    registryFinding,
+    filesFinding,
+    exportsFinding,
   ]);
-  assert.deepEqual(pro(ui, { ...wrapper, publishConfig: { access: "public" } }), [
-    '@stackra/ui-pro must be "private": true with no publishConfig (ADR 0310)',
-  ]);
+  const npmjs = {
+    ...wrapper,
+    publishConfig: {
+      access: "public",
+      registry: "https://registry.npmjs.org/",
+      exports: { ".": { "@stackra/source": "./src/index.ts", default: "./dist/index.mjs" } },
+    },
+  };
+  assert.deepEqual(pro(ui, npmjs), [registryFinding, exportsFinding]);
+  const accountless = { ...wrapper.publishConfig, registry: "https://npm.pkg.keygen.sh/" };
+  assert.deepEqual(pro(ui, { ...wrapper, publishConfig: accountless }), [registryFinding]);
+  assert.deepEqual(pro(ui, { ...wrapper, files: ["dist", "assets"] }), [filesFinding]);
+  assert.deepEqual(pro(ui, { ...wrapper, files: ["dist", "!**/*.map", "assets"] }), [filesFinding]);
+  assert.deepEqual(pro(ui, { ...wrapper, files: ["*", "!**/*.map"] }), [filesFinding]);
+  const missingEntry = {
+    ...wrapper,
+    exports: { ...wrapper.exports, "./react": "./dist/react.mjs" },
+  };
+  assert.deepEqual(pro(ui, missingEntry), [exportsFinding]);
+  const onSource = {
+    ...wrapper.publishConfig,
+    exports: { ".": { types: "./dist/index.d.mts", default: "./src/index.ts" } },
+  };
+  assert.deepEqual(pro(ui, { ...wrapper, publishConfig: onSource }), [exportsFinding]);
   const uniwind = (dir) =>
     check({
       ...ok,
@@ -157,7 +198,7 @@ const filesOk = {
 
 test("a complete member has no file findings", () => assert.deepEqual(checkFiles(filesOk), []));
 
-test("the private HeroUI Pro wrapper needs no publishConfig; any other package does (ADR 0310)", () => {
+test("the HeroUI Pro wrapper skips the npmjs publishConfig, which check replaces; any other package needs it (ADR 0310)", () => {
   const { publishConfig: _, ...unpublished } = filesOk.pkg;
   const at = (name) => checkFiles({ ...filesOk, pkg: { ...unpublished, name } });
   assert.deepEqual(at("@stackra/ui-pro"), []);
