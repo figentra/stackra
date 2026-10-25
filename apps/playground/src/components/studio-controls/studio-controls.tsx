@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the Theme Studio's controls:
  *          - the theme's name;
- *          - presets (Stackra, Steel, Ember, Moss, Violet);
+ *          - presets (Stackra, Ember, Moss, Violet);
  *          - an accent colour (on or off, its hue and chroma);
  *          - the hue and chroma the neutrals lean to;
  *          - the base radius;
@@ -35,14 +35,9 @@ const STRINGS = {
   arabic: "Arabic face",
 } as const;
 
-/** The presets: a name and the knobs it sets. */
+/** The presets: a name and the knobs it sets. Stackra is the theme as shipped, with its steel-blue accent. */
 export const STUDIO_PRESETS: readonly { id: string; label: string; knobs: ThemeKnobs }[] = [
   { id: "stackra", label: "Stackra", knobs: {} },
-  {
-    id: "steel",
-    label: "Steel",
-    knobs: { accent: { hue: 248, chroma: 0.09 }, neutralHue: 248, neutralChroma: 0.012 },
-  },
   {
     id: "ember",
     label: "Ember",

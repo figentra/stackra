@@ -150,10 +150,12 @@ pnpm --filter @stackra/tokens exec vitest run -u
 The oklch values come unchanged from the approved Stackra brand kit 0.1.0, which `@stackra/brand` vendored until ADR 0302
 retired it. The kit's token reports sit in `assets/data/stackra/` (`resolved`, `contrast`, `separation` and their
 sources); the tests hold the theme to them: the resolved colours, every WCAG minimum in the contrast report, and an
-achromatic accent family. Every hex is derived from its oklch value; the kit's own hex labels for the HeroUI base roles
+achromatic link and signal. Every hex is derived from its oklch value; the kit's own hex labels for the HeroUI base roles
 (surfaces, status colours, borders) did not match their oklch and are not used. The contrast report was computed from
-the oklch values, so it holds. Stackra has **no accent colour**: every accent role is a neutral (ink on paper, paper on
-ink). Steel colours the wordmark and the st tile only. The kit predates HeroUI's `segment` role, so the theme aliases it
+the oklch values, so it holds. The accent is the brand's **steel blue** (ADR 0319): `accent`, its hover, pressed and soft
+steps and `focus` take the wordmark's hue (248), with paper on it at 5.49:1 (light) and ink at 7.88:1 (dark); the link
+and the signal stay neutral. On the web the quiet button variants (secondary, tertiary, outline, ghost on hover) and the
+close button sit on the control fill (the thick level, floored at the frosted floor, with no backdrop filter); the primary stays solid in the accent. The kit predates HeroUI's `segment` role, so the theme aliases it
 to white in light and graphite-700 in dark.
 
 One documented deviation from the kit: the light `--muted` (and so `--field-placeholder`) is `oklch(0.49 0.01 250)`, not the

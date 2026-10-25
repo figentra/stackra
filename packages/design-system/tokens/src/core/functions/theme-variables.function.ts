@@ -14,6 +14,7 @@ import { ColorRole } from "#contracts/enums/color-role.enum";
 import { MaterialLevel } from "#contracts/enums/material-level.enum";
 import type { Theme } from "#contracts/types/theme.type";
 import type { ThemeVariables } from "#contracts/types/theme-variables.type";
+import { MATERIAL_MODES } from "#core/constants/material-modes.constant";
 import { materialModeVariables } from "#core/functions/material-mode-variables.function";
 
 const SHADOWS = ["surface", "overlay", "field"] as const;
@@ -48,6 +49,9 @@ function materialColours(theme: Theme, mode: "light" | "dark"): Record<string, s
       "color-mix(in oklch, var(--foreground) calc(var(--material-edge-share) * 100%), transparent)",
     "--material-highlight":
       "color-mix(in oklch, oklch(1 0 0) calc(var(--material-highlight-share) * 100%), transparent)",
+    // A control's glass: the thick level, never thinner than the frosted mode's floor, so a label holds 4.5:1 over
+    // any backdrop in every mode (ADR 0319 decision 2).
+    "--material-control-fill": `color-mix(in oklch, var(--surface) calc(clamp(max(var(--material-fill-floor), ${MATERIAL_MODES.frosted.fillFloor}), var(--material-thick-share) * var(--material-fill-scale), 1) * 100%), transparent)`,
     "--material-sheen-color":
       "color-mix(in oklch, oklch(1 0 0) calc(var(--material-sheen) * var(--material-highlight-share) * 100%), transparent)",
   };
