@@ -144,6 +144,7 @@ export type { KanbanCardListProps } from "#react/kanban/kanban-card-list";
 export { KpiGroup, type KpiGroupProps } from "#react/kpi-group/kpi-group";
 export { Kpi, type KpiProps } from "#react/kpi/kpi";
 export type { KpiActionsProps } from "#react/kpi/kpi-actions";
+export type { KpiChartProps } from "#react/kpi/kpi-chart";
 export type { KpiIconProps } from "#react/kpi/kpi-icon";
 export type { KpiProgressProps } from "#react/kpi/kpi-progress";
 export { LineChart, type LineChartProps } from "#react/line-chart/line-chart";

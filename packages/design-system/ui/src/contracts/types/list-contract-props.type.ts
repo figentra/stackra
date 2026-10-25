@@ -23,4 +23,9 @@ export interface ListContractProps<TItem extends ListItemData = ListItemData>
   readonly hasMore?: boolean | undefined;
   /** Called when the end of the list is reached and `hasMore` is true, never while `isLoading`. */
   readonly onLoadMore?: (() => void) | undefined;
+  /**
+   * The rows fade in and rise into place as one block when the list mounts, inside the list's surface (`Reveal`, ADR 0329). Defaults
+   * to on; off, or under reduced motion, they show at once.
+   */
+  readonly isAnimated?: boolean | undefined;
 }

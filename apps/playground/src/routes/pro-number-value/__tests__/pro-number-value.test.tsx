@@ -4,8 +4,10 @@
  *          formats the amount in four currencies and four compact figures, and keeps every `dt` and `dd` inside a
  *          `dl`.
  * Boundary: jsdom with real HeroUI Pro; `matchMedia` and `ResizeObserver` are stubbed because jsdom has neither.
+ *           NumberFlow, which draws the rolling number (ADR 0329), puts its digits in a shadow root that `textContent`
+ *           does not reach, so it is replaced by a stand-in that formats with the same locale and options.
  * Runtime: browser
- * Governing contract: ADR 0310 (decision 12); ADR 0022 (test placement).
+ * Governing contract: ADR 0310 (decision 12); ADR 0329 (motion layer); ADR 0022 (test placement).
  */
 // @covers sta-416:FR-012
 import { render, screen } from "@testing-library/react";
@@ -13,6 +15,14 @@ import { render, screen } from "@testing-library/react";
 import { stubBrowserApis } from "#src/__tests__/stub-browser-apis";
 import { ProNumberValue } from "#src/routes/pro-number-value/pro-number-value";
 import { ProNumberValueRoute } from "#src/routes/pro-number-value/pro-number-value.route";
+
+vi.mock("@number-flow/react", () => ({
+  default: (props: {
+    value: number;
+    locales?: Intl.LocalesArgument;
+    format?: Intl.NumberFormatOptions;
+  }) => <span>{new Intl.NumberFormat(props.locales, props.format).format(props.value)}</span>,
+}));
 
 describe("ProNumberValue", () => {
   beforeEach(stubBrowserApis);

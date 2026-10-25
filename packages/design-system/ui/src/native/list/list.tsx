@@ -4,7 +4,9 @@
  *          `ListGroup` surface, with a separator between rows. A list that selects makes each row a radio (one) or a
  *          checkbox (several) with its checked state and a checkmark, and reports the selection as a list of ids in the
  *          items' order. An empty list shows `emptyState`, a loading one a named spinner, and a list with `hasMore`
- *          calls `onLoadMore` from the `FlatList`'s end-reached callback, which is the contract's `onLoadMore`.
+ *          calls `onLoadMore` from the `FlatList`'s end-reached callback, which is the contract's `onLoadMore`. The rows
+ *          fade in and rise into place as one block when the list mounts (`Reveal`, unless `isAnimated` is off), inside the `ListGroup`,
+ *          so a glass group never has an animated ancestor (ADR 0329).
  * Boundary: no styling of its own; the look is HeroUI Native's. It never sorts, filters or fetches. While the list
  *           selects, a row's `onPress` is not called: a row selects or acts, never both. Not built here, and not in the
  *           contract: sections and pull to refresh. The selection is uncontrolled unless `selectedKeys` is given.
@@ -22,6 +24,7 @@ import { keysOfSelection } from "#core/functions/keys-of-selection.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Icon } from "#native/icon/icon";
 import { endContentNode, ListItem } from "#native/list/list-item";
+import { Reveal } from "#native/reveal/reveal";
 import { Separator } from "#native/separator/separator";
 import { Spinner } from "#native/spinner/spinner";
 
@@ -52,6 +55,7 @@ export function List<TItem extends ListItemData = ListItemData>({
   onSelectionChange,
   hasMore,
   onLoadMore,
+  isAnimated = true,
   ...rest
 }: ListProps<TItem>) {
   const [ownKeys, setOwnKeys] = useState<readonly string[]>(defaultSelectedKeys ?? []);
@@ -79,46 +83,50 @@ export function List<TItem extends ListItemData = ListItemData>({
         )
       ) : (
         <ListGroup {...omitUndefined({ variant })}>
-          <FlatList
-            data={items}
-            extraData={selected}
-            keyExtractor={(item) => item.id}
-            accessibilityRole="list"
-            accessibilityLabel={label}
-            ItemSeparatorComponent={RowSeparator}
-            onEndReachedThreshold={0.5}
-            {...(hasMore === true && !isLoading && onLoadMore ? { onEndReached: onLoadMore } : {})}
-            renderItem={({ item }) => {
-              const isChecked = selected.includes(item.id);
-              return (
-                <ListItem
-                  title={item.title}
-                  description={item.description}
-                  startIcon={item.startIcon}
-                  endContent={
-                    isSelecting && isChecked ? (
-                      <>
-                        {endContentNode(item.endContent)}
-                        <Icon name="check" tone="accent" />
-                      </>
-                    ) : (
-                      item.endContent
-                    )
-                  }
-                  hasChevron={item.hasChevron}
-                  onPress={isSelecting ? () => toggle(item.id) : item.onPress}
-                  isDisabled={item.isDisabled}
-                  label={item.label}
-                  {...(isSelecting
-                    ? ({
-                        accessibilityRole: selectionMode === "single" ? "radio" : "checkbox",
-                        accessibilityState: { checked: isChecked },
-                      } as const)
-                    : {})}
-                />
-              );
-            }}
-          />
+          <Reveal isAnimated={isAnimated}>
+            <FlatList
+              data={items}
+              extraData={selected}
+              keyExtractor={(item) => item.id}
+              accessibilityRole="list"
+              accessibilityLabel={label}
+              ItemSeparatorComponent={RowSeparator}
+              onEndReachedThreshold={0.5}
+              {...(hasMore === true && !isLoading && onLoadMore
+                ? { onEndReached: onLoadMore }
+                : {})}
+              renderItem={({ item }) => {
+                const isChecked = selected.includes(item.id);
+                return (
+                  <ListItem
+                    title={item.title}
+                    description={item.description}
+                    startIcon={item.startIcon}
+                    endContent={
+                      isSelecting && isChecked ? (
+                        <>
+                          {endContentNode(item.endContent)}
+                          <Icon name="check" tone="accent" />
+                        </>
+                      ) : (
+                        item.endContent
+                      )
+                    }
+                    hasChevron={item.hasChevron}
+                    onPress={isSelecting ? () => toggle(item.id) : item.onPress}
+                    isDisabled={item.isDisabled}
+                    label={item.label}
+                    {...(isSelecting
+                      ? ({
+                          accessibilityRole: selectionMode === "single" ? "radio" : "checkbox",
+                          accessibilityState: { checked: isChecked },
+                        } as const)
+                      : {})}
+                  />
+                );
+              }}
+            />
+          </Reveal>
         </ListGroup>
       )}
       {isLoading ? (

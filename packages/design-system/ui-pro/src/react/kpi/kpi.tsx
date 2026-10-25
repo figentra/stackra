@@ -6,8 +6,9 @@
  * Boundary: no styling or behaviour of its own; the look needs `@heroui-pro/react/css`. HeroUI Pro draws Title as a
  *          `dt` and Value as a `dd` with no `dl` around them (axe `dlitem`), so Header and Content wrap their children
  *          in a `dl` that is neither announced (`role="none"`) nor laid out (`display: contents`). `Kpi.Chart` draws with
- *          `recharts`, an optional peer. The compound exposes the documented parts: HeroUI Pro's `KPI.Root` is left
- *          out. Imports the `kpi` subpath, the only way to reach it.
+ *          `recharts`, an optional peer, and draws in on mount (ADR 0329), where HeroUI Pro keeps it still. The
+ *          compound exposes the documented parts: HeroUI Pro's `KPI.Root` is left out. Imports the `kpi` subpath, the
+ *          only way to reach it.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 4); ADR 0303 (decision 7); ADR 0231 (acronyms cased as words); STA-403 FR-007.
  */
@@ -16,6 +17,7 @@ import type { ComponentProps } from "react";
 
 import type { KpiContractProps } from "#contracts/types/kpi-contract-props.type";
 import { KpiActions } from "#react/kpi/kpi-actions";
+import { KpiChart } from "#react/kpi/kpi-chart";
 import { KpiIcon } from "#react/kpi/kpi-icon";
 import { KpiProgress } from "#react/kpi/kpi-progress";
 
@@ -73,8 +75,8 @@ interface KpiParts {
   readonly Progress: typeof KpiProgress;
   /** The icon-only actions button, named by `label`. */
   readonly Actions: typeof KpiActions;
-  /** The sparkline of the metric's history. */
-  readonly Chart: typeof HeroKpi.Chart;
+  /** The sparkline of the metric's history, drawing in on the theme's reveal step. */
+  readonly Chart: typeof KpiChart;
   /** A divider between sections. */
   readonly Separator: typeof HeroKpi.Separator;
   /** The footer, for a comparison note. */
@@ -94,7 +96,7 @@ export const Kpi: typeof KpiRoot & KpiParts = Object.assign(KpiRoot, {
   Trend: HeroKpi.Trend,
   Progress: KpiProgress,
   Actions: KpiActions,
-  Chart: HeroKpi.Chart,
+  Chart: KpiChart,
   Separator: HeroKpi.Separator,
   Footer: HeroKpi.Footer,
 });
