@@ -40,6 +40,8 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
   tenant header.
 - Raw SQL lives only in `TenantIsolationService.withTenant` (one parameterised `set_config`), with a `// raw-sql:`
   comment (ADR 0160).
+- A sandbox or a share is never a grant and never a tree position. Transfer rules, sandbox allowances and the terms of
+  an item kind are data (market packs, plan catalogue, the share); never name a law, country or number here.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

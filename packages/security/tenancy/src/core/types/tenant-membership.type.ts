@@ -12,6 +12,8 @@
  */
 import type { PublicId } from "@stackra/contracts";
 
+import type { TenantEnvironment } from "#core/enums/tenant-environment.enum";
+
 /**
  * A membership.
  *
@@ -39,4 +41,7 @@ export interface TenantMembership {
 
   /** Every role code the user holds in the tenant, `role` first. */
   readonly roles: readonly string[];
+
+  /** Whether the tenant is live or a sandbox, for the environment banner; absent means live. */
+  readonly environment?: TenantEnvironment;
 }

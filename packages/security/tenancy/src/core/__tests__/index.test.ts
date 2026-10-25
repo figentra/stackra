@@ -19,17 +19,31 @@ import { isTenantId } from "#core/functions/is-tenant-id.function";
 import { TenantSwitcher } from "#core/services/tenant-switcher.service";
 
 describe("@stackra/tenancy", () => {
-  it("exports exactly the switcher, the level data, the drivers, the check and the refusals", () => {
+  it("exports exactly the switcher, sandboxes, shares, the level data, the drivers, the check and the refusals", () => {
     expect(Object.keys(core).sort()).toEqual([
+      "MemorySandboxTenantsDriver",
+      "MemoryTenantSharesDriver",
+      "RevokedCopy",
+      "SandboxNotFoundError",
+      "SandboxTenantService",
+      "SandboxTenants",
+      "ShareStatus",
+      "ShareTransitionInvalidError",
       "TENANT_SCOPE_ALIAS",
       "TENANT_SCOPE_LEVEL",
       "TenancyCronScopesDriver",
       "TenancyScopes",
+      "TenantEnvironment",
       "TenantMembershipMissingError",
       "TenantRequiredError",
       "TenantScopeResolverDriver",
+      "TenantShareService",
+      "TenantShares",
       "TenantSwitcher",
+      "TransferCheck",
+      "TransferRefusedError",
       "isTenantId",
+      "revocationPlan",
     ]);
   });
 

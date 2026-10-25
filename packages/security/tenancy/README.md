@@ -13,20 +13,40 @@ A tenant is the scope node at the tenant level, and its tenant id is that node's
 
 ## What is here
 
-| Entry     | Symbol                                                | Use                                                                      |
-| --------- | ----------------------------------------------------- | ------------------------------------------------------------------------ |
-| `.`       | `TenantSwitcher`                                      | the client's memberships, active tenant and switch                       |
-| `.`       | `TenancyScopes`, `TENANT_SCOPE_LEVEL`                 | the tenant level's code and the level a deployment adds to `ScopeConfig` |
-| `.`       | `TENANT_SCOPE_ALIAS`                                  | the level's lang key (`tenancy::levels.tenant`)                          |
-| `.`       | `TenantScopeResolverDriver`                           | the tenancy step of the scope resolver chain                             |
-| `.`       | `TenancyCronScopesDriver`                             | the scheduler's `CronScopes`: a per-scope cron runs for every tenant     |
-| `.`       | `isTenantId`                                          | whether a string is a tenant id                                          |
-| `.`       | `TenantRequiredError`, `TenantMembershipMissingError` | refusals                                                                 |
-| `./node`  | `BelongsToTenant`                                     | the trait of a tenant-owned model (`tenantId`)                           |
-| `./node`  | `BelongsToTenantMacro`                                | `t.belongsToTenant()`: the column and the equality policy                |
-| `./node`  | `TenantIsolationService`                              | `withTenant(actor, work)`: `app.tenant_id` for one unit of work          |
-| `./react` | `useTenant`, `useTenantSwitcher`                      | the active membership; the memberships and the switch                    |
-| `./react` | `TenantMembership`                                    | one membership: tenant id, path, name, roles                             |
+| Entry     | Symbol                                                      | Use                                                                      |
+| --------- | ----------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `.`       | `TenantSwitcher`                                            | the client's memberships, active tenant and switch                       |
+| `.`       | `TenancyScopes`, `TENANT_SCOPE_LEVEL`                       | the tenant level's code and the level a deployment adds to `ScopeConfig` |
+| `.`       | `TENANT_SCOPE_ALIAS`                                        | the level's lang key (`tenancy::levels.tenant`)                          |
+| `.`       | `TenantScopeResolverDriver`                                 | the tenancy step of the scope resolver chain                             |
+| `.`       | `TenancyCronScopesDriver`                                   | the scheduler's `CronScopes`: a per-scope cron runs for every tenant     |
+| `.`       | `isTenantId`                                                | whether a string is a tenant id                                          |
+| `.`       | `TenantRequiredError`, `TenantMembershipMissingError`       | refusals                                                                 |
+| `.`       | `TenantEnvironment`, `SandboxTenantService`                 | live or sandbox; register, list, retire a live tenant's sandboxes        |
+| `.`       | `SandboxTenants`, `MemorySandboxTenantsDriver`              | the sandbox store port and its memory driver                             |
+| `.`       | `TenantShareService`, `ShareStatus`, `RevokedCopy`          | consented cross-tenant shares: propose, accept, revoke, flow, release    |
+| `.`       | `TenantShares`, `TransferCheck`, `MemoryTenantSharesDriver` | the share store, the cross-region transfer rules, the memory store       |
+| `.`       | `revocationPlan`                                            | keep (severed) or delete each received copy on revocation                |
+| `./node`  | `BelongsToTenant`                                           | the trait of a tenant-owned model (`tenantId`)                           |
+| `./node`  | `BelongsToTenantMacro`                                      | `t.belongsToTenant()`: the column and the equality policy                |
+| `./node`  | `TenantIsolationService`                                    | `withTenant(actor, work)`: `app.tenant_id` for one unit of work          |
+| `./react` | `useTenant`, `useTenantSwitcher`                            | the active membership; the memberships and the switch                    |
+| `./react` | `TenantMembership`                                          | one membership: tenant id, path, name, roles                             |
+
+## Sandbox tenants
+
+A sandbox is a tenant of its own, linked to the live tenant it promotes to (ADR 0280). `SandboxTenantService` registers
+the link (never from another sandbox), lists the sandboxes in use, answers `environmentOf` for the environment banner
+and retires one. How many sandboxes a plan allows is a limit entitlement on the creating action; promotion copies
+configuration and never keys, in the OS tenancy and settings services. A membership may carry `environment`.
+
+## Cross-tenant shares
+
+A share joins one record of tenant A to one of tenant B; one proposes, the other accepts, either revokes (ADR 0343).
+Items travel as copies in the receiver's own tables. Inside one region, `flows(share, kind)` says whether an update may
+travel by events; across regions the sender releases each item and `TransferCheck` (the legal entity's transfer rules,
+market-pack data) must allow it. On revocation `revocationPlan` keeps or deletes each copy by the share's terms and
+never deletes a held copy.
 
 ## Two layers of isolation
 
