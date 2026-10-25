@@ -1,0 +1,240 @@
+# Stackra file contract:
+# Purpose: Runway's `npm` provider, a public reusable workflow (ADR 0168 decision 1): with pending changesets it opens
+#          or updates the "version packages" PR; on that PR's merge it publishes every package with "private": false
+#          to npmjs with provenance through npm trusted publishing (ADR 0177, 2026-10-21 amendment), then signs the
+#          CycloneDX SBOM keylessly with cosign and attaches it to each GitHub release it created. A Trivy filesystem
+#          scan of the lockfile blocks the publish on a critical vulnerability that has a fix (ADR 0174). npm checks
+#          the CALLING workflow, so each package's trusted publisher names the caller (`release.yml` here).
+# Secrets: the GitHub App id and key the version PR is pushed with (a PR pushed with GITHUB_TOKEN would not trigger
+#          the caller's gate), passed by the caller. npm needs no token. Only with `bootstrap` (ADR 0289 decision
+#          11, the first publish of a package, owner-only) is NPM_BOOTSTRAP_TOKEN read from Infisical /ci over OIDC;
+#          `~/.npmrc` refers to it by name and the value stays in the publish step's environment.
+# Owner: release-operations
+name: Runway npm
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: The protected GitHub environment the release job waits in (a required reviewer approves it).
+        type: string
+        default: release
+      install-args:
+        description: Arguments to `pnpm install`, space-separated words with no quoting.
+        type: string
+        default: --frozen-lockfile
+      build-args:
+        description: Arguments to `pnpm turbo run build` that select what is published (e.g. `--filter=./packages/**`).
+        type: string
+        required: true
+      dry-run:
+        description: Run `pnpm -r publish --dry-run` instead of the version PR and the publish.
+        type: boolean
+        default: false
+      bootstrap:
+        description: The first publish of a package (OP2) with NPM_BOOTSTRAP_TOKEN from Infisical /ci.
+        type: boolean
+        default: false
+      infisical-identity-id:
+        description: The Infisical machine identity id that may read NPM_BOOTSTRAP_TOKEN (only read with `bootstrap`).
+        type: string
+        default: ""
+      infisical-project-id:
+        description: The Infisical project (workspace) id, not a secret.
+        type: string
+        default: ""
+      infisical-domain:
+        description: The Infisical instance.
+        type: string
+        default: https://eu.infisical.com
+      infisical-env:
+        description: The Infisical environment that holds `/ci`.
+        type: string
+        default: prod
+    secrets:
+      app-id:
+        description: The GitHub App id the version PR and the tags are pushed as.
+        required: true
+      app-private-key:
+        description: That App's private key.
+        required: true
+    outputs:
+      published:
+        description: "`true` when the run published at least one package."
+        value: ${{ jobs.release.outputs.published }}
+
+# ADR 0019 D2: nothing by default; each job asks for what it needs (the caller's job must grant the same).
+permissions: {}
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Runbook (release): a human keeps this environment protected and restricted to main, so a branch that edits the
+    # workflow cannot obtain a credential, and every run waits for the owner's approval.
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: write # push the version-PR branch and the version tags
+      pull-requests: write # open and update the version PR
+      id-token: write # npm trusted publishing and provenance; the Infisical login for a bootstrap
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+      packages: ${{ steps.changesets.outputs.publishedPackages }}
+
+    steps:
+      # Scoped to what this job needs; revoked when the job ends.
+      - name: App token
+        id: bot
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.app-id }}
+          private-key: ${{ secrets.app-private-key }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          token: ${{ steps.bot.outputs.token }} # pushes (version branch, tags) go out as the App
+          fetch-depth: 0 # changesets diffs against history and reads existing tags
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+
+      # ADR 0027 D2: node and pnpm come from the caller's mise.toml.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm
+
+      # ADR 0174: before anything is installed or published, the lockfile is scanned. Only a critical vulnerability
+      # with a released fix blocks; the version is past the March 2026 compromise of Trivy's releases (CVE-2026-33634).
+      - name: Vulnerability scan (Trivy)
+        run: >-
+          mise exec aqua:aquasecurity/trivy@0.76.1 --
+          trivy fs --scanners vuln --severity CRITICAL --ignore-unfixed --exit-code 1 --no-progress .
+
+      - name: Install dependencies
+        env:
+          INSTALL_ARGS: ${{ inputs.install-args }}
+        run: |
+          set -f
+          # shellcheck disable=SC2086 # word splitting of the argument list is the point
+          pnpm install $INSTALL_ARGS
+
+      # Only what is published is built; each package's dist must exist before `changeset publish`.
+      - name: Build
+        env:
+          BUILD_ARGS: ${{ inputs.build-args }}
+        run: |
+          set -f
+          # shellcheck disable=SC2086 # word splitting of the argument list is the point
+          pnpm turbo run build $BUILD_ARGS
+
+      - name: Publish dry run
+        if: inputs.dry-run
+        run: pnpm -r publish --dry-run --no-git-checks
+
+      # OP2 (ADR 0289 decision 11): a package's first publish cannot use trusted publishing, because npm has no
+      # package to attach the publisher to yet. The owner's 7-day publish-only token is read for this run only.
+      - name: Bootstrap token (Infisical OIDC)
+        if: inputs.bootstrap && !inputs.dry-run
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ inputs.infisical-identity-id }}
+          domain: ${{ inputs.infisical-domain }}
+          project-id: ${{ inputs.infisical-project-id }}
+          env-slug: ${{ inputs.infisical-env }}
+          secret-path: /ci
+          secret-name: NPM_BOOTSTRAP_TOKEN
+          export-type: env
+
+      # Writes a reference, not the value: pnpm expands ${NPM_BOOTSTRAP_TOKEN} from the environment when it publishes.
+      - name: Bootstrap auth
+        if: inputs.bootstrap && !inputs.dry-run
+        run: |
+          test -n "${NPM_BOOTSTRAP_TOKEN:-}" || { echo "::error::NPM_BOOTSTRAP_TOKEN is not in Infisical /ci"; exit 1; }
+          # shellcheck disable=SC2016 # the literal ${…} is the point
+          echo '//registry.npmjs.org/:_authToken=${NPM_BOOTSTRAP_TOKEN}' >> ~/.npmrc
+
+      # ADR 0025 / 0119 D7: automation prepares, the owner decides. With pending changesets this opens or updates the
+      # "chore(release): version packages" PR (`pnpm changeset:version` also refreshes the lockfile); the owner merges
+      # it. On the merge run `changeset publish` (pnpm native publish) publishes every package with "private": false
+      # to npmjs with provenance and tags it; the action pushes the tags and creates the GitHub releases.
+      - name: Version PR / publish
+        id: changesets
+        if: ${{ !inputs.dry-run }}
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        with:
+          version-script: pnpm changeset:version
+          publish-script: pnpm changeset publish
+          pr-title: "chore(release): version packages"
+          commit-message: "chore(release): version packages"
+          github-token: ${{ steps.bot.outputs.token }}
+        env:
+          # pnpm 12's native publish resolves workspace:/catalog: versions and does the OIDC exchange and provenance
+          # itself. No NPM_TOKEN exists anywhere (ADR 0177 amendment); a bootstrap run authenticates through ~/.npmrc.
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+          NPM_CONFIG_PROVENANCE: "true"
+
+  # Runs only after a publish: the SBOM of what was installed, signed keylessly with this job's OIDC identity, kept as
+  # an artifact and attached to every release the publish created. No App token and no npm access here.
+  sbom:
+    name: SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    permissions:
+      contents: write # attach the SBOM and its signature to the new releases
+      id-token: write # cosign keyless signing (Sigstore Fulcio certificate for this workflow)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm
+
+      - name: Install dependencies
+        env:
+          INSTALL_ARGS: ${{ inputs.install-args }}
+        run: |
+          set -f
+          # shellcheck disable=SC2086 # word splitting of the argument list is the point
+          pnpm install $INSTALL_ARGS
+
+      # `--ignore-npm-errors`: cyclonedx-npm shells out to `npm ls`, which reports the devDependency-only peer graphs
+      # of transitive tools as errors although pnpm installed fine. Pinned through npx: not a catalog dependency.
+      - name: Generate SBOM (CycloneDX)
+        run: npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --ignore-npm-errors --output-format JSON --output-file sbom.cdx.json
+
+      # Keyless: the certificate names this workflow and repository, so a verifier pins both
+      # (`cosign verify-blob --certificate-identity-regexp … --certificate-oidc-issuer https://token.actions.githubusercontent.com`).
+      - name: Sign SBOM (cosign)
+        run: >-
+          mise exec aqua:sigstore/cosign@3.1.4 --
+          cosign sign-blob --yes --bundle sbom.cdx.json.sigstore.json sbom.cdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sbom
+          path: |
+            sbom.cdx.json
+            sbom.cdx.json.sigstore.json
+          retention-days: 90
+
+      # changesets names each release after its tag, `<name>@<version>`.
+      - name: Attach SBOM to the releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGES: ${{ needs.release.outputs.packages }}
+        run: |
+          jq -r '.[] | "\(.name)@\(.version)"' <<< "$PACKAGES" | while read -r tag; do
+            gh release upload "$tag" sbom.cdx.json sbom.cdx.json.sigstore.json --clobber
+          done

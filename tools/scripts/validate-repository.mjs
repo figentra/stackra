@@ -9,6 +9,8 @@
  *          Every test file anywhere in the repository sits directly in a __tests__/ folder (ADR 0022).
  *          Every JSON config is .jsonc unless its reader cannot take one (MUST_STAY_JSON).
  *          The runway JSON Schemas @stackra/runway ships are byte copies of tools/schemas (checkRunwaySchemas).
+ *          Every runway.yaml passes the v3 schema of its kind and the root places each service member, through the
+ *          built @stackra/runway (checkRunwayFiles, ADR 0296; unbuilt is a finding in CI and a notice locally).
  *          Repo-owned YAML has no flow mappings (block style; checkYamlFlowMaps).
  *          Member TS imports carry no file extension and climb at most one folder (checkImports, ADR 0233).
  *          An Expo app locks no orientation and asks for no full screen, and its code never sizes from the device
@@ -20,7 +22,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { LineCounter, parseDocument, visit } from "yaml";
 import { readJsonc } from "./jsonc.mjs";
 import {
@@ -430,6 +432,72 @@ export function checkRunwaySchemas(read) {
   return out;
 }
 
+/**
+ * The runway kind a `runway.yaml` at `path` is read as (ADR 0296): the repository root is the root runway, an app or
+ * Worker member root (or a scaffold app template) an app runway, a service member root (or a scaffold service
+ * template) a service runway. Undefined anywhere else.
+ */
+export function runwayKindOf(path) {
+  if (path === "runway.yaml") return "root";
+  if (/^(?:apps|workers|tools\/scaffold\/templates\/apps)\/[^/]+\/runway\.yaml$/.test(path))
+    return "app";
+  if (/^(?:services|tools\/scaffold\/templates\/services)\/[^/]+\/runway\.yaml$/.test(path))
+    return "service";
+  return undefined;
+}
+
+/**
+ * ADR 0296 enforcement (STA-598): each runway file parses as YAML with no repeated key and passes
+ * `runway.parseRunway` for its kind; the root also passes `runway.checkPlacement` against `services`, the service
+ * member keys. `runway` is the built `@stackra/runway` entry; `read(path)` returns a repository file's text.
+ */
+export function checkRunwayFiles({ files, read, runway, services }) {
+  const out = [];
+  for (const file of files) {
+    const kind = runwayKindOf(file);
+    if (!kind) {
+      out.push(
+        `${file}: no runway kind applies here; a runway file sits at the repository root or at a member root (ADR 0296)`,
+      );
+      continue;
+    }
+    const doc = parseDocument(read(file), { uniqueKeys: true });
+    if (doc.errors.length) {
+      out.push(`${file}: not valid YAML (${doc.errors[0].message.split("\n")[0]})`);
+      continue;
+    }
+    let parsed;
+    try {
+      parsed = runway.parseRunway(kind, doc.toJS(), file);
+    } catch (error) {
+      if (!(error instanceof runway.RunwayInvalidError)) throw error;
+      for (const { path, message } of error.issues)
+        out.push(`${file}: ${path || "(document)"}: ${message}`);
+      continue;
+    }
+    if (kind === "root")
+      for (const { code, message } of runway.checkPlacement(parsed, services))
+        out.push(`${file}: ${message} (${code})`);
+  }
+  return out;
+}
+
+/** `runway.yaml` (or a misnamed `runway.yml`) in repo-owned YAML; vendored and archived copies are not ours. */
+export const isRunwayFile = (p) => isRepoOwnedYaml(p) && /(?:^|\/)runway\.ya?ml$/.test(p);
+
+/**
+ * The built `@stackra/runway` entry (its package `exports["."].default`), or undefined before it is built: its
+ * sources use extensionless `#core/*` imports that plain Node cannot load (ADR 0233).
+ */
+async function loadRunway() {
+  const dir = join(ROOT, "packages/developer/runway");
+  const entry = join(
+    dir,
+    JSON.parse(readFileSync(join(dir, "package.json"), "utf8")).exports["."].default,
+  );
+  return existsSync(entry) ? import(pathToFileURL(entry).href) : undefined;
+}
+
 /** Generated or vendored YAML the flow-map rule does not own. pnpm-workspace.yaml joins when STA-300 lands. */
 const YAML_NOT_OWNED = [
   /^pnpm-lock\.yaml$/,
@@ -552,7 +620,7 @@ export function checkWindowSizing(path, text) {
     : [];
 }
 
-function main() {
+async function main() {
   const members = JSON.parse(
     execFileSync("pnpm", ["-r", "list", "--json", "--depth", "-1"], {
       cwd: ROOT,
@@ -579,6 +647,32 @@ function main() {
     "",
     checkRunwaySchemas((p) => read(ROOT, p)),
   );
+  const runwayFiles = repoFiles.filter(isRunwayFile);
+  if (runwayFiles.length) {
+    const runway = await loadRunway();
+    // CI builds before it validates, so an unbuilt package there is a broken gate; locally it is only a notice.
+    if (runway)
+      report(
+        "",
+        checkRunwayFiles({
+          files: runwayFiles,
+          read: (p) => readFileSync(join(ROOT, p), "utf8"),
+          runway,
+          services: members
+            .map(({ path }) => relative(ROOT, path))
+            .filter((dir) => /^services\/[^/]+$/.test(dir))
+            .map((dir) => dir.slice("services/".length)),
+        }),
+      );
+    else if (process.env.CI)
+      report("packages/developer/runway", [
+        "not built, so no runway file was checked: build @stackra/runway before `pnpm validate`",
+      ]);
+    else
+      console.warn(
+        `validate: ${runwayFiles.length} runway file(s) not checked: @stackra/runway is not built (pnpm turbo run build --filter=@stackra/runway)`,
+      );
+  }
   for (const p of repoFiles.filter(isMemberSource))
     report("", checkImports(p, readFileSync(join(ROOT, p), "utf8")));
   for (const p of repoFiles.filter(isRepoOwnedYaml))
@@ -633,4 +727,4 @@ function main() {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] === fileURLToPath(import.meta.url)) await main();

@@ -8,6 +8,7 @@ import {
   checkImports,
   checkIosFormFactor,
   checkJsonConfigs,
+  checkRunwayFiles,
   checkRunwaySchemas,
   checkService,
   checkTestPlacement,
@@ -17,6 +18,8 @@ import {
   isMemberSource,
   isV2Service,
   isRepoOwnedYaml,
+  isRunwayFile,
+  runwayKindOf,
   tierFor,
 } from "../validate-repository.mjs";
 
@@ -382,6 +385,135 @@ test("checkRunwaySchemas: each shipped runway schema is a byte copy of its tools
   assert.match(
     checkRunwaySchemas((p) => files[p])[0],
     /: run `cp tools\/schemas\/runway-root\.schema\.json packages\/developer\/runway\/schema\/root\.json`$/,
+  );
+});
+
+test("runwayKindOf: root, app and Worker members, service members and the scaffold templates; nothing else", () => {
+  assert.equal(runwayKindOf("runway.yaml"), "root");
+  assert.equal(runwayKindOf("apps/docs/runway.yaml"), "app");
+  assert.equal(runwayKindOf("workers/static/runway.yaml"), "app");
+  assert.equal(runwayKindOf("tools/scaffold/templates/apps/console/runway.yaml"), "app");
+  assert.equal(runwayKindOf("services/commerce/runway.yaml"), "service");
+  assert.equal(runwayKindOf("tools/scaffold/templates/services/service/runway.yaml"), "service");
+  for (const p of [
+    "apps/docs/src/runway.yaml",
+    "packages/developer/runway/runway.yaml",
+    "services/runway.yaml",
+    "runway.yml",
+  ])
+    assert.equal(runwayKindOf(p), undefined, p);
+  assert.equal(isRunwayFile("services/commerce/runway.yaml"), true);
+  assert.equal(isRunwayFile("apps/docs/runway.yml"), true);
+  assert.equal(isRunwayFile(".agents/skills/x/runway.yaml"), false);
+  assert.equal(isRunwayFile("runway.yaml.md"), false);
+});
+
+/** A stand-in for the built @stackra/runway entry: records its calls and refuses documents with `bad: true`. */
+function stubRunway(placement = []) {
+  class RunwayInvalidError extends Error {
+    constructor(source, issues) {
+      super(source);
+      this.issues = issues;
+    }
+  }
+  const calls = [];
+  return {
+    calls,
+    RunwayInvalidError,
+    parseRunway(kind, document, source) {
+      calls.push(["parseRunway", kind, source]);
+      if (document?.bad)
+        throw new RunwayInvalidError(source, [
+          { path: "environments.dev.member", message: "Unrecognized key" },
+          { path: "", message: "Invalid input" },
+        ]);
+      if (document?.crash) throw new TypeError("boom");
+      return document;
+    },
+    checkPlacement(root, services) {
+      calls.push(["checkPlacement", root.project, services]);
+      return placement;
+    },
+  };
+}
+
+test("checkRunwayFiles: each file is parsed for its kind; only the root reaches checkPlacement", () => {
+  const files = {
+    "runway.yaml": "version: 3\nproject: acme\nenvironments: {}\n",
+    "apps/docs/runway.yaml": "version: 3\nenvironments: {}\n",
+    "services/commerce/runway.yaml": "version: 3\nenvironments: {}\n",
+  };
+  const runway = stubRunway();
+  const out = checkRunwayFiles({
+    files: Object.keys(files),
+    read: (p) => files[p],
+    runway,
+    services: ["commerce"],
+  });
+  assert.deepEqual(out, []);
+  assert.deepEqual(runway.calls, [
+    ["parseRunway", "root", "runway.yaml"],
+    ["checkPlacement", "acme", ["commerce"]],
+    ["parseRunway", "app", "apps/docs/runway.yaml"],
+    ["parseRunway", "service", "services/commerce/runway.yaml"],
+  ]);
+});
+
+test("checkRunwayFiles: schema issues name file and path; placement issues name the code", () => {
+  const files = {
+    "runway.yaml": "version: 3\nproject: acme\n",
+    "services/commerce/runway.yaml": "bad: true\n",
+  };
+  const runway = stubRunway([
+    {
+      environment: "production",
+      code: "member_unplaced",
+      subject: "billing",
+      message: 'production: "billing" is in no group and the topology has no default group',
+    },
+  ]);
+  assert.deepEqual(
+    checkRunwayFiles({
+      files: Object.keys(files),
+      read: (p) => files[p],
+      runway,
+      services: ["billing", "commerce"],
+    }),
+    [
+      'runway.yaml: production: "billing" is in no group and the topology has no default group (member_unplaced)',
+      "services/commerce/runway.yaml: environments.dev.member: Unrecognized key",
+      "services/commerce/runway.yaml: (document): Invalid input",
+    ],
+  );
+});
+
+test("checkRunwayFiles: a misplaced file, invalid YAML and a repeated key are one finding each; other errors throw", () => {
+  const files = {
+    "packages/developer/runway/runway.yaml": "version: 3\n",
+    "apps/docs/runway.yaml": "version: [\n",
+    "services/commerce/runway.yaml": "version: 3\nversion: 3\n",
+  };
+  const runway = stubRunway();
+  const out = checkRunwayFiles({
+    files: Object.keys(files),
+    read: (p) => files[p],
+    runway,
+    services: [],
+  });
+  assert.equal(out.length, 3);
+  assert.match(out[0], /^packages\/developer\/runway\/runway\.yaml: no runway kind applies here/);
+  assert.match(out[1], /^apps\/docs\/runway\.yaml: not valid YAML/);
+  assert.match(out[2], /^services\/commerce\/runway\.yaml: not valid YAML/);
+  assert.deepEqual(runway.calls, []);
+  assert.throws(
+    () =>
+      checkRunwayFiles({
+        files: ["runway.yaml"],
+        read: () => "crash: true\n",
+        runway,
+        services: [],
+      }),
+    TypeError,
   );
 });
 

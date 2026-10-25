@@ -1,0 +1,48 @@
+# Stackra file contract:
+# Purpose: deploy apps/docs (docs.stackra.figentra.com) to Mintlify through Runway's `mintlify` provider,
+#          runway-mintlify.yml (ADR 0299): on a push to main that touches the docs, or by hand, after `mint validate`,
+#          `mint broken-links` and `mint a11y`. Once it has deployed, the owner switches off the Mintlify GitHub-app
+#          deploy so a change is not deployed twice (STA-605).
+# Secrets: MINTLIFY_ADMIN_KEY from Infisical /ci (env prod) through GitHub OIDC inside the provider. The Mintlify
+#          project id is the non-secret repository variable MINTLIFY_PROJECT_ID. Until both the identity and that
+#          variable exist, the provider checks and deploys nothing.
+# Owner: release-operations
+
+name: Deploy docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/docs/**"
+      - ".github/workflows/deploy-docs.yml"
+      - ".github/workflows/runway-mintlify.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-docs
+  cancel-in-progress: false
+
+# ADR 0019 D2: nothing by default; the job grants what the provider's job asks for.
+permissions: {}
+
+jobs:
+  deploy:
+    name: Deploy docs.stackra.figentra.com
+    # Mintlify builds main; a dispatch from another branch would deploy main under that branch's checks.
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/runway-mintlify.yml
+    with:
+      member: apps/docs
+      package: "@figentra/docs"
+      # The `docs` environment (owner: main only, and an Infisical trust for its subject, STA-605).
+      environment: docs
+      install-args: --frozen-lockfile --filter=@figentra/docs
+      mintlify-project-id: ${{ vars.MINTLIFY_PROJECT_ID }}
+      infisical-identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
+      infisical-project-id: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
+      site-url: https://docs.stackra.figentra.com
+      smoke-pages: / /quickstart /runbooks/runway

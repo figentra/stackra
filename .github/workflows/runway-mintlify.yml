@@ -1,0 +1,188 @@
+# Stackra file contract:
+# Purpose: Runway's `mintlify` provider (ADR 0299), a public reusable workflow (ADR 0168 decision 1): deploy a docs
+#          member to Mintlify from CI after its checks. Runs the member's check scripts (`mint validate`,
+#          `mint broken-links`, `mint a11y`), triggers a Mintlify update (`POST /v1/project/update/{projectId}`),
+#          polls it to `success` or `failure`, warns when Mintlify built another commit than this run's, and
+#          smoke-tests the published pages. Mintlify builds its configured branch, so callers run only on main.
+# Secrets: MINTLIFY_ADMIN_KEY only, from Infisical /ci through GitHub OIDC (ADR 0299 decision 3), read by this job
+#          alone. Without an identity id or a project id the job checks, prints a notice and deploys nothing.
+# Owner: release-operations
+name: Runway mintlify
+
+on:
+  workflow_call:
+    inputs:
+      member:
+        description: The docs member folder (e.g. `apps/docs`); its scripts run the checks.
+        type: string
+        required: true
+      package:
+        description: The member's package name (e.g. `@figentra/docs`).
+        type: string
+        required: true
+      environment:
+        description: The GitHub environment the job runs in (its name is in the OIDC subject).
+        type: string
+        required: true
+      check-scripts:
+        description: The member's package scripts that must pass before a deploy, space-separated.
+        type: string
+        default: build lint a11y
+      install-args:
+        description: Arguments to `pnpm install`, space-separated words with no quoting.
+        type: string
+        default: --frozen-lockfile
+      mintlify-project-id:
+        description: The Mintlify project id (from the dashboard's API keys page; an id, not a secret). Empty skips the deploy.
+        type: string
+        default: ""
+      infisical-identity-id:
+        description: The Infisical machine identity id (a repository variable, not a secret). Empty skips the deploy.
+        type: string
+        default: ""
+      infisical-project-id:
+        description: The Infisical project (workspace) id, not a secret.
+        type: string
+        default: ""
+      infisical-domain:
+        description: The Infisical instance.
+        type: string
+        default: https://eu.infisical.com
+      infisical-env:
+        description: The Infisical environment that holds `/ci`.
+        type: string
+        default: prod
+      site-url:
+        description: The published site's origin (e.g. `https://docs.stackra.figentra.com`).
+        type: string
+        required: true
+      smoke-pages:
+        description: Paths that must answer 200 after the deploy, space-separated.
+        type: string
+        default: /
+    outputs:
+      deployed:
+        description: "`true` when Mintlify reported `success`, `false` when the deploy was skipped."
+        value: ${{ jobs.deploy.outputs.deployed }}
+
+# ADR 0019 D2: nothing by default; the job asks for what it needs (the caller's job must grant the same).
+permissions: {}
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.member }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read # checkout
+      id-token: write # GitHub OIDC token, exchanged with Infisical for read access to /ci
+    outputs:
+      deployed: ${{ steps.deploy.outcome == 'success' }}
+    env:
+      INFISICAL_IDENTITY_ID: ${{ inputs.infisical-identity-id }}
+      MINTLIFY_PROJECT_ID: ${{ inputs.mintlify-project-id }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+
+      # ADR 0027 D2: node and pnpm come from the caller's mise.toml.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm
+
+      - name: Install dependencies
+        env:
+          INSTALL_ARGS: ${{ inputs.install-args }}
+        run: |
+          set -f
+          # shellcheck disable=SC2086 # word splitting of the argument list is the point
+          pnpm install $INSTALL_ARGS
+
+      # ADR 0299 decision 2: validate, broken links and accessibility pass before anything is deployed.
+      - name: Checks
+        env:
+          PACKAGE: ${{ inputs.package }}
+          CHECK_SCRIPTS: ${{ inputs.check-scripts }}
+        run: |
+          for script in $CHECK_SCRIPTS; do
+            pnpm --filter "$PACKAGE" run "$script"
+          done
+
+      - name: Deploy prerequisites missing
+        if: env.INFISICAL_IDENTITY_ID == '' || env.MINTLIFY_PROJECT_ID == ''
+        run: >-
+          echo "::notice title=Docs deploy skipped::No Infisical identity id or Mintlify project id was passed.
+          Checked, nothing deployed."
+
+      - name: Mintlify admin key (Infisical OIDC)
+        if: env.INFISICAL_IDENTITY_ID != '' && env.MINTLIFY_PROJECT_ID != ''
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: ${{ inputs.infisical-domain }}
+          project-id: ${{ inputs.infisical-project-id }}
+          env-slug: ${{ inputs.infisical-env }}
+          secret-path: /ci
+          secret-name: MINTLIFY_ADMIN_KEY
+          export-type: env
+
+      # Mintlify builds its configured branch head, which may already be newer than this run's commit; that is a
+      # warning (the newer commit passed its own gate), not a failure.
+      - name: Mintlify update
+        id: deploy
+        if: env.INFISICAL_IDENTITY_ID != '' && env.MINTLIFY_PROJECT_ID != ''
+        env:
+          API: https://api.mintlify.com/v1/project
+          SHA: ${{ github.sha }}
+        run: |
+          auth="Authorization: Bearer $MINTLIFY_ADMIN_KEY"
+          status_id="$(curl --fail-with-body --silent --show-error -X POST -H "$auth" "$API/update/$MINTLIFY_PROJECT_ID" | jq -r .statusId)"
+          test -n "$status_id" && [ "$status_id" != null ] || { echo "::error::Mintlify returned no statusId"; exit 1; }
+          echo "Mintlify update $status_id queued for $SHA"
+          for attempt in $(seq 1 90); do
+            body="$(curl --fail-with-body --silent --show-error -H "$auth" "$API/update-status/$status_id")"
+            status="$(jq -r .status <<< "$body")"
+            case "$status" in
+              success)
+                built="$(jq -r '.commit.sha // empty' <<< "$body")"
+                [ -z "$built" ] || [ "$built" = "$SHA" ] ||
+                  echo "::warning title=Newer commit deployed::Mintlify built $built, this run is $SHA"
+                echo "::notice title=Docs deployed::update $status_id, commit ${built:-unknown}"
+                exit 0 ;;
+              failure)
+                echo "::error title=Mintlify update failed::$(jq -r '.summary // "no summary"' <<< "$body")"
+                exit 1 ;;
+              *)
+                echo "update $status (attempt $attempt of 90)"
+                sleep 10 ;;
+            esac
+          done
+          echo "::error title=Mintlify update timed out::$status_id did not finish in 15 minutes"
+          exit 1
+
+      # ADR 0299 decision 4: a deploy that does not serve its pages fails the job. The CDN may lag the build, so each
+      # page gets attempts, and each failure says what it answered.
+      - name: Smoke test
+        if: steps.deploy.outcome == 'success'
+        env:
+          MINTLIFY_ADMIN_KEY: "" # the key stays with the deploy step
+          SITE_URL: ${{ inputs.site-url }}
+          SMOKE_PAGES: ${{ inputs.smoke-pages }}
+        run: |
+          for page in $SMOKE_PAGES; do
+            for attempt in $(seq 1 12); do
+              code="$(curl --silent --output /dev/null --write-out '%{http_code}' --location --max-time 10 "$SITE_URL$page" || true)"
+              [ "$code" = 200 ] && break
+              echo "not serving yet: $SITE_URL$page answered ${code:-nothing} (attempt $attempt of 12)"
+              [ "$attempt" = 12 ] && { echo "::error title=Smoke test failed::$SITE_URL$page"; exit 1; }
+              sleep 10
+            done
+            echo "$SITE_URL$page answered 200"
+          done

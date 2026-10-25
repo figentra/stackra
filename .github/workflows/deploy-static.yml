@@ -1,9 +1,11 @@
 # Stackra file contract:
-# Purpose: deploy workers/static (the `stackra-static` Cloudflare Worker, static.stackra.figentra.com) with
-#          `wrangler deploy` (ADR 0284). Runs on main and on schema release tags only; never on a pull request.
-# Secrets: CLOUDFLARE_API_TOKEN comes from Infisical /ci (env prod) through GitHub OIDC for the deploy step. No
-#          repository secret holds it (ADR 0173, ADR 0019 D2). Until the owner creates the Infisical identity
-#          (STA-15) the job prints a notice and skips the deploy, so main stays green.
+# Purpose: deploy workers/static (the `stackra-static` Cloudflare Worker, static.stackra.figentra.com) through Runway's
+#          `cloudflare-workers` provider, runway-cloudflare-workers.yml (ADR 0284, ADR 0289 decision 1). Runs on main
+#          and on schema release tags only, never on a pull request; by hand (or `pnpm runway promote <sha>`) it
+#          redeploys a given commit of main.
+# Secrets: CLOUDFLARE_API_TOKEN comes from Infisical /ci (env prod) through GitHub OIDC inside the provider. No
+#          repository secret holds it (ADR 0173, ADR 0019 D2). Without INFISICAL_CI_IDENTITY_ID the provider builds,
+#          tests, prints a notice and deploys nothing, so main stays green.
 # Owner: release-operations
 
 name: Deploy static
@@ -11,102 +13,50 @@ name: Deploy static
 on:
   push:
     branches: [main]
-    # Only what changes the site: the member, the schema sources and this workflow.
+    # Only what changes the site: the member, the schema sources, this caller and its provider.
     paths:
       - "workers/static/**"
       - "tools/schemas/**"
       - ".github/workflows/deploy-static.yml"
+      - ".github/workflows/runway-cloudflare-workers.yml"
     # A schema release (`schemas@1.4.0`) adds an immutable /schemas/1.4.0/ tree and moves /schemas/v1/.
     tags: ["schemas@*"]
   workflow_dispatch:
+    inputs:
+      sha:
+        description: A commit of main to deploy (promote or roll back); empty deploys the branch head
+        type: string
+        default: ""
 
 # One deploy at a time, in order: a newer run waits instead of cancelling one that is mid-upload.
 concurrency:
   group: deploy-static
   cancel-in-progress: false
 
-# ADR 0019 D2: nothing by default; the job asks for what it needs.
+# ADR 0019 D2: nothing by default; the job grants what the provider's job asks for.
 permissions: {}
 
 jobs:
   deploy:
     name: Deploy static.stackra.figentra.com
-    runs-on: ubuntu-latest
-    # workflow_dispatch can name any branch; deploy only main or a schema release tag, never a branch's code.
+    # workflow_dispatch can name any branch; only main or a schema release tag deploys. The provider also refuses a
+    # commit that is not on main.
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/schemas@')
-    # A tag push runs from any commit; only a tag reachable from main is a release (checked below).
-    # The `static` environment (owner: restrict it to main and schemas@* tags) puts the environment name into the
-    # OIDC subject, so the Infisical identity can trust this job and nothing else.
-    environment: static
     permissions:
-      contents: read # checkout
-      id-token: write # GitHub OIDC token, exchanged with Infisical for read access to /ci
-    env:
-      # Non-secret id of the Infisical machine identity. Empty until the owner creates it; every Infisical and
-      # wrangler step below is skipped while it is.
-      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
-
-    steps:
-      # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
-      # fetch-depth 0 brings every schemas@* tag: the build rebuilds each release from its tag, and a missing tag
-      # would delete that release's immutable paths on deploy.
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
-
-      # A schemas@* tag must point at a commit on main, so a tag pushed from a branch cannot publish.
-      - name: Release tag is on main
-        if: startsWith(github.ref, 'refs/tags/')
-        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
-
-      # ADR 0027 D2: node and pnpm come from mise.toml.
-      - name: Toolchain (mise)
-        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
-        with:
-          install_args: node pnpm
-
-      # The licensed Pro postinstalls (ADR 0310) fail without their CI tokens, which only the Quality Gate reads, so
-      # this job skips the three members that pull them in; none of them is published or deployed here.
-      - name: Install dependencies
-        run: >-
-          pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'
-          --filter='!@stackra/ui-pro'
-
-      # The Quality Gate runs in ci.yml, a separate workflow this one cannot wait on; test the member here so a
-      # broken builder never reaches Cloudflare. The build is uncached (workers/static/turbo.jsonc).
-      - name: Test and build
-        run: |
-          pnpm turbo run test build --filter=@figentra/worker-static
-          ls -R workers/static/dist/site
-
-      # The skip path: no identity yet means no token, so say why and stop without failing main.
-      - name: Deploy prerequisites missing
-        if: env.INFISICAL_IDENTITY_ID == ''
-        run: >-
-          echo "::notice title=Static deploy skipped::Repository variable INFISICAL_CI_IDENTITY_ID is not set
-          (Infisical OIDC identity, STA-15). Built and tested, nothing deployed. See workers/static/README.md."
-
-      # Exchanges this job's OIDC token for Infisical access and exports only CLOUDFLARE_API_TOKEN into the
-      # environment of later steps. The secret-name filter keeps every other /ci value out of the job.
-      - name: Cloudflare token (Infisical OIDC)
-        if: env.INFISICAL_IDENTITY_ID != ''
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
-        with:
-          method: oidc
-          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
-          domain: https://eu.infisical.com # .infisical.yaml: Infisical Cloud EU
-          project-id: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
-          env-slug: prod
-          secret-path: /ci
-          secret-name: CLOUDFLARE_API_TOKEN
-          export-type: env
-
-      # wrangler reads CLOUDFLARE_API_TOKEN from the environment and the account id from wrangler.jsonc. It
-      # uploads dist/site, applies _headers and attaches the static.stackra.figentra.com Custom Domain.
-      - name: wrangler deploy
-        if: env.INFISICAL_IDENTITY_ID != ''
-        working-directory: workers/static
-        run: pnpm exec wrangler deploy
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/runway-cloudflare-workers.yml
+    with:
+      member: workers/static
+      package: "@figentra/worker-static"
+      # The `static` environment (owner: restrict it to main and schemas@* tags, STA-605) puts its name into the OIDC
+      # subject, so the Infisical identity can trust this job and nothing else.
+      environment: static
+      sha: ${{ inputs.sha }}
+      # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the three members that pull them
+      # in are not installed; none of them is deployed here.
+      install-args: >-
+        --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground --filter=!@stackra/ui-pro
+      infisical-identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
+      infisical-project-id: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
+      smoke-url: https://static.stackra.figentra.com/schemas/index.json

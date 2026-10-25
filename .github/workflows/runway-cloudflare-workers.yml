@@ -1,0 +1,180 @@
+# Stackra file contract:
+# Purpose: Runway's `cloudflare-workers` provider (ADR 0289 decision 1), a public reusable workflow (ADR 0168
+#          decision 1): deploy one Worker member at one commit of main with `wrangler deploy`. Checks out the commit,
+#          refuses one that is not on main, prints the SHA, tests and builds the member, then deploys and smoke-tests
+#          it, printing readiness per attempt. A caller is a thin job: `deploy-static.yml` here; another repository pins
+#          `figentra/stackra/.github/workflows/runway-cloudflare-workers.yml@<sha> # runway-v<n>` (runbooks/runway).
+# Secrets: CLOUDFLARE_API_TOKEN only, from Infisical `/ci` through GitHub OIDC, exported for the deploy step and
+#          blanked for the smoke step. No repository secret. Without an identity id the job builds, tests, prints a
+#          notice and deploys nothing.
+# Owner: release-operations
+name: Runway cloudflare-workers
+
+on:
+  workflow_call:
+    inputs:
+      member:
+        description: The Worker member folder, holding its `wrangler.jsonc` (e.g. `workers/static`).
+        type: string
+        required: true
+      package:
+        description: The member's package name, the turbo filter for its test and build (e.g. `@figentra/worker-static`).
+        type: string
+        required: true
+      environment:
+        description: >-
+          The GitHub environment the job runs in. Its name is in the OIDC subject the Infisical identity trusts,
+          and its protection decides which refs may deploy.
+        type: string
+        required: true
+      sha:
+        description: The commit to deploy (a promote or a rollback). Empty deploys the triggering commit.
+        type: string
+        default: ""
+      install-args:
+        description: Arguments to `pnpm install`, space-separated words with no quoting.
+        type: string
+        default: --frozen-lockfile
+      infisical-identity-id:
+        description: The Infisical machine identity id (a repository variable, not a secret). Empty skips the deploy.
+        type: string
+        default: ""
+      infisical-project-id:
+        description: The Infisical project (workspace) id, not a secret.
+        type: string
+        default: ""
+      infisical-domain:
+        description: The Infisical instance.
+        type: string
+        default: https://eu.infisical.com
+      infisical-env:
+        description: The Infisical environment that holds `/ci`.
+        type: string
+        default: prod
+      smoke-url:
+        description: A URL that must answer 200 after the deploy. Empty skips the smoke test.
+        type: string
+        default: ""
+    outputs:
+      sha:
+        description: The deployed commit.
+        value: ${{ jobs.deploy.outputs.sha }}
+      deployed:
+        description: "`true` when wrangler deployed, `false` when the deploy was skipped."
+        value: ${{ jobs.deploy.outputs.deployed }}
+
+# ADR 0019 D2: nothing by default; the job asks for what it needs (the caller's job must grant the same).
+permissions: {}
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.member }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Only a called workflow can take its environment from an input, which is why this is a reusable workflow and not
+    # a step list: the environment binds the deploy to its protection, its OIDC subject and GitHub's deployment record.
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read # checkout
+      id-token: write # GitHub OIDC token, exchanged with Infisical for read access to /ci
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+      deployed: ${{ steps.deploy.outcome == 'success' }}
+    env:
+      INFISICAL_IDENTITY_ID: ${{ inputs.infisical-identity-id }}
+
+    steps:
+      # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment. Full history
+      # brings origin/main for the check below and every tag a build may read (the static site rebuilds each
+      # `schemas@*` release from its tag).
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+
+      # Every deploy is of a commit on main (ADR 0170 decision 6): a tag or an explicit SHA can name any commit, so
+      # the check runs before anything is built or any credential is read. The SHA is the release's identity.
+      - name: Release commit
+        id: commit
+        run: |
+          sha="$(git rev-parse HEAD)"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          git merge-base --is-ancestor "$sha" origin/main || {
+            echo "::error title=Not on main::$sha is not on main; Runway deploys only commits of main."
+            exit 1
+          }
+          echo "::notice title=Release commit::$sha"
+
+      # ADR 0027 D2: node and pnpm come from the caller's mise.toml.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm
+
+      # The arguments arrive through the environment, never spliced into the script (zizmor template-injection);
+      # `set -f` keeps a `!` filter from globbing.
+      - name: Install dependencies
+        env:
+          INSTALL_ARGS: ${{ inputs.install-args }}
+        run: |
+          set -f
+          # shellcheck disable=SC2086 # word splitting of the argument list is the point
+          pnpm install $INSTALL_ARGS
+
+      # A caller's own Quality Gate runs in a separate workflow this one cannot wait on, so the member is tested here
+      # and a broken build never reaches Cloudflare.
+      - name: Test and build
+        env:
+          PACKAGE: ${{ inputs.package }}
+        run: pnpm turbo run test build --filter="$PACKAGE"
+
+      - name: Deploy prerequisites missing
+        if: env.INFISICAL_IDENTITY_ID == ''
+        run: >-
+          echo "::notice title=Deploy skipped::No Infisical identity id was passed (infisical-identity-id).
+          Built and tested, nothing deployed."
+
+      # Exchanges this job's OIDC token for Infisical access and exports only CLOUDFLARE_API_TOKEN; the secret-name
+      # filter keeps every other /ci value out of the job.
+      - name: Cloudflare token (Infisical OIDC)
+        if: env.INFISICAL_IDENTITY_ID != ''
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: ${{ inputs.infisical-domain }}
+          project-id: ${{ inputs.infisical-project-id }}
+          env-slug: ${{ inputs.infisical-env }}
+          secret-path: /ci
+          secret-name: CLOUDFLARE_API_TOKEN
+          export-type: env
+
+      # wrangler reads CLOUDFLARE_API_TOKEN from the environment and everything else from the member's wrangler.jsonc.
+      - name: wrangler deploy
+        id: deploy
+        if: env.INFISICAL_IDENTITY_ID != ''
+        working-directory: ${{ inputs.member }}
+        run: pnpm exec wrangler deploy
+
+      # Readiness, not just liveness (STA-268): a fresh deploy can answer 5xx or nothing for a while, so each attempt
+      # says "not serving yet" with the status, and only the end of the budget fails the job.
+      - name: Smoke test
+        if: steps.deploy.outcome == 'success' && inputs.smoke-url != ''
+        env:
+          CLOUDFLARE_API_TOKEN: "" # the token stays with the deploy step
+          SMOKE_URL: ${{ inputs.smoke-url }}
+        run: |
+          for attempt in $(seq 1 12); do
+            code="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 10 "$SMOKE_URL" || true)"
+            if [ "$code" = 200 ]; then
+              echo "::notice title=Ready::$SMOKE_URL answered 200 on attempt $attempt"
+              exit 0
+            fi
+            echo "not serving yet: $SMOKE_URL answered ${code:-nothing} (attempt $attempt of 12)"
+            sleep 10
+          done
+          echo "::error title=Smoke test failed::$SMOKE_URL did not answer 200 within two minutes"
+          exit 1

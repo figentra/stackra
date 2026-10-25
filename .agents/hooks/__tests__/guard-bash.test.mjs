@@ -2678,6 +2678,7 @@ test("STA-400: HUMAN_ASKS (deletes, deploys, releases) ask from main and subagen
       worktree,
     ],
     "eas-deploy": ["eas submit --platform ios", worktree],
+    "runway-deploy": ["pnpm runway deploy cloudflare-workers", worktree],
     publish: ["npm publish", worktree],
     "rm-delete": ["rm -rf src", worktree],
     "git-clean": ["git clean -fd", worktree],
@@ -2700,6 +2701,24 @@ test("STA-400: HUMAN_ASKS (deletes, deploys, releases) ask from main and subagen
     assert.equal(decision(c, worktree), "deny", c);
     assert.equal(decision(c, worktree, "Explore", "a1"), "deny", c);
   }
+  done();
+});
+
+test("STA-268: runway deploy and promote ask the owner in every spelling; plan and --dry-run run", () => {
+  const { worktree, done } = repoWithWorktree();
+  for (const c of [
+    "pnpm runway deploy cloudflare-workers",
+    "pnpm runway -- promote 0123abc",
+    "node tools/scripts/runway.mjs promote 0123abc",
+    "pnpm --silent runway deploy mintlify",
+  ])
+    assert.equal(decision(c, worktree), "ask", c);
+  for (const c of [
+    "pnpm runway plan production",
+    "pnpm runway deploy cloudflare-workers --dry-run",
+    "node tools/scripts/runway.mjs promote 0123abc --dry-run",
+  ])
+    assert.equal(decision(c, worktree), "allow", c);
   done();
 });
 

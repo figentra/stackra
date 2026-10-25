@@ -1432,6 +1432,7 @@ export const HUMAN_ASKS = new Set([
   "wrangler-deploy",
   "wrangler-d1-remote-delete",
   "eas-deploy",
+  "runway-deploy",
   "publish",
   "rm-delete",
   "git-clean",
@@ -1488,6 +1489,8 @@ const EAS_DEPLOY = atName(
  * one.
  */
 const PUBLISH = atName(String.raw`(?:${CLI("(?:npm|pnpm|yarn|changeset)")})?publish` + END);
+/** `pnpm runway deploy|promote` or `runway.mjs deploy|promote` (STA-268) without `--dry-run`; `plan` is a read. */
+const RUNWAY_DEPLOY = /\brunway(?:\.mjs)?\s+(?:--\s+)?(?:deploy|promote)\b(?![^|;&\n]*--dry-run)/;
 /**
  * The rules, in order. A rule denies unless it says `decision: "ask"`; any deny wins over any ask. `rx` is a regex
  * or a function of (text, ctx) that returns true, or a string that replaces `why`. `scan: "bare"` rules see the
@@ -1659,6 +1662,12 @@ const RULES = [
     decision: "ask",
     id: "eas-deploy",
     why: "`eas submit`, `--auto-submit`, `eas deploy`, `eas update` and `eas <x>:delete` ship to the stores or users, or delete, on the owner's Expo login; the owner confirms it.",
+  },
+  {
+    rx: (c) => runsQuoted(c, RUNWAY_DEPLOY),
+    decision: "ask",
+    id: "runway-deploy",
+    why: "`pnpm runway deploy` and `promote` dispatch a production deploy workflow (STA-268); the owner confirms it. `plan` and `--dry-run` deploy nothing.",
   },
   {
     rx: (c) => runsQuoted(c, PUBLISH),

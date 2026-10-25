@@ -19,12 +19,13 @@ icon: "rocket"
 
 ## Targets
 
-| Target                               | Status       | Deploy path                                                                                      |
-| ------------------------------------ | ------------ | ------------------------------------------------------------------------------------------------ |
-| Backend services (`services/<name>`) | Not deployed | Decision pending (DP2: how the generated Encore app is deployed). Staging first, then production |
-| Console (`apps/console`, a Vite SPA) | Not deployed | Static build with the API URL set at build time; host not chosen                                 |
-| Docs (`apps/docs`, Mintlify)         | Not deployed | Mintlify hosting from the repository; no pipeline of ours                                        |
-| Mobile (`apps/mobile`)               | Not released | EAS, see [Mobile release](/runbooks/mobile-release)                                              |
+| Target                               | Status       | Deploy path                                                                                                        |
+| ------------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Backend services (`services/<name>`) | Not deployed | Decision pending (DP2: how the generated Encore app is deployed). Staging first, then production                   |
+| Console (`apps/console`, a Vite SPA) | Not deployed | Static build with the API URL set at build time; host not chosen                                                   |
+| Docs (`apps/docs`, Mintlify)         | Mintlify app | `deploy-docs.yml` through Runway's `mintlify` provider, once its owner steps are done ([Runway](/runbooks/runway)) |
+| Mobile (`apps/mobile`)               | Not released | EAS, see [Mobile release](/runbooks/mobile-release)                                                                |
+| Static Worker (`workers/static`)     | CI           | `deploy-static.yml` through Runway's `cloudflare-workers` provider ([Runway](/runbooks/runway))                    |
 
 ## A deploy
 
@@ -73,4 +74,4 @@ icon: "rocket"
 | Migrations are expand-only     | Migration-safety check, once a database exists | Not built |
 | No agent sets a secret         | `guard-bash`                                   | Live      |
 
-See also [Release](/runbooks/release), [Secrets](/runbooks/secrets) and [CI](/runbooks/ci).
+See also [Runway](/runbooks/runway), [Release](/runbooks/release), [Secrets](/runbooks/secrets) and [CI](/runbooks/ci).

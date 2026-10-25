@@ -1,0 +1,126 @@
+---
+title: "Runway"
+description: "How Stackra deploys: the runway files, the reusable provider workflows, the one deploy command, the secrets and vars sync, and what is not built yet."
+icon: "plane-takeoff"
+---
+
+<Note>
+  Status: partly built (STA-72). The runway check in `pnpm validate`, core's `runway.yaml`, the
+  `cloudflare-workers`, `npm` and `mintlify` provider workflows, the supply-chain checks and `pnpm
+  runway` are written; none has run yet (testing pass STA-597). The secrets and vars sync is
+  designed here and not built (STA-606). Everything that needs the generated Encore app waits for
+  gen: the Encore deploy spike (STA-136), the staging deploy, images and generated CI pipelines.
+</Note>
+
+Runway is the deploy layer of Stackra: the runway files say what each member needs and where it runs ([0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)), and public reusable workflows in this repository deploy it ([0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml)). Promotion, rollback and records follow [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted); secrets follow [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets).
+
+## Runway files
+
+| File                                                    | Kind    | Holds                                                                                                                          |
+| ------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `runway.yaml` at the root                               | root    | providers, environments and their destinations, topology, targets with their caller workflows, CI secret names, release policy |
+| `apps/<name>/runway.yaml`, `workers/<name>/runway.yaml` | app     | the member's ports, hosts, vars and secret names per environment                                                               |
+| `services/<name>/runway.yaml`                           | service | what the service `requires`, its secret names and its sizes per environment                                                    |
+
+`pnpm validate` reads every one of them, checks it against the version 3 schema of its kind with `@stackra/runway`, and checks that a grouped topology places each service member exactly once (`checkRunwayFiles`). A `runway.yaml` anywhere else is a finding. The check uses the built package: the Quality Gate builds before it validates, and a local `pnpm validate` before a build prints a notice instead.
+
+Core's root runway declares only `dev` and `production`: Stackra deploys only its own infrastructure, the static Worker, the docs and the npm packages ([0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) decision 1). The docs member has its runway ([0299](/adr/0299-docs-runway) decision 6); `workers/static` gets one with gen, when its hand-written `wrangler.jsonc` goes ([0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker) decision 8).
+
+## Provider workflows
+
+Each provider is a `workflow_call` workflow in `.github/workflows/`. Its job takes its GitHub environment from an input, so the environment's protection, its OIDC subject and GitHub's deployment record apply to every deploy. Each job reads one credential per step from Infisical `/ci` over GitHub OIDC, and without an identity id it builds, checks, prints a notice and deploys nothing.
+
+| Provider                        | Caller here         | Does                                                                                                                                                    |
+| ------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `runway-cloudflare-workers.yml` | `deploy-static.yml` | refuses a commit that is not on main, tests and builds the member, `wrangler deploy`, smoke test with readiness per attempt                             |
+| `runway-npm.yml`                | `release.yml`       | Trivy scan of the lockfile, version PR or trusted publish with provenance, the OP2 bootstrap token on request, a cosign-signed SBOM on each new release |
+| `runway-mintlify.yml`           | `deploy-docs.yml`   | `mint validate`, `broken-links` and `a11y`, a Mintlify update polled to its end, a smoke test of the pages                                              |
+
+npm checks the calling workflow, not the reusable one, so each package's trusted publisher names `release.yml`.
+
+### Calling a provider from another repository
+
+A release of the providers is the tag `runway-v<n>` on a commit of main. Pin the commit, with the tag in a comment, as for every action ([0019](/adr/0019-supply-chain-hardening) D1):
+
+```yaml
+jobs:
+  deploy:
+    permissions:
+      contents: read
+      id-token: write
+    uses: figentra/stackra/.github/workflows/runway-cloudflare-workers.yml@<full-sha> # runway-v1
+    with:
+      member: workers/edge
+      package: "@acme/worker-edge"
+      environment: production
+      infisical-identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
+      infisical-project-id: <workspace id>
+      smoke-url: https://edge.acme.example/healthz
+```
+
+The calling job grants the permissions the provider's job asks for. zizmor fails any `uses:` that is not a full SHA.
+
+## The deploy command
+
+`pnpm runway` is the one way to start a deploy, for people and CI alike (STA-268). It never builds or deploys on your machine: it checks the commit and dispatches the same caller workflow a merge runs.
+
+```bash
+pnpm runway plan production
+```
+
+```bash
+pnpm runway deploy cloudflare-workers --dry-run
+```
+
+```bash
+pnpm runway promote <sha>
+```
+
+- `plan [env]` prints, as JSON, each target in build order with its caller workflows, the CI secret names the jobs read and the member secret and var names a deploy syncs. Names only.
+- `deploy <target>` needs a clean checkout at the head of `origin/main`; it prints that SHA and dispatches each caller workflow of the target.
+- `promote <sha>` needs a commit on `origin/main`; it dispatches every production caller that takes a `sha` input. That is also the rollback: promote the last good release's SHA. A caller that only builds the head of main (Mintlify) is listed as skipped.
+- `--dry-run` prints the `gh` commands instead of running them. An agent's `deploy` or `promote` without it asks the owner (the guard's `runway-deploy` rule).
+
+## Secrets and vars sync
+
+The sync is designed here and built in STA-606, once its targets exist.
+
+1. **Source.** Infisical holds every value ([0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets)). Member runways name secrets; the root names the Infisical environment per runway environment (`providers.infisical.environments`) and the path (`secrets.defaultPath` in `providers.infisical.paths`). CI-only names are root `secrets.ci` and never reach a runtime.
+2. **Who reads.** The deploy job of each environment logs in with that environment's own Infisical identity over OIDC, trusted only for that environment's subject, so a staging job cannot read production.
+3. **Plan first.** Before writing, the job prints the names it will write and where (`pnpm runway plan <env>` shows the same list). A name the member declares and Infisical lacks fails the deploy before anything changes.
+4. **Write from stdin only.** A value never appears in argv, a file, `GITHUB_ENV`, an output, an artifact or a log:
+
+   | Runtime            | Secrets                                                 | Vars                                     | Waits for                                                      |
+   | ------------------ | ------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------- |
+   | Encore             | `encore secret set --type <env> <NAME>`, value on stdin | config values through gen, not a sync    | the generated app (STA-59), the deploy path (STA-136)          |
+   | Cloudflare Workers | `wrangler secret bulk` with a JSON document on stdin    | `vars` in the generated `wrangler.jsonc` | gen writing the Workers config; no Worker needs a secret today |
+   | EAS                | `eas env:create --visibility secret`                    | `eas env:create --visibility plaintext`  | the EAS project (STA-17)                                       |
+
+5. **Vars.** A member's per-environment `vars` are public values. A `ref:<path>` value resolves from the stacks repository's Pulumi config at deploy time ([0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra)); a `${pr}` value from the build environment.
+6. **Drift.** A name in the runtime that no runway declares is reported, never deleted, until a prune rule is decided.
+
+## What is not built yet
+
+| Item                                                                               | Waits for                                          |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Encore deploy spike and its ADR (STA-136)                                          | gen emitting the Encore app (STA-59)               |
+| `encore-cloud` provider and a staging deploy on every merge (STA-608)              | STA-136                                            |
+| Images, Trivy image scan, syft SBOM, cosign image signing, Compose smoke (STA-609) | gen and STA-136                                    |
+| Generated CI pipelines (STA-256)                                                   | gen                                                |
+| The sync itself (STA-606)                                                          | gen, STA-136, STA-17                               |
+| `stackra validate`, `stackra deploy`, `stackra promote` (STA-607)                  | the CLI branch landing                             |
+| Snapshot `next` releases (STA-209)                                                 | the first publish                                  |
+| The R2 Turbo cache Worker (STA-604)                                                | nothing; it uses the `cloudflare-workers` provider |
+
+## Owner steps
+
+Agents cannot do these (STA-605):
+
+1. Restrict the `static` environment to `main` and `schemas@*` tags.
+2. Create the `docs` environment (main only), and add Infisical OIDC trusts for the `docs` and `release` environments.
+3. Put `MINTLIFY_ADMIN_KEY` into Infisical `/ci` through the [secrets inbox](/runbooks/secrets#the-secrets-inbox), set the repository variable `MINTLIFY_PROJECT_ID`, and switch off the Mintlify GitHub-app deploy after the first CI deploy.
+4. Apply `.github/rulesets/release-tags.json` to the `release-tags` ruleset.
+5. After the merge, tag `runway-v1` on the merge commit.
+6. The first npm publish (OP2): a 7-day publish-only token as `NPM_BOOTSTRAP_TOKEN` in `/ci`, dispatch `release.yml` with `bootstrap`, add a trusted publisher naming `release.yml` for each package, revoke the token.
+
+See also [Deploys](/runbooks/deploys), [Release](/runbooks/release), [Secrets](/runbooks/secrets) and [CI](/runbooks/ci).

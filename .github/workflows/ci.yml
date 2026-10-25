@@ -1,7 +1,8 @@
 # Stackra file contract:
 # Purpose: the Quality Gate, the one required check on every pull request to main, every merge-queue
-#          group commit (merge_group, ADR 0166 CI3) and every push to main (install, Linear key check, format, lint, typecheck, test, build, playground e2e, validate, boundaries,
-#          knip, secrets scan, agent sync). Branch protection requires the `Quality Gate` job by name;
+#          group commit (merge_group, ADR 0166 CI3) and every push to main (workflow lint, OSV dependency scan,
+#          install, Linear key check, format, lint, typecheck, test, build, docs a11y, playground e2e, validate,
+#          boundaries, knip, secrets scan, agent sync). Branch protection requires the `Quality Gate` job by name;
 #          never rename it. `deploy-staging` is a placeholder that deploys nothing.
 # Owner: release-operations
 # Secrets: HEROUI_AUTH_TOKEN and UNIWIND_AUTH_TOKEN (the HeroUI and Uniwind CI/CD licence tokens) from Infisical /ci
@@ -50,11 +51,27 @@ jobs:
           persist-credentials: false
           submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
 
-      # ADR 0027 D2: toolchains come from mise.toml (node, pnpm, gitleaks, shfmt), not setup actions.
+      # ADR 0027 D2: toolchains come from mise.toml (node, pnpm, gitleaks, shfmt and the supply-chain checks), not
+      # setup actions.
       - name: Toolchain (mise)
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
-          install_args: node pnpm gitleaks shfmt
+          install_args: >-
+            node pnpm gitleaks shfmt aqua:rhysd/actionlint aqua:zizmorcore/zizmor aqua:google/osv-scanner
+
+      # ADR 0019, ADR 0168 (Enforcement), STA-311: every workflow parses and type-checks (actionlint, with shellcheck
+      # on each `run:`), and passes zizmor's security audits, including the hash pin of every `uses:`
+      # (.github/zizmor.yml). The read-only job token lets zizmor check that each pinned SHA belongs to its action.
+      - name: Workflow lint
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          actionlint
+          zizmor --config .github/zizmor.yml .github/workflows
+
+      # ADR 0174, STA-310: known vulnerabilities in the lockfile, before anything is installed.
+      - name: Dependency scan (OSV-Scanner)
+        run: osv-scanner scan source --lockfile=pnpm-lock.yaml
 
       # Without the licensed builds, @stackra/ui-pro, the playground and the mobile app cannot typecheck or build; stop
       # here with the reason instead of failing later on missing types.
@@ -124,6 +141,11 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # ADR 0299 decision 2: `mint validate` (build) and `mint broken-links` (lint) run above through turbo; the
+      # accessibility check is the third that must pass before a docs change merges and deploys.
+      - name: Docs accessibility
+        run: pnpm --filter @figentra/docs a11y
 
       # ADR 0302: the playground's Playwright + axe tier, every route in light, dark, LTR and RTL. Not part of
       # `pnpm verify`; the browser comes from Playwright's own download, pinned by catalog:e2e.

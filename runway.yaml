@@ -1,0 +1,128 @@
+# yaml-language-server: $schema=https://static.stackra.figentra.com/schemas/runway/root.json
+# Stackra file contract:
+# Purpose: core's ROOT runway (ADR 0296): where Stackra's own deployables run and how they ship. Core deploys only
+#          its own infrastructure (ADR 0170 decision 1): the static Worker (static.stackra.figentra.com), the docs
+#          (docs.stackra.figentra.com) and the @stackra/* packages on npmjs. No staging and no previews (ADR 0170
+#          decisions 5 and 7 as they apply to Stackra), so `dev` and `production` only. Each target names the caller
+#          workflow that deploys each of its members; `pnpm runway plan|deploy|promote` reads them.
+# Boundary: no member fact (a member's port and host are its own runway.yaml) and no secret value (ADR 0173): ids
+#           here identify, they do not grant. `ref:<path>` resolves from the private stacks repository (ADR 0289
+#           decision 9) once it exists. `workers/static` gets its member runway with gen (ADR 0284 decision 8).
+# Runtime: CI; checked by `pnpm validate` (checkRunwayFiles) and read by `tools/scripts/runway.mjs`
+# Governing contract: ADR 0168, 0170, 0173, 0177, 0284, 0289, 0296, 0299
+$schema: "@stackra/runway/schema/root.json"
+version: 3
+project: stackra
+
+# ── Providers ────────────────────────────────────────────────────────────────────────────────────────
+providers:
+  cloudflare:
+    # The account of workers/static/wrangler.jsonc (ADR 0284 decision 7).
+    accountId: d861f9ac9df28b7f0b1298cc0c89bc9d
+    zones:
+      figentra.com: ref:cloudflare.zones.figentraCom
+  # The GitHub environments the deploy jobs run in. Their protection is applied by the owner (STA-605), later by the
+  # Pulumi GitHub provider (ADR 0171 decision 8); the environment name is part of each job's OIDC subject.
+  github:
+    org: figentra
+    repo: stackra
+    environments:
+      static:
+        branches: [main]
+        tags: ["schemas@*"]
+      docs:
+        branches: [main]
+      release:
+        branches: [main]
+        reviewers: [figentra-usr]
+  infisical:
+    # Infisical Cloud EU; the workspace id of .infisical.yaml, not a secret.
+    domain: https://eu.infisical.com
+    workspace: dd4724f4-7b9a-46ae-a899-b34af2d626b2
+    environments:
+      dev: dev
+      production: prod
+    paths:
+      ci: /ci
+      agents: /agents
+  # The deploy reads the repository variable MINTLIFY_PROJECT_ID until the stacks repository holds it.
+  mintlify:
+    project: ref:mintlify.project
+  npm:
+    registry: https://registry.npmjs.org/
+    scope: "@stackra"
+
+# ── Environments ─────────────────────────────────────────────────────────────────────────────────────
+environments:
+  dev:
+    destinations:
+      services: compose
+      web: vite-dev
+      mobile: expo-dev
+      docs: mint-dev
+    # `encore run` serves the reference services from one process.
+    topology:
+      mode: monolith
+  production:
+    destinations:
+      web: cloudflare-workers
+      docs: mintlify
+    domains:
+      zone: figentra.com
+      pattern: "${member}.stackra"
+    # A merge to main deploys what it touched; `pnpm runway promote <sha>` redeploys a recorded SHA.
+    deploy:
+      on: merge-to-main
+      gate: smoke
+
+# ── Targets: the provider shape and the caller workflow per member ──────────────────────────────────
+targets:
+  # The reusable provider is .github/workflows/runway-cloudflare-workers.yml (ADR 0289 decision 1).
+  cloudflare-workers:
+    compatibilityDate: "2026-10-01"
+    workflows:
+      static: deploy-static.yml
+  # The reusable provider is .github/workflows/runway-mintlify.yml (ADR 0299).
+  mintlify:
+    deployOn: merge-to-main
+    checks: [validate, broken-links, a11y]
+    # The owner switches the Mintlify GitHub-app deploy off after the first CI deploy (STA-605).
+    pushDeploy: false
+    adminKey: MINTLIFY_ADMIN_KEY
+    workflows:
+      docs: deploy-docs.yml
+  # The reusable provider is .github/workflows/runway-npm.yml. npm checks the calling workflow, so every package's
+  # trusted publisher names release.yml (ADR 0177, 2026-10-21 amendment).
+  npm:
+    access: public
+    provenance: true
+    trustedPublisher: release.yml
+    bootstrapToken: NPM_BOOTSTRAP_TOKEN
+    workflows:
+      packages: release.yml
+
+# ── Secrets: CI-only names read over OIDC from Infisical /ci; core has no runtime secret ────────────
+secrets:
+  sync: on-deploy
+  ci:
+    - CLOUDFLARE_API_TOKEN
+    - MINTLIFY_ADMIN_KEY
+    - NPM_BOOTSTRAP_TOKEN
+    - HEROUI_AUTH_TOKEN
+    - UNIWIND_AUTH_TOKEN
+
+# ── Release policy (ADR 0170) ────────────────────────────────────────────────────────────────────────
+release:
+  promote:
+    unit: sha
+  gate:
+    smoke: http
+  strategy:
+    kind: all-at-once
+  # Rollback promotes the last good SHA; the owner triggers it.
+  rollback:
+    by: owner
+    withinMinutes: 15
+  # Every deploy job runs in a GitHub environment, so GitHub records each deployment.
+  records: [github-deployments]
+  buildOrder: [npm, cloudflare-workers, mintlify]

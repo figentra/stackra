@@ -1,12 +1,14 @@
 # Stackra file contract:
-# Purpose: release on every push to main (and workflow_dispatch with `dry_run`). With pending
-#          changesets it opens or updates the "version packages" PR as stackra-bot; on that PR's merge
-#          it publishes the public packages to npmjs with provenance, then uploads a CycloneDX SBOM.
-#          The job runs in the protected `release` environment, which needs a required reviewer's
-#          approval: a run shows "waiting" until the owner approves it, by design (runbook, release).
+# Purpose: release on every push to main (and workflow_dispatch with `dry_run` or `bootstrap`) through Runway's `npm`
+#          provider, runway-npm.yml: with pending changesets it opens or updates the "version packages" PR as
+#          stackra-bot; on that PR's merge it publishes the public packages to npmjs with provenance, then attaches a
+#          signed CycloneDX SBOM to each release. The job runs in the protected `release` environment, which needs a
+#          required reviewer's approval: a run shows "waiting" until the owner approves it, by design (runbook, release).
+#          npm trusted publishing checks THIS file's name, so every package's trusted publisher names `release.yml`.
 # Owner: release-operations
-# Secrets: STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (environment or repository secrets, the
-#          stackra-bot app token, owner decision A1). npm publishing uses GitHub OIDC; no npm token.
+# Secrets: STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (repository secrets, the stackra-bot app token, owner
+#          decision A1), passed to the provider. npm publishing uses GitHub OIDC; no npm token, except the owner's
+#          one-time NPM_BOOTSTRAP_TOKEN in Infisical /ci, read only by a `bootstrap` dispatch (ADR 0289 decision 11).
 name: Release
 
 on:
@@ -18,128 +20,38 @@ on:
         description: "Run `pnpm -r publish --dry-run` (no version PR, no publish) in the release environment"
         type: boolean
         default: false
+      bootstrap:
+        description: "First publish of a package (OP2): use NPM_BOOTSTRAP_TOKEN from Infisical /ci"
+        type: boolean
+        default: false
 
 # One release run per ref at a time: a second run starting before this one finishes
 # would version the same changesets twice.
 concurrency: release-${{ github.ref }}
 
-# ADR 0019 D2: nothing by default; the job below asks for what it needs.
+# ADR 0019 D2: nothing by default; the job grants what the provider's jobs ask for.
 permissions: {}
 
 jobs:
   release:
     name: Release
-    runs-on: ubuntu-latest
-    # Runbook (apps/docs/src/runbooks/release.mdx, "Before the first release"): a human
-    # configures this environment as protected and restricted to main, so a branch that
-    # edits the workflow cannot obtain a credential.
-    environment: release
     permissions:
-      contents: write # push the version-PR branch and the version tags
-      pull-requests: write # open and update the version PR
-      # ADR 0177 amendment: pnpm trusted publishing (GitHub OIDC) and the provenance statement; no npm token
+      contents: write
+      pull-requests: write
       id-token: write
-
-    steps:
-      # stackra-bot token (owner decision A1): a version PR pushed with GITHUB_TOKEN never triggers the
-      # Quality Gate, so it could not merge. Scoped to what this job needs; revoked when the job ends.
-      - name: Bot token
-        id: bot
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
-          private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
-          permission-contents: write
-          permission-pull-requests: write
-
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          token: ${{ steps.bot.outputs.token }} # pushes (version branch, tags) go out as the bot
-          fetch-depth: 0 # changesets diffs against history and reads existing tags
-          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
-
-      # ADR 0027 D2: node and pnpm come from mise.toml.
-      - name: Toolchain (mise)
-        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
-        with:
-          install_args: node pnpm
-
-      # The licensed Pro postinstalls (ADR 0310) fail without their CI tokens, which only the Quality Gate reads, so
-      # this job skips the three members that pull them in; none of them is published or deployed here.
-      - name: Install dependencies
-        run: >-
-          pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'
-          --filter='!@stackra/ui-pro'
-
-      # ADR 0025 / 0119 D7: automation prepares, the owner decides. With pending changesets this opens or updates the
-      # "chore(release): version packages" PR (`pnpm changeset:version` also refreshes the lockfile); Claude prepares
-      # it and the owner merges it. Only packages are versioned — apps and services deploy by commit SHA
-      # (`privatePackages: { version: false, tag: false }`). On the merge run `changeset publish` (pnpm native publish) (after the Build step
-      # above, which produces each dist) publishes every package with "private": false to npmjs
-      # with provenance and tags it; the action pushes the tags and creates the GitHub releases.
-      # Only what is published: the packages. The private HeroUI Pro wrapper (ADR 0310) and the apps need the HeroUI
-      # Pro build, which this job never downloads; none of them is published.
-      - name: Build
-        run: pnpm turbo run build --filter='./packages/**' --filter='!@stackra/ui-pro'
-
-      - name: Publish dry run
-        if: inputs.dry_run == true
-        run: pnpm -r publish --dry-run --no-git-checks
-
-      - name: Version PR / publish
-        if: inputs.dry_run != true
-        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
-        with:
-          version-script: pnpm changeset:version
-          publish-script: pnpm changeset publish
-          pr-title: "chore(release): version packages"
-          commit-message: "chore(release): version packages"
-          github-token: ${{ steps.bot.outputs.token }}
-        env:
-          # changesets runs pnpm 12's native publish (`pnpm changeset publish` -> `pnpm publish`): it resolves
-          # workspace:/catalog: versions and does the OIDC exchange and provenance itself, not the npm CLI.
-          # No NPM_TOKEN exists anywhere (ADR 0177 amendment).
-          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
-          NPM_CONFIG_PROVENANCE: "true"
-
-  # The SBOM job holds no id-token and no write permission: it only reads the repository.
-  sbom:
-    name: SBOM
-    runs-on: ubuntu-latest
-    needs: release
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          persist-credentials: false
-          submodules: false
-
-      - name: Toolchain (mise)
-        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
-        with:
-          install_args: node pnpm
-
-      # The licensed Pro postinstalls (ADR 0310) fail without their CI tokens, which only the Quality Gate reads, so
-      # this job skips the three members that pull them in; none of them is published or deployed here.
-      - name: Install dependencies
-        run: >-
-          pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'
-          --filter='!@stackra/ui-pro'
-
-      # SBOM covers what actually got installed (node_modules), independent of whether this
-      # run released. `--ignore-npm-errors` is required because cyclonedx-npm shells out to
-      # `npm ls` internally, which reports the devDependency-only peer graphs of transitive
-      # tools as errors even though pnpm installed fine. The tool is pinned via npx because
-      # it is not a workspace catalog dependency.
-      - name: Generate SBOM (CycloneDX)
-        run: npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --ignore-npm-errors --output-format JSON --output-file sbom.cdx.json
-
-      - name: Upload SBOM as release artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: sbom
-          path: sbom.cdx.json
-          retention-days: 90
+    uses: ./.github/workflows/runway-npm.yml
+    with:
+      environment: release
+      # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the three members that pull them
+      # in are not installed; none of them is published.
+      install-args: >-
+        --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground --filter=!@stackra/ui-pro
+      # Only what is published: the packages. The private HeroUI Pro wrapper (ADR 0310) is never published here.
+      build-args: --filter=./packages/** --filter=!@stackra/ui-pro
+      dry-run: ${{ inputs.dry_run == true }}
+      bootstrap: ${{ inputs.bootstrap == true }}
+      infisical-identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
+      infisical-project-id: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
+    secrets:
+      app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
+      app-private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
