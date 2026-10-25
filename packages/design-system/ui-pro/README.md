@@ -1,12 +1,12 @@
 # @stackra/ui-pro
 
-Stackra Design System Pro components for Stackra's own apps only: the @stackra/ui props vocabulary over HeroUI Pro on web and HeroUI Native Pro on native. Private, never published.
+Stackra Design System Pro components for Stackra's own apps only: the @stackra/ui props vocabulary over HeroUI Pro on web and HeroUI Native Pro on native. Published only to Figentra's restricted Keygen channel, never to npmjs.
 
 **Tier:** `tier:lib` (`packages/design-system/ui-pro`). Laid out in the programming model v3 (ADR 0294, 0295).
 
 ## Entry points
 
-Private and never published (ADR 0310): only Stackra's own apps import it. `@stackra/ui` and every free package never do;
+Only Stackra's and Figentra's own apps import it (ADR 0310). `@stackra/ui` and every free package never do;
 `pnpm validate` refuses it.
 
 | Import                      | Holds                                                                                                                                                                                     |
@@ -33,6 +33,20 @@ component with nothing in the vocabulary to map (most charts, Markdown, Timeline
   `DesignSystemProvider`, plus `@import "heroui-native-pro/styles";` and a `@source` line for its `lib` folder.
 - Install: a `heroui-pro login` session locally; `HEROUI_AUTH_TOKEN` from Infisical `/ci` in CI. Without it the HeroUI
   Pro packages are empty shells.
+
+## Publishing
+
+`@stackra/ui-pro` publishes only to the restricted channel, Keygen Cloud at `https://npm.stackra.figentra.com/` (ADR
+0310 as amended, ADR 0177 decision 2), for Figentra's own repositories, and never to npmjs.
+
+- `"private": true` stays, so `pnpm publish` and changesets never send it to npmjs.
+- The tarball is the Pro form of ADR 0316 decision 2: `pnpm pack` applies `publishConfig.exports`, which name `dist`
+  only with no `@stackra/source` condition; `files` lists no `src`; the build is minified with no source maps.
+- `@heroui-pro/react` and `heroui-native-pro` stay external peers. Each consuming repository installs them with its own
+  HeroUI Pro licence token; this package carries none.
+- Keygen's npm engine takes no `npm publish`: the release step uploads the packed tarball with the Keygen CLI
+  (`keygen new`, `keygen upload`, `keygen publish`).
+- `pnpm validate` checks the private flag, the registry, `files` and the packed exports.
 
 ## Structure
 

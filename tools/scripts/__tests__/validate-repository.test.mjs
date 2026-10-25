@@ -13,6 +13,7 @@ import {
   isMemberSource,
   isV2Service,
   isRepoOwnedYaml,
+  PRO_WRAPPER_REGISTRY,
   tierFor,
 } from "../validate-repository.mjs";
 
@@ -62,8 +63,17 @@ test("dependencies replaced by Accepted ADRs are forbidden", () => {
 });
 
 test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0310)", () => {
-  const pro = (dir, pkg) => check({ ...ok, dir, pkg }).filter((m) => /HeroUI Pro|private/.test(m));
-  const wrapper = { name: "@stackra/ui-pro", private: true };
+  const pro = (dir, pkg) =>
+    check({ ...ok, dir, pkg }).filter((m) => /HeroUI Pro|@stackra\/ui-pro /.test(m));
+  const wrapper = {
+    name: "@stackra/ui-pro",
+    private: true,
+    files: ["dist", "assets"],
+    publishConfig: {
+      registry: PRO_WRAPPER_REGISTRY,
+      exports: { ".": { types: "./dist/index.d.mts", default: "./dist/index.mjs" } },
+    },
+  };
   for (const dep of ["@heroui-pro/react", "heroui-native-pro", "@stackra/ui-pro"]) {
     assert.deepEqual(
       pro("packages/design-system/ui", {
@@ -85,11 +95,24 @@ test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0310)", 
     pro(ui, { ...wrapper, devDependencies: { "@heroui-pro/react": "catalog:frontend" } }),
     [],
   );
-  assert.deepEqual(pro(ui, { name: "@stackra/ui-pro" }), [
-    '@stackra/ui-pro must be "private": true with no publishConfig (ADR 0310)',
+  assert.deepEqual(pro(ui, wrapper), []);
+  assert.deepEqual(pro(ui, { name: "@stackra/ui-pro", files: ["dist", "src"] }), [
+    '@stackra/ui-pro must be "private": true, so nothing publishes it to npmjs (ADR 0310)',
+    `@stackra/ui-pro publishConfig.registry must be ${PRO_WRAPPER_REGISTRY}, the restricted Keygen channel (ADR 0310)`,
+    "@stackra/ui-pro files must not list src: its tarball ships dist only (ADR 0316)",
+    "@stackra/ui-pro publishConfig.exports must name dist only, with no @stackra/source condition (ADR 0316)",
   ]);
-  assert.deepEqual(pro(ui, { ...wrapper, publishConfig: { access: "public" } }), [
-    '@stackra/ui-pro must be "private": true with no publishConfig (ADR 0310)',
+  const npmjs = {
+    ...wrapper,
+    publishConfig: {
+      access: "public",
+      registry: "https://registry.npmjs.org/",
+      exports: { ".": { "@stackra/source": "./src/index.ts", default: "./dist/index.mjs" } },
+    },
+  };
+  assert.deepEqual(pro(ui, npmjs), [
+    `@stackra/ui-pro publishConfig.registry must be ${PRO_WRAPPER_REGISTRY}, the restricted Keygen channel (ADR 0310)`,
+    "@stackra/ui-pro publishConfig.exports must name dist only, with no @stackra/source condition (ADR 0316)",
   ]);
   const uniwind = (dir) =>
     check({
@@ -157,7 +180,7 @@ const filesOk = {
 
 test("a complete member has no file findings", () => assert.deepEqual(checkFiles(filesOk), []));
 
-test("the private HeroUI Pro wrapper needs no publishConfig; any other package does (ADR 0310)", () => {
+test("the HeroUI Pro wrapper skips the npmjs publishConfig, which check replaces; any other package needs it (ADR 0310)", () => {
   const { publishConfig: _, ...unpublished } = filesOk.pkg;
   const at = (name) => checkFiles({ ...filesOk, pkg: { ...unpublished, name } });
   assert.deepEqual(at("@stackra/ui-pro"), []);
