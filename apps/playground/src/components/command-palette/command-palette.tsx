@@ -34,7 +34,8 @@ const STRINGS = {
   recent: "Recent",
   actions: "Quick actions",
   best: "Best matches",
-  count: (count: number) => (count === 1 ? "1 result" : `${count} results`),
+  count: (count: number) =>
+    count === 0 ? "No results" : count === 1 ? "1 result" : `${count} results`,
   empty: (query: string) => `Nothing matches “${query}”.`,
   emptyHint: "Try a component, a category such as Selection, or an action such as Dark.",
   page: "Page",
