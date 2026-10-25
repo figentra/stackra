@@ -3842,6 +3842,9 @@ importers:
       '@stackra/money':
         specifier: workspace:*
         version: link:../../commerce/money
+      '@stackra/navigation':
+        specifier: workspace:*
+        version: link:../navigation
       '@stackra/query':
         specifier: workspace:*
         version: link:../../state/query
@@ -3906,6 +3909,9 @@ importers:
       react-native:
         specifier: catalog:mobile
         version: 0.86.3(@babel/core@8.0.7)(@react-native/metro-config@0.88.0(@babel/core@8.0.7)(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2)
+      react-router:
+        specifier: catalog:frontend
+        version: 7.18.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       tsdown:
         specifier: catalog:build
         version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)

@@ -81,6 +81,7 @@
     "@stackra/iam": "workspace:*",
     "@stackra/icons": "workspace:*",
     "@stackra/money": "workspace:*",
+    "@stackra/navigation": "workspace:*",
     "@stackra/query": "workspace:*",
     "@stackra/ui": "workspace:*",
     "@stackra/validation": "workspace:*",
@@ -104,19 +105,24 @@
     "react": "catalog:frontend",
     "react-dom": "catalog:frontend",
     "react-native": "catalog:mobile",
+    "react-router": "catalog:frontend",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
     "react": "catalog:frontend",
-    "react-native": "catalog:mobile"
+    "react-native": "catalog:mobile",
+    "react-router": "catalog:frontend"
   },
   "peerDependenciesMeta": {
     "react": {
       "optional": true
     },
     "react-native": {
+      "optional": true
+    },
+    "react-router": {
       "optional": true
     }
   }

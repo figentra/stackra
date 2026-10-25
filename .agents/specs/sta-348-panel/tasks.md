@@ -13,3 +13,4 @@
 - [x] T009 [US1] Tests for every public symbol and each barrel in `src/**/__tests__/`, and the naming and vocabulary checks — covers: SC-002, FR-011, P-011 — route: tests — deps: T008
 - [x] T010 [US1] Changeset `.changeset/panel-package.md`; `oxfmt` and `oxlint` clean; the validator reports nothing for the package — covers: SC-001, SC-003 — route: package — deps: T009
 - [ ] T011 [US1] Run the package's tests, typecheck and build in the separate testing workflow after the integrator's install — covers: SC-002, SC-003 — route: tests — deps: T010
+- [x] T012 [US4] Reconciliation R4: the breadcrumb trail moves to `@stackra/navigation/react` (panel's `src/react/breadcrumbs/` removed, `PanelShell` mounts `BreadcrumbsProvider`, `./react` re-exports `useBreadcrumbs`); `registerPanelPages` and the panel route page in `packages/experience/panel/src/react/route-pages/`; tests, README, AGENTS and changeset — covers: FR-010, P-010, FR-012, P-012 — route: package — deps: T007

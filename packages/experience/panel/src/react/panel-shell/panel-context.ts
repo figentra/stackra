@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `PanelContext`, the React context the panel shell provides: the panel and its breadcrumb trail.
- * Boundary: internal to the `./react` entry; read through `usePanel`, `useBreadcrumbs` and `useBreadcrumb`.
+ * Purpose: `PanelContext`, the React context the panel shell provides: the panel it frames.
+ * Boundary: internal to the `./react` entry; read through `usePanel`.
  * Runtime: browser
  * Governing contract: ADR 0164; ADR 0294 (decision 23: Provider means a React context component).
  */

@@ -27,6 +27,9 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
 - `src/{core,react,native}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new
   public file to its barrel and to that entry's `index.test.ts`.
 - `core` imports no React; `react` and `native` import `core` and never each other.
+- The breadcrumb trail is navigation's (`BreadcrumbsProvider`, `useBreadcrumb`, `useBreadcrumbs` in
+  `@stackra/navigation/react`); panel depends on navigation, never the reverse. `./react` re-exports `useBreadcrumbs`
+  only because the template imports it from here.
 - The records, the widget registry, `PANEL_KEYS`, `widgetsFor`, `widgetInput`, `widgetTitle`, `toneOf`, `changeOf`,
   `valueAt` and `snakeCase` are internal: `react` and `native` import them by path, and no barrel exports them.
 

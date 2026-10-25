@@ -58,7 +58,8 @@
 - **P-007**: for every placement list, `resolvePlacements` keeps exactly the placements whose layer rank is the item's maximum — Validates: FR-007
 - **P-008**: the rendered tiles are the registered widgets of the slots whose display the place takes and whose permission the session holds — Validates: FR-008
 - **P-009**: a declined confirmation sends nothing; a confirmed run resolves done; a refusal resolves refused after a toast — Validates: FR-009
-- **P-010**: `useBreadcrumbs` lists one crumb per href ordered by path depth, and a crumb leaves with its publisher — Validates: FR-010
+- **P-010**: a crumb a page publishes under a `PanelShell` appears in `useBreadcrumbs`, which is navigation's own function, and no file under `packages/experience/panel/src` holds a crumb store — Validates: FR-010
+- **P-012**: after `registerPanelPages()`, navigation's `toPanel(X)` route renders the shell with `{ key, path, area }` of `X`, and after its disposer the route names the missing registration — Validates: FR-012
 - **P-011**: `grep -ri tenant packages/experience/panel/src` finds nothing, and no export is named `Field` or `Step` — Validates: FR-011
 
 ## Deploy modes

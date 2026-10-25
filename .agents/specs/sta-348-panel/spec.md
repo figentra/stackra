@@ -31,7 +31,8 @@ and the native widget slot (ADR 0307, 0164, 0306, 0305). The old `./schemas` ent
 - **Secrets**: none
 - **ADR needed**: no (ADR 0307, 0164, 0306, 0336 and 0294 decide the package); one naming choice is recorded below
 - **New dependencies**: none outside the workspace and the catalogs; runtime edges to actions, clients, container,
-  contracts, errors, experience, i18n, iam, icons, money, query, ui and validation
+  contracts, errors, experience, i18n, iam, icons, money, navigation (R4: the breadcrumb trail and the route pages),
+  query, ui and validation; React Router (catalogued) joins as an optional peer
 - **Deploy modes**: same code in all; no I/O beyond the client calls the host's transport makes
 - **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
 - **Docs to update**: `packages/experience/panel/README.md`, `packages/experience/panel/AGENTS.md`; ADR 0307, 0164, 0306 and 0336 are cited and amended only by a note if a decision here changes
@@ -132,8 +133,11 @@ the palette runs an intent with `useActionRunner()`; the mobile home renders `<W
   each running its query with its params and range and refreshing on its events and interval.
 - **FR-009**: `useActionRunner` SHALL ask the declared confirmation (or a generic one for L2 to L4), send the action,
   refresh cached queries and toast the success text or the refusal.
-- **FR-010**: `PanelShell`, `usePanel`, `useBreadcrumb` and `useBreadcrumbs` SHALL share the panel and a breadcrumb trail
-  ordered by href depth.
+- **FR-010**: `PanelShell` and `usePanel` SHALL share the panel, and the shell SHALL hold navigation's breadcrumb trail
+  (`BreadcrumbsProvider`), whose `useBreadcrumbs` `./react` re-exports for the template; panel keeps no crumb store.
+- **FR-012**: `registerPanelPages()` SHALL register with navigation's `registerRoutePages` the `panel` page `toPanel`
+  renders (the shell of the panel the class declares) and return the disposer; the `resource` page is not registered
+  until the generic pages exist.
 - **FR-011**: No identifier, comment or default SHALL carry tenant vocabulary, and the form constructors SHALL be
   `FormField` and `FormStep`.
 
@@ -151,7 +155,8 @@ the palette runs an intent with `useActionRunner()`; the mobile home renders `<W
   writes the new names and the sample converts in STA-344. The sample's `Placement.create({ then })` is `{ after }`.
 - The generic resource pages (List, View, Create, Edit, relation managers), the built-in View as JSON, clone and
   activity tab (ADR 0334 rules 9 to 11), and the View display that renders a resource's view, wait for the resource
-  table renderer and navigation's resource route adapter.
+  table renderer; when they exist, `registerPanelPages` registers them as navigation's `resource` page (its page names
+  are panel's `ResourcePage` codes: `list`, `view`, `create`, `edit`) and the panel page frames them.
 - The queued export and import pipelines and the `ImportMapper` port (ADR 0307 rule 10, 0334 rule 11) need a `./node`
   entry over queue and media; only their placements are built.
 - `@stackra/actions`' `periodOf` reads `today`, `last_7_days`, `last_30_days` and `this_month`; `TimeRange.Yesterday` and
@@ -162,6 +167,15 @@ the palette runs an intent with `useActionRunner()`; the mobile home renders `<W
   is read yet: `Dashboard`'s `overridable` waits for the experience service's layout query.
 - The action runner does not queue a run offline (`@stackra/clients` keeps its offline-aware run internal), and KPI
   drill-down links and sparklines are not drawn yet.
+
+## Reconciliation 2026-10-25 (R4)
+
+- The crumb store, `useBreadcrumb` and `useBreadcrumbs` moved to `@stackra/navigation/react` (with
+  `BreadcrumbsProvider`): navigation's route adapters are the natural publisher and panel depends on navigation, never
+  the reverse. `./react` keeps `useBreadcrumbs` as a re-export (the template's console shell imports it from here);
+  `useBreadcrumb` and `Breadcrumb` leave panel's surface (the template imports neither from panel).
+- `registerPanelPages()` registers the `panel` page; the panel key is derived from the class name until gen's panel
+  table is registered (STA-339).
 
 ## Status history
 

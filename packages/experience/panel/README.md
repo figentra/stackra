@@ -9,7 +9,8 @@ presents it.
 **Tier:** `tier:lib` (`packages/experience/panel`). Entries `.`, `./react` and `./native` (the old `./schemas` is folded
 into `.`). Depends on `@stackra/actions`, `@stackra/clients`, `@stackra/container`, `@stackra/contracts`,
 `@stackra/errors`, `@stackra/experience`, `@stackra/i18n`, `@stackra/iam`, `@stackra/icons`, `@stackra/money`,
-`@stackra/query`, `@stackra/ui`, `@stackra/validation` and zod. React and React Native are optional peers.
+`@stackra/navigation` (the breadcrumb trail and the route pages), `@stackra/query`, `@stackra/ui`,
+`@stackra/validation` and zod. React, React Router and React Native are optional peers.
 
 ## What is here
 
@@ -23,7 +24,8 @@ into `.`). Depends on `@stackra/actions`, `@stackra/clients`, `@stackra/containe
 | `.`        | `Column`, `Filter`, `View`, `Entry`, `Section`, `Relation`, `Placement`, `FormField`, `FormStep`, `WidgetDisplay`                                                           | the data constructors gen writes into `#stackra/resources`    |
 | `.`        | `slots`, `panels`, `resource`, `document`, `widget`, `registerWidgets`                                                                                                      | what gen calls in `#stackra/slots`, `panels`, `resources`     |
 | `.`        | `describeResource`, `describeWidget`, `resolvePlacements`                                                                                                                   | what gen records; the placement layer rule                    |
-| `./react`  | `PanelShell`, `usePanel`, `useBreadcrumbs`, `useBreadcrumb`                                                                                                                 | the panel frame and its breadcrumb trail                      |
+| `./react`  | `PanelShell`, `usePanel`, `useBreadcrumbs`                                                                                                                                  | the panel frame and its trail (navigation's, re-exported)     |
+| `./react`  | `registerPanelPages`                                                                                                                                                        | gives navigation the page `toPanel` renders                   |
 | `./react`  | `Dashboard`, `WidgetTile`                                                                                                                                                   | the widget grid of a panel's slots, one widget as a card      |
 | `./react`  | `useActionRunner`, `ActionRunStatus`                                                                                                                                        | run any action through its declared confirmation              |
 | `./native` | `WidgetSlot`                                                                                                                                                                | a slot's widgets on mobile                                    |
@@ -97,13 +99,18 @@ the builder methods stay `x.from`, `x.grid`, `x.steps`, `x.step`, `x.upload` and
 
 - `registerWidgets(widgets)` hands a member's generated widget table to the panel; `Dashboard` (web) and `WidgetSlot`
   (native) render the widgets of the slots they are given, gated by the session's permissions.
-- `PanelShell` frames an app's layout as one panel and provides the confirmation dialog `useActionRunner` asks with.
+- `PanelShell` frames an app's layout as one panel, holds navigation's breadcrumb trail (`BreadcrumbsProvider`; pages
+  publish with `useBreadcrumb` from `@stackra/navigation/react`) and provides the confirmation dialog `useActionRunner`
+  asks with. `useBreadcrumbs` is navigation's, re-exported here because the template imports it from here.
+- `registerPanelPages()` (called by the generated web entry) registers the `panel` page navigation's `toPanel` renders:
+  the panel's shell for the class. The `resource` page `toResource` renders is not registered until the generic pages
+  exist, so a resource route names its missing registration.
 - Built-in displays: KPI, KPI group, progress, list and Custom (the producing package's renderer, receiving
   `{ data, isRefreshing }`).
 
 ## Not built yet
 
 The generic resource pages (list, view, form, relation managers, the built-in View as JSON, clone and activity tab of
-ADR 0334), the queued export and import pipelines with the `ImportMapper` port, the Chart, Table, Timeline, Banner and
+ADR 0334) and their `resource` registration with navigation, the queued export and import pipelines with the `ImportMapper` port, the Chart, Table, Timeline, Banner and
 Check displays, the `NumberMetric`, `PercentMetric` and `DurationMetric` shapes, the scope and user layouts (layers 4
 and 5) and the KPI drill-down links and sparklines. See the spec's open items.
