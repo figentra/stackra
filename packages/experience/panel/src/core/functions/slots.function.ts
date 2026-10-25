@@ -3,7 +3,7 @@
  * Purpose: `slots(definition)`, what gen calls in `#stackra/slots`: it turns a tree of slot names into the same tree of
  *          `SlotRef`s with derived keys (`Slots.Orders.SalesOverview.Header` is `orders.sales_overview.header`).
  * Boundary: pure; returns frozen objects. A list of names takes each place from the name (Header is a Band, Main and
- *           Footer are Grids, Aside, Tabs, Banner and Checklist are their own place, any other name a Grid); a map gives
+ *           Footer are Grids, Aside, Tabs, Banner, Checklist and LineEntry are their own place, any other name a Grid); a map gives
  *           each place. Names are PascalCase.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 18: slots are typed places); ADR 0294 (decision 20: derived identities).
@@ -28,6 +28,7 @@ const PLACE_BY_NAME: Readonly<Record<string, Place>> = Object.freeze({
   Tabs: Place.Tabs,
   Banner: Place.Banner,
   Checklist: Place.Checklist,
+  LineEntry: Place.LineEntry,
 });
 
 /** The checked name. */

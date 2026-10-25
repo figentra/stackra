@@ -1,12 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: `Place`, the place type of a slot, with the displays each place takes as case data: a Band (KPIs on one
- *          row), a Grid (12 columns), an Aside, Tabs (one per widget), a Banner and a Checklist.
+ *          row), a Grid (12 columns), an Aside, Tabs (one per widget), a Banner, a Checklist and a LineEntry (the one
+ *          line editor of a document with lines).
  * Boundary: an enum (`Enum.of`) written in a generated `slots({...})` tree; the dashboard and the widget slot skip a
  *           widget whose display its slot's place does not take. Banner and Checklist take the Banner and Check
  *           displays, which are not built yet, so they take none today.
  * Runtime: isomorphic
- * Governing contract: ADR 0307 (rule 18: slots are typed places); ADR 0294 (decision 16: Enum).
+ * Governing contract: ADR 0307 (rule 18: slots are typed places); ADR 0350 (decision 6: the LineEntry slot); ADR
+ *                     0294 (decision 16: Enum).
  */
 import { Enum } from "@stackra/contracts";
 
@@ -38,6 +40,8 @@ export const Place = Enum.of({
   Banner: ["banner", { displays: Object.freeze<DisplayKind[]>([]) }],
   /** The checklist launcher; takes the Check display (not built yet). */
   Checklist: ["checklist", { displays: Object.freeze<DisplayKind[]>([]) }],
+  /** A line-document editor slot: exactly one line editor (a block), no widget; `lineEditorOf` picks it. */
+  LineEntry: ["line_entry", { displays: Object.freeze<DisplayKind[]>([]) }],
 });
 
 /** One of the codes above. */

@@ -14,7 +14,15 @@ import { Place } from "#core/enums/place.enum";
 
 describe("Place", () => {
   it("holds its codes in order", () => {
-    expect(Enum.values(Place)).toEqual(["band", "grid", "aside", "tabs", "banner", "checklist"]);
+    expect(Enum.values(Place)).toEqual([
+      "band",
+      "grid",
+      "aside",
+      "tabs",
+      "banner",
+      "checklist",
+      "line_entry",
+    ]);
   });
 
   it("lets a band take only the KPI displays", () => {
@@ -25,7 +33,7 @@ describe("Place", () => {
 
   it("types its values", () => {
     expectTypeOf<Place>().toEqualTypeOf<
-      "band" | "grid" | "aside" | "tabs" | "banner" | "checklist"
+      "band" | "grid" | "aside" | "tabs" | "banner" | "checklist" | "line_entry"
     >();
   });
 });

@@ -11,6 +11,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { COUNT_METRIC_SCHEMA } from "#core/constants/count-metric-schema.constant";
 import { MONEY_METRIC_SCHEMA } from "#core/constants/money-metric-schema.constant";
+import { SAVED_VIEW_SCHEMA } from "#core/constants/saved-view-schema.constant";
 import { TIME_RANGE_INPUT_SCHEMA } from "#core/constants/time-range-input-schema.constant";
 import * as panel from "#core/index";
 import type {
@@ -28,6 +29,7 @@ describe("@stackra/panel", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(panel).sort()).toEqual([
       "ActionPlace",
+      "Aggregate",
       "Bind",
       "Blocks",
       "Column",
@@ -55,22 +57,29 @@ describe("@stackra/panel", () => {
       "Relation",
       "Resource",
       "ResourcePage",
+      "SavedView",
+      "SavedView$",
       "Section",
       "TimeRange",
       "TimeRangeInput",
       "TimeRangeInput$",
       "View",
+      "ViewSharing",
       "Widget",
       "WidgetDisplay",
       "WidgetSize",
+      "activeContributions",
       "describeResource",
       "describeWidget",
       "document",
+      "groupRows",
+      "lineEditorOf",
       "panels",
       "registerWidgets",
       "resolvePlacements",
       "resource",
       "slots",
+      "visibleFields",
       "widget",
     ]);
   });
@@ -78,6 +87,7 @@ describe("@stackra/panel", () => {
   it("exports the shipped schemas under their generated names", () => {
     expect(panel.CountMetric$).toBe(COUNT_METRIC_SCHEMA);
     expect(panel.MoneyMetric$).toBe(MONEY_METRIC_SCHEMA);
+    expect(panel.SavedView$).toBe(SAVED_VIEW_SCHEMA);
     expect(panel.TimeRangeInput$).toBe(TIME_RANGE_INPUT_SCHEMA);
   });
 

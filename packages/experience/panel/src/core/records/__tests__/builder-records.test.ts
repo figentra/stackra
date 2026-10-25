@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of the builder records' own checks: a span or grid outside 1 to 12, a list limit outside 1 to 100, an
- *          empty KPI group and an empty place list are refused, and a later call of a table method replaces the earlier.
+ *          empty KPI group and an empty place list are refused, a field records `essential`, and a later call of a table
+ *          method replaces the earlier.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (rules 5, 11 and 14).
@@ -31,6 +32,17 @@ describe("builder records", () => {
     expect(() => display.list("items", { primary: "sku" }).limit(101)).toThrow(RangeError);
     expect(() => display.kpiGroup([])).toThrow(RangeError);
     expect(() => new ActionsRecord<Row>().run(CancelAction).in()).toThrow(RangeError);
+  });
+
+  it("records a field as essential for normal mode", () => {
+    const fields = new FieldsRecord<Row>();
+    expect(fields.from("id").span(6).essential().toNode()).toEqual({
+      kind: "value",
+      key: "id",
+      span: 6,
+      essential: true,
+    });
+    expect(fields.from("id").toNode()).toEqual({ kind: "value", key: "id" });
   });
 
   it("replaces a table method's earlier call and keeps the count mode", () => {

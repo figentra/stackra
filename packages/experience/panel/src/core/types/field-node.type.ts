@@ -3,9 +3,11 @@
  * Purpose: `FieldNode`, one recorded form element: a field, an upload, a repeater, a grid of fields or a set of steps
  *          (a wizard on Create, tabs on Edit).
  * Boundary: a type only; built by `FormField.*`, `FormStep.of` and the form builder. A step is part of a steps node.
+ *           `essential` marks a field normal mode shows (ADR 0359 decision 1); a repeater, grid or step shows when a
+ *           field inside it does.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 11: forms); ADR 0294 (decision 23: "step" alone means a workflow step, so the form's are
- *                     `FormStep`).
+ *                     `FormStep`); ADR 0359 (decision 1: normal mode shows essential fields).
  */
 import type { AnyClass } from "@stackra/container";
 import type { Enum } from "@stackra/contracts";
@@ -25,6 +27,8 @@ export type FieldNode =
       readonly options?: AnyClass;
       /** The row path the picker shows. */
       readonly optionLabel?: string;
+      /** Whether normal mode shows it; developer mode shows every field. */
+      readonly essential?: boolean;
     }
   | {
       /** A file upload through the bucket's signed URL, attached with an action. */
@@ -37,6 +41,8 @@ export type FieldNode =
       readonly accept?: readonly string[];
       /** The largest file accepted; gen fills it from the bucket. */
       readonly maxBytes?: number;
+      /** Whether normal mode shows it; developer mode shows every field. */
+      readonly essential?: boolean;
     }
   | {
       /** A list of items, each a group of fields. */

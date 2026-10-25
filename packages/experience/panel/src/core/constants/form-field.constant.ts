@@ -29,6 +29,7 @@ export const FormField = Object.freeze({
       readonly enum?: Enum.Any;
       readonly options?: AnyClass;
       readonly optionLabel?: string;
+      readonly essential?: boolean;
     } = {},
   ): FieldNode => Object.freeze({ kind: "value", key, ...options }),
 
@@ -39,6 +40,7 @@ export const FormField = Object.freeze({
       readonly action: AnyClass;
       readonly accept?: readonly string[];
       readonly maxBytes?: number;
+      readonly essential?: boolean;
     },
   ): FieldNode => Object.freeze({ kind: "upload", key, ...options }),
 

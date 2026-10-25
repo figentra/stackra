@@ -14,21 +14,24 @@ into `.`). Depends on `@stackra/actions`, `@stackra/clients`, `@stackra/containe
 
 ## What is here
 
-| Entry      | Symbol                                                                                                                                                                      | Use                                                           |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `.`        | `Resource<M, R?>`, `Widget<Q>` (`Widget.place`), `Document`, `Panel`                                                                                                        | the four kinds                                                |
-| `.`        | `Table`, `Views`, `Form`, `Infolist`, `Relations`, `Actions`, `Display`, `CreateInput` (t)                                                                                  | what the builder members receive                              |
-| `.`        | `CountMetric`, `MoneyMetric`, `TimeRangeInput` and `CountMetric$`, `MoneyMetric$`, `TimeRangeInput$`                                                                        | metric output shapes and the period input, with their schemas |
-| `.`        | `ActionPlace`, `Count`, `DisplayKind`, `DocumentKind`, `DocumentLayout`, `ExportFormat`, `ImportMode`, `Place`, `PlacementLayer`, `ResourcePage`, `TimeRange`, `WidgetSize` | enums                                                         |
-| `.`        | `Bind`, `Drill`, `DateRange`, `Blocks`                                                                                                                                      | binds, drill-downs, date filter values, document blocks       |
-| `.`        | `Column`, `Filter`, `View`, `Entry`, `Section`, `Relation`, `Placement`, `FormField`, `FormStep`, `WidgetDisplay`                                                           | the data constructors gen writes into `#stackra/resources`    |
-| `.`        | `slots`, `panels`, `resource`, `document`, `widget`, `registerWidgets`                                                                                                      | what gen calls in `#stackra/slots`, `panels`, `resources`     |
-| `.`        | `describeResource`, `describeWidget`, `resolvePlacements`                                                                                                                   | what gen records; the placement layer rule                    |
-| `./react`  | `PanelShell`, `usePanel`, `useBreadcrumbs`                                                                                                                                  | the panel frame and its trail (navigation's, re-exported)     |
-| `./react`  | `registerPanelPages`                                                                                                                                                        | gives navigation the page `toPanel` renders                   |
-| `./react`  | `Dashboard`, `WidgetTile`                                                                                                                                                   | the widget grid of a panel's slots, one widget as a card      |
-| `./react`  | `useActionRunner`, `ActionRunStatus`                                                                                                                                        | run any action through its declared confirmation              |
-| `./native` | `WidgetSlot`                                                                                                                                                                | a slot's widgets on mobile                                    |
+| Entry      | Symbol                                                                                                                                                                      | Use                                                            |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `.`        | `Resource<M, R?>`, `Widget<Q>` (`Widget.place`), `Document`, `Panel`                                                                                                        | the four kinds                                                 |
+| `.`        | `Table`, `Views`, `Form`, `Infolist`, `Relations`, `Actions`, `Display`, `CreateInput` (t)                                                                                  | what the builder members receive                               |
+| `.`        | `CountMetric`, `MoneyMetric`, `TimeRangeInput` and `CountMetric$`, `MoneyMetric$`, `TimeRangeInput$`                                                                        | metric output shapes and the period input, with their schemas  |
+| `.`        | `ActionPlace`, `Count`, `DisplayKind`, `DocumentKind`, `DocumentLayout`, `ExportFormat`, `ImportMode`, `Place`, `PlacementLayer`, `ResourcePage`, `TimeRange`, `WidgetSize` | enums                                                          |
+| `.`        | `Bind`, `Drill`, `DateRange`, `Blocks`                                                                                                                                      | binds, drill-downs, date filter values, document blocks        |
+| `.`        | `Column`, `Filter`, `View`, `Entry`, `Section`, `Relation`, `Placement`, `FormField`, `FormStep`, `WidgetDisplay`                                                           | the data constructors gen writes into `#stackra/resources`     |
+| `.`        | `slots`, `panels`, `resource`, `document`, `widget`, `registerWidgets`                                                                                                      | what gen calls in `#stackra/slots`, `panels`, `resources`      |
+| `.`        | `describeResource`, `describeWidget`, `resolvePlacements`                                                                                                                   | what gen records; the placement layer rule                     |
+| `.`        | `SavedView` (`SavedView$`), `ViewStore` (t), `groupRows`, `ViewGroup` (t), `Aggregate`, `ViewSharing`                                                                       | saved views with grouping, sub-grouping, totals and sharing    |
+| `.`        | `visibleFields`                                                                                                                                                             | the form fields a display mode shows                           |
+| `.`        | `lineEditorOf`, `LineEditorPlacement` (t), `activeContributions`                                                                                                            | the one line editor of a `LineEntry` slot; inert contributions |
+| `./react`  | `PanelShell`, `usePanel`, `useBreadcrumbs`                                                                                                                                  | the panel frame and its trail (navigation's, re-exported)      |
+| `./react`  | `registerPanelPages`                                                                                                                                                        | gives navigation the page `toPanel` renders                    |
+| `./react`  | `Dashboard`, `WidgetTile`                                                                                                                                                   | the widget grid of a panel's slots, one widget as a card       |
+| `./react`  | `useActionRunner`, `ActionRunStatus`                                                                                                                                        | run any action through its declared confirmation               |
+| `./native` | `WidgetSlot`                                                                                                                                                                | a slot's widgets on mobile                                     |
 
 ## Declaring a resource
 
@@ -88,6 +91,29 @@ export class OrderKpisWidget extends Widget<OrderKpisQuery>({
 - `Widget.place(Base, { slot, order, size, params })` moves a widget it does not own. Placements replace one another by
   layer: owner (1), host (2), edition (2b), app (3), a scope's copy (4), the user's overlay (5); `resolvePlacements`
   keeps each item's highest layer.
+
+## Saved views
+
+A saved view (ADR 0359 decision 14, reopening rule 13) is a person's filter, sort and columns for a resource, plus a
+grouping (`group: { by, then? }`), totals per group (`count`, `sum`, `average`, `min`, `max` of a row path) and its
+sharing (`private`, or everyone in the owner's `scope` who may read the resource). It stores declared keys only, and
+the list query still gates every row. The host binds a `ViewStore` driver (`list`, `save`, `remove`); `groupRows(rows,
+view)` groups what is on screen in first-met order, so the view's sort holds. A list that pages or that the server
+totals sends its own totals.
+
+## Display modes
+
+`visibleFields(fields, mode)` shows every form element in developer mode and only the essential ones in normal mode
+(`FormField.from(key, { essential: true })`, or `.essential()` in a `form(f)` member); a repeater, grid or step stays
+when a field inside it is essential. A mode is display only (ADR 0359 decision 2): a hidden field keeps its value, and
+nothing about what the viewer may do changes. The switch is `@stackra/ui`'s `ModeSwitch`.
+
+## Edition slots
+
+A document with lines declares one `LineEntry` slot (`Place.LineEntry`, ADR 0350 decision 6). `lineEditorOf(slot,
+placements)` gives the one editor it shows, the highest layer's, so an edition's editor at layer 2b replaces the base's
+and never sits beside it; two at one layer throw. `activeContributions(items, installed)` keeps a contribution to an
+enhanced module inert until that module is installed (ADR 0350 decision 4).
 
 ## Forms: `FormField` and `FormStep`
 

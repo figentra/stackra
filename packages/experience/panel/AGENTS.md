@@ -45,6 +45,8 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
 - Placements carry a `PlacementLayer`; a higher layer's placements replace a lower layer's whole set and never merge.
   `2b` is the edition layer (ADR 0336).
 - No tenant vocabulary: layer 4 is a scope node's copy (R-59).
+- A display mode is display only: `visibleFields` hides, never denies. A saved view stores declared keys only.
+- A `LineEntry` slot shows exactly one editor, the highest layer's; never merge editors.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

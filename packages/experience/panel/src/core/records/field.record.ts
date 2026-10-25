@@ -12,6 +12,7 @@ import type { FieldNode } from "#core/types/field-node.type";
 /** The flags a field records. */
 interface FieldFlags {
   readonly span?: number;
+  readonly essential?: boolean;
 }
 
 /** One form field. */
@@ -30,5 +31,10 @@ export class FieldRecord extends DraftRecord<FieldFlags, FieldNode> implements F
     if (!Number.isInteger(columns) || columns < 1 || columns > 12)
       throw new RangeError(`span(columns) is a whole number from 1 to 12, got ${columns}`);
     return this.set({ span: columns });
+  }
+
+  /** Marks the field as one normal mode shows. */
+  essential(): this {
+    return this.set({ essential: true });
   }
 }

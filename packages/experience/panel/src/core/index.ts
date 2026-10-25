@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/panel (the Resource, Widget, Document and Panel kinds, the
  *          metric shapes and the time range input with their shipped schemas, the enums, the data constructors gen
- *          writes into `#stackra/resources`, `#stackra/panels` and `#stackra/slots`, the recorders gen runs, and the
- *          public types) until `stackra gen` writes the entry barrels (STA-339).
+ *          writes into `#stackra/resources`, `#stackra/panels` and `#stackra/slots`, the recorders gen runs, the saved
+ *          views with their store port and grouping, the display-mode field filter, the line-editor and inert
+ *          contribution rules, and the public types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schemas are re-exported under their generated names
- *           (`CountMetric$`, `MoneyMetric$`, `TimeRangeInput$`), folding the old `./schemas` entry into `.` so no
+ *           (`CountMetric$`, `MoneyMetric$`, `SavedView$`, `TimeRangeInput$`), folding the old `./schemas` entry into `.` so no
  *           symbol is exported from two entries. The builder records, the widget registry, the panel's own i18n keys
  *           and the renderers' helpers are internal: the `./react` and `./native` entries import them by path. The
  *           kind instance bases are types only, so no class skips its options.
@@ -33,11 +34,13 @@ export { FormStep } from "#core/constants/form-step.constant";
 export { MONEY_METRIC_SCHEMA as MoneyMetric$ } from "#core/constants/money-metric-schema.constant";
 export { Placement } from "#core/constants/placement.constant";
 export { Relation } from "#core/constants/relation.constant";
+export { SAVED_VIEW_SCHEMA as SavedView$ } from "#core/constants/saved-view-schema.constant";
 export { Section } from "#core/constants/section.constant";
 export { TIME_RANGE_INPUT_SCHEMA as TimeRangeInput$ } from "#core/constants/time-range-input-schema.constant";
 export { View } from "#core/constants/view.constant";
 export { WidgetDisplay } from "#core/constants/widget-display.constant";
 export { ActionPlace } from "#core/enums/action-place.enum";
+export { Aggregate } from "#core/enums/aggregate.enum";
 export { Count } from "#core/enums/count.enum";
 export { DisplayKind } from "#core/enums/display-kind.enum";
 export { DocumentKind } from "#core/enums/document-kind.enum";
@@ -48,18 +51,24 @@ export { Place } from "#core/enums/place.enum";
 export { PlacementLayer } from "#core/enums/placement-layer.enum";
 export { ResourcePage } from "#core/enums/resource-page.enum";
 export { TimeRange } from "#core/enums/time-range.enum";
+export { ViewSharing } from "#core/enums/view-sharing.enum";
 export { WidgetSize } from "#core/enums/widget-size.enum";
+export { activeContributions } from "#core/functions/active-contributions.function";
 export { describeResource } from "#core/functions/describe-resource.function";
 export { describeWidget } from "#core/functions/describe-widget.function";
 export { document } from "#core/functions/document.function";
+export { groupRows } from "#core/functions/group-rows.function";
+export { lineEditorOf } from "#core/functions/line-editor-of.function";
 export { panels } from "#core/functions/panels.function";
 export { registerWidgets } from "#core/functions/register-widgets.function";
 export { resolvePlacements } from "#core/functions/resolve-placements.function";
 export { resource } from "#core/functions/resource.function";
 export { slots } from "#core/functions/slots.function";
+export { visibleFields } from "#core/functions/visible-fields.function";
 export { widget } from "#core/functions/widget.function";
 export { CountMetric } from "#core/schemas/count-metric.schema";
 export { MoneyMetric } from "#core/schemas/money-metric.schema";
+export { SavedView } from "#core/schemas/saved-view.schema";
 export { TimeRangeInput } from "#core/schemas/time-range-input.schema";
 export type { Actions } from "#core/types/actions.type";
 export type { BindRef } from "#core/types/bind-ref.type";
@@ -70,12 +79,12 @@ export type { ColumnFactory } from "#core/types/column-factory.type";
 export type { ColumnNode } from "#core/types/column-node.type";
 export type { CreateInput } from "#core/types/create-input.type";
 export type { CustomWidgetProps } from "#core/types/custom-widget-props.type";
-export type { Display } from "#core/types/display.type";
 export type { DisplayNode } from "#core/types/display-node.type";
+export type { Display } from "#core/types/display.type";
 export type { DocumentOptions } from "#core/types/document-options.type";
 export type { DocumentRange } from "#core/types/document-range.type";
-export type { DocumentRoute } from "#core/types/document-route.type";
 export type { DocumentRouteOptions } from "#core/types/document-route-options.type";
+export type { DocumentRoute } from "#core/types/document-route.type";
 export type { DrillNode } from "#core/types/drill-node.type";
 export type { EntryBuilder } from "#core/types/entry-builder.type";
 export type { EntryFactory } from "#core/types/entry-factory.type";
@@ -86,13 +95,14 @@ export type { FieldNode } from "#core/types/field-node.type";
 export type { FilterBuilder } from "#core/types/filter-builder.type";
 export type { FilterFactory } from "#core/types/filter-factory.type";
 export type { FilterNode } from "#core/types/filter-node.type";
-export type { Form } from "#core/types/form.type";
 export type { FormNode } from "#core/types/form-node.type";
 export type { FormStepNode } from "#core/types/form-step-node.type";
-export type { Infolist } from "#core/types/infolist.type";
+export type { Form } from "#core/types/form.type";
 export type { InfolistNode } from "#core/types/infolist-node.type";
+export type { Infolist } from "#core/types/infolist.type";
 export type { KpiBuilder } from "#core/types/kpi-builder.type";
 export type { KpiNode } from "#core/types/kpi-node.type";
+export type { LineEditorPlacement } from "#core/types/line-editor-placement.type";
 export type { ListingBuilder } from "#core/types/listing-builder.type";
 export type { PageRef } from "#core/types/page-ref.type";
 export type { PanelNavigation } from "#core/types/panel-navigation.type";
@@ -105,23 +115,25 @@ export type { RelationNode } from "#core/types/relation-node.type";
 export type { Relations } from "#core/types/relations.type";
 export type { ResourceOperations } from "#core/types/resource-operations.type";
 export type { ResourceOptions } from "#core/types/resource-options.type";
-export type { ResourceRoutes } from "#core/types/resource-routes.type";
 export type { ResourceRoutesOptions } from "#core/types/resource-routes-options.type";
+export type { ResourceRoutes } from "#core/types/resource-routes.type";
 export type { ResourceTree } from "#core/types/resource-tree.type";
 export type { SectionBuilder } from "#core/types/section-builder.type";
 export type { SlotGroup } from "#core/types/slot-group.type";
 export type { SlotRef } from "#core/types/slot-ref.type";
 export type { SlotTree } from "#core/types/slot-tree.type";
 export type { SortNode } from "#core/types/sort-node.type";
-export type { Table } from "#core/types/table.type";
 export type { TableNode } from "#core/types/table-node.type";
+export type { Table } from "#core/types/table.type";
 export type { ToneRule } from "#core/types/tone-rule.type";
 export type { ToneRules } from "#core/types/tone-rules.type";
 export type { ViewBuilder } from "#core/types/view-builder.type";
+export type { ViewGroup } from "#core/types/view-group.type";
 export type { ViewNode } from "#core/types/view-node.type";
+export type { ViewStore } from "#core/types/view-store.type";
 export type { Views } from "#core/types/views.type";
-export type { WidgetDescriptor } from "#core/types/widget-descriptor.type";
 export type { WidgetDescriptorOptions } from "#core/types/widget-descriptor-options.type";
+export type { WidgetDescriptor } from "#core/types/widget-descriptor.type";
 export type { WidgetOptions } from "#core/types/widget-options.type";
 export type { WidgetPlaceOptions } from "#core/types/widget-place-options.type";
 export type { WidgetRenderer } from "#core/types/widget-renderer.type";
