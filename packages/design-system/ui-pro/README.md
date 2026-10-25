@@ -23,6 +23,22 @@ onto HeroUI Pro's names, every other prop passes through, and the compound parts
 components are on the playground's "Pro" routes, the native ones in `apps/mobile`'s design-system review area. A
 component with nothing in the vocabulary to map (most charts, Markdown, Timeline, Table) keeps HeroUI Pro's API as it is.
 
+## Compositions
+
+Five web components are the package's own compositions, not one HeroUI Pro component each:
+
+| Component           | Built on                                     | Use                                                                                                                                                                  |
+| ------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AssistantPanel`    | layout, `@stackra/ui`'s `AiMark`             | the sidekick's panel: the assistant's name and AI label, header actions, the conversation, the composer                                                              |
+| `ApprovalCard`      | `ChatTool`                                   | an agent's tool call waiting for a human: approve, reject, escalate; the decided state after (ADR 0360)                                                              |
+| `PlanView`          | `Timeline`                                   | an agent's plan, step by step with its status read out in words (ADR 0245 decision 8)                                                                                |
+| `ResourceScheduler` | its own markup (HeroUI Pro has no scheduler) | a day or week of bookings per staff, room or chair; drag or arrow keys to move, Shift or the bottom edge to resize, snapped; processing gaps leave the resource free |
+| `SignatureField`    | its own SVG box, `@stackra/ui`'s `TextField` | sign by drawing or by typing a name (the keyboard way); reports SVG path data or the name                                                                            |
+
+The scheduler and the signature field propose and report only: the caller saves a moved booking, and binding a
+signature to a document is `@stackra/documents`' e-signature port. Opening hours, the working week (`days`) and the
+step (`slotMinutes`) are the caller's data, never defaults here.
+
 ## Using it in an app
 
 - Web: `@heroui-pro/react` with its peers (`motion`, `react-resizable-panels`, `recharts` for Kpi), and the styles in

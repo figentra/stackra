@@ -14,7 +14,9 @@ export { Agenda, useAgenda, type AgendaHeadingProps, type AgendaProps } from "#r
 export { AppLayout, useAppLayout, type AppLayoutProps } from "#react/app-layout/app-layout";
 export type { AppLayoutAsideTriggerProps } from "#react/app-layout/app-layout-aside-trigger";
 export type { AppLayoutMenuToggleProps } from "#react/app-layout/app-layout-menu-toggle";
+export { ApprovalCard, type ApprovalCardProps } from "#react/approval-card/approval-card";
 export { AreaChart, type AreaChartProps } from "#react/area-chart/area-chart";
+export { AssistantPanel, type AssistantPanelProps } from "#react/assistant-panel/assistant-panel";
 export { BarChart, type BarChartProps } from "#react/bar-chart/bar-chart";
 export { Carousel, useCarousel, type CarouselProps } from "#react/carousel/carousel";
 export {
@@ -169,6 +171,7 @@ export {
 export { NumberStepper, type NumberStepperProps } from "#react/number-stepper/number-stepper";
 export { NumberValue, type NumberValueProps } from "#react/number-value/number-value";
 export { PieChart, type PieChartProps } from "#react/pie-chart/pie-chart";
+export { PlanView, type PlanViewProps } from "#react/plan-view/plan-view";
 export {
   PressableFeedback,
   type PressableFeedbackProps,
@@ -198,6 +201,10 @@ export {
   type ResizableProps,
 } from "#react/resizable/resizable";
 export {
+  ResourceScheduler,
+  type ResourceSchedulerProps,
+} from "#react/resource-scheduler/resource-scheduler";
+export {
   RichTextEditor,
   filterRichTextEditorSuggestionItems,
   useRichTextEditor,
@@ -215,6 +222,7 @@ export { Sidebar, useSidebar, useSidebarPages, type SidebarProps } from "#react/
 export type { SidebarMenuProps } from "#react/sidebar/sidebar-menu";
 export type { SidebarRailProps } from "#react/sidebar/sidebar-rail";
 export type { SidebarTriggerProps } from "#react/sidebar/sidebar-trigger";
+export { SignatureField, type SignatureFieldProps } from "#react/signature-field/signature-field";
 export { Stepper, type StepperProps } from "#react/stepper/stepper";
 export { TextShimmer, type TextShimmerProps } from "#react/text-shimmer/text-shimmer";
 export { Timeline, useTimelineItem, type TimelineProps } from "#react/timeline/timeline";
