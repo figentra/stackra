@@ -1,0 +1,117 @@
+/**
+ * Stackra file contract:
+ * Purpose: unit tests of `WorkflowExplorer`: at boot it connects the native engine, plans each built workflow (so a bad
+ *          plan fails at boot), subscribes a starter for each `startOn` workflow that starts a run with the event, and
+ *          refuses a `startOn` workflow when no event bus is bound; it leaves another engine alone.
+ * Boundary: test only; a stand-in container lists fixed instances and binds a recording bus; the engine runs on the
+ *           memory journal.
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0022; ADR 0269; ADR 0144 (explorers); ADR 0101 (0294 note: `startOn`).
+ */
+import type { WorkflowRunner } from "@stackra/actions/contracts";
+import { Explorer } from "@stackra/container";
+import type { AnyClass, Container } from "@stackra/container";
+import type { Clock } from "@stackra/contracts";
+import { EventBus } from "@stackra/events";
+import type { Listener, ListenerContext } from "@stackra/events";
+import { Locks, MemoryLockDriver } from "@stackra/locking";
+import { describe, expect, it } from "@stackra/testing";
+
+import { MemoryWorkflowJournalDriver, NativeWorkflowRunnerDriver, Workflow } from "#core/index";
+import { WorkflowExplorer } from "#node/workflow.explorer";
+
+const NOON = new Date(Date.UTC(2026, 9, 25, 12));
+
+const clock = { now: () => new Date(NOON) } as Clock;
+
+class PaymentCaptured {
+  orderId!: string;
+}
+
+class FulfilWorkflow extends Workflow({ startOn: PaymentCaptured }) {
+  readonly started: string[] = [];
+
+  async allocate(run: { readonly input: PaymentCaptured }): Promise<void> {
+    this.started.push(run.input.orderId);
+  }
+}
+
+class OrphanUndoWorkflow extends Workflow({}) {
+  async undoShip(): Promise<void> {}
+}
+
+/** A container over `instances`, with `bus` bound when given. */
+function containerOf(instances: readonly object[], bus?: object): Container {
+  return {
+    instances: () => instances,
+    has: (token: AnyClass) => bus !== undefined && token === EventBus,
+    get: (token: AnyClass) => {
+      if (token === EventBus && bus !== undefined) return bus;
+      const found = instances.find((instance) => instance.constructor === token);
+      if (found === undefined) throw new Error(`${token.name} is not bound`);
+      return found;
+    },
+  } as unknown as Container;
+}
+
+/** A native engine on the memory journal. */
+const engine = () =>
+  new NativeWorkflowRunnerDriver(
+    new MemoryWorkflowJournalDriver(),
+    new Locks(new MemoryLockDriver(), clock),
+    clock,
+  );
+
+describe(WorkflowExplorer, () => {
+  it("is an explorer", () => {
+    expect(new WorkflowExplorer(containerOf([]), engine())).toBeInstanceOf(Explorer);
+  });
+
+  it("connects the engine and starts a startOn workflow with each event", async () => {
+    const subscriptions: [AnyClass, Listener][] = [];
+    const bus = {
+      subscribe: (type: AnyClass, listener: Listener) => subscriptions.push([type, listener]),
+    };
+    const fulfil = new FulfilWorkflow();
+    const runner = engine();
+    new WorkflowExplorer(containerOf([fulfil], bus), runner).onApplicationBootstrap();
+
+    expect(subscriptions).toHaveLength(1);
+    const [subscription] = subscriptions;
+    if (subscription === undefined) throw new Error("the explorer subscribed a starter");
+    const [type, starter] = subscription;
+    expect(type).toBe(PaymentCaptured);
+    const ctx = { eventId: "evt_1", occurredAt: NOON, now: () => NOON } as ListenerContext;
+    await (
+      starter as unknown as { handle(event: object, context: ListenerContext): Promise<void> }
+    ).handle(Object.assign(new PaymentCaptured(), { orderId: "ord_1" }), ctx);
+
+    expect(fulfil.started).toEqual(["ord_1"]);
+    expect((await runner.last(FulfilWorkflow))?.origin).toMatchObject({
+      callId: "evt_1",
+      actor: { kind: "system", id: "sys_workflow" },
+    });
+  });
+
+  it("refuses a startOn workflow with no event bus, and a bad plan, at boot", () => {
+    expect(() =>
+      new WorkflowExplorer(containerOf([new FulfilWorkflow()]), engine()).onApplicationBootstrap(),
+    ).toThrow(/no EventBus is bound/);
+    expect(() =>
+      new WorkflowExplorer(
+        containerOf([new OrphanUndoWorkflow()]),
+        engine(),
+      ).onApplicationBootstrap(),
+    ).toThrow(TypeError);
+  });
+
+  it("leaves another engine alone", () => {
+    const other = {
+      run: async () => undefined,
+      signal: async () => undefined,
+    } as unknown as WorkflowRunner;
+    expect(() =>
+      new WorkflowExplorer(containerOf([new OrphanUndoWorkflow()]), other).onApplicationBootstrap(),
+    ).not.toThrow();
+  });
+});
