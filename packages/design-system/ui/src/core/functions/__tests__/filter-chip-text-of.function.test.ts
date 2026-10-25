@@ -4,6 +4,7 @@
  *          option (or its key when the option is gone), one to two labels of several and a count after that, a number
  *          range in the filter's format with one-sided bounds, a day range with one-sided phrases, the boolean's own
  *          words or Yes and No; and gives an empty string for a filter with no value or one that filters nothing.
+ *          It also proves the list falls back to commas where `Intl.ListFormat` is missing, as on Hermes.
  * Boundary: pure unit test; Node's `Intl` data for `en` and `ar`.
  * Runtime: node
  * Governing contract: ADR 0318; ADR 0022 (test placement).
@@ -56,6 +57,26 @@ describe("filterChipTextOf", () => {
     expect(filterChipTextOf(MULTI, ["paid"], "en")).toBe("Paid");
     expect(filterChipTextOf(MULTI, ["paid", "shipped"], "en")).toBe("Paid, Shipped");
     expect(filterChipTextOf(MULTI, ["paid", "shipped", "refunded"], "en")).toBe("Paid, Shipped +1");
+  });
+
+  // STA-486 item 1: Hermes has no Intl.ListFormat, and constructing it crashed every native FilterBar.
+  it("joins the labels with commas where Intl.ListFormat is missing, as on Hermes", () => {
+    const listFormat = Intl.ListFormat;
+    Reflect.deleteProperty(Intl, "ListFormat");
+    try {
+      expect(typeof Intl.ListFormat).toBe("undefined");
+      expect(filterChipTextOf(MULTI, ["paid"], "en")).toBe("Paid");
+      expect(filterChipTextOf(MULTI, ["paid", "shipped"], "en")).toBe("Paid, Shipped");
+      expect(filterChipTextOf(MULTI, ["paid", "shipped", "refunded"], "ar")).toBe(
+        "Paid, Shipped +1",
+      );
+    } finally {
+      Object.defineProperty(Intl, "ListFormat", {
+        value: listFormat,
+        writable: true,
+        configurable: true,
+      });
+    }
   });
 
   it("writes a number range in the filter's format, and a one-sided bound as at least or at most", () => {
