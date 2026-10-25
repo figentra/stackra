@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of the `Block` kind base: the template's blocks record their category, icon and
- *          accepted query, a bad category, an empty icon or a non-query `accepts` is refused where it is declared,
+ *          accepted query and the document kinds they fit (a page and a screen by default), a bad category, empty or
+ *          unknown kinds, an empty icon or a non-query `accepts` is refused where it is declared,
  *          field decorators and `@Renamed` may mark a block, its brand never counts as a prop, and the kind is called
  *          only.
  * Boundary: test only; the classes restate the template's web `hero-section` and `testimonials` blocks with a local
@@ -16,6 +17,7 @@ import { Int, Renamed } from "@stackra/validation";
 import type { Fields } from "@stackra/validation";
 import { z } from "zod";
 
+import { ExperienceKind } from "#contracts/enums/experience-kind.enum";
 import { Block } from "#core/bases/block.base";
 import { BlockCategory } from "#core/enums/block-category.enum";
 import type { BlockClass } from "#core/types/block-class.type";
@@ -53,12 +55,40 @@ describe("Block", () => {
   it("records the category and the icon, with no query", () => {
     expect(kindOf(HeroSectionBlock)).toEqual({
       kind: "block",
-      options: { category: "marketing", icon: "sparkles", accepts: null },
+      options: {
+        category: "marketing",
+        icon: "sparkles",
+        accepts: null,
+        kinds: ["page", "screen"],
+      },
     });
   });
 
   it("records the accepted query class", () => {
     expect(kindOf(TestimonialsBlock)?.options["accepts"]).toBe(ListEntriesQuery);
+  });
+
+  it("records the document kinds it fits, once each", () => {
+    class ReceiptLinesBlock extends Block({
+      category: BlockCategory.Commerce,
+      icon: "receipt",
+      kinds: [
+        ExperienceKind.PrintDocument,
+        ExperienceKind.EmailTemplate,
+        ExperienceKind.PrintDocument,
+      ],
+    }) {}
+    expect(kindOf(ReceiptLinesBlock)?.options["kinds"]).toEqual([
+      "print_document",
+      "email_template",
+    ]);
+  });
+
+  it("refuses empty or unknown kinds", () => {
+    expect(bad({ category: BlockCategory.Content, icon: "house", kinds: [] })).toThrow(RangeError);
+    expect(bad({ category: BlockCategory.Content, icon: "house", kinds: ["sms"] })).toThrow(
+      /kinds/,
+    );
   });
 
   it("keeps @Renamed's old key on the block", () => {

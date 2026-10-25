@@ -13,19 +13,23 @@ Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/errors`, `@stac
 
 ## What is here
 
-| Entry         | Symbol                                                              | Use                                                                          |
-| ------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `.`           | `Block`, `BlockCategory`                                            | the kind base: `class XBlock extends Block({ category, icon, accepts? }) {}` |
-| `.`           | `LocalizedText`                                                     | a prop written once per locale (`{ en: "…", ar: "…" }`)                      |
-| `.`           | `BlockProps`                                                        | `Component<BlockProps<typeof XBlock>>`: the props as the visitor sees them   |
-| `.`           | `registerBlocks`                                                    | the generated wiring's call linking each block to its key and component      |
-| `.`           | `registeredBlocks`                                                  | a read-only copy of the registered block classes by key, for the builder     |
-| `.`           | `resolveDocument`, `UnknownBlockError`, `InvalidDocumentError`      | the document validator every renderer runs first, and its refusals           |
-| `.`           | `BlockClass`, `BlockOptions`, `BlockEntry`, `ResolvedNode`          | types                                                                        |
-| `./contracts` | `Renderer`                                                          | the port; drivers `react` and `native`                                       |
-| `./contracts` | `DocumentNode`, `BlockEvent`, `BlockEventHandlers`, `RenderContext` | the document format, read by the builder and collaboration                   |
-| `./react`     | `DocumentRenderer`, `ReactRendererDriver`                           | `<DocumentRenderer document={page.root} />` on the web                       |
-| `./native`    | `DocumentRenderer`, `NativeRendererDriver`, `BlockProps`            | the same on a phone; native `BlockProps` adds `onEvent`                      |
+| Entry         | Symbol                                                                          | Use                                                                                                            |
+| ------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `.`           | `Block`, `BlockCategory`                                                        | the kind base: `class XBlock extends Block({ category, icon, accepts? }) {}`                                   |
+| `.`           | `LocalizedText`                                                                 | a prop written once per locale (`{ en: "…", ar: "…" }`)                                                        |
+| `.`           | `BlockProps`                                                                    | `Component<BlockProps<typeof XBlock>>`: the props as the visitor sees them                                     |
+| `.`           | `registerBlocks`                                                                | the generated wiring's call linking each block to its key and component                                        |
+| `.`           | `registeredBlocks`                                                              | a read-only copy of the registered block classes by key, for the builder                                       |
+| `.`           | `resolveDocument`, `UnknownBlockError`, `InvalidDocumentError`                  | the document validator every renderer runs first, and its refusals                                             |
+| `.`           | `validateDocument`, `blockKinds`                                                | the server-side validator: every problem of a document against its kind                                        |
+| `.`           | `commitTheme`, `rollbackTheme`, `diffTheme`, `validateTheme`                    | section-based themes with numbered revisions, rollback and a reviewed diff                                     |
+| `.`           | `BlockClass`, `BlockOptions`, `BlockEntry`, `ResolvedNode`                      | types                                                                                                          |
+| `.`           | `Theme`, `ThemeRevision`, `ThemeChange`, `ThemeDiff`, `ValidateDocumentOptions` | types                                                                                                          |
+| `./contracts` | `Renderer`                                                                      | the port; drivers `react` and `native`                                                                         |
+| `./contracts` | `DocumentNode`, `BlockEvent`, `BlockEventHandlers`, `RenderContext`             | the document format, read by the builder and collaboration                                                     |
+| `./contracts` | `ExperienceKind`, `DocumentProblem`                                             | the document kinds (page, screen, form, email template, print document, theme section) and a validator problem |
+| `./react`     | `DocumentRenderer`, `ReactRendererDriver`                                       | `<DocumentRenderer document={page.root} />` on the web                                                         |
+| `./native`    | `DocumentRenderer`, `NativeRendererDriver`, `BlockProps`                        | the same on a phone; native `BlockProps` adds `onEvent`                                                        |
 
 ## Declaring a block
 
@@ -69,6 +73,33 @@ throws `InvalidDocumentError`, a key nobody registered `UnknownBlockError`, prop
 `InvalidDocumentError` with the issues as its cause. In a block's props a string-keyed map of strings is a
 `LocalizedText`: the renderer hands the component the visitor's string (exact tag, then language, then the first
 locale stored), and `BlockProps` types it `string`.
+
+## Document kinds and the server-side validator
+
+A block names the kinds of document it fits: `Block({ category, icon, kinds: [ExperienceKind.EmailTemplate] })`. A
+block that names none fits a page and a screen, so an email template or a print document only offers blocks that say
+they are safe there (ADR 0270 decision 6).
+
+```ts
+import { ExperienceKind } from "@stackra/experience/contracts";
+import { validateDocument } from "@stackra/experience";
+
+const problems = validateDocument(body.root, { kind: ExperienceKind.EmailTemplate, blocks });
+// [{ path: "0.children.1", code: "kind_not_allowed", block: "web.hero_section" }]
+```
+
+`validateDocument` runs where no component is loaded (the experience service, before a save or a publish). It never
+throws on the document: it returns every problem in tree order, `invalid_node`, `unknown_block`, `kind_not_allowed`,
+`invalid_props` (with the refused prop paths, never their values), `duplicate_id`, `too_deep` (over 32 levels) and
+`too_many_blocks` (over 10,000), with tighter bounds if the caller passes them.
+
+## Themes
+
+A theme is named sections, each a theme-section document, and its settings as JSON. `commitTheme` appends a numbered,
+frozen revision; `rollbackTheme(history, n, change)` appends a new revision with revision `n`'s content and
+`restores: n`, so nothing is ever removed and a rollback can itself be rolled back; `diffTheme` names the section and
+setting keys that changed, for the reviewed diff; `validateTheme` checks every section. The experience service stores
+the history.
 
 ## Rendering
 
