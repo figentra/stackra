@@ -96,6 +96,7 @@
       "types": "./dist/native.d.mts",
       "default": "./dist/native.mjs"
     },
+    "./css": "./assets/public/css/ui-pro.css",
     "./assets/*": "./assets/*"
   },
   "scripts": {
@@ -119,6 +120,7 @@
     "@internationalized/number": "catalog:mobile",
     "@number-flow/react": "catalog:frontend",
     "@shopify/react-native-skia": "catalog:mobile",
+    "@stackra/tokens": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",

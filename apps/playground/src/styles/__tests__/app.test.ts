@@ -8,6 +8,7 @@
  * Governing contract: ADR 0320 (the glass material); ADR 0022 (test placement).
  */
 // @covers sta-422:FR-004
+// @vitest-environment node
 import { readFileSync } from "node:fs";
 
 const css = readFileSync(new URL("../app.css", import.meta.url), "utf8");

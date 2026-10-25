@@ -101,8 +101,8 @@ solid. The web stylesheet draws it as three classes:
 | Class                                | Level     | Use                                                    |
 | ------------------------------------ | --------- | ------------------------------------------------------ |
 | `.material-thin`                     | `thin`    | small chrome without reading text: tiles, chips on art |
-| `.material` (or `.material-regular`) | `regular` | bars, cards, panels                                    |
-| `.material-thick`                    | `thick`   | large surfaces with reading text: sheets, palettes     |
+| `.material` (or `.material-regular`) | `regular` | bars, cards, panels with `foreground` text only        |
+| `.material-thick`                    | `thick`   | anything with muted text: sheets, palettes, cards      |
 
 Set the degree once on `<html data-material="…">`. With no attribute the stylesheet draws `glass`;
 `@stackra/ui`'s `DesignSystemProvider` sets `solid` unless it is given another mode, so product UI is opaque:
@@ -111,11 +111,12 @@ Set the degree once on `<html data-material="…">`. With no attribute the style
 - `frosted`: a dense fill and a heavy blur.
 - `glass`: the theme as written.
 - `liquid`: a thinner fill, a lifted backdrop and a sheen along the top edge. The sheen takes the colour scheme's
-  rim-light share, so it is bright on light and faint on dark.
+  rim-light share, so it is bright on light and faint on dark. The `thick` level is solid in liquid.
 
 Reduced transparency, more contrast and a browser without `backdrop-filter` all force `solid`; a browser without
 `color-mix()` gets a static opaque material. Forced colours keep the edge. Reading text on the `regular` and `thick`
 levels holds 4.5:1 over pure black and pure white in every mode and scheme (ADR 0320 decision 4); `thin` carries none.
+Muted text holds it only on `thick`, so it never sits on `regular` or `thin`.
 Never put the material behind a component sample; samples sit on `background`.
 
 ## Derive, export and import a theme
