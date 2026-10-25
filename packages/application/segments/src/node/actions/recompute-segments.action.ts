@@ -23,7 +23,7 @@ export class RecomputeSegmentsAction extends Action({
   actors: [ActorKind.Job],
   job: {
     timeout: "15m",
-    cron: { schedule: "0 * * * *", perTenant: true, input: {} },
+    cron: { schedule: "0 * * * *", perScope: true, input: {} },
   },
 }) {
   /** Recomputes and queues. */

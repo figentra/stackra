@@ -21,7 +21,7 @@
 - `SegmentMembershipService` (`CrudService<SegmentMembership>`): `has`, `segmentsOf`, `members` for consumers;
   `membersOf`, `enter` (create + `MembershipEntered` + flush) and `leave` (`MembershipLeft` + remove + flush).
 - `RecomputeSegmentsAction` (`segment.recompute`, `ActorKind.Job`, `job: { timeout: "15m", cron: { schedule:
-"0 * * * *", perTenant: true, input: {} } }`) with `RecomputeSegmentsInput` (optional `segmentId`).
+"0 * * * *", perScope: true, input: {} } }`) with `RecomputeSegmentsInput` (optional `segmentId`).
 - `SubjectChangeService` (a `ChangeConsumer`): finds the key of the changed model and calls `recomputeSubject`.
 - `SEGMENTS_TESTING_PLUGIN` connects each compiled testing app's `SegmentService` to the app.
 

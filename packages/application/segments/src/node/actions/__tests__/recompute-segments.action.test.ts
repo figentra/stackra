@@ -38,7 +38,7 @@ describe(RecomputeSegmentsAction, () => {
     expect(record?.options).toMatchObject({
       key: "segment.recompute",
       actors: [ActorKind.Job],
-      job: { timeout: "15m", cron: { schedule: "0 * * * *", perTenant: true, input: {} } },
+      job: { timeout: "15m", cron: { schedule: "0 * * * *", perScope: true, input: {} } },
     });
   });
 

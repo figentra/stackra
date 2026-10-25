@@ -66,7 +66,7 @@ entries `./contracts`, `.`, `./node` (+ `./config`, `./testing`), exports `.` Se
   transaction. `RuleSetPublished` is a domain event that names no scope (and nothing dispatches domain events yet), so a
   revision published elsewhere is caught by the hourly run
 - Recompute on a schedule: `RecomputeSegmentsAction` (`segment.recompute`, job actor) carries `job.cron` `0 * * * *`
-  with `perTenant: true`; each scope's run queues one full recompute per dynamic segment, each in the segment's scope
+  with `perScope: true`; each scope's run queues one full recompute per dynamic segment, each in the segment's scope
 - Recompute on a subject's change: `registerSegmentSubjects` registers `SubjectChangeService` for the model with the
   outbox; a change re-evaluates that one subject in every dynamic segment over the model its scope session sees
 - Membership writes record the event on the row (`enter`, `leave`) and flush, so the outbox writer stores the event in
