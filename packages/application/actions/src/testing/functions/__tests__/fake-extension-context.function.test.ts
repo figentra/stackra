@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `fakeExtensionContext`: the system caller and default request facts, a clock frozen at
- *          creation (pinned by `freezeClock`), and overrides.
+ *          creation (pinned by `freezeClock`), no scope unless one is passed, and overrides.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (testing helpers).
@@ -22,6 +22,7 @@ describe(fakeExtensionContext, () => {
       market: "default",
     });
     expect(ctx.abortSignal.aborted).toBe(false);
+    expect(ctx.scope).toBeUndefined();
   });
 
   it("freezes its clock at creation", () => {
@@ -32,8 +33,10 @@ describe(fakeExtensionContext, () => {
   });
 
   it("takes overrides", () => {
-    const ctx = fakeExtensionContext({ locale: "ar-SA", tenantId: "ten_1" });
+    const scope = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" } as const;
+    const ctx = fakeExtensionContext({ locale: "ar-SA", tenantId: "ten_1", scope });
     expect(ctx.locale).toBe("ar-SA");
     expect(ctx.tenantId).toBe("ten_1");
+    expect(ctx.scope).toEqual(scope);
   });
 });

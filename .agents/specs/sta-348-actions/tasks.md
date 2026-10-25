@@ -15,3 +15,6 @@
 - [x] T011 Tests beside every subject and the barrel tests — covers: SC-002 — route: tests — deps: T010
 - [x] T012 Changeset `.changeset/actions-package.md` — covers: SC-001 — route: package — deps: T010
 - [ ] T013 `pnpm install` to link the new member, then its tests, typecheck and build in the separate testing workflow — covers: SC-002, SC-003 — route: tests — deps: T011
+- [x] T014 [US1] `scope?: ScopeRef` on `CallOptions`, `CallDescriptor` and `ExtensionContext`, copied through `ActionPipeline`; pipeline and fake-context tests — covers: FR-004, P-004 — route: package — deps: T006
+- [x] T015 [US1] `yesterday` and `custom` in `periodOf`'s `windowOf`, with tests — covers: FR-004, P-004 — route: package — deps: T006
+- [x] T016 [US1] `JobCron.perTenant` renamed `perScope`; `Action` test, README and AGENTS — covers: FR-002, P-002 — route: package — deps: T004

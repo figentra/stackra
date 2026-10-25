@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `periodOf`: each named range (`today`, `last_7_days`, `last_30_days`, `this_month`) in a
- *          zone, the default (today), a custom window, the previous window of equal length, and the refusals of an
- *          unknown range and an empty window.
+ * Purpose: unit tests of `periodOf`: each named range (`today`, `yesterday`, `last_7_days`, `last_30_days`,
+ *          `this_month`) in a zone, the default (today), a custom window with and without the `custom` range, the
+ *          previous window of equal length, and the refusals of an unknown range, a `custom` range without `from` and
+ *          an empty window.
  * Boundary: test only; the clock reading is passed in.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (time ranges and the previous period).
@@ -23,6 +24,14 @@ describe(periodOf, () => {
     expect(today.previous.to).toEqual(today.from);
     expect(periodOf({}, now, "Asia/Riyadh")).toEqual(today);
     expect(periodOf({ range: null, from: null }, now, "Asia/Riyadh")).toEqual(today);
+  });
+
+  it("covers yesterday, the local day before today", () => {
+    const yesterday = periodOf({ range: "yesterday" }, now, "Asia/Riyadh");
+    expect(yesterday.from.toISOString()).toBe("2026-10-22T21:00:00.000Z");
+    expect(yesterday.to.toISOString()).toBe("2026-10-23T21:00:00.000Z");
+    expect(yesterday.days).toBe(1);
+    expect(yesterday.previous.from.toISOString()).toBe("2026-10-21T21:00:00.000Z");
   });
 
   it("covers the last 7 and 30 days including today", () => {
@@ -46,8 +55,21 @@ describe(periodOf, () => {
     expect(periodOf({ from }, now, "UTC").to).toEqual(now);
   });
 
+  it("reads `from` and `to` for the custom range, ending now when `to` is absent", () => {
+    const from = new Date("2026-10-20T00:00:00Z");
+    const to = new Date("2026-10-22T00:00:00Z");
+    const custom = periodOf({ range: "custom", from, to }, now, "UTC");
+    expect(custom.from).toEqual(from);
+    expect(custom.to).toEqual(to);
+    expect(custom.days).toBe(2);
+    expect(custom.previous.from.toISOString()).toBe("2026-10-18T00:00:00.000Z");
+    expect(periodOf({ range: "custom", from }, now, "UTC").to).toEqual(now);
+  });
+
   it("refuses an unknown range and an empty window", () => {
     expect(() => periodOf({ range: "fortnight" }, now, "UTC")).toThrow(RangeError);
+    expect(() => periodOf({ range: "custom" }, now, "UTC")).toThrow(RangeError);
+    expect(() => periodOf({ range: "custom", from: null }, now, "UTC")).toThrow(RangeError);
     expect(() => periodOf({ from: now, to: now }, now, "UTC")).toThrow(RangeError);
   });
 });

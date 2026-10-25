@@ -20,7 +20,7 @@ import type { CallDescriptor } from "#contracts/types/call-descriptor.type";
  * @example
  * export class QueueJobDispatcherDriver extends Driver(JobDispatcher) {
  *   async dispatch(action: AnyClass, input: unknown, call: CallDescriptor): Promise<void> {
- *     await this.queues.push(action, input, { causedBy: call.callId, tenantId: call.tenantId });
+ *     await this.queues.push(action, input, { origin: call.actor, scope: call.scope, causedBy: call.callId });
  *   }
  * }
  */

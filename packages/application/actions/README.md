@@ -60,6 +60,14 @@ tenancy, permission (the actor kind, then `AccessControl`), preconditions, entit
 idempotency, rate limit, interceptors, then `handle` (an action's in its `UnitOfWork`), then the `afterCommit` work and
 the audit entry. A step whose port nobody binds is skipped, except permission, which fails closed.
 
+The call carries its scope (ADR 0327 decision 6): the transport passes the `ScopeRef` the resolver chain settled on as
+`CallOptions.scope`, every port reads it on the `CallDescriptor`, a handler reads `ctx.scope`, and a job queued with
+`ctx.dispatch` runs in it. No scope is a platform call. `ctx.period(input)` reads a query's `range` (`today`,
+`yesterday`, `last_7_days`, `last_30_days`, `this_month`, or `custom` with `from` and `to`) in the call's time zone.
+
+An action that also runs as a job declares `job: { queue, unique, timeout, retries, cron }`; `cron: { schedule,
+perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists instead of once for the platform.
+
 ## Extension points
 
 ```ts

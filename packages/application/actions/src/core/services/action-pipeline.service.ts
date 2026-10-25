@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `ActionPipeline`, the one way an action or query runs: the fixed steps of ADR 0138 in their order (tenancy,
  *          permission, precondition, entitlement, flag, idempotency, rate limit, interceptors, `handle`), the call
- *          context, the action's unit of work with `afterCommit`, the audit entry, and the idempotent replay.
+ *          context (with the call's scope, so `ctx.scope` and every port read it), the action's unit of work with
+ *          `afterCommit`, the audit entry, and the idempotent replay.
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
  *           skipped (tenancy, entitlement, flag, unit of work, audit); permission fails closed (no `AccessControl` is an
@@ -10,7 +11,8 @@
  *           reorders the steps. Only a Refusal is a refusal; any other error is a bug and propagates.
  * Runtime: isomorphic
  * Governing contract: ADR 0138 (as amended by 0294: the order is fixed); ADR 0136 (decisions 1 to 3 and 5); ADR 0305
- *                     (rule 24: interceptors); ADR 0217 (decision 2: limits enforced in the pipeline); ADR 0098.
+ *                     (rule 24: interceptors); ADR 0217 (decision 2: limits enforced in the pipeline); ADR 0098; ADR
+ *                     0327 (decision 6: the current scope in the call context).
  */
 import { kindOf, type AnyClass } from "@stackra/container";
 import {
@@ -149,6 +151,7 @@ export class ActionPipeline {
       ...(registration?.risk === undefined ? {} : { risk: registration.risk }),
       actor,
       ...(actor.tenantId === undefined ? {} : { tenantId: actor.tenantId }),
+      ...(request.scope === undefined ? {} : { scope: request.scope }),
       area: options.area,
     });
     const state: CallState = { idempotencyKey: undefined, afterCommit: [], audit: {} };
@@ -343,6 +346,7 @@ export class ActionPipeline {
       key: descriptor.key,
       actor: descriptor.actor,
       ...(descriptor.tenantId === undefined ? {} : { tenantId: descriptor.tenantId }),
+      ...(descriptor.scope === undefined ? {} : { scope: descriptor.scope }),
       locale: request.locale ?? CALL_DEFAULTS.locale,
       timeZone,
       currency: request.currency ?? CALL_DEFAULTS.currency,

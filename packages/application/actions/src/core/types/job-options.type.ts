@@ -16,7 +16,7 @@ export interface JobOptions {
   /** The queue code (`Queues.Maintenance`); the default queue when absent. */
   readonly queue?: string;
 
-  /** One run per tenant at a time; an overlapping run is skipped, not queued twice. */
+  /** One run per scope at a time; an overlapping run is skipped, not queued twice. */
   readonly unique?: boolean;
 
   /** How long one run may take, as a duration (`"2m"`). */

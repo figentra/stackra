@@ -33,6 +33,9 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 - Never import `@stackra/iam`, `@stackra/workflow`, `@stackra/queue`, `@stackra/database` or `@stackra/tenancy`; they
   depend on this package and implement its ports.
 - Identities are gen's: the runtime reads them from `registerActions`, never derives a module key or a permission.
+- The current scope is `scope` (a `ScopeRef`) on `CallOptions`, `CallDescriptor` and the call context (ADR 0327
+  decision 6). `tenantId` stays on the descriptor and the context only while iam, entitlements and workflow read it;
+  never add another tenant field or option (R-59, ADR 0323): the cron option is `perScope`.
 - The source keeps to erasable syntax: no parameter properties, no `#private` fields.
 
 ## PII

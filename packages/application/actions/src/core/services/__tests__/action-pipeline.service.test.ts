@@ -3,15 +3,23 @@
  * Purpose: unit tests of `ActionPipeline`: the fixed order of the steps; the actor check and fail-closed permission;
  *          input validation from a registered schema; idempotency (required, replayed, reused, derived, released on
  *          failure); the area and action rate limits; the unit of work with `afterCommit`; the audit entry; the call
- *          context (frozen clock, request facts, registered key, `RequestContext`); the workflow, signal and job
- *          capabilities; interceptors; and a query's lighter path.
+ *          context (frozen clock, request facts, registered key, the call's scope, `RequestContext`); the workflow,
+ *          signal and job capabilities (the dispatcher sees the scope); interceptors; and a query's lighter path.
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0138 (as amended); ADR 0136 (decisions 1 to 3 and 5); ADR 0305
- *                     (rule 24); ADR 0217 (decision 2).
+ *                     (rule 24); ADR 0217 (decision 2); ADR 0327 (decision 6).
  */
 import { type AnyClass, Driver } from "@stackra/container";
-import { type Actor, ActorKind, Clock, Duration, Logger, Realm } from "@stackra/contracts";
+import {
+  type Actor,
+  ActorKind,
+  Clock,
+  Duration,
+  Logger,
+  Realm,
+  type ScopeRef,
+} from "@stackra/contracts";
 import {
   ErrorKind,
   ForbiddenError,
@@ -63,6 +71,7 @@ const customer: Actor = {
   tenantId: "ten_1",
 };
 const agent: Actor = { kind: ActorKind.Agent, id: "agt_1", tenantId: "ten_1" };
+const SCOPE: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" };
 
 /** Every step and handler appends here. */
 let log: string[] = [];
@@ -211,6 +220,7 @@ class InspectAction extends Action({
       currency: ctx.currency,
       market: ctx.market,
       tenantId: ctx.tenantId,
+      scope: ctx.scope,
       startOfDay: ctx.startOfDay(),
       days: ctx.period({ range: "last_7_days" }).days,
     };
@@ -325,8 +335,11 @@ class Workflows extends Driver(WorkflowRunner) {
 class Jobs extends Driver(JobDispatcher) {
   readonly queued: unknown[] = [];
 
-  async dispatch(action: AnyClass, input: unknown): Promise<void> {
+  readonly scopes: (ScopeRef | undefined)[] = [];
+
+  async dispatch(action: AnyClass, input: unknown, call: CallDescriptor): Promise<void> {
     this.queued.push([action.name, input]);
+    this.scopes.push(call.scope);
   }
 }
 
@@ -606,12 +619,19 @@ describe(ActionPipeline, () => {
     expect(trail.entries[0]?.at).toEqual(NOW);
   });
 
-  it("builds the context: frozen clock, request facts, key, tenant, period; logs a failed after-commit", async () => {
-    const { pipeline, lines } = setup();
+  it("builds the context: frozen clock, request facts, key, tenant, scope, period; logs a failed after-commit", async () => {
+    const { pipeline, lines, access } = setup();
     const output = await pipeline.execute(
       InspectAction,
       {},
-      { actor: customer, locale: "ar-SA", timeZone: "Asia/Riyadh", currency: "SAR", market: "sa" },
+      {
+        actor: customer,
+        scope: SCOPE,
+        locale: "ar-SA",
+        timeZone: "Asia/Riyadh",
+        currency: "SAR",
+        market: "sa",
+      },
     );
     expect(output).toEqual({
       now: NOW,
@@ -622,9 +642,11 @@ describe(ActionPipeline, () => {
       currency: "SAR",
       market: "sa",
       tenantId: "ten_1",
+      scope: SCOPE,
       startOfDay: new Date("2026-10-23T21:00:00.000Z"),
       days: 7,
     });
+    expect(access.calls[0]?.scope).toEqual(SCOPE);
     expect(lines.errors).toEqual([
       [
         "actions.after_commit_failed",
@@ -634,7 +656,10 @@ describe(ActionPipeline, () => {
     const defaults = (await pipeline.execute(InspectAction, {}, { actor: agent })) as {
       locale: string;
       currency: string;
+      scope?: ScopeRef;
     };
+    expect(defaults.scope).toBeUndefined();
+    expect(access.calls[1]).not.toHaveProperty("scope");
     expect(defaults).toMatchObject({
       locale: "en",
       currency: "USD",
@@ -648,13 +673,16 @@ describe(ActionPipeline, () => {
 
   it("reaches the workflow runner and the job dispatcher, and needs them bound", async () => {
     const { pipeline, workflows, jobs } = setup();
-    expect(await pipeline.execute(RedeemPointsAction, { points: 5 }, { actor: customer })).toEqual({
+    expect(
+      await pipeline.execute(RedeemPointsAction, { points: 5 }, { actor: customer, scope: SCOPE }),
+    ).toEqual({
       workflow: "RedeemWorkflow",
       input: { points: 5 },
       parent: "points.redeem",
     });
     expect(workflows.signals).toEqual([["Confirmed", { reference: "r1" }]]);
     expect(jobs.queued).toEqual([["SendMessageAction", { text: "redeemed" }]]);
+    expect(jobs.scopes).toEqual([SCOPE]);
     const bare = new ActionPipeline(
       resolverOf([
         [AccessControl, new RecordingAccess()],

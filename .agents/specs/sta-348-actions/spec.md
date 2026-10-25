@@ -98,12 +98,16 @@ and adds inline extensions with `.withExtensions([extension(Point, "slot", { ord
 
 - **FR-001**: Member files and entries `.`, `./contracts`, `./node`, `./testing`, each with a stand-in barrel.
 - **FR-002**: `Action` and `Query` called-only kinds recording checked options with defaults; `Precondition`,
-  `ExtensionPoint`, `Interceptor` bare kinds; `Extension` in both forms typed from its slot (spike shape E3).
+  `ExtensionPoint`, `Interceptor` bare kinds; `Extension` in both forms typed from its slot (spike shape E3). The
+  `job.cron` option's per-scope switch is `perScope` (R-59: no tenant word outside tenancy).
 - **FR-003**: The enums `Idempotency`, `OfflineMode`, `IdMinting`, `OfflinePrecondition`, `ConflictResolution`,
   `PipelineStage`.
 - **FR-004**: `ActionPipeline` with the fixed order, fail-closed permission, optional steps, the unit of work,
   `afterCommit`, audit, idempotency, rate limits, interceptors and the call context (`ActionContext`, `QueryContext`,
-  `ExtensionContext`, `PreconditionContext`).
+  `ExtensionContext`, `PreconditionContext`). The call carries its scope: `scope?: ScopeRef` on `CallOptions`,
+  `CallDescriptor` and `ExtensionContext`, copied through so a port and a handler read it (ADR 0327 decision 6).
+  `ctx.period` knows every panel `TimeRange` code: `today`, `yesterday`, `last_7_days`, `last_30_days`, `this_month`
+  and `custom` (`from` required, `to` defaulting to the call's instant).
 - **FR-005**: The ports `AccessControl`, `TenancyCheck`, `EntitlementCheck`, `FlagCheck`, `IdempotencyStore`,
   `RateLimitStore`, `UnitOfWork`, `WorkflowRunner`, `JobDispatcher`, `AuditTrail`, `ContextStorage`; memory drivers for
   the two stores; the `AsyncLocalStorage` driver in `./node`; `RequestContext`.
@@ -137,6 +141,14 @@ and adds inline extensions with `.withExtensions([extension(Point, "slot", { ord
 - A binding row for each `ExtensionPoint` subclass (no dependencies), since owners inject their point.
 - `registerActions` rows (key, permission, risk, input class) and `registerExtensions` rows (point, slot, class,
   order) in the generated entries; a `RequestContext` binding over `ContextStorage`.
+
+## Reconciliation 2026-10-25 (R1)
+
+- `ExtensionContext.tenantId` and `CallDescriptor.tenantId` stay beside `scope`: `@stackra/iam`'s access-control
+  driver and `@stackra/entitlements`' plan check read the descriptor's, and `@stackra/workflow`'s run origin
+  (`Omit<ExtensionContext, ...>`) carries the context's into event metadata. They go once those three read `scope`.
+- `job.cron.perTenant` became `perScope`; the template (STA-344) and the in-repo declarations in loyalty-kit,
+  access-log and segments follow.
 
 ## Status history
 

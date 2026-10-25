@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: `periodOf`, the window behind `ctx.period(input)`: a named range (`today`, `last_7_days`, `last_30_days`,
- *          `this_month`) or a custom `from` and `to`, with midnights in the call's time zone, its length in days and
- *          the window of the same length before it.
+ * Purpose: `periodOf`, the window behind `ctx.period(input)`: a named range (`today`, `yesterday`, `last_7_days`,
+ *          `last_30_days`, `this_month`) or a custom `from` and `to` (the `custom` range, or no range), with midnights
+ *          in the call's time zone, its length in days and the window of the same length before it.
  * Boundary: pure; the pipeline passes its frozen clock reading, so a test pins the window. With no range and no `from`
- *           the window is today.
+ *           the window is today; the `custom` range needs `from`, as panel's `TimeRangeInput` schema demands.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (metrics over a time range, with the previous period); ADR 0136 (decision 1).
  */
@@ -27,6 +27,8 @@ function windowOf(input: PeriodInput, now: Date, timeZone: string): [from: Date,
   switch (input.range ?? undefined) {
     case "today":
       return [today, tomorrow];
+    case "yesterday":
+      return [shiftDays(today, -1, timeZone), today];
     case "last_7_days":
       return [shiftDays(today, -6, timeZone), tomorrow];
     case "last_30_days":
@@ -35,6 +37,10 @@ function windowOf(input: PeriodInput, now: Date, timeZone: string): [from: Date,
       const first = startOfZonedDay(now, timeZone, "month");
       return [first, startOfZonedDay(new Date(first.getTime() + 32 * DAY), timeZone, "month")];
     }
+    case "custom":
+      if (input.from === undefined || input.from === null)
+        throw new RangeError("ctx.period: a custom range needs `from`");
+      return [input.from, input.to ?? now];
     case undefined:
       if (input.from === undefined || input.from === null) return [today, tomorrow];
       return [input.from, input.to ?? now];
@@ -46,7 +52,8 @@ function windowOf(input: PeriodInput, now: Date, timeZone: string): [from: Date,
 /**
  * The reporting window `input` names.
  *
- * @throws RangeError for an unknown range code, or a custom `to` that is not after `from`.
+ * @throws RangeError for an unknown range code, a `custom` range without `from`, or a custom `to` that is not after
+ *         `from`.
  * @example
  * periodOf({ range: "last_7_days" }, ctx.now(), "Asia/Riyadh").days; // 7
  */

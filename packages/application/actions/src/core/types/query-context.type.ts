@@ -22,7 +22,8 @@ export interface QueryContext extends ExtensionContext {
 
   /**
    * The window `input` names, with midnights in the call's time zone.
-   * @throws RangeError for a range code it does not know, or a custom `to` before `from`.
+   * @throws RangeError for a range code it does not know, a `custom` range without `from`, or a custom `to` before
+   *         `from`.
    */
   period(input: PeriodInput): Period;
 

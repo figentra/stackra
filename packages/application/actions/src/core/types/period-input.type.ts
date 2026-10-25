@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `PeriodInput`, what `ctx.period(input)` reads from a query's input: a named range (`today`,
- *          `last_7_days`, `last_30_days`, `this_month`) or a custom `from` and `to`.
+ * Purpose: `PeriodInput`, what `ctx.period(input)` reads from a query's input: a named range (`today`, `yesterday`,
+ *          `last_7_days`, `last_30_days`, `this_month`) or a custom `from` and `to` (range `custom`, or no range).
  * Boundary: a type only, written structurally so the panel's `TimeRangeInput` (its `range`, `from`, `to`) satisfies it
  *           without this package importing the panel. Other fields of the input are ignored.
  * Runtime: isomorphic
@@ -10,7 +10,7 @@
 
 /** The period fields of a query input. */
 export interface PeriodInput {
-  /** A named range code; wins over `from` and `to` when set. */
+  /** A named range code; wins over `from` and `to` when set, except `custom`, which reads them. */
   readonly range?: string | null;
 
   /** The start of a custom period, inclusive. */
