@@ -29,8 +29,15 @@ import type {
 describe("@stackra/config", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(config).sort()).toEqual([
+      "AwsSecretsManagerConfig",
+      "AwsSecretsManagerConfig$",
+      "AwsSecretsManagerOptions",
       "Config",
       "ConfigInvalidError",
+      "InfisicalConfig",
+      "InfisicalConfig$",
+      "InfisicalOptions",
+      "InfisicalSecretStoreDriver",
       "Secret",
       "buildConfig",
       "configKey",

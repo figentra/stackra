@@ -7,13 +7,20 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
+export { AwsSecretsManagerConfig } from "#config/aws-secrets-manager.config";
+export { InfisicalConfig } from "#config/infisical.config";
 export { Config } from "#core/bases/config.base";
+export { AWS_SECRETS_MANAGER_CONFIG_SCHEMA as AwsSecretsManagerConfig$ } from "#core/constants/aws-secrets-manager-config-schema.constant";
 export { env } from "#core/constants/env.constant";
+export { INFISICAL_CONFIG_SCHEMA as InfisicalConfig$ } from "#core/constants/infisical-config-schema.constant";
 export { Secret } from "#core/decorators/secret.decorator";
+export { InfisicalSecretStoreDriver } from "#core/drivers/infisical-secret-store.driver";
 export { ConfigInvalidError } from "#core/errors/config-invalid.error";
 export { buildConfig } from "#core/functions/build-config.function";
 export { configKey } from "#core/functions/config-key.function";
 export { hydrateEnv } from "#core/functions/hydrate-env.function";
+export { AwsSecretsManagerOptions } from "#core/schemas/aws-secrets-manager-options.schema";
+export { InfisicalOptions } from "#core/schemas/infisical-options.schema";
 export type { BuildFacts } from "#core/types/build-facts.type";
 export type { ConfigClass } from "#core/types/config-class.type";
 export type { ConfigIssue } from "#core/types/config-issue.type";

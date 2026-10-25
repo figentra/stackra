@@ -67,6 +67,18 @@ A `@Secret` field is resolved by name through `SecretStore` and held in a non-en
 `JSON.stringify`, `Object.keys`, a spread, `console.log` or an error. Setting one through `env` or a values layer
 throws. A schema with a secret never reaches a wire surface (gen's `secret_on_wire`).
 
+## Secret store drivers
+
+Two `SecretStore` drivers read a deployment's secrets into memory at boot; the runtime awaits `load()` before it
+builds the configuration that reads them (and again after a rotation). Neither lists, logs or reports a value.
+
+| Driver                               | Entry    | Configuration                                                                                                                                                    |
+| ------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `InfisicalSecretStoreDriver`         | `.`      | `InfisicalConfig`: site, project, environment, folder; the machine identity is `INFISICAL_CLIENT_ID` and `INFISICAL_CLIENT_SECRET` from the platform's own store |
+| `AwsSecretsManagerSecretStoreDriver` | `./node` | `AwsSecretsManagerConfig`: region and secret ids; the runtime's AWS role signs the reads                                                                         |
+
+A JSON-object secret in AWS gives one secret per string member. `@aws-sdk/client-secrets-manager` is an optional peer.
+
 ## The environment
 
 ```ts

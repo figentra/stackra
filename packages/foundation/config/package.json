@@ -2,7 +2,7 @@
   "name": "@stackra/config",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra configuration: the Config({ schema, env }) kind base, @Secret field references resolved blind through the SecretStore port, config layering, public env hydration, the env value parsers, useConfig and the testing module's withConfig and withSecrets",
+  "description": "Stackra configuration: the Config({ schema, env }) kind base, @Secret field references resolved blind through the SecretStore port, config layering, public env hydration, the env value parsers, useConfig and the testing module's withConfig and withSecrets, and the Infisical and AWS Secrets Manager SecretStore drivers",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -19,6 +19,10 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts"
+    ],
     "#contracts/*": [
       "./src/contracts/*",
       "./src/contracts/*.ts",
@@ -28,6 +32,11 @@
       "./src/core/*",
       "./src/core/*.ts",
       "./src/core/*/index.ts"
+    ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
     ],
     "#react/*": [
       "./src/react/*",
@@ -51,6 +60,11 @@
       "@stackra/source": "./src/contracts/index.ts",
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
     },
     "./react": {
       "@stackra/source": "./src/react/index.ts",
@@ -85,6 +99,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@aws-sdk/client-secrets-manager": "catalog:",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -102,9 +117,13 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "@aws-sdk/client-secrets-manager": "catalog:",
     "react": "catalog:frontend"
   },
   "peerDependenciesMeta": {
+    "@aws-sdk/client-secrets-manager": {
+      "optional": true
+    },
     "react": {
       "optional": true
     }

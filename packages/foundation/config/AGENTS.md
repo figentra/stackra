@@ -28,6 +28,8 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `
   add a layer or a deep merge: a nested object is replaced whole (ADR 0294 decision 19).
 - A secret value is never stored enumerable, logged, put in an error or accepted from `env`/values. `ConfigIssue`
   holds paths and names only. Tests assert a canary value never reaches any output.
+- A secret store driver reads values only in `load()`, keeps them in a private map and names steps, statuses or ids in
+  its errors, never a value. Tests use made-up canaries and assert they never reach an error.
 - The key comes from `configKey` only; gen calls the same function. Never add a `key` option.
 - `hydrateEnv(..., { only: "public" })` reads public-prefixed variables only (`PUBLIC_ENV_PREFIXES`).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
