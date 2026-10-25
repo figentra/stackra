@@ -14,7 +14,12 @@ An entitlement is a commercial right. It is never a release switch (that is a fl
 | Entry         | Symbol                                                                                  | Use                                                                        |
 | ------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | `.`           | `Entitlement`, `EntitlementKind`                                                        | the kind base: `class XEntitlement extends Entitlement({ kind, counts })`  |
-| `.`           | `EntitlementSource`                                                                     | the port grants come from: the plan service in SaaS, the licence on-prem   |
+| `./contracts` | `EntitlementSource` (also re-exported from `.`)                                         | the port grants come from: the plan service in SaaS, the licence on-prem   |
+| `./contracts` | `PlanSnapshots`, `SeatLedger`, `PlanSnapshot`, `LimitGrant`, `SeatAssignment`           | the plan of a scope and the seats held                                     |
+| `.`           | `PlanSnapshotEntitlementSourceDriver`, `MemoryPlanSnapshotsDriver`                      | the SaaS source over the plan snapshot, and its memory store               |
+| `.`           | `LimitReservationService`                                                               | reserve-then-commit: a create at a limit runs under the limit's lock       |
+| `.`           | `SeatMeterService`, `MemorySeatLedgerDriver`, `SeatLimitReachedError`                   | the seat-kind meter: assign, release, usage per kind                       |
+| `.`           | `limitAllows`                                                                           | whether one more fits a count or a soft limit at a time                    |
 | `./contracts` | `EntitlementUsage`                                                                      | the port a limit's current count comes from (the data layer implements it) |
 | `.`           | `PlanEntitlementCheckDriver`                                                            | the driver of `EntitlementCheck`, the pipeline's entitlement step          |
 | `.`           | `LimitReachedError`                                                                     | `limit_reached`: the refusal of a create past the plan's limit             |
@@ -80,6 +85,20 @@ Neither driver lives here: the plan service binds the SaaS one and the on-prem r
 answers one entitlement for one scope and composes nothing. The scope is the id of the call's `scope` (`ctx.scope`, the
 contracts `ScopeRef` of the scope-tree node the call acts in, ADR 0208 and 0327), `undefined` for a platform-wide call.
 A source whose plan sits on an ancestor node reads the node's path from `ScopeTree`.
+
+## Soft limits, grace and the race
+
+A limit grant is a count (hard) or a `LimitGrant` `{ limit, graceEndsAt?, ceiling? }`: past `limit`, creates still
+pass while the grace period runs and the count is below `ceiling`. The numbers and dates are plan-catalogue data. The
+pipeline step reads a snapshot, so two creates racing at the last slot may both pass; a create that must never pass
+runs inside `LimitReservationService.reserve(entitlement, scope, create)`, which holds the limit's lock from the count
+until the create returns.
+
+## Seat kinds
+
+Seat kinds (a full seat, a provider seat, a support seat) are catalogue records: `PlanSnapshot.seats` maps each kind's
+key to its allowance. `SeatMeterService.assign(scope, principal, kind)` checks and records under one lock;
+`usage(scope)` returns the seats held per kind for billing.
 
 ## Testing
 

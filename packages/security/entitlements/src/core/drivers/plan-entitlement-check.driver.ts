@@ -6,9 +6,10 @@
  *          current count there; a call without a scope asks for the platform-wide grant.
  * Boundary: plugs into the step `ActionPipeline` already runs after the preconditions and before the flag step; it adds
  *           no second gate. A right that is not granted refuses `entitlement_required`; a limit already reached
- *           refuses `limit_reached`. A grant of the wrong shape is a source bug and throws a `TypeError`. A call no
- *           entitlement gates passes without asking the source. The check reads a snapshot, so two creates racing at
- *           the limit may both pass; a hard bound needs a storage constraint.
+ *           refuses `limit_reached`, unless the grant is a soft limit whose grace period still runs (owner round 3
+ *           #18). A grant of the wrong shape is a source bug and throws a `TypeError`. A call no entitlement gates
+ *           passes without asking the source. The check reads a snapshot, so two creates racing at the limit may both
+ *           pass; a create that must never pass the limit runs inside `LimitReservationService.reserve`.
  * Runtime: isomorphic
  * Governing contract: ADR 0138 (as amended: entitlement after precondition); ADR 0215 (decisions 1 and 3); ADR 0294
  *                     (decisions 16 and 17); ADR 0270 (collaboration gated by an entitlement); ADR 0327 (decision 6:
@@ -16,10 +17,14 @@
  */
 import { type CallDescriptor, EntitlementCheck } from "@stackra/actions/contracts";
 import { Driver, kindOf } from "@stackra/container";
+import { Clock } from "@stackra/contracts";
 import { EntitlementRequiredError } from "@stackra/errors";
 
 import { ENTITLEMENT_REGISTRY } from "#core/constants/entitlement-registry.constant";
 import { LimitReachedError } from "#core/errors/limit-reached.error";
+import { isLimitGrant } from "#core/functions/is-limit-grant.function";
+import { limitAllows } from "#core/functions/limit-allows.function";
+import { limitOf } from "#core/functions/limit-of.function";
 import { EntitlementSource } from "#core/ports/entitlement-source.port";
 import { EntitlementUsage } from "#contracts/ports/entitlement-usage.port";
 import type { EntitlementOptions } from "#core/types/entitlement-options.type";
@@ -38,21 +43,26 @@ export class PlanEntitlementCheckDriver extends Driver(EntitlementCheck) {
   /** Where a limit's current count comes from. */
   private readonly usage: EntitlementUsage;
 
+  /** The time a grace period ends against; the system time when none is bound. */
+  private readonly clock: Clock | undefined;
+
   /**
    * @param source - the plan service's snapshot or the licence.
    * @param usage - the counter of the counted models.
+   * @param clock - the time a soft limit's grace period ends against; the system time when left out.
    */
-  constructor(source: EntitlementSource, usage: EntitlementUsage) {
+  constructor(source: EntitlementSource, usage: EntitlementUsage, clock?: Clock) {
     super();
     this.source = source;
     this.usage = usage;
+    this.clock = clock;
   }
 
   /**
    * Resolves when the scope's plan grants every entitlement that gates `call`.
    *
    * @throws EntitlementRequiredError when a gating right is not in the plan.
-   * @throws LimitReachedError when a gating limit's count already equals or passes the grant.
+   * @throws LimitReachedError when a gating limit's count already equals or passes the grant and no grace period runs.
    * @throws TypeError when the source answers a count for a feature or module, or a boolean `true` for a limit.
    */
   async check(call: CallDescriptor): Promise<void> {
@@ -66,14 +76,16 @@ export class PlanEntitlementCheckDriver extends Driver(EntitlementCheck) {
       if (counts === undefined) {
         if (grant !== true)
           throw new TypeError(
-            `${key} is granted or not, so its source answers a boolean, not ${grant}`,
+            `${key} is granted or not, so its source answers a boolean, not ${JSON.stringify(grant)}`,
           );
         continue;
       }
-      if (typeof grant !== "number")
+      if (!isLimitGrant(grant))
         throw new TypeError(`${key} is a limit, so its source answers a count, not ${grant}`);
-      if (grant !== Number.POSITIVE_INFINITY && (await this.usage.count(counts(), scope)) >= grant)
-        throw LimitReachedError.create({ entitlement: key, limit: grant });
+      if (limitOf(grant) === Number.POSITIVE_INFINITY) continue;
+      const count = await this.usage.count(counts(), scope);
+      if (!limitAllows(grant, count, this.clock?.now() ?? new Date()))
+        throw LimitReachedError.create({ entitlement: key, limit: limitOf(grant) });
     }
   }
 }

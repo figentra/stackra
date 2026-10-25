@@ -19,6 +19,8 @@ import type {
   EntitlementOptions,
   EntitlementRegistration,
 } from "#core/index";
+import type { LimitGrant } from "#contracts/index";
+import * as contracts from "#contracts/index";
 
 describe("@stackra/entitlements", () => {
   it("exports exactly its values", () => {
@@ -27,14 +29,25 @@ describe("@stackra/entitlements", () => {
       "EntitlementKind",
       "EntitlementSource",
       "LimitReachedError",
+      "LimitReservationService",
+      "MemoryPlanSnapshotsDriver",
+      "MemorySeatLedgerDriver",
       "PlanEntitlementCheckDriver",
+      "PlanSnapshotEntitlementSourceDriver",
+      "SeatLimitReachedError",
+      "SeatMeterService",
       "entitlementKey",
+      "limitAllows",
       "registerEntitlements",
     ]);
   });
 
+  it("re-exports the contracts' EntitlementSource, so old imports name the same token", () => {
+    expect(entitlements.EntitlementSource).toBe(contracts.EntitlementSource);
+  });
+
   it("resolves its public types", () => {
-    expectTypeOf<EntitlementGrant>().toEqualTypeOf<boolean | number>();
+    expectTypeOf<EntitlementGrant>().toEqualTypeOf<boolean | number | LimitGrant>();
     expectTypeOf<EntitlementOptions["kind"]>().toEqualTypeOf<EntitlementKind>();
     expectTypeOf<EntitlementOptions["counts"]>().toEqualTypeOf<(() => AnyClass) | undefined>();
     expectTypeOf<EntitlementRegistration["type"]>().toEqualTypeOf<EntitlementClass>();

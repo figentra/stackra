@@ -3,8 +3,9 @@
  * Purpose: unit tests of `PlanEntitlementCheckDriver`: an ungated call passes without asking the source, a feature or
  *          module outside the plan refuses `entitlement_required`, a limit refuses `limit_reached` once the count
  *          reaches the grant (the template's two-product plan), the grant and the count are asked in the call's
- *          `scope` (platform-wide without one), no limit never counts, a grant of the wrong shape is a bug, and the
- *          driver runs as the entitlement step of the real `ActionPipeline`.
+ *          `scope` (platform-wide without one), no limit never counts, a grant of the wrong shape is a bug, a soft
+ *          limit passes past its allowance while its grace period runs and up to its ceiling, and the driver runs as
+ *          the entitlement step of the real `ActionPipeline`.
  * Boundary: test only; the source is `fakeEntitlements`, the usage a list of rows, the permission step an allow-all.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0138 (as amended);
@@ -17,6 +18,7 @@ import {
   type Actor,
   ActorKind,
   ApiArea,
+  Clock,
   type PublicId,
   Realm,
   type ScopeRef,
@@ -79,6 +81,13 @@ class AllowAllDriver extends Driver(AccessControl) {
   async require(): Promise<void> {}
 
   async authorize(): Promise<void> {}
+}
+
+/** Always 2026-10-25 09:00 UTC. */
+class FixedClockDriver extends Driver(Clock) {
+  now(): Date {
+    return new Date("2026-10-25T09:00:00Z");
+  }
 }
 
 const customer: Actor = { kind: ActorKind.User, id: "usr_1", realm: Realm.Customer };
@@ -231,5 +240,29 @@ describe("PlanEntitlementCheckDriver", () => {
     await expect(
       pipeline.execute(CreateProductAction, {} as never, { actor: customer, scope: ACME }),
     ).rejects.toBeInstanceOf(LimitReachedError);
+  });
+
+  it("lets a soft limit pass during its grace period, up to the ceiling", async () => {
+    const graceEndsAt = new Date("2026-11-01T00:00:00Z");
+    const soft = new PlanEntitlementCheckDriver(
+      fakeEntitlements([[ProductLimitEntitlement, { limit: 2, graceEndsAt, ceiling: 3 }]]),
+      usage,
+      new FixedClockDriver(),
+    );
+    usage.rows = [ACME.id, ACME.id];
+    await expect(soft.check(callOf(CreateProductAction))).resolves.toBeUndefined();
+    usage.rows = [ACME.id, ACME.id, ACME.id];
+    await expect(soft.check(callOf(CreateProductAction))).rejects.toBeInstanceOf(LimitReachedError);
+    const ended = new PlanEntitlementCheckDriver(
+      fakeEntitlements([
+        [ProductLimitEntitlement, { limit: 2, graceEndsAt: new Date("2026-10-01T00:00:00Z") }],
+      ]),
+      usage,
+      new FixedClockDriver(),
+    );
+    usage.rows = [ACME.id, ACME.id];
+    await expect(ended.check(callOf(CreateProductAction))).rejects.toBeInstanceOf(
+      LimitReachedError,
+    );
   });
 });

@@ -2,7 +2,7 @@
   "name": "@stackra/entitlements",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra entitlements: the Entitlement({ kind, counts }) kind for plan rights (feature, limit, module), the EntitlementSource and EntitlementUsage ports, the plan driver of the action pipeline's entitlement step, LimitReachedError and fakeEntitlements",
+  "description": "Stackra entitlements: the Entitlement({ kind, counts }) kind for plan rights (feature, limit, module), the EntitlementSource, EntitlementUsage, PlanSnapshots and SeatLedger ports, the plan driver of the action pipeline's entitlement step with soft limits and grace, the plan-snapshot source, reserve-then-commit at a limit, the seat-kind meter, LimitReachedError, SeatLimitReachedError and fakeEntitlements",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -71,7 +71,8 @@
     "@stackra/actions": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
-    "@stackra/errors": "workspace:*"
+    "@stackra/errors": "workspace:*",
+    "@stackra/locking": "workspace:*"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",
