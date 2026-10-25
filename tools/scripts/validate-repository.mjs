@@ -10,6 +10,8 @@
  *          Every JSON config is .jsonc unless its reader cannot take one (MUST_STAY_JSON).
  *          Repo-owned YAML has no flow mappings (block style; checkYamlFlowMaps).
  *          Member TS imports carry no file extension and climb at most one folder (checkImports, ADR 0233).
+ *          An Expo app locks no orientation and asks for no full screen, and its code never sizes from the device
+ *          (checkIosFormFactor and checkWindowSizing, STA-461).
  *          Prints the findings and exits 1; prints nothing on success. Adapted from Figentra's checks 1–5.
  * Scope: every member listed by `pnpm -r list --json --depth -1`; test placement covers every non-ignored file.
  * Owner: release-operations · Secrets: forbidden
@@ -483,6 +485,42 @@ export function checkImports(path, text) {
   return out;
 }
 
+/** An Expo app config: an app member's or the app templates' `app.json`. */
+export const isExpoAppConfig = (p) =>
+  /^(?:apps|tools\/scaffold\/templates\/apps)\/[^/]+\/app\.json$/.test(p);
+/** An app's own source, where a screen lays itself out. */
+const isAppSource = (p) =>
+  /^(?:apps|tools\/scaffold\/templates\/apps)\/[^/]+\/src\/.+\.(?:ts|tsx)$/.test(p) &&
+  !p.includes("/__tests__/");
+
+/**
+ * STA-461, the iPhone Duo and every resizable iOS window: an Expo app config locks no orientation (`orientation`
+ * absent or `default`) and never asks for `ios.requireFullScreen`, so the app can take any size and rotation.
+ */
+export function checkIosFormFactor(path, text) {
+  const expo = JSON.parse(text)?.expo;
+  if (!expo) return [];
+  const out = [];
+  if (expo.orientation !== undefined && expo.orientation !== "default")
+    out.push(
+      `${path}: "orientation": "${expo.orientation}" locks the app; drop it or use "default" (STA-461)`,
+    );
+  if (expo.ios?.requireFullScreen === true)
+    out.push(
+      `${path}: "ios.requireFullScreen" refuses split views and resizable windows (STA-461)`,
+    );
+  return out;
+}
+
+/** STA-461: an app reads its size from the window it is given, never from the device or its model. */
+export function checkWindowSizing(path, text) {
+  return /\bDimensions\.get\(/.test(text)
+    ? [
+        `${path}: Dimensions.get reads the device, not the window; use useWindowDimensions (STA-461)`,
+      ]
+    : [];
+}
+
 function main() {
   const members = JSON.parse(
     execFileSync("pnpm", ["-r", "list", "--json", "--depth", "-1"], {
@@ -510,6 +548,10 @@ function main() {
     report("", checkImports(p, readFileSync(join(ROOT, p), "utf8")));
   for (const p of repoFiles.filter(isRepoOwnedYaml))
     report("", checkYamlFlowMaps(p, readFileSync(join(ROOT, p), "utf8")));
+  for (const p of repoFiles.filter(isExpoAppConfig))
+    report("", checkIosFormFactor(p, readFileSync(join(ROOT, p), "utf8")));
+  for (const p of repoFiles.filter(isAppSource))
+    report("", checkWindowSizing(p, readFileSync(join(ROOT, p), "utf8")));
   // ADR 0024 decision 2: the brand marks carry their all-rights-reserved NOTICE (in the docs app since ADR 0302).
   if (!existsSync(join(ROOT, "apps/docs/src/assets/brand/NOTICE")))
     report("apps/docs", ["src/assets/brand/NOTICE missing (ADR 0024)"]);

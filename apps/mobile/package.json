@@ -46,6 +46,7 @@
     "@stackra/ui": "workspace:*",
     "@stackra/ui-pro": "workspace:*",
     "expo": "catalog:mobile",
+    "expo-build-properties": "catalog:mobile",
     "expo-constants": "catalog:mobile",
     "expo-dev-client": "catalog:mobile",
     "expo-linking": "catalog:mobile",
