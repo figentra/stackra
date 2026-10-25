@@ -1,7 +1,15 @@
 ---
 title: "0296 — Runway v3: member requires and root topology groups"
-description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349) · amended 2026-10-24 (STA-417)"
+description: "Accepted, amended by 0335 · 2026-10-22 · amended 2026-10-23 (STA-349) · amended 2026-10-24 (STA-417)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-451) by
+  [0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle):
+  the root runway gains a `product` section, `product: { key, edition: { of, version } }`, the one
+  place an edition names its base product. A product with no `edition` is a base product. Decisions
+  1 to 6 stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-417), for the runway v3 schemas of stackra#136, which replace the version

@@ -1,7 +1,17 @@
 ---
 title: "0170 — Deployment: what deploys where, and how a release is promoted"
-description: "Accepted, amended by 0289 · 2026-10-20"
+description: "Accepted, amended by 0289 · 2026-10-20 · amended 2026-10-24 (STA-456)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-456), owner decision, with the note of the same day on
+  [0186](/adr/0186-backups-and-disaster-recovery): the OS SaaS of decision 3 runs in two independent
+  regions, GCC and EU, each on Encore Cloud on our AWS, and the in-country deployments are dedicated
+  deployments per customer that Figentra runs (the owner decision of 2026-10-24; the on-premises
+  bundles of
+  [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing) decision
+  8 are a different thing). Decision 3 is read with that; the rest stands.
+</Note>
 
 <Note>
   Amended by [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing) decision 7: each pull-request preview lives under one host, `pr-<n>.figentra.cloud`, behind a router Worker. The 7-day TTL and the synthetic data are unchanged. Previews under 0289 are for Figentra OS only; Stackra still has none, as decision 7 of this ADR says.
