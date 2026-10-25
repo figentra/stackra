@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the design-system landing's live showcase, the native twin of the web playground's `showcase`: three small
  *          product scenes composed from the real @stackra/ui components (an invite form, a deployments list, a filter
- *          panel) on glass cards, so the system is seen at work before it is browsed part by part. Every control
+ *          panel) on solid cards, so the system is seen at work before it is browsed part by part. Every control
  *          works; nothing is sent anywhere.
  * Boundary: presentation and local state only; the scenes are samples, not features. The strings are the web's.
  * Runtime: react-native
@@ -23,10 +23,8 @@ import {
   Text,
   TextField,
 } from "@stackra/ui/native";
-import { Fragment, useState, type ReactNode } from "react";
+import { Fragment, useState } from "react";
 import { View } from "react-native";
-
-import { Glass } from "./glass";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
@@ -61,15 +59,6 @@ const DEPLOYS: readonly { name: string; version: string; status: string; tone: T
   { name: "Sara Kim", version: "v2.13.9", status: "Failed", tone: "danger" },
 ];
 
-/** One scene: a transparent card on a glass layer, so the card keeps its parts and the glass is the surface. */
-function Scene({ children }: { children: ReactNode }) {
-  return (
-    <Glass padding={0}>
-      <Card variant="transparent">{children}</Card>
-    </Glass>
-  );
-}
-
 /** The three composed scenes, stacked. */
 export function Showcase() {
   const [email, setEmail] = useState("");
@@ -81,7 +70,8 @@ export function Showcase() {
 
   return (
     <View className="gap-4">
-      <Scene>
+      {/* A solid card: content never sits on glass (STA-457). */}
+      <Card>
         <Card.Header>
           <Card.Title>{STRINGS.invite.title}</Card.Title>
           <Card.Description>{STRINGS.invite.description}</Card.Description>
@@ -107,9 +97,9 @@ export function Showcase() {
             {isSent ? STRINGS.invite.sent(email) : ""}
           </Text>
         </Card.Footer>
-      </Scene>
+      </Card>
 
-      <Scene>
+      <Card>
         <Card.Header>
           <Card.Title>{STRINGS.deploys.title}</Card.Title>
           <Card.Description>{STRINGS.deploys.description}</Card.Description>
@@ -134,9 +124,9 @@ export function Showcase() {
             </Fragment>
           ))}
         </Card.Content>
-      </Scene>
+      </Card>
 
-      <Scene>
+      <Card>
         <Card.Header>
           <Card.Title>{STRINGS.filters.title}</Card.Title>
           <Card.Description>{STRINGS.filters.description}</Card.Description>
@@ -167,7 +157,7 @@ export function Showcase() {
             {STRINGS.filters.reset}
           </Button>
         </Card.Footer>
-      </Scene>
+      </Card>
     </View>
   );
 }

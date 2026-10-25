@@ -16,6 +16,7 @@ import { View } from "react-native";
 
 import { ChoiceGroup } from "./choice-group";
 import { useInsetSheet } from "./inset-sheet";
+import { ReviewIcons } from "./review-icons";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
 const STRINGS = {
@@ -45,7 +46,7 @@ const LANGUAGES = [
 ] as const;
 
 /** The header button and its display sheet. */
-export function DisplaySettings() {
+function DisplaySettingsSheet() {
   const { colorScheme, resolvedColorScheme, setColorScheme, locale, setLocale } = useDesignSystem();
   const [isOpen, setOpen] = useState(false);
   const insetSheet = useInsetSheet();
@@ -83,5 +84,14 @@ export function DisplaySettings() {
         </BottomSheet.Content>
       </BottomSheet.Portal>
     </BottomSheet>
+  );
+}
+
+/** The display switcher in a review header, which sits outside the screens, with the area's icons. */
+export function DisplaySettings() {
+  return (
+    <ReviewIcons>
+      <DisplaySettingsSheet />
+    </ReviewIcons>
   );
 }
