@@ -1,13 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: renders a theme to the Uniwind theme HeroUI Native reads: the radii in `@theme`, and the colour roles
- *          and shadows in `@layer theme { :root { @variant light { … } @variant dark { … } } }`, the shape HeroUI
- *          Native's theming docs and Uniwind's custom-theme docs prescribe. Both variants define the same variables.
- *          It also restyles HeroUI Native's text classes (`.text__root--type-*`) in the theme's type scale, in px,
- *          and writes the Arabic twins as `.type-<token>-ar` classes for the native Text to add.
+ * Purpose: renders a theme to the Uniwind theme HeroUI Native reads: the radii in `@theme`, and the colour roles,
+ *          shadows and palette in `@layer theme { :root { @variant light { … } @variant dark { … } } }`, the shape
+ *          HeroUI Native's theming docs and Uniwind's custom-theme docs prescribe. Both variants define the same
+ *          variables. The palette is written as Uniwind colours (`--color-<name>`): HeroUI Native's own `color-mix`
+ *          steps of the same name (`accent-soft`, `accent-soft-foreground`, `accent-hover`) take the theme's value, as
+ *          the web file's do, and the rest (`accent-pressed`, a product's accent ramp) become classes such as
+ *          `bg-accent-pressed`. It also restyles HeroUI Native's text classes (`.text__root--type-*`) in the theme's
+ *          type scale, in px, and writes the Arabic twins as `.type-<token>-ar` classes for the native Text to add.
  * Boundary: a pure function from a Theme to a string; it validates nothing (`defineTheme` does) and writes no file.
- *          The palette, fonts, spacing and motion are web-only: native components read the roles. Font weight is left
- *          to HeroUI Native's `font-*` classes, because with custom fonts a weight selects a family there.
+ *          The fonts, spacing, motion and material are web-only. Font weight is left to HeroUI Native's `font-*`
+ *          classes, because with custom fonts a weight selects a family there.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0165 (HeroUI Native and Uniwind on native).
  */
@@ -47,6 +50,9 @@ export function renderNativeCss(theme: Theme): string {
       `    @variant ${mode} {`,
       ...ColorRole.map((role) => `      --${role}: ${theme.colors[role][mode]};`),
       ...SHADOWS.map((shadow) => `      --${shadow}-shadow: ${theme.shadows[shadow][mode]};`),
+      ...Object.entries(theme.palette).map(
+        ([name, token]) => `      --color-${name}: ${token[mode]};`,
+      ),
       "    }",
     ].join("\n");
 
