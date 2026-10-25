@@ -57,6 +57,8 @@ export const Capability = Enum.of({
   Bluetooth: "bluetooth",
   /** Serial ports. */
   Serial: "serial",
+  /** An integrated card terminal paired to a till. */
+  CardTerminal: "card_terminal",
   /** Requirement level: a target without the capability fails gen. */
   Required: "required",
   /** Requirement level: the feature degrades on a target without the capability. */

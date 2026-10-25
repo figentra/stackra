@@ -2,7 +2,7 @@
   "name": "@stackra/platform",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra platform: the Platform capability port with its typed refusal, the push and captcha ports, the desktop, PWA and push configurations, memory, web, Electron, Expo (platform and push) and Turnstile drivers, the Bridge kind, the service-worker handlers, the React hooks and fakePlatform",
+  "description": "Stackra platform: the Platform capability port with its typed refusal, the push, captcha, kiosk-mode and second-screen ports, the desktop, PWA and push configurations, memory, web, Electron (platform, kiosk mode, second screen), Expo (platform and push) and Turnstile drivers, the Bridge kind and its kiosk and second-screen bridges, the service-worker handlers, the React hooks and fakePlatform",
   "license": "MIT",
   "repository": {
     "type": "git",

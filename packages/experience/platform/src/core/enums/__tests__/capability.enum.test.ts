@@ -34,6 +34,7 @@ describe("Capability", () => {
       "usb",
       "bluetooth",
       "serial",
+      "card_terminal",
       "required",
       "optional",
     ]);
@@ -64,6 +65,7 @@ describe("Capability", () => {
       | "usb"
       | "bluetooth"
       | "serial"
+      | "card_terminal"
       | "required"
       | "optional"
     >();

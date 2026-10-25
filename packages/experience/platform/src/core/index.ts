@@ -15,8 +15,10 @@ export { DESKTOP_CONFIG_SCHEMA as DesktopConfig$ } from "#core/constants/desktop
 export { PUSH_CONFIG_SCHEMA as PushConfig$ } from "#core/constants/push-config-schema.constant";
 export { PWA_CONFIG_SCHEMA as PwaConfig$ } from "#core/constants/pwa-config-schema.constant";
 export { MemoryCaptchaVerifierDriver } from "#core/drivers/memory-captcha-verifier.driver";
+export { MemoryKioskModeDriver } from "#core/drivers/memory-kiosk-mode.driver";
 export { MemoryPlatformDriver } from "#core/drivers/memory-platform.driver";
 export { MemoryPushTransportDriver } from "#core/drivers/memory-push-transport.driver";
+export { MemorySecondScreenDriver } from "#core/drivers/memory-second-screen.driver";
 export { CachePreset } from "#core/enums/cache-preset.enum";
 export { CacheStrategy } from "#core/enums/cache-strategy.enum";
 export { Capability } from "#core/enums/capability.enum";

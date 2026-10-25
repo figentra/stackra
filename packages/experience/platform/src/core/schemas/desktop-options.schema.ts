@@ -211,6 +211,12 @@ export class DesktopOptions extends Schema {
     pinnedSpki: string[];
   } = { disableDevToolsInProduction: true, pinnedSpki: [] };
 
+  /**
+   * Start in kiosk mode (ADR 0281, STA-469 note): a kiosk window, no menu, no developer tools in a packaged build,
+   * overlays and global shortcuts off. The launch default only; a tenant's kiosk setting switches it at run time.
+   */
+  kioskOnLaunch = false;
+
   /** Launch at login, until the user changes it. */
   launchAtLoginDefault = false;
 

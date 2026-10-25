@@ -17,11 +17,15 @@ vi.mock("electron", () => {
 });
 
 describe("@stackra/platform/desktop", () => {
-  it("exports the bridge kind, the folder picker and the renderer driver", () => {
+  it("exports the bridge kind, the bridges, the main-process drivers and the renderer driver", () => {
     expect(Object.keys(electron).sort()).toEqual([
       "Bridge",
+      "ElectronKioskModeDriver",
       "ElectronPlatformDriver",
+      "ElectronSecondScreenDriver",
       "PickFolderBridge",
+      "SetKioskModeBridge",
+      "ShowSecondScreenBridge",
     ]);
   });
 });

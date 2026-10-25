@@ -8,8 +8,10 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { CaptchaVerifier } from "#contracts/ports/captcha-verifier.port";
+export { KioskMode } from "#contracts/ports/kiosk-mode.port";
 export { Platform } from "#contracts/ports/platform.port";
 export { PushTransport } from "#contracts/ports/push-transport.port";
+export { SecondScreen } from "#contracts/ports/second-screen.port";
 export type { BadgeCapability } from "#contracts/types/badge-capability.type";
 export type { BarcodeFormat } from "#contracts/types/barcode-format.type";
 export type { CapabilityRefusal } from "#contracts/types/capability-refusal.type";

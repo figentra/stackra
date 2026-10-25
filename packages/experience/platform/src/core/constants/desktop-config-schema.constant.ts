@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `DESKTOP_CONFIG_SCHEMA`, the zod schema this package ships for `DesktopConfig` (exported as
  *          `DesktopConfig$`): desktop mode, windows, overlays, menus, tray, deep links, auto-update, devices, renderer
- *          permissions, the tighten-only hardening knobs, launch at login, crash reports and the offline store.
+ *          permissions, the tighten-only hardening knobs, the kiosk launch default, launch at login, crash reports and
+ *          the offline store.
  * Boundary: the stand-in for what gen writes for this package. Every top-level field has a default, so `.parse({})`
  *           gives the full defaults and a host's generated `DesktopConfig$` extends it with
  *           `Base$.shape.<field>.unwrap().default(...)`; a nested object is replaced whole, so its fields have no
@@ -169,6 +170,7 @@ export const DESKTOP_CONFIG_SCHEMA = z.object({
       pinnedSpki: z.array(z.string().min(1)),
     })
     .default(() => ({ disableDevToolsInProduction: true, pinnedSpki: [] })),
+  kioskOnLaunch: z.boolean().default(false),
   launchAtLoginDefault: z.boolean().default(false),
   crashReporter: z.boolean().default(false),
   offlineStore: z.enum(Enum.values(OfflineStore)).default(OfflineStore.EncryptedIndexedDb),

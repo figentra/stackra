@@ -19,8 +19,14 @@ import type {
 } from "#contracts/index";
 
 describe("@stackra/platform/contracts", () => {
-  it("exports exactly the three ports at run time", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["CaptchaVerifier", "Platform", "PushTransport"]);
+  it("exports exactly the five ports at run time", () => {
+    expect(Object.keys(contracts).sort()).toEqual([
+      "CaptchaVerifier",
+      "KioskMode",
+      "Platform",
+      "PushTransport",
+      "SecondScreen",
+    ]);
   });
 
   it("types a capability result as a refusal or data", () => {
