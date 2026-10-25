@@ -13,7 +13,9 @@ description: "Accepted · 2026-10-24"
   fields as facts), [0214](/adr/0214-registry-v2-and-the-module-install-lifecycle) (decision 3:
   enhanced modules install without their targets) and
   [0131](/adr/0131-module-key-version-and-deprecation) (decision 3: the `enhances` list beside
-  `dependsOn`), each by a Note.
+  `dependsOn`) and
+  [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) (decision 18:
+  a `LineEntry` place kind), each by a Note.
 </Note>
 
 ## Context
@@ -67,10 +69,21 @@ standing rule for cross-product work asks: place and extend, never fork.
    a dependency or an enhanced module; the registry of 0214 shows a tenant which contributions are active. A contribution
    to a module that is neither a dependency nor enhanced fails the build.
 
+6. **Line entry is an editor slot.** A resource for a document with lines (a receipt, a count, a transfer, a purchase
+   order, a quote, an order, a production order) declares one `LineEntry` slot, a place kind of
+   [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) decision 18 that holds exactly one
+   line editor. The base fills it at layer 1 with its default editor; an edition replaces it at layer 2b by placing its
+   own editor (a block in its `blocks/` group, such as a size grid) bound to the base's `Line` schema and writing through
+   the base's own actions, never through a client around them. A variant matrix is the same slot kind on the variants
+   resource, keyed by two dimensions. Columns an edition adds to lines are `ModelAddition` fields on the line model
+   ([0336](/adr/0336-edition-additions-typed-fields-on-another-products-models-and-screens-in-its-panel-slots) decision 1)
+   and appear in the base's line table through its builders with a display from the closed set; custom column renderers
+   stay out, as 0307 decision 13 says. No base file is shadowed.
+
 ## Consequences
 
 - An edition reaches the till and the staff app the way it reaches the back office: through declared slots, never by
-  file overrides, so a base release cannot break an edition's screen.
+  file overrides, so a base release cannot break an edition's screen; replacing how lines are entered is one more slot.
 - Points and additions are checked against released manifests, so an edition learns at build time that a base release
   moved a point.
 - A base's rules can use an edition's fields without the base knowing the edition.
@@ -80,7 +93,8 @@ standing rule for cross-product work asks: place and extend, never fork.
 
 ## Enforcement
 
-- planned — gen (STA-340): a placement into a slot the base's manifest does not declare fails (`slot_unknown`); an
+- planned — gen (STA-340): a placement into a slot the base's manifest does not declare fails (`slot_unknown`); a
+  `LineEntry` slot with two editors, or an editor bound to a schema other than the base's `Line`, fails; an
   implementation of a released point whose signature differs fails (`extension_point_changed`); a contribution to a
   module that is neither in `dependsOn` nor in `enhances` fails (`target_not_declared`); a module in both lists fails.
 - planned — a conformance test in `@stackra/registry`: installing a module without its enhanced module leaves the
@@ -104,8 +118,8 @@ Supersedes: none. Amends, by Note:
 [0336](/adr/0336-edition-additions-typed-fields-on-another-products-models-and-screens-in-its-panel-slots),
 [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components),
 [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer),
-[0214](/adr/0214-registry-v2-and-the-module-install-lifecycle) and
-[0131](/adr/0131-module-key-version-and-deprecation). Reads with
+[0214](/adr/0214-registry-v2-and-the-module-install-lifecycle), [0131](/adr/0131-module-key-version-and-deprecation) and
+[0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards). Reads with
 [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards),
 [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers),
 [0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle) and
