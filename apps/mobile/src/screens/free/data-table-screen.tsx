@@ -8,7 +8,7 @@
  *          table holds no query and fetches nothing: the page owns the query and plays the server, filtering and
  *          sorting a fixed list and handing back one page. A failing action rejects on purpose, to show that the
  *          selection is left as it was; the actions' timers only resolve a promise, so nothing runs against the page
- *          after it is gone.
+ *          after it is gone. Every table passes `scrollEnabled={false}`: the page scrolls, so its rows must not.
  * Runtime: react-native
  * Governing contract: ADR 0310 (decision 6); STA-471.
  */
@@ -257,6 +257,7 @@ function RowActionsSample() {
   return (
     <>
       <DataTable
+        scrollEnabled={false}
         label={STRINGS.rowActions.label}
         items={ORDERS.slice(0, 3)}
         columns={PLAIN_COLUMNS}
@@ -282,6 +283,7 @@ function SelectionSample() {
   return (
     <>
       <DataTable
+        scrollEnabled={false}
         label={STRINGS.selection.label}
         items={rows}
         columns={PLAIN_COLUMNS}
@@ -316,6 +318,7 @@ function StatesSample() {
   return (
     <>
       <DataTable
+        scrollEnabled={false}
         label={STRINGS.states.emptyLabel}
         items={[]}
         columns={PLAIN_COLUMNS}
@@ -324,6 +327,7 @@ function StatesSample() {
         headingLevel={4}
       />
       <DataTable
+        scrollEnabled={false}
         label={STRINGS.states.noResultsLabel}
         items={[]}
         columns={PLAIN_COLUMNS}
@@ -335,6 +339,7 @@ function StatesSample() {
         {STRINGS.states.searchAgain}
       </Button>
       <DataTable
+        scrollEnabled={false}
         label={STRINGS.states.firstLoadLabel}
         items={[]}
         columns={PLAIN_COLUMNS}
@@ -344,6 +349,7 @@ function StatesSample() {
         loadingLabel={STRINGS.states.loading}
       />
       <DataTable
+        scrollEnabled={false}
         label={STRINGS.states.reloadLabel}
         items={ORDERS.slice(0, 2)}
         columns={PLAIN_COLUMNS}
@@ -354,6 +360,7 @@ function StatesSample() {
         loadingLabel={STRINGS.states.loading}
       />
       <DataTable
+        scrollEnabled={false}
         label={STRINGS.states.errorLabel}
         items={[]}
         columns={PLAIN_COLUMNS}
@@ -394,6 +401,7 @@ function LiveSample() {
   return (
     <>
       <DataTable
+        scrollEnabled={false}
         label={STRINGS.live.label}
         items={matches.slice(cursor, next)}
         columns={SORTABLE_COLUMNS}
@@ -450,6 +458,7 @@ export function DataTableScreen() {
     <Screen>
       <Section title={STRINGS.basics.title} description={STRINGS.basics.description}>
         <DataTable
+          scrollEnabled={false}
           label={STRINGS.basics.label}
           items={ORDERS.slice(0, 3)}
           columns={PLAIN_COLUMNS}
