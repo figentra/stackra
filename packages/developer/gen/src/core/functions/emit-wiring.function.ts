@@ -4,15 +4,20 @@
  *          order (with each dependency's module marked `from`), the platform classes the member injects, every
  *          binding with its kind, module, lifetime and constructor tokens, the config classes with their overrides,
  *          the driver table per port with lazy candidates and the `DriverRegistry` augmentation keyed by port key,
- *          the `@Replaces` replacements and the partners read from type arguments, typed `satisfies Wiring`.
+ *          the `@Replaces` replacements and the partners read from type arguments, typed `satisfies Wiring`. Gen adds
+ *          the bindings no class declares: one per per-model token (`repositoryOf(M)`, `journalOf(M)` with `[Locks]`),
+ *          an Integration's `IntegrationRuntime`, the generated inbound webhook route, and the platform services of
+ *          `PLATFORM_BINDINGS` where they are injected (`RequestContext` where `CustomFieldService` resolves).
  * Boundary: pure. Derived from file paths, base classes and constructor parameter types at build time; no reflection
  *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle. The
  *           sections other packages own (extension points, seeders, ...) are added by those targets.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 17 and 26); ADR 0263 (gen writes the wiring); ADR 0227 2026-10-24 note
- *                     (build-time wiring from constructor types); registry v3.1 section 5 item 4.
+ *                     (build-time wiring from constructor types); registry v3.1 section 5 item 4; ADR 0308; ADR 0224.
  */
 import { BINDING_KINDS } from "#core/constants/binding-kinds.constant";
+import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
+import { PLATFORM_BINDINGS } from "#core/constants/platform-bindings.constant";
 import { configKeyOf } from "#core/functions/config-key-of.function";
 import { driverName } from "#core/functions/driver-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
@@ -20,6 +25,7 @@ import { importLines } from "#core/functions/import-lines.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { portKey } from "#core/functions/port-key.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
+import { webhookIntegrations } from "#core/functions/webhook-integrations.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { ClassValue } from "#core/types/class-value.type";
 import type { DeclaredClass } from "#core/types/declared-class.type";
@@ -32,6 +38,28 @@ const LIFETIMES: Readonly<Record<string, string>> = {
   singleton: "Lifetime.Singleton",
   transient: "Lifetime.Transient",
 };
+
+/** The one dependency gen gives an Integration that declares no constructor (ADR 0308). */
+const INTEGRATION_RUNTIME: TokenRef = {
+  class: { name: "IntegrationRuntime", from: "@stackra/integrations" },
+};
+
+/** The constructor tokens of a class: its own, or the `IntegrationRuntime` of an Integration. */
+function depsOf(declared: DeclaredClass): readonly TokenRef[] {
+  return declared.kind === "integration" && declared.deps.length === 0
+    ? [INTEGRATION_RUNTIME]
+    : declared.deps;
+}
+
+/** The constructor tokens of a platform service gen binds, when `target` is one. */
+function platformDeps(target: ClassRef): readonly ClassRef[] | undefined {
+  for (const [key, deps] of Object.entries(PLATFORM_BINDINGS)) {
+    const [pkg = "", name] = key.split("#");
+    if (name === target.name && (target.from === pkg || target.from.startsWith(`${pkg}/`)))
+      return deps;
+  }
+  return undefined;
+}
 
 /** Whether `value` is a class written as a value. */
 function isClassValue(value: unknown): value is ClassValue {
@@ -95,6 +123,7 @@ export function emitWiring(ir: MemberIR): string {
     return name;
   };
   const token = (dep: TokenRef): string => {
+    if (dep.of !== undefined) return `${ref(dep.of)}(${ref(dep.class)})`;
     const port = ref(dep.class);
     if (dep.named === undefined) return port;
     use("@stackra/container", "named");
@@ -150,10 +179,12 @@ export function emitWiring(ir: MemberIR): string {
   const bindingLines: string[] = [];
   for (const declared of ir.classes) {
     if (!BINDING_KINDS.includes(declared.kind)) continue;
-    for (const dep of declared.deps)
+    const deps = depsOf(declared);
+    for (const dep of deps)
       if (
         dep.class.from.startsWith("@stackra/") &&
         dep.named === undefined &&
+        dep.of === undefined &&
         !platform.includes(ref(dep.class))
       )
         platform.push(ref(dep.class));
@@ -161,7 +192,7 @@ export function emitWiring(ir: MemberIR): string {
     if (lifetime !== undefined) use("@stackra/container", "Lifetime");
     bindingLines.push(
       `    { module: ${JSON.stringify(declared.module)}, kind: ${JSON.stringify(declared.kind)}, provide: ${ref(own(declared))}` +
-        `${lifetime !== undefined ? `, lifetime: ${lifetime}` : ""}, deps: ${list(declared.deps.map(token))} },`,
+        `${lifetime !== undefined ? `, lifetime: ${lifetime}` : ""}, deps: ${list(deps.map(token))} },`,
     );
   }
 
@@ -266,6 +297,45 @@ export function emitWiring(ir: MemberIR): string {
     registry.push(
       `    ${JSON.stringify(key)}: ${driverNames.map((name) => JSON.stringify(name)).join(" | ")};`,
     );
+  }
+
+  // Bindings gen adds: one per per-model token, the inbound webhook route, and each platform service it knows where
+  // it is injected. A worklist, so `journalOf(M)` brings `Locks` with it.
+  const used: { readonly module: string; readonly dep: TokenRef }[] = [];
+  for (const declared of ir.classes)
+    if (BINDING_KINDS.includes(declared.kind) || declared.kind === "driver")
+      for (const dep of depsOf(declared)) used.push({ module: declared.module, dep });
+  if (webhookIntegrations(ir).length > 0) {
+    const receiver: TokenRef = { class: { name: "WebhookReceiver", from: "@stackra/webhooks" } };
+    const route = ref({ name: "InboundWebhooksController", from: "#stackra/webhooks" });
+    bindingLines.push(
+      `    { module: ${JSON.stringify(ir.member)}, kind: "controller", provide: ${route}, deps: [${token(receiver)}] },`,
+    );
+    used.push({ module: ir.member, dep: receiver });
+  }
+  const added = new Set<string>();
+  for (let index = 0; index < used.length; index += 1) {
+    const entry = used[index];
+    if (entry === undefined) continue;
+    const { module, dep } = entry;
+    const factory = dep.of;
+    const deps =
+      factory !== undefined
+        ? Object.values(MODEL_TOKENS).find(
+            (candidate) =>
+              candidate.factory.name === factory.name && candidate.factory.from === factory.from,
+          )?.deps
+        : dep.named === undefined
+          ? platformDeps(dep.class)
+          : undefined;
+    const key = `${factory?.name ?? ""}:${dep.class.from}#${dep.class.name}`;
+    if (deps === undefined || added.has(key)) continue;
+    added.add(key);
+    const tokens = deps.map((target): TokenRef => ({ class: target }));
+    bindingLines.push(
+      `    { module: ${JSON.stringify(module)}, kind: "service", provide: ${token(dep)}, deps: ${list(tokens.map(token))} },`,
+    );
+    for (const next of tokens) used.push({ module, dep: next });
   }
 
   // Replacements and partners.

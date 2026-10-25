@@ -57,6 +57,12 @@ export interface MemberIR {
   /** The exports of each source file. */
   readonly files: readonly FileExports[];
 
+  /**
+   * Every dependency package name (dependencies, then devDependencies), so the boot knows the platform packages a
+   * member runs before they commit a manifest. Absent in an IR built by hand.
+   */
+  readonly packages?: readonly string[];
+
   /** The workspace and `@stackra/*` dependencies that commit a manifest, in package.json order. */
   readonly dependencies: readonly {
     readonly package: string;

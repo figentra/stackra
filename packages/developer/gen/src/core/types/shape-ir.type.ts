@@ -7,6 +7,7 @@
  * Governing contract: ADR 0294 (decision 26, 2026-10-23 item 13: a shape may extend a shape); ADR 0305 (rules 1 and
  *                     14).
  */
+import type { EntityIR } from "#core/types/entity-ir.type";
 import type { FieldIR } from "#core/types/field-ir.type";
 
 /** One shape class. */
@@ -38,6 +39,9 @@ export interface ShapeIR {
   /** The data fields the shape declares itself (with `base`) or all of them (without). */
   readonly fields: readonly FieldIR[];
 
-  /** Field names left to the entity emitter of the data wave (model relations). */
+  /** Field names left to the entity emitter (model relations). */
   readonly relations: readonly string[];
+
+  /** A model's entity facts: its `[OptionalProps]` keys, relations and getters. Absent for every other kind. */
+  readonly entity?: EntityIR;
 }

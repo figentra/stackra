@@ -19,6 +19,7 @@ import { dirname, join } from "node:path";
 
 import { refusalCode } from "@stackra/errors";
 
+import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
 import { folderKey } from "#core/functions/folder-key.function";
 import { platformConstant } from "#core/functions/platform-constant.function";
 import { snakeCase } from "#core/functions/snake-case.function";
@@ -31,6 +32,7 @@ import type { FieldDefault } from "#core/types/field-default.type";
 import type { FieldIR } from "#core/types/field-ir.type";
 import type { FieldRule } from "#core/types/field-rule.type";
 import type { GenError } from "#core/types/gen-error.type";
+import type { RelationIR } from "#core/types/relation-ir.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
 import type { TokenRef } from "#core/types/token-ref.type";
 import type { TypeDesc } from "#core/types/type-desc.type";
@@ -78,8 +80,16 @@ type FieldRead = FieldIR | "relation";
 /** The constraint decorators, which the shape compiler applies itself. */
 const RULES = new Set(["Str", "Int", "Num", "List", "Trim"]);
 
+/** The relation decorators of a model field, with the relation kind each declares. */
+const RELATION_KINDS: Readonly<Record<string, RelationIR["kind"]>> = {
+  ManyToOne: "m:1",
+  OneToMany: "1:m",
+  ManyToMany: "m:n",
+  OneToOne: "1:1",
+};
+
 /** The relation decorators of a model field. */
-const RELATIONS = new Set(["OneToMany", "ManyToOne", "ManyToMany", "OneToOne"]);
+const RELATIONS = new Set(Object.keys(RELATION_KINDS));
 
 /** The helpers that derive one shape from another. */
 const DERIVERS = new Set(["PickType", "OmitType", "PartialType"]);
@@ -517,13 +527,16 @@ export function createSourceReader(
       symbol === undefined
         ? undefined
         : (host.valueDeclaration(symbol) ?? host.declarations(symbol)[0]);
-    if (
-      symbol === undefined ||
-      declaration === undefined ||
-      host.kind(declaration) !== "VariableDeclaration"
-    )
-      return undefined;
+    if (symbol === undefined || declaration === undefined) return undefined;
+    // A package function that wraps its `createDecorator` (`Searchable(options): DecoratorFunction`) is a facet too.
+    const wrapped =
+      host.kind(declaration) === "FunctionDeclaration" &&
+      declaration.type !== undefined &&
+      /\bDecoratorFunction\b/.test(host.text(declaration.type)) &&
+      isStackra(host.fileName(declaration));
+    if (host.kind(declaration) !== "VariableDeclaration" && !wrapped) return undefined;
     const made =
+      wrapped ||
       (declaration.initializer !== undefined &&
         /\bcreateDecorator\s*[<(]/.test(host.text(declaration.initializer))) ||
       (declaration.type !== undefined &&
@@ -1416,6 +1429,23 @@ export function createSourceReader(
     const symbol = host.symbolAt(type.typeName);
     if (symbol === undefined) return refuse();
     const declaration = host.declarations(symbol)[0];
+    // `Repository<M>` and `Journal<M>`: a per-model token, `repositoryOf(M)` or `journalOf(M)`.
+    const generic = MODEL_TOKENS[host.symbolName(symbol)];
+    if (
+      generic !== undefined &&
+      declaration !== undefined &&
+      packageOf(host.fileName(declaration)) === generic.package
+    ) {
+      const model = type.typeArguments?.[0];
+      const modelSymbol = model?.typeName === undefined ? undefined : host.symbolAt(model.typeName);
+      if (
+        model === undefined ||
+        modelSymbol === undefined ||
+        classDeclarationOf(modelSymbol) === undefined
+      )
+        return refuse();
+      return { class: refOf(model.typeName ?? model, modelSymbol), of: generic.factory };
+    }
     if (
       host.symbolName(symbol) === "Named" &&
       declaration !== undefined &&

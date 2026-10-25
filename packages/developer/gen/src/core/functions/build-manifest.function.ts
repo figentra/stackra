@@ -4,25 +4,28 @@
  *          identity (action and query keys, event wire names, permission keys, refusal codes, model keys and tables,
  *          port keys), the endpoint, tool and refusal list of each action, the module graph, the facets, and the JSON
  *          Schema of every wire shape; a service or app also lists what its hosted packages contribute, marked
- *          `from`. It reports the identity checks it can see: `identity_collision`, `override_duplicate` and
- *          `permission_unknown`.
+ *          `from`; each Integration's key, connection and webhook path. It reports the identity checks it can see:
+ *          `identity_collision`, `override_duplicate`, `permission_unknown` and the public id prefix checks
+ *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`.
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (ui, settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 20, 21 and 22); ADR 0305 (rules 1, 28 and 36); ADR 0140 (refusal
- *                     categories); ADR 0141 (event names).
+ *                     categories); ADR 0141 (event names); ADR 0135 (rule 2: prefixes); ADR 0308 (rule 19).
  */
 import { Enum } from "@stackra/contracts";
 import type { Json, StackraManifest } from "@stackra/contracts";
 import { ErrorKind, refusalCode } from "@stackra/errors";
 
 import { MANIFEST_NOTICE } from "#core/constants/manifest-notice.constant";
+import { PUBLIC_ID_PREFIXES } from "#core/constants/public-id-prefixes.constant";
 import { actionKey } from "#core/functions/action-key.function";
 import { camelCase } from "#core/functions/camel-case.function";
 import { configKeyOf } from "#core/functions/config-key-of.function";
 import { deriveEndpoint } from "#core/functions/derive-endpoint.function";
 import { driverName } from "#core/functions/driver-name.function";
 import { eventName } from "#core/functions/event-name.function";
+import { integrationKey } from "#core/functions/integration-key.function";
 import { jsonSchemaOf } from "#core/functions/json-schema-of.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { permissionKey } from "#core/functions/permission-key.function";
@@ -31,6 +34,7 @@ import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { snakeCase } from "#core/functions/snake-case.function";
 import { tableName } from "#core/functions/table-name.function";
 import { toolName } from "#core/functions/tool-name.function";
+import { webhookPath } from "#core/functions/webhook-path.function";
 import type { ClassValue } from "#core/types/class-value.type";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { FieldIR } from "#core/types/field-ir.type";
@@ -50,6 +54,7 @@ const MERGED_SECTIONS = [
   "errors",
   "models",
   "drivers",
+  "integrations",
 ] as const;
 
 /** `Permission.L2` or `Permission.L2.system()`: the risk level and the system-only marker. */
@@ -150,6 +155,7 @@ export function buildManifest(ir: MemberIR): {
       name,
       module: declared.module,
       class: declared.name,
+      file: declared.file,
       kind: integration ? "integration" : "domain",
     });
   }
@@ -286,7 +292,7 @@ export function buildManifest(ir: MemberIR): {
     };
     if (actors !== undefined) entry["actors"] = actors;
     if (preconditions.length > 0) entry["preconditions"] = preconditions.map((item) => item.$class);
-    for (const option of ["idempotency", "rateLimit", "cache", "area"])
+    for (const option of ["idempotency", "rateLimit", "cache", "area", "job"])
       if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
     if (declared.options["auth"] === false) entry["auth"] = false;
     if (endpoint !== undefined) entry["endpoint"] = { ...endpoint };
@@ -302,18 +308,91 @@ export function buildManifest(ir: MemberIR): {
     actions.push(entry);
   }
 
-  // Models.
+  // Models, and their public id prefixes: 2 to 6 letters, one owner each in the member and its hosted packages, and
+  // never a prefix the shared registry gives to another owner (ADR 0135 rule 2).
   const models: Entry[] = [];
+  const prefixes = new Map<string, string>();
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "model")) {
     const key = modelKey(declared.module, declared.name);
     claim(key, declared);
     const publicId = declared.traits.find((trait) => trait.name === "HasPublicId")?.args[0];
+    if (typeof publicId === "string") {
+      const registered = PUBLIC_ID_PREFIXES[publicId];
+      const holder = prefixes.get(publicId);
+      if (!/^[a-z]{2,6}$/.test(publicId))
+        fail(
+          declared,
+          "prefix_invalid",
+          `the public id prefix \`${publicId}\` is not 2 to 6 lowercase letters`,
+          'write a prefix of 2 to 6 lowercase letters, such as `HasPublicId("ord")`',
+        );
+      else if (registered !== undefined && registered !== key)
+        fail(
+          declared,
+          "prefix_taken",
+          `the public id prefix \`${publicId}\` is registered to ${registered}`,
+          "pick a prefix the registry in @stackra/gen does not list, or move the entry there in a reviewed change",
+        );
+      else if (holder !== undefined)
+        fail(
+          declared,
+          "prefix_duplicate",
+          `the public id prefix \`${publicId}\` is also the prefix of ${holder}`,
+          "give one of the two models another prefix",
+        );
+      else prefixes.set(publicId, key);
+    }
     models.push({
       key,
       class: declared.name,
+      file: declared.file,
       table: tableName(declared.module, declared.name),
       ...(typeof publicId === "string" ? { publicId } : {}),
       traits: declared.traits.map((trait) => trait.name),
+      ...(declared.facets.some((facet) => facet.name === "Searchable" && facet.target === "class")
+        ? { searchable: true }
+        : {}),
+    });
+  }
+  if (ir.layout !== "package")
+    for (const { package: name, manifest } of ir.dependencies) {
+      if (manifest.kind === "app") continue;
+      for (const model of manifest.models ?? []) {
+        if (typeof model.publicId !== "string") continue;
+        const holder = prefixes.get(model.publicId);
+        if (holder !== undefined && holder !== model.key)
+          errors.push({
+            code: "prefix_duplicate",
+            file: "package.json",
+            line: 0,
+            column: 0,
+            subject: name,
+            message: `the public id prefix \`${model.publicId}\` of ${model.key} is also the prefix of ${holder}`,
+            fix: "host only one of the two models, or give one of them another prefix",
+          });
+        else prefixes.set(model.publicId, model.key);
+      }
+    }
+
+  // Integrations: the key, the connection typed against each, and the webhook path (ADR 0308 rules 16 and 19).
+  const integrations: Entry[] = [];
+  for (const declared of ir.classes.filter((candidate) => candidate.kind === "integration")) {
+    const key = integrationKey(declared.module, declared.name);
+    claim(`integration:${key}`, declared);
+    const connection = ir.classes.find(
+      (candidate) => candidate.kind === "connection" && candidate.partner?.name === declared.name,
+    );
+    integrations.push({
+      key,
+      class: declared.name,
+      module: declared.module,
+      file: declared.file,
+      ...(connection !== undefined
+        ? { connection: connection.name, connectionFile: connection.file }
+        : {}),
+      ...(declared.options["webhooks"] !== undefined
+        ? { webhookPath: webhookPath(declared.module, declared.name) }
+        : {}),
     });
   }
 
@@ -445,6 +524,7 @@ export function buildManifest(ir: MemberIR): {
     errors: errorEntries,
     models,
     drivers: [...drivers.values()].map((entry) => ({ ...entry })),
+    integrations,
   };
   if (ir.layout !== "package")
     for (const dependency of ir.dependencies) {

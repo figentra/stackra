@@ -3,7 +3,8 @@
  * Purpose: `emitPackageEntries`, a package's entry barrels (`.stackra/entry/{index,contracts,node,react,native,
  *          testing}.ts`, which package.json `exports` point at): named re-exports of every export of the entry's
  *          folders, plus the shipped `X$` of the shapes, enums, configs, actions and queries declared there, and the
- *          generated `<Key>Module` in `node` when the package authors none.
+ *          generated `<Key>Module` in `node` when the package authors none, and in `node` each module's entity
+ *          schemas (`<MODULE>_ENTITIES`) for the host to register.
  * Boundary: pure. `.` holds `src/config` and `src/core`; `node` holds `src/node` except `database/factories` and
  *           `database/seeders`, which `testing` holds with `src/testing`, so a server never loads a factory. An entry
  *           with nothing to export is not written. No symbol is exported from two entries.
@@ -11,6 +12,8 @@
  * Governing contract: ADR 0294 (decision 15: entry folders; the barrels are generated); ADR 0295 (decision 7); ADR
  *                     0305 (rules 16 and 18); ADR 0127 2026-10-24 note (the allowed entries).
  */
+import { entitiesName } from "#core/functions/entities-name.function";
+import { entryOf } from "#core/functions/entry-of.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -25,23 +28,6 @@ const ENTRIES = [
   ["native", "isomorphic"],
   ["testing", "isomorphic"],
 ] as const;
-
-/** The entry of a source file, by its path relative to the member root. */
-function entryOf(file: string): (typeof ENTRIES)[number][0] | undefined {
-  const parts = file.split("/");
-  const folder = parts.length > 2 ? parts[1] : "";
-  if (/^src\/node\/database\/(factories|seeders)\//.test(file)) return "testing";
-  if (folder === "" || folder === "config" || folder === "core") return "index";
-  if (
-    folder === "contracts" ||
-    folder === "node" ||
-    folder === "react" ||
-    folder === "native" ||
-    folder === "testing"
-  )
-    return folder;
-  return undefined;
-}
 
 /** One `export { ... } from` line. */
 function exportLine(
@@ -105,6 +91,18 @@ export function emitPackageEntries(ir: MemberIR): GeneratedFile[] {
   const root = rootModuleOf(ir);
   if (root?.generated === true)
     lines.get("node")?.push(exportLine([{ name: root.name, typeOnly: false }], root.from));
+  // A host registers a package's entity schemas from here (`registerEntities([...SCOPE_ENTITIES])`).
+  for (const module of [
+    ...new Set(ir.shapes.filter((shape) => shape.kind === "model").map((shape) => shape.module)),
+  ].sort())
+    lines
+      .get("node")
+      ?.push(
+        exportLine(
+          [{ name: entitiesName(module), typeOnly: false }],
+          `#stackra/entities/${module}`,
+        ),
+      );
 
   const files: GeneratedFile[] = [];
   for (const [entry, runtime] of ENTRIES) {

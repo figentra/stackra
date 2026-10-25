@@ -3,7 +3,8 @@
  * Purpose: `emitSchemas`, the shape compiler's output for one module: `.stackra/gen/schemas/<module>.ts`, reached as
  *          `#stackra/schemas/<module>`, with one `X$` per enum and shape, a type `X$Check` per shape that makes the type
  *          checker prove the schema's output equals the class's fields, an `X$` alias per config class naming its
- *          schema, and one `registerSchemas` call linking each class to its `X$` (gap G1).
+ *          schema, one `registerSchemas` call linking each class to its `X$` (gap G1), and beside it one
+ *          `registerChanges` call linking each `Change<Subject>` class to its subject (ADR 0118, 0141 notes).
  * Boundary: pure. Names are qualified by the file (one file per module), so a class name used in two modules never
  *           collides. `?:` compiles to `.exactOptional()`, `Date` to the ISO 8601 codec, `Money` to its codec, an enum
  *           to its codes in source order; a member base is `.extend`ed and a package base's shipped `X$` gets only new
@@ -299,6 +300,30 @@ export function emitSchemas(ir: MemberIR, module: string): string {
       "/** Links each class to its schema, for `validate`, `X.create()` and `schemaOf` (gap G1). */",
       "registerSchemas([",
       ...registered.map((shape) => `  [${shape.name}, ${shape.name}$],`),
+      "]);",
+      "",
+    );
+  }
+  const changes = ir.classes.filter(
+    (declaration) =>
+      declaration.kind === "change" &&
+      declaration.module === module &&
+      declaration.partner !== undefined,
+  );
+  if (changes.length > 0) {
+    use(imports, "@stackra/versioning", "registerChanges");
+    const pairs: string[] = [];
+    for (const change of changes) {
+      const subject = change.partner;
+      if (subject === undefined) continue;
+      use(imports, subject.from, subject.name);
+      use(imports, change.importPath, change.name);
+      pairs.push(`  [${subject.name}, ${change.name}],`);
+    }
+    body.push(
+      "/** Links each subject to its change classes, for `downgrade`, `upgrade` and `resolveVersion`. */",
+      "registerChanges([",
+      ...pairs,
       "]);",
       "",
     );
