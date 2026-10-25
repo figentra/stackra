@@ -13,9 +13,11 @@ description: "Accepted · 2026-10-20 · amended 2026-10-24 (STA-456) · amended 
   to right after notifications and files, because it renders, archives and sends documents and needs
   the gapless sequences of
   [0342](/adr/0342-gapless-sequences-allocated-at-commit-per-tenant-and-series); provider tenders
-  (integrated terminals, wallets, buy-now-pay-later) come with webhooks and integrations, and a
-  product that needs them earlier asks the owner. The commerce product's release, the retail
-  edition's pilot and the legal product's launch need these steps. The first slice is unchanged.
+  (integrated card terminals, wallets, buy-now-pay-later) move with the ledger core, so the terminal
+  connectors and their webhooks come right after it and ahead of the rest of integrations (the
+  owner's second decision of 2026-10-25). The commerce product's release, the retail edition's pilot
+  and the legal product's launch need these steps, and the commerce release no longer waits for the
+  whole integrations step. The first slice is unchanged.
 </Note>
 
 <Note>
