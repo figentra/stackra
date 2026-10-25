@@ -2,8 +2,10 @@
  * Stackra file contract:
  * Purpose: proves the native CloseButton names itself by `label`, leaves HeroUI Native's close mark unless an icon
  *          replaces it, passes `iconProps`, `size`, `hitSlop` and `feedbackVariant` through, hands over its disabled
- *          flag and press, and that the type refuses a missing label.
- * Boundary: React Native does not render in vitest, so heroui-native is replaced by a recording stand-in.
+ *          flag and press, draws the glass look of its variant (tertiary by default) unless the caller brings its own
+ *          background, and that the type refuses a missing label.
+ * Boundary: React Native does not render in vitest, so heroui-native is replaced by a recording stand-in and the glass
+ *          hook by a stand-in whose look each test sets.
  * Runtime: node
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); WCAG 2.2 SC 4.1.2; ADR 0022 (test
  *          placement).
@@ -26,8 +28,26 @@ vi.mock("heroui-native", async () => {
       received.props = props;
       return createElement("div", { "data-testid": "close" }, props["children"] as ReactNode);
     },
+    cn: (...parts: unknown[]) => parts.filter(Boolean).join(" "),
   };
 });
+
+/** The glass look the hook stand-in returns, and the variants it was asked for. */
+const glass = vi.hoisted(() => ({
+  look: undefined as { background: unknown; className: string } | undefined,
+  asked: [] as string[],
+  disabled: undefined as boolean | undefined,
+}));
+
+vi.mock("#native/glass/use-glass-button", () => ({
+  useGlassButton: (variant: string, isDisabled?: boolean) => {
+    glass.asked.push(variant);
+    glass.disabled = isDisabled;
+    return glass.look;
+  },
+}));
+
+const GLASS = { background: "glass-layer", className: "bg-transparent" } as const;
 
 // The slot's Icon needs a native runtime: a name draws a marker, an element is drawn as given.
 vi.mock("#native/slot-icon/slot-icon", async () => {
@@ -49,6 +69,8 @@ const slotNames = (container: HTMLElement) =>
 describe("CloseButton (native)", () => {
   beforeEach(() => {
     received.props = {};
+    glass.look = undefined;
+    glass.asked = [];
   });
 
   it("draws an icon name through Icon in place of the close mark", () => {
@@ -96,6 +118,35 @@ describe("CloseButton (native)", () => {
     render(<CloseButton label="Dismiss" />);
     expect(received.props).not.toHaveProperty("isDisabled");
     expect(received.props).not.toHaveProperty("onPress");
+  });
+
+  it("draws HeroUI Native's tertiary default on glass, and the caller's variant's look otherwise", () => {
+    glass.look = GLASS;
+    render(<CloseButton label="Dismiss" className="mine" />);
+    expect(glass.asked.at(-1)).toBe("tertiary");
+    expect(received.props).toMatchObject({
+      background: "glass-layer",
+      className: "bg-transparent mine",
+    });
+    render(<CloseButton label="Dismiss" variant="primary" />);
+    expect(glass.asked.at(-1)).toBe("primary");
+  });
+
+  it("lets the caller's own background, or none, win over the glass layer", () => {
+    glass.look = GLASS;
+    render(<CloseButton label="Dismiss" background={null} />);
+    expect(received.props["background"]).toBeNull();
+  });
+
+  it("hands the glass hook its disabled flag", () => {
+    render(<CloseButton label="Dismiss" isDisabled />);
+    expect(glass.disabled).toBe(true);
+  });
+
+  it("hands no background and no class while the look stays solid", () => {
+    render(<CloseButton label="Dismiss" />);
+    expect(received.props).not.toHaveProperty("background");
+    expect(received.props).not.toHaveProperty("className");
   });
 
   it("requires a label", () => {
