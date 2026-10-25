@@ -5,7 +5,8 @@
  *          and the template's call shapes compile against it: a migration with a merged macro, a seeder, `CrudService`
  *          subclasses (`find` with `$in` and `populate`, `create` with nested lines, `table`, `metrics`, `$raw` with
  *          `sql` and a table constant), repositories (`insert` with `requiresNew`, `purge`, `sum`), the graph reader,
- *          the generated operations, entities with `[OptionalProps]`, and typed migration ids.
+ *          the generated operations, entities with `[OptionalProps]`, and typed migration ids. The sequence and
+ *          visibility symbols have their own tests beside them.
  * Boundary: test only; the template shapes are type-checked and constructed, never run against a database.
  * Runtime: node (vitest)
  * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note; ADR 0022; ADR 0269.
@@ -185,18 +186,37 @@ describe("@stackra/database", () => {
       "OptionalProps",
       "PostgresDatabaseDriver",
       "Seeder",
+      "Sequence",
+      "SequenceBlockClosedError",
+      "SequenceNotReservableError",
+      "SequenceNumberOutOfOrderError",
+      "SequenceService",
       "StackraNamingStrategy",
       "UniqueViolation",
+      "VisibilityFilter",
       "compileMigration",
+      "connectVisibilityFilter",
+      "formatSequenceNumber",
       "operationAction",
       "operationQuery",
       "registerEntities",
       "registerModelPartners",
+      "registerSequences",
       "repositoryOf",
       "sql",
       "table",
     ]);
-    for (const internal of ["BlueprintRecord", "SchemaRecord", "ACTIVE_DATABASE", "modelOf"])
+    for (const internal of [
+      "BlueprintRecord",
+      "SchemaRecord",
+      "ACTIVE_DATABASE",
+      "modelOf",
+      "SEQUENCE_REGISTRY",
+      "VISIBILITY_HOST",
+      "visibleFilter",
+      "mintSequenceBlockId",
+      "CreateSequenceTablesMigration",
+    ])
       expect(internal in database).toBe(false);
   });
 

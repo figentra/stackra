@@ -2,17 +2,18 @@
 
 The MikroORM layer of Stackra on Postgres: `CrudService<M>` with resource-table and metrics reads, repositories, the
 graph reader, the `Migration`, `Macro` and `Seeder` kinds with the migration compiler, the `idx_`/`fk_`/`ck_` naming
-strategy, the unit of work and scope sessions, and the `Factory` and `usePostgres` test helpers.
+strategy, the unit of work and scope sessions, gapless `Sequence` numbers, the record-visibility filter seam, and the
+`Factory` and `usePostgres` test helpers.
 
 **Tier:** `tier:lib` (`packages/data/database`), entries `.` and `./testing` (the template's old `./orm` is folded into
 `.`). The only package that imports `@mikro-orm/*` (ADR 0097). Server only: no ORM on a client (ADR 0227, 0256).
 
 ## Entry points
 
-| Import                      | Holds                      | Exports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| --------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/database`         | `src/core/`: node runtime  | `CrudService`, `Repository` (t), `repositoryOf`, `GraphQuery`, `Aggregate`, `MixedCurrencyError`, `Migration`, `MigrationId` (t), `Macro`, `Seeder`, `Blueprint` (t), `SchemaBuilder` (t), `ColumnGroup` (t), `RowLevelSecurityOptions` (t), `Extension`, `compileMigration`, `table`, `sql`, `operationAction`, `operationQuery`, `Database`, `PostgresDatabaseDriver`, `DatabaseUnitOfWorkDriver`, `StackraNamingStrategy`, `registerEntities`, `registerModelPartners`, `EntitySchema`, `OptionalProps`, `UniqueViolation` |
-| `@stackra/database/testing` | `src/testing/`: tests only | `Factory`, `Faker` (t), `usePostgres`, `DATABASE_TESTING_PLUGIN` (adds `.seed(...)` and `app.transaction(...)` to the testing module)                                                                                                                                                                                                                                                                                                                                                                                         |
+| Import                      | Holds                      | Exports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/database`         | `src/core/`: node runtime  | `CrudService`, `Repository` (t), `repositoryOf`, `GraphQuery`, `Aggregate`, `MixedCurrencyError`, `Migration`, `MigrationId` (t), `Macro`, `Seeder`, `Blueprint` (t), `SchemaBuilder` (t), `ColumnGroup` (t), `RowLevelSecurityOptions` (t), `Extension`, `compileMigration`, `table`, `sql`, `operationAction`, `operationQuery`, `Database`, `PostgresDatabaseDriver`, `DatabaseUnitOfWorkDriver`, `StackraNamingStrategy`, `registerEntities`, `registerModelPartners`, `EntitySchema`, `OptionalProps`, `UniqueViolation`; sequences: `Sequence`, `SequenceService`, `registerSequences`, `formatSequenceNumber`, `SequenceNotReservableError`, `SequenceBlockClosedError`, `SequenceNumberOutOfOrderError`, `SequenceOptions` (t), `SequenceClass` (t), `SequenceRegistration` (t), `SequenceSeries` (t), `SequenceNumber` (t), `SequenceBlock` (t), `SequenceReserveOptions` (t); visibility: `VisibilityFilter`, `connectVisibilityFilter` |
+| `@stackra/database/testing` | `src/testing/`: tests only | `Factory`, `Faker` (t), `usePostgres`, `DATABASE_TESTING_PLUGIN` (adds `.seed(...)` and `app.transaction(...)` to the testing module)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 Entry barrels are generated, never authored (ADR 0294 decision 15); until `stackra gen` writes them (STA-339),
 `src/core/index.ts` and `src/testing/index.ts` are stand-in barrels.
@@ -106,6 +107,65 @@ await database.withScope(principal.grantedScopes, () => work()); // several gran
   path that is not an `ltree` path is refused.
 - `t.scopeId()` and `t.scopePath()` are the scope-tree columns `@stackra/scope` and `@stackra/tenancy` build on;
   tenancy's `belongsToTenant` stays in tenancy.
+
+## Gapless sequences
+
+Invoices, receipts and filings take numbers with no gaps that are never reused (ADR 0342). A module declares a series
+in its `database/sequences/` group and never writes its own counter table:
+
+```ts
+// src/modules/billing/database/sequences/invoice.sequence.ts — locked as billing.invoice
+export class InvoiceSequence extends Sequence({
+  key: "invoice",
+  series: ["legalEntityId"], // dimensions beyond the scope
+  format: "INV-{year}-{n:06}", // {n}, {n:06}; {year} only with reset "yearly", and required by it
+  reset: "yearly", // or "never" (the default)
+  reserve: { size: 50 }, // blocks for offline issue; false (the default) = online only, in date order
+}) {}
+
+// inside the action that writes the invoice, as its last write
+invoice.number = (
+  await sequences.next(InvoiceSequence, ctx.scope, { legalEntityId }, ctx.timeZone)
+).formatted;
+```
+
+- `next` runs in the caller's transaction and refuses outside one: the number is taken from a counter row locked
+  until commit, so two commits never share a number and a rolled-back write takes none. The series waits on that row
+  while the transaction runs, so call it last; a hot series adds a dimension, not a second counter.
+- Offline issue: `reserve(sequence, scope, series, { holder })` hands a device a block at sync; `claim(sequence, {
+block, holder, number })` accepts each number it issued, in the document's transaction, and voids the numbers it
+  skipped; at the next sync `release(block, holder)` returns the unused remainder (the counter steps back when the
+  block is its tail, else the remainder is handed out first), and when a device is wiped `void(block, reason)` records
+  it as voided numbers. A block carries its `format` and `period`, so the device formats exactly as the server does.
+- Gen registers each class with its locked key (`registerSequences`); an unregistered sequence is refused, never
+  counted under its written key. Refusals: `sequence_not_reservable`, `sequence_block_closed`,
+  `sequence_number_out_of_order`, and `not_found` for a block the caller may not use.
+- The tables (`database.sequence_counters`, `sequence_blocks`, `sequence_voids`) come from this package's migration
+  `database.0001_create_sequence_tables`; each carries the scope columns and the ancestor policy, so a session takes
+  numbers only in its granted scopes. The year of a yearly sequence is read in the time zone the caller passes.
+
+## Record visibility
+
+A declaring model's reads carry visibility conditions on top of row-level security, never instead of it (ADR 0333
+d4–d5). This package is the seam; the model's facet and the policy decision point's evaluation are another package's
+`VisibilityFilter` driver:
+
+```ts
+export class IamVisibilityFilterDriver extends Driver(VisibilityFilter) {
+  async conditionsFor<M extends object>(
+    model: AnyClass<M>,
+    principal: Actor | undefined,
+  ): Promise<Where<M>> {
+    return this.decisions.visibleWhere(model, principal); // {} when the model declares nothing
+  }
+}
+
+connectVisibilityFilter(container); // at boot, beside connectExtensions
+```
+
+With a driver bound, `CrudService`'s `find`, `findOne`, `findOneOrFail`, `count`, `sum`, `table` and `metrics`, and
+`GraphQuery`'s source rows, AND its conditions into their filter for the running call's actor (`undefined` outside a
+call; the driver decides what that sees). Without one, reads are unchanged. Writes and `purge` carry no conditions.
 
 ## Testing
 

@@ -2,19 +2,21 @@
 
 The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`), in the programming model v3.1 shape
 (ADR 0294, 0305). Entries `.` and `./testing`; the old `./orm` is folded into `.` (ADR 0127 2026-10-24 note).
+`src/node/` holds only this package's migrations, found by path and exported from no entry.
 
 ## Where code goes
 
-| You are writing…                                     | It goes in…                                                           |
-| ---------------------------------------------------- | --------------------------------------------------------------------- |
-| A kind base (`CrudService`, `Migration`, `Macro`, …) | `src/core/bases/<name>.base.ts`                                       |
-| The `Factory` base and the other test helpers        | `src/testing/{bases,constants,types}/`, `*.fixture.ts`                |
-| A port or a driver                                   | `src/core/ports/<name>.port.ts`, `src/core/drivers/<name>.driver.ts`  |
-| The migration compiler's recorders (internal)        | `src/core/records/<name>.record.ts`                                   |
-| The ORM naming strategy                              | `src/core/orm/<name>.naming-strategy.ts`                              |
-| A value class (`ColumnRef`, `MetricsReader`)         | `src/core/values/<name>.value.ts`                                     |
-| An enum, a function, a constant, a type, a refusal   | `src/core/{enums,functions,constants,types,errors}/`                  |
-| A test                                               | `__tests__/<name>.<kind>.test.ts` beside it; Docker tests take `.int` |
+| You are writing…                                     | It goes in…                                                                   |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------- |
+| A kind base (`CrudService`, `Migration`, `Macro`, …) | `src/core/bases/<name>.base.ts`                                               |
+| The `Factory` base and the other test helpers        | `src/testing/{bases,constants,types}/`, `*.fixture.ts`                        |
+| A port or a driver                                   | `src/core/ports/<name>.port.ts`, `src/core/drivers/<name>.driver.ts`          |
+| The migration compiler's recorders (internal)        | `src/core/records/<name>.record.ts`                                           |
+| The ORM naming strategy                              | `src/core/orm/<name>.naming-strategy.ts`                                      |
+| A value class (`ColumnRef`, `MetricsReader`)         | `src/core/values/<name>.value.ts`                                             |
+| An enum, a function, a constant, a type, a refusal   | `src/core/{enums,functions,constants,types,errors}/`                          |
+| A migration of this package's own tables             | `src/node/database/migrations/<NNNN>-<stem>.migration.ts` (schema `database`) |
+| A test                                               | `__tests__/<name>.<kind>.test.ts` beside it; Docker tests take `.int`         |
 
 ## Entries and barrels
 
@@ -30,7 +32,16 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 - No scope levels here: levels are deployment data (ADR 0327 d2). Scope hooks take the contracts `ScopeRef` (an id
   and an `ltree` path); `withScope` writes `app.scope_id`, `app.scope_path` and `app.scope_paths`, and
   `rowLevelSecurity(column, { setting, match })` generates the policy that reads one of them. Isolation stays in the
-  database: never add an application WHERE filter (ADR 0327 d9, `.agents/rules/tenancy.md`).
+  database: never add an application WHERE filter for isolation (ADR 0327 d9, `.agents/rules/tenancy.md`).
+- Record visibility is the one application filter, and it only narrows inside isolation (ADR 0333 d4–d5): every read
+  of `CrudService`, `GraphQuery` and `MetricsReader` takes its filter from the internal `visibleFilter`, which ANDs
+  the bound `VisibilityFilter` driver's conditions. A new read path calls it too; never let it widen, bypass or carry
+  scope isolation, and never decide visibility here (the model's facet and iam's evaluation do).
+- Sequences (ADR 0342): `SequenceService` is the only writer of `database.sequence_counters`, `sequence_blocks` and
+  `sequence_voids`. Every change to a series locks its counter row first (a block row is locked before the counter in
+  `release`, and nothing that holds a counter lock waits on a held block), so keep that order. `next` and `claim` run
+  only inside the caller's transaction. A module never writes its own counter table; a series the primitive cannot
+  express extends it here, with an ADR. No Postgres `SEQUENCE` for a document number.
 - `t.scopeId()` and `t.scopePath()` are the only scope columns built in; tenancy's `belongsToTenant` and any other
   isolation macro live in their owning package.
 - Migration rules the compiler enforces (explicit nullability and comments, expand-only adds, online indexes, approved
@@ -41,8 +52,8 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 ## Rules that fail the build
 
 - A package never imports an app, a service, `encore.dev`/`~encore/*`, or another package's `src/`.
-- Versions are `catalog:<name>` or `workspace:*` only. Imports leaving a folder use the `#core/*` and `#testing/*`
-  aliases.
+- Versions are `catalog:<name>` or `workspace:*` only. Imports leaving a folder use the `#core/*`, `#node/*` and
+  `#testing/*` aliases; `src/core/` never imports `#node/*` (only tests do).
 - No `enum`, no `#private` fields, no parameter properties (`erasableSyntaxOnly`), no `*.stories.*`.
 - Coverage meets the shared gate (lines/functions 80, branches 70).
 
@@ -52,6 +63,8 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 
 ## PII
 
-| Data | Where | Handling                                                                                                        |
-| ---- | ----- | --------------------------------------------------------------------------------------------------------------- |
-| None | —     | Holds no rows of its own. The connection string is a secret the runtime hands to `connect`; it is never logged. |
+| Data         | Where                             | Handling                                                                                               |
+| ------------ | --------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| None         | —                                 | The connection string is a secret the runtime hands to `connect`; it is never logged.                  |
+| Device ids   | `database.sequence_blocks.holder` | Pseudonymous: a device's public id, never a person's. Kept with the block for the audit of the series. |
+| Void reasons | `database.sequence_voids.reason`  | Operator text for the audit; callers never put personal data in it.                                    |

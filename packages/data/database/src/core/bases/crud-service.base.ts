@@ -7,10 +7,12 @@
  *           dependencies are the subclass's, and it calls `super()` with none. The model comes from the type argument,
  *           which gen registers; the entity manager is the running context's, so every method runs inside the
  *           caller's transaction (an action's unit of work) and a query reads on a fork. A hand-written method of the
- *           same name overrides an inherited one.
+ *           same name overrides an inherited one. Every read (`find`, `findOne`, `findOneOrFail`, `count`, `sum`,
+ *           `table`, `metrics`) ANDs in the bound `VisibilityFilter`'s conditions, on top of row-level security;
+ *           writes and `purge` carry none.
  * Runtime: node
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0097 (decision 5.3); ADR 0307 (rules 2 and 16);
- *                     ADR 0305 (rule 5: partner by type argument); ADR 0136 (decision 2).
+ *                     ADR 0305 (rule 5: partner by type argument); ADR 0136 (decision 2); ADR 0333 (decision 4).
  */
 import { TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
@@ -31,6 +33,7 @@ import { columnOf } from "#core/functions/column-of.function";
 import { filterOf } from "#core/functions/filter-of.function";
 import { modelOf } from "#core/functions/model-of.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
+import { visibleFilter } from "#core/functions/visible-filter.function";
 import { Database } from "#core/ports/database.port";
 import type { MetricsOptions } from "#core/types/metrics-options.type";
 import type { Repository } from "#core/types/repository.type";
@@ -64,49 +67,54 @@ function nest(path: string, value: unknown): Record<string, unknown> {
  */
 export abstract class CrudService<M extends object> extends Service implements Repository<M> {
   /** See `Repository.find`. */
-  find<H extends string = never>(
+  async find<H extends string = never>(
     where: Where<M>,
     options?: FindOptions<M, H>,
   ): Promise<Loaded<M, H>[]> {
-    return this.em().find(this.model(), filterOf(where), options);
+    const model = this.model();
+    return this.em().find(model, await visibleFilter(model, where), options);
   }
 
   /** See `Repository.findOne`. */
-  findOne<H extends string = never>(
+  async findOne<H extends string = never>(
     where: Where<M>,
     options?: FindOneOptions<M, H>,
   ): Promise<Loaded<M, H> | null> {
-    return this.em().findOne(this.model(), filterOf(where), options);
+    const model = this.model();
+    return this.em().findOne(model, await visibleFilter(model, where), options);
   }
 
   /**
    * See `Repository.findOneOrFail`.
    *
-   * @throws NotFoundError when no row matches.
+   * @throws NotFoundError when no row matches, or none the caller may see.
    */
-  findOneOrFail<H extends string = never>(
+  async findOneOrFail<H extends string = never>(
     where: Where<M>,
     options?: FindOneOptions<M, H>,
   ): Promise<Loaded<M, H>> {
-    return this.em().findOneOrFail(this.model(), filterOf(where), {
+    const model = this.model();
+    return this.em().findOneOrFail(model, await visibleFilter(model, where), {
       ...options,
       failHandler: () => NotFoundError.create(),
     });
   }
 
   /** See `Repository.count`. */
-  count(where: Where<M> = {} as Where<M>): Promise<number> {
-    return this.em().count(this.model(), filterOf(where));
+  async count(where: Where<M> = {} as Where<M>): Promise<number> {
+    const model = this.model();
+    return this.em().count(model, await visibleFilter(model, where));
   }
 
   /** See `Repository.sum`. */
   async sum(field: string, where: Where<M> = {} as Where<M>): Promise<number> {
     const em = this.em();
-    const column = quoteIdentifier(columnOf(em.getMetadata(this.model()), field));
+    const model = this.model();
+    const column = quoteIdentifier(columnOf(em.getMetadata(model), field));
     const row = (await em
-      .createQueryBuilder(this.model(), "row")
+      .createQueryBuilder(model, "row")
       .select(raw(`coalesce(sum(row.${column}), 0) as total`))
-      .where(filterOf(where) as QBFilterQuery<M>)
+      .where((await visibleFilter(model, where)) as QBFilterQuery<M>)
       .execute("get")) as Record<string, unknown> | undefined;
     return Number(row?.["total"] ?? 0);
   }
@@ -159,13 +167,15 @@ export abstract class CrudService<M extends object> extends Service implements R
     options: TableOptions<M, H> = {},
   ): Promise<TablePage<Loaded<M, H>>> {
     const em = this.em();
-    const [primary = "id"] = em.getMetadata(this.model()).primaryKeys;
+    const model = this.model();
+    const [primary = "id"] = em.getMetadata(model).primaryKeys;
     const direction = input.sort?.direction ?? SortDirection.Desc;
     const filters = Object.entries(input.filter ?? {})
       .filter(([, value]) => value !== undefined)
       .map(([path, value]) => nest(path, Array.isArray(value) ? { $in: value } : value));
-    const cursor = await em.findByCursor(this.model(), {
-      where: { $and: [filterOf(options.where ?? ({} as Where<M>)), ...filters] } as Where<M>,
+    const visible = await visibleFilter(model, options.where ?? ({} as Where<M>));
+    const cursor = await em.findByCursor(model, {
+      where: { $and: [visible, ...filters] } as Where<M>,
       orderBy: [
         ...(input.sort === undefined ? [] : [nest(input.sort.key, direction)]),
         { [primary]: direction },
@@ -185,7 +195,10 @@ export abstract class CrudService<M extends object> extends Service implements R
 
   /** The metrics of the rows matching `options.where` whose `options.on` falls in `period` or the period before. */
   metrics(period: Period, options: MetricsOptions<M>): MetricsReader<M> {
-    return new MetricsReader(this.em(), this.model(), period, options);
+    const model = this.model();
+    return new MetricsReader(this.em(), model, period, options, () =>
+      visibleFilter(model, options.where ?? ({} as Where<M>)),
+    );
   }
 
   /** The entity manager of the running context; a raw query in a subclass method goes through it (ADR 0160). */

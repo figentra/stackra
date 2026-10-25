@@ -3,15 +3,19 @@
  * Purpose: unit tests of `CrudService`: the model comes from the registered partner (and an unregistered service
  *          says so), every read and write goes to the running context's entity manager with `$raw` turned into a raw
  *          key, `findOneOrFail` refuses with `not_found`, `insert` flushes in a savepoint or its own transaction,
- *          `update` assigns, `table` builds the cursor read, `sum` aggregates, and `metrics` returns a reader.
+ *          `update` assigns, `table` builds the cursor read, `sum` aggregates, and `metrics` returns a reader. With a
+ *          `VisibilityFilter` bound, every read ANDs its conditions for the running call's actor (none outside a
+ *          call), and a read with no conditions or no driver is unchanged.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
- * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0307 (rules 2 and 16); ADR 0022; ADR 0269.
+ * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0307 (rules 2 and 16); ADR 0333 (decision 4); ADR 0022;
+ *                     ADR 0269.
  */
 import { TransactionPropagation } from "@mikro-orm/core";
 import type { OptionalProps } from "@mikro-orm/core";
 import type { EntityManager } from "@mikro-orm/postgresql";
-import { SortDirection } from "@stackra/contracts";
+import { ContextStorage } from "@stackra/actions/contracts";
+import { ActorKind, Realm, SortDirection } from "@stackra/contracts";
 import { isRefusal, NotFoundError } from "@stackra/errors";
 import { HasPublicId, Model } from "@stackra/model";
 import { afterEach, describe, expect, it } from "@stackra/testing";
@@ -19,9 +23,11 @@ import { vi } from "vitest";
 
 import { CrudService } from "#core/bases/crud-service.base";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
+import { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
 import { registerModelPartners } from "#core/functions/register-model-partners.function";
 import { sql } from "#core/functions/sql.function";
 import { Database } from "#core/ports/database.port";
+import { VisibilityFilter } from "#core/ports/visibility-filter.port";
 import { MetricsReader } from "#core/values/metrics-reader.value";
 
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the generated [OptionalProps] augmentation below
@@ -54,6 +60,7 @@ function fakeEm() {
   const builder = {
     select: vi.fn(() => builder),
     where: vi.fn(() => builder),
+    andWhere: vi.fn(() => builder),
     execute: vi.fn(async () => ({ total: "42" })),
   };
   const em = {
@@ -113,8 +120,32 @@ function connect() {
   return em;
 }
 
+/** The caller of the running call in the visibility tests. */
+const actor = { kind: ActorKind.User, id: "usr_01ja0000000000000000000001", realm: Realm.Customer };
+
+/** A seven-day period and the one before it. */
+const period = {
+  from: new Date("2026-10-01T00:00:00Z"),
+  to: new Date("2026-10-08T00:00:00Z"),
+  days: 7,
+  previous: { from: new Date("2026-09-24T00:00:00Z"), to: new Date("2026-10-01T00:00:00Z") },
+};
+
+/** Connects a resolver binding a visibility driver that returns `conditions`, and a context storage holding `context`. */
+function connectVisibility(conditions: object, context: object | undefined) {
+  const conditionsFor = vi.fn(async (_model: unknown, _principal: unknown) => conditions);
+  const filter = { conditionsFor } as unknown as VisibilityFilter;
+  const storage = { current: () => context } as unknown as ContextStorage;
+  connectVisibilityFilter({
+    has: (token) => token === VisibilityFilter || token === ContextStorage,
+    get: (token) => (token === VisibilityFilter ? filter : storage) as never,
+  });
+  return conditionsFor;
+}
+
 afterEach(() => {
   ACTIVE_DATABASE.current = undefined;
+  connectVisibilityFilter(undefined);
 });
 
 describe(CrudService, () => {
@@ -175,17 +206,55 @@ describe(CrudService, () => {
     const em = connect();
     expect(await new OrderService().sum("createdAt")).toBe(42);
     expect(em.builder.select).toHaveBeenCalledTimes(1);
-    const period = {
-      from: new Date("2026-10-01T00:00:00Z"),
-      to: new Date("2026-10-08T00:00:00Z"),
-      days: 7,
-      previous: { from: new Date("2026-09-24T00:00:00Z"), to: new Date("2026-10-01T00:00:00Z") },
-    };
     expect(new OrderService().metrics(period, { on: "createdAt" })).toBeInstanceOf(MetricsReader);
   });
 
-  it("names the service whose model gen has not registered", () => {
+  it("names the service whose model gen has not registered", async () => {
     connect();
-    expect(() => new OrphanService().find({})).toThrow(/No model is registered for OrphanService/);
+    await expect(new OrphanService().find({})).rejects.toThrow(
+      /No model is registered for OrphanService/,
+    );
+  });
+
+  it("ANDs the bound visibility conditions into every read, for the running call's actor", async () => {
+    const em = connect();
+    const conditionsFor = connectVisibility({ status: "visible" }, { actor });
+    const service = new OrderService();
+    const visible = { $and: [{ status: "paid" }, { status: "visible" }] };
+    await service.find({ status: "paid" });
+    expect(em.find).toHaveBeenLastCalledWith(Order, visible, undefined);
+    await service.findOne({ status: "paid" });
+    expect(em.findOne).toHaveBeenLastCalledWith(Order, visible, undefined);
+    await service.findOneOrFail({ status: "paid" });
+    expect(em.findOneOrFail.mock.calls[0]?.[1]).toEqual(visible);
+    await service.count({ status: "paid" });
+    expect(em.count).toHaveBeenLastCalledWith(Order, visible);
+    await service.sum("createdAt", { status: "paid" });
+    expect(em.builder.where).toHaveBeenLastCalledWith(visible);
+    await service.table({ limit: 5 }, { where: { status: "paid" } });
+    expect(em.findByCursor).toHaveBeenLastCalledWith(
+      Order,
+      expect.objectContaining({ where: { $and: [visible] } }),
+    );
+    await service.metrics(period, { on: "createdAt", where: { status: "paid" } }).count();
+    expect(em.builder.where).toHaveBeenLastCalledWith(visible);
+    expect(conditionsFor).toHaveBeenCalledTimes(7);
+    expect(conditionsFor).toHaveBeenCalledWith(Order, actor);
+  });
+
+  it("passes no principal outside a call, and leaves a read alone without conditions or a driver", async () => {
+    const em = connect();
+    const conditionsFor = connectVisibility({}, undefined);
+    await new OrderService().find({ status: "paid" });
+    expect(conditionsFor).toHaveBeenCalledWith(Order, undefined);
+    expect(em.find).toHaveBeenLastCalledWith(Order, { status: "paid" }, undefined);
+    connectVisibilityFilter({
+      has: () => false,
+      get: () => {
+        throw new Error("nothing is bound");
+      },
+    });
+    expect(await new OrderService().count({ status: "paid" })).toBe(3);
+    expect(em.count).toHaveBeenLastCalledWith(Order, { status: "paid" });
   });
 });

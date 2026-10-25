@@ -11,7 +11,7 @@
  * Governing contract: ADR 0307 (rules 15 and 16); ADR 0160 (parameterised SQL).
  */
 import { raw } from "@mikro-orm/core";
-import type { EntityMetadata } from "@mikro-orm/core";
+import type { EntityMetadata, FilterQuery } from "@mikro-orm/core";
 import type { EntityManager, QBFilterQuery } from "@mikro-orm/postgresql";
 import type { Period } from "@stackra/actions";
 import type { AnyClass } from "@stackra/container";
@@ -54,19 +54,31 @@ export class MetricsReader<M extends object> {
   /** The options. */
   private readonly options: MetricsOptions<M>;
 
+  /** The filter of the rows that count, read when a statement runs. */
+  private readonly filter: () => Promise<FilterQuery<M>>;
+
   /**
    * @param em - the entity manager of the call.
    * @param model - the model to aggregate.
    * @param period - the period and its previous period.
    * @param options - the instant field and the rows that count.
+   * @param filter - the filter of the rows that count; `options.where` as written by default, and
+   *        `CrudService.metrics` passes it with the visibility conditions ANDed in.
    * @throws TypeError when `options.on` is not a single-column field.
    */
-  constructor(em: EntityManager, model: AnyClass<M>, period: Period, options: MetricsOptions<M>) {
+  constructor(
+    em: EntityManager,
+    model: AnyClass<M>,
+    period: Period,
+    options: MetricsOptions<M>,
+    filter: () => Promise<FilterQuery<M>> = async () => filterOf(options.where ?? {}),
+  ) {
     this.em = em;
     this.model = model;
     this.meta = em.getMetadata(model);
     this.period = period;
     this.options = options;
+    this.filter = filter;
     this.column(options.on);
   }
 
@@ -107,7 +119,9 @@ export class MetricsReader<M extends object> {
     const on = this.column(this.options.on);
     const { from, previous } = this.period;
     const start = `case when ${on} >= cast(? as timestamptz) then cast(? as timestamptz) else cast(? as timestamptz) end`;
-    const rows = (await this.base()
+    const rows = (await (
+      await this.base()
+    )
       .select([
         raw(`${on} >= cast(? as timestamptz) as is_current`, [from]),
         raw(`floor(extract(epoch from (${on} - (${start}))) * 1000 / ${DAY})::int as bucket`, [
@@ -140,15 +154,16 @@ export class MetricsReader<M extends object> {
   }
 
   /** The rows that count in either period. */
-  private base() {
+  private async base() {
     const on = this.column(this.options.on);
     const range = raw(`${on} >= cast(? as timestamptz) and ${on} < cast(? as timestamptz)`, [
       this.period.previous.from,
       this.period.to,
     ]);
+    const filter = await this.filter();
     return this.em
       .createQueryBuilder(this.model, ALIAS)
-      .where(filterOf(this.options.where ?? {}) as QBFilterQuery<M>)
+      .where(filter as QBFilterQuery<M>)
       .andWhere(range);
   }
 
@@ -160,7 +175,9 @@ export class MetricsReader<M extends object> {
     const on = this.column(this.options.on);
     const window = `${on} >= cast(? as timestamptz) and ${on} < cast(? as timestamptz)`;
     const { from, to, previous } = this.period;
-    const row = await this.base()
+    const row = await (
+      await this.base()
+    )
       .select([
         raw(`${aggregate(window)} as current`, [from, to]),
         raw(`${aggregate(window)} as previous`, [previous.from, previous.to]),

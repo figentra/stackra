@@ -26,9 +26,13 @@ strategy (`idx_`, `fk_`, `ck_`), the generated-read helpers (`operationAction`, 
 - **Packages touched**: `packages/data/database` (new member); `packages/foundation/contracts` gains the `ScopeRef`
   type the scope hooks take
 - **Cross-service events**: none
-- **Tenancy and data**: no tables of its own. It provides both isolation layers as hooks: `Database.withScope(ScopeRef,
+- **Tenancy and data**: it provides both isolation layers as hooks: `Database.withScope(ScopeRef,
 work)` sets `app.scope_id`, `app.scope_path` and `app.scope_paths` for the transaction, and the blueprint's `rowLevelSecurity(column, { setting, match })` compiles enable,
-  force and the equality policy (ADR 0239). The scope-owning package's macro supplies the column and the setting
+  force and the equality policy (ADR 0239). The scope-owning package's macro supplies the column and the setting.
+  Wave 9 adds its first tables, in its own schema: `database.sequence_counters`, `sequence_blocks` and
+  `sequence_voids` (ADR 0342), each with `scope_id`, `scope_path` and the forced ancestor policy on `app.scope_paths`;
+  no personal data (a block's holder is a device's public id). The record-visibility seam (ADR 0333 d4) narrows reads
+  inside isolation and never replaces it
 - **Secrets**: the connection string is handed to `PostgresDatabaseDriver.connect` by the runtime; never read or logged
   here
 - **ADR needed**: no; open naming item for the policy prefix below
@@ -36,7 +40,7 @@ work)` sets `app.scope_id`, `app.scope_path` and `app.scope_paths` for the trans
   `@testcontainers/postgresql` 12.2.0 as optional peers of `./testing` and dev dependencies; all through `catalog:`
 - **Deploy modes**: same in all; talks only to the service's own Postgres
 - **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
-- **Docs to update**: `packages/data/database/README.md`, `packages/data/database/AGENTS.md`; ADR 0014, 0097, 0105, 0159, 0160, 0190, 0231, 0238, 0239, 0269, 0307 are cited and amended only by a note if a decision here changes
+- **Docs to update**: `packages/data/database/README.md`, `packages/data/database/AGENTS.md`; ADR 0014, 0097, 0105, 0159, 0160, 0190, 0231, 0238, 0239, 0269, 0307, 0333, 0342 are cited and amended only by a note if a decision here changes
 - **Lane**: lite
 - **Change risk**: R3 (the persistence and migration contract of every service; the data wave applies)
 
@@ -93,9 +97,41 @@ unprivileged role sees only the rows of the scope set for its transaction, and n
 
 **Independent Test**: `src/testing/bases/__tests__/factory.base.test.ts`, `src/testing/__tests__/index.test.ts`.
 
+### User Story 5 - Gapless document numbers (Priority: P1)
+
+A module declares `class InvoiceSequence extends Sequence({ key: "invoice", series: ["legalEntityId"], format:
+"INV-{year}-{n:06}", reset: "yearly", reserve: { size: 50 } }) {}` in `database/sequences/`, and the action that writes
+the invoice calls `sequences.next(InvoiceSequence, ctx.scope, { legalEntityId }, ctx.timeZone)` as its last write; an
+offline till reserves a block, issues from it in order, and the server claims, releases or voids it (ADR 0342).
+
+**Independent Test**: `src/core/services/__tests__/sequence.service.test.ts`,
+`src/core/services/__tests__/sequence.service.int.test.ts` (Testcontainers), `src/core/bases/__tests__/sequence.base.test.ts`.
+
+1. **Given** eight concurrent commits on one series, **Then** they take eight consecutive numbers.
+2. **Given** a write that rolls back after taking a number, **Then** the next commit takes that number.
+3. **Given** a wiped device's block with numbers unclaimed or skipped, **Then** they appear as voids with their reasons.
+4. **Given** a sequence with `reserve: false`, **When** a block is reserved, **Then** it refuses with
+   `sequence_not_reservable`.
+
+### User Story 6 - Record visibility seam (Priority: P2)
+
+A visibility package binds a `VisibilityFilter` driver and the runtime calls `connectVisibilityFilter(container)`; every
+read of a declaring model then carries its conditions on top of row-level security (ADR 0333 d4).
+
+**Independent Test**: `src/core/bases/__tests__/crud-service.base.test.ts`,
+`src/core/services/__tests__/graph-query.service.test.ts`, `src/core/values/__tests__/metrics-reader.value.test.ts`.
+
+1. **Given** a bound driver, **When** `find`, `findOne`, `findOneOrFail`, `count`, `sum`, `table` or `metrics` runs,
+   **Then** the driver's conditions for the running call's actor are ANDed into its filter.
+2. **Given** no driver, or a model with no conditions, **Then** the read is unchanged.
+
 ### Edge Cases
 
 - A concurrent index on a table the same migration creates is refused (it builds in the transaction).
+- A yearly sequence whose format lacks `{year}`, or a never-resetting one with it, is refused at declaration, so a
+  formatted number never repeats.
+- A device claims a number behind its last accepted one: refused with `sequence_number_out_of_order`; a number ahead
+  of it voids the numbers between as skipped.
 - A NOT NULL column added to an existing table without a default is refused until a contract step.
 - A setting set earlier on a pooled connection reads as `''` after its transaction; the policy treats it as unset.
 
@@ -116,6 +152,22 @@ unprivileged role sees only the rows of the scope set for its transaction, and n
 - **FR-006**: Scope hooks SHALL take the contracts `ScopeRef` and name no scope level.
 - **FR-007**: `Factory` and `usePostgres` SHALL live in `./testing` only, with Faker and Testcontainers as optional
   peers.
+- **FR-008**: `Sequence({ key, series, format, reset, reserve })` SHALL be a called-only kind base that checks and
+  records its options, refusing `{year}` without `reset: "yearly"` and a yearly format without `{year}`;
+  `registerSequences` SHALL record each class's locked key and refuse a shared key; `formatSequenceNumber` SHALL
+  write `{n}`, `{n:0W}` and `{year}` and refuse any other token.
+- **FR-009**: `SequenceService.next` SHALL take a number inside the caller's transaction from a counter row locked
+  until commit, so concurrent commits on one series take consecutive numbers, a rolled-back write takes none, a
+  number is never reused, and a call outside a transaction is refused.
+- **FR-010**: `reserve` SHALL hand a holder a block of up to the declared size (refused with
+  `sequence_not_reservable` for `reserve: false`); `claim` SHALL accept the holder's numbers in order and void the
+  skipped ones; `release` SHALL return the unused remainder (stepping the counter back over a tail block, else handing
+  the remainder out first); `void` SHALL record it as voided numbers with a reason.
+- **FR-011**: The counter, block and void tables SHALL come from this package's migration in its own schema, each
+  with the scope columns and the forced ancestor policy, and no Postgres `SEQUENCE`.
+- **FR-012**: A `VisibilityFilter` port SHALL be read, when bound through `connectVisibilityFilter`, by every read of
+  `CrudService`, `GraphQuery` and `MetricsReader`, which AND its conditions for the running call's actor into their
+  filter; unbound, reads SHALL be unchanged, and the seam SHALL never widen a read or carry scope isolation.
 
 ## Success Criteria
 
@@ -130,7 +182,16 @@ unprivileged role sees only the rows of the scope set for its transaction, and n
 - Gen must register `[Service, Model]` and `[Factory, Model]` pairs (`registerModelPartners`) and entity schemas
   (`registerEntities`), and bind each `repositoryOf(Model)` token; the template's samples do neither yet.
 - A `memory` database driver for the template's `useDrivers("memory")` unit tests is not built.
+- Gen must call `registerSequences` with each `database/sequences/*.sequence.ts` class and its locked key, bind
+  `SequenceService` (dependencies `Database`, `Clock`), apply `database.0001_create_sequence_tables` from
+  `src/node/database/migrations/`, and call `connectVisibilityFilter(container)` at boot; the ADR 0342 gen checks (a
+  document-number field without a `Sequence`, a migration creating a `SEQUENCE` for one) are not built.
+- The device formats offline numbers from the block's `format` and `period`; `formatSequenceNumber` is server-only
+  here, so a client needs the same function from a client-safe package.
+- The year of a yearly sequence is read in the time zone the caller passes; ADR 0342 does not say whose time zone
+  governs a series (the legal entity's is the likely answer).
 
 ## Status history
 
 - 2026-10-24 · — → Implementing · Claude (data-engineer) · spec written with the package (owner mode 2026-10-24: develop now, test later)
+- 2026-10-25 · Implementing → Implementing · Claude (data-engineer) · wave 9 W9-A: `Sequence` (ADR 0342) and the record-visibility seam (ADR 0333 d4)

@@ -5,15 +5,17 @@
  *          reference.
  * Boundary: a platform service with no dependencies. Limits per ADR 0268 R10: 20 source rows by default, 100 at most,
  *           one relation per call (depth and fan-out stay within the limits). The listed fields are checked against
- *           each loaded row; rows are returned whole.
+ *           each loaded row; rows are returned whole. The source rows carry the bound `VisibilityFilter`'s conditions;
+ *           a related row is the related model's own read (its link resolver or its reference).
  *           shortcut: one load per related row through its resolver; batch by id when a read needs more than 100.
  * Runtime: node
- * Governing contract: ADR 0104 (decision 2: the query graph); ADR 0268 (R10); ADR 0294 (decision 28: links).
+ * Governing contract: ADR 0104 (decision 2: the query graph); ADR 0268 (R10); ADR 0294 (decision 28: links); ADR 0333
+ *                     (decision 4).
  */
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 
-import { filterOf } from "#core/functions/filter-of.function";
+import { visibleFilter } from "#core/functions/visible-filter.function";
 import { Database } from "#core/ports/database.port";
 import type { GraphOptions } from "#core/types/graph-options.type";
 import type { GraphRow } from "#core/types/graph-row.type";
@@ -62,7 +64,7 @@ export class GraphQuery extends Service {
       throw new TypeError(`GraphQuery: fields names the source and "${relation}", nothing else`);
     const rows = await Database.current()
       .em()
-      .find(model, filterOf(options.where ?? ({} as Where<M>)), { limit });
+      .find(model, await visibleFilter(model, options.where ?? ({} as Where<M>)), { limit });
     return Promise.all(
       rows.map(async (row) => {
         checkFields(row, options.fields[source] ?? [], source);

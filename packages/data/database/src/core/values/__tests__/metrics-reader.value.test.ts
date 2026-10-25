@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MetricsReader`: `count` and `sum` select the period and the previous period in one
- *          statement with bound instants, a money sum over two currencies is refused, and `series` fills one bucket
- *          per day for both periods.
+ *          statement with bound instants, a money sum over two currencies is refused, `series` fills one bucket per
+ *          day for both periods, and a given filter (the visibility conditions `CrudService` adds) replaces `where`.
  * Boundary: test only; a recording query builder stands in for the ORM and returns canned rows.
  * Runtime: node (vitest)
  * Governing contract: ADR 0307 (rules 15 and 16); ADR 0160; ADR 0022; ADR 0269.
@@ -93,6 +93,20 @@ describe(MetricsReader, () => {
       previous: [0, 3, 0],
     });
     await expect(reader.series(Aggregate.Sum)).rejects.toThrow(/needs the summed path/);
+  });
+
+  it("reads the rows that count through the filter it was given", async () => {
+    const { builder, em } = readerReturning({ current: "1", previous: "0" });
+    const visible = { $and: [{ status: "paid" }, { status: "visible" }] };
+    const reader = new MetricsReader(
+      em as unknown as EntityManager,
+      Order,
+      period,
+      { on: "paidAt", where: { status: "paid" } },
+      async () => visible,
+    );
+    expect(await reader.count()).toEqual({ current: 1, previous: 0 });
+    expect(builder.where).toHaveBeenLastCalledWith(visible);
   });
 
   it("refuses an instant field that is not a column", () => {

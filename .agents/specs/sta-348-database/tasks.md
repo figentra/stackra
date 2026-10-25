@@ -14,3 +14,9 @@
 - [x] T010 [US3] Tests for every public symbol in `src/**/__tests__/`, with the Testcontainers isolation test — covers: SC-002 — route: tests — deps: T009
 - [x] T011 [US1] Changeset `.changeset/database-package.md`; `oxfmt`, `oxlint` and `tsc --noEmit` clean — covers: SC-001, SC-003 — route: package — deps: T010
 - [ ] T012 [US1] Run the package's unit and integration tests and build in the separate testing workflow — covers: SC-002 — route: tests — deps: T010
+- [x] T013 [US5] `Sequence`, `formatSequenceNumber`, `registerSequences` and the sequence types in `packages/data/database/src/core/` — covers: FR-008, P-008 — route: package — deps: T011
+- [x] T014 [US5] `CreateSequenceTablesMigration` in `packages/data/database/src/node/database/migrations/` and the `#node/*` alias — covers: FR-011, P-011 — route: package — deps: T013
+- [x] T015 [US5] `SequenceService` (`next`, `reserve`, `claim`, `release`, `void`) and its three refusals in `packages/data/database/src/core/` — covers: FR-009, FR-010, P-009, P-010 — route: package — deps: T014
+- [x] T016 [US6] `VisibilityFilter`, `connectVisibilityFilter` and the internal `visibleFilter`, read by `CrudService`, `GraphQuery` and `MetricsReader` — covers: FR-012, P-012 — route: package — deps: T011
+- [x] T017 [US5] Tests for the new symbols, the Testcontainers conformance and isolation test of the sequences, the barrel list, README, AGENTS and the changeset — covers: SC-001, SC-002 — route: tests — deps: T015, T016
+- [ ] T018 [US5] Run the wave-9 unit and integration tests in the separate testing workflow — covers: SC-002 — route: tests — deps: T017
