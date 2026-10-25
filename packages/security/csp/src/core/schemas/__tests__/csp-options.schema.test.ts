@@ -21,6 +21,11 @@ describe("CspOptions", () => {
       extraFrameSrc: [],
       extraImgSrc: [],
       reportOnly: false,
+      hstsMaxAgeSeconds: 63_072_000,
+      hstsIncludeSubDomains: true,
+      hstsPreload: false,
+      referrerPolicy: "strict-origin-when-cross-origin",
+      permissionsAllow: {},
     });
   });
 

@@ -17,6 +17,11 @@ describe("CSP_OPTIONS_SCHEMA", () => {
       extraFrameSrc: [],
       extraImgSrc: [],
       reportOnly: false,
+      hstsMaxAgeSeconds: 63_072_000,
+      hstsIncludeSubDomains: true,
+      hstsPreload: false,
+      referrerPolicy: "strict-origin-when-cross-origin",
+      permissionsAllow: {},
     });
   });
 
@@ -45,6 +50,30 @@ describe("CSP_OPTIONS_SCHEMA", () => {
       }
     },
   );
+
+  it("accepts the strict referrer policies and refuses the loose ones", () => {
+    expect(CSP_OPTIONS_SCHEMA.safeParse({ referrerPolicy: "no-referrer" }).success).toBe(true);
+    for (const policy of ["unsafe-url", "no-referrer-when-downgrade", "anything"]) {
+      expect(CSP_OPTIONS_SCHEMA.safeParse({ referrerPolicy: policy }).success).toBe(false);
+    }
+  });
+
+  it("allows a baseline feature to self or a host, never to everyone or an unknown feature", () => {
+    expect(
+      CSP_OPTIONS_SCHEMA.safeParse({ permissionsAllow: { camera: ["self", "https://a.example"] } })
+        .success,
+    ).toBe(true);
+    expect(CSP_OPTIONS_SCHEMA.safeParse({ permissionsAllow: { camera: ["*"] } }).success).toBe(
+      false,
+    );
+    expect(CSP_OPTIONS_SCHEMA.safeParse({ permissionsAllow: { vibrate: ["self"] } }).success).toBe(
+      false,
+    );
+  });
+
+  it("refuses a negative HSTS max-age", () => {
+    expect(CSP_OPTIONS_SCHEMA.safeParse({ hstsMaxAgeSeconds: -1 }).success).toBe(false);
+  });
 
   it("refuses a report-only flag that is not a boolean", () => {
     expect(CSP_OPTIONS_SCHEMA.safeParse({ reportOnly: "true" }).success).toBe(false);

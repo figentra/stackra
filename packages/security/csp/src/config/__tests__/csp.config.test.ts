@@ -38,6 +38,11 @@ describe("CspConfig", () => {
       extraFrameSrc: [],
       extraImgSrc: [],
       reportOnly: false,
+      hstsMaxAgeSeconds: 63_072_000,
+      hstsIncludeSubDomains: true,
+      hstsPreload: false,
+      referrerPolicy: "strict-origin-when-cross-origin",
+      permissionsAllow: {},
     });
   });
 
@@ -47,6 +52,7 @@ describe("CspConfig", () => {
     expectTypeOf(config.extraFrameSrc).toEqualTypeOf<string[]>();
     expectTypeOf(config.extraImgSrc).toEqualTypeOf<string[]>();
     expectTypeOf(config.reportOnly).toEqualTypeOf<boolean>();
+    expectTypeOf(config.hstsMaxAgeSeconds).toEqualTypeOf<number>();
   });
 
   it("derives the key csp, for the base and for a host override", () => {

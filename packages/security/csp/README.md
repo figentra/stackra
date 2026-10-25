@@ -14,6 +14,7 @@ server render writes.
 | `.`       | `CspConfig`             | the configuration (key `csp`): `extraConnectSrc`, `extraFrameSrc`, `extraImgSrc`, `reportOnly` |
 | `.`       | `contentSecurityPolicy` | `contentSecurityPolicy(csp, { connect, nonce })`: the header value                             |
 | `.`       | `cspHeaderName`         | `Content-Security-Policy`, or `…-Report-Only` while `reportOnly` is on                         |
+| `.`       | `securityHeaders`       | HSTS, nosniff, Referrer-Policy, Permissions-Policy, COOP and X-Frame-Options, on by default    |
 | `.`       | `createNonce`           | 128 random bits, base64, once per request                                                      |
 | `.`       | `CspAdditions`          | type of the second argument of `contentSecurityPolicy`                                         |
 | `./react` | `NonceProvider`         | puts the request's nonce under the server render                                               |
@@ -48,6 +49,16 @@ export class CspConfig extends BaseCspConfig {
 }
 ```
 
+## Security headers
+
+`securityHeaders(csp)` returns the headers every response carries beside the policy, on by default:
+`Strict-Transport-Security: max-age=63072000; includeSubDomains`, `X-Content-Type-Options: nosniff`,
+`Referrer-Policy: strict-origin-when-cross-origin`, a `Permissions-Policy` that turns camera, microphone, geolocation,
+payment, the device buses and screen capture off, `Cross-Origin-Opener-Policy: same-origin` and `X-Frame-Options: DENY`.
+A host tunes `hstsMaxAgeSeconds`, `hstsIncludeSubDomains`, `hstsPreload`, `referrerPolicy` (strict values only) and
+`permissionsAllow` (`{ camera: ["self"] }` for a till's scanner); it can never drop nosniff, the opener policy or the
+frame refusal.
+
 ## The server middleware and the render
 
 ```ts
@@ -59,6 +70,7 @@ response.headers.set(
   cspHeaderName(csp),
   contentSecurityPolicy(csp, { connect: [env.apiUrl], nonce }),
 );
+for (const [name, value] of Object.entries(securityHeaders(csp))) response.headers.set(name, value);
 ```
 
 ```tsx

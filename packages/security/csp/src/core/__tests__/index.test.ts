@@ -19,11 +19,19 @@ describe("@stackra/csp", () => {
       "contentSecurityPolicy",
       "createNonce",
       "cspHeaderName",
+      "securityHeaders",
     ]);
   });
 
   it("keeps the internals out of the entry", () => {
-    for (const name of ["CspOptions", "CSP_BASELINE", "cspSource", "CSP_SOURCE_PATTERN"]) {
+    for (const name of [
+      "CspOptions",
+      "CSP_BASELINE",
+      "cspSource",
+      "CSP_SOURCE_PATTERN",
+      "PERMISSIONS_POLICY_BASELINE",
+      "REFERRER_POLICIES",
+    ]) {
       expect(name in csp).toBe(false);
     }
   });
