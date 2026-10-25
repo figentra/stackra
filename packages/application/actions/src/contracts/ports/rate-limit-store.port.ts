@@ -20,6 +20,9 @@ import type { RateLimitDecision } from "#contracts/types/rate-limit-decision.typ
  * if (!decision.allowed) throw RateLimitedError.create();
  */
 export abstract class RateLimitStore extends Port {
+  /** Type-only port key, so `DriverName<RateLimitStore>` narrows to this port's drivers. */
+  declare readonly "~key": "actions.RateLimitStore";
+
   /** Refills the bucket under `key` (created full) to `now`, then takes one token when one is there. */
   abstract take(key: string, bucket: RateLimitBucket, now: Date): Promise<RateLimitDecision>;
 }

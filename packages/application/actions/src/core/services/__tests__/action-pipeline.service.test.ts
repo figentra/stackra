@@ -8,7 +8,9 @@
  *          offline additions: a device's calls in sequence order (sequences are not contiguous; refusals settle; a
  *          resend replays or is refused; a call with no sequence is not ordered and reads `ctx.deviceId`), the offline
  *          cap by count and amount, the review of offline-computed documents, and a replica query's full fill and the
- *          changes since the cursor in its input.
+ *          changes since the cursor in its input; and the governance additions: the approval step before idempotency,
+ *          the live-configuration guard of a structural action, the meter's usage event inside the unit of work, the
+ *          cap's amount field, and the registered effect tags on the descriptor.
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -30,9 +32,12 @@ import {
   ErrorKind,
   ForbiddenError,
   IdempotencyKeyReusedError,
+  LiveReadOnlyError,
   RateLimitedError,
   Refusal,
 } from "@stackra/errors";
+import type { RecordedEvent } from "@stackra/events/contracts";
+import { EventOutbox } from "@stackra/events/contracts";
 import { describe, expect, it } from "@stackra/testing";
 import { registerSchemas, Schema } from "@stackra/validation";
 import { z } from "zod";
@@ -40,6 +45,7 @@ import { z } from "zod";
 import { RateLimitConfig } from "#config/rate-limit.config";
 import {
   AccessControl,
+  ApprovalGate,
   AuditTrail,
   ContextStorage,
   DeviceSequenceStore,
@@ -47,6 +53,7 @@ import {
   FlagCheck,
   IdempotencyStore,
   JobDispatcher,
+  LiveConfigurationGuard,
   OfflineCapStore,
   RateLimitStore,
   ReplicaLog,
@@ -66,15 +73,19 @@ import { MemoryOfflineCapStoreDriver } from "#core/drivers/memory-offline-cap-st
 import { MemoryRateLimitStoreDriver } from "#core/drivers/memory-rate-limit-store.driver";
 import { MemoryReplicaLogDriver } from "#core/drivers/memory-replica-log.driver";
 import { MemoryReviewItemSinkDriver } from "#core/drivers/memory-review-item-sink.driver";
+import { Effect } from "#contracts/enums/effect.enum";
 import { ConflictResolution } from "#core/enums/conflict-resolution.enum";
 import { Idempotency } from "#core/enums/idempotency.enum";
 import { IdMinting } from "#core/enums/id-minting.enum";
+import { MeterKind } from "#core/enums/meter-kind.enum";
 import { OfflineMode } from "#core/enums/offline-mode.enum";
 import { OfflinePrecondition } from "#core/enums/offline-precondition.enum";
+import { ApprovalRequiredError } from "#core/errors/approval-required.error";
 import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
 import { InputInvalidError } from "#core/errors/input-invalid.error";
 import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
+import { UsageRecorded } from "#core/events/usage-recorded.event";
 import { registerActions } from "#core/functions/register-actions.function";
 import { ActionPipeline } from "#core/services/action-pipeline.service";
 import { ReplicaFeed } from "#core/services/replica-feed.service";
@@ -995,5 +1006,199 @@ describe(ActionPipeline, () => {
         { actor: customer },
       ),
     ).rejects.toThrow(TypeError);
+  });
+});
+
+class PublishShellAction extends Action({
+  key: "shell.publish",
+  actors: [ActorKind.User],
+  structural: true,
+}) {
+  async handle(): Promise<string> {
+    log.push("handle");
+    return "published";
+  }
+}
+
+class RefundAction extends Action({
+  key: "payment.refund",
+  actors: [ActorKind.User],
+  meter: { name: "payments.refunded", kind: MeterKind.Sum, field: "amount" },
+}) {
+  async handle(input: { amount: { minor: number; currency: string } }): Promise<number> {
+    log.push("handle");
+    return input.amount.minor;
+  }
+}
+
+class SignInAction extends Action({
+  key: "device.sign_in",
+  actors: [ActorKind.User],
+  meter: { name: "devices.active", kind: MeterKind.Unique, field: "deviceId" },
+}) {
+  async handle(): Promise<void> {}
+}
+
+class TopUpAction extends Action({
+  key: "wallet.top_up",
+  actors: [ActorKind.User],
+  offline: {
+    mode: OfflineMode.Queue,
+    idMinting: IdMinting.Client,
+    precondition: OfflinePrecondition.None,
+    retention: "72h",
+    onConflict: [ConflictResolution.Manual],
+    cap: { amount: 1_000, amountField: "total", window: "24h" },
+  },
+}) {
+  async handle(): Promise<void> {}
+}
+
+registerActions([
+  {
+    type: RefundAction,
+    key: "payments.payment.refund@1",
+    permission: "payments.payment.refund",
+    risk: "L3",
+    effects: [Effect.Financial, Effect.Irreversible],
+  },
+]);
+
+/** Parks every call unless it names the granted approval. */
+class Approvals extends Driver(ApprovalGate) {
+  readonly seen: unknown[] = [];
+
+  async check(call: CallDescriptor, input: unknown, approvalId: string | undefined): Promise<void> {
+    log.push("approval");
+    this.seen.push([call.key, input, approvalId]);
+    if (approvalId !== "apr_granted")
+      throw ApprovalRequiredError.create({ approvalId: "apr_parked" });
+  }
+}
+
+/** A guard that answers live or sandbox. */
+class Environments extends Driver(LiveConfigurationGuard) {
+  live = true;
+
+  async check(): Promise<void> {
+    log.push("live-guard");
+    if (this.live) throw LiveReadOnlyError.create();
+  }
+}
+
+/** Keeps what the pipeline writes to the outbox, and when. */
+class Outbox extends Driver(EventOutbox) {
+  readonly written: RecordedEvent[] = [];
+
+  async write(records: readonly RecordedEvent[]): Promise<void> {
+    log.push("outbox");
+    this.written.push(...records);
+  }
+}
+
+describe("ActionPipeline governance additions", () => {
+  it("parks a call at the approval step, before idempotency, and runs it with a granted approval", async () => {
+    const approvals = new Approvals();
+    const { pipeline } = setup([[ApprovalGate, approvals]]);
+    await expect(
+      pipeline.execute(
+        CreateOrderAction,
+        { quantity: 1 },
+        { actor: customer, idempotencyKey: "k-approval" },
+      ),
+    ).rejects.toMatchObject({ code: "approval_required", approvalId: "apr_parked" });
+    expect(log.indexOf("approval")).toBeGreaterThan(log.indexOf("flag"));
+    expect(log).not.toContain("handle");
+    await expect(
+      pipeline.execute(
+        CreateOrderAction,
+        { quantity: 1 },
+        { actor: customer, idempotencyKey: "k-approval", approvalId: "apr_granted" },
+      ),
+    ).resolves.toMatchObject({ orderId: "ord_1" });
+    expect(approvals.seen.at(-1)).toEqual(["order.create", { quantity: 1 }, "apr_granted"]);
+  });
+
+  it("never parks a query", async () => {
+    const approvals = new Approvals();
+    const { pipeline } = setup([[ApprovalGate, approvals]]);
+    await pipeline.execute(GetOrderQuery, { orderId: "ord_1" }, { actor: customer });
+    expect(approvals.seen).toEqual([]);
+  });
+
+  it("refuses a structural write in live, runs it in a sandbox, and needs a guard", async () => {
+    const environments = new Environments();
+    const { pipeline } = setup([
+      [LiveConfigurationGuard, environments],
+      [PublishShellAction, new PublishShellAction()],
+    ]);
+    await expect(
+      pipeline.execute(PublishShellAction, {}, { actor: customer }),
+    ).rejects.toBeInstanceOf(LiveReadOnlyError);
+    expect(log.slice(0, 2)).toEqual(["tenancy", "live-guard"]);
+    environments.live = false;
+    await expect(pipeline.execute(PublishShellAction, {}, { actor: customer })).resolves.toBe(
+      "published",
+    );
+    const { pipeline: unguarded } = setup([[PublishShellAction, new PublishShellAction()]]);
+    await expect(unguarded.execute(PublishShellAction, {}, { actor: customer })).rejects.toThrow(
+      /LiveConfigurationGuard is not bound/,
+    );
+  });
+
+  it("writes the meter's usage event in the unit of work, with the registered effects on the descriptor", async () => {
+    const outbox = new Outbox();
+    const { pipeline, access } = setup([
+      [EventOutbox, outbox],
+      [RefundAction, new RefundAction()],
+      [SignInAction, new SignInAction()],
+    ]);
+    await pipeline.execute(
+      RefundAction,
+      { amount: { minor: 2_500, currency: "SAR" } },
+      { actor: customer, scope: SCOPE },
+    );
+    expect(log.slice(log.indexOf("begin"))).toEqual(["begin", "handle", "outbox", "commit"]);
+    const [usage] = outbox.written;
+    expect(usage?.event).toBeInstanceOf(UsageRecorded);
+    expect(usage?.event).toMatchObject({
+      meter: "payments.refunded",
+      kind: "sum",
+      value: 2_500,
+      key: "payments.payment.refund@1",
+      scopeId: SCOPE.id,
+    });
+    expect(usage?.meta).toMatchObject({ occurredAt: NOW, tenantId: "ten_1", actor: customer });
+    expect(usage?.meta.id.startsWith("evt_")).toBe(true);
+    expect(access.calls.at(-1)?.effects).toEqual([Effect.Financial, Effect.Irreversible]);
+    await pipeline.execute(SignInAction, { deviceId: "dev_9" }, { actor: customer });
+    expect(outbox.written.at(-1)?.event).toMatchObject({
+      kind: "unique",
+      value: 1,
+      subject: "dev_9",
+    });
+    await expect(pipeline.execute(SignInAction, {}, { actor: customer })).rejects.toBeInstanceOf(
+      InputInvalidError,
+    );
+  });
+
+  it("reads a capped call's amount from its declared field", async () => {
+    const { pipeline } = setup([
+      [OfflineCapStore, new MemoryOfflineCapStoreDriver()],
+      [DeviceSequenceStore, new MemoryDeviceSequenceStoreDriver()],
+      [TopUpAction, new TopUpAction()],
+    ]);
+    await pipeline.execute(
+      TopUpAction,
+      { total: 800 },
+      { actor: customer, device: { deviceId: "dev_1", sequence: 1 } },
+    );
+    await expect(
+      pipeline.execute(
+        TopUpAction,
+        { total: 300 },
+        { actor: customer, device: { deviceId: "dev_1", sequence: 2 } },
+      ),
+    ).rejects.toBeInstanceOf(OfflineCapReachedError);
   });
 });

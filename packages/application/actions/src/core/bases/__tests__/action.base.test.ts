@@ -20,6 +20,7 @@ import { Precondition } from "#core/bases/precondition.base";
 import { ConflictResolution } from "#core/enums/conflict-resolution.enum";
 import { Idempotency } from "#core/enums/idempotency.enum";
 import { IdMinting } from "#core/enums/id-minting.enum";
+import { MeterKind } from "#core/enums/meter-kind.enum";
 import { OfflineMode } from "#core/enums/offline-mode.enum";
 import { OfflinePrecondition } from "#core/enums/offline-precondition.enum";
 import type { ActionClass } from "#core/types/action-class.type";
@@ -107,6 +108,7 @@ describe("Action", () => {
         offline: OFFLINE,
         version: 1,
         area: ApiArea.App,
+        structural: false,
       },
     });
     expect(kindOf(ExpireUnpaidOrdersAction)?.options).toMatchObject({
@@ -210,5 +212,30 @@ describe("Action", () => {
     class Empty extends Action(base) {}
     expect([Bare, Empty]).toHaveLength(2);
     expectTypeOf(Action(base)).toEqualTypeOf<ActionClass>();
+  });
+
+  it("records structural, a meter and an offline cap's amount field, and refuses malformed ones", () => {
+    class PublishShellAction extends Action({
+      ...base,
+      key: "shell.publish",
+      structural: true,
+      meter: { name: "shells.published", kind: MeterKind.Count },
+      offline: { ...OFFLINE, cap: { amount: 50_000, amountField: "total", window: "24h" } },
+    }) {
+      async handle(): Promise<void> {}
+    }
+    expect(kindOf(PublishShellAction)?.options).toMatchObject({
+      structural: true,
+      meter: { name: "shells.published", kind: "count" },
+      offline: { cap: { amountField: "total" } },
+    });
+    for (const options of [
+      { structural: "yes" },
+      { meter: { name: "Messages Sent", kind: MeterKind.Count } },
+      { meter: { name: "messages.sent", kind: "average" } },
+      { meter: { name: "messages.sent", kind: MeterKind.Sum } },
+      { offline: { ...OFFLINE, cap: { count: 1, amountField: "", window: "24h" } } },
+    ])
+      expect(() => Action({ ...base, ...(options as object) })).toThrow();
   });
 });

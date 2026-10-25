@@ -20,6 +20,7 @@ import { RULE_VERSION_PATTERN } from "#core/constants/rule-version-pattern.const
 import { ConflictResolution } from "#core/enums/conflict-resolution.enum";
 import { Idempotency } from "#core/enums/idempotency.enum";
 import { IdMinting } from "#core/enums/id-minting.enum";
+import { MeterKind } from "#core/enums/meter-kind.enum";
 import { OfflineMode } from "#core/enums/offline-mode.enum";
 import { OfflinePrecondition } from "#core/enums/offline-precondition.enum";
 import { readCallOptions } from "#core/functions/read-call-options.function";
@@ -29,6 +30,9 @@ import type { ActionOptions } from "#core/types/action-options.type";
 
 /** A five-field cron expression: minute, hour, day of month, month, day of week. */
 const CRON = /^\S+(?:\s+\S+){4}$/;
+
+/** A meter name: dotted snake_case (`messages.sent`). */
+const METER_NAME = /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$/;
 
 /** The instance side every action shares. */
 export abstract class ActionBase {
@@ -141,6 +145,13 @@ function read(options: ActionOptions) {
             `Action({ offline: { cap: { ${name} } } }) must be a whole number from 1, got ${value}`,
           );
       checkDuration("offline: { cap: { window } }", cap.window);
+      if (
+        cap.amountField !== undefined &&
+        (typeof cap.amountField !== "string" || cap.amountField === "")
+      )
+        throw new TypeError(
+          `Action({ offline: { cap: { amountField } } }) names an input field, got ${JSON.stringify(cap.amountField)}`,
+        );
     }
   }
   if (accepts !== undefined) {
@@ -157,6 +168,25 @@ function read(options: ActionOptions) {
         `Action({ accepts: { evaluator } }) names a class with an evaluate(input, ctx) method (${options.key})`,
       );
   }
+  if (options.structural !== undefined && typeof options.structural !== "boolean")
+    throw new TypeError(
+      `Action({ structural }) is true or false, got ${JSON.stringify(options.structural)}`,
+    );
+  const { meter } = options;
+  if (meter !== undefined) {
+    if (typeof meter.name !== "string" || !METER_NAME.test(meter.name))
+      throw new RangeError(
+        `Action({ meter: { name } }) is dotted snake_case such as "messages.sent", got ${JSON.stringify(meter.name)}`,
+      );
+    if (!Enum.values(MeterKind).includes(meter.kind))
+      throw new RangeError(
+        `Action({ meter: { kind } }) takes a MeterKind, got ${JSON.stringify(meter.kind)}`,
+      );
+    if (meter.kind !== MeterKind.Count && (typeof meter.field !== "string" || meter.field === ""))
+      throw new TypeError(
+        `Action({ meter: { field } }) names the input field a ${meter.kind} meter reads (${options.key})`,
+      );
+  }
   return {
     ...options,
     ...shared,
@@ -164,6 +194,7 @@ function read(options: ActionOptions) {
     idempotency,
     tool: options.tool ?? false,
     intent: options.intent ?? false,
+    structural: options.structural ?? false,
   };
 }
 

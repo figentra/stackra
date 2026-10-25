@@ -49,4 +49,7 @@ export interface CallOptions {
 
   /** The verified device the call came from; with a sequence, a call replayed from its queue and applied in order. */
   readonly device?: DeviceOrder;
+
+  /** The id of a granted approval this call resubmits under, from an earlier `approval_required` refusal. */
+  readonly approvalId?: string;
 }

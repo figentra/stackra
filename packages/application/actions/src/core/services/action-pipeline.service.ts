@@ -1,16 +1,18 @@
 /**
  * Stackra file contract:
- * Purpose: `ActionPipeline`, the one way an action or query runs: the fixed steps of ADR 0138 in their order (tenancy,
- *          permission, precondition, entitlement, flag, idempotency, rate limit, interceptors, `handle`), the call
+ * Purpose: `ActionPipeline`, the one way an action or query runs: the fixed steps of ADR 0138 in their order (tenancy
+ *          with the live-configuration guard of a structural action, permission, precondition, entitlement, flag,
+ *          approval, idempotency, rate limit, interceptors, `handle` with its meter's usage event), the call
  *          context (with the call's scope, so `ctx.scope` and every port read it), the action's unit of work with
  *          `afterCommit`, the audit entry, and the idempotent replay; for offline clients, a device's replayed calls
  *          in sequence order, the `offline.cap` reconciliation, the review of offline-computed documents (`accepts`),
  *          the verified device (`ctx.deviceId`) and a replica query's answer (`ctx.replica`, by the input's `cursor`).
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
- *           skipped (tenancy, entitlement, flag, unit of work, audit); permission fails closed (no `AccessControl` is an
- *           error, never an allowed call); a declared rate limit, Idempotency-Key, device order, offline cap, `accepts`
- *           or replica with no store is an error. Nothing reorders the steps: device order wraps them all (like the
+ *           skipped (tenancy, entitlement, flag, approval, unit of work, audit); permission fails closed (no
+ *           `AccessControl` is an error, never an allowed call); a declared rate limit, Idempotency-Key, device order,
+ *           offline cap, `accepts`, replica, `structural` or `meter` with no port bound is an error. The approval gate
+ *           sees the validated input; a metered action's usage event is written in its unit of work, after `handle`. Nothing reorders the steps: device order wraps them all (like the
  *           audit), so a call refused by any step still settles its sequence; the cap is part of the idempotency step
  *           and the review part of `handle`. A device's sequences are strictly increasing, not contiguous: one above
  *           the last settled is applied (the client sends one call at a time, so it is the next), one at or below may
@@ -19,7 +21,8 @@
  * Governing contract: ADR 0138 (as amended by 0294: the order is fixed); ADR 0136 (decisions 1 to 3 and 5); ADR 0305
  *                     (rule 24: interceptors); ADR 0217 (decision 2: limits enforced in the pipeline); ADR 0098; ADR
  *                     0327 (decision 6: the current scope in the call context); ADR 0338 (decisions 1, 3 and 5); ADR
- *                     0337 (decisions 4 and 5).
+ *                     0337 (decisions 4 and 5); ADR 0098 (decision 3: approval); ADR 0359 (decision 3: live is
+ *                     read-only); ADR 0216 (decisions 1 and 4: usage through the outbox).
  */
 import { kindOf, type AnyClass } from "@stackra/container";
 import {
@@ -36,11 +39,13 @@ import {
   isRefusal,
   RateLimitedError,
 } from "@stackra/errors";
+import { EventOutbox } from "@stackra/events/contracts";
 import { duration, validate } from "@stackra/validation";
 
 import { RateLimitConfig } from "#config/rate-limit.config";
 import { ReviewReason } from "#contracts/enums/review-reason.enum";
 import { AccessControl } from "#contracts/ports/access-control.port";
+import { ApprovalGate } from "#contracts/ports/approval-gate.port";
 import { AuditTrail } from "#contracts/ports/audit-trail.port";
 import { ContextStorage } from "#contracts/ports/context-storage.port";
 import { DeviceSequenceStore } from "#contracts/ports/device-sequence-store.port";
@@ -48,6 +53,7 @@ import { EntitlementCheck } from "#contracts/ports/entitlement-check.port";
 import { FlagCheck } from "#contracts/ports/flag-check.port";
 import { IdempotencyStore } from "#contracts/ports/idempotency-store.port";
 import { JobDispatcher } from "#contracts/ports/job-dispatcher.port";
+import { LiveConfigurationGuard } from "#contracts/ports/live-configuration-guard.port";
 import { OfflineCapStore } from "#contracts/ports/offline-cap-store.port";
 import { RateLimitStore } from "#contracts/ports/rate-limit-store.port";
 import { ReplicaLog } from "#contracts/ports/replica-log.port";
@@ -67,17 +73,21 @@ import { AFTER_COMMIT_FAILED } from "#core/constants/after-commit-failed.constan
 import { CALL_DEFAULTS } from "#core/constants/call-defaults.constant";
 import { IDEMPOTENCY_TTL } from "#core/constants/idempotency-ttl.constant";
 import { Idempotency } from "#core/enums/idempotency.enum";
+import { MeterKind } from "#core/enums/meter-kind.enum";
 import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
 import { InputInvalidError } from "#core/errors/input-invalid.error";
 import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
+import { UsageRecorded } from "#core/events/usage-recorded.event";
 import { fingerprintOf } from "#core/functions/fingerprint-of.function";
 import { isOlderRuleVersion } from "#core/functions/is-older-rule-version.function";
+import { mintEventId } from "#core/functions/mint-event-id.function";
 import { periodOf } from "#core/functions/period-of.function";
 import { startOfZonedDay } from "#core/functions/start-of-zoned-day.function";
 import { ReplicaFeed } from "#core/services/replica-feed.service";
 import type { ActionAccepts } from "#core/types/action-accepts.type";
 import type { ActionContext } from "#core/types/action-context.type";
+import type { ActionMeter } from "#core/types/action-meter.type";
 import type { ActionRateLimit } from "#core/types/action-rate-limit.type";
 import type { ActionRegistration } from "#core/types/action-registration.type";
 import type { CallInput } from "#core/types/call-input.type";
@@ -100,6 +110,8 @@ interface Recorded {
   readonly rateLimit?: ActionRateLimit;
   readonly offline?: OfflineOptions;
   readonly accepts?: ActionAccepts;
+  readonly structural?: boolean;
+  readonly meter?: ActionMeter;
 }
 
 /** What one call accumulates while it runs. */
@@ -175,6 +187,9 @@ export class ActionPipeline {
       key: registration?.key ?? options.key,
       ...(registration?.permission === undefined ? {} : { permission: registration.permission }),
       ...(registration?.risk === undefined ? {} : { risk: registration.risk }),
+      ...(registration?.effects === undefined
+        ? {}
+        : { effects: Object.freeze([...registration.effects]) }),
       actor,
       ...(actor.tenantId === undefined ? {} : { tenantId: actor.tenantId }),
       ...(request.scope === undefined ? {} : { scope: request.scope }),
@@ -210,6 +225,11 @@ export class ActionPipeline {
   private async steps(call: Call, raw: unknown): Promise<unknown> {
     const { descriptor, options, kind, ctx } = call;
     await this.optional(TenancyCheck)?.check(descriptor);
+    if (kind === "action" && options.structural === true)
+      await this.required(
+        LiveConfigurationGuard,
+        `${descriptor.key} changes structural configuration; bind a guard (@stackra/tenancy)`,
+      ).check(descriptor);
     if (!options.actors.includes(descriptor.actor.kind)) throw ForbiddenError.create();
     await this.required(AccessControl, IAM).require(descriptor);
     if (kind === "action")
@@ -219,6 +239,8 @@ export class ActionPipeline {
     const input = this.validated(call, raw);
     const cursor = (input as { readonly cursor?: unknown } | null | undefined)?.cursor;
     if (kind === "query" && typeof cursor === "string") call.state.replicaCursor = cursor;
+    if (kind === "action")
+      await this.optional(ApprovalGate)?.check(descriptor, input, call.request.approvalId);
     const claim = kind === "action" ? await this.claim(call, input) : undefined;
     if (claim !== undefined && "replay" in claim) return claim.replay;
     try {
@@ -313,7 +335,7 @@ export class ActionPipeline {
     );
     const since = new Date(at.getTime() - Duration.toMilliseconds(duration(cap.window)));
     const used = await store.usage(device.deviceId, descriptor.key, since);
-    const amount = cap.amount === undefined ? 0 : this.amountOf(input, "amount");
+    const amount = cap.amount === undefined ? 0 : this.amountOf(input, cap.amountField ?? "amount");
     if (
       (cap.count !== undefined && used.count >= cap.count) ||
       (cap.amount !== undefined && used.amount + amount > cap.amount)
@@ -399,7 +421,17 @@ export class ActionPipeline {
     const instance = this.resolver.get(call.type) as unknown as Handler;
     const handle = () => instance.handle(input, call.ctx);
     const accepts = call.kind === "action" ? call.options.accepts : undefined;
-    const run = accepts === undefined ? handle : () => this.reviewed(call, accepts, input, handle);
+    const reviewed =
+      accepts === undefined ? handle : () => this.reviewed(call, accepts, input, handle);
+    const meter = call.kind === "action" ? call.options.meter : undefined;
+    const run =
+      meter === undefined
+        ? reviewed
+        : async () => {
+            const output = await reviewed();
+            await this.metered(call, meter, input);
+            return output;
+          };
     const core =
       call.kind === "action"
         ? () => {
@@ -463,6 +495,53 @@ export class ActionPipeline {
         }),
       );
     return output;
+  }
+
+  /**
+   * Writes the `usage.recorded` event of one applied call of a metered action through the outbox, inside its unit of
+   * work: 1 for `count`, the field's units for `sum`, `max` and `last`, and the field's value as the subject of
+   * `unique`.
+   */
+  private async metered(call: Call, meter: ActionMeter, input: unknown): Promise<void> {
+    const { descriptor, at } = call;
+    const outbox = this.required(
+      EventOutbox,
+      `${descriptor.key} declares a meter; bind the EventOutbox (install @stackra/outbox)`,
+    );
+    let value = 1;
+    let subject: string | undefined;
+    if (meter.kind === MeterKind.Unique) {
+      const raw = (input as Readonly<Record<string, unknown>> | null | undefined)?.[
+        meter.field ?? ""
+      ];
+      if (typeof raw !== "string" && typeof raw !== "number")
+        throw InputInvalidError.create(
+          {},
+          { fieldErrors: { [meter.field ?? "(root)"]: "a value to count once" } },
+        );
+      subject = String(raw);
+    } else if (meter.kind !== MeterKind.Count) value = this.amountOf(input, meter.field ?? "");
+    const event = UsageRecorded.create({
+      meter: meter.name,
+      kind: meter.kind,
+      value,
+      ...(subject === undefined ? {} : { subject }),
+      key: descriptor.key,
+      callId: descriptor.callId,
+      ...(descriptor.scope === undefined ? {} : { scopeId: descriptor.scope.id }),
+    });
+    await outbox.write([
+      {
+        event,
+        meta: {
+          id: mintEventId(),
+          occurredAt: at,
+          ...(descriptor.tenantId === undefined ? {} : { tenantId: descriptor.tenantId }),
+          actor: descriptor.actor,
+          correlationId: descriptor.callId,
+        },
+      },
+    ]);
   }
 
   /** Runs the work queued with `ctx.afterCommit`, in order; a failure is logged and never fails the call. */

@@ -75,6 +75,23 @@ The call carries its scope (ADR 0327 decision 6): the transport passes the `Scop
 An action that also runs as a job declares `job: { queue, unique, timeout, retries, cron }`; `cron: { schedule,
 perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists instead of once for the platform.
 
+## Governance in the pipeline
+
+- **Approval** (stage `approval`, before idempotency): a bound `ApprovalGate` decides from the tenant's approval rules
+  whether a call needs an approval; it parks a request and refuses `approval_required` with its `approvalId`, and the
+  call resubmitted with `CallOptions.approvalId` runs once the request is granted. Which calls need approval is data,
+  never code.
+- **Effect tags**: `Effect` (`financial`, `security`, `pii`, `external_communication`, `irreversible`, `bulk`) travel
+  with the permission in `registerActions` and reach every port on `CallDescriptor.effects`.
+- **Live configuration**: an action declared `structural: true` runs only where the bound `LiveConfigurationGuard`
+  allows it; in live it is refused `live_read_only`.
+- **Meters**: `meter: { name, kind, field? }` writes one `UsageRecorded` (`usage.recorded`) event through the
+  `EventOutbox` in the action's unit of work, so a metered call never commits without its usage.
+- **Audit**: `OutboxAuditTrailDriver` writes each audit entry as an `AuditEntryRecorded` event for the audit service.
+- **Stores**: `StoresConfig` (key `actions.stores`) picks `memory` or `valkey` for the idempotency and rate-limit
+  stores; the Valkey drivers are in `./node` (`ACTIONS_VALKEY_URL`). The durable Postgres stores come through
+  `@stackra/database`; the offline queue's Postgres stores through `@stackra/outbox`.
+
 ## Offline clients
 
 The server half of ADR 0338 and the `accepts` option of ADR 0337. The client half (the queue, sealed stores, replicas

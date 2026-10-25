@@ -7,8 +7,10 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { Effect } from "#contracts/enums/effect.enum";
 export { ReviewReason } from "#contracts/enums/review-reason.enum";
 export { AccessControl } from "#contracts/ports/access-control.port";
+export { ApprovalGate } from "#contracts/ports/approval-gate.port";
 export { AuditTrail } from "#contracts/ports/audit-trail.port";
 export { ContextStorage } from "#contracts/ports/context-storage.port";
 export { DeviceSequenceStore } from "#contracts/ports/device-sequence-store.port";
@@ -16,6 +18,7 @@ export { EntitlementCheck } from "#contracts/ports/entitlement-check.port";
 export { FlagCheck } from "#contracts/ports/flag-check.port";
 export { IdempotencyStore } from "#contracts/ports/idempotency-store.port";
 export { JobDispatcher } from "#contracts/ports/job-dispatcher.port";
+export { LiveConfigurationGuard } from "#contracts/ports/live-configuration-guard.port";
 export { OfflineCapStore } from "#contracts/ports/offline-cap-store.port";
 export { RateLimitStore } from "#contracts/ports/rate-limit-store.port";
 export { ReplicaLog } from "#contracts/ports/replica-log.port";

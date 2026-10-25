@@ -11,6 +11,8 @@
 import type { AnyClass } from "@stackra/container";
 import type { Actor, ApiArea, PublicId, ScopeRef } from "@stackra/contracts";
 
+import type { Effect } from "#contracts/enums/effect.enum";
+
 /** One call of an action or a query, as every pipeline port sees it. */
 export interface CallDescriptor {
   /** The call's id, shared by its audit entry, its log lines and `RequestContext.current()`. */
@@ -30,6 +32,9 @@ export interface CallDescriptor {
 
   /** The permission's risk (`L0` to `L4`), when gen registered one. */
   readonly risk?: string;
+
+  /** The permission's effect tags, when gen registered them. */
+  readonly effects?: readonly Effect[];
 
   /** Who is calling. */
   readonly actor: Actor;

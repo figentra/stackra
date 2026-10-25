@@ -30,13 +30,16 @@ describe("@stackra/actions/contracts", () => {
   it("exports exactly its ports and its enum", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "AccessControl",
+      "ApprovalGate",
       "AuditTrail",
       "ContextStorage",
       "DeviceSequenceStore",
+      "Effect",
       "EntitlementCheck",
       "FlagCheck",
       "IdempotencyStore",
       "JobDispatcher",
+      "LiveConfigurationGuard",
       "OfflineCapStore",
       "RateLimitStore",
       "ReplicaLog",

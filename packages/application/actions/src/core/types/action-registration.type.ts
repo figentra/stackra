@@ -11,6 +11,7 @@
  */
 import type { AnyClass } from "@stackra/container";
 
+import type { Effect } from "#contracts/enums/effect.enum";
 import type { ActionBase } from "#core/bases/action.base";
 import type { QueryBase } from "#core/bases/query.base";
 
@@ -27,6 +28,9 @@ export interface ActionRegistration {
 
   /** The permission's risk, `L0` to `L4`. */
   readonly risk?: string;
+
+  /** The permission's effect tags. */
+  readonly effects?: readonly Effect[];
 
   /** The input schema class, whose generated schema the pipeline validates the input with. */
   readonly input?: AnyClass;

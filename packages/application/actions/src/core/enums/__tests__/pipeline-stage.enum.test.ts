@@ -19,6 +19,7 @@ describe("PipelineStage", () => {
       "precondition",
       "entitlement",
       "flag",
+      "approval",
       "idempotency",
       "rate_limit",
       "interceptors",
@@ -29,6 +30,7 @@ describe("PipelineStage", () => {
     expect(PipelineStage.Precondition).toBe("precondition");
     expect(PipelineStage.Entitlement).toBe("entitlement");
     expect(PipelineStage.Flag).toBe("flag");
+    expect(PipelineStage.Approval).toBe("approval");
     expect(PipelineStage.Idempotency).toBe("idempotency");
     expect(PipelineStage.RateLimit).toBe("rate_limit");
     expect(PipelineStage.Interceptors).toBe("interceptors");
@@ -42,6 +44,7 @@ describe("PipelineStage", () => {
       | "precondition"
       | "entitlement"
       | "flag"
+      | "approval"
       | "idempotency"
       | "rate_limit"
       | "interceptors"

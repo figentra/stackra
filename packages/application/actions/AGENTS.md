@@ -38,6 +38,8 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 - A replica answer is the `ReplicaChanges` wire shape of `@stackra/query` (`rows`, `removed`, `cursor`, `asOf`,
   `full`); the cursor arrives as the query's `cursor` input. A replica's slice comes from the query's `handle` after
   it authorized it, never straight from input.
+- Approval, the live-configuration guard and meters decide nothing in code: the gate's rules, the environment and the
+  usage quotas are data the drivers read. A `structural` action or a `meter` without its port bound is an error.
 - Never import `@stackra/iam`, `@stackra/workflow`, `@stackra/queue`, `@stackra/database` or `@stackra/tenancy`; they
   depend on this package and implement its ports.
 - Identities are gen's: the runtime reads them from `registerActions`, never derives a module key or a permission.
