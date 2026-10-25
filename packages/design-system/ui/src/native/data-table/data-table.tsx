@@ -49,7 +49,14 @@ import { Text } from "#native/text/text";
  * `items` and `renderCell`, so children are refused.
  */
 export type DataTableProps<TItem extends CollectionItem = CollectionItem> =
-  DataTableContractProps<TItem> & Omit<ViewProps, keyof DataTableContractProps | "children">;
+  DataTableContractProps<TItem> &
+    Omit<ViewProps, keyof DataTableContractProps | "children"> & {
+      /**
+       * Whether the rows scroll on their own (the default). Pass `false` when the table sits inside a page's own
+       * `ScrollView`, so the rows lay out in the page and React Native does not warn about nested lists.
+       */
+      readonly scrollEnabled?: boolean;
+    };
 
 // shortcut: English until @stackra/i18n ships; then the keys `ui::data-table.*`.
 const STRINGS = {
@@ -117,6 +124,7 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
   totalCount,
   isAllMatchingSelected = false,
   onAllMatchingSelectedChange,
+  scrollEnabled,
   className,
   ...rest
 }: DataTableProps<TItem>) {
@@ -233,6 +241,7 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
           emptyState={empty}
           isLoading={isLoading}
           loadingLabel={loadingLabel}
+          {...(scrollEnabled === undefined ? {} : { scrollEnabled })}
         />
       )}
       {hasPager && !hasError ? (
