@@ -1,0 +1,213 @@
+---
+title: "0360 — The AI chain: four layers, one spine, approval modes and the never-bypass floor"
+description: "Accepted · 2026-10-25"
+---
+
+<Note>
+  Amends [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free) (decision 1: every action a
+  user can perform is a tool by default), [0021](/adr/0021-ai-engine-and-agent-write-safety)
+  (decision 3: AI on by default for reads and L0-L1; decision 4: a field allow-list per data class;
+  decision 5: the default-deny write list gives way to the tool default),
+  [0099](/adr/0099-risk-scale-l0-to-l4) (decision 2: a new `bulk` effect tag) and
+  [0100](/adr/0100-ai-model-and-ownership) (decision 5: the approval modes) and
+  [0205](/adr/0205-the-figentra-os-build-order-and-the-first-slice) (decision 1: workflow and AI
+  come earlier in the build order), each by a Note.
+</Note>
+
+## Context
+
+On 2026-10-25 the owner asked for everything to be AI-first, planned as one chain before anything is built: AI that
+develops and deploys Stackra and Figentra OS, AI that knows the Commerce modules and configures tenants, AI that runs a
+merchant's business, and a shopping assistant for the end consumer. One sidekick can perform every action, with
+approval modes like other AI tools and a visible marker on every AI-capable action (`questionnaire-commerce.md`,
+Answers, "AI"). The plan `ai-chain-plan.md` mapped this onto what is already decided: actions are the unit
+([0098](/adr/0098-actions-are-the-unit)), risk L0 to L4 comes from the permission
+([0099](/adr/0099-risk-scale-l0-to-l4) as amended by 0294), an agent acts for a named human
+([0100](/adr/0100-ai-model-and-ownership) decisions 3 and 4), and L0-L1 queries are tools
+([0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free)). Three earlier rules conflicted with AI-first:
+writes were opt-in tools (0155 decision 1), AI was off by default per tenant (0021 decision 3), and special-category
+data could never reach a model (0021 decision 4). The owner answered the plan's questions and the OS AI questions
+(OS-305 to OS-335, OS-424, OS-435) in chat on 2026-10-25. This ADR records those answers.
+
+## Decision
+
+### The chain
+
+1. **Four layers, one spine.** The chain has four layers: (a) Stackra and Figentra OS development (write code,
+   deploy); (b) Commerce and product expertise (know the modules, configure and set up tenants); (c) merchant
+   operations (discounts, coupons, segments, campaigns, reports); (d) the consumer assistant (search, compare, cart,
+   help). Every layer uses the same spine: one agent runtime (`@stackra/ai`), one MCP gateway in the OS `ai` service
+   (0155 decision 4), one action pipeline, one approval model and one audit trail. A layer differs only in who it acts
+   for, which tools and knowledge it loads, and its boundary (tenant, environment, data class).
+2. **The spine.** Every agent step is an action call through the pipeline ([0098](/adr/0098-actions-are-the-unit)).
+   Its risk is the L0 to L4 level of the permission it uses (0099). An agent always acts for a named human: the actor
+   is the agent, its `onBehalfOf` chain names the human, and its access is the human's grants intersected with the
+   agent's own grant (0100 decisions 3 and 4). An agent never has access its human lacks.
+3. **Deploys stay the owner's.** Deploy, promote and rollback of Figentra's own environments are never bypassed
+   (decision 8, item 6;
+   [0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step)
+   decision 4). How the coding agents of the development layer relate to the product approval model is an open
+   question.
+
+### Tools and default exposure
+
+4. **Every action a user can perform is a tool by default.** An action or query whose `actors` include a user is an
+   MCP tool unless it declares `tool: false`. `tool: false` needs a written reason in the declaration, and gen fails
+   the build when the reason is missing. This replaces the write opt-in of 0155 decision 1 and the default-deny write
+   list of 0021 decision 5. L3 and L4 actions still need a named human on every call.
+5. **AI is on by default.** For every tenant, AI is on for reads and for L0-L1 tools from the first sign-in. L2 and
+   above follow the approval modes (decisions 6 to 9). The per-tenant off switch of 0021 decision 3 is kept as an off
+   switch. Setup and onboarding AI is free (decision 19).
+
+### Approval modes
+
+6. **Modes work like Claude Code's permission modes, in three layers.** The platform sets a floor that nobody can
+   lower (decision 8). The organisation (the tenant) sets its policy within the floor, as a managed setting. Each user
+   chooses a mode within the organisation's policy. A narrower layer may only tighten what a wider layer allows. The
+   modes are the owner's, five in all:
+
+   | Mode             | What happens                                                                                                                          | Where it applies                                                                                                 |
+   | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+   | Ask              | The agent shows the call and waits for a human to approve it before it runs.                                                          | Any level. At L3 and L4 a named human approves every call ([0100](/adr/0100-ai-model-and-ownership) decision 5). |
+   | Allow by default | The call runs without a prompt, because the organisation set it so for that kind of action (for example a routine notification type). | Below the floor of decision 8 only.                                                                              |
+   | Always allow     | The user tells the agent to stop asking about one kind of call, as in Claude Code. The permission is remembered.                      | Below the floor of decision 8 only.                                                                              |
+   | Bypass           | The user switches one session so that confirmations are skipped.                                                                      | Only where the organisation's setting allows bypass, and never past the floor of decision 8 (decision 7).        |
+   | Escalate         | The approval, and when the requester lacks the permission the work itself, goes to another human (decision 9).                        | Any level. Where the floor requires a named human, escalation is how the call reaches one.                       |
+
+   Which of these modes is available at L1 and L2, how long an always-allow lasts, and whether bypass is limited to
+   sandbox are open questions.
+
+7. **Bypass is per session.** A user may switch one session to bypass only where the organisation's setting allows
+   bypass. Bypass never passes the floor of decision 8, in the way Claude Code's deny rules still apply in its bypass
+   mode.
+8. **The never-bypass floor.** Every L3 and L4 action always needs a named human on every call
+   ([0100](/adr/0100-ai-model-and-ownership) decision 5). In addition, no mode, setting or session skips a named
+   human's approval for:
+   1. **money movement**: the `financial` tag (refunds, voids, payouts, charges, store credit, activating a price,
+      discount or coupon, plan and billing changes);
+   2. **bulk customer messages**: an action with both the `external-communication` and the new `bulk` tag. A send
+      above 100 recipients always asks a human (OS-325). Outbound messages to external people default to "ask", and a
+      tenant may set "allow by default" per notification type;
+   3. **deletes**: every L4 action, every `irreversible` action, and every delete an agent calls, whatever its level;
+   4. **live configuration**: a configuration change on a live tenant reaches live only through promotion from its
+      sandbox ([0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner));
+   5. **security and access**: role grants, keys and connections, support access, MFA policy and changes to the
+      approval modes themselves;
+   6. **code deploys**: deploy, promote and rollback of Figentra's own environments.
+
+   An agent never approves its own call (0021 decision 6).
+
+   Further floor items taken at the recommended defaults, not in the owner's words: creating or changing a webhook
+   endpoint is always "ask" and never bypassable (OS-327); a partner-app tool has "ask" as its minimum mode (OS-332);
+   data and compliance actions (erasure, legal hold, shortening retention, full tenant export, audit export,
+   consent-text changes) are L3 or L4 (OS-321); AI may draft and dry-run an automation but never publishes one
+   without a human (OS-323).
+
+9. **Escalate hands over, never lends authority.** Escalation routes the approval to another human through OS
+   `tasks-approvals`. When the requester lacks the permission, the approver takes the work over and runs it as
+   themselves. Escalation never lets the requester, or the requester's agent, act with the approver's permissions.
+10. **A `bulk` effect tag.** 0099 decision 2 gains the tag `bulk`, for an action that acts on many records or many
+    recipients in one call. The floor of decision 8 reads it, including the 100-recipient send of OS-325.
+
+### Marker and agents
+
+11. **The AI marker is derived.** Every action the viewer's agent could call carries a visible AI marker, derived from
+    the manifest's tool entry and the viewer's permissions and entitlements, never set by hand. Records and content an
+    agent changed carry an AI provenance mark, and AI-generated content shown to end consumers carries a visible label
+    (OS-334, default).
+12. **Background agents are bound to a human owner.** An agent that runs without a user present (scheduled or
+    event-triggered) is its own principal, bound to a human owner whose grants cap it, under the automation rule of
+    [0153](/adr/0153-automations-run-as-principals-and-every-package-exposes-building-blocks) decision 2. It follows
+    the same approval modes, pauses when its owner loses access or leaves, and leaves a summary after each run
+    (OS-305).
+
+### Data, residency and providers
+
+13. **No training on tenant data.** Tenant data is never used to train or fine-tune a model. Providers run under
+    zero-retention terms. Customer-facing AI always says it is AI, and a tenant cannot turn that off. A tenant may
+    later opt in to tune its own models on its own data (OS-310).
+14. **Region rules.** AI processing for an `eu` tenant stays in the EU. For an `me` tenant it runs in-region where the
+    model exists, otherwise in the EU with disclosure; a strict in-region option is offered. Processing never goes to
+    the US unless the tenant opts in (OS-311).
+15. **A field allow-list per data class.** Context reaches a model only through a field allow-list per data class
+    ([0341](/adr/0341-product-defined-data-classes-and-the-privileged-class)). Special-category and privileged data
+    reach a model only when the tenant enables an in-region, zero-retention provider for that class. This replaces the
+    absolute ban of 0021 decision 4; the redaction of contact details, document numbers and card numbers stays
+    (OS-315).
+
+### Commercial and product rules
+
+16. **Credits.** One AI credit is a fixed amount of model cost (placeholder 0.01 USD), shown as credits, never tokens.
+    Tenants are warned at 80% of their cap. At the cap, AI that runs actions stops, while help and search continue on
+    a fast model. Top-up packs are optional (OS-316, OS-317).
+17. **Bring your own keys** on Business and above, with a small per-call platform fee instead of credits (OS-313).
+18. **Customer-facing AI with a human hand-off.** AI answers end customers' routine questions in Arabic and English,
+    labelled as AI, with "talk to a human". The shopper assistant may run checkout and booking actions only after
+    asking the shopper, and is capped per person per day (OS-326, OS-435). Who pays for shopper-facing AI has three
+    options (the merchant, metered with a cap; included in the plan; the shopper, for premium features); each product
+    sets its default and a merchant may switch.
+19. **Free setup AI.** AI that the platform runs for onboarding and setup uses no credits (OS-316).
+20. **The tenant owns AI output.** Figentra disclaims the accuracy of generated content but is responsible for the
+    platform enforcing the approval rules. The terms state AI use and no training on tenant data (OS-424).
+21. **Each product names its own assistant** (OS-335).
+
+### Build order
+
+22. **Workflow and AI come earlier** in the OS build order, ahead of webhooks and integrations (OS-339), and every OS
+    service ships before Commerce release 1 (OS-358; a later launch is accepted).
+
+## Consequences
+
+- Every user action shows up for the sidekick without a per-action opt-in, so a wrong permission level is now an AI
+  exposure as well as a UI one; levels and tags must be right on every action.
+- Adding `tool: false` is a reviewed line with a reason, and gen enforces it.
+- The approval resolver has a fixed order: IAM, entitlement and flag, environment, the floor, the organisation
+  policy, the user's mode, then the default by level. It belongs beside `approvalFor()` in `@stackra/ai`.
+- The plan proposes (Q13, unanswered) that the approval step in the action pipeline, effect tags in the manifest, the
+  audit actor chain, settings revisions and the sandbox-to-live split block Commerce release 1
+  (`ai-chain-plan.md` section 6), because they are costly to add after modules ship.
+- Juristra can use AI over privileged documents once an in-region, zero-retention provider exists for that class.
+- 0021 is still Proposed; this ADR amends it but does not accept it (Open questions).
+
+## Enforcement
+
+planned — STA-340 (gen): an action whose `actors` include a user and that declares `tool: false` without a reason
+fails; tags outside the 0099 list fail; the AI marker is written from the manifest's tool entry. planned — the
+approval-mode resolver in `@stackra/ai` with a test per floor item of decision 8; the OS `ai` gateway's tests for the
+region rules and the field allow-list. Nothing checks these rules yet.
+
+## Open questions
+
+- **How `bulk` is read.** The owner fixed "bulk customer messages" as never-bypass and the `bulk` tag, and OS-325
+  (default, decision 8) sets 100 recipients. Whether `bulk` is a static tag on the permission, a runtime count, or
+  both is not decided.
+- **The coding agents (Q14, recommended: keep the 0293 tiers; owner to confirm).** Whether the development layer
+  keeps the allow, ask and deny tiers of [0293](/adr/0293-agent-permission-tiers-and-executor-pushes) and the change
+  risk scale R0 to R3, or is wired to the product approval service, is not decided. The owner did not answer Q14.
+- **Modes by level.** Which modes apply at L1 and L2, and whether bypass is limited to the sandbox (the plan proposed
+  it; the owner's answer said "like Claude Code", per session where the organisation allows it), is not decided.
+- **Always allow.** The plan proposed a 30-day expiry for a remembered "always allow" grant. The owner's answer ("like
+  Claude Code") did not set one.
+- **Approval-mode permission.** The plan proposed `ai.approval.manage` at L4 for changing modes. The owner placed mode
+  changes under "security and access" but named no permission.
+- **Consumer AI default.** OS-309's default put consumer-facing AI off until the merchant enables it; the owner's
+  answer covered the internal assistant only. Whether shopper-facing AI starts on or off is open.
+- **0021's status.** 0021 is still Proposed. Accept it as amended here, or fold it into this ADR.
+- **Live read-only and developer mode** (the owner's answer to Q6 and the modes answer of `questionnaire-commerce.md`)
+  are not recorded here; they are in
+  [0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records).
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Note, [0205](/adr/0205-the-figentra-os-build-order-and-the-first-slice) decision 1, [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free) decision 1,
+[0021](/adr/0021-ai-engine-and-agent-write-safety) decisions 3, 4 and 5, [0099](/adr/0099-risk-scale-l0-to-l4)
+decision 2 and [0100](/adr/0100-ai-model-and-ownership) decision 5. Reads with
+[0098](/adr/0098-actions-are-the-unit), [0139](/adr/0139-actions-declare-their-user-experience),
+[0153](/adr/0153-automations-run-as-principals-and-every-package-exposes-building-blocks),
+[0156](/adr/0156-ai-runtime-provider-drivers-memory-and-guardrails),
+[0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner) and
+[0293](/adr/0293-agent-permission-tiers-and-executor-pushes). Sources: owner decisions in chat, 2026-10-25 (the AI
+direction in `questionnaire-commerce.md` Answers; the "Owner answers" of `ai-chain-plan.md`: Q1, Q2, Q3, Q6, Q7,
+Q10, Q12; OS rounds 6, 18 and 19 to 21 in `os/owner-answers.md`: OS-305, OS-309, OS-310, OS-311, OS-313, OS-315, OS-316, OS-317,
+OS-326, OS-335, OS-339, OS-358, OS-424, OS-435, with OS-306, OS-307, OS-319 and OS-320 settled by the plan answers); OS-334, OS-325, OS-327, OS-332,
+OS-321 and OS-323 taken at their recommended defaults (`os/default-applied.md`).

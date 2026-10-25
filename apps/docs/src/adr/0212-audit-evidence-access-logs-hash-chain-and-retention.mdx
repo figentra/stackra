@@ -1,7 +1,15 @@
 ---
 title: "0212 — Audit: evidence, access logs, a hash chain and retention"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0358 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-25 by
+  [0358](/adr/0358-money-plans-and-pricing-four-levels-one-billing-engine-and-hybrid-pricing)
+  decision 20 (owner, OS-285, OS-286 and OS-287): Figentra keeps every audit record for the period
+  of this ADR whatever the plan; plans limit only what a tenant can see, every tier can search and
+  export, and a paid add-on gives longer history, the API, a SIEM stream and proofs.
+</Note>
 
 <Note>Supersedes [0047](/adr/0047-audit-service-via-events). Closes gap C43 (audit part).</Note>
 

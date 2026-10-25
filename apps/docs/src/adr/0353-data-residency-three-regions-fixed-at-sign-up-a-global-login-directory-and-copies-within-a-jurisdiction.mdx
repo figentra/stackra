@@ -1,0 +1,67 @@
+---
+title: "0353 — Data residency: three regions fixed at sign-up, a global login directory and copies within a jurisdiction"
+description: "Accepted · 2026-10-25"
+---
+
+<Note>
+  Amends [0186](/adr/0186-backups-and-disaster-recovery) (decision 3: object replication stays
+  inside one jurisdiction; the Note of 2026-10-24 and open question 2: whole-region loss),
+  [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) (decision 3: the values of
+  the tenant `region` column),
+  [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)
+  (decision 4: hosting; decision 7: the login hosts) and
+  [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial) (decision 4: the "Region
+  choice" row of the ladder), each by a Note. Reads with
+  [0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events), whose consented
+  copies stay the only way tenant data crosses a region. The clouds and accounts that host each
+  region are
+  [0354](/adr/0354-two-clouds-aws-and-gcp-one-aws-account-per-product-region-and-ksa-in-country).
+</Note>
+
+## Context
+
+Figentra sells in the Gulf, Egypt and the EU, and later in the US. KSA and UAE PDPL, Egypt's Law 151 and GDPR each limit where personal data goes. [0186](/adr/0186-backups-and-disaster-recovery) as amended on 2026-10-24 gave two regions (GCC and EU) and no transfer of tenant data between them, but its decision 3 still said cross-region object replication, and it left whole-region loss open. [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) put a `region` column on every tenant without naming the values. Some vendors (ZITADEL Cloud, Resend, Sentry, PostHog Cloud, some AI models) have no Middle East region. The owner settled the shape in round 3 (#4) and the OS questionnaire rounds 1 to 3 on 2026-10-25; the rest takes the recommended defaults of the same questionnaire.
+
+## Decision
+
+1. **Three regions.** The regions are `eu`, `me` and `us`. `eu` runs in Frankfurt (AWS `eu-central-1`, OS-2). `me` runs in the UAE (AWS `me-central-1`, [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) decision 2). `us` comes later; its location is not decided here.
+2. **Launch.** `me` and `eu` launch. `us` opens later (round-3 #4).
+3. **Chosen at sign-up, then fixed.** A tenant picks its region at sign-up, and the region never changes ([0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) decision 4). At launch a tenant moves only by export and import into a new tenant in the other region (OS-31). Tenant handles are unique across all regions per product and are reserved through the directory (OS-30). The tenant `region` column of [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) decision 3 holds `eu`, `me` or `us`.
+4. **Hosts.** Each product is served at `<region>.<product-domain>` (round-3 #4, OS-10). Sign-in is at one login host per product and region, for example `login.me.<product-domain>`, with the tenant's branding; sign-in on a tenant's custom domain is Enterprise only (OS-37).
+5. **Global login directory.** One directory routes sign-in to the right region (round-3 #4). It stores only keyed hashes (an HMAC of the normalised email or phone) mapped to a list of regions, plus tenant handles and custom hostnames mapped to a region. It is owned by identity, runs as an edge Worker with globally replicated KV, and each region's identity service writes to it through events (OS-4). A person with accounts in two regions has one account per region; after the email is entered, the directory shows a region picker, and the accounts are linked only for that routing (OS-24).
+6. **Regions are independent.** Each region runs its own stack and keeps its tenants' data. No tenant data moves between regions, except an item a user releases over a cross-tenant share ([0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events) decision 4). Figentra staff use one Operations host per region; a view across regions (such as audit) fans out queries and copies nothing centrally (OS-9).
+7. **Disaster copies stay in one jurisdiction.** Backups, snapshots and object replication stay inside the tenant's jurisdiction: a second account, a second zone or a second region of the same jurisdiction. They never cross between `eu`, `me` and `us` (OS-5). This replaces "cross-region replication" in [0186](/adr/0186-backups-and-disaster-recovery) decision 3.
+8. **Region loss.** If the whole `eu` region is lost, `eu` is restored in a second EU region from the copies of decision 7. If the whole `me` region is lost, `me` is down until its region returns, and the SLA says so (OS-6). The stack is never active-active ([0186](/adr/0186-backups-and-disaster-recovery) decision 6).
+9. **Vendors without an ME region** (OS-7, OS-192, OS-293).
+   - Identity runs in-region or self-hosted (OS-7, OS-22). Identity is one ZITADEL per region: ZITADEL Cloud where it has a region that meets residency, self-hosted (unmodified) in `me` (OS-22).
+   - AI processing follows [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor) decision 14.
+   - Email (Resend), crash reports (Sentry) and product analytics (PostHog Cloud EU) may use EU hosting for every region. An Amazon SES driver per region is added when a customer needs in-region email (OS-192). Product analytics events carry no personal data ([0071](/adr/0071-privacy-obligations) decision 6, OS-293).
+10. **Entities in other countries.** By default a tenant may hold legal entities in any country, and all of their data lives in the tenant's region (OS-29). Strict separation, one organisation per region joined by cross-tenant shares, is an Enterprise option on request, not the default.
+
+11. **Restoring one tenant** (OS-304, recommended default; answers open question 1 of [0186](/adr/0186-backups-and-disaster-recovery)). A single tenant is restored from the pooled database by restoring a point-in-time copy into an isolated environment and copying the tenant's rows and files back with data-transfer tooling. It is a support operation for Business and above.
+
+## Consequences
+
+- A tenant's data has one home, so the residency promise at sign-up is a fact of the stack, not a policy.
+- Sign-in needs the directory before it knows the region. The directory holds no readable personal data and survives the loss of any one region.
+- `me` customers accept downtime in a full region loss, and the SLA must say so before the first paid `me` tenant.
+- Every service that stores bytes or rows needs a per-region configuration, and every new vendor needs a residency check against decision 9.
+- A tenant that needs to change region has a manual export and import at launch.
+
+## Enforcement
+
+planned — the `region` value check in the migration lint ([0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) enforcement); bucket and snapshot replication targets checked in the `@stackra/infra-*` components against the tenant jurisdiction; a directory schema test that refuses a plain email, phone or name field; the sub-processor list reviewed against decision 9.
+
+## Open questions
+
+1. **Second EU region.** Decision 8 restores `eu` in "a second EU region". Which AWS region is not decided.
+2. **`us` region.** The location and launch date of `us` are not decided.
+3. **AI for `me` tenants.** OS-7 (round 2) says AI runs in-region or self-hosted; OS-311 (round 6) allows EU with disclosure when no in-region model exists. [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor) decision 14 follows OS-311 as the later, more specific answer. The owner should confirm.
+4. **Egypt.** Where Egypt tenants are served, and whether they need a Law 151 transfer licence, is not decided. See [0354](/adr/0354-two-clouds-aws-and-gcp-one-aws-account-per-product-region-and-ksa-in-country) open question 2.
+5. **SLA wording** for decision 8 is not written.
+6. **A "dedicated" region choice.** The ladder row of [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial) read "no / no / yes / dedicated". Decision 3 now gives every tier a choice of `eu` or `me` at sign-up. Whether a dedicated deployment stays an Enterprise row is not decided.
+7. **Where the OS repository records this.** The Figentra OS repository holds uncommitted ADRs on the same subjects. Which repository keeps which decision is open; see [0358](/adr/0358-money-plans-and-pricing-four-levels-one-billing-engine-and-hybrid-pricing) open question 5.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0186](/adr/0186-backups-and-disaster-recovery) decision 3, its Note of 2026-10-24 and its open question 2, [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) decision 3, [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral) decisions 4 and 7 and [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial) decision 4 (the region row). Sources: owner decisions in chat, 2026-10-25: round-3 #4 (`notes/handover/360/questionnaire-round-3.md`); OS rounds 1 to 3 and 6, OS-2, OS-5, OS-6, OS-7, OS-29, OS-192, OS-293, OS-311 (`notes/handover/os/owner-answers.md`); recommended defaults OS-4, OS-9, OS-10, OS-22, OS-24, OS-30, OS-31, OS-37, OS-304 (`notes/handover/os/default-applied.md`); question text in `notes/handover/os/questionnaire-os.md` section 1.

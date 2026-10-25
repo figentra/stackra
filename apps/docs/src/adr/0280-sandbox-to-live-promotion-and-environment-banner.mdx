@@ -1,7 +1,18 @@
 ---
 title: "0280 — Sandbox to live promotion and the environment banner"
-description: "Accepted · 2026-10-21"
+description: "Accepted, amended by 0359 · 2026-10-21"
 ---
+
+<Note>
+  Amended 2026-10-25 by
+  [0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records)
+  decisions 3 to 5, 7 and 9 (owner, OS-15 and AI plan Q6): live configuration is read-only and
+  changes only by promotion. Decision 1's "the catalogue" means the catalogue's structure (product
+  types, attributes, categories, channels, tax and shipping rules); products, prices, stock and
+  other operational records are edited in live with revisions and audit. Open detail 1 (the
+  approver) stands, and promotion is an L4 action. Break-glass changes on live are copied back to
+  every sandbox.
+</Note>
 
 <Note>
   Specifies the sandbox promotion that

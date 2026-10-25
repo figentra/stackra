@@ -1,0 +1,93 @@
+---
+title: "0356 — Choosing a provider per tenant and market: through the Connection, with a market default"
+description: "Accepted · 2026-10-25"
+---
+
+## Context
+
+`@Replaces(Port)` binds a custom driver over a port's shipped drivers for the whole container
+([0263](/adr/0263-di-stays-and-gen-writes-the-wiring), [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers)
+decision 9). It cannot pick a provider per tenant or per country. Payments, SMS, WhatsApp, fiscal clearance, KYC,
+shipping, accounting and AI do exactly that: a KSA tenant charges through a KSA gateway, an Academorix tenant may bring
+its own SMS account. [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks) rule 4
+lets a Connection's fields override an Integration's, but that covers credentials, not the choice of provider. The
+adapter readiness report asked for one rule before payments and fiscal are built. The owner decided it on 2026-10-25
+(round-3 #8, with OS-74).
+
+## Decision
+
+1. **`@Replaces` stays global.** It swaps the driver class of a port for every tenant in that deployment. It is never
+   used to choose a provider per tenant, market or legal entity.
+2. **The Connection chooses the provider.** A capability that has more than one provider (a port with several driver
+   Integrations) resolves the provider for a call from the tenant's Connection for that capability, found at the scope
+   by walking the Integration's declared levels
+   ([0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks) rule 9). The driver bound to
+   that Connection's Integration serves the call.
+3. **Market default.** When the tenant has no Connection for the capability, the platform's default for the Market
+   applies: a platform Connection set per Market and capability
+   ([0244](/adr/0244-markets-owned-by-pricing)). For payments the Market is the checkout's Market, which already carries
+   the payment methods and processors (0244 decision 1).
+4. **Two ways to get a provider.** For each capability that offers both, the tenant uses either:
+   - **Figentra-provided**: the platform's provider account. The tenant pays Figentra (credits for messages, the
+     platform rate for payments, credits for AI); or
+   - **bring your own**: the tenant connects its own provider account from the app market
+     ([0355](/adr/0355-marketplace-one-integration-with-up-to-five-roles-one-app-market-and-open-to-any-developer)) and
+     pays the provider directly.
+5. **Bring your own, by capability.**
+   - **Payments**: the merchant may use its own gateway account or Figentra's platform account; the fees are in
+     [0357](/adr/0357-payments-architecture-one-engine-gateway-drivers-a-platform-layer-and-figentra-pay) decision 6.
+   - **Messaging** (SMS, WhatsApp, push): Figentra sends through its own providers against credits, or the tenant brings
+     its own provider with its own key (OS-74). A tenant's own WhatsApp Business account connects through Meta's
+     embedded sign-up (OS-188).
+   - **AI model keys**: see [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor) decision 17.
+   - **Other provider accounts and OAuth apps** (by default): own provider accounts on every paid plan; an own OAuth
+     app on higher plans and Enterprise (OS-216; [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks)
+     rule 11).
+6. **Platform market defaults are data, not code.** The default provider per Market for a capability (for example the
+   SMS defaults of OS-186: KSA Unifonic with Taqnyat as failover, UAE Twilio, Egypt Cequens, EU Twilio) is set as
+   platform configuration, so a change of default is not a release.
+7. **Sandboxes.** Sandbox behaviour (test-mode gateways, captured messages, test endpoints) is in
+   [0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records) decision 11,
+   whichever way the provider was chosen.
+8. **Failover** is always on for the platform's own provider accounts; on tenant-owned providers it is a higher-plan
+   feature (OS-202).
+
+## Consequences
+
+- Payments, messaging, fiscal, KYC, shipping, accounting and AI share one rule for picking a provider, so no service
+  invents its own country switch.
+- A new market is a new set of platform Connections and defaults, not a code change.
+- Every multi-provider capability needs a port with a driver per provider, each an Integration
+  ([0355](/adr/0355-marketplace-one-integration-with-up-to-five-roles-one-app-market-and-open-to-any-developer)
+  decision 1).
+- The hosted Connection store with per-tenant encryption (round-3 #10, OS integrations) must exist before any
+  per-tenant provider runs in production.
+
+## Enforcement
+
+planned — a `ConnectionContext` driver in `@stackra/integrations` that resolves the tenant Connection, then the market
+default; a conformance test per multi-provider port (tenant Connection wins; no Connection gives the market default;
+`@Replaces` changes the driver class only); a gen or validator check that refuses `@Replaces` code that branches on the
+tenant or the Market.
+
+## Open questions
+
+1. **Which Market keys the default for non-payment capabilities.** For SMS and WhatsApp it could be the tenant's Market
+   or the recipient's country; for fiscal it could be the legal entity. Not decided.
+2. **Fallback from a failing tenant Connection.** Whether a call falls back to the Figentra-provided provider when the
+   tenant's own Connection fails, or refuses, is not decided. OS-219 says connections are never auto-disconnected;
+   it does not say whether calls switch provider.
+3. **Several tenant Connections for one capability** (for example two gateways in one Market): which serves a call is
+   not decided beyond 0308 rule 10 (`connection_ambiguous`).
+
+## Supersedes and sources
+
+Supersedes: none. Reads with [0263](/adr/0263-di-stays-and-gen-writes-the-wiring),
+[0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks),
+[0244](/adr/0244-markets-owned-by-pricing),
+[0219](/adr/0219-the-merchant-account-chain-and-registered-price-models) decision 2 and
+[0156](/adr/0156-ai-runtime-provider-drivers-memory-and-guardrails). Sources: owner decisions in chat, 2026-10-25:
+round-3 questionnaire 8 and 10 (`notes/handover/360/questionnaire-round-3.md`); Commerce questionnaire Answers, 27
+(gateways chosen per tenant and market through the Connection); OS answers OS-74, OS-93 and OS-313, and the defaults
+OS-18, OS-186, OS-188, OS-202, OS-216 and OS-219 (`notes/handover/os/`); `360/adapter-readiness-and-missing-packages.md`
+finding 1 and action 4.

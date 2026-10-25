@@ -1,7 +1,36 @@
 ---
 title: "0242 — Commercial model: per-product plan ladders, shared add-ons, hybrid metric, and a 14-day trial"
-description: "Accepted · 2026-10-20"
+description: "Accepted, amended by 0353, 0358, 0359 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-25 by
+  [0353](/adr/0353-data-residency-three-regions-fixed-at-sign-up-a-global-login-directory-and-copies-within-a-jurisdiction)
+  decision 3 (owner, round-3 #4): in the ladder of decision 4, the "Region choice" row (no / no /
+  yes / dedicated) no longer holds. Every tier picks `eu` or `me` at sign-up, and the region is then
+  fixed. Whether "dedicated" stays an Enterprise row is open.
+</Note>
+
+<Note>
+  Amended 2026-10-25 by
+  [0358](/adr/0358-money-plans-and-pricing-four-levels-one-billing-engine-and-hybrid-pricing) (owner
+  decisions in chat, OS rounds 8 to 13): decision 1's buying unit is one plan per product bundling
+  its OS part, plus paid modules in the app market (0358 decisions 1 and 5); decision 2's seats are
+  active internal members, counted per product, with storage, AI credits and automation runs pooled
+  per organisation (0358 decisions 8 and 9); decision 4's numbers stay placeholders until the cost
+  model and the owner's approval (0358 decision 16); decision 5's trial is one per product per
+  organisation (0358 decision 17, OS-83). The "Support" row follows 0358 decision 19 and the "Audit
+  retention" row 0358 decision 20; the ladder also gains device and external-user limits (0358
+  decision 18, placeholders). Decisions 3, 6 and 7 stand.
+</Note>
+
+<Note>
+  Amended 2026-10-25 by
+  [0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records)
+  decision 10 (owner, OS-16): in the ladder of decision 4, the "Sandbox environments" row is Starter
+  1, Pro 1, Business 3, Enterprise custom. Every tier gets a sandbox because live configuration is
+  read-only.
+</Note>
 
 <Note>
   Completes [0203](/adr/0203-the-commercial-model-billing-provider-and-tier-names): this ADR holds

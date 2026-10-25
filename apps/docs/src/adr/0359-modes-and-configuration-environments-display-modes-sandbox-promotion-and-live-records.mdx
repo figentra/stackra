@@ -1,0 +1,60 @@
+---
+title: "0359 — Modes and configuration environments: display modes, sandbox promotion and live records"
+description: "Accepted · 2026-10-25"
+---
+
+<Note>
+  Amends [0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner) (decision 1: live
+  configuration is read-only and changes by promotion, and the catalogue's structure is promoted
+  while its products, prices and stock are live records),
+  [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial) (the "Sandbox
+  environments" row of the ladder: Starter gets one) and
+  [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) (decision 13:
+  saved views with grouping), each by a Note.
+</Note>
+
+## Context
+
+The owner wants every configuration kept in the system in full detail, a developer mode that shows it all, a normal mode that hides it, and live configuration that cannot be edited in place (Commerce questionnaire, Answers, Modes). [0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner) already promotes configuration from a sandbox with a reviewed diff, but it does not make live read-only, and it lists "the catalogue" as promoted. A merchant still has to change a price or close a store in minutes, so the line between configuration and operational records had to be drawn. [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial) gives Starter no sandbox, which would leave a Starter tenant unable to configure anything. The owner settled these on 2026-10-25 (OS-15, OS-16, AI plan Q6); the rest takes the recommended defaults.
+
+## Decision
+
+1. **Two display modes.** Developer mode shows every setting, with its provenance and lock along the cascade ([0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions) decision 2). Normal mode shows only the fields a product marks as essential; every other setting stays in the system with its value or default.
+2. **A mode is display only.** The mode never grants or denies an action. IAM alone decides what a person can do, and hiding a field is not a security control. Developer mode is a per-user toggle, offered to holders of a developer-mode permission (owners, admins and developers by default) (OS-20).
+3. **Live configuration is read-only.** Structural configuration changes only in a sandbox and reaches live only by promotion: modules, roles, rules, integrations, forms bound to actions, automations, the app shell, navigation, checkout, Markets, tax rules, price models, and the catalogue's structure (product types, attributes, categories, channels, tax and shipping rules) (OS-15, Q6).
+4. **Operational records are edited in live.** Products, prices and price lists, stock, promotions, content publishing (pages, posts, email templates), personal dashboards and views, staff, schedules, store open or closed, holiday hours, kill switches and notification preferences are changed directly in live. Each change keeps a revision and an audit record, with approval above thresholds (OS-15, Q6). Business data (customers, orders, payments) is never promoted ([0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner) open detail 3).
+5. **Declared per kind.** Whether a field or a document kind is live-editable is declared on it, in code, not chosen per tenant (OS-15).
+6. **Proposed, not yet decided by the owner: change sets.** A promotion moves one versioned change set: the revisions per kind, one combined diff, and the live revision it was computed against. Applying it checks that live is still at that revision; if live has changed, apply refuses and asks for a new diff (AI chain plan 4.2).
+7. **Promote.** Promotion is one action at risk L4. The owner or an admin of the live tenant approves it with a step-up ([0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner) open detail 1, [0207](/adr/0207-authentication-assurance-and-machine-identities) decision 1). An AI agent may prepare a change set in the sandbox but never applies one without a named human (OS-306, OS-322). The promotion record holds the approver, the diff and the verify result (and the change-set hash if decision 6 is confirmed).
+8. **Proposed, not yet decided by the owner: rollback.** Rollback re-applies the previous live snapshot as a new change set, through the same action at the same level. Live keeps every applied snapshot.
+9. **Break-glass.** For an incident, the owner may change live configuration directly with a step-up and a written reason. The change is audited and copied back to every sandbox, so the next promotion does not undo it (OS-21, Q6).
+10. **Every tier has a sandbox.** Starter 1, Pro 1, Business 3, Enterprise custom (OS-16).
+11. **What a sandbox holds and does.** A new or reset sandbox holds live configuration plus synthetic demo data seeded by each product (OS-17). Payment gateways are forced to test mode, every outbound message is captured in a sandbox inbox, and integrations use their test endpoints (OS-18). AI credits, API calls and messages used in a sandbox are not billed, within a sandbox quota per tier and with lower rate limits (OS-19).
+12. **Normal mode hides the sandbox.** In normal mode the sandbox is created for the tenant, and promotion is one "publish to live" step from the same editor; the merchant never has to manage a sandbox (OS-15).
+13. **Not a code deploy.** Tenant promotion is an OS tenancy action. It is not `stackra runway promote` ([0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step)), which moves code between Figentra environments. The two share only the words and the record shape.
+
+14. **Saved views** (OS-259). Rule 13 of [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) is reopened now: a saved view of a resource gets Linear-style grouping, sub-grouping, totals and sharing. Reports remain saved views, report widgets and dashboards plus an "explore" view, with no free report builder (OS-258).
+
+## Consequences
+
+- A broken live store has two fixes: edit an operational record directly, or break-glass. Everything else goes through a reviewed change set.
+- Every configuration kind needs export, diff, apply and verify, and every service must say which of its fields are live-editable.
+- Every tenant now carries at least one sandbox, which costs provisioning and storage for Starter too.
+- Hiding fields in normal mode needs a per-field "essential" marker in each product.
+
+## Enforcement
+
+planned — a settings test that refuses a write to a non-live field in a live tenant; a promotion test that asserts no key or secret is copied (and, if decision 6 is confirmed, refuses a change set whose base revision is stale) ([0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner) enforcement); an IAM test that the developer-mode flag never changes a permission check; the entitlement table test of [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial) with the new sandbox row.
+
+## Open questions
+
+1. **Change-set mechanics.** Decisions 6 and 8 (the base-revision check and rollback by re-applying a snapshot) come from section 4.2 of the AI chain plan, which marks them "proposed". The owner's answers cover live read-only, the live and structure split, break-glass and the sandbox counts, but did not address these two mechanics by name. They are marked as proposed in the Decision section; the owner should confirm or change them.
+2. **Saved-view design.** How grouping, sub-grouping, totals and sharing of decision 14 are specified (the table contract of 0307 decision 1, sharing scope and permission) is not decided.
+3. **Break-glass permission.** OS-21 says "owner with step-up"; the AI plan proposed a named L4 permission. Whether admins may also hold it is not decided.
+4. **Approval thresholds** for operational changes in decision 4 are not set.
+5. **Names.** The `@Setting` option that marks a field live-editable (OS-15 gives `@Setting({ live: true })` as an example), the option that marks a field essential for normal mode, and a refusal code for a write to read-only live configuration (the plan proposes `live_read_only`, which needs an amendment of [0137](/adr/0137-declared-action-options-and-refusal-codes)) are not decided.
+6. **Release ordering.** The plan proposes that a change set records the minimum platform release it needs, and that promotion is refused on an older live release. Not decided.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner) decision 1, [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial) decision 4 (the sandbox row) and [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) decision 13. Sources: owner decisions in chat, 2026-10-25: Commerce questionnaire Answers, Modes (`notes/handover/360/questionnaire-commerce.md`); OS round 3, OS-15 and OS-16, round 6, OS-306, and round 16, OS-258 and OS-259 (`notes/handover/os/owner-answers.md`); AI chain plan, Owner answers Q6, and sections 4.2 to 4.4 (`notes/handover/360/ai-chain-plan.md`); recommended defaults OS-17 to OS-21 and OS-322 (`notes/handover/os/default-applied.md`, `notes/handover/os/questionnaire-os.md`).

@@ -1,7 +1,15 @@
 ---
 title: "0218 — Integrations: the connector SDK and connections per chain level"
-description: "Accepted, amended by 0308 · 2026-10-20"
+description: "Accepted, amended by 0308, 0355 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-10-25 by
+  [0355](/adr/0355-marketplace-one-integration-with-up-to-five-roles-one-app-market-and-open-to-any-developer)
+  (owner decisions in chat, round-3 #5): decision 5 is decided. One provider is one Integration with
+  up to five roles (driver, channel, surface, connector, webhooks), listed in the one app market
+  only if a tenant connects, consents or pays. Decisions 1 to 4 stand.
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-406), by [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks). The connections package is `@stackra/integrations`, and a connection binds its integration by name with `Connection<I>` (rules 1 and 2). The store is a port with a `local` and a `hosted` driver, and the integrations service hosts the hosted driver, as decision 4 says (rule 12). Activepieces pieces are out of scope for v3.1, and their fields are reserved only (rule 21), so decision 1's adapter is not built in v3.1. Decisions 2, 3 and 5 stand in substance.

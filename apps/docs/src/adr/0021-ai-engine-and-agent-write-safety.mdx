@@ -1,7 +1,19 @@
 ---
 title: "0021 — AI engine and agent write safety"
-description: "Proposed · 2026-10-19"
+description: "Proposed, amended by 0100, 0156, 0360 · 2026-10-19"
 ---
+
+<Note>
+  Amended 2026-10-25 by
+  [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor),
+  owner decisions in chat (ai-chain-plan Q3 and Q12, OS-315): decision 3: AI is on by default for
+  reads and L0-L1 tools; L2 and above follow the approval modes; the per-tenant switch stays as an
+  off switch. Decision 4: context reaches a model through a field allow-list per data class;
+  special-category and privileged data only with an in-region, zero-retention provider the tenant
+  enables; the redaction stays. Decision 5: the default-deny write list gives way to 0360 decision 4
+  (every action a user can perform is a tool unless it declares `tool: false` with a reason); L3 and
+  L4 still need a named human. Decisions 1, 2 and 6 to 9 stand. This ADR stays Proposed.
+</Note>
 
 <Note>
   Amended by [0156](/adr/0156-ai-runtime-provider-drivers-memory-and-guardrails), decision 3: the AI
