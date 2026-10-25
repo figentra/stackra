@@ -1063,6 +1063,9 @@ importers:
       '@stackra/i18n':
         specifier: workspace:*
         version: link:../../foundation/i18n
+      '@stackra/iam':
+        specifier: workspace:*
+        version: link:../../security/iam
       '@stackra/query':
         specifier: workspace:*
         version: link:../../state/query
