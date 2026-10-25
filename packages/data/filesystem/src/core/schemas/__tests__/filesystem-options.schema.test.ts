@@ -25,7 +25,7 @@ describe("FilesystemOptions", () => {
 
   it("types disk as the FileSystem driver names", () => {
     expectTypeOf<FilesystemOptions["disk"]>().toEqualTypeOf<
-      "memory" | "local" | "s3" | "encore_bucket" | "electron"
+      "memory" | "local" | "s3" | "gcs" | "encore_bucket" | "electron"
     >();
     expectTypeOf<FilesystemOptions["url"]>().toEqualTypeOf<string | null>();
   });

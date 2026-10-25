@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `FilesystemOptions`, the shape of `FilesystemConfig`: which disk runs, where the local disk keeps its files,
- *          the base URL public files are served from and the S3/R2 bucket.
+ *          the base URL public files are served from, the S3/R2 bucket and the
+ *          GCS bucket.
  * Boundary: a shape class; it registers this package's own schema (`FILESYSTEM_CONFIG_SCHEMA`) for itself when the
- *           module loads, so `buildConfig(FilesystemConfig)` validates with no generated file. `s3` is a nested object
- *           a host override replaces whole, merging the base value explicitly. Deploy-time values only; no credential.
+ *           module loads, so `buildConfig(FilesystemConfig)` validates with no generated file. `s3` and `gcs` are nested
+ *           objects a host override replaces whole, merging the base value explicitly. Deploy-time values only; no credential.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); ADR 0305 (rule 34); ADR 0234 (decision 7).
  */
@@ -46,6 +47,14 @@ export class FilesystemOptions extends Schema {
     /** Path-style addressing (`<endpoint>/<bucket>/<key>`), which MinIO needs. */
     forcePathStyle: boolean;
   } = { bucket: "", region: "us-east-1", endpoint: null, forcePathStyle: false };
+
+  /** The Google Cloud Storage bucket of the `gcs` disk (the in-country GCP environments, ADR 0354). */
+  gcs: {
+    /** The bucket name; required by the `gcs` disk. */
+    bucket: string;
+    /** The project the client bills to; `null` reads it from the environment's credentials. */
+    projectId: string | null;
+  } = { bucket: "", projectId: null };
 }
 
 registerSchemas([[FilesystemOptions, FILESYSTEM_CONFIG_SCHEMA]]);

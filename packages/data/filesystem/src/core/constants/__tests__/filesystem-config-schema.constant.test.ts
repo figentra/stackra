@@ -20,6 +20,7 @@ describe("FILESYSTEM_CONFIG_SCHEMA", () => {
       root: "storage",
       url: null,
       s3: DEFAULT_S3,
+      gcs: { bucket: "", projectId: null },
     });
   });
 

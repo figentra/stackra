@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./node` entry: the local, S3/R2 and Encore bucket disks are exported and
+ * Purpose: the consumer contract of the `./node` entry: the local, S3/R2, GCS and Encore bucket disks are exported and
  *          nothing else is.
  * Boundary: test only; imports the stand-in barrel through its `#node` alias.
  * Runtime: node (vitest)
@@ -14,6 +14,7 @@ describe("@stackra/filesystem/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
       "EncoreBucketFileSystemDriver",
+      "GcsFileSystemDriver",
       "LocalFileSystemDriver",
       "S3FileSystemDriver",
     ]);

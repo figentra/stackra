@@ -1,10 +1,12 @@
 # @stackra/filesystem
 
-Stackra server disks: the `FileSystem` port, its memory, local, S3/R2 and Encore bucket drivers, the Electron
+Stackra server disks: the `FileSystem` port, its memory, local, S3/R2, Google Cloud Storage and Encore bucket
+drivers, the Electron
 main-process driver, and `FilesystemConfig`, which picks the driver.
 
 **Tier:** `tier:lib` (`packages/data/filesystem`). Entries `.`, `./contracts`, `./node` and `./desktop`. Depends on
-`@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@stackra/config`, zod and the AWS SDK S3 client;
+`@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@stackra/config`, zod, the AWS SDK S3 client and
+`@google-cloud/storage`;
 `electron` is an optional peer of `./desktop`.
 
 ## What is here
@@ -14,12 +16,13 @@ main-process driver, and `FilesystemConfig`, which picks the driver.
 | `./contracts` | `FileSystem`                            | the port: `exists`, `read`, `write`, `delete`, `list`, `stat`, `url`, `temporaryUrl` |
 | `./contracts` | `EncoreBucket`                          | the slice of an Encore bucket the `encore_bucket` disk drives                        |
 | `./contracts` | `FileStat`, `WriteOptions`              | types: `{ path, size, lastModified, contentType }`, `{ contentType? }`               |
-| `.`           | `FilesystemConfig`, `FilesystemConfig$` | key `filesystem`: `disk`, `root`, `url`, `s3`                                        |
+| `.`           | `FilesystemConfig`, `FilesystemConfig$` | key `filesystem`: `disk`, `root`, `url`, `s3`, `gcs`                                 |
 | `.`           | `FilesystemOptions`                     | the shape of the configuration, for restating a field type in an override            |
 | `.`           | `MemoryFileSystemDriver`                | `disk: memory`: a `Map`, for tests and as the safe default                           |
 | `.`           | `FileNotFoundError`                     | what `read` and `stat` throw when nothing is stored under a key                      |
 | `./node`      | `LocalFileSystemDriver`                 | `disk: local`: a folder (`root`), atomic writes                                      |
 | `./node`      | `S3FileSystemDriver`                    | `disk: s3`: AWS S3, Cloudflare R2 or MinIO; presigned temporary URLs                 |
+| `./node`      | `GcsFileSystemDriver`                   | `disk: gcs`: Google Cloud Storage (in-country GCP, ADR 0354); V4 signed URLs         |
 | `./node`      | `EncoreBucketFileSystemDriver`          | `disk: encore_bucket`: the bucket the generated Encore app binds                     |
 | `./desktop`   | `ElectronFileSystemDriver`              | `disk: electron`: the desktop app's files under `userData/<root>`                    |
 
@@ -43,6 +46,7 @@ prefix at any depth: `images/` is a folder, `images` also matches `images-2026/`
 | `memory`        | `filesystem.url` + key  | the URL with an unsigned `expires`   | kept                 | the `Clock`'s now     |
 | `local`         | `filesystem.url` + key  | refuses: nothing checks a signature  | `null`               | file time             |
 | `s3`            | `filesystem.url` + key  | SigV4 presigned GET (at most 7 days) | kept                 | object time           |
+| `gcs`           | `filesystem.url` + key  | V4 signed GET (at most 7 days)       | kept                 | object update time    |
 | `encore_bucket` | the bucket's public URL | Encore signed download URL           | kept                 | `null`                |
 | `electron`      | `file:` URL             | the same `file:` URL                 | `null`               | file time             |
 
@@ -62,7 +66,8 @@ config:
 ```
 
 No credential is configuration. The S3 driver uses the AWS SDK's default chain (`AWS_ACCESS_KEY_ID` and
-`AWS_SECRET_ACCESS_KEY`, which runway syncs from Infisical, or an instance role). The Encore driver imports no
+`AWS_SECRET_ACCESS_KEY`, which runway syncs from Infisical, or an instance role). The GCS driver reads Application
+Default Credentials (workload identity on GCP) and takes only `gcs.bucket` and an optional `gcs.projectId`. The Encore driver imports no
 `encore.dev`: the generated Encore app declares the bucket and binds `EncoreBucket`.
 
 ## Overriding

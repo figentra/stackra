@@ -25,7 +25,8 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`, `./desktop`.
 ## This package
 
 - Every driver normalises keys through the one shared function: `..`, a backslash or a NUL is a `RangeError`.
-- No credential is configuration: the S3 driver uses the SDK's default chain; the Encore driver imports no
+- No credential is configuration: the S3 driver uses the SDK's default chain, the GCS driver Application Default
+  Credentials; the Encore driver imports no
   `encore.dev` and drives the `EncoreBucket` slice the generated app binds.
 - One disk per member; named disks, uploads and tenant file records belong elsewhere (README, "Not here").
 

@@ -2,7 +2,7 @@
   "name": "@stackra/filesystem",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra server disks: the FileSystem port with memory, local, Encore bucket and S3/R2 drivers, the Electron main-process driver, and FilesystemConfig with its shipped schema",
+  "description": "Stackra server disks: the FileSystem port with memory, local, Encore bucket, S3/R2 and Google Cloud Storage drivers, the Electron main-process driver, and FilesystemConfig with its shipped schema",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -84,6 +84,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",
     "@aws-sdk/s3-request-presigner": "catalog:",
+    "@google-cloud/storage": "catalog:",
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",

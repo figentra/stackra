@@ -10,4 +10,11 @@
  */
 
 /** The `FileSystem` drivers of this package, by name. */
-export const FILE_SYSTEM_DISKS = ["memory", "local", "s3", "encore_bucket", "electron"] as const;
+export const FILE_SYSTEM_DISKS = [
+  "memory",
+  "local",
+  "s3",
+  "gcs",
+  "encore_bucket",
+  "electron",
+] as const;
