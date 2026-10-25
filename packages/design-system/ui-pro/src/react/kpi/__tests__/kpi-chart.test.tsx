@@ -8,7 +8,7 @@
  * Governing contract: ADR 0329 (motion layer); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
-// @covers sta-430:FR-005
+// @covers sta-430:FR-005 sta-430:P-001 sta-430:P-002
 import { render } from "@testing-library/react";
 
 import { KpiChart } from "#react/kpi/kpi-chart";
@@ -32,7 +32,7 @@ describe("Kpi.Chart (web)", () => {
     expect(received.props["areaProps"]).toEqual({
       isAnimationActive: "auto",
       animationDuration: 400,
-      animationEasing: "cubic-bezier(0.22, 1, 0.36, 1)",
+      animationEasing: "cubic-bezier(0.22,1,0.36,1)",
     });
     expect(received.props["data"]).toBe(DATA);
   });

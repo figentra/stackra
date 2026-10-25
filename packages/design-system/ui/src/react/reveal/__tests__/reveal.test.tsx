@@ -9,7 +9,7 @@
  * Governing contract: ADR 0329 (motion layer); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
-// @covers sta-430:FR-002 sta-430:FR-004
+// @covers sta-430:FR-002 sta-430:FR-004 sta-430:P-001 sta-430:P-003
 import { render, screen } from "@testing-library/react";
 
 import { Reveal } from "#react/reveal/reveal";

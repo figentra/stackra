@@ -19,6 +19,7 @@ const ANIMATED = { animate: CHART_SERIES_ANIMATE };
 
 /** The pie chart: HeroUI Native Pro's own PieChart, with every prop and part it has, its slices animating to new data. */
 export const PieChart: typeof HeroPieChart = Object.assign(
+  // A copy of the root, so adding the parts below never changes HeroUI Native Pro's own PieChart.
   withDefaults(HeroPieChart, {}),
   HeroPieChart,
   {

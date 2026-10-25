@@ -44,6 +44,7 @@ where HeroUI Pro and HeroUI Native Pro leave it off: the KPI sparkline, the nati
 
 - **P-001**: Every new duration is `0ms` under reduced motion, and every animated default is still under reduced motion — Validates: FR-001, FR-004
 - **P-002**: A caller's own animation props always win over a default — Validates: FR-005, FR-006, FR-007, FR-008
+- **P-003**: `Reveal` enters on the theme's `reveal` step on both platforms, delayed by `index` × `stagger` — Validates: FR-002, FR-003
 
 ## Delegation and risk plan
 

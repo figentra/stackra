@@ -20,6 +20,7 @@ describe("motionTiming", () => {
   it("reads the duration in milliseconds or seconds", () => {
     expect(timingOf({ duration: "400ms", easing: "linear" }).durationMs).toBe(400);
     expect(timingOf({ duration: "0.25s", easing: "linear" }).durationMs).toBe(250);
+    expect(timingOf({ duration: ".5s", easing: "linear" }).durationMs).toBe(500);
   });
 
   it("maps the named easings to the control points CSS defines", () => {
@@ -38,6 +39,8 @@ describe("motionTiming", () => {
   it("refuses a missing step, and a duration or an easing it cannot play", () => {
     expect(() => motionTiming(STACKRA_THEME, "missing")).toThrow(RangeError);
     expect(() => timingOf({ duration: "fast", easing: "linear" })).toThrow(RangeError);
+    expect(() => timingOf({ duration: "-1ms", easing: "linear" })).toThrow(RangeError);
+    expect(() => timingOf({ duration: "1ms", easing: "constructor" })).toThrow(RangeError);
     expect(() => timingOf({ duration: "1ms", easing: "cubic-bezier(1, 2)" })).toThrow(RangeError);
   });
 

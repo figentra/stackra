@@ -19,9 +19,9 @@ material. Animating a blur radius on the web repaints the whole backdrop on each
 
 1. **Motion tokens.** `Theme.motion` gains two steps. `reveal` (400ms, `cubic-bezier(0.22, 1, 0.36, 1)`) is an
    entrance: a row arriving, a chart drawing in, a number rolling. `stagger` (40ms) is the delay between items that
-   reveal in a row; only its duration is read. The web stylesheet renders them as `--duration-reveal`, `--ease-reveal`
-   and `--duration-stagger`, and sets every duration to `0ms` under `prefers-reduced-motion: reduce`, as for the other
-   steps.
+   reveal in a row; only its duration is read. The web stylesheet renders them as `--duration-reveal`, `--ease-reveal`,
+   `--duration-stagger` and `--ease-stagger`, and sets every duration to `0ms` under `prefers-reduced-motion: reduce`,
+   as for the other steps.
 
 2. **`motionTiming`.** `@stackra/tokens` exports `motionTiming(theme, name)`, which reads a step as milliseconds and a
    cubic bezier for animation libraries in JavaScript (Motion, Reanimated, Recharts, NumberFlow). It throws a
@@ -35,7 +35,9 @@ material. Animating a blur radius on the web repaints the whole backdrop on each
    system setting (`ReduceMotion.System`).
 
 4. **Animation on by default.** Each of these animates unless its caller turns it off. Each respects reduced motion.
-   - `List`, on both platforms, reveals its rows inside its surface (`isAnimated`, on by default).
+   - `List`, on both platforms, reveals its rows as one block inside its surface (`isAnimated`, on by default). A
+     per-row stagger is left out: rows arrive in pages and recycle, so one entrance for the block keeps a reused row
+     from replaying.
    - The web `Kpi.Chart` draws its sparkline in on the `reveal` step. Recharts' `isAnimationActive: "auto"` keeps it
      still under reduced motion and on the server. A caller's `areaProps` win.
    - Native charts (`AreaChart`, `BarChart`, `LineChart`, `PieChart`, `ComposedChart`) give their series a timing
@@ -44,8 +46,9 @@ material. Animating a blur radius on the web repaints the whole backdrop on each
      every series. Grouped bars (`BarGroupItem`) keep HeroUI's default, because `BarGroup` reads its items' props
      without rendering them.
    - The web `NumberValue` rolls its number with NumberFlow on the `reveal` step (`isAnimated`, on by default).
-     NumberFlow stays still under reduced motion. A render-prop child, and the scientific and engineering notations
-     that NumberFlow cannot draw, get HeroUI Pro's still number.
+     NumberFlow stays still under reduced motion. A render-prop child gets HeroUI Pro's still number, and so does
+     anything NumberFlow cannot draw: the scientific and engineering notations, and a locale whose digits are not
+     Latin, such as `ar-SA` and `ar-EG` with their Arabic-Indic digits. NumberFlow reads each digit as a Latin one.
 
 5. **Unchanged, because they already comply.** Web charts keep HeroUI Pro's Recharts defaults: they animate, with
    `isAnimationActive: "auto"`. Progress (bar, circle, meter) and toasts animate on both platforms and respect reduced
@@ -64,7 +67,8 @@ material. Animating a blur radius on the web repaints the whole backdrop on each
 
 - A screen gets motion from its components, with one set of timings, and reduced motion holds without per-screen code.
 - Changing the `reveal` step in the theme retimes every entrance, chart and number together.
-- `@stackra/ui` takes Motion as a peer on the web, so a web app that renders `Reveal` or `List` installs it.
+- `@stackra/ui` takes Motion as a peer of its `./react` entry, optional like the entry's other UI libraries, so a web
+  app that imports `@stackra/ui/react` installs it, and a native app does not.
 - An end-to-end accessibility scan can run while content is still fading in, and read a colour mid-fade. A scan
   therefore emulates reduced motion, which puts every entrance at rest before it is checked.
 
@@ -73,7 +77,7 @@ material. Animating a blur radius on the web repaints the whole backdrop on each
 - `@stackra/tokens` tests: `motionTiming` and the reduced-motion block of the web stylesheet.
 - `@stackra/ui` tests: `Reveal` on both platforms and `List`'s reveal.
 - `@stackra/ui-pro` tests: `Kpi.Chart`, the native chart series and `NumberValue`.
-- planned — the playground's end-to-end axe scans emulate reduced motion.
+- The playground's end-to-end axe scans emulate reduced motion (`apps/playground/e2e/__tests__/playground.e2e.test.ts`).
 - planned — an oxlint rule that refuses an animated `opacity` on a native `GlassView` or its ancestors (decision 7);
   until it lands, design review checks it.
 
