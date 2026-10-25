@@ -158,6 +158,9 @@ const PAGE_SIZE = 5;
 /** How long a fake action or page takes, so a busy state can be seen and tested. */
 const DELAY = 500;
 
+/** How long the slow row action takes: long enough for a busy e2e runner to reopen the menu and see it working. */
+const SLOW_ACTION = 2_000;
+
 /** Does nothing: a sample whose query never changes. */
 const ignore = () => undefined;
 
@@ -237,7 +240,7 @@ function rowActionsOf(report: (text: string) => void) {
       id: "archive",
       label: STRINGS.archive,
       onPress: async () => {
-        await delay(DELAY);
+        await delay(SLOW_ACTION);
         report(STRINGS.done(`${STRINGS.archive} ${order.order}`));
       },
     },

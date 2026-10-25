@@ -121,7 +121,7 @@ describe("DataTable page", () => {
       expect(screen.getByRole("menuitem", { name: /^Archive/ }).getAttribute("aria-disabled")).toBe(
         "true",
       );
-      await advance(500);
+      await advance(2_000);
       expect(actions.getByTestId("data-table-last-action").textContent).toBe(
         "Last action: Archive #1002 done",
       );
