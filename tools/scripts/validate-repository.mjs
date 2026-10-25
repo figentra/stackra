@@ -66,31 +66,50 @@ export const PRO_DEPENDENCIES = ["@heroui-pro/react", "heroui-native-pro", "@sta
 /**
  * The one package that wraps HeroUI Pro. It publishes only to the restricted Keygen channel, never to npmjs (ADR 0310
  * decision 1 as amended by STA-447): `"private": true` keeps `pnpm publish` and changesets from sending it to npmjs, and
- * its `pnpm pack` tarball goes up through the Keygen CLI, since Keygen's npm engine takes no `npm publish`.
+ * its `pnpm pack` tarball goes up through the Keygen CLI (STA-482), since Keygen's npm engine takes no `npm publish`.
  */
 const PRO_WRAPPER = "@stackra/ui-pro";
 
-/** The restricted channel: the Keygen custom domain (ADR 0175 decision 3, ADR 0177 decision 2, ADR 0310). */
-export const PRO_WRAPPER_REGISTRY = "https://npm.stackra.figentra.com/";
+/**
+ * The restricted channel: Keygen's hosted npm engine for one account (ADR 0177 decision 2, ADR 0310). The Keygen
+ * custom domain is named later (ADR 0290 decision 17), so the check takes any account and a move to that domain changes
+ * this pattern and the package's `publishConfig.registry` together.
+ */
+export const PRO_WRAPPER_REGISTRY = /^https:\/\/npm\.pkg\.keygen\.sh\/[\w-]+\/$/;
+
+/** The `files` entry that keeps source maps out of the Pro tarball (ADR 0316 decision 2). */
+const NO_SOURCE_MAPS = "!**/*.map";
+
+/** A `files` entry that would pack the source folder: `src`, `./src`, `src/` or anything under it. */
+const isSourceEntry = (entry) => /^(\.\/)?src(\/|$)/.test(entry);
 
 /**
  * Findings for the Pro wrapper's publishing fields: private, the restricted registry, and the Pro tarball of ADR 0316
- * decision 2 (no `src`, no `@stackra/source` condition in the packed exports).
+ * decision 2 (no `src` and no source maps in `files`; packed exports for the same entries, with no `@stackra/source`).
  */
 function checkProWrapper(pkg) {
   const out = [];
   const publishConfig = pkg.publishConfig ?? {};
+  const files = pkg.files ?? [];
   if (pkg.private !== true)
     out.push(`${PRO_WRAPPER} must be "private": true, so nothing publishes it to npmjs (ADR 0310)`);
-  if (publishConfig.registry !== PRO_WRAPPER_REGISTRY)
+  if (!PRO_WRAPPER_REGISTRY.test(publishConfig.registry ?? ""))
     out.push(
-      `${PRO_WRAPPER} publishConfig.registry must be ${PRO_WRAPPER_REGISTRY}, the restricted Keygen channel (ADR 0310)`,
+      `${PRO_WRAPPER} publishConfig.registry must be Keygen's npm engine, https://npm.pkg.keygen.sh/<account>/ (ADR 0310)`,
     );
-  if ((pkg.files ?? []).includes("src"))
-    out.push(`${PRO_WRAPPER} files must not list src: its tarball ships dist only (ADR 0316)`);
-  if (!publishConfig.exports || JSON.stringify(publishConfig.exports).includes("@stackra/source"))
+  if (files.some(isSourceEntry) || !files.includes(NO_SOURCE_MAPS))
     out.push(
-      `${PRO_WRAPPER} publishConfig.exports must name dist only, with no @stackra/source condition (ADR 0316)`,
+      `${PRO_WRAPPER} files must list no src and must hold "${NO_SOURCE_MAPS}": its tarball ships dist only (ADR 0316)`,
+    );
+  const entries = Object.keys(pkg.exports ?? {}).sort();
+  const packed = Object.keys(publishConfig.exports ?? {}).sort();
+  if (
+    packed.length === 0 ||
+    packed.join() !== entries.join() ||
+    JSON.stringify(publishConfig.exports).includes("@stackra/source")
+  )
+    out.push(
+      `${PRO_WRAPPER} publishConfig.exports must name every entry of exports, on dist only, with no @stackra/source condition (ADR 0316)`,
     );
   return out;
 }

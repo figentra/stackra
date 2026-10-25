@@ -11,6 +11,7 @@
   },
   "files": [
     "dist",
+    "!**/*.map",
     "assets",
     "stackra.manifest.json",
     "README.md",
@@ -123,7 +124,7 @@
       "./css": "./assets/public/css/ui-pro.css",
       "./assets/*": "./assets/*"
     },
-    "registry": "https://npm.stackra.figentra.com/"
+    "registry": "https://npm.pkg.keygen.sh/figentra/"
   },
   "scripts": {
     "build": "tsdown",

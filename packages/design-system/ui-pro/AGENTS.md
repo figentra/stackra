@@ -1,6 +1,6 @@
 # AGENTS — @stackra/ui-pro
 
-Stackra Design System Pro components for Stackra's own apps only: the @stackra/ui props vocabulary over HeroUI Pro on web and HeroUI Native Pro on native. Private, never published. Member at `packages/design-system/ui-pro` (`tier:lib`), in the programming model v3 shape
+Stackra Design System Pro components for Stackra's own apps only: the @stackra/ui props vocabulary over HeroUI Pro on web and HeroUI Native Pro on native. Published only to Figentra's restricted Keygen channel, never to npmjs. Member at `packages/design-system/ui-pro` (`tier:lib`), in the programming model v3 shape
 (ADR 0294, 0295).
 
 ## Where code goes
@@ -34,8 +34,10 @@ extending the kind's base class. The group table is the docs page `standards/str
 
 ## This package (ADR 0310)
 
-- **Private, never published.** `"private": true` and no `publishConfig`; `pnpm validate` refuses either change and any
-  non-app member that depends on this package, `@heroui-pro/react` or `heroui-native-pro`. Only our own apps import it
+- **Restricted channel only (ADR 0310 as amended, ADR 0316 decision 2).** Keep `"private": true` and the
+  `publishConfig` (Keygen's npm engine as `registry`, dist-only `exports` for every entry), `files` without `src` and
+  with `!**/*.map`, and the minified, map-free build in `tsdown.config.ts`. `pnpm validate` refuses any change to them,
+  and any non-app member that depends on this package, `@heroui-pro/react` or `heroui-native-pro`. Only our own apps import it
   (console, docs, playground, Figentra OS); `@stackra/ui` never does (ADR 0165 decision 5, ADR 0197).
 - A component is a contract in `src/contracts/types/<name>-contract-props.type.ts` (`<Name>ContractProps`, built on
   `@stackra/ui/contracts`' `Size`, `Tone`, `Variant`; never `@stackra/ui`'s `src/`) plus a thin wrapper in

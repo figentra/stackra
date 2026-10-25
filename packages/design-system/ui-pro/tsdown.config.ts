@@ -25,4 +25,6 @@ export default {
   ),
   minify: true,
   sourcemap: false,
+  // The tsconfig chain sets `declarationMap`, which would turn maps back on through the declaration build.
+  dts: { sourcemap: false },
 };

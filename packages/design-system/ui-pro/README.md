@@ -36,16 +36,19 @@ component with nothing in the vocabulary to map (most charts, Markdown, Timeline
 
 ## Publishing
 
-`@stackra/ui-pro` publishes only to the restricted channel, Keygen Cloud at `https://npm.stackra.figentra.com/` (ADR
-0310 as amended, ADR 0177 decision 2), for Figentra's own repositories, and never to npmjs.
+`@stackra/ui-pro` publishes only to the restricted channel, Keygen Cloud's npm engine for Figentra's account,
+`https://npm.pkg.keygen.sh/figentra/` (ADR 0310 as amended, ADR 0177 decision 2), for Figentra's own repositories, and
+never to npmjs. The Keygen custom domain gets its name later (ADR 0290 decision 17); the registry then moves to it.
 
 - `"private": true` stays, so `pnpm publish` and changesets never send it to npmjs.
 - The tarball is the Pro form of ADR 0316 decision 2: `pnpm pack` applies `publishConfig.exports`, which name `dist`
-  only with no `@stackra/source` condition; `files` lists no `src`; the build is minified with no source maps.
+  only with no `@stackra/source` condition; `files` lists no `src` and drops `**/*.map`; the build is minified with no
+  source maps.
 - `@heroui-pro/react` and `heroui-native-pro` stay external peers. Each consuming repository installs them with its own
   HeroUI Pro licence token; this package carries none.
-- Keygen's npm engine takes no `npm publish`: the release step uploads the packed tarball with the Keygen CLI
-  (`keygen new`, `keygen upload`, `keygen publish`).
+- Keygen's npm engine takes no `npm publish`: a release step will upload the packed tarball with the Keygen CLI
+  (`keygen new`, `keygen upload`, `keygen publish`). That step is STA-482; until it lands, nothing publishes this
+  package, and the release workflow still builds and skips it as before.
 - `pnpm validate` checks the private flag, the registry, `files` and the packed exports.
 
 ## Structure

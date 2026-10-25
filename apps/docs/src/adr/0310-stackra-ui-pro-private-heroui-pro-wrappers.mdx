@@ -144,15 +144,17 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
 ## Enforcement
 
 - `packages/design-system/ui-pro/package.json` keeps `"private": true`, so `pnpm publish` and changesets never send it to
-  npmjs, and has a `publishConfig` whose `registry` is the restricted channel, `https://npm.stackra.figentra.com/` (the
-  Keygen custom domain of [0175](/adr/0175-edge-domains-and-tls) decision 3), and whose `exports` name `dist` only.
-  Keygen's npm engine takes no `npm publish`, so the release step uploads the `pnpm pack` tarball with the Keygen CLI
-  (STA-447).
+  npmjs, and has a `publishConfig` whose `registry` is the restricted channel, Keygen's npm engine for Figentra's
+  account (`https://npm.pkg.keygen.sh/figentra/`; the Keygen custom domain is named later, per
+  [0290](/adr/0290-dev-environment-and-cloudflare-services) decision 17), and whose `exports` name `dist` only. Keygen's
+  npm engine takes no `npm publish`, so a release step will upload the `pnpm pack` tarball with the Keygen CLI. That step
+  is STA-482; until it lands, the release workflow builds and skips this package as the last bullet says.
 - `check` in `tools/scripts/validate-repository.mjs` (`PRO_DEPENDENCIES`, run by `pnpm validate`) fails any member other than an
   app or `@stackra/ui-pro` that depends on `@heroui-pro/react` or `heroui-native-pro`, any non-app member that depends on
   `@stackra/ui-pro`, and `@stackra/ui-pro` itself without `"private": true`, without the restricted `publishConfig.registry`
-  (an npmjs one is refused), with `src` in `files`, or with `publishConfig.exports` missing or naming the
-  `@stackra/source` condition ([0316](/adr/0316-open-core-distribution) decision 2). It also fails any non-app member that
+  (an npmjs one is refused), with `src` in `files` or without the `!**/*.map` exclusion there, or with
+  `publishConfig.exports` that miss an entry of `exports` or name the `@stackra/source` condition
+  ([0316](/adr/0316-open-core-distribution) decision 2). It also fails any non-app member that
   names `catalog:uniwind-pro` (decision 11).
 - `packages/design-system/ui-pro/tsdown.config.ts` builds minified output with no source maps (0316 decision 2).
 - gitleaks (the pre-commit hook and the CI scan) keeps the token out of git, as [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets) requires.
