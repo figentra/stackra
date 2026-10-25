@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the facet, the service, the configuration (which the template's
- *          host override extends), its shape and shipped schema under the generated name `AccessLogOptions$`, the
+ *          host override extends), its shape and shipped schema under the generated name `AccessLogConfig$`, the
  *          memory sink, the chain functions, the refusal and the log event, and nothing else is a value.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -19,8 +19,8 @@ describe("@stackra/access-log", () => {
     expect(Object.keys(accessLog).sort()).toEqual([
       "ACCESS_LOG_WRITE_FAILED",
       "AccessLogConfig",
+      "AccessLogConfig$",
       "AccessLogOptions",
-      "AccessLogOptions$",
       "AccessLogService",
       "AccessLogWriteFailedError",
       "AccessLogged",
@@ -31,7 +31,7 @@ describe("@stackra/access-log", () => {
   });
 
   it("exports the shipped schema under its generated name", () => {
-    expect(accessLog.AccessLogOptions$).toBe(ACCESS_LOG_CONFIG_SCHEMA);
+    expect(accessLog.AccessLogConfig$).toBe(ACCESS_LOG_CONFIG_SCHEMA);
   });
 
   it("takes the template's call shapes", () => {

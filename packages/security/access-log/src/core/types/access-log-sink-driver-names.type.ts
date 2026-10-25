@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the `DriverRegistry` entry of `AccessLogSink`, so `DriverName<AccessLogSink>` is `"postgres" | "memory"`.
  * Boundary: a module augmentation only; the stand-in for the one gen writes into `#stackra/wiring` (STA-339).
- *           `AccessLogOptions` imports this file so the augmentation travels with the config shape.
+ *           `access-log-options.schema.ts` imports this file so the augmentation travels with the config shape (the schema is exported as `AccessLogConfig$`).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 16); ADR 0263 (gen writes the wiring).
  */

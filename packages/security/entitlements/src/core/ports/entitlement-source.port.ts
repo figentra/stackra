@@ -3,7 +3,8 @@
  * Purpose: the `EntitlementSource` port: where grants come from. In SaaS a driver reads the plan service's event-fed
  *          snapshot (plan, add-ons, overrides and trials composed there); on-prem a driver reads the entitlement codes
  *          of the licence `@stackra/licensing` verified, keyed by `entitlementKey(entitlement)`.
- * Boundary: an abstract class that is its own token. A source answers one entitlement for one scope and composes
+ * Boundary: an abstract class that is its own token, kept in `.` and not `./contracts`: its signature uses
+ *           `EntitlementClass`, which names the core `Entitlement` base, and contracts cannot import core. A source answers one entitlement for one scope and composes
  *           nothing: the effective set is the plan service's or the licence's. `undefined` means the right is not in
  *           the plan at all. Feature flags and consent are separate packages and never answer here (ADR 0213).
  * Runtime: isomorphic

@@ -31,7 +31,7 @@ import { EntitlementKind } from "#core/enums/entitlement-kind.enum";
 import { LimitReachedError } from "#core/errors/limit-reached.error";
 import { registerEntitlements } from "#core/functions/register-entitlements.function";
 import { EntitlementSource } from "#core/ports/entitlement-source.port";
-import { EntitlementUsage } from "#core/ports/entitlement-usage.port";
+import { EntitlementUsage } from "#contracts/ports/entitlement-usage.port";
 import type { EntitlementClass } from "#core/types/entitlement-class.type";
 import type { EntitlementGrant } from "#core/types/entitlement-grant.type";
 import { fakeEntitlements } from "#testing/functions/fake-entitlements.function";

@@ -1,26 +1,26 @@
 # @stackra/entitlements
 
 Stackra entitlements: the `Entitlement` kind for plan rights (a feature, a limit, a module), the `EntitlementSource`
-and `EntitlementUsage` ports, the plan driver of the action pipeline's entitlement step, `LimitReachedError` and the
+and `EntitlementUsage` ports (`EntitlementUsage` from `./contracts`), the plan driver of the action pipeline's entitlement step, `LimitReachedError` and the
 `fakeEntitlements` test helper.
 
-**Tier:** `tier:lib` (`packages/security/entitlements`). Entries `.` and `./testing`. Depends on
+**Tier:** `tier:lib` (`packages/security/entitlements`). Entries `.`, `./contracts` and `./testing`. Depends on
 `@stackra/actions`, `@stackra/container`, `@stackra/contracts` and `@stackra/errors`.
 
 An entitlement is a commercial right. It is never a release switch (that is a flag, `@stackra/feature-flags`, ADR 0213) and never consent (`@stackra/consent`). It gates calls, not records, so it is not a model trait.
 
 ## What is here
 
-| Entry       | Symbol                                                                                  | Use                                                                        |
-| ----------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `.`         | `Entitlement`, `EntitlementKind`                                                        | the kind base: `class XEntitlement extends Entitlement({ kind, counts })`  |
-| `.`         | `EntitlementSource`                                                                     | the port grants come from: the plan service in SaaS, the licence on-prem   |
-| `.`         | `EntitlementUsage`                                                                      | the port a limit's current count comes from (the data layer implements it) |
-| `.`         | `PlanEntitlementCheckDriver`                                                            | the driver of `EntitlementCheck`, the pipeline's entitlement step          |
-| `.`         | `LimitReachedError`                                                                     | `limit_reached`: the refusal of a create past the plan's limit             |
-| `.`         | `registerEntitlements`, `entitlementKey`                                                | what gen's entry calls at boot; the locked key a keyed source looks up     |
-| `.`         | `EntitlementClass`, `EntitlementGrant`, `EntitlementOptions`, `EntitlementRegistration` | types                                                                      |
-| `./testing` | `fakeEntitlements`                                                                      | an `EntitlementSource` with the grants a test lists                        |
+| Entry         | Symbol                                                                                  | Use                                                                        |
+| ------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `.`           | `Entitlement`, `EntitlementKind`                                                        | the kind base: `class XEntitlement extends Entitlement({ kind, counts })`  |
+| `.`           | `EntitlementSource`                                                                     | the port grants come from: the plan service in SaaS, the licence on-prem   |
+| `./contracts` | `EntitlementUsage`                                                                      | the port a limit's current count comes from (the data layer implements it) |
+| `.`           | `PlanEntitlementCheckDriver`                                                            | the driver of `EntitlementCheck`, the pipeline's entitlement step          |
+| `.`           | `LimitReachedError`                                                                     | `limit_reached`: the refusal of a create past the plan's limit             |
+| `.`           | `registerEntitlements`, `entitlementKey`                                                | what gen's entry calls at boot; the locked key a keyed source looks up     |
+| `.`           | `EntitlementClass`, `EntitlementGrant`, `EntitlementOptions`, `EntitlementRegistration` | types                                                                      |
+| `./testing`   | `fakeEntitlements`                                                                      | an `EntitlementSource` with the grants a test lists                        |
 
 ## Declaring an entitlement
 

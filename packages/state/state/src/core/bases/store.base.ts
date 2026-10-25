@@ -6,7 +6,7 @@
  *          same name is its instance side.
  * Boundary: the class is a singleton binding the container builds with the client storage (`@stackra/storage`'s
  *           `Storage`, structurally a `StoreStorage`). A persisted store's key is derived and registered by gen
- *           (`registerStores`); the constructor opens the area, and hydration runs on a microtask, after the
+ *           (`registerStores`); the constructor opens the area (and its cross-tab channel), and hydration runs on a microtask, after the
  *           subclass's field initializers. Bookkeeping lives outside the instance, so a spread of a store is exactly its
  *           state. Nothing server-owned belongs here (ADR 0079 decision 2).
  * Runtime: isomorphic
@@ -18,10 +18,12 @@ import { STORE_INTERNALS } from "#core/constants/store-internals.constant";
 import { commitStore } from "#core/functions/commit-store.function";
 import { hydrateStore } from "#core/functions/hydrate-store.function";
 import { internalsOf } from "#core/functions/internals-of.function";
+import { openStoreChannel } from "#core/functions/open-store-channel.function";
 import { storeKeyOf } from "#core/functions/store-key-of.function";
 import type { StoreClass } from "#core/types/store-class.type";
 import type { StoreOptions } from "#core/types/store-options.type";
 import type { StorePatch } from "#core/types/store-patch.type";
+import type { StoreInternals } from "#core/types/store-internals.type";
 import type { StoreStorage } from "#core/types/store-storage.type";
 
 /** The runtime base every store class extends. */
@@ -34,14 +36,18 @@ class StoreBase {
   constructor(storage?: StoreStorage) {
     const persist = (kindOf(new.target)?.options as Partial<StoreOptions> | undefined)?.persist;
     const area = persist === undefined || storage === undefined ? undefined : storage.area(persist);
-    STORE_INTERNALS.set(this, {
+    const internals: StoreInternals = {
       area,
       key: area === undefined ? undefined : storeKeyOf(new.target),
       listeners: new Set(),
       written: new Set(),
       version: 0,
+      channel: undefined,
       hydration: false,
-    });
+    };
+    STORE_INTERNALS.set(this, internals);
+    if (persist !== undefined && area !== undefined)
+      internals.channel = openStoreChannel(this, internals, persist);
     queueMicrotask(() => void hydrateStore(this));
   }
 

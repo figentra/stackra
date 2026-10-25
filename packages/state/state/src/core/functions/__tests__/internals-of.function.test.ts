@@ -22,6 +22,7 @@ describe("internalsOf", () => {
       area: undefined,
       key: undefined,
       version: 0,
+      channel: undefined,
       hydration: false,
     });
     expect(internals.listeners.size).toBe(0);

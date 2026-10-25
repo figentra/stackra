@@ -54,6 +54,11 @@ never written under a guessed key. The whole state (the own fields) is written o
 after the field initializers: a saved field is applied only when the store still declares it with the same type and
 `set` has not written it first.
 
+Every persisted store syncs across the tabs of an origin when the runtime has `BroadcastChannel` (there is no option;
+native and Node do nothing). On each commit the store posts `{ key, version, state }` on `stackra:state:<area>`; another
+context applies it to its instance of the same store with the same validation as hydration, replaces fields it wrote
+itself, and notifies subscribers. A context ignores its own posts, another store's key and a message of another version.
+
 ## Signals
 
 ```ts

@@ -26,7 +26,6 @@ describe("@stackra/entitlements", () => {
       "Entitlement",
       "EntitlementKind",
       "EntitlementSource",
-      "EntitlementUsage",
       "LimitReachedError",
       "PlanEntitlementCheckDriver",
       "entitlementKey",

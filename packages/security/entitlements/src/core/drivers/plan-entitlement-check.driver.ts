@@ -21,7 +21,7 @@ import { EntitlementRequiredError } from "@stackra/errors";
 import { ENTITLEMENT_REGISTRY } from "#core/constants/entitlement-registry.constant";
 import { LimitReachedError } from "#core/errors/limit-reached.error";
 import { EntitlementSource } from "#core/ports/entitlement-source.port";
-import { EntitlementUsage } from "#core/ports/entitlement-usage.port";
+import { EntitlementUsage } from "#contracts/ports/entitlement-usage.port";
 import type { EntitlementOptions } from "#core/types/entitlement-options.type";
 
 /**

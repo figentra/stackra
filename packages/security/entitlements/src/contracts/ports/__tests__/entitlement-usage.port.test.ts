@@ -10,7 +10,7 @@ import { type AnyClass, Driver } from "@stackra/container";
 import { Port, type PublicId } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
-import { EntitlementUsage } from "#core/ports/entitlement-usage.port";
+import { EntitlementUsage } from "#contracts/ports/entitlement-usage.port";
 
 class Product {}
 

@@ -49,7 +49,7 @@ or query call throws, because `RequestContext` has no actor to log.
 | ------------- | --------------------------------------------------------------------- | -------------------------------------------------------------- |
 | `.`           | `AccessLogged`                                                        | the class facet, made with `createDecorator`                   |
 | `.`           | `AccessLogService`                                                    | builds each record, resolves its subjects, swallows failures   |
-| `.`           | `AccessLogConfig`, `AccessLogOptions`, `AccessLogOptions$`            | `sink` (`postgres` or `memory`) and `retentionDays` (400, ≥90) |
+| `.`           | `AccessLogConfig`, `AccessLogOptions`, `AccessLogConfig$`             | `sink` (`postgres` or `memory`) and `retentionDays` (400, ≥90) |
 | `.`           | `MemoryAccessLogSinkDriver`                                           | one chain in memory, for tests and `sink: "memory"`            |
 | `.`           | `linkAccessRecord`, `findChainBreak`                                  | build the next link; find the first broken link of a run       |
 | `.`           | `AccessLogWriteFailedError`, `ACCESS_LOG_WRITE_FAILED`                | the sink's refusal and the log event, one code                 |

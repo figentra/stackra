@@ -10,7 +10,7 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { AccessLogConfig } from "#config/access-log.config";
-export { ACCESS_LOG_CONFIG_SCHEMA as AccessLogOptions$ } from "#core/constants/access-log-config-schema.constant";
+export { ACCESS_LOG_CONFIG_SCHEMA as AccessLogConfig$ } from "#core/constants/access-log-config-schema.constant";
 export { ACCESS_LOG_WRITE_FAILED } from "#core/constants/access-log-write-failed.constant";
 export { AccessLogged } from "#core/decorators/access-logged.decorator";
 export { MemoryAccessLogSinkDriver } from "#core/drivers/memory-access-log-sink.driver";

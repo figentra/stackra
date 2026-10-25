@@ -17,6 +17,9 @@ export interface StoreInternals {
   /** The derived key the state is stored under; set whenever `area` is. */
   readonly key: string | undefined;
 
+  /** The `stackra:state:<area>` channel of cross-tab sync; `undefined` when not persisted or the runtime has none. */
+  channel: BroadcastChannel | undefined;
+
   /** Called after every change; `useStore` subscribes here. */
   readonly listeners: Set<() => void>;
 

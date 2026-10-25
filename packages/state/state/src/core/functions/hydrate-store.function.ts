@@ -10,27 +10,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0079 (decision 2); ADR 0256.
  */
+import { applyStoreState } from "#core/functions/apply-store-state.function";
 import { internalsOf } from "#core/functions/internals-of.function";
-import type { StoreInternals } from "#core/types/store-internals.type";
-
-/** Applies a saved state to `store` and notifies its listeners when a field changed. */
-function apply(store: Record<string, unknown>, internals: StoreInternals, saved: unknown): void {
-  if (typeof saved !== "object" || saved === null) return;
-  let changed = false;
-  for (const [field, value] of Object.entries(saved)) {
-    if (!Object.hasOwn(store, field) || internals.written.has(field)) continue;
-    const current = store[field];
-    if (typeof current === "function" || Object.is(current, value)) continue;
-    // shortcut: a type check against the default only; validate with the store's generated `X$` once gen registers it.
-    if (current !== null && current !== undefined && typeof value !== typeof current) continue;
-    store[field] = value;
-    changed = true;
-  }
-  if (!changed) return;
-  internals.version += 1;
-  // oxlint-disable-next-line unicorn/no-useless-spread -- reason: a copy, so a listener that unsubscribes another mid-loop does not skip it
-  for (const listener of [...internals.listeners]) listener();
-}
 
 /**
  * Hydrates `store` from its storage area.
@@ -52,12 +33,12 @@ export function hydrateStore(store: object): Promise<void> | undefined {
   }
   const saved = area.get(key);
   if (!(saved instanceof Promise)) {
-    apply(store as Record<string, unknown>, internals, saved);
+    applyStoreState(store as Record<string, unknown>, internals, saved, false);
     internals.hydration = true;
     return undefined;
   }
   const running = saved.then((value: unknown) => {
-    apply(store as Record<string, unknown>, internals, value);
+    applyStoreState(store as Record<string, unknown>, internals, value, false);
     internals.hydration = true;
   });
   internals.hydration = running;
