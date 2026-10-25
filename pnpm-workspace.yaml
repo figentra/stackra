@@ -110,6 +110,10 @@ catalogs:
     react-aria-components: 1.22.1
     "@testing-library/react": 16.3.3
     "@testing-library/dom": 10.4.2
+    # @stackra/testing's ./react and ./native entries (STA-348): the user-event companion of Testing Library and the
+    # React Native renderer, newest stable releases at least two weeks old. MIT.
+    "@testing-library/user-event": 14.6.7
+    "@testing-library/react-native": 14.1.0
     jsdom: 30.1.0
     # Code-based routing for the console and every Vite app (no file routing anywhere).
     react-router: 7.18.4
