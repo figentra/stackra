@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `OfflineEntry`, one row of the offline map: a consumed action and the `offline` policy its producer declared
- *          (mode, id minting, replay precondition, retention, the conflict resolutions the UI may offer, the cap).
+ *          (mode, id minting, replay precondition, retention, the conflict resolutions the UI may offer, the cap with
+ *          its amount field).
  * Boundary: a type only; the policy is `@stackra/actions`' `OfflineOptions`, copied by gen from the producer's
  *           manifest, so this package re-declares none of its enums.
  * Runtime: isomorphic
@@ -10,7 +11,6 @@
 import type { OfflineOptions } from "@stackra/actions";
 
 import type { OfflineActionRef } from "#core/types/offline-action-ref.type";
-import type { OfflineCap } from "#core/types/offline-cap.type";
 
 /**
  * An action and its offline policy.
@@ -21,8 +21,4 @@ import type { OfflineCap } from "#core/types/offline-cap.type";
 export interface OfflineEntry extends OfflineOptions {
   /** The action's generated class. */
   readonly action: OfflineActionRef;
-
-  // shortcut: narrowed to the local `OfflineCap` until actions' declares its `amountField` (W9-C2); then this member goes.
-  /** The most the client may queue offline within a window; uncapped when absent. */
-  readonly cap?: OfflineCap;
 }

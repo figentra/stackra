@@ -70,7 +70,8 @@ await queue.enqueue(CreateOrderAction, input, input.orderId); // persisted, seal
 
 ## Caps
 
-An action whose `offline` option declares `cap: { count, amount, amountField?, window }` is refused offline once the
+`OfflineCap` is `@stackra/actions`' own type, so the client and the pipeline read the same `amountField`. An action
+whose `offline` option declares `cap: { count, amount, amountField?, window }` is refused offline once the
 cap is reached (ADR 0338 decision 5), with the pipeline's own refusal, `@stackra/actions`' `OfflineCapReachedError`
 (`offline_cap_reached`). The queue counts every call of the action still waiting, whatever its age (the server counts
 it when it applies it), and the capped calls the server accepted within the window, which it keeps with the queue
