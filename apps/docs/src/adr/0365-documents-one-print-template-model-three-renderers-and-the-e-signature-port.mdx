@@ -1,0 +1,84 @@
+---
+title: "0365 — Documents: one print template model, three renderers and the e-signature port"
+description: "Proposed · 2026-10-25"
+---
+
+<Note>
+  Proposed. It reads with
+  [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)
+  (builder document kinds),
+  [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios)
+  (configuration over code) and
+  [0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default)
+  (provider per tenant and Market). It settles conflict 4 of the package needs list: the e-signature
+  port lives in `@stackra/documents`, not in OS files.
+</Note>
+
+## Context
+
+Every product prints. Figentra OS invoicing, experience, files and workforce, Commerce (receipts, packing slips,
+customs documents, labels), Muslin (line sheets, tickets), Beautilon (signed intake and consent forms), Juristra
+(drafting, bilingual layouts) and Academorix (certificates, report cards, letters) each asked for the same things: one
+template that becomes HTML, PDF and DOCX; Arabic that is shaped and ordered correctly next to Latin text and numbers;
+side-by-side or stacked bilingual layouts; QR codes; amounts in words (tafqeet); and forms signed on a device with
+the signature image and a content hash. The owner approved the package (owner questionnaire #19). Where the
+e-signature port lives was disputed between this package and OS files; owner round 22 points it to Stackra. The
+configuration principle ([0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios))
+requires that no paper size, currency name, wording or provider is fixed in code.
+
+Weighed: a PDF layout library in process (pdfmake, pdf-lib) was rejected because none shapes Arabic or runs the bidi
+algorithm reliably; a template language with markup (Handlebars, MJML) was rejected because templates are tenant data
+and may carry no markup or code ([0154](/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step)).
+
+## Decision
+
+1. **`@stackra/documents` (category `data`) owns the print template model.** A template is an L2 document of the
+   builder kind `print` ([0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)
+   decision 7 adds kinds): a page in millimetres (no height for a roll), one or two locales each with its direction
+   and font, a layout (`single`, `side-by-side`, `stacked`) and blocks (text with `{{path}}` placeholders, table,
+   QR, image, signature, amount in words). The package ships the zod schema and checks every template at the trust
+   boundary. Templates are seeded per product as `studio-template:<product>:print:*`; the builder owns the editing
+   surface.
+2. **One resolved model, three outputs.** A template is resolved once against its data, then written as HTML (self
+   contained, escaped, values isolated in `<bdi>`, QR as SVG, images inline), as DOCX (right-to-left paragraphs and
+   runs, which Word shapes) or as PDF. A PDF is the HTML printed by the **`PdfEngine` port**: a browser-class engine
+   shapes Arabic and lays out mixed directions; its drivers live with the runtime that hosts it. A missing value is
+   refused with its path, never printed blank. `shapeArabic` and `toVisualOrder` exist only for devices that draw
+   characters one by one (line printers, label printers, pole displays).
+3. **Amounts in words are grammar in code and nouns in data.** `spellAmount` takes the amount in minor units and the
+   currency's `CurrencyWords` from the market pack (exponent; per language the noun forms and, for Arabic, gender,
+   dual, plural and accusative). Each language is a speller function; the first are Arabic and English. Wording around
+   the amount ("only") is the template's.
+4. **Signed form PDFs.** `signForm` places a drawn signature (PNG or JPEG) in the template's signature block, prints
+   the PDF and returns its SHA-256 content hash, the signature image's own hash, the signer and the time. This is a
+   simple electronic signature; storing, versioning and auditing it is OS files' job. `verifyContentHash` checks a
+   stored file later.
+5. **The e-signature port lives here.** `ESignatureProvider` (in `./contracts`) sends a PDF with its content hash and
+   signers, reports a normalised `SignatureStatus` (sent, viewed, signed, declined, expired, cancelled), downloads the
+   signed PDF and cancels an open envelope; `send` is idempotent on the caller's reference. The provider for a call is
+   the tenant's Connection, else the Market's platform default
+   ([0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default)); which
+   providers a market offers is market-pack data and the price is `rate-card:e-signature`. Provider drivers are
+   integrations connectors. The package ships only a `memory` driver for tests and sandboxes.
+
+## Consequences
+
+- Every product prints through one model and one set of renderers; a new document is a studio template and a seed,
+  not code.
+- A PDF needs a deployed `PdfEngine` driver; until one is bound, products render HTML and DOCX.
+- A new language for amounts in words is a speller and a schema field; a new market is a pack with currency names.
+- Two third-party dependencies enter the catalogs: `docx` (DOCX writing) and `uqr` (QR encoding), both MIT.
+- OS files keeps storage, versions, watermarking and retention; it calls this package, never the reverse.
+
+## Enforcement
+
+planned — the package's unit tests check the schema refusals, the escaping of every text in HTML, the refusal of
+missing values and the idempotency of the memory e-signature driver (`packages/data/documents/src/**/__tests__`);
+the lint rule of [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios)
+(country and currency codes in package source) is not built yet.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: `notes/handover/stackra-package-needs.md` (the `@stackra/documents` row and conflict 4);
+`notes/handover/answers-as-config.md` (CAP-documents, OS-153, OS-260, PUT-156, JUR-130, JUR-135); owner questionnaire
+#19; owner round 22; COM-153, COM-154; PUT-156.

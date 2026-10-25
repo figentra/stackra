@@ -464,7 +464,8 @@
               "adr/0361-principals-and-parties",
               "adr/0362-no-code-without-an-answered-questionnaire-and-a-plan",
               "adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios",
-              "adr/0364-fiscal-e-invoicing-and-till-fiscal-drivers-chosen-by-market-pack-data"
+              "adr/0364-fiscal-e-invoicing-and-till-fiscal-drivers-chosen-by-market-pack-data",
+              "adr/0365-documents-one-print-template-model-three-renderers-and-the-e-signature-port"
             ]
           }
         ]
