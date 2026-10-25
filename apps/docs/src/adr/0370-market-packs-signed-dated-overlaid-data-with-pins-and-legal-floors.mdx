@@ -1,0 +1,90 @@
+---
+title: "0370 — @stackra/market-packs: signed, dated, overlaid market data with tenant pins and legal floors"
+description: "Proposed · 2026-10-25"
+---
+
+<Note>
+  Proposed. It places the market-pack loader that
+  [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios)
+  (configuration over code) needs, and settles that ADR's open question 1 (the pack home). It reads
+  with [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions) (settings
+  cascade), [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer) (rules),
+  [0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default)
+  (provider per Market),
+  [0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records)
+  (sandbox and live),
+  [0366](/adr/0366-stackra-calendar-umm-al-qura-business-days-recurrence-and-slots-over-market-pack-data)
+  (calendar data from packs) and [0127](/adr/0127-package-categories-including-infrastructure)
+  (package categories).
+</Note>
+
+## Context
+
+The owner ruled on 2026-10-25 that countries are market packs: versioned data holding tax, e-invoicing, till fiscal
+rules, legal floors, providers, sign-in methods, calendar, formats and price tier. OS pricing, invoicing, identity,
+verification, notifications, geography and tenancy, and every product, need to read that data the same way: verified,
+overlaid (`eu` then `eu-de`, `ae` then `ae-difc`), dated (a VAT change on 1 July), pinned per tenant, and with the
+floors no setting may cross. Juristra also needs reviewer sign-off per rule and a launch gate per pack and product.
+Nothing is on disk, and 0363 left the home open. Alternatives weighed: a part of `@stackra/settings` (rejected: settings
+is per-scope state, while packs are signed per-market data that the rules engine and offline tills read too) and a
+pack format inside `@stackra/assets` (rejected: assets resolves files; it does not know versions, overlays or dates).
+
+## Decision
+
+1. **Package.** `@stackra/market-packs` in `packages/foundation/market-packs`, `tier:lib`, entry `.` only, depending on
+   `@stackra/contracts`, `@stackra/errors` and `zod`. Pure mechanism, isomorphic and offline; it ships no pack content.
+   Base packs are owned by the platform (OS), product sections by each product.
+2. **Signed and content-hashed.** A pack ships as `{ pack, hash, signature }`: the SHA-256 of the canonical JSON of the
+   pack (keys sorted at every depth) and an Ed25519 signature of that hash by a named key. `signPack` is the build
+   step; `verifyPack` checks shape, hash (over the pack exactly as shipped) and signature against trusted public keys
+   from deployment configuration, and refuses with `PackRejectedError` (`shape_invalid`, `hash_mismatch`,
+   `key_unknown`, `signature_invalid`). A service whose packs do not verify does not start. Crypto is Web Crypto.
+3. **Overlays.** A pack names the market it overlays in `extends`. `resolvePack` walks the chain to the root and
+   returns the layers root first. A layer's value wins over its parent's only while its own entry is in force. A loop
+   is refused (`overlay_cycle`); a market with no fitting version is `PackNotFoundError`.
+4. **Versions, status and pins.** A pack version is `major.minor.patch` with a status: `draft`, `beta`, `live`,
+   `retired`. Which markets are open is this status, never a list in code. A tenant pins per market to a major line
+   (`"2"`) or, for a rollback, one exact version (`"2.1.0"`); an unpinned market takes its highest accepted version.
+   Only `live` is accepted unless the caller says otherwise (a sandbox may accept `beta`, per 0359). A major release
+   changes shape and is promoted like any structural change.
+5. **Dated values.** An entry is a key, a JSON value and the days it is in force (`from`, optional `until`, both
+   inclusive); the latest start in force wins. `valueOf(resolved, key, on)` answers "the value of X for market M on
+   date D" with the market and version that set it; `valuesOn` gives all of them. A consumer checks a value against
+   its own schema (for example `BusinessCalendar$` of 0366).
+6. **Legal floors as data.** A floor entry carries `bound` (`min` or `max`) and `law`. `floorsOn` lists the floors in
+   force with their pack, so the settings resolver (0213 cascade plus a floor) and the rules engine (0331, as a final
+   guard) refuse a value past the floor and say which pack and law set it. `factsOn` gives the values in force as a
+   plain record, a fact source for rules. This package carries floors; it does not apply them.
+7. **Product sections.** A pack with `section` set is one product's part of a market (courts, safeguarding,
+   hallmarking). Its keys start with `<section>.`, so it never overwrites a base value; it has no `extends` of its own
+   and follows its base pack's major line. A tenant resolves the sections its products need.
+8. **Review and launch gate.** A pack version records reviewer sign-offs per entry key and a launch checklist whose
+   items may name a product. Both are signed with the version, so completing an item is a new patch.
+   `unreviewed` lists keys without a sign-off; `launchGate` says whether a product may sell under a resolved market:
+   every layer `live`, every checklist item for that product done, every key reviewed.
+9. **Not here.** Applying a floor to a setting stays with `@stackra/settings`; rule evaluation with `@stackra/rules`;
+   provider choice per Connection with `@stackra/integrations` (0356); where pack bytes are stored and fetched with the
+   caller; which pack wins for a tenant active in two markets stays 0363 open question 3.
+
+## Consequences
+
+- A new market is a new pack (and drivers where needed); a dated legal change is a new minor version published ahead.
+- Every refusal over a floor can name the pack, version and law.
+- A tampered or unsigned pack stops a service at start-up rather than changing tax or legal behaviour silently.
+- The calendar (0366), settings and rules can drop their "until the pack loader exists" caveats once they read through
+  this package.
+- Checklist and review changes need a re-signed version; counsel signs pack versions, not ADRs.
+
+## Enforcement
+
+planned — the package's tests (`packages/foundation/market-packs/src/**/__tests__/`) fix the behaviour with made-up
+markets only; the lint rule of
+[0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios) will flag market
+codes and values in source. Nothing checks it in CI yet.
+
+## Supersedes and sources
+
+Supersedes: none. Settles 0363 open question 1. Sources: `notes/handover/stackra-package-needs.md` (market-pack loader
+row); `notes/handover/config-model.md` section 1; `notes/handover/answers-as-config.md` (CAP-market-pack,
+CAP-legal-floor, CAP-pack-review, CAP-pack-launch-gate); `notes/handover/adr-hardcoding-findings.md` (draft 0363);
+owner principle of 2026-10-25.

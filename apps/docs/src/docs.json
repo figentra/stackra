@@ -469,7 +469,8 @@
               "adr/0366-stackra-calendar-umm-al-qura-business-days-recurrence-and-slots-over-market-pack-data",
               "adr/0367-data-transfer-streaming-tabular-files-mapping-and-resumable-imports-with-a-batch-ledger",
               "adr/0368-achievements-award-kinds-as-data-criteria-grants-revoke-and-a-cross-scope-verify-token",
-              "adr/0369-stackra-shipping-carrier-ports-tracking-states-label-documents-and-dimensional-weight"
+              "adr/0369-stackra-shipping-carrier-ports-tracking-states-label-documents-and-dimensional-weight",
+              "adr/0370-market-packs-signed-dated-overlaid-data-with-pins-and-legal-floors"
             ]
           }
         ]
