@@ -19,7 +19,7 @@ import { visibleFilter } from "#core/functions/visible-filter.function";
 import { Database } from "#core/ports/database.port";
 import type { GraphOptions } from "#core/types/graph-options.type";
 import type { GraphRow } from "#core/types/graph-row.type";
-import type { Where } from "#core/types/where.type";
+import type { Where } from "#contracts/types/where.type";
 
 /** The most source rows one call reads. */
 const MAX_LIMIT = 100;

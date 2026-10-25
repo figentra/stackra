@@ -8,7 +8,7 @@
  */
 import type { FilterQuery } from "@mikro-orm/core";
 
-import type { Where } from "#core/types/where.type";
+import type { Where } from "#contracts/types/where.type";
 
 /**
  * The MikroORM filter of `where`.

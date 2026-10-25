@@ -7,7 +7,7 @@
  *           at `<userData>/<root>`, so every key stays inside that folder. URLs are `file:` URLs of the stored file:
  *           the files are the user's own, on the user's machine, so nothing is signed.
  * Runtime: node
- * Governing contract: ADR 0058 (desktop is Electron); ADR 0127 2026-10-24 note (`./electron` entry); ADR 0234
+ * Governing contract: ADR 0058 (desktop is Electron); ADR 0127 2026-10-24 note (`./desktop` entry); ADR 0234
  *                     (decision 7); ADR 0294 (decision 16).
  */
 import { join } from "node:path";
@@ -28,7 +28,7 @@ import { LocalFileSystemDriver } from "#node/drivers/local-file-system.driver";
  *
  * @example
  * // generated .stackra/desktop/wiring.ts
- * { port: FileSystem, candidates: { electron: () => import("@stackra/filesystem/electron").then((m) => m.ElectronFileSystem) } }
+ * { port: FileSystem, candidates: { electron: () => import("@stackra/filesystem/desktop").then((m) => m.ElectronFileSystemDriver) } }
  */
 export class ElectronFileSystemDriver extends Driver(FileSystem) {
   private readonly local: LocalFileSystemDriver;

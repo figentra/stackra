@@ -11,5 +11,7 @@ import { library } from "@stackra/tsdown-config";
 
 export default library({
   index: "src/core/index.ts",
+  contracts: "src/contracts/index.ts",
+  node: "src/node/index.ts",
   testing: "src/testing/index.ts",
 });

@@ -20,7 +20,8 @@ import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import { SortDirection } from "@stackra/contracts";
 import { repositoryOf, UniqueViolation } from "@stackra/database";
-import type { Repository, Where } from "@stackra/database";
+import type { Repository } from "@stackra/database";
+import type { Where } from "@stackra/database/contracts";
 import type { Locks } from "@stackra/locking";
 import { traitsOf } from "@stackra/model";
 

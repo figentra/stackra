@@ -14,7 +14,7 @@ import { afterAll, beforeAll } from "@stackra/testing";
 import { PostgreSqlContainer } from "@testcontainers/postgresql";
 import type { StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 
-import { PostgresDatabaseDriver } from "#core/drivers/postgres-database.driver";
+import { PostgresDatabaseDriver } from "#node/drivers/postgres-database.driver";
 import type { PostgresFixture } from "#testing/types/postgres-fixture.type";
 import type { UsePostgresOptions } from "#testing/types/use-postgres-options.type";
 

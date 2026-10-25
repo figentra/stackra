@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/iam (the record-visibility query filter: the
  *          `VisibilityFilter` driver and `registerVisibility`, which gen's entry calls) until `stackra gen` writes the
  *          entry barrels (STA-339).
- * Boundary: names each re-export and declares nothing. Server only: it reaches `@stackra/database` and
+ * Boundary: names each re-export and declares nothing. Server only: it reaches `@stackra/database/contracts` and
  *           `@stackra/model`, so it is kept out of the isomorphic `.` entry, which browser bundles import. It imports
  *           `.` and `./contracts` and re-exports neither (one symbol, one entry).
  * Runtime: node

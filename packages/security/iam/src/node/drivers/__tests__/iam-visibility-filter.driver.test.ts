@@ -20,7 +20,7 @@ import {
   Realm,
   type ScopeRef,
 } from "@stackra/contracts";
-import { VisibilityFilter } from "@stackra/database";
+import { VisibilityFilter } from "@stackra/database/contracts";
 import { ManyToOne, Model, Visibility } from "@stackra/model";
 import type { Ref } from "@stackra/model";
 import { Rules } from "@stackra/rules";

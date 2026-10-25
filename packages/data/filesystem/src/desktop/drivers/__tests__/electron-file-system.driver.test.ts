@@ -23,7 +23,7 @@ import { app } from "electron";
 import { FilesystemConfig } from "#config/filesystem.config";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import { FileNotFoundError } from "#core/errors/file-not-found.error";
-import { ElectronFileSystemDriver } from "#electron/drivers/electron-file-system.driver";
+import { ElectronFileSystemDriver } from "#desktop/drivers/electron-file-system.driver";
 
 /** The folder `app.getPath("userData")` answers in this test. */
 const userData = vi.hoisted(() => ({ path: "" }));

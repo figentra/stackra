@@ -110,6 +110,8 @@ describe("@stackra/model", () => {
     expect(Object.keys(entry).sort()).toEqual([
       "AppendOnly",
       "Collection",
+      "EncryptedFieldsSubscriber",
+      "HasEncryptedFields",
       "HasPublicId",
       "Index",
       "Link",
@@ -130,6 +132,7 @@ describe("@stackra/model", () => {
       "Versioned",
       "Visibility",
       "createTrait",
+      "encryptedFieldsOf",
       "traitsOf",
     ]);
   });

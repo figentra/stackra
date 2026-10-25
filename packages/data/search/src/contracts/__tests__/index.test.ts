@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./contracts` entry: `SearchDriver`, which the template's commerce wiring
- *          imports (`port: SearchDriver`), is the only value, and the public types resolve.
+ *          imports (`port: SearchDriver`), and the `VectorIndex` and `Embedder` ports @stackra/ai uses are the values,
+ *          and the public types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -14,11 +15,14 @@ import type {
   SearchFilterValue,
   SearchRequest,
   SearchTable,
+  VectorHit,
+  VectorItem,
+  VectorQueryOptions,
 } from "#contracts/index";
 
 describe("@stackra/search/contracts", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["SearchDriver"]);
+    expect(Object.keys(contracts).sort()).toEqual(["Embedder", "SearchDriver", "VectorIndex"]);
   });
 
   it("resolves its public types", () => {
@@ -26,5 +30,8 @@ describe("@stackra/search/contracts", () => {
     expectTypeOf<SearchDocument["id"]>().toEqualTypeOf<string>();
     expectTypeOf<SearchRequest["words"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<SearchTable["schema"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<VectorItem["vector"]>().toEqualTypeOf<readonly number[]>();
+    expectTypeOf<VectorHit["score"]>().toEqualTypeOf<number>();
+    expectTypeOf<VectorQueryOptions["topK"]>().toEqualTypeOf<number>();
   });
 });

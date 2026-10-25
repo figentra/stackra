@@ -41,7 +41,7 @@ import type { TableOptions } from "#core/types/table-options.type";
 import type { TablePage } from "#core/types/table-page.type";
 import type { TableQuery } from "#core/types/table-query.type";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
-import type { Where } from "#core/types/where.type";
+import type { Where } from "#contracts/types/where.type";
 import { MetricsReader } from "#core/values/metrics-reader.value";
 
 /** A nested object for a dotted path: `nest("totals.totalMinor", "desc")` is `{ totals: { totalMinor: "desc" } }`. */

@@ -3,25 +3,25 @@
 Stackra server disks: the `FileSystem` port, its memory, local, S3/R2 and Encore bucket drivers, the Electron
 main-process driver, and `FilesystemConfig`, which picks the driver.
 
-**Tier:** `tier:lib` (`packages/data/filesystem`). Entries `.`, `./contracts`, `./node` and `./electron`. Depends on
+**Tier:** `tier:lib` (`packages/data/filesystem`). Entries `.`, `./contracts`, `./node` and `./desktop`. Depends on
 `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@stackra/config`, zod and the AWS SDK S3 client;
-`electron` is an optional peer of `./electron`.
+`electron` is an optional peer of `./desktop`.
 
 ## What is here
 
-| Entry         | Symbol                                            | Use                                                                                  |
-| ------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `./contracts` | `FileSystem`                                      | the port: `exists`, `read`, `write`, `delete`, `list`, `stat`, `url`, `temporaryUrl` |
-| `./contracts` | `EncoreBucket`                                    | the slice of an Encore bucket the `encore_bucket` disk drives                        |
-| `./contracts` | `FileStat`, `WriteOptions`                        | types: `{ path, size, lastModified, contentType }`, `{ contentType? }`               |
-| `.`           | `FilesystemConfig`, `FilesystemConfig$`           | key `filesystem`: `disk`, `root`, `url`, `s3`                                        |
-| `.`           | `FilesystemOptions`                               | the shape of the configuration, for restating a field type in an override            |
-| `.`           | `MemoryFileSystemDriver`                          | `disk: memory`: a `Map`, for tests and as the safe default                           |
-| `.`           | `FileNotFoundError`                               | what `read` and `stat` throw when nothing is stored under a key                      |
-| `./node`      | `LocalFileSystemDriver`                           | `disk: local`: a folder (`root`), atomic writes                                      |
-| `./node`      | `S3FileSystemDriver`                              | `disk: s3`: AWS S3, Cloudflare R2 or MinIO; presigned temporary URLs                 |
-| `./node`      | `EncoreBucketFileSystemDriver`                    | `disk: encore_bucket`: the bucket the generated Encore app binds                     |
-| `./electron`  | `ElectronFileSystemDriver` (`ElectronFileSystem`) | `disk: electron`: the desktop app's files under `userData/<root>`                    |
+| Entry         | Symbol                                  | Use                                                                                  |
+| ------------- | --------------------------------------- | ------------------------------------------------------------------------------------ |
+| `./contracts` | `FileSystem`                            | the port: `exists`, `read`, `write`, `delete`, `list`, `stat`, `url`, `temporaryUrl` |
+| `./contracts` | `EncoreBucket`                          | the slice of an Encore bucket the `encore_bucket` disk drives                        |
+| `./contracts` | `FileStat`, `WriteOptions`              | types: `{ path, size, lastModified, contentType }`, `{ contentType? }`               |
+| `.`           | `FilesystemConfig`, `FilesystemConfig$` | key `filesystem`: `disk`, `root`, `url`, `s3`                                        |
+| `.`           | `FilesystemOptions`                     | the shape of the configuration, for restating a field type in an override            |
+| `.`           | `MemoryFileSystemDriver`                | `disk: memory`: a `Map`, for tests and as the safe default                           |
+| `.`           | `FileNotFoundError`                     | what `read` and `stat` throw when nothing is stored under a key                      |
+| `./node`      | `LocalFileSystemDriver`                 | `disk: local`: a folder (`root`), atomic writes                                      |
+| `./node`      | `S3FileSystemDriver`                    | `disk: s3`: AWS S3, Cloudflare R2 or MinIO; presigned temporary URLs                 |
+| `./node`      | `EncoreBucketFileSystemDriver`          | `disk: encore_bucket`: the bucket the generated Encore app binds                     |
+| `./desktop`   | `ElectronFileSystemDriver`              | `disk: electron`: the desktop app's files under `userData/<root>`                    |
 
 ## Using a disk
 

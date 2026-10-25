@@ -16,8 +16,8 @@ import type { AnyClass } from "@stackra/container";
 
 import { VISIBILITY_HOST } from "#core/constants/visibility-host.constant";
 import { filterOf } from "#core/functions/filter-of.function";
-import { VisibilityFilter } from "#core/ports/visibility-filter.port";
-import type { Where } from "#core/types/where.type";
+import { VisibilityFilter } from "#contracts/ports/visibility-filter.port";
+import type { Where } from "#contracts/types/where.type";
 
 /**
  * The filter of a read of `model`.

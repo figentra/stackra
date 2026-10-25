@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: test config of @stackra/filesystem: the decorators vitest preset (for @stackra/validation's legacy
- *          decorators) (node: the local driver writes to a temporary folder, the `./electron` test mocks `electron`)
+ *          decorators) (node: the local driver writes to a temporary folder, the `./desktop` test mocks `electron`)
  *          plus the shared coverage gate. `test` runs the unit tier (`<subject>.test.ts` in `__tests__/`); the infixed
  *          tiers (`.int`, `.contract`, `.e2e`, `.load`) run under their own tasks.
  * Boundary: test configuration only; a tool config gen will write into `.stackra/` (ADR 0295 decision 5).

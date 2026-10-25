@@ -17,7 +17,7 @@ import type { AnyClass } from "@stackra/container";
 import { Port } from "@stackra/contracts";
 import type { Actor } from "@stackra/contracts";
 
-import type { Where } from "#core/types/where.type";
+import type { Where } from "#contracts/types/where.type";
 
 /**
  * The visibility conditions of reads.

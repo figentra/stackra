@@ -1,6 +1,6 @@
 # @stackra/model
 
-The model kind of the programming model v3.1: `Model.with(...traits)`, the seven model traits, relations (`Ref<T>`
+The model kind of the programming model v3.1: `Model.with(...traits)`, the eight model traits, relations (`Ref<T>`
 and `Collection<T>` inside a module, `Link<T>` across modules), the `@Index`, `@Searchable` and `@Visibility` facets,
 and the ORM column types and `Money` embeddable that gen's generated entity metadata imports.
 
@@ -10,9 +10,9 @@ Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@
 
 ## Entry points
 
-| Import           | Holds                     | Exports                                                                                                                                                                                                                                                                                                                                         |
-| ---------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/model` | `src/core/`: node runtime | `Model`, traits (`HasPublicId`, `Timestamps`, `UserStamps`, `Versioned`, `SoftDeletes`, `AppendOnly`, `Translatable`), `createTrait`, `traitsOf`, `Index`, `Searchable`, `Visibility`, `ManyToOne`, `OneToMany`, `ManyToMany`, `OnDelete`, `Collection`, `Ref`, `Link`, `Translated`, `Attributes`, `LinkType`, `TranslatedType`, `MoneySchema` |
+| Import           | Holds                     | Exports                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ---------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/model` | `src/core/`: node runtime | `Model`, traits (`HasPublicId`, `Timestamps`, `UserStamps`, `Versioned`, `SoftDeletes`, `AppendOnly`, `Translatable`, `HasEncryptedFields`), `createTrait`, `traitsOf`, `encryptedFieldsOf`, `EncryptedFieldsSubscriber`, `Index`, `Searchable`, `Visibility`, `ManyToOne`, `OneToMany`, `ManyToMany`, `OnDelete`, `Collection`, `Ref`, `Link`, `Translated`, `Attributes`, `LinkType`, `TranslatedType`, `MoneySchema` |
 
 Entry barrels are generated, never authored (ADR 0294 decision 15); until `stackra gen` writes them (STA-339),
 `src/core/index.ts` is a stand-in barrel.
@@ -44,20 +44,32 @@ order.record(OrderPlaced.create({ orderId: order.id })); // kept beside the inst
 
 ## Traits
 
-| Trait                  | Adds                                              | Notes                                                        |
-| ---------------------- | ------------------------------------------------- | ------------------------------------------------------------ |
-| `HasPublicId(prefix)`  | `id: PublicId<prefix>`, minted on create (UUIDv7) | Prefix 2 to 6 lowercase letters (ADR 0135)                   |
-| `Timestamps`           | `createdAt`, `updatedAt`                          | `updatedAt` moves on every changing flush                    |
-| `UserStamps`           | `createdBy`, `updatedBy` (principal public ids)   | Filled from the actor, never from input                      |
-| `Versioned`            | `version` (starts at 1)                           | Optimistic concurrency; a stale write is a `conflict`        |
-| `SoftDeletes`          | `deletedAt`                                       | Delete policy `soft`                                         |
-| `AppendOnly`           | nothing                                           | Marker read by `traitsOf`; updates are refused               |
-| `Translatable(fields)` | nothing                                           | Names the model's `Translated` fields (jsonb, `.in(locale)`) |
+| Trait                           | Adds                                              | Notes                                                        |
+| ------------------------------- | ------------------------------------------------- | ------------------------------------------------------------ |
+| `HasPublicId(prefix)`           | `id: PublicId<prefix>`, minted on create (UUIDv7) | Prefix 2 to 6 lowercase letters (ADR 0135)                   |
+| `Timestamps`                    | `createdAt`, `updatedAt`                          | `updatedAt` moves on every changing flush                    |
+| `UserStamps`                    | `createdBy`, `updatedBy` (principal public ids)   | Filled from the actor, never from input                      |
+| `Versioned`                     | `version` (starts at 1)                           | Optimistic concurrency; a stale write is a `conflict`        |
+| `SoftDeletes`                   | `deletedAt`                                       | Delete policy `soft`                                         |
+| `AppendOnly`                    | nothing                                           | Marker read by `traitsOf`; updates are refused               |
+| `Translatable(fields)`          | nothing                                           | Names the model's `Translated` fields (jsonb, `.in(locale)`) |
+| `HasEncryptedFields(...fields)` | nothing                                           | Names string fields that rest sealed; see below              |
 
 Ownership by a tenant is not a model trait: `BelongsToTenant` is `@stackra/tenancy/node`'s (ADR 0321, ADR 0323
 decision 3), built with `createTrait`, as in the example above. `createTrait(name, apply, options)` makes a trait for
 another package, and `traitsOf(Model)` lists a model's traits with their options. `Model.with` refuses a trait applied
 twice.
+
+## Encrypted fields
+
+`HasEncryptedFields("email", "phone")` names string fields that rest encrypted (gap R-36). The table holds only their
+sealed form; the model holds plain text. `EncryptedFieldsSubscriber`, built with the `FieldCipher` port of
+`@stackra/contracts`, seals them before a create, an update (only the fields it writes) or an upsert, gives the plain
+text back after the write, and opens them on load. Each value is bound to the context `<model key>.<field>`
+(`crm.customer_contact.email`), so it opens only in its own column; a null stays null. Pass the subscriber in
+`DatabaseOptions.subscribers`; the generated boot does it once gen registers it (STA-339). Writes that bypass the unit
+of work (`nativeInsert`, `nativeUpdate`, the query builder, raw SQL) are not sealed, and an encrypted field cannot be
+searched, sorted or indexed by value. `encryptedFieldsOf(Model)` lists the fields.
 
 ## Relations
 

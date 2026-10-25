@@ -11,7 +11,7 @@
 import type { FindOneOptions, FindOptions, Loaded, RequiredEntityData } from "@mikro-orm/core";
 
 import type { TransactionOptions } from "#core/types/transaction-options.type";
-import type { Where } from "#core/types/where.type";
+import type { Where } from "#contracts/types/where.type";
 
 /**
  * The repository of `M`.

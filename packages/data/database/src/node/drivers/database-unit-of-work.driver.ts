@@ -17,7 +17,7 @@ import { Database } from "#core/ports/database.port";
  * The unit of work on the database.
  *
  * @example
- * // generated wiring: { port: UnitOfWork, candidates: { database: () => import("@stackra/database").then((m) => m.DatabaseUnitOfWorkDriver) } }
+ * // generated wiring: { port: UnitOfWork, candidates: { database: () => import("@stackra/database/node").then((m) => m.DatabaseUnitOfWorkDriver) } }
  */
 export class DatabaseUnitOfWorkDriver extends Driver(UnitOfWork) {
   /** Runs `work` in a transaction of the connected database. */

@@ -1,7 +1,7 @@
 # AGENTS — @stackra/storage
 
 Client storage. Member at `packages/data/storage` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305).
-Entries `.`, `./contracts`, `./browser`, `./react`, `./testing`.
+Entries `.`, `./contracts`, `./browser`, `./native`, `./react`, `./testing`.
 
 ## Where code goes
 
@@ -11,13 +11,14 @@ Entries `.`, `./contracts`, `./browser`, `./react`, `./testing`.
 | An enum, a function, a type      | `src/core/{enums,functions,types}/`                                      |
 | An isomorphic driver             | `src/core/drivers/<name>-storage.driver.ts`, extends `AreaStorageDriver` |
 | A browser-only driver            | `src/browser/drivers/`                                                   |
+| A device (React Native) driver   | `src/native/drivers/`                                                    |
 | React code                       | `src/react/<name>/`                                                      |
 | A test helper                    | `src/testing/functions/`                                                 |
 | A test                           | `__tests__/<name>.<kind>.test.ts(x)` beside it                           |
 
 ## Entries and barrels
 
-- `src/{core,contracts,browser,react,testing}/index.ts` are stand-in barrels until gen writes the entry barrels
+- `src/{core,contracts,browser,native,react,testing}/index.ts` are stand-in barrels until gen writes the entry barrels
   (STA-339); add every new public file to its barrel and to that entry's `index.test.ts`.
 - `Storage` is exported from `./contracts` only, never from `.` (registry A3). `./contracts` imports no other entry, so
   the port types its areas as properties named by the `StorageArea` codes instead of importing the enum.

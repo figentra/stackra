@@ -13,8 +13,8 @@ import type { Actor } from "@stackra/contracts";
 import { HasPublicId, Model } from "@stackra/model";
 import { describe, expect, it } from "@stackra/testing";
 
-import { VisibilityFilter } from "#core/ports/visibility-filter.port";
-import type { Where } from "#core/types/where.type";
+import { VisibilityFilter } from "#contracts/ports/visibility-filter.port";
+import type { Where } from "#contracts/types/where.type";
 
 class Document extends Model.with(HasPublicId("doc")) {
   ownerId!: string;

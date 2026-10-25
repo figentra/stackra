@@ -4,7 +4,8 @@
  *          The template's old `./orm` entry is folded in (ADR 0127 2026-10-24 note): `EntitySchema`, `OptionalProps`
  *          and `UniqueViolation` are MikroORM's own, re-exported, so generated entity metadata and `instanceof` checks
  *          use the classes the ORM throws and reads.
- * Boundary: names each re-export and declares nothing. The migration records, the registries, the name helpers, the
+ * Boundary: names each re-export and declares nothing. The Postgres and unit-of-work drivers live in `./node`; the
+ *           `VisibilityFilter` port and the `Where` type live in `./contracts`. The migration records, the registries, the name helpers, the
  *           block-id minting and the visibility filter function stay internal; the sequence tables' migration is found
  *           by its path (`src/node/database/migrations/`), as every migration is, so it is not re-exported.
  * Runtime: node
@@ -21,8 +22,6 @@ export { Macro } from "#core/bases/macro.base";
 export { Migration } from "#core/bases/migration.base";
 export { Seeder } from "#core/bases/seeder.base";
 export { Sequence } from "#core/bases/sequence.base";
-export { DatabaseUnitOfWorkDriver } from "#core/drivers/database-unit-of-work.driver";
-export { PostgresDatabaseDriver } from "#core/drivers/postgres-database.driver";
 export { Aggregate } from "#core/enums/aggregate.enum";
 export { Extension } from "#core/enums/extension.enum";
 export { MixedCurrencyError } from "#core/errors/mixed-currency.error";
@@ -42,7 +41,6 @@ export { sql } from "#core/functions/sql.function";
 export { table } from "#core/functions/table.function";
 export { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 export { Database } from "#core/ports/database.port";
-export { VisibilityFilter } from "#core/ports/visibility-filter.port";
 export { GraphQuery } from "#core/services/graph-query.service";
 export { SequenceService } from "#core/services/sequence.service";
 export type { Blueprint } from "#core/types/blueprint.type";
@@ -81,6 +79,5 @@ export type { TableOptions } from "#core/types/table-options.type";
 export type { TablePage } from "#core/types/table-page.type";
 export type { TableQuery } from "#core/types/table-query.type";
 export type { TransactionOptions } from "#core/types/transaction-options.type";
-export type { Where } from "#core/types/where.type";
 export type { ColumnRef } from "#core/values/column-ref.value";
 export type { MetricsReader } from "#core/values/metrics-reader.value";

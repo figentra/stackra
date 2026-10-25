@@ -3,6 +3,7 @@
 Stackra search: Postgres hybrid search over a model's `@Searchable` index (ADR 0221). A query injects `Search` and asks
 `search.in(Product)` for ranked rows; the index lives in the model's own table, in the columns the `t.searchable(...)`
 migration macro writes, so a search runs in the caller's transaction under the same row-level security as the data.
+A `VectorIndex` stores embedded passages for semantic retrieval (pgvector in Postgres, ADR 0160).
 
 **Tier:** `tier:lib` (`packages/data/search`). Entries `.`, `./contracts` and `./node`. Depends on `@stackra/config`,
 `@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/model`,
@@ -15,11 +16,15 @@ migration macro writes, so a search runs in the caller's transaction under the s
 | `.`           | `Search`                                                              | the injected reader: `search.in(Model)`                            |
 | `.`           | `SearchIndex`, `SearchFindOptions`, `SearchPageOptions`               | one model's index: `find`, `page`, `index`, `remove`, `reindex`    |
 | `.`           | `MemorySearchDriver`                                                  | the in-process engine (tests, the dev lane)                        |
+| `.`           | `MemoryVectorIndexDriver`                                             | the in-process `VectorIndex` (tests, the dev lane)                 |
 | `.`           | `SearchConfig`, `SearchConfig$`, `SearchOptions`                      | `search.driver`: `postgres` (default) or `memory`                  |
 | `.`           | `SearchCursorInvalidError`                                            | refusal of a cursor no page gave (`search_cursor_invalid`, 400)    |
 | `./contracts` | `SearchDriver`                                                        | the port                                                           |
 | `./contracts` | `SearchDocument`, `SearchRequest`, `SearchTable`, `SearchFilterValue` | what a driver stores and is asked                                  |
+| `./contracts` | `VectorIndex`, `Embedder`                                             | the vector ports @stackra/ai retrieves through                     |
+| `./contracts` | `VectorItem`, `VectorHit`, `VectorQueryOptions`                       | what a vector index stores, returns and is asked                   |
 | `./node`      | `PostgresSearchDriver`                                                | the hybrid engine: full-text and trigram, fused by reciprocal rank |
+| `./node`      | `PgvectorVectorIndexDriver`                                           | the pgvector `VectorIndex`: cosine distance, scope-filtered        |
 | `./node`      | `SearchableMacro`, `SearchableColumns`                                | `t.searchable({ text, filters, locales })` in a migration          |
 | `./node`      | `registerSearchableModels`, `SearchableChangeService`                 | automatic indexing from the outbox's row changes (gen's wiring)    |
 
@@ -92,10 +97,36 @@ configuration, `arabic` and `english` included), `search_text` and `search_filte
 writes no index: the migration declares its own. This package's migration `search.0001_create_text_functions` creates
 the trigram extension and `search.unaccent_immutable(text)`.
 
+## Vector retrieval
+
+```ts
+const vectors = await embedder.embed(chunks.map((chunk) => chunk.text));
+await index.upsert(
+  chunks.map((chunk, at) => ({
+    id: chunk.id,
+    scope,
+    vector: vectors[at] ?? [],
+    text: chunk.text,
+    metadata: { source: doc.id },
+  })),
+);
+const [query] = await embedder.embed([question]);
+// best first, each with its cosine score
+const hits = await index.query(query ?? [], { topK: 5, scope, filter: { source: doc.id } });
+```
+
+`VectorIndex` (`upsert`, `query`, `remove`) and `Embedder` (`embed`, `dimensions`) are the ports in `./contracts`.
+`PgvectorVectorIndexDriver` keeps passages in `search.vector_items` (migration `search.0002_create_vector_items`: the
+`vector` and `ltree` extensions, the table under the forced scope policy). It runs in the caller's transaction and scope
+session (`Database.withScope`), so row-level security limits every read and write to the granted scopes; a query also
+narrows to the rows at or below its `scope`. The embedding column has no fixed dimension, so a query scans the scope's
+rows exactly (no HNSW index yet); every passage of one deployment comes from one embedder. `MemoryVectorIndexDriver`
+does the same in memory. No `Embedder` driver ships here: the provider drivers live with the AI integrations.
+
 ## Not here
 
 - Re-indexing a parent when a related row its facet reads changes: the writer calls `index` for it; `reindex`
   backfills.
-- The vector lane (pgvector) waits for an embedding port; the versioned index swap, the palette, the public search API
+- The vector lane in the hybrid `Search` ranking (the `VectorIndex` stands alone for now); the versioned index swap, the palette, the public search API
   and the IAM predicate of ADR 0221 are later work.
 - An OpenSearch driver: built behind the same port when ADR 0221 d9's trigger is met.

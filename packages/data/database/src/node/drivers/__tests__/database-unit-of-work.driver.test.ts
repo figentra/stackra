@@ -11,7 +11,7 @@ import { UnitOfWork } from "@stackra/actions/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
-import { DatabaseUnitOfWorkDriver } from "#core/drivers/database-unit-of-work.driver";
+import { DatabaseUnitOfWorkDriver } from "#node/drivers/database-unit-of-work.driver";
 import { Database } from "#core/ports/database.port";
 
 class RecordingDatabase extends Database {

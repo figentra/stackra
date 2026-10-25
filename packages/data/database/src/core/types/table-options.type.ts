@@ -8,7 +8,7 @@
  */
 import type { FindOptions } from "@mikro-orm/core";
 
-import type { Where } from "#core/types/where.type";
+import type { Where } from "#contracts/types/where.type";
 
 /** The table read options. */
 export interface TableOptions<M extends object, H extends string = never> {

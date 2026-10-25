@@ -6,7 +6,7 @@
  * Runtime: node
  * Governing contract: ADR 0307 (rule 16).
  */
-import type { Where } from "#core/types/where.type";
+import type { Where } from "#contracts/types/where.type";
 
 /** The metrics options. */
 export interface MetricsOptions<M extends object> {

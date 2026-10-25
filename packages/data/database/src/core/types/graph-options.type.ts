@@ -7,7 +7,7 @@
  * Runtime: node
  * Governing contract: ADR 0104 (decision 2: the query graph); ADR 0268 (R10: graph limits).
  */
-import type { Where } from "#core/types/where.type";
+import type { Where } from "#contracts/types/where.type";
 
 /** The graph read options. */
 export interface GraphOptions<

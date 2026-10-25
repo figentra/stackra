@@ -20,7 +20,7 @@ describe("emitBoot", () => {
   it("connects the database, segments and the relay in order", () => {
     const boot = emitBoot(BILLING_IR) ?? "";
     expect(boot).toContain('import type { Container } from "@stackra/container";');
-    expect(boot).toContain('import { PostgresDatabaseDriver } from "@stackra/database";');
+    expect(boot).toContain('import { PostgresDatabaseDriver } from "@stackra/database/node";');
     expect(boot).toContain(
       'import { OutboxRelayService, OutboxWriterService } from "@stackra/outbox/node";',
     );

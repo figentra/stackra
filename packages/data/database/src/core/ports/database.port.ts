@@ -6,7 +6,9 @@
  * Boundary: the ORM itself is MikroORM, which only this package imports (ADR 0097). `Database.current()` is the
  *           connected driver for code that cannot inject it; everything else injects `Database`. A scope is a
  *           contracts `ScopeRef`, a node's id and `ltree` path; levels are deployment data, so none is named here.
- *           Isolation stays in the database: nothing adds a WHERE filter to queries.
+ *           Isolation stays in the database: nothing adds a WHERE filter to queries. It stays in `.` and not in
+ *           `./contracts` because it carries `Database.current()` over the core `ACTIVE_DATABASE` constant, 33 files in
+ *           other packages import it from `.`, and contracts holds only ports, enums and types that never import core.
  * Runtime: node
  * Governing contract: ADR 0014; ADR 0097 (decision 2); ADR 0238; ADR 0239; ADR 0327 (decisions 2, 3, 5, 8 and 9);
  *                     `.agents/rules/tenancy.md` (two layers).

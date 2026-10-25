@@ -27,7 +27,7 @@ import { connectVisibilityFilter } from "#core/functions/connect-visibility-filt
 import { registerModelPartners } from "#core/functions/register-model-partners.function";
 import { sql } from "#core/functions/sql.function";
 import { Database } from "#core/ports/database.port";
-import { VisibilityFilter } from "#core/ports/visibility-filter.port";
+import { VisibilityFilter } from "#contracts/ports/visibility-filter.port";
 import { MetricsReader } from "#core/values/metrics-reader.value";
 
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the generated [OptionalProps] augmentation below

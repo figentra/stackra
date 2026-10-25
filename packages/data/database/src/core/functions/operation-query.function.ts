@@ -18,7 +18,7 @@ import type { CrudService } from "#core/bases/crud-service.base";
 import { modelKey } from "#core/functions/model-key.function";
 import type { OperationQueryOptions } from "#core/types/operation-query-options.type";
 import type { TableQuery } from "#core/types/table-query.type";
-import type { Where } from "#core/types/where.type";
+import type { Where } from "#contracts/types/where.type";
 
 /**
  * The generated query of `operation` on `model`.

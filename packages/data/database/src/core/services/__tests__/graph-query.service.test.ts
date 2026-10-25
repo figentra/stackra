@@ -15,7 +15,7 @@ import { vi } from "vitest";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
 import { Database } from "#core/ports/database.port";
-import { VisibilityFilter } from "#core/ports/visibility-filter.port";
+import { VisibilityFilter } from "#contracts/ports/visibility-filter.port";
 import { GraphQuery } from "#core/services/graph-query.service";
 
 class Variant extends Model.with(HasPublicId("var")) {

@@ -12,7 +12,7 @@ import { vi } from "vitest";
 
 import { FILE_SYSTEM_DISKS } from "#core/constants/file-system-disks.constant";
 import { MemoryFileSystemDriver } from "#core/drivers/memory-file-system.driver";
-import { ElectronFileSystemDriver } from "#electron/drivers/electron-file-system.driver";
+import { ElectronFileSystemDriver } from "#desktop/drivers/electron-file-system.driver";
 import { EncoreBucketFileSystemDriver } from "#node/drivers/encore-bucket-file-system.driver";
 import { LocalFileSystemDriver } from "#node/drivers/local-file-system.driver";
 import { S3FileSystemDriver } from "#node/drivers/s3-file-system.driver";

@@ -16,7 +16,7 @@
  *                     value in SQL text).
  */
 import { Duration, type Json } from "@stackra/contracts";
-import type { Where } from "@stackra/database";
+import type { Where } from "@stackra/database/contracts";
 import type { Condition, Rules } from "@stackra/rules";
 import { FieldType, Operator } from "@stackra/rules/contracts";
 import { duration } from "@stackra/validation";

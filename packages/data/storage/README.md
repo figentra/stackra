@@ -6,8 +6,8 @@ the offline payloads unreadable at rest without the session's key (ADR 0338). No
 sync engine stays deferred (ADR 0011).
 
 **Tier:** `tier:lib` (`packages/data/storage`), the one data package outside the data gate. Entries `.`, `./contracts`,
-`./browser`, `./react` and `./testing`. Depends on `@stackra/contracts`, `@stackra/container` and
-`@stackra/validation`; React is an optional peer of `./react`.
+`./browser`, `./native`, `./react` and `./testing`. Depends on `@stackra/contracts`, `@stackra/container` and
+`@stackra/validation`; React is an optional peer of `./react`; `react-native-mmkv` and `expo-secure-store` of `./native`.
 
 ## What is here
 
@@ -24,6 +24,7 @@ sync engine stays deferred (ADR 0011).
 | `./contracts` | `StorageAreaHandle`          | one area: `get`, `set`, `has`, `delete`, `keys`, `clear`, `read`, `write`     |
 | `./contracts` | `PayloadSeal`                | seals and opens the `outbox` and `cache` payloads with the session's key      |
 | `./browser`   | `WebStorageDriver`           | web and PWA: `prefs`/`cache` in `localStorage`, `session` in `sessionStorage` |
+| `./native`    | `NativeStorageDriver`        | mobile: five areas in MMKV (`stackra.<area>`), `secrets` in keychain/keystore |
 | `./react`     | `usePrefs`                   | the `prefs` area of the nearest container                                     |
 | `./testing`   | `fakeStorage`                | a fresh in-memory `Storage` for one test                                      |
 

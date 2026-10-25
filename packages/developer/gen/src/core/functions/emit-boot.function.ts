@@ -37,7 +37,7 @@ export function emitBoot(ir: MemberIR): string | undefined {
   const imports = ['import type { Container } from "@stackra/container";'];
   const steps: string[] = [];
   if (database) {
-    imports.push('import { PostgresDatabaseDriver } from "@stackra/database";');
+    imports.push('import { PostgresDatabaseDriver } from "@stackra/database/node";');
     steps.push(
       `  await PostgresDatabaseDriver.connect({ url: options.url${outbox ? ", subscribers: [container.get(OutboxWriterService)]" : ""} });`,
     );

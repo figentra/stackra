@@ -187,6 +187,9 @@ catalogs:
     expo-system-ui: 57.0.4
     expo-glass-effect: 57.0.4
     expo-blur: 57.0.3
+    # Storage drivers for @stackra/storage (optional peers). MIT. MMKV 4.x has createMMKV and remove.
+    react-native-mmkv: 4.3.2
+    expo-secure-store: 57.0.4
     # Push permission and tokens for @stackra/platform/native (optional peer). MIT.
     expo-notifications: 57.0.22
     babel-preset-expo: 57.0.16

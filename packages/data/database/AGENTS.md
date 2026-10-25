@@ -1,26 +1,28 @@
 # AGENTS — @stackra/database
 
 The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`), in the programming model v3.1 shape
-(ADR 0294, 0305). Entries `.` and `./testing`; the old `./orm` is folded into `.` (ADR 0127 2026-10-24 note).
-`src/node/` holds only this package's migrations, found by path and exported from no entry.
+(ADR 0294, 0305). Entries `.`, `./contracts`, `./node` and `./testing`; the old `./orm` is folded into `.` (ADR 0127 2026-10-24 note).
+`src/node/` holds the two drivers (the `./node` entry) and this package's migrations, found by path and exported from no entry.
 
 ## Where code goes
 
-| You are writing…                                     | It goes in…                                                                   |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------- |
-| A kind base (`CrudService`, `Migration`, `Macro`, …) | `src/core/bases/<name>.base.ts`                                               |
-| The `Factory` base and the other test helpers        | `src/testing/{bases,constants,types}/`, `*.fixture.ts`                        |
-| A port or a driver                                   | `src/core/ports/<name>.port.ts`, `src/core/drivers/<name>.driver.ts`          |
-| The migration compiler's recorders (internal)        | `src/core/records/<name>.record.ts`                                           |
-| The ORM naming strategy                              | `src/core/orm/<name>.naming-strategy.ts`                                      |
-| A value class (`ColumnRef`, `MetricsReader`)         | `src/core/values/<name>.value.ts`                                             |
-| An enum, a function, a constant, a type, a refusal   | `src/core/{enums,functions,constants,types,errors}/`                          |
-| A migration of this package's own tables             | `src/node/database/migrations/<NNNN>-<stem>.migration.ts` (schema `database`) |
-| A test                                               | `__tests__/<name>.<kind>.test.ts` beside it; Docker tests take `.int`         |
+| You are writing…                                                     | It goes in…                                                                   |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| A kind base (`CrudService`, `Migration`, `Macro`, …)                 | `src/core/bases/<name>.base.ts`                                               |
+| The `Factory` base and the other test helpers                        | `src/testing/{bases,constants,types}/`, `*.fixture.ts`                        |
+| A port (`Database`, which carries `Database.current()`)              | `src/core/ports/<name>.port.ts`                                               |
+| A port or type with no core dependency (`VisibilityFilter`, `Where`) | `src/contracts/{ports,types}/`                                                |
+| A driver (Postgres, unit of work)                                    | `src/node/drivers/<name>.driver.ts`                                           |
+| The migration compiler's recorders (internal)                        | `src/core/records/<name>.record.ts`                                           |
+| The ORM naming strategy                                              | `src/core/orm/<name>.naming-strategy.ts`                                      |
+| A value class (`ColumnRef`, `MetricsReader`)                         | `src/core/values/<name>.value.ts`                                             |
+| An enum, a function, a constant, a type, a refusal                   | `src/core/{enums,functions,constants,types,errors}/`                          |
+| A migration of this package's own tables                             | `src/node/database/migrations/<NNNN>-<stem>.migration.ts` (schema `database`) |
+| A test                                                               | `__tests__/<name>.<kind>.test.ts` beside it; Docker tests take `.int`         |
 
 ## Entries and barrels
 
-- `src/core/index.ts` and `src/testing/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339);
+- `src/core/index.ts`, `src/contracts/index.ts`, `src/node/index.ts` and `src/testing/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339);
   add every new public file to the barrel and to the export list in its `__tests__/index.test.ts`.
 
 ## This package

@@ -2,7 +2,7 @@
   "name": "@stackra/storage",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra client storage: the Storage port with the named areas of ADR 0256 (prefs, session, cache, outbox, secrets, files), values checked by their generated schemas, a time-to-live per write, the memory and web drivers, usePrefs and fakeStorage",
+  "description": "Stackra client storage: the Storage port with the named areas of ADR 0256 (prefs, session, cache, outbox, secrets, files), values checked by their generated schemas, a time-to-live per write, the memory, web and native drivers, usePrefs and fakeStorage",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,6 +34,11 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*/index.ts"
+    ],
     "#react/*": [
       "./src/react/*",
       "./src/react/*.ts",
@@ -61,6 +66,11 @@
       "@stackra/source": "./src/browser/index.ts",
       "types": "./dist/browser.d.mts",
       "default": "./dist/browser.mjs"
+    },
+    "./native": {
+      "@stackra/source": "./src/native/index.ts",
+      "types": "./dist/native.d.mts",
+      "default": "./dist/native.mjs"
     },
     "./react": {
       "@stackra/source": "./src/react/index.ts",
@@ -101,20 +111,30 @@
     "@types/react": "catalog:frontend",
     "@types/react-dom": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",
+    "expo-secure-store": "catalog:mobile",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
     "react": "catalog:frontend",
     "react-dom": "catalog:frontend",
+    "react-native-mmkv": "catalog:mobile",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality",
     "zod": "catalog:"
   },
   "peerDependencies": {
-    "react": "catalog:frontend"
+    "expo-secure-store": "catalog:mobile",
+    "react": "catalog:frontend",
+    "react-native-mmkv": "catalog:mobile"
   },
   "peerDependenciesMeta": {
+    "expo-secure-store": {
+      "optional": true
+    },
     "react": {
+      "optional": true
+    },
+    "react-native-mmkv": {
       "optional": true
     }
   }
