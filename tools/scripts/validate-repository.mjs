@@ -63,8 +63,66 @@ export const FORBIDDEN_DEPENDENCIES = [
  */
 export const PRO_DEPENDENCIES = ["@heroui-pro/react", "heroui-native-pro", "@stackra/ui-pro"];
 
-/** The one package that wraps HeroUI Pro; it stays private and unpublished (ADR 0310 decision 1). */
+/**
+ * The one package that wraps HeroUI Pro. It publishes only to the restricted Keygen channel, never to npmjs (ADR 0310
+ * decision 1 as amended by STA-447): `"private": true` keeps `pnpm publish` and changesets from sending it to npmjs, and
+ * its `pnpm pack` tarball goes up through the Keygen CLI (STA-482), since Keygen's npm engine takes no `npm publish`.
+ */
 const PRO_WRAPPER = "@stackra/ui-pro";
+
+/**
+ * The restricted channel: Keygen's hosted npm engine for one account (ADR 0177 decision 2, ADR 0310). The Keygen
+ * custom domain is named later (ADR 0290 decision 17), so the check takes any account and a move to that domain changes
+ * this pattern and the package's `publishConfig.registry` together.
+ */
+const PRO_WRAPPER_REGISTRY = /^https:\/\/npm\.pkg\.keygen\.sh\/[\w-]+\/$/;
+
+/** The last `files` entry, which keeps source maps out of the Pro tarball (ADR 0316 decision 2). */
+const NO_SOURCE_MAPS = "!**/*.map";
+
+/** A `files` entry that would pack the source folder: `src` in any spelling, or the whole package (`.`, `*`, `**`). */
+const isSourceEntry = (entry) => /^(\.\/?|(\.\/)?\*{1,2}|(\.\/)?src(\/.*)?)$/.test(entry);
+
+/** Every path a conditional `exports` value names, condition objects walked to their leaves. */
+const exportTargets = (value) =>
+  typeof value === "string"
+    ? [value]
+    : Object.values(value ?? {}).flatMap((inner) => exportTargets(inner));
+
+/**
+ * Findings for the Pro wrapper's publishing fields: private, the restricted registry, and the Pro tarball of ADR 0316
+ * decision 2 (no `src` and, last, no source maps in `files`; packed exports for the same entries, on `dist` or
+ * `assets` only, with no `@stackra/source`).
+ */
+function checkProWrapper(pkg) {
+  const out = [];
+  const publishConfig = pkg.publishConfig ?? {};
+  const files = pkg.files ?? [];
+  if (pkg.private !== true)
+    out.push(`${PRO_WRAPPER} must be "private": true, so nothing publishes it to npmjs (ADR 0310)`);
+  if (!PRO_WRAPPER_REGISTRY.test(publishConfig.registry ?? ""))
+    out.push(
+      `${PRO_WRAPPER} publishConfig.registry must be Keygen's npm engine, https://npm.pkg.keygen.sh/<account>/ (ADR 0310)`,
+    );
+  // A negated `files` entry only drops what the entries before it added, so the map exclusion comes last.
+  if (files.some(isSourceEntry) || files.at(-1) !== NO_SOURCE_MAPS)
+    out.push(
+      `${PRO_WRAPPER} files must list no src and must end with "${NO_SOURCE_MAPS}": its tarball ships dist only (ADR 0316)`,
+    );
+  const entries = Object.keys(pkg.exports ?? {}).sort();
+  const packed = Object.keys(publishConfig.exports ?? {}).sort();
+  const targets = exportTargets(publishConfig.exports);
+  if (
+    packed.length === 0 ||
+    packed.join() !== entries.join() ||
+    JSON.stringify(publishConfig.exports).includes("@stackra/source") ||
+    !targets.every((target) => /^\.\/(dist|assets)\//.test(target))
+  )
+    out.push(
+      `${PRO_WRAPPER} publishConfig.exports must name every entry of exports, on dist or assets only, with no @stackra/source condition (ADR 0316)`,
+    );
+  return out;
+}
 
 const DEPENDENCY_FIELDS = [
   "dependencies",
@@ -134,8 +192,7 @@ export function check({ dir, pkg, turbo, tsconfig }) {
     }
   }
 
-  if (pkg.name === PRO_WRAPPER && (pkg.private !== true || pkg.publishConfig))
-    out.push(`${PRO_WRAPPER} must be "private": true with no publishConfig (ADR 0310)`);
+  if (pkg.name === PRO_WRAPPER) out.push(...checkProWrapper(pkg));
 
   const tier = tierFor(dir);
   if (tier === null) return out;
@@ -185,7 +242,7 @@ export function checkFiles({ dir, pkg, files, agents, licenseText, rootLicense }
         'package.json repository must be { type: "git", url: "git+https://github.com/figentra/stackra.git", directory } (ADR 0177)',
       );
     const pc = pkg.publishConfig ?? {};
-    // ADR 0310: the HeroUI Pro wrapper is never published, so it carries no publishConfig (`check` refuses one).
+    // ADR 0310: the HeroUI Pro wrapper publishes only to the restricted channel, which `check` requires instead.
     if (
       pkg.name !== PRO_WRAPPER &&
       (pc.access !== "public" ||

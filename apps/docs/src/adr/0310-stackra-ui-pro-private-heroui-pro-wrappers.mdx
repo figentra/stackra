@@ -153,11 +153,22 @@ HeroUI's CDN, so CI needs a token for that download. The owner decided the token
 
 ## Enforcement
 
-- `"private": true` in `packages/design-system/ui-pro/package.json`, with no `publishConfig`.
+- `packages/design-system/ui-pro/package.json` keeps `"private": true`, so `pnpm publish` and changesets never send it to
+  npmjs, and has a `publishConfig` whose `registry` is the restricted channel, Keygen's npm engine for Figentra's
+  account (`https://npm.pkg.keygen.sh/figentra/`; the Keygen custom domain is named later, per
+  [0290](/adr/0290-dev-environment-and-cloudflare-services) decision 17), and whose `exports` name `dist` and
+  `assets` only. Its `files` end with `!**/*.map`. Keygen's npm engine takes no `npm publish`, so a release step will
+  upload the `pnpm pack` tarball with the Keygen CLI. That step is STA-482; until it lands, the release workflow neither
+  installs nor builds this package, as the release-workflow bullet below says.
 - `check` in `tools/scripts/validate-repository.mjs` (`PRO_DEPENDENCIES`, run by `pnpm validate`) fails any member other than an
   app or `@stackra/ui-pro` that depends on `@heroui-pro/react` or `heroui-native-pro`, any non-app member that depends on
-  `@stackra/ui-pro`, and `@stackra/ui-pro` itself without `"private": true` or with a `publishConfig`. It also
-  fails any non-app member that names `catalog:uniwind-pro` (decision 11).
+  `@stackra/ui-pro`, and `@stackra/ui-pro` itself without `"private": true`, without the restricted `publishConfig.registry`
+  (an npmjs one is refused), with `src` (or the whole package) in `files` or without `!**/*.map` as its last entry,
+  or with `publishConfig.exports` that miss an entry of `exports`, point outside `dist` and `assets`, or name the
+  `@stackra/source` condition
+  ([0316](/adr/0316-open-core-distribution) decision 2). It also fails any non-app member that
+  names `catalog:uniwind-pro` (decision 11).
+- `packages/design-system/ui-pro/tsdown.config.ts` builds minified output with no source maps (0316 decision 2).
 - gitleaks (the pre-commit hook and the CI scan) keeps the token out of git, as [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets) requires.
 - The Quality Gate (`.github/workflows/ci.yml`) stops at its `Licensed UI prerequisites` step when `INFISICAL_GATE_IDENTITY_ID` is
   unset, and its `HeroUI Pro token (Infisical OIDC)` and `Uniwind Pro token (Infisical OIDC)` steps export only `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` (decisions 9 and 11). The release workflow
