@@ -241,6 +241,16 @@ catalogs:
     electron-builder: 26.16.1
   # Deploy CLIs. wrangler builds and deploys the Cloudflare Workers members (workers/static, ADR 0284); CI runs
   # `wrangler deploy` with a token from Infisical /ci, never from a file.
+  # Pulumi providers for the infra-* packages (ADR 0171, ADR 0352); each pinned to a release at least two weeks old.
+  infra:
+    "@pulumi/aws": 7.50.0
+    "@pulumi/cloudflare": 6.22.0
+    "@pulumi/github": 6.15.0
+    "@pulumi/pulumi": 3.268.0
+    "@pulumiverse/sentry": 0.0.9
+    "@pulumiverse/zitadel": 0.2.0
+    pulumi-better-uptime: 0.22.4
+    pulumi-logtail: 3.1.4
   deploy:
     wrangler: 4.148.0
   # Documentation site (apps/docs).
