@@ -39,6 +39,10 @@ catalog:
   # Apache-2.0; bump the pair together.
   "@aws-sdk/client-s3": 3.1149.0
   "@aws-sdk/s3-request-presigner": 3.1149.0
+  # The AWS Secrets Manager store of @stackra/config/node (BatchGetSecretValue). Apache-2.0; keep beside client-s3.
+  "@aws-sdk/client-secrets-manager": 3.1149.0
+  # The GCS disk of @stackra/filesystem (GcsFileSystemDriver, ADR 0354): objects and V4 signed URLs. Apache-2.0.
+  "@google-cloud/storage": 8.4.0
   # @stackra/model on the server only (ADR 0014, 0227): Collection, Ref, custom Types and the Money embeddable.
   # The version the STA-335 entity-schema spike proved. MIT.
   "@mikro-orm/core": 7.2.5
@@ -188,6 +192,8 @@ catalogs:
     expo-dev-client: 57.0.20
     expo-constants: 57.0.22
     expo-linking: 57.0.13
+    # Hosted sign-in for @stackra/identity/native (openAuthSessionAsync). MIT; the SDK 57 bundled version.
+    expo-web-browser: 57.0.3
     expo-splash-screen: 57.0.10
     expo-status-bar: 57.0.1
     expo-system-ui: 57.0.4
