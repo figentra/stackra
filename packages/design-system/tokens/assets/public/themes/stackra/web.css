@@ -150,6 +150,7 @@
   --signal: oklch(0.158 0.005 248);
   --signal-foreground: oklch(0.972 0.004 122);
   --cursor: oklch(0.47 0.095 75);
+  --warning-hover: oklch(0.5 0.15 47);
   --material-thin-share: 0.6;
   --material-thin-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-thin-share) * var(--material-fill-scale), 1) * 100%), transparent);
   --material-thin-filter: blur(calc(var(--material-thin-blur) * var(--material-blur-scale))) saturate(calc(var(--material-thin-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
@@ -226,6 +227,7 @@
   --signal: oklch(0.972 0.004 122);
   --signal-foreground: oklch(0.158 0.005 248);
   --cursor: oklch(0.83 0.15 82);
+  --warning-hover: oklch(0.67 0.17 47);
   --material-thin-share: 0.62;
   --material-thin-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-thin-share) * var(--material-fill-scale), 1) * 100%), transparent);
   --material-thin-filter: blur(calc(var(--material-thin-blur) * var(--material-blur-scale))) saturate(calc(var(--material-thin-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));

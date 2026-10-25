@@ -2,15 +2,16 @@
  * Stackra file contract:
  * Purpose: the Theme Studio's live preview: the derived theme's custom properties (HeroUI's and Stackra's, for the
  *          scheme on screen) set inline on a sheet of its own background, holding real @stackra/ui components and the
- *          index page's scenes, so every change is seen at once. Under it, the contrast of the theme's main
- *          foreground and background pairs, each against WCAG 2.2 AA (4.5:1 for text, 3:1 for edges and focus).
+ *          index page's scenes, so every change is seen at once. Under it, the contrast of the theme's main pairs as
+ *          the components paint them (HeroUI's hover and soft colours included, translucent ones composited over the
+ *          page), each against WCAG 2.2 AA (4.5:1 for text, 3:1 for edges and focus).
  * Boundary: presentation only; the theme comes from the page. The canvas has its own width (fluid, tablet, phone)
  *          and scheme (the page's until one is picked), as a builder's canvas has.
  * Runtime: browser
- * Governing contract: ADR 0320 (the Theme Studio); WCAG 2.2 SC 1.4.3, 1.4.11.
+ * Governing contract: ADR 0320 (the Theme Studio); ADR 0340 (decision 4: what is painted); WCAG 2.2 SC 1.4.3, 1.4.11.
  */
-import { contrastRatio, themeVariables } from "@stackra/tokens";
-import type { ColorRole, Theme } from "@stackra/tokens/contracts";
+import { pairRatio, paintedColour, themeVariables } from "@stackra/tokens";
+import type { ContrastPair, Theme } from "@stackra/tokens/contracts";
 import * as Ui from "@stackra/ui/react";
 import { useState, type CSSProperties } from "react";
 
@@ -42,18 +43,30 @@ const STRINGS = {
   ],
 } as const;
 
-/** The pairs the report measures: a name, the foreground and background roles, and the ratio they need. */
-const PAIRS: readonly { name: string; fg: ColorRole; bg: ColorRole; needs: number }[] = [
-  { name: "Text on background", fg: "foreground", bg: "background", needs: 4.5 },
-  { name: "Muted text on background", fg: "muted", bg: "background", needs: 4.5 },
-  { name: "Text on surface", fg: "surface-foreground", bg: "surface", needs: 4.5 },
-  { name: "Accent label", fg: "accent-foreground", bg: "accent", needs: 4.5 },
-  { name: "Link on background", fg: "link", bg: "background", needs: 4.5 },
-  { name: "Field text", fg: "field-foreground", bg: "field-background", needs: 4.5 },
-  { name: "Danger label", fg: "danger-foreground", bg: "danger", needs: 4.5 },
-  { name: "Field edge", fg: "field-border", bg: "field-background", needs: 3 },
-  { name: "Focus ring", fg: "focus", bg: "background", needs: 3 },
+/** The pairs the report measures, by painted name: a label, the pair and the ratio it needs. */
+const PAIRS: readonly (ContrastPair & { name: string })[] = [
+  { name: "Text on background", fg: "foreground", bg: "background", min: 4.5 },
+  { name: "Muted text on background", fg: "muted", bg: "background", min: 4.5 },
+  { name: "Text on surface", fg: "surface-foreground", bg: "surface", min: 4.5 },
+  { name: "Accent label", fg: "accent-foreground", bg: "accent", min: 4.5 },
+  { name: "Accent label on hover", fg: "accent-foreground", bg: "accent-hover", min: 4.5 },
+  { name: "Soft accent label", fg: "accent-soft-foreground", bg: "accent-soft", min: 4.5 },
+  { name: "Link on background", fg: "link", bg: "background", min: 4.5 },
+  { name: "Field text", fg: "field-foreground", bg: "field-background", min: 4.5 },
+  { name: "Warning label on hover", fg: "warning-foreground", bg: "warning-hover", min: 4.5 },
+  { name: "Danger label", fg: "danger-foreground", bg: "danger", min: 4.5 },
+  { name: "Soft danger label", fg: "danger-soft-foreground", bg: "danger-soft", min: 4.5 },
+  { name: "Field edge", fg: "field-border", bg: "field-background", min: 3 },
+  { name: "Focus ring", fg: "focus", bg: "background", min: 3 },
 ];
+
+/** The CSS colour painted for `name`, for the report's drawn sample; transparent when nothing paints it. */
+function cssOf(theme: Theme, name: string, scheme: "light" | "dark") {
+  const colour = paintedColour(theme, name, scheme);
+  if (!colour) return "transparent";
+  const [red, green, blue] = colour.rgb.map(Math.round);
+  return `rgb(${red} ${green} ${blue} / ${colour.alpha.toFixed(3)})`;
+}
 
 const VARIANTS = ["primary", "secondary", "tertiary", "outline", "ghost", "danger"] as const;
 
@@ -86,7 +99,6 @@ export function StudioPreview({ theme, scheme: pageScheme }: StudioPreviewProps)
     ...heroui[scheme],
     ...stackra[scheme],
   } as CSSProperties;
-  const hex = scheme === "dark" ? "hexDark" : "hexLight";
 
   return (
     <section aria-labelledby="studio-preview" className="grid min-w-0 content-start gap-4">
@@ -175,9 +187,10 @@ export function StudioPreview({ theme, scheme: pageScheme }: StudioPreviewProps)
           </Ui.Text>
         </div>
         <ul className="grid gap-2">
-          {PAIRS.map(({ name, fg, bg, needs }) => {
-            const ratio = contrastRatio(theme.colors[fg][hex], theme.colors[bg][hex]);
-            const isPassing = ratio >= needs;
+          {PAIRS.map((pair) => {
+            const { name, fg, bg, min } = pair;
+            const ratio = pairRatio(theme, pair, scheme);
+            const isPassing = ratio !== undefined && ratio >= min;
             return (
               <li key={name} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                 {/* Lines, not text: the sample shows the theme's pair, which a checker must not take for the page's text. */}
@@ -188,18 +201,20 @@ export function StudioPreview({ theme, scheme: pageScheme }: StudioPreviewProps)
                     width="31"
                     height="31"
                     rx="8"
-                    fill={theme.colors[bg][scheme]}
-                    stroke={theme.colors[needs === 3 ? fg : "separator"][scheme]}
+                    fill={cssOf(theme, bg, scheme)}
+                    stroke={cssOf(theme, min === 3 ? fg : "separator", scheme)}
                   />
-                  {needs === 3 ? null : (
-                    <g fill={theme.colors[fg][scheme]}>
+                  {min === 3 ? null : (
+                    <g fill={cssOf(theme, fg, scheme)}>
                       <rect x="8" y="11" width="16" height="3" rx="1.5" />
                       <rect x="8" y="18" width="11" height="3" rx="1.5" />
                     </g>
                   )}
                 </svg>
                 <span className="flex-1">{name}</span>
-                <span className="font-mono text-xs">{`${ratio.toFixed(2)}:1`}</span>
+                <span className="font-mono text-xs">
+                  {ratio === undefined ? "—" : `${ratio.toFixed(2)}:1`}
+                </span>
                 <Ui.Chip size="sm" variant="soft" tone={isPassing ? "success" : "danger"}>
                   {isPassing ? STRINGS.passes : STRINGS.fails}
                 </Ui.Chip>

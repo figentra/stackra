@@ -28,3 +28,14 @@ export type {
 export type { ThemeDiff } from "#contracts/types/theme-diff.type";
 export type { ThemeKnobs } from "#contracts/types/theme-knobs.type";
 export type { ThemeVariables } from "#contracts/types/theme-variables.type";
+export { ThemeFindingCode } from "#contracts/enums/theme-finding-code.enum";
+export type { ContrastPair } from "#contracts/types/contrast-pair.type";
+export type { DerivedColour } from "#contracts/types/derived-colour.type";
+export type { LayerPolicy } from "#contracts/types/layer-policy.type";
+export type { PaintedColour } from "#contracts/types/painted-colour.type";
+export type { SeparationRule } from "#contracts/types/separation-rule.type";
+export type { ThemeAccepted } from "#contracts/types/theme-accepted.type";
+export type { ThemeFinding } from "#contracts/types/theme-finding.type";
+export type { ThemeLayer } from "#contracts/types/theme-layer.type";
+export type { ThemeRefused } from "#contracts/types/theme-refused.type";
+export type { ThemeVerdict } from "#contracts/types/theme-verdict.type";

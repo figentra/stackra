@@ -97,6 +97,9 @@ export const STACKRA_THEME = defineTheme({
     signal: FOREGROUND,
     "signal-foreground": INVERSE,
     cursor: color("oklch(0.47 0.095 75)", "oklch(0.83 0.15 82)"),
+    // ADR 0340 decision 4: HeroUI's own warning hover mixes 10% white into the light warning, which leaves its white
+    // text at 4.22:1; this step goes 0.05 darker in both schemes, as the accent's hover does (6.38:1 and 6.10:1).
+    "warning-hover": color("oklch(0.5 0.15 47)", "oklch(0.67 0.17 47)"),
   },
   fontFamily: {
     sans: '"Geist", ui-sans-serif, system-ui, sans-serif',
