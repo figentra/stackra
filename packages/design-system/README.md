@@ -6,8 +6,8 @@ package, `packages/design-system/<name>`, named `@stackra/<name>`
 
 **Today:** [`tokens`](tokens) (`@stackra/tokens`): the theme schema, the default stackra theme, its HeroUI v3 web CSS
 and its HeroUI Native / Uniwind CSS, and the theme's fonts. [`ui`](ui) (`@stackra/ui`): the component API, contracts
-shared, HeroUI v3 on web and HeroUI Native with Uniwind on native. [`ui-pro`](ui-pro) (`@stackra/ui-pro`, private,
-never published): the same props vocabulary over HeroUI Pro and HeroUI Native Pro, for Stackra's own apps only
+shared, HeroUI v3 on web and HeroUI Native with Uniwind on native. [`ui-pro`](ui-pro) (`@stackra/ui-pro`, published
+only to Figentra's restricted Keygen channel): the same props vocabulary over HeroUI Pro and HeroUI Native Pro, for Stackra's own apps only
 ([ADR 0310](../../apps/docs/src/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers.mdx)).
 
 **Planned here:** icons. A product brings its own brand as a theme for `@stackra/tokens`; Stackra's own logos and brand
