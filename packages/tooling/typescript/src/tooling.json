@@ -1,0 +1,9 @@
+// Stackra file contract:
+// Purpose: the `tooling` role (ADR 0294, 0300): the preset packages in packages/tooling, whose files plain Node,
+//          Vite or the tool itself loads (`./x.ts` imports stay, base allowImportingTsExtensions). The v3 role
+//          name of `vite-node`, which it extends unchanged: src plus the package's root config files.
+// Owner: release-operations · Secrets: forbidden
+{
+  "display": "@stackra/typescript-config — tooling",
+  "extends": "./vite-node.json"
+}
