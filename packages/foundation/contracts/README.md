@@ -52,6 +52,16 @@ export abstract class LoyaltyMembers extends Port {
 The class is the token. Gen derives its key (`loyalty_kit.LoyaltyMembers`) and prints the wiring; nothing reads
 metadata at runtime.
 
+## Drivers that ship here
+
+This package sits below `@stackra/container`, so these are plain subclasses of their ports, listed as candidates in a
+host's wiring like any driver:
+
+- `AesGcmFieldCipherDriver`: AES-256-GCM over a `KeyProvider`, `v1.<keyId>.<iv>.<ciphertext>`, the context as
+  additional data, so a value opens only where it was sealed and a rotated key still opens old rows.
+- `MemoryKeyProviderDriver`: data keys handed to it in process; the KMS driver ships with its infra package.
+- `NoopTracerDriver`: the default `Tracer`; the OTLP tracer ships with the telemetry runtime.
+
 ## Member definitions
 
 ```ts

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the FieldCipher port: seals one string field for storage and opens it again, so a model's encrypted fields
  *          never hold plaintext at rest.
- * Boundary: an abstract class that is its own token; a driver over a `KeyProvider` ships later. The sealed form
+ * Boundary: an abstract class that is its own token; the AES-GCM driver over a `KeyProvider` ships here. The sealed form
  *           carries the id of the key that sealed it, so rotation still reads old rows. `context` binds a sealed value
  *           to where it belongs (such as `table.column`), so it opens only there.
  * Runtime: isomorphic
