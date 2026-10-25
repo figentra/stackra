@@ -90,6 +90,21 @@ idempotent: a throw retries the change for every consumer of the model.
 - **Transports**: `InboxEventPublisherDriver` in process; the Encore Pub/Sub and Postgres queue transports between
   services are drivers gen supplies (ADR 0142).
 
+## Broker transport
+
+`BrokerEventPublisherDriver` (driver name `broker`) is the cross-service `EventPublisher`: the relay publishes each
+envelope to the topic of its wire name through @stackra/queue's `BrokerPublisher`, so the broker the deployment runs
+(Encore Pub/Sub, a Valkey stream) carries it. The message id is the event id; consumers deduplicate in their inbox.
+
+## The offline queue's server stores
+
+`./node` ships the durable drivers of three @stackra/actions ports, in tables migration `outbox.0003_create_offline_stores`
+creates: `PostgresDeviceSequenceStoreDriver` (each device's last settled sequence, moved only upward),
+`PostgresOfflineCapStoreDriver` (the applied calls of capped actions, pruned past the window) and
+`PostgresReplicaLogDriver` (each replica partition's ordered changes, stamped with the record's scope and read only
+within the caller's scope path, so a legal entity's device never receives another's records). Sealed payloads,
+revoke and wipe are the client's (`@stackra/query`, `@stackra/storage`).
+
 ## Not here
 
 - Outbox staging per workflow run (ADR 0102 decision 3) waits for @stackra/workflow.

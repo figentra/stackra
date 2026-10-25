@@ -40,6 +40,8 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
   must not reach the next.
 - Raw SQL only in the Postgres drivers and `insertMessages`, every value bound, every row read through zod, each
   statement with a `// raw-sql:` reason (ADR 0160). A released migration is frozen; a change is a new migration.
+- The offline stores bind the device id, the partition and the caller's scope path in every statement; their tables
+  carry no row-level security. A replica append takes the partition's advisory lock before it reads the head.
 - No tenant word is declared here (final review R-59, ADR 0323): a scope is a `ScopeRef`. "Hook" is a React word only
   (ADR 0294 decision 23): the row-change seam is a change consumer.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.

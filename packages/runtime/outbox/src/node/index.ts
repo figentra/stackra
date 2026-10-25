@@ -11,8 +11,11 @@
  *                     the STA-347 stand-in barrel decision.
  */
 export { InboxEventPublisherDriver } from "#node/drivers/inbox-event-publisher.driver";
+export { PostgresDeviceSequenceStoreDriver } from "#node/drivers/postgres-device-sequence-store.driver";
 export { PostgresInboxDriver } from "#node/drivers/postgres-inbox.driver";
+export { PostgresOfflineCapStoreDriver } from "#node/drivers/postgres-offline-cap-store.driver";
 export { PostgresOutboxDriver } from "#node/drivers/postgres-outbox.driver";
+export { PostgresReplicaLogDriver } from "#node/drivers/postgres-replica-log.driver";
 export { InboxService } from "#node/services/inbox.service";
 export { OutboxRelayService } from "#node/services/outbox-relay.service";
 export { OutboxWriterService } from "#node/services/outbox-writer.service";

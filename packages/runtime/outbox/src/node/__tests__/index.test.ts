@@ -17,8 +17,11 @@ describe("@stackra/outbox/node", () => {
       "InboxService",
       "OutboxRelayService",
       "OutboxWriterService",
+      "PostgresDeviceSequenceStoreDriver",
       "PostgresInboxDriver",
+      "PostgresOfflineCapStoreDriver",
       "PostgresOutboxDriver",
+      "PostgresReplicaLogDriver",
     ]);
   });
 });

@@ -15,6 +15,7 @@ import * as outbox from "#core/index";
 describe("@stackra/outbox", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(outbox).sort()).toEqual([
+      "BrokerEventPublisherDriver",
       "MemoryInboxDriver",
       "MemoryOutboxDriver",
       "OutboxConfig",

@@ -12,6 +12,7 @@
  */
 export { OutboxConfig } from "#config/outbox.config";
 export { OUTBOX_CONFIG_SCHEMA as OutboxConfig$ } from "#core/constants/outbox-config-schema.constant";
+export { BrokerEventPublisherDriver } from "#core/drivers/broker-event-publisher.driver";
 export { MemoryInboxDriver } from "#core/drivers/memory-inbox.driver";
 export { MemoryOutboxDriver } from "#core/drivers/memory-outbox.driver";
 export { OutboxEventOutboxDriver } from "#core/drivers/outbox-event-outbox.driver";
