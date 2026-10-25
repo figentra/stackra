@@ -4,8 +4,9 @@ Stackra content: the built-in content entry types a content service serves, and 
 only (ADR 0116, ADR 0154, ADR 0226). A scope adds a field to a model as a stored definition of a registered type; a
 record's values live in a side table and are checked against those definitions on every write.
 
-**Tier:** `tier:lib` (`packages/data/content`). Entries `.` and `./node`. Depends on `@stackra/contracts`,
-`@stackra/database`, `@stackra/entitlements`, `@stackra/errors` and `@stackra/model`.
+**Tier:** `tier:lib` (`packages/data/content`). Entries `.` and `./node`. Depends on `@stackra/actions` (the call's
+scope through `RequestContext`), `@stackra/contracts`, `@stackra/database`, `@stackra/entitlements`, `@stackra/errors`
+and `@stackra/model`.
 
 ## What is here
 
@@ -49,8 +50,12 @@ await fields.define(scope, "catalogue.product", {
   ],
 });
 await fields.write(scope, "catalogue.product", product.id, { shoeSize: "42" });
-await fields.read("catalogue.product", product.id); // { shoeSize: "42" }
+await fields.write("catalogue.product", product.id, { shoeSize: "43" }); // inside an action: the call's scope
+await fields.read("catalogue.product", product.id); // { shoeSize: "43" }
 ```
+
+- `define`, `definitionsOf` and `write` take the `ScopeRef` first, or leave it out to act in the running call's scope
+  (`ctx.scope`, ADR 0327 decision 6); a call with no scope is a `TypeError`, since a field always belongs to a node.
 
 - A definition is strict data: an unknown key, a label with `{{`, `${` or `<%`, choices on a type that takes none, and
   bounds a type cannot hold are refused with one field error per path (`custom_field_definition_invalid`).

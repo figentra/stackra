@@ -36,7 +36,7 @@
 | Licence tier (ADR 0077)               | PASS   | MIT with `LICENSE`                                                                                                     |
 | Docs and ADRs                         | PASS   | README, AGENTS, file contracts and TSDoc; ADR 0116, 0226 and 0321 stand, the open items are listed in the spec         |
 
-- Boundaries: runtime imports of contracts, database, entitlements, errors and model; dev-only `@stackra/container`
+- Boundaries: runtime imports of actions, contracts, database, entitlements, errors and model; dev-only `@stackra/container`
   (`kindOf` in a test), `@stackra/testing` and the tooling presets.
 - Versions: catalogs and `workspace:*` only.
 - Naming: models are nouns, the service `CustomFieldService`, refusals end in `Error`, the trait `Has*`, no `define`
@@ -48,7 +48,7 @@
 - **P-002**: `Enum.values(ContentEntryType)` lists the CT4 types in source order and includes `faq` and `testimonial` — Validates: FR-002
 - **P-003**: for every definition, `checkCustomFieldDefinition` returns it exactly when it is a strict definition whose bounds and choices fit its type, and otherwise refuses `custom_field_definition_invalid` with a field error per refused path — Validates: FR-003
 - **P-004**: for every definitions list and values map, `checkCustomFields` returns the values exactly when each key is defined, each required key is present and each value parses under its type — Validates: FR-004
-- **P-005**: the migration compiles both tables with their `cfd`/`cfv` keys, unique indexes and forced row-level security on `app.scope_paths`, and the service refuses a repeated key with `custom_field_taken` and a bad value with `custom_fields_invalid` — Validates: FR-005
+- **P-005**: the migration compiles both tables with their `cfd`/`cfv` keys, unique indexes and forced row-level security on `app.scope_paths`, and the service refuses a repeated key with `custom_field_taken` and a bad value with `custom_fields_invalid`; with no explicit scope every write uses the call's scope, and a call without one writes nothing — Validates: FR-005
 - **P-006**: `traitsOf` lists `has_custom_fields` on a model using the trait and the model gains no field; `CustomFieldLimitEntitlement` is a limit counting `CustomField` — Validates: FR-006
 - **P-007**: `grep -ri tenant packages/data/content/src` finds nothing — Validates: FR-007
 

@@ -31,7 +31,8 @@ the plan limit on how many fields a scope may define.
 - **Secrets**: none
 - **ADR needed**: no (ADR 0116, 0226 and 0321 decide the package and its traits; ADR 0154 and 0327 bind it)
 - **New dependencies**: none outside the workspace and the catalogs (`zod` from the default catalog); runtime edges
-  to contracts, database, entitlements, errors and model
+  to actions (the call's scope through `RequestContext`, added 2026-10-25), contracts, database, entitlements, errors
+  and model
 - **Deploy modes**: same code in all; no network, clock or environment read
 - **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
 - **Docs to update**: `packages/data/content/README.md`, `packages/data/content/AGENTS.md`; ADR 0116, 0154, 0226, 0321 and 0327 are cited and amended only by a note if a decision here changes
@@ -121,7 +122,8 @@ The product form saves `{ shoeSize: "42" }`; the product page reads it back.
 - **FR-005**: `CustomField` and `CustomFieldValueSet` SHALL be models with `cfd` and `cfv` public ids, keyed by
   `scope_id` with a GiST-indexed `scope_path` under forced row-level security, created by one migration;
   `CustomFieldService` SHALL define fields (refusing `custom_field_taken` for a repeated key), list a model's
-  definitions, and write and read a record's values checked against them.
+  definitions, and write and read a record's values checked against them, in the explicit `ScopeRef` or, when it is
+  left out, in the running call's scope (`ctx.scope`, ADR 0327 decision 6), refusing a call that has none.
 - **FR-006**: `HasCustomFields` SHALL be a trait made with `createTrait` that adds no field, and
   `CustomFieldLimitEntitlement` SHALL be a limit entitlement counting `CustomField` with no gated call.
 - **FR-007**: No identifier, comment or default in the package SHALL carry tenant vocabulary.

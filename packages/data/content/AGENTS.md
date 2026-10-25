@@ -32,6 +32,8 @@ at `packages/data/content` (`tier:lib`), in the programming model v3.1 shape (AD
   strict; a new field type is a case of `CustomFieldType` plus a branch of `checkCustomFields`, never stored data.
 - Field error codes are snake_case (zod's issue code or the refinement's message) and never echo a refused value.
 - No tenant vocabulary (R-59, ADR 0323): every table is keyed by the contracts `ScopeRef`.
+- `CustomFieldService` keeps the explicit `ScopeRef` argument first; when it is left out the scope is the call's
+  (`RequestContext.current().scope`), never request input.
 - A revision's `data` is written once; a change is a new revision, never an update of `data`.
 - Isolation is the database's: never add an application-level `WHERE` filter for isolation; selecting `scopeId` picks
   the node whose definitions apply.

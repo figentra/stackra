@@ -2050,6 +2050,9 @@ importers:
 
   packages/data/content:
     dependencies:
+      '@stackra/actions':
+        specifier: workspace:*
+        version: link:../../application/actions
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
@@ -2385,6 +2388,9 @@ importers:
       '@stackra/model':
         specifier: workspace:*
         version: link:../model
+      '@stackra/outbox':
+        specifier: workspace:*
+        version: link:../../runtime/outbox
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation
@@ -5776,6 +5782,9 @@ importers:
       '@stackra/model':
         specifier: workspace:*
         version: link:../../data/model
+      '@stackra/scheduler':
+        specifier: workspace:*
+        version: link:../../runtime/scheduler
       '@stackra/scope':
         specifier: workspace:*
         version: link:../scope

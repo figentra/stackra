@@ -3,11 +3,14 @@
  * Purpose: unit tests of `CustomFieldService`: `define` stores a checked definition in the scope with a translated
  *          label, refuses a bad model key or definition, and turns a unique violation into `custom_field_taken`;
  *          `definitionsOf` reads the scope's definitions in order and maps them back; `write` checks values against
- *          them and creates or changes the record's one row; `read` returns the stored values or `{}`.
- * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
+ *          them and creates or changes the record's one row; `read` returns the stored values or `{}`; without an
+ *          explicit scope each takes the call's scope, and refuses a call that has none.
+ * Boundary: test only; a fake `Database` hands out a recording entity manager and a stand-in `RequestContext` answers
+ *           the call's scope, so no database and no pipeline run.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0116 (decision CT2); ADR 0327 (decisions 3 and 9).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0116 (decision CT2); ADR 0327 (decisions 3, 6 and 9).
  */
+import type { RequestContext } from "@stackra/actions";
 import type { ScopeRef } from "@stackra/contracts";
 import { CrudService, Database, registerModelPartners, UniqueViolation } from "@stackra/database";
 import { isRefusal } from "@stackra/errors";
@@ -73,8 +76,11 @@ function connect(fields: CustomField[] = [], valueSet: CustomFieldValueSet | nul
   return em;
 }
 
-/** The service with the value side table's repository. */
-const serviceOf = () => new CustomFieldService(new ValueSetRepository());
+/** The service with the value side table's repository, inside a call acting in `scope` (none when absent). */
+const serviceOf = (scope?: ScopeRef) =>
+  new CustomFieldService(new ValueSetRepository(), {
+    current: () => (scope === undefined ? {} : { scope }),
+  } as unknown as RequestContext);
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -178,6 +184,38 @@ describe(CustomFieldService, () => {
       .catch((error: unknown) => error);
     expect(isRefusal(refused, CustomFieldsInvalidError)).toBe(true);
     expect((refused as CustomFieldsInvalidError).fieldErrors).toEqual({ giftWrap: "invalid_type" });
+  });
+
+  it("defines, lists and writes in the call's scope when none is passed", async () => {
+    const em = connect([storedField()]);
+    const service = serviceOf(SCOPE);
+    expect(await service.define(PRODUCT, GIFT_WRAP)).toMatchObject({
+      scopeId: SCOPE.id,
+      scopePath: SCOPE.path,
+      key: "giftWrap",
+    });
+    expect(await service.definitionsOf(PRODUCT)).toEqual([GIFT_WRAP]);
+    expect(em.find.mock.calls[0]?.[1]).toEqual({ scopeId: SCOPE.id, model: PRODUCT });
+    const recordId = "prd_01j9z3k4m5n6p7q8r9s0t1v2w3";
+    await service.write(PRODUCT, recordId, { giftWrap: true });
+    expect(em.create).toHaveBeenLastCalledWith(CustomFieldValueSet, {
+      scopeId: SCOPE.id,
+      scopePath: SCOPE.path,
+      model: PRODUCT,
+      recordId,
+      values: { giftWrap: true },
+    });
+  });
+
+  it("refuses to pick a scope for a call that has none", async () => {
+    connect([storedField()]);
+    const service = serviceOf();
+    await expect(service.define(PRODUCT, GIFT_WRAP)).rejects.toBeInstanceOf(TypeError);
+    await expect(service.definitionsOf(PRODUCT)).rejects.toBeInstanceOf(TypeError);
+    await expect(
+      service.write(PRODUCT, "prd_01j9z3k4m5n6p7q8r9s0t1v2w3", { giftWrap: true }),
+    ).rejects.toBeInstanceOf(TypeError);
+    expect(await service.definitionsOf(SCOPE, PRODUCT)).toEqual([GIFT_WRAP]);
   });
 
   it("reads the stored values, or nothing for a record never written", async () => {
