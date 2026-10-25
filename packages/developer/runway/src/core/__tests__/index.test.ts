@@ -16,10 +16,12 @@ import type {
   AppRunway,
   DevPorts,
   PlacementIssue,
+  RegionIssue,
   RootRunway,
   RunwayDocument,
   RunwayFacts,
   RunwayIssue,
+  RunwayRegion,
   ServiceRunway,
 } from "#core/index";
 
@@ -28,15 +30,20 @@ describe("@stackra/runway", () => {
     expect(Object.keys(runway).sort()).toEqual([
       "CacheEviction",
       "RequirementEngine",
+      "RunwayCloud",
       "RunwayEnvironment",
       "RunwayInvalidError",
       "RunwayKind",
       "RunwayUnresolvedError",
       "TopologyMode",
       "baseUrlOf",
+      "brandsOf",
       "checkPlacement",
+      "checkRegions",
       "devPorts",
       "parseRunway",
+      "productOf",
+      "regionsOf",
       "runwayJsonSchema",
       "updateFeed",
     ]);
@@ -56,5 +63,8 @@ describe("@stackra/runway", () => {
     expectTypeOf<RunwayFacts["lane"]>().toEqualTypeOf<number>();
     expectTypeOf<RunwayIssue["path"]>().toEqualTypeOf<string>();
     expectTypeOf<PlacementIssue["subject"]>().toEqualTypeOf<string>();
+    expectTypeOf<RegionIssue["code"]>().toEqualTypeOf<"unknown_region" | "cloud_unconfigured">();
+    expectTypeOf(runway.regionsOf).returns.toEqualTypeOf<RunwayRegion[]>();
+    expectTypeOf<RunwayRegion["cloud"]>().toEqualTypeOf<"aws" | "gcp">();
   });
 });

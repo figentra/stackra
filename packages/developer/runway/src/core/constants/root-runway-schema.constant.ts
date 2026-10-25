@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ROOT_RUNWAY_SCHEMA`, the repository's root `runway.yaml` at format version 3: the project, the product (an edition's base), the providers
- *          and accounts, each environment (destinations, shared resources, defaults, topology), the deploy targets,
+ *          and accounts (AWS and GCP among them), the regions (each with its cloud and cloud region), each environment (destinations, shared resources, defaults, topology), the deploy targets,
  *          the edge, the secret defaults with the CI and gateway secret names, the release policy and observability.
  * Boundary: internal; `parseRunway("root", …)` and `runwayJsonSchema("root")` read it, and it accepts what the
  *           canonical `tools/schemas/runway-root.schema.json` accepts. Strict at the top and in `secrets`, so a
@@ -9,7 +9,8 @@
  *           owners check them (`definesFor` reads `targets.electron-release.feed.publicOrigin` itself).
  * Runtime: isomorphic
  * Governing contract: ADR 0296 (decision 2 and its 2026-10-24 note), ADR 0168 (decisions 1 to 3 and 6), ADR 0171
- *                     (`ref:` values), ADR 0173 (secret names only), ADR 0237 (gateway secret names), ADR 0335 (decision 2: product).
+ *                     (`ref:` values), ADR 0173 (secret names only), ADR 0237 (gateway secret names), ADR 0335 (decision 2: product), ADR 0354
+ *                     (decisions 4 and 5: the cloud dimension and GCP).
  */
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
@@ -17,6 +18,7 @@ import { z } from "zod";
 import { OPEN_OBJECT_SCHEMA } from "#core/constants/open-object-schema.constant";
 import { ROOT_ENVIRONMENT_SCHEMA } from "#core/constants/root-environment-schema.constant";
 import { PRODUCT_SCHEMA } from "#core/constants/product-schema.constant";
+import { REGION_SCHEMA } from "#core/constants/region-schema.constant";
 import { SECRET_NAMES_SCHEMA } from "#core/constants/secret-names-schema.constant";
 import { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 
@@ -46,6 +48,12 @@ export const ROOT_RUNWAY_SCHEMA = z.strictObject({
           requiredTags: z.array(z.string()).optional(),
         })
         .optional(),
+      gcp: z
+        .looseObject({
+          projects: z.record(z.string(), VALUE).optional(),
+          state: OPEN_OBJECT_SCHEMA.optional(),
+        })
+        .optional(),
       encore: z.looseObject({ app: z.string().optional() }).optional(),
       cloudflare: z
         .looseObject({
@@ -69,6 +77,12 @@ export const ROOT_RUNWAY_SCHEMA = z.strictObject({
         .optional(),
     })
     .catchall(OPEN_OBJECT_SCHEMA)
+    .optional(),
+  regions: z
+    .record(
+      z.string().regex(/^[a-z][a-z0-9-]*$/, "Expected a lower-case region key"),
+      REGION_SCHEMA,
+    )
     .optional(),
   environments: z.partialRecord(ENVIRONMENT, ROOT_ENVIRONMENT_SCHEMA),
   targets: z.record(z.string(), OPEN_OBJECT_SCHEMA).optional(),

@@ -16,6 +16,8 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `updateFeed(member)`                                                                    | the desktop update feed of the build's environment, or `null` in dev        |
 | `.`         | `parseRunway(kind, document, source?)`                                                  | check a parsed runway against its version 3 schema                          |
 | `.`         | `checkPlacement(root, members)`                                                         | every topology placement failure, for `stackra validate`                    |
+| `.`         | `checkRegions(root)`, `regionsOf(root, environment)`                                    | region failures for `stackra validate`; an environment's resolved regions   |
+| `.`         | `RunwayCloud`                                                                           | `aws`, `gcp`: the cloud a region names                                      |
 | `.`         | `runwayJsonSchema(kind)`                                                                | the zod schemas as JSON Schema, tested against the shipped canonical files  |
 | `.`         | `RunwayKind`, `RunwayEnvironment`, `TopologyMode`, `RequirementEngine`, `CacheEviction` | enums                                                                       |
 | `.`         | `RunwayInvalidError`, `RunwayUnresolvedError`                                           | errors                                                                      |
@@ -43,6 +45,27 @@ import { readRunway } from "@stackra/runway/node";
 const root = readRunway("runway.yaml", "root");
 const issues = checkPlacement(root, ["commerce", "notifications"]); // [] when every member is placed
 ```
+
+## Regions and clouds
+
+The root runway names every data region once, with the cloud and cloud region that serve it, and each environment
+lists the regions it deploys to, in release order (ADR 0354 decision 4). Which cloud serves which region is data here,
+never a choice in code.
+
+```yaml
+providers:
+  aws: { accounts: { eu: "ref:aws/eu" } }
+  gcp: { projects: { sa: "ref:gcp/sa" } }
+regions:
+  eu: { cloud: aws, location: eu-central-1, account: "ref:aws/eu" }
+  sa: { cloud: gcp, location: me-central2, account: "ref:gcp/sa", jurisdiction: sa }
+environments:
+  production: { regions: [sa, eu] }
+```
+
+A region without a cloud or a location, or a cloud other than `aws` and `gcp`, fails the schema. `checkRegions` reports
+a region whose cloud has no `providers` section (`cloud_unconfigured`) and an environment that names an undeclared
+region (`unknown_region`); `regionsOf` resolves an environment's regions for the providers. Nothing here deploys.
 
 ## Runway facts
 

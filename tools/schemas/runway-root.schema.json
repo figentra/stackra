@@ -100,6 +100,23 @@
             }
           }
         },
+        "gcp": {
+          "type": "object",
+          "description": "Google Cloud projects and Pulumi state (ADR 0354).",
+          "properties": {
+            "projects": {
+              "type": "object",
+              "description": "Project role → project id or `ref:`.",
+              "additionalProperties": {
+                "$ref": "#/$defs/value"
+              }
+            },
+            "state": {
+              "type": "object",
+              "description": "Pulumi state for the GCP stacks."
+            }
+          }
+        },
         "encore": {
           "type": "object",
           "description": "Encore Cloud.",
@@ -175,6 +192,19 @@
         "description": "Another vendor: public ids or `ref:` values."
       }
     },
+    "regions": {
+      "type": "object",
+      "description": "Every data region, named once: its cloud, cloud region, account or project, and jurisdiction (ADR 0354 d4). Environments list the regions they deploy to.",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/region"
+      },
+      "examples": [
+        { "eu": { "cloud": "aws", "location": "eu-central-1", "account": "ref:aws/eu" } }
+      ]
+    },
     "environments": {
       "type": "object",
       "description": "Per-environment destinations, shared resources and member defaults. Exactly these four names in every tool (ADR 0170 DP5; `local` is `dev`).",
@@ -242,6 +272,32 @@
     }
   },
   "$defs": {
+    "region": {
+      "type": "object",
+      "description": "One data region: the cloud and cloud region that serve it (ADR 0354 d4, ADR 0353).",
+      "additionalProperties": false,
+      "required": ["cloud", "location"],
+      "properties": {
+        "cloud": {
+          "enum": ["aws", "gcp"],
+          "description": "The cloud (ADR 0354 d1)."
+        },
+        "location": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The cloud's region id.",
+          "examples": ["me-central-1", "me-central2"]
+        },
+        "account": {
+          "$ref": "#/$defs/value",
+          "description": "The AWS account or GCP project that holds it, or `ref:` (one AWS account per product-region, ADR 0354 d2)."
+        },
+        "jurisdiction": {
+          "type": "string",
+          "description": "The jurisdiction its data stays in, for residency evidence."
+        }
+      }
+    },
     "envName": {
       "enum": ["dev", "preview", "staging", "production"],
       "description": "Environment name (ADR 0170 DP5)."
@@ -552,6 +608,14 @@
         },
         "topology": {
           "$ref": "#/$defs/topology"
+        },
+        "regions": {
+          "type": "array",
+          "description": "The regions this environment deploys to, by key of the root `regions`, in release order (a release rolls region by region).",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
         },
         "domains": {
           "type": "object",

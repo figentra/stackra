@@ -3,11 +3,12 @@
  * Purpose: `ROOT_ENVIRONMENT_SCHEMA`, one `environments.<env>` block of the root runway: where each kind of member
  *          runs (`destinations`), the dev containers, lanes, https and proxy, the Encore environment, a preview's ttl
  *          and data, the shared resources, the defaults members start from, the topology, the domains, the deploy
- *          rule and the mobile and desktop channels.
+ *          rule, the mobile and desktop channels, and the regions it deploys to, in release order.
  * Boundary: internal. Strict at its top and in `shared` and `defaults.service`, as the canonical schema is; the
  *           provider facts inside stay open, and the commands that read them check their own part.
  * Runtime: isomorphic
- * Governing contract: ADR 0296 (decision 2), ADR 0238 (one database server per environment), ADR 0170, ADR 0289.
+ * Governing contract: ADR 0296 (decision 2), ADR 0238 (one database server per environment), ADR 0170, ADR 0289,
+ *                     ADR 0354 (decision 4); OS-12 (a release rolls region by region).
  */
 import { z } from "zod";
 
@@ -57,6 +58,10 @@ export const ROOT_ENVIRONMENT_SCHEMA = z.strictObject({
     })
     .optional(),
   topology: TOPOLOGY_SCHEMA.optional(),
+  regions: z
+    .array(z.string())
+    .refine((keys) => new Set(keys).size === keys.length, "A region is listed more than once")
+    .optional(),
   domains: z
     .looseObject({
       zone: z.string().optional(),
