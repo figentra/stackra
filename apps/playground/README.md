@@ -19,20 +19,37 @@ language (English, left to right; Arabic, right to left). Both live in the URL, 
 /foundations?scheme=dark&locale=ar
 ```
 
+## Navigation and the glass
+
+There is no sidebar. The index (`/`) is the landing: a hero stage (the beam-S wordmark echoed in hairline, glass
+tiles of the system's parts on the brand's graph lines and grid), a live showcase of scenes built from `@stackra/ui`, and
+a gallery with one glass panel per category (free pages first, Pro pages badged, an All / Free / Pro filter). Every
+page is one search away: the command palette opens from the bar's search button, ⌘K or Ctrl+K, and `/`. A component
+page shows its category as a strip above it (the current page marked) and the previous and next pages below it; the
+page itself sits on a solid sheet of the theme's background, because its samples are tuned against that colour.
+
+The glass is a recorded brand amendment (ADR 0320): showcase and marketing surfaces only, never under a component
+sample. The glass (`glass`, `glass-strong` in `src/styles/app.css`) is built from the theme's roles only. It turns solid under
+`prefers-reduced-transparency`, `prefers-contrast: more` and in browsers without `backdrop-filter`, keeps an edge in
+forced colours, and its motion stops under `prefers-reduced-motion`. The ambient field under it is flat tints shaped by
+masks, so axe measures text against every tint at once rather than giving up on a gradient.
+
 ## Pages
 
-| Route          | Page                                                                                                                |
-| -------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `/`            | the index: what the playground is and a link to every page                                                          |
-| `/foundations` | the `stackra` theme: colour roles with their contrast pairs, type scale, spacing, radii, shadows, motion            |
-| `/icon`        | `Icon`: sizes, tones, decorative and labelled use, mirrored and never-mirrored icons, own components, a live sample |
-| `/typography`  | `Text` and `Heading`: every type, level, tone, alignment, truncation and language, a live sample                    |
+| Route           | Page                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `/`             | the index: what the playground is and a link to every page                                                                |
+| `/theme-studio` | the Theme Studio: derive a theme from a few controls, preview it with its contrast, export CSS, JSON or DTCG, import JSON |
+| `/foundations`  | the `stackra` theme: colour roles with their contrast pairs, type scale, spacing, radii, shadows, motion                  |
+| `/icon`         | `Icon`: sizes, tones, decorative and labelled use, mirrored and never-mirrored icons, own components, a live sample       |
+| `/typography`   | `Text` and `Heading`: every type, level, tone, alignment, truncation and language, a live sample                          |
 
 Add a page as a route folder `src/routes/<name>/` with `<name>.route.ts` (path `/<name>` and title), the page
-`<name>.tsx` and `__tests__/`, then one line in `PAGES` in `src/main.tsx`. Its h1 is its title. The route class also
-names its `category` (`Foundations`, `Actions`, `Inputs and forms`, `Charts` and the rest, in
-`src/enums/page-category.enum.ts`), which groups it in the shell's navigation and on the index. The tier is derived:
-a path that starts with `/pro-` is Pro (badged, listed after the Free pages, filterable with All / Free / Pro). The end-to-end suite finds the folder by itself.
+`<name>.tsx` and `__tests__/`, and nothing else: the router, the gallery, the palette and the e2e suite find it. Its
+h1 is its title. The route class also names its `category` (`Foundations`, `Actions`, `Inputs and forms`, `Charts` and
+the rest, in `src/enums/page-category.enum.ts`), which groups it on the index, in the category strip and in the
+palette. The tier is derived: a path that starts with `/pro-` is Pro (badged, listed after the Free pages, filterable
+with All / Free / Pro on the index).
 
 Every finished component belongs here, to be checked, tried and tested: each variant, size, tone and state with a
 short caption, and at least one live sample (a pressable button that updates a counter or toggles state). Pages
@@ -65,14 +82,23 @@ e2e/__tests__/playground.e2e.test.ts   every route × light/dark × LTR/RTL, h1,
 src/
 ├── playground.module.ts               the root module
 ├── main.tsx                           stand-in entry and route tree until gen writes them (STA-339)
-├── components/playground-shell/       the layout: provider, header, switcher, navigation
+├── components/playground-shell/       the layout: provider, glass bar, switcher, category strip, pager, palette
+├── components/command-palette/        the launcher: pages, quick actions, recent, preview (⌘K, Ctrl+K or `/`)
+├── components/category-glyph/         the brand glyph a category wears
+├── components/category-nav/           a component page's category strip
+├── components/page-pager/             previous and next page
+├── components/page-gallery/           the index gallery: a glass panel per category, All / Free / Pro
+├── components/showcase/               the index page's live scenes
+├── components/hero-art/               the index hero's decorative glass stack
+├── components/choice/                 a switcher choice with a check mark
 ├── routes/home/                       `/`
 ├── routes/foundations/                `/foundations`
 ├── routes/icon/                       `/icon`
 ├── routes/typography/                 `/typography`
-├── components/page-list/              the pages grouped by category (index page and navigation)
 ├── components/page-section/           a named region with a level-2 heading and a note
 ├── enums/page-category.enum.ts        the page categories, in navigation order
+├── enums/page-tier.enum.ts            Free and Pro (a `/pro-*` path is Pro)
+├── types/shell-context.type.ts        what the shell hands a page (open the palette)
 ├── types/page-link.type.ts            what a navigation link needs
-└── styles/app.css                     Tailwind, HeroUI, the stackra fonts and theme
+└── styles/app.css                     Tailwind, HeroUI, the stackra fonts and theme, the glass material
 ```

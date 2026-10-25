@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0022 (test placement).
  */
-// @covers sta-350:FR-056
+// @covers sta-350:FR-056 sta-422:FR-003 sta-422:P-002
 // HeroUI Pro's Sheet reads matchMedia as its module loads, and the real route folders include the Pro pages.
 import "#src/__tests__/stub-browser-apis";
 
@@ -60,6 +60,23 @@ describe("discoverPages", () => {
       category: "Foundations",
     });
     expect(pages[0]?.element.type).toBeTypeOf("function");
+  });
+
+  it("marks a `/pro-*` path Pro and lists it after the free pages of its category", () => {
+    const pages = discoverPages(
+      {
+        "../../routes/pro-alpha/pro-alpha.route.ts": route("/pro-alpha", "Alpha Pro", "Actions"),
+        "../../routes/zeta/zeta.route.ts": route("/zeta", "Zeta", "Actions"),
+      },
+      {
+        "../../routes/pro-alpha/pro-alpha.tsx": page(),
+        "../../routes/zeta/zeta.tsx": page(),
+      },
+    );
+    expect(pages.map(({ route: { title, path } }) => `${title} ${tierOf(path)}`)).toEqual([
+      "Zeta Free",
+      "Alpha Pro Pro",
+    ]);
   });
 
   it("skips a route that names no category, as the index route does", () => {
