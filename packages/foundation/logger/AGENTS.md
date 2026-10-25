@@ -18,7 +18,7 @@ The driver behind the `Logger` port, its reporter and two configurations. Member
 - Code logs through the `Logger` port of `@stackra/contracts`; nothing outside the container imports this package's
   driver directly.
 - Every record passes `redact` before any reporter sees it. A new reporter reuses `redact`; never bypass it.
-- `.` stays bundle-safe (no `node:*`); the console reporter writes through `console`.
+- `.` stays bundle-safe (no `node:*`); the console reporter writes through `console`, the OTLP reporter through `fetch`.
 - `src/{core,contracts}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339).
 
 ## Rules that fail the build

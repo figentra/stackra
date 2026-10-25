@@ -63,3 +63,11 @@ export class LoggingConfig extends BaseLoggingConfig {
 A nested object is replaced whole, so an override spreads a base instance's value (tsc refuses `this.<field>` in
 the field's own initializer). `TelemetryConfig` defaults are dev-safe: nothing is reported, no replay, ADR 0183's
 budgets, no Lighthouse path.
+
+## OTLP
+
+`OtlpLogReporterDriver` (driver name `otlp`, the production default of ADR 0147) batches redacted records and POSTs
+them as OTLP/JSON to `<endpoint>/v1/logs`. `OtlpConfig` (key `logger.otlp`) sets the collector, the `service.name`, the
+batch size, the flush interval and the queue bound; the collector's headers are one secret in the OpenTelemetry form
+(`OTEL_EXPORTER_OTLP_HEADERS`, `k=v,k2=v2`). A failed send drops its batch and the oldest records go first past
+`maxQueue`. Call `flush()` before a process or a Worker request ends.

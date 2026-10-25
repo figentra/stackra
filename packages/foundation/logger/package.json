@@ -2,7 +2,7 @@
   "name": "@stackra/logger",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra logging: the Logger driver with per-channel levels, sampling and redaction (field names, @Classified fields and secret patterns), the LogReporter port with its console driver, and the LoggingConfig and TelemetryConfig configurations with their shipped schemas",
+  "description": "Stackra logging: the Logger driver with per-channel levels, sampling and redaction (field names, @Classified fields and secret patterns), the LogReporter port with its console driver, and the LoggingConfig and TelemetryConfig configurations with their shipped schemas, and the OTLP log reporter with OtlpConfig",
   "license": "MIT",
   "repository": {
     "type": "git",
