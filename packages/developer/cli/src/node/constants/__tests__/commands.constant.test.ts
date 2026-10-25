@@ -43,6 +43,8 @@ describe("COMMANDS", () => {
         "agents check",
         "db migrate",
         "db rollback",
+        "new",
+        "seed-pack",
       ]),
     );
   });

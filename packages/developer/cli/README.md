@@ -11,6 +11,7 @@ framework (ADR 0127, 2026-10-24 note): a command is data plus one `run` function
 
 | Command                                | Does                                                                                     |
 | -------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `stackra new <kind> <name>`            | a v3 `package` (`--category`), `service` (`--area`) or product `seed-pack`               |
 | `stackra gen [--check] [--backend]`    | gen-core on the member, or on every `stackra.config.ts` member at the workspace root     |
 | `stackra dev [--target <t>]`           | gen, then serve: Vite (web, PWA), Expo (iOS, Android), Wrangler, Encore, Mintlify        |
 | `stackra build [--target <t>]`         | gen, then build: tsdown (package), Vite (web), `expo export` (native), Wrangler dry run  |
@@ -18,6 +19,7 @@ framework (ADR 0127, 2026-10-24 note): a command is data plus one `run` function
 | `stackra typecheck`                    | gen, then `tsc --noEmit`                                                                 |
 | `stackra test [--tier unit\|e2e]`      | gen, then vitest (unit), Playwright (web and desktop e2e) or Maestro (native e2e)        |
 | `stackra lint`                         | `oxlint .`                                                                               |
+| `stackra seed-pack <product>`          | check `seed-pack:<product>` (`--check`) or seed one `--profile` without touching tenants |
 | `stackra ls [section]`                 | the identities a committed `stackra.manifest.json` locks (actions, events, permissions…) |
 | `stackra mcp`                          | the local developer MCP over stdio; its tools run these commands in-process              |
 | `stackra mcp sync`                     | render `.mcp.json` from `.mcp.yaml` (the template's `prepare`)                           |
@@ -33,13 +35,34 @@ member-root config otherwise. A task that no tool serves for the member (a deskt
 Encore target) is refused with the reason, never guessed. Exit codes: 0 success, 1 failure, 2 usage error, 127 a tool
 that cannot start.
 
+## Seed packs
+
+A product's defaults are data, not code (owner principle "configuration, not code"; config-model section 6). Each
+product keeps one `seed-pack:<product>` in `seed-packs/<product>/` of its repository: `seed-pack.yaml` (`key`,
+`product`, a semantic `version`) and one YAML document per record under `profiles/minimal`, `profiles/demo` and
+`profiles/test` (ADR 0190). A document has a `kind` (settings, rule-set, workflow-template, studio-template,
+role-template, industry-template, plan-catalogue, price-list, offer, connector-catalogue, brand-kit), the record `key`
+and `rows`; every row has an `id` and the `answer` id it encodes (`COM-160`), so a changed answer changes one row.
+
+- `stackra seed-pack <product> --check` reads the pack and refuses it with every issue (`seed_pack_header`,
+  `seed_profile_unknown`, `seed_kind_unknown`, `seed_record_key_missing`, `seed_record_duplicate`,
+  `seed_row_id_missing`, `seed_row_duplicate`, `seed_row_answer_missing`).
+- `stackra seed-pack <product> [--profile minimal|demo|test] [--env <e>]` loads `minimal` (then `demo` or `test`),
+  asks the member's `@stackra/database/node` runner what it stores (`seedState`), and writes (`applySeed`) only new
+  records and seed-owned records whose content hash changed. A record a tenant changed is kept: a new seed version
+  only changes the product default underneath.
+- `stackra new seed-pack <product>` writes the header and the three profile folders.
+
 ## Not here yet
 
 `stackra db migrate` and `stackra db rollback` are pending: the command code is here, but `@stackra/database/node`
 exports no `migrate` and `rollback` yet, so both fail until a follow-up item for `@stackra/database` lands them with the
 `DatabaseRunner` signature (`migrate({ cwd, environment }) -> { applied }`, `rollback(...) -> { reverted }`), where
 `environment` selects the database the call connects to so the production rollback guard protects the right one.
-`stackra db diff` and `seed` land with `@stackra/database` in the data wave (ADR 0159 note).
-`new`, `validate`, `verify`, `structure`, `doctor` and `agents setup` move in from `tools/scripts` and their
-owning packages as those are built (ADR 0282 consequences). Figentra-internal operations never ship here (ADR 0282
+`stackra seed-pack` needs the same follow-up: `@stackra/database/node` exports no `seedState` and `applySeed` yet, so a
+run (not `--check`) fails until it does, with the `SeedRunner` signature in `src/node/types/seed-runner.type.ts`.
+`stackra db diff` and `seed` land with `@stackra/database` in the data wave (ADR 0159 note). `stackra new` makes
+packages, services and seed packs; app kinds stay with `pnpm new` until their templates move here. `validate`,
+`verify`, `structure`, `doctor` and `agents setup` move in from `tools/scripts` and their owning packages as those are
+built (ADR 0282 consequences). Figentra-internal operations never ship here (ADR 0282
 decision 4).
