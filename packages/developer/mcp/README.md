@@ -18,6 +18,10 @@ Stackra repository. `@stackra/cli` wires it to `stackra mcp`, `stackra mcp sync`
 | `.`      | `shellCommandLine(argv)`, `secretNamesOf` | the quoted `sh -c` line and the `$NAME` references it expands            |
 | `.`      | `mcpConfigJsonSchema()`                   | the JSON Schema served at `static.stackra.figentra.com/schemas/mcp.json` |
 | `.`      | `McpConfigInvalidError`                   | a `.mcp.yaml` that cannot be used, with every issue                      |
+| `.`      | `toolTable(manifests)`                    | the hosted server's tools, from committed manifests                      |
+| `.`      | `filterTools(tools, access)`              | one caller's tools in one tenant, and the ones locked by the plan        |
+| `.`      | `protectedResourceMetadata(options)`      | the RFC 9728 document of the hosted endpoint                             |
+| `.`      | `wwwAuthenticate(metadataUrl, challenge)` | the `Bearer` challenge of a 401 or 403                                   |
 | `./node` | `syncMcpConfig(root?)`                    | `stackra mcp sync` (the template's `prepare`): write `.mcp.json`         |
 | `./node` | `checkMcpConfig(root?)`                   | `stackra agents check`: is `.mcp.json` what `.mcp.yaml` renders to?      |
 | `./node` | `readMcpConfig(file)`                     | read, YAML-parse and check one `.mcp.yaml`                               |
@@ -71,4 +75,27 @@ import { serveLocalMcp } from "@stackra/mcp/node";
 await serveLocalMcp({ version: CLI_VERSION, run: (args) => commands.run(args) });
 ```
 
-The hosted mode of ADR 0282 (`mcp.stackra.figentra.com`, OAuth) is a separate deployment and is not in this package.
+## The hosted server core
+
+The hosted gateway (ADR 0155 decision 4, in the OS `ai` service) builds on three pure pieces here; the deployment, the
+transport and the token check stay in the service.
+
+- `toolTable(manifests)` turns every manifest action with a `tool` entry into a row: the MCP descriptor with its input
+  schema inlined and gen's derived hints as `annotations`, plus the action key, permission, risk and effect tags the
+  gateway filters, approves and audits on. Gen decides what is a tool (ADR 0360 decision 4); nothing is hand-added.
+- `filterTools(tools, access)` drops a tool the caller lacks the permission for and holds back, as `locked`, one the
+  tenant is not entitled to, so the gateway answers it with "requires subscription" (ADR 0155 decision 3). Both
+  answers come from the host's IAM and entitlements.
+- `protectedResourceMetadata({ resource, authorizationServers, ... })` and `wwwAuthenticate(metadataUrl)` publish the
+  endpoint as an OAuth protected resource naming the identity provider's issuer (ADR 0348 decision 2, RFC 9728). Every
+  URL is the host's configuration.
+
+```ts
+import { filterTools, protectedResourceMetadata, toolTable } from "@stackra/mcp";
+
+const table = toolTable(manifests);
+const { tools, locked } = filterTools(table, {
+  can: (p) => grants.has(p),
+  isEntitled: (t) => plan.has(t.name),
+});
+```

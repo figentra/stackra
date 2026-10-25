@@ -18,6 +18,9 @@ shape (ADR 0294, 0305). Entries `.` and `./node` (ADR 0127, 2026-10-24 note).
 - A secret value never passes through this process: `execWithSecrets` hands `$NAME` references to
   `infisical run ... -- sh -c` and never reads, prints or puts a value on argv. Never add a flag that takes a value.
 - Every write tool of the local server goes through the CLI's `run`, so the CLI's gates apply.
+- The hosted server core (`toolTable`, `filterTools`, `protectedResourceMetadata`, `wwwAuthenticate`) is pure and
+  lives in `.`. It reads committed manifests only, never adds or annotates a tool by hand, and takes every URL,
+  permission and entitlement answer from the host; the deployment itself is the OS `ai` service.
 - `.mcp.yaml` rules carry snake_case codes (`secret_without_exec`, `secret_in_remote_server`, `unpinned_npx_server`).
 
 ## Rules that fail the build
