@@ -19,8 +19,9 @@ peers for `./react`.
 | `.`           | `inspectorFieldsOf`                                                                  | a block's zod props schema as inspector field descriptors             |
 | `.`           | `parseDocumentNode`                                                                  | a stored or received root node as a frozen editor tree, or a refusal  |
 | `.`           | `MAX_DOCUMENT_DEPTH`, `MAX_DOCUMENT_BLOCKS`, `BLOCK_ID_PATTERN`, `BLOCK_KEY_PATTERN` | the bounds and formats a document keeps to                            |
-| `.`           | `DocumentInvalidError`, `BlockNotRegisteredError`, `BlockNotFoundError`, ...         | the refusals                                                          |
+| `.`           | `DocumentInvalidError`, `BlockNotRegisteredError`, `BlockNotAllowedError`, ...       | the refusals                                                          |
 | `./contracts` | `EditorNode`, `EditorChange`, `EditorChangeKind`, `EditorState`, `EditorOptions`     | the types; an `EditorNode` is an experience `DocumentNode` with an id |
+| `./contracts` | `BlockKit`                                                                           | a reviewed block kit: the only blocks a surface may offer             |
 | `./react`     | `useInspector`                                                                       | the selected block's fields, values and an undoable `set(key, value)` |
 | `./react`     | `useEditor`, `useSelection`                                                          | open a document, follow the selection (web and React Native)          |
 | `./react`     | `useSharedEditor`, `bindSharedDocument`                                              | the same editor co-edited through `@stackra/collaboration` and Yjs    |
@@ -47,6 +48,25 @@ editor.problems(); // { "<hero id>.title": "invalid_type" }
   being filled in, and publishing refuses what `problems()` reports.
 - Documents are data that reference registered code only (ADR 0154). `parseDocumentNode` bounds a tree to 32 levels and
   10,000 blocks and drops every key outside `id`, `block`, `props`, `children` and `input`.
+
+## Document kinds and reviewed kits
+
+A form, an email template, a print document and a theme section are kinds of the same kernel (ADR 0270 decision 6):
+
+```ts
+const editor = Editor.create({
+  root,
+  blocks: registeredBlocks(),
+  kind: ExperienceKind.EmailTemplate,
+});
+editor.palette(); // only the blocks whose `Block({ kinds })` names email_template
+editor.insert(root.id, 0, "web.hero_section"); // throws BlockNotAllowedError
+```
+
+A partner theme's sections are edited with a reviewed `kit` (`{ key, blocks }`): the host builds it from the blocks
+the app market approved and the first-party blocks it trusts, and the editor offers and inserts nothing outside it.
+`problems()` reports `block_not_allowed` for a stored block the kind or kit does not allow, so publish refuses it;
+`@stackra/experience`'s `validateDocument` makes the same check on the server.
 
 ## Hooks
 

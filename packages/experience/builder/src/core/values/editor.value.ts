@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `Editor`, the editor kernel every builder surface (canvas, document, grid, tree, graph) drives: one open
  *          document as a tree of block instances, changed only by insert, move, remove and set-prop, with an undo and
- *          redo stack, a selection, and a check of every block against the registered blocks.
+ *          redo stack, a selection, and a check of every block against the registered blocks, the document's kind and
+ *          a reviewed block kit.
  * Boundary: a value built with `Editor.create`, never injected; one per open document. It renders nothing (the apps'
  *           builders draw the chrome) and loads no CRDT library: a shared document is bound by `./react`. Its state is
  *           a frozen snapshot replaced on each change, for `useSyncExternalStore`. Local changes are reported through
@@ -10,12 +11,13 @@
  *           co-editor removed meanwhile is skipped. Props are checked by `problems`, not on every edit, so a block
  *           may be incomplete while it is being filled in; publishing refuses what `problems` reports.
  * Runtime: isomorphic
- * Governing contract: ADR 0270 (decisions 1, 3 and 4); ADR 0154 (documents reference registered code only); ADR 0328
+ * Governing contract: ADR 0270 (decisions 1, 3, 4 and 6); COM-358; ADR 0154 (documents reference registered code only); ADR 0328
  *                     (values are built with `create`).
  */
 import type { AnyClass } from "@stackra/container";
 import type { Json } from "@stackra/contracts";
 import { type FieldErrors, isRefusal } from "@stackra/errors";
+import { blockKinds } from "@stackra/experience";
 import type { DocumentNode } from "@stackra/experience/contracts";
 import { validate } from "@stackra/validation";
 
@@ -26,6 +28,7 @@ import {
   type EditorOptions,
   type EditorState,
 } from "#contracts/index";
+import { BlockNotAllowedError } from "#core/errors/block-not-allowed.error";
 import { BlockNotRegisteredError } from "#core/errors/block-not-registered.error";
 import { applyChange } from "#core/functions/apply-change.function";
 import { blockIds } from "#core/functions/block-ids.function";
@@ -59,6 +62,8 @@ function find(node: EditorNode, id: string): EditorNode | undefined {
 export class Editor {
   private readonly blocks: ReadonlyMap<string, AnyClass>;
 
+  private readonly options: Pick<EditorOptions, "kind" | "kit">;
+
   private current: EditorState;
 
   private readonly undoStack: EditorChange[] = [];
@@ -69,8 +74,13 @@ export class Editor {
 
   private readonly changeListeners = new Set<(change: EditorChange) => void>();
 
-  private constructor(root: EditorNode, blocks: ReadonlyMap<string, AnyClass>) {
+  private constructor(
+    root: EditorNode,
+    blocks: ReadonlyMap<string, AnyClass>,
+    options: Pick<EditorOptions, "kind" | "kit">,
+  ) {
     this.blocks = blocks;
+    this.options = options;
     this.current = Object.freeze({ root, selection: [], canUndo: false, canRedo: false });
   }
 
@@ -80,7 +90,10 @@ export class Editor {
    * @throws DocumentInvalidError when the root is not a well-formed tree (see `parseDocumentNode`).
    */
   static create(options: EditorOptions): Editor {
-    return new Editor(parseDocumentNode(options.root), options.blocks);
+    return new Editor(parseDocumentNode(options.root), options.blocks, {
+      ...(options.kind !== undefined && { kind: options.kind }),
+      ...(options.kit !== undefined && { kit: options.kit }),
+    });
   }
 
   /** The current snapshot: the tree, the selection and the undo and redo flags. */
@@ -118,6 +131,27 @@ export class Editor {
     return this.blocks.get(block);
   }
 
+  /**
+   * Whether the registered block `block` may be placed in this document: it fits the document's kind, when one was
+   * given, and is in the reviewed kit, when one was given.
+   */
+  allows(block: string): boolean {
+    const type = this.blocks.get(block);
+    if (type === undefined) return false;
+    const { kind, kit } = this.options;
+    return (
+      (kind === undefined || blockKinds(type).includes(kind)) &&
+      (kit === undefined || kit.blocks.includes(block))
+    );
+  }
+
+  /** The keys of the blocks the palette offers for this document, in code-unit order. */
+  palette(): string[] {
+    return [...this.blocks.keys()]
+      .filter((block) => this.allows(block))
+      .sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
+  }
+
   /** The block `id` in the current tree, or `undefined`. */
   node(id: string): EditorNode | undefined {
     return find(this.current.root, id);
@@ -128,6 +162,7 @@ export class Editor {
    *
    * @returns the new block's id.
    * @throws BlockNotRegisteredError when no registered block has the key `block`.
+   * @throws BlockNotAllowedError when the document's kind or the reviewed kit does not allow `block`.
    * @throws BlockNotFoundError when the tree holds no `parentId`.
    */
   insert(
@@ -137,6 +172,7 @@ export class Editor {
     props: Readonly<Record<string, Json>> = {},
   ): string {
     if (!this.blocks.has(block)) throw BlockNotRegisteredError.create({ block });
+    if (!this.allows(block)) throw BlockNotAllowedError.create({ block });
     const node: EditorNode = Object.freeze({
       id: globalThis.crypto.randomUUID(),
       block,
@@ -219,8 +255,9 @@ export class Editor {
 
   /**
    * What is wrong with the current tree against the registered blocks, by path: `<block id>` →
-   * `block_not_registered` for an unknown key, `<block id>.<prop path>` → the schema's issue code for a prop that
-   * does not fit; `{}` when nothing is. A path reports its first issue only.
+   * `block_not_registered` for an unknown key, `block_not_allowed` for a block the kind or the kit does not allow,
+   * `<block id>.<prop path>` → the schema's issue code for a prop that does not fit; `{}` when nothing is. A path
+   * reports its first issue only.
    *
    * @throws TypeError when a registered block's schema is not registered (run `stackra gen`).
    */
@@ -230,6 +267,7 @@ export class Editor {
       const type = this.blocks.get(node.block);
       if (type === undefined) errors[node.id] = "block_not_registered";
       else {
+        if (!this.allows(node.block)) errors[node.id] = "block_not_allowed";
         const result = validate(type, node.props);
         if (!result.success)
           for (const issue of result.error.issues)

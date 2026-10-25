@@ -16,6 +16,7 @@ describe("@stackra/builder", () => {
       "BLOCK_ID_PATTERN",
       "BLOCK_KEY_PATTERN",
       "BlockMoveInvalidError",
+      "BlockNotAllowedError",
       "BlockNotFoundError",
       "BlockNotRegisteredError",
       "DocumentInvalidError",

@@ -13,6 +13,7 @@ export { BLOCK_KEY_PATTERN } from "#core/constants/block-key-pattern.constant";
 export { MAX_DOCUMENT_BLOCKS } from "#core/constants/max-document-blocks.constant";
 export { MAX_DOCUMENT_DEPTH } from "#core/constants/max-document-depth.constant";
 export { BlockMoveInvalidError } from "#core/errors/block-move-invalid.error";
+export { BlockNotAllowedError } from "#core/errors/block-not-allowed.error";
 export { BlockNotFoundError } from "#core/errors/block-not-found.error";
 export { BlockNotRegisteredError } from "#core/errors/block-not-registered.error";
 export { DocumentInvalidError } from "#core/errors/document-invalid.error";

@@ -18,6 +18,7 @@ import type { Inspector } from "#contracts/index";
 import { Editor } from "#core/index";
 import { useInspector } from "#react/inspector/use-inspector";
 
+// oxlint-disable-next-line typescript/no-extraneous-class -- reason: a bare block type for the test
 class PageBlock {}
 
 class HeroBlock {

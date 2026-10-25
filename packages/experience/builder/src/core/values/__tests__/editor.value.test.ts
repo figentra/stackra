@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `Editor`: opening a document, the four changes, undo and redo (bounded, skipping steps a
  *          co-editor made impossible), the selection, state snapshots and listeners, `replace`, and `problems` against
- *          the registered blocks and their schemas; it opens against `@stackra/experience`'s `registeredBlocks()`.
+ *          the registered blocks and their schemas; it opens against `@stackra/experience`'s `registeredBlocks()`; the
+ *          palette and the inserts a document's kind and a reviewed block kit allow.
  * Boundary: test only; the block classes are plain classes whose schemas are registered with `registerSchemas`, as gen
  *           does for real blocks.
  * Runtime: node (vitest)
@@ -11,12 +12,14 @@
 import type { AnyClass } from "@stackra/container";
 import { isRefusal } from "@stackra/errors";
 import { Block, BlockCategory, registerBlocks, registeredBlocks } from "@stackra/experience";
+import { ExperienceKind } from "@stackra/experience/contracts";
 import { describe, expect, it } from "@stackra/testing";
 import { registerSchemas } from "@stackra/validation";
 import { vi } from "vitest";
 import { z } from "zod";
 
 import { type EditorChange, EditorChangeKind } from "#contracts/index";
+import { BlockNotAllowedError } from "#core/errors/block-not-allowed.error";
 import { BlockNotFoundError } from "#core/errors/block-not-found.error";
 import { BlockNotRegisteredError } from "#core/errors/block-not-registered.error";
 import { DocumentInvalidError } from "#core/errors/document-invalid.error";
@@ -283,5 +286,68 @@ describe("Editor", () => {
     const editor = Editor.create({ root: PAGE, blocks: BLOCKS });
     expect(editor.blockClass("web.hero_section")).toBe(HeroSectionBlock);
     expect(editor.blockClass("web.unknown")).toBeUndefined();
+  });
+});
+
+describe("Editor kinds and kits", () => {
+  class MailSectionBlock extends Block({
+    category: BlockCategory.Layout,
+    icon: "layout-grid",
+    kinds: [ExperienceKind.EmailTemplate, ExperienceKind.ThemeSection],
+  }) {}
+
+  class MailTextBlock extends Block({
+    category: BlockCategory.Content,
+    icon: "type",
+    kinds: [ExperienceKind.EmailTemplate],
+  }) {}
+
+  class HeroBlock extends Block({ category: BlockCategory.Marketing, icon: "sparkles" }) {}
+
+  registerSchemas([
+    [MailSectionBlock, z.object({})],
+    [MailTextBlock, z.object({})],
+    [HeroBlock, z.object({})],
+  ]);
+
+  const blocks = new Map<string, AnyClass>([
+    ["mail.section", MailSectionBlock],
+    ["mail.text", MailTextBlock],
+    ["web.hero", HeroBlock],
+  ]);
+  const root = { id: "root", block: "mail.section" };
+
+  it("offers and inserts only the blocks that fit the document's kind", () => {
+    const editor = Editor.create({ root, blocks, kind: ExperienceKind.EmailTemplate });
+    expect(editor.palette()).toEqual(["mail.section", "mail.text"]);
+    expect(editor.allows("web.hero")).toBe(false);
+    expect(editor.allows("web.unknown")).toBe(false);
+    expect(() => editor.insert("root", 0, "web.hero")).toThrow(BlockNotAllowedError);
+    expect(editor.state.root.children).toEqual([]);
+    expect(editor.insert("root", 0, "mail.text")).toBeTypeOf("string");
+  });
+
+  it("narrows the palette to a reviewed kit", () => {
+    const editor = Editor.create({
+      root,
+      blocks,
+      kind: ExperienceKind.ThemeSection,
+      kit: { key: "partner_theme", blocks: ["mail.section", "web.hero"] },
+    });
+    expect(editor.palette()).toEqual(["mail.section"]);
+    expect(Editor.create({ root, blocks }).palette()).toEqual([
+      "mail.section",
+      "mail.text",
+      "web.hero",
+    ]);
+  });
+
+  it("reports a block the kind does not allow", () => {
+    const editor = Editor.create({
+      root: { ...root, children: [{ id: "hero", block: "web.hero" }] },
+      blocks,
+      kind: ExperienceKind.EmailTemplate,
+    });
+    expect(editor.problems()).toEqual({ hero: "block_not_allowed" });
   });
 });

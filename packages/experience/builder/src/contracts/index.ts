@@ -9,6 +9,7 @@
  */
 export { EditorChangeKind } from "#contracts/enums/editor-change-kind.enum";
 export { InspectorFieldKind } from "#contracts/enums/inspector-field-kind.enum";
+export type { BlockKit } from "#contracts/types/block-kit.type";
 export type { EditorChange } from "#contracts/types/editor-change.type";
 export type { EditorNode } from "#contracts/types/editor-node.type";
 export type { EditorOptions } from "#contracts/types/editor-options.type";

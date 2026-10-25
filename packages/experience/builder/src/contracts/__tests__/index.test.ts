@@ -7,11 +7,12 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
  */
 import type { AnyClass } from "@stackra/container";
-import type { DocumentNode } from "@stackra/experience/contracts";
+import type { DocumentNode, ExperienceKind } from "@stackra/experience/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
 import type {
+  BlockKit,
   EditorChange,
   EditorNode,
   EditorOptions,
@@ -47,6 +48,9 @@ describe("@stackra/builder/contracts", () => {
   it("types the options, the state and the changes", () => {
     expectTypeOf<EditorOptions["root"]>().toEqualTypeOf<DocumentNode>();
     expectTypeOf<EditorOptions["blocks"]>().toEqualTypeOf<ReadonlyMap<string, AnyClass>>();
+    expectTypeOf<EditorOptions["kind"]>().toEqualTypeOf<ExperienceKind | undefined>();
+    expectTypeOf<EditorOptions["kit"]>().toEqualTypeOf<BlockKit | undefined>();
+    expectTypeOf<BlockKit["blocks"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<EditorState["selection"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<EditorChange["kind"]>().toEqualTypeOf<"insert" | "remove" | "move" | "set_prop">();
   });
