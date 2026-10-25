@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: the contract of the `.` entry: exactly the registry row's primitives are exported (the template imports
- *          nothing from @stackra/pricing yet), and they compose with `@stackra/money`.
+ * Purpose: the contract of the `.` entry: the registry row's primitives, the pure evaluation (`resolvePrice`,
+ *          `evaluateFormula`, `taxByRates`), `PriceKind` and the tax memory driver are exported, nothing else, and they
+ *          compose with `@stackra/money`.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias and the runner through @stackra/testing.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0127 2026-10-24 note.
@@ -14,7 +15,15 @@ import type { PriceTier } from "#core/index";
 
 describe("@stackra/pricing", () => {
   it("exports exactly the runtime surface", () => {
-    expect(Object.keys(entry).sort()).toEqual(["GraduatedPrice", "PricePoint"]);
+    expect(Object.keys(entry).sort()).toEqual([
+      "GraduatedPrice",
+      "MemoryTaxProviderDriver",
+      "PriceKind",
+      "PricePoint",
+      "evaluateFormula",
+      "resolvePrice",
+      "taxByRates",
+    ]);
   });
 
   it("prices usage and rounds an adjusted list price onto a point", () => {
