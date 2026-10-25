@@ -8,13 +8,15 @@
  *           only through `ActionPipeline`, never by calling `handle` from another class.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16, 20, 21 and 25); ADR 0305 (rules 2, 28 and 30); ADR 0098 (actions are the
- *                     unit); ADR 0136; ADR 0138 (as amended).
+ *                     unit); ADR 0136; ADR 0138 (as amended); ADR 0338 (decision 5: `offline.cap`); ADR 0337
+ *                     (decisions 4 and 5: `accepts`).
  */
 import { createKind } from "@stackra/container";
 import { ActorKind, Enum } from "@stackra/contracts";
 import { duration } from "@stackra/validation";
 
 import { Precondition } from "#core/bases/precondition.base";
+import { RULE_VERSION_PATTERN } from "#core/constants/rule-version-pattern.constant";
 import { ConflictResolution } from "#core/enums/conflict-resolution.enum";
 import { Idempotency } from "#core/enums/idempotency.enum";
 import { IdMinting } from "#core/enums/id-minting.enum";
@@ -67,7 +69,7 @@ function read(options: ActionOptions) {
     throw new RangeError(
       `Action({ idempotency }) takes an Idempotency, got ${JSON.stringify(idempotency)}`,
     );
-  const { rateLimit, job, offline } = options;
+  const { rateLimit, job, offline, accepts } = options;
   if (rateLimit !== undefined) {
     if (!Number.isInteger(rateLimit.perMinute) || rateLimit.perMinute < 1)
       throw new RangeError(
@@ -123,6 +125,36 @@ function read(options: ActionOptions) {
     )
       throw new RangeError(
         `Action({ offline: { onConflict } }) lists at least one ConflictResolution (${options.key})`,
+      );
+    const { cap } = offline;
+    if (cap !== undefined) {
+      if (cap.count === undefined && cap.amount === undefined)
+        throw new RangeError(
+          `Action({ offline: { cap } }) needs a count, an amount or both (${options.key})`,
+        );
+      for (const [name, value] of [
+        ["count", cap.count],
+        ["amount", cap.amount],
+      ] as const)
+        if (value !== undefined && (!Number.isSafeInteger(value) || value < 1))
+          throw new RangeError(
+            `Action({ offline: { cap: { ${name} } } }) must be a whole number from 1, got ${value}`,
+          );
+      checkDuration("offline: { cap: { window } }", cap.window);
+    }
+  }
+  if (accepts !== undefined) {
+    if (typeof accepts.ruleVersion !== "string" || !RULE_VERSION_PATTERN.test(accepts.ruleVersion))
+      throw new RangeError(
+        `Action({ accepts: { ruleVersion } }) is dotted whole numbers such as "2.4.0", got ${JSON.stringify(accepts.ruleVersion)}`,
+      );
+    if (
+      typeof accepts.evaluator !== "function" ||
+      typeof (accepts.evaluator.prototype as { evaluate?: unknown } | undefined)?.evaluate !==
+        "function"
+    )
+      throw new TypeError(
+        `Action({ accepts: { evaluator } }) names a class with an evaluate(input, ctx) method (${options.key})`,
       );
   }
   return {

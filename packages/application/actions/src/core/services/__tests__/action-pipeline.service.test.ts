@@ -4,11 +4,16 @@
  *          input validation from a registered schema; idempotency (required, replayed, reused, derived, released on
  *          failure); the area and action rate limits; the unit of work with `afterCommit`; the audit entry; the call
  *          context (frozen clock, request facts, registered key, the call's scope, `RequestContext`); the workflow,
- *          signal and job capabilities (the dispatcher sees the scope); interceptors; and a query's lighter path.
- * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly.
+ *          signal and job capabilities (the dispatcher sees the scope); interceptors; a query's lighter path; and the
+ *          offline additions: a device's calls in sequence order (refusals settle, an early or repeated sequence is
+ *          refused), the offline cap by count and amount, the review of offline-computed documents, and a replica
+ *          query's full fill and changes since its cursor.
+ * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
+ *           offline stores are the memory drivers.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0138 (as amended); ADR 0136 (decisions 1 to 3 and 5); ADR 0305
- *                     (rule 24); ADR 0217 (decision 2); ADR 0327 (decision 6).
+ *                     (rule 24); ADR 0217 (decision 2); ADR 0327 (decision 6); ADR 0338 (decisions 1, 3 and 5); ADR
+ *                     0337 (decisions 4 and 5).
  */
 import { type AnyClass, Driver } from "@stackra/container";
 import {
@@ -36,11 +41,15 @@ import {
   AccessControl,
   AuditTrail,
   ContextStorage,
+  DeviceSequenceStore,
   EntitlementCheck,
   FlagCheck,
   IdempotencyStore,
   JobDispatcher,
+  OfflineCapStore,
   RateLimitStore,
+  ReplicaLog,
+  ReviewItemSink,
   TenancyCheck,
   UnitOfWork,
   WorkflowRunner,
@@ -50,14 +59,27 @@ import { Action } from "#core/bases/action.base";
 import { Interceptor } from "#core/bases/interceptor.base";
 import { Precondition } from "#core/bases/precondition.base";
 import { Query } from "#core/bases/query.base";
+import { MemoryDeviceSequenceStoreDriver } from "#core/drivers/memory-device-sequence-store.driver";
 import { MemoryIdempotencyStoreDriver } from "#core/drivers/memory-idempotency-store.driver";
+import { MemoryOfflineCapStoreDriver } from "#core/drivers/memory-offline-cap-store.driver";
 import { MemoryRateLimitStoreDriver } from "#core/drivers/memory-rate-limit-store.driver";
+import { MemoryReplicaLogDriver } from "#core/drivers/memory-replica-log.driver";
+import { MemoryReviewItemSinkDriver } from "#core/drivers/memory-review-item-sink.driver";
+import { ConflictResolution } from "#core/enums/conflict-resolution.enum";
 import { Idempotency } from "#core/enums/idempotency.enum";
+import { IdMinting } from "#core/enums/id-minting.enum";
+import { OfflineMode } from "#core/enums/offline-mode.enum";
+import { OfflinePrecondition } from "#core/enums/offline-precondition.enum";
+import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
 import { InputInvalidError } from "#core/errors/input-invalid.error";
+import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
 import { registerActions } from "#core/functions/register-actions.function";
 import { ActionPipeline } from "#core/services/action-pipeline.service";
+import { ReplicaFeed } from "#core/services/replica-feed.service";
 import { RequestContext } from "#core/services/request-context.service";
+import type { RuleEvaluation } from "#core/types/rule-evaluation.type";
+import type { RuleEvaluator } from "#core/types/rule-evaluator.type";
 import type { ActionContext } from "#core/types/action-context.type";
 import type { QueryContext } from "#core/types/query-context.type";
 import type { Resolver } from "#core/types/resolver.type";
@@ -281,6 +303,66 @@ class TwiceQuery extends Query({
 }) {
   async handle(): Promise<number> {
     return 1;
+  }
+}
+
+class RedeemGiftCardAction extends Action({
+  key: "gift_card.redeem",
+  actors: [ActorKind.User],
+  offline: {
+    mode: OfflineMode.Queue,
+    idMinting: IdMinting.Client,
+    precondition: OfflinePrecondition.None,
+    retention: "72h",
+    onConflict: [ConflictResolution.Manual],
+    cap: { count: 2, amount: 5_000, window: "24h" },
+  },
+}) {
+  async handle(input: { amount: number | { minor: number; currency: string } }): Promise<object> {
+    return { redeemed: input.amount };
+  }
+}
+
+type SaleInput = { total?: number; ruleVersion?: string };
+
+class SaleEvaluator implements RuleEvaluator<SaleInput> {
+  async evaluate(input: SaleInput): Promise<RuleEvaluation | undefined> {
+    log.push("evaluate");
+    if (input.total === undefined || input.ruleVersion === undefined) return undefined;
+    return {
+      ruleVersion: input.ruleVersion,
+      client: { total: input.total },
+      server: { total: 950 },
+    };
+  }
+}
+
+class CompleteSaleAction extends Action({
+  key: "sale.complete",
+  actors: [ActorKind.User],
+  accepts: { ruleVersion: "2.4.0", evaluator: SaleEvaluator },
+}) {
+  async handle(): Promise<{ saleId: string; total: number }> {
+    log.push("handle");
+    return { saleId: "sal_1", total: 950 };
+  }
+}
+
+class Sale {}
+
+class RecentSalesQuery extends Query({
+  key: "sale.recent",
+  actors: [ActorKind.User],
+  replica: { of: Sale, window: "30d", limit: 50 },
+}) {
+  async handle(_input: object, ctx: QueryContext): Promise<unknown> {
+    return ctx.replica(async () => [{ id: "sal_1" }]);
+  }
+}
+
+class NotReplicaQuery extends Query({ key: "sale.plain", actors: [ActorKind.User] }) {
+  async handle(_input: object, ctx: QueryContext): Promise<unknown> {
+    return ctx.replica(async () => []);
   }
 }
 
@@ -718,6 +800,174 @@ describe(ActionPipeline, () => {
     ]);
     await expect(pipeline.execute(TwiceQuery, {}, { actor: customer })).rejects.toThrow(
       /next\(\) twice/,
+    );
+  });
+
+  it("applies a device's calls in sequence order and settles a refused one", async () => {
+    const devices = new MemoryDeviceSequenceStoreDriver();
+    const { pipeline, shop } = setup([[DeviceSequenceStore, devices]]);
+    const call = (sequence: number, key: string) =>
+      pipeline.execute(
+        CreateOrderAction,
+        { quantity: 1 },
+        {
+          actor: customer,
+          idempotencyKey: key,
+          scope: SCOPE,
+          device: { deviceId: "dev_1", sequence },
+        },
+      );
+    await expect(call(2, "k2")).rejects.toMatchObject({
+      code: "device_sequence_out_of_order",
+      expected: 1,
+    });
+    expect(log).toEqual([]);
+    await call(1, "k1");
+    expect(await devices.last("dev_1")).toMatchObject({
+      sequence: 1,
+      settledAt: NOW,
+      scope: SCOPE,
+    });
+    expect(await call(1, "k1")).toEqual({ orderId: "ord_1", key: "k1" });
+    await expect(call(1, "k9")).rejects.toBeInstanceOf(DeviceSequenceOutOfOrderError);
+    shop.open = false;
+    await expect(call(2, "k2")).rejects.toBeInstanceOf(OrdersPausedError);
+    expect((await devices.last("dev_1"))?.sequence).toBe(2);
+    shop.open = true;
+    expect(await call(3, "k3")).toEqual({ orderId: "ord_2", key: "k3" });
+    await expect(call(0, "k0")).rejects.toBeInstanceOf(InputInvalidError);
+    const bare = new ActionPipeline(
+      resolverOf([
+        [AccessControl, new RecordingAccess()],
+        [InspectAction, new InspectAction()],
+      ]),
+    );
+    await expect(
+      bare.execute(
+        InspectAction,
+        {},
+        { actor: customer, device: { deviceId: "dev_1", sequence: 1 } },
+      ),
+    ).rejects.toThrow(/DeviceSequenceStore is not bound/);
+  });
+
+  it("reconciles a device's replayed calls against the offline cap, by count and by amount", async () => {
+    const caps = new MemoryOfflineCapStoreDriver();
+    const { pipeline } = setup([
+      [DeviceSequenceStore, new MemoryDeviceSequenceStoreDriver()],
+      [OfflineCapStore, caps],
+      [RedeemGiftCardAction, new RedeemGiftCardAction()],
+    ]);
+    const redeem = (sequence: number, amount: unknown) =>
+      pipeline.execute(RedeemGiftCardAction, { amount } as never, {
+        actor: customer,
+        device: { deviceId: "dev_1", sequence },
+      });
+    await redeem(1, 2_000);
+    await expect(redeem(2, 3_500)).rejects.toBeInstanceOf(OfflineCapReachedError);
+    await redeem(3, { minor: 3_000, currency: "USD" });
+    await expect(redeem(4, 1)).rejects.toMatchObject({ code: "offline_cap_reached" });
+    expect(await caps.usage("dev_1", "gift_card.redeem", new Date(0))).toEqual({
+      count: 2,
+      amount: 5_000,
+    });
+    await expect(redeem(5, "lots")).rejects.toBeInstanceOf(InputInvalidError);
+    expect(
+      await pipeline.execute(RedeemGiftCardAction, { amount: 9_000 }, { actor: customer }),
+    ).toEqual({ redeemed: 9_000 });
+  });
+
+  it("reviews an offline-computed document that differs or is older, and never refuses it", async () => {
+    const sink = new MemoryReviewItemSinkDriver();
+    const { pipeline } = setup([
+      [ReviewItemSink, sink],
+      [SaleEvaluator, new SaleEvaluator()],
+      [CompleteSaleAction, new CompleteSaleAction()],
+    ]);
+    const sell = (input: SaleInput) =>
+      pipeline.execute(CompleteSaleAction, input, { actor: customer });
+    expect(await sell({ total: 950, ruleVersion: "2.4.0" })).toEqual({
+      saleId: "sal_1",
+      total: 950,
+    });
+    expect(log).toEqual([
+      "tenancy",
+      "permission",
+      "entitlement",
+      "flag",
+      "begin",
+      "evaluate",
+      "handle",
+      "commit",
+    ]);
+    expect(await sell({ total: 900, ruleVersion: "2.4.1" })).toEqual({
+      saleId: "sal_1",
+      total: 950,
+    });
+    await sell({ total: 950, ruleVersion: "2.3.9" });
+    await sell({});
+    expect(
+      sink.items.map(({ reason, ruleVersion, acceptedVersion, client, server, output }) => ({
+        reason,
+        ruleVersion,
+        acceptedVersion,
+        client,
+        server,
+        output,
+      })),
+    ).toEqual([
+      {
+        reason: "differs",
+        ruleVersion: "2.4.1",
+        acceptedVersion: "2.4.0",
+        client: { total: 900 },
+        server: { total: 950 },
+        output: { saleId: "sal_1", total: 950 },
+      },
+      {
+        reason: "older_rule_version",
+        ruleVersion: "2.3.9",
+        acceptedVersion: "2.4.0",
+        client: { total: 950 },
+        server: { total: 950 },
+        output: { saleId: "sal_1", total: 950 },
+      },
+    ]);
+    expect(sink.items[0]?.call.key).toBe("sale.complete");
+  });
+
+  it("answers a replica query with a full fill, then the changes since its cursor", async () => {
+    const replicas = new MemoryReplicaLogDriver();
+    const { pipeline } = setup([
+      [ReplicaLog, replicas],
+      [RecentSalesQuery, new RecentSalesQuery()],
+      [NotReplicaQuery, new NotReplicaQuery()],
+    ]);
+    const first = (await pipeline.execute(RecentSalesQuery, {}, { actor: customer })) as {
+      full: boolean;
+      cursor: string;
+      asOf: Date;
+    };
+    expect(first).toMatchObject({ full: true, rows: [{ id: "sal_1" }], asOf: NOW });
+    await new ReplicaFeed(replicas).record(RecentSalesQuery, [{ id: "sal_2", row: { total: 4 } }]);
+    expect(
+      await pipeline.execute(
+        RecentSalesQuery,
+        {},
+        { actor: customer, replicaCursor: first.cursor },
+      ),
+    ).toMatchObject({ full: false, changes: [{ id: "sal_2", row: { total: 4 } }], more: false });
+    await expect(pipeline.execute(NotReplicaQuery, {}, { actor: customer })).rejects.toThrow(
+      /declares no replica/,
+    );
+    const bare = new ActionPipeline(
+      resolverOf([
+        [AccessControl, new RecordingAccess()],
+        [RecentSalesQuery, new RecentSalesQuery()],
+      ]),
+    );
+    await expect(bare.execute(RecentSalesQuery, {}, { actor: customer })).rejects.toThrow(
+      /ReplicaLog is not bound/,
     );
   });
 

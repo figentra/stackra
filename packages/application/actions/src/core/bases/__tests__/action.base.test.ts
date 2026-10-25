@@ -3,10 +3,12 @@
  * Purpose: unit and type tests of `Action`: the called form records the `action` kind with its options and defaults,
  *          keeps `instanceof` and constructor dependencies, and refuses every malformed option (key, actors, version,
  *          endpoint method, tool without an agent, job without the system actor, job and offline values, precondition
- *          classes, rate limit); a bare `extends Action` and a missing `handle` fail to compile.
+ *          classes, rate limit), records an offline cap and the `accepts` option and refuses malformed ones; a bare
+ *          `extends Action` and a missing `handle` fail to compile.
  * Boundary: test only; the options are the template's create, expire and freeze actions.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16, 20 and 21); ADR 0305 (rules 28 and 30).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16, 20 and 21); ADR 0305 (rules 28 and 30); ADR
+ *                     0338 (decision 5); ADR 0337 (decisions 4 and 5).
  */
 import { kindOf } from "@stackra/container";
 import { ActorKind, ApiArea, HttpMethod } from "@stackra/contracts";
@@ -171,6 +173,35 @@ describe("Action", () => {
       RangeError,
     );
     expect(() => Action({ ...base, idempotency: "always" as Idempotency })).toThrow(RangeError);
+  });
+
+  it("records an offline cap and the accepts option, and refuses malformed ones", () => {
+    class PriceEvaluator {
+      async evaluate(): Promise<undefined> {
+        return undefined;
+      }
+    }
+    const cap = { count: 3, amount: 50_000, amountField: "total", window: "24h" };
+    const accepts = { ruleVersion: "2.4.0", evaluator: PriceEvaluator };
+    expect(
+      kindOf(Action({ ...base, offline: { ...OFFLINE, cap }, accepts }))?.options,
+    ).toMatchObject({ offline: { cap }, accepts });
+    const capped = (value: object) =>
+      Action({ ...base, offline: { ...OFFLINE, cap: value as typeof cap } });
+    expect(() => capped({ window: "24h" })).toThrow(/count, an amount or both/);
+    expect(() => capped({ count: 0, window: "24h" })).toThrow(RangeError);
+    expect(() => capped({ amount: 1.5, window: "24h" })).toThrow(RangeError);
+    expect(() => capped({ count: 1, window: "a day" })).toThrow(RangeError);
+    expect(() => capped({ count: 1, amountField: "total", window: "1d" })).toThrow(TypeError);
+    expect(() => Action({ ...base, accepts: { ...accepts, ruleVersion: "v2" } })).toThrow(
+      RangeError,
+    );
+    expect(() =>
+      Action({
+        ...base,
+        accepts: { ruleVersion: "2", evaluator: Orders as unknown as typeof PriceEvaluator },
+      }),
+    ).toThrow(TypeError);
   });
 
   it("is called only and makes a subclass implement handle", () => {

@@ -10,6 +10,7 @@
 export { CommandStatus } from "#contracts/enums/command-status.enum";
 export { DeviceCommands } from "#contracts/ports/device-commands.port";
 export { DeviceCredential } from "#contracts/ports/device-credential.port";
+export { DeviceIdentity } from "#contracts/ports/device-identity.port";
 export { DeviceTelemetry } from "#contracts/ports/device-telemetry.port";
 export type { DeviceCommand } from "#contracts/types/device-command.type";
 export type { TelemetryReading } from "#contracts/types/telemetry-reading.type";

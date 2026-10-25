@@ -13,7 +13,7 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 | A refusal                               | `src/core/errors/<name>.error.ts`                              |
 | A service or a driver                   | `src/core/services/`, `src/core/drivers/`                      |
 | The configuration                       | `src/config/rate-limit.config.ts`, its shape in `core/schemas` |
-| A port or an exchanged type             | `src/contracts/{ports,types}/`                                 |
+| A port, an exchanged type or its enum   | `src/contracts/{ports,types,enums}/`                           |
 | Anything that imports `node:`           | `src/node/`                                                    |
 | A test helper                           | `src/testing/{functions,constants,types}/`                     |
 | A test                                  | `__tests__/<name>.<kind>.test.ts` beside it                    |
@@ -30,6 +30,11 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 
 - The pipeline order is fixed (ADR 0138 as amended): never reorder `ActionPipeline.steps`, never add a step outside
   `PipelineStage`. Permission fails closed; every other missing port skips its step or errors when the call needs it.
+  Device order (ADR 0338 d1) wraps the steps like the audit, so any refusal settles a device's sequence; the offline cap
+  belongs to the idempotency step and the `accepts` review to `handle` (inside the unit of work).
+- A device id reaches `CallOptions.device` only after the transport matched it to the verified session's device; the
+  pipeline never trusts the header alone. A replica's slice comes from the query's `handle` after it authorized it,
+  never straight from input.
 - Never import `@stackra/iam`, `@stackra/workflow`, `@stackra/queue`, `@stackra/database` or `@stackra/tenancy`; they
   depend on this package and implement its ports.
 - Identities are gen's: the runtime reads them from `registerActions`, never derives a module key or a permission.

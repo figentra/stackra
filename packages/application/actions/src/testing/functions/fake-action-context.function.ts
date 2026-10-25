@@ -3,8 +3,8 @@
  * Purpose: `fakeActionContext(overrides?)`, the context a unit test hands a service or extension that takes an
  *          `ActionContext`, without running the pipeline: `authorize` allows, `afterCommit` work and `audit` fields are
  *          recorded, and `period`, `startOfDay` and `now` work on a clock frozen at creation.
- * Boundary: test only. `run`, `signal` and `dispatch` reject with a message unless the test passes its own; a test that
- *           needs the real steps uses `run(...)` instead. Overrides replace members whole.
+ * Boundary: test only. `run`, `signal`, `dispatch` and `replica` reject with a message unless the test passes its own;
+ *           a test that needs the real steps uses `run(...)` instead. Overrides replace members whole.
  * Runtime: node
  * Governing contract: ADR 0269 (testing helpers); ADR 0136 (consequence: handlers are testable with a fake ctx).
  */
@@ -55,6 +55,7 @@ export function fakeActionContext(overrides: Partial<ActionContext> = {}): FakeA
     run: missing("run"),
     signal: missing("signal"),
     dispatch: missing("dispatch"),
+    replica: missing("replica"),
     ...overrides,
     recorded: Object.freeze({ authorized, afterCommit, audit }),
   });

@@ -3,8 +3,10 @@
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/actions` (`Action`,
  *          `ConflictResolution`, `Extension`, `ExtensionPoint`, `IdMinting`, `Idempotency`, `OfflineMode`,
  *          `OfflinePrecondition`, `Precondition`, `Query`, `RateLimitConfig`, `RateLimitConfig$`, `RequestContext`)
- *          and the registry row's runtime are exported, nothing else is, the ports are not, and the template's types
- *          (`ActionContext`, `ExtensionContext`, `ExtensionTable`, `PreconditionContext`, `QueryContext`) resolve.
+ *          and the registry row's runtime are exported with the offline additions (`OFFLINE_HEADERS`, the device,
+ *          cap, replica and review memory drivers, `ReplicaFeed` and two refusals), nothing else is, the ports are not,
+ *          and the template's types (`ActionContext`, `ExtensionContext`, `ExtensionTable`, `PreconditionContext`,
+ *          `QueryContext`) and the offline option and replica types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -14,14 +16,24 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as actions from "#core/index";
 import type {
+  ActionAccepts,
   ActionContext,
   CallInput,
+  CallOptions,
   ExtensionContext,
   ExtensionTable,
   InputOf,
+  OfflineCap,
+  OfflineOptions,
   OutputOf,
   PreconditionContext,
   QueryContext,
+  QueryOptions,
+  QueryReplica,
+  ReplicaBounds,
+  ReplicaPage,
+  RuleEvaluation,
+  RuleEvaluator,
 } from "#core/index";
 
 describe("@stackra/actions", () => {
@@ -30,6 +42,7 @@ describe("@stackra/actions", () => {
       "Action",
       "ActionPipeline",
       "ConflictResolution",
+      "DeviceSequenceOutOfOrderError",
       "Extension",
       "ExtensionPoint",
       "IdMinting",
@@ -37,8 +50,14 @@ describe("@stackra/actions", () => {
       "IdempotencyKeyRequiredError",
       "InputInvalidError",
       "Interceptor",
+      "MemoryDeviceSequenceStoreDriver",
       "MemoryIdempotencyStoreDriver",
+      "MemoryOfflineCapStoreDriver",
       "MemoryRateLimitStoreDriver",
+      "MemoryReplicaLogDriver",
+      "MemoryReviewItemSinkDriver",
+      "OFFLINE_HEADERS",
+      "OfflineCapReachedError",
       "OfflineMode",
       "OfflinePrecondition",
       "PipelineStage",
@@ -46,6 +65,7 @@ describe("@stackra/actions", () => {
       "Query",
       "RateLimitConfig",
       "RateLimitConfig$",
+      "ReplicaFeed",
       "RequestContext",
       "connectExtensions",
       "registerActions",
@@ -69,5 +89,18 @@ describe("@stackra/actions", () => {
     expectTypeOf<InputOf<Handler>>().toEqualTypeOf<{ orderId: string }>();
     expectTypeOf<CallInput<Handler>>().toEqualTypeOf<{ orderId: string }>();
     expectTypeOf<OutputOf<Handler>>().toEqualTypeOf<{ status: string }>();
+    expectTypeOf<OfflineOptions["cap"]>().toEqualTypeOf<OfflineCap | undefined>();
+    expectTypeOf<QueryOptions["replica"]>().toEqualTypeOf<QueryReplica | undefined>();
+    expectTypeOf<ActionAccepts["ruleVersion"]>().toEqualTypeOf<string>();
+    expectTypeOf<CallOptions["replicaCursor"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<ReplicaBounds["since"]>().toEqualTypeOf<Date>();
+    expectTypeOf<Extract<ReplicaPage<{ id: string }>, { full: true }>["rows"]>().toEqualTypeOf<
+      readonly { id: string }[]
+    >();
+    expectTypeOf<RuleEvaluation["ruleVersion"]>().toEqualTypeOf<string>();
+    expectTypeOf<ReturnType<RuleEvaluator["evaluate"]>>().toEqualTypeOf<
+      Promise<RuleEvaluation | undefined>
+    >();
+    expectTypeOf<QueryContext["replica"]>().toBeFunction();
   });
 });

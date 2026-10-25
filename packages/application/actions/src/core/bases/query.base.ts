@@ -8,7 +8,7 @@
  *           runs only through `ActionPipeline`.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16, 20, 21 and 25); ADR 0305 (rules 28 and 31); ADR 0155 (queries are MCP
- *                     tools); ADR 0136 (decision 2: queries have no transaction).
+ *                     tools); ADR 0136 (decision 2: queries have no transaction); ADR 0338 (decision 3: `replica`).
  */
 import { createKind } from "@stackra/container";
 import { duration } from "@stackra/validation";
@@ -30,10 +30,13 @@ export abstract class QueryBase {
 /** A query instance. */
 export type Query = QueryBase;
 
+/** A row field name in camelCase (`legalEntityId`). */
+const FIELD = /^[a-z][A-Za-z0-9]*$/;
+
 /** Checks the options of a query and applies their defaults. */
 function read(options: QueryOptions) {
   const shared = readCallOptions("Query", options);
-  const { cache } = options;
+  const { cache, replica } = options;
   if (cache !== undefined) {
     try {
       duration(String(cache.ttl));
@@ -47,6 +50,30 @@ function read(options: QueryOptions) {
         throw new TypeError(
           `Query({ cache: { invalidateOn } }) lists event classes (${options.key})`,
         );
+  }
+  if (replica !== undefined) {
+    if (typeof replica.of !== "function")
+      throw new TypeError(
+        `Query({ replica: { of } }) names the model class it mirrors (${options.key})`,
+      );
+    try {
+      duration(String(replica.window));
+    } catch {
+      throw new RangeError(
+        `Query({ replica: { window } }) must be a duration such as "30d", got ${JSON.stringify(replica.window)}`,
+      );
+    }
+    if (!Number.isSafeInteger(replica.limit) || replica.limit < 1)
+      throw new RangeError(
+        `Query({ replica: { limit } }) must be a whole number from 1, got ${replica.limit}`,
+      );
+    if (
+      replica.scope !== undefined &&
+      (typeof replica.scope !== "string" || !FIELD.test(replica.scope))
+    )
+      throw new TypeError(
+        `Query({ replica: { scope } }) names a row field such as "legalEntityId", got ${JSON.stringify(replica.scope)}`,
+      );
   }
   return {
     ...options,

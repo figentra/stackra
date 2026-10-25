@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: the three ports and `CommandStatus` are exported, nothing
+ * Purpose: the consumer contract of the `./contracts` entry: the four ports and `CommandStatus` are exported, nothing
  *          else is, and each port is a `Port` whose subclass is its driver.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
@@ -18,6 +18,7 @@ describe("@stackra/devices/contracts", () => {
       "CommandStatus",
       "DeviceCommands",
       "DeviceCredential",
+      "DeviceIdentity",
       "DeviceTelemetry",
     ]);
   });
@@ -26,6 +27,7 @@ describe("@stackra/devices/contracts", () => {
     expect(Object.getPrototypeOf(contracts.DeviceTelemetry)).toBe(Port);
     expect(Object.getPrototypeOf(contracts.DeviceCommands)).toBe(Port);
     expect(Object.getPrototypeOf(contracts.DeviceCredential)).toBe(Port);
+    expect(Object.getPrototypeOf(contracts.DeviceIdentity)).toBe(Port);
   });
 
   it("lets a class implement a port", async () => {

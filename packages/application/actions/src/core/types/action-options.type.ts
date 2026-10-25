@@ -2,13 +2,14 @@
  * Stackra file contract:
  * Purpose: `ActionOptions`, what `Action({...})` takes: the written key, the actors, the permission when the stem
  *          differs, the preconditions, interceptors, idempotency and rate limit the pipeline applies, and the surfaces
- *          (`endpoint`, `tool`, `intent`, `job`, `offline`).
+ *          (`endpoint`, `tool`, `intent`, `job`, `offline`), and the client rule code it accepts (`accepts`).
  * Boundary: a type only. Everything gen derives is absent: the module, the locked key `<module>.<model>.<verb>@<major>`,
  *           the permission name and its risk, the route and the MCP tool name. `permission` names a `Permissions`
  *           static only when the class stem differs from the action's model (ADR 0305 rule 7).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16, 20 and 21); ADR 0305 (rules 7, 9, 28 and 30); ADR 0136 (decision 3);
- *                     ADR 0138 (as amended); ADR 0252 (decision 2).
+ *                     ADR 0138 (as amended); ADR 0252 (decision 2); ADR 0338 (decision 5); ADR 0337 (decisions 4
+ *                     and 5).
  */
 import type { AnyClass } from "@stackra/container";
 import type { ActorKind, ApiArea } from "@stackra/contracts";
@@ -16,6 +17,7 @@ import type { ActorKind, ApiArea } from "@stackra/contracts";
 import type { Interceptor } from "#core/bases/interceptor.base";
 import type { Precondition } from "#core/bases/precondition.base";
 import type { Idempotency } from "#core/enums/idempotency.enum";
+import type { ActionAccepts } from "#core/types/action-accepts.type";
 import type { ActionRateLimit } from "#core/types/action-rate-limit.type";
 import type { EndpointOptions } from "#core/types/endpoint-options.type";
 import type { JobOptions } from "#core/types/job-options.type";
@@ -64,4 +66,7 @@ export interface ActionOptions {
 
   /** What clients may do with it offline; online-only when absent. */
   readonly offline?: OfflineOptions;
+
+  /** The offline-computed documents it takes: the oldest rule version without review and the server's evaluator. */
+  readonly accepts?: ActionAccepts;
 }

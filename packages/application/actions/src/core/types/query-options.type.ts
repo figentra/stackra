@@ -1,11 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `QueryOptions`, what `Query({...})` takes: the written key, the actors, the permission when the stem
- *          differs, the API area, interceptors, and the surfaces (`endpoint`, `tool`, `intent`) and the `cache` profile.
+ *          differs, the API area, interceptors, the surfaces (`endpoint`, `tool`, `intent`), the `cache` profile and the
+ *          offline `replica`.
  * Boundary: a type only. A query changes no state, so it takes no preconditions, idempotency, job or offline option;
  *           `tool` is on by default (queries are MCP tools under the caller's permissions).
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 16, 20 and 21); ADR 0305 (rules 28 and 31); ADR 0155 (queries are MCP tools).
+ * Governing contract: ADR 0294 (decisions 16, 20 and 21); ADR 0305 (rules 28 and 31); ADR 0155 (queries are MCP tools);
+ *                     ADR 0338 (decision 3: replicas).
  */
 import type { AnyClass } from "@stackra/container";
 import type { ActorKind, ApiArea } from "@stackra/contracts";
@@ -13,6 +15,7 @@ import type { ActorKind, ApiArea } from "@stackra/contracts";
 import type { Interceptor } from "#core/bases/interceptor.base";
 import type { EndpointOptions } from "#core/types/endpoint-options.type";
 import type { QueryCache } from "#core/types/query-cache.type";
+import type { QueryReplica } from "#core/types/query-replica.type";
 
 /** The options of a query. */
 export interface QueryOptions {
@@ -45,4 +48,7 @@ export interface QueryOptions {
 
   /** Serve results from cache for a time, invalidated by events. */
   readonly cache?: QueryCache;
+
+  /** Hold it on clients as a bounded replica, refreshed by change cursor; not available offline when absent. */
+  readonly replica?: QueryReplica;
 }

@@ -2,10 +2,12 @@
  * Stackra file contract:
  * Purpose: unit and type tests of `Query`: the called form records the `query` kind with `tool` on by default, keeps
  *          constructor dependencies, takes a cache profile and a `GET` override, and refuses a non-GET endpoint, a bad
- *          cache duration or a non-class in `invalidateOn`; a bare `extends Query` fails to compile.
+ *          cache duration or a non-class in `invalidateOn`; records a replica and refuses a malformed one; a bare
+ *          `extends Query` fails to compile.
  * Boundary: test only; the options are the template's KPI and storefront queries.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16 and 21); ADR 0305 (rules 28 and 31).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16 and 21); ADR 0305 (rules 28 and 31); ADR 0338
+ *                     (decision 3).
  */
 import { kindOf } from "@stackra/container";
 import { ActorKind, ApiArea, HttpMethod } from "@stackra/contracts";
@@ -92,6 +94,17 @@ describe("Query", () => {
     ).toThrow(TypeError);
     expect(() => Query({ ...base, tool: true })).toThrow(/tool_without_agent_actor/);
     expect(() => Query({ ...base, key: "order" })).toThrow(TypeError);
+  });
+
+  it("records a replica and refuses a malformed one", () => {
+    class Sale {}
+    const replica = { of: Sale, window: "30d", limit: 500, scope: "legalEntityId" };
+    expect(kindOf(Query({ ...base, replica }))?.options).toMatchObject({ replica });
+    const replicated = (value: object) => Query({ ...base, replica: value as typeof replica });
+    expect(() => replicated({ ...replica, of: "sale" })).toThrow(TypeError);
+    expect(() => replicated({ ...replica, window: "a month" })).toThrow(RangeError);
+    expect(() => replicated({ ...replica, limit: 0 })).toThrow(RangeError);
+    expect(() => replicated({ ...replica, scope: "legal_entity_id" })).toThrow(TypeError);
   });
 
   it("is called only", () => {

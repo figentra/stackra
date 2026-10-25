@@ -3,16 +3,21 @@
  * Purpose: `ActionPipeline`, the one way an action or query runs: the fixed steps of ADR 0138 in their order (tenancy,
  *          permission, precondition, entitlement, flag, idempotency, rate limit, interceptors, `handle`), the call
  *          context (with the call's scope, so `ctx.scope` and every port read it), the action's unit of work with
- *          `afterCommit`, the audit entry, and the idempotent replay.
+ *          `afterCommit`, the audit entry, and the idempotent replay; for offline clients, a device's replayed calls
+ *          in sequence order, the `offline.cap` reconciliation, the review of offline-computed documents (`accepts`)
+ *          and a replica query's answer (`ctx.replica`).
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
  *           skipped (tenancy, entitlement, flag, unit of work, audit); permission fails closed (no `AccessControl` is an
- *           error, never an allowed call); a declared rate limit or Idempotency-Key with no store is an error. Nothing
- *           reorders the steps. Only a Refusal is a refusal; any other error is a bug and propagates.
+ *           error, never an allowed call); a declared rate limit, Idempotency-Key, device order, offline cap, `accepts`
+ *           or replica with no store is an error. Nothing reorders the steps: device order wraps them all (like the
+ *           audit), so a call refused by any step still settles its sequence; the cap is part of the idempotency step
+ *           and the review part of `handle`. Only a Refusal is a refusal; any other error is a bug and propagates.
  * Runtime: isomorphic
  * Governing contract: ADR 0138 (as amended by 0294: the order is fixed); ADR 0136 (decisions 1 to 3 and 5); ADR 0305
  *                     (rule 24: interceptors); ADR 0217 (decision 2: limits enforced in the pipeline); ADR 0098; ADR
- *                     0327 (decision 6: the current scope in the call context).
+ *                     0327 (decision 6: the current scope in the call context); ADR 0338 (decisions 1, 3 and 5); ADR
+ *                     0337 (decisions 4 and 5).
  */
 import { kindOf, type AnyClass } from "@stackra/container";
 import {
@@ -29,17 +34,22 @@ import {
   isRefusal,
   RateLimitedError,
 } from "@stackra/errors";
-import { validate } from "@stackra/validation";
+import { duration, validate } from "@stackra/validation";
 
 import { RateLimitConfig } from "#config/rate-limit.config";
+import { ReviewReason } from "#contracts/enums/review-reason.enum";
 import { AccessControl } from "#contracts/ports/access-control.port";
 import { AuditTrail } from "#contracts/ports/audit-trail.port";
 import { ContextStorage } from "#contracts/ports/context-storage.port";
+import { DeviceSequenceStore } from "#contracts/ports/device-sequence-store.port";
 import { EntitlementCheck } from "#contracts/ports/entitlement-check.port";
 import { FlagCheck } from "#contracts/ports/flag-check.port";
 import { IdempotencyStore } from "#contracts/ports/idempotency-store.port";
 import { JobDispatcher } from "#contracts/ports/job-dispatcher.port";
+import { OfflineCapStore } from "#contracts/ports/offline-cap-store.port";
 import { RateLimitStore } from "#contracts/ports/rate-limit-store.port";
+import { ReplicaLog } from "#contracts/ports/replica-log.port";
+import { ReviewItemSink } from "#contracts/ports/review-item-sink.port";
 import { TenancyCheck } from "#contracts/ports/tenancy-check.port";
 import { UnitOfWork } from "#contracts/ports/unit-of-work.port";
 import { WorkflowRunner } from "#contracts/ports/workflow-runner.port";
@@ -53,20 +63,28 @@ import { ACTION_REGISTRY } from "#core/constants/action-registry.constant";
 import { AFTER_COMMIT_FAILED } from "#core/constants/after-commit-failed.constant";
 import { CALL_DEFAULTS } from "#core/constants/call-defaults.constant";
 import { IDEMPOTENCY_TTL } from "#core/constants/idempotency-ttl.constant";
+import { OFFLINE_HEADERS } from "#core/constants/offline-headers.constant";
 import { Idempotency } from "#core/enums/idempotency.enum";
+import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
 import { InputInvalidError } from "#core/errors/input-invalid.error";
+import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
 import { fingerprintOf } from "#core/functions/fingerprint-of.function";
+import { isOlderRuleVersion } from "#core/functions/is-older-rule-version.function";
 import { periodOf } from "#core/functions/period-of.function";
 import { startOfZonedDay } from "#core/functions/start-of-zoned-day.function";
+import { ReplicaFeed } from "#core/services/replica-feed.service";
+import type { ActionAccepts } from "#core/types/action-accepts.type";
 import type { ActionContext } from "#core/types/action-context.type";
 import type { ActionRateLimit } from "#core/types/action-rate-limit.type";
 import type { ActionRegistration } from "#core/types/action-registration.type";
 import type { CallInput } from "#core/types/call-input.type";
 import type { CallOptions } from "#core/types/call-options.type";
+import type { OfflineOptions } from "#core/types/offline-options.type";
 import type { OutputOf } from "#core/types/output-of.type";
 import type { PeriodInput } from "#core/types/period-input.type";
 import type { QueryContext } from "#core/types/query-context.type";
+import type { ReplicaBounds } from "#core/types/replica-bounds.type";
 import type { Resolver } from "#core/types/resolver.type";
 
 /** The recorded options the pipeline reads, with the defaults `Action` and `Query` applied. */
@@ -78,11 +96,15 @@ interface Recorded {
   readonly preconditions?: readonly AnyClass<Precondition>[];
   readonly idempotency?: Idempotency;
   readonly rateLimit?: ActionRateLimit;
+  readonly offline?: OfflineOptions;
+  readonly accepts?: ActionAccepts;
 }
 
 /** What one call accumulates while it runs. */
 interface CallState {
   idempotencyKey: string | undefined;
+  /** Set when a device resends a sequence it already settled: only a replay may answer, and this is the next one. */
+  replayOnly: number | undefined;
   readonly afterCommit: (() => unknown)[];
   readonly audit: Record<string, Json>;
 }
@@ -154,7 +176,12 @@ export class ActionPipeline {
       ...(request.scope === undefined ? {} : { scope: request.scope }),
       area: options.area,
     });
-    const state: CallState = { idempotencyKey: undefined, afterCommit: [], audit: {} };
+    const state: CallState = {
+      idempotencyKey: undefined,
+      replayOnly: undefined,
+      afterCommit: [],
+      audit: {},
+    };
     const ctx = this.contextOf(descriptor, request, at, state);
     const call: Call = {
       type,
@@ -167,7 +194,7 @@ export class ActionPipeline {
       state,
       ctx,
     };
-    const work = () => this.audited(call, () => this.steps(call, input));
+    const work = () => this.audited(call, () => this.ordered(call, () => this.steps(call, input)));
     const storage = this.optional(ContextStorage);
     return (await (storage === undefined ? work() : storage.run(ctx, work))) as OutputOf<
       InstanceType<C>
@@ -188,10 +215,20 @@ export class ActionPipeline {
     const claim = kind === "action" ? await this.claim(call, input) : undefined;
     if (claim !== undefined && "replay" in claim) return claim.replay;
     try {
+      if (call.state.replayOnly !== undefined)
+        throw DeviceSequenceOutOfOrderError.create({ expected: call.state.replayOnly });
+      const amount = await this.capped(call, input);
       await this.limit(call);
       const output = await this.intercepted(call, input);
       if (claim !== undefined)
         await this.required(IdempotencyStore, "").complete(claim.held, output);
+      if (amount !== undefined && call.request.device !== undefined)
+        await this.required(OfflineCapStore, "").record(
+          call.request.device.deviceId,
+          descriptor.key,
+          call.at,
+          amount,
+        );
       await this.afterCommit(call);
       return output;
     } catch (error) {
@@ -210,6 +247,85 @@ export class ActionPipeline {
       result.error.issues.map((issue) => [issue.path.join(".") || "(root)", issue.message]),
     );
     throw InputInvalidError.create({}, { fieldErrors });
+  }
+
+  /**
+   * Runs `work` only when an action call replayed from a device's queue is that device's next one, then settles its
+   * sequence on an output or a refusal (a rejected call is settled too, so the next one may run). A later sequence is
+   * refused at once; an earlier, settled one may only replay its stored output (a resend after a lost response), which
+   * the idempotency step enforces. A reused Idempotency-Key does not settle (the first call with it does), and any
+   * other error leaves the sequence for a retry. Calls without device order run as they are.
+   */
+  private async ordered(call: Call, work: () => Promise<unknown>): Promise<unknown> {
+    const { device } = call.request;
+    if (call.kind !== "action" || device === undefined) return work();
+    const fieldErrors = {
+      ...(typeof device.deviceId === "string" && device.deviceId !== ""
+        ? {}
+        : { [OFFLINE_HEADERS.deviceId]: "a device id" }),
+      ...(Number.isSafeInteger(device.sequence) && device.sequence >= 1
+        ? {}
+        : { [OFFLINE_HEADERS.deviceSequence]: "a whole number from 1" }),
+    };
+    if (Object.keys(fieldErrors).length > 0) throw InputInvalidError.create({}, { fieldErrors });
+    const store = this.required(
+      DeviceSequenceStore,
+      "a call with device order needs one (the memory driver ships with @stackra/actions)",
+    );
+    const expected = ((await store.last(device.deviceId))?.sequence ?? 0) + 1;
+    if (device.sequence > expected) throw DeviceSequenceOutOfOrderError.create({ expected });
+    if (device.sequence < expected) {
+      call.state.replayOnly = expected;
+      return work();
+    }
+    const settle = () =>
+      store.settle(device.deviceId, device.sequence, call.at, call.descriptor.scope);
+    try {
+      const output = await work();
+      await settle();
+      return output;
+    } catch (error) {
+      if (isRefusal(error) && !isRefusal(error, IdempotencyKeyReusedError)) await settle();
+      throw error;
+    }
+  }
+
+  /**
+   * Refuses a device's call beyond its action's `offline.cap` within the window, counting the device's applied calls;
+   * resolves to the amount to record once the call is applied, or `undefined` when no cap applies.
+   */
+  private async capped(call: Call, input: unknown): Promise<number | undefined> {
+    const cap = call.options.offline?.cap;
+    const { device } = call.request;
+    if (call.kind !== "action" || cap === undefined || device === undefined) return undefined;
+    const { descriptor, at } = call;
+    const store = this.required(
+      OfflineCapStore,
+      `${descriptor.key} declares an offline cap; bind a store (the memory driver ships with @stackra/actions)`,
+    );
+    const since = new Date(at.getTime() - Duration.toMilliseconds(duration(cap.window)));
+    const used = await store.usage(device.deviceId, descriptor.key, since);
+    const amount = cap.amount === undefined ? 0 : this.amountOf(input, cap.amountField ?? "amount");
+    if (
+      (cap.count !== undefined && used.count >= cap.count) ||
+      (cap.amount !== undefined && used.amount + amount > cap.amount)
+    )
+      throw OfflineCapReachedError.create();
+    return amount;
+  }
+
+  /** The minor units in `input[field]`: a number, or a Money's `minor`. */
+  private amountOf(input: unknown, field: string): number {
+    const value = (input as Readonly<Record<string, unknown>> | null | undefined)?.[field];
+    const minor =
+      typeof value === "object" && value !== null
+        ? (value as { readonly minor?: unknown }).minor
+        : value;
+    if (typeof minor === "number" && Number.isFinite(minor) && minor >= 0) return minor;
+    throw InputInvalidError.create(
+      {},
+      { fieldErrors: { [field]: "an amount in minor units, or a Money" } },
+    );
   }
 
   /** Claims the call's Idempotency-Key, or finds the earlier result to replay; `undefined` when the call has no key. */
@@ -274,11 +390,13 @@ export class ActionPipeline {
   private intercepted(call: Call, input: unknown): Promise<unknown> {
     const instance = this.resolver.get(call.type) as unknown as Handler;
     const handle = () => instance.handle(input, call.ctx);
+    const accepts = call.kind === "action" ? call.options.accepts : undefined;
+    const run = accepts === undefined ? handle : () => this.reviewed(call, accepts, input, handle);
     const core =
       call.kind === "action"
         ? () => {
             const unit = this.optional(UnitOfWork);
-            return unit === undefined ? handle() : unit.transaction(handle);
+            return unit === undefined ? run() : unit.transaction(run);
           }
         : handle;
     return call.options.interceptors
@@ -295,6 +413,48 @@ export class ActionPipeline {
             return next();
           });
       }, core)();
+  }
+
+  /**
+   * Re-evaluates an offline-computed document on the server, runs `handle`, and records a review item with both answers
+   * when they differ or the document's rule version is older than the action accepts. It never refuses the call: the
+   * server's figure is what `handle` applies. Runs in the action's unit of work, so a review item exists only for an
+   * applied document.
+   */
+  private async reviewed(
+    call: Call,
+    accepts: ActionAccepts,
+    input: unknown,
+    handle: () => Promise<unknown>,
+  ): Promise<unknown> {
+    const { descriptor, at } = call;
+    const sink = this.required(
+      ReviewItemSink,
+      `${descriptor.key} accepts offline documents; bind a sink (the memory driver ships with @stackra/actions)`,
+    );
+    const evaluation = await this.resolver
+      .get(accepts.evaluator)
+      .evaluate(input as never, call.ctx as ActionContext);
+    const output = await handle();
+    if (evaluation === undefined) return output;
+    const older = isOlderRuleVersion(evaluation.ruleVersion, accepts.ruleVersion);
+    if (
+      older ||
+      (await fingerprintOf(evaluation.client)) !== (await fingerprintOf(evaluation.server))
+    )
+      await sink.record(
+        Object.freeze({
+          call: descriptor,
+          at,
+          reason: older ? ReviewReason.OlderRuleVersion : ReviewReason.Differs,
+          ruleVersion: evaluation.ruleVersion,
+          acceptedVersion: accepts.ruleVersion,
+          client: evaluation.client,
+          server: evaluation.server,
+          output,
+        }),
+      );
+    return output;
   }
 
   /** Runs the work queued with `ctx.afterCommit`, in order; a failure is logged and never fails the call. */
@@ -357,6 +517,22 @@ export class ActionPipeline {
         this.required(AccessControl, IAM).authorize(descriptor, record),
       period: (input: PeriodInput) => periodOf(input, at, timeZone),
       startOfDay: () => startOfZonedDay(at, timeZone),
+      replica: <R>(fill: (bounds: ReplicaBounds) => Promise<readonly R[]>, slice?: string) =>
+        new ReplicaFeed(
+          this.required(
+            ReplicaLog,
+            "a replica query needs one (the memory driver ships with @stackra/actions)",
+          ),
+        ).page<R>(
+          descriptor.type,
+          {
+            ...(request.replicaCursor === undefined ? {} : { cursor: request.replicaCursor }),
+            ...(descriptor.scope === undefined ? {} : { within: descriptor.scope }),
+            at,
+          },
+          fill,
+          slice,
+        ),
     };
     if (descriptor.kind === "query") return Object.freeze(query);
     const action: ActionContext = {

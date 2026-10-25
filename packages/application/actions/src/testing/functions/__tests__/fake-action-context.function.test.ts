@@ -43,11 +43,12 @@ describe(fakeActionContext, () => {
     expect(ctx.period({ range: "last_7_days" }).days).toBe(7);
   });
 
-  it("rejects run, signal and dispatch unless overridden", async () => {
+  it("rejects run, signal, dispatch and replica unless overridden", async () => {
     const ctx = fakeActionContext();
     await expect(ctx.run(RedeemWorkflow, {})).rejects.toThrow(/no run/);
     await expect(ctx.signal(RedeemWorkflow, {})).rejects.toThrow(/no signal/);
     await expect(ctx.dispatch(SendMessageAction, { text: "hi" })).rejects.toThrow(/no dispatch/);
+    await expect(ctx.replica(async () => [])).rejects.toThrow(/no replica/);
     const stubbed = fakeActionContext({ run: async <O>() => ({ redeemed: 5 }) as O });
     expect(await stubbed.run<{ redeemed: number }>(RedeemWorkflow, {})).toEqual({ redeemed: 5 });
   });
