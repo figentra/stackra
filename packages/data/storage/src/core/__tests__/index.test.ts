@@ -21,6 +21,7 @@ describe("@stackra/storage", () => {
       "StorageArea",
       "WebCryptoPayloadSealDriver",
       "registerStorageKeys",
+      "sliceArea",
     ]);
     expect("Storage" in storage).toBe(false);
   });

@@ -6,27 +6,28 @@ the offline payloads unreadable at rest without the session's key (ADR 0338). No
 sync engine stays deferred (ADR 0011).
 
 **Tier:** `tier:lib` (`packages/data/storage`), the one data package outside the data gate. Entries `.`, `./contracts`,
-`./browser`, `./native`, `./react` and `./testing`. Depends on `@stackra/contracts`, `@stackra/container` and
+`./browser`, `./desktop`, `./native`, `./react` and `./testing`. Depends on `@stackra/contracts`, `@stackra/container` and
 `@stackra/validation`; React is an optional peer of `./react`; `react-native-mmkv` and `expo-secure-store` of `./native`.
 
 ## What is here
 
-| Entry         | Symbol                       | Use                                                                           |
-| ------------- | ---------------------------- | ----------------------------------------------------------------------------- |
-| `.`           | `StorageArea`                | `prefs`, `session`, `cache`, `outbox`, `secrets`, `files`; `storage[area]`    |
-| `.`           | `OfflineStore`               | where the query cache and offline queue live (`DesktopConfig.offlineStore`)   |
-| `.`           | `MemoryStorageDriver`        | the `memory` candidate: tests, server renders, the testing module             |
-| `.`           | `WebCryptoPayloadSealDriver` | the `web_crypto` seal: AES-GCM, the key in `secrets`                          |
-| `.`           | `MemoryPayloadSealDriver`    | the `memory` seal: binds a payload to the key without encrypting              |
-| `.`           | `registerStorageKeys`        | how generated code links a stored class to its derived key and area           |
-| `.`           | `StorageKey`                 | type of one registration                                                      |
-| `./contracts` | `Storage`                    | the port, injected by type (exported from here only)                          |
-| `./contracts` | `StorageAreaHandle`          | one area: `get`, `set`, `has`, `delete`, `keys`, `clear`, `read`, `write`     |
-| `./contracts` | `PayloadSeal`                | seals and opens the `outbox` and `cache` payloads with the session's key      |
-| `./browser`   | `WebStorageDriver`           | web and PWA: `prefs`/`cache` in `localStorage`, `session` in `sessionStorage` |
-| `./native`    | `NativeStorageDriver`        | mobile: five areas in MMKV (`stackra.<area>`), `secrets` in keychain/keystore |
-| `./react`     | `usePrefs`                   | the `prefs` area of the nearest container                                     |
-| `./testing`   | `fakeStorage`                | a fresh in-memory `Storage` for one test                                      |
+| Entry         | Symbol                         | Use                                                                           |
+| ------------- | ------------------------------ | ----------------------------------------------------------------------------- |
+| `.`           | `StorageArea`                  | `prefs`, `session`, `cache`, `outbox`, `secrets`, `files`; `storage[area]`    |
+| `.`           | `OfflineStore`                 | where the query cache and offline queue live (`DesktopConfig.offlineStore`)   |
+| `.`           | `MemoryStorageDriver`          | the `memory` candidate: tests, server renders, the testing module             |
+| `.`           | `WebCryptoPayloadSealDriver`   | the `web_crypto` seal: AES-GCM, the key in `secrets`                          |
+| `.`           | `MemoryPayloadSealDriver`      | the `memory` seal: binds a payload to the key without encrypting              |
+| `.`           | `registerStorageKeys`          | how generated code links a stored class to its derived key and area           |
+| `.`           | `StorageKey`                   | type of one registration                                                      |
+| `./contracts` | `Storage`                      | the port, injected by type (exported from here only)                          |
+| `./contracts` | `StorageAreaHandle`            | one area: `get`, `set`, `has`, `delete`, `keys`, `clear`, `read`, `write`     |
+| `./contracts` | `PayloadSeal`                  | seals and opens the `outbox` and `cache` payloads with the session's key      |
+| `./browser`   | `WebStorageDriver`             | web and PWA: `prefs`/`cache` in `localStorage`, `session` in `sessionStorage` |
+| `./desktop`   | `SafeStoragePayloadSealDriver` | Electron main process: payloads sealed by the OS keychain (`safeStorage`)     |
+| `./native`    | `NativeStorageDriver`          | mobile: five areas in MMKV (`stackra.<area>`), `secrets` in keychain/keystore |
+| `./react`     | `usePrefs`                     | the `prefs` area of the nearest container                                     |
+| `./testing`   | `fakeStorage`                  | a fresh in-memory `Storage` for one test                                      |
 
 ## Using it
 
@@ -68,11 +69,27 @@ await seal.open(sealed); // undefined: nothing sealed before can be opened again
   text is `v1.<nonce>.<ciphertext>`.
 - `MemoryPayloadSealDriver` (`memory`) encrypts nothing (`isEncrypting: false`) but binds each payload to the key id,
   so a wipe makes it unreadable exactly as a real key does: tests, and a native target until its driver lands.
+- `SafeStoragePayloadSealDriver` (`safe_storage`, `./desktop`, Electron main process) seals with the operating
+  system's keychain (`safeStorage`) and binds each payload to a session id kept in `secrets`, so a wipe still makes it
+  unreadable. It refuses to seal where the platform has no keychain encryption. The sealed text is `ss1.<base64>`.
 - `open` never throws: another key, a wiped key, tampered or foreign text read as `undefined`.
 - On the web the `secrets` area lives in memory, so the key, and with it what was sealed, lasts until the page
   reloads.
 
 `@stackra/query`'s `StorageQueryPersisterDriver` is the one caller; nothing else needs the seal.
+
+## Replica slices
+
+A replica scoped by a tenant dimension (`replica: { scope: "legalEntityId" }`, ADR 0338 decision 3) keeps its rows in a
+slice of the area, so a device holds only its own legal entity's records:
+
+```ts
+const sales = sliceArea(storage.cache, "legalEntityId", session.legalEntityId);
+sales.set("sales.sale.sal_01", row);
+```
+
+Opening a slice removes the area's rows of every other value of that dimension, so a device moved to another legal
+entity keeps nothing of the one it left. The dimension is the module's declaration and the value the session's.
 
 ## Testing
 

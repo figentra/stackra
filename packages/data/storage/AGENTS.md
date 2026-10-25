@@ -12,6 +12,7 @@ Entries `.`, `./contracts`, `./browser`, `./native`, `./react`, `./testing`.
 | An isomorphic driver             | `src/core/drivers/<name>-storage.driver.ts`, extends `AreaStorageDriver` |
 | A browser-only driver            | `src/browser/drivers/`                                                   |
 | A device (React Native) driver   | `src/native/drivers/`                                                    |
+| An Electron main-process driver  | `src/desktop/drivers/` (`./desktop`; `electron` is an optional peer)     |
 | React code                       | `src/react/<name>/`                                                      |
 | A test helper                    | `src/testing/functions/`                                                 |
 | A test                           | `__tests__/<name>.<kind>.test.ts(x)` beside it                           |

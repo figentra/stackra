@@ -34,6 +34,11 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
+    "#desktop/*": [
+      "./src/desktop/*",
+      "./src/desktop/*.ts",
+      "./src/desktop/*/index.ts"
+    ],
     "#native/*": [
       "./src/native/*",
       "./src/native/*.ts",
@@ -66,6 +71,11 @@
       "@stackra/source": "./src/browser/index.ts",
       "types": "./dist/browser.d.mts",
       "default": "./dist/browser.mjs"
+    },
+    "./desktop": {
+      "@stackra/source": "./src/desktop/index.ts",
+      "types": "./dist/desktop.d.mts",
+      "default": "./dist/desktop.mjs"
     },
     "./native": {
       "@stackra/source": "./src/native/index.ts",
@@ -108,9 +118,11 @@
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
     "@types/react": "catalog:frontend",
     "@types/react-dom": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",
+    "electron": "catalog:desktop",
     "expo-secure-store": "catalog:mobile",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
@@ -123,11 +135,15 @@
     "zod": "catalog:"
   },
   "peerDependencies": {
+    "electron": "catalog:desktop",
     "expo-secure-store": "catalog:mobile",
     "react": "catalog:frontend",
     "react-native-mmkv": "catalog:mobile"
   },
   "peerDependenciesMeta": {
+    "electron": {
+      "optional": true
+    },
     "expo-secure-store": {
       "optional": true
     },

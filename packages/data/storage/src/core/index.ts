@@ -13,4 +13,6 @@ export { WebCryptoPayloadSealDriver } from "#core/drivers/web-crypto-payload-sea
 export { OfflineStore } from "#core/enums/offline-store.enum";
 export { StorageArea } from "#core/enums/storage-area.enum";
 export { registerStorageKeys } from "#core/functions/register-storage-keys.function";
+export { sliceArea } from "#core/functions/slice-area.function";
+export type { ReplicaSlice } from "#core/types/replica-slice.type";
 export type { StorageKey } from "#core/types/storage-key.type";
