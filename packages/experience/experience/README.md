@@ -19,6 +19,7 @@ Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/errors`, `@stac
 | `.`           | `LocalizedText`                                                     | a prop written once per locale (`{ en: "…", ar: "…" }`)                      |
 | `.`           | `BlockProps`                                                        | `Component<BlockProps<typeof XBlock>>`: the props as the visitor sees them   |
 | `.`           | `registerBlocks`                                                    | the generated wiring's call linking each block to its key and component      |
+| `.`           | `registeredBlocks`                                                  | a read-only copy of the registered block classes by key, for the builder     |
 | `.`           | `resolveDocument`, `UnknownBlockError`, `InvalidDocumentError`      | the document validator every renderer runs first, and its refusals           |
 | `.`           | `BlockClass`, `BlockOptions`, `BlockEntry`, `ResolvedNode`          | types                                                                        |
 | `./contracts` | `Renderer`                                                          | the port; drivers `react` and `native`                                       |

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `LocalizedText`, the type of a block prop a tenant writes once per locale (`title!: LocalizedText`): one
- *          string per BCP 47 locale tag, stored in the document as that map.
+ * Purpose: `LocalizedText`, the type of a block prop a scope's editor writes once per locale
+ *          (`title!: LocalizedText`): one string per BCP 47 locale tag, stored in the document as that map.
  * Boundary: a type only. In a block's props a string-keyed map of strings is read as `LocalizedText`: the renderer
  *           hands the component the visitor's string (the exact tag, else its language, else the first locale
  *           stored), and `BlockProps` types the prop `string`. Gen compiles it as a record of strings.

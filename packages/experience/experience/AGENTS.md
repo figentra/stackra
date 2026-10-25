@@ -24,6 +24,7 @@ The `Block` kind, `LocalizedText`, the L2 document format and validator, the `Re
   constant (R-56).
 - `resolveDocument` checks the whole tree before a driver draws anything; drivers never draw an unchecked node.
 - `./contracts` stays a leaf: the builder and collaboration read `DocumentNode` from it without a renderer.
+- `BLOCK_ENTRIES` stays internal; the only way out is `registeredBlocks()`, a copy without the components.
 - The web and native drawings are separate code on `@stackra/ui` and `@stackra/ui/native` (ADR 0112 X9); keep them in
   step.
 - `BlockProps` in `.` and in `./native` are two declarations: the native one adds a required `onEvent` (registry A3).

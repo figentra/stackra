@@ -4,7 +4,7 @@
  *          block's schema refuses (`invalid_document`).
  * Boundary: raised by `resolveDocument` before anything is drawn; kind `Validation` (HTTP 400), not retryable. It names
  *           where the node sits and, once known, its block; the schema's issues travel as the `cause`, never in the
- *           envelope, so a tenant's text is not echoed back.
+ *           envelope, so text a scope's editor wrote is not echoed back.
  * Runtime: isomorphic
  * Governing contract: ADR 0110 (decision 6: bad props are refused); ADR 0140 (envelope and kinds); final review R-02
  *                     (typed `create`).

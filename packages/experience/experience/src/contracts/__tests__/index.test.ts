@@ -19,6 +19,7 @@ describe("@stackra/experience/contracts", () => {
   });
 
   it("types the document format", () => {
+    expectTypeOf<DocumentNode["id"]>().toEqualTypeOf<string | undefined>();
     expectTypeOf<DocumentNode["block"]>().toEqualTypeOf<string>();
     expectTypeOf<DocumentNode["input"]>().toEqualTypeOf<Json | undefined>();
     expectTypeOf<BlockEvent["verb"]>().toEqualTypeOf<"navigate" | "action">();

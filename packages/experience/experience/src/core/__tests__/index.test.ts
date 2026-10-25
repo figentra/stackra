@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the template imports `Block`, `BlockCategory` and the
- *          `BlockProps` and `LocalizedText` types; the wiring adds `registerBlocks`, and the validator and its two
- *          refusals complete it; nothing else is exported.
+ *          `BlockProps` and `LocalizedText` types; the wiring adds `registerBlocks`, the builder `registeredBlocks`,
+ *          and the validator and its two refusals complete it; nothing else is exported.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
@@ -20,6 +20,7 @@ describe("@stackra/experience", () => {
       "InvalidDocumentError",
       "UnknownBlockError",
       "registerBlocks",
+      "registeredBlocks",
       "resolveDocument",
     ]);
   });

@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: `DocumentNode`, one node of an L2 document: the key of a registered block, the props a tenant or an agent
- *          gave it, the input of the query the block accepts, and its child nodes. A document is one node or a list of
- *          nodes; the experience service stores it, and the builder and collaboration edit it.
+ * Purpose: `DocumentNode`, one node of an L2 document: an optional stable id, the key of a registered block, the
+ *          props an author or an agent gave it, the input of the query the block accepts, and its child nodes. A
+ *          document is one node or a list of nodes; the experience service stores it, and the builder and
+ *          collaboration edit it.
  * Boundary: a type only, in the leaf entry, so the builder, collaboration and a server-side validator read the format
  *           without loading a renderer. Data that only references registered code: no markup, CSS, script or
  *           expression, ever (ADR 0110 decision 4, ADR 0154). The renderer checks every node against the registered
- *           blocks before it draws one.
+ *           blocks before it draws one. The id is the builder's: the renderer ignores it (it keys a node by path).
  * Runtime: isomorphic
  * Governing contract: ADR 0110 (decisions 1, 2, 4 and 6); ADR 0270 (decision 1); ADR 0114 (decision 2); ADR 0154.
  */
@@ -23,6 +24,12 @@ import type { Json } from "@stackra/contracts";
  * };
  */
 export interface DocumentNode {
+  /**
+   * The node's id, unique in the document and stable across edits, which the builder's selection, undo and
+   * co-editing name a block by; absent on a node no editor has saved.
+   */
+  readonly id?: string;
+
   /** The registered block's key (`web.hero_section`); a key renamed with `@Renamed` still resolves. */
   readonly block: string;
 

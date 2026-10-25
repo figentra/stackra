@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `DocumentRenderer`, the web component a page places to draw an L2 document (a tenant's page, a product
+ * Purpose: `DocumentRenderer`, the web component a page places to draw an L2 document (a scope's page, a product
  *          description): `<DocumentRenderer document={this.props.data.page.root} />`.
  * Boundary: composition only. The `Renderer` comes from the container (the generated wiring binds `react`), the locale
  *           from `@stackra/i18n`; both are read on every render, so a locale switch redraws in the new language. A

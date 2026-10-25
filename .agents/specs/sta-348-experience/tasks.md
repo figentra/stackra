@@ -12,3 +12,4 @@
 - [x] T008 [US1] Tests for every public symbol and each barrel in `src/**/__tests__/` — covers: SC-002 — route: tests — deps: T007
 - [x] T009 [US1] Changeset `.changeset/experience-package.md`; `oxfmt` and `oxlint` clean; the validator reports nothing for the package — covers: SC-001, SC-003 — route: package — deps: T008
 - [ ] T010 [US1] Run the package's tests, typecheck and build in the separate testing workflow after the integrator's install — covers: SC-002, SC-003 — route: tests — deps: T009
+- [x] T011 [US1] R3 reconciliation: `registeredBlocks()` in `packages/experience/experience/src/core/functions/registered-blocks.function.ts` and the optional `DocumentNode.id` in `src/contracts/types/document-node.type.ts` — covers: FR-003, FR-004 — route: package — deps: T009
