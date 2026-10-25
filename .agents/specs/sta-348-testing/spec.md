@@ -27,13 +27,17 @@ consumer template's imports from `@stackra/testing`.
 - **Packages touched**: new `packages/developer/testing` (`@stackra/testing`)
 - **Public contract change**: new package; the `.` entry exports the vitest runner objects and `Fake`,
   `createMatcher`, `factory`, `freezeClock`, `freezeIds`, with the types `Matchers`, `FakeConstructor`,
-  `FakeRecorder`, `FactoryDefaults`, `FixtureBuilder`
+  `FakeRecorder`, `FactoryDefaults`, `FixtureBuilder`; reconciliation R4 adds `./react` (`render`, `renderHook`,
+  `userEvent`, `screen`, `within`, `act`) and `./native` (`render`, `renderHook`, `userEvent`, `screen`, `act`, `axe`,
+  `toHaveNoViolations`)
 - **Cross-service events**: none
 - **Tenancy and data**: none
 - **Security and privacy**: none; test-only code, no personal data
 - **Secrets**: none
 - **ADR needed**: no; implements ADR 0269 as accepted
-- **New dependencies**: none new; `vitest` (already catalogued in `quality`) becomes a peer dependency
+- **New dependencies**: none new; `vitest` (already catalogued in `quality`) becomes a peer dependency; R4 adds the
+  catalogued `@testing-library/react`, `@testing-library/dom`, `@testing-library/user-event`,
+  `@testing-library/react-native`, `react` and `react-native` as optional peers
 - **Deploy modes**: none; a test kit, never deployed
 - **Licence tier**: MIT, published to npmjs with provenance (ADR 0177)
 - **Docs to update**: `packages/developer/testing/README.md`, `packages/developer/testing/AGENTS.md`; ADR 0022, 0127, 0177, 0269, 0294, 0305 are cited and amended only by a note if a decision here changes
@@ -83,6 +87,13 @@ augmentation, and `x.fixture.ts` with `factory<T>()`, exactly as the template do
 - **FR-007**: `factory<T>(defaults)` builds plain test data: values or index generators per field, overrides that
   skip the overridden generator, `build()` at index 0, `buildMany(n)` at `0..n-1`, and a `RangeError` for a bad count.
 - **FR-008**: `.` has no workspace dependency and no domain type (ADR 0269 decision 2).
+- **FR-009**: `./react` and `./native` are thin, provider-agnostic wrappers over Testing Library with no workspace
+  import: `render(ui, { providers, wrapper })` and `renderHook` compose the providers (first outermost) and the
+  wrapper into one wrapper, `userEvent` runs in one `userEvent.setup()` session per render, every render is cleaned up
+  when its test finishes, and `screen`, `within` (web) and `act` are the libraries' own. The native renders are
+  asynchronous, as React Native Testing Library 14's are.
+- **FR-010**: `./native` ships `axe(view)` and the `toHaveNoViolations` matcher: a pressable without a name, an image
+  without a label and a heading without a name are violations; hidden subtrees and decorative images are skipped.
 
 ## Template contract
 
@@ -104,6 +115,22 @@ with `.build(overrides)`, `freezeClock(isoString)` in a test or hook, and `freez
   for the file and the returned function ends it.
 - **EC-02**: a fake is awaited, serialised or printed: `then`, `toJSON` and other probed names are never spied.
 - **EC-03**: an overridden fixture field whose default is a generator: the generator is not called.
+- **EC-04**: a `userEvent` call before any render, or outside a test: it runs on a fresh session of its own, as
+  user-event's direct calls do.
+
+## Reconciliation 2026-10-25 (R4)
+
+- `./react` and `./native` ship as thin wrappers (FR-009, FR-010). The template's house options on `render` and
+  `renderHook` (`locale`, `site`, `flags`, `analytics`, `session`, `route`, ...) and the members it reads back
+  (`router`, `i18n`, `navigation`, `direction`) need workspace packages, so they are not here: the packages that own
+  them compose their providers through `providers`/`wrapper` (STA-344 moves those calls).
+- The template calls the native `render`, `renderHook` and `renderRoute` without `await`; React Native Testing
+  Library 14 renders asynchronously, so the template's native tests add `await` (STA-344).
+- The route helpers `renderRoute`, `renderLayout`, `runRouteLoader`, `runRouteSubmit` and `routeMeta` live in
+  `@stackra/navigation/testing`; the template's imports of them from `@stackra/testing/react` move there (STA-344).
+  The native `renderRoute` is not built (see the navigation spec).
+- React Native Testing Library 14 declares `jest` and `test-renderer` as peers; a consumer installs `test-renderer`,
+  and the `jest` peer stays unmet under vitest (only the `pure` entry is imported, so jest is never loaded).
 
 ## Status history
 

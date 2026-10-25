@@ -42,6 +42,8 @@ constructor returns a proxy that creates a named `vi.fn()` spy for a missing low
 - **P-005**: `createMatcher("toY", fn)` registers a matcher that `expect(x).toY(...)` calls, sync or async and with arguments, returns the name, and an augmentation of `Matchers<R>` types the call — Validates: FR-006
 - **P-006**: `factory<T>(defaults).build()` builds index 0 and `buildMany(n)` builds `0..n-1`, an override replaces its field without calling that field's generator, and a bad count throws a `RangeError` — Validates: FR-007
 - **P-007**: `package.json` lists no `workspace:` runtime or peer dependency, and `.` exports no domain type — Validates: FR-008
+- **P-008**: for any providers `[P1..Pn]` and wrapper `W`, `render` and `renderHook` mount the subject as `P1(...Pn(W(subject)))`; after the test that rendered, the document is empty and `userEvent` has no session; no file under `src/react` or `src/native` imports `@stackra/*` — Validates: FR-009
+- **P-009**: `axe` reports exactly the pressables without a label or text, the images without a label and the headings without a label or text, outside hidden subtrees, in tree order; `toHaveNoViolations` passes exactly when that list is empty — Validates: FR-010
 
 ## Decisions
 

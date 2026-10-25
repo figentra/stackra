@@ -23,3 +23,9 @@
 ## Phase 4: Release
 
 - [x] T010 Changeset `.changeset/testing-package.md` — covers: SC-001 — route: spec-task — deps: T008
+
+## Phase 5: Reconciliation R4 (2026-10-25)
+
+- [x] T011 [US1] `./react`: `render`, `renderHook`, `userEvent` and the re-exported `screen`, `within`, `act` in `packages/developer/testing/src/react/`; exports, optional peers and the jsdom test switch; tests beside each — covers: FR-009, P-008, EC-04 — route: spec-task — deps: T002
+- [x] T012 [US1] `./native`: `render`, `renderHook`, `userEvent`, `screen`, `act`, `axe` and `toHaveNoViolations` in `packages/developer/testing/src/native/`; tests beside each — covers: FR-009, FR-010, P-008, P-009 — route: spec-task — deps: T005
+- [x] T013 Boundary test, README, AGENTS and changeset for the two entries — covers: FR-008, FR-009, SC-001 — route: spec-task — deps: T011, T012

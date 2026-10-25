@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: test config of @stackra/testing: the base vitest preset plus the shared coverage gate. `test` runs the
- *          unit tier (`<subject>.test.ts` in `__tests__/`); the infixed tiers (`.int`, `.contract`, `.e2e`, `.load`)
- *          run under their own tasks, so they are excluded here.
+ *          unit tier (`<subject>.test.ts` in `__tests__/`); the `./react` tests switch themselves to jsdom with a
+ *          `@vitest-environment` comment, as @stackra/ui's do, and the rest stay on node. The infixed tiers (`.int`,
+ *          `.contract`, `.e2e`, `.load`) run under their own tasks, so they are excluded here.
  * Boundary: test configuration only; a tool config gen will write into `.stackra/` (ADR 0295 decision 5).
  * Runtime: node
  * Governing contract: ADR 0182 (test tiers and coverage); ADR 0022 (test placement); ADR 0269 (decision 4).
