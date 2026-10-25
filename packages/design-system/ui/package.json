@@ -117,7 +117,10 @@
     "@stackra/tokens": "workspace:*"
   },
   "devDependencies": {
+    "@expo/ui": "catalog:mobile",
     "@heroui/react": "catalog:frontend",
+    "@internationalized/date": "catalog:frontend",
+    "@internationalized/number": "catalog:mobile",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
@@ -148,7 +151,10 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "@expo/ui": "^57.0.25",
     "@heroui/react": "^3.2.6",
+    "@internationalized/date": "^3.12.4",
+    "@internationalized/number": "^3.6.9",
     "expo-glass-effect": "^57.0.4",
     "heroui-native": "^1.0.10",
     "lucide-react": "^1.54.0",
@@ -163,7 +169,13 @@
     "uniwind": "^1.12.1"
   },
   "peerDependenciesMeta": {
+    "@expo/ui": {
+      "optional": true
+    },
     "@heroui/react": {
+      "optional": true
+    },
+    "@internationalized/number": {
       "optional": true
     },
     "expo-glass-effect": {

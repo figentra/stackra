@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@bottom-tabs/react-navigation": "catalog:mobile",
+    "@expo/ui": "catalog:mobile",
     "@gorhom/bottom-sheet": "catalog:mobile",
     "@internationalized/date": "catalog:mobile",
     "@internationalized/number": "catalog:mobile",

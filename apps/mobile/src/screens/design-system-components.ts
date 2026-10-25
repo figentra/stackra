@@ -16,8 +16,14 @@ import type { ReactElement } from "react";
 import { ComponentCategory } from "../enums/component-category.enum";
 import { ComponentTier } from "../enums/component-tier.enum";
 import type { PageLink } from "../types/page-link.type";
+import { AccordionScreen } from "./free/accordion-screen";
+import { ActionMenuScreen } from "./free/action-menu-screen";
+import { AlertScreen } from "./free/alert-screen";
+import { AlertDialogScreen } from "./free/alert-dialog-screen";
 import { AvatarScreen } from "./free/avatar-screen";
 import { BadgeScreen as FreeBadgeScreen } from "./free/badge-screen";
+import { BreadcrumbsScreen } from "./free/breadcrumbs-screen";
+import { BulkActionBarScreen } from "./free/bulk-action-bar-screen";
 import { ButtonScreen } from "./free/button-screen";
 import { CardScreen } from "./free/card-screen";
 import { CheckboxScreen } from "./free/checkbox-screen";
@@ -25,6 +31,14 @@ import { CheckboxGroupScreen } from "./free/checkbox-group-screen";
 import { ChipScreen } from "./free/chip-screen";
 import { CloseButtonScreen } from "./free/close-button-screen";
 import { ComboBoxScreen as FreeComboBoxScreen } from "./free/combo-box-screen";
+import { DataTableScreen } from "./free/data-table-screen";
+import { DateFieldScreen as FreeDateFieldScreen } from "./free/date-field-screen";
+import { DatePickerScreen as FreeDatePickerScreen } from "./free/date-picker-screen";
+import { DrawerScreen } from "./free/drawer-screen";
+import { EmptyStateScreen as FreeEmptyStateScreen } from "./free/empty-state-screen";
+import { EntityPickerScreen } from "./free/entity-picker-screen";
+import { ErrorStateScreen } from "./free/error-state-screen";
+import { FilterBarScreen } from "./free/filter-bar-screen";
 import { FormScreen } from "./free/form-screen";
 import { FormFieldScreen } from "./free/form-field-screen";
 import { FormSectionScreen } from "./free/form-section-screen";
@@ -32,8 +46,20 @@ import { IconScreen } from "./free/icon-screen";
 import { IconButtonScreen } from "./free/icon-button-screen";
 import { InputGroupScreen } from "./free/input-group-screen";
 import { LinkScreen } from "./free/link-screen";
+import { ListScreen } from "./free/list-screen";
+import { MenuScreen } from "./free/menu-screen";
+import { ModalScreen } from "./free/modal-screen";
+import { NavigationListScreen } from "./free/navigation-list-screen";
+import { NumberFieldScreen as FreeNumberFieldScreen } from "./free/number-field-screen";
+import { PageHeaderScreen } from "./free/page-header-screen";
+import { PageSkeletonScreen } from "./free/page-skeleton-screen";
+import { PopoverScreen } from "./free/popover-screen";
+import { ProgressBarScreen as FreeProgressBarScreen } from "./free/progress-bar-screen";
+import { ProgressCircleScreen as FreeProgressCircleScreen } from "./free/progress-circle-screen";
+import { PropertyListScreen } from "./free/property-list-screen";
 import { RadioGroupScreen } from "./free/radio-group-screen";
 import { SearchFieldScreen } from "./free/search-field-screen";
+import { SectionScreen } from "./free/section-screen";
 import { SelectScreen } from "./free/select-screen";
 import { SeparatorScreen } from "./free/separator-screen";
 import { SkeletonScreen } from "./free/skeleton-screen";
@@ -41,10 +67,15 @@ import { SpinnerScreen } from "./free/spinner-screen";
 import { StatusBadgeScreen } from "./free/status-badge-screen";
 import { SurfaceScreen } from "./free/surface-screen";
 import { SwitchScreen } from "./free/switch-screen";
+import { TableScreen as FreeTableScreen } from "./free/table-screen";
+import { TabsScreen } from "./free/tabs-screen";
 import { TagGroupScreen } from "./free/tag-group-screen";
 import { TextAreaScreen } from "./free/text-area-screen";
 import { TextFieldScreen } from "./free/text-field-screen";
+import { ToastScreen } from "./free/toast-screen";
+import { TooltipScreen } from "./free/tooltip-screen";
 import { TypographyScreen } from "./free/typography-screen";
+import { UseConfirmationScreen } from "./free/use-confirmation-screen";
 import { CalendarScreen } from "./pro/calendar-screen";
 import { DatePickerScreen } from "./pro/date-picker-screen";
 import { NumberFieldScreen } from "./pro/number-field-screen";
@@ -282,6 +313,224 @@ const COMPONENTS: readonly DesignSystemComponent[] = [
     title: "Surface",
     route: "FreeSurface",
     screen: SurfaceScreen,
+  },
+
+  {
+    category: "Inputs and forms",
+    tier: "Free",
+    title: "NumberField",
+    route: "FreeNumberField",
+    screen: FreeNumberFieldScreen,
+  },
+  {
+    category: "Selection",
+    tier: "Free",
+    title: "EntityPicker",
+    route: "FreeEntityPicker",
+    screen: EntityPickerScreen,
+  },
+  {
+    category: "Date and time",
+    tier: "Free",
+    title: "DateField",
+    route: "FreeDateField",
+    screen: FreeDateFieldScreen,
+  },
+  {
+    category: "Date and time",
+    tier: "Free",
+    title: "DatePicker",
+    route: "FreeDatePicker",
+    screen: FreeDatePickerScreen,
+  },
+  {
+    category: "Data display",
+    tier: "Free",
+    title: "Accordion",
+    route: "FreeAccordion",
+    screen: AccordionScreen,
+  },
+  {
+    category: "Data display",
+    tier: "Free",
+    title: "BulkActionBar",
+    route: "FreeBulkActionBar",
+    screen: BulkActionBarScreen,
+  },
+  {
+    category: "Data display",
+    tier: "Free",
+    title: "DataTable",
+    route: "FreeDataTable",
+    screen: DataTableScreen,
+  },
+  {
+    category: "Data display",
+    tier: "Free",
+    title: "FilterBar",
+    route: "FreeFilterBar",
+    screen: FilterBarScreen,
+  },
+  {
+    category: "Data display",
+    tier: "Free",
+    title: "List",
+    route: "FreeList",
+    screen: ListScreen,
+  },
+  {
+    category: "Data display",
+    tier: "Free",
+    title: "PropertyList",
+    route: "FreePropertyList",
+    screen: PropertyListScreen,
+  },
+  {
+    category: "Data display",
+    tier: "Free",
+    title: "Table",
+    route: "FreeTable",
+    screen: FreeTableScreen,
+  },
+  {
+    category: "Feedback and status",
+    tier: "Free",
+    title: "Alert",
+    route: "FreeAlert",
+    screen: AlertScreen,
+  },
+  {
+    category: "Feedback and status",
+    tier: "Free",
+    title: "EmptyState",
+    route: "FreeEmptyState",
+    screen: FreeEmptyStateScreen,
+  },
+  {
+    category: "Feedback and status",
+    tier: "Free",
+    title: "ErrorState",
+    route: "FreeErrorState",
+    screen: ErrorStateScreen,
+  },
+  {
+    category: "Feedback and status",
+    tier: "Free",
+    title: "PageSkeleton",
+    route: "FreePageSkeleton",
+    screen: PageSkeletonScreen,
+  },
+  {
+    category: "Feedback and status",
+    tier: "Free",
+    title: "ProgressBar",
+    route: "FreeProgressBar",
+    screen: FreeProgressBarScreen,
+  },
+  {
+    category: "Feedback and status",
+    tier: "Free",
+    title: "ProgressCircle",
+    route: "FreeProgressCircle",
+    screen: FreeProgressCircleScreen,
+  },
+  {
+    category: "Feedback and status",
+    tier: "Free",
+    title: "Toast",
+    route: "FreeToast",
+    screen: ToastScreen,
+  },
+  {
+    category: "Navigation",
+    tier: "Free",
+    title: "Breadcrumbs",
+    route: "FreeBreadcrumbs",
+    screen: BreadcrumbsScreen,
+  },
+  {
+    category: "Navigation",
+    tier: "Free",
+    title: "NavigationList",
+    route: "FreeNavigationList",
+    screen: NavigationListScreen,
+  },
+  {
+    category: "Navigation",
+    tier: "Free",
+    title: "Tabs",
+    route: "FreeTabs",
+    screen: TabsScreen,
+  },
+  {
+    category: "Overlays",
+    tier: "Free",
+    title: "ActionMenu",
+    route: "FreeActionMenu",
+    screen: ActionMenuScreen,
+  },
+  {
+    category: "Overlays",
+    tier: "Free",
+    title: "AlertDialog",
+    route: "FreeAlertDialog",
+    screen: AlertDialogScreen,
+  },
+  {
+    category: "Overlays",
+    tier: "Free",
+    title: "Drawer",
+    route: "FreeDrawer",
+    screen: DrawerScreen,
+  },
+  {
+    category: "Overlays",
+    tier: "Free",
+    title: "Menu",
+    route: "FreeMenu",
+    screen: MenuScreen,
+  },
+  {
+    category: "Overlays",
+    tier: "Free",
+    title: "Modal",
+    route: "FreeModal",
+    screen: ModalScreen,
+  },
+  {
+    category: "Overlays",
+    tier: "Free",
+    title: "Popover",
+    route: "FreePopover",
+    screen: PopoverScreen,
+  },
+  {
+    category: "Overlays",
+    tier: "Free",
+    title: "Tooltip",
+    route: "FreeTooltip",
+    screen: TooltipScreen,
+  },
+  {
+    category: "Overlays",
+    tier: "Free",
+    title: "useConfirmation",
+    route: "FreeUseConfirmation",
+    screen: UseConfirmationScreen,
+  },
+  {
+    category: "Layout",
+    tier: "Free",
+    title: "PageHeader",
+    route: "FreePageHeader",
+    screen: PageHeaderScreen,
+  },
+  {
+    category: "Layout",
+    tier: "Free",
+    title: "Section",
+    route: "FreeSection",
+    screen: SectionScreen,
   },
 
   // Pro

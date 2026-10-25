@@ -18,7 +18,7 @@
  */
 import { Menu as HeroMenu, Separator, SubMenu, useIsRTL, type MenuRootProps } from "heroui-native";
 import { Fragment, use, useState, type ReactNode } from "react";
-import { Linking, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 import type { MenuContractProps } from "#contracts/types/menu-contract-props.type";
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
@@ -26,6 +26,7 @@ import { mergeSectionSelection } from "#core/functions/merge-section-selection.f
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { physicalSideOf } from "#core/functions/physical-side-of.function";
 import { Icon } from "#native/icon/icon";
+import { followHref } from "#native/router-provider/follow-href.function";
 import { RouterContext } from "#native/router-provider/router-context";
 
 /**
@@ -34,9 +35,6 @@ import { RouterContext } from "#native/router-provider/router-context";
  */
 export type MenuProps = MenuContractProps &
   Omit<MenuRootProps, keyof MenuContractProps | "children" | "isDefaultOpen">;
-
-/** An absolute URL: it starts with a scheme (`https:`, `mailto:`, `tel:`, the app's own). */
-const HAS_SCHEME = /^[a-z][a-z\d+.-]*:/i;
 
 // shortcut: English until @stackra/i18n ships; then the key `ui::menu.link-could-not-open`.
 const STRINGS = { couldNotOpen: "Menu could not open the link of an action" } as const;
@@ -108,12 +106,7 @@ export function Menu({
   const isSelectable = selectionMode !== "none";
   const choose = (item: MenuLeafItem) => {
     item.onPress?.();
-    const { href } = item;
-    if (href) {
-      if (navigate && !HAS_SCHEME.test(href)) navigate(href);
-      // The URL stays out of the warning: it may hold a token.
-      else Linking.openURL(href).catch(() => console.warn(STRINGS.couldNotOpen));
-    }
+    if (item.href) followHref(item.href, navigate, STRINGS.couldNotOpen);
     onAction?.(item.id);
   };
   const body = sections.map((section, index) => {

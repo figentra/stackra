@@ -135,6 +135,9 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
         <HeroTable.ScrollContainer {...(isStickyHeader ? { style: { maxHeight } } : {})}>
           <HeroTable.Content
             aria-label={label}
+            // React Aria's own default, which HeroUI turns to "tab": the arrow keys walk the cells and land on a
+            // cell's link or button, so a row menu is reachable from the keyboard (WCAG 2.1.1).
+            keyboardNavigationBehavior="arrow"
             selectionMode={selectionMode}
             // A box per row for several; for one, a press on the row selects it, the way a list does.
             selectionBehavior={isMultiple ? "toggle" : "replace"}
