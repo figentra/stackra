@@ -1265,6 +1265,79 @@ importers:
         specifier: catalog:quality
         version: 5.0.5(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
+  packages/application/segments:
+    dependencies:
+      '@stackra/actions':
+        specifier: workspace:*
+        version: link:../actions
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
+      '@stackra/contracts':
+        specifier: workspace:*
+        version: link:../../foundation/contracts
+      '@stackra/database':
+        specifier: workspace:*
+        version: link:../../data/database
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      '@stackra/events':
+        specifier: workspace:*
+        version: link:../../foundation/events
+      '@stackra/model':
+        specifier: workspace:*
+        version: link:../../data/model
+      '@stackra/outbox':
+        specifier: workspace:*
+        version: link:../../runtime/outbox
+      '@stackra/queue':
+        specifier: workspace:*
+        version: link:../../runtime/queue
+      '@stackra/rules':
+        specifier: workspace:*
+        version: link:../rules
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
+    devDependencies:
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../../developer/testing
+      '@stackra/tsdown-config':
+        specifier: workspace:*
+        version: link:../../tooling/tsdown
+      '@stackra/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      '@stackra/vitest-config':
+        specifier: workspace:*
+        version: link:../../tooling/vitest
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      '@vitest/coverage-v8':
+        specifier: catalog:quality
+        version: 5.0.3(vitest@5.0.5)
+      oxfmt:
+        specifier: catalog:quality
+        version: 0.71.0
+      oxlint:
+        specifier: catalog:quality
+        version: 1.86.0
+      tsdown:
+        specifier: catalog:build
+        version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
+      typescript:
+        specifier: catalog:build
+        version: 7.0.2
+      vitest:
+        specifier: catalog:quality
+        version: 5.0.5(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
   packages/commerce/ledger:
     dependencies:
       '@stackra/container':
@@ -1319,6 +1392,118 @@ importers:
       vitest:
         specifier: catalog:quality
         version: 5.0.5(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
+  packages/commerce/loyalty-kit:
+    dependencies:
+      '@stackra/actions':
+        specifier: workspace:*
+        version: link:../../application/actions
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
+      '@stackra/contracts':
+        specifier: workspace:*
+        version: link:../../foundation/contracts
+      '@stackra/database':
+        specifier: workspace:*
+        version: link:../../data/database
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      '@stackra/events':
+        specifier: workspace:*
+        version: link:../../foundation/events
+      '@stackra/i18n':
+        specifier: workspace:*
+        version: link:../../foundation/i18n
+      '@stackra/ledger':
+        specifier: workspace:*
+        version: link:../ledger
+      '@stackra/model':
+        specifier: workspace:*
+        version: link:../../data/model
+      '@stackra/search':
+        specifier: workspace:*
+        version: link:../../data/search
+      '@stackra/settings':
+        specifier: workspace:*
+        version: link:../../state/settings
+      '@stackra/tenancy':
+        specifier: workspace:*
+        version: link:../../security/tenancy
+      '@stackra/ui':
+        specifier: workspace:*
+        version: link:../../design-system/ui
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
+      '@stackra/versioning':
+        specifier: workspace:*
+        version: link:../../communication/versioning
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
+    devDependencies:
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../../developer/testing
+      '@stackra/tsdown-config':
+        specifier: workspace:*
+        version: link:../../tooling/tsdown
+      '@stackra/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      '@stackra/vitest-config':
+        specifier: workspace:*
+        version: link:../../tooling/vitest
+      '@testing-library/dom':
+        specifier: catalog:frontend
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: catalog:frontend
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      '@types/react':
+        specifier: catalog:frontend
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: catalog:frontend
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitest/coverage-v8':
+        specifier: catalog:quality
+        version: 5.0.3(vitest@5.0.5)
+      jsdom:
+        specifier: catalog:frontend
+        version: 30.1.0
+      oxfmt:
+        specifier: catalog:quality
+        version: 0.71.0
+      oxlint:
+        specifier: catalog:quality
+        version: 1.86.0
+      react:
+        specifier: catalog:frontend
+        version: 19.3.0
+      react-dom:
+        specifier: catalog:frontend
+        version: 19.3.0(react@19.3.0)
+      react-native:
+        specifier: catalog:mobile
+        version: 0.86.3(@babel/core@8.0.7)(@react-native/metro-config@0.88.0(@babel/core@8.0.7)(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2)
+      tsdown:
+        specifier: catalog:build
+        version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
+      typescript:
+        specifier: catalog:build
+        version: 7.0.2
+      vitest:
+        specifier: catalog:quality
+        version: 5.0.5(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/commerce/money:
     dependencies:
@@ -3198,6 +3383,94 @@ importers:
         specifier: catalog:quality
         version: 5.0.5(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3)(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
+  packages/experience/builder:
+    dependencies:
+      '@stackra/collaboration':
+        specifier: workspace:*
+        version: link:../collaboration
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
+      '@stackra/contracts':
+        specifier: workspace:*
+        version: link:../../foundation/contracts
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      '@stackra/experience':
+        specifier: workspace:*
+        version: link:../experience
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
+    devDependencies:
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@stackra/entitlements':
+        specifier: workspace:*
+        version: link:../../security/entitlements
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../../developer/testing
+      '@stackra/tsdown-config':
+        specifier: workspace:*
+        version: link:../../tooling/tsdown
+      '@stackra/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      '@stackra/vitest-config':
+        specifier: workspace:*
+        version: link:../../tooling/vitest
+      '@testing-library/dom':
+        specifier: catalog:frontend
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: catalog:frontend
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      '@types/react':
+        specifier: catalog:frontend
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: catalog:frontend
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitest/coverage-v8':
+        specifier: catalog:quality
+        version: 5.0.3(vitest@5.0.5)
+      jsdom:
+        specifier: catalog:frontend
+        version: 30.1.0
+      oxfmt:
+        specifier: catalog:quality
+        version: 0.71.0
+      oxlint:
+        specifier: catalog:quality
+        version: 1.86.0
+      react:
+        specifier: catalog:frontend
+        version: 19.3.0
+      react-dom:
+        specifier: catalog:frontend
+        version: 19.3.0(react@19.3.0)
+      tsdown:
+        specifier: catalog:build
+        version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
+      typescript:
+        specifier: catalog:build
+        version: 7.0.2
+      vitest:
+        specifier: catalog:quality
+        version: 5.0.5(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+      yjs:
+        specifier: 'catalog:'
+        version: 13.6.33
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
+
   packages/experience/collaboration:
     dependencies:
       '@stackra/config':
@@ -3282,6 +3555,300 @@ importers:
       yjs:
         specifier: 'catalog:'
         version: 13.6.33
+
+  packages/experience/experience:
+    dependencies:
+      '@stackra/clients':
+        specifier: workspace:*
+        version: link:../../application/clients
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
+      '@stackra/contracts':
+        specifier: workspace:*
+        version: link:../../foundation/contracts
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      '@stackra/i18n':
+        specifier: workspace:*
+        version: link:../../foundation/i18n
+      '@stackra/icons':
+        specifier: workspace:*
+        version: link:../../design-system/icons
+      '@stackra/ui':
+        specifier: workspace:*
+        version: link:../../design-system/ui
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
+    devDependencies:
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../../developer/testing
+      '@stackra/tsdown-config':
+        specifier: workspace:*
+        version: link:../../tooling/tsdown
+      '@stackra/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      '@stackra/vitest-config':
+        specifier: workspace:*
+        version: link:../../tooling/vitest
+      '@testing-library/dom':
+        specifier: catalog:frontend
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: catalog:frontend
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      '@types/react':
+        specifier: catalog:frontend
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: catalog:frontend
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitest/coverage-v8':
+        specifier: catalog:quality
+        version: 5.0.3(vitest@5.0.5)
+      jsdom:
+        specifier: catalog:frontend
+        version: 30.1.0
+      oxfmt:
+        specifier: catalog:quality
+        version: 0.71.0
+      oxlint:
+        specifier: catalog:quality
+        version: 1.86.0
+      react:
+        specifier: catalog:frontend
+        version: 19.3.0
+      react-dom:
+        specifier: catalog:frontend
+        version: 19.3.0(react@19.3.0)
+      tsdown:
+        specifier: catalog:build
+        version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
+      typescript:
+        specifier: catalog:build
+        version: 7.0.2
+      vitest:
+        specifier: catalog:quality
+        version: 5.0.5(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
+  packages/experience/navigation:
+    dependencies:
+      '@stackra/clients':
+        specifier: workspace:*
+        version: link:../../application/clients
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
+      '@stackra/contracts':
+        specifier: workspace:*
+        version: link:../../foundation/contracts
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      '@stackra/feature-flags':
+        specifier: workspace:*
+        version: link:../../state/feature-flags
+      '@stackra/i18n':
+        specifier: workspace:*
+        version: link:../../foundation/i18n
+      '@stackra/icons':
+        specifier: workspace:*
+        version: link:../../design-system/icons
+      '@stackra/platform':
+        specifier: workspace:*
+        version: link:../platform
+      '@stackra/seo':
+        specifier: workspace:*
+        version: link:../../cross-cutting/seo
+      '@stackra/settings':
+        specifier: workspace:*
+        version: link:../../state/settings
+      '@stackra/ui':
+        specifier: workspace:*
+        version: link:../../design-system/ui
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
+    devDependencies:
+      '@react-navigation/native':
+        specifier: catalog:mobile
+        version: 7.5.1(react-native@0.86.3(@babel/core@8.0.7)(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0)
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../../developer/testing
+      '@stackra/tsdown-config':
+        specifier: workspace:*
+        version: link:../../tooling/tsdown
+      '@stackra/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      '@stackra/vitest-config':
+        specifier: workspace:*
+        version: link:../../tooling/vitest
+      '@testing-library/dom':
+        specifier: catalog:frontend
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: catalog:frontend
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      '@types/react':
+        specifier: catalog:frontend
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: catalog:frontend
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitest/coverage-v8':
+        specifier: catalog:quality
+        version: 5.0.3(vitest@5.0.5)
+      jsdom:
+        specifier: catalog:frontend
+        version: 30.1.0
+      oxfmt:
+        specifier: catalog:quality
+        version: 0.71.0
+      oxlint:
+        specifier: catalog:quality
+        version: 1.86.0
+      react:
+        specifier: catalog:frontend
+        version: 19.3.0
+      react-dom:
+        specifier: catalog:frontend
+        version: 19.3.0(react@19.3.0)
+      react-native:
+        specifier: catalog:mobile
+        version: 0.86.3(@babel/core@8.0.7)(@react-native/metro-config@0.88.0(@babel/core@8.0.7)(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2)
+      react-router:
+        specifier: catalog:frontend
+        version: 7.18.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      tsdown:
+        specifier: catalog:build
+        version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
+      typescript:
+        specifier: catalog:build
+        version: 7.0.2
+      vitest:
+        specifier: catalog:quality
+        version: 5.0.5(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
+  packages/experience/panel:
+    dependencies:
+      '@stackra/actions':
+        specifier: workspace:*
+        version: link:../../application/actions
+      '@stackra/clients':
+        specifier: workspace:*
+        version: link:../../application/clients
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
+      '@stackra/contracts':
+        specifier: workspace:*
+        version: link:../../foundation/contracts
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      '@stackra/i18n':
+        specifier: workspace:*
+        version: link:../../foundation/i18n
+      '@stackra/icons':
+        specifier: workspace:*
+        version: link:../../design-system/icons
+      '@stackra/money':
+        specifier: workspace:*
+        version: link:../../commerce/money
+      '@stackra/query':
+        specifier: workspace:*
+        version: link:../../state/query
+      '@stackra/ui':
+        specifier: workspace:*
+        version: link:../../design-system/ui
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
+    devDependencies:
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../../developer/testing
+      '@stackra/tsdown-config':
+        specifier: workspace:*
+        version: link:../../tooling/tsdown
+      '@stackra/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      '@stackra/vitest-config':
+        specifier: workspace:*
+        version: link:../../tooling/vitest
+      '@tanstack/query-core':
+        specifier: 'catalog:'
+        version: 5.104.1
+      '@testing-library/dom':
+        specifier: catalog:frontend
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: catalog:frontend
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      '@types/react':
+        specifier: catalog:frontend
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: catalog:frontend
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitest/coverage-v8':
+        specifier: catalog:quality
+        version: 5.0.3(vitest@5.0.5)
+      jsdom:
+        specifier: catalog:frontend
+        version: 30.1.0
+      oxfmt:
+        specifier: catalog:quality
+        version: 0.71.0
+      oxlint:
+        specifier: catalog:quality
+        version: 1.86.0
+      react:
+        specifier: catalog:frontend
+        version: 19.3.0
+      react-dom:
+        specifier: catalog:frontend
+        version: 19.3.0(react@19.3.0)
+      react-native:
+        specifier: catalog:mobile
+        version: 0.86.3(@babel/core@8.0.7)(@react-native/metro-config@0.88.0(@babel/core@8.0.7)(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2)
+      tsdown:
+        specifier: catalog:build
+        version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
+      typescript:
+        specifier: catalog:build
+        version: 7.0.2
+      vitest:
+        specifier: catalog:quality
+        version: 5.0.5(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/experience/peripherals:
     dependencies:
@@ -4553,6 +5120,76 @@ importers:
         specifier: catalog:quality
         version: 5.0.5(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
+  packages/runtime/workflow:
+    dependencies:
+      '@stackra/actions':
+        specifier: workspace:*
+        version: link:../../application/actions
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
+      '@stackra/contracts':
+        specifier: workspace:*
+        version: link:../../foundation/contracts
+      '@stackra/database':
+        specifier: workspace:*
+        version: link:../../data/database
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      '@stackra/events':
+        specifier: workspace:*
+        version: link:../../foundation/events
+      '@stackra/locking':
+        specifier: workspace:*
+        version: link:../locking
+      '@stackra/queue':
+        specifier: workspace:*
+        version: link:../queue
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
+    devDependencies:
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../../developer/testing
+      '@stackra/tsdown-config':
+        specifier: workspace:*
+        version: link:../../tooling/tsdown
+      '@stackra/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      '@stackra/vitest-config':
+        specifier: workspace:*
+        version: link:../../tooling/vitest
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      '@vitest/coverage-v8':
+        specifier: catalog:quality
+        version: 5.0.3(vitest@5.0.5)
+      oxfmt:
+        specifier: catalog:quality
+        version: 0.71.0
+      oxlint:
+        specifier: catalog:quality
+        version: 1.86.0
+      tsdown:
+        specifier: catalog:build
+        version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
+      typescript:
+        specifier: catalog:build
+        version: 7.0.2
+      vitest:
+        specifier: catalog:quality
+        version: 5.0.5(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
   packages/security/access-log:
     dependencies:
       '@stackra/actions':
@@ -4805,6 +5442,173 @@ importers:
       vitest:
         specifier: catalog:quality
         version: 5.0.5(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
+  packages/security/iam:
+    dependencies:
+      '@stackra/actions':
+        specifier: workspace:*
+        version: link:../../application/actions
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
+      '@stackra/contracts':
+        specifier: workspace:*
+        version: link:../../foundation/contracts
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      '@stackra/rules':
+        specifier: workspace:*
+        version: link:../../application/rules
+      '@stackra/scope':
+        specifier: workspace:*
+        version: link:../scope
+    devDependencies:
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../../developer/testing
+      '@stackra/tsdown-config':
+        specifier: workspace:*
+        version: link:../../tooling/tsdown
+      '@stackra/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      '@stackra/vitest-config':
+        specifier: workspace:*
+        version: link:../../tooling/vitest
+      '@testing-library/dom':
+        specifier: catalog:frontend
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: catalog:frontend
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      '@types/react':
+        specifier: catalog:frontend
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: catalog:frontend
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitest/coverage-v8':
+        specifier: catalog:quality
+        version: 5.0.3(vitest@5.0.5)
+      jsdom:
+        specifier: catalog:frontend
+        version: 30.1.0
+      oxfmt:
+        specifier: catalog:quality
+        version: 0.71.0
+      oxlint:
+        specifier: catalog:quality
+        version: 1.86.0
+      react:
+        specifier: catalog:frontend
+        version: 19.3.0
+      react-dom:
+        specifier: catalog:frontend
+        version: 19.3.0(react@19.3.0)
+      tsdown:
+        specifier: catalog:build
+        version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
+      typescript:
+        specifier: catalog:build
+        version: 7.0.2
+      vitest:
+        specifier: catalog:quality
+        version: 5.0.5(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
+  packages/security/identity:
+    dependencies:
+      '@stackra/clients':
+        specifier: workspace:*
+        version: link:../../application/clients
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
+      '@stackra/contracts':
+        specifier: workspace:*
+        version: link:../../foundation/contracts
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      '@stackra/scope':
+        specifier: workspace:*
+        version: link:../scope
+      '@stackra/storage':
+        specifier: workspace:*
+        version: link:../../data/storage
+      '@stackra/tenancy':
+        specifier: workspace:*
+        version: link:../tenancy
+      '@stackra/transport':
+        specifier: workspace:*
+        version: link:../../foundation/transport
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
+    devDependencies:
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../../developer/testing
+      '@stackra/tsdown-config':
+        specifier: workspace:*
+        version: link:../../tooling/tsdown
+      '@stackra/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      '@stackra/vitest-config':
+        specifier: workspace:*
+        version: link:../../tooling/vitest
+      '@testing-library/dom':
+        specifier: catalog:frontend
+        version: 10.4.2
+      '@testing-library/react':
+        specifier: catalog:frontend
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      '@types/react':
+        specifier: catalog:frontend
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: catalog:frontend
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitest/coverage-v8':
+        specifier: catalog:quality
+        version: 5.0.3(vitest@5.0.5)
+      jsdom:
+        specifier: catalog:frontend
+        version: 30.1.0
+      oxfmt:
+        specifier: catalog:quality
+        version: 0.71.0
+      oxlint:
+        specifier: catalog:quality
+        version: 1.86.0
+      react:
+        specifier: catalog:frontend
+        version: 19.3.0
+      react-dom:
+        specifier: catalog:frontend
+        version: 19.3.0(react@19.3.0)
+      tsdown:
+        specifier: catalog:build
+        version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
+      typescript:
+        specifier: catalog:build
+        version: 7.0.2
+      vitest:
+        specifier: catalog:quality
+        version: 5.0.5(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.0)(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/security/licensing:
     dependencies:
@@ -22333,6 +23137,16 @@ snapshots:
       use-latest-callback: 0.2.6(react@19.2.3)
       use-sync-external-store: 1.7.0(react@19.2.3)
 
+  '@react-navigation/core@7.24.0(react@19.3.0)':
+    dependencies:
+      '@react-navigation/routers': 7.6.5
+      escape-string-regexp: 4.0.0
+      fast-deep-equal: 3.1.3
+      react: 19.3.0
+      react-is: 19.3.1
+      use-latest-callback: 0.2.6(react@19.3.0)
+      use-sync-external-store: 1.7.0(react@19.3.0)
+
   '@react-navigation/elements@2.9.45(@react-navigation/native@7.5.1(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3))(react-native-safe-area-context@5.7.0(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)':
     dependencies:
       '@react-navigation/native': 7.5.1(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
@@ -22367,6 +23181,17 @@ snapshots:
       react-native: 0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1)
       standard-navigation: 0.0.8(react@19.2.3)
       use-latest-callback: 0.2.6(react@19.2.3)
+
+  '@react-navigation/native@7.5.1(react-native@0.86.3(@babel/core@8.0.7)(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0)':
+    dependencies:
+      '@react-navigation/core': 7.24.0(react@19.3.0)
+      escape-string-regexp: 4.0.0
+      fast-deep-equal: 3.1.3
+      nanoid: 3.3.20
+      react: 19.3.0
+      react-native: 0.86.3(@babel/core@8.0.7)(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2)
+      standard-navigation: 0.0.8(react@19.3.0)
+      use-latest-callback: 0.2.6(react@19.3.0)
 
   '@react-navigation/routers@7.6.5':
     dependencies:
@@ -31834,6 +32659,10 @@ snapshots:
     dependencies:
       react: 19.2.3
 
+  standard-navigation@0.0.8(react@19.3.0):
+    dependencies:
+      react: 19.3.0
+
   standardwebhooks@1.1.1:
     dependencies:
       '@stablelib/base64': 1.0.1
@@ -32628,6 +33457,10 @@ snapshots:
   use-latest-callback@0.2.6(react@19.2.3):
     dependencies:
       react: 19.2.3
+
+  use-latest-callback@0.2.6(react@19.3.0):
+    dependencies:
+      react: 19.3.0
 
   use-sync-external-store@1.7.0(react@19.2.3):
     dependencies:
