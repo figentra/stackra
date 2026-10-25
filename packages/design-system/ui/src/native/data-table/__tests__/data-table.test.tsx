@@ -225,6 +225,15 @@ describe("DataTable (native)", () => {
     expect(propsOf("table")["sortDescriptor"]).toBeUndefined();
   });
 
+  // STA-486 item 8: inside a page's ScrollView the rows must not scroll, or React Native warns about nested lists.
+  it("hands the Table scrollEnabled only when it is given", () => {
+    render(<DataTable {...baseProps} scrollEnabled={false} />);
+    expect(propsOf("table")["scrollEnabled"]).toBe(false);
+    expect(propsOf("root")["scrollEnabled"]).toBeUndefined();
+    render(<DataTable {...baseProps} />);
+    expect(propsOf("table")).not.toHaveProperty("scrollEnabled");
+  });
+
   it("writes the sort the table asks for into the whole next query", () => {
     const onQueryChange = vi.fn();
     render(

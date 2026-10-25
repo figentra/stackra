@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: proves `directionOf` reads a locale's direction from Intl, falls back to the script list when Intl has no
- *          text info, and treats an invalid locale as left-to-right.
+ *          text info, reads the tag's script or language when Intl has no Locale (Hermes), and treats an invalid
+ *          locale as left-to-right.
  * Boundary: pure function; stubs Intl.Locale for the fallback.
  * Runtime: node
  * Governing contract: ADR 0302 (decision 3); ADR 0022 (test placement).
@@ -40,5 +41,22 @@ describe("directionOf", () => {
     vi.stubGlobal("Intl", { ...Intl, Locale: BareLocale });
     expect(directionOf("ar")).toBe("rtl");
     expect(directionOf("sr-Cyrl")).toBe("ltr");
+  });
+
+  // Hermes, the React Native engine, has no Intl.Locale (found with STA-486 item 1).
+  it.each([
+    ["ar", "rtl"],
+    ["ar-EG", "rtl"],
+    ["he_IL", "rtl"],
+    ["fa-IR", "rtl"],
+    ["az-Arab", "rtl"],
+    ["pa-arab-PK", "rtl"],
+    ["sr-Cyrl", "ltr"],
+    ["en-US", "ltr"],
+    ["not a locale!", "ltr"],
+  ] as const)("reads %s as %s from the tag where Intl.Locale is missing", (locale, direction) => {
+    const { Locale: _locale, ...withoutLocale } = Intl;
+    vi.stubGlobal("Intl", withoutLocale);
+    expect(directionOf(locale)).toBe(direction);
   });
 });
