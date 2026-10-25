@@ -10,6 +10,8 @@
  */
 import { Module, Service } from "@stackra/container";
 import type { Wiring } from "@stackra/container";
+import { HealthIndicator, HealthStatus } from "@stackra/contracts";
+import type { HealthReport } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -52,6 +54,22 @@ describe("createApp (server)", () => {
     expect(app.ready()).toBe(true);
     expect(app.handlers.byKind.get("action")).toEqual([CancelOrderAction]);
     expect(app.handlers.byKind.get("service")).toEqual([LedgerService]);
+    await app.close();
+  });
+
+  it("answers the health routes through probe, with the given indicators", async () => {
+    class UpIndicator extends HealthIndicator {
+      readonly name = "postgres";
+      async check(): Promise<HealthReport> {
+        return { status: HealthStatus.Up };
+      }
+    }
+    const app = await createApp(OrdersModule, { wiring, health: [new UpIndicator()] });
+    expect(await app.probe("GET", "/healthz")).toEqual({ status: 200, body: { status: "up" } });
+    expect(await app.probe("GET", "/readyz")).toEqual({ status: 200, body: { postgres: "up" } });
+    await app.drain();
+    expect((await app.probe("GET", "/healthz"))?.status).toBe(503);
+    expect((await app.probe("GET", "/readyz"))?.status).toBe(503);
     await app.close();
   });
 

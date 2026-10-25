@@ -57,6 +57,8 @@ catalog:
   # satori stays on 0.36.0, the last release that exports `satori/yoga.wasm`, which the Worker driver imports.
   satori: 0.36.0
   "@resvg/resvg-wasm": 2.6.2
+  # The Valkey/Redis client of @stackra/cache (RedisCacheDriver). MIT.
+  iovalkey: 0.4.0
 
 catalogs:
   # Toolchain that builds TypeScript output — a different risk/cadence than lint/format/test tools.

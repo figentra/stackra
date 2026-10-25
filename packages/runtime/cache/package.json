@@ -2,7 +2,7 @@
   "name": "@stackra/cache",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra cache: the Cache port with keys scoped per call namespace and single-flight loads, CacheKey.of, the CacheNamespace port, the CacheConfig configuration with its shipped schema, and the memory driver",
+  "description": "Stackra cache: the Cache port with keys scoped per call namespace and single-flight loads, CacheKey.of, the CacheNamespace port, the CacheConfig configuration with its shipped schema, and the memory, storage, Valkey and Workers KV drivers",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -32,6 +32,16 @@
       "./src/core/*",
       "./src/core/*.ts",
       "./src/core/*/index.ts"
+    ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
+    ],
+    "#worker/*": [
+      "./src/worker/*",
+      "./src/worker/*.ts",
+      "./src/worker/*/index.ts"
     ]
   },
   "exports": {
@@ -44,6 +54,16 @@
       "@stackra/source": "./src/contracts/index.ts",
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
+    },
+    "./worker": {
+      "@stackra/source": "./src/worker/index.ts",
+      "types": "./dist/worker.d.mts",
+      "default": "./dist/worker.mjs"
     }
   },
   "publishConfig": {
@@ -65,7 +85,9 @@
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/storage": "workspace:*",
     "@stackra/validation": "workspace:*",
+    "iovalkey": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

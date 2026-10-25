@@ -11,6 +11,7 @@ export { AppDrainingError } from "#server/errors/app-draining.error";
 export { createApp } from "#server/functions/create-app.function";
 export type { ControllerClass } from "#server/types/controller-class.type";
 export type { ControllerOptions } from "#server/types/controller-options.type";
+export type { ProbeAnswer } from "#server/types/probe-answer.type";
 export type { ServerApp } from "#server/types/server-app.type";
 export type { ServerAppOptions } from "#server/types/server-app-options.type";
 export type { ServerHandlers } from "#server/types/server-handlers.type";

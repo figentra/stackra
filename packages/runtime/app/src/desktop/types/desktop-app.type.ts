@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `DesktopApp`, what `createApp` from `@stackra/app/electron` resolves to: `start()` and its open `windows`.
+ * Purpose: `DesktopApp`, what `createApp` from `@stackra/app/desktop` resolves to: `start()` and its open `windows`.
  * Boundary: a type only.
  * Runtime: node
  * Governing contract: ADR 0295 (decision 8).

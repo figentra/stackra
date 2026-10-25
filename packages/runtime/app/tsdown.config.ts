@@ -16,5 +16,5 @@ export default library({
   worker: "src/worker/index.ts",
   browser: "src/browser/index.ts",
   native: "src/native/index.ts",
-  electron: "src/electron/index.ts",
+  desktop: "src/desktop/index.ts",
 });

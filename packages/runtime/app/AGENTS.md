@@ -2,7 +2,7 @@
 
 The app runtime: `createApp` per runtime target, the shared boot, the client contexts and the `Controller` kind.
 Member at `packages/runtime/app` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
-`./react`, `./server`, `./worker`, `./browser`, `./native`, `./electron` (ADR 0295 decision 8; ADR 0127 2026-10-24
+`./react`, `./server`, `./worker`, `./browser`, `./native`, `./desktop` (ADR 0295 decision 8; ADR 0127 2026-10-24
 note).
 
 ## Where code goes

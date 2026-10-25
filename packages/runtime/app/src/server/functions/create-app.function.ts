@@ -14,6 +14,7 @@
 import type { AnyClass, ModuleClass } from "@stackra/container";
 
 import { bootApp } from "#core/functions/boot-app.function";
+import { answerProbe } from "#server/functions/answer-probe.function";
 import { AppDrainingError } from "#server/errors/app-draining.error";
 import type { ServerApp } from "#server/types/server-app.type";
 import type { ServerAppOptions } from "#server/types/server-app-options.type";
@@ -84,5 +85,15 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
 
   for (const signal of STOP_SIGNALS) process.once(signal, onSignal);
 
-  return { key: wiring.member, ready: () => draining === undefined, drain, close, handlers };
+  const ready = (): boolean => draining === undefined;
+  const indicators = options.health ?? [];
+
+  return {
+    key: wiring.member,
+    ready,
+    probe: (method, path) => answerProbe(method, path, { alive: ready, indicators }),
+    drain,
+    close,
+    handlers,
+  };
 }

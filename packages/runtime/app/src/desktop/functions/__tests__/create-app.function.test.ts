@@ -17,9 +17,9 @@ import { ErrorReporter } from "@stackra/errors/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
-import { BRIDGE_CHANNEL } from "#electron/constants/bridge-channel.constant";
-import { createApp } from "#electron/functions/create-app.function";
-import type { DesktopAppOptions } from "#electron/types/desktop-app-options.type";
+import { BRIDGE_CHANNEL } from "#desktop/constants/bridge-channel.constant";
+import { createApp } from "#desktop/functions/create-app.function";
+import type { DesktopAppOptions } from "#desktop/types/desktop-app-options.type";
 
 /** A recorded listener table. */
 type Listeners = Record<string, (...args: never[]) => unknown>;
@@ -145,7 +145,7 @@ const bridgeHandler = () =>
     1,
   );
 
-describe("createApp (electron)", () => {
+describe("createApp (desktop)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     electron.windows.length = 0;

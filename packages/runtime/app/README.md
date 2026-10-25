@@ -5,7 +5,7 @@ generated wiring, the client `Contexts`, and the `Controller` kind for raw HTTP.
 `.stackra/entry/<target>.ts`, which calls `createApp` from the target's subpath (ADR 0295 decisions 7 and 8).
 
 **Tier:** `tier:lib` (`packages/runtime/app`). Entries `.`, `./react`, `./server`, `./worker`, `./browser`, `./native`,
-`./electron`. Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/errors`,
+`./desktop`. Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/errors`,
 `@stackra/i18n` and `@stackra/csp`; React, React Router, Electron, React Native and expo-splash-screen are optional
 peers, each loaded only by the entry that needs it.
 
@@ -14,20 +14,20 @@ peers, each loaded only by the entry that needs it.
 
 ## What is here
 
-| Symbol                                       | Entry        | Use                                                                     |
-| -------------------------------------------- | ------------ | ----------------------------------------------------------------------- |
-| `bootApp`                                    | `.`          | the boot every target shares: configs from the env, container, reporter |
-| `AppWiring`                                  | `.`          | the booted wiring as a container token                                  |
-| `AppSections`, `BootOptions`, `BootedApp`    | `.`          | the wiring sections this package reads; boot's options and result       |
-| `Contexts`                                   | `./react`    | the client contexts in graph order, with the locale and catalogues      |
-| `registerContext`                            | `./react`    | a client package names the component of its context key                 |
-| `createApp`, `ServerApp`                     | `./server`   | `key`, `ready()`, `drain()`, `close()`, `handlers`; signals, exit codes |
-| `Controller`                                 | `./server`   | `extends Controller({ path })`: a raw endpoint with `handle(request)`   |
-| `AppDrainingError`                           | `./server`   | the 503 refusal a draining server answers                               |
-| `createApp`, `WorkerApp`, `WorkerRequest<E>` | `./worker`   | `fetch(request, env, ctx)` over the React Router server build           |
-| `createApp`, `BrowserApp`, `hydrateRoute`    | `./browser`  | `mount(root)`, `hydrate({ nonce })`, `router`; one prerendered page     |
-| `createApp`, `NativeApp`                     | `./native`   | `Root`, which boots behind the splash                                   |
-| `createApp`, `DesktopApp`, `BRIDGE_CHANNEL`  | `./electron` | `start()`, `windows`: the hardened main process and its bridges         |
+| Symbol                                       | Entry       | Use                                                                                  |
+| -------------------------------------------- | ----------- | ------------------------------------------------------------------------------------ |
+| `bootApp`                                    | `.`         | the boot every target shares: configs from the env, container, reporter              |
+| `AppWiring`                                  | `.`         | the booted wiring as a container token                                               |
+| `AppSections`, `BootOptions`, `BootedApp`    | `.`         | the wiring sections this package reads; boot's options and result                    |
+| `Contexts`                                   | `./react`   | the client contexts in graph order, with the locale and catalogues                   |
+| `registerContext`                            | `./react`   | a client package names the component of its context key                              |
+| `createApp`, `ServerApp`                     | `./server`  | `key`, `ready()`, `probe()`, `drain()`, `close()`, `handlers`; `/healthz`, `/readyz` |
+| `Controller`                                 | `./server`  | `extends Controller({ path })`: a raw endpoint with `handle(request)`                |
+| `AppDrainingError`                           | `./server`  | the 503 refusal a draining server answers                                            |
+| `createApp`, `WorkerApp`, `WorkerRequest<E>` | `./worker`  | `fetch(request, env, ctx)` over the React Router server build                        |
+| `createApp`, `BrowserApp`, `hydrateRoute`    | `./browser` | `mount(root)`, `hydrate({ nonce })`, `router`; one prerendered page                  |
+| `createApp`, `NativeApp`                     | `./native`  | `Root`, which boots behind the splash                                                |
+| `createApp`, `DesktopApp`, `BRIDGE_CHANNEL`  | `./desktop` | `start()`, `windows`: the hardened main process and its bridges                      |
 
 ## The generated entries
 

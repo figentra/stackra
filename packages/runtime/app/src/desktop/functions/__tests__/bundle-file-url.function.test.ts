@@ -9,7 +9,7 @@
  */
 import { describe, expect, it } from "@stackra/testing";
 
-import { bundleFileUrl } from "#electron/functions/bundle-file-url.function";
+import { bundleFileUrl } from "#desktop/functions/bundle-file-url.function";
 
 const renderer = new URL("file:///Applications/Acme.app/renderer/");
 

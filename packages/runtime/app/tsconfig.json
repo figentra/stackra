@@ -2,7 +2,7 @@
 // (pnpm validate checks the preset). tsc reads tsconfig.json as JSONC, so the name stays .json.
 // `decorators-react`: no decorators of its own, but it typechecks @stackra/config's and @stackra/i18n's source, whose
 // shapes carry legacy field decorators (ADR 0005); the client entries are TSX and use DOM types; node types for
-// `./server` and `./electron`. The source keeps to erasable syntax (no parameter properties), because apps typecheck
+// `./server` and `./desktop`. The source keeps to erasable syntax (no parameter properties), because apps typecheck
 // it under erasableSyntaxOnly.
 // Owner: release-operations · Secrets: forbidden
 { "extends": "@stackra/typescript-config/decorators-react" }

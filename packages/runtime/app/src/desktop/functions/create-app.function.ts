@@ -21,10 +21,10 @@ import { app, autoUpdater, BrowserWindow, ipcMain, net, protocol, session, shell
 import { fileURLToPath } from "node:url";
 
 import { bootApp } from "#core/functions/boot-app.function";
-import { BRIDGE_CHANNEL } from "#electron/constants/bridge-channel.constant";
-import { bundleFileUrl } from "#electron/functions/bundle-file-url.function";
-import type { DesktopApp } from "#electron/types/desktop-app.type";
-import type { DesktopAppOptions } from "#electron/types/desktop-app-options.type";
+import { BRIDGE_CHANNEL } from "#desktop/constants/bridge-channel.constant";
+import { bundleFileUrl } from "#desktop/functions/bundle-file-url.function";
+import type { DesktopApp } from "#desktop/types/desktop-app.type";
+import type { DesktopAppOptions } from "#desktop/types/desktop-app-options.type";
 
 /** What a bridge class exposes to the renderer. */
 interface BridgeInstance {

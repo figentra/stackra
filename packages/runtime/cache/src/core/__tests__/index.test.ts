@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: `CacheKey` (the template's `{ type Cache, CacheKey }` import keeps
  *          `CacheKey` here; `Cache` moves to `./contracts`, A3) and the registry row's configuration and drivers are
- *          exported, nothing else is (`Cache`, `CacheNamespace` and `coversKey` are not), and `CacheKey` is both a
- *          value and a type.
+ *          exported, nothing else is (`Cache`, `CacheNamespace`, `coversKey` and `storedCache` are not), and
+ *          `CacheKey` is both a value and a type.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -23,6 +23,7 @@ describe("@stackra/cache", () => {
       "CacheOptions",
       "MemoryCacheDriver",
       "SharedCacheNamespaceDriver",
+      "StorageCacheDriver",
     ]);
   });
 

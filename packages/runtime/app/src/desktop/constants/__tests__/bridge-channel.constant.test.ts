@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from "@stackra/testing";
 
-import { BRIDGE_CHANNEL } from "#electron/constants/bridge-channel.constant";
+import { BRIDGE_CHANNEL } from "#desktop/constants/bridge-channel.constant";
 
 describe("BRIDGE_CHANNEL", () => {
   it("is the stackra bridge channel", () => {

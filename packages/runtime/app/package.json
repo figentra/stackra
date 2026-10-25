@@ -2,7 +2,7 @@
   "name": "@stackra/app",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra app runtime: createApp per runtime target (server, worker, browser, native, electron) returning that target's app object, the shared boot from the generated wiring, the client Contexts, and the Controller kind for raw HTTP",
+  "description": "Stackra app runtime: createApp per runtime target (server, worker, browser, native, desktop) returning that target's app object, the shared boot from the generated wiring, the client Contexts, and the Controller kind for raw HTTP",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -29,9 +29,9 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
-    "#electron/*": [
-      "./src/electron/*",
-      "./src/electron/*.ts"
+    "#desktop/*": [
+      "./src/desktop/*",
+      "./src/desktop/*.ts"
     ],
     "#native/*": [
       "./src/native/*",
@@ -83,10 +83,10 @@
       "types": "./dist/native.d.mts",
       "default": "./dist/native.mjs"
     },
-    "./electron": {
-      "@stackra/source": "./src/electron/index.ts",
-      "types": "./dist/electron.d.mts",
-      "default": "./dist/electron.mjs"
+    "./desktop": {
+      "@stackra/source": "./src/desktop/index.ts",
+      "types": "./dist/desktop.d.mts",
+      "default": "./dist/desktop.mjs"
     }
   },
   "publishConfig": {
