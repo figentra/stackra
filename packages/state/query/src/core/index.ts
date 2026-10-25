@@ -2,8 +2,7 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/query (the configuration with its shipped schema, the offline
  *          settings, the key scope, `offlineMap`, `registerReplicas`, the mutation queue, the server-state cache, the
- *          replica store, the offline lock, the storage persister and the `offline` and `offline_cap_reached`
- *          refusals) until `stackra gen` writes the entry barrels (STA-339).
+ *          replica store, the offline lock, the storage persister and the `offline` refusal) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schema is re-exported under the generated name
  *           (`QueryConfig$`) a host's generated schemas extend. The ports are the `./contracts` entry's; the queue's
  *           record types (`PendingMutation`, `ConflictRecord`) and `ReplicaSnapshot` are the `./react` entry's (one
@@ -17,7 +16,6 @@ export { QueryConfig } from "#config/query.config";
 export { QUERY_CONFIG_SCHEMA as QueryConfig$ } from "#core/constants/query-config-schema.constant";
 export { StorageQueryPersisterDriver } from "#core/drivers/storage-query-persister.driver";
 export { QueryScope } from "#core/enums/query-scope.enum";
-export { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
 export { OfflineError } from "#core/errors/offline.error";
 export { offlineMap } from "#core/functions/offline-map.function";
 export { registerReplicas } from "#core/functions/register-replicas.function";

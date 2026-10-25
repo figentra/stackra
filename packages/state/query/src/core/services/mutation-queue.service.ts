@@ -4,21 +4,23 @@
  *          each with the Idempotency-Key minted when it was queued and the device that queued it, persists them in the
  *          `outbox` area, replays them one at a time in the order they were queued when this context leads and the
  *          network is up, stamps each call's per-device sequence number when it is first sent, refuses a capped action
- *          past its cap, and turns a refusal for good or an expired call into a conflict record a person resolves
- *          (`useMutationQueue()` reads it).
+ *          past its cap (counting the calls it holds and the capped calls it sent within the window), and turns a
+ *          refusal for good or an expired call into a conflict record a person resolves (`useMutationQueue()` reads it).
  * Boundary: a singleton service; the host's query context calls `open(partition)` after sign-in and on every switch,
  *           so a call is only ever replayed for the principal and scope that queued it. Per-device order (ADR 0338
  *           decision 1): a later call is never sent before an earlier one was accepted or refused, so a call that did
  *           not reach the server stops the replay. A conflict blocks the later calls of its aggregate until it is
  *           resolved or discarded, and nothing is overwritten silently (ADR 0059 decision 3); the other aggregates go
  *           on, each call taking its sequence when it leaves. A failed send that may succeed later keeps the entry; a
- *           call that fails to persist is not queued. An `OfflineLock` wipe closes the queue until the next `open`. No
- *           sync engine: replay is the action call with its key (ADR 0227 row).
+ *           call that fails to persist is not queued. A capped call is refused with the pipeline's own refusal
+ *           (`@stackra/actions`' `OfflineCapReachedError`), and every waiting call counts against the cap whatever its
+ *           age, because the server counts it when it applies it. An `OfflineLock` wipe closes the queue until the next
+ *           `open`. No sync engine: replay is the action call with its key (ADR 0227 row).
  * Runtime: isomorphic
  * Governing contract: ADR 0059 (decisions 2 and 3); ADR 0252 (decision 2: retention, a leader, per-aggregate order);
  *                     ADR 0338 (decisions 1, 4 and 5); ADR 0138 (the idempotency step); ADR 0294 (decisions 16 and 17).
  */
-import { ConflictResolution, OfflineMode } from "@stackra/actions";
+import { ConflictResolution, OfflineCapReachedError, OfflineMode } from "@stackra/actions";
 import { Service } from "@stackra/container";
 import { Clock, Duration } from "@stackra/contracts";
 import type { Json } from "@stackra/contracts";
@@ -34,7 +36,6 @@ import { QueueLeader } from "#contracts/ports/queue-leader.port";
 import type { ReplayOutcome } from "#contracts/types/replay-outcome.type";
 import { OFFLINE_POLICIES } from "#core/constants/offline-policies.constant";
 import { PERSISTED_QUEUE_SCHEMA } from "#core/constants/persisted-queue-schema.constant";
-import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
 import { OfflineError } from "#core/errors/offline.error";
 import { partitionKey } from "#core/functions/partition-key.function";
 import { OfflineLock } from "#core/services/offline-lock.service";
@@ -63,15 +64,20 @@ interface QueueState {
 /** A queue with nothing in it. */
 const EMPTY: QueueState = Object.freeze({ items: [], conflicts: [], isDraining: false });
 
+/** A capped call the server accepted: what it counts against the cap until its window passes. */
+interface CapUse {
+  readonly action: string;
+  readonly at: string;
+  readonly amount: number;
+}
+
 /** A plain JSON object. */
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-// shortcut: the cap's amount is read from the input's `amount` field (a `Money` wire form or minor units); move to a
-// declared field once actions' `cap` option names one (W9-C2).
-/** The minor units a call's input spends, for a cap's `amount`. */
-function amountOf(input: Json): number {
-  const amount = isRecord(input) ? input["amount"] : undefined;
+/** The minor units a call's input spends in its cap's amount field (a `Money` wire form or minor units). */
+function amountOf(input: Json, cap: OfflineCap): number {
+  const amount = isRecord(input) ? input[cap.amountField ?? "amount"] : undefined;
   if (typeof amount === "number") return amount;
   return isRecord(amount) && typeof amount["minor"] === "number" ? amount["minor"] : 0;
 }
@@ -123,6 +129,9 @@ export class MutationQueue extends Service {
 
   /** The last sequence this device stamped, as far as this context knows. */
   private lastSequence = 0;
+
+  /** The capped calls the server accepted, still within their window; persisted with the queue. */
+  private spent: readonly CapUse[] = [];
 
   /**
    * @param config - scope, replay and retention.
@@ -221,8 +230,10 @@ export class MutationQueue extends Service {
     if (!parsed.success)
       throw new TypeError(`The stored offline queue under ${key} cannot be read; it was kept`);
     const queue = parsed.data;
-    if (queue.version === 2) this.seed(key, deviceId, queue.items, queue.conflicts);
-    else
+    if (queue.version === 2) {
+      this.seed(key, deviceId, queue.items, queue.conflicts);
+      this.spent = queue.spent;
+    } else
       this.seed(
         key,
         deviceId,
@@ -353,6 +364,7 @@ export class MutationQueue extends Service {
   ): void {
     this.partition = partition;
     this.deviceId = deviceId;
+    this.spent = [];
     for (const call of [...items, ...conflicts])
       this.lastSequence = Math.max(this.lastSequence, call.sequence ?? 0);
     this.publish({ items, conflicts, isDraining: false });
@@ -362,6 +374,7 @@ export class MutationQueue extends Service {
   private async close(): Promise<void> {
     this.partition = undefined;
     this.opens += 1;
+    this.spent = [];
     this.publish(EMPTY);
     await this.saving;
   }
@@ -389,20 +402,42 @@ export class MutationQueue extends Service {
    */
   private refuseOverCap(action: string, input: Json, cap: OfflineCap, now: Date): void {
     const since = now.getTime() - Duration.toMilliseconds(duration(cap.window));
-    // shortcut: counts the calls still unsent; the server reconciles the sent ones on sync (ADR 0338 decision 5).
-    // Keep a sent log here if a device must hold its cap across a sync.
-    const inputs = [
+    const sent = this.spent.filter((use) => use.action === action && Date.parse(use.at) > since);
+    const amounts = [
+      ...sent.map((use) => use.amount),
       ...this.state.items
-        .filter((item) => item.action === action && Date.parse(item.queuedAt) > since)
-        .map((item) => item.input),
-      input,
+        .filter((item) => item.action === action)
+        .map((item) => amountOf(item.input, cap)),
+      amountOf(input, cap),
     ];
-    const amount = inputs.reduce<number>((sum, value) => sum + amountOf(value), 0);
+    const amount = amounts.reduce((sum, value) => sum + value, 0);
     if (
-      (cap.count !== undefined && inputs.length > cap.count) ||
+      (cap.count !== undefined && amounts.length > cap.count) ||
       (cap.amount !== undefined && amount > cap.amount)
     )
-      throw OfflineCapReachedError.create({ action });
+      throw OfflineCapReachedError.create();
+  }
+
+  /** `spent` with the accepted `head` when its action is capped, without the uses whose window has passed. */
+  private spentAfter(head: PendingMutation): readonly CapUse[] {
+    const now = this.clock.now();
+    const kept = this.spent.filter((use) => {
+      const cap = OFFLINE_POLICIES.get(use.action)?.cap;
+      return (
+        cap !== undefined &&
+        Date.parse(use.at) > now.getTime() - Duration.toMilliseconds(duration(cap.window))
+      );
+    });
+    const cap = OFFLINE_POLICIES.get(head.action)?.cap;
+    if (cap === undefined) return kept;
+    return [
+      ...kept,
+      Object.freeze({
+        action: head.action,
+        at: now.toISOString(),
+        amount: amountOf(head.input, cap),
+      }),
+    ];
   }
 
   /** Drains when the configuration replays on its own. */
@@ -500,6 +535,7 @@ export class MutationQueue extends Service {
     refusal: Pick<ConflictRecord, "code" | "server"> | null,
   ): Promise<void> {
     if (this.partition !== partition || !this.state.items.includes(head)) return;
+    if (refusal === null) this.spent = this.spentAfter(head);
     const items = this.state.items.filter((item) => item !== head);
     const conflicts =
       refusal === null
@@ -533,8 +569,9 @@ export class MutationQueue extends Service {
   /** Writes the current state of `partition`, after every earlier write. */
   private persist(partition: string): Promise<void> {
     const { items, conflicts } = this.state;
+    const spent = this.spent;
     const write = (): Promise<void> =>
-      this.persister.write(StorageArea.Outbox, partition, { version: 2, items, conflicts });
+      this.persister.write(StorageArea.Outbox, partition, { version: 2, items, conflicts, spent });
     const written = this.saving.then(write, write);
     this.saving = written.catch(() => undefined);
     return written;

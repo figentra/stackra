@@ -1,7 +1,7 @@
 # AGENTS — @stackra/devices
 
 Device telemetry and command ports and their HTTP drivers. Member at `packages/runtime/devices` (`tier:lib`), in the
-programming model v3.1 shape (ADR 0294, 0305). Entries `.` and `./contracts`.
+programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` and `./node` (the server's query).
 
 ## Where code goes
 
@@ -13,14 +13,17 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.` and `./contracts`.
 | A refusal                     | `src/core/errors/<name>.error.ts`           |
 | A function, a constant, shape | `src/core/{functions,constants,schemas}/`   |
 | The configuration             | `src/config/devices.config.ts`              |
+| A query or its input/output   | `src/node/{queries,schemas}/`               |
 | A test                        | `__tests__/<name>.<kind>.test.ts` beside it |
 
 ## Entries and barrels
 
-- `src/{core,contracts}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new
+- `src/{core,contracts,node}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new
   public file to its barrel and to that entry's `index.test.ts`.
 - The ports, `CommandStatus` and the wire types are exported from `./contracts` only. `./contracts` imports no other
-  entry.
+  entry. Only `./node` imports `@stackra/actions`: a device app never loads the pipeline.
+- The acknowledged query's wire names (key, route, `{ sequence }`) are `DEVICE_ORDER` of `@stackra/clients`; keep them
+  equal. The calling device is `ctx.deviceId`, never input.
 
 ## This package
 

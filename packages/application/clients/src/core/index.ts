@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/clients (the ref factories gen writes `#stackra/clients/<service>`
- *          over, `ServiceClient`, the config, the HTTP `ClientTransport` and `MutationSender` drivers, the transport
- *          and server refusals, and the public types) until `stackra gen` writes the entry barrels (STA-339).
+ *          over, `ServiceClient`, the config, the HTTP `ClientTransport` driver, the `MutationSender`,
+ *          `AcknowledgementReader` and `ReplicaSource` drivers of `@stackra/query`'s offline ports, the transport and
+ *          server refusals, and the public types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schema is re-exported under the generated name
  *           `ClientsConfig$`. `ClientTransportName` and `MutationSenderName` carry the `DriverRegistry` augmentation,
  *           so exporting them loads it.
@@ -15,7 +16,9 @@ export { ClientQuery } from "#core/bases/client-query.base";
 export { ClientRefusal } from "#core/bases/client-refusal.base";
 export { ServiceClient } from "#core/bases/service-client.base";
 export { CLIENTS_CONFIG_SCHEMA as ClientsConfig$ } from "#core/constants/clients-config-schema.constant";
+export { ClientAcknowledgementReaderDriver } from "#core/drivers/client-acknowledgement-reader.driver";
 export { ClientMutationSenderDriver } from "#core/drivers/client-mutation-sender.driver";
+export { ClientReplicaSourceDriver } from "#core/drivers/client-replica-source.driver";
 export { HttpClientTransportDriver } from "#core/drivers/http-client-transport.driver";
 export { ServerRefusalError } from "#core/errors/server-refusal.error";
 export { TransportError } from "#core/errors/transport.error";

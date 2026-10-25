@@ -3,19 +3,20 @@
  * Purpose: `emitRoutes`, an app's route table per client runtime (`.stackra/gen/routes/<runtime>.ts`, reached as
  *          `#stackra/routes/<runtime>`): each `Route({...})` class under its key (the snake_case of its file stem)
  *          with the page that draws it on that runtime, and the `registerRoutes(routeTable)` call that makes every
- *          `Routes.<key>` ref resolve to its path.
+ *          `Routes.<key>` ref resolve to its path; on the browser of an app that hosts `@stackra/panel`, the
+ *          `registerPanelPages()` call that gives navigation the panel's shell page.
  * Boundary: pure. A page is bound by name beside its route (`settings.tsx`, `settings.native.tsx`); a route without a
  *           page on a runtime is still registered, so refs resolve. The data-route tree (`toRoot`) is not here: it
  *           needs the locale prefixes of `#stackra/i18n` and the router keys the booted container makes.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 14, 20 and 22); ADR 0297 (decision 4); the navigation package's
- *                     `registerRoutes`.
+ *                     `registerRoutes`; ADR 0307 (the panel's route pages).
  */
 import { clientRuntimes } from "#core/functions/client-runtimes.function";
 import { componentBeside } from "#core/functions/component-beside.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
-import { snakeCase } from "#core/functions/snake-case.function";
+import { routeKey } from "#core/functions/route-key.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 
@@ -28,6 +29,9 @@ import type { MemberIR } from "#core/types/member-ir.type";
 export function emitRoutes(ir: MemberIR): GeneratedFile[] {
   const routes = ir.classes.filter((declared) => declared.kind === "route");
   if (routes.length === 0) return [];
+  const usesPanel =
+    (ir.packages ?? []).includes("@stackra/panel") ||
+    ir.dependencies.some((dependency) => dependency.package === "@stackra/panel");
   return clientRuntimes(ir).map((runtime) => {
     const imports = new Map<string, Map<string, boolean>>([
       ["@stackra/navigation", new Map([["registerRoutes", false]])],
@@ -42,9 +46,12 @@ export function emitRoutes(ir: MemberIR): GeneratedFile[] {
       use(route.importPath, route.name);
       if (page !== undefined) use(page.from, page.name);
       rows.push(
-        `  ${snakeCase(stem)}: { route: ${route.name}${page !== undefined ? `, page: ${page.name}` : ""} },`,
+        `  ${routeKey(route.file)}: { route: ${route.name}${page !== undefined ? `, page: ${page.name}` : ""} },`,
       );
     }
+    // The panel's shell is the page `toPanel` renders; an app that hosts the panel registers it on the browser.
+    const panel = runtime === "browser" && usesPanel;
+    if (panel) use("@stackra/panel/react", "registerPanelPages");
     const header = generatedHeader({
       from: "the Route classes under src/routes and the pages beside them",
       purpose: `the ${runtime} route table of ${ir.package}: each route key with its class and its page, registered.`,
@@ -65,6 +72,7 @@ export function emitRoutes(ir: MemberIR): GeneratedFile[] {
         "} as const;",
         "",
         "registerRoutes(routeTable);",
+        ...(panel ? ["registerPanelPages();"] : []),
         "",
       ].join("\n"),
     };

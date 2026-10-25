@@ -1,13 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: `PERSISTED_QUEUE_SCHEMA`, the stored form of one partition's offline queue in the `outbox` area: a schema
- *          version, the pending calls in order and the conflict records.
+ *          version, the pending calls in order, the conflict records and the capped calls the server accepted within
+ *          their window.
  * Boundary: internal; the queue checks what it reads back with it, because the outbox outlives app versions. The
  *           envelope is versioned so a later shape adds an upgrader instead of dropping queued work (plan row "client
  *           migrations": the queue is the one store with a client migration). Version 2 adds each call's device and
- *           sequence (ADR 0338 decision 1); a version 1 queue still parses, and `MutationQueue.open` upgrades it.
+ *           sequence (ADR 0338 decision 1) and the sent capped calls (`spent`, decision 5; empty when a stored version
+ *           2 queue predates it); a version 1 queue still parses, and `MutationQueue.open` upgrades it.
  * Runtime: isomorphic
- * Governing contract: ADR 0059 (decision 2); ADR 0252 (decision 2: survival across an upgrade); ADR 0338 (decision 1).
+ * Governing contract: ADR 0059 (decision 2); ADR 0252 (decision 2: survival across an upgrade); ADR 0338 (decisions 1
+ *                     and 5).
  */
 import { json } from "@stackra/validation";
 import { z } from "zod";
@@ -42,5 +45,10 @@ export const PERSISTED_QUEUE_SCHEMA = z.discriminatedUnion("version", [
     version: z.literal(2),
     items: z.array(MUTATION_V2),
     conflicts: z.array(MUTATION_V2.extend(CONFLICT)),
+    spent: z
+      .array(
+        z.object({ action: z.string().min(1), at: z.string(), amount: z.number().nonnegative() }),
+      )
+      .default([]),
   }),
 ]);

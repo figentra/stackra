@@ -15,3 +15,6 @@
 - [x] T011 Tests beside every subject and the barrel tests — covers: SC-002, SC-003 — route: tests — deps: T010
 - [x] T012 Changeset `.changeset/storage-package.md` — covers: SC-001 — route: package — deps: T010
 - [ ] T013 Run the package's tests, typecheck and build in the separate testing workflow — covers: SC-002 — route: tests — deps: T011
+- [x] T014 [US5] `PayloadSeal` in `packages/data/storage/src/contracts/ports/`, `PAYLOAD_KEY`, `WebCryptoPayloadSealDriver` and `MemoryPayloadSealDriver` in `packages/data/storage/src/core/`, with their tests and the port's test — covers: FR-008, P-008 — route: package — deps: T012
+- [x] T015 [US5] README, AGENTS and the changeset for the sealed payloads — covers: SC-001 — route: package — deps: T014
+- [ ] T016 [US5] Run the wave-9 tests, typecheck and build in the separate testing workflow — covers: SC-002 — route: tests — deps: T014

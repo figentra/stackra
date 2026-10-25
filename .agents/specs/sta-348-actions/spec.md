@@ -116,6 +116,24 @@ and adds inline extensions with `.withExtensions([extension(Point, "slot", { ord
   printed chain.
 - **FR-008**: `./testing`: `run`, `fakeActionContext`, `fakeExtensionContext`, `extension`, and the plugin adding
   `.withExtensions`.
+- **FR-009**: (ADR 0338 decisions 1 and 4) per-device apply order: `CallOptions.device` (`DeviceOrder`: `deviceId`,
+  optional `sequence`) set by the generated adapter from `@stackra/clients`' `DEVICE_ORDER` headers (this package
+  names no header); a replayed action call runs only when its sequence is above the device's last settled one
+  (sequences are strictly increasing, not contiguous), settles on an output or any refusal, and a resend at or below
+  replays its stored output or is refused `device_sequence_out_of_order` (`acknowledged`); the `DeviceSequenceStore`
+  port with its memory driver; `ctx.deviceId` for a call from a verified device.
+- **FR-010**: (ADR 0338 decision 5) `offline.cap` (`count`, `amount`, `window`) checked by `Action({...})`; the
+  idempotency step counts a device's applied calls in the window (`OfflineCapStore`, memory driver) and refuses
+  beyond the cap with `offline_cap_reached`, the client's code; the amount is the input's `amount` (minor units or a
+  Money's `minor`), as the client reads it.
+- **FR-011**: (ADR 0338 decision 3) `Query({ replica: { of, window, limit, scope? } })`; `ctx.replica(fill, slice)`
+  answers the `ReplicaChanges` wire shape of `@stackra/query` (`rows`, `removed`, `cursor`, `asOf`, `full`): the
+  changes since the input's `cursor` collapsed to the latest per id, or a full fill within the bounds; `ReplicaFeed`
+  records changes on the `ReplicaLog` port (memory driver) with an opaque monotonic cursor per partition and reads
+  only within the caller's scope.
+- **FR-012**: (ADR 0337 decisions 4 and 5) `accepts: { ruleVersion, evaluator }`: in the unit of work, before
+  `handle`, the consumer's `RuleEvaluator` answers both figures; a differing answer or an older rule version is a
+  `ReviewItem` on the `ReviewItemSink` port (memory driver), never a refusal.
 
 ## Success Criteria
 
@@ -129,6 +147,9 @@ and adds inline extensions with `.withExtensions([extension(Point, "slot", { ord
 
 ## Out of scope (named, not built)
 
+- Durable drivers of `DeviceSequenceStore`, `OfflineCapStore`, `ReplicaLog` (pruning past the window) and a
+  `ReviewItemSink` that writes the consuming product's review-item model: through `@stackra/database` and the product.
+
 - The query `cache` runtime (serving and invalidating cached results): the option is typed and checked; serving needs
   `@stackra/cache` wiring and the live-query channel (owner R-25), and `CacheScope` waits for the R-59 call.
 - `Controller` (A13): not assigned to this package by the owner.
@@ -139,6 +160,8 @@ and adds inline extensions with `.withExtensions([extension(Point, "slot", { ord
 ## Gen needs (for the gen-core row)
 
 - A binding row for each `ExtensionPoint` subclass (no dependencies), since owners inject their point.
+- The adapter maps `DEVICE_ORDER.deviceHeader` and `sequenceHeader` (`@stackra/clients`) onto `CallOptions.device`
+  only after matching the device id to the verified session's device, and binds the four offline ports.
 - `registerActions` rows (key, permission, risk, input class) and `registerExtensions` rows (point, slot, class,
   order) in the generated entries; a `RequestContext` binding over `ContextStorage`.
 

@@ -1,0 +1,6 @@
+// TypeScript project for this member: extends exactly one @stackra/typescript-config preset and sets nothing else
+// (pnpm validate checks the preset). tsc reads tsconfig.json as JSONC, so the name stays .json.
+// `decorators`: plain functions and zod schemas, no TSX; it typechecks @stackra/runway's source, which reaches
+// @stackra/validation, whose shapes carry legacy field decorators (ADR 0005). Node types for the `./node` entry.
+// Owner: release-operations · Secrets: forbidden
+{ "extends": "@stackra/typescript-config/decorators" }

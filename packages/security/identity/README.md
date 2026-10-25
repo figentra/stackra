@@ -7,30 +7,31 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 
 **Tier:** `tier:lib` (`packages/security/identity`). Entries `.`, `./contracts`, `./react` and `./testing`. Depends on
 `@stackra/clients`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/errors`,
-`@stackra/iam`, `@stackra/scope`, `@stackra/storage`, `@stackra/tenancy`, `@stackra/transport`, `@stackra/validation`
-and zod; React is an optional peer of `./react`, vitest of `./testing`.
+`@stackra/iam`, `@stackra/query` (the offline stores' session port), `@stackra/scope`, `@stackra/storage`,
+`@stackra/tenancy`, `@stackra/transport`, `@stackra/validation` and zod; React is an optional peer of `./react`, vitest of `./testing`.
 
 ## What is here
 
-| Entry         | Symbol                                          | Use                                                                                   |
-| ------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `.`           | `IdentityConfig`                                | the configuration (key `identity`): flow per target, device client, scopes, idle rule |
-| `.`           | `IdentityConfig$`                               | the shipped schema a member's generated override extends                              |
-| `.`           | `AuthFlow`                                      | `bff`, `pkce`                                                                         |
-| `.`           | `SessionStatus`                                 | `loading`, `signed_in`, `signed_out`, `revoked`                                       |
-| `.`           | `SessionService`                                | the client's session: state, listeners, sign-in, sign-out, idle rule                  |
-| `.`           | `BffSessionStoreDriver`                         | the web's session: the BFF and its cookie                                             |
-| `.`           | `PkceSessionStoreDriver`                        | the device's session: PKCE, tokens in the `secrets` storage area                      |
-| `.`           | `MemorySessionStoreDriver`                      | tests and previews                                                                    |
-| `.`           | `SessionClientSessionDriver`                    | `@stackra/clients`' `ClientSession`: the bearer token and `X-Scope-Path`              |
-| `.`           | `MemoryIdentityResolverDriver`                  | the contracts' `IdentityResolver` over principals in memory                           |
-| `.`           | `IDENTITY_CLAIMS`, `sessionUserOf`              | the Stackra claim names, and claims to a `SessionUser`                                |
-| `.`           | `SignInCancelledError`, `SessionRevokedError`   | refusals                                                                              |
-| `./contracts` | `SessionStore`                                  | the port of a flow (`load`, `signIn`, `signOut`, `accessToken`)                       |
-| `./contracts` | `SignInBrowser`                                 | the platform step of PKCE: open the hosted sign-in, hand back the redirect            |
-| `./contracts` | `SessionUser`                                   | the signed-in user: id, address, name, permissions, memberships                       |
-| `./react`     | `useSession`, `SessionValue`, `SignedInSession` | the session in a component                                                            |
-| `./testing`   | `fakeSession`, `SessionFake`, `fakeIdentity`    | a session in any status with spied actions; a resolver over named principals          |
+| Entry         | Symbol                                          | Use                                                                                    |
+| ------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `.`           | `IdentityConfig`                                | the configuration (key `identity`): flow per target, device client, scopes, idle rule  |
+| `.`           | `IdentityConfig$`                               | the shipped schema a member's generated override extends                               |
+| `.`           | `AuthFlow`                                      | `bff`, `pkce`                                                                          |
+| `.`           | `SessionStatus`                                 | `loading`, `signed_in`, `signed_out`, `revoked`                                        |
+| `.`           | `SessionService`                                | the client's session: state, listeners, sign-in, sign-out, idle rule                   |
+| `.`           | `BffSessionStoreDriver`                         | the web's session: the BFF and its cookie                                              |
+| `.`           | `PkceSessionStoreDriver`                        | the device's session: PKCE, tokens in the `secrets` storage area                       |
+| `.`           | `MemorySessionStoreDriver`                      | tests and previews                                                                     |
+| `.`           | `SessionClientSessionDriver`                    | `@stackra/clients`' `ClientSession`: the bearer token and `X-Scope-Path`               |
+| `.`           | `SessionOfflineSessionDriver`                   | `@stackra/query`'s `OfflineSession`: revoked and signed-in signals, the local sign-out |
+| `.`           | `MemoryIdentityResolverDriver`                  | the contracts' `IdentityResolver` over principals in memory                            |
+| `.`           | `IDENTITY_CLAIMS`, `sessionUserOf`              | the Stackra claim names, and claims to a `SessionUser`                                 |
+| `.`           | `SignInCancelledError`, `SessionRevokedError`   | refusals                                                                               |
+| `./contracts` | `SessionStore`                                  | the port of a flow (`load`, `signIn`, `signOut`, `accessToken`)                        |
+| `./contracts` | `SignInBrowser`                                 | the platform step of PKCE: open the hosted sign-in, hand back the redirect             |
+| `./contracts` | `SessionUser`                                   | the signed-in user: id, address, name, permissions, memberships                        |
+| `./react`     | `useSession`, `SessionValue`, `SignedInSession` | the session in a component                                                             |
+| `./testing`   | `fakeSession`, `SessionFake`, `fakeIdentity`    | a session in any status with spied actions; a resolver over named principals           |
 
 ## Configuring a member
 
@@ -74,6 +75,15 @@ return <Avatar name={session.user.displayName} src={session.user.avatarUrl} />;
   window coming back into view reads the session again.
 - `revoked` means the provider refused the device's session (revoked from "Sessions", or past its lifetime). The stores
   that hold offline data wipe on it and the client waits for a new sign-in (ADR 0338 decision 4).
+
+## Revoke means wipe and lock
+
+Bind `SessionOfflineSessionDriver` as `@stackra/query`'s `OfflineSession`. Its `isRevoked` signal turns on with
+`SessionStatus.Revoked`, and `@stackra/query`'s `OfflineLock` then wipes the `outbox`, `cache` and `secrets` areas,
+the device's queued calls, replicas, tokens and payload key, and locks. Its `isSignedIn` signal turning on again (a
+fresh sign-in, since the wipe took the stored tokens) unlocks the device. When the tenant's offline limit (24 hours by
+default) passes without a sync, the lock wipes the same way and calls the driver's `end`, which signs out on the
+device even when the provider cannot be told.
 
 ## The flows
 

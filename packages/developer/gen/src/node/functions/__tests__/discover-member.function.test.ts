@@ -4,7 +4,8 @@
  *          package: kinds from bare, called and value-argument bases, options as constants, partners, constructor
  *          tokens with a named instance, the lifetime, facets, public methods, `handle` shapes, refusals, statics,
  *          shapes with rules, defaults, enums, dates and driver names, enums in source order, file exports, the
- *          authored root module, and tests read only when asked; on both TypeScript backends with equal results.
+ *          authored root module, the dependency package names, and tests read only when asked; on both TypeScript
+ *          backends with equal results.
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 16, 17, 20, 25 and 26); ADR 0305 (rules 42 and
@@ -29,6 +30,7 @@ describe("discoverMember", async () => {
       version: "1.0.0",
       layout: "package",
       modules: ["shop"],
+      packages: [],
     });
     expect(ir.rootModule).toEqual({ name: "ShopModule", from: "#node/shop.module" });
     expect(ir.errors).toEqual([]);

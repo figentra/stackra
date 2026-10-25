@@ -7,6 +7,7 @@
  * Governing contract: ADR 0260 (decision 3); ADR 0305 (query `cache`); the HTTP conventions rule.
  */
 import type { EndpointOptions } from "@stackra/actions";
+import type { ReplicaOptions } from "@stackra/query";
 
 import type { EventRef } from "#core/types/event-ref.type";
 import type { QueryRefCache } from "#core/types/query-ref-cache.type";
@@ -28,4 +29,7 @@ export interface QueryRefOptions<I extends RefSchema, O extends RefSchema> {
 
   /** The producer's cache declaration. */
   readonly cache?: QueryRefCache;
+
+  /** The producer's replica declaration: the client keeps the query as a bounded replica, available offline. */
+  readonly replica?: ReplicaOptions;
 }

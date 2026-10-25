@@ -4,8 +4,9 @@
  *          network is down and the offline map lets the queue hold the action, queues it instead.
  * Boundary: internal to `useAction`; not exported from an entry. A call is queued only after a network failure, never
  *           after a refusal; the queued call keeps the wire input and is ordered behind the earlier calls on the record
- *           its route names (the first `:param`). An online-only action rethrows the network error. An invalid input
- *           is refused before anything is sent.
+ *           its route names (the first `:param`). An online-only action rethrows the network error; a capped action
+ *           past its offline cap rejects with the queue's `offline_cap_reached`. An invalid input is refused before
+ *           anything is sent.
  * Runtime: isomorphic
  * Governing contract: ADR 0059 (offline queue); ADR 0227 (no sync engine); ADR 0260 (decision 4).
  */
@@ -54,7 +55,8 @@ function aggregateOf(request: ClientRequest): string | undefined {
  * Runs `action` with `input`.
  *
  * @throws InputInvalidError when `input` does not match the action's input schema.
- * @throws ClientError the producer's refusal, or the `TransportError` when the call can neither be sent nor queued.
+ * @throws ClientError the producer's refusal, the `TransportError` when the call can neither be sent nor queued, or
+ *         `@stackra/actions`' `OfflineCapReachedError` when the queue refuses it past its offline cap.
  * @throws Error the queue's write error; the call is then neither sent nor queued.
  */
 export async function runAction<A extends ActionRef>(

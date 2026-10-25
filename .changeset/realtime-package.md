@@ -20,3 +20,8 @@ falls back to server-sent events, and `MemoryRealtimeTransportDriver`.
 The package also adds the `RealtimeConfig` configuration (`realtime`) with its shipped schema `RealtimeConfig$`,
 `RealtimeStatus`, `REALTIME_PATH`, `useRealtimeConnection` and `useSubscription` (`./react`), and `fakeRealtime`
 (`./testing`).
+
+`liveQueryRoutes` derives the routes of a live query's refresh (a query with `cache.invalidateOn`, every offline
+`replica:` query among them): one per invalidating event, on that event's module channel, under the query's own
+permission and audience, so the broadcaster carries the data-free refresh that makes `@stackra/query` refetch the
+query or refresh its replica by change cursor.

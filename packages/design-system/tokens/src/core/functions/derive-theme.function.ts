@@ -3,20 +3,23 @@
  * Purpose: derives a full theme from a base theme and a few knobs (the Theme Studio's controls).
  *          - Neutral roles: the neutral colour roles, and the graphite and accent palette steps, lean to the knobs'
  *            hue and chroma, and keep their lightness.
- *          - Accent: an accent colour replaces the accent family (accent, focus, link and the hover, pressed and soft
- *            steps) at fixed lightnesses per mode. Its foreground is white or ink, whichever contrasts more.
+ *          - Accent: an accent hue and chroma replace the accent family (accent, its foreground, focus and the hover,
+ *            pressed and soft steps) through `deriveAccent`, at the base accent's own lightness in each scheme; no
+ *            fixed lightness, and the link stays the base's (ADR 0340 decision 4, ADR 0319).
+ *          - Material: a level's fill share (both schemes) and blur replace the base's.
  *          - Rest: the radius, the font stacks and the name are replaced as given.
  *          The status colours, the brand's artwork colours and everything else stay as the base has them. Every hex
  *          is derived again from its oklch value.
  * Boundary: pure; returns a theme `defineTheme` has checked, so a knob that yields an unusable value throws
  *          InvalidThemeError. Colours that are not `oklch(…)` are kept as they are.
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (Stackra Design System); ADR 0320 (the Theme Studio).
+ * Governing contract: ADR 0302 (Stackra Design System); ADR 0320 (the Theme Studio); ADR 0340 (decision 4).
  */
-import type { ColorToken, Theme } from "#contracts/types/theme.type";
+import { MaterialLevel } from "#contracts/enums/material-level.enum";
+import type { ColorToken, Theme, ThemeMaterials } from "#contracts/types/theme.type";
 import type { ThemeKnobs } from "#contracts/types/theme-knobs.type";
-import { contrastRatio } from "#core/functions/contrast-ratio.function";
 import { defineTheme } from "#core/functions/define-theme.function";
+import { deriveAccent } from "#core/functions/derive-accent.function";
 import { oklchToHex } from "#core/functions/oklch-to-hex.function";
 
 const OKLCH = /^oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+)\s*)?\)$/;
@@ -36,8 +39,6 @@ const KEPT_ROLES = new Set([
 
 /** The palette steps the neutral knobs move: the graphite ramp and the accent steps. */
 const MOVED_PALETTE = /^(graphite-\d+|accent-.+)$/;
-
-const WHITE = "oklch(1 0 0)";
 
 const round = (value: number, digits: number) => Number(value.toFixed(digits));
 
@@ -69,30 +70,26 @@ const leanToken = (colour: ColorToken, knobs: ThemeKnobs): ColorToken => {
   return light === colour.light && dark === colour.dark ? colour : token(light, dark);
 };
 
-/** White or the base's ink, whichever stands further from `background` (a hex). */
-function onColour(background: string, ink: string): string {
-  return contrastRatio(oklchToHex(WHITE), background) >= contrastRatio(oklchToHex(ink), background)
-    ? WHITE
-    : ink;
-}
-
-/** The accent family for an accent of `hue` and `chroma`, on the base's ink. */
-function accentFamily(hue: number, chroma: number, ink: string) {
-  const accent = token(oklch(0.52, chroma, hue), oklch(0.74, chroma, hue));
-  return {
-    colors: {
-      accent,
-      "accent-foreground": token(onColour(accent.hexLight, ink), onColour(accent.hexDark, ink)),
-      focus: accent,
-      link: token(oklch(0.46, chroma, hue), oklch(0.8, chroma * 0.8, hue)),
-    },
-    palette: {
-      "accent-hover": token(oklch(0.47, chroma, hue), oklch(0.69, chroma, hue)),
-      "accent-pressed": token(oklch(0.42, chroma, hue), oklch(0.64, chroma, hue)),
-      "accent-soft": token(oklch(0.94, chroma * 0.3, hue), oklch(0.3, chroma * 0.4, hue)),
-      "accent-soft-foreground": token(oklch(0.42, chroma, hue), oklch(0.86, chroma * 0.7, hue)),
-    },
-  };
+/** The base's material with each level knob in place: a fill share in both schemes, a blur in px. */
+function materialsOf(base: ThemeMaterials, knobs: ThemeKnobs["materials"]): ThemeMaterials {
+  if (!knobs) return base;
+  const levels = Object.fromEntries(
+    MaterialLevel.map((level) => {
+      const own = base.levels[level];
+      const knob = knobs[level];
+      return [
+        level,
+        knob === undefined || (knob.fill === undefined && knob.blur === undefined)
+          ? own
+          : {
+              ...own,
+              ...(knob.fill === undefined ? {} : { fill: { light: knob.fill, dark: knob.fill } }),
+              ...(knob.blur === undefined ? {} : { blur: `${knob.blur}px` }),
+            },
+      ];
+    }),
+  ) as ThemeMaterials["levels"];
+  return { ...base, levels };
 }
 
 /**
@@ -114,7 +111,10 @@ export function deriveTheme(base: Theme, knobs: ThemeKnobs): Theme {
     ]),
   );
   const accent = knobs.accent
-    ? accentFamily(knobs.accent.hue, knobs.accent.chroma, base.colors.foreground.light)
+    ? (deriveAccent({ ...base, colors }, knobs.accent) as {
+        readonly colors: Partial<Theme["colors"]>;
+        readonly palette: Theme["palette"];
+      })
     : undefined;
 
   return defineTheme({
@@ -129,5 +129,6 @@ export function deriveTheme(base: Theme, knobs: ThemeKnobs): Theme {
     },
     radius:
       knobs.radius === undefined ? base.radius : { ...base.radius, base: `${knobs.radius}px` },
+    materials: materialsOf(base.materials, knobs.materials),
   });
 }

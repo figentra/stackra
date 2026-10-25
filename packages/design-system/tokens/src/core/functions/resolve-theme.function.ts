@@ -1,16 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: ADR 0340 decision 2, the one fold of brand over theme: a base theme through any number of layers. Each layer
- *          must extend the current theme's name; each path it changes must be allowed and unlocked by the policy in
- *          force; its changes merge (unsafe keys dropped), the resolved theme takes its name, and every colour it
+ *          must extend the current theme's name; its changes first move through the path aliases of renamed tokens
+ *          (decision 6), so a stored layer outlives a rename; each path it changes must be allowed and unlocked by the
+ *          policy in force; its changes merge (unsafe keys dropped), the resolved theme takes its name, and every colour it
  *          changes gets its hex recomputed from the oklch value; its own policy narrows the one above for the layers
  *          below, and widening it is refused. The resolved theme then meets the default contrast pairs and the policy's
  *          pairs as painted, and the policy's separation rules as notices.
  * Boundary: pure and total: it never throws. A refusal carries every finding and, for each colour the last layer
- *           changed that fails a pair, the nearest colour that passes; nothing is corrected silently. Path aliases for
- *           renamed tokens (decision 6) come with the versioned diff, later.
+ *           changed that fails a pair, the nearest colour that passes; nothing is corrected silently.
  * Runtime: isomorphic
- * Governing contract: ADR 0340 (decisions 2 to 5).
+ * Governing contract: ADR 0340 (decisions 2 to 6).
  */
 import type { LayerPolicy } from "#contracts/types/layer-policy.type";
 import type { ColorToken, Theme } from "#contracts/types/theme.type";
@@ -20,6 +20,7 @@ import type { ThemeLayer } from "#contracts/types/theme-layer.type";
 import type { ThemeVerdict } from "#contracts/types/theme-verdict.type";
 import { DEFAULT_CONTRAST_PAIRS } from "#core/constants/default-contrast-pairs.constant";
 import { InvalidThemeError } from "#core/errors/invalid-theme.error";
+import { aliasThemeDiff } from "#core/functions/alias-theme-diff.function";
 import { checkSeparation } from "#core/functions/check-separation.function";
 import { checkTheme } from "#core/functions/check-theme.function";
 import { mergeTheme } from "#core/functions/merge-theme.function";
@@ -116,7 +117,8 @@ export function resolveTheme(
       );
       break;
     }
-    const paths = leafPaths(layer.changes).filter((path) => path !== "name");
+    const aliased = aliasThemeDiff(layer.changes);
+    const paths = leafPaths(aliased).filter((path) => path !== "name");
     if (policy)
       for (const path of paths)
         if ((policy.lock ?? []).some((pattern) => matches(path, pattern)))
@@ -128,7 +130,7 @@ export function resolveTheme(
             path,
             `${path} is not among the paths the layer above allows`,
           );
-    const changes = layer.changes as Readonly<Record<string, unknown>>;
+    const changes = aliased as Readonly<Record<string, unknown>>;
     const diff = {
       ...changes,
       name: layer.name,

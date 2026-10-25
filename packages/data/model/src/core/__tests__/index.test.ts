@@ -128,6 +128,7 @@ describe("@stackra/model", () => {
       "TranslatedType",
       "UserStamps",
       "Versioned",
+      "Visibility",
       "createTrait",
       "traitsOf",
     ]);

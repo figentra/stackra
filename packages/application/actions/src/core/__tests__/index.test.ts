@@ -3,8 +3,8 @@
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/actions` (`Action`,
  *          `ConflictResolution`, `Extension`, `ExtensionPoint`, `IdMinting`, `Idempotency`, `OfflineMode`,
  *          `OfflinePrecondition`, `Precondition`, `Query`, `RateLimitConfig`, `RateLimitConfig$`, `RequestContext`)
- *          and the registry row's runtime are exported with the offline additions (`OFFLINE_HEADERS`, the device,
- *          cap, replica and review memory drivers, `ReplicaFeed` and two refusals), nothing else is, the ports are not,
+ *          and the registry row's runtime are exported with the offline additions (the device, cap, replica and review
+ *          memory drivers, `ReplicaFeed` and two refusals; no header name), nothing else is, the ports are not,
  *          and the template's types (`ActionContext`, `ExtensionContext`, `ExtensionTable`, `PreconditionContext`,
  *          `QueryContext`) and the offline option and replica types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
@@ -56,7 +56,6 @@ describe("@stackra/actions", () => {
       "MemoryRateLimitStoreDriver",
       "MemoryReplicaLogDriver",
       "MemoryReviewItemSinkDriver",
-      "OFFLINE_HEADERS",
       "OfflineCapReachedError",
       "OfflineMode",
       "OfflinePrecondition",
@@ -92,11 +91,13 @@ describe("@stackra/actions", () => {
     expectTypeOf<OfflineOptions["cap"]>().toEqualTypeOf<OfflineCap | undefined>();
     expectTypeOf<QueryOptions["replica"]>().toEqualTypeOf<QueryReplica | undefined>();
     expectTypeOf<ActionAccepts["ruleVersion"]>().toEqualTypeOf<string>();
-    expectTypeOf<CallOptions["replicaCursor"]>().toEqualTypeOf<string | undefined>();
-    expectTypeOf<ReplicaBounds["since"]>().toEqualTypeOf<Date>();
-    expectTypeOf<Extract<ReplicaPage<{ id: string }>, { full: true }>["rows"]>().toEqualTypeOf<
-      readonly { id: string }[]
+    expectTypeOf<NonNullable<CallOptions["device"]>["sequence"]>().toEqualTypeOf<
+      number | undefined
     >();
+    expectTypeOf<QueryContext["deviceId"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<ReplicaBounds["since"]>().toEqualTypeOf<Date>();
+    expectTypeOf<ReplicaPage["removed"]>().toEqualTypeOf<readonly string[]>();
+    expectTypeOf<ReplicaPage["full"]>().toEqualTypeOf<boolean>();
     expectTypeOf<RuleEvaluation["ruleVersion"]>().toEqualTypeOf<string>();
     expectTypeOf<ReturnType<RuleEvaluator["evaluate"]>>().toEqualTypeOf<
       Promise<RuleEvaluation | undefined>

@@ -8,11 +8,16 @@
  */
 export { TokensConfig } from "#config/tokens.config";
 export { MATERIAL_MODES, type MaterialModeFactors } from "#core/constants/material-modes.constant";
+export { STACKRA_CONTRAST_PAIRS } from "#core/constants/stackra-contrast-pairs.constant";
 export { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 export { THEME_JSON_FORMATS } from "#core/constants/theme-json-formats.constant";
+export { TOKEN_PATH_ALIASES } from "#core/constants/token-path-aliases.constant";
+export { TOKEN_SET_VERSION } from "#core/constants/token-set-version.constant";
 export { InvalidThemeError } from "#core/errors/invalid-theme.error";
+export { aliasThemeDiff } from "#core/functions/alias-theme-diff.function";
 export { contrastRatio } from "#core/functions/contrast-ratio.function";
 export { defineTheme } from "#core/functions/define-theme.function";
+export { deriveAccent } from "#core/functions/derive-accent.function";
 export { deriveTheme } from "#core/functions/derive-theme.function";
 export { diffTheme } from "#core/functions/diff-theme.function";
 export { exportThemeDiff } from "#core/functions/export-theme-diff.function";

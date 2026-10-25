@@ -4,14 +4,15 @@
  *          generated entity and schemas files, then makes every registration call the platform packages wait for,
  *          from the identities the manifest locked: the hosted packages' entity lists, the model partners of each
  *          `CrudService<M>`, the integration events' wire names and outbound webhooks, the job actions for the queue
- *          and the scheduler, the connections, the webhook events and the `@Searchable` models.
+ *          and the scheduler, the connections, the webhook events, the sequences and the `@Searchable` models.
  * Boundary: pure. Node only: the server entry and the generated test setup import it before the container boots. A
  *           service registers its own classes and those its hosted packages list in their manifests (imported from
  *           the entry that exports each file); a package registers its own. A call with no row is not written, and a
  *           member with nothing to register gets no file. Factory partners are the test setup's, never this file's.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 20 and 22: identities from the manifest); ADR 0097 (decision 5.4);
- *                     ADR 0305 (rule 5: partners); ADR 0141; ADR 0308 (rules 2 and 15); ADR 0224; ADR 0221 (decision 5).
+ *                     ADR 0305 (rule 5: partners); ADR 0141; ADR 0308 (rules 2 and 15); ADR 0224; ADR 0221
+ *                     (decision 5); ADR 0342 (decision 5: registered sequences).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
@@ -184,6 +185,17 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
   );
 
   call(
+    "registerSequences",
+    "@stackra/database",
+    ((manifest["sequences"] ?? []) as readonly Entry[]).map((entry) => {
+      const type = classOf(entry);
+      return type === undefined
+        ? undefined
+        : `{ type: ${type}, key: ${JSON.stringify(entry["key"])} }`;
+    }),
+  );
+
+  call(
     "registerSearchableModels",
     "@stackra/search/node",
     ((manifest.models ?? []) as readonly Entry[])
@@ -197,7 +209,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     purpose:
       `the registrations of ${ir.package}: loads the generated entity and schemas files, then names each class the ` +
       "platform packages look up by its locked identity (entities, model partners, event wire names, jobs, " +
-      "connections, webhook events, outbound webhooks and searchable models).",
+      "connections, webhook events, outbound webhooks, sequences and searchable models).",
     boundary:
       "imported by the server entry and the generated test setup before the container boots; every row comes from " +
       "the committed identities, so a hand edit is overwritten.",

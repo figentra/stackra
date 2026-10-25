@@ -5,7 +5,8 @@
  *          package class), its options as constants, its partner from the heritage type argument (`Point["slot"]`
  *          included), its constructor tokens, facets, `handle` signature, refusals, statics and traits; each shape's
  *          fields from the declared type node first and the checker second, with rules and constant defaults; each
- *          `Enum.of` in source order; and each file's exports.
+ *          model's entity facts (`[OptionalProps]` keys, relations with their target, inverse and options, getters);
+ *          each `Enum.of` in source order; and each file's exports.
  * Boundary: syntax-first and backend-neutral: every question goes through `TsHost`. Only the member's own source
  *           files under `src/` are read as declarations; a dependency is read only to resolve a kind, an inherited
  *           field or a constant, and its options never (ADR 0294 decision 25). Every refusal is collected with its
@@ -26,6 +27,7 @@ import { snakeCase } from "#core/functions/snake-case.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { ClassValue } from "#core/types/class-value.type";
 import type { DeclaredClass } from "#core/types/declared-class.type";
+import type { EntityIR } from "#core/types/entity-ir.type";
 import type { EnumIR } from "#core/types/enum-ir.type";
 import type { FacetUse } from "#core/types/facet-use.type";
 import type { FieldDefault } from "#core/types/field-default.type";
@@ -1186,6 +1188,111 @@ export function createSourceReader(
     return { fields, relations };
   };
 
+  /** The relation of a model field: its kind from the decorator or `Link<T>`, its target, inverse side and options. */
+  const relationOf = (shape: string, property: TsNode): RelationIR | undefined => {
+    const name = nameOf(property.name);
+    const decorator = decoratorsOf(property).find((use) => RELATIONS.has(use.name));
+    const members =
+      property.type === undefined
+        ? []
+        : host.kind(property.type) === "UnionType"
+          ? (property.type.types ?? [])
+          : [property.type];
+    const typed = members.find((member) => host.kind(member) === "TypeReference");
+    const typeSymbol = typed?.typeName === undefined ? undefined : host.symbolAt(typed.typeName);
+    const typeName = typeSymbol === undefined ? undefined : host.symbolName(typeSymbol);
+    const kind =
+      typeName === "Link"
+        ? "link"
+        : decorator === undefined
+          ? undefined
+          : RELATION_KINDS[decorator.name];
+    const thunk = decorator?.args[0];
+    const targetNode =
+      thunk !== undefined && host.kind(thunk) === "ArrowFunction"
+        ? thunk.body
+        : typed?.typeArguments?.[0]?.typeName;
+    const targetSymbol = targetNode === undefined ? undefined : host.symbolAt(targetNode);
+    const targetClass = classDeclarationOf(targetSymbol);
+    if (
+      kind === undefined ||
+      targetNode === undefined ||
+      targetSymbol === undefined ||
+      targetClass === undefined
+    ) {
+      if (isOwn(host.fileName(property)))
+        fail(
+          property.name ?? property,
+          `${shape}.${name}`,
+          "relation_decorator_missing",
+          `\`${name}\` is a relation gen cannot read: no relation decorator names its target model`,
+          "add `@ManyToOne(() => Target)`, `@OneToMany(() => Target, (row) => row.back)` or `@ManyToMany(() => Target)`, or type a model of another module `Link<Target>`",
+        );
+      return undefined;
+    }
+    const back = decorator?.args[1];
+    const inverse =
+      back !== undefined && host.kind(back) === "ArrowFunction" && back.body?.name !== undefined
+        ? nameOf(back.body.name)
+        : undefined;
+    const written = decorator?.args
+      .slice(1)
+      .find((argument) => host.kind(argument) === "ObjectLiteralExpression");
+    const targetModule =
+      isOwn(host.fileName(targetClass)) && kindInfo(targetClass)?.kind === "model"
+        ? moduleOf(host.fileName(targetClass))
+        : undefined;
+    return {
+      name,
+      kind,
+      target: refOf(targetNode, targetSymbol),
+      ...(targetModule !== undefined ? { targetModule } : {}),
+      nullable: members.some(isNullish),
+      ref: typeName === "Ref",
+      ...(inverse !== undefined ? { inverse } : {}),
+      options: optionsOf(written),
+    };
+  };
+
+  /** A model's entity facts: `[OptionalProps]` keys, relations and public getters, over its whole chain. */
+  const entityOf = (
+    shape: string,
+    chain: readonly TsNode[],
+    relations: readonly string[],
+    traitFields: readonly string[],
+  ): EntityIR => {
+    // Base-most first, as `fieldsOf` reads a chain: a base's declaration holds the decorators.
+    const baseFirst = chain.reduceRight<TsNode[]>((links, link) => [...links, link], []);
+    const properties = baseFirst.flatMap(propertiesOf);
+    const declarations = new Map<string, TsNode>();
+    for (const property of properties)
+      if (!declarations.has(nameOf(property.name)))
+        declarations.set(nameOf(property.name), property);
+    const initialized = properties
+      .filter((property) => property.initializer !== undefined)
+      .map((property) => nameOf(property.name));
+    const getters = baseFirst
+      .flatMap((link) => link.members ?? [])
+      .filter(
+        (member) =>
+          host.kind(member) === "GetAccessor" &&
+          kindOf(member.name) === "Identifier" &&
+          !has(member, "StaticKeyword") &&
+          !has(member, "PrivateKeyword") &&
+          !has(member, "ProtectedKeyword"),
+      )
+      .map((member) => nameOf(member.name));
+    return {
+      optional: [...new Set([...traitFields, ...initialized])].sort(),
+      relations: relations.flatMap((name) => {
+        const declaration = declarations.get(name);
+        const relation = declaration === undefined ? undefined : relationOf(shape, declaration);
+        return relation === undefined ? [] : [relation];
+      }),
+      computed: [...new Set(getters)],
+    };
+  };
+
   // Shapes, cached so a derived shape reads its source once.
   const shapeCache = new Map<TsNode, ShapeIR | null>();
   const readShape = (node: TsNode): ShapeIR | undefined => {
@@ -1296,6 +1403,7 @@ export function createSourceReader(
     if (info.kind === "model" && node.name !== undefined) {
       // Trait fields come from `Model.with(...)` mixins: their declarations are generic, so the checker types them.
       const declared = new Set([...fields.map((field) => field.name), ...relations]);
+      const traitFields: string[] = [];
       for (const property of host.properties(host.typeAt(node.name))) {
         const propertyName = host.symbolName(property);
         const declaration = host.declarations(property)[0];
@@ -1319,7 +1427,14 @@ export function createSourceReader(
           type,
           rules: [],
         });
+        traitFields.push(propertyName);
       }
+      return {
+        ...head,
+        fields,
+        relations,
+        entity: entityOf(name, info.chain, relations, traitFields),
+      };
     }
     return { ...head, fields, relations };
   };

@@ -8,7 +8,7 @@
 
 <!-- Specs are public on GitHub: no secrets, customer data or details of an unfixed vulnerability (ADR 0120 D17). -->
 
-**Linear**: STA-348
+**Linear**: STA-348 (wave 9 revoke-and-wipe driver: STA-488)
 
 **Linear project**: Foundation kernel
 
@@ -29,7 +29,8 @@ client's session with `useSession`, the session claims the tenant switcher and t
   tenancy package's `TenantMembership`, filled from the session claims (the `scp_` id, the path and the roles)
 - **Secrets**: none; a browser has no client credential and a device is a public client (ADR 0173: secrets are names)
 - **ADR needed**: no (ADR 0206, 0241, 0277, 0327, 0338 d4)
-- **New dependencies**: none new; workspace packages through `workspace:*`, `zod` through `catalog:`, the React test
+- **New dependencies**: none new outside the workspace; wave 9 adds `@stackra/query` (the `OfflineSession` port)
+  through `workspace:*`; workspace packages through `workspace:*`, `zod` through `catalog:`, the React test
   libraries and jsdom through `catalog:frontend` (tests only)
 - **Deploy modes**: same in all
 - **Licence tier**: free (MIT; distributed on npmjs with provenance when released, ADR 0177)
@@ -55,6 +56,10 @@ The package follows ADR 0206, 0241, 0277, 0327 and the v3.1 registry row, with t
   `ScopeRequest.claim`
 - ADR 0338 d4: `SessionStatus.Revoked` is the revocation signal; `invalid_grant` on renewal means revoked, any other
   renewal failure keeps the session (ADR 0206 d9)
+- ADR 0338 d4, wave 9 (STA-488): identity hands the signal to `@stackra/query`'s `OfflineLock` through
+  `SessionOfflineSessionDriver` (the query port `OfflineSession`), which wipes and locks; identity clears no storage
+  area of another package. The lock's sign-out past the offline limit goes through `SessionService.signOut` and
+  resolves even when the provider cannot be told
 - R-59 and ADR 0323: no tenant identifier is declared here; `SessionUser.tenants` keeps the template's field name and
   holds `TenantMembership` values
 - `IdentityConfig` has no env map; the device's `issuer` and `clientId` are public values set per environment by
@@ -104,7 +109,10 @@ Pages and the generated navigation call `useSession()`; a profile page reads `Si
 A device whose session is revoked from "Sessions" learns it on its next renewal, drops its tokens and reports
 `revoked`, so the offline stores wipe.
 
-**Independent Test**: `src/core/services/__tests__/session.service.test.ts`, `src/core/drivers/__tests__/pkce-session-store.driver.test.ts`.
+Through `SessionOfflineSessionDriver`, `@stackra/query`'s `OfflineLock` wipes the device's queue, replicas, tokens and
+payload key on `revoked`, and a fresh sign-in unlocks it.
+
+**Independent Test**: `src/core/services/__tests__/session.service.test.ts`, `src/core/drivers/__tests__/pkce-session-store.driver.test.ts`, `src/core/drivers/__tests__/session-offline-session.driver.test.ts`.
 
 ### User Story 5 - Call services with the session (Priority: P1)
 
@@ -126,6 +134,8 @@ The template's tests call `fakeSession({ status, tenants })` and `fakeIdentity({
 - A discovery document naming another issuer: refused.
 - A stored session that no longer parses: signed out.
 - A failure to read the session at boot: signed out, reported once.
+- A refresh that repeats the same status tells no offline listener; a sign-out the provider cannot hear still ends the
+  session on the device.
 
 ## Requirements
 
@@ -152,6 +162,9 @@ The template's tests call `fakeSession({ status, tenants })` and `fakeIdentity({
 - **FR-009**: `fakeSession` SHALL return a session in the asked status, typed `SignedInSession` when signed in, with
   spied `signIn` and `signOut`, bindable as `SessionService`; `fakeIdentity` SHALL return an `IdentityResolver` over the
   named principals.
+- **FR-010**: `SessionOfflineSessionDriver` SHALL implement `@stackra/query`'s `OfflineSession`: `isRevoked` and
+  `isSignedIn` read `SessionService`'s status and tell their listeners only when their value changes, and `end` signs
+  out and resolves even when the provider cannot be told.
 
 ## Success Criteria
 

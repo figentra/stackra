@@ -5,9 +5,10 @@
  *          failure); the area and action rate limits; the unit of work with `afterCommit`; the audit entry; the call
  *          context (frozen clock, request facts, registered key, the call's scope, `RequestContext`); the workflow,
  *          signal and job capabilities (the dispatcher sees the scope); interceptors; a query's lighter path; and the
- *          offline additions: a device's calls in sequence order (refusals settle, an early or repeated sequence is
- *          refused), the offline cap by count and amount, the review of offline-computed documents, and a replica
- *          query's full fill and changes since its cursor.
+ *          offline additions: a device's calls in sequence order (sequences are not contiguous; refusals settle; a
+ *          resend replays or is refused; a call with no sequence is not ordered and reads `ctx.deviceId`), the offline
+ *          cap by count and amount, the review of offline-computed documents, and a replica query's full fill and the
+ *          changes since the cursor in its input.
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -82,6 +83,7 @@ import type { RuleEvaluation } from "#core/types/rule-evaluation.type";
 import type { RuleEvaluator } from "#core/types/rule-evaluator.type";
 import type { ActionContext } from "#core/types/action-context.type";
 import type { QueryContext } from "#core/types/query-context.type";
+import type { ReplicaPage } from "#core/types/replica-page.type";
 import type { Resolver } from "#core/types/resolver.type";
 import { AsyncContextStorageDriver } from "#node/drivers/async-context-storage.driver";
 
@@ -243,6 +245,7 @@ class InspectAction extends Action({
       market: ctx.market,
       tenantId: ctx.tenantId,
       scope: ctx.scope,
+      deviceId: ctx.deviceId,
       startOfDay: ctx.startOfDay(),
       days: ctx.period({ range: "last_7_days" }).days,
     };
@@ -355,8 +358,8 @@ class RecentSalesQuery extends Query({
   actors: [ActorKind.User],
   replica: { of: Sale, window: "30d", limit: 50 },
 }) {
-  async handle(_input: object, ctx: QueryContext): Promise<unknown> {
-    return ctx.replica(async () => [{ id: "sal_1" }]);
+  async handle(_input: { cursor?: string | null }, ctx: QueryContext): Promise<unknown> {
+    return ctx.replica(async () => [{ id: "sal_1", at: NOW, data: { total: 1 } }]);
   }
 }
 
@@ -806,6 +809,7 @@ describe(ActionPipeline, () => {
   it("applies a device's calls in sequence order and settles a refused one", async () => {
     const devices = new MemoryDeviceSequenceStoreDriver();
     const { pipeline, shop } = setup([[DeviceSequenceStore, devices]]);
+    const first = 1_729_760_400_000;
     const call = (sequence: number, key: string) =>
       pipeline.execute(
         CreateOrderAction,
@@ -817,31 +821,36 @@ describe(ActionPipeline, () => {
           device: { deviceId: "dev_1", sequence },
         },
       );
-    await expect(call(2, "k2")).rejects.toMatchObject({
-      code: "device_sequence_out_of_order",
-      expected: 1,
-    });
-    expect(log).toEqual([]);
-    await call(1, "k1");
+    expect(await call(first, "k1")).toEqual({ orderId: "ord_1", key: "k1" });
     expect(await devices.last("dev_1")).toMatchObject({
-      sequence: 1,
+      sequence: first,
       settledAt: NOW,
       scope: SCOPE,
     });
-    expect(await call(1, "k1")).toEqual({ orderId: "ord_1", key: "k1" });
-    await expect(call(1, "k9")).rejects.toBeInstanceOf(DeviceSequenceOutOfOrderError);
+    expect(await call(first, "k1")).toEqual({ orderId: "ord_1", key: "k1" });
+    await expect(call(first, "k9")).rejects.toMatchObject({
+      code: "device_sequence_out_of_order",
+      acknowledged: first,
+    });
+    await expect(call(first - 5, "k8")).rejects.toBeInstanceOf(DeviceSequenceOutOfOrderError);
     shop.open = false;
-    await expect(call(2, "k2")).rejects.toBeInstanceOf(OrdersPausedError);
-    expect((await devices.last("dev_1"))?.sequence).toBe(2);
+    await expect(call(first + 7, "k2")).rejects.toBeInstanceOf(OrdersPausedError);
+    expect((await devices.last("dev_1"))?.sequence).toBe(first + 7);
     shop.open = true;
-    expect(await call(3, "k3")).toEqual({ orderId: "ord_2", key: "k3" });
-    await expect(call(0, "k0")).rejects.toBeInstanceOf(InputInvalidError);
+    expect(await call(first + 9, "k3")).toEqual({ orderId: "ord_2", key: "k3" });
+    await expect(call(0, "k0")).rejects.toMatchObject({
+      code: "input_invalid",
+      fieldErrors: { "device.sequence": "a whole number from 1" },
+    });
     const bare = new ActionPipeline(
       resolverOf([
         [AccessControl, new RecordingAccess()],
         [InspectAction, new InspectAction()],
       ]),
     );
+    expect(
+      await bare.execute(InspectAction, {}, { actor: customer, device: { deviceId: "dev_1" } }),
+    ).toMatchObject({ deviceId: "dev_1" });
     await expect(
       bare.execute(
         InspectAction,
@@ -943,20 +952,25 @@ describe(ActionPipeline, () => {
       [RecentSalesQuery, new RecentSalesQuery()],
       [NotReplicaQuery, new NotReplicaQuery()],
     ]);
-    const first = (await pipeline.execute(RecentSalesQuery, {}, { actor: customer })) as {
-      full: boolean;
-      cursor: string;
-      asOf: Date;
-    };
-    expect(first).toMatchObject({ full: true, rows: [{ id: "sal_1" }], asOf: NOW });
-    await new ReplicaFeed(replicas).record(RecentSalesQuery, [{ id: "sal_2", row: { total: 4 } }]);
+    const first = (await pipeline.execute(
+      RecentSalesQuery,
+      { cursor: null },
+      { actor: customer },
+    )) as ReplicaPage;
+    expect(first).toMatchObject({
+      rows: [{ id: "sal_1", at: NOW, data: { total: 1 } }],
+      removed: [],
+      asOf: NOW,
+      full: true,
+    });
+    const sale = { id: "sal_2", at: NOW, data: { total: 4 } };
+    await new ReplicaFeed(replicas).record(RecentSalesQuery, [
+      { id: "sal_2", row: sale },
+      { id: "sal_1" },
+    ]);
     expect(
-      await pipeline.execute(
-        RecentSalesQuery,
-        {},
-        { actor: customer, replicaCursor: first.cursor },
-      ),
-    ).toMatchObject({ full: false, changes: [{ id: "sal_2", row: { total: 4 } }], more: false });
+      await pipeline.execute(RecentSalesQuery, { cursor: first.cursor }, { actor: customer }),
+    ).toMatchObject({ rows: [sale], removed: ["sal_1"], full: false });
     await expect(pipeline.execute(NotReplicaQuery, {}, { actor: customer })).rejects.toThrow(
       /declares no replica/,
     );

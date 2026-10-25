@@ -21,8 +21,7 @@ class SingleDeviceDriver extends Driver(DeviceSequenceStore) {
   }
 
   async settle(deviceId: string, sequence: number, at: Date): Promise<void> {
-    if (sequence === (this.known?.sequence ?? 0) + 1)
-      this.known = { deviceId, sequence, settledAt: at };
+    if (sequence > (this.known?.sequence ?? 0)) this.known = { deviceId, sequence, settledAt: at };
   }
 }
 

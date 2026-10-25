@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `ClientMutationSenderDriver`: a replay goes through the transport with the queued key and its
- *          route, and its outcome is sent, refused for good (code and the server's current record), or not reached
+ * Purpose: unit tests of `ClientMutationSenderDriver`: a replay goes through the transport with the queued key, its
+ *          device order and its route, and its outcome is sent, refused for good (code and the server's current record), or not reached
  *          (offline, 401, 429, 5xx); an unknown action is refused for good.
  * Boundary: test only; the transport is a stand-in.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0059 (decisions 2 and 3); ADR 0138.
+ * Governing contract: ADR 0022; ADR 0059 (decisions 2 and 3); ADR 0138; ADR 0338 (decision 1).
  */
 import { HttpMethod } from "@stackra/contracts";
 import { ErrorKind } from "@stackra/errors";
@@ -56,18 +56,21 @@ class StubTransport extends ClientTransport {
   }
 }
 
+const ORDER = { deviceId: "device-1", sequence: 1729760400000 };
+
 const replay = (answer: () => Promise<unknown>) => {
   const transport = new StubTransport(answer);
   const sending = new ClientMutationSenderDriver(transport).send(
     "catalogue.product.archive@1",
     { productId: "prd_1" },
     "key-1",
+    ORDER,
   );
   return { transport, sending };
 };
 
 describe("ClientMutationSenderDriver", () => {
-  it("replays with the queued key and the action's route", async () => {
+  it("replays with the queued key, the device order and the action's route", async () => {
     const { transport, sending } = replay(() => Promise.resolve({ productId: "prd_1" }));
     expect(await sending).toEqual({ ok: true, code: null, server: null });
     expect(transport.sent[0]).toMatchObject({
@@ -76,6 +79,7 @@ describe("ClientMutationSenderDriver", () => {
       endpoint: { method: "PUT", path: "/products/:productId/archive" },
       input: { productId: "prd_1" },
       idempotencyKey: "key-1",
+      device: ORDER,
     });
   });
 
@@ -97,7 +101,7 @@ describe("ClientMutationSenderDriver", () => {
 
   it("refuses an action no loaded ref has", async () => {
     const driver = new ClientMutationSenderDriver(new StubTransport(() => Promise.resolve({})));
-    expect(await driver.send("orders.order.unknown@1", {}, "key-2")).toEqual({
+    expect(await driver.send("orders.order.unknown@1", {}, "key-2", ORDER)).toEqual({
       ok: false,
       code: "unknown_action",
       server: null,

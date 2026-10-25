@@ -9,11 +9,11 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0270 (decision 3); ADR 0294 (decisions 20 and 22); ADR 0110 (decision 6).
  */
+import { blockKey } from "#core/functions/block-key.function";
 import { clientRuntimes } from "#core/functions/client-runtimes.function";
 import { componentBeside } from "#core/functions/component-beside.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
-import { snakeCase } from "#core/functions/snake-case.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 
@@ -41,7 +41,7 @@ export function emitBlocks(ir: MemberIR): GeneratedFile[] {
           (imports.get(target.from) ?? new Map<string, boolean>()).set(target.name, false),
         );
       rows.push(
-        `  { key: ${JSON.stringify(`${ir.member}.${snakeCase(folder)}`)}, block: ${block.name}, component: ${component.name} },`,
+        `  { key: ${JSON.stringify(blockKey(ir.member, block.file))}, block: ${block.name}, component: ${component.name} },`,
       );
     }
     if (rows.length === 0) continue;

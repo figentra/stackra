@@ -27,6 +27,11 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 - Output is deterministic: files sorted by path, stable key order. Every refusal has a snake_case code, a position and
   a fix; when there is one, nothing is written.
 - Identity formulas live in one place each (ADR 0294 decision 20); other packages call them, never copy them.
+- A generated registration calls only a function its package exports, with rows from the locked identities, and is
+  written only when it has a row. A new public id prefix of a platform package is a reviewed row in
+  `PUBLIC_ID_PREFIXES` (ADR 0135 rule 2).
+- `generateMember` runs every emitter; `generate` (and so `stackra gen`) writes what it returns. A new output is an
+  emitter in `src/core/functions/` called from `generateMember`, with its test.
 
 ## Rules that fail the build
 

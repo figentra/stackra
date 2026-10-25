@@ -1,28 +1,28 @@
 /**
  * Stackra file contract:
  * Purpose: `DeviceSequenceOutOfOrderError` (`device_sequence_out_of_order`), the refusal of a call replayed from a
- *          device's offline queue whose sequence is not the device's next one; it names the sequence the server
- *          expects.
- * Boundary: never settles a sequence. `expected` below the sequence sent means an earlier call has not arrived: send it
- *           first and retry this one, hence retryable (thrown before any step). `expected` above means that call was
- *           already applied or rejected and this resend is not a replay of it (a resend with its own Idempotency-Key
- *           replays the stored output instead): drop it (thrown by the idempotency step). A conflict (409).
+ *          device's offline queue whose sequence is at or below the device's last acknowledged one and is not a resend
+ *          the server can replay; it names that last acknowledged sequence.
+ * Boundary: never settles a sequence. Thrown by the idempotency step: the call was already applied or rejected (or a
+ *           later one was), and this send carries no Idempotency-Key with a stored output to replay, so the client
+ *           drops it. Sequences are not contiguous, so the server never refuses a sequence as too far ahead; the client
+ *           sends one call at a time. A conflict (409), not retryable.
  * Runtime: isomorphic
- * Governing contract: ADR 0338 (decision 1: never a later call before an earlier one is applied or rejected); ADR
- *                     0140; final review R-02 (typed `create`).
+ * Governing contract: ADR 0338 (decisions 1 and 4: never a later call before an earlier one is applied or rejected;
+ *                     the last acknowledged sequence); ADR 0140; final review R-02 (typed `create`).
  */
 import { ErrorKind, Refusal } from "@stackra/errors";
 
 /**
- * Retryable once the expected call has been sent.
+ * The device already moved past this sequence.
  *
  * @example
- * throw DeviceSequenceOutOfOrderError.create({ expected: 42 });
+ * throw DeviceSequenceOutOfOrderError.create({ acknowledged: 1729760400000 });
  */
 export class DeviceSequenceOutOfOrderError extends Refusal({
   kind: ErrorKind.Conflict,
-  retryable: true,
+  retryable: false,
 }) {
-  /** The device's next sequence. */
-  expected!: number;
+  /** The device's last acknowledged (applied or rejected) sequence. */
+  acknowledged!: number;
 }

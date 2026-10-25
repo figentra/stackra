@@ -181,7 +181,7 @@ describe("Action", () => {
         return undefined;
       }
     }
-    const cap = { count: 3, amount: 50_000, amountField: "total", window: "24h" };
+    const cap = { count: 3, amount: 50_000, window: "24h" };
     const accepts = { ruleVersion: "2.4.0", evaluator: PriceEvaluator };
     expect(
       kindOf(Action({ ...base, offline: { ...OFFLINE, cap }, accepts }))?.options,
@@ -192,7 +192,6 @@ describe("Action", () => {
     expect(() => capped({ count: 0, window: "24h" })).toThrow(RangeError);
     expect(() => capped({ amount: 1.5, window: "24h" })).toThrow(RangeError);
     expect(() => capped({ count: 1, window: "a day" })).toThrow(RangeError);
-    expect(() => capped({ count: 1, amountField: "total", window: "1d" })).toThrow(TypeError);
     expect(() => Action({ ...base, accepts: { ...accepts, ruleVersion: "v2" } })).toThrow(
       RangeError,
     );

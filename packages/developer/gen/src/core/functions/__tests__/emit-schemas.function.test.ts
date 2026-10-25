@@ -3,8 +3,8 @@
  * Purpose: unit tests of `emitSchemas`: one `X$` per enum and shape in dependency order, the codecs and rules of each
  *          field type, `.exactOptional()`, `.nullable()` and constant defaults, the `X$Check` assertions, the
  *          `{ input, output }` of each action and query, the config alias, a member base `.extend`ed, a package base
- *          reused through `Base<Name>$`, a later reference made lazy, a sibling module imported, and the
- *          `registerSchemas` call of gap G1.
+ *          reused through `Base<Name>$`, a later reference made lazy, a sibling module imported, the
+ *          `registerSchemas` call of gap G1, and the `registerChanges` call beside it.
  * Boundary: test only; asserts on the generated source text.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26); ADR 0305 (rules 1 and 14); registry v3.1 G1.
@@ -13,6 +13,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { emitSchemas } from "#core/functions/emit-schemas.function";
 import type { MemberIR } from "#core/types/member-ir.type";
+import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 
 describe("emitSchemas", () => {
@@ -154,5 +155,18 @@ describe("emitSchemas", () => {
     expect(content).toContain(
       "  maxRedeemPercent: BaseLoyaltyKitConfig$.shape.maxRedeemPercent.default(30),",
     );
+  });
+
+  it("links each change to its subject beside the schemas", () => {
+    const billing = emitSchemas(BILLING_IR, "billing");
+    expect(billing).toContain('import { registerChanges } from "@stackra/versioning";');
+    expect(billing).toContain(
+      'import { InvoiceIssued } from "#modules/billing/events/invoice-issued.event";',
+    );
+    expect(billing).toContain(
+      'import { InvoiceIssuedChange } from "#modules/billing/events/invoice-issued.change";',
+    );
+    expect(billing).toContain("registerChanges([\n  [InvoiceIssued, InvoiceIssuedChange],\n]);");
+    expect(orders).not.toContain("registerChanges");
   });
 });

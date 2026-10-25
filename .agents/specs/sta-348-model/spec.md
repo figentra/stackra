@@ -46,6 +46,14 @@ The package follows the v3.1 registry row and the owner decisions of 2026-10-24 
   Q4; depends on validation, money, events; ADR 0294 decisions 4, 6, 11, 16, 25, 27 and 28; ADR 0096, 0133, 0135,
   0162, 0221, 0239
 
+### Session 2026-10-25 (STA-595)
+
+- ADR 0333 decisions 1 and 4: a model declares record visibility with a class facet here, `@Visibility({ attributes,
+follows })`; the rules, their evaluation and the query filter are `@stackra/iam`'s (this package imports neither
+  iam nor rules, which both reach it). Attributes are the fields a rule may test; `follows` names many-to-one
+  relations whose record must be visible too (ADR 0333's amendment). ADR 0294 decision 6 does not list the facet yet
+  (open item)
+
 ## User Scenarios & Testing
 
 ### User Story 1 - Declare a model with traits (Priority: P1)
@@ -93,6 +101,16 @@ Gen writes `{ type: new LinkType("catalogue.variant") }` and `{ kind: "embedded"
 
 1. **Given** a factory declaring the `~builds` brand, **Then** it fits a `Ref` position; a public id fits a `Link`.
 
+### User Story 6 - Declare record visibility (Priority: P1)
+
+`@Visibility({ attributes: ["collection", "status"] })` on a product, `@Visibility({ follows: ["matter"] })` on a
+document.
+
+**Independent Test**: `src/core/decorators/__tests__/visibility.decorator.test.ts`.
+
+1. **Given** a declaration, **Then** `Visibility.on(Model)` gives its frozen lists, and a subclass finds it.
+2. **Given** no name, a dotted or capitalised name, or a repeated one, **Then** a TypeError.
+
 ## Requirements
 
 - **FR-001**: Package `@stackra/model` at `packages/data/model`, entry `.` only, member files per ADR 0294 R12.
@@ -108,6 +126,8 @@ Gen writes `{ type: new LinkType("catalogue.variant") }` and `{ kind: "embedded"
   (ADR 0162 d2); `TranslatedType` maps it to jsonb.
 - **FR-007**: `MoneySchema` maps `Money` to `<prefix>minor bigint` and `<prefix>currency char(3)`, refusing an unsafe
   integer (ADR 0294 d27).
+- **FR-008**: `@Visibility({ attributes, follows })` is a class facet on the model kinds that records at least one
+  camelCase property name, each list without repeats, frozen, read back with `Visibility.on` (ADR 0333 d1, d4).
 
 ## Success Criteria
 
@@ -126,6 +146,14 @@ Gen writes `{ type: new LinkType("catalogue.variant") }` and `{ kind: "embedded"
   `createTrait`.
 - `EntitySchema`, `OptionalProps`, `CrudService`, `Factory`: @stackra/database.
 
+## Open items (STA-595)
+
+- ADR 0294 decision 6 lists the class facets (`@Index`, `@Searchable`, `@Auditable`, ...) and not `@Visibility`; a
+  note on 0294 should add it (the work item and the registry name a facet in this package).
+- Gen: check each `@Visibility` attribute is a field of the model with an index and each followed name a same-module
+  `Ref` relation, build the `record` fact source from the attributes' types, and write the `registerVisibility` rows
+  (`@stackra/iam/node`).
+
 ## Reconciliation 2026-10-25 (R4)
 
 - `BelongsToTenant` left the package (trait file, barrel, tests, docs): @stackra/tenancy/node owns it (ADR 0321,
@@ -136,3 +164,4 @@ Gen writes `{ type: new LinkType("catalogue.variant") }` and `{ kind: "embedded"
 ## Status history
 
 - 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)
+- 2026-10-25 · Implementing → Implementing · Claude (package-builder) · STA-595: the `@Visibility` facet (ADR 0333 d1, d4)

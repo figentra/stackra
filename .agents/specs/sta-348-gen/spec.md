@@ -26,7 +26,7 @@ packages; migration and entity emit waits for the data wave.
 - **Apps touched**: none (the template's generated Vite and Metro configs import `classComponents()` and the Metro
   transformer; STA-344 wires this repository's apps)
 - **Services touched**: none
-- **Packages touched**: `packages/developer/gen` (new member)
+- **Packages touched**: `packages/developer/gen` (new member; wave 9 catch-up STA-490)
 - **Cross-service events**: none
 - **Tenancy and data**: none; gen reads source and writes generated files under a member root only
 - **Secrets**: none held or read; a config's schema never reaches the manifest or `openapi.json` (ADR 0305 rule 34)
@@ -116,6 +116,40 @@ unless the class carries `@Renamed("order.cancel")`.
 3. **Given** Vite or Metro, **Then** `classComponents()` and `@stackra/gen/metro-transformer` run the pass before the
    framework's own transforms.
 
+### User Story 6 - The platform packages' registrations, entities and app outputs are generated (Priority: P1)
+
+Wave 9 catch-up (STA-490). The platform packages wait for gen to name their classes by locked identity: the
+database's entity schemas and model partners, the outbox's event wire names, the queue's and scheduler's jobs, the
+integrations' connections, the webhooks' events and inbound route, the sequences, the searchable models, an app's
+routes and blocks. Gen writes each from discovery and the manifest, so no package keeps a hand-written stand-in.
+
+**Independent Test**: `emit-entities.function.test.ts`, `emit-registrations.function.test.ts`,
+`emit-boot.function.test.ts`, `emit-webhooks.function.test.ts`, `emit-prefixes.function.test.ts`,
+`emit-routes.function.test.ts`, `emit-blocks.function.test.ts`, `emit-tool-configs.function.test.ts`,
+`generate-member.function.test.ts`, `src/node/functions/__tests__/create-source-reader.function.test.ts`.
+
+**Acceptance Scenarios**:
+
+1. **Given** a model, **Then** `#stackra/entities/<module>` holds its `[OptionalProps]` augmentation (trait fields and
+   initialized fields), one `EntitySchema` with its relations (inverse sides, `Ref`, links by model key) and getters,
+   the module's `<MODULE>_ENTITIES` list and its `registerEntities` call; a package's `node` entry exports the list.
+2. **Given** a service, **Then** `#stackra/registrations` loads the entity and schemas files and calls
+   `registerEntities` (hosted packages), `registerModelPartners`, `registerEventNames`, `registerJobs`,
+   `registerScheduledJobs`, `registerConnections`, `registerWebhookEvents`, `registerOutboundWebhooks`,
+   `registerSequences` and `registerSearchableModels`, one row per locked identity; `#stackra/schemas` calls
+   `registerChanges`; `#stackra/boot` connects the database (the outbox writer among its subscribers), segments and
+   the relay; `#stackra/webhooks` is the inbound route with the raw body.
+3. **Given** a constructor that injects `Repository<M>`, `Journal<M>`, `RequestContext`, an Integration or the
+   generated webhook route, **Then** the wiring binds `repositoryOf(M)`, `journalOf(M)` with `Locks`, the platform
+   service with its constructor tokens, and the Integration with `IntegrationRuntime`.
+4. **Given** integrations, sequences, an app's blocks and routes, and public id prefixes, **Then** the manifest locks
+   each identity (`@Renamed` to change one), refuses a prefix that is invalid, shared or registered to another
+   owner, and `#stackra/prefixes` lists each prefix with its model.
+5. **Given** an app, **Then** `#stackra/routes/<runtime>` registers the route table (and the panel's pages on the
+   browser when the app hosts the panel), `#stackra/blocks/<runtime>` registers the blocks that runtime draws, and
+   the browser and native entries load them; a package or service gets tsdown, Vitest and the test setup in
+   `.stackra/`.
+
 ### User Story 5 - Contract tests read the committed contract (Priority: P1)
 
 **Independent Test**: `src/testing/functions/__tests__/*.test.ts`.
@@ -141,6 +175,19 @@ unless the class carries `@Renamed("order.cancel")`.
 - **FR-004**: The shape compiler, wiring, member module and entries follow registry section 5 items 1 to 6 and gap G1.
 - **FR-005**: The class-component compiler follows ADR 0305 rules 37 to 41.
 - **FR-006**: `./testing` exports exactly the symbols the template imports from `@stackra/gen/testing`.
+- **FR-007**: Discovery reads each model's entity facts (`[OptionalProps]` keys, relations with kind, target, inverse
+  and constant options, getters) and refuses a relation it cannot read with `relation_decorator_missing`; gen writes
+  `#stackra/entities/<module>` from them (ADR 0097 decision 3, ADR 0294 decision 28).
+- **FR-008**: Gen writes `#stackra/registrations`, `#stackra/boot` and `#stackra/webhooks` for a service, and
+  `registerChanges` beside `registerSchemas`, calling only the registration functions the platform packages export,
+  with rows from the locked identities (registry v3.1 section 5; ADR 0141, 0308, 0342).
+- **FR-009**: The wiring binds the per-model tokens (`repositoryOf`, `journalOf` with `Locks`), an Integration's
+  `IntegrationRuntime`, the inbound webhook route and the platform services of `PLATFORM_BINDINGS` where they are
+  injected (ADR 0263, 0294 decision 17).
+- **FR-010**: The manifest derives and locks integration, sequence, block and route keys, checks public id prefixes
+  against the shared registry (ADR 0135 rule 2), and gen writes `#stackra/prefixes`.
+- **FR-011**: Gen writes an app's route tables and block registrations per client runtime, the runtime entries that
+  load them, and a package's or service's tool configs into `.stackra/` (ADR 0295 decisions 5 and 7).
 
 ## Success Criteria
 
@@ -151,11 +198,16 @@ unless the class carries `@Renamed("order.cancel")`.
 
 ## Out of scope (owned elsewhere)
 
-Clients, routes, navigation, resources and panels, flags, settings, permissions refs, queues, events, extensions, ai,
-intents, capabilities, assets, env, i18n keys, `EntitySchema` and migrations, the Encore app, tool configs, icon-name
-validation, hooks lint mapped back to the class line, the generated function-type declaration of a class component,
-and the snapshot-read lint (registry section 5, "Targets that land with their packages").
+Clients, navigation trees and `keys` for `toRoot`, resources, panels and widgets, flags, settings pages, permissions
+refs and the other per-kind registrations (`registerActions`, `registerPermissions`, `registerRoles`,
+`registerPolicies`, `registerListeners`, `registerExtensions`, `registerWorkflows`, `registerEntitlements`,
+`registerBuckets`, `registerSegmentSubjects`), queues, events, extensions, ai, intents, capabilities, assets, env,
+i18n keys, migrations, the Encore app (with the inbox subscription and the call to `boot`), the Vite, Expo, Metro,
+Wrangler and electron-builder configs, the worker and desktop main entries, icon-name validation, hooks lint mapped
+back to the class line, the generated function-type declaration of a class component, and the snapshot-read lint
+(registry section 5, "Targets that land with their packages").
 
 ## Status history
 
 - 2026-10-24 · — → Implementing · Claude (package-builder) · retroactive spec for a package already written (owner mode 2026-10-24: develop now, test later)
+- 2026-10-25 · Implementing → Implementing · Claude (compiler-engineer) · wave 9 catch-up (STA-490): US6, FR-007 to FR-011, T014 to T021

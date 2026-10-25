@@ -8,6 +8,7 @@
  * Governing contract: ADR 0260 (decisions 3 and 4); ADR 0305 (query `cache`); owner decision R-25 (live queries).
  */
 import type { EndpointOptions } from "@stackra/actions";
+import type { ReplicaOptions } from "@stackra/query";
 import type { ZodType } from "zod";
 
 import type { EventRef } from "#core/types/event-ref.type";
@@ -40,4 +41,7 @@ export type QueryRef<
 
   /** The producer's cache time (`5m`), when it declared one. */
   readonly ttl?: string;
+
+  /** Its replica declaration, when the producer declared one; only such a query is available offline. */
+  readonly replica?: ReplicaOptions;
 };

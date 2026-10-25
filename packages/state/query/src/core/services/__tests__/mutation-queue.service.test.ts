@@ -6,9 +6,10 @@
  *          replays one call at a time in queue order with a rising per-device sequence stamped at the first send and
  *          repeated on a resend, never sends a later call before an earlier one is answered, keeps what did not reach
  *          the server, turns a refusal or an expired call into a conflict that holds its aggregate, refuses a capped
- *          action past its count or amount within the window, drains only while leading and online (on its own when
- *          allowed), resolves and discards conflicts, never keeps a call it could not persist, closes on a wipe,
- *          notifies subscribers, and stops on shutdown.
+ *          action past its count or amount with the pipeline's refusal (counting every waiting call and the accepted
+ *          ones within the window, across a reopen, by the declared amount field), drains only while leading and
+ *          online (on its own when allowed), resolves and discards conflicts, never keeps a call it could not persist,
+ *          closes on a wipe, notifies subscribers, and stops on shutdown.
  * Boundary: test only; storage, the seal, the platform and the settings store are the real memory drivers, the lock is
  *           the real `OfflineLock`, and the sender, the leader, the device, the session, the reader and the clock are
  *           small classes of their ports; the offline map restates the template's console entries.
@@ -16,7 +17,13 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0059 (decisions 2 and 3); ADR 0252 (decision 2); ADR 0338 (decisions 1,
  *                     2, 4 and 5); ADR 0138.
  */
-import { ConflictResolution, IdMinting, OfflineMode, OfflinePrecondition } from "@stackra/actions";
+import {
+  ConflictResolution,
+  IdMinting,
+  OfflineCapReachedError,
+  OfflineMode,
+  OfflinePrecondition,
+} from "@stackra/actions";
 import { buildConfig } from "@stackra/config";
 import type { ConfigValues } from "@stackra/config";
 import { Service } from "@stackra/container";
@@ -38,7 +45,6 @@ import { QueueLeader } from "#contracts/ports/queue-leader.port";
 import type { DeviceOrder } from "#contracts/types/device-order.type";
 import type { ReplayOutcome } from "#contracts/types/replay-outcome.type";
 import { StorageQueryPersisterDriver } from "#core/drivers/storage-query-persister.driver";
-import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
 import { OfflineError } from "#core/errors/offline.error";
 import { offlineMap } from "#core/functions/offline-map.function";
 import { MutationQueue } from "#core/services/mutation-queue.service";
@@ -58,6 +64,10 @@ class CancelOrderAction {
 
 class RedeemGiftCardAction {
   static readonly key = "loyalty.gift_card.redeem@1";
+}
+
+class SpendStoreCreditAction {
+  static readonly key = "loyalty.store_credit.spend@1";
 }
 
 offlineMap([
@@ -89,6 +99,15 @@ offlineMap([
     retention: "72h",
     onConflict: [ConflictResolution.Manual],
     cap: { count: 2, amount: 5000, window: "24h" },
+  },
+  {
+    action: SpendStoreCreditAction,
+    mode: OfflineMode.Queue,
+    idMinting: IdMinting.Client,
+    precondition: OfflinePrecondition.Version,
+    retention: "72h",
+    onConflict: [ConflictResolution.Manual],
+    cap: { amount: 100, amountField: "total", window: "24h" },
   },
 ]);
 
@@ -284,6 +303,7 @@ describe("MutationQueue", () => {
       version: 2,
       items: queue.items,
       conflicts: [],
+      spent: [],
     });
   });
 
@@ -427,6 +447,7 @@ describe("MutationQueue", () => {
       version: 2,
       items: [behind],
       conflicts: queue.conflicts,
+      spent: [],
     });
   });
 
@@ -445,7 +466,7 @@ describe("MutationQueue", () => {
     expect(queue.pending).toBe(0);
   });
 
-  it("refuses a capped action past its count or amount within the window, with the pipeline's code", async () => {
+  it("refuses a capped action past its count with the pipeline's refusal, counting every waiting call", async () => {
     const { queue, clock } = await queueOf();
     await queue.enqueue(RedeemGiftCardAction, { amount: { minor: 1000, currency: "SAR" } });
     await queue.enqueue(RedeemGiftCardAction, { amount: 1000 });
@@ -454,14 +475,47 @@ describe("MutationQueue", () => {
       .catch((error: unknown) => error);
     if (!isRefusal(refused, OfflineCapReachedError)) throw new Error("a cap refusal expected");
     expect(refused.code).toBe("offline_cap_reached");
-    expect(refused.action).toBe(RedeemGiftCardAction.key);
     expect(queue.pending).toBe(2);
+    // The server counts a waiting call when it applies it, so its age does not free the cap.
     clock.at += 25 * HOUR_MS;
-    await queue.enqueue(RedeemGiftCardAction, { amount: 4000 });
-    await expect(queue.enqueue(RedeemGiftCardAction, { amount: 1001 })).rejects.toThrow(
+    await expect(queue.enqueue(RedeemGiftCardAction, { amount: 1 })).rejects.toThrow(
       OfflineCapReachedError,
     );
     await queue.enqueue(CreateOrderAction, { amount: 1_000_000 });
+  });
+
+  it("counts the capped calls the server accepted within the window, across a reopen", async () => {
+    const storage = new MemoryStorageDriver();
+    const { queue, platform, clock } = await queueOf({ storage, online: true });
+    await queue.enqueue(RedeemGiftCardAction, { amount: 4000 });
+    await queue.drain();
+    expect(queue.pending).toBe(0);
+    await expect(queue.enqueue(RedeemGiftCardAction, { amount: 1001 })).rejects.toThrow(
+      OfflineCapReachedError,
+    );
+    platform.network.isOnline.set(false);
+    await queue.enqueue(RedeemGiftCardAction, { amount: 1000 });
+    await queue.open(USER);
+    expect(queue.pending).toBe(1);
+    await expect(queue.enqueue(RedeemGiftCardAction, { amount: 1 })).rejects.toThrow(
+      OfflineCapReachedError,
+    );
+    platform.network.isOnline.set(true);
+    await queue.drain();
+    clock.at += 25 * HOUR_MS;
+    await queue.enqueue(RedeemGiftCardAction, { amount: 5000 });
+  });
+
+  it("reads a cap's amount from its declared amount field", async () => {
+    const { queue } = await queueOf();
+    await queue.enqueue(SpendStoreCreditAction, {
+      total: { minor: 60, currency: "SAR" },
+      amount: 1,
+    });
+    await expect(queue.enqueue(SpendStoreCreditAction, { total: 41 })).rejects.toThrow(
+      OfflineCapReachedError,
+    );
+    await queue.enqueue(SpendStoreCreditAction, { total: 40, amount: 1_000 });
   });
 
   it("drains only while leading and online, and on its own when either turns on", async () => {

@@ -27,6 +27,9 @@ Entries `.`, `./contracts`, `./browser`, `./react`, `./testing`.
 - Every driver shares `createStorageArea` through `AreaStorageDriver`; a platform driver only passes backends. Its
   constructor takes nothing: the container builds it and gen reads constructor parameters as dependencies.
 - A secret never rests in Web Storage. A new area is an ADR change, a new `StorageArea` case and a new port property.
+- The payload key lives in `secrets` under `PAYLOAD_KEY` and is read on every seal and open, so clearing `secrets` is
+  the wipe (ADR 0338 decision 2). A seal driver never logs, returns or caches the raw key beyond the imported
+  `CryptoKey`, and `open` answers `undefined` instead of throwing.
 - No ORM on a client (ADR 0014, 0256 decision 6). No parameter properties and no `#private` fields.
 
 ## Rules that fail the build
@@ -37,7 +40,8 @@ Entries `.`, `./contracts`, `./browser`, `./react`, `./testing`.
 
 ## PII
 
-| Data                | Where              | Handling                                                     |
-| ------------------- | ------------------ | ------------------------------------------------------------ |
-| Preferences, drafts | `prefs`, `session` | On the device only; never sent anywhere by this package.     |
-| Tokens, keys        | `secrets`          | Memory on the web; a platform store elsewhere. Never logged. |
+| Data                | Where              | Handling                                                                               |
+| ------------------- | ------------------ | -------------------------------------------------------------------------------------- |
+| Preferences, drafts | `prefs`, `session` | On the device only; never sent anywhere by this package.                               |
+| Tokens, keys        | `secrets`          | Memory on the web; a platform store elsewhere. Never logged.                           |
+| Sealed payloads     | `outbox`, `cache`  | Written by `@stackra/query` through `PayloadSeal`; unreadable once `secrets` is wiped. |

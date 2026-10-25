@@ -18,6 +18,9 @@ const ACME: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.a
 const EU: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w3", path: "platform.acme.shop_eu" };
 const OTHER: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w9", path: "platform.acmex" };
 
+/** A replica row of `id` carrying `total`. */
+const rowOf = (id: string, total: number) => ({ id, at: new Date(0), data: { total } });
+
 describe("MemoryReplicaLogDriver", () => {
   it("is a ReplicaLog", () => {
     expect(new MemoryReplicaLogDriver()).toBeInstanceOf(ReplicaLog);
@@ -30,22 +33,22 @@ describe("MemoryReplicaLogDriver", () => {
       await log.append(
         "p",
         [
-          { id: "sal_1", row: 1 },
-          { id: "sal_2", row: 2 },
+          { id: "sal_1", row: rowOf("sal_1", 1) },
+          { id: "sal_2", row: rowOf("sal_2", 2) },
         ],
         EU,
       ),
     ).toBe(2);
     expect(await log.append("p", [{ id: "sal_1" }], EU)).toBe(3);
     expect(await log.read("p", 1, 10, undefined)).toEqual({
-      changes: [{ id: "sal_2", row: 2 }, { id: "sal_1" }],
+      changes: [{ id: "sal_2", row: rowOf("sal_2", 2) }, { id: "sal_1" }],
       position: 3,
       more: false,
     });
     expect(await log.read("p", 0, 2, undefined)).toEqual({
       changes: [
-        { id: "sal_1", row: 1 },
-        { id: "sal_2", row: 2 },
+        { id: "sal_1", row: rowOf("sal_1", 1) },
+        { id: "sal_2", row: rowOf("sal_2", 2) },
       ],
       position: 2,
       more: true,

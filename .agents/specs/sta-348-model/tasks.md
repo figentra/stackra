@@ -16,3 +16,4 @@
 - [ ] T012 Owner: add `@mikro-orm/core: 7.2.5` to the default catalog — covers: SC-003 — route: dependencies — deps: T002
 - [ ] T013 `pnpm install` to link the member, then its tests, typecheck and build in the separate testing workflow — covers: SC-002, SC-003 — route: tests — deps: T010, T012
 - [x] T014 [US1] Reconciliation R4: remove `BelongsToTenant` (trait, barrel, tests, README, spec, changeset); tenancy's `./node` owns it — covers: FR-002, FR-004 — route: package — deps: T009
+- [x] T015 [US6] `@Visibility` and `VisibilityOptions` in `packages/data/model/src/core/{decorators,types}/`, the barrel, its export test, the facet test, README, AGENTS and the changeset — covers: FR-005, FR-008, P-005, P-008 — route: package — deps: T009

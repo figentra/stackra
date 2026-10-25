@@ -6,7 +6,7 @@
  *           class that happens to share a name is never mistaken for one. `CrudService` brands a service.
  * Runtime: node
  * Governing contract: ADR 0294 (decision 16: the kind table); ADR 0305 (rules 2, 3 and 19); ADR 0308 (integrations
- *                     and connections).
+ *                     and connections); ADR 0342 (sequences).
  */
 
 /** Kind base name to kind code. */
@@ -57,6 +57,7 @@ export const KIND_BASES: Readonly<Record<string, string>> = Object.freeze({
   Route: "route",
   Schema: "schema",
   Seeder: "seeder",
+  Sequence: "sequence",
   Service: "service",
   Settings: "settings",
   Shortcut: "shortcut",

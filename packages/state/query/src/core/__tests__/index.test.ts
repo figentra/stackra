@@ -2,9 +2,9 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/query`
  *          (`QueryConfig`, the generated `QueryConfig$`, `QueryScope`, `offlineMap`), the registry row's queue,
- *          cache, persister and refusal, and the offline additions of ADR 0338 (settings, replicas, lock, cap refusal)
- *          are exported, nothing else is, the `$` name is the shipped schema, the ports
- *          and the record types stay in their own entries, and the public types resolve.
+ *          cache, persister and refusal, and the offline additions of ADR 0338 (settings, replicas, lock) are
+ *          exported, nothing else is (the cap refusal is `@stackra/actions`'), the `$` name is the shipped schema, the
+ *          ports and the record types stay in their own entries, and the public types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
@@ -30,7 +30,6 @@ describe("@stackra/query", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(query).sort()).toEqual([
       "MutationQueue",
-      "OfflineCapReachedError",
       "OfflineError",
       "OfflineLock",
       "QueryConfig",

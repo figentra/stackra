@@ -22,7 +22,7 @@ export interface OfflineEntry extends OfflineOptions {
   /** The action's generated class. */
   readonly action: OfflineActionRef;
 
-  // shortcut: declared here until `OfflineOptions` carries `cap` (W9-C2); then this member goes.
+  // shortcut: narrowed to the local `OfflineCap` until actions' declares its `amountField` (W9-C2); then this member goes.
   /** The most the client may queue offline within a window; uncapped when absent. */
   readonly cap?: OfflineCap;
 }

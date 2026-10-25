@@ -26,6 +26,7 @@ describe("@stackra/identity", () => {
       "MemorySessionStoreDriver",
       "PkceSessionStoreDriver",
       "SessionClientSessionDriver",
+      "SessionOfflineSessionDriver",
       "SessionRevokedError",
       "SessionService",
       "SessionStatus",

@@ -1,6 +1,6 @@
 # AGENTS — @stackra/model
 
-The model kind, traits, relations and table facets. Member at `packages/data/model` (`tier:lib`), in the programming
+The model kind, traits, relations and the class facets (`@Index`, `@Searchable`, `@Visibility`). Member at `packages/data/model` (`tier:lib`), in the programming
 model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are folded in (ADR 0127 2026-10-24 note).
 
 ## Where code goes
@@ -31,6 +31,8 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
   `unwrap()`.
 - Never import @stackra/database (it depends on this package); a factory meets `Attributes<M>` through the
   `RelationSource` brand.
+- Never import @stackra/rules or @stackra/iam either (both reach this package): `@Visibility` names attributes and
+  relations only, and the rules, their evaluation and the query filter are IAM's (ADR 0333).
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 
 ## Rules that fail the build

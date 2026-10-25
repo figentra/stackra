@@ -16,3 +16,8 @@
 - [x] T012 Tests beside every subject and each barrel's test — covers: SC-002, P-002 — route: tests — deps: T011
 - [x] T013 Changeset `.changeset/clients-package.md`; `oxfmt`, `oxlint`, `tsc` and `validate-repository.mjs` clean — covers: SC-001, SC-003 — route: package — deps: T012
 - [ ] T014 `pnpm install` to drop the stale `events` and `platform` links, then the tests and build in the separate testing workflow — covers: SC-002 — route: tests — deps: T012
+- [x] T015 [US5] `ClientRequest.device`, the `DEVICE_ORDER` headers in `httpCall`, and `ClientMutationSenderDriver` sending the `DeviceOrder` — covers: FR-012, P-012 — route: package — deps: T013
+- [x] T016 [US5] `queryRef`'s `replica` option and `ClientReplicaSourceDriver` — covers: FR-013, P-013 — route: package — deps: T013
+- [x] T017 [US5] `ClientAcknowledgementReaderDriver` — covers: FR-014, P-014 — route: package — deps: T015
+- [x] T018 [US5] Tests for the new drivers, the headers and the replica option; the barrel list, README, AGENTS and the changeset — covers: SC-001, SC-002 — route: tests — deps: T016, T017
+- [ ] T019 [US5] Run the wave-9 tests, typecheck and build in the separate testing workflow — covers: SC-002 — route: tests — deps: T018

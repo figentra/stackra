@@ -3,11 +3,13 @@
  * Purpose: `DEVICE_ORDER`, the wire names of per-device order (ADR 0338 decisions 1 and 4): the two headers every
  *          replayed call of the offline queue carries (the device's id and its per-device sequence number) and the
  *          query that answers the device's last acknowledged sequence.
- * Boundary: frozen; names only, spelled once for the client (`ClientMutationSenderDriver`,
- *           `ClientAcknowledgementReaderDriver`) and the server (the generated adapter maps the headers onto the call
- *           the pipeline's apply-order step reads; the server's query locks this key and serves this route). The
- *           sequence is a decimal, strictly increasing per device and not contiguous: a call discarded before it was
- *           sent never takes one. The acknowledged query takes no input: the device is the `deviceHeader` value.
+ * Boundary: frozen; names only, spelled once for the client (the HTTP transport sends a request's `device` as the two
+ *           headers, for `ClientMutationSenderDriver` and `ClientAcknowledgementReaderDriver`) and the server (the
+ *           generated adapter maps the headers onto `CallOptions.device`, which the pipeline's apply-order step reads,
+ *           once it matched the device to the verified session's; the server's query locks this key and serves this
+ *           route). The sequence is a decimal, strictly increasing per device and not contiguous: a call discarded
+ *           before it was sent never takes one. The acknowledged query takes no input: the device is the
+ *           `deviceHeader` value.
  * Runtime: isomorphic
  * Governing contract: ADR 0338 (decisions 1 and 4); ADR 0235 (devices are principals); ADR 0294 (decision 20).
  */

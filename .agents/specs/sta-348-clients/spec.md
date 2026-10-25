@@ -8,7 +8,7 @@
 
 <!-- Specs are public on GitHub: no secrets, customer data or details of an unfixed vulnerability (ADR 0120 D17). -->
 
-**Linear**: STA-348
+**Linear**: STA-348 (wave 9 offline drivers: STA-488)
 
 **Linear project**: Foundation kernel
 
@@ -34,7 +34,7 @@ facts, and `fakeClient`.
   `@stackra/query`'s. No tenant vocabulary (R-59)
 - **Secrets**: none read by the package. `forwardedFacts` takes the gateway's visitor signing key from the Worker's
   validated env and never logs it
-- **ADR needed**: no (ADR 0059, 0079, 0082, 0138, 0140, 0142, 0155, 0237, 0260, 0261, 0294, 0305, owner decisions R-12,
+- **ADR needed**: no (ADR 0059, 0079, 0082, 0138, 0140, 0142, 0155, 0237, 0260, 0261, 0294, 0305, 0338, owner decisions R-12,
   R-25, R-56, R-59 and the owner's Q4 answer on runtime-target entries)
 - **New dependencies**: none outside the workspace and existing catalogs: `@stackra/actions`, `config`, `container`,
   `contracts`, `errors`, `i18n`, `query`, `transport`, `validation` through `workspace:*`; `@tanstack/query-core` and
@@ -70,6 +70,20 @@ The package follows the v3.1 registry row and the owner decisions of 2026-10-24.
   but the public one; `useIntentRouter` matches phrases locally (no model call) and proposes an empty input; `risk` is
   `@stackra/iam`'s `Risk` (`Risk.L2`)
 
+### Session 2026-10-25 (wave 9, STA-488)
+
+ADR 0338 makes this package the client side of the offline wire. The choices:
+
+- Decision 1: `DEVICE_ORDER` in `./contracts` is the one spelling of `Stackra-Device` and `Stackra-Device-Sequence`; a
+  `ClientRequest` carries `device: { deviceId, sequence? }`, which the HTTP transport writes as those headers, and the
+  generated server adapter maps them onto `CallOptions.device` (gen, STA-489). `@stackra/actions` cannot import this
+  package (this package depends on it), so the server reads the constant through gen's adapter
+- Decision 3: `queryRef(key, { replica })` records the ref with `@stackra/query`'s `registerReplicas`, and its type
+  then carries `replica`; `ClientReplicaSourceDriver` sends the slice and the opaque cursor as the query's input, the
+  shape the pipeline's `ReplicaPage` answers
+- Decision 4: `ClientAcknowledgementReaderDriver` reads `devices.device.acknowledged@1` at `GET /devices/acknowledged`
+  with the device header and no input; the server answers `{ sequence }` for the device it matched to the session
+
 ## User Scenarios & Testing
 
 ### User Story 1 - Show and change a producer's data in an app (Priority: P1)
@@ -100,6 +114,17 @@ record.
 **Independent Test**: `packages/application/clients/src/core/functions/__tests__/run-action.function.test.ts`,
 `packages/application/clients/src/core/drivers/__tests__/client-mutation-sender.driver.test.ts`.
 
+### User Story 5 - Replay in device order and keep replicas fresh (Priority: P1)
+
+A till comes back online: each queued sale goes out with `Stackra-Device` and `Stackra-Device-Sequence`; "recent
+sales" refreshes with its cursor and the till's legal entity; the offline lock reads the till's last acknowledged
+sequence.
+
+**Independent Test**: `packages/application/clients/src/core/drivers/__tests__/client-mutation-sender.driver.test.ts`,
+`packages/application/clients/src/core/drivers/__tests__/client-replica-source.driver.test.ts`,
+`packages/application/clients/src/core/drivers/__tests__/client-acknowledgement-reader.driver.test.ts`,
+`packages/application/clients/src/core/functions/__tests__/http-call.function.test.ts`.
+
 ### User Story 3 - Call another service (Priority: P1)
 
 Commerce prices an order with `this.pricing.price.quote.call(input)` and voids a payment with
@@ -124,6 +149,9 @@ The web Worker builds `createPublicClients(...)` per request with the locale, th
 - A refusal is never queued; an online-only action rethrows the network error.
 - A replayed action no loaded ref has is refused for good (`unknown_action`) instead of waiting forever.
 - A URL the platform cannot resolve (an empty base URL outside a browser) throws instead of passing as offline.
+- A replica query no loaded ref has rejects its refresh; a malformed replica or acknowledged answer rejects.
+- A replica declaration with an unreadable window or a limit that is not a positive integer refuses the ref before it
+  is recorded.
 
 ## Requirements
 
@@ -157,6 +185,13 @@ The web Worker builds `createPublicClients(...)` per request with the locale, th
 - **FR-010**: `fakeClient` SHALL answer calls from a script by ref, record calls and queued calls, and stand in for a
   `ServiceClient`'s members.
 - **FR-011**: No identifier, code or text SHALL use tenant vocabulary.
+- **FR-012**: A `ClientRequest`'s `device` SHALL go out as the `DEVICE_ORDER` headers (the sequence only when present),
+  and `ClientMutationSenderDriver` SHALL replay each call with its `DeviceOrder`.
+- **FR-013**: `queryRef` with `replica` SHALL carry it as a static, type the ref as `@stackra/query`'s `ReplicaRef` and
+  record it with `registerReplicas` before the ref is recorded; `ClientReplicaSourceDriver` SHALL send the slice and the
+  cursor (none on a first fill) as the query's input and return the checked `ReplicaChanges`.
+- **FR-014**: `ClientAcknowledgementReaderDriver` SHALL ask the `DEVICE_ORDER` acknowledged query with the device header
+  and no input and return the checked `sequence`.
 
 ## Success Criteria
 
@@ -177,6 +212,9 @@ The web Worker builds `createPublicClients(...)` per request with the locale, th
   `runRouteSubmit`) need to route calls to the fakes (`ClientFake.knows`); both live outside this package.
 - One amendment of ADR 0126/0127 records the runtime-target entries (`./server`, `./worker`) and the `application`
   placement (owner Q4 and Q7 answers).
+- The server side of the offline wire is STA-489 and gen: the adapter mapping `DEVICE_ORDER` onto `CallOptions.device`,
+  the acknowledged query at `DEVICE_ORDER`'s key and route, and replica queries whose input takes the slice and
+  `cursor`.
 
 ## Status history
 

@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/realtime`
- *          (`RealtimeConfig`, `RealtimeStatus`; the generated `RealtimeConfig$` and `MemoryRealtimeDriver`) and the
- *          gen samples' other drivers are exported, nothing else is, the `$` name is the shipped schema, the ports stay
- *          in `./contracts`, and the public types resolve.
+ *          (`RealtimeConfig`, `RealtimeStatus`; the generated `RealtimeConfig$` and `MemoryRealtimeDriver`), the gen
+ *          samples' other drivers and `liveQueryRoutes` are exported, nothing else is, the `$` name is the shipped
+ *          schema, the ports stay in `./contracts`, and the public types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
@@ -16,6 +16,7 @@ import { REALTIME_CONFIG_SCHEMA } from "#core/constants/realtime-config-schema.c
 import * as realtime from "#core/index";
 import type {
   BroadcastRoute,
+  LiveQueryRefresh,
   RealtimeConnectionState,
   RealtimeDriverName,
   RealtimeEventRef,
@@ -42,6 +43,7 @@ describe("@stackra/realtime", () => {
       "SseRealtimeDriver",
       "WebSocketRealtimeDriver",
       "WebsocketRealtimeTransportDriver",
+      "liveQueryRoutes",
     ]);
   });
 
@@ -55,6 +57,7 @@ describe("@stackra/realtime", () => {
     expectTypeOf<RealtimeConnectionState["status"]>().toEqualTypeOf<RealtimeStatus>();
     expectTypeOf<BroadcastRoute["audience"]>().toEqualTypeOf<BroadcastAudience>();
     expectTypeOf<RealtimeEventRef["eventName"]>().toEqualTypeOf<string>();
+    expectTypeOf<LiveQueryRefresh["invalidateOn"]>().toEqualTypeOf<readonly RealtimeEventRef[]>();
     expectTypeOf<Parameters<RealtimePeer["deliver"]>[0]>().toEqualTypeOf<RealtimeMessage>();
     expectTypeOf<RealtimeSocket["send"]>().toEqualTypeOf<(data: string) => void>();
     expectTypeOf<RealtimeToken["expiresAt"]>().toEqualTypeOf<Date>();

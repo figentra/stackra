@@ -27,10 +27,12 @@ import type {
 describe("@stackra/clients", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(clients).sort()).toEqual([
+      "ClientAcknowledgementReaderDriver",
       "ClientAction",
       "ClientMutationSenderDriver",
       "ClientQuery",
       "ClientRefusal",
+      "ClientReplicaSourceDriver",
       "ClientsConfig",
       "ClientsConfig$",
       "ClientsOptions",

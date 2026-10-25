@@ -8,7 +8,7 @@
 
 <!-- Specs are public on GitHub: no secrets, customer data or details of an unfixed vulnerability (ADR 0120 D17). -->
 
-**Linear**: STA-348
+**Linear**: STA-348 (wave 9 sealed payloads: STA-488)
 
 **Linear project**: Foundation kernel
 
@@ -26,7 +26,7 @@ time-to-live and typed values (ADR 0256); no ORM on a client. Export `Storage` f
 - **Tenancy and data**: device-local values only; nothing leaves the device through this package
 - **Secrets**: none handled by the repository; on the web the `secrets` area never rests in Web Storage
 - **ADR needed**: no (ADR 0256 decides the package; ADR 0294 decisions 15 to 17, 20, 26; ADR 0127 2026-10-24 note for
-  entries; ADR 0266 memory drivers first; ADR 0269 testing)
+  entries; ADR 0266 memory drivers first; ADR 0269 testing; ADR 0338 decision 2 for the sealed payloads)
 - **New dependencies**: none new; `@stackra/contracts`, `@stackra/container`, `@stackra/validation` through
   `workspace:*`; React as an optional peer; zod (`catalog:`) for tests
 - **Deploy modes**: same in all; isomorphic core, `./browser` browser only, `./testing` node only
@@ -44,6 +44,15 @@ The package follows the v3.1 registry row and the owner decisions of 2026-10-24 
 
 - Registry A3: `Storage` is exported from `./contracts` only; the owner's 2026-10-24
   answers: extra entries fold into the standard six plus the runtime targets, so browser-only drivers use `./browser`
+
+### Session 2026-10-25 (wave 9, STA-488)
+
+- ADR 0338 decision 2: the `outbox` and `cache` payloads are sealed at rest with a key minted per session in the
+  `secrets` area (`PayloadSeal`, port in `./contracts`). The `web_crypto` driver is AES-GCM with a fresh nonce per seal
+  wherever `crypto.subtle` exists (React Native through a WebCrypto polyfill); the `memory` driver binds a payload to
+  the key id without encrypting and reports `isEncrypting: false`, so `@stackra/query` persists no replica through it
+  while encryption is required. Wiping `secrets` makes every earlier payload unopenable; `open` answers `undefined`,
+  never throws
 
 ## User Scenarios & Testing
 
@@ -103,6 +112,15 @@ binds the `memory` candidate.
 **Independent Test**: `src/testing/functions/__tests__/fake-storage.function.test.ts`,
 `src/core/drivers/__tests__/memory-storage.driver.test.ts`.
 
+### User Story 5 - Keep a lost till's data unreadable (Priority: P1)
+
+The offline queue and the replicas of a till rest sealed with its session's key. When the till is revoked, the
+`secrets` area is wiped and nothing sealed before can be opened again.
+
+**Independent Test**: `src/contracts/ports/__tests__/payload-seal.port.test.ts`,
+`src/core/drivers/__tests__/web-crypto-payload-seal.driver.test.ts`,
+`src/core/drivers/__tests__/memory-payload-seal.driver.test.ts`.
+
 ## Requirements
 
 - **FR-001**: Entries `.`, `./contracts`, `./browser`, `./react`, `./testing` only (ADR 0294 d15, ADR 0127 2026-10-24
@@ -115,6 +133,10 @@ binds the `memory` candidate.
   schema compiled at runtime.
 - **FR-006**: Keys are derived by gen and registered with `registerStorageKeys`; nothing guesses a key.
 - **FR-007**: No ORM and no new third-party runtime dependency.
+- **FR-008**: `./contracts` exports `PayloadSeal` (`isEncrypting`, `seal`, `open`), and `.` exports its `web_crypto`
+  (`WebCryptoPayloadSealDriver`, AES-GCM) and `memory` (`MemoryPayloadSealDriver`) drivers. A seal mints the session's
+  key in `secrets` when none is there; `open` answers the text only under the key it was sealed with and `undefined`
+  otherwise (another key, a wiped key, tampered or foreign text).
 
 ## Success Criteria
 
@@ -131,7 +153,10 @@ binds the `memory` candidate.
   `safeStorage` bridge from `@stackra/platform` (wave 6); lands with it.
 - The native drivers (`mmkv`, `sqlite`, `secure-store`, `expo-fs`) and the web IndexedDB, OPFS and WebCrypto backends
   of ADR 0256 decision 3: need uncatalogued dependencies (`react-native-mmkv`, `expo-sqlite`, `expo-secure-store`,
-  `expo-file-system`, `fake-indexeddb` to test). Until then the web `outbox` and `files` areas live in memory.
+  `expo-file-system`, `fake-indexeddb` to test). Until then the web `outbox` and `files` areas live in memory, and so
+  does the web `secrets` area that holds the payload key, so a sealed payload is readable until the page reloads.
+- A native `PayloadSeal` driver over the platform's secure store: until it lands, a native target binds the `memory`
+  seal (no encryption at rest) or `web_crypto` through a WebCrypto polyfill.
 - The `./sql` read-model entry of ADR 0256 decision 5: Phase 2, and not in the 0127 allowed entry set.
 - Gen need: each generated member file calls `registerStorageKeys([[Class, { key, area? }]])` for its stored shapes and
   persisted stores, beside `registerSchemas` (gap G1).

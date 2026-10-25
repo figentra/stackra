@@ -76,3 +76,4 @@
 - **P-003**: the channel hub reconnects with a backoff capped at `maxBackoffSeconds` and delivers a broadcast only to the audience its `broadcast: { permission, audience }` names (ADR 0294 amendment item 7) — Validates: FR-003
 - **P-004**: a delivery carries no payload field to a client, and nothing is delivered to a session that lacks the permission — Validates: FR-004
 - **P-005**: `SseRealtimeDriver`, `WebSocketRealtimeDriver` and `WebsocketRealtimeTransportDriver` are exported from `.` — Validates: FR-005
+- **P-006**: for every live query, `liveQueryRoutes` returns exactly one route per distinct invalidating event, each with the event's wire name, the module that is its first label, the query's permission and its audience; and a session reaches a refresh on such a route only when it holds the query's permission — Validates: FR-006

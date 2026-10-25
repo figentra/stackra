@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `MemoryDeviceSequenceStoreDriver`: an unknown device has no sequence, `settle` advances only
- *          to the next sequence (a repeat or a jump changes nothing), and the settled call's scope is kept per device.
+ * Purpose: unit tests of `MemoryDeviceSequenceStoreDriver`: an unknown device has no sequence, `settle` only moves a
+ *          device forward (a jump advances it, a repeat or a lower one changes nothing), and the settled call's scope is
+ *          kept per device.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0338 (decisions 1 and 4).
@@ -20,21 +21,24 @@ describe("MemoryDeviceSequenceStoreDriver", () => {
     expect(new MemoryDeviceSequenceStoreDriver()).toBeInstanceOf(DeviceSequenceStore);
   });
 
-  it("advances one sequence at a time and keeps the scope", async () => {
+  it("only moves a device forward and keeps the scope", async () => {
     const store = new MemoryDeviceSequenceStoreDriver();
     expect(await store.last("dev_1")).toBeUndefined();
-    await store.settle("dev_1", 2, AT, SHOP);
-    expect(await store.last("dev_1")).toBeUndefined();
-    await store.settle("dev_1", 1, AT, SHOP);
-    await store.settle("dev_1", 1, AT, undefined);
+    await store.settle("dev_1", 1_729_760_400_000, AT, SHOP);
+    await store.settle("dev_1", 1_729_760_400_000, AT, undefined);
+    await store.settle("dev_1", 7, AT, undefined);
     expect(await store.last("dev_1")).toEqual({
       deviceId: "dev_1",
-      sequence: 1,
+      sequence: 1_729_760_400_000,
       settledAt: AT,
       scope: SHOP,
     });
-    await store.settle("dev_1", 2, AT, undefined);
-    expect(await store.last("dev_1")).toEqual({ deviceId: "dev_1", sequence: 2, settledAt: AT });
+    await store.settle("dev_1", 1_729_760_400_005, AT, undefined);
+    expect(await store.last("dev_1")).toEqual({
+      deviceId: "dev_1",
+      sequence: 1_729_760_400_005,
+      settledAt: AT,
+    });
     expect(await store.last("dev_2")).toBeUndefined();
   });
 });

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/identity (the configuration with its shipped schema, the flows
- *          and statuses, the session service, the session drivers, the claims mapping, the `ClientSession` and memory
- *          `IdentityResolver` drivers, and the refusals) until `stackra gen` writes the entry barrels (STA-339).
+ *          and statuses, the session service, the session drivers, the claims mapping, the `ClientSession`,
+ *          `OfflineSession` and memory `IdentityResolver` drivers, and the refusals) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. `SessionStore`, `SignInBrowser` and `SessionUser` are exported
  *           from `./contracts` only (ADR 0294 decision 15). The shipped schema is re-exported under its generated name
  *           (`IdentityConfig$`). The session-user schema and the PKCE helpers (random tokens, the code challenge, the
@@ -18,6 +18,7 @@ export { MemoryIdentityResolverDriver } from "#core/drivers/memory-identity-reso
 export { MemorySessionStoreDriver } from "#core/drivers/memory-session-store.driver";
 export { PkceSessionStoreDriver } from "#core/drivers/pkce-session-store.driver";
 export { SessionClientSessionDriver } from "#core/drivers/session-client-session.driver";
+export { SessionOfflineSessionDriver } from "#core/drivers/session-offline-session.driver";
 export { AuthFlow } from "#core/enums/auth-flow.enum";
 export { SessionStatus } from "#core/enums/session-status.enum";
 export { SessionRevokedError } from "#core/errors/session-revoked.error";

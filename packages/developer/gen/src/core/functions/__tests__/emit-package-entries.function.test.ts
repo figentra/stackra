@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `emitPackageEntries`: each entry holds its folders' exports and their shipped `X$`, seeders
- *          go to `testing`, stand-in barrels are skipped, type-only names print as types, the generated module goes
- *          to `node`, no symbol appears in two entries, and a non-package writes no entry.
+ *          go to `testing`, stand-in barrels are skipped, type-only names print as types, the generated module and
+ *          each module's entity list go to `node`, no symbol appears in two entries, and a non-package writes no
+ *          entry.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); ADR 0305 (rule 16).
@@ -75,6 +76,30 @@ describe("emitPackageEntries", () => {
       ),
     );
     expect(new Set(names).size).toBe(names.length);
+  });
+
+  it("exports each module's entity list from `node` for the host", () => {
+    const withModel = {
+      ...LOYALTY_KIT_IR,
+      shapes: [
+        ...LOYALTY_KIT_IR.shapes,
+        {
+          name: "LoyaltyAccount",
+          kind: "model",
+          module: "loyalty_kit",
+          file: "src/node/models/loyalty-account.model.ts",
+          importPath: "#node/models/loyalty-account.model",
+          fields: [],
+          relations: [],
+          entity: { optional: [], relations: [], computed: [] },
+        },
+      ],
+    };
+    const node = emitPackageEntries(withModel).find(
+      (file) => file.path === ".stackra/entry/node.ts",
+    )?.content;
+    expect(node).toContain('export { LOYALTY_KIT_ENTITIES } from "#stackra/entities/loyalty_kit";');
+    expect(entry("node")).not.toContain("_ENTITIES");
   });
 
   it("writes no entry for a service", () => {

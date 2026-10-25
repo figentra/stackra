@@ -16,3 +16,5 @@
 - [x] T012 [US1] Changeset `.changeset/identity-package.md`; `oxfmt` and `oxlint` clean; the validator reports nothing for the package — covers: SC-001, SC-003 — route: package — deps: T011
 - [ ] T013 [US1] Run the package's tests, typecheck and build in the separate testing workflow after the integrator's install — covers: SC-002, SC-003 — route: tests — deps: T012
 - [x] T014 [US1] R3 reconciliation: `IDENTITY_CLAIMS.scopePath` is `@stackra/scope`'s `SCOPE_PATH_CLAIM`, and `SessionService` sets every state's permission keys into `@stackra/iam`'s `PermissionSnapshotService` in `packages/security/identity/src/core/` — covers: FR-005, P-005, FR-006, P-006 — route: package — deps: T012
+- [x] T015 [US4] `SessionOfflineSessionDriver` (`@stackra/query`'s `OfflineSession`) in `packages/security/identity/src/core/drivers/`, its test, the barrel list, the `@stackra/query` dependency, README, AGENTS and the changeset — covers: FR-010, P-010 — route: package — deps: T014
+- [ ] T016 [US4] Run the wave-9 test, typecheck and build in the separate testing workflow — covers: SC-002 — route: tests — deps: T015

@@ -23,6 +23,26 @@ buster)` clears the client, restores a dehydrated snapshot from the `cache` area
   queue over memory storage, the memory platform, an always-leading leader and a sender that never reaches a server.
   It is seeded synchronously through the protected `seed`.
 
+### Wave 9: ADR 0338 (STA-488)
+
+- Per-device order: `PendingMutation` gains `deviceId` and `sequence` (persisted as `{ version: 2 }`; a version 1
+  queue is upgraded on `open`). A pass sends the first waiting call whose aggregate no conflict blocks, one at a time,
+  stamping `max(last + 1, clock ms)` and persisting it before the send; a call that did not reach the server ends the
+  pass. `MutationSender.send` takes a `DeviceOrder`.
+- Caps: `refuseOverCap` sums the action's waiting calls, the accepted calls within the window (`spent`, persisted in
+  the version 2 envelope, defaulting to empty) and the new call, by `amountField`, and throws `@stackra/actions`'
+  `OfflineCapReachedError`. `settle` records an accepted capped call and prunes the expired ones.
+- Replicas: `registerReplicas` fills the module registry `REPLICAS`; `ReplicaStore` keeps a frozen snapshot per
+  replica, asks `ReplicaSource.changes(key, cursor, slice)`, merges rows and removals by id, bounds by window and limit,
+  filters by the slice, persists `{ version: 1, cursor, asOf, rows }` under the partition in the `cache` area, and
+  subscribes to each replica's `invalidateOn` through realtime. `useReplica` reads it through `useSyncExternalStore`.
+- Lock: `OfflineLock` watches `OfflineSession` and the network, keeps the last sync time in `prefs`, asks
+  `AcknowledgementReader` to sync, schedules the next check when the limit falls due, and on a wipe awaits its
+  `onWipe` listeners (the queue, the cache and the replicas close there) before clearing the areas. `QuerySettings`
+  carries `offlineLimitHours`.
+- Sealing: `StorageQueryPersisterDriver` seals `outbox` and `cache` payloads with `PayloadSeal`; `isEncrypted` is the
+  seal's `isEncrypting`.
+
 ## Constitution Check
 
 | Law                                   | Result | Note                                                                                                                                  |
@@ -48,11 +68,16 @@ buster)` clears the client, restores a dehydrated snapshot from the `cache` area
 - **P-001**: `package.json` names `@stackra/query` at `packages/state/query`, and `exports` lists exactly `.`, `./contracts`, `./react` and `./testing` — Validates: FR-001
 - **P-002**: each barrel's export list equals its test's list, and every template import is in it (`QueryConfig`, `QueryConfig$`, `QueryScope`, `offlineMap`; `QueryPersister`, `QueueLeader`; `ConflictRecord`, `PendingMutation`, `useMutationQueue`; `fakeQueue`) — Validates: FR-002
 - **P-003**: `{ ...new QueryOptions() }` equals `QUERY_CONFIG_SCHEMA.parse({})`, and `buildConfig(QueryConfig)` is keyed `query` with `scope: active_scope` and `persistEncrypted: true` — Validates: FR-003
-- **P-004**: for any calls queued offline, once online and leading, the calls of each aggregate are sent in queue order, each with the id it was given as its Idempotency-Key, and at most `maxParallelAggregates` sends are in flight — Validates: FR-004
+- **P-004**: for any calls queued offline, once online and leading, the calls are sent in queue order, each with the id it was given as its Idempotency-Key, and one send is in flight at a time — Validates: FR-004
 - **P-005**: for any refusal with a code, the call moves to `conflicts` with that code and the server record, and no later call of its aggregate is sent until that conflict is resolved or discarded — Validates: FR-005
-- **P-006**: after `open(other)` the client holds no query of the previous partition; a snapshot is hydrated only when its buster matches and its age is below `persistMaxAgeHours`; with a plain persister and `persistEncrypted` on, nothing is written to the `cache` area — Validates: FR-006
+- **P-006**: after `open(other)` or a wipe the client holds no query of the previous partition, and the cache writes nothing to storage — Validates: FR-006
 - **P-007**: for a watched query, each broadcast of an event in its `invalidateOn` marks its results invalidated, and after the last watcher stops no broadcast does — Validates: FR-007
 - **P-008**: no file under `packages/state/query/src` declares an identifier or enum code containing `tenant` — Validates: FR-008
+- **P-009**: for any calls replayed, each send carries the call's device id and a sequence greater than every earlier send's, a resend repeats its sequence, and no call is sent while an earlier one is unanswered — Validates: FR-009
+- **P-010**: for any capped action, `enqueue` rejects with `offline_cap_reached` exactly when the waiting calls, the accepted calls younger than the window and the new call together pass `count`, or their `amountField` amounts pass `amount`; the accepted calls survive a reopen — Validates: FR-010
+- **P-011**: for any refresh answers, the replica equals the merge of the full fill and the later changes by id, limited to records younger than `window`, at most `limit` newest first, and inside the slice; `read` of an unregistered query throws, and `useReplica` returns the store's `{ data, asOf }` — Validates: FR-011
+- **P-012**: a revoke, or `offlineLimitHours` passing with every sync failing, leaves `outbox`, `cache` and `secrets` empty after every `onWipe` listener settled and `isLocked` true until a sign-in; a successful sync before the limit never wipes — Validates: FR-012
+- **P-013**: what the `storage` persister wrote to `outbox` or `cache` reads back while the payload key is in `secrets` and reads as absent once it is wiped — Validates: FR-013
 
 ## Deploy modes
 

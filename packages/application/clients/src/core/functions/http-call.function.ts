@@ -1,15 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `httpCall`, sends one `ClientRequest` over HTTP and reads the answer: fills the route's `:params` from the
- *          input, puts the rest in the query string (`GET`) or a JSON body, sends the caller's Idempotency-Key, and
- *          resolves the answer decoded by the output schema, or rejects with the decoded refusal or a `TransportError`.
+ *          input, puts the rest in the query string (`GET`) or a JSON body, sends the caller's Idempotency-Key and the
+ *          call's device order (`DEVICE_ORDER` headers), and resolves the answer decoded by the output schema, or rejects with the decoded refusal or a `TransportError`.
  * Boundary: internal to the HTTP transport driver and the public clients; not exported from an entry. A queued call
  *           sends `Prefer: respond-async` (RFC 7240) and reads no answer body. A query-string value that is not text,
  *           a number or a boolean is sent as JSON. A call that acts on behalf of a principal is service-to-service
  *           and never goes through this function. A caller's abort rejects with the platform's abort error.
  * Runtime: isomorphic
- * Governing contract: ADR 0140 (envelope); ADR 0142 (transport through drivers); ADR 0138 (Idempotency-Key); the HTTP
- *                     conventions rule.
+ * Governing contract: ADR 0140 (envelope); ADR 0142 (transport through drivers); ADR 0138 (Idempotency-Key); ADR 0338
+ *                     (decision 1: device order); the HTTP conventions rule.
  */
 import { HttpMethod } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
@@ -17,6 +17,7 @@ import type { ErrorEnvelope } from "@stackra/errors";
 import { RequestTimedOutError, TRANSPORT_HEADERS } from "@stackra/transport";
 import type { Transport } from "@stackra/transport";
 
+import { DEVICE_ORDER } from "#contracts/constants/device-order.constant";
 import { TransportFailure } from "#contracts/enums/transport-failure.enum";
 import type { ClientRequest } from "#contracts/types/client-request.type";
 import { TransportError } from "#core/errors/transport.error";
@@ -106,6 +107,9 @@ export async function httpCall(request: ClientRequest, options: HttpCallOptions)
   const headers: Record<string, string> = { Accept: "application/json", ...options.headers };
   if (request.idempotencyKey !== undefined)
     headers[TRANSPORT_HEADERS.idempotencyKey] = request.idempotencyKey;
+  if (request.device !== undefined) headers[DEVICE_ORDER.deviceHeader] = request.device.deviceId;
+  if (request.device?.sequence !== undefined)
+    headers[DEVICE_ORDER.sequenceHeader] = String(request.device.sequence);
   if (options.queue === true) headers["Prefer"] = "respond-async";
   if (!isRead) headers["Content-Type"] = "application/json";
   const body = isRead ? null : JSON.stringify(isRecord(request.input) ? rest : request.input);

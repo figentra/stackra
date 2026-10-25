@@ -15,6 +15,10 @@
   `MemoryStorageDriver` passes none; `WebStorageDriver` (`./browser`) passes prefixed `localStorage`/`sessionStorage`
   backends for `prefs`, `cache`, `session`.
 - `usePrefs()` resolves `Storage` from `useContainer()`; `fakeStorage()` returns a new `MemoryStorageDriver`.
+- Wave 9 (STA-488, ADR 0338 d2): `PayloadSeal` (port) with two drivers over `Storage`. Both read the key from
+  `secrets` under `PAYLOAD_KEY` on every call, so a wipe of that area takes effect at once. `web_crypto` imports the
+  raw 256-bit key (cached while the stored value is the same) and writes `v1.<nonce>.<ciphertext>` in base64;
+  `memory` writes `m1.<key id>.<text>`. `@stackra/query`'s persister seals the `outbox` and `cache` payloads with it.
 
 ## Constitution Check
 
@@ -55,3 +59,4 @@
 - **P-005**: a stored value is JSON, and a shape class is checked by its registered schema from `@stackra/validation`, never by a schema compiled at runtime — Validates: FR-005
 - **P-006**: `registerStorageKeys` registers the keys gen derives, and no driver builds a key of its own — Validates: FR-006
 - **P-007**: `package.json` lists no ORM and no third-party runtime `dependencies` entry — Validates: FR-007
+- **P-008**: for any text, `open(seal(text))` equals the text while the key in `secrets` is unchanged, and is `undefined` once `secrets` is cleared or the sealed text is altered; `web_crypto`'s sealed text never contains the plain text and two seals of one text differ — Validates: FR-008

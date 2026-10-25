@@ -17,6 +17,7 @@ on `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@stackra/
 | `.`           | `RealtimeStatus`                                                                                      | `connected`, `connecting`, `disconnected`                                     |
 | `.`           | `RealtimeHub`                                                                                         | server channel hub: one-time subscribe tokens, joins, permission fan-out      |
 | `.`           | `RealtimeBroadcaster`                                                                                 | server: turns a committed event into a refresh on its derived channel         |
+| `.`           | `liveQueryRoutes`, `LiveQueryRefresh`                                                                 | server: the routes of a live (or replica) query's refresh, for gen to wire    |
 | `.`           | `MemoryRealtimeDriver`, `SseRealtimeDriver`, `WebSocketRealtimeDriver`                                | the three `RealtimeDriver` drivers (`memory`, `sse`, `websocket`)             |
 | `.`           | `RealtimeConnection`                                                                                  | client: one connection, reconnect with backoff, background suspension         |
 | `.`           | `WebsocketRealtimeTransportDriver`, `MemoryRealtimeTransportDriver`                                   | the two `RealtimeTransport` drivers (`websocket` with SSE fallback, `memory`) |
@@ -54,6 +55,21 @@ await broadcaster.broadcast(record, {
   permission: "orders.order.read",
   audience: BroadcastAudience.Tenant,
 });
+```
+
+A live query (one that declares `cache.invalidateOn`, every `replica:` query among them) refreshes on its own routes,
+which `liveQueryRoutes` derives: one per invalidating event, on that event's module channel, under the query's
+permission and audience (ADR 0315 decision 1). Gen hands them to the broadcaster after the relay, beside the event
+routes. The client's `@stackra/query` refetches the query, or refreshes the replica by its change cursor (ADR 0338
+decision 3), when the refresh arrives.
+
+```ts
+const routes = liveQueryRoutes({
+  permission: "sales.sale.read",
+  audience: BroadcastAudience.Tenant,
+  invalidateOn: [SaleCompleted],
+});
+for (const route of routes) await broadcaster.broadcast(record, route); // for the events these routes name
 ```
 
 Tokens are one-time. A connection is closed when its token expires (`subscribeTokenTtl`, 15 minutes by default),

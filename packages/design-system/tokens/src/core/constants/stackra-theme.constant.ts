@@ -1,16 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: the stackra theme, the default theme of the Stackra Design System. Its oklch values come unchanged from
- *          the approved Stackra brand kit 0.1.0, which @stackra/brand vendored until it was retired; the kit's token
- *          reports sit in assets/data/stackra/ and the tests hold the values to them. One documented deviation: light
- *          `muted` is 0.49, not the kit's 0.5 (owner decision 2026-10-23). Each hex is derived from its oklch value
- *          (`oklchToHex`), never typed, so the two cannot disagree.
+ *          the approved Stackra brand kit 0.1.0, which @stackra/brand vendored until it was retired; the theme's test
+ *          holds every colour to a frozen in-code snapshot of them and every WCAG minimum of the kit's contrast report
+ *          to `STACKRA_CONTRAST_PAIRS` (ADR 0340 decision 8). One documented deviation: light `muted` is 0.49, not the
+ *          kit's 0.5 (owner decision 2026-10-23). Each hex is derived from its oklch value (`oklchToHex`), never
+ *          typed, so the two cannot disagree.
  * Boundary: data only. The accent is the brand's steel blue (ADR 0319): the accent, its hover, pressed and soft
  *          steps and the focus ring take the wordmark's hue (248) at a chroma a control can carry, with paper or ink on
  *          it at 4.5:1 or more; the link and the signal stay neutral. Graphite carries the neutral states and,
- *          as an alias, the dark `segment` role.
+ *          as an alias, the dark `segment` role. The environment banners and the chart set are ADR 0340 decision 9's
+ *          tokens. The theme names no product or family (decision 8): the amber bar a mark draws is `amber-strong`.
  * Runtime: isomorphic
- * Governing contract: ADR 0302 (Stackra Design System); ADR 0024 (the brand assets stay all rights reserved).
+ * Governing contract: ADR 0302 (Stackra Design System); ADR 0024 (the brand assets stay all rights reserved); ADR 0340
+ *          (decisions 8 and 9).
  */
 import type { ColorToken } from "#contracts/types/theme.type";
 import { defineTheme } from "#core/functions/define-theme.function";
@@ -96,10 +99,27 @@ export const STACKRA_THEME = defineTheme({
     "accent-soft-foreground": color("oklch(0.42 0.12 248)", "oklch(0.85 0.07 248)"),
     signal: FOREGROUND,
     "signal-foreground": INVERSE,
-    cursor: color("oklch(0.47 0.095 75)", "oklch(0.83 0.15 82)"),
+    // ADR 0340 decision 8: amber that stands 3:1 off the page in each scheme, under a neutral name (was `cursor`;
+    // TOKEN_PATH_ALIASES maps the old path).
+    "amber-strong": color("oklch(0.47 0.095 75)", "oklch(0.83 0.15 82)"),
     // ADR 0340 decision 4: HeroUI's own warning hover mixes 10% white into the light warning, which leaves its white
     // text at 4.22:1; this step goes 0.05 darker in both schemes, as the accent's hover does (6.38:1 and 6.10:1).
     "warning-hover": color("oklch(0.5 0.15 47)", "oklch(0.67 0.17 47)"),
+    // ADR 0340 decision 9: the environment banners of ADR 0280, which a brand above may lock. Each sits at the status
+    // colours' lightness with their label, and 25 degrees or more from danger, warning, success and the accent.
+    "banner-sandbox": color("oklch(0.5 0.08 190)", "oklch(0.72 0.11 190)"),
+    "banner-sandbox-foreground": ON_STATUS,
+    "banner-staging": color("oklch(0.5 0.16 300)", "oklch(0.72 0.13 300)"),
+    "banner-staging-foreground": ON_STATUS,
+    "banner-acting-as": color("oklch(0.5 0.17 350)", "oklch(0.72 0.15 350)"),
+    "banner-acting-as-foreground": ON_STATUS,
+    // ADR 0340 decision 9: a categorical chart set at 3:1 or more against the surface in both schemes, so a product
+    // accent never pushes a chart under it. On the web the names are HeroUI Pro's own chart properties.
+    "chart-1": color("oklch(0.55 0.12 248)", "oklch(0.72 0.11 248)"),
+    "chart-2": color("oklch(0.6 0.1 185)", "oklch(0.78 0.11 185)"),
+    "chart-3": color("oklch(0.52 0.16 300)", "oklch(0.7 0.14 300)"),
+    "chart-4": color("oklch(0.62 0.15 55)", "oklch(0.78 0.14 60)"),
+    "chart-5": color("oklch(0.55 0.17 355)", "oklch(0.72 0.15 355)"),
   },
   fontFamily: {
     sans: '"Geist", ui-sans-serif, system-ui, sans-serif',

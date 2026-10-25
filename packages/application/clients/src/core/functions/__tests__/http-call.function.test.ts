@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `httpCall`: the HTTP request built from a `ClientRequest` (route params, query string, JSON
- *          body, headers, Idempotency-Key, queued call), the decoded answer, the decoded refusal, and each transport
+ *          body, headers, Idempotency-Key, device order, queued call), the decoded answer, the decoded refusal, and each transport
  *          failure (network, timeout, an answer without an envelope, a body the output schema refuses).
  * Boundary: test only; the transport is a function standing in for `fetch`, so nothing reaches a network.
  * Runtime: node (vitest)
@@ -94,6 +94,33 @@ describe("httpCall", () => {
     expect(sent[0]?.headers.get("Idempotency-Key")).toBe("step-7");
     expect(sent[0]?.headers.get("Content-Type")).toBe("application/json");
     expect(await sent[0]?.json()).toEqual({ title: "Tee" });
+  });
+
+  it("sends the call's device and its sequence as the DEVICE_ORDER headers", async () => {
+    const { transport, sent } = answering(() =>
+      Response.json({ variantId: "var_1", title: "Tee" }),
+    );
+    const rename: ClientRequest = {
+      key: "catalogue.variant.rename@1",
+      kind: "action",
+      endpoint: { method: HttpMethod.Put, path: "/variants/:variantId/rename" },
+      input: { variantId: "var_1", title: "Tee" },
+      output,
+    };
+    await httpCall(
+      { ...rename, device: { deviceId: "device-1", sequence: 1729760400000 } },
+      { baseUrl: API, transport, headers: {} },
+    );
+    expect(sent[0]?.headers.get("Stackra-Device")).toBe("device-1");
+    expect(sent[0]?.headers.get("Stackra-Device-Sequence")).toBe("1729760400000");
+    await httpCall(
+      { ...rename, device: { deviceId: "device-1" } },
+      { baseUrl: API, transport, headers: {} },
+    );
+    expect(sent[1]?.headers.get("Stackra-Device")).toBe("device-1");
+    expect(sent[1]?.headers.has("Stackra-Device-Sequence")).toBe(false);
+    await httpCall(rename, { baseUrl: API, transport, headers: {} });
+    expect(sent[2]?.headers.has("Stackra-Device")).toBe(false);
   });
 
   it("asks a queued call to run asynchronously and reads no answer", async () => {

@@ -4,14 +4,16 @@
  *          identity (action and query keys, event wire names, permission keys, refusal codes, model keys and tables,
  *          port keys), the endpoint, tool and refusal list of each action, the module graph, the facets, and the JSON
  *          Schema of every wire shape; a service or app also lists what its hosted packages contribute, marked
- *          `from`; each Integration's key, connection and webhook path. It reports the identity checks it can see:
- *          `identity_collision`, `override_duplicate`, `permission_unknown` and the public id prefix checks
- *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`.
+ *          `from`; each Integration's key, connection and webhook path; each sequence's key; an app's block and route
+ *          keys. It reports the identity checks it can see: `identity_collision`, `override_duplicate`,
+ *          `permission_unknown`, `identity_missing` and the public id prefix checks `prefix_invalid`, `prefix_taken`
+ *          and `prefix_duplicate`.
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (ui, settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 20, 21 and 22); ADR 0305 (rules 1, 28 and 36); ADR 0140 (refusal
- *                     categories); ADR 0141 (event names); ADR 0135 (rule 2: prefixes); ADR 0308 (rule 19).
+ *                     categories); ADR 0141 (event names); ADR 0135 (rule 2: prefixes); ADR 0308 (rule 19); ADR 0342
+ *                     (decision 1: sequence keys); ADR 0270 (decision 3: block keys).
  */
 import { Enum } from "@stackra/contracts";
 import type { Json, StackraManifest } from "@stackra/contracts";
@@ -20,6 +22,7 @@ import { ErrorKind, refusalCode } from "@stackra/errors";
 import { MANIFEST_NOTICE } from "#core/constants/manifest-notice.constant";
 import { PUBLIC_ID_PREFIXES } from "#core/constants/public-id-prefixes.constant";
 import { actionKey } from "#core/functions/action-key.function";
+import { blockKey } from "#core/functions/block-key.function";
 import { camelCase } from "#core/functions/camel-case.function";
 import { configKeyOf } from "#core/functions/config-key-of.function";
 import { deriveEndpoint } from "#core/functions/derive-endpoint.function";
@@ -31,6 +34,8 @@ import { modelKey } from "#core/functions/model-key.function";
 import { permissionKey } from "#core/functions/permission-key.function";
 import { portKey } from "#core/functions/port-key.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
+import { routeKey } from "#core/functions/route-key.function";
+import { sequenceKey } from "#core/functions/sequence-key.function";
 import { snakeCase } from "#core/functions/snake-case.function";
 import { tableName } from "#core/functions/table-name.function";
 import { toolName } from "#core/functions/tool-name.function";
@@ -55,6 +60,7 @@ const MERGED_SECTIONS = [
   "models",
   "drivers",
   "integrations",
+  "sequences",
 ] as const;
 
 /** `Permission.L2` or `Permission.L2.system()`: the risk level and the system-only marker. */
@@ -396,6 +402,41 @@ export function buildManifest(ir: MemberIR): {
     });
   }
 
+  // Sequences: `<module>.` + the written key (ADR 0342 decision 1).
+  const sequences: Entry[] = [];
+  for (const declared of ir.classes.filter((candidate) => candidate.kind === "sequence")) {
+    const written = declared.options["key"];
+    if (typeof written !== "string") {
+      fail(
+        declared,
+        "identity_missing",
+        "sequence has no written `key`",
+        'write `Sequence({ key: "invoice" })`',
+      );
+      continue;
+    }
+    const key = sequenceKey(declared.module, written);
+    claim(`sequence:${key}`, declared);
+    sequences.push({ key, class: declared.name, module: declared.module, file: declared.file });
+  }
+
+  // An app's block keys (`<member>.<snake(folder)>`) and route keys (`snake(stem)`), locked once published.
+  const appKeys = (kind: "block" | "route"): Entry[] =>
+    ir.classes
+      .filter((candidate) => candidate.kind === kind)
+      .map((declared) => {
+        const key = kind === "block" ? blockKey(ir.member, declared.file) : routeKey(declared.file);
+        claim(`${kind}:${key}`, declared);
+        return {
+          key,
+          class: declared.name,
+          ...(kind === "block" ? { module: ir.member } : {}),
+          file: declared.file,
+        };
+      });
+  const blocks = ir.layout === "app" ? appKeys("block") : [];
+  const routes = ir.layout === "app" ? appKeys("route") : [];
+
   // Configs: identities only (the key), never their schema.
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "config")) {
     if (declared.base !== undefined && !declared.base.own) continue; // an override inherits its base's key
@@ -525,6 +566,7 @@ export function buildManifest(ir: MemberIR): {
     models,
     drivers: [...drivers.values()].map((entry) => ({ ...entry })),
     integrations,
+    sequences,
   };
   if (ir.layout !== "package")
     for (const dependency of ir.dependencies) {
@@ -548,6 +590,7 @@ export function buildManifest(ir: MemberIR): {
     modules,
     ...(facets.size > 0 ? { facets: [...facets.values()] } : {}),
     ...sections,
+    ...(ir.layout === "app" ? { blocks, routes } : {}),
     schemas,
   };
   return { manifest: manifest as unknown as StackraManifest, errors };

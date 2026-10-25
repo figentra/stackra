@@ -3,16 +3,18 @@
  * Purpose: `OfflineLock`, revoke means wipe and lock (ADR 0338 decision 4): when identity revokes the device's session,
  *          or when the offline limit (`QuerySettings.offlineLimitHours`, 24 hours by default) passes without a sync, it
  *          tells the queue, the cache and the replicas to drop what they hold, wipes the `outbox`, `cache` and `secrets`
- *          areas, and stays locked until a sync succeeds again. A sync is an answer to the device's last acknowledged
- *          sequence (`AcknowledgementReader`), asked on start, on every reconnect, on every sign-in and when the limit
- *          falls due, so an idle device that is online never wipes.
+ *          areas, and stays locked until someone signs in again (or a sync succeeds). A sync is an answer to the
+ *          device's last acknowledged sequence (`AcknowledgementReader`), asked on start, on every reconnect, on every
+ *          sign-in and when the limit falls due, so an idle device that is online never wipes.
  * Boundary: a singleton service the host's query context starts once (`start()`). The listeners (`onWipe`) run and
  *           settle before the areas are cleared, so no write they had in flight lands after the wipe; a listener's
  *           failure never stops the wipe. A wipe past the offline limit also ends the session on the device, so only a
- *           new sign-in unlocks it; a revoke leaves identity's `revoked` state for the screen to show. A revoked device's
- *           unsent calls are lost by design (the server lists its last acknowledged sequence, `lastAcknowledged`). The
- *           countdown starts the first time the lock sees the device, and a failed settings read falls back to the
- *           default limit, so a missing settings store never disables the wipe.
+ *           new sign-in unlocks it; a revoke leaves identity's `revoked` state for the screen to show. Either wipe takes
+ *           the stored credentials with `secrets`, so the sign-in that unlocks is a fresh one. A revoked device's unsent
+ *           calls are lost by design (the server lists its last acknowledged sequence, `lastAcknowledged`). The
+ *           countdown starts the first time the lock sees the device and again after a wipe (a failed sync right after
+ *           the unlocking sign-in never wipes at once), and a failed settings read falls back to the default limit, so
+ *           a missing settings store never disables the wipe.
  * Runtime: isomorphic
  * Governing contract: ADR 0338 (decisions 2 and 4); ADR 0256 (the areas); ADR 0294 (decisions 16 and 17).
  */
@@ -27,7 +29,7 @@ import { AcknowledgementReader } from "#contracts/ports/acknowledgement-reader.p
 import { OfflineSession } from "#contracts/ports/offline-session.port";
 import { QuerySettings } from "#core/query.settings";
 
-/** The `prefs` key of the last sync's time; kept across a wipe, because it is no secret and holds no data. */
+/** The `prefs` key of the last sync's time; no secret, so it lives in `prefs`, and a wipe removes it. */
 const LAST_SYNC_KEY = "query.last_synced_at";
 
 /** `QuerySettings.offlineLimitHours`' default, used when the settings cannot be read. */
@@ -98,7 +100,7 @@ export class OfflineLock extends Service {
     this.clock = clock;
   }
 
-  /** True from a wipe until the next sync succeeds. */
+  /** True from a wipe until someone signs in again or a sync succeeds. */
   get isLocked(): boolean {
     return this.locked;
   }
@@ -136,7 +138,9 @@ export class OfflineLock extends Service {
         if (isRevoked) void this.wipe();
       }),
       this.session.isSignedIn.subscribe((isSignedIn) => {
-        if (isSignedIn) void this.check(true);
+        if (!isSignedIn) return;
+        this.locked = false;
+        void this.check(true);
       }),
       this.platform.network.isOnline.subscribe((isOnline) => {
         if (isOnline) void this.check(true);
@@ -220,6 +224,7 @@ export class OfflineLock extends Service {
       this.storage.outbox.clear();
       this.storage.cache.clear();
       this.storage.secrets.clear();
+      this.storage.prefs.delete(LAST_SYNC_KEY);
       try {
         await this.storage.flush();
       } finally {

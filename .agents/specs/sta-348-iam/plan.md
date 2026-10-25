@@ -18,6 +18,14 @@
   only for a call without one maps the caller's scope id to its node through `ScopeTree`; `authorize` resolves the record's policy (registered by model, built by the resolver
   `connectPolicies` set), calls the method named after the verb, then checks again with the record's facts.
 - `IamGrantedScopesDriver extends Driver(GrantedScopes)` answers the scope package's header step.
+- Record visibility in reads (STA-595): `visibleCondition` reads the snapshot once, settles each rule's audience for
+  the principal (it depends on the principal, never on the record) and returns `all(any(allows), not(any(denies)))`,
+  dropping the `any(allows)` part when `unmatched` is `Allow`. The server-only `./node` entry holds
+  `IamVisibilityFilterDriver extends Driver(VisibilityFilter)` (deps: the decision point, `ContextStorage` for the
+  call's scope and instant, `Clock`), `registerVisibility` with its internal registry, and `whereOf`, which maps the
+  tree onto MikroORM's `$and`/`$or`/`$not` (an empty `$or` is `1 = 0` in MikroORM 7) and each leaf onto its operator
+  behind a "column is set" guard; lists use the jsonb key operators (gen stores `string[]` as jsonb), money the
+  embedded `minor` and `currency`. A followed relation nests the target's filter as `$or: [{ rel: null }, { rel: f }]`.
 - `PermissionSnapshotService` is the client's store; `usePermission` reads it with `useSyncExternalStore`.
 - The testing plugin connects the policies and loads "everyone is owner at the root" into a memory source.
 
@@ -45,7 +53,7 @@
 
 ## Properties
 
-- **P-001**: `package.json` names `@stackra/iam` at `packages/security/iam` and `exports` lists only `.`, `./contracts`, `./react` and `./testing` — Validates: FR-001
+- **P-001**: `package.json` names `@stackra/iam` at `packages/security/iam` and `exports` lists only `.`, `./contracts`, `./node`, `./react` and `./testing` — Validates: FR-001
 - **P-002**: `.` exports `Decision`, `Permission`, `Permissions`, `Policy`, `Risk` and `SystemRole`, `./react` exports `usePermission` and `./testing` exports `actors`, each with the shape the template uses — Validates: FR-002
 - **P-003**: `kindOf` reads `permissions`, `policy` and `role` for the three kinds; `Role` throws for every empty, non-`Permission` or system grant list — Validates: FR-003
 - **P-004**: for every grant at node `g` and call node `c`, the grant applies exactly when `c` is `g` or below it and the grant is unexpired; a deny that covers the key and matches the audience refuses whatever grant applies — Validates: FR-004
@@ -54,6 +62,9 @@
 - **P-007**: each registration function stores nothing beyond the failing row and throws for a row that does not match its class; `permissionKey` throws for an unregistered static — Validates: FR-007
 - **P-008**: `usePermission` re-renders on every `set`, and every `actors` helper returns a frozen actor of its kind — Validates: FR-008
 - **P-009**: the `risk` of `ActionRefOptions`, `ActionRef` and `IntentMatch` is `Risk | undefined` — Validates: FR-009
+- **P-010**: for every snapshot, capability and model, a record meets `visibleCondition` exactly when `visibility` on that record answers `Allow`, or `Abstain` with `unmatched: Allow`; a platform actor gets `{ all: [] }` — Validates: FR-010
+- **P-011**: for every checked condition and row, the row passes `whereOf`'s filter exactly when `evaluate` matches its facts (a null attribute matching `is_not_set` only), and the driver's filter ANDs a followed model's filter under the relation, letting a row without the related row through — Validates: FR-011
+- **P-012**: `registerVisibility` stores a row only when it matches the model's `@Visibility` facet, and throws for every other row without storing it — Validates: FR-012
 
 ## Deploy modes
 

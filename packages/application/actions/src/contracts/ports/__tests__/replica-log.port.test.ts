@@ -42,7 +42,14 @@ describe("ReplicaLog", () => {
   it("is implemented by a driver", async () => {
     const driver = new ListDriver();
     expect(
-      await driver.append("p", [{ id: "sal_1", row: { total: 5 } }, { id: "sal_2" }], undefined),
+      await driver.append(
+        "p",
+        [
+          { id: "sal_1", row: { id: "sal_1", at: new Date(0), data: { total: 5 } } },
+          { id: "sal_2" },
+        ],
+        undefined,
+      ),
     ).toBe(2);
     expect(await driver.head("p")).toBe(2);
     expect(await driver.read("p", 1, 10, undefined)).toEqual({

@@ -1,35 +1,37 @@
 /**
  * Stackra file contract:
- * Purpose: proves the stackra theme carries the approved brand kit, as amended by ADR 0319.
- *          - Its colours equal the kit's resolved tokens, bar the steel-blue accent family ADR 0319 sets.
- *          - Every pairing the kit's contrast report holds to a WCAG minimum still meets it, the amended ones too.
- *          - The rest of the accent family (link, signal) stays achromatic, and the amended steps are steel blue.
+ * Purpose: proves the stackra theme carries the approved brand kit, as amended by ADR 0319 and ADR 0340.
+ *          - Its colours equal a frozen in-code snapshot of the kit's resolved tokens (ADR 0340 decision 8), with the
+ *            steel-blue accent family of ADR 0319, the neutral `amber-strong` name and decision 9's banner and chart
+ *            tokens; a change to any colour changes the snapshot on purpose.
+ *          - Every pair in `STACKRA_CONTRAST_PAIRS` (the kit's WCAG minimums, moved into code) holds in both schemes.
+ *          - The link, the signal and the accent's label stay achromatic, and the amended steps are steel blue.
+ *          - The banners stand apart from the status colours and the accent.
  *          - Every hex is the sRGB of its oklch.
  *          - The fonts moved with the theme beside their OFL licences.
- * Boundary: reads the kit reports and fonts in assets/; computes contrast from the oklch values through sRGB, which
- *          is how the kit's contrast report was computed (it matches to 0.005).
+ * Boundary: in-memory theme, and the fonts in assets/public/fonts; contrast is computed from the oklch values through
+ *          sRGB, as the kit's contrast report was.
  * Runtime: node
- * Governing contract: ADR 0302; ADR 0024 (fonts keep the SIL OFL); ADR 0022 (test placement).
+ * Governing contract: ADR 0302; ADR 0340 (decisions 8 and 9); ADR 0024 (fonts keep the SIL OFL); ADR 0022 (test
+ *          placement).
  */
 import { existsSync, readFileSync } from "node:fs";
 
 import type { ColorToken } from "#contracts/types/theme.type";
 import { MATERIAL_MODES } from "#core/constants/material-modes.constant";
+import { STACKRA_CONTRAST_PAIRS } from "#core/constants/stackra-contrast-pairs.constant";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
+import { checkSeparation } from "#core/functions/check-separation.function";
+import { checkTheme } from "#core/functions/check-theme.function";
 import { contrastRatio } from "#core/functions/contrast-ratio.function";
 import { oklchToHex } from "#core/functions/oklch-to-hex.function";
 
 const assets = new URL("../../../../assets/", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, assets), "utf8");
-const kit = <T>(name: string) => JSON.parse(read(`data/stackra/${name}.json`)) as T;
-type Mode = "light" | "dark";
 
 const tokenOf = (name: string): ColorToken | undefined =>
   (STACKRA_THEME.colors as Readonly<Record<string, ColorToken>>)[name] ??
   STACKRA_THEME.palette[name];
-
-/** The WCAG ratio of two oklch colours as a browser paints them: through their 8-bit sRGB. */
-const contrast = (one: string, two: string) => contrastRatio(oklchToHex(one), oklchToHex(two));
 
 /** The tokens ADR 0319 moves off the kit's neutral accent onto the brand's steel blue. */
 const STEEL_ACCENT = new Set([
@@ -41,8 +43,86 @@ const STEEL_ACCENT = new Set([
   "focus",
 ]);
 
-// The kit labels the modes "base" and "dark".
-const modeOf = (theme: string): Mode => (theme === "dark" ? "dark" : "light");
+/** The accent family members the kit's separation report holds achromatic, which ADR 0319 leaves so. */
+const ACHROMATIC = ["accent-foreground", "link", "signal", "signal-foreground"];
+
+/**
+ * Every colour of the stackra theme, light then dark, frozen (ADR 0340 decision 8): the kit's resolved tokens with the
+ * amendments of ADR 0319 (the steel accent), the owner's light muted 0.49 (2026-10-23), HeroUI's warning hover fix and
+ * ADR 0340 (`amber-strong`, the banners and the charts).
+ */
+const SNAPSHOT: Readonly<Record<"colors" | "palette", Readonly<Record<string, readonly [string, string]>>>> = {
+  colors: {
+    background: ["oklch(0.972 0.004 122)", "oklch(0.158 0.005 248)"],
+    foreground: ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],
+    surface: ["oklch(1 0 0)", "oklch(0.195 0.006 250)"],
+    "surface-foreground": ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],
+    "surface-secondary": ["oklch(0.955 0.004 110)", "oklch(0.235 0.007 250)"],
+    "surface-secondary-foreground": ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],
+    "surface-tertiary": ["oklch(0.935 0.004 110)", "oklch(0.285 0.007 250)"],
+    "surface-tertiary-foreground": ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],
+    overlay: ["oklch(1 0 0)", "oklch(0.215 0.006 250)"],
+    "overlay-foreground": ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],
+    muted: ["oklch(0.49 0.01 250)", "oklch(0.72 0.008 250)"],
+    default: ["oklch(0.935 0.004 110)", "oklch(0.285 0.007 250)"],
+    "default-foreground": ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],
+    accent: ["oklch(0.5 0.12 248)", "oklch(0.72 0.11 248)"],
+    "accent-foreground": ["oklch(0.972 0.004 122)", "oklch(0.158 0.005 248)"],
+    success: ["oklch(0.5 0.13 135)", "oklch(0.72 0.15 135)"],
+    "success-foreground": ["oklch(1 0 0)", "oklch(0.158 0.005 248)"],
+    warning: ["oklch(0.55 0.15 47)", "oklch(0.72 0.17 47)"],
+    "warning-foreground": ["oklch(1 0 0)", "oklch(0.158 0.005 248)"],
+    danger: ["oklch(0.45 0.17 24)", "oklch(0.66 0.2 22)"],
+    "danger-foreground": ["oklch(1 0 0)", "oklch(0.158 0.005 248)"],
+    "field-background": ["oklch(1 0 0)", "oklch(0.235 0.007 250)"],
+    "field-foreground": ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],
+    "field-placeholder": ["oklch(0.49 0.01 250)", "oklch(0.72 0.008 250)"],
+    "field-border": ["oklch(0.6 0.008 250)", "oklch(0.56 0.008 250)"],
+    segment: ["oklch(1 0 0)", "oklch(0.38 0.009 248)"],
+    "segment-foreground": ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],
+    border: ["oklch(0.885 0.005 110)", "oklch(0.35 0.008 250)"],
+    separator: ["oklch(0.92 0.004 110)", "oklch(0.27 0.007 250)"],
+    focus: ["oklch(0.5 0.12 248)", "oklch(0.72 0.11 248)"],
+    link: ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],
+    backdrop: ["oklch(0.158 0.005 248 / 0.4)", "oklch(0.08 0.004 248 / 0.6)"],
+  },
+  palette: {
+    amber: ["oklch(0.83 0.15 82)", "oklch(0.83 0.15 82)"],
+    ink: ["oklch(0.158 0.005 248)", "oklch(0.158 0.005 248)"],
+    paper: ["oklch(0.972 0.004 122)", "oklch(0.972 0.004 122)"],
+    white: ["oklch(1 0 0)", "oklch(1 0 0)"],
+    steel: ["oklch(0.931 0.012 248)", "oklch(0.931 0.012 248)"],
+    "steel-deep": ["oklch(0.24 0.015 248.4)", "oklch(0.24 0.015 248.4)"],
+    "stk-tile": ["oklch(1 0 89.9)", "oklch(0.234 0.007 258.4)"],
+    "stk-tile-line": ["oklch(0.839 0.007 124.5)", "oklch(0.35 0.009 248.1)"],
+    "stk-ink": ["oklch(0.24 0.015 248.4)", "oklch(0.931 0.012 248)"],
+    "graphite-100": ["oklch(0.925 0.006 248)", "oklch(0.925 0.006 248)"],
+    "graphite-200": ["oklch(0.87 0.007 248)", "oklch(0.87 0.007 248)"],
+    "graphite-300": ["oklch(0.8 0.008 248)", "oklch(0.8 0.008 248)"],
+    "graphite-700": ["oklch(0.38 0.009 248)", "oklch(0.38 0.009 248)"],
+    "graphite-800": ["oklch(0.3 0.009 248)", "oklch(0.3 0.009 248)"],
+    "graphite-900": ["oklch(0.265 0.008 248)", "oklch(0.265 0.008 248)"],
+    "accent-hover": ["oklch(0.45 0.12 248)", "oklch(0.67 0.11 248)"],
+    "accent-pressed": ["oklch(0.4 0.11 248)", "oklch(0.62 0.11 248)"],
+    "accent-soft": ["oklch(0.94 0.03 248)", "oklch(0.29 0.05 248)"],
+    "accent-soft-foreground": ["oklch(0.42 0.12 248)", "oklch(0.85 0.07 248)"],
+    signal: ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],
+    "signal-foreground": ["oklch(0.972 0.004 122)", "oklch(0.158 0.005 248)"],
+    "amber-strong": ["oklch(0.47 0.095 75)", "oklch(0.83 0.15 82)"],
+    "warning-hover": ["oklch(0.5 0.15 47)", "oklch(0.67 0.17 47)"],
+    "banner-sandbox": ["oklch(0.5 0.08 190)", "oklch(0.72 0.11 190)"],
+    "banner-sandbox-foreground": ["oklch(1 0 0)", "oklch(0.158 0.005 248)"],
+    "banner-staging": ["oklch(0.5 0.16 300)", "oklch(0.72 0.13 300)"],
+    "banner-staging-foreground": ["oklch(1 0 0)", "oklch(0.158 0.005 248)"],
+    "banner-acting-as": ["oklch(0.5 0.17 350)", "oklch(0.72 0.15 350)"],
+    "banner-acting-as-foreground": ["oklch(1 0 0)", "oklch(0.158 0.005 248)"],
+    "chart-1": ["oklch(0.55 0.12 248)", "oklch(0.72 0.11 248)"],
+    "chart-2": ["oklch(0.6 0.1 185)", "oklch(0.78 0.11 185)"],
+    "chart-3": ["oklch(0.52 0.16 300)", "oklch(0.7 0.14 300)"],
+    "chart-4": ["oklch(0.62 0.15 55)", "oklch(0.78 0.14 60)"],
+    "chart-5": ["oklch(0.55 0.17 355)", "oklch(0.72 0.15 355)"],
+  },
+};
 
 const channels = (hex: string) => [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16));
 
@@ -94,22 +174,18 @@ describe("STACKRA_THEME", () => {
     expect(typography["h4-ar"]?.family).toBe("arabic");
   });
 
-  it("carries the kit's resolved colours unchanged", () => {
-    const resolved = kit<{
-      tokens: {
-        name: string;
-        light: { value: string; hex: string };
-        dark: { value: string; hex: string };
-      }[];
-    }>("resolved").tokens;
-    expect(resolved.length).toBeGreaterThan(20);
-    for (const token of resolved.filter(({ name }) => !STEEL_ACCENT.has(name)))
-      expect(tokenOf(token.name), token.name).toEqual({
-        light: token.light.value,
-        dark: token.dark.value,
-        hexLight: token.light.hex,
-        hexDark: token.dark.hex,
-      });
+  // @covers sta-348:FR-004
+  it("holds every colour to the frozen snapshot", () => {
+    for (const group of ["colors", "palette"] as const)
+      expect(
+        Object.fromEntries(
+          Object.entries(STACKRA_THEME[group]).map(([name, token]) => [
+            name,
+            [token.light, token.dark],
+          ]),
+        ),
+        group,
+      ).toEqual(SNAPSHOT[group]);
   });
 
   it("derives every hex from its oklch value", () => {
@@ -126,43 +202,39 @@ describe("STACKRA_THEME", () => {
     expect(STACKRA_THEME.colors.success.hexLight).toBe("#40731A");
   });
 
-  it("meets every WCAG minimum in the kit's contrast report", () => {
-    const rows = kit<
-      {
-        foreground: string;
-        background: string;
-        theme: string;
-        minimum: number | null;
-        ratio: number;
-      }[]
-    >("contrast").filter((row) => row.minimum !== null);
-    expect(rows.length).toBeGreaterThan(80);
-    for (const row of rows) {
-      const mode = modeOf(row.theme);
-      const ratio = contrast(
-        tokenOf(row.foreground)?.[mode] ?? "",
-        tokenOf(row.background)?.[mode] ?? "",
-      );
-      const pair = `${row.theme} ${row.foreground} on ${row.background}`;
-      expect(ratio, pair).toBeGreaterThanOrEqual(row.minimum ?? 0);
-      // An amended token keeps the kit's minimum, not the kit's exact ratio.
-      if (!STEEL_ACCENT.has(row.foreground) && !STEEL_ACCENT.has(row.background))
-        expect(Math.abs(ratio - row.ratio), pair).toBeLessThan(0.01);
-    }
+  // @covers sta-348:FR-004 sta-348:FR-005
+  it("meets every pair of STACKRA_CONTRAST_PAIRS in both schemes, as painted", () => {
+    expect(checkTheme(STACKRA_THEME, STACKRA_CONTRAST_PAIRS)).toEqual([]);
   });
 
-  it("keeps the rest of the accent family achromatic (oklch chroma below 0.02), as the kit's separation report records", () => {
-    const rows = kit<{ neutrality: { theme: string; name: string; hex: string }[] }>(
-      "separation",
-    ).neutrality;
-    expect(rows.length).toBeGreaterThan(10);
-    for (const row of rows.filter(({ name }) => !STEEL_ACCENT.has(name))) {
-      const mode = modeOf(row.theme);
-      const token = tokenOf(row.name);
-      const chroma = Number(token?.[mode].match(/oklch\([\d.]+ ([\d.]+)/)?.[1]);
-      expect(chroma, row.name).toBeLessThan(0.02);
-      expect(mode === "dark" ? token?.hexDark : token?.hexLight, row.name).toBe(row.hex);
+  it("keeps the accent's label, the link and the signal achromatic (oklch chroma below 0.02)", () => {
+    for (const name of ACHROMATIC)
+      for (const mode of ["light", "dark"] as const) {
+        const chroma = Number(tokenOf(name)?.[mode].match(/oklch\([\d.]+ ([\d.]+)/)?.[1]);
+        expect(chroma, `${name} ${mode}`).toBeLessThan(0.02);
+      }
+  });
+
+  // @covers sta-348:FR-005
+  it("draws the environment banners apart from the status colours and the accent (ADR 0340 decision 9)", () => {
+    const banners = ["banner-sandbox", "banner-staging", "banner-acting-as"];
+    for (const name of banners) {
+      expect(tokenOf(name), name).toBeDefined();
+      expect(tokenOf(`${name}-foreground`), name).toBeDefined();
     }
+    expect(
+      checkSeparation(STACKRA_THEME, [
+        { subject: "accent", from: ["danger", "warning", "success", ...banners] },
+        ...banners.map((subject) => ({ subject, from: ["danger", "warning", "success"] })),
+      ]),
+    ).toEqual([]);
+    expect(Object.keys(STACKRA_THEME.palette).filter((name) => name.startsWith("chart-"))).toEqual([
+      "chart-1",
+      "chart-2",
+      "chart-3",
+      "chart-4",
+      "chart-5",
+    ]);
   });
 
   // @covers sta-425:FR-001 sta-425:P-001

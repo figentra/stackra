@@ -4,7 +4,8 @@
  *          differs from the one the committed manifest locked fails with `identity_changed`, unless the class carries
  *          `@Renamed(old)` naming the locked identity (in full or as written: `orders.order.cancel@1` or
  *          `order.cancel`).
- * Boundary: pure. Only the member's own entries are locked here (an entry with `from` belongs to its package's lock).
+ * Boundary: pure. Locks actions, events, refusals, models, integrations, sequences and an app's blocks and routes.
+ *           Only the member's own entries are locked here (an entry with `from` belongs to its package's lock).
  *           A class that disappeared is not a changed identity; the backward-compatibility test reports the removal.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 5 and 22: the manifest lock and `@Renamed`).
@@ -14,7 +15,16 @@ import type { StackraManifest } from "@stackra/contracts";
 import type { GenError } from "#core/types/gen-error.type";
 
 /** The identity field of each locked section. */
-const LOCKED = { actions: "key", events: "name", errors: "code", models: "key" } as const;
+const LOCKED = {
+  actions: "key",
+  events: "name",
+  errors: "code",
+  models: "key",
+  integrations: "key",
+  sequences: "key",
+  blocks: "key",
+  routes: "key",
+} as const;
 
 /** Each own entry's identity, by class name. */
 function identities(

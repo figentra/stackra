@@ -53,9 +53,11 @@
 
 ## Correctness properties
 
-- **P-001**: `package.json` `exports` lists exactly `.` and `./contracts`, and `src/contracts/` imports no other entry — Validates: FR-001
+- **P-001**: `package.json` `exports` lists exactly `.`, `./contracts` and `./node`, `src/contracts/` imports no other entry, and no file outside `src/node/` imports `@stackra/actions` — Validates: FR-001
 - **P-002**: `./contracts` exports `DeviceTelemetry`, `DeviceCommands`, `DeviceCredential`, `CommandStatus`, `TelemetryReading` and `DeviceCommand`, and `.` exports none of them — Validates: FR-002
 - **P-003**: `.` exports `DevicesConfig`, `DevicesConfig$`, `DevicesOptions`, `HttpDeviceTelemetryDriver`, `HttpDeviceCommandsDriver`, `DeviceUnauthorizedError`, `DeviceHubRefusedError` and `DEVICE_HUB_PATHS` — Validates: FR-003
 - **P-004**: `HttpDeviceTelemetryDriver` and `HttpDeviceCommandsDriver` send every request through a `@stackra/transport` transport (`createTransport` with `idempotencyKey`, `bearerToken`, `retry` and `timeout`) to a path in `DEVICE_HUB_PATHS` — Validates: FR-004
 - **P-005**: no path in `DEVICE_HUB_PATHS` and no request body names the device, and the bearer token comes from `DeviceCredential` — Validates: FR-005
 - **P-006**: the pending-commands response body is parsed with a zod schema before any command is returned — Validates: FR-006
+- **P-007**: `DeviceIdentity` is a `Port` keyed `devices.DeviceIdentity`, exported from `./contracts` only — Validates: FR-007
+- **P-008**: for every store state and caller, `DeviceAcknowledgedQuery` answers the calling device's last settled sequence (or `null`), and for a named device answers a sequence only when the device's last settled scope path is the caller's or below it (any for a platform caller), else `null` — Validates: FR-008

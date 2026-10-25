@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `discoverMember`, gen's discovery: opens the member's program behind the host seam, reads every kind
- *          class, shape, enum and file export of its own sources (sorted by path), the committed manifests of its
- *          dependencies, its modules and its authored root module, and fills each `DriverName<Port>` field with the
- *          driver names found for that port: the `MemberIR` every gen output is a pure function of.
+ *          class, shape, enum and file export of its own sources (sorted by path), its dependency package names and the
+ *          committed manifests of those that ship one, its modules and its authored root module, and fills each
+ *          `DriverName<Port>` field with the driver names found for that port: the `MemberIR` every gen output is a
+ *          pure function of.
  * Boundary: reads the member; writes nothing. Refusals are collected into `errors`, never thrown; only an unreadable
  *           package.json, tsconfig or dependency manifest throws. The program is always closed.
  * Runtime: node
@@ -141,6 +142,7 @@ export async function discoverMember(
       shapes: filled,
       enums,
       files,
+      packages: facts.dependencies,
       dependencies,
       errors: [...reader.errors],
     };

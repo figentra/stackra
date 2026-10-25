@@ -127,9 +127,15 @@ Realm[]`, `subscribeTokenTtl: Duration`, `driver`, `origin`), `RealtimeConfig$` 
 - **FR-004**: No payload field ever reaches a client; no delivery without the permission.
 - **FR-005**: The gen samples' `SseRealtimeDriver`, `WebSocketRealtimeDriver` and `WebsocketRealtimeTransportDriver`
   exist, exported from `.`.
+- **FR-006**: (ADR 0315 decision 1, ADR 0338 decision 3) `liveQueryRoutes(refresh)`: the broadcast routes of a live
+  query's refresh (a query with `cache.invalidateOn`, every `replica:` query among them), one per distinct
+  invalidating event, its module read from the event's wire name, under the query's permission and audience; it throws
+  on a name that is not a wire name or an empty permission. `LiveQueryRefresh` is its input.
 
 ## Open items
 
+- Gen calls `liveQueryRoutes` once per live query from the manifest and broadcasts each committed occurrence of those
+  events on those routes too, after the outbox relay (the replica refresh signal of ADR 0338 decision 3).
 - Gen must import the server and client drivers from `.`, not from `./node`, `./browser` or `./native` (one symbol
   from one entry; the drivers need no runtime-target entry).
 - `@stackra/clients`' `eventRef` must expose the wire name as the static `eventName`.

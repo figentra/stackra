@@ -18,3 +18,8 @@
 - [x] T014 [US1] `scope?: ScopeRef` on `CallOptions`, `CallDescriptor` and `ExtensionContext`, copied through `ActionPipeline`; pipeline and fake-context tests — covers: FR-004, P-004 — route: package — deps: T006
 - [x] T015 [US1] `yesterday` and `custom` in `periodOf`'s `windowOf`, with tests — covers: FR-004, P-004 — route: package — deps: T006
 - [x] T016 [US1] `JobCron.perTenant` renamed `perScope`; `Action` test, README and AGENTS — covers: FR-002, P-002 — route: package — deps: T004
+- [x] T017 [US1] Per-device order (STA-489): `DeviceOrder` on `CallOptions`, non-contiguous sequences in the pipeline and `MemoryDeviceSequenceStoreDriver`, `DeviceSequenceOutOfOrderError` with `acknowledged`, `ctx.deviceId`; no header names (`DEVICE_ORDER` is clients'); tests — covers: FR-009, P-009 — route: package — deps: T006
+- [x] T018 [US1] `offline.cap` reconcile on the input's `amount` (no `amountField`), `OfflineCapStore` and its memory driver, `OfflineCapReachedError`; tests — covers: FR-010, P-010 — route: package — deps: T006
+- [x] T019 [US1] Replicas on the client's wire shape: `ReplicaPage` (`rows`, `removed`, `cursor`, `asOf`, `full`), the cursor from the input, `ReplicaFeed` collapsing every page since the cursor, `ReplicaLog` and its memory driver; tests — covers: FR-011, P-011 — route: package — deps: T006
+- [x] T020 [US1] `accepts` review: `ActionAccepts`, `RuleEvaluator`, `RuleEvaluation`, `ReviewItemSink` with its memory driver, `ReviewReason`, `isOlderRuleVersion`; tests — covers: FR-012, P-012 — route: package — deps: T006
+- [x] T021 README, AGENTS, barrels and changeset for the offline additions — covers: FR-009, FR-010, FR-011, FR-012 — route: package — deps: T017, T018, T019, T020

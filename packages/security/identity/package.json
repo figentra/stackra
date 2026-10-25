@@ -89,6 +89,7 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/iam": "workspace:*",
+    "@stackra/query": "workspace:*",
     "@stackra/scope": "workspace:*",
     "@stackra/storage": "workspace:*",
     "@stackra/tenancy": "workspace:*",

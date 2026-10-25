@@ -5,7 +5,8 @@
  *          permission is the platform's only, deny overrides allow (by role, scope node and segment audiences), a
  *          conditional deny is tested only against a record and fails closed without a fact source, every link of
  *          the actor chain must hold the permission, visibility answers deny over allow and abstains with no
- *          matching rule, and delegation stays at or below a held role's node.
+ *          matching rule, the visible condition of a query joins the rules of the principal's audiences by the deny
+ *          rule and reads them closed, and delegation stays at or below a held role's node.
  * Boundary: test only; the source is `MemoryPolicySourceDriver`, the clock fixed, the conditions real
  *           `@stackra/rules` trees. The registries are cleared before each test.
  * Runtime: node (vitest)
@@ -21,7 +22,7 @@ import {
   Realm,
   type ScopeRef,
 } from "@stackra/contracts";
-import { Rules } from "@stackra/rules";
+import { ConditionInvalidError, Rules } from "@stackra/rules";
 import { type FactField, FieldType, Operator } from "@stackra/rules/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
@@ -322,6 +323,125 @@ describe("PolicyDecisionPointService", () => {
       expect(await pdpOver({}).visibility(job, Capability.See, "orders.order", order("eu"))).toBe(
         Decision.Allow,
       );
+    });
+  });
+
+  describe("visibleCondition", () => {
+    const IN_US: Condition = { field: "record.region", operator: Operator.Equals, value: "us" };
+    const RULES: MemoryPolicyState = {
+      segments: [{ principal: customer.id, segment: VIP }],
+      grants: [{ principal: staff.id, role: SystemRole.Manager, scope: ACME }],
+      visibility: [
+        {
+          model: "orders.order",
+          audience: { kind: "segment", id: VIP },
+          capability: Capability.See,
+          condition: IN_EU,
+        },
+        {
+          model: "orders.order",
+          audience: { kind: "role", key: SystemRole.Manager },
+          capability: Capability.See,
+          condition: IN_US,
+          deny: true,
+        },
+        { model: "orders.order", audience: GLOBEX, capability: Capability.See },
+        { model: "orders.order", audience: ROOT, capability: Capability.List, deny: true },
+        { model: "catalogue.product", audience: ROOT, capability: Capability.See, deny: true },
+      ],
+    };
+
+    it("joins the allow rules of the principal's audiences, and hides an unmatched record on Deny", async () => {
+      const pdp = pdpOver(RULES);
+      expect(
+        await pdp.visibleCondition(customer, Capability.See, "orders.order", {
+          rules: ORDER_FACTS,
+          unmatched: Decision.Deny,
+        }),
+      ).toEqual({ any: [IN_EU] });
+      expect(
+        await pdp.visibleCondition(customer, Capability.See, "orders.order", {
+          rules: ORDER_FACTS,
+          unmatched: Decision.Allow,
+        }),
+      ).toEqual({ all: [] });
+    });
+
+    it("lets a deny beat every allow, for the role held where the call acts only", async () => {
+      const pdp = pdpOver(RULES);
+      const options = { rules: ORDER_FACTS, unmatched: Decision.Allow } as const;
+      expect(
+        await pdp.visibleCondition(staff, Capability.See, "orders.order", {
+          ...options,
+          scope: ACME_EU,
+        }),
+      ).toEqual({ not: { any: [IN_US] } });
+      expect(
+        await pdp.visibleCondition(staff, Capability.See, "orders.order", {
+          ...options,
+          scope: GLOBEX,
+        }),
+      ).toEqual({ all: [] });
+      expect(
+        await pdp.visibleCondition(staff, Capability.See, "orders.order", {
+          ...options,
+          unmatched: Decision.Deny,
+          scope: ACME,
+        }),
+      ).toEqual({ all: [{ any: [] }, { not: { any: [IN_US] } }] });
+    });
+
+    it("matches every record for an unconditional rule and the platform, none for an unconditional deny", async () => {
+      const pdp = pdpOver(RULES);
+      expect(
+        await pdp.visibleCondition(staff, Capability.See, "orders.order", {
+          unmatched: Decision.Deny,
+          scope: GLOBEX,
+        }),
+      ).toEqual({ any: [{ all: [] }] });
+      expect(
+        await pdp.visibleCondition(customer, Capability.See, "catalogue.product", {
+          unmatched: Decision.Allow,
+          scope: ACME,
+        }),
+      ).toEqual({ not: { any: [{ all: [] }] } });
+      expect(
+        await pdpOver({}).visibleCondition(job, Capability.See, "orders.order", {
+          unmatched: Decision.Deny,
+        }),
+      ).toEqual({ all: [] });
+    });
+
+    it("reads a condition closed when the model registers no attributes, and refuses an invalid one", async () => {
+      const pdp = pdpOver(RULES);
+      expect(
+        await pdp.visibleCondition(customer, Capability.See, "orders.order", {
+          unmatched: Decision.Deny,
+        }),
+      ).toEqual({ any: [{ any: [] }] });
+      expect(
+        await pdp.visibleCondition(staff, Capability.See, "orders.order", {
+          unmatched: Decision.Allow,
+          scope: ACME,
+        }),
+      ).toEqual({ not: { any: [{ all: [] }] } });
+      const broken = pdpOver({
+        visibility: [
+          {
+            model: "orders.order",
+            audience: ROOT,
+            capability: Capability.See,
+            condition: { field: "record.total", operator: Operator.Equals, value: 1 },
+          },
+        ],
+      });
+      await expect(
+        broken.visibleCondition(customer, Capability.See, "orders.order", {
+          rules: ORDER_FACTS,
+          unmatched: Decision.Deny,
+          scope: ACME,
+        }),
+      ).rejects.toThrow(ConditionInvalidError);
     });
   });
 

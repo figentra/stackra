@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `checkIdentityLock`: a changed identity fails with `identity_changed` and its fix, unless the
- *          class's `@Renamed` names the locked identity in full or as written; a removed class and a package's
- *          merged entries are not this check's concern.
+ *          class's `@Renamed` names the locked identity in full or as written; integrations, sequences, blocks and
+ *          routes are locked too; a removed class and a package's merged entries are not this check's concern.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 5 and 22).
@@ -30,6 +30,16 @@ function withAction(key: string, extra: Record<string, unknown> = {}): StackraMa
         ...extra,
       },
     ],
+  };
+}
+
+/** A manifest whose `section` holds one entry of `key` declared by `Subject`. */
+function keyed(section: string, key: string): StackraManifest {
+  return {
+    member: "web",
+    package: "@acme/web",
+    version: "1.0.0",
+    [section]: [{ key, class: "Subject", module: "web", file: "src/subject.ts" }],
   };
 }
 
@@ -71,5 +81,23 @@ describe("checkIdentityLock", () => {
     expect(
       checkIdentityLock(previous, withAction("x.y.z@1", { from: "@acme/kit" }), new Map()),
     ).toEqual([]);
+  });
+
+  it("locks integration, sequence, block and route keys", () => {
+    for (const section of ["integrations", "sequences", "blocks", "routes"]) {
+      const errors = checkIdentityLock(
+        keyed(section, "web.old"),
+        keyed(section, "web.new"),
+        new Map(),
+      );
+      expect(errors.map((error) => error.code)).toEqual(["identity_changed"]);
+      expect(
+        checkIdentityLock(
+          keyed(section, "web.old"),
+          keyed(section, "web.new"),
+          new Map([["Subject", "web.old"]]),
+        ),
+      ).toEqual([]);
+    }
   });
 });

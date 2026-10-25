@@ -21,6 +21,7 @@ import type {
   RateLimitDecision,
   ReplicaChange,
   ReplicaRead,
+  ReplicaRow,
   ReviewItem,
   ReviewReason,
 } from "#contracts/index";
@@ -56,12 +57,11 @@ describe("@stackra/actions/contracts", () => {
     expectTypeOf<Extract<IdempotencyRecord, { done: true }>["output"]>().toEqualTypeOf<unknown>();
     expectTypeOf<RateLimitBucket["tokensPerSecond"]>().toEqualTypeOf<number>();
     expectTypeOf<RateLimitDecision["allowed"]>().toEqualTypeOf<boolean>();
-    expectTypeOf<DeviceOrder["sequence"]>().toEqualTypeOf<number>();
+    expectTypeOf<DeviceOrder["sequence"]>().toEqualTypeOf<number | undefined>();
     expectTypeOf<DeviceSequence["settledAt"]>().toEqualTypeOf<Date>();
     expectTypeOf<OfflineCapUsage["amount"]>().toEqualTypeOf<number>();
-    expectTypeOf<ReplicaChange<{ total: number }>["row"]>().toEqualTypeOf<
-      { total: number } | undefined
-    >();
+    expectTypeOf<ReplicaChange["row"]>().toEqualTypeOf<ReplicaRow | undefined>();
+    expectTypeOf<ReplicaRow["at"]>().toEqualTypeOf<Date>();
     expectTypeOf<ReplicaRead["more"]>().toEqualTypeOf<boolean>();
     expectTypeOf<ReviewItem["reason"]>().toEqualTypeOf<ReviewReason>();
     expectTypeOf<ReviewItem["client"]>().toEqualTypeOf<Json>();

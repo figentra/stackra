@@ -36,4 +36,5 @@ export type { PolicyRegistration } from "#core/types/policy-registration.type";
 export type { RecordFacts } from "#core/types/record-facts.type";
 export type { RoleOptions } from "#core/types/role-options.type";
 export type { RoleRegistration } from "#core/types/role-registration.type";
+export type { VisibleConditionOptions } from "#core/types/visible-condition-options.type";
 export { Permission } from "#core/values/permission.value";

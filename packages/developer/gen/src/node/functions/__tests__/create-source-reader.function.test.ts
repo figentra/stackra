@@ -4,12 +4,14 @@
  *          `shape_unknown_type` (a literal union, an interface, an inferred enum literal with the annotation fix),
  *          `shape_default_not_constant`, `shape_rule_not_constant`, `shape_hatch_reason_missing`,
  *          `shape_decorator_type_mismatch`, `action_handle_signature`, `two_declarations_in_file`,
- *          `partner_mismatch`, `event_base_abstract` and `token_not_a_class`, each with a position and a fix; and a
- *          derived shape (`PickType`) and a discriminated union read correctly.
+ *          `partner_mismatch`, `event_base_abstract` and `token_not_a_class`, each with a position and a fix; a
+ *          derived shape (`PickType`) and a discriminated union read correctly; and each model's entity facts
+ *          (`[OptionalProps]` keys, a one-to-many with its inverse, a `Ref` many-to-one, a `Link` across models,
+ *          getters) with `relation_decorator_missing` for a relation gen cannot read.
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13); ADR 0305 (rules 6, 13
- *                     and 19).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
+ *                     (rules 6, 13 and 19); ADR 0097 (decision 3).
  */
 import { join } from "node:path";
 
@@ -173,5 +175,134 @@ describe("createSourceReader", async () => {
       name: "OrderStatus.Paid",
       values: ["paid"],
     });
+  });
+});
+
+/** A stand-in `@stackra/model`: the kind base, two traits, the relation types and decorators. */
+const MODEL_STAND_IN: Readonly<Record<string, string>> = {
+  "node_modules/@stackra/model/package.json": JSON.stringify({
+    name: "@stackra/model",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/model/index.d.ts": [
+    'export declare abstract class ModelBase { protected readonly "~kind": "model"; }',
+    'export interface Trait<F extends object> { readonly "~fields"?: F; }',
+    "type Fields<T extends readonly unknown[]> = T extends readonly [infer Head, ...infer Rest]",
+    "  ? (Head extends Trait<infer F> ? F : unknown) & Fields<Rest>",
+    "  : unknown;",
+    "export declare const Model: {",
+    "  with<T extends readonly Trait<object>[]>(...traits: T): abstract new () => ModelBase & Fields<T>;",
+    "};",
+    "export declare function HasPublicId<P extends string>(prefix: P): Trait<{ id: string }>;",
+    "export declare const Timestamps: Trait<{ createdAt: Date; updatedAt: Date }>;",
+    'export declare class Collection<T extends object> { constructor(owner: object); readonly "~items"?: T; }',
+    'export type Ref<T extends object> = T & { readonly "~ref": true };',
+    'export type Link<T extends object> = { readonly "~link"?: T; readonly id: string };',
+    "type ModelClass<M> = abstract new (...args: never[]) => M;",
+    "export declare function ManyToOne<M extends object>(target: () => ModelClass<M>, options?: { readonly onDelete?: string }): (target: object, key: string) => void;",
+    "export declare function OneToMany<M extends object>(target: () => ModelClass<M>, inverse: (item: M) => unknown, options?: { readonly orphanRemoval?: boolean }): (target: object, key: string) => void;",
+    "",
+  ].join("\n"),
+};
+
+/** Three models: a one-to-many with its inverse, a link, a getter and a relation with no decorator. */
+const MODEL_SOURCES: Readonly<Record<string, string>> = {
+  ...MODEL_STAND_IN,
+  "src/node/models/order.model.ts": [
+    'import { Collection, HasPublicId, Model, OneToMany, Timestamps } from "@stackra/model";',
+    'import { OrderLine } from "#node/models/order-line.model";',
+    "",
+    'export class Order extends Model.with(HasPublicId("ord"), Timestamps) {',
+    '  status: string = "pending";',
+    "",
+    "  @OneToMany(() => OrderLine, (line) => line.order, { orphanRemoval: true })",
+    "  lines = new Collection<OrderLine>(this);",
+    "",
+    "  get isOpen(): boolean {",
+    '    return this.status === "pending";',
+    "  }",
+    "}",
+    "",
+  ].join("\n"),
+  "src/node/models/order-line.model.ts": [
+    'import { HasPublicId, ManyToOne, Model } from "@stackra/model";',
+    'import type { Link, Ref } from "@stackra/model";',
+    'import { Customer } from "#node/models/customer.model";',
+    'import { Order } from "#node/models/order.model";',
+    "",
+    'export class OrderLine extends Model.with(HasPublicId("oln")) {',
+    '  @ManyToOne(() => Order, { onDelete: "cascade" })',
+    "  order!: Ref<Order>;",
+    "",
+    "  note!: string | null;",
+    "",
+    "  customer!: Link<Customer> | null;",
+    "",
+    "  bad!: Ref<Order>;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/node/models/customer.model.ts": [
+    'import { HasPublicId, Model } from "@stackra/model";',
+    "",
+    'export class Customer extends Model.with(HasPublicId("cus")) {}',
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on models", async () => {
+  const root = writeFixtureMember("models", MODEL_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  host.close();
+  const entity = (name: string) => shapes.find((shape) => shape.name === name)?.entity;
+
+  it("reads the keys a create may leave out and the getters", () => {
+    expect(entity("Order")?.optional).toEqual(["createdAt", "id", "lines", "status", "updatedAt"]);
+    expect(entity("Order")?.computed).toEqual(["isOpen"]);
+    expect(entity("OrderLine")?.optional).toEqual(["id"]);
+    expect(entity("Customer")).toEqual({ optional: ["id"], relations: [], computed: [] });
+  });
+
+  it("reads a one-to-many with its inverse and options", () => {
+    expect(entity("Order")?.relations).toEqual([
+      {
+        name: "lines",
+        kind: "1:m",
+        target: { name: "OrderLine", from: "#node/models/order-line.model" },
+        targetModule: "models",
+        nullable: false,
+        ref: false,
+        inverse: "order",
+        options: { orphanRemoval: true },
+      },
+    ]);
+  });
+
+  it("reads a Ref many-to-one and a nullable Link, and refuses a relation it cannot read", () => {
+    expect(entity("OrderLine")?.relations).toEqual([
+      {
+        name: "order",
+        kind: "m:1",
+        target: { name: "Order", from: "#node/models/order.model" },
+        targetModule: "models",
+        nullable: false,
+        ref: true,
+        options: { onDelete: "cascade" },
+      },
+      {
+        name: "customer",
+        kind: "link",
+        target: { name: "Customer", from: "#node/models/customer.model" },
+        targetModule: "models",
+        nullable: true,
+        ref: false,
+        options: {},
+      },
+    ]);
+    expect(reader.errors.map((error) => `${error.code} ${error.subject}`)).toEqual([
+      "relation_decorator_missing OrderLine.bad",
+    ]);
   });
 });

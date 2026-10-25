@@ -23,6 +23,8 @@ The realtime hub, the broadcaster, the client connection and the drivers of both
 - The channel is derived from the broadcast's audience. Never accept a channel from a client, and never widen a
   channel that cannot be filled.
 - Every delivery checks the permission and the channel ids (`mayReceive`). Deny by default.
+- A live query's refresh rides the same data-free message under the query's permission (`liveQueryRoutes`); its
+  module comes from the event's wire name, never from a written string.
 - Subscribe tokens are one-time and short-lived; a connection closes at the token's expiry.
 - `./contracts` imports no other entry; `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).
 

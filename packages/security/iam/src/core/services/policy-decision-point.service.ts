@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `PolicyDecisionPointService`, the embedded policy decision point: `check` and `explain` (may this actor use
- *          this permission where the call acts), `visibility` (may it see, list or use this record) and `canDelegate`
+ *          this permission where the call acts), `visibility` (may it see, list or use this record), `visibleCondition`
+ *          (the condition a record must meet for that, which the query filter pushes into reads) and `canDelegate`
  *          (may it hand this grant on), each evaluated in process over the principal's policy snapshot.
  * Boundary: reads only `PolicySource` and `Clock`; no network hop of its own and no writes. Rules, in order: a system or
  *           job actor is the platform; a system permission is held by the platform only (a service acting for no one
@@ -11,14 +12,17 @@
  *           link of the actor chain must hold the permission (a service and the user it acts for). Conditions are
  *           `@stackra/rules` trees evaluated by that package's `evaluate`, with the time as a fact (ADR 0331 decisions
  *           1, 6 and 11): IAM reuses the operator set and the evaluator, and keeps its own path from the snapshot.
- *           Visibility answers `Abstain` for a record no rule matches: no default is decided (ADR 0333 decision 7).
+ *           Visibility answers `Abstain` for a record no rule matches: no default is decided (ADR 0333 decision 7), so
+ *           `visibleCondition` takes the answer for such a record from its caller. A rule's audience depends on the
+ *           principal only, so `visibleCondition` settles it here and returns the matching rules' conditions, each
+ *           checked against the model's fields, joined by the deny rule: the IAM path of ADR 0331 decision 11.
  * Runtime: isomorphic
  * Governing contract: ADR 0208 (decisions 1 to 4, and the 0327 and 0333 notes); ADR 0132 (decision 5); ADR 0333
  *                     (decisions 2, 3 and 7); ADR 0099 (as amended by 0294); ADR 0098 (the actor chain).
  */
 import { Service } from "@stackra/container";
 import { type Actor, ActorKind, Clock, Enum, type ScopeRef } from "@stackra/contracts";
-import { type Condition, evaluate } from "@stackra/rules";
+import { type Condition, evaluate, type Rules } from "@stackra/rules";
 import { isWithinScope } from "@stackra/scope";
 
 import { PolicySource } from "#contracts/index";
@@ -33,6 +37,7 @@ import { permissionKey } from "#core/functions/permission-key.function";
 import type { AccessExplanation } from "#core/types/access-explanation.type";
 import type { CheckOptions } from "#core/types/check-options.type";
 import type { RecordFacts } from "#core/types/record-facts.type";
+import type { VisibleConditionOptions } from "#core/types/visible-condition-options.type";
 import type { Permission } from "#core/values/permission.value";
 
 /** The built-in role codes, which may hold a wildcard. */
@@ -90,6 +95,17 @@ function conditionHolds(
   if (record === undefined) return false;
   if (record === null) return true;
   return evaluate(record.rules, condition, record.facts, { now: at }).matched;
+}
+
+/** A stored rule's condition checked against `rules`; without `rules`, a deny holds for every record, an allow none. */
+function testable(
+  condition: Condition | undefined,
+  rules: Rules | undefined,
+  deny: boolean,
+): Condition {
+  if (condition === undefined) return { all: [] };
+  if (rules === undefined) return deny ? { all: [] } : { any: [] };
+  return rules.check(condition);
 }
 
 /**
@@ -178,6 +194,44 @@ export class PolicyDecisionPointService extends Service {
       allowed = true;
     }
     return allowed ? Decision.Allow : Decision.Abstain;
+  }
+
+  /**
+   * The condition a record of `model` meets exactly when the originating principal behind `actor` may do `capability`
+   * with it: no deny rule's condition holds and, unless `options.unmatched` is `Allow`, an allow rule's does.
+   * `{ all: [] }` holds for every record (the platform, or nothing in force) and `{ any: [] }` for none. The query
+   * filter of ADR 0333 decision 4 pushes it into a read; `visibility` answers the same rules for one record.
+   *
+   * @throws ConditionInvalidError when a stored condition is not a valid tree of `options.rules`.
+   * @throws Error when the source cannot be reached.
+   * @example
+   * await pdp.visibleCondition(customer, Capability.See, "catalogue.product", { rules, unmatched: Decision.Deny });
+   * // { any: [{ field: "record.collection", operator: Operator.Equals, value: "private_sale" }] }
+   */
+  async visibleCondition(
+    actor: Actor,
+    capability: Capability,
+    model: string,
+    options: VisibleConditionOptions,
+  ): Promise<Condition> {
+    const subject = subjectOf(actor);
+    if (isPlatform(subject)) return { all: [] };
+    const at = options.at ?? this.clock.now();
+    const snapshot = await this.source.snapshot(subject);
+    const grants = snapshot.grants.filter((grant) => applies(grant, options.scope, at));
+    const allows: Condition[] = [];
+    const denies: Condition[] = [];
+    for (const rule of snapshot.visibility) {
+      if (rule.model !== model || rule.capability !== capability) continue;
+      if (!inAudience(rule.audience, snapshot, grants, options.scope)) continue;
+      const deny = rule.deny === true;
+      (deny ? denies : allows).push(testable(rule.condition, options.rules, deny));
+    }
+    const parts: Condition[] = [];
+    // fail closed: anything but an explicit Allow hides a record no allow rule matches
+    if (options.unmatched !== Decision.Allow) parts.push({ any: allows });
+    if (denies.length > 0) parts.push({ not: { any: denies } });
+    return parts.length === 1 && parts[0] !== undefined ? parts[0] : { all: parts };
   }
 
   /**

@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the pure compiler (identities, manifest and its checks, shape
- *          compiler, wiring, member module, entries, openapi projection) is exported and nothing internal is (the
- *          case helpers, the import printer, the platform evaluator), and the IR types resolve.
+ *          compiler, wiring, member module, entries, entities, registrations, boot, webhooks, prefixes, routes, blocks,
+ *          tool configs, openapi projection, the prefix registry) is exported and nothing internal is (the case
+ *          helpers, the import printer, the platform evaluator, the emitters' path helpers), and the IR types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); ADR 0127 2026-10-24 note.
@@ -11,37 +12,59 @@ import type { StackraManifest } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as gen from "#core/index";
-import type { GenError, GeneratedFile, MemberIR, TypeDesc } from "#core/index";
+import type {
+  EntityIR,
+  GenError,
+  GeneratedFile,
+  MemberIR,
+  RelationIR,
+  ShapeIR,
+  TypeDesc,
+} from "#core/index";
 
 describe("@stackra/gen", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(gen).sort()).toEqual([
       "GENERATED_NOTICE",
       "MANIFEST_NOTICE",
+      "PUBLIC_ID_PREFIXES",
       "actionKey",
+      "blockKey",
       "buildManifest",
       "checkIdentityLock",
       "compareManifests",
       "configKeyOf",
       "deriveEndpoint",
       "driverName",
+      "emitBlocks",
+      "emitBoot",
+      "emitEntities",
       "emitMemberModule",
       "emitPackageEntries",
+      "emitPrefixes",
+      "emitRegistrations",
+      "emitRoutes",
       "emitRuntimeEntries",
       "emitSchemas",
+      "emitToolConfigs",
+      "emitWebhooks",
       "emitWiring",
       "eventName",
       "folderKey",
       "formatGenError",
       "generateMember",
+      "integrationKey",
       "jsonSchemaOf",
       "modelKey",
       "openApiOf",
       "permissionKey",
       "portKey",
       "rootModuleOf",
+      "routeKey",
+      "sequenceKey",
       "tableName",
       "toolName",
+      "webhookPath",
     ]);
   });
 
@@ -54,5 +77,7 @@ describe("@stackra/gen", () => {
       .toEqualTypeOf<StackraManifest>();
     expectTypeOf<MemberIR["errors"]>().toEqualTypeOf<readonly GenError[]>();
     expectTypeOf<Extract<TypeDesc, { kind: "public_id" }>["prefix"]>().toEqualTypeOf<string>();
+    expectTypeOf<ShapeIR["entity"]>().toEqualTypeOf<EntityIR | undefined>();
+    expectTypeOf<EntityIR["relations"]>().toEqualTypeOf<readonly RelationIR[]>();
   });
 });

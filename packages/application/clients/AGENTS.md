@@ -29,6 +29,12 @@ at `packages/application/clients` (`tier:lib`), in the programming model v3.1 sh
   envelope decodes into the producer's class. Both registries are filled when a generated module loads.
 - Offline writes are queued only after a network failure, never after a refusal, and replay with the Idempotency-Key
   minted at queue time (ADR 0059, ADR 0227: no sync engine).
+- `DEVICE_ORDER` (`./contracts`) is the one spelling of the device-order headers and the acknowledged query; the
+  server side imports it from here, so never spell `Stackra-Device` anywhere else. A request's `device` is the only
+  way a call carries it (ADR 0338 decisions 1 and 4).
+- The offline drivers (`ClientMutationSenderDriver`, `ClientReplicaSourceDriver`, `ClientAcknowledgementReaderDriver`)
+  implement `@stackra/query`'s ports through the bound `ClientTransport` and check every answer's shape; a query with
+  `replica` registers itself with `registerReplicas` when its ref is built.
 - `ClientSession` belongs to identity: this package never reads a token store, a cookie or a claim. `isAllowed` is
   presentation; the producer's pipeline checks every call.
 - Public clients (`./server`) are anonymous and public-area only; any other area is refused when they are built.

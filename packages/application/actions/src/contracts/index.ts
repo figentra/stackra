@@ -25,6 +25,7 @@ export { UnitOfWork } from "#contracts/ports/unit-of-work.port";
 export { WorkflowRunner } from "#contracts/ports/workflow-runner.port";
 export type { AuditEntry } from "#contracts/types/audit-entry.type";
 export type { CallDescriptor } from "#contracts/types/call-descriptor.type";
+export type { DeviceOrder } from "#contracts/types/device-order.type";
 export type { DeviceSequence } from "#contracts/types/device-sequence.type";
 export type { IdempotencyRecord } from "#contracts/types/idempotency-record.type";
 export type { OfflineCapUsage } from "#contracts/types/offline-cap-usage.type";

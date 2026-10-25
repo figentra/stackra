@@ -3,7 +3,9 @@
  * Purpose: unit tests of `emitWiring`: the root module, the module graph in dependency order, the platform set, each
  *          binding with its lifetime and constructor tokens (named instances through `named`), the config entry, the
  *          driver table with its selecting field and lazy candidate, the `DriverRegistry` augmentation, replacements,
- *          partners and dependency modules marked `from`, and the names the container really exports.
+ *          partners and dependency modules marked `from`, the bindings gen adds (per-model tokens with their
+ *          dependencies, an Integration's runtime, the inbound webhook route, the platform services it injects), and
+ *          the names the container really exports.
  * Boundary: test only; asserts on the generated source text and on @stackra/container's exports.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 17 and 26); ADR 0263.
@@ -13,6 +15,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { emitWiring } from "#core/functions/emit-wiring.function";
 import type { MemberIR } from "#core/types/member-ir.type";
+import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 
 describe("emitWiring", () => {
@@ -100,6 +103,24 @@ describe("emitWiring", () => {
       '    loyalty_kit: { exports: [], dependsOn: [], from: "@acme/loyalty-kit", type: LoyaltyKitModule },',
     );
     expect(content).toContain('import { LoyaltyKitModule } from "@acme/loyalty-kit/node";');
+  });
+
+  it("adds the bindings no class declares", () => {
+    const billing = emitWiring(BILLING_IR);
+    for (const line of [
+      '    { module: "billing", kind: "integration", provide: StripeIntegration, deps: [IntegrationRuntime] },',
+      '    { module: "billing", kind: "controller", provide: InboundWebhooksController, deps: [WebhookReceiver] },',
+      '    { module: "billing", kind: "service", provide: IntegrationRuntime, deps: [SecretStore, RateLimitStore, Clock] },',
+      '    { module: "billing", kind: "service", provide: repositoryOf(Invoice), deps: [] },',
+      '    { module: "billing", kind: "service", provide: journalOf(Invoice), deps: [Locks] },',
+      '    { module: "billing", kind: "service", provide: Locks, deps: [LockDriver, Clock] },',
+      '    { module: "billing", kind: "service", provide: RequestContext, deps: [ContextStorage] },',
+      '    { module: "billing", kind: "service", provide: WebhookReceiver, deps: [ConnectionStore, SecretStore, EventOutbox, Clock] },',
+    ])
+      expect(billing).toContain(line);
+    expect(billing).toContain('import { InboundWebhooksController } from "#stackra/webhooks";');
+    expect(billing).toContain('import { journalOf } from "@stackra/ledger";');
+    expect(billing.match(/provide: Locks,/g)).toHaveLength(1);
   });
 
   it("uses names @stackra/container exports", () => {

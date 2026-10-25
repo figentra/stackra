@@ -2,7 +2,7 @@
   "name": "@stackra/devices",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra devices: the DeviceTelemetry, DeviceCommands and DeviceCredential ports a device app reports and takes commands through, the DevicesConfig configuration with its shipped schema, and the HTTP drivers over @stackra/transport",
+  "description": "Stackra devices: the DeviceTelemetry, DeviceCommands, DeviceCredential and DeviceIdentity ports a device app reports, takes commands and orders its offline calls through, the DevicesConfig configuration with its shipped schema, the HTTP drivers over @stackra/transport, and the server's devices.device.acknowledged query",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -32,6 +32,11 @@
       "./src/core/*",
       "./src/core/*.ts",
       "./src/core/*/index.ts"
+    ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
     ]
   },
   "exports": {
@@ -44,6 +49,11 @@
       "@stackra/source": "./src/contracts/index.ts",
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
     }
   },
   "publishConfig": {
@@ -62,6 +72,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/actions": "workspace:*",
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",

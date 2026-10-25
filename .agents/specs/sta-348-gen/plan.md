@@ -20,6 +20,12 @@
   `getCacheKey`.
 - **`./testing`**: `loadManifest`, `loadOpenApi`, `previousRelease` (git tags), `expectBackwardCompatible`,
   `projectOpenApi`, `discoverWithGen`.
+- **Wave 9 catch-up (STA-490)**: `.` adds `emitEntities`, `emitRegistrations`, `emitBoot`, `emitWebhooks`,
+  `emitPrefixes`, `emitRoutes`, `emitBlocks`, `emitToolConfigs`, the identity helpers `integrationKey`, `webhookPath`,
+  `sequenceKey`, `blockKey`, `routeKey`, the prefix registry `PUBLIC_ID_PREFIXES`, and `EntityIR`/`RelationIR`;
+  `generateMember` runs every emitter, so `generate` and `stackra gen` write them. `./node` reads each model's entity
+  facts and the member's dependency names (`MemberIR.packages`), and knows the `Sequence` kind base. A registration
+  call is written only for a function its package exports and only when it has a row.
 - The platform set in the wiring is derived (every constructor token from a `@stackra/*` package), never listed.
 - A kind base is recognised by name only when declared in a `@stackra/*` package; a dependency's declaration file is
   read only for a kind (`X_base: ConfigClass<...>`), an inherited field or a constant.
@@ -66,3 +72,8 @@
 - **P-004**: the shape compiler, wiring, member module and entries follow registry section 5 items 1 to 6 and gap G1, and one source and manifest give the same wiring and entries on every run — Validates: FR-004
 - **P-005**: `classComponents()` from `./node` applies the class-component pass of ADR 0305 rules 37 to 41 and no other transform — Validates: FR-005
 - **P-006**: `./testing` exports exactly the symbols the template imports from `@stackra/gen/testing` — Validates: FR-006
+- **P-007**: every model's entity file lists exactly its trait and initialized fields as `[OptionalProps]` and one property per field, relation and getter, and an unreadable relation is refused, never dropped — Validates: FR-007
+- **P-008**: each registration row names a class by the identity the manifest locked, a call with no row is not written, and every called function is one its package exports — Validates: FR-008
+- **P-009**: a per-model token or platform service is bound once per member with its constructor tokens, whatever number of classes inject it — Validates: FR-009
+- **P-010**: integration, sequence, block and route keys change only with `@Renamed`, and no public id prefix has two owners in a member, its hosted packages and the shared registry — Validates: FR-010
+- **P-011**: an app's runtime entry loads exactly the route and block files this run writes, and a package's or service's tool configs name exactly its generated entries — Validates: FR-011

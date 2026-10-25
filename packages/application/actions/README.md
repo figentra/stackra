@@ -23,7 +23,7 @@ configuration and the action testing helpers.
 | `.`           | `RateLimitConfig`, `RateLimitConfig$`                                                    | the per-area token buckets (key `actions.rate_limit`)                   |
 | `.`           | `MemoryIdempotencyStoreDriver`, `MemoryRateLimitStoreDriver`                             | the in-process stores                                                   |
 | `.`           | `registerActions`, `registerExtensions`, `connectExtensions`                             | what gen's entry and the runtime call at boot                           |
-| `.`           | `OFFLINE_HEADERS`, `OfflineCap`, `ActionAccepts`, `RuleEvaluator`, `RuleEvaluation`      | offline replay headers, `offline.cap`, `accepts` (client rule code)     |
+| `.`           | `OfflineCap`, `ActionAccepts`, `RuleEvaluator`, `RuleEvaluation`                         | `offline.cap`, `accepts` (client rule code)                             |
 | `.`           | `QueryReplica`, `ReplicaPage`, `ReplicaBounds`, `ReplicaFeed`                            | `replica` on a query, `ctx.replica(fill, slice)`, recording changes     |
 | `.`           | `OfflineCapReachedError`, `DeviceSequenceOutOfOrderError`                                | `offline_cap_reached`, `device_sequence_out_of_order`                   |
 | `.`           | `MemoryDeviceSequenceStoreDriver`, `MemoryOfflineCapStoreDriver`                         | the in-process device order and cap stores                              |
@@ -32,6 +32,7 @@ configuration and the action testing helpers.
 | `./contracts` | `IdempotencyStore`, `RateLimitStore`, `UnitOfWork`, `AuditTrail`                         | the ports of its stores and its transaction                             |
 | `./contracts` | `WorkflowRunner`, `JobDispatcher`, `ContextStorage`                                      | the ports behind `ctx.run`, `ctx.signal`, `ctx.dispatch`, the context   |
 | `./contracts` | `DeviceSequenceStore`, `OfflineCapStore`, `ReplicaLog`, `ReviewItemSink`, `ReviewReason` | the offline stores and the review sink, with their types                |
+| `./contracts` | `DeviceOrder`, `DeviceSequence`, `ReplicaRow`, `ReplicaChange`, `ReviewItem`             | the device on the call, a device's last settled call, replica rows      |
 | `./node`      | `AsyncContextStorageDriver`                                                              | `ContextStorage` over `AsyncLocalStorage`                               |
 | `./testing`   | `run`, `fakeActionContext`, `fakeExtensionContext`, `extension`                          | call through the real pipeline; fake contexts; inline extensions        |
 
@@ -79,28 +80,32 @@ perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists 
 The server half of ADR 0338 and the `accepts` option of ADR 0337. The client half (the queue, sealed stores, replicas
 on the device) lives in `@stackra/query`, `@stackra/storage` and `@stackra/clients`.
 
-- **Per-device order.** A call replayed from a device's queue carries `Stackra-Device-Id` and
-  `Stackra-Device-Sequence` (`OFFLINE_HEADERS`); the transport maps them to `CallOptions.device` once the id matches
-  the verified session's device. The pipeline runs a device's call only when its sequence is the next one, around
-  every step, and settles it on an output or any refusal, so a rejected call never blocks the next. A later sequence
-  is refused `device_sequence_out_of_order` with `expected`; a resend of a settled one replays its stored output (same
-  Idempotency-Key) or is refused with `expected` above it. Bind a `DeviceSequenceStore`; `last(deviceId)` is the
-  device's last acknowledged sequence (the `devices.device.sequence` query of `@stackra/devices` lists it).
-- **Caps.** `offline: { ..., cap: { count?, amount?, amountField?, window } }`. The client refuses the action offline
-  at the cap; the idempotency step counts the device's applied calls in the window (`OfflineCapStore`) and refuses
-  beyond it with the same `offline_cap_reached`. The amount is read from `input[amountField ?? "amount"]`: minor
-  units, or a Money's `minor`.
+- **Per-device order.** The generated adapter reads the `DEVICE_ORDER` headers of `@stackra/clients` (this package
+  names no header) and sets `CallOptions.device` (`{ deviceId, sequence? }`) once the id matches the verified
+  session's device. A device's sequences are strictly increasing and not contiguous, and the client sends one call at
+  a time. The pipeline applies a call whose sequence is above the device's last settled one, around every step, and
+  settles it on an output or any refusal, so a rejected call never blocks the next. A sequence at or below the last
+  settled one is a resend: it replays its stored output (same Idempotency-Key) or is refused
+  `device_sequence_out_of_order` with `acknowledged`. Bind a `DeviceSequenceStore`; `last(deviceId)` is the device's
+  last acknowledged sequence, which the `devices.device.acknowledged` query of `@stackra/devices` answers. A call
+  with a device and no sequence (that query) is not ordered; `ctx.deviceId` names the device.
+- **Caps.** `offline: { ..., cap: { count?, amount?, window } }`. The client refuses the action offline at the cap;
+  the idempotency step counts the device's applied calls in the window (`OfflineCapStore`) and refuses beyond it
+  with the same `offline_cap_reached`. The amount is read from `input.amount`, as the client reads it: minor units,
+  or a Money's `minor`.
 - **Client rule code.** `accepts: { ruleVersion: "2.4.0", evaluator: SaleEvaluator }`. In the unit of work, before
   `handle`, the evaluator (a class you write, resolved by class) answers `{ ruleVersion, client, server }` for the
   document in the input. A different answer or an older rule version is recorded on the `ReviewItemSink` with both
-  answers; the call is never refused, and `handle` applies the server's figure.
-- **Replicas.** `Query({ ..., replica: { of: Sale, window: "30d", limit: 5_000, scope?: "legalEntityId" } })`. Its
-  `handle` authorizes the caller's slice and returns `ctx.replica(fill, slice)`: the changes since the cursor the
-  client sent (`Stackra-Replica-Cursor`, `CallOptions.replicaCursor`), or a full fill on the first refresh or a cursor
-  the log no longer holds, with the next opaque cursor and `asOf`. Producers record changes with
+  answers; the call is never refused, and `handle` applies the server's figure. The review item's record is the
+  consuming product's model: bind a sink that writes it (the memory driver keeps items in process).
+- **Replicas.** `Query({ ..., replica: { of: Sale, window: "30d", limit: 5_000, scope?: "legalEntityId" } })`. The
+  client calls it with `{ cursor, ...slice }` as input. Its `handle` authorizes the caller's slice and returns
+  `ctx.replica(fill, slice)`: the rows changed and the ids removed since the input's `cursor`, or a full fill (the
+  rows `fill` reads within the bounds) on the first refresh or a cursor the log no longer holds, with the next opaque
+  cursor and `asOf`. That is the `ReplicaChanges` wire shape `@stackra/query` parses. Producers record changes with
   `ReplicaFeed.record(Query, changes, { slice, scope })` in the same unit of work as the change, so the live query's
-  refresh (its `cache.invalidateOn` events, delivered by `@stackra/realtime` after commit) never arrives first. A
-  read returns only entries within the caller's scope.
+  refresh (its `cache.invalidateOn` events, delivered by `@stackra/realtime` after commit on the routes
+  `liveQueryRoutes` derives) never arrives first. A read returns only entries within the caller's scope.
 
 ```ts
 export class RedeemGiftCardAction extends Action({
@@ -115,7 +120,7 @@ export class RecentSalesQuery extends Query({
   replica: { of: Sale, window: "30d", limit: 5_000, scope: "legalEntityId" },
   cache: { ttl: "1m", invalidateOn: [SaleCompleted] },
 }) {
-  async handle(_input: RecentSalesInput, ctx: QueryContext): Promise<ReplicaPage<SaleRow>> {
+  async handle(_input: RecentSalesInput, ctx: QueryContext): Promise<ReplicaPage> {
     const entity = await this.devices.legalEntityOf(ctx); // the caller's verified slice
     return ctx.replica((bounds) => this.sales.recent(entity, bounds), entity);
   }

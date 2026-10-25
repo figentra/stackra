@@ -12,4 +12,5 @@
 - [x] T008 `packages/runtime/realtime/src/testing`: `RealtimeFake`, `fakeRealtime`, with tests — covers: FR-002 — route: package — deps: T005, T006
 - [x] T009 Barrel tests for the four entries; changeset — covers: FR-001, FR-005, SC-001 — route: tests — deps: T007, T008
 - [x] T010 Format and lint the package — covers: SC-003 — route: package — deps: T009
+- [x] T012 `liveQueryRoutes` and `LiveQueryRefresh` (STA-489): the replica and live-query refresh routes, with tests, the barrel rows, README, AGENTS and changeset — covers: FR-006, P-006 — route: package — deps: T005
 - [ ] T011 Run the tests, typecheck and build (separate testing workflow) — covers: SC-002 — route: tests — deps: T010

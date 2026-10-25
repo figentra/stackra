@@ -18,6 +18,9 @@
   `createDecorator` with kinds `["model", "projection"]`. `@Index` accumulates a list per class (decorators apply
   bottom-up, so it prepends). Readers: `X.members(Model)`, `Index.on`, `Searchable.on`. Relation decorators return
   `FieldDecorator<...>` from @stackra/validation so tsc checks the field type.
+- `@Visibility({ attributes, follows })` (STA-595) is a class facet from `createDecorator` with the model kinds; it
+  checks name shape only and stores the frozen lists. Gen and `@stackra/iam/node`'s `registerVisibility` check the
+  names against the model.
 - `Collection` and `Ref` are MikroORM's own, re-exported, as the entity-schema spike proved. `Link<T>` is a value with
   the ORM's custom-type brands and no `unwrap()`; `Link.useResolver` installs the generated read.
 - ORM (`src/core/orm/`): `LinkType` (`varchar(33)`: a 6-letter prefix, `_`, 26 characters), `TranslatedType` (jsonb),
@@ -75,3 +78,4 @@
 - **P-005**: a decorator made with `createDecorator` marks model kinds only and records metadata without changing behaviour — Validates: FR-005
 - **P-006**: `Translated` reads a locale by the fallback chain exact tag, then language, then the first stored value, and `TranslatedType` maps it to jsonb — Validates: FR-006
 - **P-007**: `MoneySchema` maps a `Money` to `<prefix>minor bigint` and `<prefix>currency char(3)`, and refuses an unsafe integer — Validates: FR-007
+- **P-008**: `Visibility(options)` returns a decorator exactly when the lists hold at least one name, every name is a camelCase property name and no list repeats one; `Visibility.on` then returns the frozen lists, omitting an empty one — Validates: FR-008

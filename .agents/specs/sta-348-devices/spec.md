@@ -93,8 +93,8 @@ A host overrides `DevicesConfig` (`hubUrl`, `timeoutMs`, `attempts`); the driver
 
 ## Requirements
 
-- **FR-001**: Two entries, `.` and `./contracts` (registry row, ADR 0294 decision 15); `./contracts` imports no other
-  entry.
+- **FR-001**: Entries `.` and `./contracts` (registry row, ADR 0294 decision 15), and `./node` for the server's
+  query (STA-489); `./contracts` imports no other entry, and only `./node` imports `@stackra/actions`.
 - **FR-002**: `./contracts` exports `DeviceTelemetry`, `DeviceCommands`, `DeviceCredential`, `CommandStatus` and the
   types `TelemetryReading`, `DeviceCommand`; none of them is exported from `.`.
 - **FR-003**: `.` exports `DevicesConfig`, `DevicesConfig$`, `DevicesOptions`, `HttpDeviceTelemetryDriver`,
@@ -103,6 +103,13 @@ A host overrides `DevicesConfig` (`hubUrl`, `timeoutMs`, `attempts`); the driver
   `retry`, `timeout`) and follow the endpoint convention for their routes.
 - **FR-005**: No route or body names the device; the token comes from `DeviceCredential` (ADR 0235 decision 1).
 - **FR-006**: The pending-commands body is parsed with a zod schema at the trust boundary.
+- **FR-007**: (ADR 0338 decision 1) the `DeviceIdentity` port in `./contracts` (key `devices.DeviceIdentity`): the
+  device's stable id, which every queued call of the offline queue carries.
+- **FR-008**: (ADR 0338 decision 4) `DeviceAcknowledgedQuery` in `./node`, `devices.device.acknowledged@1` on `GET
+/devices/acknowledged` (the `DEVICE_ORDER` names of `@stackra/clients`): with no input, the calling device's
+  (`ctx.deviceId`) last acknowledged sequence from `@stackra/actions`' `DeviceSequenceStore` as `{ sequence: number |
+null }`, refused `input_invalid` without a verified device; with a `deviceId`, that device's only when its last
+  settled call acted within the caller's scope, else `null`.
 
 ## Success Criteria
 

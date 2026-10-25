@@ -24,6 +24,7 @@ import type {
   RecordFacts,
   RoleOptions,
   RoleRegistration,
+  VisibleConditionOptions,
 } from "#core/index";
 
 describe("@stackra/iam", () => {
@@ -64,6 +65,10 @@ describe("@stackra/iam", () => {
     expectTypeOf<PolicyRegistration["model"]>().toEqualTypeOf<AnyClass>();
     expectTypeOf<RoleOptions["grants"]>().toEqualTypeOf<readonly iam.Permission[]>();
     expectTypeOf<RoleRegistration["key"]>().toEqualTypeOf<string>();
+    expectTypeOf<VisibleConditionOptions["unmatched"]>().toEqualTypeOf<
+      typeof iam.Decision.Allow | typeof iam.Decision.Deny
+    >();
+    expectTypeOf<VisibleConditionOptions["rules"]>().toEqualTypeOf<Rules | undefined>();
     expectTypeOf<MemoryPolicyState["roles"]>().toEqualTypeOf<
       Readonly<Record<string, readonly string[]>> | undefined
     >();

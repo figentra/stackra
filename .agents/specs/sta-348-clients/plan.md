@@ -27,6 +27,11 @@
   translator. `createPublicClients` and `forwardedFacts` reuse `clientRequest` and `httpCall`.
 - `ClientFake` is a `ClientTransport` that answers by ref key and, through a proxy, by `ServiceClient` member path;
   `fakeClient<C>` types it as the client it replaces plus its controls.
+- Wave 9 (STA-488, ADR 0338): `ClientRequest` gains `device`, which `httpCall` writes as the `DEVICE_ORDER` headers.
+  `queryRef` is overloaded: with `replica` it returns the ref typed with `replica` and calls `registerReplicas` before
+  `CALL_REFS.set`. The two new drivers find routes in `CALL_REFS` (the replica source) or `DEVICE_ORDER` (the
+  acknowledgement reader), send through the bound `ClientTransport`, and parse the answer with a local zod schema of
+  its wire form.
 
 ## Constitution Check
 
@@ -62,6 +67,9 @@
 - **P-009**: public clients built for any area but `public` throw; a `Stackra-Visitor` signature verifies under the signing key and fails under another — Validates: FR-009
 - **P-010**: for any scripted ref, the fake's answers follow the script in order (`throwsOnce` before `returns`), and `called`/`queued` list the inputs in call order — Validates: FR-010
 - **P-011**: no file under `packages/application/clients/src` declares an identifier or code containing `tenant` — Validates: FR-011
+- **P-012**: for any request with `device`, the HTTP request carries `Stackra-Device` equal to its id and `Stackra-Device-Sequence` exactly when it has a sequence; a replay sends the queue's `DeviceOrder` — Validates: FR-012
+- **P-013**: a ref built with a well-formed `replica` carries it and is a `ReplicaRef`; a malformed one throws `RangeError` and no ref is recorded; a refresh sends `{ ...slice, cursor? }` to the query's route and returns the answer only when it has the `ReplicaChanges` shape — Validates: FR-013
+- **P-014**: the acknowledged read sends the device header and `{}` to `GET /devices/acknowledged` and returns `sequence` (a positive integer or `null`), rejecting any other answer — Validates: FR-014
 
 ## Deploy modes
 

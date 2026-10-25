@@ -15,7 +15,6 @@ export { ExtensionPoint } from "#core/bases/extension-point.base";
 export { Interceptor } from "#core/bases/interceptor.base";
 export { Precondition } from "#core/bases/precondition.base";
 export { Query } from "#core/bases/query.base";
-export { OFFLINE_HEADERS } from "#core/constants/offline-headers.constant";
 export { RATE_LIMIT_CONFIG_SCHEMA as RateLimitConfig$ } from "#core/constants/rate-limit-config-schema.constant";
 export { MemoryDeviceSequenceStoreDriver } from "#core/drivers/memory-device-sequence-store.driver";
 export { MemoryIdempotencyStoreDriver } from "#core/drivers/memory-idempotency-store.driver";

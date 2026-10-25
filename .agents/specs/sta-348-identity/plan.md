@@ -17,6 +17,9 @@
 - `sessionUserOf` reads the Stackra claims into `SessionUser`; its memberships are tenancy's `TenantMembership`, which
   `SessionService` hands to `TenantSwitcher` on every change, so the active scope follows the session.
 - `SessionClientSessionDriver` fills `@stackra/clients`' `ClientSession` from the session and `ActiveScopeService`.
+- `SessionOfflineSessionDriver` (wave 9, ADR 0338 d4) fills `@stackra/query`'s `OfflineSession`: two frozen signals
+  built from `SessionService.status` and `subscribe`, each remembering its last answer so a listener hears only a
+  change, and `end` as `signOut()` with its rejection dropped.
 - `useSession` reads the service through `useSyncExternalStore` and starts it on mount; `fakeSession` is a real
   `SessionService` over a memory store with spied actions.
 
@@ -54,6 +57,7 @@
 - **P-007**: the hook renders the service's current state after every change, `loading` on the server — Validates: FR-007
 - **P-008**: `headers()` holds `Authorization` exactly when there is a token and `X-Scope-Path` exactly when a scope is active; `can` is true exactly for a held permission — Validates: FR-008
 - **P-009**: `fakeSession({ status })` reports that status, its actions are spies, and two fakes never share state; `fakeIdentity` answers exactly the named principals — Validates: FR-009
+- **P-010**: for any sequence of session states, `isRevoked` and `isSignedIn` equal `status === revoked` and `status === signed_in`, each listener hears exactly the changes of its value, and `end` resolves with the session signed out whatever the store's sign-out does — Validates: FR-010
 
 ## Deploy modes
 

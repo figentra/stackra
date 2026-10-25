@@ -33,8 +33,11 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
   Device order (ADR 0338 d1) wraps the steps like the audit, so any refusal settles a device's sequence; the offline cap
   belongs to the idempotency step and the `accepts` review to `handle` (inside the unit of work).
 - A device id reaches `CallOptions.device` only after the transport matched it to the verified session's device; the
-  pipeline never trusts the header alone. A replica's slice comes from the query's `handle` after it authorized it,
-  never straight from input.
+  pipeline never trusts the header alone. Spell no header name here: they are `DEVICE_ORDER` of `@stackra/clients`
+  (which depends on this package). Device sequences are not contiguous: never compare with `last + 1`.
+- A replica answer is the `ReplicaChanges` wire shape of `@stackra/query` (`rows`, `removed`, `cursor`, `asOf`,
+  `full`); the cursor arrives as the query's `cursor` input. A replica's slice comes from the query's `handle` after
+  it authorized it, never straight from input.
 - Never import `@stackra/iam`, `@stackra/workflow`, `@stackra/queue`, `@stackra/database` or `@stackra/tenancy`; they
   depend on this package and implement its ports.
 - Identities are gen's: the runtime reads them from `registerActions`, never derives a module key or a permission.
