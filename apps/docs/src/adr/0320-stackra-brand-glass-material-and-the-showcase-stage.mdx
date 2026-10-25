@@ -47,8 +47,13 @@ limits, so the material does not drift into product screens or into the componen
    - **Reading text holds 4.5:1 over the worst backdrops.** On the `regular` and `thick` levels, the theme's
      `foreground` holds 4.5:1 over pure black and over pure white, in every mode and colour scheme, with liquid's
      sheen at full strength. `stackra-theme.constant.test.ts` computes it through 8-bit sRGB, as a browser
-     composites. The `thin` level carries no reading text. Muted text on a level is checked where it sits, by axe in
-     every mode, scheme and direction.
+     composites. The `thin` level carries no reading text.
+   - **Muted text holds 4.5:1 too, on the `thick` level only** (owner decision 2026-10-25, STA-486).
+     - On `regular` it cannot: over pure black on the light scheme it reaches 3.70:1 in glass and 2.36:1 in liquid.
+       So muted text never sits on `thin` or `regular`.
+     - Where the `thick` level's own fill cannot hold it either (liquid, 3.15:1), the mode's `thickFloor` makes that
+       level solid. The other levels keep the mode's look.
+     - The same test computes it, and axe still checks muted text where it sits, in every mode, scheme and direction.
 5. **The marks are unchanged.**
    - The beam-S wordmark stays static, in its artwork colour (steel-deep on light, steel on dark).
    - It may be drawn large and echoed as a hairline outline on a showcase stage.
@@ -60,8 +65,9 @@ limits, so the material does not drift into product screens or into the componen
 7. **The material is a theme token with three levels and four modes** (added 2026-10-24, STA-424).
    - **Levels** (`MaterialLevel`) are thicknesses:
      - `thin` is for small chrome without reading text (tiles, chips over art).
-     - `regular` (`.material`) is for bars, cards and panels.
-     - `thick` is for large surfaces that hold reading text (sheets, palettes).
+     - `regular` (`.material`) is for bars, cards and panels whose text is all `foreground`.
+     - `thick` is for surfaces that hold muted text or long reading text (sheets, palettes, cards with a
+       description).
      - A theme gives each level a fill share of `surface` per colour mode, a px blur and a saturation factor, plus
        the edge and rim-light shares (`Theme.materials`, validated by `defineTheme`).
    - **Modes** (`MaterialMode`) are degrees, set once on `<html data-material>`. Every level scales by the mode's
@@ -71,7 +77,7 @@ limits, so the material does not drift into product screens or into the componen
      - `frosted` gives a dense fill and a heavy blur.
      - `glass` is the theme as written, and the showcase default.
      - `liquid` gives a thinner fill and a lifted backdrop (more saturation, a little brightness) with a sheen
-       along the top inside edge.
+       along the top inside edge. Its `thick` level is solid, so muted text keeps 4.5:1 (decision 4).
    - **Where each default comes from.** `glass` is the stylesheet's `:root` default, so a page with no
      `data-material` (a static showcase page, the docs landing) gets the theme as written. `DesignSystemProvider`
      sets `solid` unless it is given another mode (`material`), so product UI is opaque without asking, and a

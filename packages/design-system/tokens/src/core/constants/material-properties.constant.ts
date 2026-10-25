@@ -22,6 +22,7 @@ export const MATERIAL_PROPERTIES: readonly string[] = Object.freeze([
   "material-sheen-color",
   "material-fill-scale",
   "material-fill-floor",
+  "material-thick-floor",
   "material-blur-scale",
   "material-saturate-scale",
   "material-brightness",

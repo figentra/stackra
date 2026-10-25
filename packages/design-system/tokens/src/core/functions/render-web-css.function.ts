@@ -85,12 +85,19 @@ const modeFactors = (mode: MaterialMode, indent = "  ") => {
   return [
     `${indent}--material-fill-scale: ${factors.fillScale};`,
     `${indent}--material-fill-floor: ${factors.fillFloor};`,
+    `${indent}--material-thick-floor: ${factors.thickFloor};`,
     `${indent}--material-blur-scale: ${factors.blurScale};`,
     `${indent}--material-saturate-scale: ${factors.saturationScale};`,
     `${indent}--material-brightness: ${factors.brightness};`,
     `${indent}--material-sheen: ${factors.sheen};`,
   ];
 };
+
+/** The least fill share of a level: the mode's floor, and for the thick level, which muted text sits on, its own too. */
+const floorOf = (level: MaterialLevel) =>
+  level === "thick"
+    ? "max(var(--material-fill-floor), var(--material-thick-floor))"
+    : "var(--material-fill-floor)";
 
 /**
  * The material's properties of one colour mode: each level's share of the surface, and the fills, filters, edge, rim
@@ -104,7 +111,7 @@ function materialColours(theme: Theme, mode: "light" | "dark"): string[] {
       declare(`material-${level}-share`, String(levels[level].fill[mode])),
       declare(
         `material-${level}-fill`,
-        `color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-${level}-share) * var(--material-fill-scale), 1) * 100%), transparent)`,
+        `color-mix(in oklch, var(--surface) calc(clamp(${floorOf(level)}, var(--material-${level}-share) * var(--material-fill-scale), 1) * 100%), transparent)`,
       ),
       declare(
         `material-${level}-filter`,

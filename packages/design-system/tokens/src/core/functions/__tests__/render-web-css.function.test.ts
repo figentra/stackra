@@ -125,8 +125,13 @@ describe("renderWebCss", () => {
       expect(light).toContain(`  --material-${level}-share: ${token.fill.light};`);
       expect(dark).toContain(`  --material-${level}-share: ${token.fill.dark};`);
       for (const block of [light, dark]) {
+        // The thick level, which muted text sits on, also takes the mode's thick floor (solid in liquid).
+        const floor =
+          level === "thick"
+            ? "max(var(--material-fill-floor), var(--material-thick-floor))"
+            : "var(--material-fill-floor)";
         expect(block).toContain(
-          `  --material-${level}-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-${level}-share) * var(--material-fill-scale), 1) * 100%), transparent);`,
+          `  --material-${level}-fill: color-mix(in oklch, var(--surface) calc(clamp(${floor}, var(--material-${level}-share) * var(--material-fill-scale), 1) * 100%), transparent);`,
         );
         expect(block).toContain(
           `  --material-${level}-filter: blur(calc(var(--material-${level}-blur)`,
@@ -149,10 +154,12 @@ describe("renderWebCss", () => {
       const factors = MATERIAL_MODES[mode];
       const block = blockOf(`[data-material="${mode}"]`);
       expect(block, mode).toContain(`  --material-fill-floor: ${factors.fillFloor};`);
+      expect(block, mode).toContain(`  --material-thick-floor: ${factors.thickFloor};`);
       expect(block, mode).toContain(`  --material-sheen: ${factors.sheen};`);
     }
     expect(blockOf(":root")).toContain("  --material-fill-floor: 0;");
-    expect(MATERIAL_MODES.solid).toMatchObject({ fillFloor: 1, blurScale: 0 });
+    expect(blockOf(":root")).toContain("  --material-thick-floor: 0;");
+    expect(MATERIAL_MODES.solid).toMatchObject({ fillFloor: 1, thickFloor: 1, blurScale: 0 });
   });
 
   it("draws the material classes in the components layer, the regular level as .material", () => {
@@ -166,7 +173,7 @@ describe("renderWebCss", () => {
 
   it("turns the material solid under reduced transparency, more contrast and no backdrop filter", () => {
     expect(css).toContain(
-      "@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {\n  :root,\n  [data-material] {\n    --material-fill-scale: 1;\n    --material-fill-floor: 1;\n    --material-blur-scale: 0;",
+      "@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {\n  :root,\n  [data-material] {\n    --material-fill-scale: 1;\n    --material-fill-floor: 1;\n    --material-thick-floor: 1;\n    --material-blur-scale: 0;",
     );
     expect(css).toContain(
       "@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {\n  :root,\n  [data-material] {\n    --material-fill-scale: 1;\n    --material-fill-floor: 1;",
