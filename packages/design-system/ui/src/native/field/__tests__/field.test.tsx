@@ -80,7 +80,7 @@ describe("Field (native)", () => {
 
   it("writes the user's value back", () => {
     render(<CreateOrder />);
-    act(() => (received.props["quantity"]?.["onChange"] as (value: number) => void)(4));
+    act(() => ((received.props["quantity"] ?? {})["onChange"] as (value: number) => void)(4));
     expect(received.props["quantity"]?.["value"]).toBe(4);
   });
 });

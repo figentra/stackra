@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the icons the web components of @stackra/ui draw by themselves (the avatar's person mark, the action
- *          menu's ellipsis, the chevrons and check mark of lists, pagination and copy buttons, the copy mark and the tone icons of alerts and dialogs, and the sidebar's collapse and expand marks), registered here so they show without the app
+ *          menu's ellipsis, the chevrons and check mark of lists, pagination and copy buttons, the copy mark and the tone icons of alerts and dialogs, and the sidebar's collapse and expand marks, and the AI mark's sparkles), registered here so they show without the app
  *          registering them.
  * Boundary: a registry of named re-exports, so a bundler keeps only these; an app's own registry wins for the same
  *          name.
@@ -21,6 +21,7 @@ import {
   Info,
   PanelLeftClose,
   PanelLeftOpen,
+  Sparkles,
   TriangleAlert,
   UserRound,
 } from "@stackra/icons/react/lucide-icons";
@@ -38,6 +39,7 @@ export const UI_ICONS = defineIconRegistry({
   info: Info,
   "panel-left-close": PanelLeftClose,
   "panel-left-open": PanelLeftOpen,
+  sparkles: Sparkles,
   "triangle-alert": TriangleAlert,
   "user-round": UserRound,
 });

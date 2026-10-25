@@ -18,6 +18,7 @@ export default library(
     node: "src/node/ui.module.ts",
     react: "src/react/index.ts",
     native: "src/native/index.ts",
+    testing: "src/testing/fakes/fake-confirmation-provider.tsx",
   },
   { decorators: true },
 );

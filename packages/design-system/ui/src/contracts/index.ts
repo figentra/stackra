@@ -7,6 +7,7 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { AccordionVariant } from "#contracts/enums/accordion-variant.enum";
+export { AiMarkKind } from "#contracts/enums/ai-mark-kind.enum";
 export { AvatarShape } from "#contracts/enums/avatar-shape.enum";
 export { AvatarVariant } from "#contracts/enums/avatar-variant.enum";
 export { BadgePlacement } from "#contracts/enums/badge-placement.enum";
@@ -16,6 +17,7 @@ export { ChipVariant } from "#contracts/enums/chip-variant.enum";
 export { ColorScheme, type ResolvedColorScheme } from "#contracts/enums/color-scheme.enum";
 export { ControlVariant } from "#contracts/enums/control-variant.enum";
 export { Direction } from "#contracts/enums/direction.enum";
+export { DisplayMode } from "#contracts/enums/display-mode.enum";
 export { EmptyReason } from "#contracts/enums/empty-reason.enum";
 export { ErrorKind } from "#contracts/enums/error-kind.enum";
 export { FilterKind } from "#contracts/enums/filter-kind.enum";
@@ -46,6 +48,7 @@ export { Variant } from "#contracts/enums/variant.enum";
 export type { AccordionContractProps } from "#contracts/types/accordion-contract-props.type";
 export type { AccordionItem } from "#contracts/types/accordion-item.type";
 export type { ActionMenuContractProps } from "#contracts/types/action-menu-contract-props.type";
+export type { AiMarkContractProps } from "#contracts/types/ai-mark-contract-props.type";
 export type { AlertContractProps } from "#contracts/types/alert-contract-props.type";
 export type { AlertDialogContractProps } from "#contracts/types/alert-dialog-contract-props.type";
 export type { AllMatchingSelectionContractProps } from "#contracts/types/all-matching-selection-contract-props.type";
@@ -95,6 +98,7 @@ export type {
   MultipleEntityPickerContractProps,
   SingleEntityPickerContractProps,
 } from "#contracts/types/entity-picker-contract-props.type";
+export type { EnvironmentBannerContractProps } from "#contracts/types/environment-banner-contract-props.type";
 export type { ErrorStateContractProps } from "#contracts/types/error-state-contract-props.type";
 export type { FeedbackContractProps } from "#contracts/types/feedback-contract-props.type";
 export type { FieldContractProps } from "#contracts/types/field-contract-props.type";
@@ -140,6 +144,7 @@ export type { MenuItem } from "#contracts/types/menu-item.type";
 export type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
 export type { MenuSection } from "#contracts/types/menu-section.type";
 export type { ModalContractProps } from "#contracts/types/modal-contract-props.type";
+export type { ModeSwitchContractProps } from "#contracts/types/mode-switch-contract-props.type";
 export type { NavigationHeaderContractProps } from "#contracts/types/navigation-header-contract-props.type";
 export type { NavigationItem } from "#contracts/types/navigation-item.type";
 export type { NavigationListContractProps } from "#contracts/types/navigation-list-contract-props.type";

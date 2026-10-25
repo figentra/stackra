@@ -8,6 +8,7 @@
  */
 export { Accordion, type AccordionProps } from "#react/accordion/accordion";
 export { ActionMenu, type ActionMenuProps } from "#react/action-menu/action-menu";
+export { AiMark, type AiMarkProps } from "#react/ai-mark/ai-mark";
 export { AlertDialog, type AlertDialogProps } from "#react/alert-dialog/alert-dialog";
 export { Alert, type AlertProps } from "#react/alert/alert";
 export { AppHeader, type AppHeaderProps } from "#react/app-header/app-header";
@@ -47,6 +48,10 @@ export type { DrawerTitleProps } from "#react/drawer/drawer-title";
 export { Dropdown, type DropdownItemProps } from "#react/dropdown/dropdown";
 export { EmptyState, type EmptyStateProps } from "#react/empty-state/empty-state";
 export { EntityPicker, type EntityPickerProps } from "#react/entity-picker/entity-picker";
+export {
+  EnvironmentBanner,
+  type EnvironmentBannerProps,
+} from "#react/environment-banner/environment-banner";
 export { ErrorState, type ErrorStateProps } from "#react/error-state/error-state";
 export { FieldError, type FieldErrorProps } from "#react/field-error/field-error";
 export { Field } from "#react/field/field";
@@ -70,6 +75,7 @@ export { Menu, type MenuProps } from "#react/menu/menu";
 export { Modal, type ModalProps } from "#react/modal/modal";
 export type { ModalCloseProps } from "#react/modal/modal-close";
 export type { ModalTitleProps } from "#react/modal/modal-title";
+export { ModeSwitch, type ModeSwitchProps } from "#react/mode-switch/mode-switch";
 export {
   NavigationHeader,
   type NavigationHeaderProps,

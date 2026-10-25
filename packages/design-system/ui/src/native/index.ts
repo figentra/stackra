@@ -8,6 +8,7 @@
  */
 export { Accordion, type AccordionProps } from "#native/accordion/accordion";
 export { ActionMenu, type ActionMenuProps } from "#native/action-menu/action-menu";
+export { AiMark, type AiMarkProps } from "#native/ai-mark/ai-mark";
 export { AlertDialog, type AlertDialogProps } from "#native/alert-dialog/alert-dialog";
 export { Alert, type AlertProps } from "#native/alert/alert";
 export { AppHeader, type AppHeaderProps } from "#native/app-header/app-header";
@@ -45,6 +46,10 @@ export type { DrawerCloseProps } from "#native/drawer/drawer-close";
 export type { DrawerTitleProps } from "#native/drawer/drawer-title";
 export { EmptyState, type EmptyStateProps } from "#native/empty-state/empty-state";
 export { EntityPicker, type EntityPickerProps } from "#native/entity-picker/entity-picker";
+export {
+  EnvironmentBanner,
+  type EnvironmentBannerProps,
+} from "#native/environment-banner/environment-banner";
 export { ErrorState, type ErrorStateProps } from "#native/error-state/error-state";
 export { FieldError, type FieldErrorProps } from "#native/field-error/field-error";
 export { Field } from "#native/field/field";
@@ -68,6 +73,7 @@ export { Menu, type MenuProps } from "#native/menu/menu";
 export { Modal, type ModalProps } from "#native/modal/modal";
 export type { ModalCloseProps } from "#native/modal/modal-close";
 export type { ModalTitleProps } from "#native/modal/modal-title";
+export { ModeSwitch, type ModeSwitchProps } from "#native/mode-switch/mode-switch";
 export {
   NavigationHeader,
   type NavigationHeaderProps,

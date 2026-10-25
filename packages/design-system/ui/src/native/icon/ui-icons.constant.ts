@@ -23,6 +23,7 @@ import {
   Ellipsis,
   ExternalLink,
   Info,
+  Sparkles,
   TriangleAlert,
   UserRound,
 } from "@stackra/icons/native/lucide-icons";
@@ -41,6 +42,7 @@ export const UI_ICONS = defineIconRegistry({
   ellipsis: Ellipsis,
   "external-link": ExternalLink,
   info: Info,
+  sparkles: Sparkles,
   "triangle-alert": TriangleAlert,
   "user-round": UserRound,
 });
