@@ -34,31 +34,37 @@ test("loads MapLibre's worker, so the map finishes loading with its route source
   expect(errors.filter((text) => /worker/i.test(text))).toEqual([]);
 });
 
-for (const width of [1280, 390])
-  test(`keeps the open popup inside the map and off every label at ${width}px`, async ({
+for (const width of [1280, 390, 320])
+  test(`keeps each stop's popup inside the map and off every label at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
     await visit(page, PATH, "light");
     await expect(page.locator('[data-slot="map"][data-loaded="true"]')).toBeVisible();
-    const popup = page.locator(".maplibregl-popup");
-    await expect(popup).toBeVisible();
-    const map = await page.locator('[data-slot="map"]').boundingBox();
-    const box = await popup.boundingBox();
-    if (!map || !box) throw new Error("no map or popup box");
-    expect(box.x).toBeGreaterThanOrEqual(map.x - 1);
-    expect(box.y).toBeGreaterThanOrEqual(map.y - 1);
-    expect(box.x + box.width).toBeLessThanOrEqual(map.x + map.width + 1);
-    expect(box.y + box.height).toBeLessThanOrEqual(map.y + map.height + 1);
-    for (const label of await page.locator('[data-slot="map-marker-label"]').all()) {
-      const other = await label.boundingBox();
-      if (!other) continue;
-      const overlaps =
-        box.x < other.x + other.width &&
-        other.x < box.x + box.width &&
-        box.y < other.y + other.height &&
-        other.y < box.y + box.height;
-      expect(overlaps, `the popup covers "${await label.textContent()}"`).toBe(false);
+    for (const stop of ["Ferry Building", "Oracle Park", "Chase Center"]) {
+      await page.getByRole("button", { name: `Show ${stop}` }).click();
+      const popup = page.locator(".maplibregl-popup");
+      await expect(popup).toContainText(stop);
+      // Measured after the press: at a narrow width the press scrolls the page.
+      const map = await page.locator('[data-slot="map"]').boundingBox();
+      const box = await popup.boundingBox();
+      if (!map || !box) throw new Error(`no map or popup box for ${stop}`);
+      expect(box.x, `${stop}: left edge`).toBeGreaterThanOrEqual(map.x - 1);
+      expect(box.y, `${stop}: top edge`).toBeGreaterThanOrEqual(map.y - 1);
+      expect(box.x + box.width, `${stop}: right edge`).toBeLessThanOrEqual(map.x + map.width + 1);
+      expect(box.y + box.height, `${stop}: bottom edge`).toBeLessThanOrEqual(
+        map.y + map.height + 1,
+      );
+      for (const label of await page.locator('[data-slot="map-marker-label"]').all()) {
+        const other = await label.boundingBox();
+        if (!other) continue;
+        const overlaps =
+          box.x < other.x + other.width &&
+          other.x < box.x + box.width &&
+          box.y < other.y + other.height &&
+          other.y < box.y + box.height;
+        expect(overlaps, `${stop}: the popup covers "${await label.textContent()}"`).toBe(false);
+      }
     }
   });
 

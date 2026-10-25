@@ -32,6 +32,7 @@ const STRINGS = {
   chosen: (name: string, status: string, time: string) => `${name}: ${status}, arrival ${time}`,
 } as const;
 
+// At zoom 13 the stops sit 245px and 145px apart down the map, so a popup above or below one never reaches the next.
 const STOPS = [
   {
     id: "ferry",
@@ -43,12 +44,12 @@ const STOPS = [
     label: "top",
   },
   {
-    id: "market",
-    name: "Market Street",
+    id: "oracle",
+    name: "Oracle Park",
     status: "Next stop",
     time: "9:19 AM",
-    latitude: 37.7896,
-    longitude: -122.3887,
+    latitude: 37.77859,
+    longitude: -122.38927,
     label: "top",
   },
   {
@@ -77,8 +78,7 @@ const STYLES = { light: blank("#e5e7eb"), dark: blank("#1f2937") };
 
 /** The Map page. */
 export function ProMap() {
-  // The last stop opens first: nothing sits above it, so its popup covers no other stop.
-  const [chosen, setChosen] = useState<(typeof STOPS)[number] | null>(STOPS[2]);
+  const [chosen, setChosen] = useState<(typeof STOPS)[number] | null>(STOPS[1]);
 
   return (
     <article className="grid gap-6">
