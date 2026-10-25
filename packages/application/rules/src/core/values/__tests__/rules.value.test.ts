@@ -3,7 +3,9 @@
  * Purpose: unit tests of `Rules`: `create` registers the sources' fields by path and throws on a misdeclared source;
  *          `fields` and `fieldOf` read them; `problems` names each refused node by its path (unknown field, operator
  *          outside the type's set, unfitting value, malformed node, too deep, too many nodes) and finds nothing in a
- *          valid tree; `check` returns the tree or throws `ConditionInvalidError` with those field errors.
+ *          valid tree; `check` returns the tree or throws `ConditionInvalidError` with those field errors; outcome
+ *          kinds are registered and misdeclared ones throw; `outcomeProblems` names each refused outcome or parameter
+ *          and `checkOutcomes` returns the outcomes or throws `OutcomeInvalidError`.
  * Boundary: test only; pure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0331 (decisions 2, 3, 4 and 10).
@@ -14,6 +16,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { type FactSource, FieldType, Operator } from "#contracts/index";
 import { ConditionInvalidError } from "#core/errors/condition-invalid.error";
+import { OutcomeInvalidError } from "#core/errors/outcome-invalid.error";
 import type { Condition } from "#core/types/condition.type";
 import { Rules } from "#core/values/rules.value";
 
@@ -150,5 +153,79 @@ describe("Rules", () => {
       expect(isRefusal(error, ConditionInvalidError)).toBe(true);
       expect((error as ConditionInvalidError).fieldErrors).toEqual({ "all.0": "field_unknown" });
     }
+  });
+});
+
+describe("Rules outcome kinds", () => {
+  const REFUND = {
+    key: "refundWindow",
+    label,
+    params: {
+      days: { type: FieldType.Number, label, floor: "consumer.withdrawal_days" },
+      note: { type: FieldType.String, label },
+    },
+  };
+  const HOLD = {
+    key: "holdOrder",
+    label,
+    params: { reason: { type: FieldType.Enum, label, values: { fraud: label } } },
+  };
+  const RETURNS = Rules.create({ key: "shop.returns", sources: [CART], outcomes: [REFUND, HOLD] });
+
+  it("registers each outcome kind by its key, none when left out", () => {
+    expect(RETURNS.outcomeKinds().map((kind) => kind.key)).toEqual(["refundWindow", "holdOrder"]);
+    expect(RETURNS.outcomeKind("holdOrder")).toBe(HOLD);
+    expect(RULES.outcomeKinds()).toEqual([]);
+  });
+
+  it("throws on a misdeclared outcome kind", () => {
+    const withKinds = (outcomes: never[]) => () =>
+      Rules.create({ key: "shop.returns", sources: [CART], outcomes });
+    expect(withKinds([REFUND, REFUND] as never[])).toThrow(/distinct camelCase outcome key/);
+    expect(
+      withKinds([
+        { key: "near", label, params: { at: { type: FieldType.Geo, label } } },
+      ] as never[]),
+    ).toThrow(/never a geo point/);
+    expect(
+      withKinds([
+        { key: "fee", label, params: { note: { type: FieldType.String, label, floor: "x.y" } } },
+      ] as never[]),
+    ).toThrow(/only a number parameter names a floor/);
+  });
+
+  it("finds nothing wrong with registered outcomes and returns them", () => {
+    const outcomes = [
+      { kind: "refundWindow", params: { days: 30, note: "standard" } },
+      { kind: "holdOrder", params: { reason: "fraud" } },
+    ];
+    expect(RETURNS.outcomeProblems(outcomes)).toEqual({});
+    expect(RETURNS.checkOutcomes(outcomes)).toEqual(outcomes);
+  });
+
+  it("names each refused outcome and parameter by its path", () => {
+    expect(
+      RETURNS.outcomeProblems([
+        { kind: "refundWindow", params: { days: "thirty", extra: 1 } },
+        { kind: "giftWrap", params: {} },
+        "hold",
+      ]),
+    ).toEqual({
+      "0.params.days": "value_invalid",
+      "0.params.extra": "param_unknown",
+      "0.params.note": "param_missing",
+      "1": "kind_unknown",
+      "2": "node_invalid",
+    });
+    expect(RETURNS.outcomeProblems({})).toEqual({ "(root)": "node_invalid" });
+    expect(RETURNS.outcomeProblems(Array.from({ length: 21 }, () => ({})))).toEqual({
+      "(root)": "too_many_outcomes",
+    });
+  });
+
+  it("refuses invalid outcomes with OutcomeInvalidError", () => {
+    expect(() => RETURNS.checkOutcomes([{ kind: "giftWrap", params: {} }])).toThrow(
+      OutcomeInvalidError,
+    );
   });
 });

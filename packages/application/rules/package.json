@@ -2,7 +2,7 @@
   "name": "@stackra/rules",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra rules: one condition engine for every rule consumer. A condition tree of all, any and not over field, operator and value leaves; fixed operator sets per field type (FieldType, Operator); fact sources a consumer registers (FactSource); Rules, which checks tenant-written conditions against them; evaluate, deterministic with the time as a fact and explained by tree path; versioned RuleSet records on HasRevisions with RuleSetService; and the RuleBuilder component",
+  "description": "Stackra rules: one condition engine for every rule consumer. A condition tree of all, any and not over field, operator and value leaves; fixed operator sets per field type (FieldType, Operator); fact sources and outcome kinds a consumer registers (FactSource, OutcomeKind); Rules, which checks tenant-written conditions and outcomes against them; evaluate, deterministic with the time as a fact and explained by tree path; decide, which guards every outcome against the market-pack floors; OutcomeDispatcher, which routes outcomes to the consumer's handlers; versioned RuleSet records on HasRevisions with RuleSetService, seeded from versioned rule-set packs; and the RuleBuilder component",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -86,6 +86,7 @@
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
     "@stackra/i18n": "workspace:*",
+    "@stackra/market-packs": "workspace:*",
     "@stackra/model": "workspace:*",
     "@stackra/money": "workspace:*",
     "@stackra/ui": "workspace:*",

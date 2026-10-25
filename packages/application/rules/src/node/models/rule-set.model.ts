@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `RuleSet`, a scope's rule as a versioned record: the scope it belongs to and the consumer whose fields it
- *          tests; its conditions are its revisions.
+ * Purpose: `RuleSet`, a scope's rule as a versioned record: the scope it belongs to, the consumer whose fields it
+ *          tests and, for a default seeded from a rule-set pack, the template key and seed version it came from; its
+ *          conditions and outcomes are its revisions.
  * Boundary: data only. Key `rules.rule_set`, table `rules.rule_sets`, under forced row-level security on
  *           `scope_path`. `HasRevisions` keeps each condition as a frozen, numbered revision in `content.revisions`;
  *           the row itself holds no condition. A consumer's own record (a discount, a segment) links to it by id.
@@ -27,11 +28,17 @@ export class RuleSet extends Model.with(HasPublicId("rset"), Timestamps, HasRevi
 
   /** The key of the consumer whose `Rules` its conditions are checked against (`promotions.discount`). */
   consumer!: string;
+
+  /** The rule-set pack template it was seeded from (`commerce.returns`); null for a tenant's own rule set. */
+  seedKey: string | null = null;
+
+  /** The pack version its last seeded revision came from; null for a tenant's own rule set. */
+  seedVersion: string | null = null;
 }
 
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `CrudService.insert` may leave the trait timestamps
 // out; remove it once gen writes the entity files (STA-339).
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface RuleSet {
-  [OptionalProps]?: "createdAt" | "updatedAt";
+  [OptionalProps]?: "createdAt" | "updatedAt" | "seedKey" | "seedVersion";
 }

@@ -4,7 +4,10 @@
  *          condition against the consumer's `Rules`, numbers the revision after the stored ones and copies the scope,
  *          refuses another consumer's rule set and an invalid condition, and turns a unique violation into
  *          `rule_set_changed`; `publish` stamps the revision and records `RuleSetPublished`; `revision` reads the one
- *          published last or a stated one; `evaluate` runs that revision and names it.
+ *          published last or a stated one; `evaluate` runs that revision and names it; a draft stores checked outcomes;
+ *          `decide` guards the published revision's outcomes against the floors; `seed` creates and publishes a
+ *          template, skips the version it already holds, keeps a tenant's edit and updates a seeded copy; `seedPack`
+ *          seeds each template against its consumer's `Rules`.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0331 (decisions 5, 6 and 10); ADR 0327 (decisions 3 and 9).
@@ -18,7 +21,10 @@ import type { I18nKey } from "@stackra/i18n";
 import { afterEach, describe, expect, freezeClock, it } from "@stackra/testing";
 import { vi } from "vitest";
 
-import { FieldType, Operator } from "#contracts/index";
+import { FloorBound } from "@stackra/market-packs";
+import type { ResolvedValue } from "@stackra/market-packs";
+
+import { FieldType, Operator, SeedResult } from "#contracts/index";
 import {
   type Condition,
   ConditionInvalidError,
@@ -45,6 +51,19 @@ const RULES = Rules.create({
   key: "shop.discount",
   sources: [
     { key: "cart", fields: { items: { type: FieldType.Number, label: "shop::items" as I18nKey } } },
+  ],
+  outcomes: [
+    {
+      key: "refundWindow",
+      label: "shop::refund" as I18nKey,
+      params: {
+        days: {
+          type: FieldType.Number,
+          label: "shop::days" as I18nKey,
+          floor: "consumer.withdrawal_days",
+        },
+      },
+    },
   ],
 });
 
@@ -179,6 +198,7 @@ describe(RuleSetService, () => {
     expect(await serviceOf().revision(ruleSet.id)).toEqual({
       number: 2,
       condition: BIG_CART,
+      outcomes: [],
       publishedAt: published.publishedAt,
     });
     expect(em.find).toHaveBeenLastCalledWith(
@@ -209,5 +229,140 @@ describe(RuleSetService, () => {
     const result = await serviceOf().evaluate(ruleSet.id, RULES, { cart: { items: 12 } }, { now });
     expect(result.matched).toBe(true);
     expect(result.revision).toBe(5);
+  });
+});
+
+/** A refund window outcome of `days`. */
+const refund = (days: number) => ({ kind: "refundWindow", params: { days } });
+
+/** A template of the seeded consumer. */
+const TEMPLATE = {
+  key: "shop.returns",
+  consumer: "shop.discount",
+  condition: BIG_CART,
+  outcomes: [refund(30)],
+};
+
+/**
+ * Connects an entity manager for a seed: `known` is the seeded rule set already there (or none), `latest` its latest
+ * revision; every row the seed creates is kept and found again.
+ */
+function connectSeed(known: RuleSet | null, latest: Revision[] = []) {
+  const created: object[] = [];
+  const em = {
+    findOne: vi.fn(async () => known),
+    findOneOrFail: vi.fn(async (model: unknown) =>
+      model === RuleSet
+        ? (known ?? created.find((row) => row instanceof RuleSet))
+        : created.findLast((row) => row instanceof Revision),
+    ),
+    find: vi.fn(async () => latest),
+    count: vi.fn(async () => latest.length),
+    create: vi.fn((Row: new () => object, data: object) => {
+      const row = Object.assign(new Row(), data);
+      created.push(row);
+      return row;
+    }),
+    flush: vi.fn(async () => undefined),
+    transactional: vi.fn(async (work: (manager: unknown) => Promise<unknown>) => work(em)),
+  };
+  vi.spyOn(Database, "current").mockReturnValue({
+    em: () => em as unknown as ReturnType<Database["em"]>,
+  } as unknown as Database);
+  return { em, created };
+}
+
+describe("RuleSetService outcomes and seeds", () => {
+  it("drafts checked outcomes beside the condition", async () => {
+    const ruleSet = storedRuleSet();
+    const em = connect(ruleSet);
+    await serviceOf().draft(ruleSet.id, RULES, BIG_CART, [refund(30)]);
+    expect(em.create).toHaveBeenCalledWith(
+      Revision,
+      expect.objectContaining({
+        data: { condition: BIG_CART, outcomes: [refund(30)] },
+      }),
+    );
+  });
+
+  it("decides the published revision with its outcomes guarded against the floors", async () => {
+    const ruleSet = storedRuleSet();
+    const published = Object.assign(storedRevision(ruleSet, 4, new Date("2026-10-20T00:00:00Z")), {
+      data: { condition: BIG_CART, outcomes: [refund(7)] },
+    });
+    connect(ruleSet, [published]);
+    const floors = [
+      {
+        key: "consumer.withdrawal_days",
+        value: 14,
+        market: "eu",
+        version: "1.0.0",
+        floor: { bound: FloorBound.Min, law: "Directive 2011/83/EU" },
+      },
+    ] as ResolvedValue[];
+    const decision = await serviceOf().decide(
+      ruleSet.id,
+      RULES,
+      { cart: { items: 12 } },
+      { now: new Date("2026-10-25T09:00:00Z"), floors },
+    );
+    expect(decision.evaluation.revision).toBe(4);
+    expect(decision.outcomes).toEqual([refund(14)]);
+  });
+
+  it("creates and publishes a template the scope does not have", async () => {
+    const { created } = connectSeed(null);
+    expect(await serviceOf().seed(SCOPE, RULES, TEMPLATE, "1.0.0")).toBe(SeedResult.Created);
+    const [ruleSet, revision] = created as [RuleSet, Revision];
+    expect(ruleSet).toMatchObject({
+      seedKey: "shop.returns",
+      seedVersion: "1.0.0",
+      consumer: "shop.discount",
+    });
+    expect(revision.data).toEqual({
+      condition: BIG_CART,
+      outcomes: [refund(30)],
+      seed: { key: "shop.returns", version: "1.0.0" },
+    });
+    expect(revision.publishedAt).not.toBeNull();
+  });
+
+  it("leaves a copy already at the version, and keeps a tenant's edit", async () => {
+    const seeded = Object.assign(storedRuleSet(), {
+      seedKey: "shop.returns",
+      seedVersion: "1.0.0",
+    });
+    connectSeed(seeded);
+    expect(await serviceOf().seed(SCOPE, RULES, TEMPLATE, "1.0.0")).toBe(SeedResult.Current);
+    const { created } = connectSeed(seeded, [storedRevision(seeded, 2, null)]);
+    expect(await serviceOf().seed(SCOPE, RULES, TEMPLATE, "1.1.0")).toBe(SeedResult.Kept);
+    expect(created).toEqual([]);
+    expect(seeded.seedVersion).toBe("1.0.0");
+  });
+
+  it("updates a seeded copy the tenant left alone", async () => {
+    const seeded = Object.assign(storedRuleSet(), {
+      seedKey: "shop.returns",
+      seedVersion: "1.0.0",
+    });
+    const seedRevision = Object.assign(storedRevision(seeded, 1, new Date()), {
+      data: { condition: BIG_CART, seed: { key: "shop.returns", version: "1.0.0" } },
+    });
+    const { created } = connectSeed(seeded, [seedRevision]);
+    expect(await serviceOf().seed(SCOPE, RULES, TEMPLATE, "1.1.0")).toBe(SeedResult.Updated);
+    expect((created[0] as Revision).number).toBe(2);
+    expect(seeded.seedVersion).toBe("1.1.0");
+  });
+
+  it("refuses a template of another consumer, and seeds a pack per consumer", async () => {
+    connectSeed(null);
+    await expect(
+      serviceOf().seed(SCOPE, RULES, { ...TEMPLATE, consumer: "shop.shipping" }, "1.0.0"),
+    ).rejects.toThrow(TypeError);
+    const pack = { key: "shop", version: "1.0.0", ruleSets: [TEMPLATE] };
+    expect(await serviceOf().seedPack(SCOPE, pack, [RULES])).toEqual({
+      "shop.returns": SeedResult.Created,
+    });
+    await expect(serviceOf().seedPack(SCOPE, pack, [])).rejects.toThrow(/needs the Rules/);
   });
 });

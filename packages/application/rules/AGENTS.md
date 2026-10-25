@@ -10,6 +10,8 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `./contracts`, `.`, `
 | -------------------------------------------- | --------------------------------------------------------- |
 | A field type, an operator                    | `src/contracts/enums/`                                    |
 | A type a consumer registers                  | `src/contracts/types/`                                    |
+| An outcome, a decision, a pack type          | `src/core/types/`                                         |
+| The floor guard, `decide`, the dispatcher    | `src/core/{functions,values}/`                            |
 | A condition, fact or evaluation type         | `src/core/types/`                                         |
 | The registry, the evaluator, an operand rule | `src/core/{values,functions}/`                            |
 | A refusal, the event and its shipped schema  | `src/core/{errors,events,constants}/`                     |
@@ -33,7 +35,11 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `./contracts`, `.`, `
   `Operator`, a place in `FieldType`'s sets, an operand rule in `fitsOperand` and a branch of `evaluate`, never data.
 - Deterministic (decision 6): the evaluator reads no clock, store or environment; the time is `EvaluateOptions.now`.
 - A missing fact matches `is_not_set` and nothing else; keep that one reading everywhere.
-- The engine returns results only; it never applies an outcome (decision 9).
+- The engine returns results only; it never applies an outcome (decision 9). `decide` checks and guards outcomes,
+  `OutcomeDispatcher` routes them to the consumer's handlers.
+- Every outcome passes `guardFloors` (config-model section 4): `DecideOptions.floors` stays required. No floor value,
+  country or rate is written here; floors come from `@stackra/market-packs`.
+- A seed never overwrites a rule set whose latest revision is the tenant's.
 - No tenant vocabulary (R-59, ADR 0323): rule sets are keyed by the contracts `ScopeRef`.
 - Field error codes are snake_case and never echo a value; explanation steps never carry a fact's value.
 - Migrations are frozen literal snapshots that import only @stackra/database.
@@ -52,3 +58,4 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `./contracts`, `.`, `
 | Facts       | `Facts` passed to `evaluate`           | Possibly personal (an email, a location); read in memory, never stored or logged. |
 | Conditions  | `content.revisions.data` of a rule set | Scope configuration; may name a value such as an email domain; never logged.      |
 | Explanation | `Evaluation.steps`                     | Paths, fields and operators only; no fact value.                                  |
+| Outcomes    | `content.revisions.data` of a rule set | Scope configuration (days, amounts, codes); never logged.                         |

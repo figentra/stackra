@@ -7,7 +7,7 @@ and operators; it is never an expression and never runs code (ADR 0154, ADR 0227
 
 **Tier:** `tier:lib` (`packages/application/rules`). Entries `./contracts`, `.`, `./node` and `./react`. Depends on
 `@stackra/content`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/events`, `@stackra/i18n`,
-`@stackra/model`, `@stackra/money`, `@stackra/ui` and `@stackra/validation`.
+`@stackra/market-packs`, `@stackra/model`, `@stackra/money`, `@stackra/ui` and `@stackra/validation`.
 
 ## What is here
 
@@ -15,10 +15,14 @@ and operators; it is never an expression and never runs code (ADR 0154, ADR 0227
 | ------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `./contracts` | `FieldType`, `Operator`                                                | the field types and the operator set each one fixes (IAM may reuse it) |
 | `./contracts` | `FactSource`, `FactField`, `GeoPoint`                                  | what a consumer registers, and a geo fact (types)                      |
+| `./contracts` | `OutcomeKind`, `OutcomeParam`, `SeedResult`                            | the outcomes a consumer registers; what a seed did                     |
 | `.`           | `Rules`                                                                | one consumer's registry of fact sources and the check of a condition   |
 | `.`           | `evaluate`                                                             | the evaluator: deterministic, explained by tree path                   |
 | `.`           | `Condition`, `Facts`, `FactValue`, `Evaluation`, `EvaluationStep`, ... | the tree, the facts and the result (types)                             |
-| `.`           | `ConditionInvalidError`, `RuleSetChangedError`                         | refusals (400, 409)                                                    |
+| `.`           | `decide`, `Decision`, `DecideOptions`, `guardFloors`, `FlooredParam`   | a rule's guarded outcomes; the market-pack floor as the final guard    |
+| `.`           | `OutcomeDispatcher`, `OutcomeHandler`, `Outcome`, `RuleDocument`       | the consumer's handlers per outcome kind                               |
+| `.`           | `RuleSetPack$`, `RuleSetPack`, `RuleSetTemplate`                       | default rule sets as a versioned seed document                         |
+| `.`           | `ConditionInvalidError`, `OutcomeInvalidError`, `RuleSetChangedError`  | refusals (400, 400, 409)                                               |
 | `.`           | `RuleSetPublished`                                                     | the domain event of a published revision                               |
 | `./node`      | `RuleSet`, `RuleSetService`, `RuleSetRevision`                         | versioned rule sets on `HasRevisions`, and their service               |
 | `./react`     | `RuleBuilder`, `RuleBuilderProps`                                      | the rule-builder panel on `@stackra/ui`                                |
@@ -90,6 +94,60 @@ security matching `scope_path` at or below the session's `app.scope_paths`. Cond
 published, and publishing an older revision rolls back to it. A draft for another consumer's rule set is `not_found`; two
 drafts racing for one number refuse `rule_set_changed` (retryable).
 
+## Outcomes and the floor guard
+
+A consumer registers the outcomes its rules may yield beside its facts, and one handler per kind. A parameter may name
+a market-pack floor key; the value of the floor is pack data, never code.
+
+```ts
+export const RETURNS_RULES = Rules.create({
+  key: "orders.returns",
+  sources: [ORDER_FACTS],
+  outcomes: [
+    {
+      key: "refundWindow",
+      label: I18n.orders.outcomes.refundWindow,
+      params: {
+        days: {
+          type: FieldType.Number,
+          label: I18n.orders.outcomes.days,
+          floor: "consumer.withdrawal_days",
+        },
+      },
+    },
+  ],
+});
+export const RETURNS_OUTCOMES = OutcomeDispatcher.create(RETURNS_RULES, {
+  refundWindow: (params, order: Order) => order.setRefundDays(params["days"] as number),
+});
+
+const decision = await ruleSets.decide(ruleSetId, RETURNS_RULES, facts, {
+  now,
+  floors: floorsOn(resolved, today),
+});
+decision.floored; // [{ kind: "refundWindow", param: "days", from: 7, to: 14, law, market, version }]
+await RETURNS_OUTCOMES.dispatch(decision, order);
+```
+
+- `decide` evaluates the rule and, when it matches, checks its outcomes and runs `guardFloors`: a number parameter
+  below a `min` floor or above a `max` floor is lifted to it and reported with the law that set it. `floors` is
+  required, so no outcome leaves without the guard; a market with no floors passes `[]`.
+- A floor whose pack value is not a number throws rather than let an outcome through unguarded.
+- The dispatcher needs exactly one handler per registered kind, and takes only a `Decision`.
+
+## Rule-set packs
+
+A product's seed pack ships its default rule sets as a versioned document (`RuleSetPack$`):
+`{ key, version: "1.2.0", ruleSets: [{ key, consumer, condition, outcomes }] }`.
+
+```ts
+await ruleSets.seedPack(scope, pack, [RETURNS_RULES, COD_RULES]); // { "commerce.returns": "created", ... }
+```
+
+`seed` creates and publishes a template the first time (`rules.rule_sets.seed_key` and `seed_version`, migration
+`rules.0002`), skips a version it already holds, and later publishes a new version only while the latest revision is
+a seed's: a tenant's edit stands (`kept`). Seeded revisions carry `seed: { key, version }` in their data.
+
 ## Rule builder
 
 ```tsx
@@ -103,8 +161,11 @@ host's. Start a new rule with `{ all: [] }` (an empty `all` holds; an empty `any
 
 ## Not here
 
-- The outcome of a match: segments record membership, promotions apply a discount, pricing chooses a price (ADR 0331
-  decision 9).
+- Applying an outcome: the consumer's handlers do (segments record membership, promotions apply a discount, pricing
+  chooses a price; ADR 0331 decision 9). The engine checks, guards and routes outcomes only.
+- A floor on a money parameter: floors guard number parameters (days, percentages) until a pack carries money floors
+  with their currency.
+- Editing outcomes in the rule builder.
 - A boolean field type: ADR 0331 fixes seven types; a yes-or-no fact is an enum of two codes until an ADR adds one.
 - The planned gen check (an unregistered field or a foreign operator in a seeded rule set) and the oxlint rule against
   other evaluators.
