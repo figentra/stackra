@@ -1,7 +1,20 @@
 ---
 title: "0244 — Markets, owned by pricing"
-description: "Accepted · 2026-10-20"
+description: "Accepted · 2026-10-20 · amended 2026-10-24 (STA-451)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-451), owner decision from the Muslin rethink: three changes to decision 1,
+  and one to decision 3. A Market's conditions also include a retail location (a store's Market) and
+  a B2B company (a company's Market), so every order resolves to channel, Market, location and
+  customer. In decision 3's resolution an authenticated company customer resolves to its company's
+  Market first and a store app or till to its store's Market, and only a visitor with neither falls
+  through the domain, address and geo-IP order. Shipping zones are owned by Commerce fulfilment
+  ([0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) rule 22), and a
+  Market only references them. Tax calculation stays on the Market, in pricing, while the tax
+  documents it produces (e-receipts, e-invoices, tax invoices) belong to OS invoicing. Decisions 2
+  and 4 to 9 stand.
+</Note>
 
 <Note>
   Builds on [0219](/adr/0219-the-merchant-account-chain-and-registered-price-models) (price models)

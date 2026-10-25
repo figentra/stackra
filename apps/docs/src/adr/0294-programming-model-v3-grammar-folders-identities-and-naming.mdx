@@ -1,7 +1,18 @@
 ---
 title: "0294 — Programming model v3: grammar, group folders, derived identities and naming"
-description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349, STA-406) and 2026-10-24 (STA-428)"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349, STA-406) and 2026-10-24 (STA-428) · amended 2026-10-24 (STA-456)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-456): the module table of decision 13 gains `database/sequences/` for
+  `<name>.sequence.ts` (`Sequence`,
+  [0342](/adr/0342-gapless-sequences-allocated-at-commit-per-tenant-and-series)), beside migrations,
+  factories, seeders and macros, and the `access/` group also holds a product's data classes as
+  `<name>.data-class.ts` (`DataClass`,
+  [0341](/adr/0341-product-defined-data-classes-and-the-privileged-class)). Both are kinds with a
+  base class, so the naming rules and the decorator test apply unchanged. The projected rule table
+  follows in its own change.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-428), by

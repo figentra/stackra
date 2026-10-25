@@ -1,7 +1,14 @@
 ---
 title: "0231 — Naming and casing standard"
-description: "Accepted, amended by 0264, 0294 · 2026-10-20"
+description: "Accepted, amended by 0264, 0294 · 2026-10-20 · amended 2026-10-24 (STA-348)"
 ---
+
+<Note>
+  Amended 2026-10-24 (STA-348), as `@stackra/database` was built: the database row gains a fourth
+  prefix. A row-level-security policy is named `pol_<table>_<column>` after the column it tests, for
+  example `pol_orders_tenant_id` and `pol_orders_scope_path`, beside `idx_`, `fk_` and `ck_`. The
+  rest of the table stands.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): a class
