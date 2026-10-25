@@ -13,6 +13,7 @@ export { MediaConfig } from "#config/media.config";
 export { Bucket } from "#core/bases/bucket.base";
 export { MEDIA_CONFIG_SCHEMA as MediaConfig$ } from "#core/constants/media-config-schema.constant";
 export { HttpUploaderDriver } from "#core/drivers/http-uploader.driver";
+export { MemoryFileScannerDriver } from "#core/drivers/memory-file-scanner.driver";
 export { MemoryMediaDiskDriver } from "#core/drivers/memory-media-disk.driver";
 export { MemoryUploaderDriver } from "#core/drivers/memory-uploader.driver";
 export { BucketVisibility } from "#core/enums/bucket-visibility.enum";

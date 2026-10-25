@@ -15,6 +15,7 @@ import type { DriverName } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 import { registerSchemas, Schema } from "@stackra/validation";
 
+import type { FileScanner } from "#contracts/ports/file-scanner.port";
 import type { MediaDisk } from "#contracts/ports/media-disk.port";
 import { MEDIA_CONFIG_SCHEMA } from "#core/constants/media-config-schema.constant";
 import type { Uploader } from "#core/ports/uploader.port";
@@ -39,6 +40,19 @@ export class MediaOptions extends Schema {
 
   /** Where the `http` uploader asks for a signed URL: the `upload.create` endpoint of the media module. */
   uploadEndpoint = "/api/uploads";
+
+  /** The malware scanner: `guard_duty` where GuardDuty runs in the region, `clamav` elsewhere, `memory` in tests. */
+  scanner: DriverName<FileScanner> = "memory";
+
+  /** The clamd daemon the `clamav` scanner streams to, and the largest file it sends (clamd's `StreamMaxLength`). */
+  clamav: {
+    /** The daemon's host. */
+    host: string;
+    /** The daemon's TCP port. */
+    port: number;
+    /** The largest file streamed, in bytes; a larger one is `failed`. */
+    maxBytes: number;
+  } = { host: "127.0.0.1", port: 3310, maxBytes: 26_214_400 };
 }
 
 registerSchemas([[MediaOptions, MEDIA_CONFIG_SCHEMA]]);

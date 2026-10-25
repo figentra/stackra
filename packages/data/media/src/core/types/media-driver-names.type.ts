@@ -9,6 +9,7 @@
  * Governing contract: ADR 0294 (decisions 4 and 19); ADR 0263 (decision 9).
  */
 import type { MEDIA_DISKS } from "#core/constants/media-disks.constant";
+import type { MEDIA_SCANNERS } from "#core/constants/media-scanners.constant";
 import type { MEDIA_UPLOADERS } from "#core/constants/media-uploaders.constant";
 
 declare module "@stackra/container" {
@@ -17,5 +18,7 @@ declare module "@stackra/container" {
     "media.MediaDisk": (typeof MEDIA_DISKS)[number];
     /** The driver names of `Uploader` (`memory`, `http`). */
     "media.Uploader": (typeof MEDIA_UPLOADERS)[number];
+    /** The driver names of `FileScanner` (`memory`, `clamav`, `guard_duty`). */
+    "media.FileScanner": (typeof MEDIA_SCANNERS)[number];
   }
 }

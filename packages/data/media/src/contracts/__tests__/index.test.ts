@@ -14,7 +14,14 @@ import type { MediaDisk, MediaObject, SignedUpload, UploadRequest } from "#contr
 
 describe("@stackra/media/contracts", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["MediaDisk"]);
+    expect(Object.keys(contracts).sort()).toEqual([
+      "ContentCredentials",
+      "FileScanner",
+      "ImageTransformer",
+      "MediaDisk",
+      "ScanVerdict",
+      "TextExtractor",
+    ]);
     expect(contracts.MediaDisk.prototype).toBeInstanceOf(Port);
   });
 

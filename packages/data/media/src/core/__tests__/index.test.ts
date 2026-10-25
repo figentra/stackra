@@ -32,6 +32,7 @@ describe("@stackra/media", () => {
       "MediaLibrary",
       "MediaOptions",
       "MediaType",
+      "MemoryFileScannerDriver",
       "MemoryMediaDiskDriver",
       "MemoryUploaderDriver",
       "Upload",

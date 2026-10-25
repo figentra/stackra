@@ -87,6 +87,8 @@ config:
     disk: s3 # memory | s3
     uploader: http # memory | http (an app's setting)
     uploadExpiresIn: PT1H # at most seven days
+    scanner: guard_duty # memory | clamav | guard_duty
+    clamav: { host: clamd.internal, port: 3310, maxBytes: 26214400 } # the clamav scanner only
   filesystem:
     url: https://cdn.acme.test
     s3:
@@ -98,6 +100,17 @@ config:
 No credential is configuration. The S3 driver uses the AWS SDK's default chain. The bucket's CORS rule must allow `PUT`
 from the app's origins with the `content-type` and `x-amz-meta-*` headers. A lifecycle rule should expire `uploads/`
 after a day, which removes uploads nobody claimed.
+
+## Scanning and processing
+
+`FileScanner` (`./contracts`) scans a stored upload before the files service hands it out: `guard_duty` reads the
+`GuardDutyMalwareScanStatus` tag GuardDuty Malware Protection writes on the object (no tag yet is `pending`),
+`clamav` streams the bytes to clamd (`INSTREAM`) where GuardDuty is not offered (GCP Dammam, a local stack), and
+`memory` finds only the EICAR test file. Verdicts are `clean`, `infected`, `pending` and `failed`.
+
+`ImageTransformer` (resize and re-encode without metadata), `TextExtractor` (OCR and text extraction with BCP 47
+language hints, Arabic included) and `ContentCredentials` (signed C2PA manifests on AI-generated images) are ports in
+`./contracts`; their engines are drivers a host binds.
 
 ## Testing
 

@@ -18,6 +18,8 @@ describe("MEDIA_CONFIG_SCHEMA", () => {
       uploader: "memory",
       uploadExpiresIn: "PT1H",
       uploadEndpoint: "/api/uploads",
+      scanner: "memory",
+      clamav: { host: "127.0.0.1", port: 3310, maxBytes: 26_214_400 },
     });
   });
 

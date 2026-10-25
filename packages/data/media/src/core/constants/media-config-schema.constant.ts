@@ -13,6 +13,7 @@ import { Duration } from "@stackra/contracts";
 import { z } from "zod";
 
 import { MEDIA_DISKS } from "#core/constants/media-disks.constant";
+import { MEDIA_SCANNERS } from "#core/constants/media-scanners.constant";
 import { MEDIA_UPLOADERS } from "#core/constants/media-uploaders.constant";
 
 /** The longest a signed URL may live. */
@@ -40,4 +41,12 @@ export const MEDIA_CONFIG_SCHEMA = z.object({
     })
     .default(Duration.hours(1)),
   uploadEndpoint: z.string().min(1).default("/api/uploads"),
+  scanner: z.enum(MEDIA_SCANNERS).default("memory"),
+  clamav: z
+    .object({
+      host: z.string().min(1).default("127.0.0.1"),
+      port: z.number().int().min(1).max(65535).default(3310),
+      maxBytes: z.number().int().min(1).default(26_214_400),
+    })
+    .default(() => ({ host: "127.0.0.1", port: 3310, maxBytes: 26_214_400 })),
 });

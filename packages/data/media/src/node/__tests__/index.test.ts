@@ -13,9 +13,11 @@ import * as node from "#node/index";
 describe("@stackra/media/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "ClamavFileScannerDriver",
       "CreateUploadAction",
       "CreateUploadInput",
       "CreateUploadOutput",
+      "GuardDutyFileScannerDriver",
       "S3MediaDiskDriver",
     ]);
   });
