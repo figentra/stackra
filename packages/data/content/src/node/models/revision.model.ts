@@ -5,7 +5,8 @@
  * Boundary: data only. Key `content.revision`, table `content.revisions`, under forced row-level security on
  *           `scope_path`; unique per model, record and number. `data` is written once and never changed: a change is
  *           a new revision. A revision with no `publishedAt` is a draft; publishing sets it, and publishing an older
- *           revision again makes it the current one. Rows are written by the owning package's service, never with
+ *           revision again makes it the current one. A scheduled revision carries `scheduledAt` and an optional
+ *           `campaign` until it is published or unscheduled. Rows are written by the owning package's service, never with
  *           `new`; the ORM loads rows without running the constructor.
  * Runtime: node
  * Governing contract: ADR 0321 (decision 2); ADR 0116 (decision CT3); ADR 0327 (decisions 3 and 9); ADR 0294
@@ -38,11 +39,17 @@ export class Revision extends Model.with(HasPublicId("rev"), Timestamps) {
 
   /** When the revision was last published; null for a draft. */
   publishedAt: Date | null = null;
+
+  /** When a scheduled revision goes live; null unless scheduled (`Schedulable`). */
+  scheduledAt: Date | null = null;
+
+  /** The campaign key that groups scheduled revisions; null for none. */
+  campaign: string | null = null;
 }
 
 // shortcut: the `[OptionalProps]` augmentation is written by hand so `Repository.insert` may leave the trait timestamps
 // and the draft's `publishedAt` out; remove it once gen writes the entity files (STA-339).
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface Revision {
-  [OptionalProps]?: "createdAt" | "updatedAt" | "publishedAt";
+  [OptionalProps]?: "createdAt" | "updatedAt" | "publishedAt" | "scheduledAt" | "campaign";
 }

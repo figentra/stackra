@@ -77,8 +77,21 @@ export class RuleSet extends Model.with(HasPublicId("rset"), Timestamps, HasRevi
 and public id, numbered from 1. A revision's `data` is a frozen snapshot written once; a change is a new revision. A
 revision without `publishedAt` is a draft; publishing sets it, and publishing an older revision again rolls back to it
 (the current revision is the one published last). The owning package writes revisions through
-`Repository<Revision>`, as `@stackra/rules` does for its rule sets; a shared revision service, `Publishable` and
-`Schedulable` come later.
+`Repository<Revision>`, as `@stackra/rules` does for its rule sets, or through `RevisionService`: `draft`,
+`publish`, `current`, `rollback`, and for `Schedulable` models `schedule(…, at, campaign)`, `unschedule(campaign)` and
+`publishDue(now)`, which the tenant schedule of `@stackra/scheduler` calls. A preview is `findOneOrFail` by number.
+
+## Publishing and slugs
+
+```ts
+export class Page extends Model.with(HasPublicId("pag"), Publishable, Sluggable) {}
+
+page.slug = Translated.of({ en: slugOf(title.in("en")), ar: slugOf(title.in("ar")) }); // Arabic stays Arabic
+isPublished(page, clock.now()); // published, or scheduled for a time that has come
+```
+
+`Publishable` adds `publicationStatus` (`draft`, `scheduled`, `published`), `publishAt` and `publishedAt`;
+`Sluggable` adds `slug`, one per locale, unique by the model's own index.
 
 ## Tables
 
@@ -86,13 +99,12 @@ revision without `publishedAt` is a draft; publishing sets it, and publishing an
 (jsonb per locale), `required` and `rules` (choices and bounds, jsonb), unique on scope, model and key.
 `content.custom_field_value_sets` holds `id` (`cfv_…`), the scope, `model`, `record_id` and `values` (jsonb by field
 key), unique on model and record id. `content.revisions` holds `id` (`rev_…`), the scope, `model`, `record_id`,
-`number`, `data` (jsonb) and `published_at` (nullable), unique on model, record id and number. All three force
+`number`, `data` (jsonb), `published_at`, `scheduled_at` and `campaign` (nullable), unique on model, record id and number. All three force
 row-level security matching `scope_path` at or below the session's `app.scope_paths` (`Database.withScope`); no
 application code adds an isolation filter.
 
 ## Not here
 
-- The content traits `Publishable`, `Sluggable` and `Schedulable`, a shared revision service, the built-in content
-  type models, tenant-defined content types at runtime and headless delivery: later, each with its model design.
+- The built-in content type models, tenant-defined content types at runtime and headless delivery: later, each with its model design.
 - Removing a definition: `CrudService` has no delete; its policy is a data-wave decision.
 - The collaborative-editing `SnapshotStore` driver: the content service owns it (ADR 0270).

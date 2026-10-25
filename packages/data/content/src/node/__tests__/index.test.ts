@@ -20,7 +20,11 @@ describe("@stackra/content/node", () => {
       "CustomFieldValueSet",
       "HasCustomFields",
       "HasRevisions",
+      "Publishable",
       "Revision",
+      "RevisionService",
+      "Schedulable",
+      "Sluggable",
     ]);
   });
 

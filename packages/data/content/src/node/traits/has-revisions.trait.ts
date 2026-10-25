@@ -5,7 +5,7 @@
  * Boundary: adds no field and no column: the revisions live in the side table `content.revisions`, keyed by the model
  *           key and the record's public id, one frozen snapshot per number. The owning package writes and reads them
  *           through `Repository<Revision>`; the trait is recorded in the trait registry so gen can find the models
- *           that keep revisions. `Publishable`, `Schedulable` and their states are later traits.
+ *           that keep revisions. `RevisionService` drafts, publishes, schedules and rolls back.
  * Runtime: node
  * Governing contract: ADR 0321 (decisions 2 and 6: owned by @stackra/content); ADR 0116 (decision CT3); ADR 0096
  *                     (decision 2: `Has*` owns data); ADR 0294 (decision 27).

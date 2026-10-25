@@ -19,8 +19,11 @@ describe("@stackra/content", () => {
       "CustomFieldTakenError",
       "CustomFieldType",
       "CustomFieldsInvalidError",
+      "PublicationStatus",
       "checkCustomFieldDefinition",
       "checkCustomFields",
+      "isPublished",
+      "slugOf",
     ]);
   });
 
