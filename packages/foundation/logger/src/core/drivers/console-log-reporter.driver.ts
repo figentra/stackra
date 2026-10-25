@@ -8,8 +8,8 @@
  */
 import { Driver } from "@stackra/container";
 
-import { LogReporter } from "#core/ports/log-reporter.port";
-import type { LogRecord } from "#core/types/log-record.type";
+import { LogReporter } from "#contracts/ports/log-reporter.port";
+import type { LogRecord } from "#contracts/types/log-record.type";
 
 /** Writes each record as one JSON line to the console. */
 export class ConsoleLogReporterDriver extends Driver(LogReporter) {

@@ -8,7 +8,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 3, 4 and 11); ADR 0173 (nobody reads a value).
  */
-import { Secret, type SecretStore } from "@stackra/config";
+import { Secret } from "@stackra/config";
+import type { SecretStore } from "@stackra/config/contracts";
 import type { AnyClass } from "@stackra/container";
 
 import type { Connection } from "#core/bases/connection.base";

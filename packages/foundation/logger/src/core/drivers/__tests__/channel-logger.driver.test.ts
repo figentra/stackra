@@ -18,8 +18,8 @@ import { vi } from "vitest";
 
 import { LoggingConfig } from "#config/logging.config";
 import { ChannelLoggerDriver } from "#core/drivers/channel-logger.driver";
-import { LogReporter } from "#core/ports/log-reporter.port";
-import type { LogRecord } from "#core/types/log-record.type";
+import { LogReporter } from "#contracts/ports/log-reporter.port";
+import type { LogRecord } from "#contracts/types/log-record.type";
 
 const NOW = "2026-10-24T09:00:00.000Z";
 

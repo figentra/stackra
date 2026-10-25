@@ -15,7 +15,7 @@ import type { Assert, Fields, Same } from "@stackra/validation";
 import type { z } from "zod";
 
 import { LOGGING_CONFIG_SCHEMA } from "#core/constants/logging-config-schema.constant";
-import { LogLevel } from "#core/enums/log-level.enum";
+import { LogLevel } from "#contracts/enums/log-level.enum";
 import { LoggingOptions } from "#core/schemas/logging-options.schema";
 
 /** The check gen writes for a shape and its schema. */

@@ -1,24 +1,25 @@
 # @stackra/contracts
 
 The leaf vocabulary of Stackra: the `Port` and `Enum` bases, actor and id types, `Duration`, the platform enums, the
-core ports `Clock`, `Logger` and `IdentityResolver`, the manifest type and the four `stackra.config.ts` helpers.
+core ports `Clock`, `Logger`, `IdentityResolver`, `HealthIndicator`, `KeyProvider` and `FieldCipher`, the manifest type and the four `stackra.config.ts` helpers.
 
 **Tier:** `tier:lib` (`packages/foundation/contracts`), entry `.` only, no workspace dependency. Every other Stackra
 package may import it; it imports nothing.
 
 ## What is here
 
-| Symbol                                                                                                                    | Kind      | Use                                                                           |
-| ------------------------------------------------------------------------------------------------------------------------- | --------- | ----------------------------------------------------------------------------- |
-| `Port`                                                                                                                    | kind base | `abstract class X extends Port`: a contract a driver implements; its token    |
-| `Enum`                                                                                                                    | kind base | `export const X = Enum.of({...})` plus `export type X = Enum.Value<typeof X>` |
-| `Duration`                                                                                                                | value     | `Duration.minutes(10)` is `"PT10M"`; `parse`, `toMilliseconds`                |
-| `ActorKind`, `ApiArea`, `DataClassification`, `HttpMethod`, `Realm`, `SortDirection`, `Target`, `Tone`, `MigrationRunner` | enums     | the platform's closed sets                                                    |
-| `Clock`, `Logger`, `IdentityResolver`                                                                                     | ports     | inject by type; drivers live in container, logger and identity                |
-| `Actor`, `PublicId<P>`, `Branded<T, B>`, `Email`, `Url`, `Json`, `VerifiedPrincipal`                                      | types     | the caller, ids and value types the shape compiler knows                      |
-| `brand<B>()`                                                                                                              | function  | the one constructor of a branded type                                         |
-| `StackraManifest`                                                                                                         | type      | reading a committed `stackra.manifest.json`                                   |
-| `defineApp`, `defineService`, `definePackage`, `defineWorker`                                                             | functions | the one call in a member's `stackra.config.ts`                                |
+| Symbol                                                                                                                                    | Kind      | Use                                                                                       |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | --------- | ----------------------------------------------------------------------------------------- |
+| `Port`                                                                                                                                    | kind base | `abstract class X extends Port`: a contract a driver implements; its token                |
+| `Enum`                                                                                                                                    | kind base | `export const X = Enum.of({...})` plus `export type X = Enum.Value<typeof X>`             |
+| `Duration`                                                                                                                                | value     | `Duration.minutes(10)` is `"PT10M"`; `parse`, `toMilliseconds`                            |
+| `ActorKind`, `ApiArea`, `DataClassification`, `HttpMethod`, `Realm`, `SortDirection`, `Target`, `Tone`, `MigrationRunner`, `HealthStatus` | enums     | the platform's closed sets                                                                |
+| `Clock`, `Logger`, `IdentityResolver`                                                                                                     | ports     | inject by type; drivers live in container, logger and identity                            |
+| `HealthIndicator`, `KeyProvider`, `FieldCipher`                                                                                           | ports     | a probed dependency; envelope-encryption data keys; seal and open a field; no driver here |
+| `Actor`, `PublicId<P>`, `Branded<T, B>`, `Email`, `Url`, `Json`, `VerifiedPrincipal`, `HealthReport`, `DataKey`                           | types     | the caller, ids and value types the shape compiler knows                                  |
+| `brand<B>()`                                                                                                                              | function  | the one constructor of a branded type                                                     |
+| `StackraManifest`                                                                                                                         | type      | reading a committed `stackra.manifest.json`                                               |
+| `defineApp`, `defineService`, `definePackage`, `defineWorker`                                                                             | functions | the one call in a member's `stackra.config.ts`                                            |
 
 ## Enums
 

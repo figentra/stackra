@@ -1,7 +1,7 @@
 # AGENTS — @stackra/config
 
 Configuration classes, secret references and env hydration. Member at `packages/foundation/config` (`tier:lib`), in
-the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./testing`.
+the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./react`, `./testing`.
 
 ## Where code goes
 
@@ -9,7 +9,7 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./te
 | --------------------------------------- | --------------------------------------------------------- |
 | The kind base (`Config`)                | `src/core/bases/config.base.ts`                           |
 | A decorator                             | `src/core/decorators/<name>.decorator.ts`                 |
-| A port (no `./contracts` entry here)    | `src/core/ports/<name>.port.ts`                           |
+| A port (the `./contracts` entry)        | `src/contracts/ports/<name>.port.ts`                      |
 | A function, a type, a constant, a error | `src/core/{functions,types,constants,errors}/`            |
 | React code                              | `src/react/<name>/`                                       |
 | The testing plugin                      | `src/testing/constants/config-testing-plugin.constant.ts` |
@@ -17,7 +17,7 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./te
 
 ## Entries and barrels
 
-- `src/{core,react,testing}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new
+- `src/{core,contracts,react,testing}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add every new
   public file to its barrel and to that entry's `index.test.ts`.
 - The old `./env` entry is folded into `.`; `MigrationRunner` lives in `@stackra/contracts`.
 - `./testing` registers its plugin when imported; `sideEffects` stays `false` (only vitest loads it).

@@ -8,7 +8,7 @@
  * Governing contract: ADR 0294 (decision 19); ADR 0296 (decision 1); ADR 0146 (decision 3, as amended).
  */
 import type { Config } from "#core/bases/config.base";
-import type { SecretStore } from "#core/ports/secret-store.port";
+import type { SecretStore } from "#contracts/ports/secret-store.port";
 import type { ConfigValues } from "#core/types/config-values.type";
 
 /** The layers applied after construction. */

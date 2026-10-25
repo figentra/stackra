@@ -10,7 +10,7 @@
  * Governing contract: ADR 0173 (secrets by name); ADR 0294 (decision 17: dependencies by type); ADR 0127 2026-10-24
  *                     note (`./worker` entry).
  */
-import { SecretStore } from "@stackra/config";
+import { SecretStore } from "@stackra/config/contracts";
 import { Driver } from "@stackra/container";
 
 import { CaptchaVerifier } from "#contracts/ports/captcha-verifier.port";

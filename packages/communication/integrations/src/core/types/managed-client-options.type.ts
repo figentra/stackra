@@ -8,7 +8,7 @@
  * Governing contract: ADR 0308 (rules 4, 7 and 13).
  */
 import type { RateLimitStore } from "@stackra/actions/contracts";
-import type { SecretStore } from "@stackra/config";
+import type { SecretStore } from "@stackra/config/contracts";
 import type { Clock } from "@stackra/contracts";
 
 import type { Connection } from "#core/bases/connection.base";

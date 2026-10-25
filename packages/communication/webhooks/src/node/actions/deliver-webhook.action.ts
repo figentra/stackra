@@ -12,7 +12,7 @@
  * Governing contract: ADR 0224 (decisions 2 and 3); ADR 0305 (rules 28 and 30); ADR 0148 (decision 1); ADR 0173.
  */
 import { Action, type ActionContext } from "@stackra/actions";
-import type { SecretStore } from "@stackra/config";
+import type { SecretStore } from "@stackra/config/contracts";
 import { ActorKind } from "@stackra/contracts";
 import type { Clock } from "@stackra/contracts";
 import { Backoff } from "@stackra/queue";

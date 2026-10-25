@@ -15,7 +15,8 @@ import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { registerSchemas, Schema } from "@stackra/validation";
 import { z } from "zod";
 
-import { Config, ConfigInvalidError, Secret, SecretStore } from "#core/index";
+import { SecretStore } from "#contracts/ports/secret-store.port";
+import { Config, ConfigInvalidError, Secret } from "#core/index";
 import "#testing/index";
 
 class KitOptions extends Schema {

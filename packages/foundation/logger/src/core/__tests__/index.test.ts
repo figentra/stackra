@@ -12,16 +12,14 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { LOGGING_CONFIG_SCHEMA } from "#core/constants/logging-config-schema.constant";
 import { TELEMETRY_CONFIG_SCHEMA } from "#core/constants/telemetry-config-schema.constant";
+import type { LogLevel, LogRecord } from "#contracts/index";
 import * as logger from "#core/index";
-import type { LogLevel, LogRecord } from "#core/index";
 
 describe("@stackra/logger", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(logger).sort()).toEqual([
       "ChannelLoggerDriver",
       "ConsoleLogReporterDriver",
-      "LogLevel",
-      "LogReporter",
       "LoggingConfig",
       "LoggingConfig$",
       "LoggingOptions",
@@ -35,6 +33,11 @@ describe("@stackra/logger", () => {
   it("exports the shipped schemas under their generated names", () => {
     expect(logger.LoggingConfig$).toBe(LOGGING_CONFIG_SCHEMA);
     expect(logger.TelemetryConfig$).toBe(TELEMETRY_CONFIG_SCHEMA);
+  });
+
+  it("leaves the reporter port to the contracts entry", () => {
+    expect("LogReporter" in logger).toBe(false);
+    expect("LogLevel" in logger).toBe(false);
   });
 
   it("resolves its public types", () => {

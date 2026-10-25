@@ -12,7 +12,7 @@
 import { Num, registerSchemas, Schema } from "@stackra/validation";
 
 import { LOGGING_CONFIG_SCHEMA } from "#core/constants/logging-config-schema.constant";
-import { LogLevel } from "#core/enums/log-level.enum";
+import { LogLevel } from "#contracts/enums/log-level.enum";
 
 /**
  * The logger's settings.

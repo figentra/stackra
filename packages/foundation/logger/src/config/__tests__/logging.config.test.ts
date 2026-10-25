@@ -13,7 +13,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { LoggingConfig } from "#config/logging.config";
 import { LOGGING_CONFIG_SCHEMA } from "#core/constants/logging-config-schema.constant";
-import type { LogLevel } from "#core/enums/log-level.enum";
+import type { LogLevel } from "#contracts/enums/log-level.enum";
 
 /** The template's override, under the plain name with the package class aliased. */
 const BaseLoggingConfig = LoggingConfig;

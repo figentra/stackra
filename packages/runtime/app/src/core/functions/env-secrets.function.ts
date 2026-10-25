@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0173 (Infisical sync into the runtimes); ADR 0294 (decision 19); ADR 0146 as amended.
  */
-import { SecretStore } from "@stackra/config";
+import { SecretStore } from "@stackra/config/contracts";
 
 /**
  * A secret store over `env`.

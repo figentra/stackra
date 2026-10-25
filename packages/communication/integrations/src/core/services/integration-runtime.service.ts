@@ -12,7 +12,7 @@
  * Governing contract: ADR 0308 (rules 3, 4, 6, 7, 12, 13 and 20); ADR 0173 (secrets); ADR 0294 (decision 17).
  */
 import type { RateLimitStore } from "@stackra/actions/contracts";
-import type { SecretStore } from "@stackra/config";
+import type { SecretStore } from "@stackra/config/contracts";
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 

@@ -18,7 +18,7 @@ export const PLATFORM_BINDINGS: Readonly<Record<string, readonly ClassRef[]>> = 
     { name: "ContextStorage", from: "@stackra/actions/contracts" },
   ],
   "@stackra/integrations#IntegrationRuntime": [
-    { name: "SecretStore", from: "@stackra/config" },
+    { name: "SecretStore", from: "@stackra/config/contracts" },
     { name: "RateLimitStore", from: "@stackra/actions/contracts" },
     { name: "Clock", from: "@stackra/contracts" },
   ],
@@ -28,7 +28,7 @@ export const PLATFORM_BINDINGS: Readonly<Record<string, readonly ClassRef[]>> = 
   ],
   "@stackra/webhooks#WebhookReceiver": [
     { name: "ConnectionStore", from: "@stackra/integrations" },
-    { name: "SecretStore", from: "@stackra/config" },
+    { name: "SecretStore", from: "@stackra/config/contracts" },
     { name: "EventOutbox", from: "@stackra/events/contracts" },
     { name: "Clock", from: "@stackra/contracts" },
   ],

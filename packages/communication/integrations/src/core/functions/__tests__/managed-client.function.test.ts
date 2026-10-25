@@ -11,7 +11,8 @@
  * Governing contract: ADR 0022 (test placement); ADR 0308 (rules 4, 6, 13 and 20); ADR 0217.
  */
 import { MemoryRateLimitStoreDriver } from "@stackra/actions";
-import { Secret, SecretStore } from "@stackra/config";
+import { Secret } from "@stackra/config";
+import { SecretStore } from "@stackra/config/contracts";
 import { Clock } from "@stackra/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";

@@ -10,8 +10,8 @@
 import { Port } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
-import { LogReporter } from "#core/ports/log-reporter.port";
-import type { LogRecord } from "#core/types/log-record.type";
+import { LogReporter } from "#contracts/ports/log-reporter.port";
+import type { LogRecord } from "#contracts/types/log-record.type";
 
 describe("LogReporter", () => {
   it("is a port a reporter implements", () => {

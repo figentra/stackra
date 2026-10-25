@@ -9,7 +9,7 @@
 import { Enum } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
-import { LogLevel } from "#core/enums/log-level.enum";
+import { LogLevel } from "#contracts/enums/log-level.enum";
 
 describe("LogLevel", () => {
   it("lists the four levels lowest first", () => {

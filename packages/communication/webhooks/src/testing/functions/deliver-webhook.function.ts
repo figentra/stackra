@@ -11,7 +11,7 @@
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3); ADR 0308 (rules 15 and 16); ADR 0224.
  */
-import { SecretStore } from "@stackra/config";
+import { SecretStore } from "@stackra/config/contracts";
 import { Clock } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
 import type { WebhookEventClass } from "@stackra/events";

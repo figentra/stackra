@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0147 (decision 1: structured JSON); ADR 0184 (logs carry no personal data).
  */
-import type { LogLevel } from "#core/enums/log-level.enum";
+import type { LogLevel } from "#contracts/enums/log-level.enum";
 
 /** One log line. */
 export interface LogRecord {

@@ -10,7 +10,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0308 (rules 15, 16 and 20); ADR 0078 (decision 4).
  */
-import { Secret, SecretStore } from "@stackra/config";
+import { Secret } from "@stackra/config";
+import { SecretStore } from "@stackra/config/contracts";
 import type { Clock } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
 import { WebhookEvent } from "@stackra/events";

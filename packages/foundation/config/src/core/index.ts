@@ -14,7 +14,6 @@ export { ConfigInvalidError } from "#core/errors/config-invalid.error";
 export { buildConfig } from "#core/functions/build-config.function";
 export { configKey } from "#core/functions/config-key.function";
 export { hydrateEnv } from "#core/functions/hydrate-env.function";
-export { SecretStore } from "#core/ports/secret-store.port";
 export type { BuildFacts } from "#core/types/build-facts.type";
 export type { ConfigClass } from "#core/types/config-class.type";
 export type { ConfigIssue } from "#core/types/config-issue.type";

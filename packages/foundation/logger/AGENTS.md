@@ -1,17 +1,17 @@
 # AGENTS — @stackra/logger
 
 The driver behind the `Logger` port, its reporter and two configurations. Member at `packages/foundation/logger`
-(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). One entry, `.`.
+(`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.` and `./contracts`.
 
 ## Where code goes
 
-| You are writing…                     | It goes in…                                           |
-| ------------------------------------ | ----------------------------------------------------- |
-| A configuration                      | `src/config/<name>.config.ts`                         |
-| A driver                             | `src/core/drivers/<name>.driver.ts`                   |
-| A port (no `./contracts` entry here) | `src/core/ports/<name>.port.ts`                       |
-| A function, enum, constant, schema   | `src/core/{functions,enums,constants,schemas,types}/` |
-| A test                               | `__tests__/<name>.<kind>.test.ts` beside it           |
+| You are writing…                   | It goes in…                                 |
+| ---------------------------------- | ------------------------------------------- |
+| A configuration                    | `src/config/<name>.config.ts`               |
+| A driver                           | `src/core/drivers/<name>.driver.ts`         |
+| A port, its enum and types         | `src/contracts/{ports,enums,types}/`        |
+| A function, enum, constant, schema | `src/core/{functions,constants,schemas}/`   |
+| A test                             | `__tests__/<name>.<kind>.test.ts` beside it |
 
 ## This package
 
@@ -19,7 +19,7 @@ The driver behind the `Logger` port, its reporter and two configurations. Member
   driver directly.
 - Every record passes `redact` before any reporter sees it. A new reporter reuses `redact`; never bypass it.
 - `.` stays bundle-safe (no `node:*`); the console reporter writes through `console`.
-- `src/core/index.ts` is a stand-in barrel until gen writes the entry barrels (STA-339).
+- `src/{core,contracts}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339).
 
 ## Rules that fail the build
 

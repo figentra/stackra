@@ -11,7 +11,7 @@ import { Container, Driver } from "@stackra/container";
 import { Port } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
-import { SecretStore } from "#core/ports/secret-store.port";
+import { SecretStore } from "#contracts/ports/secret-store.port";
 
 class RecordSecretStoreDriver extends Driver(SecretStore) {
   get(name: string): string | undefined {

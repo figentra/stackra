@@ -23,6 +23,11 @@
       "./src/config/*",
       "./src/config/*.ts"
     ],
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*/index.ts"
+    ],
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
@@ -34,6 +39,11 @@
       "@stackra/source": "./src/core/index.ts",
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
+    },
+    "./contracts": {
+      "@stackra/source": "./src/contracts/index.ts",
+      "types": "./dist/contracts.d.mts",
+      "default": "./dist/contracts.mjs"
     }
   },
   "publishConfig": {

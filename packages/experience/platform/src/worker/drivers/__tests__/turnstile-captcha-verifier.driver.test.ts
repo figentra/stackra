@@ -7,7 +7,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0173 (secrets by name).
  */
-import { SecretStore } from "@stackra/config";
+import { SecretStore } from "@stackra/config/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 

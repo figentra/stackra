@@ -11,8 +11,8 @@ import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { ConsoleLogReporterDriver } from "#core/drivers/console-log-reporter.driver";
-import { LogReporter } from "#core/ports/log-reporter.port";
-import type { LogRecord } from "#core/types/log-record.type";
+import { LogReporter } from "#contracts/ports/log-reporter.port";
+import type { LogRecord } from "#contracts/types/log-record.type";
 
 const RECORD: LogRecord = {
   time: "2026-10-24T09:00:00.000Z",

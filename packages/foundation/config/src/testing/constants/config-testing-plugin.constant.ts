@@ -15,7 +15,8 @@ import { registerTestingPlugin } from "@stackra/container/testing";
 import type { TestingModuleBuilder, TestingPlugin } from "@stackra/container/testing";
 
 import { configRoot } from "#core/functions/config-root.function";
-import { buildConfig, SecretStore } from "#core/index";
+import { SecretStore } from "#contracts/ports/secret-store.port";
+import { buildConfig } from "#core/index";
 import type { Config, ConfigValues } from "#core/index";
 
 declare module "@stackra/container/testing" {

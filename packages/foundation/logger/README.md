@@ -4,21 +4,21 @@ Stackra logging: the driver behind the `Logger` port of `@stackra/contracts`, wi
 redaction, the `LogReporter` port with its console driver, and two configurations, `LoggingConfig` and
 `TelemetryConfig`, with the schemas they ship.
 
-**Tier:** `tier:lib` (`packages/foundation/logger`). One entry, `.`. Depends on `@stackra/contracts`,
+**Tier:** `tier:lib` (`packages/foundation/logger`). Entries `.` and `./contracts`. Depends on `@stackra/contracts`,
 `@stackra/container`, `@stackra/validation`, `@stackra/config` and zod.
 
 ## What is here
 
-| Symbol                                    | Use                                                                                            |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `LoggingConfig`, `LoggingConfig$`         | key `logger.logging`: `level`, `channels`, `sampleRate`, `redaction.extraFields`               |
-| `TelemetryConfig`, `TelemetryConfig$`     | key `logger.telemetry`: `dsn`, `errors`, `traces`, `replay`, `vitals`, `budgets`, `lighthouse` |
-| `LoggingOptions`, `TelemetryOptions`      | the shapes of the two configurations, for restating a field type in an override                |
-| `ChannelLoggerDriver`                     | the driver of `Logger`: filters, samples, redacts, hands a `LogRecord` to the reporter         |
-| `LogReporter`, `ConsoleLogReporterDriver` | where records go; the console driver writes one JSON line per record                           |
-| `LogLevel`                                | `debug`, `info`, `warn`, `error`, lowest first                                                 |
-| `redact`                                  | the redaction every line passes; reusable by another reporter                                  |
-| `LogRecord`                               | type: `{ time, level, event, channel, fields }`                                                |
+| Symbol                                | Use                                                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `LoggingConfig`, `LoggingConfig$`     | key `logger.logging`: `level`, `channels`, `sampleRate`, `redaction.extraFields`                             |
+| `TelemetryConfig`, `TelemetryConfig$` | key `logger.telemetry`: `dsn`, `errors`, `traces`, `replay`, `vitals`, `budgets`, `lighthouse`               |
+| `LoggingOptions`, `TelemetryOptions`  | the shapes of the two configurations, for restating a field type in an override                              |
+| `ChannelLoggerDriver`                 | the driver of `Logger`: filters, samples, redacts, hands a `LogRecord` to the reporter                       |
+| `ConsoleLogReporterDriver`            | where records go (the `LogReporter` port, `./contracts`); the console driver writes one JSON line per record |
+| `LogLevel` (`./contracts`)            | `debug`, `info`, `warn`, `error`, lowest first                                                               |
+| `redact`                              | the redaction every line passes; reusable by another reporter                                                |
+| `LogRecord` (`./contracts`)           | type: `{ time, level, event, channel, fields }`                                                              |
 
 ## Logging
 

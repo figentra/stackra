@@ -14,10 +14,10 @@ import { Driver } from "@stackra/container";
 import { Clock, Enum, Logger } from "@stackra/contracts";
 
 import { LoggingConfig } from "#config/logging.config";
-import { LogLevel } from "#core/enums/log-level.enum";
+import { LogLevel } from "#contracts/enums/log-level.enum";
 import { redact } from "#core/functions/redact.function";
-import { LogReporter } from "#core/ports/log-reporter.port";
-import type { LogRecord } from "#core/types/log-record.type";
+import { LogReporter } from "#contracts/ports/log-reporter.port";
+import type { LogRecord } from "#contracts/types/log-record.type";
 
 /** The levels in severity order: a level's index is its rank. */
 const LEVELS: readonly LogLevel[] = Enum.values(LogLevel);

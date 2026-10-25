@@ -4,24 +4,24 @@ Stackra configuration: deploy-time values as classes. A configuration is `class 
 the class is the DI token, its key is derived, its fields come from the schema, and secrets are named on schema fields
 with `@Secret("NAME")` and resolved blind.
 
-**Tier:** `tier:lib` (`packages/foundation/config`). Entries `.`, `./react` and `./testing`. Depends on
+**Tier:** `tier:lib` (`packages/foundation/config`). Entries `.`, `./contracts`, `./react` and `./testing`. Depends on
 `@stackra/contracts`, `@stackra/container`, `@stackra/validation` and zod; React is an optional peer of `./react`.
 
 ## What is here
 
-| Entry       | Symbol                                     | Use                                                                      |
-| ----------- | ------------------------------------------ | ------------------------------------------------------------------------ |
-| `.`         | `Config`                                   | `extends Config({ schema, env })`, called only                           |
-| `.`         | `Secret`                                   | `@Secret("RESEND_API_KEY")` on a schema, integration or connection field |
-| `.`         | `SecretStore`                              | the port secrets resolve through; the runtime binds its driver           |
-| `.`         | `buildConfig`                              | the runtime's one way to make a configuration instance                   |
-| `.`         | `hydrateEnv`                               | the generated `#stackra/env`: public part, or the whole instance         |
-| `.`         | `env`                                      | `env.str()`, `env.url()`, `env.enum([...])` for build-time files         |
-| `.`         | `configKey`                                | the key derivation gen shares                                            |
-| `.`         | `ConfigInvalidError`                       | thrown at boot; names paths, variables and secrets, never values         |
-| `.`         | `BuildFacts`, `PublicPart`, `ConfigValues` | types                                                                    |
-| `./react`   | `useConfig`                                | `const site = useConfig(SiteConfig)` in a component                      |
-| `./testing` | `.withConfig`, `.withSecrets`              | added to `createTestingModule(...)` when the entry loads                 |
+| Entry         | Symbol                                     | Use                                                                      |
+| ------------- | ------------------------------------------ | ------------------------------------------------------------------------ |
+| `.`           | `Config`                                   | `extends Config({ schema, env })`, called only                           |
+| `.`           | `Secret`                                   | `@Secret("RESEND_API_KEY")` on a schema, integration or connection field |
+| `.`           | `buildConfig`                              | the runtime's one way to make a configuration instance                   |
+| `.`           | `hydrateEnv`                               | the generated `#stackra/env`: public part, or the whole instance         |
+| `.`           | `env`                                      | `env.str()`, `env.url()`, `env.enum([...])` for build-time files         |
+| `.`           | `configKey`                                | the key derivation gen shares                                            |
+| `.`           | `ConfigInvalidError`                       | thrown at boot; names paths, variables and secrets, never values         |
+| `.`           | `BuildFacts`, `PublicPart`, `ConfigValues` | types                                                                    |
+| `./contracts` | `SecretStore`                              | the port secrets resolve through; the runtime binds its driver           |
+| `./react`     | `useConfig`                                | `const site = useConfig(SiteConfig)` in a component                      |
+| `./testing`   | `.withConfig`, `.withSecrets`              | added to `createTestingModule(...)` when the entry loads                 |
 
 ## Declaring a configuration
 

@@ -17,11 +17,11 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { registerSchemas, Schema } from "@stackra/validation";
 import { z } from "zod";
 
+import { SecretStore } from "#contracts/ports/secret-store.port";
 import { Config } from "#core/bases/config.base";
 import { Secret } from "#core/decorators/secret.decorator";
 import { ConfigInvalidError } from "#core/errors/config-invalid.error";
 import { buildConfig } from "#core/functions/build-config.function";
-import { SecretStore } from "#core/ports/secret-store.port";
 
 /** A value no output may contain. */
 const CANARY = "sk_live_canary_0123456789";

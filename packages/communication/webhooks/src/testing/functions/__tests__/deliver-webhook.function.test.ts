@@ -9,7 +9,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269 (decision 3); ADR 0308 (rules 15 and 16).
  */
-import { Secret, SecretStore } from "@stackra/config";
+import { Secret } from "@stackra/config";
+import { SecretStore } from "@stackra/config/contracts";
 import { Module } from "@stackra/container";
 import { createTestingModule, registerWiring } from "@stackra/container/testing";
 import { WebhookEvent } from "@stackra/events";

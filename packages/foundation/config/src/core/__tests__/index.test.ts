@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/config`
- *          (`Config`, `Secret`, `env`, `hydrateEnv`) and the registry row's layering, key derivation, port and error
+ *          (`Config`, `Secret`, `env`, `hydrateEnv`) and the registry row's layering, key derivation, and error
  *          are exported, nothing else is (`MigrationRunner` left for @stackra/contracts), and the public types
  *          resolve, `BuildFacts` and `PublicPart` among them.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
@@ -32,7 +32,6 @@ describe("@stackra/config", () => {
       "Config",
       "ConfigInvalidError",
       "Secret",
-      "SecretStore",
       "buildConfig",
       "configKey",
       "env",

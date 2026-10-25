@@ -14,7 +14,8 @@
  * Governing contract: ADR 0308 (rules 15, 16 and 20); ADR 0224 (decision 4, as amended); ADR 0078 (decision 4: inbox
  *                     dedup); ADR 0173 (secrets read blind).
  */
-import { Secret, type SecretStore } from "@stackra/config";
+import { Secret } from "@stackra/config";
+import type { SecretStore } from "@stackra/config/contracts";
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
