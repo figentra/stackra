@@ -24,6 +24,15 @@ const WORDS = { yes: "Yes", no: "No", from: "From", until: "Until" } as const;
 const NAMED_CHOICES = 2;
 
 /**
+ * The labels as one list in `locale`. Hermes (React Native) has no `Intl.ListFormat`, so there the labels are joined
+ * with commas, which is what the English narrow list gives.
+ */
+const listOf = (labels: readonly string[], locale: string): string =>
+  typeof Intl.ListFormat === "function"
+    ? new Intl.ListFormat(locale, { type: "conjunction", style: "narrow" }).format(labels)
+    : labels.join(", ");
+
+/**
  * Says what a filter chip shows for the filter's value.
  * @param definition - the filter, which tells the kind, the options, the number format and the boolean words
  * @param value - what the query holds under the filter's `id`, or `undefined` when it holds nothing
@@ -48,9 +57,7 @@ export function filterChipTextOf(
       const labels = ids.map(
         (id) => definition.options.find((option) => option.id === id)?.label ?? id,
       );
-      if (labels.length <= NAMED_CHOICES) {
-        return new Intl.ListFormat(locale, { type: "conjunction", style: "narrow" }).format(labels);
-      }
+      if (labels.length <= NAMED_CHOICES) return listOf(labels, locale);
       return `${labels.slice(0, NAMED_CHOICES).join(", ")} +${labels.length - NAMED_CHOICES}`;
     }
     case "number": {

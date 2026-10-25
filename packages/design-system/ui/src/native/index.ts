@@ -15,6 +15,7 @@ export { AppShell, type AppShellProps } from "#native/app-shell/app-shell";
 export { Avatar, type AvatarProps } from "#native/avatar/avatar";
 export { Badge, type BadgeAnchorProps, type BadgeProps } from "#native/badge/badge";
 export { Breadcrumbs, type BreadcrumbsProps } from "#native/breadcrumbs/breadcrumbs";
+export { BulkActionBar, type BulkActionBarProps } from "#native/bulk-action-bar/bulk-action-bar";
 export { Button, type ButtonProps } from "#native/button/button";
 export { Card, type CardProps } from "#native/card/card";
 export type { CardTitleProps } from "#native/card/card-title";
@@ -32,6 +33,9 @@ export {
   CursorPagination,
   type CursorPaginationProps,
 } from "#native/cursor-pagination/cursor-pagination";
+export { DataTable, type DataTableProps } from "#native/data-table/data-table";
+export { DateField, type DateFieldProps } from "#native/date-field/date-field";
+export { DatePicker, type DatePickerProps } from "#native/date-picker/date-picker";
 export { Description, type DescriptionProps } from "#native/description/description";
 export { DesignSystemProvider } from "#native/design-system-provider/design-system-provider";
 export { useDesignSystem } from "#native/design-system-provider/use-design-system";
@@ -39,8 +43,10 @@ export { Drawer, type DrawerProps } from "#native/drawer/drawer";
 export type { DrawerCloseProps } from "#native/drawer/drawer-close";
 export type { DrawerTitleProps } from "#native/drawer/drawer-title";
 export { EmptyState, type EmptyStateProps } from "#native/empty-state/empty-state";
+export { EntityPicker, type EntityPickerProps } from "#native/entity-picker/entity-picker";
 export { ErrorState, type ErrorStateProps } from "#native/error-state/error-state";
 export { FieldError, type FieldErrorProps } from "#native/field-error/field-error";
+export { FilterBar, type FilterBarProps } from "#native/filter-bar/filter-bar";
 export { FormField, type FormFieldProps } from "#native/form-field/form-field";
 export { FormSection, type FormSectionProps } from "#native/form-section/form-section";
 export { Form, type FormProps } from "#native/form/form";
@@ -65,6 +71,7 @@ export {
   type NavigationHeaderProps,
 } from "#native/navigation-header/navigation-header";
 export { NavigationList, type NavigationListProps } from "#native/navigation-list/navigation-list";
+export { NumberField, type NumberFieldProps } from "#native/number-field/number-field";
 export { PageHeader, type PageHeaderProps } from "#native/page-header/page-header";
 export { PageSkeleton, type PageSkeletonProps } from "#native/page-skeleton/page-skeleton";
 export { Popover, type PopoverProps } from "#native/popover/popover";

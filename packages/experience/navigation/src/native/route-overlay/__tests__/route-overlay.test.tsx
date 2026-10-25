@@ -4,8 +4,8 @@
  *          and footer, pops the screen on close, keeps the stack's swipe-down in step with `isDismissable` and clears
  *          the status bar only when full-screen; a `sheet` or `drawer` screen opens `@stackra/ui`'s inset `Drawer`
  *          open, pops the screen when the sheet closes and hands it `isDismissable`; `complete` pops and then opens
- *          the given path; `setDismissable` reaches both forms; and nothing is popped when there is nowhere to go back
- *          to.
+ *          the given path; `setDismissable` reaches both forms; and a cold-start overlay, with nothing to go back
+ *          to, is replaced with its stack's first screen.
  * Boundary: React Native does not render in vitest, so React Navigation, `@stackra/ui/native`, react-native and the
  *           safe-area hook are replaced by recording stand-ins that render plain DOM; what reaches them is checked, not
  *           how it draws, and the sheet over a native modal is a device check.
@@ -28,6 +28,15 @@ const nav = vi.hoisted(() => ({
   canGoBack: vi.fn(() => true),
   setOptions: vi.fn(),
   linkTo: vi.fn(),
+  replace: vi.fn(),
+  getState: vi.fn(() => STACK),
+}));
+
+/** The stack a cold-start deep link builds: only the overlay, over a stack whose first screen is Home. */
+const STACK = vi.hoisted(() => ({
+  routeNames: ["Home", "Order"],
+  routes: [{ name: "Order" }],
+  index: 0,
 }));
 
 vi.mock("@react-navigation/native", () => ({
@@ -106,7 +115,9 @@ describe("RouteOverlay (native)", () => {
     nav.goBack.mockClear();
     nav.setOptions.mockClear();
     nav.linkTo.mockClear();
+    nav.replace.mockClear();
     nav.canGoBack.mockReturnValue(true);
+    nav.getState.mockReturnValue(STACK);
   });
 
   it.each(["modal", "full-screen"] as const)(
@@ -216,10 +227,35 @@ describe("RouteOverlay (native)", () => {
     expect(nav.linkTo).toHaveBeenCalledWith("/orders/ord_1");
   });
 
-  it("pops nothing when there is nowhere to go back to", () => {
+  it("replaces a cold-start overlay with its stack's first screen, since there is nothing to go back to", () => {
     nav.canGoBack.mockReturnValue(false);
     render(<RouteOverlay title="T" closeLabel="Close" />);
     act(() => screen.getByRole("button", { name: "Close" }).click());
     expect(nav.goBack).not.toHaveBeenCalled();
+    expect(nav.replace).toHaveBeenCalledWith("Home");
+  });
+
+  it("completes a cold-start overlay by leaving it for the first screen and then opening the path", () => {
+    nav.canGoBack.mockReturnValue(false);
+    render(
+      <RouteOverlay title="T" closeLabel="Close">
+        <Inside />
+      </RouteOverlay>,
+    );
+    act(() => screen.getByRole("button", { name: "Done" }).click());
+    expect(nav.replace).toHaveBeenCalledWith("Home");
+    expect(nav.linkTo).toHaveBeenCalledWith("/orders/ord_1");
+  });
+
+  it("replaces nothing when the overlay is itself the stack's first screen", () => {
+    nav.canGoBack.mockReturnValue(false);
+    nav.getState.mockReturnValue({
+      routeNames: ["Order"],
+      routes: [{ name: "Order" }],
+      index: 0,
+    });
+    render(<RouteOverlay title="T" closeLabel="Close" />);
+    act(() => screen.getByRole("button", { name: "Close" }).click());
+    expect(nav.replace).not.toHaveBeenCalled();
   });
 });
