@@ -22,9 +22,11 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only.
 ## This package
 
 - Runtime dependencies are `@stackra/contracts`, `@stackra/validation` and `zod` only.
-- `validateCatalogue` is pure and never throws on untrusted input. Any new check keeps the output independent of input
+- `validateCatalogue`, `canTransitionReview` and `planEditionInstall` are pure and never throw on untrusted input. Any new check keeps the output independent of input
   order: walk manifests in the sorted order, and compare strings by code unit, never with `localeCompare`.
 - A new diagnostic code is a new case of `CatalogueDiagnosticCode`, snake_case.
+- Configuration, not code: fee rates, sandbox counts and lifetimes, and review rules are records and settings the
+  service passes in; only the transitions, the arithmetic and the install order live here.
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 
 ## Rules that fail the build
@@ -41,6 +43,6 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only.
 
 ## PII
 
-| Data | Where | Handling                                        |
-| ---- | ----- | ----------------------------------------------- |
-| None | —     | Manifests hold identities only; nothing stored. |
+| Data | Where                                                                       | Handling                                                         |
+| ---- | --------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Ids  | `AppReview.reviewer`, `DeveloperSandbox.developer`, `PartnerPayout.partner` | Principal and organisation public ids only; nothing stored here. |
