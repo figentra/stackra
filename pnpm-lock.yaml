@@ -1046,6 +1046,9 @@ importers:
       lucide-react-native:
         specifier: catalog:mobile
         version: 1.54.0(@types/react@19.3.0)(react-native-svg@15.15.4(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@10.2.2))(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0))(react-native@0.86.3(@babel/core@7.29.7(supports-color@10.2.2))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@10.2.2))(supports-color@10.2.2))(@types/react@19.3.0)(react@19.3.0)(supports-color@10.2.2))(react@19.3.0)
+      motion:
+        specifier: catalog:frontend
+        version: 12.43.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       oxfmt:
         specifier: catalog:quality
         version: 0.71.0
@@ -1091,6 +1094,9 @@ importers:
 
   packages/design-system/ui-pro:
     dependencies:
+      '@stackra/tokens':
+        specifier: workspace:*
+        version: link:../tokens
       '@stackra/ui':
         specifier: workspace:*
         version: link:../ui

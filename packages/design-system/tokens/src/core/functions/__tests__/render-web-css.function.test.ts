@@ -57,7 +57,7 @@ describe("renderWebCss", () => {
 
   it("stops motion under prefers-reduced-motion and sets the Arabic stack for lang(ar)", () => {
     expect(css).toContain(
-      "@media (prefers-reduced-motion: reduce) {\n  :root {\n    --duration-fast: 0ms;\n    --duration-base: 0ms;\n    --duration-blink: 0ms;\n  }\n",
+      "@media (prefers-reduced-motion: reduce) {\n  :root {\n    --duration-fast: 0ms;\n    --duration-base: 0ms;\n    --duration-blink: 0ms;\n    --duration-reveal: 0ms;\n    --duration-stagger: 0ms;\n  }\n",
     );
     expect(css).toContain(":root:lang(ar) {\n  font-family: var(--font-arabic);\n}");
   });

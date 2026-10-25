@@ -161,6 +161,7 @@ export type { RadioGroupContractProps } from "#contracts/types/radio-group-contr
 export type { ResourceAction } from "#contracts/types/resource-action.type";
 export type { ResourceQueryContractProps } from "#contracts/types/resource-query-contract-props.type";
 export type { ResourceQuery } from "#contracts/types/resource-query.type";
+export type { RevealContractProps } from "#contracts/types/reveal-contract-props.type";
 export type { ScreenContractProps } from "#contracts/types/screen-contract-props.type";
 export type { SearchFieldContractProps } from "#contracts/types/search-field-contract-props.type";
 export type { SectionContractProps } from "#contracts/types/section-contract-props.type";

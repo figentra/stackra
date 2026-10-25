@@ -429,6 +429,7 @@
               "adr/0326-app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets",
               "adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer",
               "adr/0328-value-classes-are-built-with-create-and-containers-are-never-constructed",
+              "adr/0329-motion-layer-tokens-reveal-and-animation-on-by-default",
               "adr/0330-shortcut-chords-on-a-tanstack-hotkeys-driver",
               "adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer",
               "adr/0332-stackra-segments-audiences-defined-by-rules",

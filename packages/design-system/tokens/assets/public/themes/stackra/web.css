@@ -72,6 +72,10 @@
   --ease-base: ease-in-out;
   --duration-blink: 1000ms;
   --ease-blink: steps(1);
+  --duration-reveal: 400ms;
+  --ease-reveal: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-stagger: 40ms;
+  --ease-stagger: linear;
   --material-thin-blur: 12px;
   --material-thin-saturate: 1.6;
   --material-regular-blur: 20px;
@@ -286,6 +290,8 @@
     --duration-fast: 0ms;
     --duration-base: 0ms;
     --duration-blink: 0ms;
+    --duration-reveal: 0ms;
+    --duration-stagger: 0ms;
   }
   .skeleton--shimmer::after,
   .skeleton--shimmer::before,

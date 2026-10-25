@@ -58,6 +58,7 @@ import { ProgressBarScreen as FreeProgressBarScreen } from "./free/progress-bar-
 import { ProgressCircleScreen as FreeProgressCircleScreen } from "./free/progress-circle-screen";
 import { PropertyListScreen } from "./free/property-list-screen";
 import { RadioGroupScreen } from "./free/radio-group-screen";
+import { RevealScreen } from "./free/reveal-screen";
 import { SearchFieldScreen } from "./free/search-field-screen";
 import { SectionScreen } from "./free/section-screen";
 import { SelectScreen } from "./free/select-screen";
@@ -142,6 +143,13 @@ export interface DesignSystemComponent extends PageLink {
 const COMPONENTS: readonly DesignSystemComponent[] = [
   // Free
   { category: "Foundations", tier: "Free", title: "Icon", route: "FreeIcon", screen: IconScreen },
+  {
+    category: "Foundations",
+    tier: "Free",
+    title: "Reveal",
+    route: "FreeReveal",
+    screen: RevealScreen,
+  },
   {
     category: "Foundations",
     tier: "Free",

@@ -64,6 +64,7 @@ const HOME_TAB_LINKS: PathConfig<HomeStackParamList> = {
         FreeProgressCircle: "design-system/free/progress-circle",
         FreePropertyList: "design-system/free/property-list",
         FreeRadioGroup: "design-system/free/radio-group",
+        FreeReveal: "design-system/free/reveal",
         FreeSearchField: "design-system/free/search-field",
         FreeSection: "design-system/free/section",
         FreeSelect: "design-system/free/select",

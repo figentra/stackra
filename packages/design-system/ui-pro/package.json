@@ -110,6 +110,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/tokens": "workspace:*",
     "@stackra/ui": "workspace:*"
   },
   "devDependencies": {
@@ -120,7 +121,6 @@
     "@internationalized/number": "catalog:mobile",
     "@number-flow/react": "catalog:frontend",
     "@shopify/react-native-skia": "catalog:mobile",
-    "@stackra/tokens": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",

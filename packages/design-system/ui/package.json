@@ -135,6 +135,7 @@
     "jsdom": "catalog:frontend",
     "lucide-react": "catalog:frontend",
     "lucide-react-native": "catalog:mobile",
+    "motion": "catalog:frontend",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
     "react": "catalog:frontend",
@@ -159,6 +160,7 @@
     "heroui-native": "^1.0.10",
     "lucide-react": "^1.54.0",
     "lucide-react-native": "^1.54.0",
+    "motion": "^12.43.0",
     "react": ">=19.2.0",
     "react-aria-components": "^1.22.1",
     "react-hook-form": "^7.89.0",
@@ -188,6 +190,9 @@
       "optional": true
     },
     "lucide-react-native": {
+      "optional": true
+    },
+    "motion": {
       "optional": true
     },
     "react-aria-components": {

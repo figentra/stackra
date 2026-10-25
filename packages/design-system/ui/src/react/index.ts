@@ -79,6 +79,7 @@ export { ProgressBar, type ProgressBarProps } from "#react/progress-bar/progress
 export { ProgressCircle, type ProgressCircleProps } from "#react/progress-circle/progress-circle";
 export { PropertyList, type PropertyListProps } from "#react/property-list/property-list";
 export { RadioGroup, type RadioGroupProps } from "#react/radio-group/radio-group";
+export { Reveal, type RevealProps } from "#react/reveal/reveal";
 export { Screen, type ScreenProps } from "#react/screen/screen";
 export { SearchField, type SearchFieldProps } from "#react/search-field/search-field";
 export { Section, type SectionProps } from "#react/section/section";

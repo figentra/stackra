@@ -19,6 +19,7 @@ export { exportThemeDiff } from "#core/functions/export-theme-diff.function";
 export { exportThemeJson } from "#core/functions/export-theme-json.function";
 export { materialModeVariables } from "#core/functions/material-mode-variables.function";
 export { mergeTheme } from "#core/functions/merge-theme.function";
+export { motionTiming } from "#core/functions/motion-timing.function";
 export { oklchToHex } from "#core/functions/oklch-to-hex.function";
 export { parseThemeJson } from "#core/functions/parse-theme-json.function";
 export { renderNativeCss } from "#core/functions/render-native-css.function";

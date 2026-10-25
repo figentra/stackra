@@ -243,6 +243,10 @@ export const STACKRA_THEME = defineTheme({
     fast: { duration: "150ms", easing: "ease-out" },
     base: { duration: "250ms", easing: "ease-in-out" },
     blink: { duration: "1000ms", easing: "steps(1)" },
+    // An entrance (Reveal, a chart drawing in): quick to start, long to settle.
+    reveal: { duration: "400ms", easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+    // The delay between items revealed in a row; only its duration is read.
+    stagger: { duration: "40ms", easing: "linear" },
   },
   // ADR 0320: text on a level keeps at least the regular fill's share of the surface behind it, so its contrast
   // holds over the light ambient tints; the thin level is for chrome without reading text.

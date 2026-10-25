@@ -100,6 +100,8 @@ export type HomeStackParamList = {
   FreePropertyList: undefined;
   /** The free RadioGroup page; deep link `stackra://design-system/free/radio-group`. */
   FreeRadioGroup: undefined;
+  /** The free Reveal page; deep link `stackra://design-system/free/reveal`. */
+  FreeReveal: undefined;
   /** The free SearchField page; deep link `stackra://design-system/free/search-field`. */
   FreeSearchField: undefined;
   /** The free Section page; deep link `stackra://design-system/free/section`. */

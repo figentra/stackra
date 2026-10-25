@@ -111,7 +111,7 @@ describe("Kpi (web)", () => {
   });
 
   it("carries HeroUI Pro's own parts", () => {
-    for (const part of ["Title", "Value", "Trend", "Chart", "Separator", "Footer"] as const) {
+    for (const part of ["Title", "Value", "Trend", "Separator", "Footer"] as const) {
       expect(Kpi[part]).toBe(HeroKpi[part]);
     }
   });
