@@ -179,7 +179,7 @@
         "retries": 3,
         "cron": {
           "schedule": "0 3 * * *",
-          "perTenant": true
+          "perScope": true
         }
       },
       "input": {
