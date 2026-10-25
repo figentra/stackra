@@ -2,7 +2,7 @@
   "name": "@stackra/feature-flags",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra feature flags: the Flag({ default, expires, removalIssue, scopes }) kind, typed flag refs, the FlagProvider port with its config and PostHog drivers, the FlagReader, FeatureFlagsConfig with its shipped schema, useFlag and fakeFlags",
+  "description": "Stackra feature flags: the Flag({ default, expires, removalIssue, scopes }) kind, typed flag refs, the FlagProvider port with its config and PostHog drivers, the FlagReader, FeatureFlagsConfig with its shipped schema, useFlag and fakeFlags, and the feature-flags oxlint plugin with its no-plan-targeting rule",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -33,6 +33,11 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
+    "#lint/*": [
+      "./src/lint/*",
+      "./src/lint/*.ts",
+      "./src/lint/*/index.ts"
+    ],
     "#react/*": [
       "./src/react/*",
       "./src/react/*.ts",
@@ -55,6 +60,11 @@
       "@stackra/source": "./src/contracts/index.ts",
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
+    },
+    "./lint": {
+      "@stackra/source": "./src/lint/index.ts",
+      "types": "./dist/lint.d.mts",
+      "default": "./dist/lint.mjs"
     },
     "./react": {
       "@stackra/source": "./src/react/index.ts",

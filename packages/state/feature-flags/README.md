@@ -4,7 +4,7 @@ Stackra feature flags: the `Flag` kind, the typed flag references gen writes int
 `FlagProvider` port with its `config` and `posthog` drivers, the `FlagReader` that serves values, the
 `FeatureFlagsConfig` configuration with its shipped schema, the `useFlag` hook and the `fakeFlags` test helper.
 
-**Tier:** `tier:lib` (`packages/state/feature-flags`). Entries `.`, `./contracts`, `./react` and `./testing`.
+**Tier:** `tier:lib` (`packages/state/feature-flags`). Entries `.`, `./contracts`, `./lint`, `./react` and `./testing`.
 Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@stackra/config` and zod; React is an
 optional peer for `./react`.
 
@@ -23,6 +23,7 @@ decision 7).
 | `.`           | `FlagReader`                                            | the service that loads, holds and serves values                                              |
 | `.`           | `ConfigFlagProviderDriver`, `PosthogFlagProviderDriver` | the two drivers of `FlagProvider`                                                            |
 | `./contracts` | `FlagProvider`, `FlagContext`                           | the port and the ids it evaluates for                                                        |
+| `./lint`      | `FEATURE_FLAGS_LINT_PLUGIN` (default)                   | the `feature-flags` oxlint plugin: `no-plan-targeting`                                       |
 | `./react`     | `useFlag`                                               | one flag's current value in a component                                                      |
 | `./testing`   | `fakeFlags`                                             | a `FlagsFake` reader whose values a test sets                                                |
 
@@ -82,6 +83,19 @@ export class FeatureFlagsConfig extends BaseFeatureFlagsConfig {
 
 A key in `values` must be a flag key (`<module>.<name>`), so a typo fails at boot. The PostHog key is public and comes
 from the host's env configuration (`featureFlagsPosthogKey`).
+
+## Lint: no plan targeting
+
+A flag is never a commercial right (ADR 0213 decision 7): a paid feature is an entitlement. The `feature-flags` oxlint
+plugin refuses a flag named after a plan, tier, edition, entitlement or subscription (`ProPlanFlag`) and a `Flag({...})`
+option keyed by one (`plans: [...]`).
+
+```jsonc
+{
+  "jsPlugins": ["@stackra/feature-flags/lint"],
+  "rules": { "feature-flags/no-plan-targeting": "error" },
+}
+```
 
 ## Testing
 
