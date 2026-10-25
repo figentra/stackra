@@ -8,7 +8,7 @@
  * Governing contract: ADR 0310 (decision 6); STA-416 FR-013.
  */
 import { ButtonVariant, Size } from "@stackra/ui/contracts";
-import { Button, Icon, Text } from "@stackra/ui/native";
+import { Button, Heading, Icon, Text } from "@stackra/ui/native";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 
@@ -75,8 +75,12 @@ export function ButtonScreen() {
   return (
     <Screen>
       <Section title={STRINGS.variants.title} description={STRINGS.variants.description}>
+        {/* Each row's label sits above it, as on the web, so it never reads as the heading of the next row. */}
         {Size.map((size) => (
-          <Sample key={size} caption={STRINGS.variants.size(size)}>
+          <View key={size} className="gap-2">
+            <Heading level={3} type="h6">
+              {STRINGS.variants.size(size)}
+            </Heading>
             <View className="flex-row flex-wrap gap-2">
               {ButtonVariant.map((variant) => (
                 <Button key={variant} variant={variant} size={size}>
@@ -84,13 +88,16 @@ export function ButtonScreen() {
                 </Button>
               ))}
             </View>
-          </Sample>
+          </View>
         ))}
       </Section>
 
       <Section title={STRINGS.states.title} description={STRINGS.states.description}>
         {ButtonVariant.map((variant) => (
-          <Sample key={variant} caption={variant}>
+          <View key={variant} className="gap-2">
+            <Text type="small" tone="muted">
+              {variant}
+            </Text>
             <View className="flex-row flex-wrap gap-2">
               <Button variant={variant}>{STRINGS.states.default}</Button>
               <Button variant={variant} isDisabled>
@@ -100,7 +107,7 @@ export function ButtonScreen() {
                 {STRINGS.states.loading}
               </Button>
             </View>
-          </Sample>
+          </View>
         ))}
       </Section>
 
