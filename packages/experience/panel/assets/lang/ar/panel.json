@@ -1,0 +1,26 @@
+{
+  "widgets": {
+    "empty": "لا يوجد ما يُعرض بعد.",
+    "failed": "تعذّر تحميل هذه البطاقة.",
+    "retry": "حاول مرة أخرى",
+    "range": "الفترة",
+    "change": "{change} مقارنة بالفترة السابقة",
+    "target": "الهدف {target}",
+    "not_rendered": "لا يمكن عرض هذه البطاقة هنا."
+  },
+  "time_range": {
+    "today": "اليوم",
+    "yesterday": "أمس",
+    "last_7_days": "آخر 7 أيام",
+    "last_30_days": "آخر 30 يومًا",
+    "this_month": "هذا الشهر",
+    "custom": "مخصص"
+  },
+  "actions": {
+    "confirm_title": "هل أنت متأكد؟",
+    "confirm": "متابعة",
+    "cancel": "إلغاء",
+    "done": "تم.",
+    "refused": "تعذّر تنفيذ ذلك."
+  }
+}
