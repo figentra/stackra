@@ -75,6 +75,12 @@ describe("ProMap", () => {
     expect(Object.keys(props.styles.dark?.sources ?? { x: 1 })).toEqual([]);
   });
 
+  it("tells the map where MapLibre's worker is, so the route's data source loads under Vite", () => {
+    render(<ProMap />);
+    const props = seen.at(-1) as { workerUrl?: unknown };
+    expect(String(props.workerUrl)).toMatch(/maplibre-gl-worker\.mjs/);
+  });
+
   it("chooses a stop from the buttons, and reports it", () => {
     render(<ProMap />);
     expect(screen.getByRole("status").textContent).toBe(

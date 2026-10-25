@@ -17,6 +17,22 @@ import { SCHEMES, visit } from "../support/pro-page";
 const PATH = "/pro-map";
 const MAP_COLOUR = { light: "#e5e7eb", dark: "#1f2937" } as const;
 
+test("loads MapLibre's worker, so the map finishes loading with its route source", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  await visit(page, PATH, "light");
+  await expect(page.locator('[data-slot="map"][data-loaded="true"]')).toBeVisible();
+  // The route is a GeoJSON source, which MapLibre parses in its worker; a missing worker logs "Worker failed to
+  // load" shortly after the map loads, so give it a moment to say so.
+  await page.waitForTimeout(1000);
+  expect(errors.filter((text) => /worker/i.test(text))).toEqual([]);
+});
+
 for (const scheme of SCHEMES)
   test(`every marker label holds 4.5:1 against the map in ${scheme}`, async ({ page }) => {
     await visit(page, PATH, scheme);

@@ -29,6 +29,9 @@ component with nothing in the vocabulary to map (most charts, Markdown, Timeline
 - Web: `@heroui-pro/react` with its peers (`motion`, `react-resizable-panels`, `recharts` for Kpi), and the styles in
   this order: `@import "tailwindcss";`, `@import "@heroui/styles";`, `@import "@heroui-pro/react/css";` and
   `@import "@stackra/ui-pro/css";`, the last outside any `@layer` so it wins over HeroUI Pro's layered rules.
+- Map under Vite: pass `workerUrl` from `import url from "maplibre-gl/dist/maplibre-gl-worker.mjs?url"`. MapLibre
+  looks for its worker beside its own module, which Vite's dep optimiser moves and its build does not emit; without
+  it the map draws no GeoJSON layer, routes included ("Worker failed to load").
 - Native: `heroui-native-pro` (with `@internationalized/date` for Calendar and DatePicker) inside `@stackra/ui`'s
   `DesignSystemProvider`, plus `@import "heroui-native-pro/styles";` and a `@source` line for its `lib` folder.
 - Install: a `heroui-pro login` session locally; `HEROUI_AUTH_TOKEN` from Infisical `/ci` in CI. Without it the HeroUI

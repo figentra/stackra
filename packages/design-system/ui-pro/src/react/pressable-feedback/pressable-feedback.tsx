@@ -32,7 +32,15 @@ export type PressableFeedbackProps = PressableFeedbackContractProps &
 // shortcut: the root is typed for its default `button`; HeroUI Pro's generic over other elements returns when a
 // caller needs `render` to produce a typed link.
 function PressableFeedbackRoot({ isDisabled, ...rest }: PressableFeedbackProps) {
-  return <HeroPressableFeedback.Root {...rest} {...omitUndefined({ isDisabled })} />;
+  // HeroUI Pro writes `disabled` as the string "true", which React warns about on a boolean attribute; its own props
+  // spread after it, so a real boolean here replaces it.
+  return (
+    <HeroPressableFeedback.Root
+      {...rest}
+      {...omitUndefined({ isDisabled })}
+      disabled={isDisabled === true}
+    />
+  );
 }
 
 /** The parts of the compound, typed from HeroUI Pro's own so the declaration output can name them. */

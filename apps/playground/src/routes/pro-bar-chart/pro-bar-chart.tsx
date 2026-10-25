@@ -49,7 +49,9 @@ const PRODUCTS = [
   { product: "Add-ons", units: 743 },
 ];
 
-const thousands = (value: number) => `${(value / 1000).toFixed(0)}k`;
+// Compact, with one fraction digit only when a tick needs it (7.5K, 2K), and a plain 0 at zero.
+const thousands = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 })
+  .format;
 
 /** The BarChart page. */
 export function ProBarChart() {

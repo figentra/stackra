@@ -12,6 +12,9 @@
  */
 import * as Ui from "@stackra/ui/react";
 import * as UiPro from "@stackra/ui-pro/react";
+// MapLibre finds its worker next to its own module, which Vite's dep optimiser moves and its build never emits; the
+// worker file is self-contained, so Vite serves and emits it as an asset and the map is told its URL.
+import MAPLIBRE_WORKER from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import { useState } from "react";
 
 import { ProMapRoute } from "#src/routes/pro-map/pro-map.route";
@@ -85,8 +88,14 @@ export function ProMap() {
         <h2 id="route-heading" className="type-h2">
           {STRINGS.route}
         </h2>
-        <div className="relative h-[420px] w-full overflow-hidden rounded-lg border border-border">
-          <UiPro.Map label={STRINGS.map} styles={STYLES} center={[-122.3927, 37.7816]} zoom={12.5}>
+        <div className="relative h-[480px] w-full overflow-hidden rounded-lg border border-border">
+          <UiPro.Map
+            label={STRINGS.map}
+            styles={STYLES}
+            center={[-122.3908, 37.7821]}
+            zoom={13}
+            workerUrl={MAPLIBRE_WORKER}
+          >
             <UiPro.Map.Route coordinates={ROUTE} />
             {STOPS.map((stop) => (
               <UiPro.Map.Marker
@@ -102,13 +111,15 @@ export function ProMap() {
               </UiPro.Map.Marker>
             ))}
             {chosen === null ? null : (
+              // To the right of the stop and clear of its label, which sits centred above the dot.
               <UiPro.Map.Popup
+                anchor="left"
                 closeButton
                 closeOnClick={false}
                 focusAfterOpen={false}
                 latitude={chosen.latitude}
                 longitude={chosen.longitude}
-                offset={18}
+                offset={44}
                 onClose={() => setChosen(null)}
               >
                 <div className="space-y-1 pe-4 text-xs">
