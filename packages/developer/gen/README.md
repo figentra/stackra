@@ -25,6 +25,7 @@ the committed manifest is the IR, and source is read behind one host seam, never
 | `.`                   | `openApiOf`                                                                  | `openapi.json`, the projection of the manifest                                      |
 | `.`                   | `actionKey`, `eventName`, `permissionKey`, `modelKey`, `tableName`, ...      | the identity formulas of ADR 0294 decision 20                                       |
 | `.`                   | `integrationKey`, `webhookPath`, `sequenceKey`, `blockKey`, `routeKey`       | integration, webhook, sequence, block and route identities                          |
+| `.`                   | `toolHints`, `EFFECT_TAGS`, `INTEGRATION_ROLES`                              | derived MCP hints, the effect tags and the Integration roles the manifest accepts   |
 | `./node`              | `generate`                                                                   | one run: write, or `{ check: true }` for `--check`                                  |
 | `./node`              | `discoverMember`, `openHost`                                                 | discovery on TypeScript 7, falling back to TypeScript 6                             |
 | `./node`              | `classComponents`                                                            | the Vite plugin of the class-component pass                                         |
@@ -47,6 +48,19 @@ Gen sorts files by path, reads each class's kind from its `extends` clause (`ext
 the heritage type argument (`Policy<Order>`, `Extension<Point["slot"]>`), and its constructor parameter types as
 tokens. A dependency is described by its committed manifest, never by its `.d.ts`. Every refusal carries a
 snake_case code, a position and the fix; when there is one, nothing is written.
+
+## Tools, effects, listings and replacements
+
+- **Tools by default (ADR 0360 decision 4).** A query, or an action whose `actors` include `user`, gets a `tool`
+  entry (`name`, `default`, and the `hints` of ADR 0099 decision 3). `tool: false` on such a class needs a reason on
+  the line above, `// reason: <why an agent may not call it>`; without one gen refuses with `tool_reason_missing`, and
+  with one the entry records it as `toolOff`.
+- **Effect tags (ADR 0099 decision 2, ADR 0360 decision 10).** `effects: [...]` is copied into the entry and feeds the
+  hints; a tag outside `EFFECT_TAGS` is `effect_unknown`.
+- **Listings (ADR 0355 decision 1, ADR 0308 rule 21).** An Integration's `roles` (plus `webhooks` when it receives
+  them) and its `listing` (the entitlement reference) land on its entry; a role outside `INTEGRATION_ROLES` is
+  `integration_role_unknown`.
+- **Replacements.** Every `@Replaces(Base)` is listed in a `replaces` section.
 
 ## What one run writes
 

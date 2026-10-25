@@ -5,20 +5,27 @@
  *          port keys), the endpoint, tool and refusal list of each action, the module graph, the facets, and the JSON
  *          Schema of every wire shape; a service or app also lists what its hosted packages contribute, marked
  *          `from`; each Integration's key, connection and webhook path; each sequence's key; an app's block and route
- *          keys. It reports the identity checks it can see: `identity_collision`, `override_duplicate`,
- *          `permission_unknown`, `identity_missing` and the public id prefix checks `prefix_invalid`, `prefix_taken`
- *          and `prefix_duplicate`.
+ *          keys; each tool's derived MCP hints and each action's effect tags; each Integration's roles and listing;
+ *          the `@Replaces` replacements. It reports the identity checks it can see: `identity_collision`,
+ *          `override_duplicate`, `permission_unknown`, `identity_missing`, the public id prefix checks
+ *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, and `tool_reason_missing`, `effect_unknown` and
+ *          `integration_role_unknown`.
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (ui, settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 20, 21 and 22); ADR 0305 (rules 1, 28 and 36); ADR 0140 (refusal
  *                     categories); ADR 0141 (event names); ADR 0135 (rule 2: prefixes); ADR 0308 (rule 19); ADR 0342
- *                     (decision 1: sequence keys); ADR 0270 (decision 3: block keys).
+ *                     (decision 1: sequence keys); ADR 0270 (decision 3: block keys); ADR 0360 (decisions 4 and 10: user
+ *                     actions are tools by default, `tool: false` needs a reason, the `bulk` tag); ADR 0099 (decisions
+ *                     2 and 3: effect tags, derived hints); ADR 0355 (decision 1: Integration roles); ADR 0308 (rule
+ *                     21: `listing.entitlement`).
  */
 import { Enum } from "@stackra/contracts";
 import type { Json, StackraManifest } from "@stackra/contracts";
 import { ErrorKind, refusalCode } from "@stackra/errors";
 
+import { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
+import { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";
 import { MANIFEST_NOTICE } from "#core/constants/manifest-notice.constant";
 import { PUBLIC_ID_PREFIXES } from "#core/constants/public-id-prefixes.constant";
 import { actionKey } from "#core/functions/action-key.function";
@@ -38,6 +45,7 @@ import { routeKey } from "#core/functions/route-key.function";
 import { sequenceKey } from "#core/functions/sequence-key.function";
 import { snakeCase } from "#core/functions/snake-case.function";
 import { tableName } from "#core/functions/table-name.function";
+import { toolHints } from "#core/functions/tool-hints.function";
 import { toolName } from "#core/functions/tool-name.function";
 import { webhookPath } from "#core/functions/webhook-path.function";
 import type { ClassValue } from "#core/types/class-value.type";
@@ -277,8 +285,32 @@ export function buildManifest(ir: MemberIR): {
         ? { endpoint: declared.options["endpoint"] }
         : {}),
     });
-    const toolEnabled =
-      kind === "query" ? declared.options["tool"] !== false : declared.options["tool"] === true;
+    // ADR 0360 d4: a query, or an action a user can perform, is a tool unless it says `tool: false` with a reason.
+    const tool = declared.options["tool"];
+    const userFacing = actors?.includes("user") ?? false;
+    const toolEnabled = tool === true || (tool !== false && (kind === "query" || userFacing));
+    const toolReason =
+      typeof declared.options["toolReason"] === "string"
+        ? declared.options["toolReason"]
+        : undefined;
+    if (tool === false && userFacing && toolReason === undefined)
+      fail(
+        declared,
+        "tool_reason_missing",
+        `${kind} a user can perform says \`tool: false\` without a reason`,
+        "add a `// reason: <why an agent may not call it>` line above `tool: false`",
+      );
+    const writtenEffects = Array.isArray(declared.options["effects"])
+      ? declared.options["effects"].map(String)
+      : [];
+    for (const effect of writtenEffects.filter((candidate) => !EFFECT_TAGS.includes(candidate)))
+      fail(
+        declared,
+        "effect_unknown",
+        `\`${effect}\` is not an effect tag`,
+        `use one of ${EFFECT_TAGS.join(", ")}; a new tag needs an amendment of ADR 0099`,
+      );
+    const effects = [...new Set(writtenEffects.filter((effect) => EFFECT_TAGS.includes(effect)))];
     const preconditions = Array.isArray(declared.options["preconditions"])
       ? declared.options["preconditions"].filter(isClassValue)
       : [];
@@ -297,13 +329,27 @@ export function buildManifest(ir: MemberIR): {
       risk: risk ?? (kind === "query" ? "L0" : "L1"),
     };
     if (actors !== undefined) entry["actors"] = actors;
+    if (effects.length > 0) entry["effects"] = effects;
     if (preconditions.length > 0) entry["preconditions"] = preconditions.map((item) => item.$class);
     for (const option of ["idempotency", "rateLimit", "cache", "area", "job"])
       if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
     if (declared.options["auth"] === false) entry["auth"] = false;
     if (endpoint !== undefined) entry["endpoint"] = { ...endpoint };
     else if (declared.options["endpoint"] === false) entry["endpoint"] = false;
-    if (toolEnabled) entry["tool"] = { name: toolName(key), default: kind === "query" };
+    if (toolEnabled)
+      entry["tool"] = {
+        name: toolName(key),
+        default: tool === undefined,
+        hints: toolHints({
+          kind,
+          risk: String(entry["risk"]),
+          effects,
+          idempotent:
+            declared.options["idempotency"] !== undefined &&
+            declared.options["idempotency"] !== false,
+        }),
+      };
+    else if (toolReason !== undefined) entry["toolOff"] = toolReason;
     const inputRef = ref(declared.handle?.input);
     const outputRef = ref(declared.handle?.output);
     if (inputRef !== undefined) entry["input"] = inputRef;
@@ -388,6 +434,20 @@ export function buildManifest(ir: MemberIR): {
     const connection = ir.classes.find(
       (candidate) => candidate.kind === "connection" && candidate.partner?.name === declared.name,
     );
+    // The listing's roles (ADR 0355 d1): the declared ones, plus `webhooks` when the provider sends us events.
+    const declaredRoles = Array.isArray(declared.options["roles"])
+      ? declared.options["roles"].map(String)
+      : [];
+    for (const role of declaredRoles.filter((candidate) => !INTEGRATION_ROLES.includes(candidate)))
+      fail(
+        declared,
+        "integration_role_unknown",
+        `\`${role}\` is not an Integration role`,
+        `use one of ${INTEGRATION_ROLES.join(", ")}`,
+      );
+    const roleSet = new Set(declaredRoles);
+    if (declared.options["webhooks"] !== undefined) roleSet.add("webhooks");
+    const roles = INTEGRATION_ROLES.filter((role) => roleSet.has(role));
     integrations.push({
       key,
       class: declared.name,
@@ -398,6 +458,10 @@ export function buildManifest(ir: MemberIR): {
         : {}),
       ...(declared.options["webhooks"] !== undefined
         ? { webhookPath: webhookPath(declared.module, declared.name) }
+        : {}),
+      ...(roles.length > 0 ? { roles: [...roles] } : {}),
+      ...(declared.options["listing"] !== undefined
+        ? { listing: jsonOf(declared.options["listing"]) }
         : {}),
     });
   }
@@ -523,6 +587,18 @@ export function buildManifest(ir: MemberIR): {
     };
   });
 
+  // Replacements: `@Replaces(Base)` on a class of the member, so a host and a reviewer see what it swaps out.
+  const replaces: Entry[] = [];
+  for (const declared of ir.classes)
+    for (const facet of declared.facets.filter((candidate) => candidate.name === "Replaces"))
+      if (isClassValue(facet.options))
+        replaces.push({
+          class: declared.name,
+          file: declared.file,
+          replaces: facet.options.$class,
+          from: facet.options.from,
+        });
+
   // Facets: each decorator once, with every target it marks.
   const facets = new Map<string, Entry & { targets: string[] }>();
   for (const declared of ir.classes)
@@ -589,6 +665,7 @@ export function buildManifest(ir: MemberIR): {
     ...(ir.targets !== undefined ? { targets: [...ir.targets] } : {}),
     modules,
     ...(facets.size > 0 ? { facets: [...facets.values()] } : {}),
+    ...(replaces.length > 0 ? { replaces } : {}),
     ...sections,
     ...(ir.layout === "app" ? { blocks, routes } : {}),
     schemas,

@@ -6,11 +6,13 @@
  *          sequence keys, an app's block and route keys), the module graph, the facets, the schemas without a
  *          config's schema, merged package sections marked `from`, and the checks `identity_collision`,
  *          `override_duplicate`, `permission_unknown`, `identity_missing`, `prefix_invalid`, `prefix_taken` and
- *          `prefix_duplicate`.
+ *          `prefix_duplicate`; the v3 tool default with `tool_reason_missing`, effect tags with `effect_unknown`,
+ *          Integration roles and listing with `integration_role_unknown`, and the `@Replaces` section.
  * Boundary: test only; runs on the commerce IR fixture.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10, 20, 21 and 22); ADR 0305 (rules 1, 28 and
- *                     34); ADR 0140; ADR 0141; ADR 0135 (rule 2); ADR 0308 (rule 19); ADR 0342 (decision 1).
+ *                     34); ADR 0140; ADR 0141; ADR 0135 (rule 2); ADR 0308 (rules 19 and 21); ADR 0342 (decision 1);
+ *                     ADR 0360 (decisions 4 and 10); ADR 0099 (decisions 2 and 3); ADR 0355 (decision 1).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -78,7 +80,17 @@ describe("buildManifest", () => {
       output: { $ref: "#/schemas/orders.CancelOrderOutput" },
       refusals: ["order_not_cancellable"],
     });
-    expect(cancel?.["tool"]).toBeUndefined();
+    // ADR 0360 d4: an action a user can perform is a tool by default.
+    expect(cancel?.["tool"]).toEqual({
+      name: "orders_order_cancel",
+      default: true,
+      hints: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    });
     expect(list).toMatchObject({
       key: "orders.order.list@1",
       permission: "orders.order.read",
@@ -179,6 +191,7 @@ describe("buildManifest", () => {
         connection: "StripeConnection",
         connectionFile: "src/modules/billing/connections/stripe.connection.ts",
         webhookPath: "/webhooks/billing/stripe/:connectionId",
+        roles: ["webhooks"],
       },
     ]);
     expect(billing.manifest["sequences"]).toEqual([
@@ -320,5 +333,114 @@ describe("buildManifest", () => {
     expect(codes).toContain("permission_unknown RefundOrderAction");
     expect(codes).toContain("identity_missing NoKeyAction");
     expect(codes).toContain("override_duplicate OtherAnalyticsConfig");
+  });
+
+  describe("tools, effects, listings and replacements", () => {
+    const cancel = declared("CancelOrderAction");
+    const withClasses = (...classes: DeclaredClass[]): MemberIR => ({
+      ...COMMERCE_IR,
+      classes: [...COMMERCE_IR.classes.filter((item) => item.name !== cancel.name), ...classes],
+    });
+    const codesOf = (ir: MemberIR): string[] =>
+      buildManifest(ir).errors.map((error) => `${error.code} ${error.subject}`);
+
+    it("refuses `tool: false` on a user action without a reason, and records the reason", () => {
+      const off = { ...cancel, options: { ...cancel.options, tool: false } };
+      expect(codesOf(withClasses(off))).toContain("tool_reason_missing CancelOrderAction");
+      const reasoned = { ...off, options: { ...off.options, toolReason: "needs a card reader" } };
+      const { manifest: built, errors: found } = buildManifest(withClasses(reasoned));
+      expect(found).toEqual([]);
+      const entry = built.actions?.find((action) => action.class === "CancelOrderAction");
+      expect(entry?.["tool"]).toBeUndefined();
+      expect(entry?.["toolOff"]).toBe("needs a card reader");
+    });
+
+    it("keeps a system-only action off the tool list without a reason", () => {
+      const system = { ...cancel, options: { ...cancel.options, actors: ["system"] } };
+      const { manifest: built, errors: found } = buildManifest(withClasses(system));
+      expect(found).toEqual([]);
+      expect(
+        built.actions?.find((action) => action.class === "CancelOrderAction")?.["tool"],
+      ).toBeUndefined();
+    });
+
+    it("records effect tags, derives the hints from them and refuses an unknown tag", () => {
+      const tagged = {
+        ...cancel,
+        options: {
+          ...cancel.options,
+          effects: ["financial", "external-communication", "irreversible"],
+        },
+      };
+      const entry = buildManifest(withClasses(tagged)).manifest.actions?.find(
+        (action) => action.class === "CancelOrderAction",
+      );
+      expect(entry?.["effects"]).toEqual(["financial", "external-communication", "irreversible"]);
+      expect(entry?.["tool"]).toMatchObject({
+        default: true,
+        hints: { destructiveHint: true, openWorldHint: true, readOnlyHint: false },
+      });
+      const unknown = { ...cancel, options: { ...cancel.options, effects: ["spooky"] } };
+      expect(codesOf(withClasses(unknown))).toContain("effect_unknown CancelOrderAction");
+    });
+
+    it("records an Integration's roles and listing, and refuses an unknown role", () => {
+      const stripe = BILLING_IR.classes.find((item) => item.name === "StripeIntegration");
+      if (stripe === undefined) throw new Error("no StripeIntegration fixture");
+      const listed = {
+        ...stripe,
+        options: {
+          ...stripe.options,
+          roles: ["driver", "connector"],
+          listing: { entitlement: "billing.stripe" },
+        },
+      };
+      const ir: MemberIR = {
+        ...BILLING_IR,
+        classes: BILLING_IR.classes.map((item) => (item === stripe ? listed : item)),
+      };
+      expect(buildManifest(ir).manifest["integrations"]).toEqual([
+        expect.objectContaining({
+          roles: ["driver", "connector", "webhooks"],
+          listing: { entitlement: "billing.stripe" },
+        }),
+      ]);
+      const wrong = { ...stripe, options: { ...stripe.options, roles: ["reseller"] } };
+      const codes = buildManifest({
+        ...BILLING_IR,
+        classes: BILLING_IR.classes.map((item) => (item === stripe ? wrong : item)),
+      }).errors.map((error) => `${error.code} ${error.subject}`);
+      expect(codes).toContain("integration_role_unknown StripeIntegration");
+    });
+
+    it("lists each `@Replaces` replacement", () => {
+      const service = COMMERCE_IR.classes.find((item) => item.kind === "service");
+      if (service === undefined) throw new Error("no service fixture");
+      const replacing = {
+        ...service,
+        facets: [
+          ...service.facets,
+          {
+            name: "Replaces",
+            kind: "replaces",
+            target: "class" as const,
+            options: { $class: "TaxService", from: "@stackra/pricing" },
+            from: "@stackra/container",
+          },
+        ],
+      };
+      const ir: MemberIR = {
+        ...COMMERCE_IR,
+        classes: COMMERCE_IR.classes.map((item) => (item === service ? replacing : item)),
+      };
+      expect(buildManifest(ir).manifest["replaces"]).toEqual([
+        {
+          class: service.name,
+          file: service.file,
+          replaces: "TaxService",
+          from: "@stackra/pricing",
+        },
+      ]);
+    });
   });
 });

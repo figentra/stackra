@@ -413,7 +413,13 @@ export function createSourceReader(
           : kind === "ShorthandPropertyAssignment"
             ? constant(property.name)
             : NOT_CONSTANT;
-      if (!hasNonConstant(value)) options[nameOf(property.name)] = value;
+      const name = nameOf(property.name);
+      if (!hasNonConstant(value)) options[name] = value;
+      // ADR 0360 d4: `tool: false` carries its reason as a `// reason:` line, as `@Field(zod)` does.
+      if (name === "tool" && value === false) {
+        const reason = /\/\/\s*reason:\s*(.+)/.exec(host.leading(property))?.[1]?.trim();
+        if (reason) options["toolReason"] = reason;
+      }
     }
     return options;
   };

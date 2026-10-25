@@ -10,7 +10,9 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note (`ir`
  *                     and `source` fold into gen).
  */
+export { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
 export { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
+export { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";
 export { MANIFEST_NOTICE } from "#core/constants/manifest-notice.constant";
 export { PUBLIC_ID_PREFIXES } from "#core/constants/public-id-prefixes.constant";
 export { actionKey } from "#core/functions/action-key.function";
@@ -48,6 +50,7 @@ export { rootModuleOf } from "#core/functions/root-module-of.function";
 export { routeKey } from "#core/functions/route-key.function";
 export { sequenceKey } from "#core/functions/sequence-key.function";
 export { tableName } from "#core/functions/table-name.function";
+export { toolHints } from "#core/functions/tool-hints.function";
 export { toolName } from "#core/functions/tool-name.function";
 export { webhookPath } from "#core/functions/webhook-path.function";
 export type { ClassRef } from "#core/types/class-ref.type";
@@ -70,4 +73,5 @@ export type { RegexValue } from "#core/types/regex-value.type";
 export type { RelationIR } from "#core/types/relation-ir.type";
 export type { ShapeIR } from "#core/types/shape-ir.type";
 export type { TokenRef } from "#core/types/token-ref.type";
+export type { ToolHints } from "#core/types/tool-hints.type";
 export type { TypeDesc } from "#core/types/type-desc.type";

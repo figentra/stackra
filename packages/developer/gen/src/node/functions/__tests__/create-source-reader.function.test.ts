@@ -306,3 +306,54 @@ describe("createSourceReader on models", async () => {
     ]);
   });
 });
+
+/** An action whose `tool: false` carries its reason, and one without. */
+const TOOL_SOURCES: Readonly<Record<string, string>> = {
+  "src/node/actions/open-drawer.action.ts": [
+    'import { Action } from "@stackra/actions";',
+    'import { ActorKind } from "@stackra/contracts";',
+    "",
+    "export class OpenDrawerAction extends Action({",
+    '  key: "drawer.open",',
+    "  actors: [ActorKind.User],",
+    "  // reason: opens a physical cash drawer at the till",
+    "  tool: false,",
+    "}) {",
+    "  async handle(): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
+  "src/node/actions/close-drawer.action.ts": [
+    'import { Action } from "@stackra/actions";',
+    'import { ActorKind } from "@stackra/contracts";',
+    "",
+    "export class CloseDrawerAction extends Action({",
+    '  key: "drawer.close",',
+    "  actors: [ActorKind.User],",
+    "  tool: false,",
+    "}) {",
+    "  async handle(): Promise<void> {}",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on tool reasons", async () => {
+  const root = writeFixtureMember("tools", TOOL_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+  const options = (name: string) => classes.find((declared) => declared.name === name)?.options;
+
+  it("reads the `// reason:` line above `tool: false` as `toolReason`", () => {
+    expect(options("OpenDrawerAction")).toMatchObject({
+      tool: false,
+      toolReason: "opens a physical cash drawer at the till",
+    });
+  });
+
+  it("leaves `toolReason` out when no reason is written", () => {
+    expect(options("CloseDrawerAction")?.["toolReason"]).toBeUndefined();
+  });
+});

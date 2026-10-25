@@ -25,7 +25,9 @@ import type {
 describe("@stackra/gen", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(gen).sort()).toEqual([
+      "EFFECT_TAGS",
       "GENERATED_NOTICE",
+      "INTEGRATION_ROLES",
       "MANIFEST_NOTICE",
       "PUBLIC_ID_PREFIXES",
       "actionKey",
@@ -63,6 +65,7 @@ describe("@stackra/gen", () => {
       "routeKey",
       "sequenceKey",
       "tableName",
+      "toolHints",
       "toolName",
       "webhookPath",
     ]);
