@@ -37,6 +37,8 @@ decisions 4 and 5). Member at `packages/runtime/scheduler` (`tier:lib`), in the 
 - A driver stores; it never parses a cron, reads a clock or pushes. The service passes every instant.
 - The cron parser stays the classic five fields (the shape `Action({ job: { cron } })` checks). No croner: no catalog
   carries it, and a new dependency needs `dependency-steward` and the owner.
+- In SaaS the crons of actions run on their own Encore CronJobs (`encoreCronJobs`, `fire`); the minute tick then passes
+  `{ crons: false }`, so no cron is pushed twice. This package never imports `encore.dev`.
 - `cronRuns` steps minute by minute over a range the caller bounds; keep `catchUpWindow` capped at one day.
 - Raw SQL only in `PostgresScheduleDriver`, every value bound, every row read through zod, each statement with a
   `// raw-sql:` reason (ADR 0160). The tables carry no row-level security (the tick reads every scope), so a scope's

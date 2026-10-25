@@ -75,6 +75,13 @@ one runs at both instants. No run from before the schedule was made is pushed.
 - In SaaS gen's Encore CronJob calls `tick` every minute; on-prem `run({ signal })` is the timer and logs a failed tick
   (`scheduler.tick_failed`) through the `Logger` before the next one.
 
+## Encore CronJob in SaaS
+
+`encoreCronJobs()` lists the CronJobs gen emits for a SaaS service: one per registered action whose `job` option has
+a `cron` (its kebab id, its schedule, an endpoint that calls `SchedulerService.fire(key)`), and `scheduler-schedules`
+every minute, whose endpoint calls `tick(undefined, { crons: false })` for the stored per-scope schedules. Encore runs
+one invocation of a CronJob at a time, so `fire` takes no lock. On-prem, `run` stays the timer.
+
 ## Testing
 
 ```ts

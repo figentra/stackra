@@ -5,7 +5,8 @@
  *          again; missed runs are caught up within the window under each `Misfire` policy; one runner holds a tick;
  *          stored schedules run in their scope and time zone, never before they were made, are refused when invalid,
  *          skipped when their action is unknown, and deleted only from their scope; `run` ticks at once, logs a
- *          failed tick, and stops on abort.
+ *          failed tick, and stops on abort; `fire` pushes one run of a cron action (per scope too) for its Encore
+ *          CronJob, and `tick({ crons: false })` leaves the crons of actions to theirs.
  * Boundary: test only; the real queue service, `Locks` and memory drivers on a clock the test moves. The job registry
  *           is process-wide, so every tick here evaluates the crons registered at the top of this file.
  * Runtime: node (vitest)
@@ -320,5 +321,36 @@ describe(SchedulerService, () => {
     controller.abort();
     await running;
     expect(logger.errors[0]?.event).toBe("scheduler.tick_failed");
+  });
+});
+
+describe("SchedulerService.fire and tick({ crons: false })", () => {
+  it("fires one run of a platform cron action at once", async () => {
+    const { jobs, scheduler } = setup();
+    await expect(scheduler.fire("access_log.entry.purge@1")).resolves.toBe(1);
+    expect((await stored(jobs)).map((job) => job.key)).toEqual(["access_log.entry.purge@1"]);
+  });
+
+  it("fires a per-scope cron once per scope, with its input", async () => {
+    const { jobs, scheduler } = setup({}, [acme, globex]);
+    await expect(scheduler.fire("orders.order.expire_unpaid@1")).resolves.toBe(2);
+    expect((await stored(jobs)).map((job) => [job.scope?.id, job.input])).toEqual([
+      ["scp_acme", { batchSize: 100 }],
+      ["scp_globex", { batchSize: 100 }],
+    ]);
+  });
+
+  it("refuses a key that is not a registered cron action", async () => {
+    const { scheduler } = setup();
+    await expect(scheduler.fire("digests.digest.send@1")).rejects.toThrow(TypeError);
+    await expect(scheduler.fire("nope@1")).rejects.toThrow(TypeError);
+  });
+
+  it("leaves the crons of actions to their CronJobs when told to", async () => {
+    const { clock, jobs, scheduler } = setup({}, [acme]);
+    clock.at = at("13:00:10").getTime();
+    const result = await scheduler.tick(undefined, { crons: false });
+    expect(result).toEqual({ ran: true, pushed: 0, skipped: [] });
+    expect(await stored(jobs)).toEqual([]);
   });
 });

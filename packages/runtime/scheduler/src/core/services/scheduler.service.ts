@@ -10,7 +10,9 @@
  *           worker (ADR 0078 decision 6). One runner per tick: every instance ticks, `Locks.tryWith` lets one through,
  *           and the watermarks make a second tick of the same minute push nothing. With the Postgres drivers the
  *           pushes and the watermarks commit in the lock's transaction, so a tick that dies pushes nothing. In SaaS
- *           gen's Encore CronJob calls `tick` every minute; on-prem `run` is the timer (ADR 0148 decision 4).
+ *           each cron of an action has its own Encore CronJob (`encoreCronJobs`) whose endpoint calls `fire`, and a
+ *           minute CronJob ticks the stored schedules only (`{ crons: false }`); on-prem `run` is the timer (ADR 0148
+ *           decision 4).
  * Runtime: isomorphic
  * Governing contract: ADR 0148 (decisions 4 and 5); ADR 0078 (decision 6, as amended); ADR 0103 (decision 4);
  *                     ADR 0305 (rules 28 and 30); ADR 0327 and ADR 0323 (`ScopeRef`).
@@ -32,6 +34,7 @@ import { cronRuns } from "#core/functions/cron-runs.function";
 import { mintScheduleId } from "#core/functions/mint-schedule-id.function";
 import { parseCron } from "#core/functions/parse-cron.function";
 import type { ScheduleOptions } from "#core/types/schedule-options.type";
+import type { TickOptions } from "#core/types/tick-options.type";
 import type { TickResult } from "#core/types/tick-result.type";
 
 /** One minute in milliseconds: the tick interval and the resolution of a cron. */
@@ -139,16 +142,39 @@ export class SchedulerService extends Service {
   }
 
   /**
-   * Pushes every run due at `at` (now when absent) that no earlier tick pushed, when no other runner holds the tick.
+   * Pushes every run due at `at` (now when absent) that no earlier tick pushed, when no other runner holds the tick;
+   * with `{ crons: false }` only the stored schedules' runs.
    *
    * @returns what the tick did; `ran` is `false` when another runner held it.
    */
-  async tick(at: Date = this.clock.now()): Promise<TickResult> {
+  async tick(at: Date = this.clock.now(), options: TickOptions = {}): Promise<TickResult> {
     let result: TickResult = { ran: false, pushed: 0, skipped: [] };
     await this.locks.tryWith(TICK_LOCK, TICK_LEASE, async () => {
-      result = await this.dispatch(at);
+      result = await this.dispatch(at, options.crons ?? true);
     });
     return result;
+  }
+
+  /**
+   * Pushes one run of the cron action registered as `key` now: once, or once per scope `CronScopes` lists. The
+   * endpoint of that action's Encore CronJob calls it; Encore runs one invocation at a time, so it takes no lock and
+   * moves no watermark.
+   *
+   * @returns how many jobs were stored.
+   * @throws TypeError when `key` is not a registered action with a `cron`.
+   */
+  async fire(key: string): Promise<number> {
+    const type = SCHEDULED_JOBS.byKey.get(key);
+    const options =
+      type === undefined
+        ? undefined
+        : (kindOf(type)?.options as unknown as Pick<ActionOptions, "job"> | undefined);
+    const cron = options?.job?.cron;
+    if (type === undefined || cron === undefined)
+      throw new TypeError(`${key} is not a registered job action with a cron`);
+    const scopes: readonly (ScopeRef | undefined)[] =
+      cron.perScope === true ? await this.cronScopes.list() : [undefined];
+    return this.push(type, cron.input ?? {}, scopes, 1);
   }
 
   /** Ticks at the start of every minute until `signal` aborts; a failed tick is logged and the next one runs. */
@@ -211,7 +237,7 @@ export class SchedulerService extends Service {
   }
 
   /** One tick under the lock. */
-  private async dispatch(now: Date): Promise<TickResult> {
+  private async dispatch(now: Date, crons: boolean): Promise<TickResult> {
     const at = now.getTime();
     const floor = at - Duration.toMilliseconds(this.config.catchUpWindow);
     const marks = await this.driver.watermarks();
@@ -222,7 +248,7 @@ export class SchedulerService extends Service {
     const skipped: PublicId<"sch">[] = [];
     let scopes: readonly ScopeRef[] | undefined;
     let pushed = 0;
-    for (const [type, key] of SCHEDULED_JOBS.keys) {
+    for (const [type, key] of crons ? SCHEDULED_JOBS.keys : []) {
       const options = kindOf(type)?.options as unknown as Pick<ActionOptions, "job"> | undefined;
       const cron = options?.job?.cron;
       if (cron === undefined) continue;

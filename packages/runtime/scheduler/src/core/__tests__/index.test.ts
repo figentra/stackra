@@ -23,6 +23,7 @@ describe("@stackra/scheduler", () => {
       "SchedulerOptions",
       "SchedulerService",
       "cronRuns",
+      "encoreCronJobs",
       "parseCron",
       "registerScheduledJobs",
     ]);
