@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 @import "@heroui-pro/react/css";
+/* The fixes our Pro wrappers need (contrast, Arabic line boxes, the shimmer), owned by @stackra/ui-pro (STA-458). */
+@import "@stackra/ui-pro/css";
 @import "@stackra/tokens/fonts/fonts.css";
 @import "@stackra/tokens/themes/stackra/web.css";
 
@@ -50,112 +52,9 @@ body {
   letter-spacing: var(--h3-ar-letter-spacing);
 }
 
-/* HeroUI Pro paints white text on the danger fill (today's date, the current time); the theme's danger-foreground is
-   the text colour that holds 4.5:1 on danger in both schemes. */
-.agenda__day-header-date[data-today="true"],
-.agenda__month-cell-date[data-today="true"],
-.agenda__current-time-label {
-  color: var(--danger-foreground);
-}
-
-/* IBM Plex Sans Arabic's glyphs are taller than the 1em line HeroUI Pro gives these pills, so in Arabic they take a
-   normal line and the fill covers the whole text. */
-:root:lang(ar) .agenda__day-header-date[data-today="true"],
-:root:lang(ar) .agenda__month-cell-date[data-today="true"],
-:root:lang(ar) .agenda__current-time-label {
-  line-height: normal;
-}
-
-/* HeroUI Pro's TextShimmer dims its text to 45% of its colour (under 4.5:1) and sweeps a text-shaped copy over it,
-   which also hides the background from a contrast check. Here the copy is hidden and the sweep is a mask on the text
-   itself: a full-strength band moving over text at 75%, which holds 4.5:1 for the theme's foreground in both schemes.
-   A shimmer drawn in a weaker colour than the foreground needs that colour to hold 4.5:1 at 75% too. */
-.text-shimmer__highlight {
-  display: none;
-}
-
-.text-shimmer__text {
-  color: currentColor;
-  mask-image: linear-gradient(
-    90deg,
-    rgb(0 0 0 / 0.75) calc(50% - var(--spread)),
-    #000 50%,
-    rgb(0 0 0 / 0.75) calc(50% + var(--spread))
-  );
-  mask-size: 300% 100%;
-  animation: stackra-text-shimmer 2.5s linear infinite;
-}
-
-@keyframes stackra-text-shimmer {
-  from {
-    mask-position: 100% 0;
-  }
-
-  to {
-    mask-position: 0 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .text-shimmer__text {
-    animation: none;
-    mask-image: none;
-  }
-}
-
-/* HeroUI Pro draws a source's fallback letter in the colour of its own disc (`--muted` on `--muted`), so it cannot be
-   seen; the page background colour holds 4.5:1 on the muted disc in both schemes, as muted does on the background. */
-.chat-source__icon-fallback {
-  color: var(--background);
-}
-
-/* The letter is the first of a web address, so it keeps the Latin face in an Arabic document: IBM Plex Sans Arabic's
-   taller glyph box would spill past the 14 px disc. */
-:root:lang(ar) .chat-source__icon-fallback {
-  font-family: var(--font-sans);
-}
-
-/* HeroUI Pro fades an upcoming step's description to 60% of the muted colour (2.5:1); the step's state is already in
-   its indicator and title, so the description keeps the muted colour, which holds 4.5:1. */
-[data-status="inactive"] .stepper__description {
-  opacity: 1;
-}
-
-/* HeroUI Pro's file format badges draw 8 px white text on Tailwind's 500 shades (2.2:1 on green); Tailwind's 700
-   shades of the same hues hold 4.5:1 under white. */
-.drop-zone__file-format-icon-badge[data-color="red"] {
-  background-color: oklch(50.5% 0.213 27.518);
-}
-
-.drop-zone__file-format-icon-badge[data-color="green"] {
-  background-color: oklch(52.7% 0.154 150.069);
-}
-
-.drop-zone__file-format-icon-badge[data-color="blue"] {
-  background-color: oklch(48.8% 0.243 264.376);
-}
-
-.drop-zone__file-format-icon-badge[data-color="orange"] {
-  background-color: oklch(55.3% 0.195 38.402);
-}
-
-.drop-zone__file-format-icon-badge[data-color="purple"] {
-  background-color: oklch(49.6% 0.265 301.924);
-}
-
-.drop-zone__file-format-icon-badge[data-color="gray"] {
-  background-color: oklch(37.3% 0.034 259.733);
-}
-
-/* Shiki's GitHub light theme, which HeroUI Pro's code blocks use (in Markdown too), has token colours under 4.5:1 on
-   the surface behind code (keywords are 4:1); in the light scheme each token keeps its hue and chroma at a lightness
-   of at most 50%, which holds 4.5:1 there. The dark scheme keeps HeroUI Pro's rule, whose dark theme holds already. */
-:root:not(.dark) .code-block__code .shiki span {
-  color: oklch(from var(--shiki-light, var(--surface-secondary-foreground)) min(l, 0.5) c h);
-}
-
 /* A frame for the Pro shells (Sidebar, AppLayout): HeroUI Pro sizes them to the viewport (svh, dvh), so inside the
-   frame they are sized to it instead. The Pro stylesheet is unlayered, so this wins by selector weight. */
+   frame they are sized to it instead. HeroUI Pro's styles sit in `@layer components` and these rules in no layer, so
+   they win by layer, whatever the selectors' weight. */
 .demo-frame {
   height: 32rem;
   overflow: hidden;
