@@ -12,18 +12,23 @@ import { LOCKING_CONFIG_SCHEMA } from "#core/constants/locking-config-schema.con
 
 describe("LOCKING_CONFIG_SCHEMA", () => {
   it("parses {} to the default", () => {
-    expect(LOCKING_CONFIG_SCHEMA.parse({})).toEqual({ driver: "postgres" });
+    expect(LOCKING_CONFIG_SCHEMA.parse({})).toEqual({
+      driver: "postgres",
+      valkeyUrl: "",
+      valkey: { keyPrefix: "lock:" },
+    });
   });
 
   it("takes the shipped drivers and refuses others", () => {
     expect(LOCKING_CONFIG_SCHEMA.parse({ driver: "memory" }).driver).toBe("memory");
-    expect(LOCKING_CONFIG_SCHEMA.safeParse({ driver: "valkey" }).success).toBe(false);
+    expect(LOCKING_CONFIG_SCHEMA.parse({ driver: "valkey" }).driver).toBe("valkey");
+    expect(LOCKING_CONFIG_SCHEMA.safeParse({ driver: "redis" }).success).toBe(false);
   });
 
   it("is extended by a host's generated schema", () => {
     const Host$ = LOCKING_CONFIG_SCHEMA.extend({
       driver: LOCKING_CONFIG_SCHEMA.shape.driver.unwrap().default("memory"),
     });
-    expect(Host$.parse({})).toEqual({ driver: "memory" });
+    expect(Host$.parse({})).toMatchObject({ driver: "memory" });
   });
 });

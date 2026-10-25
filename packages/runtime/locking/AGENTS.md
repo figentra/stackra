@@ -35,6 +35,8 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
 - Raw SQL only in `PostgresLockDriver`, every key bound, each statement with a `// raw-sql:` reason (ADR 0160). A
   released migration is frozen; a change is a new migration.
 - The refusal carries no key: a key is an internal name.
+- The Valkey driver's scripts compare the stored `<owner>:<token>` before they renew or delete, so a lapsed lease never
+  touches its successor's key. Its URL is the `LOCKING_VALKEY_URL` secret, never a value.
 - No tenant word here (final review R-59, ADR 0323), and no `@WithLock` (registry A9).
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 

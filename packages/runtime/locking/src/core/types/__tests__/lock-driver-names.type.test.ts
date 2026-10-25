@@ -17,7 +17,7 @@ import { LOCKING_CONFIG_SCHEMA } from "#core/constants/locking-config-schema.con
 
 describe("DriverRegistry['locking.LockDriver']", () => {
   it("narrows DriverName<LockDriver> to the shipped drivers", () => {
-    expectTypeOf<DriverName<LockDriver>>().toEqualTypeOf<"postgres" | "memory">();
+    expectTypeOf<DriverName<LockDriver>>().toEqualTypeOf<"postgres" | "valkey" | "memory">();
     expectTypeOf<DriverRegistry["locking.LockDriver"]>().toEqualTypeOf<DriverName<LockDriver>>();
   });
 

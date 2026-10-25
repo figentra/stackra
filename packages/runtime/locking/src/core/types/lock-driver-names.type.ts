@@ -11,7 +11,7 @@ import type { LOCK_DRIVERS } from "#core/constants/lock-drivers.constant";
 
 declare module "@stackra/container" {
   interface DriverRegistry {
-    /** The driver names of `LockDriver` (`postgres`, `memory`). */
+    /** The driver names of `LockDriver` (`postgres`, `valkey`, `memory`). */
     "locking.LockDriver": (typeof LOCK_DRIVERS)[number];
   }
 }

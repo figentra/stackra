@@ -24,6 +24,6 @@ describe("LockingOptions", () => {
   });
 
   it("types driver as the LockDriver driver names", () => {
-    expectTypeOf<LockingOptions["driver"]>().toEqualTypeOf<"postgres" | "memory">();
+    expectTypeOf<LockingOptions["driver"]>().toEqualTypeOf<"postgres" | "valkey" | "memory">();
   });
 });

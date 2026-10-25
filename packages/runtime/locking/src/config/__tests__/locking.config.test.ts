@@ -45,7 +45,7 @@ describe("LockingConfig", () => {
   it("refuses a driver no one ships", () => {
     expect(() =>
       buildConfig(LockingConfig, {
-        values: { driver: "valkey" as DriverName<LockDriver> },
+        values: { driver: "redis" as DriverName<LockDriver> },
       }),
     ).toThrow(ConfigInvalidError);
   });

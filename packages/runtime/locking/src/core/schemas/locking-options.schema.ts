@@ -1,14 +1,17 @@
 /**
  * Stackra file contract:
- * Purpose: `LockingOptions`, the shape of `LockingConfig`: which lock driver runs.
+ * Purpose: `LockingOptions`, the shape of `LockingConfig`: which lock driver runs, and the `valkey` driver's server
+ *          and key prefix.
  * Boundary: a shape class; it registers this package's own schema (`LOCKING_CONFIG_SCHEMA`) for itself when the module
- *           loads, so `buildConfig(LockingConfig)` validates with no generated file. Deploy-time values only.
+ *           loads, so `buildConfig(LockingConfig)` validates with no generated file. Deploy-time values only. The Valkey
+ *           URL carries the password, so it is the `LOCKING_VALKEY_URL` secret, never a value.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); ADR 0305 (rule 34); ADR 0149 (decision 1: Postgres advisory
- *                     locks by default).
+ *                     locks by default); ADR 0103 (decision 2: a Valkey driver); ADR 0173.
  */
 import "#core/types/lock-driver-names.type";
 
+import { Secret } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
 import { registerSchemas, Schema } from "@stackra/validation";
 
@@ -26,6 +29,16 @@ import { LOCKING_CONFIG_SCHEMA } from "#core/constants/locking-config-schema.con
 export class LockingOptions extends Schema {
   /** Which driver runs: `postgres` holds advisory locks in the service's database; `memory` in the process. */
   driver: DriverName<LockDriver> = "postgres";
+
+  /** The `valkey` driver's server (`redis://` or `rediss://`, with its password); empty until the secret is set. */
+  @Secret("LOCKING_VALKEY_URL")
+  valkeyUrl = "";
+
+  /** The `valkey` driver's keys. */
+  valkey: {
+    /** Put in front of every lock key, so members that share one server never share a lock by accident. */
+    keyPrefix: string;
+  } = { keyPrefix: "lock:" };
 }
 
 registerSchemas([[LockingOptions, LOCKING_CONFIG_SCHEMA]]);

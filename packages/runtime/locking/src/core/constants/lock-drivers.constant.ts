@@ -10,4 +10,4 @@
  */
 
 /** The `LockDriver` drivers of this package, by name. */
-export const LOCK_DRIVERS = ["postgres", "memory"] as const;
+export const LOCK_DRIVERS = ["postgres", "valkey", "memory"] as const;

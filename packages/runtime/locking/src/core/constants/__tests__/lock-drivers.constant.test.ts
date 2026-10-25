@@ -11,6 +11,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { LOCK_DRIVERS } from "#core/constants/lock-drivers.constant";
 import { MemoryLockDriver } from "#core/drivers/memory-lock.driver";
 import { PostgresLockDriver } from "#node/drivers/postgres-lock.driver";
+import { ValkeyLockDriver } from "#node/drivers/valkey-lock.driver";
 
 /** `MemoryLockDriver` to `memory`: the class name less the port and kind, in lower case. */
 const driverName = (type: { readonly name: string }): string =>
@@ -18,6 +19,8 @@ const driverName = (type: { readonly name: string }): string =>
 
 describe("LOCK_DRIVERS", () => {
   it("names every shipped driver once", () => {
-    expect([...LOCK_DRIVERS]).toEqual([PostgresLockDriver, MemoryLockDriver].map(driverName));
+    expect([...LOCK_DRIVERS]).toEqual(
+      [PostgresLockDriver, ValkeyLockDriver, MemoryLockDriver].map(driverName),
+    );
   });
 });

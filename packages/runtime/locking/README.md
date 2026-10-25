@@ -69,3 +69,7 @@ and refuses a write with a smaller one stops a holder whose lock lapsed from wri
   dies; outside a transaction, `Locks` opens one around the work. The token comes from `locking.lock_tokens`, created by
   this package's migration `locking.0001_create_lock_tokens`.
 - **Memory** (`.`): leases in process memory, expiry on the `Clock`. It serialises callers in one process only.
+- **Valkey** (`./node`, `driver: valkey`): each key a Valkey string `<owner>:<token>` with a `PX` lifetime, a lease
+  taken, renewed and released in one script, the token from one counter key. The server is the `LOCKING_VALKEY_URL`
+  secret, keys are prefixed with `valkey.keyPrefix`. The lease ends with its TTL, so `Locks` renews it; a lapsed holder
+  never frees or extends the next holder's lock. One endpoint (or a shared hash tag), not a sharded cluster.
