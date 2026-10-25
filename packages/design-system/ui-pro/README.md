@@ -1,4 +1,4 @@
-# @stackra/ui-pro
+# @stackra-pro/ui
 
 Stackra Design System Pro components for Stackra's own apps only: the @stackra/ui props vocabulary over HeroUI Pro on web and HeroUI Native Pro on native. Published only to Figentra's restricted Keygen channel, never to npmjs.
 
@@ -11,13 +11,12 @@ Only Stackra's and Figentra's own apps import it (ADR 0310). `@stackra/ui` and e
 
 | Import                      | Holds                                                                                                                                                                                     |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/ui-pro`           | `src/config/ui-pro.config.ts`: `UiProConfig`                                                                                                                                              |
-| `@stackra/ui-pro/contracts` | the props contracts (`<Name>ContractProps`) on `@stackra/ui/contracts`' `Size` and `Tone`                                                                                                 |
-| `@stackra/ui-pro/react`     | every HeroUI Pro web component (66): charts, AI, forms, navigation, overlays, layout, data display and feedback; Pro `Command` is ActionPalette, `FloatingToc` is FloatingTableOfContents |
-| `@stackra/ui-pro/native`    | every HeroUI Native Pro component (55): charts, buttons, data display, date and time, forms and navigation; Pro `Fab` is FloatingActionButton                                             |
-| `@stackra/ui-pro/node`      | `src/node/ui-pro.module.ts`: the root module                                                                                                                                              |
-| `@stackra/ui-pro/css`       | `assets/public/css/ui-pro.css`: the fixes over HeroUI Pro's styles (contrast, the shimmer, Arabic lines), on theme variables only                                                         |
-| `@stackra/ui-pro/assets/*`  | static files at the package root (ADR 0234)                                                                                                                                               |
+| `@stackra-pro/ui`           | `src/config/ui-pro.config.ts`: `UiProConfig`                                                                                                                                              |
+| `@stackra-pro/ui/contracts` | the props contracts (`<Name>ContractProps`) on `@stackra/ui/contracts`' `Size` and `Tone`                                                                                                 |
+| `@stackra-pro/ui/react`     | every HeroUI Pro web component (66): charts, AI, forms, navigation, overlays, layout, data display and feedback; Pro `Command` is ActionPalette, `FloatingToc` is FloatingTableOfContents |
+| `@stackra-pro/ui/native`    | every HeroUI Native Pro component (55): charts, buttons, data display, date and time, forms and navigation; Pro `Fab` is FloatingActionButton                                             |
+| `@stackra-pro/ui/node`      | `src/node/ui-pro.module.ts`: the root module                                                                                                                                              |
+| `@stackra-pro/ui/assets/*`  | static files at the package root (ADR 0234)                                                                                                                                               |
 
 Each component is a thin wrapper: the `@stackra/ui` vocabulary (`size`, `tone`, `isDisabled`, `label`, `onPress`) maps
 onto HeroUI Pro's names, every other prop passes through, and the compound parts are HeroUI Pro's own. The web
@@ -28,7 +27,7 @@ component with nothing in the vocabulary to map (most charts, Markdown, Timeline
 
 - Web: `@heroui-pro/react` with its peers (`motion`, `react-resizable-panels`, `recharts` for Kpi), and the styles in
   this order: `@import "tailwindcss";`, `@import "@heroui/styles";`, `@import "@heroui-pro/react/css";` and
-  `@import "@stackra/ui-pro/css";`, the last outside any `@layer` so it wins over HeroUI Pro's layered rules.
+  `@import "@stackra-pro/ui/assets/public/css/ui-pro.css";`, the last outside any `@layer` so it wins over HeroUI Pro's layered rules.
 - Map under Vite: pass `workerUrl` from `import url from "maplibre-gl/dist/maplibre-gl-worker.mjs?url"`. MapLibre
   looks for its worker beside its own module, which Vite's dep optimiser moves and its build does not emit; without
   it the map draws no GeoJSON layer, routes included ("Worker failed to load").
@@ -39,7 +38,7 @@ component with nothing in the vocabulary to map (most charts, Markdown, Timeline
 
 ## Publishing
 
-`@stackra/ui-pro` publishes only to the restricted channel, Keygen Cloud's npm engine for Figentra's account,
+`@stackra-pro/ui` publishes only to the restricted channel, Keygen Cloud's npm engine for Figentra's account,
 `https://npm.pkg.keygen.sh/figentra/` (ADR 0310 as amended, ADR 0177 decision 2), for Figentra's own repositories, and
 never to npmjs. The Keygen custom domain gets its name later (ADR 0290 decision 17); the registry then moves to it.
 
@@ -83,4 +82,4 @@ generated from `tools/scripts/structure.mjs`. A group folder appears with its fi
 | `format:check`  | `oxfmt --check .`                               |
 | `clean`         | `rm -rf dist coverage .turbo`                   |
 
-Run one with `pnpm turbo run <task> --filter=@stackra/ui-pro`.
+Run one with `pnpm turbo run <task> --filter=@stackra-pro/ui`.

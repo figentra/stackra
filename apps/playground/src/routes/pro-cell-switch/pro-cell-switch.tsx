@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the CellSwitch route: `@stackra/ui-pro`'s CellSwitch, a toggle styled as a settings cell, in a
+ * Purpose: the page of the CellSwitch route: `@stackra-pro/ui`'s CellSwitch, a toggle styled as a settings cell, in a
  *          controlled cell that reports its state, an uncontrolled one that starts on, and disabled ones in both states.
  * Boundary: presentation and local state only. Each cell is named by `label`, the same text as its visible label.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProCellSwitchRoute } from "#src/routes/pro-cell-switch/pro-cell-switch.route";

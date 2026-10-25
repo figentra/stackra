@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: `EditorChangeKind` is its one value, and its types keep
+ * Purpose: the consumer contract of the `./contracts` entry: `EditorChangeKind` and `InspectorFieldKind` are its values, and its types keep
  *          their shapes (an `EditorNode` is an experience `DocumentNode`).
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
@@ -11,11 +11,18 @@ import type { DocumentNode } from "@stackra/experience/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
-import type { EditorChange, EditorNode, EditorOptions, EditorState } from "#contracts/index";
+import type {
+  EditorChange,
+  EditorNode,
+  EditorOptions,
+  EditorState,
+  Inspector,
+  InspectorField,
+} from "#contracts/index";
 
 describe("@stackra/builder/contracts", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(contracts).sort()).toEqual(["EditorChangeKind"]);
+    expect(Object.keys(contracts).sort()).toEqual(["EditorChangeKind", "InspectorFieldKind"]);
   });
 
   it("keeps the kernel out of the leaf entry", () => {
@@ -27,6 +34,14 @@ describe("@stackra/builder/contracts", () => {
     expectTypeOf<EditorNode>().toExtend<DocumentNode>();
     expectTypeOf<EditorNode["id"]>().toEqualTypeOf<string>();
     expectTypeOf<EditorNode["children"]>().toEqualTypeOf<readonly EditorNode[]>();
+  });
+
+  it("types the inspector and its field descriptors", () => {
+    expectTypeOf<InspectorField["kind"]>().toEqualTypeOf<
+      "text" | "number" | "boolean" | "enum" | "money" | "localized"
+    >();
+    expectTypeOf<InspectorField["options"]>().toEqualTypeOf<readonly string[]>();
+    expectTypeOf<Inspector["fields"]>().toEqualTypeOf<readonly InspectorField[]>();
   });
 
   it("types the options, the state and the changes", () => {

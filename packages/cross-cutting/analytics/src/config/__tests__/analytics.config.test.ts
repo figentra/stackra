@@ -3,8 +3,7 @@
  * Purpose: unit and type tests of `AnalyticsConfig`: a configuration over `AnalyticsOptions` keyed `analytics`, built
  *          with defaults that send nothing, the template's web, console and mobile overrides, a runway values layer,
  *          and a refused gating category.
- * Boundary: test only; the overrides restate the template's `apps/{web,console,mobile}/src/config/analytics.config.ts`
- *           with the `none` driver in place of `posthog`, whose vendor driver has not shipped.
+ * Boundary: test only; the overrides restate the template's `apps/{web,console,mobile}/src/config/analytics.config.ts`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 19, 20 and 26); ADR 0298.
  */
@@ -21,7 +20,7 @@ const BaseAnalyticsConfig = AnalyticsConfig;
 
 /** The public site's override. */
 class WebAnalyticsConfig extends BaseAnalyticsConfig {
-  override driver: DriverName<AnalyticsDriver> = "none";
+  override driver: DriverName<AnalyticsDriver> = "posthog";
 
   override ingestOrigin = "";
 
@@ -42,7 +41,7 @@ class WebAnalyticsConfig extends BaseAnalyticsConfig {
 
 /** The console's and the mobile app's override (the same members). */
 class ConsoleAnalyticsConfig extends BaseAnalyticsConfig {
-  override driver: DriverName<AnalyticsDriver> = "none";
+  override driver: DriverName<AnalyticsDriver> = "posthog";
 
   override consentCategory: ConsentCategory = ConsentCategory.Analytics;
 

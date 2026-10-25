@@ -122,7 +122,7 @@ catalogs:
     jsdom: 30.1.0
     # Code-based routing for the console and every Vite app (no file routing anywhere).
     react-router: 7.18.4
-    # HeroUI Pro for web (ADR 0310): only @stackra/ui-pro (private) and our own apps depend on it, never a free or
+    # HeroUI Pro for web (ADR 0310): only @stackra-pro/ui (private) and our own apps depend on it, never a free or
     # published package (ADR 0165 decision 5, ADR 0197). The npm package is a shell; its postinstall downloads the
     # licensed code from HeroUI's CDN with a CLI login (local) or HEROUI_AUTH_TOKEN (CI). recharts is its optional
     # peer for the charts and KPI.
@@ -194,6 +194,10 @@ catalogs:
     expo-secure-store: 57.0.4
     # Push permission and tokens for @stackra/platform/native (optional peer). MIT.
     expo-notifications: 57.0.22
+    # Optional peers of @stackra/platform/native (connectivity, camera permission, haptics). MIT.
+    "@react-native-community/netinfo": 12.0.1
+    expo-camera: 57.0.5
+    expo-haptics: 57.0.3
     babel-preset-expo: 57.0.16
     react: 19.2.3
     react-dom: 19.2.3

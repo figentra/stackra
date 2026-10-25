@@ -74,7 +74,8 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/experience": "workspace:*",
-    "@stackra/validation": "workspace:*"
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@stackra/config": "workspace:*",
@@ -97,8 +98,7 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality",
-    "yjs": "catalog:",
-    "zod": "catalog:"
+    "yjs": "catalog:"
   },
   "peerDependencies": {
     "react": "catalog:frontend",

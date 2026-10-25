@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the LineChart route: `@stackra/ui-pro`'s LineChart with two series (traffic by source, a legend
+ * Purpose: the page of the LineChart route: `@stackra-pro/ui`'s LineChart with two series (traffic by source, a legend
  *          that names each series) and with one dashed series against a solid one (this year against last), each with a
  *          named container and the shared ChartTooltip card on hover.
  * Boundary: presentation only; the figures are local. A chart's container is named by `label` with `role="img"`, and
@@ -9,7 +9,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { DemoChartTick } from "#src/components/demo-chart-tick";
 import { DemoChartTooltip } from "#src/components/demo-chart-tooltip";

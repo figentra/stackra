@@ -63,17 +63,20 @@ export const FORBIDDEN_DEPENDENCIES = [
 ];
 
 /**
- * HeroUI Pro and its wrapper package (ADR 0310, ADR 0197): only apps and the private `@stackra/ui-pro` may depend on
- * them, and only apps on `@stackra/ui-pro`; a free or published package never does (ADR 0165 decision 5).
+ * HeroUI Pro and its wrapper package (ADR 0310, ADR 0197): only apps and the private `@stackra-pro/ui` may depend on
+ * them, and only apps on `@stackra-pro/ui`; a free or published package never does (ADR 0165 decision 5).
  */
-export const PRO_DEPENDENCIES = ["@heroui-pro/react", "heroui-native-pro", "@stackra/ui-pro"];
+export const PRO_DEPENDENCIES = ["@heroui-pro/react", "heroui-native-pro", "@stackra-pro/ui"];
 
 /**
  * The one package that wraps HeroUI Pro. It publishes only to the restricted Keygen channel, never to npmjs (ADR 0310
  * decision 1 as amended by STA-447): `"private": true` keeps `pnpm publish` and changesets from sending it to npmjs, and
  * its `pnpm pack` tarball goes up through the Keygen CLI (STA-482), since Keygen's npm engine takes no `npm publish`.
  */
-const PRO_WRAPPER = "@stackra/ui-pro";
+const PRO_WRAPPER = "@stackra-pro/ui";
+
+/** Where the wrapper lives: the folder keeps its name while the package is `@stackra-pro/ui`. */
+const PRO_WRAPPER_DIR = "packages/design-system/ui-pro";
 
 /**
  * The restricted channel: Keygen's hosted npm engine for one account (ADR 0177 decision 2, ADR 0310). The Keygen
@@ -154,6 +157,8 @@ export function tierFor(dir) {
  */
 export function expectedName(dir) {
   const base = dir.split("/").at(-1);
+  // The one Pro package lives in a `@stackra-pro` scope whose name is not its folder's (owner 6).
+  if (dir === PRO_WRAPPER_DIR) return PRO_WRAPPER;
   if (dir.startsWith("apps/")) return `@figentra/${base}`;
   if (dir.startsWith("services/")) return `@figentra/service-${base}`;
   if (dir.startsWith("workers/")) return `@figentra/worker-${base}`;

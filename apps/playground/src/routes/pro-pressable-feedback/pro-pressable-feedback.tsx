@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the PressableFeedback route: `@stackra/ui-pro`'s PressableFeedback as two press tiles, one
+ * Purpose: the page of the PressableFeedback route: `@stackra-pro/ui`'s PressableFeedback as two press tiles, one
  *          with a ripple and one with a highlight, that count their presses in text, and a disabled tile, each a real
  *          button named by its text.
  * Boundary: presentation and local state only. The feedback is visual and extra; the press, the count and the name come
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProPressableFeedbackRoute } from "#src/routes/pro-pressable-feedback/pro-pressable-feedback.route";

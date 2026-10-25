@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/ui-pro, which has several public files, until
+ * Purpose: Stand-in barrel: the `./contracts` entry of @stackra-pro/ui, which has several public files, until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing.
  * Runtime: isomorphic

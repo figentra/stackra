@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the root module of @stackra/ui-pro sits where gen looks for it, `src/node/<name>.module.ts`
+ * Purpose: proves the root module of @stackra-pro/ui sits where gen looks for it, `src/node/<name>.module.ts`
  *          named after the package, and imports nothing yet.
  * Boundary: reads package.json and imports the module file; builds no container.
  * Runtime: node

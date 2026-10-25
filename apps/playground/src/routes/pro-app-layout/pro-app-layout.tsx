@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the AppLayout route: `@stackra/ui-pro`'s AppLayout in a frame inside the page, with the sidebar
+ * Purpose: the page of the AppLayout route: `@stackra-pro/ui`'s AppLayout in a frame inside the page, with the sidebar
  *          (collapsing to icons), a top bar with the menu toggle that opens the navigation on a narrow viewport and the
  *          trigger of the aside panel, the main content, and the aside.
  * Boundary: presentation and local state only. The layout sits in a fixed-height frame because HeroUI Pro sizes it to the
@@ -11,7 +11,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0060 (light, dark, RTL); STA-403 FR-013.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { DemoNavigation, navigationLabel } from "#src/components/demo-navigation";

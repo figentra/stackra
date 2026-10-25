@@ -16,8 +16,7 @@ import { ConsentConfig, ConsentLedger, MemoryConsentStoreDriver } from "@stackra
 import type { Event } from "@stackra/events";
 
 import type { AnalyticsDelivery } from "#contracts/index";
-import { AnalyticsClient, AnalyticsConfig } from "#core/index";
-import { MemoryAnalyticsDriver } from "#testing/drivers/memory-analytics.driver";
+import { AnalyticsClient, AnalyticsConfig, MemoryAnalyticsDriver } from "#core/index";
 
 /**
  * An analytics client a test reads back.

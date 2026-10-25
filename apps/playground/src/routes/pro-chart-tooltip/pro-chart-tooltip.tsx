@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ChartTooltip route: `@stackra/ui-pro`'s ChartTooltip drawn as a card on its own (a header,
+ * Purpose: the page of the ChartTooltip route: `@stackra-pro/ui`'s ChartTooltip drawn as a card on its own (a header,
  *          two rows with their swatch, label and value) and as the card a bar chart shows for a pressed or hovered
  *          column.
  * Boundary: presentation only; the figures are local. The standalone card is plain content, so it sits in a named
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { DemoChartTick } from "#src/components/demo-chart-tick";
 import { DemoChartTooltip } from "#src/components/demo-chart-tooltip";

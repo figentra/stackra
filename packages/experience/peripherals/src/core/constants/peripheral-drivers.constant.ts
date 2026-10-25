@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `PERIPHERAL_DRIVERS`, the driver names of the three selectable ports, each a driver file prefix of this
- *          package: `memory` (`.`) for each, `escpos`, `printer_kick` and `hid` (`./electron`).
+ *          package: `memory` (`.`) for each, `escpos`, `printer_kick` and `hid` (`./desktop`).
  * Boundary: internal data; it types `PeripheralsConfig`'s driver fields through the `DriverRegistry` entries and checks
  *           them in the shipped schema. The names must equal the ones gen writes for these ports in a host's wiring,
  *           because both augment the same `DriverRegistry` keys. A new driver file adds its name here.

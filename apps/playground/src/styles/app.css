@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 @import "@heroui-pro/react/css";
-/* The fixes our Pro wrappers need (contrast, Arabic line boxes, the shimmer), owned by @stackra/ui-pro (STA-458). */
-@import "@stackra/ui-pro/css";
+/* The fixes our Pro wrappers need (contrast, Arabic line boxes, the shimmer), owned by @stackra-pro/ui (STA-458). */
+@import "@stackra-pro/ui/assets/public/css/ui-pro.css";
 @import "@stackra/tokens/fonts/fonts.css";
 @import "@stackra/tokens/themes/stackra/web.css";
 

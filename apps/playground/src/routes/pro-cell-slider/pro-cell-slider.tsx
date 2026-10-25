@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the CellSlider route: `@stackra/ui-pro`'s CellSlider, a range slider styled as a settings cell, in
+ * Purpose: the page of the CellSlider route: `@stackra-pro/ui`'s CellSlider, a range slider styled as a settings cell, in
  *          a controlled cell that reports its value, an uncontrolled one, and a disabled one.
  * Boundary: presentation and local state only. Each cell is named by `label`, the same text as its visible label.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProCellSliderRoute } from "#src/routes/pro-cell-slider/pro-cell-slider.route";

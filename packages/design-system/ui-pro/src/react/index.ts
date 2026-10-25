@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./react` entry of @stackra/ui-pro (the web wrappers over HeroUI Pro), which has
+ * Purpose: Stand-in barrel: the `./react` entry of @stackra-pro/ui (the web wrappers over HeroUI Pro), which has
  *          several public files, until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing.
  * Runtime: browser

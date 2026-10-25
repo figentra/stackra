@@ -1,6 +1,6 @@
 # src/native
 
-The `./native` entry of @stackra/ui-pro (ADR 0294 decision 15): React Native renderers, one folder each,
+The `./native` entry of @stackra-pro/ui (ADR 0294 decision 15): React Native renderers, one folder each,
 `native/<name>/<name>.tsx` with its `__tests__/`. It imports `core/`, never `node/` or `react/`; `react-native`
 becomes an optional peer with the first import.
 

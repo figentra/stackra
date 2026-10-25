@@ -8,7 +8,7 @@
  */
 import type { PageCategory } from "#src/enums/page-category.enum";
 
-/** The `@stackra/ui-pro` LineChart page, at `/pro-line-chart`. */
+/** The `@stackra-pro/ui` LineChart page, at `/pro-line-chart`. */
 // shortcut: a plain class until the Route kind base ships with gen (STA-339); then
 // `export class ProLineChartRoute extends Route({ path: "/pro-line-chart" }) {}`.
 // oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
@@ -19,6 +19,6 @@ export class ProLineChartRoute {
   /** The page title, the component's name. */
   static readonly title = "LineChart";
 
-  /** The category the page is listed under: the `@stackra/ui-pro` pages. */
+  /** The category the page is listed under: the `@stackra-pro/ui` pages. */
   static readonly category: PageCategory = "Charts";
 }

@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the DataGrid route: `@stackra/ui-pro`'s DataGrid with invoices, sortable columns (the
+ * Purpose: the page of the DataGrid route: `@stackra-pro/ui`'s DataGrid with invoices, sortable columns (the
  *          amount sorts as a number), row selection with checkboxes, and a live count of the selected rows.
  * Boundary: presentation only; the data is local. Amounts and dates are isolated left to right (`<bdi>`) so a
  *          right-to-left page keeps them readable.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0060 (light, dark, RTL); STA-403 FR-013.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProDataGridRoute } from "#src/routes/pro-data-grid/pro-data-grid.route";

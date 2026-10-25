@@ -2,7 +2,7 @@
   "name": "@stackra/analytics",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra product analytics delivery: AnalyticsEvent instances sent through the AnalyticsDriver port only once the visitor's consent category is granted, a bounded ordered queue for events fired before the decision that is sent on acceptance and dropped on refusal (ADR 0298), the AnalyticsConfig configuration with its shipped schema, the React useAnalytics hook and the fakeAnalytics test helper",
+  "description": "Stackra product analytics delivery: AnalyticsEvent instances sent through the AnalyticsDriver port only once the visitor's consent category is granted, a bounded ordered queue for events fired before the decision that is sent on acceptance and dropped on refusal (ADR 0298), the AnalyticsConfig configuration with its shipped schema, the none, memory and PostHog drivers (and a native PostHog driver that flushes when the app goes to the background), the React useAnalytics hook and the fakeAnalytics test helper",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -33,6 +33,11 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*/index.ts"
+    ],
     "#react/*": [
       "./src/react/*",
       "./src/react/*.ts",
@@ -60,6 +65,11 @@
       "@stackra/source": "./src/react/index.ts",
       "types": "./dist/react.d.mts",
       "default": "./dist/react.mjs"
+    },
+    "./native": {
+      "@stackra/source": "./src/native/index.ts",
+      "types": "./dist/native.d.mts",
+      "default": "./dist/native.mjs"
     },
     "./testing": {
       "@stackra/source": "./src/testing/index.ts",
@@ -107,15 +117,20 @@
     "oxlint": "catalog:quality",
     "react": "catalog:frontend",
     "react-dom": "catalog:frontend",
+    "react-native": "catalog:mobile",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
-    "react": "catalog:frontend"
+    "react": "catalog:frontend",
+    "react-native": "catalog:mobile"
   },
   "peerDependenciesMeta": {
     "react": {
+      "optional": true
+    },
+    "react-native": {
       "optional": true
     }
   }

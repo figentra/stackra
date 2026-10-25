@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ChainOfThought route: `@stackra/ui-pro`'s ChainOfThought as a finished, collapsed trace
+ * Purpose: the page of the ChainOfThought route: `@stackra-pro/ui`'s ChainOfThought as a finished, collapsed trace
  *          ("Thought for 4 seconds", opened by its trigger) and as a trace still streaming (an open list of steps under a
  *          shimmering "Thinking" trigger).
  * Boundary: presentation only; the steps are local. The trigger is a real button that reports its expanded state.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProChainOfThoughtRoute } from "#src/routes/pro-chain-of-thought/pro-chain-of-thought.route";
 

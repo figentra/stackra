@@ -8,7 +8,7 @@
  */
 import type { PageCategory } from "#src/enums/page-category.enum";
 
-/** The `@stackra/ui-pro` PressableFeedback page, at `/pro-pressable-feedback`. */
+/** The `@stackra-pro/ui` PressableFeedback page, at `/pro-pressable-feedback`. */
 // shortcut: a plain class until the Route kind base ships with gen (STA-339); then
 // `export class ProPressableFeedbackRoute extends Route({ path: "/pro-pressable-feedback" }) {}`.
 // oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
@@ -19,6 +19,6 @@ export class ProPressableFeedbackRoute {
   /** The page title, the component's name. */
   static readonly title = "PressableFeedback";
 
-  /** The category the page is listed under: the `@stackra/ui-pro` pages. */
+  /** The category the page is listed under: the `@stackra-pro/ui` pages. */
   static readonly category: PageCategory = "Actions";
 }

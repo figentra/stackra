@@ -177,6 +177,7 @@ export type { SkeletonGroupContractProps } from "#contracts/types/skeleton-group
 export type { SortDescriptor } from "#contracts/types/sort-descriptor.type";
 export type { SpinnerContractProps } from "#contracts/types/spinner-contract-props.type";
 export type { StateContractProps } from "#contracts/types/state-contract-props.type";
+export type { StatContractProps } from "#contracts/types/stat-contract-props.type";
 export type { StatusBadgeContractProps } from "#contracts/types/status-badge-contract-props.type";
 export type { SurfaceContractProps } from "#contracts/types/surface-contract-props.type";
 export type { SwitchContractProps } from "#contracts/types/switch-contract-props.type";

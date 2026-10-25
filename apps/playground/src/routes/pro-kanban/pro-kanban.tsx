@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Kanban route: `@stackra/ui-pro`'s Kanban with three columns of cards that move between
+ * Purpose: the page of the Kanban route: `@stackra-pro/ui`'s Kanban with three columns of cards that move between
  *          columns by dragging (HeroUI Pro's drag and drop) or, for keyboard and assistive-technology users, by a
  *          button on each card, with each column's card count and a line that says what moved.
  * Boundary: presentation and local state only. The buttons are the page's non-dragging way to move a card (WCAG 2.2,
@@ -9,7 +9,7 @@
  * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0060 (light, dark, RTL); STA-403 FR-013.
  */
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProKanbanRoute } from "#src/routes/pro-kanban/pro-kanban.route";

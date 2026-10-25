@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the NumberStepper route: `@stackra/ui-pro`'s NumberStepper, a numeric input with decrement and
+ * Purpose: the page of the NumberStepper route: `@stackra-pro/ui`'s NumberStepper, a numeric input with decrement and
  *          increment buttons and an animated value, in a controlled stepper that reports its value, three sizes, a
  *          currency format and a disabled stepper.
  * Boundary: presentation and local state only. Each stepper is named by `label`; its two buttons take their names from
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProNumberStepperRoute } from "#src/routes/pro-number-stepper/pro-number-stepper.route";

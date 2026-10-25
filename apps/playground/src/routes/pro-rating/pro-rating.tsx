@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Rating route: `@stackra/ui-pro`'s Rating as an input of five stars, each named by its
+ * Purpose: the page of the Rating route: `@stackra-pro/ui`'s Rating as an input of five stars, each named by its
  *          value, that reports the rating chosen, and as read-only ratings, one with a fractional value that is also
  *          written out as text.
  * Boundary: presentation and local state only. A read-only rating is announced with its value in a label, since the
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProRatingRoute } from "#src/routes/pro-rating/pro-rating.route";

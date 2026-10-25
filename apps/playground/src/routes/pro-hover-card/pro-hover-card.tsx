@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the HoverCard route: `@stackra/ui-pro`'s HoverCard on a link inside a sentence, opening a card
+ * Purpose: the page of the HoverCard route: `@stackra-pro/ui`'s HoverCard on a link inside a sentence, opening a card
  *          with a profile preview when the link is hovered or focused, and a second card with a short delay on a
  *          button.
  * Boundary: presentation only. The card is a dialog named by `label`; the link's address is a fragment, so a press
@@ -9,7 +9,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProHoverCardRoute } from "#src/routes/pro-hover-card/pro-hover-card.route";
 

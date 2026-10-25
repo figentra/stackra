@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the CellColorPicker route: `@stackra/ui-pro`'s CellColorPicker, a colour picker styled as a
+ * Purpose: the page of the CellColorPicker route: `@stackra-pro/ui`'s CellColorPicker, a colour picker styled as a
  *          settings cell, in a controlled cell that reports the colour as hex, an uncontrolled one, and a disabled one.
  * Boundary: presentation and local state only. The trigger button is named by its content, the label and the colour
  *          as text; the root draws no element, so it takes no name. The popover holds a named colour area and a named hue slider.
@@ -9,7 +9,7 @@
  */
 import { ColorArea, ColorSlider, parseColor } from "@heroui/react";
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProCellColorPickerRoute } from "#src/routes/pro-cell-color-picker/pro-cell-color-picker.route";

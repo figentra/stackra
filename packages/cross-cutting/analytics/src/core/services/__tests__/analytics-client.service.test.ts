@@ -28,7 +28,7 @@ import { AnalyticsConfig } from "#config/analytics.config";
 import { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
 import { AnalyticsState } from "#core/enums/analytics-state.enum";
 import { AnalyticsClient } from "#core/services/analytics-client.service";
-import { MemoryAnalyticsDriver } from "#testing/drivers/memory-analytics.driver";
+import { MemoryAnalyticsDriver } from "#core/drivers/memory-analytics.driver";
 
 /** The template's contact-page event. */
 class LeadSubmitted extends AnalyticsEvent({ name: "lead.submitted" }) {

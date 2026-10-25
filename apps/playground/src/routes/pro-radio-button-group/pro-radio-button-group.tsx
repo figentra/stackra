@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the RadioButtonGroup route: `@stackra/ui-pro`'s RadioButtonGroup, a single-selection group of
+ * Purpose: the page of the RadioButtonGroup route: `@stackra-pro/ui`'s RadioButtonGroup, a single-selection group of
  *          card-style radios, in a controlled group that reports the choice, a grid layout and a disabled group.
  * Boundary: presentation and local state only. Each group is named by `label`, the same text as its visible label; each
  *          card is named by its own label and described by its description.
@@ -8,7 +8,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProRadioButtonGroupRoute } from "#src/routes/pro-radio-button-group/pro-radio-button-group.route";

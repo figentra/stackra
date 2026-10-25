@@ -30,5 +30,7 @@ describe("AnalyticsOptions", () => {
     expectTypeOf<AnalyticsOptions["consentCategory"]>().toEqualTypeOf<ConsentCategory>();
     expectTypeOf<AnalyticsOptions["denyProperties"]>().toEqualTypeOf<string[]>();
     expectTypeOf<AnalyticsOptions["ingestOrigin"]>().toEqualTypeOf<string>();
+    expectTypeOf<AnalyticsOptions["posthogKey"]>().toEqualTypeOf<string | null>();
+    expectTypeOf<AnalyticsOptions["posthogHost"]>().toEqualTypeOf<string>();
   });
 });

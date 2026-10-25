@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `ANALYTICS_CONFIG_SCHEMA`: the defaults that send nothing anywhere, the field rules (never
  *          gated by `necessary`, a queue of 0 to 1,000, an empty or http(s) ingest origin, known driver names,
- *          non-empty deny names), and no object-level refinement, so a member's generated schema can `.extend` it in
+ *          non-empty deny names, an http(s) PostHog host), and no object-level refinement, so a member's generated schema can `.extend` it in
  *          the template's mobile form.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -25,7 +25,20 @@ describe("ANALYTICS_CONFIG_SCHEMA", () => {
       cookieless: true,
       ingestOrigin: "",
       denyProperties: [],
+      posthogKey: null,
+      posthogHost: "https://eu.i.posthog.com",
     });
+  });
+
+  it("accepts the posthog driver with its key and another host", () => {
+    const parsed = ANALYTICS_CONFIG_SCHEMA.parse({
+      driver: "posthog",
+      posthogKey: "phc_test",
+      posthogHost: "https://us.i.posthog.com",
+    });
+    expect(parsed.driver).toBe("posthog");
+    expect(parsed.posthogKey).toBe("phc_test");
+    expect(parsed.posthogHost).toBe("https://us.i.posthog.com");
   });
 
   it("accepts a reverse-proxied ingest origin and another optional category", () => {
@@ -47,6 +60,7 @@ describe("ANALYTICS_CONFIG_SCHEMA", () => {
     ["an ingest origin that is not a URL", { ingestOrigin: "ingest" }],
     ["a script URL as the ingest origin", { ingestOrigin: "javascript:alert(1)" }],
     ["an empty deny name", { denyProperties: [""] }],
+    ["a PostHog host that is not a URL", { posthogHost: "posthog" }],
   ])("refuses %s", (_case, values) => {
     expect(ANALYTICS_CONFIG_SCHEMA.safeParse(values).success).toBe(false);
   });

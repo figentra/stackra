@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Carousel route: `@stackra/ui-pro`'s Carousel with five slides, previous and next buttons,
+ * Purpose: the page of the Carousel route: `@stackra-pro/ui`'s Carousel with five slides, previous and next buttons,
  *          pagination dots, a loop, and a line that says which slide is showing, over slides drawn from token colours.
  * Boundary: presentation and local state only. The slides are coloured panels with a caption, not photographs, so the
  *          page needs no network and every slide's text is checked for contrast; there are no thumbnails, which need an
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProCarouselRoute } from "#src/routes/pro-carousel/pro-carousel.route";
 

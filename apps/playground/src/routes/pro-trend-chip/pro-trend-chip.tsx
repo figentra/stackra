@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the TrendChip route: `@stackra/ui-pro`'s TrendChip in each direction (up, down, neutral) in
+ * Purpose: the page of the TrendChip route: `@stackra-pro/ui`'s TrendChip in each direction (up, down, neutral) in
  *          each size, in each variant, and with a prefix and a suffix; each chip names its direction in words, since
  *          HeroUI Pro conveys it by an arrow and a colour only.
  * Boundary: presentation only. The direction word is visually hidden text in the chip's suffix. Values are isolated
@@ -9,8 +9,8 @@
  * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0060 (light, dark, RTL); STA-403 FR-013.
  */
 import { Size } from "@stackra/ui/contracts";
-import { TrendChipVariant } from "@stackra/ui-pro/contracts";
-import * as UiPro from "@stackra/ui-pro/react";
+import { TrendChipVariant } from "@stackra-pro/ui/contracts";
+import * as UiPro from "@stackra-pro/ui/react";
 import type { ReactNode } from "react";
 
 import { ProTrendChipRoute } from "#src/routes/pro-trend-chip/pro-trend-chip.route";

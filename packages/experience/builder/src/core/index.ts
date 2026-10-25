@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `.` entry of @stackra/builder (the `Editor` kernel, `parseDocumentNode`, the document
- *          limits and patterns, and the refusals they raise) until `stackra gen` writes the entry barrels (STA-339).
+ * Purpose: Stand-in barrel: the `.` entry of @stackra/builder (the `Editor` kernel, `parseDocumentNode`, `inspectorFieldsOf`, the
+ *          document limits and patterns, and the refusals they raise) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The types are the `./contracts` entry's; the hooks and the Yjs
  *           binding are the `./react` entry's (one symbol, one entry), so this entry loads neither React nor a CRDT
  *           library. `applyChange` and `blockIds` stay internal: `Editor` is the one way to change a document.
@@ -17,5 +17,6 @@ export { BlockNotFoundError } from "#core/errors/block-not-found.error";
 export { BlockNotRegisteredError } from "#core/errors/block-not-registered.error";
 export { DocumentInvalidError } from "#core/errors/document-invalid.error";
 export { RootBlockLockedError } from "#core/errors/root-block-locked.error";
+export { inspectorFieldsOf } from "#core/functions/inspector-fields-of.function";
 export { parseDocumentNode } from "#core/functions/parse-document-node.function";
 export { Editor } from "#core/values/editor.value";

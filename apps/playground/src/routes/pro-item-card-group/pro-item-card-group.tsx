@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ItemCardGroup route: `@stackra/ui-pro`'s ItemCardGroup as a titled list of three
+ * Purpose: the page of the ItemCardGroup route: `@stackra-pro/ui`'s ItemCardGroup as a titled list of three
  *          integrations joined into one surface by separators, each with a button that names it and reports which
  *          was pressed, and as a two-column grid of the same cards.
  * Boundary: presentation and local state only.
@@ -8,7 +8,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { Fragment, useState } from "react";
 
 import { DemoIcon, type DemoIconName } from "#src/components/demo-icon";

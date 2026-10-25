@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Stepper route: `@stackra/ui-pro`'s Stepper as a four-step checkout that moves by pressing a
+ * Purpose: the page of the Stepper route: `@stackra-pro/ui`'s Stepper as a four-step checkout that moves by pressing a
  *          step or the Back and Next buttons, and as a vertical stepper with descriptions, each naming its step and
  *          position.
  * Boundary: presentation and local state only.
@@ -8,7 +8,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProStepperRoute } from "#src/routes/pro-stepper/pro-stepper.route";

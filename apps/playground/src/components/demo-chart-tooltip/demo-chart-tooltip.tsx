@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: the tooltip card the chart pages of the Pro group show for a hovered point: the point's label as a header,
- *          then one row per series with its colour swatch, name and value, drawn with `@stackra/ui-pro`'s ChartTooltip.
+ *          then one row per series with its colour swatch, name and value, drawn with `@stackra-pro/ui`'s ChartTooltip.
  * Boundary: presentation only; a recharts chart passes it as the `content` of its Tooltip, and it draws nothing while
  *          no point is active. Values are isolated left to right (`<bdi>`) so a right-to-left page keeps them readable.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import { ChartTooltip } from "@stackra/ui-pro/react";
+import { ChartTooltip } from "@stackra-pro/ui/react";
 
 /** One row of a tooltip's payload, as far as the card reads it. */
 export interface DemoChartTooltipEntry {

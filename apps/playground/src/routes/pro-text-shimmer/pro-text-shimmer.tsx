@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the TextShimmer route: `@stackra/ui-pro`'s TextShimmer on two short labels ("Thinking..." and
+ * Purpose: the page of the TextShimmer route: `@stackra-pro/ui`'s TextShimmer on two short labels ("Thinking..." and
  *          "Generating response...") and on a muted label, text with a highlight that sweeps across it while work goes on.
  * Boundary: presentation only. The text is real text, so it reads as it is; under reduced motion the highlight is
  *          removed and the text is solid. The muted label uses the page's muted text colour.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProTextShimmerRoute } from "#src/routes/pro-text-shimmer/pro-text-shimmer.route";
 

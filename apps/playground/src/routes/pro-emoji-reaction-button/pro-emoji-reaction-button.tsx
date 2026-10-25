@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the EmojiReactionButton route: `@stackra/ui-pro`'s EmojiReactionButton as a row of five
+ * Purpose: the page of the EmojiReactionButton route: `@stackra-pro/ui`'s EmojiReactionButton as a row of five
  *          reactions, each a toggle named by its meaning that adds or removes the reader's own reaction and its count,
  *          with the totals reported, and a disabled one.
  * Boundary: presentation and local state only. Each button is named by its meaning and the count it shows ("Thumbs
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProEmojiReactionButtonRoute } from "#src/routes/pro-emoji-reaction-button/pro-emoji-reaction-button.route";

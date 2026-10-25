@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Resizable route: `@stackra/ui-pro`'s Resizable as a side-by-side layout (a sidebar with
+ * Purpose: the page of the Resizable route: `@stackra-pro/ui`'s Resizable as a side-by-side layout (a sidebar with
  *          pixel limits and a main panel) and as a stacked layout (an editor over a console), each separator named,
  *          draggable and moved with the arrow keys.
  * Boundary: presentation only. Each group sits in a fixed-height frame, since the panels fill the height they are given.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProResizableRoute } from "#src/routes/pro-resizable/pro-resizable.route";
 

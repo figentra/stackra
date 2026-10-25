@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the FloatingTableOfContents route: `@stackra/ui-pro`'s FloatingTableOfContents beside a short
+ * Purpose: the page of the FloatingTableOfContents route: `@stackra-pro/ui`'s FloatingTableOfContents beside a short
  *          article of four sections, a column of bars that opens a list of section links on a press (or on hover),
  *          marks the current section and moves to the section chosen.
  * Boundary: presentation and local state only. The current section is the one last chosen; the page does not track
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProFloatingTableOfContentsRoute } from "#src/routes/pro-floating-table-of-contents/pro-floating-table-of-contents.route";

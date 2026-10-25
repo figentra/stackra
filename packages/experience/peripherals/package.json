@@ -33,10 +33,10 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
-    "#electron/*": [
-      "./src/electron/*",
-      "./src/electron/*.ts",
-      "./src/electron/*/index.ts"
+    "#desktop/*": [
+      "./src/desktop/*",
+      "./src/desktop/*.ts",
+      "./src/desktop/*/index.ts"
     ]
   },
   "exports": {
@@ -50,10 +50,10 @@
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
     },
-    "./electron": {
-      "@stackra/source": "./src/electron/index.ts",
-      "types": "./dist/electron.d.mts",
-      "default": "./dist/electron.mjs"
+    "./desktop": {
+      "@stackra/source": "./src/desktop/index.ts",
+      "types": "./dist/desktop.d.mts",
+      "default": "./dist/desktop.mjs"
     }
   },
   "publishConfig": {

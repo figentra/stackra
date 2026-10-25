@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Segment route: `@stackra/ui-pro`'s Segment as a view switch (four labelled choices with the
+ * Purpose: the page of the Segment route: `@stackra-pro/ui`'s Segment as a view switch (four labelled choices with the
  *          selection reported beside it) and as a small ghost range picker with separators.
  * Boundary: presentation and local state only.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProSegmentRoute } from "#src/routes/pro-segment/pro-segment.route";

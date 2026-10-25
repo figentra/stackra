@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./native` entry of @stackra/ui-pro (the native wrappers over HeroUI Native Pro),
+ * Purpose: Stand-in barrel: the `./native` entry of @stackra-pro/ui (the native wrappers over HeroUI Native Pro),
  *          which has several public files, until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing.
  * Runtime: react-native

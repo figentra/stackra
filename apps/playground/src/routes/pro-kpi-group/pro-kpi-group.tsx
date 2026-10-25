@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the KpiGroup route: `@stackra/ui-pro`'s KpiGroup joining three Kpi cards into one horizontal
+ * Purpose: the page of the KpiGroup route: `@stackra-pro/ui`'s KpiGroup joining three Kpi cards into one horizontal
  *          strip with separators, and stacking two in a vertical group, each with a formatted value and a trend that
  *          names its direction.
  * Boundary: presentation only; the figures are local.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { Fragment } from "react";
 
 import { ProKpiGroupRoute } from "#src/routes/pro-kpi-group/pro-kpi-group.route";

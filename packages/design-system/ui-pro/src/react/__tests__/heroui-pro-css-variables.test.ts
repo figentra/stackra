@@ -3,7 +3,7 @@
  * Purpose: proves the installed HeroUI Pro stylesheet reads no CSS variable that nothing defines, so a theme reaches
  *          every Pro component: each `var(--x)` it reads with no fallback is defined by HeroUI Pro itself, HeroUI's
  *          theme, Tailwind's theme or the Stackra theme, or is one of the few a component sets inline at runtime. It
- *          also proves `@stackra/ui-pro/css` reads only variables the Stackra theme, Tailwind or Pro defines (not
+ *          also proves `@stackra-pro/ui/css` reads only variables the Stackra theme, Tailwind or Pro defines (not
  *          HeroUI's defaults, so a theme missing one fails here), names only HeroUI Pro classes and `data-*` values
  *          that still exist, so a Pro release that renames one fails here instead of dropping a fix in silence, and
  *          draws every colour from a theme variable.
@@ -72,7 +72,7 @@ describe("HeroUI Pro's CSS variables", () => {
   });
 });
 
-describe("@stackra/ui-pro/css", () => {
+describe("@stackra-pro/ui/css", () => {
   it("reads only variables the Stackra theme, Tailwind or HeroUI Pro defines", () => {
     const own = new Set([PRO, TAILWIND_THEME, STACKRA_THEME].flatMap(declared));
     const undefinedReads = [...readsWithoutFallback(UI_PRO)].filter((name) => !own.has(name));

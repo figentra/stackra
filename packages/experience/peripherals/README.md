@@ -7,10 +7,10 @@ honour resolves a typed refusal (`unavailable`, `permission_denied`) in the `Cap
 a keyboard-wedge HID device. A peripheral is hardware the client uses; a device that is a principal belongs to
 `@stackra/devices` (ADR 0235).
 
-**Tier:** `tier:lib` (`packages/experience/peripherals`). Entries `.`, `./contracts` and `./electron` (ADR 0127
+**Tier:** `tier:lib` (`packages/experience/peripherals`). Entries `.`, `./contracts` and `./desktop` (ADR 0127
 2026-10-24 note: a runtime-target entry). Depends on `@stackra/platform` (capability codes, the result shape, the
 `Bridge` kind), `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation` and
-`@stackra/errors`. Electron is an optional peer of `./electron`.
+`@stackra/errors`. Electron is an optional peer of `./desktop`.
 
 ## What is here
 
@@ -20,8 +20,8 @@ a keyboard-wedge HID device. A peripheral is hardware the client uses; a device 
 | `.`           | `MemoryReceiptPrinterDriver`, `MemoryCashDrawerDriver`, `MemoryBarcodeScannerDriver`, `MemoryScaleDriver`           | the `memory` candidates: tests, web builds, a till with no hardware yet                   |
 | `.`           | `PrinterUnavailableError`                                                                                           | the refusal the print bridge sends back when the printer refused (`printer_unavailable`)  |
 | `./contracts` | `ReceiptPrinter`, `CashDrawer`, `BarcodeScanner`, `Scale`; `Receipt`, `PrintedReceipt`, `DrawerPin`, `ScaleReading` | the ports, injected by type (from here only)                                              |
-| `./electron`  | `PrintReceiptBridge`                                                                                                | `peripherals.receipt.print`, the renderer's only way to the printer                       |
-| `./electron`  | `EscposReceiptPrinterDriver`, `PrinterKickCashDrawerDriver`, `HidBarcodeScannerDriver`                              | the main-process drivers `escpos`, `printer_kick` and `hid`                               |
+| `./desktop`   | `PrintReceiptBridge`                                                                                                | `peripherals.receipt.print`, the renderer's only way to the printer                       |
+| `./desktop`   | `EscposReceiptPrinterDriver`, `PrinterKickCashDrawerDriver`, `HidBarcodeScannerDriver`                              | the main-process drivers `escpos`, `printer_kick` and `hid`                               |
 
 ## Using it
 

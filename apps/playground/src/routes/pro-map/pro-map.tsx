@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Map route: `@stackra/ui-pro`'s Map as a named map surface with a route, three labelled
+ * Purpose: the page of the Map route: `@stackra-pro/ui`'s Map as a named map surface with a route, three labelled
  *          stops, a popup for the chosen stop and zoom and compass controls, with a list of buttons beside it that
  *          choose a stop for keyboard and screen-reader users and a line that says which is chosen.
  * Boundary: presentation and local state only. The map draws no tiles and fetches nothing: its style is a plain
@@ -11,7 +11,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 // MapLibre finds its worker next to its own module, which Vite's dep optimiser moves and its build never emits; the
 // worker file is self-contained, so Vite serves and emits it as an asset and the map is told its URL.
 import MAPLIBRE_WORKER from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";

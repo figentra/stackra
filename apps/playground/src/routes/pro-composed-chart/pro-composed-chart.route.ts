@@ -8,7 +8,7 @@
  */
 import type { PageCategory } from "#src/enums/page-category.enum";
 
-/** The `@stackra/ui-pro` ComposedChart page, at `/pro-composed-chart`. */
+/** The `@stackra-pro/ui` ComposedChart page, at `/pro-composed-chart`. */
 // shortcut: a plain class until the Route kind base ships with gen (STA-339); then
 // `export class ProComposedChartRoute extends Route({ path: "/pro-composed-chart" }) {}`.
 // oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
@@ -19,6 +19,6 @@ export class ProComposedChartRoute {
   /** The page title, the component's name. */
   static readonly title = "ComposedChart";
 
-  /** The category the page is listed under: the `@stackra/ui-pro` pages. */
+  /** The category the page is listed under: the `@stackra-pro/ui` pages. */
   static readonly category: PageCategory = "Charts";
 }

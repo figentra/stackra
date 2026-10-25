@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ListView route: `@stackra/ui-pro`'s ListView as a list of files with a title, a
+ * Purpose: the page of the ListView route: `@stackra-pro/ui`'s ListView as a list of files with a title, a
  *          description and a named action each, chosen one at a time with the arrow keys or a press and reported
  *          beside it, and an empty list that says so.
  * Boundary: presentation and local state only.
@@ -9,7 +9,7 @@
  */
 import type { Selection } from "@heroui/react";
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { DemoIcon, type DemoIconName } from "#src/components/demo-icon";

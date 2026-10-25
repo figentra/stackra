@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./react` entry: the three hooks and the Yjs binding are exported; the kernel,
+ * Purpose: the consumer contract of the `./react` entry: the four hooks and the Yjs binding are exported; the kernel,
  *          the types and the refusals stay in their own entries.
  * Boundary: test only; imports the stand-in barrel through its `#react` alias.
  * Runtime: node (vitest)
@@ -15,6 +15,7 @@ describe("@stackra/builder/react", () => {
     expect(Object.keys(react).sort()).toEqual([
       "bindSharedDocument",
       "useEditor",
+      "useInspector",
       "useSelection",
       "useSharedEditor",
     ]);

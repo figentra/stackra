@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the EmptyState route: `@stackra/ui-pro`'s EmptyState as a full one (an icon, a title, a
+ * Purpose: the page of the EmptyState route: `@stackra-pro/ui`'s EmptyState as a full one (an icon, a title, a
  *          description and two actions that report which one ran) and as a minimal one (a title and a description).
  * Boundary: presentation and local state only.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { DemoIcon } from "#src/components/demo-icon";

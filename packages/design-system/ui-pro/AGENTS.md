@@ -1,4 +1,4 @@
-# AGENTS — @stackra/ui-pro
+# AGENTS — @stackra-pro/ui
 
 Stackra Design System Pro components for Stackra's own apps only: the @stackra/ui props vocabulary over HeroUI Pro on web and HeroUI Native Pro on native. Published only to Figentra's restricted Keygen channel, never to npmjs. Member at `packages/design-system/ui-pro` (`tier:lib`), in the programming model v3 shape
 (ADR 0294, 0295).
@@ -65,7 +65,7 @@ extending the kind's base class. The group table is the docs page `standards/str
 
 ## Tasks
 
-`pnpm turbo run <task> --filter=@stackra/ui-pro` — `build`, `typecheck`, `lint`, `test`, `test:coverage`,
+`pnpm turbo run <task> --filter=@stackra-pro/ui` — `build`, `typecheck`, `lint`, `test`, `test:coverage`,
 `format`, `format:check`, `clean`.
 
 ## PII

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ActionBar route: `@stackra/ui-pro`'s ActionBar over a list of files that can be selected,
+ * Purpose: the page of the ActionBar route: `@stackra-pro/ui`'s ActionBar over a list of files that can be selected,
  *          appearing at the foot of the window once one or more files are chosen with a count, three named actions
  *          and a button that clears the selection, and a line that says which action ran last.
  * Boundary: presentation and local state only. HeroUI Pro fixes the bar to the window's foot, so it is closed until
@@ -10,7 +10,7 @@
  */
 import type { Selection } from "@heroui/react";
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProActionBarRoute } from "#src/routes/pro-action-bar/pro-action-bar.route";

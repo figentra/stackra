@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the PromptSuggestion route: `@stackra/ui-pro`'s PromptSuggestion as a header over a list of
+ * Purpose: the page of the PromptSuggestion route: `@stackra-pro/ui`'s PromptSuggestion as a header over a list of
  *          suggested prompts, each a button that chooses it (the choice is written below, announced as a status), and as
  *          grouped cards with a title and a description each.
  * Boundary: presentation only; the prompts are local. A list suggestion is a button whose name is its own text; a
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProPromptSuggestionRoute } from "#src/routes/pro-prompt-suggestion/pro-prompt-suggestion.route";

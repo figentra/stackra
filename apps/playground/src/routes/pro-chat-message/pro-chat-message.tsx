@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ChatMessage route: `@stackra/ui-pro`'s ChatMessage as a user turn in a bubble and an assistant
+ * Purpose: the page of the ChatMessage route: `@stackra-pro/ui`'s ChatMessage as a user turn in a bubble and an assistant
  *          turn with an avatar, a body and a row of icon actions (copy, good response, bad response, regenerate), each
  *          action named for screen readers, and an assistant turn with rendered Markdown.
  * Boundary: presentation only; the messages are local. Message text is isolated (`<bdi>`) so a right-to-left page keeps
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { DemoIcon, type DemoIconName } from "#src/components/demo-icon";
 import { ProChatMessageRoute } from "#src/routes/pro-chat-message/pro-chat-message.route";

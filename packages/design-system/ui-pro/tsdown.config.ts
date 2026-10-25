@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: build config of @stackra/ui-pro: one tsdown entry per package.json export (core `.` is `index`).
+ * Purpose: build config of @stackra-pro/ui: one tsdown entry per package.json export (core `.` is `index`).
  *          `./contracts`, `./react` and `./native` name stand-in barrels until gen writes the entry barrels (ADR 0294
  *          decision 15, STA-339). The peer dependencies (React, HeroUI, HeroUI Pro, HeroUI Native, HeroUI Native Pro,
  *          Uniwind, React Native) stay external, so no HeroUI Pro code is ever bundled into `dist/`. The output is the

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the tier of a playground page and the navigation's tier filter. A page is Pro when its path starts with
- *          `/pro-` (the `@stackra/ui-pro` pages, ADR 0310); every other page is Free. The tier is derived from the
+ *          `/pro-` (the `@stackra-pro/ui` pages, ADR 0310); every other page is Free. The tier is derived from the
  *          path, never declared on a route.
  * Boundary: pure functions and one frozen tuple; no discovery, so the shell can import it without loading the pages.
  * Runtime: browser
@@ -14,7 +14,7 @@ export const TIER_FILTERS = Object.freeze(["all", "free", "pro"] as const);
 /** One tier filter value. */
 export type TierFilter = (typeof TIER_FILTERS)[number];
 
-/** The tier of a page: Free for a `@stackra/ui` page, Pro for a `@stackra/ui-pro` one. */
+/** The tier of a page: Free for a `@stackra/ui` page, Pro for a `@stackra-pro/ui` one. */
 export type PageTier = "Free" | "Pro";
 
 /** The tier of the page at `path`: Pro when it starts with `/pro-`, else Free. */

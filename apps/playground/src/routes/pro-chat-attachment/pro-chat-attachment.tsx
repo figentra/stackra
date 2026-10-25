@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ChatAttachment route: `@stackra/ui-pro`'s ChatAttachment as a group of file chips with their
+ * Purpose: the page of the ChatAttachment route: `@stackra-pro/ui`'s ChatAttachment as a group of file chips with their
  *          kind, name and size (a PDF, an archive, a spreadsheet, a source file) and a button that removes each, and
  *          ChatAttachmentInput as the attach button and drop zone of a prompt composer that lists the files picked.
  * Boundary: presentation only; the files are local and nothing is uploaded. The remove and attach buttons carry their own
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { DemoIcon } from "#src/components/demo-icon";

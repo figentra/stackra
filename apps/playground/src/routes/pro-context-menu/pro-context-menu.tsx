@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ContextMenu route: `@stackra/ui-pro`'s ContextMenu on a work area that opens on a secondary
+ * Purpose: the page of the ContextMenu route: `@stackra-pro/ui`'s ContextMenu on a work area that opens on a secondary
  *          press or a long press, with items, a submenu, a separator and a danger item, and a named button that opens
  *          the same menu, with a line that says which item ran last.
  * Boundary: presentation and local state only. A secondary press is pointer-only, so the button is the keyboard and
@@ -9,7 +9,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProContextMenuRoute } from "#src/routes/pro-context-menu/pro-context-menu.route";

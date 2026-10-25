@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ChatSource route: `@stackra/ui-pro`'s ChatSource as a citation chip for a web page (title, link
+ * Purpose: the page of the ChatSource route: `@stackra-pro/ui`'s ChatSource as a citation chip for a web page (title, link
  *          and a short description) and for an uploaded document, and ChatSources as a collapsible list of several
  *          sources under a trigger that counts them.
  * Boundary: presentation only; the sources are local and no favicon is fetched, so the page needs no network. A web
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProChatSourceRoute } from "#src/routes/pro-chat-source/pro-chat-source.route";
 

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the configuration of @stackra/ui-pro starts from its defaults and that a host subclass changes a
+ * Purpose: proves the configuration of @stackra-pro/ui starts from its defaults and that a host subclass changes a
  *          value by overriding it.
  * Boundary: constructs config objects only.
  * Runtime: node

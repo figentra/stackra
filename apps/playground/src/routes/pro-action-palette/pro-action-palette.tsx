@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ActionPalette route: `@stackra/ui-pro`'s ActionPalette opened by a button or by Ctrl or
+ * Purpose: the page of the ActionPalette route: `@stackra-pro/ui`'s ActionPalette opened by a button or by Ctrl or
  *          Cmd with K, with three groups of actions, a search field that filters them, an empty state, and a line
  *          that says which action ran last.
  * Boundary: presentation and local state only. HeroUI Pro's palette has no shortcut of its own (its docs show the key
@@ -12,7 +12,7 @@
  */
 import { Kbd } from "@heroui/react";
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useEffect, useState } from "react";
 
 import { DemoIcon, type DemoIconName } from "#src/components/demo-icon";

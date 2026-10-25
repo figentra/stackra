@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the member definition of @stackra/ui-pro: static data that gen reads from the syntax tree without
+ * Purpose: the member definition of @stackra-pro/ui: static data that gen reads from the syntax tree without
  *          running it. The member key is derived from the package name; there is no key option.
  * Boundary: data only; no function, no environment read and no import of the package's own code.
  * Runtime: node

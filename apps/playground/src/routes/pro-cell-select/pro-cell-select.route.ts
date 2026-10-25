@@ -8,7 +8,7 @@
  */
 import type { PageCategory } from "#src/enums/page-category.enum";
 
-/** The `@stackra/ui-pro` CellSelect page, at `/pro-cell-select`. */
+/** The `@stackra-pro/ui` CellSelect page, at `/pro-cell-select`. */
 // shortcut: a plain class until the Route kind base ships with gen (STA-339); then
 // `export class ProCellSelectRoute extends Route({ path: "/pro-cell-select" }) {}`.
 // oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
@@ -19,6 +19,6 @@ export class ProCellSelectRoute {
   /** The page title, the component's name. */
   static readonly title = "CellSelect";
 
-  /** The category the page is listed under: the `@stackra/ui-pro` pages. */
+  /** The category the page is listed under: the `@stackra-pro/ui` pages. */
   static readonly category: PageCategory = "Inputs and forms";
 }

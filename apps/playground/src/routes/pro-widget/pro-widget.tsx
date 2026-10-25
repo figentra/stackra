@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Widget route: `@stackra/ui-pro`'s Widget as a dashboard container for a traffic breakdown,
+ * Purpose: the page of the Widget route: `@stackra-pro/ui`'s Widget as a dashboard container for a traffic breakdown,
  *          with a title, a description, a legend, a content area of labelled bars whose values are in text, and a
  *          footer, and as a plain widget holding only text.
  * Boundary: presentation only; the figures are local. The bars are drawn from chart tokens with the value beside each,
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProWidgetRoute } from "#src/routes/pro-widget/pro-widget.route";
 

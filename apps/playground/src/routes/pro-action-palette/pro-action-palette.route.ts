@@ -8,7 +8,7 @@
  */
 import type { PageCategory } from "#src/enums/page-category.enum";
 
-/** The `@stackra/ui-pro` ActionPalette page, at `/pro-action-palette`. */
+/** The `@stackra-pro/ui` ActionPalette page, at `/pro-action-palette`. */
 // shortcut: a plain class until the Route kind base ships with gen (STA-339); then
 // `export class ProActionPaletteRoute extends Route({ path: "/pro-action-palette" }) {}`.
 // oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
@@ -19,6 +19,6 @@ export class ProActionPaletteRoute {
   /** The page title, the component's name. */
   static readonly title = "ActionPalette";
 
-  /** The category the page is listed under: the `@stackra/ui-pro` pages. */
+  /** The category the page is listed under: the `@stackra-pro/ui` pages. */
   static readonly category: PageCategory = "Actions";
 }

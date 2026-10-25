@@ -113,6 +113,11 @@ export class Editor {
     };
   }
 
+  /** The registered block class for the key `block`, or `undefined`; the inspector reads its schema. */
+  blockClass(block: string): AnyClass | undefined {
+    return this.blocks.get(block);
+  }
+
   /** The block `id` in the current tree, or `undefined`. */
   node(id: string): EditorNode | undefined {
     return find(this.current.root, id);

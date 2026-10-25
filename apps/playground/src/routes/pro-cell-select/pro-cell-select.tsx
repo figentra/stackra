@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the CellSelect route: `@stackra/ui-pro`'s CellSelect, a select styled as a settings cell, in a
+ * Purpose: the page of the CellSelect route: `@stackra-pro/ui`'s CellSelect, a select styled as a settings cell, in a
  *          controlled cell that reports the item chosen, an uncontrolled one with a placeholder, and a disabled one.
  * Boundary: presentation and local state only. Each cell is named by `label`, the same text as its visible label, and
  *          its trigger by the visible label and value.
@@ -8,7 +8,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import { ListBox, type Key } from "@heroui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useId, useState } from "react";
 
 import { ProCellSelectRoute } from "#src/routes/pro-cell-select/pro-cell-select.route";

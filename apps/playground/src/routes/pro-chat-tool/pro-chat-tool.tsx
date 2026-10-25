@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ChatTool route: `@stackra/ui-pro`'s ChatTool as a finished tool call (arguments and result), a
+ * Purpose: the page of the ChatTool route: `@stackra-pro/ui`'s ChatTool as a finished tool call (arguments and result), a
  *          call still streaming its arguments, a failed call with its error, and a call that waits for approval with
  *          Approve and Reject buttons whose choice is announced, and ChatToolGroup as a collapsible list of calls.
  * Boundary: presentation only; the calls are local and nothing runs. Each row's trigger is a button that reports its
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProChatToolRoute } from "#src/routes/pro-chat-tool/pro-chat-tool.route";

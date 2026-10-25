@@ -8,7 +8,7 @@
  */
 import type { PageCategory } from "#src/enums/page-category.enum";
 
-/** The `@stackra/ui-pro` RadialChart page, at `/pro-radial-chart`. */
+/** The `@stackra-pro/ui` RadialChart page, at `/pro-radial-chart`. */
 // shortcut: a plain class until the Route kind base ships with gen (STA-339); then
 // `export class ProRadialChartRoute extends Route({ path: "/pro-radial-chart" }) {}`.
 // oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
@@ -19,6 +19,6 @@ export class ProRadialChartRoute {
   /** The page title, the component's name. */
   static readonly title = "RadialChart";
 
-  /** The category the page is listed under: the `@stackra/ui-pro` pages. */
+  /** The category the page is listed under: the `@stackra-pro/ui` pages. */
   static readonly category: PageCategory = "Charts";
 }

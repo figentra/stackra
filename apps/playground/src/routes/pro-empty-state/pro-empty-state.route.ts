@@ -8,7 +8,7 @@
  */
 import type { PageCategory } from "#src/enums/page-category.enum";
 
-/** The `@stackra/ui-pro` EmptyState page, at `/pro-empty-state`. */
+/** The `@stackra-pro/ui` EmptyState page, at `/pro-empty-state`. */
 // shortcut: a plain class until the Route kind base ships with gen (STA-339); then
 // `export class ProEmptyStateRoute extends Route({ path: "/pro-empty-state" }) {}`.
 // oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
@@ -19,6 +19,6 @@ export class ProEmptyStateRoute {
   /** The page title, the component's name. */
   static readonly title = "EmptyState";
 
-  /** The category the page is listed under: the `@stackra/ui-pro` pages. */
+  /** The category the page is listed under: the `@stackra-pro/ui` pages. */
   static readonly category: PageCategory = "Data display";
 }

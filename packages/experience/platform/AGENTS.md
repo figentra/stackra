@@ -1,7 +1,7 @@
 # AGENTS — @stackra/platform
 
 Capabilities of the running target. Member at `packages/experience/platform` (`tier:lib`), in the programming model
-v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./electron`, `./native`, `./react`, `./sw`,
+v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./desktop`, `./native`, `./react`, `./sw`,
 `./testing`, `./worker`.
 
 ## Where code goes
@@ -13,8 +13,8 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./electro
 | The shipped `X$` of a configuration  | `src/core/constants/<name>-config-schema.constant.ts`                          |
 | An enum, a function, a type          | `src/core/{enums,functions,types}/`                                            |
 | An isomorphic driver                 | `src/core/drivers/memory-<port>.driver.ts`                                     |
-| A target driver                      | `src/{browser,electron,native,worker}/drivers/`                                |
-| A bridge (Electron main)             | `src/electron/bridges/<name>.bridge.ts`, extends `Bridge({ key })`             |
+| A target driver                      | `src/{browser,desktop,native,worker}/drivers/`                                 |
+| A bridge (Electron main)             | `src/desktop/bridges/<name>.bridge.ts`, extends `Bridge({ key })`              |
 | A service-worker handler             | `src/sw/functions/handle-<event>.function.ts`, events typed in `src/sw/types/` |
 | React code                           | `src/react/<name>/`                                                            |
 | A test helper                        | `src/testing/functions/`                                                       |
@@ -27,13 +27,13 @@ v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./browser`, `./electro
 - `Platform` is exported from `./contracts` only (registry A3). `./contracts` imports no other entry, so `has` takes a
   capability code as a string.
 - `./react` stays platform-neutral: the driver supplies what differs (the scanner's `View`).
-- No module of `./electron` imports Electron at load time (the renderer loads the entry for its driver); a bridge loads
+- No module of `./desktop` imports Electron at load time (the renderer loads the entry for its driver); a bridge loads
   it inside `handle`.
 
 ## This package
 
 - A new capability: a `Capability` case, a facet on `Platform` with its type, a row in `CAPABILITY_FACETS`, and an
-  implementation in the memory, web (and so Electron) drivers.
+  implementation in the memory, web (and so desktop) and Expo drivers.
 - A capability call that the target or device cannot honour returns `refuse(capability, code)`; a programming error
   throws.
 - A driver's constructor takes only container-built dependencies; gen reads constructor parameters as dependencies.

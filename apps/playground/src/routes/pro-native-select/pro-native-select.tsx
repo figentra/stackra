@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the NativeSelect route: `@stackra/ui-pro`'s NativeSelect, a styled browser select, in a
+ * Purpose: the page of the NativeSelect route: `@stackra-pro/ui`'s NativeSelect, a styled browser select, in a
  *          controlled select that reports the item chosen, both variants, a select with option groups, and a disabled one.
  * Boundary: presentation and local state only. Each `select` is named by `label` on its trigger, the same text as the
  *          visible text above it.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProNativeSelectRoute } from "#src/routes/pro-native-select/pro-native-select.route";

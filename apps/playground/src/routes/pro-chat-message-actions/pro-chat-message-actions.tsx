@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ChatMessageActions route: `@stackra/ui-pro`'s ChatMessageActions as the full row of preset
+ * Purpose: the page of the ChatMessageActions route: `@stackra-pro/ui`'s ChatMessageActions as the full row of preset
  *          actions under an assistant message (copy, good response, bad response, regenerate, more) and as a minimal row
  *          (copy and more), each icon-only action named for screen readers.
  * Boundary: presentation only; the actions do nothing. Copy writes to the clipboard in a browser that allows it.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProChatMessageActionsRoute } from "#src/routes/pro-chat-message-actions/pro-chat-message-actions.route";
 

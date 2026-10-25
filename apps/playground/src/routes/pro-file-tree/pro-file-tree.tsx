@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the FileTree route: `@stackra/ui-pro`'s FileTree as a project tree with nested folders
+ * Purpose: the page of the FileTree route: `@stackra-pro/ui`'s FileTree as a project tree with nested folders
  *          expanded to start, expanding and collapsing with the arrow keys or a press, and a selection that is
  *          reported beside it, and a second tree that does not animate.
  * Boundary: presentation and local state only. The tree is read-only: it does not move files.
@@ -8,7 +8,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import type { Selection } from "@heroui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProFileTreeRoute } from "#src/routes/pro-file-tree/pro-file-tree.route";

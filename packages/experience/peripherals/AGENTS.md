@@ -2,7 +2,7 @@
 
 Point-of-sale hardware: receipt printer, cash drawer, barcode scanner, scale. Member at
 `packages/experience/peripherals` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305). Entries `.`,
-`./contracts`, `./electron`.
+`./contracts`, `./desktop`.
 
 ## Where code goes
 
@@ -14,7 +14,7 @@ Point-of-sale hardware: receipt printer, cash drawer, barcode scanner, scale. Me
 | A memory driver                      | `src/core/drivers/memory-<port>.driver.ts`                           |
 | An encoder, a refusal builder        | `src/core/functions/`                                                |
 | A refusal                            | `src/core/errors/<name>.error.ts`                                    |
-| A main-process driver or bridge      | `src/electron/drivers/`, `src/electron/bridges/`                     |
+| A main-process driver or bridge      | `src/desktop/drivers/`, `src/desktop/bridges/`                       |
 | A test                               | `__tests__/<name>.<kind>.test.ts` beside it                          |
 
 ## This package
@@ -25,7 +25,7 @@ Point-of-sale hardware: receipt printer, cash drawer, barcode scanner, scale. Me
   the same `DriverRegistry` key.
 - No native module (ADR 0253 decision 3): main reaches printers over `node:net` or a device path, and the scanner
   through `before-input-event`. A browser driver needs a `./browser` entry first.
-- No module of `./electron` imports Electron or a Node module at load time; each loads it when it runs.
+- No module of `./desktop` imports Electron or a Node module at load time; each loads it when it runs.
 - The bridge validates its input: it comes from the renderer. Lines are text, never printer commands.
 - `src/*/index.ts` are stand-in barrels until gen writes them (STA-339); add every public file to its barrel and to
   that entry's `index.test.ts`.

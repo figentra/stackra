@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Navbar route: `@stackra/ui-pro`'s Navbar as a static bar inside the page, with a brand, four
+ * Purpose: the page of the Navbar route: `@stackra-pro/ui`'s Navbar as a static bar inside the page, with a brand, four
  *          links that mark the current page, a menu toggle and panel that stand in for the links on a narrow
  *          viewport, and a line that says which page is current.
  * Boundary: presentation and local state only. The bar is `static` and does not block scroll, so it stays in the page
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProNavbarRoute } from "#src/routes/pro-navbar/pro-navbar.route";

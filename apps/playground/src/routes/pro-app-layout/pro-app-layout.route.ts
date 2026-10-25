@@ -8,7 +8,7 @@
  */
 import type { PageCategory } from "#src/enums/page-category.enum";
 
-/** The `@stackra/ui-pro` AppLayout page, at `/pro-app-layout`. */
+/** The `@stackra-pro/ui` AppLayout page, at `/pro-app-layout`. */
 // shortcut: a plain class until the Route kind base ships with gen (STA-339); then
 // `export class ProAppLayoutRoute extends Route({ path: "/pro-app-layout" }) {}`.
 // oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
@@ -19,7 +19,7 @@ export class ProAppLayoutRoute {
   /** The page title, the component's name. */
   static readonly title = "AppLayout";
 
-  /** The category the page is listed under: the `@stackra/ui-pro` pages. */
+  /** The category the page is listed under: the `@stackra-pro/ui` pages. */
   static readonly category: PageCategory = "Navigation";
 
   /** AppLayout draws its own `main`, so the shell adds none around this page. */

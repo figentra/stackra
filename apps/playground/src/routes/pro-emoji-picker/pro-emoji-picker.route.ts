@@ -8,7 +8,7 @@
  */
 import type { PageCategory } from "#src/enums/page-category.enum";
 
-/** The `@stackra/ui-pro` EmojiPicker page, at `/pro-emoji-picker`. */
+/** The `@stackra-pro/ui` EmojiPicker page, at `/pro-emoji-picker`. */
 // shortcut: a plain class until the Route kind base ships with gen (STA-339); then
 // `export class ProEmojiPickerRoute extends Route({ path: "/pro-emoji-picker" }) {}`.
 // oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
@@ -19,6 +19,6 @@ export class ProEmojiPickerRoute {
   /** The page title, the component's name. */
   static readonly title = "EmojiPicker";
 
-  /** The category the page is listed under: the `@stackra/ui-pro` pages. */
+  /** The category the page is listed under: the `@stackra-pro/ui` pages. */
   static readonly category: PageCategory = "Overlays";
 }

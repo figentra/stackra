@@ -14,7 +14,7 @@ export default library({
   index: "src/core/index.ts",
   contracts: "src/contracts/index.ts",
   browser: "src/browser/index.ts",
-  electron: "src/electron/index.ts",
+  desktop: "src/desktop/index.ts",
   native: "src/native/index.ts",
   react: "src/react/index.ts",
   sw: "src/sw/index.ts",

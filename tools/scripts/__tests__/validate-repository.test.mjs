@@ -14,6 +14,7 @@ import {
   checkTestPlacement,
   checkWindowSizing,
   checkYamlFlowMaps,
+  expectedName,
   isExpoAppConfig,
   isMemberSource,
   isV2Service,
@@ -68,11 +69,24 @@ test("dependencies replaced by Accepted ADRs are forbidden", () => {
   }
 });
 
-test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0310)", () => {
+test("the Pro wrapper's folder is ui-pro and its package is @stackra-pro/ui (owner 6)", () => {
+  assert.equal(expectedName("packages/design-system/ui-pro"), "@stackra-pro/ui");
+  assert.equal(expectedName("packages/design-system/ui"), "@stackra/ui");
+  assert.deepEqual(
+    check({
+      ...ok,
+      dir: "packages/design-system/ui-pro",
+      pkg: { name: "@stackra-pro/ui" },
+    }).filter((m) => m.startsWith("package name")),
+    [],
+  );
+});
+
+test("HeroUI Pro reaches only apps and the private @stackra-pro/ui (ADR 0310)", () => {
   const pro = (dir, pkg) =>
-    check({ ...ok, dir, pkg }).filter((m) => /HeroUI Pro|@stackra\/ui-pro /.test(m));
+    check({ ...ok, dir, pkg }).filter((m) => /HeroUI Pro|@stackra-pro\/ui /.test(m));
   const wrapper = {
-    name: "@stackra/ui-pro",
+    name: "@stackra-pro/ui",
     private: true,
     files: ["dist", "assets", "!**/*.map"],
     exports: { ".": { "@stackra/source": "./src/index.ts", default: "./dist/index.mjs" } },
@@ -82,19 +96,19 @@ test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0310)", 
     },
   };
   const registryFinding =
-    "@stackra/ui-pro publishConfig.registry must be Keygen's npm engine, https://npm.pkg.keygen.sh/<account>/ (ADR 0310)";
+    "@stackra-pro/ui publishConfig.registry must be Keygen's npm engine, https://npm.pkg.keygen.sh/<account>/ (ADR 0310)";
   const filesFinding =
-    '@stackra/ui-pro files must list no src and must end with "!**/*.map": its tarball ships dist only (ADR 0316)';
+    '@stackra-pro/ui files must list no src and must end with "!**/*.map": its tarball ships dist only (ADR 0316)';
   const exportsFinding =
-    "@stackra/ui-pro publishConfig.exports must name every entry of exports, on dist or assets only, with no @stackra/source condition (ADR 0316)";
-  for (const dep of ["@heroui-pro/react", "heroui-native-pro", "@stackra/ui-pro"]) {
+    "@stackra-pro/ui publishConfig.exports must name every entry of exports, on dist or assets only, with no @stackra/source condition (ADR 0316)";
+  for (const dep of ["@heroui-pro/react", "heroui-native-pro", "@stackra-pro/ui"]) {
     assert.deepEqual(
       pro("packages/design-system/ui", {
         name: "@stackra/ui",
         devDependencies: { [dep]: "catalog:" },
       }),
       [
-        `devDependencies.${dep} is HeroUI Pro: only apps and @stackra/ui-pro may depend on it (ADR 0310)`,
+        `devDependencies.${dep} is HeroUI Pro: only apps and @stackra-pro/ui may depend on it (ADR 0310)`,
       ],
       dep,
     );
@@ -109,8 +123,8 @@ test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0310)", 
     [],
   );
   assert.deepEqual(pro(ui, wrapper), []);
-  assert.deepEqual(pro(ui, { name: "@stackra/ui-pro", files: ["dist", "./src/"] }), [
-    '@stackra/ui-pro must be "private": true, so nothing publishes it to npmjs (ADR 0310)',
+  assert.deepEqual(pro(ui, { name: "@stackra-pro/ui", files: ["dist", "./src/"] }), [
+    '@stackra-pro/ui must be "private": true, so nothing publishes it to npmjs (ADR 0310)',
     registryFinding,
     filesFinding,
     exportsFinding,
@@ -208,7 +222,7 @@ test("a complete member has no file findings", () => assert.deepEqual(checkFiles
 test("the HeroUI Pro wrapper skips the npmjs publishConfig, which check replaces; any other package needs it (ADR 0310)", () => {
   const { publishConfig: _, ...unpublished } = filesOk.pkg;
   const at = (name) => checkFiles({ ...filesOk, pkg: { ...unpublished, name } });
-  assert.deepEqual(at("@stackra/ui-pro"), []);
+  assert.deepEqual(at("@stackra-pro/ui"), []);
   assert.equal(at("@stackra/search").length, 1);
 });
 

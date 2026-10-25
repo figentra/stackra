@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the AreaChart route: `@stackra/ui-pro`'s AreaChart as one filled series with a gradient (monthly
+ * Purpose: the page of the AreaChart route: `@stackra-pro/ui`'s AreaChart as one filled series with a gradient (monthly
  *          revenue) and as stacked series (traffic by source), each with a named container, a legend that names its
  *          series and the shared ChartTooltip card on hover.
  * Boundary: presentation only; the figures are local. The chart's container is named by `label` with `role="img"`, and
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { DemoChartTick } from "#src/components/demo-chart-tick";
 import { DemoChartTooltip } from "#src/components/demo-chart-tooltip";

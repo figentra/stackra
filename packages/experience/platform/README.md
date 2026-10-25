@@ -7,11 +7,11 @@ out one facet per capability (`network`, `notifications`, `scanner`, `fileHandli
 check (`CaptchaVerifier`), the desktop, PWA and push configurations, the `Bridge` kind of the Electron main process and
 the service-worker handlers. It absorbs the retired `network` and `pwa` packages.
 
-**Tier:** `tier:lib` (`packages/experience/platform`). Entries `.`, `./contracts`, `./browser`, `./electron`,
+**Tier:** `tier:lib` (`packages/experience/platform`). Entries `.`, `./contracts`, `./browser`, `./desktop`,
 `./native`, `./react`, `./sw`, `./testing` and `./worker` (ADR 0127 2026-10-24 note). Depends on `@stackra/contracts`,
 `@stackra/container`, `@stackra/config`, `@stackra/validation`, `@stackra/state` (signals), `@stackra/storage`
 (`OfflineStore`) and `@stackra/filesystem` (the folder picker's disk). React is a peer; Electron, the Expo modules and
-React Native are optional peers of `./electron` and `./native`.
+React Native, NetInfo, expo-camera and expo-haptics are optional peers of `./desktop` and `./native`.
 
 ## What is here
 
@@ -23,8 +23,8 @@ React Native are optional peers of `./electron` and `./native`.
 | `.`           | `MemoryPlatformDriver`, `MemoryPushTransportDriver`, `MemoryCaptchaVerifierDriver`                                                                                                                                              | the `memory` candidates: tests, server renders, local runs             |
 | `./contracts` | `Platform`, `PushTransport`, `CaptchaVerifier` and their signature types                                                                                                                                                        | the ports, injected by type (`Platform` from here only)                |
 | `./browser`   | `WebPlatformDriver`, `WebPushTransportDriver`                                                                                                                                                                                   | web and PWA                                                            |
-| `./electron`  | `Bridge`, `PickFolderBridge`, `ElectronPlatformDriver`                                                                                                                                                                          | the bridge kind, the folder picker (main), the renderer driver         |
-| `./native`    | `ExpoPushTransportDriver`, `SelfHostedPushTransportDriver`                                                                                                                                                                      | push on a device (`platform.push.provider`)                            |
+| `./desktop`   | `Bridge`, `PickFolderBridge`, `ElectronPlatformDriver`                                                                                                                                                                          | the bridge kind, the folder picker (main), the renderer driver         |
+| `./native`    | `ExpoPlatformDriver`, `ExpoPushTransportDriver`, `SelfHostedPushTransportDriver`                                                                                                                                                | the phone platform; push on a device (`platform.push.provider`)        |
 | `./worker`    | `TurnstileCaptchaVerifierDriver`                                                                                                                                                                                                | Turnstile siteverify from a Cloudflare Worker                          |
 | `./sw`        | `handleBackgroundSync`, `handlePush`, `handlePushSubscriptionChange`, `handleNotificationClick`, `handleShareTarget`, `handleSkipWaiting`                                                                                       | registered by the generated `sw.ts`                                    |
 | `./react`     | `usePlatform`, `useCapability`, `useLaunchedFiles`, `usePushPermission`, `ScannerView`                                                                                                                                          | hooks and the scanner's camera view                                    |
@@ -53,7 +53,7 @@ if (!scanner.isAvailable) return { kind: "unavailable" };
 A bridge is the only path from the Electron renderer to main:
 
 ```ts
-import { Bridge } from "@stackra/platform/electron";
+import { Bridge } from "@stackra/platform/desktop";
 
 export class ExportCsvBridge extends Bridge({ key: "exports.save_csv", capability: Capability.FilesSave }) {
   constructor(files: FileSystem) { ... }

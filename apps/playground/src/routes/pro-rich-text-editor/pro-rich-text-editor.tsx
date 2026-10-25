@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the RichTextEditor route: `@stackra/ui-pro`'s RichTextEditor, a Tiptap editor with a toolbar of
+ * Purpose: the page of the RichTextEditor route: `@stackra-pro/ui`'s RichTextEditor, a Tiptap editor with a toolbar of
  *          format and history buttons, a link popover and a character count, as an editable editor, a disabled one and a
  *          read-only one.
  * Boundary: presentation and local state only. Each toolbar and each editing area is named; the buttons take their names
@@ -11,7 +11,7 @@
  */
 import type { JSONContent } from "@tiptap/core";
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProRichTextEditorRoute } from "#src/routes/pro-rich-text-editor/pro-rich-text-editor.route";
 

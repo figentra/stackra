@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ComposedChart route: `@stackra/ui-pro`'s ComposedChart with columns and a line on two
+ * Purpose: the page of the ComposedChart route: `@stackra-pro/ui`'s ComposedChart with columns and a line on two
  *          scales (revenue and orders), and with an area under a line (visits and sign-ups), each with a named
  *          container, a legend that names each series and the shared ChartTooltip card on hover.
  * Boundary: presentation only; the figures are local. A chart's container is named by `label` with `role="img"`, and
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { DemoChartTick } from "#src/components/demo-chart-tick";
 import { DemoChartTooltip } from "#src/components/demo-chart-tooltip";

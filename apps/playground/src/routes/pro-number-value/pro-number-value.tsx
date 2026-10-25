@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the NumberValue route: `@stackra/ui-pro`'s NumberValue formatting one amount as currency in
+ * Purpose: the page of the NumberValue route: `@stackra-pro/ui`'s NumberValue formatting one amount as currency in
  *          four currencies, as a compact figure at four sizes, and with a prefix and a suffix, each in a labelled
  *          description list.
  * Boundary: presentation only. The number is formatted for the document's locale by the browser, so the digits and
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProNumberValueRoute } from "#src/routes/pro-number-value/pro-number-value.route";
 

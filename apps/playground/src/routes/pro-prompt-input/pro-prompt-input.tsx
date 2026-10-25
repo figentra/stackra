@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the PromptInput route: `@stackra/ui-pro`'s PromptInput as a composer whose text area, attach
+ * Purpose: the page of the PromptInput route: `@stackra-pro/ui`'s PromptInput as a composer whose text area, attach
  *          button and send button carry names, which sends the message into a list below it, and as a composer that is
  *          waiting for a reply, whose button stops the reply instead of sending.
  * Boundary: presentation only; nothing is sent anywhere. Sending adds the text to a local list and empties the field.
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { DemoIcon } from "#src/components/demo-icon";

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the HoloCard route: `@stackra/ui-pro`'s HoloCard as a membership card on a dark gradient that
+ * Purpose: the page of the HoloCard route: `@stackra-pro/ui`'s HoloCard as a membership card on a dark gradient that
  *          tilts and catches a holographic glare as the pointer moves over it, with the card's text as real text, and a
  *          flat, unlit one beside it for comparison.
  * Boundary: presentation only. The tilt and glare are pointer effects, so the card's content is readable without them;
@@ -9,7 +9,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProHoloCardRoute } from "#src/routes/pro-holo-card/pro-holo-card.route";
 

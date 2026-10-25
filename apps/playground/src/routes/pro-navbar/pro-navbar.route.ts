@@ -8,7 +8,7 @@
  */
 import type { PageCategory } from "#src/enums/page-category.enum";
 
-/** The `@stackra/ui-pro` Navbar page, at `/pro-navbar`. */
+/** The `@stackra-pro/ui` Navbar page, at `/pro-navbar`. */
 // shortcut: a plain class until the Route kind base ships with gen (STA-339); then
 // `export class ProNavbarRoute extends Route({ path: "/pro-navbar" }) {}`.
 // oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
@@ -19,6 +19,6 @@ export class ProNavbarRoute {
   /** The page title, the component's name. */
   static readonly title = "Navbar";
 
-  /** The category the page is listed under: the `@stackra/ui-pro` pages. */
+  /** The category the page is listed under: the `@stackra-pro/ui` pages. */
   static readonly category: PageCategory = "Navigation";
 }

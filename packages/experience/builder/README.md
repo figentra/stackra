@@ -16,10 +16,12 @@ peers for `./react`.
 | Entry         | Symbol                                                                               | Use                                                                   |
 | ------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
 | `.`           | `Editor`                                                                             | one open document: changes, undo and redo, selection, `problems()`    |
+| `.`           | `inspectorFieldsOf`                                                                  | a block's zod props schema as inspector field descriptors             |
 | `.`           | `parseDocumentNode`                                                                  | a stored or received root node as a frozen editor tree, or a refusal  |
 | `.`           | `MAX_DOCUMENT_DEPTH`, `MAX_DOCUMENT_BLOCKS`, `BLOCK_ID_PATTERN`, `BLOCK_KEY_PATTERN` | the bounds and formats a document keeps to                            |
 | `.`           | `DocumentInvalidError`, `BlockNotRegisteredError`, `BlockNotFoundError`, ...         | the refusals                                                          |
 | `./contracts` | `EditorNode`, `EditorChange`, `EditorChangeKind`, `EditorState`, `EditorOptions`     | the types; an `EditorNode` is an experience `DocumentNode` with an id |
+| `./react`     | `useInspector`                                                                       | the selected block's fields, values and an undoable `set(key, value)` |
 | `./react`     | `useEditor`, `useSelection`                                                          | open a document, follow the selection (web and React Native)          |
 | `./react`     | `useSharedEditor`, `bindSharedDocument`                                              | the same editor co-edited through `@stackra/collaboration` and Yjs    |
 
@@ -55,6 +57,17 @@ const selected = useSelection(editor); // re-renders on selection changes only
 
 The hooks touch no DOM, so React Native builders import them from `./react` as well. There is no `./native` entry,
 because one symbol lives in one entry. To open another document, remount with a `key`.
+
+## Inspector
+
+```tsx
+const { id, fields, values, set } = useInspector(editor); // follows the first selected block
+```
+
+`inspectorFieldsOf(schema)` describes each prop of a block's zod schema as `{ key, label, kind, required, options }`
+with `kind` one of `text`, `number`, `boolean`, `enum`, `money` and `localized`; a prop of another shape (a list, a
+nested object) is not offered. `set` goes through `editor.setProp`, so undo reverts it. The hook renders nothing: the
+console draws the controls with `@stackra/ui`.
 
 ## Co-editing
 

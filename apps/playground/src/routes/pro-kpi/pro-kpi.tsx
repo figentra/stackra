@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Kpi route: four `@stackra/ui-pro` Kpi cards (revenue, users, refund rate, storage) with a
+ * Purpose: the page of the Kpi route: four `@stackra-pro/ui` Kpi cards (revenue, users, refund rate, storage) with a
  *          formatted value, a trend that names its direction, a tinted icon, a progress bar on one, an actions button
  *          and a footer note.
  * Boundary: presentation only; the figures are local.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0060 (light, dark, RTL); STA-403 FR-013.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { DemoIcon, type DemoIconName } from "#src/components/demo-icon";
 import { ProKpiRoute } from "#src/routes/pro-kpi/pro-kpi.route";

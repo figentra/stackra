@@ -1,6 +1,6 @@
 # src/react
 
-The `./react` entry of @stackra/ui-pro (ADR 0294 decision 15): web renderers, one folder each,
+The `./react` entry of @stackra-pro/ui (ADR 0294 decision 15): web renderers, one folder each,
 `react/<name>/<name>.tsx` with its `__tests__/`. It imports `core/`, never `node/` or `native/`; `react` becomes an
 optional peer with the first import.
 

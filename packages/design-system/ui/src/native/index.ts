@@ -24,6 +24,7 @@ export { Checkbox, type CheckboxProps } from "#native/checkbox/checkbox";
 export { Chip, type ChipProps } from "#native/chip/chip";
 export { CloseButton, type CloseButtonProps } from "#native/close-button/close-button";
 export { ComboBox, type ComboBoxProps } from "#native/combo-box/combo-box";
+export { Component } from "#native/component/component";
 export {
   ConfirmationProvider,
   type ConfirmationProviderProps,
@@ -46,6 +47,7 @@ export { EmptyState, type EmptyStateProps } from "#native/empty-state/empty-stat
 export { EntityPicker, type EntityPickerProps } from "#native/entity-picker/entity-picker";
 export { ErrorState, type ErrorStateProps } from "#native/error-state/error-state";
 export { FieldError, type FieldErrorProps } from "#native/field-error/field-error";
+export { Field } from "#native/field/field";
 export { FilterBar, type FilterBarProps } from "#native/filter-bar/filter-bar";
 export { FormField, type FormFieldProps } from "#native/form-field/form-field";
 export { FormSection, type FormSectionProps } from "#native/form-section/form-section";
@@ -84,6 +86,8 @@ export { RouterProvider, type RouterProviderProps } from "#native/router-provide
 export { Screen, type ScreenProps } from "#native/screen/screen";
 export { SearchField, type SearchFieldProps } from "#native/search-field/search-field";
 export { Section, type SectionProps } from "#native/section/section";
+export type { SchemaForm } from "#native/schema-form/schema-form.type";
+export { useSchemaForm } from "#native/schema-form/use-schema-form";
 export { Select, type SelectProps } from "#native/select/select";
 export { Separator, type SeparatorProps } from "#native/separator/separator";
 export { Sidebar, type SidebarProps } from "#native/sidebar/sidebar";
@@ -94,9 +98,11 @@ export {
 export { SkeletonGroup, type SkeletonGroupProps } from "#native/skeleton-group/skeleton-group";
 export { Skeleton, type SkeletonProps } from "#native/skeleton/skeleton";
 export { Spinner, type SpinnerProps } from "#native/spinner/spinner";
+export { Stat, type StatProps } from "#native/stat/stat";
 export { StatusBadge, type StatusBadgeProps } from "#native/status-badge/status-badge";
 export { Surface, type SurfaceProps } from "#native/surface/surface";
 export { Switch, type SwitchProps } from "#native/switch/switch";
+export { tabBarIcon } from "#native/tab-bar-icon/tab-bar-icon";
 export { TabBar, type TabBarProps } from "#native/tab-bar/tab-bar";
 export { Table, type TableProps } from "#native/table/table";
 export { Tabs, type TabsProps } from "#native/tabs/tabs";
@@ -111,3 +117,6 @@ export {
   TwoColumnLayout,
   type TwoColumnLayoutProps,
 } from "#native/two-column-layout/two-column-layout";
+// Native-only HeroUI Native parts the apps compose in HeroUI Native's own API: the list group of a settings screen, the
+// press feedback of a tappable card, the theme colour hook a navigator reads, and the toast hook of a screen.
+export { ListGroup, PressableFeedback, useThemeColor, useToast } from "heroui-native";

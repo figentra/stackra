@@ -278,4 +278,10 @@ describe("Editor", () => {
     });
     expect(editor.node(stray)).toBeDefined();
   });
+
+  it("gives the registered class of a block key", () => {
+    const editor = Editor.create({ root: PAGE, blocks: BLOCKS });
+    expect(editor.blockClass("web.hero_section")).toBe(HeroSectionBlock);
+    expect(editor.blockClass("web.unknown")).toBeUndefined();
+  });
 });

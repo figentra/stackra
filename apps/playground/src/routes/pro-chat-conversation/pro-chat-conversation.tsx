@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ChatConversation route: `@stackra/ui-pro`'s ChatConversation as a scrolling viewport of
+ * Purpose: the page of the ChatConversation route: `@stackra-pro/ui`'s ChatConversation as a scrolling viewport of
  *          user and assistant messages that stays pinned to the newest message, with a named button that jumps back
  *          to the bottom after the reader scrolls up, and a button that adds a message to see it stick.
  * Boundary: presentation only; the messages are local. The viewport has a name and the scroll button its own name.
@@ -8,7 +8,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProChatConversationRoute } from "#src/routes/pro-chat-conversation/pro-chat-conversation.route";

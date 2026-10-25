@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/analytics (the configuration with its shipped schema, the
- *          delivery state, the `AnalyticsClient` and the `none` driver) until `stackra gen` writes the entry barrels
+ *          delivery state, the `AnalyticsClient` and the `none`, `memory` and `posthog` drivers) until `stackra gen` writes the entry barrels
  *          (STA-339).
  * Boundary: names each re-export and declares nothing. The port and the delivery type are the `./contracts` entry's;
- *           the memory driver is the `./testing` entry's (one symbol, one entry). The shipped schema is re-exported
+ *           the native PostHog driver is the `./native` entry's (one symbol, one entry). The shipped schema is re-exported
  *           under its generated name (`AnalyticsConfig$`). `AnalyticsDriverName` carries the `DriverRegistry`
  *           augmentation, so exporting it loads it for every consumer.
  * Runtime: isomorphic
@@ -12,7 +12,9 @@
  */
 export { AnalyticsConfig } from "#config/analytics.config";
 export { ANALYTICS_CONFIG_SCHEMA as AnalyticsConfig$ } from "#core/constants/analytics-config-schema.constant";
+export { MemoryAnalyticsDriver } from "#core/drivers/memory-analytics.driver";
 export { NoneAnalyticsDriver } from "#core/drivers/none-analytics.driver";
+export { PosthogAnalyticsDriver } from "#core/drivers/posthog-analytics.driver";
 export { AnalyticsState } from "#core/enums/analytics-state.enum";
 export { AnalyticsOptions } from "#core/schemas/analytics-options.schema";
 export { AnalyticsClient } from "#core/services/analytics-client.service";

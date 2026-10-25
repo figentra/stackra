@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Sidebar route: `@stackra/ui-pro`'s Sidebar in a frame inside the page, collapsing to
+ * Purpose: the page of the Sidebar route: `@stackra-pro/ui`'s Sidebar in a frame inside the page, collapsing to
  *          icons from its trigger, its rail or Ctrl or Cmd with B, with a working menu (an expandable item, a count, a
  *          footer) that reports the current item beside it.
  * Boundary: presentation and local state only. The sidebar sits in a fixed-height frame because HeroUI Pro sizes it to
@@ -9,7 +9,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0060 (light, dark, RTL); STA-403 FR-013.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { DemoNavigation, navigationLabel } from "#src/components/demo-navigation";

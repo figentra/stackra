@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ChatListView route: `@stackra/ui-pro`'s ChatListView as a list of conversations with an icon,
+ * Purpose: the page of the ChatListView route: `@stackra-pro/ui`'s ChatListView as a list of conversations with an icon,
  *          a title, a one-line preview and the time of the last message, in the default density and in the compact
  *          density, each list named for screen readers and selectable by keyboard.
  * Boundary: presentation only; the threads are local. Titles and previews are isolated (`<bdi>`) so a right-to-left page
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { DemoIcon } from "#src/components/demo-icon";
 import { ProChatListViewRoute } from "#src/routes/pro-chat-list-view/pro-chat-list-view.route";

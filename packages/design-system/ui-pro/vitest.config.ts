@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: test config of @stackra/ui-pro: the decorators vitest preset plus the shared coverage gate. `test` runs
+ * Purpose: test config of @stackra-pro/ui: the decorators vitest preset plus the shared coverage gate. `test` runs
  *          the unit tier (`<subject>.test.ts(x)` in `__tests__/`); the web wrapper tests switch themselves to jsdom
  *          with a `@vitest-environment` comment. The infixed tiers (`.int`, `.contract`, `.e2e`, `.load`) run under
  *          their own tasks, so they are excluded here.

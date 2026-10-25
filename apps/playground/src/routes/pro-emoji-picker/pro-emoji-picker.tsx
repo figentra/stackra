@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the EmojiPicker route: `@stackra/ui-pro`'s EmojiPicker as a button that shows the chosen emoji
+ * Purpose: the page of the EmojiPicker route: `@stackra-pro/ui`'s EmojiPicker as a button that shows the chosen emoji
  *          beside its own name and opens a searchable grid of emoji, with the choice reported beside it and an empty
  *          state when the search matches none.
  * Boundary: presentation and local state only. The grid holds a short hand-written list of emoji with names and tags
@@ -10,7 +10,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProEmojiPickerRoute } from "#src/routes/pro-emoji-picker/pro-emoji-picker.route";

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the ChatLoader route: `@stackra/ui-pro`'s ChatLoader as three small indicators (dots, a pulse, a
+ * Purpose: the page of the ChatLoader route: `@stackra-pro/ui`'s ChatLoader as three small indicators (dots, a pulse, a
  *          spinner), each announced as a status by its own name, and as a skeleton placeholder for a reply that has
  *          not arrived.
  * Boundary: presentation only. An indicator with a `label` is a named status; the skeleton is decorative, so it is
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProChatLoaderRoute } from "#src/routes/pro-chat-loader/pro-chat-loader.route";
 

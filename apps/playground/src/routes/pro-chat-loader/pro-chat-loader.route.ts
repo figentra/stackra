@@ -8,7 +8,7 @@
  */
 import type { PageCategory } from "#src/enums/page-category.enum";
 
-/** The `@stackra/ui-pro` ChatLoader page, at `/pro-chat-loader`. */
+/** The `@stackra-pro/ui` ChatLoader page, at `/pro-chat-loader`. */
 // shortcut: a plain class until the Route kind base ships with gen (STA-339); then
 // `export class ProChatLoaderRoute extends Route({ path: "/pro-chat-loader" }) {}`.
 // oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
@@ -19,6 +19,6 @@ export class ProChatLoaderRoute {
   /** The page title, the component's name. */
   static readonly title = "ChatLoader";
 
-  /** The category the page is listed under: the `@stackra/ui-pro` pages. */
+  /** The category the page is listed under: the `@stackra-pro/ui` pages. */
   static readonly category: PageCategory = "AI";
 }

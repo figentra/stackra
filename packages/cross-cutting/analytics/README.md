@@ -4,26 +4,28 @@ Product analytics delivery for Stackra surfaces (ADR 0298): an event leaves the 
 granted its consent category. Events fired before the decision wait in a bounded, ordered queue that is sent in order on
 acceptance and discarded unsent on refusal. Global Privacy Control counts as a refusal.
 
-**Tier:** `tier:lib` (`packages/cross-cutting/analytics`). Entries `.`, `./contracts`, `./react` and `./testing`.
-Depends on `@stackra/config`, `@stackra/consent`, `@stackra/container`, `@stackra/contracts`, `@stackra/events`,
-`@stackra/validation` and zod; React is an optional peer of `./react`. The event base, `AnalyticsEvent`, lives in
+**Tier:** `tier:lib` (`packages/cross-cutting/analytics`). Entries `.`, `./contracts`, `./react`, `./native` and
+`./testing`. Depends on `@stackra/config`, `@stackra/consent`, `@stackra/container`, `@stackra/contracts`,
+`@stackra/events`, `@stackra/validation` and zod; React is an optional peer of `./react`, React Native of `./native`. The event base, `AnalyticsEvent`, lives in
 `@stackra/events`; this package delivers it.
 
 ## What is here
 
-| Entry         | Symbol                  | Use                                                                                  |
-| ------------- | ----------------------- | ------------------------------------------------------------------------------------ |
-| `.`           | `AnalyticsConfig`       | the configuration (key `analytics`): driver, gating category, queue bound, deny list |
-| `.`           | `AnalyticsConfig$`      | the shipped schema a member's generated override extends                             |
-| `.`           | `AnalyticsOptions`      | the configuration's shape                                                            |
-| `.`           | `AnalyticsClient`       | the service that delivers: `track(event)`, `state`                                   |
-| `.`           | `AnalyticsState`        | `opted_in`, `opted_out`, `pending`                                                   |
-| `.`           | `NoneAnalyticsDriver`   | the default driver: sends nothing                                                    |
-| `./contracts` | `AnalyticsDriver`       | the port a driver implements (`send(deliveries)`), with the `AnalyticsDelivery` type |
-| `./react`     | `useAnalytics`          | the client of the nearest container                                                  |
-| `./testing`   | `fakeAnalytics`         | a real client over memory and its own consent ledger, recording every tracked event  |
-| `./testing`   | `AnalyticsFake`         | the class `fakeAnalytics` returns: `events()`, `tracked`, `state`, `delivered()`     |
-| `./testing`   | `MemoryAnalyticsDriver` | the `memory` driver: keeps what it is sent                                           |
+| Entry         | Symbol                   | Use                                                                                    |
+| ------------- | ------------------------ | -------------------------------------------------------------------------------------- |
+| `.`           | `AnalyticsConfig`        | the configuration (key `analytics`): driver, gating category, queue bound, deny list   |
+| `.`           | `AnalyticsConfig$`       | the shipped schema a member's generated override extends                               |
+| `.`           | `AnalyticsOptions`       | the configuration's shape                                                              |
+| `.`           | `AnalyticsClient`        | the service that delivers: `track(event)`, `state`                                     |
+| `.`           | `AnalyticsState`         | `opted_in`, `opted_out`, `pending`                                                     |
+| `.`           | `NoneAnalyticsDriver`    | the default driver: sends nothing                                                      |
+| `.`           | `MemoryAnalyticsDriver`  | the `memory` driver: keeps what it is sent                                             |
+| `.`           | `PosthogAnalyticsDriver` | the `posthog` driver: one batch capture request per send, plain `fetch`                |
+| `./contracts` | `AnalyticsDriver`        | the port a driver implements (`send(deliveries)`), with the `AnalyticsDelivery` type   |
+| `./react`     | `useAnalytics`           | the client of the nearest container                                                    |
+| `./native`    | `PosthogAnalyticsDriver` | the `posthog` driver for React Native: batches of 20, flushed when the app backgrounds |
+| `./testing`   | `fakeAnalytics`          | a real client over memory and its own consent ledger, recording every tracked event    |
+| `./testing`   | `AnalyticsFake`          | the class `fakeAnalytics` returns: `events()`, `tracked`, `state`, `delivered()`       |
 
 ## The rules, in order
 
@@ -65,8 +67,16 @@ expect(analytics.events()).toEqual([LeadSubmitted.create({ plan: "pro" })]);
 expect(analytics.delivered()).toEqual([]); // nobody accepted yet
 ```
 
+## PostHog
+
+Set `driver: "posthog"` and feed `posthogKey` (the public `phc_...` project key) from the host's env configuration;
+`posthogHost` defaults to `https://eu.i.posthog.com`, and a non-empty `ingestOrigin` (a reverse proxy on the site's own
+origin) wins over it. The driver posts to `<origin>/batch/` with plain `fetch`, no SDK. It is called only after
+consent, so its anonymous `distinct_id` (random, created on the first send, held in memory, never stored) never leaves
+before the visitor accepts, and every event carries `$process_person_profile: false`. On a phone, take the driver
+from `@stackra/analytics/native`: it buffers and sends one batch at 20 events or when `AppState` goes to `background`.
+
 ## Not here yet
 
-Vendor drivers (PostHog for web and native) come later, with their names in `AnalyticsDriverName` and their keys. The
-capture switches (`autocapturePageviews`, `autocaptureClicks`, `webVitals`, `sessionReplay`, `cookieless`) and
-`ingestOrigin` are read by those drivers only.
+The capture switches (`autocapturePageviews`, `autocaptureClicks`, `webVitals`, `sessionReplay`) are not read by the
+PostHog driver yet: it sends only the events tracked through `AnalyticsClient`.

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the RadarChart route: `@stackra/ui-pro`'s RadarChart with one series (a skill assessment) and
+ * Purpose: the page of the RadarChart route: `@stackra-pro/ui`'s RadarChart with one series (a skill assessment) and
  *          with two series compared (two teams, a legend that names each), each with a named container and HeroUI
  *          Pro's own tooltip card on hover.
  * Boundary: presentation only; the figures are local. A chart's container is named by `label` with `role="img"`, and
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { DemoChartTick } from "#src/components/demo-chart-tick";
 import { ProRadarChartRoute } from "#src/routes/pro-radar-chart/pro-radar-chart.route";

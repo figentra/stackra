@@ -45,9 +45,9 @@ jobs:
       # The licensed Pro postinstalls (ADR 0310) fail without the gate's tokens, so the three members that pull them
       # in are not installed; none of them is published.
       install-args: >-
-        --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground --filter=!@stackra/ui-pro
+        --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground --filter=!@stackra-pro/ui
       # Only what is published: the packages. The private HeroUI Pro wrapper (ADR 0310) is never published here.
-      build-args: --filter=./packages/** --filter=!@stackra/ui-pro
+      build-args: --filter=./packages/** --filter=!@stackra-pro/ui
       dry-run: ${{ inputs.dry_run == true }}
       bootstrap: ${{ inputs.bootstrap == true }}
       infisical-identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}

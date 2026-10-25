@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Sheet route: `@stackra/ui-pro`'s Sheet opened from two named buttons, a bottom sheet with a
+ * Purpose: the page of the Sheet route: `@stackra-pro/ui`'s Sheet opened from two named buttons, a bottom sheet with a
  *          handle and a side sheet with a form, each a dialog named by its heading with a close button and a footer
  *          that reports the choice made.
  * Boundary: presentation and local state only. The edge is a physical one (`bottom`, `right`), as HeroUI Pro's is.
@@ -8,7 +8,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProSheetRoute } from "#src/routes/pro-sheet/pro-sheet.route";

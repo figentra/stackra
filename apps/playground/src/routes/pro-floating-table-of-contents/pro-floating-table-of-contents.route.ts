@@ -8,7 +8,7 @@
  */
 import type { PageCategory } from "#src/enums/page-category.enum";
 
-/** The `@stackra/ui-pro` FloatingTableOfContents page, at `/pro-floating-table-of-contents`. */
+/** The `@stackra-pro/ui` FloatingTableOfContents page, at `/pro-floating-table-of-contents`. */
 // shortcut: a plain class until the Route kind base ships with gen (STA-339); then
 // `export class ProFloatingTableOfContentsRoute extends Route({ path: "/pro-floating-table-of-contents" }) {}`.
 // oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
@@ -19,6 +19,6 @@ export class ProFloatingTableOfContentsRoute {
   /** The page title, the component's name. */
   static readonly title = "FloatingTableOfContents";
 
-  /** The category the page is listed under: the `@stackra/ui-pro` pages. */
+  /** The category the page is listed under: the `@stackra-pro/ui` pages. */
   static readonly category: PageCategory = "Navigation";
 }

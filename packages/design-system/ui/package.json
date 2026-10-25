@@ -39,6 +39,12 @@
       "./src/core/*.tsx",
       "./src/core/*/index.ts"
     ],
+    "#form/*": [
+      "./src/form/*",
+      "./src/form/*.ts",
+      "./src/form/*.tsx",
+      "./src/form/*/index.ts"
+    ],
     "#node/*": [
       "./src/node/*",
       "./src/node/*.ts",
@@ -81,6 +87,11 @@
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
     },
+    "./form": {
+      "@stackra/source": "./src/form/index.ts",
+      "types": "./dist/form.d.mts",
+      "default": "./dist/form.mjs"
+    },
     "./node": {
       "@stackra/source": "./src/node/ui.module.ts",
       "types": "./dist/node.d.mts",
@@ -114,7 +125,9 @@
   },
   "dependencies": {
     "@stackra/icons": "workspace:*",
-    "@stackra/tokens": "workspace:*"
+    "@stackra/tokens": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@expo/ui": "catalog:mobile",

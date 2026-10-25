@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Markdown route: `@stackra/ui-pro`'s Markdown rendering a document with a heading, a paragraph
+ * Purpose: the page of the Markdown route: `@stackra-pro/ui`'s Markdown rendering a document with a heading, a paragraph
  *          with emphasis and inline code, a list, a quotation and a fenced code block, and StreamMarkdown rendering a
  *          reply that is still arriving, cut off part-way through a block.
  * Boundary: presentation only; the text is local and fixed, so the streaming reply does not change while the page is
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProMarkdownRoute } from "#src/routes/pro-markdown/pro-markdown.route";
 

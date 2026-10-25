@@ -8,7 +8,7 @@
  */
 import type { PageCategory } from "#src/enums/page-category.enum";
 
-/** The `@stackra/ui-pro` CellSlider page, at `/pro-cell-slider`. */
+/** The `@stackra-pro/ui` CellSlider page, at `/pro-cell-slider`. */
 // shortcut: a plain class until the Route kind base ships with gen (STA-339); then
 // `export class ProCellSliderRoute extends Route({ path: "/pro-cell-slider" }) {}`.
 // oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
@@ -19,6 +19,6 @@ export class ProCellSliderRoute {
   /** The page title, the component's name. */
   static readonly title = "CellSlider";
 
-  /** The category the page is listed under: the `@stackra/ui-pro` pages. */
+  /** The category the page is listed under: the `@stackra-pro/ui` pages. */
   static readonly category: PageCategory = "Inputs and forms";
 }

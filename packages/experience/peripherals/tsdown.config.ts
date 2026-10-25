@@ -13,5 +13,5 @@ import { library } from "@stackra/tsdown-config";
 export default library({
   index: "src/core/index.ts",
   contracts: "src/contracts/index.ts",
-  electron: "src/electron/index.ts",
+  desktop: "src/desktop/index.ts",
 });

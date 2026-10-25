@@ -1,6 +1,6 @@
 /*
  * Stackra file contract:
- * Purpose: `@stackra/ui-pro/css`, the fixes Stackra's apps lay over HeroUI Pro's own stylesheet so its components meet
+ * Purpose: `@stackra-pro/ui/assets/public/css/ui-pro.css`, the fixes Stackra's apps lay over HeroUI Pro's own stylesheet so its components meet
  *          WCAG 2.2 AA in light, dark, LTR and RTL: text colours that hold 4.5:1, a shimmer and an Arabic line that stay
  *          readable, and file badges on the theme's status colours.
  * Boundary: CSS only, and only over HeroUI Pro's BEM classes. Every colour is a theme variable (`--danger`, `--muted`,

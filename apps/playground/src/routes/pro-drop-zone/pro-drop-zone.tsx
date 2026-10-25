@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the DropZone route: `@stackra/ui-pro`'s DropZone, a file drop area with a file picker and a list
+ * Purpose: the page of the DropZone route: `@stackra-pro/ui`'s DropZone, a file drop area with a file picker and a list
  *          of files, in a zone that adds the files dropped or chosen to a list that already shows the three upload states
  *          (uploading with progress, complete, and failed with a retry), and a disabled zone.
  * Boundary: presentation and local state only; nothing is uploaded, so a chosen or dropped file is listed as complete.
@@ -8,7 +8,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { type ComponentProps, useState } from "react";
 
 import { ProDropZoneRoute } from "#src/routes/pro-drop-zone/pro-drop-zone.route";

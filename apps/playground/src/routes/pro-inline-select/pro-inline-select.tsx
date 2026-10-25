@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the InlineSelect route: `@stackra/ui-pro`'s InlineSelect, a dropdown that blends into the text
+ * Purpose: the page of the InlineSelect route: `@stackra-pro/ui`'s InlineSelect, a dropdown that blends into the text
  *          around it, in a controlled sentence that reports the item chosen and a disabled one.
  * Boundary: presentation and local state only. Each select is named by `label`; the sentence around it is plain text.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import { ListBox, type Key } from "@heroui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProInlineSelectRoute } from "#src/routes/pro-inline-select/pro-inline-select.route";

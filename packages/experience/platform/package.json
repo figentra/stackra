@@ -2,7 +2,7 @@
   "name": "@stackra/platform",
   "version": "0.0.0",
   "private": true,
-  "description": "Stackra platform: the Platform capability port with its typed refusal, the push and captcha ports, the desktop, PWA and push configurations, memory, web, Electron, Expo and Turnstile drivers, the Bridge kind, the service-worker handlers, the React hooks and fakePlatform",
+  "description": "Stackra platform: the Platform capability port with its typed refusal, the push and captcha ports, the desktop, PWA and push configurations, memory, web, Electron, Expo (platform and push) and Turnstile drivers, the Bridge kind, the service-worker handlers, the React hooks and fakePlatform",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -39,10 +39,10 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
-    "#electron/*": [
-      "./src/electron/*",
-      "./src/electron/*.ts",
-      "./src/electron/*/index.ts"
+    "#desktop/*": [
+      "./src/desktop/*",
+      "./src/desktop/*.ts",
+      "./src/desktop/*/index.ts"
     ],
     "#native/*": [
       "./src/native/*",
@@ -87,10 +87,10 @@
       "types": "./dist/browser.d.mts",
       "default": "./dist/browser.mjs"
     },
-    "./electron": {
-      "@stackra/source": "./src/electron/index.ts",
-      "types": "./dist/electron.d.mts",
-      "default": "./dist/electron.mjs"
+    "./desktop": {
+      "@stackra/source": "./src/desktop/index.ts",
+      "types": "./dist/desktop.d.mts",
+      "default": "./dist/desktop.mjs"
     },
     "./native": {
       "@stackra/source": "./src/native/index.ts",
@@ -144,6 +144,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@react-native-community/netinfo": "catalog:mobile",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -155,7 +156,9 @@
     "@types/react-dom": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",
     "electron": "catalog:desktop",
+    "expo-camera": "catalog:mobile",
     "expo-constants": "catalog:mobile",
+    "expo-haptics": "catalog:mobile",
     "expo-notifications": "catalog:mobile",
     "fake-indexeddb": "catalog:quality",
     "jsdom": "catalog:frontend",
@@ -169,17 +172,29 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "@react-native-community/netinfo": "catalog:mobile",
     "electron": "catalog:desktop",
+    "expo-camera": "catalog:mobile",
     "expo-constants": "catalog:mobile",
+    "expo-haptics": "catalog:mobile",
     "expo-notifications": "catalog:mobile",
     "react": "catalog:frontend",
     "react-native": "catalog:mobile"
   },
   "peerDependenciesMeta": {
+    "@react-native-community/netinfo": {
+      "optional": true
+    },
     "electron": {
       "optional": true
     },
+    "expo-camera": {
+      "optional": true
+    },
     "expo-constants": {
+      "optional": true
+    },
+    "expo-haptics": {
       "optional": true
     },
     "expo-notifications": {

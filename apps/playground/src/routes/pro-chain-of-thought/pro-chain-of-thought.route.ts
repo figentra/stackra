@@ -8,7 +8,7 @@
  */
 import type { PageCategory } from "#src/enums/page-category.enum";
 
-/** The `@stackra/ui-pro` ChainOfThought page, at `/pro-chain-of-thought`. */
+/** The `@stackra-pro/ui` ChainOfThought page, at `/pro-chain-of-thought`. */
 // shortcut: a plain class until the Route kind base ships with gen (STA-339); then
 // `export class ProChainOfThoughtRoute extends Route({ path: "/pro-chain-of-thought" }) {}`.
 // oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
@@ -19,6 +19,6 @@ export class ProChainOfThoughtRoute {
   /** The page title, the component's name. */
   static readonly title = "ChainOfThought";
 
-  /** The category the page is listed under: the `@stackra/ui-pro` pages. */
+  /** The category the page is listed under: the `@stackra-pro/ui` pages. */
   static readonly category: PageCategory = "AI";
 }

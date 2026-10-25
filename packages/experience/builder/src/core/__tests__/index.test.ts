@@ -23,6 +23,7 @@ describe("@stackra/builder", () => {
       "MAX_DOCUMENT_BLOCKS",
       "MAX_DOCUMENT_DEPTH",
       "RootBlockLockedError",
+      "inspectorFieldsOf",
       "parseDocumentNode",
     ]);
   });

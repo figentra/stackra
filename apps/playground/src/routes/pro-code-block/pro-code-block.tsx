@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the CodeBlock route: `@stackra/ui-pro`'s CodeBlock with a language label and a named copy button,
+ * Purpose: the page of the CodeBlock route: `@stackra-pro/ui`'s CodeBlock with a language label and a named copy button,
  *          for TypeScript and for JSON, the code highlighted by Shiki in the theme of the page.
  * Boundary: presentation only; the code is local. Code is always left to right (`dir="ltr"`) so a right-to-left page keeps
  *          it readable. The copy button names itself; the language label is text in the header.
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { ProCodeBlockRoute } from "#src/routes/pro-code-block/pro-code-block.route";
 
@@ -28,7 +28,7 @@ const TYPESCRIPT = `function greet(name: string) {
 console.log(greet("Stackra"));`;
 
 const JSON_CODE = `{
-  "name": "@stackra/ui-pro",
+  "name": "@stackra-pro/ui",
   "private": true,
   "type": "module"
 }`;

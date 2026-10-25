@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Agenda route: `@stackra/ui-pro`'s Agenda as a week calendar with a day, week and month view
+ * Purpose: the page of the Agenda route: `@stackra-pro/ui`'s Agenda as a week calendar with a day, week and month view
  *          selector, previous, today and next buttons, an all-day row and a time grid, where a drag across the grid
  *          creates an event that can then be moved, resized or deleted, and a count of the events made.
  * Boundary: presentation and local state only. The calendar starts empty, because building an event needs
@@ -9,7 +9,7 @@
  * Runtime: browser
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 import { useState } from "react";
 
 import { ProAgendaRoute } from "#src/routes/pro-agenda/pro-agenda.route";

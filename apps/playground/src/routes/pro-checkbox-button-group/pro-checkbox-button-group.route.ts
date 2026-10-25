@@ -8,7 +8,7 @@
  */
 import type { PageCategory } from "#src/enums/page-category.enum";
 
-/** The `@stackra/ui-pro` CheckboxButtonGroup page, at `/pro-checkbox-button-group`. */
+/** The `@stackra-pro/ui` CheckboxButtonGroup page, at `/pro-checkbox-button-group`. */
 // shortcut: a plain class until the Route kind base ships with gen (STA-339); then
 // `export class ProCheckboxButtonGroupRoute extends Route({ path: "/pro-checkbox-button-group" }) {}`.
 // oxlint-disable-next-line typescript/no-extraneous-class -- the Route kind base replaces the static fields
@@ -19,6 +19,6 @@ export class ProCheckboxButtonGroupRoute {
   /** The page title, the component's name. */
   static readonly title = "CheckboxButtonGroup";
 
-  /** The category the page is listed under: the `@stackra/ui-pro` pages. */
+  /** The category the page is listed under: the `@stackra-pro/ui` pages. */
   static readonly category: PageCategory = "Selection";
 }

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the page of the Timeline route: `@stackra/ui-pro`'s Timeline as a release log of five events, each with a
+ * Purpose: the page of the Timeline route: `@stackra-pro/ui`'s Timeline as a release log of five events, each with a
  *          marker, a title, a status chip that says its state in words, a description and a time, the current event
  *          marked, in a compact density.
  * Boundary: presentation only; the events are local. The markers are decorative (hidden from assistive technology), so
@@ -9,7 +9,7 @@
  * Governing contract: ADR 0310 (decision 12); ADR 0060 (light, dark, RTL); STA-416 FR-012.
  */
 import * as Ui from "@stackra/ui/react";
-import * as UiPro from "@stackra/ui-pro/react";
+import * as UiPro from "@stackra-pro/ui/react";
 
 import { DemoIcon, type DemoIconName } from "#src/components/demo-icon";
 import { ProTimelineRoute } from "#src/routes/pro-timeline/pro-timeline.route";
