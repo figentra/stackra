@@ -12,3 +12,4 @@
 - [x] T008 [US1] Tests for every public symbol and each barrel in `src/**/__tests__/` — covers: SC-002 — route: tests — deps: T007
 - [x] T009 [US1] Changeset `.changeset/tenancy-package.md`; `oxfmt` and `oxlint` clean; the validator reports nothing for the package; the scratch typecheck passes — covers: SC-001, SC-003 — route: package — deps: T008
 - [ ] T010 [US1] Run the package's tests, typecheck and build in the separate testing workflow after the integrator's install — covers: SC-002, SC-003 — route: tests — deps: T009
+- [x] T011 [US1] R3 reconciliation: `TenancyCronScopesDriver` in `packages/security/tenancy/src/core/drivers/tenancy-cron-scopes.driver.ts`, the scheduler's `CronScopes` over the tenant nodes — covers: FR-009, P-009 — route: package — deps: T009

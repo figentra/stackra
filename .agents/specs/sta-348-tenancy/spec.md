@@ -123,6 +123,8 @@ The console's switcher calls `useTenant({ optional: true })` and `useTenantSwitc
   tenant outside the memberships with `TenantMembershipMissingError`.
 - **FR-008**: `useTenant` and `useTenantSwitcher` SHALL read `TenantSwitcher` and re-render on a change; `useTenant()`
   without `optional` SHALL refuse `TenantRequiredError` while no tenant is active.
+- **FR-009**: `TenancyCronScopesDriver` SHALL implement `@stackra/scheduler`'s `CronScopes` by listing every
+  tenant-level node below `ScopeConfig.root` the `ScopeTree` shows, as `ScopeRef`s in path order.
 
 ## Success Criteria
 

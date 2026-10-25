@@ -75,6 +75,7 @@
     "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/model": "workspace:*",
+    "@stackra/scheduler": "workspace:*",
     "@stackra/scope": "workspace:*"
   },
   "devDependencies": {

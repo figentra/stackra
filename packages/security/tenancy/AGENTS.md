@@ -7,17 +7,17 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
 
 ## Where code goes
 
-| You are writing…                                   | It goes in…                                    |
-| -------------------------------------------------- | ---------------------------------------------- |
-| An isomorphic enum, constant, function or type     | `src/core/{enums,constants,functions,types}/`  |
-| A refusal                                          | `src/core/errors/`                             |
-| The client switcher, a resolver step               | `src/core/{services,drivers}/`                 |
-| The trait                                          | `src/node/traits/`                             |
-| A migration macro and its `Blueprint` augmentation | `src/node/database/macros/`, `src/node/types/` |
-| A server service, an internal server constant      | `src/node/{services,constants}/`               |
-| A hook                                             | `src/react/tenant/`                            |
-| A label                                            | `assets/lang/{en,ar}/tenancy.json`             |
-| A test                                             | `__tests__/<name>.<kind>.test.ts` beside it    |
+| You are writing…                                    | It goes in…                                    |
+| --------------------------------------------------- | ---------------------------------------------- |
+| An isomorphic enum, constant, function or type      | `src/core/{enums,constants,functions,types}/`  |
+| A refusal                                           | `src/core/errors/`                             |
+| The client switcher, a resolver step, a port driver | `src/core/{services,drivers}/`                 |
+| The trait                                           | `src/node/traits/`                             |
+| A migration macro and its `Blueprint` augmentation  | `src/node/database/macros/`, `src/node/types/` |
+| A server service, an internal server constant       | `src/node/{services,constants}/`               |
+| A hook                                              | `src/react/tenant/`                            |
+| A label                                             | `assets/lang/{en,ar}/tenancy.json`             |
+| A test                                              | `__tests__/<name>.<kind>.test.ts` beside it    |
 
 ## Entries and barrels
 
@@ -25,7 +25,9 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
   public file to its barrel and to that entry's `index.test.ts`.
 - `node` and `react` import `core` through `#core/index`; `react` also re-exports `TenantMembership` from its declaring
   file, which `.` does not export (one symbol, one entry).
-- No `./contracts` entry: the ports this package uses are `@stackra/scope`'s. Add one only with a port of its own.
+- No `./contracts` entry: the ports this package uses are `@stackra/scope`'s and `@stackra/scheduler`'s
+  (`CronScopes`). Add one only with a port of its own. Import scheduler through `./contracts` only; scheduler must
+  never depend on tenancy.
 
 ## This package
 

@@ -5,8 +5,8 @@ Stackra tenancy: tenant isolation in Postgres, the tenant level of the scope tre
 speaks of a `ScopeRef` or uses the names exported here.
 
 **Tier:** `tier:lib` (`packages/security/tenancy`). Entries `.`, `./node` and `./react`. Depends on
-`@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/model` and
-`@stackra/scope`.
+`@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/model`,
+`@stackra/scheduler` (its `./contracts` only, for the `CronScopes` port) and `@stackra/scope`.
 
 A tenant is the scope node at the tenant level, and its tenant id is that node's public id (`scp_…`). The scope tree is
 `@stackra/scope`'s; tenancy adds its level as data and keeps row isolation.
@@ -19,6 +19,7 @@ A tenant is the scope node at the tenant level, and its tenant id is that node's
 | `.`       | `TenancyScopes`, `TENANT_SCOPE_LEVEL`                 | the tenant level's code and the level a deployment adds to `ScopeConfig` |
 | `.`       | `TENANT_SCOPE_ALIAS`                                  | the level's lang key (`tenancy::levels.tenant`)                          |
 | `.`       | `TenantScopeResolverDriver`                           | the tenancy step of the scope resolver chain                             |
+| `.`       | `TenancyCronScopesDriver`                             | the scheduler's `CronScopes`: a per-scope cron runs for every tenant     |
 | `.`       | `isTenantId`                                          | whether a string is a tenant id                                          |
 | `.`       | `TenantRequiredError`, `TenantMembershipMissingError` | refusals                                                                 |
 | `./node`  | `BelongsToTenant`                                     | the trait of a tenant-owned model (`tenantId`)                           |
@@ -106,6 +107,13 @@ export class ChainScopeResolverDriver extends BaseChainScopeResolverDriver {
   }
 }
 ```
+
+## Per-tenant crons
+
+Bind `TenancyCronScopesDriver` as `@stackra/scheduler`'s `CronScopes` and an action with
+`job: { cron: { perScope: true } }` runs once per tick in every tenant: the driver lists every tenant-level node below
+`ScopeConfig.root` (child tenants included) through the `ScopeTree`. The tree's row-level security applies, so the
+scheduler reads it from the root's session.
 
 ## The switcher
 

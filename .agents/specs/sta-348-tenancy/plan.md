@@ -50,6 +50,7 @@
 - **P-006**: the step's answer is the tree's node of `actor.tenantId` exactly when that id is a tenant id and the node's level is `tenant` — Validates: FR-006
 - **P-007**: after any sequence of `setMemberships` and `switchTo`, the active membership is one of the memberships or `null`, and the active scope is its node — Validates: FR-007
 - **P-008**: the hooks render the switcher's current state after every change, and `useTenant()` refuses `tenant_required` with no active tenant — Validates: FR-008
+- **P-009**: for every tree, `list()` is exactly the descendants of the root whose level is `tenant`, as `{ id, path }`, and empty when the tree shows no root — Validates: FR-009
 
 ## Deploy modes
 
