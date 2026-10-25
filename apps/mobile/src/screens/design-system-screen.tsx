@@ -22,12 +22,12 @@ import { useReducedMotion } from "react-native-reanimated";
 import type { SearchBarCommands } from "react-native-screens";
 
 import { HeroArt } from "../components/ui/hero-art";
+import { matchPages } from "../components/ui/match-pages";
 import { PageGallery } from "../components/ui/page-gallery";
 import { ReviewIcons } from "../components/ui/review-icons";
 import { Screen } from "../components/ui/screen";
 import { Showcase } from "../components/ui/showcase";
 import type { DesignSystemComponentRoute, HomeStackParamList } from "../navigation/types";
-import type { PageLink } from "../types/page-link.type";
 import { DESIGN_SYSTEM_COMPONENTS } from "./design-system-components";
 
 // shortcut: English strings in one place until @stackra/i18n reaches the mobile app; then keys.
@@ -60,15 +60,6 @@ const STATS = [
   STRINGS.stats.schemes,
   STRINGS.stats.directions,
 ];
-
-/** The pages whose title, category or tier contains every word of `query`, ignoring case (the web palette's rule). */
-function matching(pages: readonly PageLink[], query: string) {
-  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-  return pages.filter((page) => {
-    const text = `${page.title} ${page.category} ${page.tier}`.toLowerCase();
-    return words.every((word) => text.includes(word));
-  });
-}
 
 /** A section heading with its muted note. */
 function SectionHeading({ title, note }: { title: string; note: string }) {
@@ -128,7 +119,7 @@ function DesignSystemLanding({
     });
   }, [navigation]);
 
-  const found = query.trim() ? matching(DESIGN_SYSTEM_COMPONENTS, query) : undefined;
+  const found = query.trim() ? matchPages(DESIGN_SYSTEM_COMPONENTS, query) : undefined;
   if (found)
     return (
       <Screen isAmbient>
