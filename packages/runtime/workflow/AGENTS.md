@@ -20,6 +20,8 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 | The Postgres journal, the explorer         | `src/node/drivers/`, `src/node/workflow.explorer.ts`      |
 | A migration                                | `src/node/database/migrations/<NNNN>-<name>.migration.ts` |
 | The test driver                            | `src/testing/{constants,functions,types}/`                |
+| A building-block, document or pack piece   | `src/core/{constants,enums,errors,functions,types}/`      |
+| The automation model, its service          | `src/node/{models,services,types}/`                       |
 | A test                                     | `__tests__/<name>.<kind>.test.ts` beside it               |
 
 ## Entries and barrels
@@ -49,6 +51,12 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 - No tenant word is declared here (final review R-59, ADR 0323): a scope is a `ScopeRef`. "Guard" in the engine is an
   attempt's abort signal, never a precondition (ADR 0294 decision 23).
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
+- An automation or a plan is data that references registered blocks (ADR 0122, 0154): no expression, template or
+  `eval`; a reference is `{ "$ref": "<root>.<path>" }` walked over own properties. Conditions are `@stackra/rules`
+  conditions, never a second evaluator (ADR 0331 decision 1).
+- A document run keeps its document in `workflow.runs.input`; a coded run resumes only on the class of its pinned
+  version (`WORKFLOW_KEYS.versions`).
+- Seeds never overwrite an automation whose latest revision is the tenant's.
 
 ## Rules that fail the build
 
@@ -65,3 +73,6 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
 | Caller        | `workflow.runs.origin` (jsonb)                        | Public ids and kinds of the caller, the call id, key and scope, locale and market      |
 | Signal fields | `workflow.signals.payload` (jsonb)                    | The sender's payload; deleted when taken, dropped after seven days untaken             |
 | Failures      | `workflow.runs.error`, `workflow.steps.error` (jsonb) | The refusal code (`internal` otherwise) and message; never a stack or the step's input |
+| Documents     | `content.revisions.data`, `workflow.runs.input`       | Scope configuration; inputs may hold literal values (a phone, a text); never logged    |
+| Principal     | `workflow.automations.principal` (jsonb)              | The actor kind and public id an automation runs as                                     |
+| Held events   | `workflow.signals.payload` (jsonb)                    | A waitable trigger's occurrence, dropped after seven days untaken                      |

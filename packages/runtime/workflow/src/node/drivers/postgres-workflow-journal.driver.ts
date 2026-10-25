@@ -8,7 +8,7 @@
  *           through zod. No table has a row-level-security policy (the worker advances every scope's runs); a held
  *           signal is matched to a run of the same scope by its `scope_id`, and `take` locks the row it removes
  *           (`for update skip locked`) so two runners never take one signal. JSON columns are `jsonb`; scope paths are
- *           `ltree`, read back as text.
+ *           `ltree`, read back as text. A run's pinned version is `version` (migration 0002; 1 for older rows).
  * Runtime: node
  * Governing contract: ADR 0102 (decision 1); ADR 0292 (decision 2); ADR 0160 (raw SQL is parameterised and typed with
  *                     zod); ADR 0142 (drivers behind ports); ADR 0327 (decisions 3 and 9: the scope session).
@@ -33,8 +33,8 @@ const SIGNALS = '"workflow"."signals"';
 
 /** The columns a run is read from. */
 const RUN_COLUMNS =
-  "id, workflow, status, input, origin, error, scope_id, scope_path::text as scope_path, started_at, deadline_at, " +
-  "ended_at";
+  "id, workflow, version, status, input, origin, error, scope_id, scope_path::text as scope_path, started_at, " +
+  "deadline_at, ended_at";
 
 /** The columns a step is read from. */
 const STEP_COLUMNS =
@@ -51,6 +51,7 @@ const FAILURE = z.object({ code: z.string(), message: z.string() });
 const RUN = z.object({
   id: z.string().startsWith("wfr_"),
   workflow: z.string(),
+  version: z.number().int().min(1),
   status: z.enum(Enum.values(WorkflowRunStatus) as [WorkflowRunStatus, ...WorkflowRunStatus[]]),
   input: z.unknown(),
   origin: z.record(z.string(), z.unknown()),
@@ -124,6 +125,7 @@ function runOf(row: z.infer<typeof RUN>, steps: readonly z.infer<typeof STEP>[])
   return Object.freeze({
     id: row.id as PublicId<"wfr">,
     workflow: row.workflow,
+    version: row.version,
     status: row.status,
     input: row.input,
     origin: row.origin as unknown as RunOrigin,
@@ -190,12 +192,13 @@ export class PostgresWorkflowJournalDriver extends Driver(WorkflowJournal) {
     const em = this.database.em();
     // raw-sql: the journal has no model; one upsert for the run and one for all its steps
     await em.execute(
-      `insert into ${RUNS} (id, workflow, status, input, origin, error, scope_id, scope_path, started_at, ` +
-        "deadline_at, ended_at) values (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::ltree, ?, ?, ?) " +
+      `insert into ${RUNS} (id, workflow, version, status, input, origin, error, scope_id, scope_path, ` +
+        "started_at, deadline_at, ended_at) values (?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::ltree, ?, ?, ?) " +
         "on conflict (id) do update set status = excluded.status, error = excluded.error, ended_at = excluded.ended_at",
       [
         run.id,
         run.workflow,
+        run.version ?? 1,
         run.status,
         JSON.stringify(run.input ?? null),
         JSON.stringify(run.origin),

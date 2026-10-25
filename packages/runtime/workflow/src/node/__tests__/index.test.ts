@@ -12,6 +12,11 @@ import * as node from "#node/index";
 
 describe("@stackra/workflow/node", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(node).sort()).toEqual(["PostgresWorkflowJournalDriver", "WorkflowExplorer"]);
+    expect(Object.keys(node).sort()).toEqual([
+      "Automation",
+      "AutomationService",
+      "PostgresWorkflowJournalDriver",
+      "WorkflowExplorer",
+    ]);
   });
 });

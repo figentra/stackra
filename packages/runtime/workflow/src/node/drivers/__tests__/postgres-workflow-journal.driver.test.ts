@@ -31,6 +31,7 @@ interface Statement {
 const RUN_ROW = {
   id: "wfr_a",
   workflow: "RedeemWorkflow",
+  version: 2,
   status: "waiting",
   input: { points: 300 },
   origin: { callId: "call-1", key: "points.redeem", actor: { kind: "system", id: "sys_test" } },
@@ -168,7 +169,8 @@ describe(PostgresWorkflowJournalDriver, () => {
     expect(statements).toHaveLength(2);
     expect(statements[0]?.sql).toContain('insert into "workflow"."runs"');
     expect(statements[0]?.sql).toContain("on conflict (id) do update");
-    expect(statements[0]?.params.slice(0, 3)).toEqual(["wfr_a", "RedeemWorkflow", "running"]);
+    // a run journaled without a version is pinned to version 1
+    expect(statements[0]?.params.slice(0, 4)).toEqual(["wfr_a", "RedeemWorkflow", 1, "running"]);
     expect(statements[1]?.sql).toContain('insert into "workflow"."steps"');
     expect(statements[1]?.sql).toContain("jsonb_to_recordset(?::jsonb)");
     expect(JSON.parse(String(statements[1]?.params[1]))).toEqual([
@@ -188,6 +190,7 @@ describe(PostgresWorkflowJournalDriver, () => {
     expect(run).toEqual({
       id: "wfr_a",
       workflow: "RedeemWorkflow",
+      version: 2,
       status: WorkflowRunStatus.Waiting,
       input: { points: 300 },
       origin: RUN_ROW.origin,

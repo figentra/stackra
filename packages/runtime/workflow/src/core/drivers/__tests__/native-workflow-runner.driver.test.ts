@@ -8,13 +8,17 @@
  *          `startOn` runs once per key; the context carries the call, its scope (the session's when the call has none),
  *          the step key and the clock, and recorded events go to the outbox or the bus with the scope id as the
  *          envelope's scope field and no `scope` key; a tick takes over a run whose runner died; the port methods
- *          delegate.
+ *          delegate. Documents and plans: a document run calls each action block through the pipeline as the run's
+ *          caller with resolved inputs and the step key, skips by condition, parks on a trigger block and resumes on
+ *          the held occurrence, starts once per key, and refuses an invalid document; a run resumes on its pinned
+ *          version's class and waits while that version is not deployed.
  * Boundary: test only; the memory journal and lock driver, a settable clock, a map resolver, recording stand-ins for
  *           the outbox, the bus and the context storage. `backoffDelay` is mocked to zero so a retry does not wait.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0102 (decisions 1, 2 and 7); ADR 0151 (decision 6: conformance);
  *                     ADR 0152 (0294 note).
  */
+import { Action, ActionPipeline } from "@stackra/actions";
 import type { Resolver } from "@stackra/actions";
 import { ContextStorage, WorkflowRunner } from "@stackra/actions/contracts";
 import type { CallDescriptor } from "@stackra/actions/contracts";
@@ -25,7 +29,9 @@ import { ErrorKind, Refusal } from "@stackra/errors";
 import { DomainEvent, EventBus, IntegrationEvent } from "@stackra/events";
 import { EventOutbox } from "@stackra/events/contracts";
 import type { RecordedEvent } from "@stackra/events/contracts";
+import type { I18nKey } from "@stackra/i18n";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
+import { FieldType, Operator } from "@stackra/rules/contracts";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -34,11 +40,16 @@ import { Workflow } from "#core/bases/workflow.base";
 import { Step } from "#core/decorators/step.decorator";
 import { MemoryWorkflowJournalDriver } from "#core/drivers/memory-workflow-journal.driver";
 import { NativeWorkflowRunnerDriver } from "#core/drivers/native-workflow-runner.driver";
+import { BlockKind } from "#core/enums/block-kind.enum";
 import { StepStatus } from "#core/enums/step-status.enum";
 import { WorkflowRunStatus } from "#core/enums/workflow-run-status.enum";
+import { AutomationInvalidError } from "#core/errors/automation-invalid.error";
+import { registerBlocks } from "#core/functions/register-blocks.function";
+import { registerWorkflows } from "#core/functions/register-workflows.function";
 import type { Run } from "#core/types/run.type";
 import type { RunOrigin } from "#core/types/run-origin.type";
 import type { StepContext } from "#core/types/step-context.type";
+import type { WorkflowRun } from "#core/types/workflow-run.type";
 
 vi.mock("@stackra/queue", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@stackra/queue")>()),
@@ -583,5 +594,155 @@ describe(NativeWorkflowRunnerDriver, () => {
     const controller = new AbortController();
     controller.abort();
     await expect(runner.work({ signal: controller.signal })).resolves.toBeUndefined();
+  });
+});
+
+class CodConfirmed extends DomainEvent {
+  orderId!: string;
+
+  answer!: string;
+}
+
+class SendSmsAction extends Action({ key: "sms.send", actors: [ActorKind.System] }) {
+  async handle(): Promise<void> {}
+}
+
+registerBlocks([
+  {
+    key: "orders.cod_confirmed",
+    kind: BlockKind.Trigger,
+    type: CodConfirmed,
+    label: "orders::blocks.cod_confirmed",
+    facts: { answer: { type: FieldType.String, label: "orders::facts.answer" as I18nKey } },
+    correlate: (event: CodConfirmed) => event.orderId,
+  },
+  { key: "sms.send", kind: BlockKind.Action, type: SendSmsAction, label: "sms::blocks.send" },
+]);
+
+/** An automation that asks for a COD confirmation, waits for it and thanks the buyer. */
+const COD = {
+  key: "commerce.cod_confirmation",
+  version: 3,
+  trigger: { block: "orders.cod_confirmed" },
+  steps: [
+    {
+      name: "ask",
+      block: "sms.send",
+      input: { orderId: { $ref: "input.orderId" }, text: "Confirm?" },
+    },
+    {
+      name: "skipped",
+      block: "sms.send",
+      when: { field: "trigger.answer", operator: Operator.Equals, value: "never" },
+    },
+    {
+      name: "thank",
+      block: "sms.send",
+      waitFor: { block: "orders.cod_confirmed", correlate: "input.orderId", timeout: "1h" },
+      input: { answer: { $ref: "event.answer" }, asked: { $ref: "results.ask.messageId" } },
+    },
+  ],
+};
+
+/** An engine whose action pipeline is a recording stand-in. */
+function documentEngine() {
+  const calls: { type: unknown; input: unknown; request: Record<string, unknown> }[] = [];
+  const pipeline = {
+    execute: async (type: unknown, input: unknown, request: Record<string, unknown>) => {
+      calls.push({ type, input, request });
+      return { messageId: `msg_${calls.length}` };
+    },
+  };
+  return { ...engineWith([[ActionPipeline, pipeline]]), calls };
+}
+
+describe("NativeWorkflowRunnerDriver documents and plans", () => {
+  it("runs a document's action blocks through the pipeline as the run's caller", async () => {
+    const { runner, calls, clock } = documentEngine();
+    const id = await runner.startDocument(
+      COD,
+      { orderId: "ord_1", answer: "pending" },
+      {
+        ...ORIGIN,
+        scope: SCOPE,
+      },
+    );
+
+    const parked = id === undefined ? undefined : await runner.find(id);
+    expect(parked).toMatchObject({
+      workflow: "workflow.document",
+      version: 3,
+      status: WorkflowRunStatus.Waiting,
+    });
+    expect(statuses(parked)).toEqual([
+      ["ask", StepStatus.Done],
+      ["skipped", StepStatus.Skipped],
+      ["thank", StepStatus.Waiting],
+    ]);
+    expect(calls[0]).toMatchObject({
+      type: SendSmsAction,
+      input: { orderId: "ord_1", text: "Confirm?" },
+      request: { actor: ACTOR, scope: SCOPE, idempotencyKey: `${id}:ask` },
+    });
+
+    await runner.hold(CodConfirmed, { orderId: "ord_1", answer: "yes" }, "ord_1");
+    clock.at = plus(1);
+    expect(await runner.tick()).toBe(1);
+
+    expect((id === undefined ? undefined : await runner.find(id))?.status).toBe(
+      WorkflowRunStatus.Completed,
+    );
+    expect(calls[1]?.input).toEqual({ answer: "yes", asked: "msg_1" });
+  });
+
+  it("runs an agent's plan once per key, and refuses an invalid one", async () => {
+    const { runner, calls } = documentEngine();
+    const plan = {
+      key: "ai.plan",
+      steps: [{ name: "notify", block: "sms.send", input: { text: "Hi" } }],
+    };
+
+    const first = await runner.startDocument(plan, {}, ORIGIN, { key: "pln_1" });
+    const again = await runner.startDocument(plan, {}, ORIGIN, { key: "pln_1" });
+
+    expect(first).toMatch(/^wfr_/);
+    expect(again).toBeUndefined();
+    expect(calls).toHaveLength(1);
+    await expect(
+      runner.startDocument({ key: "ai.plan", steps: [] }, {}, ORIGIN),
+    ).rejects.toBeInstanceOf(AutomationInvalidError);
+  });
+
+  it("resumes a run on its pinned version, and waits while that version is not deployed", async () => {
+    class PinnedWorkflow extends Workflow({}) {
+      @Step({ waitFor: Confirmed, correlate: () => "pin" })
+      async confirm(): Promise<string> {
+        return "v1";
+      }
+    }
+    class PinnedV2Workflow extends Workflow({ version: 2 }) {
+      async confirm(): Promise<string> {
+        return "v2";
+      }
+    }
+    registerWorkflows([
+      { type: PinnedWorkflow, key: "test.pinned" },
+      { type: PinnedV2Workflow, key: "test.pinned" },
+    ]);
+    const { runner, journal } = engineWith([
+      [PinnedWorkflow, new PinnedWorkflow()],
+      [PinnedV2Workflow, new PinnedV2Workflow()],
+    ]);
+    await runner.start(PinnedWorkflow, {}, ORIGIN);
+    const parked = await runner.last(PinnedWorkflow);
+    expect(parked?.version).toBe(1);
+
+    await runner.hold(Confirmed, { by: "usr_1" }, "pin");
+    await journal.save({ ...(parked as WorkflowRun), version: 9 });
+    expect(await runner.tick(plus(1))).toBe(0);
+
+    await journal.save(parked as WorkflowRun);
+    expect(await runner.tick(plus(1))).toBe(1);
+    expect((await runner.find((parked as WorkflowRun).id))?.steps.at(-1)?.result).toBe("v1");
   });
 });

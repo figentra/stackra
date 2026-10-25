@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: `WorkflowOptions<I>`, the options of `Workflow({ ... })`: the event that starts a run, the key that keeps
- *          one run per business fact, and the time a whole run may take.
+ *          one run per business fact, the time a whole run may take, and the version a run is pinned to.
  * Boundary: a type only. A workflow an action starts writes `Workflow<Input>({ timeout })` and names its input; one an
  *           event starts writes `startOn`, whose class gives the input. Durations are text (`"20m"`, `"PT20M"`), read
  *           with @stackra/validation's `duration` when the class is defined.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 3, 4 and 25: `startOn` takes a class of another kind); ADR 0101 (0294 note:
- *                     an event starts a workflow only through `startOn`); ADR 0152 (0294 note: a run timeout).
+ *                     an event starts a workflow only through `startOn`); ADR 0152 (0294 note: a run timeout; decision
+ *                     2: a run is pinned to the version it started on).
  */
 import type { AnyClass } from "@stackra/container";
 
@@ -24,4 +25,11 @@ export interface WorkflowOptions<I> {
 
   /** How long a whole run may take, waits included (`"20m"`); past it the run compensates and refuses. */
   readonly timeout?: string;
+
+  /**
+   * The workflow's version, a whole number from 1 (the default). A changed graph ships as a new class with the same key
+   * and the next version; a run resumes on the class of the version it started on, so both stay deployed until the
+   * older one's runs end.
+   */
+  readonly version?: number;
 }

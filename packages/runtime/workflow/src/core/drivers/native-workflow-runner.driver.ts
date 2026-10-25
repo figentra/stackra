@@ -4,8 +4,9 @@
  *          `ctx.signal`: it runs a workflow's steps in process, each in a transaction of its own that also writes the
  *          step's journal row; parks a run before a step that waits for a signal and resumes it when the signal or the
  *          timeout comes; retries a step with backoff; times out steps and runs; and on a failure undoes the completed
- *          steps last first. `tick` advances what is due (resumed waits, timeouts, runs whose runner died); `work`
- *          ticks until stopped.
+ *          steps last first. `startDocument` runs an automation document or an agent's plan the same way, each step an
+ *          action call through the pipeline as the run's principal. `tick` advances what is due (resumed waits,
+ *          timeouts, runs whose runner died), each run on the version it started on; `work` ticks until stopped.
  * Boundary: over the `WorkflowJournal` port (Postgres or memory), `Locks` (one runner per run, so a run never advances
  *           twice at once) and the `Clock`; `connect(resolver)` gives it the container that builds workflow instances
  *           and binds `EventOutbox`, `EventBus` and `ContextStorage` (the explorer connects it at boot, the testing
@@ -16,13 +17,19 @@
  *           step's integration events go to the outbox in the step's transaction and its domain events to the bus
  *           after it commits, with the run's scope id as the envelope's scope field and no `scope` key; events a model
  *           records reach the outbox through its own flush. Staging the events of a whole run until it succeeds (ADR
- *           0102 decision 3) waits for a staged state in @stackra/outbox.
+ *           0102 decision 3) waits for a staged state in @stackra/outbox. A document run keeps its document in its
+ *           input, so it resumes on that version; a coded run resumes on the class registered for its key and
+ *           version, and waits (not advanced here) while no such class is deployed in this process. A step may wait
+ *           for an event as for a signal: the explorer holds each occurrence of a correlating trigger block.
  * Runtime: isomorphic
  * Governing contract: ADR 0102 (decisions 1, 2 and 7); ADR 0151 (decisions 2 and 3: the native driver behind the
  *                     engine port, which is @stackra/actions' `WorkflowRunner`); ADR 0292 (decision 2); ADR 0152 (0294
- *                     note: waits, timeouts, heartbeats, held signals); ADR 0101 (0294 note: `ctx.run`); ADR 0149
- *                     (locks).
+ *                     note: waits, timeouts, heartbeats, held signals; decisions 1, 2 and 5: event waits, the version
+ *                     pin, one graph format); ADR 0101 (0294 note: `ctx.run`); ADR 0149 (locks); ADR 0122 (decision
+ *                     3); ADR 0153 (decision 2: an automation runs as its principal); ADR 0245 (decision 8: a plan is
+ *                     an ephemeral workflow).
  */
+import { ActionPipeline } from "@stackra/actions";
 import type { ExtensionContext, Resolver } from "@stackra/actions";
 import { ContextStorage, WorkflowRunner } from "@stackra/actions/contracts";
 import type { CallDescriptor } from "@stackra/actions/contracts";
@@ -38,16 +45,24 @@ import type { EventMeta, RecordedEvent } from "@stackra/events/contracts";
 import type { Locks } from "@stackra/locking";
 import { backoffDelay } from "@stackra/queue";
 
-import type { Signal } from "#core/bases/signal.base";
+import { BUILDING_BLOCKS } from "#core/constants/building-blocks.constant";
+import { DOCUMENT_WORKFLOW } from "#core/constants/document-workflow.constant";
 import { WORKFLOW_DEFAULTS } from "#core/constants/workflow-defaults.constant";
 import { WORKFLOW_KEYS } from "#core/constants/workflow-keys.constant";
 import { StepStatus } from "#core/enums/step-status.enum";
 import { WorkflowRunStatus } from "#core/enums/workflow-run-status.enum";
+import { checkAutomation } from "#core/functions/check-automation.function";
 import { correlationKey } from "#core/functions/correlation-key.function";
+import { documentPlan } from "#core/functions/document-plan.function";
 import { mintId } from "#core/functions/mint-id.function";
 import { planOf } from "#core/functions/plan-of.function";
+import { resolveRefs } from "#core/functions/resolve-refs.function";
 import { workflowKey } from "#core/functions/workflow-key.function";
 import type { WorkflowJournal } from "#core/ports/workflow-journal.port";
+import type { AutomationDocument } from "#core/types/automation-document.type";
+import type { AutomationStep } from "#core/types/automation-step.type";
+import type { DocumentInput } from "#core/types/document-input.type";
+import type { DocumentView } from "#core/types/document-view.type";
 import type { RunOrigin } from "#core/types/run-origin.type";
 import type { StepContext } from "#core/types/step-context.type";
 import type { StepPlan } from "#core/types/step-plan.type";
@@ -88,6 +103,15 @@ interface Guard {
 interface Latest {
   record: WorkflowStepRecord | undefined;
 }
+
+/** What a run advances on: its plan and the instance whose methods are its steps. */
+interface Target {
+  readonly plan: WorkflowPlan;
+  readonly instance: object;
+}
+
+/** The class kinds `hold` takes: a signal, or an event a step waits for. */
+const HOLDABLE: readonly string[] = ["signal", "domain_event", "integration_event"];
 
 /** The run statuses a tick advances. */
 const ACTIVE: readonly WorkflowRunStatus[] = [
@@ -138,17 +162,22 @@ function withStep(run: WorkflowRun, step: WorkflowStepRecord): WorkflowRun {
   return Object.freeze({ ...run, steps: Object.freeze(steps) });
 }
 
-/** `run` as a step sees it (`Run<W>`): its id, input and the results kept so far. */
+/** `run` as a step sees it (`Run<W>`): its id, input and the results kept so far, and when it started. */
 function viewOf(run: WorkflowRun): object {
   const results = Object.fromEntries(
     run.steps.filter((step) => "result" in step).map((step) => [step.name, step.result]),
   );
-  return Object.freeze({ id: run.id, input: run.input, results: Object.freeze(results) });
+  return Object.freeze({
+    id: run.id,
+    input: run.input,
+    results: Object.freeze(results),
+    startedAt: run.startedAt,
+  });
 }
 
 /** An instance of `type` built from a held payload, as `Event.create` builds an event: no constructor runs. */
-const signalOf = (type: AnyClass<Signal>, payload: object): Signal =>
-  Object.freeze(Object.assign(Object.create(type.prototype as object) as Signal, payload));
+const signalOf = (type: AnyClass, payload: object): object =>
+  Object.freeze(Object.assign(Object.create(type.prototype as object) as object, payload));
 
 /**
  * Calls `method` of `instance` with `args`.
@@ -274,6 +303,56 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
       plan.correlate === undefined
         ? undefined
         : `${plan.key}:${correlationKey(plan.correlate(input as never))}`;
+    const outcome = await this.launch(plan, instance, toJson(input), origin, key);
+    if (outcome === undefined) return undefined;
+    return typeof (instance as { output?: unknown }).output === "function"
+      ? invoke(instance, "output", [viewOf(outcome.run)])
+      : undefined;
+  }
+
+  /**
+   * Starts a run of an automation document or an agent's plan with `input` as `origin` (the automation's principal,
+   * or the user who approved the plan) and advances it until it completes, parks or compensates. Each step calls its
+   * action block through the action pipeline as that caller, so access, approval and audit apply to every step. The
+   * run keeps the document, so it resumes on this version. Given `options.key`, a second start of the same key starts
+   * nothing (a redelivered trigger).
+   *
+   * @returns the run's id; `undefined` for a key that already has a run.
+   * @throws AutomationInvalidError when the document does not check; the failing step's error, or
+   *         `WorkflowTimedOutError`, once the completed steps were undone; Error before `connect`.
+   */
+  async startDocument(
+    document: unknown,
+    input: unknown,
+    origin: RunOrigin,
+    options: { readonly key?: string } = {},
+  ): Promise<PublicId<"wfr"> | undefined> {
+    const checked = checkAutomation(document);
+    this.connected();
+    const run: DocumentInput = { document: checked, input: toJson(input) };
+    const outcome = await this.launch(
+      documentPlan(checked),
+      this.documentInstance(checked),
+      run,
+      origin,
+      options.key === undefined ? undefined : `${DOCUMENT_WORKFLOW}:${options.key}`,
+    );
+    return outcome?.run.id;
+  }
+
+  /**
+   * Saves a new run of `plan` with `input` and advances it; with `key`, the run's id is derived from it and a key that
+   * already has a run starts nothing. An origin without a `scope` takes the caller's session scope.
+   *
+   * @throws the failing step's error once the completed steps were undone.
+   */
+  private async launch(
+    plan: WorkflowPlan,
+    instance: object,
+    input: unknown,
+    origin: RunOrigin,
+    key: string | undefined,
+  ): Promise<Outcome | undefined> {
     const id = await mintId("wfr", key);
     const scope = await this.journal.currentScope();
     return this.locks.with(lockKey(id), WORKFLOW_DEFAULTS.lease, async () => {
@@ -283,8 +362,9 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
         Object.freeze({
           id,
           workflow: plan.key,
+          version: plan.version,
           status: WorkflowRunStatus.Running,
-          input: toJson(input),
+          input,
           // A run an event starts has no call scope: its steps run in, and read, the session's.
           origin:
             origin.scope === undefined && scope !== undefined
@@ -298,20 +378,18 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
       );
       const outcome = await this.advance(run, instance, plan, startedAt);
       if (outcome.failed) throw outcome.error;
-      return typeof (instance as { output?: unknown }).output === "function"
-        ? invoke(instance, "output", [viewOf(outcome.run)])
-        : undefined;
+      return outcome;
     });
   }
 
   /**
-   * Holds `payload` as a `signal` sent with `correlation`, in the caller's transaction, for the run of the caller's
-   * scope that waits on both; the next tick resumes that run.
+   * Holds `payload` as a `signal` (or an awaited event) sent with `correlation`, in the caller's transaction, for the
+   * run of the caller's scope that waits on both; the next tick resumes that run.
    *
-   * @throws TypeError when `signal` is not a signal class.
+   * @throws TypeError when `signal` is neither a signal class nor an event class.
    */
   async hold(signal: AnyClass, payload: object, correlation?: string | object): Promise<void> {
-    if (kindOf(signal)?.kind !== "signal")
+    if (!HOLDABLE.includes(kindOf(signal)?.kind ?? ""))
       throw new TypeError(`${signal.name} is not a signal: extend Signal`);
     const receivedAt = this.clock.now();
     const scope = await this.journal.currentScope();
@@ -365,17 +443,84 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
       }
   }
 
-  /** Advances run `id` when its lock is free and its workflow is known here; `true` when it did. */
+  /** Advances run `id` when its lock is free and its workflow version is known here; `true` when it did. */
   private async resume(id: PublicId<"wfr">, now: Date): Promise<boolean> {
     let advanced = false;
     await this.locks.tryWith(lockKey(id), WORKFLOW_DEFAULTS.lease, async () => {
       const run = await this.journal.find(id);
-      const type = run === undefined ? undefined : WORKFLOW_KEYS.byKey.get(run.workflow);
-      if (run === undefined || type === undefined || !ACTIVE.includes(run.status)) return;
-      await this.advance(run, this.instanceOf(type), planOf(type), now);
+      if (run === undefined || !ACTIVE.includes(run.status)) return;
+      const target = this.targetOf(run);
+      if (target === undefined) return;
+      await this.advance(run, target.instance, target.plan, now);
       advanced = true;
     });
     return advanced;
+  }
+
+  /**
+   * What `run` advances on: the document it carries, or the class registered for its key and pinned version;
+   * `undefined` when this process cannot run it (that version, or a block it names, is not deployed here).
+   */
+  private targetOf(run: WorkflowRun): Target | undefined {
+    if (run.workflow === DOCUMENT_WORKFLOW) {
+      const { document } = run.input as DocumentInput;
+      const keys = [
+        document.trigger?.block,
+        ...document.steps.flatMap((step) => [step.block, step.waitFor?.block]),
+      ];
+      if (!keys.every((key) => key === undefined || BUILDING_BLOCKS.has(key))) return undefined;
+      return { plan: documentPlan(document), instance: this.documentInstance(document) };
+    }
+    const type = WORKFLOW_KEYS.versions.get(`${run.workflow}@${run.version ?? 1}`);
+    return type === undefined ? undefined : { plan: planOf(type), instance: this.instanceOf(type) };
+  }
+
+  /** The object whose methods are `document`'s steps, each calling its block (or handing on what it waited for). */
+  private documentInstance(document: AutomationDocument): object {
+    return Object.freeze(
+      Object.fromEntries(
+        document.steps.map((step) => [
+          step.name,
+          (view: DocumentView, ctx: StepContext, received?: object) =>
+            this.perform(step, view, ctx, received),
+        ]),
+      ),
+    );
+  }
+
+  /**
+   * One document step: calls its action block through the action pipeline as the run's caller, in the run's scope,
+   * with its input's references resolved and the step key as the call's idempotency key; a wait-only step returns
+   * the occurrence it received.
+   */
+  private async perform(
+    step: AutomationStep,
+    view: DocumentView,
+    ctx: StepContext,
+    received: object | undefined,
+  ): Promise<unknown> {
+    if (step.block === undefined) return toJson(received);
+    // reason: the plan was built only when every block of the document is registered here
+    const block = BUILDING_BLOCKS.get(step.block) as { readonly type: AnyClass };
+    const roots = {
+      input: view.input.input,
+      results: view.results,
+      ...(received === undefined ? {} : { event: toJson(received) }),
+    };
+    const resolver = this.connected();
+    const pipeline = resolver.has(ActionPipeline)
+      ? resolver.get(ActionPipeline)
+      : new ActionPipeline(resolver);
+    return pipeline.execute(block.type as never, resolveRefs(step.input, roots) as never, {
+      actor: ctx.actor,
+      ...(ctx.scope === undefined ? {} : { scope: ctx.scope }),
+      idempotencyKey: ctx.stepKey,
+      locale: ctx.locale,
+      timeZone: ctx.timeZone,
+      currency: ctx.currency,
+      market: ctx.market,
+      abortSignal: ctx.abortSignal,
+    });
   }
 
   /** Runs the steps of `start` that are not done, in plan order, until the run completes, parks or compensates. */
@@ -477,7 +622,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     let run = start;
     const latest: Latest = { record };
     const first = (record?.attempts ?? 0) + 1;
-    let signal: Signal | undefined;
+    let signal: object | undefined;
     for (let attempt = first; ; attempt += 1) {
       const at = attempt === first ? now : this.clock.now();
       const events: Event[] = [];
@@ -777,11 +922,20 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
    * @throws Error before `connect`.
    */
   private instanceOf(type: AnyClass): object {
+    return this.connected().get(type);
+  }
+
+  /**
+   * The connected resolver.
+   *
+   * @throws Error before `connect`.
+   */
+  private connected(): Resolver {
     if (this.resolver === undefined)
       throw new Error(
         "NativeWorkflowRunnerDriver is not connected: WorkflowExplorer connects it at boot, the testing plugin in a test",
       );
-    return this.resolver.get(type);
+    return this.resolver;
   }
 
   /** The bound instance of `port`, or `undefined` when nothing binds it. */

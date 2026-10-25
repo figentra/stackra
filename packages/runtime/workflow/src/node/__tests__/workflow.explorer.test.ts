@@ -3,7 +3,9 @@
  * Purpose: unit tests of `WorkflowExplorer`: at boot it connects the native engine, plans each built workflow (so a bad
  *          plan fails at boot), subscribes a starter for each `startOn` workflow that starts a run with the event (its
  *          origin naming no scope), and refuses a `startOn` workflow when no event bus is bound; it leaves another
- *          engine alone.
+ *          engine alone. It subscribes each trigger block: an occurrence is held for waiting runs under the block's
+ *          correlation and starts each published automation as its principal, keyed by automation and occurrence; a
+ *          coded step waiting for an event no trigger block correlates fails boot.
  * Boundary: test only; a stand-in container lists fixed instances and binds a recording bus; the engine runs on the
  *           memory journal.
  * Runtime: node (vitest)
@@ -13,12 +15,21 @@ import type { WorkflowRunner } from "@stackra/actions/contracts";
 import { Explorer } from "@stackra/container";
 import type { AnyClass, Container } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
-import { EventBus } from "@stackra/events";
+import { DomainEvent, EventBus } from "@stackra/events";
 import type { Listener, ListenerContext } from "@stackra/events";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
 import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
-import { MemoryWorkflowJournalDriver, NativeWorkflowRunnerDriver, Workflow } from "#core/index";
+import {
+  BlockKind,
+  MemoryWorkflowJournalDriver,
+  NativeWorkflowRunnerDriver,
+  registerBlocks,
+  Step,
+  Workflow,
+} from "#core/index";
+import { AutomationService } from "#node/services/automation.service";
 import { WorkflowExplorer } from "#node/workflow.explorer";
 
 const NOON = new Date(Date.UTC(2026, 9, 25, 12));
@@ -77,8 +88,10 @@ describe(WorkflowExplorer, () => {
     const runner = engine();
     new WorkflowExplorer(containerOf([fulfil], bus), runner).onApplicationBootstrap();
 
-    expect(subscriptions).toHaveLength(1);
-    const [subscription] = subscriptions;
+    // the trigger blocks this file registers are subscribed too
+    const starters = subscriptions.filter(([type]) => type === PaymentCaptured);
+    expect(starters).toHaveLength(1);
+    const [subscription] = starters;
     if (subscription === undefined) throw new Error("the explorer subscribed a starter");
     const [type, starter] = subscription;
     expect(type).toBe(PaymentCaptured);
@@ -123,5 +136,77 @@ describe(WorkflowExplorer, () => {
     expect(() =>
       new WorkflowExplorer(containerOf([new OrphanUndoWorkflow()]), other).onApplicationBootstrap(),
     ).not.toThrow();
+  });
+});
+
+describe("WorkflowExplorer trigger blocks", () => {
+  class OrderPaid extends DomainEvent {
+    orderId!: string;
+  }
+
+  class OrderRefunded extends DomainEvent {}
+
+  class AwaitRefundWorkflow extends Workflow({}) {
+    @Step({ waitFor: OrderRefunded, correlate: () => "ord_1" })
+    async refunded(): Promise<void> {}
+  }
+
+  registerBlocks([
+    {
+      key: "orders.order_paid",
+      kind: BlockKind.Trigger,
+      type: OrderPaid,
+      label: "orders::blocks.paid",
+      correlate: (event: OrderPaid) => event.orderId,
+    },
+  ]);
+
+  const PRINCIPAL = { kind: "system", id: "sys_automation" };
+
+  const DOCUMENT = { key: "commerce.thanks", steps: [] };
+
+  it("holds each occurrence and starts the published automations it triggers", async () => {
+    const subscriptions: [AnyClass, Listener][] = [];
+    const bus = {
+      subscribe: (type: AnyClass, listener: Listener) => subscriptions.push([type, listener]),
+    };
+    const automations = {
+      triggered: async () => [{ automationId: "wfa_1", document: DOCUMENT, principal: PRINCIPAL }],
+    };
+    const container = {
+      instances: () => [],
+      has: (token: AnyClass) => token === EventBus || token === AutomationService,
+      get: (token: AnyClass) => (token === EventBus ? bus : automations),
+    } as unknown as Container;
+    const runner = engine();
+    const hold = vi.spyOn(runner, "hold").mockResolvedValue(undefined);
+    const start = vi.spyOn(runner, "startDocument").mockResolvedValue(undefined);
+    new WorkflowExplorer(container, runner).onApplicationBootstrap();
+
+    const [type, listener] = subscriptions.find(([candidate]) => candidate === OrderPaid) ?? [];
+    expect(type).toBe(OrderPaid);
+    const event = Object.assign(new OrderPaid(), { orderId: "ord_1" });
+    const ctx = { eventId: "evt_1", occurredAt: NOON, now: () => NOON } as ListenerContext;
+    await (listener as unknown as { handle(e: object, c: ListenerContext): Promise<void> }).handle(
+      event,
+      ctx,
+    );
+
+    expect(hold).toHaveBeenCalledWith(OrderPaid, event, "ord_1");
+    expect(start).toHaveBeenCalledWith(
+      DOCUMENT,
+      event,
+      expect.objectContaining({ callId: "evt_1", key: "commerce.thanks", actor: PRINCIPAL }),
+      { key: "wfa_1:evt_1" },
+    );
+  });
+
+  it("fails boot for a step that waits for an event no trigger block correlates", () => {
+    expect(() =>
+      new WorkflowExplorer(
+        containerOf([new AwaitRefundWorkflow()]),
+        engine(),
+      ).onApplicationBootstrap(),
+    ).toThrow(/no trigger block correlates/);
   });
 });

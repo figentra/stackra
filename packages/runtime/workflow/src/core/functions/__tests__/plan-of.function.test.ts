@@ -3,12 +3,14 @@
  * Purpose: unit tests of `planOf`: steps are every method but `output` and the undos, ancestors' first in declaration
  *          order, moved only by `after`; each undo is matched to its step; options are checked and durations read in
  *          milliseconds; it refuses a class that is not a workflow, an undo naming no step, an `after` naming no other
- *          step or forming a cycle, a retry budget below one and a `waitFor` that is not a signal; it caches the plan.
+ *          step or forming a cycle, a retry budget below one and a `waitFor` that is neither a signal nor an event; it
+ *          caches the plan, and plans the version (1 by default) and a wait on an event.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 18); ADR 0151 (0294 note).
  */
 import { Backoff } from "@stackra/queue";
+import { DomainEvent } from "@stackra/events";
 import { describe, expect, it } from "@stackra/testing";
 
 import { Signal } from "#core/bases/signal.base";
@@ -113,5 +115,23 @@ describe(planOf, () => {
     }
     expect(() => planOf(NoAttemptsWorkflow)).toThrow(RangeError);
     expect(() => planOf(BadWaitWorkflow)).toThrow(TypeError);
+  });
+});
+
+describe("planOf versions and event waits", () => {
+  class OrderCollected extends DomainEvent {
+    orderId!: string;
+  }
+
+  class PickupWorkflow extends Workflow({ version: 3 }) {
+    @Step({ waitFor: OrderCollected, correlate: () => "ord_1", timeout: "1h" })
+    async collected(): Promise<void> {}
+  }
+
+  it("plans the version, 1 by default, and a wait on an event", () => {
+    expect(planOf(FulfilWorkflow).version).toBe(1);
+    const plan = planOf(PickupWorkflow);
+    expect(plan.version).toBe(3);
+    expect(plan.steps[0]).toMatchObject({ waitFor: OrderCollected, signal: "OrderCollected" });
   });
 });

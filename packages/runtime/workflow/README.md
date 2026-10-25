@@ -7,8 +7,9 @@ durable journal, parks a run on a signal wait, retries with backoff, times out s
 steps last first when one fails (ADR 0102, 0151, 0152, 0292).
 
 **Tier:** `tier:lib` (`packages/runtime/workflow`). Entries `.`, `./node` and `./testing`. Depends on
-`@stackra/actions`, `@stackra/config`, `@stackra/container`, `@stackra/contracts`, `@stackra/database`,
-`@stackra/errors`, `@stackra/events`, `@stackra/locking`, `@stackra/queue`, `@stackra/validation` and zod.
+`@stackra/actions`, `@stackra/config`, `@stackra/container`, `@stackra/content`, `@stackra/contracts`,
+`@stackra/database`, `@stackra/errors`, `@stackra/events`, `@stackra/locking`, `@stackra/model`, `@stackra/queue`,
+`@stackra/rules`, `@stackra/validation` and zod.
 
 ## What is here
 
@@ -27,6 +28,11 @@ steps last first when one fails (ADR 0102, 0151, 0152, 0292).
 | `PostgresWorkflowJournalDriver`                                      | `./node`    | the durable journal: `workflow.runs`, `workflow.steps`, `workflow.signals`   |
 | `WorkflowExplorer`                                                   | `./node`    | at boot: connects the engine, checks every plan, subscribes `startOn`        |
 | `WORKFLOW_TESTING_PLUGIN`, `runWorkflow`, `signal`, `WorkflowResult` | `./testing` | the in-process test driver, `app.workflows.last(W)` and `.advanceClock(d)`   |
+| `registerBlocks`, `buildingBlocks`, `BlockKind`, `BuildingBlock`     | `.`         | the building-block registry every package adds its triggers and actions to   |
+| `AutomationDocument$`, `checkAutomation`, `AutomationInvalidError`   | `.`         | the automation document kind (and an agent's plan): shape and registry check |
+| `dryRun`, `DryRun`, `DryRunStep`, `DryRunOutcome`                    | `.`         | what each step would do on a sample input, calling nothing                   |
+| `WorkflowTemplatePack$`, `SeedResult`                                | `.`         | default automations as a versioned seed document                             |
+| `Automation`, `AutomationService`, `AutomationRevision`              | `./node`    | versioned automations: draft, dry run, publish as a principal, seed          |
 
 ## Writing a workflow
 
@@ -83,6 +89,78 @@ An action starts it with `ctx.run(RedeemPointsWorkflow, input)`; another action 
 - **`startOn`**: `Workflow({ startOn: PaymentCaptured, correlate: (event) => event.orderId })` starts a run on each
   event (the explorer subscribes it); a key that already has a run starts nothing.
 
+## Versions
+
+`Workflow({ version: 2 })` ships a changed graph as a new class under the same key. A run records the version it
+started on (`workflow.runs.version`, migration `workflow.0002`) and resumes on that version's class; while no class of
+that version is deployed in a process, the run waits there. Keep the old class until its runs end.
+
+## Event waits
+
+`@Step({ waitFor: OrderCollected, correlate: (run) => run.input.orderId })` parks on an event as on a signal. The event
+must be a trigger building block with a `correlate`: the explorer holds each occurrence under that correlation, so an
+event that arrives before the run parks still resumes it. Boot fails for a wait on an event no block correlates.
+
+## Building blocks, automations and plans
+
+Every package exposes its capabilities as building blocks (ADR 0153): trigger events and actions.
+
+```ts
+registerBlocks([
+  {
+    key: "orders.order_paid",
+    kind: BlockKind.Trigger,
+    type: OrderPaid,
+    label: "orders::blocks.order_paid",
+    facts: { total: { type: FieldType.Number, label: "orders::facts.total" } },
+    correlate: (event: OrderPaid) => event.orderId,
+  },
+  {
+    key: "notifications.send_sms",
+    kind: BlockKind.Action,
+    type: SendSmsAction,
+    label: "notifications::blocks.sms",
+  },
+]);
+```
+
+An automation is a document that references blocks and adds no code (ADR 0122):
+
+```json
+{
+  "key": "commerce.cod_confirmation",
+  "trigger": { "block": "orders.order_paid" },
+  "steps": [
+    {
+      "name": "ask",
+      "block": "notifications.send_sms",
+      "input": { "orderId": { "$ref": "input.orderId" } },
+      "when": { "field": "trigger.total", "operator": "at_least", "value": 100 }
+    },
+    {
+      "name": "confirm",
+      "waitFor": { "block": "orders.cod_confirmed", "correlate": "input.orderId", "timeout": "2h" }
+    }
+  ]
+}
+```
+
+- `checkAutomation` refuses an unregistered or wrong-kind block, a wait on a trigger that does not correlate, a
+  reference that points forward (`results.<later step>`) or to `event.*` outside a waiting step, and a `when` that is
+  not a `@stackra/rules` condition over the trigger's facts.
+- `AutomationService`: `open`, `draft` (the document's version is the revision number), `dryRun` (records the
+  revision), `publish(id, revision, principal)` (refuses `automation_not_dry_run`), `revision`, `triggered`, `seed`,
+  `seedPack`. Table `workflow.automations` (migration `workflow.0003`), under forced row-level security.
+- The explorer subscribes each trigger block: an occurrence starts each published automation of the delivery's scope
+  as the automation's principal, keyed by automation and occurrence, so a redelivery starts nothing twice.
+- `runner.startDocument(document, input, origin, { key })` runs a document: each step calls its action block through
+  `ActionPipeline` as `origin.actor`, with its input's references resolved and the step key as the Idempotency-Key, so
+  access, approval and audit apply to every step. An agent's plan is a document without a trigger, started the same
+  way: an ephemeral workflow with no stored record (ADR 0245 decision 8). The run keeps the document, so it resumes on
+  that version.
+- A product's seed pack ships default automations as a `WorkflowTemplatePack$` (`{ key, version, templates }`);
+  `seedPack(scope, pack, principal)` publishes each, and a new version never overwrites a tenant's edit.
+
 ## Running it
 
 ```ts
@@ -115,6 +193,8 @@ expect((await app.workflows.last(RedeemPointsWorkflow)).status).toBe(WorkflowRun
 ## Not here
 
 - Staging a run's events until it succeeds (ADR 0102 decision 3): needs a staged state in @stackra/outbox.
-- The run version pin (ADR 0152 decision 2): a resumed run runs the current code.
-- Waiting for an event rather than a signal; workflow hooks (ADR 0102 decision 4); inspect, retry and cancel actions
-  (ADR 0152 decision 4); the Temporal driver (Pro, ADR 0292).
+- Workflow hooks (ADR 0102 decision 4); inspect, retry and cancel actions (ADR 0152 decision 4); the Temporal driver
+  (Pro, ADR 0292).
+- Pausing an automation when its publisher loses access, and the check that its grants never exceed the publisher's
+  (ADR 0153 decision 2): the publishing action decides the principal it passes.
+- The automation studio editor (`@stackra/builder`) and the sandboxed code step (`@stackra/sandbox`, ADR 0154).

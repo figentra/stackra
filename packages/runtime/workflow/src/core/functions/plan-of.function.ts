@@ -2,14 +2,15 @@
  * Stackra file contract:
  * Purpose: `planOf`, how the engine reads a workflow class once: its steps (every method other than `output` and the
  *          `undo<Step>` compensations, ancestors' first, in declaration order, moved only by `after`), each step's
- *          checked `@Step` options, each undo's step, the run timeout and the `startOn` options.
+ *          checked `@Step` options, each undo's step, the run timeout, the pinned version and the `startOn` options.
  * Boundary: internal; cached per class. Everything it refuses fails when the class is first run, or at boot through
  *           the explorer: an undo naming no step, an `after` naming no other step or forming a cycle, a bad duration,
- *           a retry budget below one, a `waitFor` that is not a signal. It cannot see `private`, so a private helper
+ *           a retry budget below one, a `waitFor` that is neither a signal nor an event. It cannot see `private`, so a private helper
  *           method counts as a step (the purity lint keeps helpers out of a workflow, ADR 0151).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 18); ADR 0151 (0294 note: the class is the graph); ADR 0152 (0294 note: gen
- *                     refuses an undo naming no step).
+ *                     refuses an undo naming no step; decision 1: a step waits for an event or a signal; decision 2:
+ *                     the version pin).
  */
 import { kindOf } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
@@ -30,6 +31,9 @@ const PLANS = new WeakMap<AnyClass, WorkflowPlan>();
 
 /** An undo's method name: `undo` and a capital. */
 const UNDO = /^undo[A-Z]/;
+
+/** The kinds a step may wait for: a signal, or an event a building block correlates. */
+const WAITABLE: readonly string[] = ["signal", "domain_event", "integration_event"];
 
 /**
  * The milliseconds of `text`, or `undefined` without one.
@@ -75,7 +79,8 @@ function methodsOf(type: AnyClass): string[] {
 /**
  * The plan of step `name`.
  *
- * @throws RangeError for a bad duration, retry budget or backoff; TypeError for a `waitFor` that is not a signal.
+ * @throws RangeError for a bad duration, retry budget or backoff; TypeError for a `waitFor` that is neither a signal
+ *         nor an event.
  */
 function stepOf(
   owner: string,
@@ -93,8 +98,8 @@ function stepOf(
       `${where}: retry.backoff takes a Backoff code, got ${JSON.stringify(backoff)}`,
     );
   const { waitFor, when, correlate } = options;
-  if (waitFor !== undefined && kindOf(waitFor)?.kind !== "signal")
-    throw new TypeError(`${where}: waitFor takes a class that extends Signal`);
+  if (waitFor !== undefined && !WAITABLE.includes(kindOf(waitFor)?.kind ?? ""))
+    throw new TypeError(`${where}: waitFor takes a class that extends Signal, or an event`);
   const timeout = millisecondsOf(where, "timeout", options.timeout);
   const heartbeat = millisecondsOf(where, "heartbeat", options.heartbeat);
   return Object.freeze({
@@ -152,7 +157,8 @@ export function planOf(type: AnyClass): WorkflowPlan {
   const record = kindOf(type);
   if (record?.kind !== "workflow")
     throw new TypeError(`${type.name} is not a workflow: extend Workflow({ ... })`);
-  const { startOn, correlate, timeout } = record.options as unknown as WorkflowOptions<never>;
+  const { startOn, correlate, timeout, version } =
+    record.options as unknown as WorkflowOptions<never>;
   const methods = methodsOf(type);
   const names = methods.filter((name) => name !== "output" && !UNDO.test(name));
   const undos = new Map<string, string>();
@@ -169,6 +175,7 @@ export function planOf(type: AnyClass): WorkflowPlan {
   const limit = millisecondsOf(type.name, "timeout", timeout);
   const plan: WorkflowPlan = Object.freeze({
     key: workflowKey(type),
+    version: version ?? 1,
     steps: ordered(type.name, steps),
     ...(limit === undefined ? {} : { timeout: limit }),
     ...(startOn === undefined ? {} : { startOn }),

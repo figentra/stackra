@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: `WorkflowRun`, one run as the journal keeps it and `app.workflows.last(W)` returns it: its workflow key,
- *          status, input, starting call, scope, failure, times and steps.
+ * Purpose: `WorkflowRun`, one run as the journal keeps it and `app.workflows.last(W)` returns it: its workflow key and
+ *          pinned version, status, input, starting call, scope, failure, times and steps.
  * Boundary: a type only; the input is JSON. The scope is the one the starting call ran in; every step runs in it.
  * Runtime: isomorphic
- * Governing contract: ADR 0102 (decision 1: the journal); ADR 0152 (decision 4: inspect is an operation); ADR 0327 and
+ * Governing contract: ADR 0102 (decision 1: the journal); ADR 0152 (decision 2: the version pin; decision 4: inspect
+ *                     is an operation); ADR 0327 and
  *                     ADR 0323 (a scope is a `ScopeRef`).
  */
 import type { PublicId, ScopeRef } from "@stackra/contracts";
@@ -21,6 +22,9 @@ export interface WorkflowRun {
 
   /** The workflow's registered key, else its class name. */
   readonly workflow: string;
+
+  /** The version it started on and resumes on; absent reads as 1 (a run journaled before versions). */
+  readonly version?: number;
 
   /** Where it stands. */
   readonly status: WorkflowRunStatus;

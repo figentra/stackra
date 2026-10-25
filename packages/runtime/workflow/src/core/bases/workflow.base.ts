@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `Workflow({ startOn, correlate, timeout })` and `Workflow<Input>({ timeout })`, the kind base of a durable
- *          run: its public async methods are its steps, run in declaration order (`@Step` gives one options, `after`
- *          reorders), `undo<Step>` compensates a step, and `output(run)` builds the result.
+ * Purpose: `Workflow({ startOn, correlate, timeout, version })` and `Workflow<Input>({ timeout })`, the kind base of a
+ *          durable run: its public async methods are its steps, run in declaration order (`@Step` gives one options,
+ *          `after` reorders), `undo<Step>` compensates a step, and `output(run)` builds the result.
  * Boundary: called only, generic in its input (an action names it, `startOn` gives it). The options are checked when
  *           the class is defined and recorded in the kind registry; the engine reads the steps when it first runs the
  *           class. A binding: dependencies are constructor parameters. It runs only through the engine (`ctx.run` from
@@ -32,7 +32,7 @@ export type Workflow<I = unknown> = WorkflowBase<I>;
 
 /** Checks the options of the called form. */
 function read(options: WorkflowOptions<unknown> = {}) {
-  const { startOn, correlate, timeout } = options;
+  const { startOn, correlate, timeout, version } = options;
   if (startOn !== undefined && typeof startOn !== "function")
     throw new TypeError(
       `Workflow({ startOn }) takes an event class, got ${JSON.stringify(startOn)}`,
@@ -40,6 +40,10 @@ function read(options: WorkflowOptions<unknown> = {}) {
   if (correlate !== undefined && (typeof correlate !== "function" || startOn === undefined))
     throw new TypeError(
       "Workflow({ correlate }) is a function of the startOn event, so it needs startOn",
+    );
+  if (version !== undefined && (!Number.isInteger(version) || version < 1))
+    throw new RangeError(
+      `Workflow({ version }) must be a whole number from 1, got ${JSON.stringify(version)}`,
     );
   if (timeout !== undefined)
     try {

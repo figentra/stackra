@@ -1,15 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `StepPlan`, one step as the engine runs it: its name, its checked options with durations in milliseconds,
- *          the key of the signal it waits for, its retry budget and its undo's method name.
+ *          the key of the signal or event it waits for, its retry budget and its undo's method name.
  * Boundary: a type only, internal; `planOf` builds it once per class.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 18).
  */
 import type { AnyClass } from "@stackra/container";
 import type { Backoff } from "@stackra/queue";
-
-import type { Signal } from "#core/bases/signal.base";
 
 /** One step of a plan. */
 export interface StepPlan {
@@ -31,10 +29,10 @@ export interface StepPlan {
   /** The wait between two attempts. */
   readonly backoff: Backoff;
 
-  /** The signal class it waits for. */
-  readonly waitFor?: AnyClass<Signal>;
+  /** The signal or event class it waits for. */
+  readonly waitFor?: AnyClass;
 
-  /** That signal's key. */
+  /** That class's key. */
   readonly signal?: string;
 
   /** Its correlation, from the run. */
