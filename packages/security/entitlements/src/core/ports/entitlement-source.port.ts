@@ -30,8 +30,9 @@ export abstract class EntitlementSource extends Port {
    * The grant of `entitlement` in `scope`: a boolean for a feature or a module, a count for a limit
    * (`Number.POSITIVE_INFINITY` for no limit), `undefined` when the plan does not include it.
    *
-   * @param scope - the public id of the scope-tree node the call acts in (ADR 0208); `undefined` for a platform-wide
-   *                call. shortcut: a public id until contracts ships `ScopeRef` (R-59); switch the type then.
+   * @param scope - the id of the call's `ScopeRef`, the scope-tree node it acts in (ADR 0208, ADR 0327); `undefined`
+   *                for a platform-wide call. shortcut: the id only, so a source whose plan sits on an ancestor node
+   *                reads the path from `ScopeTree`; take the `ScopeRef` once collaboration passes its room's.
    * @throws Error when the source cannot be reached; the call then fails as a bug, never as allowed.
    */
   abstract grant(

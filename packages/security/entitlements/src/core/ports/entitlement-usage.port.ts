@@ -24,8 +24,8 @@ export abstract class EntitlementUsage extends Port {
   /**
    * How many live records of `model` exist in `scope`.
    *
-   * @param scope - the public id of the scope-tree node the call acts in; `undefined` for a platform-wide call.
-   *                shortcut: a public id until contracts ships `ScopeRef` (R-59); switch the type then.
+   * @param scope - the id of the call's `ScopeRef`, the scope-tree node it acts in; `undefined` for a platform-wide
+   *                call. shortcut: the id only (as `EntitlementSource.grant`); take the `ScopeRef` with it.
    */
   abstract count(model: AnyClass, scope: PublicId | undefined): Promise<number>;
 }

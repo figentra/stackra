@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `PlanEntitlementCheckDriver`, the driver of the action pipeline's entitlement step (`EntitlementCheck` from
  *          `@stackra/actions`): for each registered entitlement that gates the call it asks the `EntitlementSource` for
- *          the scope's grant and, for a limit, the `EntitlementUsage` for the current count.
+ *          the grant in the call's scope (`call.scope`, by its id) and, for a limit, the `EntitlementUsage` for the
+ *          current count there; a call without a scope asks for the platform-wide grant.
  * Boundary: plugs into the step `ActionPipeline` already runs after the preconditions and before the flag step; it adds
  *           no second gate. A right that is not granted refuses `entitlement_required`; a limit already reached
  *           refuses `limit_reached`. A grant of the wrong shape is a source bug and throws a `TypeError`. A call no
@@ -10,7 +11,8 @@
  *           the limit may both pass; a hard bound needs a storage constraint.
  * Runtime: isomorphic
  * Governing contract: ADR 0138 (as amended: entitlement after precondition); ADR 0215 (decisions 1 and 3); ADR 0294
- *                     (decisions 16 and 17); ADR 0270 (collaboration gated by an entitlement).
+ *                     (decisions 16 and 17); ADR 0270 (collaboration gated by an entitlement); ADR 0327 (decision 6:
+ *                     the call's scope).
  */
 import { type CallDescriptor, EntitlementCheck } from "@stackra/actions/contracts";
 import { Driver, kindOf } from "@stackra/container";
@@ -54,8 +56,7 @@ export class PlanEntitlementCheckDriver extends Driver(EntitlementCheck) {
    * @throws TypeError when the source answers a count for a feature or module, or a boolean `true` for a limit.
    */
   async check(call: CallDescriptor): Promise<void> {
-    // shortcut: the descriptor's tenant id is the scope until contracts ships ScopeRef (R-59); swap it here then.
-    const scope = call.tenantId;
+    const scope = call.scope?.id;
     for (const { type, key, gates } of ENTITLEMENT_REGISTRY.values()) {
       if (!gates.includes(call.type)) continue;
       // `Entitlement` records `counts` for a limit and only for a limit.

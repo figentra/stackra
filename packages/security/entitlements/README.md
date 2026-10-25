@@ -77,8 +77,9 @@ Collaboration (ADR 0270) and any other gated surface is a feature or module enti
 | Air-gapped | as on-prem: the signed licence file needs no network                                                  |
 
 Neither driver lives here: the plan service binds the SaaS one and the on-prem runtime the licence one. A source
-answers one entitlement for one scope and composes nothing. The scope is the public id of the scope-tree node the call
-acts in (ADR 0208), `undefined` for a platform-wide call; it becomes the contracts `ScopeRef` once that type ships.
+answers one entitlement for one scope and composes nothing. The scope is the id of the call's `scope` (`ctx.scope`, the
+contracts `ScopeRef` of the scope-tree node the call acts in, ADR 0208 and 0327), `undefined` for a platform-wide call.
+A source whose plan sits on an ancestor node reads the node's path from `ScopeTree`.
 
 ## Testing
 

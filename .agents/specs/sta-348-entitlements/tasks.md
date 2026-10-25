@@ -14,3 +14,4 @@
 - [x] T010 [US1] Tests for every public symbol in `src/**/__tests__/` — covers: SC-002 — route: tests — deps: T009
 - [x] T011 [US1] Changeset `.changeset/entitlements-package.md`; `oxfmt` and `oxlint` clean; typecheck passes — covers: SC-001, SC-003 — route: package — deps: T010
 - [ ] T012 [US1] Run the package's tests and build in the separate testing workflow — covers: SC-002 — route: tests — deps: T010
+- [x] T013 [US2] R5 reconciliation: `PlanEntitlementCheckDriver` asks the grant and the count in the id of the call's `scope` (platform-wide without one) instead of the descriptor's tenant id; the ports' shortcut notes, README, AGENTS and changeset say so — covers: FR-005, P-005 — route: package — deps: T011

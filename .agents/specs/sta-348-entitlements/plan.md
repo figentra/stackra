@@ -18,7 +18,7 @@ Driver(EntitlementCheck)`, takes `EntitlementSource` and `EntitlementUsage` by c
 - `registerEntitlements` mirrors the manifest's `entitlements[]` rows (`key`, class, `gates`) and checks them like
   `registerActions` does.
 - A grant is keyed by the entitlement class and the scope's public id; a keyed source reads the locked key through
-  `entitlementKey`. The scope is read from the call descriptor in one marked place until contracts ships `ScopeRef`.
+  `entitlementKey`. The scope is the id of the call descriptor's `scope` (ADR 0327 d6, R5 reconciliation).
 - `fakeEntitlements` builds an `EntitlementSource` instance over a map (the `FlagsFake` pattern), so a container
   override accepts it.
 
@@ -30,7 +30,7 @@ Driver(EntitlementCheck)`, takes `EntitlementSource` and `EntitlementUsage` by c
 | Secrets (ADR 0173)                    | N/A    | no secret is read, stored or logged                                                                                                                         |
 | Security                              | PASS   | refuses closed: a wrong-shape grant throws, an unreachable source fails the call; refusal details carry only the caller's own plan                          |
 | HTTP and events                       | PASS   | plugs into the fixed pipeline step (ADR 0138); the refusal maps to HTTP 402 through its kind                                                                |
-| Tenancy                               | PASS   | no tenant vocabulary (R-59); the scope is a public id until contracts ships `ScopeRef`                                                                      |
+| Tenancy                               | PASS   | no tenant vocabulary (R-59); the scope is the id of the call's contracts `ScopeRef`                                                                         |
 | Delegation                            | PASS   | `package-builder` (route `package`) writes the code and `test-engineer` (route `tests`) the tests; a separate reviewer                                      |
 | Not built yet (ADR 0227)              | PASS   | no rejected or deferred technology is introduced                                                                                                            |
 | Test placement (ADR 0022)             | PASS   | every test sits in `src/**/__tests__/` beside its subject                                                                                                   |

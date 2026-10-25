@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `PlanEntitlementCheckDriver`: an ungated call passes without asking the source, a feature or
  *          module outside the plan refuses `entitlement_required`, a limit refuses `limit_reached` once the count
- *          reaches the grant (the template's two-product plan), no limit never counts, a grant of the wrong shape is
- *          a bug, and the driver runs as the entitlement step of the real `ActionPipeline`.
+ *          reaches the grant (the template's two-product plan), the grant and the count are asked in the call's
+ *          `scope` (platform-wide without one), no limit never counts, a grant of the wrong shape is a bug, and the
+ *          driver runs as the entitlement step of the real `ActionPipeline`.
  * Boundary: test only; the source is `fakeEntitlements`, the usage a list of rows, the permission step an allow-all.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0138 (as amended);
@@ -12,7 +13,14 @@
 import { Action, ActionPipeline, Query, type Resolver } from "@stackra/actions";
 import { AccessControl, type CallDescriptor, EntitlementCheck } from "@stackra/actions/contracts";
 import { type AnyClass, Driver } from "@stackra/container";
-import { type Actor, ActorKind, ApiArea, type PublicId, Realm } from "@stackra/contracts";
+import {
+  type Actor,
+  ActorKind,
+  ApiArea,
+  type PublicId,
+  Realm,
+  type ScopeRef,
+} from "@stackra/contracts";
 import { EntitlementRequiredError } from "@stackra/errors";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
@@ -73,37 +81,38 @@ class AllowAllDriver extends Driver(AccessControl) {
   async authorize(): Promise<void> {}
 }
 
-const customer: Actor = {
-  kind: ActorKind.User,
-  id: "usr_1",
-  realm: Realm.Customer,
-  tenantId: "org_1",
-};
+const customer: Actor = { kind: ActorKind.User, id: "usr_1", realm: Realm.Customer };
 
-/** The descriptor the pipeline builds for a call of `type`. */
-function callOf(type: AnyClass): CallDescriptor {
+/** The scope the calls act in, and another one. */
+const ACME: ScopeRef = { id: "scp_1", path: "platform.acme" };
+const OTHER: PublicId<"scp"> = "scp_2";
+
+/** The descriptor the pipeline builds for a call of `type`, in `scope` (Acme unless `null`). */
+function callOf(type: AnyClass, scope: ScopeRef | null = ACME): CallDescriptor {
   return {
     callId: "call_1",
     type,
     kind: "action",
     key: "catalogue.product.create@1",
     actor: customer,
-    tenantId: "org_1",
+    ...(scope === null ? {} : { scope }),
     area: ApiArea.App,
   };
 }
 
-/** A source that counts its questions. */
+/** A source that records its questions: the entitlements and the scopes asked for. */
 function countingSource(grants: readonly (readonly [EntitlementClass, EntitlementGrant])[]) {
   const fake = fakeEntitlements(grants);
   const asked: EntitlementClass[] = [];
+  const scopes: (PublicId | undefined)[] = [];
   const source = Object.assign(Object.create(EntitlementSource.prototype) as EntitlementSource, {
     grant: (entitlement: EntitlementClass, scope: PublicId | undefined) => {
       asked.push(entitlement);
+      scopes.push(scope);
       return fake.grant(entitlement, scope);
     },
   });
-  return { source, asked };
+  return { source, asked, scopes };
 }
 
 describe("PlanEntitlementCheckDriver", () => {
@@ -151,9 +160,9 @@ describe("PlanEntitlementCheckDriver", () => {
       fakeEntitlements([[ProductLimitEntitlement, 2]]),
       usage,
     );
-    usage.rows = ["org_1", "org_2", "org_2"];
+    usage.rows = [ACME.id, OTHER, OTHER];
     await expect(check.check(callOf(CreateProductAction))).resolves.toBeUndefined();
-    usage.rows = ["org_1", "org_1"];
+    usage.rows = [ACME.id, ACME.id];
     const refused = await check.check(callOf(CreateProductAction)).catch((error: unknown) => error);
     expect(refused).toBeInstanceOf(LimitReachedError);
     expect((refused as LimitReachedError).details).toEqual({
@@ -162,11 +171,22 @@ describe("PlanEntitlementCheckDriver", () => {
     });
   });
 
+  it("counts in the call's scope, and platform-wide for a call without one", async () => {
+    const { source, scopes } = countingSource([[ProductLimitEntitlement, 2]]);
+    const check = new PlanEntitlementCheckDriver(source, usage);
+    usage.rows = [ACME.id, ACME.id];
+    await expect(check.check(callOf(CreateProductAction))).rejects.toBeInstanceOf(
+      LimitReachedError,
+    );
+    await expect(check.check(callOf(CreateProductAction, null))).resolves.toBeUndefined();
+    expect(scopes).toEqual([ACME.id, undefined]);
+  });
+
   it("refuses a limit outside the plan and never counts an unlimited one", async () => {
     await expect(
       new PlanEntitlementCheckDriver(fakeEntitlements(), usage).check(callOf(CreateProductAction)),
     ).rejects.toBeInstanceOf(EntitlementRequiredError);
-    usage.rows = ["org_1", "org_1", "org_1"];
+    usage.rows = [ACME.id, ACME.id, ACME.id];
     const unlimited = new PlanEntitlementCheckDriver(
       fakeEntitlements([[ProductLimitEntitlement, Number.POSITIVE_INFINITY]]),
       usage,
@@ -205,11 +225,11 @@ describe("PlanEntitlementCheckDriver", () => {
     };
     const pipeline = new ActionPipeline(resolver);
     await expect(
-      pipeline.execute(CreateProductAction, {} as never, { actor: customer }),
+      pipeline.execute(CreateProductAction, {} as never, { actor: customer, scope: ACME }),
     ).resolves.toBe("created");
-    usage.rows = ["org_1"];
+    usage.rows = [ACME.id];
     await expect(
-      pipeline.execute(CreateProductAction, {} as never, { actor: customer }),
+      pipeline.execute(CreateProductAction, {} as never, { actor: customer, scope: ACME }),
     ).rejects.toBeInstanceOf(LimitReachedError);
   });
 });

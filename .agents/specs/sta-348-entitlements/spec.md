@@ -24,7 +24,7 @@ pipeline's existing entitlement step, the `LimitReachedError` refusal and the `f
 - **Services touched**: none (the template's commerce service consumes it once converted, STA-344)
 - **Packages touched**: `packages/security/entitlements` (new member)
 - **Cross-service events**: none; grants arrive through the `EntitlementSource` port
-- **Tenancy and data**: none stored; a grant is keyed by the scope's public id (the contracts `ScopeRef` once it ships, R-59)
+- **Tenancy and data**: none stored; a grant is keyed by the id of the call's scope (the contracts `ScopeRef`, R-59)
 - **Secrets**: none
 - **ADR needed**: no (ADR 0215, 0138 as amended, 0294 and 0305 settle the shape; the owner decisions of 2026-10-24 bind it)
 - **New dependencies**: none outside the workspace; runtime edges to `@stackra/actions`, `@stackra/container`,
@@ -133,8 +133,9 @@ reads the key with `entitlementKey`.
 
 ## Open items (for the owner, not blocking)
 
-- The contracts `ScopeRef` (R-59) does not exist; the ports take `PublicId | undefined` and the driver reads the call
-  descriptor's tenant id in one marked place until it ships.
+- Settled by the R5 reconciliation: the driver reads the id of the call descriptor's `scope` (ADR 0327 d6). The ports
+  keep `PublicId | undefined` because `@stackra/collaboration` passes its room's scope id; they take the `ScopeRef`
+  when it moves with them.
 - R-61 names an `entitlement:` option on actions, routes and resources. `Action({...})` and `Query({...})` have no such
   option yet (an `@stackra/actions` change); until then gen's `registerEntitlements` rows carry the gates.
 - ADR 0215 decision 3 names the code `limit_exceeded`; the owner's `LimitReachedError` (`limit_reached`) wins and the
