@@ -15,9 +15,11 @@ import type { StorageKey } from "#core/index";
 describe("@stackra/storage", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(storage).sort()).toEqual([
+      "MemoryPayloadSealDriver",
       "MemoryStorageDriver",
       "OfflineStore",
       "StorageArea",
+      "WebCryptoPayloadSealDriver",
       "registerStorageKeys",
     ]);
     expect("Storage" in storage).toBe(false);

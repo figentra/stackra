@@ -1,13 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: `PendingMutation`, one call waiting in the offline queue (`useMutationQueue().items`): its Idempotency-Key,
- *          the versioned action key, the input, the aggregate it is ordered within, and when it was queued and expires.
+ *          the versioned action key, the input, the aggregate it is ordered within, the device that queued it and its
+ *          per-device sequence number, and when it was queued and expires.
  * Boundary: a type only, JSON-safe, because the queue persists it (ADR 0059 decision 2). The id is the Idempotency-Key
  *           every replay sends, so a replay after a lost answer is the same call. The versioned key lets a call queued
- *           before an app update replay against the same action major (ADR 0131). Exported from `./react`, where the
+ *           before an app update replay against the same action major (ADR 0131). The sequence is stamped when the
+ *           call is first sent and kept for every resend (ADR 0338 decision 1). Exported from `./react`, where the
  *           pending-changes view names it.
  * Runtime: isomorphic
- * Governing contract: ADR 0059 (decision 2); ADR 0252 (decision 2); ADR 0138 (the idempotency step).
+ * Governing contract: ADR 0059 (decision 2); ADR 0252 (decision 2); ADR 0138 (the idempotency step); ADR 0338
+ *                     (decision 1).
  */
 import type { Json } from "@stackra/contracts";
 
@@ -29,6 +32,12 @@ export interface PendingMutation {
 
   /** The aggregate it is ordered within: calls of one aggregate replay first in, first out. */
   readonly aggregate: string;
+
+  /** The device that queued it (`DeviceIdentity.id()`). */
+  readonly deviceId: string;
+
+  /** Its sequence number on that device, stamped when it is first sent; `null` until then. */
+  readonly sequence: number | null;
 
   /** When it was queued (ISO 8601). */
   readonly queuedAt: string;

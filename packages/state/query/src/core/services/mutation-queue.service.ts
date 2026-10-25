@@ -1,23 +1,28 @@
 /**
  * Stackra file contract:
  * Purpose: `MutationQueue`, the offline mutation queue of a client: it holds the calls the offline map lets it queue,
- *          each with the Idempotency-Key minted when it was queued, persists them in the `outbox` area, replays them
- *          per aggregate first in first out (up to `maxParallelAggregates` aggregates at once) when this context leads
- *          and the network is up, and turns a refusal for good or an expired call into a conflict record a person
- *          resolves (`useMutationQueue()` reads it).
+ *          each with the Idempotency-Key minted when it was queued and the device that queued it, persists them in the
+ *          `outbox` area, replays them one at a time in the order they were queued when this context leads and the
+ *          network is up, stamps each call's per-device sequence number when it is first sent, refuses a capped action
+ *          past its cap, and turns a refusal for good or an expired call into a conflict record a person resolves
+ *          (`useMutationQueue()` reads it).
  * Boundary: a singleton service; the host's query context calls `open(partition)` after sign-in and on every switch,
- *           so a call is only ever replayed for the principal and scope that queued it. A conflict blocks the later
- *           calls of its aggregate until it is resolved or discarded, and nothing is overwritten silently (ADR 0059
- *           decision 3). A failed send that may succeed later keeps the entry; a call that fails to persist is not
- *           queued. No sync engine: replay is the action call with its key (ADR 0227 row).
+ *           so a call is only ever replayed for the principal and scope that queued it. Per-device order (ADR 0338
+ *           decision 1): a later call is never sent before an earlier one was accepted or refused, so a call that did
+ *           not reach the server stops the replay. A conflict blocks the later calls of its aggregate until it is
+ *           resolved or discarded, and nothing is overwritten silently (ADR 0059 decision 3); the other aggregates go
+ *           on, each call taking its sequence when it leaves. A failed send that may succeed later keeps the entry; a
+ *           call that fails to persist is not queued. An `OfflineLock` wipe closes the queue until the next `open`. No
+ *           sync engine: replay is the action call with its key (ADR 0227 row).
  * Runtime: isomorphic
  * Governing contract: ADR 0059 (decisions 2 and 3); ADR 0252 (decision 2: retention, a leader, per-aggregate order);
- *                     ADR 0138 (the idempotency step); ADR 0294 (decisions 16 and 17).
+ *                     ADR 0338 (decisions 1, 4 and 5); ADR 0138 (the idempotency step); ADR 0294 (decisions 16 and 17).
  */
 import { ConflictResolution, OfflineMode } from "@stackra/actions";
 import { Service } from "@stackra/container";
 import { Clock, Duration } from "@stackra/contracts";
 import type { Json } from "@stackra/contracts";
+import { DeviceIdentity } from "@stackra/devices/contracts";
 import { Platform } from "@stackra/platform/contracts";
 import { StorageArea } from "@stackra/storage";
 import { duration } from "@stackra/validation";
@@ -29,10 +34,13 @@ import { QueueLeader } from "#contracts/ports/queue-leader.port";
 import type { ReplayOutcome } from "#contracts/types/replay-outcome.type";
 import { OFFLINE_POLICIES } from "#core/constants/offline-policies.constant";
 import { PERSISTED_QUEUE_SCHEMA } from "#core/constants/persisted-queue-schema.constant";
+import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
 import { OfflineError } from "#core/errors/offline.error";
 import { partitionKey } from "#core/functions/partition-key.function";
+import { OfflineLock } from "#core/services/offline-lock.service";
 import type { ConflictRecord } from "#core/types/conflict-record.type";
 import type { OfflineActionRef } from "#core/types/offline-action-ref.type";
+import type { OfflineCap } from "#core/types/offline-cap.type";
 import type { PendingMutation } from "#core/types/pending-mutation.type";
 import type { QueryPartition } from "#core/types/query-partition.type";
 
@@ -55,6 +63,19 @@ interface QueueState {
 /** A queue with nothing in it. */
 const EMPTY: QueueState = Object.freeze({ items: [], conflicts: [], isDraining: false });
 
+/** A plain JSON object. */
+const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+// shortcut: the cap's amount is read from the input's `amount` field (a `Money` wire form or minor units); move to a
+// declared field once actions' `cap` option names one (W9-C2).
+/** The minor units a call's input spends, for a cap's `amount`. */
+function amountOf(input: Json): number {
+  const amount = isRecord(input) ? input["amount"] : undefined;
+  if (typeof amount === "number") return amount;
+  return isRecord(amount) && typeof amount["minor"] === "number" ? amount["minor"] : 0;
+}
+
 /**
  * The offline mutation queue.
  *
@@ -76,6 +97,8 @@ export class MutationQueue extends Service {
 
   private readonly clock: Clock;
 
+  private readonly device: DeviceIdentity;
+
   private readonly listeners = new Set<() => void>();
 
   private readonly stops: readonly (() => void)[];
@@ -95,13 +118,21 @@ export class MutationQueue extends Service {
   /** The outbox key of the open partition; `undefined` until `open` resolves, and while a switch reads the next one. */
   private partition: string | undefined;
 
+  /** The device of the open partition. */
+  private deviceId = "";
+
+  /** The last sequence this device stamped, as far as this context knows. */
+  private lastSequence = 0;
+
   /**
-   * @param config - scope, replay, parallelism and retention.
+   * @param config - scope, replay and retention.
    * @param persister - keeps the queue in the `outbox` area.
-   * @param sender - sends one call with its Idempotency-Key.
+   * @param sender - sends one call with its Idempotency-Key and device order.
    * @param leader - whether this context drains.
    * @param platform - the network signal.
    * @param clock - stamps and expires entries.
+   * @param device - this device's id, carried by every call.
+   * @param lock - closes the queue when the device's offline data is wiped.
    */
   constructor(
     config: QueryConfig,
@@ -110,6 +141,8 @@ export class MutationQueue extends Service {
     leader: QueueLeader,
     platform: Platform,
     clock: Clock,
+    device: DeviceIdentity,
+    lock: OfflineLock,
   ) {
     super();
     this.config = config;
@@ -118,16 +151,18 @@ export class MutationQueue extends Service {
     this.leader = leader;
     this.platform = platform;
     this.clock = clock;
+    this.device = device;
     const replayWhenOn = (isOn: boolean): void => {
       if (isOn) this.replayIfAllowed();
     };
     this.stops = [
       platform.network.isOnline.subscribe(replayWhenOn),
       leader.isLeader.subscribe(replayWhenOn),
+      lock.onWipe(() => this.close()),
     ];
   }
 
-  /** The calls waiting for the network, first in first out within each aggregate. */
+  /** The calls waiting for the network, in the order they were queued. */
   get items(): readonly PendingMutation[] {
     return this.state.items;
   }
@@ -163,34 +198,47 @@ export class MutationQueue extends Service {
   readonly version = (): number => this.changes;
 
   /**
-   * Opens the queue of `partition`: reads what it persisted, then replays it when allowed. Until it resolves the queue
-   * is closed, so nothing is queued or replayed against the wrong principal or scope.
+   * Opens the queue of `partition`: reads what it persisted (upgrading a version 1 queue to this device), then replays
+   * it when allowed. Until it resolves the queue is closed, so nothing is queued or replayed against the wrong
+   * principal or scope.
    *
    * @throws TypeError when what is stored is not a queue this version can read; it is left untouched.
-   * @throws Error the persister's read error; the queue stays closed.
+   * @throws Error the persister's or the device identity's error; the queue stays closed.
    */
   async open(partition: QueryPartition): Promise<void> {
     const key = `query.queue.${partitionKey(this.config.scope, partition)}`;
     const ticket = ++this.opens;
     this.partition = undefined;
     this.publish(EMPTY);
-    const stored = await this.persister.read(StorageArea.Outbox, key);
+    const [stored, deviceId] = await Promise.all([
+      this.persister.read(StorageArea.Outbox, key),
+      this.device.id(),
+    ]);
     if (ticket !== this.opens) return;
     const parsed = PERSISTED_QUEUE_SCHEMA.safeParse(
-      stored ?? { version: 1, items: [], conflicts: [] },
+      stored ?? { version: 2, items: [], conflicts: [] },
     );
     if (!parsed.success)
       throw new TypeError(`The stored offline queue under ${key} cannot be read; it was kept`);
-    this.seed(key, parsed.data.items, parsed.data.conflicts);
+    const queue = parsed.data;
+    if (queue.version === 2) this.seed(key, deviceId, queue.items, queue.conflicts);
+    else
+      this.seed(
+        key,
+        deviceId,
+        queue.items.map((item) => Object.freeze({ ...item, deviceId, sequence: null })),
+        queue.conflicts.map((record) => Object.freeze({ ...record, deviceId, sequence: null })),
+      );
     this.replayIfAllowed();
   }
 
   /**
-   * Queues a call to `action` with `input`, ordered after the earlier calls of `aggregate`, and resolves once it is
-   * persisted. Its expiry is the action's declared retention, at most `queueRetentionDays`.
+   * Queues a call to `action` with `input`, after every earlier call, and resolves once it is persisted. Its expiry is
+   * the action's declared retention, at most `queueRetentionDays`.
    *
    * @param aggregate - the record the call changes (its public id); calls without one share a lane.
    * @throws OfflineError when the offline map does not let the queue hold `action`.
+   * @throws OfflineCapReachedError when the action's offline cap is reached within its window.
    * @throws TypeError when the queue is not open.
    * @throws Error the persister's write error; the call is not queued.
    */
@@ -204,6 +252,7 @@ export class MutationQueue extends Service {
     if (policy?.mode !== OfflineMode.Queue) throw OfflineError.create({ action: key });
     const partition = this.opened();
     const now = this.clock.now();
+    if (policy.cap !== undefined) this.refuseOverCap(key, input, policy.cap, now);
     const retention = Math.min(
       Duration.toMilliseconds(duration(policy.retention)),
       Duration.toMilliseconds(Duration.days(this.config.queueRetentionDays)),
@@ -213,6 +262,8 @@ export class MutationQueue extends Service {
       action: key,
       input,
       aggregate,
+      deviceId: this.deviceId,
+      sequence: null,
       queuedAt: now.toISOString(),
       expiresAt: new Date(now.getTime() + retention).toISOString(),
     });
@@ -246,8 +297,8 @@ export class MutationQueue extends Service {
 
   /**
    * Applies a person's resolution to the conflict `id`: `server_wins` drops the local intent, `client_retry` queues it
-   * again ahead of its aggregate with a new Idempotency-Key (the old key would replay the stored refusal), `manual`
-   * leaves it for the person. An unknown id changes nothing.
+   * again ahead of the waiting calls with a new Idempotency-Key (the old key would replay the stored refusal) and a new
+   * sequence when it leaves, `manual` leaves it for the person. An unknown id changes nothing.
    *
    * @throws RangeError when `client_retry` is not among the resolutions the action declared.
    * @throws TypeError when the queue is not open.
@@ -285,19 +336,34 @@ export class MutationQueue extends Service {
     this.replayIfAllowed();
   }
 
-  /** Stops listening to the network and the leader when the container closes. */
+  /** Stops listening to the network, the leader and the lock when the container closes. */
   onApplicationShutdown(): void {
     for (const stop of this.stops) stop();
   }
 
-  /** Opens `partition` with `items` and `conflicts` as its state; for `open`, and a subclass that seeds itself (a fake). */
+  /**
+   * Opens `partition` for `deviceId` with `items` and `conflicts` as its state; for `open`, and a subclass that seeds
+   * itself (a fake).
+   */
   protected seed(
     partition: string,
+    deviceId: string,
     items: readonly PendingMutation[],
     conflicts: readonly ConflictRecord[],
   ): void {
     this.partition = partition;
+    this.deviceId = deviceId;
+    for (const call of [...items, ...conflicts])
+      this.lastSequence = Math.max(this.lastSequence, call.sequence ?? 0);
     this.publish({ items, conflicts, isDraining: false });
+  }
+
+  /** Closes the queue and drops what it holds, once every write in flight has landed; the lock wipes the area next. */
+  private async close(): Promise<void> {
+    this.partition = undefined;
+    this.opens += 1;
+    this.publish(EMPTY);
+    await this.saving;
   }
 
   /** Replaces the state and notifies every listener. */
@@ -314,6 +380,29 @@ export class MutationQueue extends Service {
         "The offline queue is not open: the query context opens it after sign-in",
       );
     return this.partition;
+  }
+
+  /**
+   * Refuses the call when it would pass the action's offline cap within its window.
+   *
+   * @throws OfflineCapReachedError when the count or the amount would pass the cap.
+   */
+  private refuseOverCap(action: string, input: Json, cap: OfflineCap, now: Date): void {
+    const since = now.getTime() - Duration.toMilliseconds(duration(cap.window));
+    // shortcut: counts the calls still unsent; the server reconciles the sent ones on sync (ADR 0338 decision 5).
+    // Keep a sent log here if a device must hold its cap across a sync.
+    const inputs = [
+      ...this.state.items
+        .filter((item) => item.action === action && Date.parse(item.queuedAt) > since)
+        .map((item) => item.input),
+      input,
+    ];
+    const amount = inputs.reduce<number>((sum, value) => sum + amountOf(value), 0);
+    if (
+      (cap.count !== undefined && inputs.length > cap.count) ||
+      (cap.amount !== undefined && amount > cap.amount)
+    )
+      throw OfflineCapReachedError.create({ action });
   }
 
   /** Drains when the configuration replays on its own. */
@@ -345,39 +434,60 @@ export class MutationQueue extends Service {
     }
   }
 
-  /** Replays every aggregate a conflict does not block, `maxParallelAggregates` at a time. */
+  /**
+   * Sends the waiting calls one at a time in queue order, skipping the aggregates a conflict blocks, until none is
+   * left, one did not reach the server (nothing later may go before it), or the replay is no longer allowed.
+   */
   private async pass(partition: string): Promise<void> {
     const blocked = new Set(this.state.conflicts.map((record) => record.aggregate));
-    const lanes = [...new Set(this.state.items.map((item) => item.aggregate))].filter(
-      (aggregate) => !blocked.has(aggregate),
-    );
-    let next = 0;
-    const worker = async (): Promise<void> => {
-      for (let lane = lanes[next++]; lane !== undefined; lane = lanes[next++])
-        await this.replayLane(partition, lane);
-    };
-    const workers = Math.min(this.config.maxParallelAggregates, lanes.length);
-    await Promise.all(Array.from({ length: workers }, worker));
-  }
-
-  /** Sends the calls of one aggregate in order until it is empty, a send waits, or a call becomes a conflict. */
-  private async replayLane(partition: string, aggregate: string): Promise<void> {
     while (this.mayReplay(partition)) {
-      const head = this.state.items.find((item) => item.aggregate === aggregate);
+      const next = this.state.items.find((item) => !blocked.has(item.aggregate));
+      if (next === undefined) return;
+      if (Date.parse(next.expiresAt) <= this.clock.now().getTime()) {
+        await this.settle(partition, next, { code: STALE_CODE, server: null });
+        blocked.add(next.aggregate);
+        continue;
+      }
+      const head = next.sequence === null ? await this.stamp(partition, next) : next;
       if (head === undefined) return;
-      if (Date.parse(head.expiresAt) <= this.clock.now().getTime())
-        return this.settle(partition, head, { code: STALE_CODE, server: null });
       const outcome = await this.send(head);
       if (outcome.ok) await this.settle(partition, head, null);
       else if (outcome.code === null) return;
-      else return this.settle(partition, head, { code: outcome.code, server: outcome.server });
+      else {
+        await this.settle(partition, head, { code: outcome.code, server: outcome.server });
+        blocked.add(head.aggregate);
+      }
     }
+  }
+
+  /**
+   * Gives `entry` the device's next sequence and persists it before it is sent, so every resend repeats it; a call
+   * discarded meanwhile stays gone (`undefined`).
+   */
+  private async stamp(
+    partition: string,
+    entry: PendingMutation,
+  ): Promise<PendingMutation | undefined> {
+    if (this.partition !== partition || !this.state.items.includes(entry)) return undefined;
+    // Strictly increasing on the device: a clock reading keeps it ahead of what another tab stamped while it led.
+    this.lastSequence = Math.max(this.lastSequence + 1, this.clock.now().getTime());
+    const stamped: PendingMutation = Object.freeze({ ...entry, sequence: this.lastSequence });
+    this.publish({
+      ...this.state,
+      items: this.state.items.map((item) => (item === entry ? stamped : item)),
+    });
+    // A lost write restamps the call after a restart; its key still makes the server answer it once.
+    await this.persist(partition).catch(() => undefined);
+    return this.partition === partition && this.state.items.includes(stamped) ? stamped : undefined;
   }
 
   /** Sends `head`, counting a throw as not reached. */
   private async send(head: PendingMutation): Promise<ReplayOutcome> {
     try {
-      return await this.sender.send(head.action, head.input, head.id);
+      return await this.sender.send(head.action, head.input, head.id, {
+        deviceId: head.deviceId,
+        sequence: head.sequence ?? this.lastSequence,
+      });
     } catch {
       return NOT_REACHED;
     }
@@ -404,7 +514,7 @@ export class MutationQueue extends Service {
     await this.persist(partition).catch(() => undefined);
   }
 
-  /** The call of `conflict` queued again: a new key, a fresh retention. */
+  /** The call of `conflict` queued again: a new key, no sequence yet, a fresh retention. */
   private retryOf(conflict: ConflictRecord): PendingMutation {
     const now = this.clock.now();
     const retention = Duration.toMilliseconds(Duration.days(this.config.queueRetentionDays));
@@ -413,6 +523,8 @@ export class MutationQueue extends Service {
       action: conflict.action,
       input: conflict.input,
       aggregate: conflict.aggregate,
+      deviceId: conflict.deviceId,
+      sequence: null,
       queuedAt: now.toISOString(),
       expiresAt: new Date(now.getTime() + retention).toISOString(),
     });
@@ -422,7 +534,7 @@ export class MutationQueue extends Service {
   private persist(partition: string): Promise<void> {
     const { items, conflicts } = this.state;
     const write = (): Promise<void> =>
-      this.persister.write(StorageArea.Outbox, partition, { version: 1, items, conflicts });
+      this.persister.write(StorageArea.Outbox, partition, { version: 2, items, conflicts });
     const written = this.saving.then(write, write);
     this.saving = written.catch(() => undefined);
     return written;

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: the `ClientTransport` and `ClientSession` ports and the
- *          `TransportFailure` reasons are exported, nothing else is, the ports are keyed `clients.<Port>`, and
+ * Purpose: the consumer contract of the `./contracts` entry: the `ClientTransport` and `ClientSession` ports, the
+ *          `TransportFailure` reasons and `DEVICE_ORDER` are exported, nothing else is, the ports are keyed `clients.<Port>`, and
  *          `ClientRequest` resolves.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
@@ -17,6 +17,7 @@ describe("@stackra/clients/contracts", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "ClientSession",
       "ClientTransport",
+      "DEVICE_ORDER",
       "TransportFailure",
     ]);
   });

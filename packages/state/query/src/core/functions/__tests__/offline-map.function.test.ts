@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `offlineMap`: it looks a policy up by the action's class or its key (a conflict record holds
  *          the key), answers `undefined` for an online-only action, records the policies for the queue, and refuses an
- *          unreadable retention or an empty `onConflict` at boot.
+ *          unreadable retention, an empty `onConflict` or a malformed cap at boot.
  * Boundary: test only; the actions are classes with a static key, as `@stackra/clients`' `actionRef` writes them, and
  *           the entries restate the template's console offline map.
  * Runtime: node (vitest)
@@ -78,5 +78,31 @@ describe("offlineMap", () => {
     expect(() => offlineMap([{ ...entry, retention: "three days" }])).toThrow(RangeError);
     expect(() => offlineMap([{ ...entry, onConflict: [] }])).toThrow(RangeError);
     expect(OFFLINE_POLICIES.has("orders.order.cancel@1")).toBe(false);
+  });
+
+  it("refuses a cap with an unreadable window or a limit that is not a positive integer", () => {
+    const entry = {
+      action: CancelOrderAction,
+      mode: OfflineMode.Queue,
+      idMinting: IdMinting.Server,
+      precondition: OfflinePrecondition.None,
+      retention: "72h",
+      onConflict: [ConflictResolution.Manual],
+    };
+    expect(() => offlineMap([{ ...entry, cap: { count: 3, window: "a day" } }])).toThrow(
+      RangeError,
+    );
+    expect(() => offlineMap([{ ...entry, cap: { count: 0, window: "24h" } }])).toThrow(RangeError);
+    expect(() => offlineMap([{ ...entry, cap: { amount: 1.5, window: "24h" } }])).toThrow(
+      RangeError,
+    );
+    expect(OFFLINE_POLICIES.has("orders.order.cancel@1")).toBe(false);
+    expect(
+      offlineMap([{ ...entry, cap: { count: 3, window: "24h" } }]).for(CancelOrderAction)?.cap,
+    ).toEqual({
+      count: 3,
+      window: "24h",
+    });
+    OFFLINE_POLICIES.delete("orders.order.cancel@1");
   });
 });

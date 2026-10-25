@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `QUERY_CONFIG_SCHEMA`, the zod schema this package ships for `QueryConfig` (exported as `QueryConfig$`):
- *          the key scope, the persisted cache (encryption, age), the queue (replay on reconnect, leader driver,
- *          parallel aggregates, retention) and the read defaults (fresh time, refetch on focus, retries).
+ *          the key scope, the persisted replicas (encryption, age), the queue (replay on reconnect, leader driver,
+ *          retention, and the parallelism field it no longer reads) and the read defaults (fresh time, refetch on
+ *          focus, retries).
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated `QueryConfig$` extends it. The defaults equal `QueryOptions`'
  *           initializers (tested). The leader names are the `QueueLeader` drivers. No object-level refinement, so gen's
