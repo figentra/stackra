@@ -326,3 +326,26 @@ for (const scheme of SCHEMES)
         expect(violations.map((v) => v.id)).toEqual([]);
         expect(incomplete.map((v) => v.id)).toEqual([]);
       });
+
+// @covers sta-425:SC-001
+for (const material of MaterialMode)
+  for (const scheme of SCHEMES)
+    for (const { locale, dir } of LOCALES)
+      test(`the Button page passes axe on the steel accent and glass buttons in ${material}, ${scheme}, ${dir}`, async ({
+        page,
+      }) => {
+        await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
+        await page.goto(`/button?scheme=${scheme}&locale=${locale}&material=${material}`);
+        await expect(page.locator("html")).toHaveAttribute("dir", dir);
+        const quiet = page.locator(".button--secondary").first();
+        await expect(quiet).toBeVisible();
+        // ADR 0319 decision 2: a quiet button carries the control fill and an edge, never a backdrop filter.
+        expect(await quiet.evaluate((element) => getComputedStyle(element).backdropFilter)).toBe(
+          "none",
+        );
+        const { violations, incomplete } = await new AxeBuilder({ page })
+          .withTags(AXE_TAGS)
+          .analyze();
+        expect(violations.map((v) => v.id)).toEqual([]);
+        expect(incomplete.map((v) => v.id)).toEqual([]);
+      });

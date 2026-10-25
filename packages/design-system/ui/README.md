@@ -77,7 +77,10 @@ through the `@stackra/source` condition; `tsdown` builds `dist/` for publishing 
 The UI libraries are optional peer dependencies, each needed only by its entry: `react-aria-components` and
 `lucide-react` for `./react` (and `@heroui/react` for its components), `heroui-native`, `uniwind`,
 `lucide-react-native`, `react-native-svg` and `react-native-reanimated` (the native progress indicators) and `react-native` for `./native` (the native provider mounts a `LucideProvider`, so
-`lucide-react-native` is needed by the whole entry). `react` and `react-hook-form` are needed by both, and are not optional: `FormField` is exported from both entries and
+`lucide-react-native` is needed by the whole entry; `Button`, `IconButton` and `CloseButton` draw their quiet variants
+on Liquid Glass through `expo-glass-effect` on iOS 26 and later, solid elsewhere and under reduced transparency or
+more contrast, ADR 0319).
+`react` and `react-hook-form` are needed by both, and are not optional: `FormField` is exported from both entries and
 imports `react-hook-form`, so an app that imports either entry resolves it at build.
 
 ## Contracts

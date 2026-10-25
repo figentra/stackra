@@ -191,4 +191,35 @@ describe("renderWebCss", () => {
     // Equal specificity to the colour blocks (one class or attribute), so coming later is what makes it win.
     expect(css.indexOf(query)).toBeGreaterThan(css.indexOf('.dark,\n[data-theme="dark"] {'));
   });
+
+  // @covers sta-425:FR-002 sta-425:P-002
+  it("puts the quiet button variants and the close button on the control fill with no backdrop filter (ADR 0319)", () => {
+    expect(layer).toContain(
+      "  .button--secondary,\n  .button--tertiary,\n  .button--outline {\n    --button-bg: var(--material-control-fill);",
+    );
+    expect(layer).toContain('  .button--ghost:hover,\n  .button--ghost[data-hovered="true"],');
+    expect(layer).toContain(
+      "  .close-button--default {\n    background-color: var(--material-control-fill);",
+    );
+    expect(layer).not.toContain(".button--primary");
+    const buttons = layer.slice(layer.indexOf(".button--secondary"));
+    // Decision 2: a control carries the fill and a hairline edge, never a backdrop filter.
+    expect(buttons).not.toContain("backdrop-filter");
+    // HeroUI's focus ring is a box-shadow: the glass buttons must not set one.
+    expect(buttons).not.toContain("box-shadow");
+    expect(css).toContain(
+      "  .button--outline,\n  .close-button--default {\n    border-color: CanvasText;",
+    );
+  });
+
+  it("derives the control fill from the thick level, floored at the frosted mode's floor, and makes it static without color-mix", () => {
+    for (const block of [
+      blockOf(':root,\n[data-theme="light"]'),
+      blockOf('.dark,\n[data-theme="dark"]'),
+    ])
+      expect(block).toContain(
+        `  --material-control-fill: color-mix(in oklch, var(--surface) calc(clamp(max(var(--material-fill-floor), ${MATERIAL_MODES.frosted.fillFloor}), var(--material-thick-share) * var(--material-fill-scale), 1) * 100%), transparent);`,
+      );
+    expect(css).toContain("    --material-control-fill: var(--surface);");
+  });
 });

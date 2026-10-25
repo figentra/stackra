@@ -49,7 +49,8 @@ const inRule = (selector: string, lines: readonly string[]) =>
  * The `@layer components` block that draws HeroUI's Typography classes in the theme's type scale (HeroUI's own
  * customisation route). It stays inside the layer, because an unlayered rule would beat a caller's utilities. The
  * Arabic rule uses `:where(:lang(...))`, which keeps it at one class of specificity: it wins over the Latin rule by
- * order, and the weight modifiers below still win over both. The glass material's classes close the block.
+ * order, and the weight modifiers below still win over both. The glass material's classes and the glass button
+ * variants (ADR 0319) close the block.
  */
 function componentsLayer(theme: Theme): string {
   const rules = HEROUI_TYPOGRAPHY_TOKENS.filter(({ token }) => token in theme.typography).flatMap(
@@ -71,7 +72,7 @@ function componentsLayer(theme: Theme): string {
   const weights = WEIGHT_MODIFIERS.map(([name, weight]) =>
     inRule(`.typography--weight-${name}`, [`    font-weight: ${weight};`]),
   );
-  return `@layer components {\n${[...rules, ...weights, ...materialRules()].join("\n")}\n}`;
+  return `@layer components {\n${[...rules, ...weights, ...materialRules(), ...glassButtonRules()].join("\n")}\n}`;
 }
 
 /** The selectors of every skeleton animation, which HeroUI v3 never stops under reduced motion. */
@@ -113,10 +114,53 @@ const staticMaterial = () =>
       `    --material-${level}-fill: var(--surface);`,
       `    --material-${level}-filter: none;`,
     ]),
+    "    --material-control-fill: var(--surface);",
     "    --material-edge: var(--border);",
     "    --material-highlight: transparent;",
     "    --material-sheen-color: transparent;",
   ].join("\n");
+
+/**
+ * The glass on a control: the control fill and a hairline edge, with no backdrop filter (ADR 0319 decision 2). A blur
+ * under every button costs a filter pass each and smears what sits behind a row of them; the fill alone carries the
+ * material, and its floor keeps the label legible over any backdrop.
+ */
+const GLASS_CONTROL = ["    border: 1px solid var(--material-edge);"];
+
+/** The control fill a little darker (light) or lighter (dark) for hover and press, from the page's own foreground. */
+const glassTint = (share: number) =>
+  `color-mix(in oklch, var(--material-control-fill), var(--foreground) ${share}%)`;
+
+/**
+ * HeroUI's quiet button variants on the control fill (ADR 0319), through HeroUI's own variant properties
+ * (`--button-bg`, `-hover`, `-pressed`): secondary, tertiary and outline sit on glass; ghost turns glass under the
+ * pointer and the press. The primary and danger variants stay solid. No box-shadow is set, so HeroUI's focus ring
+ * (a ring box-shadow) stays whole; the material's fallbacks make the glass solid where it must be.
+ */
+const glassButtonRules = () => [
+  inRule(".button--secondary,\n  .button--tertiary,\n  .button--outline", [
+    "    --button-bg: var(--material-control-fill);",
+    `    --button-bg-hover: ${glassTint(8)};`,
+    `    --button-bg-pressed: ${glassTint(12)};`,
+    ...GLASS_CONTROL,
+  ]),
+  inRule(".button--ghost", [
+    `    --button-bg-hover: ${glassTint(8)};`,
+    `    --button-bg-pressed: ${glassTint(12)};`,
+    "    border: 1px solid transparent;",
+  ]),
+  inRule(
+    '.button--ghost:hover,\n  .button--ghost[data-hovered="true"],\n  .button--ghost[data-pressed="true"]',
+    GLASS_CONTROL,
+  ),
+  inRule(".close-button--default", [
+    "    background-color: var(--material-control-fill);",
+    ...GLASS_CONTROL,
+  ]),
+  inRule('.close-button--default:hover,\n  .close-button--default[data-hovered="true"]', [
+    `    background-color: ${glassTint(8)};`,
+  ]),
+];
 
 /** The fallbacks: solid where transparency is unwanted or unsupported, a stronger edge for more contrast. */
 function materialFallbacks(): string {
@@ -126,7 +170,7 @@ function materialFallbacks(): string {
     "@media (prefers-contrast: more) {\n  :root,\n  .dark,\n  [data-theme] {\n    --material-edge-share: 0.45;\n  }\n}",
     `@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {\n  :root,\n  [data-material] {\n${solid}\n  }\n}`,
     `@supports not (color: color-mix(in oklch, white, black)) {\n  :root,\n  .dark,\n  [data-theme] {\n${staticMaterial()}\n  }\n}`,
-    "@media (forced-colors: active) {\n  .material,\n  .material-regular,\n  .material-thin,\n  .material-thick {\n    border-color: CanvasText;\n  }\n}",
+    "@media (forced-colors: active) {\n  .material,\n  .material-regular,\n  .material-thin,\n  .material-thick,\n  .button--secondary,\n  .button--tertiary,\n  .button--outline,\n  .close-button--default {\n    border-color: CanvasText;\n  }\n}",
   ].join("\n\n");
 }
 

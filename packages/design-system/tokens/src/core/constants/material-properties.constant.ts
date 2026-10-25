@@ -14,6 +14,7 @@ export const MATERIAL_PROPERTIES: readonly string[] = Object.freeze([
   ...MaterialLevel.flatMap((level) =>
     ["share", "blur", "saturate", "fill", "filter"].map((part) => `material-${level}-${part}`),
   ),
+  "material-control-fill",
   "material-edge-share",
   "material-highlight-share",
   "material-edge",
