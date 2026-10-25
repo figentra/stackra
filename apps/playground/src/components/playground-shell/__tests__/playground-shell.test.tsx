@@ -114,7 +114,7 @@ describe("PlaygroundShell", () => {
     renderShell("/?scheme=dark&locale=en");
     const dark = screen.getByRole("radio", { name: "Dark" });
     expect(dark.querySelector('[data-testid="selected-mark"]')).toBeTruthy();
-    expect(screen.getAllByTestId("selected-mark")).toHaveLength(2); // one per group: scheme and language
+    expect(screen.getAllByTestId("selected-mark")).toHaveLength(3); // one per group: scheme, material and language
     expect(dark.className).toContain("--toggle-button-bg-selected:var(--accent)");
   });
 
