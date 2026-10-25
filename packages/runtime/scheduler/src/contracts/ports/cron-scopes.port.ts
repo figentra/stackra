@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the `CronScopes` port: the scopes a cron of an action fans out over when it runs once per scope
- *          (`job: { cron: { perTenant: true } }`); each tick pushes one job per scope it lists.
+ *          (`job: { cron: { perScope: true } }`); each tick pushes one job per scope it lists.
  * Boundary: an abstract class that is its own token, keyed `scheduler.CronScopes`. The package that owns the scope
  *           level a deployment schedules by binds the driver (@stackra/tenancy lists its active nodes); the memory
  *           driver lists what a test or a single process set. It names no scope level (ADR 0323). A leaf

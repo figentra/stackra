@@ -41,8 +41,8 @@ decisions 4 and 5). Member at `packages/runtime/scheduler` (`tier:lib`), in the 
 - Raw SQL only in `PostgresScheduleDriver`, every value bound, every row read through zod, each statement with a
   `// raw-sql:` reason (ADR 0160). The tables carry no row-level security (the tick reads every scope), so a scope's
   read or delete binds `scope_id` itself. A released migration is frozen; a change is a new migration.
-- No tenant word is declared here (R-59, ADR 0323): a scope is a `ScopeRef`. `perTenant` is read only because it is
-  the name of `@stackra/actions`' `JobCron` option.
+- No tenant word is declared or read here (R-59, ADR 0323): a scope is a `ScopeRef`, and the cron switch is
+  `@stackra/actions`' `JobCron.perScope`.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

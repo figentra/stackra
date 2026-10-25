@@ -51,7 +51,7 @@ v3.1, ADR 0294, 0305). The choices recorded when it was specified:
 - Registry row: entry `.`; the template imports nothing from it. The ports go to `./contracts`, the Postgres driver and
   migration to `./node`, the `tick` helper to `./testing`, because each folder has a file (ADR 0127 note)
 - A cron is the `job.cron` sub-option of `Action({...})` (R-13, ADR 0305 rule 28): `schedule` (five fields, UTC),
-  `perTenant`, `input`; no `@Cron`. Gen's entry registers the job actions with their locked keys
+  `perScope`, `input`; no `@Cron`. Gen's entry registers the job actions with their locked keys
   (`registerScheduledJobs`, the same rows as queue's `registerJobs`)
 - Cron parser: written here (classic five fields, names, ranges, steps, lists, the either-day rule); `pnpm-workspace.yaml`
   has no croner or cron-parser, so no new dependency
@@ -152,8 +152,8 @@ A test calls `tick(at)` on the compiled testing app and `drainQueue()` runs what
 
 ## Open items (for the owner, not blocking)
 
-- `@stackra/actions`' `JobCron.perTenant` carries the tenant word R-59 bans outside tenancy; the template uses it, so
-  this package reads it as is. A rename to `perScope` is an actions and template change.
+- Resolved 2026-10-25 (R1): `@stackra/actions`' `JobCron.perTenant` is now `perScope`, and this package reads that
+  name; the template's declarations follow in STA-344.
 - ADR 0148 decision 5 also names jitter and heartbeats for schedules: jitter needs a delayed push, which
   `QueueService.push` does not take yet (it queues "due now"); heartbeats wait for the telemetry heartbeat check of ADR 0184. One-shot timed updates (ADR 0321 decision 6, ADR 0161 decision 5) are not built: the schedules here are
   recurring crons.

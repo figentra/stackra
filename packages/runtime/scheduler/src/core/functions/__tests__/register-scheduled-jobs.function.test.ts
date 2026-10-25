@@ -18,7 +18,7 @@ import { registerScheduledJobs } from "#core/functions/register-scheduled-jobs.f
 class ExpireUnpaidOrdersAction extends Action({
   key: "order.expire_unpaid",
   actors: [ActorKind.System],
-  job: { queue: "maintenance", unique: true, cron: { schedule: "*/5 * * * *", perTenant: true } },
+  job: { queue: "maintenance", unique: true, cron: { schedule: "*/5 * * * *", perScope: true } },
 }) {
   async handle(_input: { batchSize: number }): Promise<void> {}
 }

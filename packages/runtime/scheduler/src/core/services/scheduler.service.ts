@@ -234,8 +234,8 @@ export class SchedulerService extends Service {
         at,
       );
       if (runs.length === 0) continue;
-      // `perTenant` is the option's name in @stackra/actions; here it means once per scope `CronScopes` lists.
-      const perScope = cron.perTenant === true;
+      // Once per scope `CronScopes` lists, each run in its scope.
+      const perScope = cron.perScope === true;
       // oxlint-disable-next-line no-await-in-loop -- listed once per tick, on the first per-scope cron that is due
       if (perScope) scopes ??= await this.cronScopes.list();
       const targets = perScope ? (scopes ?? []) : [undefined];

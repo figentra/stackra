@@ -33,7 +33,7 @@ export class ExpireUnpaidOrdersAction extends Action({
     queue: Queues.Maintenance,
     unique: true,
     timeout: "2m",
-    cron: { schedule: "*/5 * * * *", perTenant: true, input: { batchSize: 100 } },
+    cron: { schedule: "*/5 * * * *", perScope: true, input: { batchSize: 100 } },
   },
 }) { ... }
 ```
@@ -41,8 +41,8 @@ export class ExpireUnpaidOrdersAction extends Action({
 - The schedule is five fields in UTC: minute, hour, day of the month, month, day of the week; `*`, values, ranges
   `a-b`, steps `/n`, lists, month and weekday names, 7 as Sunday. When both day fields are restricted a day matches
   when either does, as in classic cron.
-- `perTenant: true` (the option's name in `@stackra/actions`) pushes one job per scope the bound `CronScopes` driver
-  lists; without it one job runs for the platform. Every run gets `input` (`{}` when absent).
+- `perScope: true` pushes one job per scope the bound `CronScopes` driver lists, each in its scope; without it one job
+  runs for the platform. Every run gets `input` (`{}` when absent).
 - A scheduler handler only dispatches: the action does the work, run by the queue worker with the job's retries,
   timeout and dead letter. A `unique` job of a scope that still waits or runs is not pushed again.
 

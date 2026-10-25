@@ -58,7 +58,7 @@
 - **P-006**: for every listed scope a per-scope cron pushes one job in it; a stored schedule's jobs carry its scope and no run precedes its creation — Validates: FR-006
 - **P-007**: for every statement the placeholders equal the parameters and no value appears in the text; a delete binds the scope — Validates: FR-007
 - **P-008**: `tick` rejects without a current scheduler and, on a compiled app, pushes the due run `drainQueue` runs — Validates: FR-008
-- **P-009**: `grep -rn Cron\( packages/runtime/scheduler/src` finds no decorator, and every tenant word in `src` is the `perTenant` option `@stackra/actions` names — Validates: FR-009
+- **P-009**: `grep -rn Cron\( packages/runtime/scheduler/src` finds no decorator, and `grep -rni tenant packages/runtime/scheduler/src` finds nothing — Validates: FR-009
 
 ## Deploy modes
 

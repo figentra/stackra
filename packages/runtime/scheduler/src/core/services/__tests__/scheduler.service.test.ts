@@ -37,7 +37,7 @@ class ExpireUnpaidOrdersAction extends Action({
   job: {
     queue: "maintenance",
     unique: true,
-    cron: { schedule: "*/5 * * * *", perTenant: true, input: { batchSize: 100 } },
+    cron: { schedule: "*/5 * * * *", perScope: true, input: { batchSize: 100 } },
   },
 }) {
   async handle(_input: { batchSize: number }): Promise<void> {}
