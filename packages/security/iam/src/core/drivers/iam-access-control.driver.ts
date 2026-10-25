@@ -8,7 +8,8 @@
  *           caller). A call with no permission (an `auth: false` query) passes. Fails closed: an unknown scope node, a
  *           record whose policy cannot be resolved (`connectPolicies` not called) or a policy that answers something
  *           other than a `Decision` is an error, never an allowed call. Any deny wins; `Allow` and `Abstain` leave the
- *           permission as the answer.
+ *           permission as the answer. The node is the call's `scope`; only a call without one reads the caller's node
+ *           from `ScopeTree`.
  * Runtime: isomorphic
  * Governing contract: ADR 0138 (as amended: permission is the second step, the record policy runs inside `handle`);
  *                     ADR 0132 (as amended by 0294 and 0263); ADR 0208 (decision 3); ADR 0327 (decision 7).
@@ -77,12 +78,12 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
   /** Decides. */
   private readonly pdp: PolicyDecisionPointService;
 
-  /** Turns the call's scope id into its node. */
+  /** Turns the caller's scope id into its node when the call carries no `scope`. */
   private readonly tree: ScopeTree;
 
   /**
    * @param pdp - the decision point.
-   * @param tree - the scope tree, for the path of the node the call acts in.
+   * @param tree - the scope tree, for the caller's node when the call carries no `scope`.
    */
   constructor(pdp: PolicyDecisionPointService, tree: ScopeTree) {
     super();
@@ -123,12 +124,15 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
     if (!(await this.pdp.check(call.actor, permission, options))) throw ForbiddenError.create();
   }
 
-  /** The node the call acts in; `undefined` for a call at the root. */
+  /**
+   * The node the call acts in: the call's `scope`, else the node of the id the caller's credential carries, read from
+   * the tree; `undefined` for a call at the root.
+   */
   private async scopeOf(call: CallDescriptor): Promise<ScopeRef | undefined> {
-    // shortcut: the descriptor carries the scope's id, not the resolved ScopeRef (ADR 0327 decision 6 needs a field on
-    // the actions call context); read the node here until it does, then take `call.scope`.
-    if (call.tenantId === undefined) return undefined;
-    const node = await this.tree.node(call.tenantId as PublicId<"scp">);
+    if (call.scope !== undefined) return call.scope;
+    const id = call.actor.tenantId;
+    if (id === undefined) return undefined;
+    const node = await this.tree.node(id as PublicId<"scp">);
     if (node === undefined) throw ForbiddenError.create();
     return { id: node.id, path: node.path };
   }

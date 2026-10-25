@@ -8,6 +8,7 @@
  */
 import type { PublicId, ScopeRef } from "@stackra/contracts";
 import type { Condition } from "@stackra/rules";
+import type { SegmentRef } from "@stackra/segments/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
@@ -18,7 +19,6 @@ import type {
   Grant,
   PolicySnapshot,
   RoleRef,
-  SegmentRef,
   VisibilityRule,
 } from "#contracts/index";
 
@@ -31,7 +31,8 @@ describe("@stackra/iam/contracts", () => {
     expectTypeOf<Grant["scope"]>().toEqualTypeOf<ScopeRef>();
     expectTypeOf<Grant["expiresAt"]>().toEqualTypeOf<Date | undefined>();
     expectTypeOf<Audience>().toEqualTypeOf<ScopeRef | SegmentRef | RoleRef>();
-    expectTypeOf<SegmentRef["kind"]>().toEqualTypeOf<"segment">();
+    expectTypeOf<Extract<Audience, { kind: "segment" }>>().toEqualTypeOf<SegmentRef>();
+    expectTypeOf<SegmentRef["id"]>().toEqualTypeOf<PublicId<"seg">>();
     expectTypeOf<RoleRef["kind"]>().toEqualTypeOf<"role">();
     expectTypeOf<DenyRule["condition"]>().toEqualTypeOf<Condition | undefined>();
     expectTypeOf<VisibilityRule["capability"]>().toEqualTypeOf<Capability>();

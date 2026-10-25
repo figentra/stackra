@@ -13,7 +13,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { actors } from "#testing/constants/actors.constant";
 
 describe("actors", () => {
-  it("builds users of the customer and tenant realms, with fixed defaults", () => {
+  it("builds customer and staff users, with fixed defaults", () => {
     expect(actors.customer()).toEqual(actors.customer());
     expect(actors.customer()).toMatchObject({ kind: ActorKind.User, realm: Realm.Customer });
     expect(actors.staff("usr_staff")).toEqual({

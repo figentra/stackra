@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `IamAccessControlDriver`: `require` passes a call without a permission, passes a held one at
- *          the call's node and refuses `forbidden` otherwise (and for an unknown node); `authorize` runs the policy
+ *          the call's `scope` (or, without one, the caller's node read from the tree) and refuses `forbidden`
+ *          otherwise (and for an unknown node); `authorize` runs the policy
  *          method named after the verb (deny refuses, abstain and a missing method pass), refuses a matching
  *          conditional deny through the model's fact source and fails closed without one, and errors on an
  *          unconnected policy or an answer that is not a `Decision`; the driver runs as the permission step and
@@ -145,8 +146,8 @@ function driverOver(state: MemoryPolicyState, bindings: Map<AnyClass, object> = 
   return { driver, resolver };
 }
 
-/** The descriptor the pipeline builds for a call of `permission` by `actor`. */
-function callOf(actor: Actor, permission?: string, tenantId?: PublicId): CallDescriptor {
+/** The descriptor the pipeline builds for a call of `permission` by `actor`, acting in `scope` when given. */
+function callOf(actor: Actor, permission?: string, scope?: ScopeRef): CallDescriptor {
   return {
     callId: "call_1",
     type: CancelOrderAction,
@@ -154,9 +155,14 @@ function callOf(actor: Actor, permission?: string, tenantId?: PublicId): CallDes
     key: "orders.order.cancel@1",
     ...(permission === undefined ? {} : { permission }),
     actor,
-    ...(tenantId === undefined ? {} : { tenantId }),
+    ...(scope === undefined ? {} : { scope }),
     area: ApiArea.App,
   };
+}
+
+/** `actor` whose credential carries the scope id `id`. */
+function within(actor: Actor, id: PublicId): Actor {
+  return { ...actor, tenantId: id };
 }
 
 describe("IamAccessControlDriver", () => {
@@ -185,16 +191,32 @@ describe("IamAccessControlDriver", () => {
       );
     });
 
-    it("reads the call's node from the tree, and refuses an unknown node", async () => {
+    it("checks at the call's scope, without reading the tree", async () => {
+      const { driver } = driverOver({ ...BUYERS, grants: [{ role: "buyer", scope: ACME }] });
+      const unknown = within(customer, "scp_01j9z3k4m5n6p7q8r9s0t1v2zz");
+      await expect(
+        driver.require(callOf(customer, "orders.order.read", ACME)),
+      ).resolves.toBeUndefined();
+      await expect(
+        driver.require(callOf(unknown, "orders.order.read", ACME)),
+      ).resolves.toBeUndefined();
+      await expect(
+        driver.require(callOf(customer, "orders.order.read", ROOT)),
+      ).rejects.toBeInstanceOf(ForbiddenError);
+    });
+
+    it("reads the caller's node from the tree when the call has no scope, and refuses an unknown node", async () => {
       const { driver } = driverOver({ ...BUYERS, grants: [{ role: "buyer", scope: ACME }] });
       await expect(
-        driver.require(callOf(customer, "orders.order.read", ACME.id)),
+        driver.require(callOf(within(customer, ACME.id), "orders.order.read")),
       ).resolves.toBeUndefined();
       await expect(driver.require(callOf(customer, "orders.order.read"))).rejects.toBeInstanceOf(
         ForbiddenError,
       );
       await expect(
-        driver.require(callOf(customer, "orders.order.read", "scp_01j9z3k4m5n6p7q8r9s0t1v2zz")),
+        driver.require(
+          callOf(within(customer, "scp_01j9z3k4m5n6p7q8r9s0t1v2zz"), "orders.order.read"),
+        ),
       ).rejects.toBeInstanceOf(ForbiddenError);
     });
   });

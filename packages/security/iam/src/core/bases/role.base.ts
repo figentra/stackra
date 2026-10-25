@@ -5,7 +5,7 @@
  *          of the same name is its instance side.
  * Boundary: called only (`grants` is required). The call checks and records its options in the kind registry; the
  *           role's key (`orders.order_clerk`) is derived by gen and reaches the runtime through `registerRoles`, which
- *           turns the grants into permission keys. Shipped roles are versioned and read-only; tenants add custom roles
+ *           turns the grants into permission keys. Shipped roles are versioned and read-only; a scope adds custom roles
  *           as data in the policy snapshot. A grant of a system permission is refused here as gen refuses it.
  * Runtime: isomorphic
  * Governing contract: ADR 0208 (decision 2 and the 0294 note); ADR 0294 (decisions 16 and 25); ADR 0305 (rules 2 and

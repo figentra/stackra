@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `VisibilityRule`, who may see, list or use which records of one model: an audience, a capability and a
  *          `@stackra/rules` condition over the record's attributes, allowing or denying.
- * Boundary: a type only, and tenant data that references registered fields. It sits on top of row-level isolation and
+ * Boundary: a type only, and a scope's data that references registered fields. It sits on top of row-level isolation and
  *           never replaces it (ADR 0333 decision 5). A deny beats an allow; a record no rule matches gets no answer
  *           here (`Decision.Abstain`), because no default is decided (ADR 0333 decision 7).
  * Runtime: isomorphic

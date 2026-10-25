@@ -40,7 +40,7 @@ function userId(id: string | undefined, fallback: PublicId<"usr">): PublicId<"us
  */
 export const actors = Object.freeze({
   /**
-   * A tenant's customer.
+   * A customer (`Realm.Customer`).
    *
    * @throws TypeError when `id` is not a user's public id.
    */
@@ -48,7 +48,7 @@ export const actors = Object.freeze({
     Object.freeze({ kind: ActorKind.User, id: userId(id, CUSTOMER_ID), realm: Realm.Customer }),
 
   /**
-   * A tenant's staff member.
+   * A staff member of a scope (`Realm.Tenant`, the contracts realm of a scope's staff).
    *
    * @throws TypeError when `id` is not a user's public id.
    */

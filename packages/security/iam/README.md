@@ -5,8 +5,8 @@ rules live in a policy per model, module roles bundle permissions, and an embedd
 check in process from the principal's policy snapshot (ADR 0208, 0132, 0333).
 
 **Tier:** `tier:lib` (`packages/security/iam`). Entries `.`, `./contracts`, `./react` and `./testing`. Depends on
-`@stackra/actions`, `@stackra/container`, `@stackra/contracts`, `@stackra/errors`, `@stackra/rules` and
-`@stackra/scope`.
+`@stackra/actions`, `@stackra/container`, `@stackra/contracts`, `@stackra/errors`, `@stackra/rules`,
+`@stackra/scope` and `@stackra/segments` (its `./contracts` only, for the `SegmentRef` audience).
 
 ## What is here
 
@@ -62,7 +62,9 @@ static. An action takes its risk from its permission. A policy whose permission 
 
 1. A system or job actor is the platform and passes.
 2. A system permission is held by the platform only (a service acting for no one counts); no role grants it.
-3. A grant applies at its scope node and every node below, until it expires. A call with no scope acts at the root.
+3. A grant applies at its scope node and every node below, until it expires. The pipeline driver checks at the call's
+   `scope` (`ctx.scope`); a call without one acts at the node its caller's credential names, read from `ScopeTree`,
+   or at the root when there is none.
 4. A role's permissions come from its module class (`registerRoles`) or from the snapshot (custom and provisioned
    roles). A wildcard (`orders.*`, `*`) counts only in a system role.
 5. An explicit deny beats every grant. A deny with a `@stackra/rules` condition is tested only against a record, and

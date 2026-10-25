@@ -16,3 +16,5 @@
 - [x] T012 [US1] Tests for every public symbol in `src/**/__tests__/` — covers: SC-002 — route: tests — deps: T010
 - [x] T013 [US1] Changeset `.changeset/iam-package.md`; `oxfmt` and `oxlint` clean; the validator reports nothing for the package — covers: SC-001, SC-003 — route: package — deps: T012
 - [ ] T014 [US1] Run the package's tests, typecheck and build in the separate testing workflow — covers: SC-002 — route: tests — deps: T012
+- [x] T015 [US1] R3 reconciliation: the `SegmentRef` stand-in removed from `packages/security/iam/src/contracts/`; `Audience` names `@stackra/segments/contracts`' `SegmentRef` — covers: FR-001, P-001 — route: package — deps: T013
+- [x] T016 [US2] R5 reconciliation: `IamAccessControlDriver` checks at the call's `scope` and reads `ScopeTree` only for a call without one; the "tenant" wording in the role, role-options, visibility-rule and `actors` docblocks says scope — covers: FR-006, P-006 — route: package — deps: T015

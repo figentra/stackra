@@ -63,7 +63,7 @@ const ROOT: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2r1", path: "platform" 
 const ACME: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" };
 const ACME_EU: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w2", path: "platform.acme.eu" };
 const GLOBEX: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w3", path: "platform.globex" };
-const VIP: PublicId = "seg_01j9z3k4m5n6p7q8r9s0t1v2v1";
+const VIP: PublicId<"seg"> = "seg_01j9z3k4m5n6p7q8r9s0t1v2v1";
 
 const staff: Actor = {
   kind: ActorKind.User,

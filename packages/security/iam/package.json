@@ -84,7 +84,8 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/rules": "workspace:*",
-    "@stackra/scope": "workspace:*"
+    "@stackra/scope": "workspace:*",
+    "@stackra/segments": "workspace:*"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",

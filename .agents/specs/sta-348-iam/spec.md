@@ -149,8 +149,8 @@ memory policy so the module's policy decides.
   on scope (for `GrantedScopes`, `ScopeTree` and `isWithinScope`) and not on tenancy.
 - `SystemRole` holds `owner`, `manager` and `staff` (the template names the first two); more codes need an owner
   decision.
-- The call descriptor carries the scope's id, not its `ScopeRef`, so the driver reads the node from `ScopeTree` in one
-  marked place until ADR 0327 decision 6 adds the scope to the call context.
+- Settled by the R5 reconciliation: the call descriptor carries `scope` (ADR 0327 decision 6) and the driver reads it;
+  only a call without one reads the caller's node from `ScopeTree`.
 - The client snapshot is set by the session's owner (`@stackra/identity`), which does not set it yet.
 - Not built: the server `PolicySource` driver and the IAM service, the per-model visibility filter on queries (wave 9),
   separation-of-duties pairs and access reviews (paid, ADR 0208 decision 5).

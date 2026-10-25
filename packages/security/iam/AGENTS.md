@@ -24,7 +24,8 @@ Permissions, policies, roles and the embedded policy decision point (ADR 0208, 0
   every new public file to its barrel and to that entry's `index.test.ts`.
 - `src/contracts/` is the leaf; `core` imports `contracts`; `react` and `testing` import `core` through `#core/index`.
 - The registries (`PERMISSION_REGISTRY`, `ROLE_REGISTRY`, `POLICY_REGISTRY`) stay internal; never export them.
-- `SegmentRef` is a stand-in until `@stackra/segments` ships its own; then import that one and delete it.
+- `SegmentRef` is `@stackra/segments/contracts`' own; import it from there and never redeclare or re-export it.
+  segments must never depend on iam.
 
 ## This package
 
@@ -34,7 +35,8 @@ Permissions, policies, roles and the embedded policy decision point (ADR 0208, 0
 - Conditions are `@stackra/rules` trees evaluated by its `evaluate`; write no evaluator of condition trees here
   (ADR 0331 decisions 1 and 11).
 - Visibility never invents a default for a record no rule matches: it answers `Decision.Abstain` (ADR 0333 decision 7).
-- No tenant vocabulary (R-59): scopes are the contracts `ScopeRef`.
+- No tenant vocabulary (R-59): scopes are the contracts `ScopeRef`. The access-control driver reads the call's
+  `scope`; never read the descriptor's `tenantId` (it is going away).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

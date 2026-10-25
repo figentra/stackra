@@ -14,8 +14,8 @@
 - The decision point reads one `PolicySource` snapshot per actor link (grants, custom roles, segments, denies,
   visibility, version) and the `Clock`. Module roles come from `registerRoles` and beat a snapshot role of the same
   key. Conditions are `@stackra/rules` trees evaluated by `evaluate` with the time as a fact.
-- `IamAccessControlDriver extends Driver(AccessControl)`: `require` maps the call's scope id to its node through
-  `ScopeTree` and checks; `authorize` resolves the record's policy (registered by model, built by the resolver
+- `IamAccessControlDriver extends Driver(AccessControl)`: `require` checks at the call's `scope` (ADR 0327 d6) and
+  only for a call without one maps the caller's scope id to its node through `ScopeTree`; `authorize` resolves the record's policy (registered by model, built by the resolver
   `connectPolicies` set), calls the method named after the verb, then checks again with the record's facts.
 - `IamGrantedScopesDriver extends Driver(GrantedScopes)` answers the scope package's header step.
 - `PermissionSnapshotService` is the client's store; `usePermission` reads it with `useSyncExternalStore`.
