@@ -1,7 +1,8 @@
 # @stackra/support
 
-Dependency-free pure helpers for Stackra packages and services, grown on demand. Today it holds `time`; string,
-array, async and object helpers are added when a package first needs them, not before.
+Dependency-free pure helpers for Stackra packages and services, grown on demand. It holds `time`, `Quantity` (an
+exact amount with a unit), `restrictedGtin` (GS1 restricted-circulation numbers) and `code128` (a Code 128 and GS1-128
+encoder); string, array, async and object helpers are added when a package first needs them, not before.
 
 **Tier:** `tier:lib` (`packages/foundation/support`). Laid out in the programming model v3.1 (ADR 0294, 0305).
 No workspace dependency, no runtime dependency, no host globals: it runs unchanged in Node, Encore, browsers,
@@ -9,12 +10,12 @@ workers and React Native.
 
 ## Entry points
 
-| Import             | Holds                        | Exports today                                  |
-| ------------------ | ---------------------------- | ---------------------------------------------- |
-| `@stackra/support` | `src/core/`: isomorphic code | `time` (`src/core/constants/time.constant.ts`) |
+| Import             | Holds                        | Exports today                                                                                      |
+| ------------------ | ---------------------------- | -------------------------------------------------------------------------------------------------- |
+| `@stackra/support` | `src/core/`: isomorphic code | `time`, `Quantity`, `restrictedGtin`, `code128`; types `QuantityUnit`, `Rational`, `Code128Symbol` |
 
 The package has the one entry `.` (ADR 0127, 2026-10-24 note). Entry barrels are generated, never authored
-(ADR 0294 decision 15); until `stackra gen` writes them (STA-339) the export names the entry's one public file.
+(ADR 0294 decision 15); until `stackra gen` writes them (STA-339) `src/core/index.ts` is a stand-in barrel.
 
 ## `time`
 
@@ -41,6 +42,32 @@ const expiresAt = time.addDays(issuedAt, 30);
 - The helpers never read the clock: the current time comes from the caller (the `Clock` port of
   `@stackra/contracts`, or `ctx.now()` in an action).
 - Calendar months and years are not offered: they need a time zone and a clamping rule.
+
+## `Quantity`
+
+An amount with its unit, kept as a reduced fraction of big integers so conversion and arithmetic never round.
+
+```ts
+import { Quantity } from "@stackra/support";
+
+Quantity.of("2.5", "yd").to("m").toDecimal(4); // "2.2860"
+Quantity.of("1.5", "kg").ratio(Quantity.of(100, "g")); // { num: 15n, den: 1n }: the unit-price divisor
+```
+
+- Units: `mg`, `g`, `kg`, `oz`, `lb`; `mm`, `cm`, `m`, `in`, `ft`, `yd`; `ml`, `l`, `fl_oz` (US), `gal` (US);
+  `piece`. Factors are the exact legal definitions (an inch is 0.0254 m).
+- An amount is a decimal string, a safe integer or a big integer; a fractional `number` is refused.
+- Units of different dimensions never mix (`TypeError`). Rounding happens once, in `toDecimal(places)`, half away
+  from zero.
+- Which unit a Market sells or shows in is market-pack data, never a default here.
+
+## Barcodes
+
+- `restrictedGtin(prefix, serial)`: a GTIN-13 under a GS1 restricted-circulation prefix (02, 04, 20 to 29) for a
+  tenant with no GS1 company prefix. The prefix comes from the tenant's settings and the serial from its counter.
+  Validating a GTIN is `@stackra/validation`'s job.
+- `code128(data, { gs1 })`: symbol values and module widths, code set C for digit runs and B for text; with `gs1`, a
+  leading FNC1 and FNC1 for each `\u001d` separator. Printable ASCII only; drawing is the caller's.
 
 ## Tasks
 

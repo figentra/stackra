@@ -14,6 +14,12 @@ programming model v3.1 shape (ADR 0294, 0305).
 - A helper is added when a package or service imports it, never ahead of a consumer. Port `str`, `arr`, `async` and
   `object` from the Figentra OS source only then.
 - One declaration per file (ADR 0305); a file opens with the Stackra file contract and every export carries TSDoc.
+- `src/core/index.ts` is a stand-in barrel until gen writes it (STA-339): add each public file to it and to the export
+  list in `src/core/__tests__/index.test.ts`.
+- No `Enum.of` (it is `@stackra/contracts'`): unit codes are a frozen table (`QUANTITY_UNITS`) and a derived type.
+- Exact means exact: `Quantity` keeps big-integer fractions and never takes a fractional `number`. A unit's factor is
+  its legal definition; which unit a Market uses is market-pack data, never here.
+- GTIN validation is `@stackra/validation`'s (conflict #1); this package keeps restricted-range allocation and Code 128.
 - Tests sit in `__tests__/` beside the subject and import the runner from `@stackra/testing` (ADR 0269).
 
 ## PII

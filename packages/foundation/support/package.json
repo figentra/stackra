@@ -2,7 +2,7 @@
   "name": "@stackra/support",
   "version": "0.0.0",
   "private": true,
-  "description": "Dependency-free pure helpers for Stackra packages and services, grown on demand (time first)",
+  "description": "Dependency-free pure helpers for Stackra packages and services, grown on demand: time shifts, exact quantities with units, GS1 restricted-circulation GTINs and a Code 128 encoder",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -27,7 +27,7 @@
   },
   "exports": {
     ".": {
-      "@stackra/source": "./src/core/constants/time.constant.ts",
+      "@stackra/source": "./src/core/index.ts",
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
     }
