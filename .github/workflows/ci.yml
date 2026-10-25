@@ -2,8 +2,8 @@
 # Purpose: the Quality Gate, the one required check on every pull request to main, every merge-queue
 #          group commit (merge_group, ADR 0166 CI3) and every push to main (workflow lint, OSV dependency scan,
 #          install, Linear key check, format, lint, typecheck, test, build, docs a11y, playground e2e, validate,
-#          boundaries, knip, secrets scan, agent sync). Branch protection requires the `Quality Gate` job by name;
-#          never rename it. `deploy-staging` is a placeholder that deploys nothing.
+#          boundaries, knip, secrets scan, agent sync), plus `Dependency Review` on pull requests.
+#          Branch protection requires the `Quality Gate` job by name; never rename it. `deploy-staging` is a placeholder that deploys nothing.
 # Owner: release-operations
 # Secrets: HEROUI_AUTH_TOKEN and UNIWIND_AUTH_TOKEN (the HeroUI and Uniwind CI/CD licence tokens) from Infisical /ci
 #          (env prod) through GitHub OIDC, for the install step only: the HeroUI Pro and Uniwind Pro postinstalls
@@ -173,6 +173,26 @@ jobs:
 
       - name: Agent sync check
         run: pnpm agents:check
+
+  # STA-310: refuse a pull request that adds a dependency with a known high or critical advisory. The OSV step in the
+  # gate scans the whole lockfile; this job reads only the pull request's dependency diff.
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+        with:
+          fail-on-severity: high
 
   # No deploy decision exists yet: how the generated, gitignored Encore app reaches a runtime, the environments and
   # the promotion unit are open owner questions (gap questionnaire DP1-DP7, DP2 first; ADR 0091 leaves deploy open).
