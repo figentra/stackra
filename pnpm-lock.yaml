@@ -3667,6 +3667,9 @@ importers:
       '@stackra/i18n':
         specifier: workspace:*
         version: link:../../foundation/i18n
+      '@stackra/iam':
+        specifier: workspace:*
+        version: link:../../security/iam
       '@stackra/icons':
         specifier: workspace:*
         version: link:../../design-system/icons
@@ -5472,6 +5475,9 @@ importers:
       '@stackra/scope':
         specifier: workspace:*
         version: link:../scope
+      '@stackra/segments':
+        specifier: workspace:*
+        version: link:../../application/segments
     devDependencies:
       '@stackra/testing':
         specifier: workspace:*
@@ -5545,6 +5551,9 @@ importers:
       '@stackra/errors':
         specifier: workspace:*
         version: link:../../foundation/errors
+      '@stackra/iam':
+        specifier: workspace:*
+        version: link:../iam
       '@stackra/scope':
         specifier: workspace:*
         version: link:../scope
