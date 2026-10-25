@@ -1,0 +1,86 @@
+---
+title: "0364 — Fiscal: e-invoicing and till fiscal drivers chosen by market-pack data"
+description: "Proposed · 2026-10-25"
+---
+
+<Note>
+  Proposed. It records the owner's approval of `@stackra/fiscal` (owner questionnaire #21, answer
+  "add": "required by law in your first markets") and widens its scope from e-invoicing to the till
+  fiscal drivers (the "EU till fiscal drivers" row of `notes/handover/stackra-package-needs.md`,
+  restaurant questionnaire section 6, COM-36). It reads with
+  [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios)
+  (market packs),
+  [0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default)
+  (provider per market) and [0361](/adr/0361-principals-and-parties) (parties).
+</Note>
+
+## Context
+
+The first markets require fiscal documents by law: clearance and reporting e-invoicing with a device certificate per
+till (ZATCA Phase 2), sealed documents with registered item codes (the Egyptian e-invoicing system), tax invoices
+through an accredited service provider or the Peppol network, and hybrid PDF invoices (Factur-X, ZUGFeRD). Commerce's
+"EU on day one" (COM-36) adds the till fiscal rules: a technical security element, a certified software chain, a
+fiscal data module, a telematic recorder, a register security regulation and a verifiable billing record. The owner
+approved `@stackra/fiscal` for e-invoicing (questionnaire #21); the configuration principle
+([0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios)) says no package names
+a country, so which of these applies is market-pack data. Nothing was on disk.
+
+## Decision
+
+1. **One package, one port, two channels.** `@stackra/fiscal` (`packages/commerce/fiscal`, `tier:lib`) holds every
+   e-invoicing mandate and every till fiscal device behind one `FiscalDriver` port (`seal`, `submit`,
+   `exportJournal`). A document is sealed in the `invoice` channel (the pack's e-invoicing mandate) or the `till`
+   channel (the pack's till fiscal rule). The first drivers are `zatca`, `eta`, `peppol`, `factur-x`, `tse`, `nf525`,
+   `fdm`, `rt`, `rksv` and `verifactu`.
+2. **The pack chooses.** A market pack's fiscal section names, per channel, the driver key, its options, the offline
+   reporting window and the retention period. Each driver validates its options with its own schema and refuses a
+   pack that leaves one out; nothing has a default in code. A market served through a provider (an ASP, an access
+   point) is the same driver with that provider's endpoint in the pack. The pack is read through the
+   `FiscalPackSource` port until the market-pack loader has a home.
+3. **Seal offline, submit later.** `FiscalService.seal` signs and chains a document onto its unit's journal with no
+   network, idempotently per document; `submitPending` hands sealed records to the authority in sequence order and
+   stops at the first it cannot reach. `offlineStatus` reports the backlog against the pack's reporting window, so a
+   till stops issuing at the lower of the tenant's offline limit and that window.
+4. **Keys, credentials and the network stay with the host.** Signing (`FiscalSigner`: XAdES, CAdES, JWS, raw), the
+   turnover cipher, HTTP with its credentials (`FiscalTransport`) and the per-unit credential store (`TillCredentials`)
+   are ports. A CSID per till is onboarded by `ZatcaOnboarding` (compliance CSID, compliance check, production CSID),
+   whose issued secrets go straight to the store.
+5. **Hardware through a port, pairing in devices.** TSEs, fiscal data modules and telematic recorders are reached
+   through `FiscalDevice`; their pairing and registry are `@stackra/devices` (handover conflict 3).
+6. **Hybrid PDF through documents.** The CII XML is built here; embedding it in a PDF/A-3 is the `HybridPdf` port,
+   bound by `@stackra/documents`.
+7. **Journal export per mandate.** Each driver exports its unit's records in its mandate's audit form (a device
+   archive, a signed-receipt file, or JSON lines of the chain).
+8. **Format identity is code, market values are data.** Standard namespaces, UNCL code lists and a format's own type
+   letters are in the drivers; endpoints, versions, profile ids, tax and payment mappings, slots, buckets and time
+   zones are pack options.
+9. **No tax computation here.** Lines arrive with tax computed (OS invoicing and pricing from pack rates) and numbers
+   from the host's sequences; fiscal never recomputes or numbers.
+
+## Consequences
+
+- A new market is a pack (and, for a new mandate, one driver), never a branch in code.
+- Hosts write five bindings (pack source, journal store, signer, transport, credential store) plus device and PDF
+  bindings where a driver needs them; fakes for each ship in `./testing`.
+- Each driver's output is checked against the authority's sandbox in the certification tracker (COM-356) before its
+  pack goes live.
+
+## Enforcement
+
+planned — the package's unit tests pin each driver's format, chain and refusals; the 0363 lint rule flags country
+codes in package source; certification against each authority's sandbox is a pack launch-gate item.
+
+## Open questions
+
+1. **ETA e-receipts.** The B2C receipt flow (receipt UUID chain and its QR) is not a driver yet; whether it is a second
+   ETA driver or an `eta` option is not decided.
+2. **Validation polling.** Authorities that validate after accepting (the ETA document status) need a status query;
+   its home (driver method or workflow) is not decided.
+3. **Pack home.** The `FiscalPackSource` binding waits for the market-pack loader (0363 open question 1).
+
+## Supersedes and sources
+
+Supersedes: none. Sources: `notes/handover/owner-questionnaire-2026-10-25.md` (#21);
+`notes/handover/stackra-package-needs.md` (`@stackra/fiscal` and "EU till fiscal drivers" rows);
+`notes/handover/config-model.md` (market packs: e-invoicing and till fiscal rules); `notes/handover/answers-as-config.md`
+(CAP-e-invoicing, CAP-till-fiscal, OS-116 to OS-120); COM-265 to COM-273; COM-36.
