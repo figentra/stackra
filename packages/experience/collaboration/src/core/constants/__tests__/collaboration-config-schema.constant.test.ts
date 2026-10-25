@@ -15,6 +15,7 @@ describe("COLLABORATION_CONFIG_SCHEMA", () => {
     expect(COLLABORATION_CONFIG_SCHEMA.parse({})).toEqual({
       cursorIntervalMilliseconds: 50,
       snapshotIntervalSeconds: 30,
+      presenceHeartbeatSeconds: 20,
     });
   });
 
@@ -24,6 +25,7 @@ describe("COLLABORATION_CONFIG_SCHEMA", () => {
     ["a fractional cursor interval", { cursorIntervalMilliseconds: 20.5 }],
     ["a snapshot interval of zero", { snapshotIntervalSeconds: 0 }],
     ["a snapshot interval past one hour", { snapshotIntervalSeconds: 3601 }],
+    ["a presence heartbeat of zero", { presenceHeartbeatSeconds: 0 }],
   ])("refuses %s", (_case, values) => {
     expect(COLLABORATION_CONFIG_SCHEMA.safeParse(values).success).toBe(false);
   });
@@ -37,6 +39,7 @@ describe("COLLABORATION_CONFIG_SCHEMA", () => {
     expect(Host$.parse({})).toEqual({
       cursorIntervalMilliseconds: 50,
       snapshotIntervalSeconds: 10,
+      presenceHeartbeatSeconds: 20,
     });
     expect(Host$.safeParse({ snapshotIntervalSeconds: 0 }).success).toBe(false);
   });

@@ -19,6 +19,8 @@ describe("@stackra/collaboration", () => {
       "CollaborationOptions",
       "CollaborationSession",
       "LiveCollaborationEntitlement",
+      "RealtimePresenceChannelDriver",
+      "RealtimeSyncTransportDriver",
       "SnapshotService",
     ]);
   });

@@ -5,15 +5,17 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./re
 
 ## Where code goes
 
-| You are writing…                | It goes in…                                    |
-| ------------------------------- | ---------------------------------------------- |
-| A port or a type it speaks      | `src/contracts/{ports,types}/`                 |
-| The configuration               | `src/config/collaboration.config.ts`           |
-| The entitlement                 | `src/core/access/`                             |
-| The session or snapshot service | `src/core/services/`                           |
-| React code or the Yjs binding   | `src/react/<name>/`                            |
-| A memory driver                 | `src/testing/drivers/`                         |
-| A test                          | `__tests__/<name>.<kind>.test.ts(x)` beside it |
+| You are writing…                | It goes in…                                      |
+| ------------------------------- | ------------------------------------------------ |
+| A port or a type it speaks      | `src/contracts/{ports,types}/`                   |
+| The configuration               | `src/config/collaboration.config.ts`             |
+| The entitlement                 | `src/core/access/`                               |
+| The session or snapshot service | `src/core/services/`                             |
+| React code or the Yjs binding   | `src/react/<name>/`                              |
+| A memory driver                 | `src/testing/drivers/`                           |
+| A network driver over realtime  | `src/core/drivers/`, helpers in `core/functions` |
+| A server driver or migration    | `src/node/{drivers,database/migrations}/`        |
+| A test                          | `__tests__/<name>.<kind>.test.ts(x)` beside it   |
 
 ## This package
 

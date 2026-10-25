@@ -26,6 +26,7 @@ describe("@stackra/collaboration/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "PresenceChannel",
+      "RoomTokens",
       "SnapshotStore",
       "SyncTransport",
     ]);

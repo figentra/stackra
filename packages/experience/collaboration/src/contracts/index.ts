@@ -9,6 +9,7 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { PresenceChannel } from "#contracts/ports/presence-channel.port";
+export { RoomTokens } from "#contracts/ports/room-tokens.port";
 export { SnapshotStore } from "#contracts/ports/snapshot-store.port";
 export { SyncTransport } from "#contracts/ports/sync-transport.port";
 export type { CollaborationCursor } from "#contracts/types/collaboration-cursor.type";

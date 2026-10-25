@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `CollaborationConfig`, the configuration of @stackra/collaboration (key `collaboration`): the cursor send
- *          interval `CollaborationSession` throttles to and the snapshot interval `SnapshotService` saves at.
+ *          interval `CollaborationSession` throttles to, the snapshot interval `SnapshotService` saves at, and the
+ *          presence heartbeat of the realtime presence driver.
  * Boundary: a configuration class over `CollaborationOptions` with no env map; runway's `config.collaboration` layer
  *           sets it per environment. A host overrides it under the same name, with this class aliased
  *           `BaseCollaborationConfig`, by `override` members only.

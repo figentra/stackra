@@ -17,4 +17,5 @@ import { z } from "zod";
 export const COLLABORATION_CONFIG_SCHEMA = z.object({
   cursorIntervalMilliseconds: z.number().int().min(16).max(1000).default(50),
   snapshotIntervalSeconds: z.number().int().min(1).max(3600).default(30),
+  presenceHeartbeatSeconds: z.number().int().min(1).max(3600).default(20),
 });

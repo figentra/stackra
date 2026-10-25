@@ -69,9 +69,16 @@ const other = new CollaborationSession(config, presence.peer("usr_…"), sync.pe
 presence.drop(); // the link goes down; presence.reconnect() brings it back
 ```
 
+## Network drivers
+
+- `RealtimePresenceChannelDriver` and `RealtimeSyncTransportDriver` (`.`) ride the document's `@stackra/realtime` room
+  (ADR 0346). Before each connect they ask the `RoomTokens` port (`./contracts`) for a one-time token; the host binds it
+  over its generated client's room-token action. Presence is re-announced every `presenceHeartbeatSeconds`, cursors
+  are throttled to `cursorIntervalMilliseconds`, and updates travel as base64 `update` messages.
+- `PostgresSnapshotStoreDriver` (`./node`) keeps the latest state per document in `collaboration.snapshots`
+  (migration `collaboration.0001_create_snapshots`), isolated by the room's scope.
+
 ## Limits today
 
-- No network driver ships for `PresenceChannel` or `SyncTransport`. `@stackra/realtime` delivers data-free refreshes
-  from the server only, so presence, cursors and document updates cannot ride its channels yet; the drivers come
-  with a payload-carrying, two-way room channel in realtime (needs an ADR). The host binds its own drivers until then.
-- No `SnapshotStore` driver ships: the document's owner (the content service) implements it.
+- The realtime drivers use the room's WebSocket; a client behind a proxy that blocks sockets has no co-editing yet
+  (the server-sent-events fallback of ADR 0346 decision 5 is not built).

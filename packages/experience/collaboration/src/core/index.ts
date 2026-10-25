@@ -13,6 +13,8 @@
 export { CollaborationConfig } from "#config/collaboration.config";
 export { LiveCollaborationEntitlement } from "#core/access/live-collaboration.entitlement";
 export { COLLABORATION_CONFIG_SCHEMA as CollaborationConfig$ } from "#core/constants/collaboration-config-schema.constant";
+export { RealtimePresenceChannelDriver } from "#core/drivers/realtime-presence-channel.driver";
+export { RealtimeSyncTransportDriver } from "#core/drivers/realtime-sync-transport.driver";
 export { CollaborationOptions } from "#core/schemas/collaboration-options.schema";
 export { CollaborationSession } from "#core/services/collaboration-session.service";
 export { SnapshotService } from "#core/services/snapshot.service";
