@@ -11,12 +11,12 @@
   },
   "files": [
     "dist",
-    "!**/*.map",
     "assets",
     "stackra.manifest.json",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "!**/*.map"
   ],
   "type": "module",
   "sideEffects": false,

@@ -35,8 +35,8 @@ extending the kind's base class. The group table is the docs page `standards/str
 ## This package (ADR 0310)
 
 - **Restricted channel only (ADR 0310 as amended, ADR 0316 decision 2).** Keep `"private": true` and the
-  `publishConfig` (Keygen's npm engine as `registry`, dist-only `exports` for every entry), `files` without `src` and
-  with `!**/*.map`, and the minified, map-free build in `tsdown.config.ts`. `pnpm validate` refuses any change to them,
+  `publishConfig` (Keygen's npm engine as `registry`, `exports` on `dist` and `assets` for every entry), `files`
+  without `src` and ending with `!**/*.map`, and the minified, map-free build in `tsdown.config.ts`. `pnpm validate` refuses any change to them,
   and any non-app member that depends on this package, `@heroui-pro/react` or `heroui-native-pro`. Only our own apps import it
   (console, docs, playground, Figentra OS); `@stackra/ui` never does (ADR 0165 decision 5, ADR 0197).
 - A component is a contract in `src/contracts/types/<name>-contract-props.type.ts` (`<Name>ContractProps`, built on

@@ -42,13 +42,13 @@ never to npmjs. The Keygen custom domain gets its name later (ADR 0290 decision 
 
 - `"private": true` stays, so `pnpm publish` and changesets never send it to npmjs.
 - The tarball is the Pro form of ADR 0316 decision 2: `pnpm pack` applies `publishConfig.exports`, which name `dist`
-  only with no `@stackra/source` condition; `files` lists no `src` and drops `**/*.map`; the build is minified with no
-  source maps.
+  and `assets` only with no `@stackra/source` condition; `files` lists no `src` and ends with `!**/*.map` (a negated
+  entry drops only what the entries before it added); the build is minified with no source maps.
 - `@heroui-pro/react` and `heroui-native-pro` stay external peers. Each consuming repository installs them with its own
   HeroUI Pro licence token; this package carries none.
 - Keygen's npm engine takes no `npm publish`: a release step will upload the packed tarball with the Keygen CLI
   (`keygen new`, `keygen upload`, `keygen publish`). That step is STA-482; until it lands, nothing publishes this
-  package, and the release workflow still builds and skips it as before.
+  package, and the release workflow neither installs nor builds it (`release.yml` filters it out).
 - `pnpm validate` checks the private flag, the registry, `files` and the packed exports.
 
 ## Structure

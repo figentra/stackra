@@ -13,7 +13,6 @@ import {
   isMemberSource,
   isV2Service,
   isRepoOwnedYaml,
-  PRO_WRAPPER_REGISTRY,
   tierFor,
 } from "../validate-repository.mjs";
 
@@ -68,7 +67,7 @@ test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0310)", 
   const wrapper = {
     name: "@stackra/ui-pro",
     private: true,
-    files: ["dist", "!**/*.map", "assets"],
+    files: ["dist", "assets", "!**/*.map"],
     exports: { ".": { "@stackra/source": "./src/index.ts", default: "./dist/index.mjs" } },
     publishConfig: {
       registry: "https://npm.pkg.keygen.sh/figentra/",
@@ -78,9 +77,9 @@ test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0310)", 
   const registryFinding =
     "@stackra/ui-pro publishConfig.registry must be Keygen's npm engine, https://npm.pkg.keygen.sh/<account>/ (ADR 0310)";
   const filesFinding =
-    '@stackra/ui-pro files must list no src and must hold "!**/*.map": its tarball ships dist only (ADR 0316)';
+    '@stackra/ui-pro files must list no src and must end with "!**/*.map": its tarball ships dist only (ADR 0316)';
   const exportsFinding =
-    "@stackra/ui-pro publishConfig.exports must name every entry of exports, on dist only, with no @stackra/source condition (ADR 0316)";
+    "@stackra/ui-pro publishConfig.exports must name every entry of exports, on dist or assets only, with no @stackra/source condition (ADR 0316)";
   for (const dep of ["@heroui-pro/react", "heroui-native-pro", "@stackra/ui-pro"]) {
     assert.deepEqual(
       pro("packages/design-system/ui", {
@@ -121,12 +120,18 @@ test("HeroUI Pro reaches only apps and the private @stackra/ui-pro (ADR 0310)", 
   const accountless = { ...wrapper.publishConfig, registry: "https://npm.pkg.keygen.sh/" };
   assert.deepEqual(pro(ui, { ...wrapper, publishConfig: accountless }), [registryFinding]);
   assert.deepEqual(pro(ui, { ...wrapper, files: ["dist", "assets"] }), [filesFinding]);
+  assert.deepEqual(pro(ui, { ...wrapper, files: ["dist", "!**/*.map", "assets"] }), [filesFinding]);
+  assert.deepEqual(pro(ui, { ...wrapper, files: ["*", "!**/*.map"] }), [filesFinding]);
   const missingEntry = {
     ...wrapper,
     exports: { ...wrapper.exports, "./react": "./dist/react.mjs" },
   };
   assert.deepEqual(pro(ui, missingEntry), [exportsFinding]);
-  assert.ok(PRO_WRAPPER_REGISTRY.test("https://npm.pkg.keygen.sh/figentra/"));
+  const onSource = {
+    ...wrapper.publishConfig,
+    exports: { ".": { types: "./dist/index.d.mts", default: "./src/index.ts" } },
+  };
+  assert.deepEqual(pro(ui, { ...wrapper, publishConfig: onSource }), [exportsFinding]);
   const uniwind = (dir) =>
     check({
       ...ok,

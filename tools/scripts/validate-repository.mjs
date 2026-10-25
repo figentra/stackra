@@ -75,17 +75,24 @@ const PRO_WRAPPER = "@stackra/ui-pro";
  * custom domain is named later (ADR 0290 decision 17), so the check takes any account and a move to that domain changes
  * this pattern and the package's `publishConfig.registry` together.
  */
-export const PRO_WRAPPER_REGISTRY = /^https:\/\/npm\.pkg\.keygen\.sh\/[\w-]+\/$/;
+const PRO_WRAPPER_REGISTRY = /^https:\/\/npm\.pkg\.keygen\.sh\/[\w-]+\/$/;
 
-/** The `files` entry that keeps source maps out of the Pro tarball (ADR 0316 decision 2). */
+/** The last `files` entry, which keeps source maps out of the Pro tarball (ADR 0316 decision 2). */
 const NO_SOURCE_MAPS = "!**/*.map";
 
-/** A `files` entry that would pack the source folder: `src`, `./src`, `src/` or anything under it. */
-const isSourceEntry = (entry) => /^(\.\/)?src(\/|$)/.test(entry);
+/** A `files` entry that would pack the source folder: `src` in any spelling, or the whole package (`.`, `*`, `**`). */
+const isSourceEntry = (entry) => /^(\.\/?|(\.\/)?\*{1,2}|(\.\/)?src(\/.*)?)$/.test(entry);
+
+/** Every path a conditional `exports` value names, condition objects walked to their leaves. */
+const exportTargets = (value) =>
+  typeof value === "string"
+    ? [value]
+    : Object.values(value ?? {}).flatMap((inner) => exportTargets(inner));
 
 /**
  * Findings for the Pro wrapper's publishing fields: private, the restricted registry, and the Pro tarball of ADR 0316
- * decision 2 (no `src` and no source maps in `files`; packed exports for the same entries, with no `@stackra/source`).
+ * decision 2 (no `src` and, last, no source maps in `files`; packed exports for the same entries, on `dist` or
+ * `assets` only, with no `@stackra/source`).
  */
 function checkProWrapper(pkg) {
   const out = [];
@@ -97,19 +104,22 @@ function checkProWrapper(pkg) {
     out.push(
       `${PRO_WRAPPER} publishConfig.registry must be Keygen's npm engine, https://npm.pkg.keygen.sh/<account>/ (ADR 0310)`,
     );
-  if (files.some(isSourceEntry) || !files.includes(NO_SOURCE_MAPS))
+  // A negated `files` entry only drops what the entries before it added, so the map exclusion comes last.
+  if (files.some(isSourceEntry) || files.at(-1) !== NO_SOURCE_MAPS)
     out.push(
-      `${PRO_WRAPPER} files must list no src and must hold "${NO_SOURCE_MAPS}": its tarball ships dist only (ADR 0316)`,
+      `${PRO_WRAPPER} files must list no src and must end with "${NO_SOURCE_MAPS}": its tarball ships dist only (ADR 0316)`,
     );
   const entries = Object.keys(pkg.exports ?? {}).sort();
   const packed = Object.keys(publishConfig.exports ?? {}).sort();
+  const targets = exportTargets(publishConfig.exports);
   if (
     packed.length === 0 ||
     packed.join() !== entries.join() ||
-    JSON.stringify(publishConfig.exports).includes("@stackra/source")
+    JSON.stringify(publishConfig.exports).includes("@stackra/source") ||
+    !targets.every((target) => /^\.\/(dist|assets)\//.test(target))
   )
     out.push(
-      `${PRO_WRAPPER} publishConfig.exports must name every entry of exports, on dist only, with no @stackra/source condition (ADR 0316)`,
+      `${PRO_WRAPPER} publishConfig.exports must name every entry of exports, on dist or assets only, with no @stackra/source condition (ADR 0316)`,
     );
   return out;
 }

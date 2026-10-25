@@ -12,7 +12,8 @@
  */
 import { library } from "@stackra/tsdown-config";
 
-export default {
+// Annotated: the spread object's inferred type names tsdown internals, which a declaration cannot reach (TS2883).
+const config: ReturnType<typeof library> = {
   ...library(
     {
       index: "src/config/ui-pro.config.ts",
@@ -28,3 +29,5 @@ export default {
   // The tsconfig chain sets `declarationMap`, which would turn maps back on through the declaration build.
   dts: { sourcemap: false },
 };
+
+export default config;
