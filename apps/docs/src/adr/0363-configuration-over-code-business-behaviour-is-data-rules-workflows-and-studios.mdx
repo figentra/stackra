@@ -1,0 +1,96 @@
+---
+title: "0363 — Configuration over code: business behaviour is data, rules, workflows and studios"
+description: "Proposed · 2026-10-25"
+---
+
+<Note>
+  Proposed. When accepted, it adds a dated Note to
+  [0203](/adr/0203-the-commercial-model-billing-provider-and-tier-names),
+  [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial),
+  [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region),
+  [0189](/adr/0189-privacy-operations-and-data-retention),
+  [0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events),
+  [0220](/adr/0220-stackra-money-and-the-ledger-package),
+  [0268](/adr/0268-register-answers-thin-items-r1-to-r18),
+  [0192](/adr/0192-translation-workflow-and-arabic-defaults),
+  [0186](/adr/0186-backups-and-disaster-recovery) and
+  [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor)
+  (the items listed in `notes/handover/adr-hardcoding-findings.md`). It reads with
+  [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions) (settings cascade),
+  [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer) (rules),
+  [0153](/adr/0153-automations-run-as-principals-and-every-package-exposes-building-blocks)
+  (automations),
+  [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)
+  (builder document kinds),
+  [0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default)
+  (provider per Market) and
+  [0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records)
+  (sandbox and live).
+</Note>
+
+## Context
+
+The owner ruled on 2026-10-25 that every business answer is a default configuration, seeded as data and editable in
+each product's admin. Several Stackra ADRs still carry business values: the plan ladder in [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial), tier names in [0203](/adr/0203-the-commercial-model-billing-provider-and-tier-names),
+country tax rules "in OS code" in [0220](/adr/0220-stackra-money-and-the-ledger-package) and [0268](/adr/0268-register-answers-thin-items-r1-to-r18), named privacy laws in [0189](/adr/0189-privacy-operations-and-data-retention) and [0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events), and a 100-recipient threshold in
+[0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor). A mechanism that names a country or a price cannot serve a second market or a second product without a code
+change. Stackra already has the pieces: the settings cascade ([0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions)), the rules engine ([0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer)), the workflow engine
+([0153](/adr/0153-automations-run-as-principals-and-every-package-exposes-building-blocks)), the builder document kinds ([0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)) and provider choice per Market ([0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default)).
+
+## Decision
+
+1. **Code holds mechanism only.** Engines, ports, drivers, studios and importers are code. Business behaviour is not:
+   prices, plans, tiers, seat kinds, modules, fees, limits, trials, offers, policies and thresholds are data.
+2. **Four homes for business behaviour.**
+   - **Data:** catalogue records and settings, edited in each product's admin.
+   - **Rules:** any decision with a condition is a rule set in `@stackra/rules` ([0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer)). Return windows, deposits, cash
+     on delivery, approvals, tips, service charges, discount permits and commissions are rule sets.
+   - **Workflows:** any multi-step flow is a workflow template ([0153](/adr/0153-automations-run-as-principals-and-every-package-exposes-building-blocks)).
+   - **Studios:** screens, forms, dashboards, reports and print documents are builder documents ([0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)).
+3. **Market packs.** A country or legal area is a market pack: versioned data with effective dates that holds tax,
+   e-invoicing, till fiscal rules, legal floors, carriers, payment and messaging providers, sign-in and verification
+   methods, holidays, address format, currency and languages. Overlays (a free zone, an EU member state) extend a base
+   pack. No Stackra package names a country. A driver may serve one country; choosing it is pack data through the
+   Connection rule of [0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default).
+4. **Legal floors are pack data.** A legal minimum or maximum (a withdrawal period, a reporting window, a retention
+   period, a tax rate) is a floor in the pack. The settings resolver and the rules engine refuse a value past the floor
+   and say which pack and law set it. Code holds the check, never the number.
+5. **Settings layers.** The cascade of [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions) decision 2 is read as four business layers: platform floor, product
+   default, tenant, user. A narrower layer may only tighten a floor. Each key declares live or sandbox ([0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records) decisions
+   3 to 5).
+6. **Plan catalogue.** Each product's tiers, seat kinds, modules, limits, trials and offers are records in a plan
+   catalogue read by entitlements ([0215](/adr/0215-entitlements)) and billing ([0358](/adr/0358-the-stackra-licence-and-one-billing-engine-with-the-seller-as-a-parameter)). A seat meter counts the principal kinds the catalogue
+   names as seats. An ADR may name the kinds of limit; it never fixes their values.
+7. **Seeds.** A product's defaults ship as its seed pack ([0325](/adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy) decision 7, [0190](/adr/0190-seed-profiles-and-product-analytics)), loaded into the platform and into
+   every new sandbox. Changing a default is a seed change and a data migration, not a release of code.
+8. **Thresholds in floors.** A platform safety threshold (for example the bulk-send size of [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor) decision 8) is a
+   platform-floor setting. A tenant may make it stricter, never looser.
+9. **Tests check shape, not values.** A test may check that the seed matches its schema and respects the floors. It
+   never asserts a business number copied from an ADR.
+
+## Consequences
+
+- A new country is a new pack and its drivers, not a code change. A new price or plan is an admin edit.
+- `@stackra/settings` needs a floor-aware resolver, and `@stackra/rules` needs to read pack floors.
+- A market-pack loader, a plan-catalogue model and a seed compiler need homes (see `stackra-package-needs.md`).
+- ADRs get shorter: they keep the mechanism and point to the seed for values.
+- Reviewers must refuse a pull request that adds a country branch, a price or a policy value to code.
+
+## Enforcement
+
+planned — a lint rule that flags country codes, currency codes and tier names in package source outside packs and
+tests; a seed-schema test per product; a resolver test that a tenant value past a pack floor is refused with the
+pack and law named.
+
+## Open questions
+
+1. **Pack home.** Whether the market-pack loader is a new package or part of `@stackra/settings` is not decided.
+2. **Pack authorship.** Who signs a pack version (counsel, a local reviewer) before it goes live is not decided.
+3. **Floor conflicts across packs.** For a tenant active in two markets, which pack wins for a shared record (the
+   strictest, or the pack of the record's legal entity) is not decided.
+
+## Supersedes and sources
+
+Supersedes: none. Adds Notes to [0203](/adr/0203-the-commercial-model-billing-provider-and-tier-names), [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial), [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region), [0189](/adr/0189-privacy-operations-and-data-retention), [0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events), [0220](/adr/0220-stackra-money-and-the-ledger-package), [0268](/adr/0268-register-answers-thin-items-r1-to-r18), [0192](/adr/0192-translation-workflow-and-arabic-defaults), [0186](/adr/0186-backups-and-disaster-recovery) and [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor). Sources: owner
+principle of 2026-10-25 (`notes/handover/os/owner-answers.md`, last section);
+`notes/handover/adr-hardcoding-findings.md`; `notes/handover/config-model.md`.

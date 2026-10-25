@@ -462,7 +462,8 @@
               "adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records",
               "adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor",
               "adr/0361-principals-and-parties",
-              "adr/0362-no-code-without-an-answered-questionnaire-and-a-plan"
+              "adr/0362-no-code-without-an-answered-questionnaire-and-a-plan",
+              "adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios"
             ]
           }
         ]
